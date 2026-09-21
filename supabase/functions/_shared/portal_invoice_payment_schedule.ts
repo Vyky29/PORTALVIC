@@ -11,6 +11,10 @@ export type InvoicePaymentScheduleRow = {
   status: "pending" | "paid";
   paid_at?: string | null;
   paid_via?: string | null;
+  /** How this instalment is collected (hybrid GC: first month bank, later months DD). */
+  collect_via?: "bank_transfer" | "gocardless" | null;
+  /** GoCardless payment id scheduled/collected for this instalment only. */
+  gocardless_payment_id?: string | null;
 };
 
 export function round2(n: number): number {
@@ -27,6 +31,13 @@ export function normalizePaymentSchedule(raw: unknown): InvoicePaymentScheduleRo
     const amount = Number(o.amount_gbp);
     if (!Number.isFinite(amount) || amount <= 0) continue;
     const status = String(o.status || "pending").toLowerCase() === "paid" ? "paid" : "pending";
+    const viaRaw = String(o.collect_via || "").trim().toLowerCase();
+    const collect_via =
+      viaRaw === "bank_transfer" || viaRaw === "bank" || viaRaw === "tide"
+        ? ("bank_transfer" as const)
+        : viaRaw === "gocardless" || viaRaw === "gc"
+          ? ("gocardless" as const)
+          : null;
     out.push({
       seq: Number(o.seq) > 0 ? Math.floor(Number(o.seq)) : i + 1,
       label: String(o.label || `Payment ${i + 1}`).trim().slice(0, 120),
@@ -35,6 +46,10 @@ export function normalizePaymentSchedule(raw: unknown): InvoicePaymentScheduleRo
       status,
       paid_at: o.paid_at ? String(o.paid_at) : null,
       paid_via: o.paid_via ? String(o.paid_via).slice(0, 40) : null,
+      collect_via,
+      gocardless_payment_id: o.gocardless_payment_id
+        ? String(o.gocardless_payment_id).slice(0, 80)
+        : null,
     });
   }
   return out.sort((a, b) => a.seq - b.seq);
@@ -46,6 +61,29 @@ export function hasPaymentSchedule(raw: unknown): boolean {
 
 export function scheduleInstalmentCount(raw: unknown): number {
   return normalizePaymentSchedule(raw).length;
+}
+
+/** Mid-month join: bank remainder + later GC 1sts. */
+export function hybridBankGcPlanLabel(
+  rows: InvoicePaymentScheduleRow[],
+): string | null {
+  let bank = 0;
+  let gc = 0;
+  for (const r of rows || []) {
+    const via = String(r.collect_via || "").toLowerCase();
+    const lab = String(r.label || "").toLowerCase();
+    if (via === "bank_transfer" || via === "bank" || /bank transfer/.test(lab)) {
+      bank += 1;
+    } else if (via === "gocardless" || via === "gc" || /gocardless/.test(lab)) {
+      gc += 1;
+    }
+  }
+  if (bank > 0 && gc > 0) {
+    const bankBit = bank === 1 ? "1 bank transfer" : `${bank} bank transfers`;
+    const gcBit = gc === 1 ? "1 GoCardless" : `${gc} GoCardless`;
+    return `${bankBit} + ${gcBit} · £1.50 / GC instalment`;
+  }
+  return null;
 }
 
 /**
@@ -70,6 +108,9 @@ export function paymentSchedulePlanShortLabel(
   const method = String(opts?.paymentMethodHint || "").toLowerCase();
   const isBank = !method || method === "bank_transfer" || method === "bank" || method === "tide";
   const isGc = method === "gocardless";
+
+  const hybrid = hybridBankGcPlanLabel(rows);
+  if (hybrid) return hybrid;
 
   if (
     /own way|own arrangement|own_term|admin fee|minimum prepaid|top-?ups? as you go/.test(
@@ -215,6 +256,26 @@ export function shareNextInstalmentIsCollectingNow(share: {
   return instalmentDueIsCollectingNow(nextDue);
 }
 
+/**
+ * Parent My invoices: hide unpaid future-term INV-Ps until the collect window
+ * (same 7-day rule as admin Unpaid chip). Paid / partial stay visible so
+ * families see money already sitting on Spring/Summer. Pending confirmation
+ * always shows.
+ */
+export function parentInvoiceDueForParentView(share: {
+  payment_status?: unknown;
+  payment_schedule?: unknown;
+  next_instalment_due?: unknown;
+  due_date?: unknown;
+}): boolean {
+  const st = String(share.payment_status || "")
+    .trim()
+    .toLowerCase();
+  if (st === "void") return false;
+  if (st === "paid" || st === "partial" || st === "pending_confirmation") return true;
+  return shareNextInstalmentIsCollectingNow(share);
+}
+
 export type ApplyInstalmentPaymentResult = {
   schedule: InvoicePaymentScheduleRow[];
   amount_paid_gbp: number;
@@ -282,9 +343,10 @@ export function applyInstalmentPayment(
 }
 
 /**
- * Reduce pending instalments by a credit amount (first pending onwards).
- * The invoice total (amount_gbp) is reduced by the same credit elsewhere, so
- * the schedule keeps matching the total. Fully covered instalments drop out.
+ * Reduce pending instalments by a credit amount.
+ * Flexi (exactly 2 rows): prefer the last unpaid half (2nd payment).
+ * Longer schedules: apply forward from the next unpaid row.
+ * Fully covered instalments drop out.
  */
 export function applyCreditToSchedule(
   rawSchedule: unknown,
@@ -292,6 +354,20 @@ export function applyCreditToSchedule(
 ): { schedule: InvoicePaymentScheduleRow[]; next_instalment_due: string | null } {
   const schedule = normalizePaymentSchedule(rawSchedule).map((r) => ({ ...r }));
   let remaining = round2(creditGbp);
+  const isFlexiPair = schedule.length === 2;
+
+  if (isFlexiPair) {
+    for (let i = schedule.length - 1; i >= 0 && remaining > 0; i--) {
+      const row = schedule[i];
+      if (row.status === "paid") continue;
+      const applied = Math.min(remaining, row.amount_gbp);
+      row.amount_gbp = round2(row.amount_gbp - applied);
+      remaining = round2(remaining - applied);
+    }
+    const out = schedule.filter((row) => !(row.status !== "paid" && row.amount_gbp <= 0));
+    return { schedule: out, next_instalment_due: nextInstalmentDueDate(out) };
+  }
+
   const out: InvoicePaymentScheduleRow[] = [];
   for (const row of schedule) {
     if (remaining > 0 && row.status !== "paid") {

@@ -73,8 +73,9 @@
     }
     if (!res.ok || !j || !j.ok) {
       var err = (j && j.error) || "request_failed";
-      var e = new Error(err);
+      var e = new Error((j && j.message) || err);
       e.code = err;
+      e.reason = j && j.reason ? j.reason : "";
       e.payload = j;
       throw e;
     }
@@ -86,14 +87,20 @@
     funding_code: null,
     booking_scope: null,
     pay_plan: null,
+    choices_json: {},
   };
 
   function demoPayload() {
     var unit = 50;
     var termSessions = 14;
-    var remaining = 14;
+    // Mid-term join now (after 1 Sept): e.g. first Wednesday still ahead → 13 remaining.
+    var remaining = 13;
+    var today = new Date().toISOString().slice(0, 10);
     var termTotal = unit * termSessions;
     var payable = unit * remaining;
+    function round2(n) {
+      return Math.round(n * 100) / 100;
+    }
     function quote(plan) {
       if (plan === "own_way") {
         var own = unit * 2 + 50;
@@ -102,27 +109,138 @@
           programme_total_gbp: own,
           invoice_total_gbp: own,
           first_due_gbp: own,
-          first_due_date: new Date().toISOString().slice(0, 10),
-          schedule: [{ amount_gbp: own, due_date: new Date().toISOString().slice(0, 10), status: "pending" }],
+          first_due_date: today,
+          schedule: [
+            {
+              amount_gbp: own,
+              due_date: today,
+              status: "pending",
+              collect_via: "bank_transfer",
+            },
+          ],
           payment_method_hint: "bank_transfer",
+          pro_rata_from: today,
         };
       }
-      var first =
-        plan === "gocardless_monthly"
-          ? Math.round((payable / 3) * 100) / 100 + 1.5
-          : plan === "flexi_bank"
-            ? Math.round((payable / 2) * 100) / 100
-            : payable;
+      if (plan === "gocardless_monthly") {
+        // After month 1st: bank remainder now + Oct/Nov/Dec on the 1st (equal split + £1.50 GC fee).
+        var base = round2(payable / 4);
+        var lastBase = round2(payable - base * 3);
+        var schedule = [
+          {
+            seq: 1,
+            label: "September 2026 remainder · bank transfer (due on booking day)",
+            amount_gbp: base,
+            due_date: today,
+            status: "pending",
+            collect_via: "bank_transfer",
+          },
+          {
+            seq: 2,
+            label: "Payment · October 2026 · GoCardless (1st)",
+            amount_gbp: round2(base + 1.5),
+            due_date: "2026-10-01",
+            status: "pending",
+            collect_via: "gocardless",
+          },
+          {
+            seq: 3,
+            label: "Payment · November 2026 · GoCardless (1st)",
+            amount_gbp: round2(base + 1.5),
+            due_date: "2026-11-01",
+            status: "pending",
+            collect_via: "gocardless",
+          },
+          {
+            seq: 4,
+            label: "Payment · December 2026 · GoCardless (1st)",
+            amount_gbp: round2(lastBase + 1.5),
+            due_date: "2026-12-01",
+            status: "pending",
+            collect_via: "gocardless",
+          },
+        ];
+        var invTotal = round2(schedule.reduce(function (s, r) {
+          return s + r.amount_gbp;
+        }, 0));
+        return {
+          remaining_sessions: remaining,
+          programme_total_gbp: payable,
+          invoice_total_gbp: invTotal,
+          first_due_gbp: schedule[0].amount_gbp,
+          first_due_date: today,
+          schedule: schedule,
+          payment_method_hint: "gocardless",
+          pro_rata_from: today,
+        };
+      }
+      if (plan === "flexi_bank") {
+        var half = round2(payable / 2);
+        var half2 = round2(payable - half);
+        return {
+          remaining_sessions: remaining,
+          programme_total_gbp: payable,
+          invoice_total_gbp: payable,
+          first_due_gbp: half,
+          first_due_date: today,
+          schedule: [
+            {
+              label: "Autumn term · 1st half",
+              amount_gbp: half,
+              due_date: today,
+              status: "pending",
+              collect_via: "bank_transfer",
+            },
+            {
+              label: "Autumn term · 2nd half",
+              amount_gbp: half2,
+              due_date: "2026-10-26",
+              status: "pending",
+              collect_via: "bank_transfer",
+            },
+          ],
+          payment_method_hint: "bank_transfer",
+          pro_rata_from: today,
+        };
+      }
       return {
         remaining_sessions: remaining,
         programme_total_gbp: payable,
-        invoice_total_gbp: plan === "gocardless_monthly" ? payable + 4.5 : payable,
-        first_due_gbp: first,
-        first_due_date: new Date().toISOString().slice(0, 10),
-        schedule: [{ amount_gbp: first, due_date: new Date().toISOString().slice(0, 10), status: "pending" }],
-        payment_method_hint: plan === "gocardless_monthly" ? "gocardless" : "bank_transfer",
+        invoice_total_gbp: payable,
+        first_due_gbp: payable,
+        first_due_date: today,
+        schedule: [
+          {
+            amount_gbp: payable,
+            due_date: today,
+            status: "pending",
+            collect_via: "bank_transfer",
+          },
+        ],
+        payment_method_hint: "bank_transfer",
+        pro_rata_from: today,
       };
     }
+    var activeQuote =
+      demoState.pay_plan && quote(demoState.pay_plan)
+        ? quote(demoState.pay_plan)
+        : null;
+    var gcBankFirstDemo =
+      demoState.pay_plan === "gocardless_monthly" &&
+      activeQuote &&
+      activeQuote.schedule &&
+      activeQuote.schedule[0] &&
+      String(activeQuote.schedule[0].collect_via || "").toLowerCase() ===
+        "bank_transfer";
+    var gcUnlockedDemo = Boolean(
+      demoState.choices_json && demoState.choices_json.office_paid_notified_at,
+    );
+    var gcUrlDemo =
+      demoState.pay_plan === "gocardless_monthly"
+        ? gcBankFirstDemo && !gcUnlockedDemo
+          ? null
+          : "https://example.com/gocardless-demo"
+        : null;
     return {
       ok: true,
       status: demoState.status,
@@ -160,11 +278,11 @@
           programme_total_gbp: unit,
           invoice_total_gbp: unit,
           first_due_gbp: unit,
-          first_due_date: new Date().toISOString().slice(0, 10),
+          first_due_date: today,
           schedule: [
             {
               amount_gbp: unit,
-              due_date: new Date().toISOString().slice(0, 10),
+              due_date: today,
               status: "pending",
             },
           ],
@@ -180,37 +298,79 @@
               amount_gbp:
                 demoState.booking_scope === "trial_session"
                   ? unit
-                  : (demoState.pay_plan && quote(demoState.pay_plan).invoice_total_gbp) || payable,
+                  : (activeQuote && activeQuote.invoice_total_gbp) || payable,
               amount_paid_gbp: 0,
               payment_status: "unpaid",
-              payment_schedule: [
-                {
-                  amount_gbp:
-                    demoState.booking_scope === "trial_session"
-                      ? unit
-                      : (demoState.pay_plan && quote(demoState.pay_plan).first_due_gbp) || payable,
-                  due_date: new Date().toISOString().slice(0, 10),
-                  status: "pending",
-                },
-              ],
+              payment_schedule:
+                demoState.booking_scope === "trial_session"
+                  ? [
+                      {
+                        amount_gbp: unit,
+                        due_date: today,
+                        status: "pending",
+                      },
+                    ]
+                  : (activeQuote && activeQuote.schedule) || [
+                      {
+                        amount_gbp: payable,
+                        due_date: today,
+                        status: "pending",
+                      },
+                    ],
               payment_method_hint:
-                demoState.pay_plan === "gocardless_monthly" ? "gocardless" : "bank_transfer",
-              gocardless_url:
-                demoState.pay_plan === "gocardless_monthly" ? "https://example.com/gocardless-demo" : null,
-              due_date: new Date().toISOString().slice(0, 10),
+                demoState.pay_plan === "gocardless_monthly"
+                  ? "gocardless"
+                  : demoState.pay_plan === "stripe_instant"
+                    ? "stripe"
+                    : "bank_transfer",
+              gocardless_url: gcUrlDemo,
+              due_date: today,
             }
           : null,
-      bank: {
-        payee_name: "clubSENsational (demo)",
-        sort_code: "00-00-00",
-        account_number: "00000000",
-      },
-      transfer_reference: "MALAZ-DEMO",
-      gocardless_url:
-        demoState.pay_plan === "gocardless_monthly" ? "https://example.com/gocardless-demo" : null,
+      bank:
+        demoState.pay_plan === "stripe_instant"
+          ? null
+          : {
+              payee_name: "clubSENsational (demo)",
+              sort_code: "00-00-00",
+              account_number: "00000000",
+            },
+      transfer_reference:
+        demoState.pay_plan === "stripe_instant" ? null : "MALAZ-DEMO",
+      gocardless_url: gcUrlDemo,
+      gc_step2_unlocked: gcUnlockedDemo,
+      choices_json: demoState.choices_json || {},
+      checkout_url:
+        demoState.pay_plan === "stripe_instant"
+          ? "https://example.com/stripe-checkout-demo"
+          : null,
+      stripe_checkout:
+        demoState.pay_plan === "stripe_instant"
+          ? {
+              checkout_url: "https://example.com/stripe-checkout-demo",
+              charge_gbp: round2(unit * 1.029 + 0.2),
+              fee_gbp: round2(unit * 0.029 + 0.2),
+            }
+          : null,
       booking_kind: demoState.booking_scope === "trial_session" ? "trial" : "term",
       is_trial_intent: demoState.booking_scope === "trial_session",
+      registration_support: {
+        ehcp: "Yes",
+        ehcp_details: "Demo EHCP",
+        ehcp_storage_path: "demo/ehcp.pdf",
+        social_worker: "Yes",
+        social_worker_name: "Miss Sarah Kagaba",
+        social_worker_email: "sarah.kagaba@example.nhs.uk",
+        social_worker_contact: "Miss Sarah Kagaba · sarah.kagaba@example.nhs.uk",
+        support_regulated: "2to1",
+        support_dysregulated: null,
+      },
+      social_worker_name:
+        demoState.social_worker_name || "Miss Sarah Kagaba",
+      social_worker_email:
+        demoState.social_worker_email || "sarah.kagaba@example.nhs.uk",
       completed: demoState.status === "completed",
+      pin_sent: false,
     };
   }
 
@@ -220,10 +380,14 @@
     }
     if (action === "save_choices") {
       if (extra.funding_code) demoState.funding_code = extra.funding_code;
+      if (extra.social_worker_name) demoState.social_worker_name = extra.social_worker_name;
+      if (extra.social_worker_email) demoState.social_worker_email = extra.social_worker_email;
       if (extra.booking_scope) demoState.booking_scope = extra.booking_scope;
       if (extra.pay_plan) {
         demoState.pay_plan = extra.pay_plan;
         demoState.status = "choices_saved";
+      } else if (demoState.funding_code === "sw_nhs_referral") {
+        demoState.status = "awaiting_office_referral";
       } else if (extra.booking_scope) {
         demoState.status = "scope_saved";
       } else {
@@ -235,6 +399,9 @@
         funding_code: demoState.funding_code,
         booking_scope: demoState.booking_scope,
         pay_plan: demoState.pay_plan,
+        social_worker_name: demoState.social_worker_name || null,
+        social_worker_email: demoState.social_worker_email || null,
+        no_parent_pay: demoState.funding_code === "sw_nhs_referral",
       });
     }
     if (action === "create_invoice") {
@@ -242,13 +409,45 @@
       demoState.booking_scope = extra.booking_scope || demoState.booking_scope;
       demoState.pay_plan = extra.pay_plan || demoState.pay_plan;
       demoState.status = "awaiting_payment";
+      demoState.choices_json = Object.assign({}, demoState.choices_json || {}, {
+        pay_plan: demoState.pay_plan,
+        booking_scope: demoState.booking_scope,
+        funding_code: demoState.funding_code,
+        gc_requires_office_notify: demoState.pay_plan === "gocardless_monthly",
+      });
       var p = demoPayload();
+      var stripeTrial = demoState.pay_plan === "stripe_instant";
       return Promise.resolve({
         ok: true,
         invoice: p.invoice,
-        bank: p.bank,
-        transfer_reference: p.transfer_reference,
+        bank: stripeTrial ? null : p.bank,
+        transfer_reference: stripeTrial ? null : p.transfer_reference,
         gocardless_url: p.gocardless_url,
+        gc_step2_unlocked: Boolean(p.gc_step2_unlocked),
+        choices_json: p.choices_json,
+        checkout_url: p.checkout_url || null,
+        stripe_checkout: p.stripe_checkout || null,
+        pay_hold_minutes: 30,
+        pay_hold_expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      });
+    }
+    if (action === "notify_office_paid") {
+      return Promise.resolve({
+        ok: false,
+        error: "notify_office_paid_disabled",
+        message:
+          "Demo: WhatsApp/email open only. Send the message; tap alone does not notify office.",
+      });
+    }
+    if (action === "create_stripe_checkout") {
+      return Promise.resolve({
+        ok: true,
+        checkout_url: "https://example.com/stripe-checkout-demo",
+        stripe_checkout: {
+          checkout_url: "https://example.com/stripe-checkout-demo",
+          charge_gbp: 1,
+          fee_gbp: 0.05,
+        },
       });
     }
     if (action === "confirm_paid") {
@@ -285,7 +484,19 @@
     var termLabel = p.term_label || data.term_label || data.term || "Term";
 
     var priceRows = "";
-    if (unit != null || termSessions != null || termTotal != null) {
+    if (data.is_trial_intent || data.booking_kind === "trial" || data.booking_scope === "trial_session") {
+      var trialGbp =
+        (p && p.trial_session_gbp != null ? p.trial_session_gbp : null) ||
+        unit ||
+        data.unit_price_gbp;
+      priceRows =
+        '<div class="card-inner" style="margin-top:10px">' +
+        "<div><strong>Booking</strong> Trial session (1 only)</div>" +
+        "<div><strong>Pay now</strong> " +
+        esc(money(trialGbp)) +
+        "</div>" +
+        "</div>";
+    } else if (unit != null || termSessions != null || termTotal != null) {
       priceRows =
         '<div class="card-inner" style="margin-top:10px">' +
         "<div><strong>Price per session</strong> " +
@@ -339,11 +550,33 @@
     if (plan === "trial_one_off" || q.is_trial) {
       return money(q.first_due_gbp) + " due now (1 trial session)";
     }
+    var rem =
+      q.remaining_sessions != null
+        ? String(q.remaining_sessions) + " remaining sessions"
+        : "remaining sessions";
+    if (plan === "gocardless_monthly") {
+      var firstVia =
+        (q.schedule &&
+          q.schedule[0] &&
+          String(q.schedule[0].collect_via || "").toLowerCase()) ||
+        "";
+      if (firstVia === "bank_transfer" || firstVia === "bank") {
+        return (
+          "Today " +
+          money(q.first_due_gbp) +
+          " by bank · then GoCardless on later 1sts (" +
+          rem +
+          " · term " +
+          money(q.invoice_total_gbp) +
+          ")"
+        );
+      }
+    }
     return (
       money(q.first_due_gbp) +
       " due first (" +
-      esc(String(q.remaining_sessions || "—")) +
-      " sessions · total " +
+      rem +
+      " · total " +
       money(q.invoice_total_gbp) +
       ")"
     );
@@ -421,7 +654,7 @@
     var intro = document.querySelector("#fbStepPay > .muted");
     if (intro) {
       intro.textContent =
-        "Trial session — choose how to pay. Your place is held for 30 minutes.";
+        "Trial sessions are card / Apple Pay only (Stripe). A card fee is added so we receive the session price in full. Term places can choose bank transfer or other methods. Your place is held for 30 minutes.";
     }
     var bank = document.querySelector('input[name="pay_channel"][value="bank_transfer"]');
     var gc = document.querySelector('input[name="pay_channel"][value="gocardless"]');
@@ -434,31 +667,22 @@
     }
     if (bank) {
       bank.checked = false;
-      var bankHint = bank.closest("label") && bank.closest("label").querySelector(".hint");
-      if (bankHint) {
-        bankHint.innerHTML =
-          "Pay <strong>£" +
-          esc(
-            String(
-              (data.pricing && data.pricing.trial_session_gbp) ||
-                data.unit_price_gbp ||
-                "—",
-            ),
-          ) +
-          "</strong> by bank transfer within <strong>30 minutes</strong>. Then email or WhatsApp the office (photo/screenshot of the transfer welcome) so they can confirm.";
-      }
+      var bankChoice = bank.closest("label");
+      if (bankChoice) bankChoice.hidden = true;
     }
     if (!stripeLabel) {
       var host = document.getElementById("fbPayChannelBox");
-      if (host && bank) {
+      if (host) {
         var lbl = document.createElement("label");
         lbl.className = "choice";
         lbl.id = "fbTrialStripeChannel";
         lbl.innerHTML =
           '<input type="radio" name="pay_channel" value="stripe_instant" checked />' +
           "<strong>Card / Apple Pay</strong>" +
-          '<span class="hint">Pay now (small card fee so we receive the session price in full). Confirms the trial when payment succeeds.</span>';
-        host.insertBefore(lbl, bank.closest("label"));
+          '<span class="hint">Pay now. A card fee is added so we receive the session price in full. Confirms the trial when payment succeeds.</span>';
+        var bankWrap = bank && bank.closest("label");
+        if (bankWrap) host.insertBefore(lbl, bankWrap);
+        else host.insertBefore(lbl, host.firstChild);
       }
     } else {
       stripeLabel.hidden = false;
@@ -483,7 +707,9 @@
     var bank = document.querySelector('input[name="pay_channel"][value="bank_transfer"]');
     if (bank) {
       bank.checked = true;
-      var bankHint = bank.closest("label") && bank.closest("label").querySelector(".hint");
+      var bankChoice = bank.closest("label");
+      if (bankChoice) bankChoice.hidden = false;
+      var bankHint = bankChoice && bankChoice.querySelector(".hint");
       if (bankHint) {
         bankHint.innerHTML =
           "You must pay the first amount within <strong>30 minutes</strong> or the place goes live again. After you transfer, email or WhatsApp the office (photo/screenshot welcome) so they can confirm.";
@@ -492,17 +718,128 @@
   }
 
   function setStep(name) {
-    ["fbStepFunding", "fbStepScope", "fbStepPay", "fbStepInvoice", "fbStepAwaitingOffice", "fbStepDone"].forEach(
-      function (id) {
-        var el = document.getElementById(id);
-        if (el) el.hidden = true;
-      },
-    );
+    [
+      "fbStepFunding",
+      "fbStepSwConfirm",
+      "fbStepScope",
+      "fbStepPay",
+      "fbStepInvoice",
+      "fbStepAwaitingOffice",
+      "fbStepSwReferral",
+      "fbStepDone",
+    ].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.hidden = true;
+    });
     var show = document.getElementById(name);
     if (show) show.hidden = false;
   }
 
+  function looksLikeEmail(s) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || "").trim());
+  }
+
+  function fillSwConfirmFields(data) {
+    var nameEl = document.getElementById("fbSwName");
+    var emailEl = document.getElementById("fbSwEmail");
+    var rs = (data && data.registration_support) || {};
+    if (nameEl && !String(nameEl.value || "").trim()) {
+      nameEl.value =
+        data.social_worker_name ||
+        rs.social_worker_name ||
+        "";
+    }
+    if (emailEl && !String(emailEl.value || "").trim()) {
+      emailEl.value =
+        data.social_worker_email ||
+        rs.social_worker_email ||
+        "";
+    }
+  }
+
+  function showSwConfirmStep(data) {
+    data.funding_code = "sw_nhs_referral";
+    fillSwConfirmFields(data);
+    setStep("fbStepSwConfirm");
+  }
+
+  function swContactPersonName(data) {
+    var rs = (data && data.registration_support) || {};
+    return String(
+      (data && data.social_worker_name) || rs.social_worker_name || "",
+    ).trim();
+  }
+
+  function swFinaliseMessage(data, withThanks) {
+    var name = swContactPersonName(data);
+    var who = name || "the social worker / NHS manager";
+    var core = "Our team will contact " + who + " to finalise the booking.";
+    return withThanks ? "Thank you. " + core : core;
+  }
+
+  function showSwReferralDone(data) {
+    setStep("fbStepSwReferral");
+    var lead = document.getElementById("fbSwReferralLead");
+    if (lead) lead.textContent = swFinaliseMessage(data, true);
+    var box = document.getElementById("fbSwReferralSummary");
+    if (!box) return;
+    var rs = data.registration_support || {};
+    var name = swContactPersonName(data) || "—";
+    var email = data.social_worker_email || rs.social_worker_email || "—";
+    box.innerHTML =
+      "<div><strong>Social worker / NHS manager:</strong> " +
+      esc(name) +
+      "</div>" +
+      "<div><strong>Email:</strong> " +
+      esc(email) +
+      "</div>";
+  }
+
+  function adaptScopeForFunding(data) {
+    var trial = document.querySelector(
+      'input[name="booking_scope"][value="trial_session"]',
+    );
+    if (!trial) return;
+    var label = trial.closest("label");
+    var hint = label && label.querySelector(".hint");
+    var strong = label && label.querySelector("strong");
+    var postTrial =
+      data.post_trial_convert === true ||
+      (data.choices_json && data.choices_json.post_trial_convert === true);
+    if (postTrial) {
+      trial.disabled = true;
+      if (label) label.hidden = true;
+      var termOnly = document.querySelector(
+        'input[name="booking_scope"][value="this_term_only"]',
+      );
+      if (termOnly) termOnly.checked = true;
+      data.booking_scope = data.booking_scope || "this_term_only";
+      data.booking_kind = "term";
+      data.is_trial_intent = false;
+      return;
+    }
+    if (label) label.hidden = false;
+    trial.disabled = false;
+    if (data.funding_code === "sw_nhs_referral") {
+      if (strong) strong.textContent = "Trial session (office arranges with LA/NHS)";
+      if (hint) {
+        hint.textContent =
+          "One session request. Our team will contact the social worker / NHS manager to finalise the booking.";
+      }
+    } else {
+      if (strong) strong.textContent = "Trial session (pay now)";
+      if (hint) {
+        hint.textContent =
+          "One session only. Pay by card or Apple Pay only (Stripe) - a card fee is added so we receive the session price in full. Bank transfer and other methods are only for term places.";
+      }
+    }
+  }
+
   function showPayChannel(data) {
+    if (data.funding_code === "sw_nhs_referral") {
+      showSwReferralDone(data);
+      return;
+    }
     if (data.booking_scope === "trial_session") {
       showTrialPayChannel(data);
       return;
@@ -525,14 +862,96 @@
     }
   }
 
-  function plansForChannel(channel) {
+  function formatUkShortDate(iso) {
+    var s = String(iso || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+    var parts = s.split("-").map(Number);
+    var dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    return dt.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }
+
+  function iconWa() {
+    return (
+      '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">' +
+      '<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>' +
+      "</svg>"
+    );
+  }
+
+  function iconMail() {
+    return (
+      '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">' +
+      '<rect x="3" y="5" width="18" height="14" rx="2"/>' +
+      '<path d="M3 7l9 6 9-6"/>' +
+      "</svg>"
+    );
+  }
+
+  function iconCard() {
+    return (
+      '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">' +
+      '<rect x="2" y="5" width="20" height="14" rx="2"/>' +
+      '<path d="M2 10h20"/>' +
+      "</svg>"
+    );
+  }
+
+  function iconGc() {
+    return (
+      '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">' +
+      '<rect x="2" y="5" width="20" height="14" rx="2"/>' +
+      '<path d="M2 10h20"/>' +
+      '<path d="M6 15h4"/>' +
+      "</svg>"
+    );
+  }
+
+  /** Pay-hold expiry for parents: UK clock (Europe/London), never raw UTC. */
+  function formatHoldExpiryTime(iso) {
+    var d = new Date(String(iso || "").trim());
+    if (Number.isNaN(d.getTime())) return "";
+    var tz = "Europe/London";
+    var hm = new Intl.DateTimeFormat("en-GB", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      hourCycle: "h23",
+    }).format(d);
+    var dayExp = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(d);
+    var dayNow = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
+    if (dayExp === dayNow) return "today " + hm;
+    var dayLabel = new Intl.DateTimeFormat("en-GB", {
+      timeZone: tz,
+      day: "numeric",
+      month: "short",
+    }).format(d);
+    return dayLabel + " " + hm;
+  }
+
+  function plansForChannel(channel, data) {
     if (channel === "gocardless") {
+      var gcQ = (data && data.quotes && data.quotes.gocardless_monthly) || null;
+      var gcFirstVia =
+        (gcQ &&
+          gcQ.schedule &&
+          gcQ.schedule[0] &&
+          String(gcQ.schedule[0].collect_via || "").toLowerCase()) ||
+        "";
+      var gcBankNow =
+        gcFirstVia === "bank_transfer" || gcFirstVia === "bank";
       return [
         {
           value: "gocardless_monthly",
           title: "GoCardless monthly",
-          hint:
-            "First payment on booking day, then the 1st of each remaining month this term. £1.50 per instalment.",
+          hint: gcBankNow
+            ? "Only remaining sessions are billed. Today: pay this month by bank transfer, tell the office, then set up GoCardless. Later months collect on the 1st with every family (£1.50 per Direct Debit)."
+            : "Only remaining sessions are billed. Set up Direct Debit now — collections on the 1st each month with every family (£1.50 per instalment).",
         },
       ];
     }
@@ -546,6 +965,17 @@
         },
       ];
     }
+    var flexiQ = (data && data.quotes && data.quotes.flexi_bank) || null;
+    var flexiDue = flexiQ && flexiQ.first_due_date ? String(flexiQ.first_due_date).slice(0, 10) : "";
+    var today = new Date().toISOString().slice(0, 10);
+    var flexiHint =
+      flexiDue && flexiDue <= today
+        ? "First half due now (the fixed term due date has already passed), second half mid-term — bank transfer."
+        : flexiDue
+          ? "First half due " +
+            formatUkShortDate(flexiDue) +
+            ", second half mid-term — bank transfer."
+          : "Two instalments this term by bank transfer (first on the term due date, or now if that date has passed).";
     return [
       {
         value: "one_off_bank",
@@ -555,7 +985,7 @@
       {
         value: "flexi_bank",
         title: "Flexi (2 payments this term)",
-        hint: "Half on the fixed due date (Autumn 15 Aug), half mid-term — bank transfer.",
+        hint: flexiHint,
       },
     ];
   }
@@ -577,7 +1007,7 @@
             : "Own way — confirm the prepaid minimum:";
     }
     if (!host) return;
-    host.innerHTML = plansForChannel(channel)
+    host.innerHTML = plansForChannel(channel, data)
       .map(function (p, i) {
         return (
           '<label class="choice">' +
@@ -604,19 +1034,61 @@
     var notice = document.getElementById("fbNotice");
 
     if (data.completed || data.status === "completed") {
+      var trialDone =
+        (data.booking_kind === "trial" ||
+          data.booking_scope === "trial_session" ||
+          data.is_trial_intent) &&
+        !data.pin_sent;
+      var doneTitle = document.getElementById("fbDoneTitle");
+      var doneCopy = document.getElementById("fbDoneCopy");
+      var donePortal = document.getElementById("fbDonePortal");
+      if (trialDone) {
+        if (doneTitle) doneTitle.textContent = "Booking completed";
+        if (doneCopy) {
+          doneCopy.textContent =
+            "Payment received. Check WhatsApp or email for the day, time, venue and instructor. Parent Portal login is for term places after the first payment.";
+        }
+        if (donePortal) donePortal.hidden = true;
+        showNotice(notice, "Booking completed. Session details are on WhatsApp / email.", "ok");
+      } else {
+        if (doneTitle) doneTitle.textContent = "You're in";
+        if (doneCopy) {
+          doneCopy.textContent =
+            "Payment confirmed. Check your email or WhatsApp for your Parent Portal PIN (sign in with your child's first name + PIN).";
+        }
+        if (donePortal) donePortal.hidden = false;
+        showNotice(
+          notice,
+          "Booking complete. Check email / WhatsApp for your Parent Portal PIN.",
+          "ok",
+        );
+      }
       setStep("fbStepDone");
-      showNotice(
-        notice,
-        "Booking complete. Check email / WhatsApp for your Parent Portal PIN.",
-        "ok",
-      );
       return;
     }
     if (data.status === "awaiting_office_payment") {
+      if (data.invoice) {
+        showInvoice(data);
+        showNotice(
+          notice,
+          "Thanks — your place is held while the office confirms Tide. PIN arrives after they Mark paid.",
+          "ok",
+        );
+        return;
+      }
       setStep("fbStepAwaitingOffice");
       showNotice(
         notice,
         "Thanks — once the office confirms your transfer, your Parent Portal PIN is sent by email / WhatsApp.",
+        "ok",
+      );
+      return;
+    }
+    if (data.status === "awaiting_office_referral") {
+      showSwReferralDone(data);
+      showNotice(
+        notice,
+        swFinaliseMessage(data, false),
         "ok",
       );
       return;
@@ -626,12 +1098,60 @@
       return;
     }
 
+    // Office / prior choices already locked trial — never show term £900 pricing flow.
+    // Post-trial convert is the opposite: never show another trial.
+    if (
+      data.post_trial_convert === true ||
+      (data.choices_json && data.choices_json.post_trial_convert === true)
+    ) {
+      data.booking_kind = "term";
+      data.is_trial_intent = false;
+      if (!data.booking_scope || data.booking_scope === "trial_session") {
+        data.booking_scope = "this_term_only";
+      }
+      if (!data.funding_code) data.funding_code = "privately_funded";
+      adaptScopeForFunding(data);
+      if (data.invoice) {
+        showInvoice(data);
+        return;
+      }
+      if (
+        data.status === "choices_saved" ||
+        data.status === "scope_saved" ||
+        data.status === "awaiting_payment"
+      ) {
+        setStep("fbStepPay");
+        showPayChannel(data);
+        return;
+      }
+    }
+    if (
+      (data.is_trial_intent ||
+        data.booking_kind === "trial" ||
+        data.booking_scope === "trial_session") &&
+      (data.status === "awaiting_payment" ||
+        data.status === "choices_saved" ||
+        data.status === "scope_saved")
+    ) {
+      data.booking_scope = "trial_session";
+      if (!data.funding_code) data.funding_code = "privately_funded";
+      if (data.invoice) {
+        showInvoice(data);
+        return;
+      }
+      setStep("fbStepPay");
+      showPayChannel(data);
+      return;
+    }
+
     if (
       (data.status === "scope_saved" || data.status === "choices_saved") &&
       data.funding_code &&
       data.booking_scope
     ) {
-      if (data.booking_scope === "trial_session") {
+      if (data.funding_code === "sw_nhs_referral") {
+        showSwReferralDone(data);
+      } else if (data.booking_scope === "trial_session") {
         if (data.pay_plan === "stripe_instant" || data.pay_plan === "one_off_bank") {
           if (data.invoice) {
             showInvoice(data);
@@ -647,11 +1167,56 @@
         setStep("fbStepPay");
         showPayChannel(data);
       }
+    } else if (
+      data.status === "funding_saved" &&
+      data.funding_code === "sw_nhs_referral"
+    ) {
+      // Legacy tokens that stopped after funding: finalise referral without booking length.
+      showNotice(notice, "Saving…", "");
+      void api("save_choices", {
+        funding_code: "sw_nhs_referral",
+        social_worker_name: data.social_worker_name,
+        social_worker_email: data.social_worker_email,
+      })
+        .then(function (out) {
+          data.status = "awaiting_office_referral";
+          if (out && out.social_worker_name) {
+            data.social_worker_name = out.social_worker_name;
+          }
+          if (out && out.social_worker_email) {
+            data.social_worker_email = out.social_worker_email;
+          }
+          showSwReferralDone(data);
+          showNotice(
+            notice,
+            swFinaliseMessage(data, false),
+            "ok",
+          );
+        })
+        .catch(function (err) {
+          setStep("fbStepFunding");
+          showNotice(notice, err.message || "Could not save referral.", "error");
+        });
+    } else if (
+      (data.status === "funding_saved" || data.status === "choices_saved") &&
+      data.funding_code &&
+      !data.booking_scope
+    ) {
+      setStep("fbStepScope");
+      adaptScopeForFunding(data);
+      preselectScope(data);
     } else if (data.status === "funding_saved" && data.funding_code) {
       setStep("fbStepScope");
+      adaptScopeForFunding(data);
       preselectScope(data);
     } else {
       setStep("fbStepFunding");
+      if (data.funding_code) {
+        var preFund = document.querySelector(
+          'input[name="funding"][value="' + data.funding_code + '"]',
+        );
+        if (preFund) preFund.checked = true;
+      }
     }
 
     var fundForm = document.getElementById("fbFundingForm");
@@ -665,10 +1230,16 @@
         }
         data.funding_code = funding;
         data.pay_plan = null;
+        if (funding === "sw_nhs_referral") {
+          showSwConfirmStep(data);
+          showNotice(notice, "", "");
+          return;
+        }
         showNotice(notice, "Saving…", "");
         void api("save_choices", { funding_code: funding })
           .then(function () {
             setStep("fbStepScope");
+            adaptScopeForFunding(data);
             preselectScope(data);
             showNotice(notice, "", "");
           })
@@ -678,9 +1249,51 @@
       };
     }
 
+    var swConfirmForm = document.getElementById("fbSwConfirmForm");
+    if (swConfirmForm) {
+      swConfirmForm.onsubmit = function (ev) {
+        ev.preventDefault();
+        var swName = String((document.getElementById("fbSwName") || {}).value || "").trim();
+        var swEmail = String((document.getElementById("fbSwEmail") || {}).value || "").trim();
+        if (!swName || !looksLikeEmail(swEmail)) {
+          showNotice(
+            notice,
+            "Confirm or edit the social worker / NHS manager name and email.",
+            "error",
+          );
+          return;
+        }
+        data.funding_code = "sw_nhs_referral";
+        data.social_worker_name = swName;
+        data.social_worker_email = swEmail;
+        data.pay_plan = null;
+        showNotice(notice, "Saving…", "");
+        void api("save_choices", {
+          funding_code: "sw_nhs_referral",
+          social_worker_name: swName,
+          social_worker_email: swEmail,
+        })
+          .then(function (out) {
+            data.status = "awaiting_office_referral";
+            if (out && out.social_worker_name) {
+              data.social_worker_name = out.social_worker_name;
+            }
+            if (out && out.social_worker_email) {
+              data.social_worker_email = out.social_worker_email;
+            }
+            showSwReferralDone(data);
+            showNotice(notice, swFinaliseMessage(data, false), "ok");
+          })
+          .catch(function (err) {
+            showNotice(notice, err.message || "Could not save referral.", "error");
+          });
+      };
+    }
+
     var scopeForm = document.getElementById("fbScopeForm");
     if (scopeForm) {
       preselectScope(data);
+      adaptScopeForFunding(data);
       scopeForm.onsubmit = function (ev) {
         ev.preventDefault();
         var scope = (scopeForm.querySelector('input[name="booking_scope"]:checked') || {})
@@ -691,28 +1304,36 @@
           return;
         }
         data.booking_scope = scope;
-        if (scope === "trial_session") {
-          showNotice(notice, "Saving…", "");
-          void api("save_choices", {
-            funding_code: funding,
-            booking_scope: scope,
-          })
-            .then(function () {
-              setStep("fbStepPay");
-              showPayChannel(data);
-              showNotice(notice, "", "");
-            })
-            .catch(function (err) {
-              showNotice(notice, err.message || "Could not save booking length.", "error");
-            });
-          return;
-        }
-        showNotice(notice, "Saving…", "");
-        void api("save_choices", {
+        var scopePayload = {
           funding_code: funding,
           booking_scope: scope,
-        })
-          .then(function () {
+        };
+        if (funding === "sw_nhs_referral") {
+          scopePayload.social_worker_name = data.social_worker_name;
+          scopePayload.social_worker_email = data.social_worker_email;
+        }
+        showNotice(notice, "Saving…", "");
+        void api("save_choices", scopePayload)
+          .then(function (out) {
+            if (
+              funding === "sw_nhs_referral" ||
+              (out && out.status === "awaiting_office_referral")
+            ) {
+              data.status = "awaiting_office_referral";
+              if (out && out.social_worker_name) {
+                data.social_worker_name = out.social_worker_name;
+              }
+              if (out && out.social_worker_email) {
+                data.social_worker_email = out.social_worker_email;
+              }
+              showSwReferralDone(data);
+              showNotice(
+                notice,
+                swFinaliseMessage(data, false),
+                "ok",
+              );
+              return;
+            }
             setStep("fbStepPay");
             showPayChannel(data);
             showNotice(notice, "", "");
@@ -734,11 +1355,7 @@
           return;
         }
         if (data.booking_scope === "trial_session") {
-          var trialPlan =
-            channel === "bank_transfer" || channel === "one_off_bank"
-              ? "one_off_bank"
-              : "stripe_instant";
-          void startTrialWithPlan(data, notice, trialPlan).catch(function (err) {
+          void startTrialWithPlan(data, notice, "stripe_instant").catch(function (err) {
             showNotice(notice, err.message || "Could not create trial invoice.", "error");
           });
           return;
@@ -797,6 +1414,8 @@
             data.pay_hold_expires_at = out.pay_hold_expires_at;
             data.status = "awaiting_payment";
             data.pay_plan = plan;
+            if (out.choices_json) data.choices_json = out.choices_json;
+            data.gc_step2_unlocked = Boolean(out.gc_step2_unlocked);
             showInvoice(data);
             showNotice(notice, "", "");
           })
@@ -836,44 +1455,69 @@
       (data.quotes && data.quotes.trial_one_off && data.quotes.trial_one_off.is_trial);
     var isTrialBank =
       isTrial &&
+      data.pay_plan !== "stripe_instant" &&
+      inv.payment_method_hint !== "stripe" &&
+      inv.payment_method_hint !== "payment_link" &&
       (data.pay_plan === "one_off_bank" ||
         inv.payment_method_hint === "bank_transfer" ||
         (!checkoutUrl && data.bank));
     var isTrialStripe =
-      isTrial && !isTrialBank && (data.pay_plan === "stripe_instant" || checkoutUrl || inv.payment_method_hint === "stripe");
+      isTrial &&
+      !isTrialBank &&
+      (data.pay_plan === "stripe_instant" ||
+        checkoutUrl ||
+        inv.payment_method_hint === "stripe" ||
+        inv.payment_method_hint === "payment_link");
+    var firstVia = String((first && first.collect_via) || "").toLowerCase();
+    var gcBankFirst =
+      data.pay_plan === "gocardless_monthly" &&
+      (firstVia === "bank_transfer" ||
+        firstVia === "bank" ||
+        /bank transfer/i.test(String((first && first.label) || "")));
     var html =
       '<p style="margin:0 0 8px"><strong>Invoice ' +
       esc(inv.invoice_number || "") +
       "</strong></p>" +
       '<p class="muted" style="margin:0 0 12px;overflow-wrap:break-word">First amount due: <strong>' +
       esc(money(firstAmt)) +
-      "</strong></p>";
+      "</strong>" +
+      "</p>";
 
-    if (gcUrl && (data.pay_plan === "gocardless_monthly" || inv.payment_method_hint === "gocardless")) {
+    if (
+      gcUrl &&
+      !gcBankFirst &&
+      (data.pay_plan === "gocardless_monthly" || inv.payment_method_hint === "gocardless")
+    ) {
       if (isDemoMode()) {
         html +=
           '<button type="button" class="btn btn--pri" id="fbConfirmPaid">Demo: I’ve paid — report to office</button>' +
           '<p class="muted" style="margin:10px 0 0">PIN is only sent after office confirms payment (not on this click).</p>';
       } else {
+        var firstDueIso = first && first.due_date ? String(first.due_date).slice(0, 10) : "";
+        var firstDueLabel = formatUkShortDate(firstDueIso) || "the 1st";
         html +=
           '<a class="btn btn--pri" href="' +
           esc(gcUrl) +
-          '">Set up GoCardless</a>' +
-          '<p class="muted" style="margin:10px 0 0">When the first Direct Debit payment clears, the office can confirm and we send your Parent Portal PIN.</p>';
+          '" style="gap:8px">' +
+          iconGc() +
+          " Set up GoCardless</a>" +
+          '<p class="muted" style="margin:10px 0 0;overflow-wrap:break-word">Direct Debit collections are on the <strong>1st of each month</strong> (same day as other families). First collection: <strong>' +
+          esc(firstDueLabel) +
+          "</strong>. After it clears, the office can confirm and we send your Parent Portal PIN.</p>";
       }
     } else if (isTrialStripe) {
-      var holdMin =
+      var holdMinS =
         Number(data.pay_hold_minutes) ||
         (data.choices_json && Number(data.choices_json.pay_hold_minutes)) ||
         30;
-      var holdExp =
+      var holdExpS =
         data.pay_hold_expires_at ||
         (data.choices_json && data.choices_json.pay_hold_expires_at) ||
         "";
-      var holdLine = holdExp
+      var holdLineS = holdExpS
         ? "Your place is held until <strong>" +
-          esc(String(holdExp).replace("T", " ").slice(0, 16)) +
-          " UTC</strong> while you pay. If payment is not completed in time, the slot goes back on the Booking Portal."
+          esc(formatHoldExpiryTime(holdExpS) || "the deadline") +
+          "</strong> while you pay. If payment is not completed in time, the slot goes back on the Booking Portal."
         : "Pay now with card or Apple Pay. If payment is not completed in time, the slot is not booked.";
       var chargeNote =
         data.stripe_checkout && data.stripe_checkout.charge_gbp
@@ -885,12 +1529,20 @@
           : "";
       if (isDemoMode()) {
         html +=
-          '<button type="button" class="btn btn--pri" id="fbConfirmPaid">Demo: paid with card</button>';
+          chargeNote +
+          '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+          holdLineS +
+          "</p>" +
+          '<a class="btn btn--pri" href="' +
+          esc(checkoutUrl || "#") +
+          '">Pay with card / Apple Pay</a>' +
+          '<p class="muted" style="margin:10px 0 8px">Demo: Stripe checkout (no real charge). Or mark paid below.</p>' +
+          '<button type="button" class="btn" id="fbConfirmPaid">Demo: paid with card</button>';
       } else if (checkoutUrl) {
         html +=
           chargeNote +
           '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
-          holdLine +
+          holdLineS +
           "</p>" +
           '<a class="btn btn--pri" id="fbStripePay" href="' +
           esc(checkoutUrl) +
@@ -900,7 +1552,7 @@
         html +=
           chargeNote +
           '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
-          holdLine +
+          holdLineS +
           "</p>" +
           '<button type="button" class="btn btn--pri" id="fbStripeRetry">Pay with card / Apple Pay</button>';
       }
@@ -915,13 +1567,25 @@
         "";
       var holdLine = holdExp
         ? "Place held until <strong>" +
-          esc(String(holdExp).replace("T", " ").slice(0, 16)) +
-          " UTC</strong> (" +
+          esc(formatHoldExpiryTime(holdExp) || "the deadline") +
+          "</strong> (" +
           esc(String(holdMin)) +
-          " minutes from invoice). If unpaid by then, the seat returns to the Booking Portal."
+          " minutes). If unpaid by then, the seat returns to the Booking Portal."
         : "Place held for <strong>" +
           esc(String(holdMin)) +
           " minutes</strong> only. If unpaid by then, the seat returns to the Booking Portal.";
+      var officeNotified = Boolean(
+        data.status === "awaiting_office_payment" ||
+          (data.choices_json && data.choices_json.office_paid_notified_at) ||
+          data.office_confirm_hold,
+      );
+      if (officeNotified) {
+        holdLine = holdExp
+          ? "You told the office you paid. Place held for Tide confirmation until <strong>" +
+            esc(formatHoldExpiryTime(holdExp) || "the deadline") +
+            "</strong>. Your seat stays reserved; PIN is sent after they Mark paid."
+          : "You told the office you paid. Your seat stays reserved while they confirm Tide. PIN is sent after they Mark paid.";
+      }
       var paidMsg =
         "Hi, I have paid for " +
         (data.participant_name || "my child") +
@@ -948,45 +1612,222 @@
       );
       var waHref =
         "https://wa.me/447592558671?text=" + encodeURIComponent(paidMsg);
-      html +=
-        '<div class="card-inner" style="margin:0 0 12px">' +
-        "<div><strong>Payee</strong> " +
-        esc(bank.payee_name || "clubSENsational") +
-        "</div>" +
-        "<div><strong>Sort code</strong> " +
-        esc(bank.sort_code || "—") +
-        "</div>" +
-        "<div><strong>Account</strong> " +
-        esc(bank.account_number || "—") +
-        "</div>" +
-        "<div><strong>Reference</strong> " +
-        esc(data.transfer_reference || data.participant_name || "") +
-        "</div>" +
-        "</div>" +
-        '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
-        holdLine +
-        "</p>" +
-        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>send us a WhatsApp or email</strong> saying you have paid' +
-        (isTrialBank ? " (include reference + amount)" : "") +
-        ". A photo/screenshot is helpful but optional. There is no \"I've paid\" button here - the office checks Tide, marks you paid, then sends your Parent Portal PIN.</p>" +
-        '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
-        '<a class="btn btn--pri" href="' +
-        esc(waHref) +
-        '" target="_blank" rel="noopener noreferrer">WhatsApp the office</a>' +
-        '<a class="btn" href="mailto:info@clubsensational.org?subject=' +
-        mailSub +
-        "&body=" +
-        mailBody +
-        '">Email info@...</a>' +
-        "</p>" +
-        '<p class="muted" style="margin:0">Use the club WhatsApp you already chat on if you prefer - same \"I\'ve paid\" message is fine.</p>';
+      var payViaKey = "fb_invoice_pay_via_" + String(inv.id || inv.invoice_number || "x");
+      var payVia = String(data.invoice_pay_via || "").trim();
+      if (!payVia) {
+        try {
+          payVia = String(global.sessionStorage.getItem(payViaKey) || "").trim();
+        } catch (_e) {
+          payVia = "";
+        }
+      }
+      if (payVia !== "bank" && payVia !== "apple_pay") payVia = "";
+
+      if (!payVia) {
+        html +=
+          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">Choose how you want to pay the amount above:</p>' +
+          '<label class="choice">' +
+          '<input type="radio" name="fb_invoice_pay_via" value="bank" checked />' +
+          "<strong>Bank transfer</strong>" +
+          '<span class="hint">2 steps: transfer the money, then WhatsApp or email the office.</span>' +
+          "</label>" +
+          '<label class="choice">' +
+          '<input type="radio" name="fb_invoice_pay_via" value="apple_pay" />' +
+          "<strong>Card / Apple Pay</strong>" +
+          '<span class="hint">1 step: pay now. We are notified automatically — no message needed.</span>' +
+          "</label>" +
+          '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+          holdLine +
+          "</p>" +
+          '<button type="button" class="btn btn--pri" id="fbInvoicePayViaNext">Continue</button>';
+      } else if (payVia === "apple_pay") {
+        html +=
+          '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Pay with card / Apple Pay</p>' +
+          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">One step — payment confirms automatically and the office is notified. Includes a small card fee so we receive <strong>' +
+          esc(money(firstAmt)) +
+          "</strong> in full.</p>" +
+          '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+          holdLine +
+          "</p>" +
+          '<button type="button" class="btn btn--pri" id="fbBankStripePay" style="gap:8px;margin:0 0 10px">' +
+          iconCard() +
+          " Pay with card / Apple Pay</button>" +
+          '<button type="button" class="btn" id="fbInvoicePayViaBack" style="background:#eef3f7;color:var(--ink)">Back — choose bank transfer</button>';
+      } else {
+        html +=
+          '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 1 — Pay by bank transfer</p>' +
+          '<div class="card-inner" style="margin:0 0 12px">' +
+          "<div><strong>Payee</strong> " +
+          esc(bank.payee_name || "clubSENsational") +
+          "</div>" +
+          "<div><strong>Sort code</strong> " +
+          esc(bank.sort_code || "—") +
+          "</div>" +
+          "<div><strong>Account</strong> " +
+          esc(bank.account_number || "—") +
+          "</div>" +
+          "<div><strong>Reference</strong> " +
+          esc(data.transfer_reference || data.participant_name || "") +
+          "</div>" +
+          "</div>" +
+          '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+          holdLine +
+          "</p>" +
+          '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
+          '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 2 - Tell the office</p>' +
+          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, open WhatsApp or email and <strong>send</strong> a short message that you have paid' +
+          (isTrialBank ? " (include reference + amount)" : "") +
+          ". A photo/screenshot is helpful but optional. Opening the app alone does not notify us - you must send the message.</p>" +
+          '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
+          '<a class="btn btn--pri" id="fbNotifyWa" href="' +
+          esc(waHref) +
+          '" target="_blank" rel="noopener noreferrer" style="width:auto;flex:1 1 140px;gap:8px">' +
+          iconWa() +
+          " WhatsApp the office</a>" +
+          '<a class="btn btn--pri" id="fbNotifyEmail" href="mailto:info@clubsensational.org?subject=' +
+          mailSub +
+          "&body=" +
+          mailBody +
+          '" style="width:auto;flex:1 1 140px;gap:8px">' +
+          iconMail() +
+          " Email the office</a>" +
+          "</p>" +
+          "</div>";
+        if (gcBankFirst) {
+          var invPaySt = String(inv.payment_status || "").toLowerCase();
+          var gcUnlocked =
+            data.gc_step2_unlocked === true ||
+            Boolean(
+              data.choices_json && data.choices_json.office_paid_notified_at,
+            ) ||
+            invPaySt === "paid" ||
+            invPaySt === "partial";
+          var gcHref = gcUnlocked && gcUrl ? gcUrl : "";
+          html +=
+            '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
+            '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 3 - Set up GoCardless</p>' +
+            '<p class="muted" id="fbGcStep2Hint" style="margin:0 0 10px;overflow-wrap:break-word">' +
+            (gcUnlocked
+              ? "After the office confirms your bank transfer, set up Direct Debit so later months collect on the <strong>1st</strong> with every family."
+              : "Locked until the office confirms your bank transfer (Tide / Mark paid). First message them in Step 2.") +
+            "</p>" +
+            (gcHref
+              ? '<a class="btn btn--pri" id="fbGcStep2" href="' +
+                esc(gcHref) +
+                '"' +
+                (isDemoMode() ? ' target="_blank" rel="noopener noreferrer"' : "") +
+                ' style="gap:8px">' +
+                iconGc() +
+                " Set up GoCardless</a>"
+              : '<button type="button" class="btn btn--pri" id="fbGcStep2" disabled style="gap:8px;opacity:.55;cursor:not-allowed">' +
+                iconGc() +
+                " Set up GoCardless</button>") +
+            "</div>";
+        }
+        html +=
+          '<button type="button" class="btn" id="fbInvoicePayViaBack" style="background:#eef3f7;color:var(--ink);margin-top:12px">Back — choose Card / Apple Pay</button>';
+      }
     }
     if (host) host.innerHTML = html;
+    var payViaKeyBind =
+      "fb_invoice_pay_via_" + String(inv.id || inv.invoice_number || "x");
+    function setInvoicePayVia(via) {
+      data.invoice_pay_via = via || "";
+      try {
+        if (via) global.sessionStorage.setItem(payViaKeyBind, via);
+        else global.sessionStorage.removeItem(payViaKeyBind);
+      } catch (_e) {
+        /* ignore */
+      }
+      showInvoice(data);
+    }
+    var payViaNext = document.getElementById("fbInvoicePayViaNext");
+    if (payViaNext) {
+      payViaNext.onclick = function () {
+        var picked = (
+          document.querySelector('input[name="fb_invoice_pay_via"]:checked') ||
+          {}
+        ).value;
+        if (picked !== "bank" && picked !== "apple_pay") {
+          showNotice(
+            document.getElementById("fbNotice"),
+            "Choose bank transfer or Card / Apple Pay.",
+            "error",
+          );
+          return;
+        }
+        setInvoicePayVia(picked);
+      };
+    }
+    var payViaBack = document.getElementById("fbInvoicePayViaBack");
+    if (payViaBack) {
+      payViaBack.onclick = function () {
+        setInvoicePayVia("");
+      };
+    }
+    var bankStripePay = document.getElementById("fbBankStripePay");
+    if (bankStripePay) {
+      bankStripePay.onclick = function () {
+        showNotice(
+          document.getElementById("fbNotice"),
+          "Opening card / Apple Pay…",
+          "",
+        );
+        void api("create_stripe_checkout", {
+          booking_scope: data.booking_scope || null,
+        })
+          .then(function (out) {
+            if (out.checkout_url) {
+              if (isDemoMode()) {
+                showNotice(
+                  document.getElementById("fbNotice"),
+                  "Demo — card / Apple Pay would open here. No Step 2 needed; office is notified automatically.",
+                  "ok",
+                );
+                return;
+              }
+              global.location.href = out.checkout_url;
+            }
+          })
+          .catch(function (err) {
+            showNotice(
+              document.getElementById("fbNotice"),
+              err.message || "Could not start card / Apple Pay.",
+              "error",
+            );
+          });
+      };
+    }
+    // WhatsApp / Email are plain links only - do NOT call notify_office_paid on click.
+    // Accidental taps must not mark pending_confirmation / alter admin. Office is
+    // notified when the parent actually sends the message (WhatsApp webhook / email).
+    var waBtn = document.getElementById("fbNotifyWa");
+    var emailBtn = document.getElementById("fbNotifyEmail");
+    if (waBtn) {
+      waBtn.addEventListener("click", function () {
+        showNotice(
+          document.getElementById("fbNotice"),
+          "WhatsApp opened - send the message so the office can check Tide. We are not notified until you send it.",
+          "ok",
+        );
+      });
+    }
+    if (emailBtn) {
+      emailBtn.addEventListener("click", function () {
+        showNotice(
+          document.getElementById("fbNotice"),
+          "Email draft opened - send it so the office can check Tide. We are not notified until you send it.",
+          "ok",
+        );
+      });
+    }
     var stripeRetry = document.getElementById("fbStripeRetry");
     if (stripeRetry) {
       stripeRetry.onclick = function () {
         showNotice(document.getElementById("fbNotice"), "Opening payment…", "");
-        void api("create_stripe_checkout", { booking_scope: "trial_session" })
+        void api("create_stripe_checkout", {
+          booking_scope: data.booking_scope || "trial_session",
+        })
           .then(function (out) {
             if (out.checkout_url) global.location.href = out.checkout_url;
           })
@@ -1073,15 +1914,21 @@
         showNotice(notice, "", "");
         bind(data);
         if (qs("stripe") === "1" && data.status === "awaiting_payment") {
+          var trialPay =
+            data.booking_kind === "trial" ||
+            data.booking_scope === "trial_session" ||
+            data.is_trial_intent;
           showNotice(
             notice,
-            "Payment received — confirming your trial. If your PIN is not here in a minute, refresh this page.",
+            trialPay
+              ? "Payment received - confirming your trial. Refresh in a minute for booking completed."
+              : "Payment received - confirming your booking. If your PIN is not here in a minute, refresh this page.",
             "ok",
           );
         } else if (qs("stripe_cancel") === "1") {
           showNotice(
             notice,
-            "Payment was not completed. Your slot is not booked until you pay with card / Apple Pay.",
+            "Payment was not completed. You can try card / Apple Pay again, or pay by bank transfer and tell the office.",
             "error",
           );
         } else if (qs("gc") === "1" && data.status === "awaiting_payment") {
@@ -1093,11 +1940,15 @@
         }
       })
       .catch(function (err) {
-        var msg = err.code === "token_expired"
-          ? "This link has expired. Ask the office to resend your finish-booking link."
-          : err.code === "invalid_token"
-            ? "This link is not valid. Ask the office to resend it."
-            : err.message || "Could not load booking.";
+        var msg =
+          err.code === "token_expired" || err.error === "token_expired"
+            ? err.reason === "pay_hold_lapsed" ||
+              /30-minute|pay window|went live/i.test(String(err.message || ""))
+              ? "The 30-minute payment window ended and that place went live again. Open Booking Portal to choose a slot and finish booking again."
+              : "This link has expired. Ask the office to resend your finish-booking link."
+            : err.code === "invalid_token"
+              ? "This link is not valid. Ask the office to resend it."
+              : err.message || "Could not load booking.";
         showNotice(notice, msg, "error");
       });
   }

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#173247" />
+  <title>Demo — Post-trial offer → booking</title>
+  <script src="/portal-static-bootstrap.js"></script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
+  <style>
+    :root {
+      --ink: #173247;
+      --blue: #2d84b3;
+      --muted: #5f7383;
+      --line: rgba(23, 50, 71, 0.12);
+      --bg: #edf4fb;
+      --white: #fff;
+      --ok: #0f7a4c;
+      --warn: #9a5b00;
+      --wa-out: #dcf8c6;
+      --wa-in: #fff3cd;
+      --sys: #e8eef3;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #f7fbff 0%, var(--bg) 100%);
+      line-height: 1.45;
+    }
+    .wrap {
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: max(20px, env(safe-area-inset-top)) 16px max(40px, env(safe-area-inset-bottom));
+      min-width: 0;
+    }
+    h1 { margin: 0 0 8px; font-size: 1.35rem; overflow-wrap: break-word; }
+    .lead { margin: 0 0 18px; color: var(--muted); overflow-wrap: break-word; max-width: 68ch; }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #173247;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin: 0 0 12px;
+      min-width: 0;
+    }
+    .card h2 { margin: 0 0 8px; font-size: 1.02rem; }
+    .card p, .card li { color: var(--muted); font-size: 0.92rem; overflow-wrap: break-word; }
+    .card p { margin: 0 0 8px; }
+    .card p:last-child { margin-bottom: 0; }
+    ol, ul { margin: 0; padding-left: 1.2rem; }
+    ol li, ul li { margin: 0 0 6px; }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    .tab {
+      border: 1px solid var(--line);
+      background: #e8eef3;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      min-width: 0;
+    }
+    .tab[aria-pressed="true"] {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+    .panel[hidden] { display: none; }
+    .compare {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 720px) {
+      .compare { grid-template-columns: 1fr 1fr; }
+    }
+    .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .tag--portal { background: #d9ecff; color: #0b4f7a; }
+    .tag--finish { background: #dff5e8; color: var(--ok); }
+    .tag--bug { background: #ffe8d2; color: var(--warn); }
+    .phone {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #ece5dd;
+      min-width: 0;
+    }
+    .phone-hd {
+      background: #075e54;
+      color: #fff;
+      padding: 10px 12px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      overflow-wrap: break-word;
+    }
+    .phone-hd small {
+      display: block;
+      font-weight: 500;
+      opacity: 0.85;
+      font-size: 0.75rem;
+      margin-top: 2px;
+    }
+    .thread {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 220px;
+      max-height: 420px;
+      overflow: auto;
+    }
+    .bubble {
+      max-width: 92%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
+    .bubble--out {
+      align-self: flex-end;
+      background: var(--wa-out);
+    }
+    .bubble--in {
+      align-self: flex-start;
+      background: var(--wa-in);
+    }
+    .bubble--sys {
+      align-self: center;
+      background: var(--sys);
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-align: center;
+      max-width: 100%;
+    }
+    .bubble a {
+      color: #0b6bcb;
+      word-break: break-all;
+    }
+    .meta {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+    .steps {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f7fbff;
+      min-width: 0;
+    }
+    .step strong {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 2px;
+    }
+    .n {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 0;
+      font-weight: 800;
+      font-size: 0.95rem;
+      text-decoration: none;
+      cursor: pointer;
+      background: var(--blue);
+      color: #fff;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn--ghost {
+      background: #e8eef3;
+      color: var(--ink);
+    }
+    .play {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .play button {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .play button:disabled { opacity: 0.45; cursor: default; }
+    code {
+      font-size: 0.85em;
+      background: #e8eef3;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="pill">LOCAL DEMO</div>
+    <h1>Post-trial: what parents get after the class</h1>
+    <p class="lead">
+      Same product rule for everyone: after a paid trial ends, we message the parent twice
+      (right after the session + 20:00 London if nothing done), with Booking Portal + FREE,
+      and at EOD we release the soft-hold and alert the office.
+      Zaid and Muhammad both got that catch-up; Muhammad then got a <strong>second, different</strong>
+      WhatsApp because Booking Portal showed FULL (bug).
+    </p>
+
+    <div class="tabs" role="tablist" aria-label="Demo views">
+      <button type="button" class="tab" role="tab" id="tab-flow" aria-pressed="true" data-panel="flow">1. After class (normal)</button>
+      <button type="button" class="tab" role="tab" id="tab-compare" aria-pressed="false" data-panel="compare">2. Zaid vs Muhammad</button>
+      <button type="button" class="tab" role="tab" id="tab-live" aria-pressed="false" data-panel="live">3. Play local chat</button>
+    </div>
+
+    <section class="panel" id="panel-flow" role="tabpanel">
+      <div class="card">
+        <h2>Normal path (product rule — live from now)</h2>
+        <div class="steps">
+          <div class="step">
+            <span class="n">1</span>
+            <div>
+              <strong>Trial session ends</strong>
+              <span style="color:var(--muted);font-size:0.9rem">Cron / offer row watches trial end time (Europe/London).</span>
+            </div>
+          </div>
+          <div class="step">
+            <span class="n">2</span>
+            <div>
+              <strong>Wave 1 WhatsApp</strong>
+              <span style="color:var(--muted);font-size:0.9rem">
+                Soft-hold on the trialled slot. Message points to
+                <code>bookingportal</code> (same or other term slot). Reply <code>FREE</code> to release.
+              </span>
+            </div>
+          </div>
+          <div class="step">
+            <span class="n">3</span>
+            <div>
+              <strong>Parent books in Booking Portal</strong>
+              <span style="color:var(--muted);font-size:0.9rem">
+                Picks term place → OTP / registration if needed → finish-booking + pay.
+                That is the <em>linked</em> path: portal, not a magic pay link in wave 1.
+              </span>
+            </div>
+          </div>
+          <div class="step">
+            <span class="n">4</span>
+            <div>
+              <strong>If silent → wave 2 at 20:00</strong>
+              <span style="color:var(--muted);font-size:0.9rem">Same Booking Portal link + reminder.</span>
+            </div>
+          </div>
+          <div class="step">
+            <span class="n">5</span>
+            <div>
+              <strong>EOD no decision</strong>
+              <span style="color:var(--muted);font-size:0.9rem">Soft-hold released + office alert email. Place is public again.</span>
+            </div>
+          </div>
+        </div>
+        <a class="btn" href="/bookingportal.html">Open Booking Portal (local)</a>
+        <a class="btn btn--ghost" href="/finish_booking_flow_demo.html">Finish-booking parent demo</a>
+      </div>
+      <div class="card">
+        <h2>What you see in admin Local / Messages</h2>
+        <ul>
+          <li>Thread shows <code>system@clubsensational.org</code> with kind like <code>post_trial_offer_catchup_…</code> or <code>post_trial_offer_wave1</code>.</li>
+          <li>Body ends with Booking Portal URL + FREE instruction.</li>
+          <li>If the 24h WhatsApp window is closed, composer shows <strong>Needs Meta template</strong> (as in your Zaynab screenshot) — outbound system sends still use the approved contact template under the hood.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-compare" role="tabpanel" hidden>
+      <div class="compare">
+        <div class="card">
+          <span class="tag tag--portal">Zaid · Zaynab</span>
+          <h2>Only the standard catch-up</h2>
+          <p>
+            Sun 6 trial (SwimFarm Aquatic 9–9.30). Catch-up WA 08 Sep ~08:56:
+            trial finished → book term on <strong>Booking Portal</strong> by EOD Tue 8 → or reply FREE.
+          </p>
+          <p>No second office message. She stays on the normal self-serve path.</p>
+          <div class="phone" aria-label="Zaynab thread mock">
+            <div class="phone-hd">
+              Zaynab Alfadhl
+              <small>+447852758314 · Zaid · Local view mock</small>
+            </div>
+            <div class="thread">
+              <div class="bubble bubble--sys">08 Sep 08:56 · post_trial_offer_catchup_20260908 · Delivered</div>
+              <div class="bubble bubble--out" id="zaidBody"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <span class="tag tag--bug">Muhammad · Asli</span>
+          <h2>Catch-up + later direct finish link</h2>
+          <p>
+            Mon 7 trial (Northolt Aquatic 4.30–5, Dan). Same catch-up first (Booking Portal + FREE).
+          </p>
+          <p>
+            She tried to book → soft-hold + trial hold made the slot look <strong>FULL</strong>.
+            Office then sent a <strong>different</strong> WA: apology + <em>direct finish-booking URL</em>
+            (token, 30 min pay hold on next Mon 14 Sep). That is why her thread feels different.
+          </p>
+          <div class="phone" aria-label="Asli thread mock">
+            <div class="phone-hd">
+              Asli
+              <small>Muhammad · Local view mock</small>
+            </div>
+            <div class="thread">
+              <div class="bubble bubble--sys">1) Catch-up (same product as Zaid)</div>
+              <div class="bubble bubble--out" id="muBody1"></div>
+              <div class="bubble bubble--sys">2) After FULL bug — office unblock</div>
+              <div class="bubble bubble--out" id="muBody2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>One-line difference</h2>
+        <p>
+          <strong>Zaid:</strong> only <code>https://…/bookingportal</code>.
+          <strong>Muhammad:</strong> same first, then <code>parent_finish_booking.html?t=…</code> because portal was blocked by our own hold.
+        </p>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-live" role="tabpanel" hidden>
+      <div class="card">
+        <h2>Play the timeline (office Local chat mock)</h2>
+        <p>Press Next to see what appears after the trial clock ends, then the parent path.</p>
+        <div class="play">
+          <button type="button" id="btnReset">Reset</button>
+          <button type="button" id="btnNext">Next step</button>
+        </div>
+        <div class="phone" style="margin-top:12px">
+          <div class="phone-hd" id="liveHd">
+            Parent (demo)
+            <small id="liveSub">Press Next</small>
+          </div>
+          <div class="thread" id="liveThread"></div>
+        </div>
+        <p id="liveHint" style="margin-top:10px"></p>
+        <a class="btn" id="liveCta" href="/bookingportal.html" hidden>Open linked Booking Portal</a>
+        <a class="btn btn--ghost" id="liveCta2" href="/parent_finish_booking.html?demo=1" hidden>Open finish-booking demo (Muhammad-style link)</a>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      var BOOKING = "https://www.clubsensational.org/bookingportal";
+      var zaid =
+        "Hi Zaynab,\n\n" +
+        "Zaid's trial (SwimFarm · Aquatic · Sunday 9.00-9.30 (6 Sep)) has finished.\n\n" +
+        "You can now book a term place — the same slot or a different one — and complete payment here:\n" +
+        BOOKING +
+        "\n\nPlease finish booking by tonight (Tuesday 8 Sep, end of day). " +
+        "If we do not hear from you by then, the place will be released for other families.\n\n" +
+        "If you do not want a continuing place, reply FREE and we will release it now.\n\n" +
+        "Thanks,\nOffice | clubSENsational";
+      var mu1 =
+        "Hi Asli,\n\n" +
+        "Muhammad's trial (Northolt · Aquatic · Monday 4.30-5.00 (7 Sep)) has finished.\n\n" +
+        "You can now book a term place — the same slot or a different one — and complete payment here:\n" +
+        BOOKING +
+        "\n\nPlease finish booking by tonight (Tuesday 8 Sep, end of day). … FREE …";
+      var mu2 =
+        "Hi Asli,\n\n" +
+        "Sorry — the Booking Portal showed full because we were holding Muhammad's Northolt Monday 4.30-5 place for you.\n\n" +
+        "Here is your direct link to finish the term booking and pay (held 30 minutes):\n" +
+        "https://www.clubsensational.org/parent_finish_booking.html?t=…\n\n" +
+        "Thanks,\nOffice | clubSENsational";
+
+      function linkify(el, text) {
+        el.textContent = "";
+        var parts = String(text).split(/(https:\/\/[^\s]+)/g);
+        parts.forEach(function (part) {
+          if (/^https:\/\//.test(part)) {
+            var a = document.createElement("a");
+            a.href = part.indexOf("parent_finish_booking") >= 0
+              ? "/parent_finish_booking.html?demo=1"
+              : "/bookingportal.html";
+            a.target = "_blank";
+            a.rel = "noopener";
+            a.textContent = part;
+            el.appendChild(a);
+          } else {
+            el.appendChild(document.createTextNode(part));
+          }
+        });
+        var meta = document.createElement("span");
+        meta.className = "meta";
+        meta.textContent = "system@clubsensational.org · Delivered";
+        el.appendChild(meta);
+      }
+
+      linkify(document.getElementById("zaidBody"), zaid);
+      linkify(document.getElementById("muBody1"), mu1);
+      linkify(document.getElementById("muBody2"), mu2);
+
+      var tabs = document.querySelectorAll(".tab");
+      tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          var id = tab.getAttribute("data-panel");
+          tabs.forEach(function (t) {
+            t.setAttribute("aria-pressed", t === tab ? "true" : "false");
+          });
+          ["flow", "compare", "live"].forEach(function (p) {
+            document.getElementById("panel-" + p).hidden = p !== id;
+          });
+        });
+      });
+
+      var liveSteps = [
+        {
+          hd: "Office alert (internal)",
+          sub: "Trial clock just ended",
+          bubbles: [
+            { kind: "sys", text: "Trial ended · soft-hold created on trialled slot" },
+            { kind: "sys", text: "Queue wave-1 WhatsApp to parent" },
+          ],
+          hint: "No parent link yet — system prepares the offer row + soft-hold.",
+          cta: false,
+          cta2: false,
+        },
+        {
+          hd: "Zaynab / Asli — Local Messages",
+          sub: "Wave 1 outbound",
+          bubbles: [
+            { kind: "sys", text: "post_trial_offer_wave1 · Delivered" },
+            { kind: "out", text: zaid },
+          ],
+          hint: "This is what you saw on Zaid's mother. Link = Booking Portal (self-serve).",
+          cta: true,
+          cta2: false,
+        },
+        {
+          hd: "Parent on phone",
+          sub: "Opens Booking Portal",
+          bubbles: [
+            { kind: "in", text: "(Parent taps the bookingportal link)" },
+            { kind: "sys", text: "Chooses same or other term slot → pay via finish-booking" },
+          ],
+          hint: "Happy path: portal → finish booking. Soft-hold protects their trialled slot until EOD.",
+          cta: true,
+          cta2: false,
+        },
+        {
+          hd: "Muhammad exception",
+          sub: "Portal showed FULL",
+          bubbles: [
+            { kind: "in", text: "(Asli tries Booking Portal — slot looks FULL)" },
+            { kind: "sys", text: "Office clears trial hold · converts soft-hold → 30m pay hold" },
+            { kind: "out", text: mu2 },
+          ],
+          hint: "Second message is NOT the normal product — it is a direct finish-booking token because we blocked ourselves.",
+          cta: false,
+          cta2: true,
+        },
+        {
+          hd: "If no reply by EOD",
+          sub: "Auto release + office alert",
+          bubbles: [
+            { kind: "sys", text: "20:00 wave-2 reminder (if still pending)" },
+            { kind: "sys", text: "23:59 soft-hold released · office email: no decision" },
+          ],
+          hint: "Inbound FREE is still manual (not auto-parsed yet).",
+          cta: false,
+          cta2: false,
+        },
+      ];
+      var idx = -1;
+      var thread = document.getElementById("liveThread");
+      var hint = document.getElementById("liveHint");
+      var cta = document.getElementById("liveCta");
+      var cta2 = document.getElementById("liveCta2");
+      var btnNext = document.getElementById("btnNext");
+
+      function renderLive() {
+        var step = liveSteps[idx];
+        if (!step) return;
+        document.getElementById("liveHd").childNodes[0].textContent = step.hd + " ";
+        document.getElementById("liveSub").textContent = step.sub;
+        thread.innerHTML = "";
+        step.bubbles.forEach(function (b) {
+          var d = document.createElement("div");
+          d.className =
+            "bubble " +
+            (b.kind === "out" ? "bubble--out" : b.kind === "in" ? "bubble--in" : "bubble--sys");
+          if (b.kind === "out") linkify(d, b.text);
+          else d.textContent = b.text;
+          thread.appendChild(d);
+        });
+        hint.textContent = step.hint;
+        cta.hidden = !step.cta;
+        cta2.hidden = !step.cta2;
+        btnNext.disabled = idx >= liveSteps.length - 1;
+      }
+
+      document.getElementById("btnReset").addEventListener("click", function () {
+        idx = -1;
+        thread.innerHTML = "";
+        hint.textContent = "Press Next to start.";
+        cta.hidden = true;
+        cta2.hidden = true;
+        btnNext.disabled = false;
+        document.getElementById("liveSub").textContent = "Press Next";
+      });
+      btnNext.addEventListener("click", function () {
+        if (idx < liveSteps.length - 1) {
+          idx += 1;
+          renderLive();
+        }
+      });
+      hint.textContent = "Press Next to start.";
+    })();
+  </script>
+</body>
+</html>

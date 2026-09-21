@@ -26,6 +26,44 @@
     admin: "Administrator",
   };
 
+  /** Display labels / aliases → staff_profiles CHECK slugs. */
+  global.PORTAL_ONBOARDING_STAFF_ROLE_TO_CHECK = {
+    "support worker": "support",
+    "day centre support worker": "support",
+    "specialist support worker": "support",
+    "service lead": "support",
+    "programme lead": "support",
+    "swimming instructor": "swimming",
+    "swimming teacher": "swimming",
+    "climbing instructor": "climbing",
+    "climbing teacher": "climbing",
+    "fitness instructor": "fitness",
+    "pt / fitness instructor": "fitness",
+    administrator: "admin",
+    admin: "admin",
+    manager: "manager",
+    support: "support",
+    swimming: "swimming",
+    fitness: "fitness",
+    climbing: "climbing",
+  };
+
+  global.portalOnboardingFormMapStaffRoleToCheck = function portalOnboardingFormMapStaffRoleToCheck(raw) {
+    var lower = String(raw || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    if (!lower) return "support";
+    var mapped = global.PORTAL_ONBOARDING_STAFF_ROLE_TO_CHECK[lower];
+    if (mapped) return mapped;
+    if (/swim/.test(lower)) return "swimming";
+    if (/climb/.test(lower)) return "climbing";
+    if (/fitness|\bpt\b/.test(lower)) return "fitness";
+    if (/manager/.test(lower)) return "manager";
+    if (/admin/.test(lower)) return "admin";
+    return "support";
+  };
+
   global.PORTAL_ONBOARDING_EMPLOYMENT_STATUS = [
     "Full-time",
     "Part-time",

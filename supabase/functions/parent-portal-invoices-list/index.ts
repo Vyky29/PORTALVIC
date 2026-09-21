@@ -12,7 +12,7 @@ import {
   amountDueNow,
   normalizePaymentSchedule,
   parentFacingSchedule,
-  shareNextInstalmentIsCollectingNow,
+  parentInvoiceDueForParentView,
 } from "../_shared/portal_invoice_payment_schedule.ts";
 import { gocardlessConfigured } from "../_shared/gocardless.ts";
 import { mandateIsActive } from "../_shared/gocardless_portal.ts";
@@ -56,7 +56,8 @@ function parentInvoiceAllowedForShare(
 
   if (/^smoke[-_]/.test(num) || /^test[-_]/.test(num)) return false;
   if (/\bcrash\b/.test(blob)) return true;
-  // Term invoices from re-enrolment carry billing_term — always parent-facing.
+  // Term invoices from re-enrolment carry billing_term — eligible (due window
+  // gated separately via parentInvoiceDueForParentView).
   if (clean(share.billing_term, 20)) return true;
   if (/26\/27|2026\/27|2026-27|autumn term 26|spring term 26|summer term 26/.test(blob)) {
     return true;
@@ -222,7 +223,16 @@ Deno.serve(async (req) => {
     })
     .filter(Boolean);
 
-  const sequenceShares: PaySequenceShare[] = (shares || []).map((s) => ({
+  const parentVisibleShares = (shares || []).filter((s) => {
+    const doc = docsById.get(String(s.document_id));
+    if (!doc || !doc.file_url) return false;
+    if (!parentInvoiceAllowedForShare(s, doc.title)) return false;
+    // AUTO year: Spring/Summer unpaid stay off My invoices until due window.
+    if (!parentInvoiceDueForParentView(s)) return false;
+    return true;
+  });
+
+  const sequenceShares: PaySequenceShare[] = parentVisibleShares.map((s) => ({
     id: s.id,
     invoice_number: s.invoice_number,
     billing_term: s.billing_term,
@@ -235,10 +245,9 @@ Deno.serve(async (req) => {
   }));
 
   const out = [];
-  for (const share of shares || []) {
+  for (const share of parentVisibleShares) {
     const doc = docsById.get(String(share.document_id));
     if (!doc || !doc.file_url) continue;
-    if (!parentInvoiceAllowedForShare(share, doc.title)) continue;
     const hintEarly = clean(share.payment_method_hint, 40) || "bank_transfer";
     // LA-funded only: office invoices the funder — parents do not pay in the portal.
     if (hintEarly === "la_funded") continue;
@@ -321,6 +330,7 @@ Deno.serve(async (req) => {
       paid_at: share.paid_at || null,
       paid_via: share.paid_via || null,
       suggested_reference: suggestedRef,
+      vat_mode: clean(share.vat_mode, 20) || null,
       bank_transfer:
         hideManualPay || sequenceLocked || !(openForPay || status === "pending_confirmation")
           ? null

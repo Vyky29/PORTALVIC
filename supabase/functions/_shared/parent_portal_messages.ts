@@ -234,6 +234,75 @@ export function unreadOutboundCountByContact(
   return out;
 }
 
+export function firstParentAlertName(raw: string): string {
+  const t = String(raw || "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const first = t.split(/\s+/)[0] || t;
+  return first.charAt(0).toUpperCase() + first.slice(1);
+}
+
+export function formatParentAlertLabel(parentName: string, childName?: string | null): string {
+  const p = firstParentAlertName(parentName);
+  const c = firstParentAlertName(String(childName || ""));
+  if (p && c && c.toLowerCase() !== p.toLowerCase()) return p + " (" + c + ")";
+  return p || c || "";
+}
+
+/** Office parent/carer name on file for this WhatsApp number (not the Meta profile name). */
+export async function resolveOfficeParentAlertName(
+  admin: SupabaseClient,
+  phone: string,
+  fallbackWaName?: string | null,
+): Promise<string> {
+  const wa = firstParentAlertName(String(fallbackWaName || "")) || "Parent";
+  const last10 = parentPhoneLast10(phone);
+  if (!last10) return wa;
+  try {
+    const { data } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_display, parent_first_name, child_display, child_first_name, mobile, in_class")
+      .not("mobile", "is", null)
+      .ilike("mobile", `%${last10}`)
+      .limit(40);
+    const hits: { parent: string; child: string; inClass: boolean }[] = [];
+    for (const row of data || []) {
+      if (parentPhoneLast10(String(row.mobile || "")) !== last10) continue;
+      const parent =
+        String(row.parent_first_name || "").trim() ||
+        String(row.parent_display || "").trim().split(/\s+/)[0] ||
+        "";
+      const child =
+        String(row.child_first_name || "").trim() ||
+        String(row.child_display || "").trim().split(/\s+/)[0] ||
+        "";
+      if (parent || child) hits.push({ parent, child, inClass: row.in_class === true });
+    }
+    if (hits.length) {
+      const preferred = hits.find((h) => h.inClass && h.parent) || hits.find((h) => h.inClass) || hits[0];
+      const labelled = formatParentAlertLabel(preferred.parent, preferred.child);
+      if (labelled) return labelled;
+    }
+  } catch (_e) {}
+  try {
+    const { data: logs } = await admin
+      .from("portal_parent_notify_log")
+      .select("parent_name, client_display, parent_phone")
+      .not("parent_name", "is", null)
+      .ilike("parent_phone", `%${last10}`)
+      .order("created_at", { ascending: false })
+      .limit(12);
+    for (const row of logs || []) {
+      if (parentPhoneLast10(String(row.parent_phone || "")) !== last10) continue;
+      const labelled = formatParentAlertLabel(
+        String(row.parent_name || ""),
+        String(row.client_display || ""),
+      );
+      if (labelled) return labelled;
+    }
+  } catch (_l) {}
+  return wa;
+}
+
 export function applyUnreadFlagsToMessages(
   messages: ParentPortalMessageRow[],
   readAtIso: string,

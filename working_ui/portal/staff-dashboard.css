@@ -139,7 +139,7 @@
       -webkit-overflow-scrolling:touch;
       overscroll-behavior:contain;
       overscroll-behavior-x:none;
-      touch-action:pan-y;
+      touch-action:manipulation;
       padding-bottom:0;
       box-sizing:border-box;
     }
@@ -277,9 +277,9 @@
       box-sizing:border-box;
       overflow:visible;
     }
-    /* Halo flanks: hug screen edges + a bit more vertical room for larger tiles. */
+    /* Halo flanks: hug screen edges; keep topbar short so Today gets the height. */
     .topbar:has(.topbar-lead--halo-flanks){
-      padding:6px 1px 4px;
+      padding:2px 1px 0;
     }
     .topbar-lead{
       display:grid;
@@ -423,18 +423,34 @@
       cursor:pointer;
     }
     .topbar-center--halo .avatar-wrap--staff-halo{
-      --avatar-core-size:82px;
-      --avatar-wrap-size:94px;
-      --avatar-orbit-outset:17px;
+      --avatar-core-size:74px;
+      --avatar-wrap-size:86px;
+      --avatar-orbit-outset:14px;
     }
     /* Idle: shrink wrap to the photo so grey padding + empty band under the circle disappear */
     .topbar-center--halo .avatar-wrap--staff-halo.avatar-wrap--portal-orbit-idle{
-      --avatar-wrap-size:84px;
-      --avatar-core-size:82px;
+      --avatar-wrap-size:76px;
+      --avatar-core-size:74px;
       --avatar-orbit-outset:0px;
     }
     .topbar-center--halo:has(.avatar-wrap:not(.avatar-wrap--portal-orbit-idle)) .topbar-staff-photo__edit--above-name{
-      margin-top:calc(var(--avatar-orbit-outset, 16px) + 2px);
+      display:none;
+    }
+    .topbar-center--halo .topbar-staff-photo__edit,
+    .topbar-center--halo .topbar-staff-photo__edit--above-name{
+      display:none !important;
+    }
+    /* Beat header.topbar h1.topbar-name { flex:1 } so the name does not grow a
+       tall empty band under "Roberto" before the Today card. */
+    header.topbar .topbar-center--halo h1.topbar-name.topbar-name--under-halo,
+    .topbar-center--halo .topbar-name--under-halo{
+      margin-top:1px;
+      line-height:1.05;
+      font-size:clamp(15px, 4.2vw, 20px);
+      flex:0 0 auto;
+      justify-content:flex-start;
+      min-height:0;
+      height:auto;
     }
     .avatar-wrap:hover{
       transform:scale(1.05);
@@ -514,14 +530,6 @@
     }
     .avatar-wrap[data-gender="f"] .topbar-staff-photo--halo .topbar-staff-photo__initials{
       color:var(--topbar-profile-female-ink,#9c2756);
-    }
-    .topbar-center--halo .topbar-staff-photo__edit--above-name{
-      width:26px;
-      height:26px;
-      margin:3px auto 1px;
-    }
-    .topbar-center--halo .topbar-name--under-halo{
-      margin-top:0;
     }
     .topbar-staff-photo--halo .topbar-staff-photo__share-note{
       display:none;
@@ -2958,6 +2966,20 @@
       color:#6d28d9;
       border-color:rgba(124,58,237,.35);
     }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant{
+      background:linear-gradient(180deg,#ccfbf1 0%,#99f6e4 100%);
+      border:2px solid rgba(13,148,136,.45);
+      color:var(--ink);
+      box-shadow:0 6px 18px rgba(13,148,136,.22);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-copy strong{color:#0f766e}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-sub{color:#0d9488}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-chev{color:rgba(15,118,110,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-icon{
+      background:rgba(45,212,191,.28);
+      color:#0f766e;
+      border-color:rgba(13,148,136,.38);
+    }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled,
     .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled{
@@ -3041,6 +3063,10 @@
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-trial:hover{
       border-color:rgba(124,58,237,.55);
       box-shadow:0 10px 26px rgba(124,58,237,.28);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant:hover{
+      border-color:rgba(13,148,136,.65);
+      box-shadow:0 10px 26px rgba(13,148,136,.28);
     }
     #menuSheet.menu-sheet--logo-lite .portal-lead-team-qm-host .menu-btn.menu-btn--qm-lead-team-shift,
     #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift{
@@ -3135,6 +3161,20 @@
       background:rgba(167,139,250,.24);
       color:#6d28d9;
       border-color:rgba(124,58,237,.35);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant{
+      background:linear-gradient(180deg,#ccfbf1 0%,#99f6e4 100%);
+      border:2px solid rgba(13,148,136,.45);
+      color:var(--ink);
+      box-shadow:0 6px 18px rgba(13,148,136,.22);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-copy strong{color:#0f766e}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-sub{color:#0d9488}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-chev{color:rgba(15,118,110,.55)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-icon{
+      background:rgba(45,212,191,.28);
+      color:#0f766e;
+      border-color:rgba(13,148,136,.38);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled{
       background:linear-gradient(180deg,#d6d6dc 0%,#bfc0c8 100%) !important;
@@ -3931,6 +3971,10 @@
       border-color:rgba(219,39,119,.55);
       box-shadow:0 10px 26px rgba(236,72,153,.28);
     }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant:hover{
+      border-color:rgba(13,148,136,.65);
+      box-shadow:0 10px 26px rgba(13,148,136,.28);
+    }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled:hover{
       background:linear-gradient(180deg,#dcdce2 0%,#b0b1ba 100%) !important;
       background-color:#b0b1ba !important;
@@ -4067,13 +4111,13 @@
     .override--absent{background:linear-gradient(180deg,rgba(255,248,225,.96) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(200,160,40,.55)}
     .override--closed{background:linear-gradient(180deg,rgba(255,235,238,.95) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(183,28,28,.45)}
     .override--replace{background:linear-gradient(180deg,rgba(252,228,236,.95) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(194,24,91,.32)}
-    .override--trial{background:#f5f0ff;border-color:rgba(167,139,250,.45)}
+    .override--trial{background:linear-gradient(180deg,rgba(245,243,255,.95) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(124,58,237,.42)}
     .override--instructor{background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(25,118,210,.32)}
     .override--slot-open{background:linear-gradient(180deg,rgba(224,242,254,.92) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(8,145,178,.38)}
     .portal-sched-ov-badge.override--absent{background:rgba(212,140,38,.14);color:#a56a12;border-color:rgba(212,140,38,.34)}
     .portal-sched-ov-badge.override--closed{background:rgba(183,28,28,.13);color:#9b1f1f;border-color:rgba(183,28,28,.32)}
     .portal-sched-ov-badge.override--replace{background:rgba(194,24,91,.13);color:#a81f63;border-color:rgba(194,24,91,.3)}
-    .portal-sched-ov-badge.override--trial{background:#f3e8ff;color:#7c3aed;border-color:rgba(124,58,237,.32)}
+    .portal-sched-ov-badge.override--trial{background:rgba(167,139,250,.22);color:#5b21b6;border-color:rgba(124,58,237,.38)}
     .portal-sched-ov-badge.override--instructor{background:rgba(45,132,179,.12);color:#2d84b3;border-color:rgba(45,132,179,.28)}
     .portal-sched-ov-badge.override--slot-open{background:rgba(8,145,178,.14);color:#0e7490;border-color:rgba(8,145,178,.32)}
     .portal-sched-ov-badge.override--updated{background:rgba(37,99,235,.12);color:#1d4ed8;border-color:rgba(37,99,235,.28)}
@@ -4089,9 +4133,9 @@
       border-color:rgba(185,28,28,.52);
       box-shadow:0 1px 4px rgba(220,38,38,.22);
     }
-    /* Changed by Admin — same yellow card as No Participant (until session starts) */
-    .section-card--today .session-card.session-card--admin-adjusted,
-    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue{
+    /* Changed by Admin — yellow card (until session starts). Never paint ov-blue here;
+       Move in / New Client keep their blue block below. */
+    .section-card--today .session-card.session-card--admin-adjusted{
       background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
       border-color:rgba(200,165,45,.5);
       box-shadow:0 1px 6px rgba(200,165,45,.12);
@@ -4131,6 +4175,32 @@
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-pink:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
       border-color:#a01047;
       box-shadow:0 4px 14px rgba(194,24,91,.22);
+    }
+    /* Move in / New Client: keep blue card (never Make Up pink or admin yellow). */
+    .section-card--today .session-card.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
+    .section-card--today .session-card.session-card--ov-blue.override--replace:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
+      background:linear-gradient(180deg,#dbeafe 0%,#eff6ff 55%,#f8fbff 100%);
+      border-color:rgba(37,99,235,.58);
+      box-shadow:0 1px 6px rgba(37,99,235,.14);
+    }
+    .section-card--today .session-card.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
+      border-color:rgba(29,78,216,.72);
+      box-shadow:0 4px 14px rgba(37,99,235,.2);
+    }
+    /* Teaching Pool / area note must stay readable on blue Move in cards. */
+    .section-card--today .session-card.session-card--ov-blue .session-area-note-label{
+      color:#0f172a;
+      font-weight:750;
+      text-shadow:0 1px 0 rgba(255,255,255,.65);
+    }
+    .section-card--today .session-card.session-card--ov-blue .session-area-note-icon,
+    .section-card--today .session-card.session-card--ov-blue .session-venue-visual{
+      filter:saturate(1.15) contrast(1.12);
+    }
+    .section-card--today .session-card.session-card--ov-blue .session-area-note-stack{
+      --area-note-accent:#0f172a;
     }
     .session-card--ov-green{
       background:var(--reviewGreenBg);
@@ -4192,8 +4262,8 @@
       border-color:rgba(136,14,79,.72);
     }
     .session-card--ov-trial{
-      background:#f5f0ff;
-      border-color:rgba(167,139,250,.5);
+      background:linear-gradient(180deg,#f5f3ff 0%,#ede9fe 55%,rgba(255,255,255,.98) 100%);
+      border-color:rgba(124,58,237,.45);
     }
     .section-card--today .session-card.session-card--ov-pink,
     .section-card--today .session-card.override--replace{
@@ -4201,12 +4271,12 @@
     }
     .section-card--today .session-card.session-card--ov-trial,
     .section-card--today .session-card.override--trial{
-      background:#f5f0ff;
-      border-color:#c4b5fd;
+      background:linear-gradient(180deg,#f5f3ff 0%,#ede9fe 55%,rgba(255,255,255,.98) 100%);
+      border-color:rgba(124,58,237,.48);
     }
     .session-card--ov-blue{
-      background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);
-      border-color:rgba(25,118,210,.32);
+      background:linear-gradient(180deg,#dbeafe 0%,#eff6ff 55%,#f8fbff 100%);
+      border-color:rgba(37,99,235,.55);
     }
     .session-card--ov-red{
       background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
@@ -4225,16 +4295,39 @@
       box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
     }
     .session-card.override--portal-cancelled{
+      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
+      border-color:rgba(123,18,18,.78);
+      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
+    }
+    /* Unresolved cancel chrome only — resolved Cancelled (review-done) must stay green. */
+    .section-card--today .session-card.override--portal-cancelled:not(.session-card--review-done):not(.session-card--review-needed),
+    .section-card--today .session-card.override--portal-cancelled.session-card--admin-adjusted:not(.session-card--review-done):not(.session-card--review-needed),
+    .section-card--today .session-card.session-card--ov-red.override--portal-cancelled:not(.session-card--review-done):not(.session-card--review-needed){
+      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
+      border-color:#b71c1c;
+      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
+    }
+    .section-card--today .session-card.override--portal-cancelled.session-card--review-done,
+    .section-card--today .session-card.session-card--review-cancelled{
       background:var(--reviewGreenBg);
       border-color:var(--reviewGreenBorder);
       box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
     }
-    .section-card--today .session-card.override--portal-cancelled:hover{
+    .section-card--today .session-card.override--portal-cancelled.session-card--review-done:hover,
+    .section-card--today .session-card.session-card--review-cancelled:hover{
       border-color:rgba(21,115,71,.45);
+    }
+    .section-card--today .session-card.session-card--segments.override--portal-cancelled:not(.session-card--review-done),
+    .section-card--today .session-card.session-card--segments.session-card--ov-red:not(.session-card--review-done){
+      border-left-color:#b71c1c;
+    }
+    .section-card--today .session-card.session-card--segments.override--portal-cancelled.session-card--review-done,
+    .section-card--today .session-card.session-card--segments.session-card--review-cancelled{
+      border-left-color:var(--reviewGreenBorder);
     }
     .session-card.override--closed{background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);border-color:rgba(123,18,18,.78)}
     .session-card.override--replace{background:rgba(252,233,241,.92);border-color:rgba(136,14,79,.72)}
-    .session-card.override--trial{background:#f5f0ff;border-color:rgba(167,139,250,.5)}
+    .session-card.override--trial{background:linear-gradient(180deg,#f5f3ff 0%,#ede9fe 55%,rgba(255,255,255,.98) 100%);border-color:rgba(124,58,237,.48)}
     .section-card--today .session-card.override--replace.session-card--review-needed{
       background:var(--reviewOrangeBg);
       border-color:var(--reviewOrangeBorder);
@@ -4248,12 +4341,13 @@
       box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
     }
     .session-card.override--instructor{background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(25,118,210,.32)}
+    /* No Participant keeps light-red open paint even if an override tone class is present. */
     .section-card--today .session-card.session-card--available.session-card--ov-yellow,
     .section-card--today .session-card.session-card--available.session-card--ov-green,
     .section-card--today .session-card.session-card--available.session-card--ov-red{
-      border-color:rgba(45,132,179,.34);
-      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
-      box-shadow:0 1px 4px rgba(23,50,71,.07);
+      border-color:rgba(244, 63, 94, 0.35);
+      background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
+      box-shadow:0 1px 6px rgba(190, 18, 60, 0.1);
     }
     .session-ov-symbol-text{
       display:block;min-width:0;max-width:100%;
@@ -4596,7 +4690,7 @@
     }
 
     .section-head--today{
-      padding:6px 12px 4px;
+      padding:4px 10px 2px;
       align-items:center;
       justify-content:center;
       flex-direction:row;
@@ -4955,25 +5049,28 @@
       overflow-y:hidden;
     }
     .section-card--today .today-grid.today-grid--session-scroll{
-      overflow-y:auto;
-      -webkit-overflow-scrolling:touch;
-      overscroll-behavior:contain;
-      scrollbar-width:thin;
-      scrollbar-color:rgba(45,132,179,.35) transparent;
+      /* Prefer equal-height fixed rows (auto-scale type/icons) over inner scroll. */
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:auto;
+      overscroll-behavior:none;
     }
     .section-card--today .today-grid.today-grid--session-scroll .today-grid-rows{
-      height:auto;
-      flex:0 0 auto;
-      max-height:none;
+      height:100%;
+      flex:1 1 0;
+      max-height:calc(100% * var(--today-rows-fill, 1));
+      min-height:0;
     }
     .section-card--today .today-grid.today-grid--session-scroll .today-grid-rows > .session-card{
-      flex:0 0 auto;
-      min-height:58px;
+      flex:1 1 0;
+      min-height:0;
       max-height:none;
-      overflow:visible;
+      overflow:hidden;
     }
     .section-card--today .today-grid.today-grid--session-scroll .today-grid-rows > .session-card .session-line--symbol{
-      overflow:visible;
+      overflow:hidden;
+    }
+    .section-card--today .today-grid.today-grid--session-scroll .session-card .session-card-body{
+      overflow:hidden;
     }
     .today-grid{
       padding:4px 8px 10px;
@@ -5389,6 +5486,69 @@
       text-overflow:ellipsis;
       white-space:nowrap;
     }
+    /* Soft red wash on photo for cancelled / absent (no pulse). */
+    .today-participant-chip--cancelled .today-participant-chip__avatar,
+    .today-participant-chip--absent .today-participant-chip__avatar{
+      border-color:rgba(198,40,40,.42);
+    }
+    .today-participant-chip--cancelled .today-participant-chip__avatar::after,
+    .today-participant-chip--absent .today-participant-chip__avatar::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      z-index:1;
+      border-radius:50%;
+      background:rgba(198,40,40,.28);
+      pointer-events:none;
+    }
+    .today-participant-chip--cancelled .today-participant-chip__avatar img,
+    .today-participant-chip--absent .today-participant-chip__avatar img{
+      filter:saturate(.85) brightness(.96);
+    }
+    /* Trial / Make up / New: coloured pulse ring only — never red photo filter. */
+    .today-participant-chip--trial .today-participant-chip__avatar-wrap{
+      animation:todayNextChipPulseTrial 1.55s ease-in-out infinite;
+      border-radius:50%;
+    }
+    .today-participant-chip--trial .today-participant-chip__avatar{
+      border-color:rgba(124,92,214,.55);
+    }
+    .today-participant-chip--makeup .today-participant-chip__avatar-wrap{
+      animation:todayNextChipPulseMakeup 1.55s ease-in-out infinite;
+      border-radius:50%;
+    }
+    .today-participant-chip--makeup .today-participant-chip__avatar{
+      border-color:rgba(194,24,91,.5);
+    }
+    .today-participant-chip--new .today-participant-chip__avatar-wrap{
+      animation:todayNextChipPulseNew 1.55s ease-in-out infinite;
+      border-radius:50%;
+    }
+    .today-participant-chip--new .today-participant-chip__avatar{
+      border-color:rgba(45,132,179,.55);
+    }
+    @keyframes todayNextChipPulseTrial{
+      0%,100%{box-shadow:0 0 0 0 rgba(124,92,214,.22)}
+      50%{box-shadow:0 0 0 5px rgba(124,92,214,.38)}
+    }
+    @keyframes todayNextChipPulseMakeup{
+      0%,100%{box-shadow:0 0 0 0 rgba(194,24,91,.18)}
+      50%{box-shadow:0 0 0 5px rgba(194,24,91,.36)}
+    }
+    @keyframes todayNextChipPulseNew{
+      0%,100%{box-shadow:0 0 0 0 rgba(45,132,179,.2)}
+      50%{box-shadow:0 0 0 5px rgba(45,132,179,.4)}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .today-participant-chip--trial .today-participant-chip__avatar-wrap,
+      .today-participant-chip--makeup .today-participant-chip__avatar-wrap,
+      .today-participant-chip--new .today-participant-chip__avatar-wrap{
+        animation:none;
+        box-shadow:0 0 0 3px rgba(45,132,179,.28);
+      }
+      .today-participant-chip--trial .today-participant-chip__avatar-wrap{box-shadow:0 0 0 3px rgba(124,92,214,.3)}
+      .today-participant-chip--makeup .today-participant-chip__avatar-wrap{box-shadow:0 0 0 3px rgba(194,24,91,.28)}
+    }
     .today-day-panel__chips[data-chip-count="7"] .today-participant-chip__name,
     .today-day-panel__chips[data-chip-count="8"] .today-participant-chip__name,
     .today-day-panel__chips[data-chip-count="9"] .today-participant-chip__name{
@@ -5455,19 +5615,19 @@
       background:linear-gradient(180deg,#fff1f1 0%,#ffcaca 100%);
       box-shadow:0 1px 6px rgba(150,28,28,.2);
     }
-    /* No Participant = open slot awaiting a booking → yellow card (matches the
-       "changed by admin" yellow), no chip. Distinct from Closed (red). */
+    /* No Participant = open slot awaiting a booking → light red card, no chip.
+       Distinct from Closed (stronger red). */
     .section-card--today .session-card.session-card--available{
-      border-color:rgba(200,165,45,.5);
-      background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
-      box-shadow:0 1px 6px rgba(200,165,45,.12);
+      border-color:rgba(244, 63, 94, 0.35);
+      background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
+      box-shadow:0 1px 6px rgba(190, 18, 60, 0.1);
     }
     .section-card--today .session-card.session-card--available:hover{
-      border-color:rgba(150,110,20,.62);
-      box-shadow:0 4px 14px rgba(180,140,30,.2);
+      border-color:rgba(190, 18, 60, 0.5);
+      box-shadow:0 4px 14px rgba(190, 18, 60, 0.16);
     }
     .section-card--today .session-card.session-card--available .session-meta-name{
-      color:#b91c1c;
+      color:#9f1239;
     }
     .section-card--today .session-card .session-card-body{
       flex:1 1 auto;
@@ -5515,8 +5675,8 @@
       padding:2px 2px 2px 2px;
     }
     .section-card--today .session-card--segments .session-line--name-lead{
-      flex:0 0 30%;
-      max-width:32%;
+      flex:0 0 38%;
+      max-width:42%;
       align-self:stretch;
       display:flex;
       align-items:center;
@@ -5700,10 +5860,21 @@
     .section-card--today .today-grid[data-session-count="5"] .session-chips-below-name .portal-session-slot-chip,
     .section-card--today .today-grid[data-session-count="6"] .session-chips-below-name .portal-session-slot-chip,
     .section-card--today .today-grid[data-session-count="7"] .session-chips-below-name .portal-session-slot-chip,
-    .section-card--today .today-grid[data-session-count="8"] .session-chips-below-name .portal-session-slot-chip{
-      padding:3px 7px;
-      font-size:9px;
-      line-height:1.1;
+    .section-card--today .today-grid[data-session-count="8"] .session-chips-below-name .portal-session-slot-chip,
+    .section-card--today .today-grid[data-session-count="9"] .session-chips-below-name .portal-session-slot-chip{
+      padding:2px 6px;
+      font-size:clamp(7px, 1.8cqi + 6px, 9px);
+      line-height:1.05;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .section-card--today .today-grid[data-session-count="7"] .session-line--name .session-meta-name,
+    .section-card--today .today-grid[data-session-count="8"] .session-line--name .session-meta-name,
+    .section-card--today .today-grid[data-session-count="9"] .session-line--name .session-meta-name{
+      font-size:clamp(10px, calc(var(--today-name-fs, 12px) + 0.1vw), 14px);
+      line-height:1.05;
     }
     .section-card--today .session-line--name .session-meta-name{
       /* Auto-size: grows with available width but stays consistent. */
@@ -5730,6 +5901,16 @@
       flex:1 1 auto;
       gap:3px;
     }
+    .section-card--today .session-meta-support{
+      display:block;
+      font-size:11px;
+      font-weight:650;
+      line-height:1.25;
+      color:#5b6470;
+      text-align:center;
+      overflow-wrap:anywhere;
+      max-width:100%;
+    }
     .section-card--today .session-line--name .session-name-stack > .portal-sched-ov-badge{
       margin-left:0;
       max-width:100%;
@@ -5748,9 +5929,11 @@
       margin-top:4px;
     }
     .section-card--today .session-chips-below-name--wrap{
+      flex-direction:column;
       flex-wrap:nowrap;
+      align-items:center;
       justify-content:center;
-      gap:3px;
+      gap:4px;
     }
     .section-card--today .session-chips-below-name .portal-session-slot-chip,
     .section-card--today .session-chips-below-name .portal-sched-ov-badge{
@@ -5760,14 +5943,15 @@
     }
     .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip,
     .section-card--today .session-chips-below-name--wrap .portal-sched-ov-badge{
-      max-width:calc(50% - 2px);
-      padding:4px 7px;
+      max-width:100%;
+      width:auto;
+      padding:4px 10px;
       font-size:10px;
     }
     /* "Updated by admin" must stay readable — never 50%-width ellipsis. */
     .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip--updated{
       max-width:100%;
-      flex:1 1 100%;
+      flex:0 1 auto;
       padding:4px 10px;
       font-size:10px;
     }
@@ -5833,11 +6017,15 @@
       box-sizing:border-box;
       text-transform:capitalize;
     }
-    .portal-session-slot-chip > span{
-      overflow:hidden;
-      text-overflow:ellipsis;
+    .section-card--today .session-card--segments .session-line--name-lead .portal-session-slot-chip,
+    .section-card--today .session-card--segments .session-line--name-lead .portal-session-slot-chip > span,
+    .portal-session-slot-chip--cancelled > span,
+    .portal-session-slot-chip--submitted > span,
+    .portal-session-slot-chip--absent > span,
+    .portal-session-slot-chip--pending > span{
+      overflow:visible;
+      text-overflow:clip;
       white-space:nowrap;
-      min-width:0;
     }
     .portal-session-slot-chip--updated{
       color:#fff;
@@ -5905,12 +6093,38 @@
     }
     .portal-session-slot-chip--trial{
       color:#fff;
-      background:linear-gradient(145deg,#8b5cf6,#7c3aed);
-      border:1px solid rgba(109,40,217,.55);
-      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(124,58,237,.28);
+      background:linear-gradient(145deg,#a78bfa,#7c3aed);
+      border:1px solid rgba(91,33,182,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 2px 8px rgba(124,58,237,.3);
       text-transform:none;
     }
     .portal-session-slot-chip--trial > span{
+      white-space:normal;
+      overflow-wrap:anywhere;
+      text-overflow:unset;
+      text-align:center;
+    }
+    .portal-session-slot-chip--new-client{
+      color:#fff;
+      background:linear-gradient(145deg,#38bdf8,#0284c7);
+      border:1px solid rgba(3,105,161,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 2px 8px rgba(2,132,199,.28);
+      text-transform:none;
+    }
+    .portal-session-slot-chip--new-client > span{
+      white-space:normal;
+      overflow-wrap:anywhere;
+      text-overflow:unset;
+      text-align:center;
+    }
+    .portal-session-slot-chip--move-in{
+      color:#fff;
+      background:linear-gradient(145deg,#38bdf8,#0369a1);
+      border:1px solid rgba(3,105,161,.5);
+      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 2px 8px rgba(3,105,161,.28);
+      text-transform:none;
+    }
+    .portal-session-slot-chip--move-in > span{
       white-space:normal;
       overflow-wrap:anywhere;
       text-overflow:unset;
@@ -6345,11 +6559,17 @@
     }
     .session-card.session-card--review-absent:hover{border-color:rgba(190,65,65,.55)}
     .session-card.session-card--review-cancelled{
-      background:var(--reviewLilacBg);
-      border-color:var(--reviewLilacBorder);
-      box-shadow:0 0 0 1px var(--reviewLilacGlow),0 8px 22px var(--reviewLilacGlow);
+      background:var(--reviewGreenBg);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
     }
-    .session-card.session-card--review-cancelled:hover{border-color:rgba(110,90,150,.48)}
+    .session-card.session-card--review-cancelled:hover{border-color:rgba(21,115,71,.45)}
+    .section-card--today .session-card.session-card--review-cancelled,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-cancelled{
+      background:var(--reviewGreenBg);
+      border-color:var(--reviewGreenBorder);
+      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
+    }
     .session-card.session-card--review-done .session-cell--time,
     .session-card.session-card--review-done .session-line--time,
     .session-card.session-card--review-incident .session-cell--time,
@@ -7144,8 +7364,8 @@
     .week-override-tag--trial{
       color:#fff;
       -webkit-text-fill-color:#fff;
-      background:linear-gradient(145deg,#8b5cf6,#7c3aed);
-      border:1px solid rgba(109,40,217,.55);
+      background:linear-gradient(145deg,#a78bfa,#7c3aed);
+      border:1px solid rgba(91,33,182,.5);
     }
     .week-override-tag--absent{
       color:#fff;
@@ -7222,8 +7442,8 @@
       border-color:rgba(194,24,91,.32);
     }
     .calendar-day--tomorrow.calendar-day--tomorrow-ov-trial{
-      background:linear-gradient(180deg,#f5f0ff 0%,#ede9fe 100%);
-      border-color:rgba(124,58,237,.32);
+      background:linear-gradient(180deg,#f5f3ff 0%,#ede9fe 100%);
+      border-color:rgba(124,58,237,.4);
     }
     .calendar-day--tomorrow.calendar-day--tomorrow-ov-pending{
       background:linear-gradient(180deg,#fff8f0 0%,#fff0e0 100%);
@@ -7335,9 +7555,9 @@
     }
     .calendar-day-tomorrow-middle .tomorrow-trial-pill{
       color:#fff;
-      background:linear-gradient(180deg,#a78bfa,#7c3aed);
-      border:1px solid rgba(91,33,182,.34);
-      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(124,58,237,.22);
+      background:linear-gradient(145deg,#a78bfa,#7c3aed);
+      border:1px solid rgba(91,33,182,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 2px 10px rgba(124,58,237,.28);
     }
     .calendar-day-tomorrow-override .tomorrow-trial-pill > span,
     .calendar-day-tomorrow-middle .tomorrow-trial-pill > span{
@@ -7728,6 +7948,7 @@
       cursor:pointer;
     }
     .term-cal-day.term-feedback-complete[data-term-review-date]:active,
+    .term-cal-day.term-feedback-cancelled[data-term-review-date]:active,
     .term-cal-day.active[data-term-review-date]:active,
     .term-cal-day.term-feedback-late:active{
       transform:scale(.96);
@@ -7743,11 +7964,11 @@
       border-color:rgba(200,110,45,.52);
     }
     .term-cal-day.term-feedback-cancelled{
-      background:var(--reviewLilacBg);
-      border-color:var(--reviewLilacBorder);
-      box-shadow:0 0 0 1px var(--reviewLilacGlow),0 6px 18px var(--reviewLilacGlow);
-      color:#4a3d5e;
-      cursor:default;
+      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
+      border-color:#b71c1c;
+      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
+      color:#7b1212;
+      cursor:pointer;
     }
     .term-cal-day.term-feedback-future-ov-admin{
       background:linear-gradient(180deg,#eef4ff 0%,#e5eeff 100%);
@@ -7979,6 +8200,14 @@
       .term-cal-day.term-cal-day--ov-pulse-shift-removed{box-shadow:0 0 0 2px rgba(185,28,28,.55),0 8px 20px rgba(185,28,28,.28)}
     }
 
+    /* Closed sheets must leave the hit tree. iOS still captures inset:0 +
+       display:flex layers even with opacity:0 / pointer-events:none. */
+    .sheet:not(.open),
+    [id$="Sheet"]:not(.open){
+      display:none !important;
+      pointer-events:none !important;
+      visibility:hidden !important;
+    }
     /* Hojas inferiores: cerradas = invisibles (no solo fuera de pantalla), para que nada “trasluzca” bajo el FAB */
     .sheet{
       position:fixed;
@@ -8001,6 +8230,8 @@
       pointer-events:none;
     }
     .sheet.open{
+      display:flex;
+      flex-direction:column;
       transform:translateY(0);
       opacity:1;
       visibility:visible;
@@ -8011,22 +8242,119 @@
     .sheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:100;
     }
-    /* Pending announcement / safeguarding / alerts: above dashboard; dock stays tappable. */
+    /* Pending announcement / safeguarding / alerts: above dashboard. */
     #announcementsSheet.sheet--fullscreen.sheet--mobile-frame.open,
     #safeguardingFeedbackPolicySheet.sheet--fullscreen.sheet--mobile-frame.open,
     #alertsNotificationsSheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:130;
+    }
+    /* —— Announcement hard gate (booking-portal style): blur dashboard, hide dock, popup only —— */
+    html.announcement-gate-active,
+    body.announcement-gate-active{
+      overflow:hidden !important;
+    }
+    body.announcement-gate-active #appBodyScroll,
+    body.announcement-gate-active .topbar,
+    body.announcement-gate-active .app-main,
+    body.announcement-gate-active .dashboard-shell,
+    body.announcement-gate-active #dashboardRoot,
+    body.announcement-gate-active .session-day-panel{
+      filter:blur(6px);
+      pointer-events:none !important;
+      user-select:none !important;
+    }
+    body.announcement-gate-active .dock-bar,
+    body.dock-context-announcement-lock .dock-bar,
+    body.announcement-gate-active #dockClientQuickActions{
+      display:none !important;
+      pointer-events:none !important;
+      visibility:hidden !important;
+    }
+    body.announcement-gate-active #announcementsSheet.sheet--fullscreen.sheet--mobile-frame.open{
+      z-index:220 !important;
+      background:rgba(23,50,71,.34);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      border:none;
+      box-shadow:none;
+      padding-bottom:max(16px, env(safe-area-inset-bottom, 0px));
+    }
+    body.announcement-gate-active #announcementsSheet .sheet-handle{
+      display:none !important;
+    }
+    body.announcement-gate-active #announcementsSheet .sheet-head{
+      background:transparent;
+      color:#fff;
+      text-shadow:0 1px 2px rgba(15,23,42,.35);
+    }
+    body.announcement-gate-active #announcementsSheet .sheet-head h3,
+    body.announcement-gate-active #announcementsSheet .sheet-head p{
+      color:#fff;
+    }
+    body.announcement-gate-active #announcementsSheet .sheet-body{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding-top:8px;
+    }
+    body.announcement-gate-active #announcementPendingHost{
+      width:min(100%, 420px);
+      margin:0 auto;
+      min-width:0;
+    }
+    body.announcement-gate-active .announcement-lock-card--gate{
+      background:#fff !important;
+      border:1px solid rgba(23,50,71,.12) !important;
+      box-shadow:0 24px 60px rgba(23,50,71,.28);
+      color:var(--ink,#173247);
+    }
+    body.announcement-gate-active .announcement-lock-card--gate .announcement-lock-head strong,
+    body.announcement-gate-active .announcement-lock-card--gate .announcement-message-p,
+    body.announcement-gate-active .announcement-lock-card--gate .announcement-lock-copy,
+    body.announcement-gate-active .announcement-lock-card--gate .announcement-lock-check{
+      color:var(--ink,#173247) !important;
+    }
+    .announcement-gate-progress{
+      margin:0 0 10px;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      color:#7f1d1d;
+      overflow-wrap:break-word;
+    }
+    /* Picker / list rows: ink on blush — never blue-on-red */
+    .announcement-picker-item,
+    .announcement-picker-item .announcement-history-kind,
+    .announcement-picker-item .announcement-history-title-line,
+    .announcement-picker-item .announcement-picker-item__when{
+      color:#7f1d1d !important;
+    }
+    .announcement-picker-item--contract,
+    .announcement-picker-item--contract .announcement-history-kind,
+    .announcement-picker-item--contract .announcement-history-title-line,
+    .announcement-picker-item--contract .announcement-picker-item__when{
+      color:#1e3a5f !important;
     }
     body.dock-context-announcement-lock .dock-bar,
     body:has(#announcementsSheet.sheet.open) .dock-bar,
     body:has(#safeguardingFeedbackPolicySheet.sheet.open) .dock-bar{
       z-index:136;
     }
+    body.announcement-gate-active.dock-context-announcement-lock .dock-bar,
+    body.announcement-gate-active:has(#announcementsSheet.sheet.open) .dock-bar{
+      display:none !important;
+      z-index:auto;
+    }
     /* Quick menu opened from dock while a mandatory sheet was showing — menu must sit above it. */
     body.dock-context-menu #menuSheet.sheet--fullscreen.sheet--mobile-frame.open,
     body.dock-context-announcement-lock.dock-context-menu #menuSheet.sheet--fullscreen.sheet--mobile-frame.open,
     body:has(#announcementsSheet.sheet.open).dock-context-menu #menuSheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:137;
+    }
+    body.announcement-gate-active #menuSheet{
+      display:none !important;
     }
 
     /* Tomorrow / week / term: fullscreen, centred in the viewport */
@@ -9092,9 +9420,9 @@
     }
 
     .sheet-backdrop{
-      position:fixed;inset:0;background:rgba(11,18,32,.34);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:78
+      position:fixed;inset:0;background:rgba(11,18,32,.34);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:78;display:none
     }
-    .sheet-backdrop.open{opacity:1;pointer-events:auto}
+    .sheet-backdrop.open{display:block;opacity:1;pointer-events:auto}
 
     /* Setup (Reminder): modal centrado bajo avisos; fondo borroso; cerrar solo pulsando fuera */
     .sheet-backdrop.sheet-backdrop--focus.open{
@@ -10407,8 +10735,8 @@
       outline:2px solid rgba(200,140,30,.55);
       outline-offset:2px;
     }
-    /* Pending announcement: block dashboard scroll behind sheet; keep dock so staff can open Quick menu / sign out. */
-    body.dock-context-announcement-lock #appBodyScroll{
+    /* Pending announcement: hard gate hides dock (see announcement-gate-active). */
+    body.dock-context-announcement-lock:has(#announcementsSheet.open) #appBodyScroll{
       pointer-events:none;
       user-select:none;
     }
@@ -10631,3 +10959,45 @@
       box-shadow:0 10px 26px rgba(63,63,70,.34) !important;
       transform:none;
     }
+
+/* Venue report embed — keep hub alive (no cold reload when opening venue). */
+html.portal-venue-embed-open,
+html.portal-venue-embed-open body{
+  overflow:hidden !important;
+}
+#portalVenueEmbedWrap{
+  position:fixed;
+  inset:0;
+  z-index:12000;
+  display:flex;
+  flex-direction:column;
+  background:#f4fdf7;
+}
+#portalVenueEmbedWrap[hidden]{ display:none !important; }
+#portalVenueEmbedBar{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  padding-top:max(10px, env(safe-area-inset-top));
+  background:#173247;
+  color:#fff;
+  min-width:0;
+}
+#portalVenueEmbedClose{
+  border:0;
+  background:transparent;
+  color:#fff;
+  font:700 15px/1.2 system-ui,-apple-system,sans-serif;
+  padding:8px 4px;
+  cursor:pointer;
+  min-width:0;
+}
+#portalVenueEmbedFrame{
+  flex:1 1 auto;
+  width:100%;
+  border:0;
+  background:#fff;
+  min-height:0;
+}

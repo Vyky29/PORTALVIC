@@ -34,11 +34,13 @@
   var SCOPE = {
     client: {
       form_type: 'client_registration',
-      title: 'Registration forms',
+      title: 'REGISTERED',
       intro:
-        '<strong>New-client registration</strong> — PDF + photo from Booking Portal leads (not climbing). ' +
-        'Flow: slot → registration → <strong>payment</strong> (finish-booking link sent automatically) → office marks invoice paid → review form/PDF after payment → Parent Portal PIN. ' +
-        '<strong>Mark reviewed</strong> tracks that you opened the form; <strong>Resend finish link</strong> if the parent lost it. ' +
+        'Bucket <strong>REGISTERED</strong>: registration form completed, never been a CLIENT. ' +
+        '<strong>New-client registration</strong> — PDF + photo (FYI). No Accept gate; parents finish funding/payment later via the finish-booking link. ' +
+        '<strong>Place</strong> is live only (REGISTERED only / WAITING / Pay hold / Awaiting Tide / In class / Did not finish). Chosen slot is not listed here - it arrives in the pay-hold / I\'ve paid office alerts. ' +
+        'After bank transfer, parent WhatsApps or emails office (must send the message - tap alone does not change admin) → check Tide → <strong>Mark paid</strong> in Re-enrolments &amp; Bookings → PIN. ' +
+        '<strong>Mark reviewed</strong> = you opened the PDF; <strong>Resend finish link</strong> if they lost it. ' +
         'Climbing forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_climbing_registrations">Climbing registrations</button>. ' +
         'Annual consents: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.',
       empty: 'No client registration forms yet.',
@@ -57,7 +59,7 @@
       intro:
         '<strong>Climbing registration forms</strong> — same pay-first flow as client registration: finish-booking link goes out on submit (no Accept gate). ' +
         'Office gets a FYI email; review the PDF after they pay. ' +
-        'Client / lead forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_participant_documents">Registration forms</button>. ' +
+        'Client / LEADS forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_participant_documents">REGISTERED</button>. ' +
         'Annual consents: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.',
       empty: 'No climbing registration forms yet.',
       emptyFiltered: 'No climbing registration forms matched this participant yet.',
@@ -182,7 +184,7 @@
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Submitted</th><th>Form</th><th>Participant</th><th>Parent</th><th>Requested slot</th><th>Status</th><th>PDF</th><th>Photo</th><th>Review</th>' +
+      '<th>Submitted</th><th>Form</th><th>Place</th><th>Participant</th><th>Parent</th><th>Office review</th><th>PDF</th><th>Photo</th><th>Review</th>' +
       '</tr></thead><tbody>' +
       docs.map(function (d) {
         var formType = String(d.form_type || '').toLowerCase();
@@ -197,6 +199,129 @@
             formLab = 'Place request (existing client)';
           }
         } catch (_lab) {}
+        var placeLab = String(d.place_label || '').trim();
+        var placeTone = String(d.place_tone || 'pend').trim() || 'pend';
+        var placeKind = String(d.place_kind || '').trim();
+        if (placeTone === 'warn') placeTone = 'urg';
+        // In class · trial = dark green (active seat).
+        if (placeKind === 'trial_in_class' || /^in class\s*·\s*trial$/i.test(placeLab)) {
+          placeTone = 'okDark';
+        }
+        if (!placeLab) {
+          placeLab = 'Registered only';
+          placeTone = 'pend';
+        }
+        var placeDetail = String(d.place_detail || '').trim();
+        var placeSec = String(d.place_secondary_label || '').trim();
+        var placeSecTone = String(d.place_secondary_tone || 'info').trim() || 'info';
+        if (placeSecTone === 'warn') placeSecTone = 'urgSoft';
+        var placeChips = Array.isArray(d.place_chips) ? d.place_chips : null;
+        var formChips = Array.isArray(d.form_chips) ? d.form_chips.slice() : null;
+        // Fallback when API has not deployed form_chips yet: split funding · ratio from Place.
+        if (!formChips || !formChips.length) {
+          var placeLow = placeLab.toLowerCase();
+          var fundLab = "";
+          var fundTone = "info";
+          if (/local authority\s*\/\s*nhs|nhs referral|sw_nhs/i.test(placeLow)) {
+            fundLab = "Local Authority / NHS referral";
+          } else if (/direct\s*payments/i.test(placeLow)) {
+            fundLab = "Funded with Direct Payments";
+          } else if (/privately\s*funded|private\s*pay/i.test(placeLow)) {
+            fundLab = "Privately funded";
+            fundTone = "pend";
+          }
+          var ratioFromPlace = placeLab.match(/\b(1to1|2to1|1:1|2:1)\b/i);
+          if (fundLab || ratioFromPlace) {
+            formChips = [];
+            if (fundLab) formChips.push({ label: fundLab, tone: fundTone });
+            if (ratioFromPlace) {
+              formChips.push({
+                label: /2/.test(ratioFromPlace[1]) ? "2to1" : "1to1",
+                tone: "info",
+              });
+            }
+            if (/local authority|direct payment|privately funded/i.test(placeLow)) {
+              placeLab = placeDetail ? "Pending place" : "Registered only";
+              placeTone = "pend";
+              placeSec = "";
+              placeChips = null;
+            }
+          }
+        }
+        // Split trial-expired office tags into 3 chips if API did not send place_chips yet.
+        if (
+          !placeChips &&
+          (placeKind === 'registered_trial_expired_slot_lost' ||
+            placeKind === 'registered_trial_expired_admin_hold' ||
+            /registered\s*·\s*trial expired/i.test(placeLab))
+        ) {
+          placeChips = [
+            { label: 'Registered', tone: 'pend' },
+            { label: 'Trial expired', tone: 'orange' },
+            {
+              label:
+                placeKind === 'registered_trial_expired_admin_hold' ||
+                /slot hold by admin/i.test(placeSec)
+                  ? 'Slot hold by admin'
+                  : placeSec || 'Slot lost',
+              tone:
+                placeKind === 'registered_trial_expired_admin_hold' ||
+                /slot hold by admin/i.test(placeSec)
+                  ? 'urgSoft'
+                  : 'urg',
+            },
+          ];
+          placeSec = '';
+        }
+        var placeTitle = placeDetail
+          ? (placeChips
+              ? placeChips
+                  .map(function (c) {
+                    return c && c.label ? String(c.label) : '';
+                  })
+                  .filter(Boolean)
+                  .join(' + ')
+              : placeLab + (placeSec ? ' + ' + placeSec : '')) +
+              ' — ' +
+              placeDetail
+          : 'Live place status (slot comes from finish-booking / pay alerts, not this form)';
+        function placeChipHtml(label, tone, title) {
+          var t = String(tone || 'pend').trim() || 'pend';
+          if (t === 'warn') t = 'urgSoft';
+          return (
+            '<span class="chip chip--' +
+            esc(t) +
+            '"' +
+            (title ? ' title="' + esc(title) + '"' : '') +
+            ' style="max-width:100%;overflow-wrap:break-word;white-space:normal;line-height:1.25">' +
+            esc(label) +
+            '</span>'
+          );
+        }
+        var formChipsHtml = '';
+        if (formChips && formChips.length) {
+          formChipsHtml = formChips
+            .map(function (c) {
+              if (!c || !c.label) return '';
+              return placeChipHtml(String(c.label), String(c.tone || 'info'), '');
+            })
+            .filter(Boolean)
+            .join('');
+        }
+        var placeChipsHtml = '';
+        if (placeChips && placeChips.length) {
+          placeChipsHtml = placeChips
+            .map(function (c) {
+              if (!c || !c.label) return '';
+              return placeChipHtml(String(c.label), String(c.tone || 'pend'), placeTitle);
+            })
+            .filter(Boolean)
+            .join('');
+        } else {
+          placeChipsHtml =
+            placeChipHtml(placeLab, placeTone, placeTitle) +
+            (placeSec ? placeChipHtml(placeSec, placeSecTone, '') : '');
+        }
         var parentLine = [d.parent_name, d.parent_email].filter(Boolean).join(' · ') || '—';
         var pdfLink = d.pdf_signed_url
           ? '<button type="button" class="btn btn--pri btn--sm portal-pax-doc-open" data-url="' +
@@ -208,26 +333,11 @@
             esc(d.photo_signed_url) +
             '">View photo</button>'
           : '<span class="muted">No photo</span>';
-        var slotLine = '—';
-        try {
-          var br = d.payload_json && d.payload_json.booking_request;
-          if (br && typeof br === 'object') {
-            var bits = [
-              br.service_name || br.service || br.service_id,
-              br.venue,
-              br.day || br.day_label,
-              br.time || br.time_label
-            ].filter(Boolean);
-            slotLine = bits.length ? bits.join(' · ') : br.slot_id || '—';
-          }
-        } catch (_e) {
-          slotLine = '—';
-        }
         var reviewed = String(d.status || '').toLowerCase() === 'reviewed';
         var reviewCell;
         if (!isReg) {
           reviewCell = '<span class="muted" style="font-size:12px">Consents — use Parent consents</span>';
-        } else         if (reviewed) {
+        } else if (reviewed) {
           reviewCell =
             '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
             '<span class="chip chip--ok">Reviewed</span>' +
@@ -257,17 +367,32 @@
           '<td class="muted" style="white-space:nowrap">' +
           esc(formatDate(d.submitted_at)) +
           '</td>' +
-          '<td style="min-width:0;overflow-wrap:break-word">' +
+          '<td style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
+          '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;align-items:flex-start">' +
+          '<span style="overflow-wrap:break-word">' +
           esc(formLab) +
+          '</span>' +
+          (formChipsHtml
+            ? '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;align-items:flex-start">' +
+              formChipsHtml +
+              '</div>'
+            : '') +
+          '</div>' +
           '</td>' +
+          '<td style="min-width:0;max-width:12rem">' +
+          '<div style="display:flex;flex-direction:column;gap:2px;min-width:0">' +
+          placeChipsHtml +
+          (placeDetail
+            ? '<span class="muted" style="font-size:11px;line-height:1.25;overflow-wrap:break-word">' +
+              esc(placeDetail) +
+              '</span>'
+            : '') +
+          '</div></td>' +
           '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
           esc(d.participant_name || '—') +
           '</strong></td>' +
           '<td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
           esc(parentLine) +
-          '</td>' +
-          '<td class="muted" style="min-width:0;max-width:16rem;overflow-wrap:break-word">' +
-          esc(slotLine) +
           '</td>' +
           '<td><span class="chip chip--' +
           (reviewed ? 'ok' : 'pend') +
@@ -426,22 +551,38 @@
         var id = String(btn.getAttribute('data-id') || '').trim();
         var name = String(btn.getAttribute('data-name') || '').trim() || 'this participant';
         if (!id) return;
-        if (!global.confirm('Resend finish-booking link to parent for ' + name + '?')) return;
+        if (!global.confirm(
+          'Resend finish-booking link for ' +
+            name +
+            '?\n\nThis re-holds their Booking Portal seat for 30 minutes and tells them to finish funding/payment now. If the slot is full, nothing is sent.',
+        )) return;
         btn.disabled = true;
         btn.textContent = '…';
         void acceptDocument(id, 'resend_finish_link').then(function (out) {
           btn.disabled = false;
           btn.textContent = 'Resend finish link';
           if (!out || !out.ok) {
-            global.alert('Could not resend (' + ((out && out.error) || 'failed') + ').');
+            global.alert(
+              out && out.error === 'slot_unavailable'
+                ? 'Could not re-hold — that slot looks full. Link was not sent.'
+                : 'Could not resend (' + ((out && out.error) || 'failed') + ').',
+            );
             return;
           }
+          var holdMsg = out.slot_held
+            ? ' · seat held 30′'
+            : out.rehold_error
+              ? ' · no seat re-hold (' + out.rehold_error + ')'
+              : '';
           if (typeof cfg.toast === 'function') {
             cfg.toast(
-              'Finish link resent' + (out.email_ok ? ' · email' : '') + (out.wa_ok ? ' · WhatsApp' : '')
+              'Finish link resent' +
+                holdMsg +
+                (out.email_ok ? ' · email' : '') +
+                (out.wa_ok ? ' · WhatsApp' : ''),
             );
           } else {
-            global.alert('Finish-booking link resent.');
+            global.alert('Finish-booking link resent' + holdMsg + '.');
           }
         });
       });

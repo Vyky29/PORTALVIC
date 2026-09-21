@@ -4,14 +4,26 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { syncParentFormPhotoToParticipantAvatar } from "../_shared/participant_avatar.ts";
 import { ensureInterestedClientFromRegistration } from "../_shared/portal_interested_client.ts";
+import { resolveParentPortalSessionFromToken } from "../_shared/parent_portal_session.ts";
 import { notifyOfficeRegistrationSubmitted } from "../_shared/portal_booking_lead_office_notify.ts";
 import { sendFinishBookingAfterRegistration } from "../_shared/portal_booking_finish.ts";
 import {
   extractBookingRequest,
   loadPendingBookingFromLeadSession,
   loadPendingBookingForEmail,
+  calendarDateIsoInLondon,
+  resolveSessionDateIso,
   type PortalBookingRequest,
 } from "../_shared/portal_booking_context.ts";
+import {
+  loadAdminDayOverridesForBookingWindow,
+  resolveBookableSessionWithAdminOverrides,
+} from "../_shared/portal_booking_admin_day_override.ts";
+import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
+import {
+  notesWithInstructor,
+  pickOpenInstructorsForBand,
+} from "../_shared/portal_booking_reservation_ops.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -25,6 +37,7 @@ const corsHeaders: Record<string, string> = {
 const BUCKET = "participant-documents";
 const MAX_PDF_BYTES = 18 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+const MAX_EHCP_BYTES = 12 * 1024 * 1024;
 const ALLOWED_FORM_TYPES = new Set(["climbing_registration", "client_registration"]);
 
 function json(status: number, body: Record<string, unknown>) {
@@ -55,8 +68,8 @@ function parseDob(raw: string): string | null {
   return `${m[3]}-${mm}-${dd}`;
 }
 
-/** Soft hold window while admin reviews the registration form. */
-const SLOT_HOLD_DAYS = 21;
+/** Booking Portal seat: 30' window to finish pay (same as finish-booking invoice hold). */
+
 
 type BookingRequest = PortalBookingRequest;
 
@@ -240,6 +253,24 @@ Deno.serve(async (req) => {
     return json(400, { ok: false, error: "missing_photo" });
   }
 
+  const ehcpFile = form.get("ehcp_file");
+  let ehcpBlob: File | null = null;
+  if (ehcpFile instanceof File && ehcpFile.size) {
+    if (ehcpFile.size > MAX_EHCP_BYTES) {
+      return json(413, { ok: false, error: "ehcp_too_large" });
+    }
+    const ehcpType = String(ehcpFile.type || "").toLowerCase();
+    const ehcpName = String(ehcpFile.name || "").toLowerCase();
+    const okType =
+      ehcpType.includes("pdf") ||
+      ehcpType.startsWith("image/") ||
+      /\.(pdf|jpe?g|png|webp)$/.test(ehcpName);
+    if (!okType) {
+      return json(400, { ok: false, error: "invalid_ehcp_type" });
+    }
+    ehcpBlob = ehcpFile;
+  }
+
   let payload: Record<string, unknown> = {};
   const payloadRaw = String(form.get("payload") || "").trim();
   if (payloadRaw) {
@@ -265,6 +296,10 @@ Deno.serve(async (req) => {
     String(form.get("booking_lead_session") || req.headers.get("x-booking-lead-session") || ""),
     200,
   );
+  const parentPortalSessionToken = sanitizePart(
+    String(form.get("parent_portal_session") || req.headers.get("x-parent-portal-session") || ""),
+    200,
+  );
 
   const adminEarly = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -279,6 +314,56 @@ Deno.serve(async (req) => {
   }
   if (bookingRequest) {
     payload = { ...payload, booking_request: bookingRequest };
+  }
+
+  // Hard gate: never accept a registration onto a band with no free open seat
+  // (active pay holds keep the instructor until status is released/expired).
+  if (bookingRequest && formType === "client_registration") {
+    const ratioEarly = sanitizePart(
+      String(payload.support_regulated || bookingRequest.support_regulated || ""),
+      20,
+    )
+      .toLowerCase()
+      .replace(/\s+/g, "");
+    const seatsNeededEarly = ratioEarly === "2to1" || ratioEarly === "2:1" ? 2 : 1;
+    try {
+      const freeInstructors = await pickOpenInstructorsForBand(
+        adminEarly,
+        {
+          slotId: bookingRequest.slot_id,
+          venue: bookingRequest.venue,
+          day: bookingRequest.day,
+          timeLabel: bookingRequest.time,
+        },
+        seatsNeededEarly,
+      );
+      if (freeInstructors.length < seatsNeededEarly) {
+        return json(409, { ok: false, error: "slot_unavailable" });
+      }
+    } catch (e) {
+      console.warn("[portal-parent-form-submit] seat check", e);
+      return json(409, { ok: false, error: "slot_unavailable" });
+    }
+  }
+
+  // Prefer structured SW fields; keep combined contact for older readers.
+  const swName = sanitizePart(String(payload.social_worker_name || ""), 200);
+  const swEmail = sanitizePart(String(payload.social_worker_email || ""), 200).toLowerCase();
+  if (swName || swEmail) {
+    payload = {
+      ...payload,
+      social_worker_name: swName || null,
+      social_worker_email: swEmail || null,
+      social_worker_contact:
+        sanitizePart(String(payload.social_worker_contact || ""), 400) ||
+        [swName, swEmail].filter(Boolean).join(" · "),
+    };
+  }
+
+  const ehcpAnswer = sanitizePart(String(payload.ehcp || ""), 40).toLowerCase();
+  const ehcpNeedsFile = ehcpAnswer === "yes" || ehcpAnswer === "in progress";
+  if (formType === "client_registration" && ehcpNeedsFile && !ehcpBlob) {
+    return json(400, { ok: false, error: "missing_ehcp_file" });
   }
 
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -315,6 +400,45 @@ Deno.serve(async (req) => {
     }
   }
 
+  let ehcpPath: string | null = null;
+  if (ehcpBlob) {
+    const ehcpType = String(ehcpBlob.type || "").toLowerCase();
+    const ehcpName = String(ehcpBlob.name || "").toLowerCase();
+    let ehcpExt = "pdf";
+    if (ehcpType.includes("png") || ehcpName.endsWith(".png")) ehcpExt = "png";
+    else if (ehcpType.includes("webp") || ehcpName.endsWith(".webp")) ehcpExt = "webp";
+    else if (ehcpType.includes("jpeg") || ehcpType.includes("jpg") || /\.jpe?g$/.test(ehcpName)) {
+      ehcpExt = "jpg";
+    } else if (ehcpType.includes("pdf") || ehcpName.endsWith(".pdf")) ehcpExt = "pdf";
+    ehcpPath = `${prefix}/ehcp.${ehcpExt}`;
+    const ehcpBytes = new Uint8Array(await ehcpBlob.arrayBuffer());
+    const contentType =
+      ehcpBlob.type ||
+      (ehcpExt === "pdf"
+        ? "application/pdf"
+        : ehcpExt === "png"
+        ? "image/png"
+        : ehcpExt === "webp"
+        ? "image/webp"
+        : "image/jpeg");
+    const { error: ehcpUpErr } = await admin.storage.from(BUCKET).upload(ehcpPath, ehcpBytes, {
+      contentType,
+      upsert: false,
+    });
+    if (ehcpUpErr) {
+      console.error("[portal-parent-form-submit] ehcp upload", ehcpUpErr.message);
+      const removePaths = [pdfPath];
+      if (photoPath) removePaths.push(photoPath);
+      await admin.storage.from(BUCKET).remove(removePaths);
+      return json(500, { ok: false, error: "ehcp_upload_failed" });
+    }
+    payload = {
+      ...payload,
+      ehcp_storage_path: ehcpPath,
+      ehcp_filename: sanitizePart(String(ehcpBlob.name || `ehcp.${ehcpExt}`), 200),
+    };
+  }
+
   const { data: row, error: insErr } = await admin
     .from("portal_participant_documents")
     .insert({
@@ -336,20 +460,26 @@ Deno.serve(async (req) => {
     console.error("[portal-parent-form-submit] insert", insErr?.message);
     const removePaths = [pdfPath];
     if (photoPath) removePaths.push(photoPath);
+    if (ehcpPath) removePaths.push(ehcpPath);
     await admin.storage.from(BUCKET).remove(removePaths);
     return json(500, { ok: false, error: "save_failed" });
   }
 
   /* Every completed Client Registration → Interested client record (not waitlist-only). */
+  let ensuredContactId: string | null = null;
   if (formType === "client_registration") {
     try {
       const parentBits = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
-      await ensureInterestedClientFromRegistration(admin, {
+      const portalSess = parentPortalSessionToken
+        ? await resolveParentPortalSessionFromToken(admin, parentPortalSessionToken)
+        : null;
+      const ensured = await ensureInterestedClientFromRegistration(admin, {
         participantName,
         participantDob,
         parentName,
         parentEmail,
         parentPhone,
+        attachParentPersonId: portalSess?.parent_person_id || null,
         addressLine1: sanitizePart(String(parentBits.parent_address || parentBits.address || ""), 200) || null,
         postcode: sanitizePart(String(parentBits.parent_postcode || parentBits.postcode || ""), 20) || null,
         registrationDate: String(row.submitted_at || "").slice(0, 10) || null,
@@ -359,11 +489,22 @@ Deno.serve(async (req) => {
             : "Requested booking\tNone (registration only — Interested in our services)",
           parentBits.ehcp ? `EHCP\t${sanitizePart(String(parentBits.ehcp), 40)}` : "",
           parentBits.ehcp_details ? `EHCP details\t${sanitizePart(String(parentBits.ehcp_details), 400)}` : "",
+          parentBits.ehcp_storage_path ? `EHCP file\tuploaded` : "",
+          parentBits.social_worker_name
+            ? `Social worker\t${sanitizePart(String(parentBits.social_worker_name), 120)}`
+            : "",
+          parentBits.social_worker_email
+            ? `Social worker email\t${sanitizePart(String(parentBits.social_worker_email), 120)}`
+            : "",
+          parentBits.support_regulated
+            ? `Support when regulated\t${sanitizePart(String(parentBits.support_regulated), 40)}`
+            : "",
           parentBits.motivators ? `Motivators\t${sanitizePart(String(parentBits.motivators), 400)}` : "",
           parentBits.dislikes ? `Dislikes\t${sanitizePart(String(parentBits.dislikes), 400)}` : "",
           `Registration document\t${row.id}`,
         ].filter(Boolean),
       });
+      if (ensured && ensured.contactId) ensuredContactId = String(ensured.contactId);
     } catch (ensureErr) {
       console.warn("[portal-parent-form-submit] ensure interested client", ensureErr);
     }
@@ -377,6 +518,7 @@ Deno.serve(async (req) => {
         participantDob,
         photoBytes,
         photoBlob?.type || "image/jpeg",
+        ensuredContactId,
       );
     } catch (syncErr) {
       console.warn("[portal-parent-form-submit] avatar sync", syncErr);
@@ -404,7 +546,7 @@ Deno.serve(async (req) => {
   let reservationId: string | null = null;
   if (bookingRequest && formType === "client_registration") {
     try {
-      const holdExpires = new Date(Date.now() + SLOT_HOLD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      const holdExpires = bookingPayHoldExpiresAt();
       const tokenHash = bookingSessionToken ? await sha256Hex(bookingSessionToken) : null;
 
       // One pending hold per email+slot — refresh if they re-submit.
@@ -422,6 +564,57 @@ Deno.serve(async (req) => {
           .ilike("parent_email", parentEmail);
       }
 
+      const resolvedWithOv = resolveBookableSessionWithAdminOverrides(
+        {
+          dateIso: bookingRequest.date_iso,
+          day: bookingRequest.day,
+          time: bookingRequest.time,
+          venue: bookingRequest.venue,
+          asOfIso: calendarDateIsoInLondon(),
+          bookingKind: bookingRequest.booking_kind,
+        },
+        await loadAdminDayOverridesForBookingWindow(admin, {
+          fromIso: calendarDateIsoInLondon(),
+          daysAhead: 28,
+        }),
+      );
+      const resolvedDateIso =
+        resolvedWithOv.iso ||
+        resolveSessionDateIso({
+          dateIso: bookingRequest.date_iso,
+          day: bookingRequest.day,
+          time: bookingRequest.time,
+          asOfIso: calendarDateIsoInLondon(),
+          bookingKind: bookingRequest.booking_kind,
+        });
+
+      const ratio = sanitizePart(
+        String(payload.support_regulated || bookingRequest.support_regulated || ""),
+        20,
+      ).toLowerCase().replace(/\s+/g, "");
+      const seatsNeeded = ratio === "2to1" || ratio === "2:1" ? 2 : 1;
+      let instructorStamp: string | null = null;
+      try {
+        const picked = await pickOpenInstructorsForBand(
+          admin,
+          {
+            slotId: bookingRequest.slot_id,
+            venue: bookingRequest.venue,
+            day: bookingRequest.day,
+            timeLabel: bookingRequest.time,
+          },
+          seatsNeeded,
+        );
+        instructorStamp = picked[0] || null;
+        if (!instructorStamp || picked.length < seatsNeeded) {
+          console.warn("[portal-parent-form-submit] slot_unavailable after race");
+          return json(409, { ok: false, error: "slot_unavailable" });
+        }
+      } catch (e) {
+        console.warn("[portal-parent-form-submit] pick instructor", e);
+        return json(409, { ok: false, error: "slot_unavailable" });
+      }
+
       const { data: holdRow, error: holdErr } = await admin
         .from("portal_booking_slot_reservations")
         .insert({
@@ -435,7 +628,7 @@ Deno.serve(async (req) => {
           booking_mode: bookingRequest.booking_mode,
           week_id: bookingRequest.week_id,
           block_id: bookingRequest.block_id,
-          date_iso: bookingRequest.date_iso,
+          date_iso: resolvedDateIso || bookingRequest.date_iso,
           document_id: row.id,
           participant_name: participantName,
           parent_name: parentName,
@@ -444,16 +637,19 @@ Deno.serve(async (req) => {
           booking_session_token_hash: tokenHash,
           status: "pending",
           hold_expires_at: holdExpires,
-          notes:
-            bookingRequest.booking_kind === "trial"
-              ? "booking_kind=trial"
-              : "booking_kind=term",
+          notes: notesWithInstructor(null, instructorStamp, [
+            bookingRequest.booking_kind === "trial" ? "booking_kind=trial" : "booking_kind=term",
+            "pay_hold_30m",
+            ratio ? `support_regulated=${ratio}` : "",
+            `seats_needed=${seatsNeeded}`,
+          ]),
         })
         .select("id")
         .single();
 
       if (holdErr) {
         console.warn("[portal-parent-form-submit] slot reservation", holdErr.message);
+        return json(409, { ok: false, error: "slot_unavailable" });
       } else {
         reservationId = holdRow?.id ?? null;
         if (parentEmail) {

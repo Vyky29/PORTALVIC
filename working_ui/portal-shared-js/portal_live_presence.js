@@ -1,9 +1,14 @@
 /**
  * Supabase Realtime Presence — who is online on admin / staff / lead / onboarding shells.
  * Admin mounts `#portalLivePresenceBar`; other dashboards only publish presence.
- * Admin bar merges Realtime with DB heartbeats (visit sessions + live GPS).
+ * Admin bar merges Realtime with DB heartbeats (visit sessions + live GPS),
+ * plus Parent Portal names and Booking Portal live visitor count.
  */
-import { getSharedSupabaseClient } from "./supabase-client.js";
+import {
+  getSharedSupabaseClient,
+  getSupabaseAnonKey,
+  getSupabaseFunctionUrl,
+} from "./supabase-client.js";
 import {
   STAFF_USERNAME_TO_EMAIL,
   PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY,
@@ -309,10 +314,10 @@ async function subscribeAndTrack(supabase, payload) {
           resolve(false);
           return;
         }
-        if (typeof globalThis.portalWarnUnlessOffline === "function") {
+        if (typeof globalThis.portalRealtimeLogChannelIssue === "function") {
+          globalThis.portalRealtimeLogChannelIssue("[portal] presence channel", status, err);
+        } else if (typeof globalThis.portalWarnUnlessOffline === "function") {
           globalThis.portalWarnUnlessOffline("[portal] presence channel", status, err);
-        } else if (typeof navigator === "undefined" || navigator.onLine !== false) {
-          console.warn("[portal] presence channel", status, err || "");
         }
         resolve(false);
       }
@@ -461,13 +466,124 @@ function presencePillsHtml(entries, emptyLabel) {
     return '<span class="sf-status-bar__chip sf-status-bar__chip--muted">' + escHtml(emptyLabel) + "</span>";
   }
   return entries
-    .map(
-      (e) =>
-        '<span class="sf-status-bar__chip">' +
+    .map((e) => {
+      const title = e.title ? ' title="' + escHtml(e.title) + '"' : "";
+      return (
+        '<span class="sf-status-bar__chip"' +
+        title +
+        ">" +
         escHtml(e.name) +
         "</span>"
-    )
+      );
+    })
     .join("");
+}
+
+function parentLiveChips(online) {
+  const rows = Array.isArray(online) ? online : [];
+  /** @type {{ name: string, title?: string }[]} */
+  const out = [];
+  const seen = new Set();
+  for (const p of rows) {
+    if (!p || typeof p !== "object") continue;
+    const raw = String(p.parent_name || "").trim();
+    const kids = Array.isArray(p.children)
+      ? p.children.map((c) => String(c || "").trim()).filter(Boolean)
+      : [];
+    let name = portalPresenceFirstName(raw, "");
+    if (!name || /^parent$/i.test(name)) {
+      name = portalPresenceFirstName(kids[0] || "", "") || "Parent";
+    }
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const titleBits = [raw && !/^parent$/i.test(raw) ? raw : "", kids.join(", ")].filter(
+      Boolean,
+    );
+    out.push({ name, title: titleBits.join(" · ") || name });
+  }
+  return out;
+}
+
+async function adminAccessToken() {
+  try {
+    const client = getSharedSupabaseClient();
+    const { data } = await client.auth.getSession();
+    return String(data?.session?.access_token || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+async function fetchAdminEdgeJson(functionName) {
+  const token = await adminAccessToken();
+  const url = getSupabaseFunctionUrl(functionName);
+  if (!token || !url) return null;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+        apikey: getSupabaseAnonKey(),
+      },
+      body: "{}",
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || !body || body.ok !== true) return null;
+    return body;
+  } catch {
+    return null;
+  }
+}
+
+/** @returns {Promise<{ parents: { name: string, title?: string }[], bookingCount: number }>} */
+async function fetchPublicPortalPresence() {
+  const [parentBody, bookingBody] = await Promise.all([
+    fetchAdminEdgeJson("portal-ceo-parent-portal-presence"),
+    fetchAdminEdgeJson("portal-ceo-booking-service-presence"),
+  ]);
+  const parents = parentLiveChips(parentBody && parentBody.online);
+  const bookingCount = Number(
+    (bookingBody && bookingBody.summary && bookingBody.summary.online_now) ||
+      (bookingBody && Array.isArray(bookingBody.online) ? bookingBody.online.length : 0) ||
+      0,
+  );
+  return {
+    parents,
+    bookingCount: Number.isFinite(bookingCount) ? Math.max(0, bookingCount) : 0,
+  };
+}
+
+function publicPresenceLaneHtml(kind, count, chipsHtml, title) {
+  const countLabel = String(count || 0);
+  const tagClass =
+    kind === "parent"
+      ? "sf-status-bar__tag sf-status-bar__tag--parent"
+      : kind === "booking"
+        ? "sf-status-bar__tag sf-status-bar__tag--booking"
+        : "sf-status-bar__tag";
+  const label = kind === "parent" ? "Parent" : kind === "booking" ? "Booking" : "Online";
+  const values =
+    chipsHtml != null
+      ? '<div class="sf-status-bar__values">' + chipsHtml + "</div>"
+      : "";
+  return (
+    '<div class="sf-status-bar__lane sf-status-bar__lane--' +
+    escHtml(kind) +
+    '" title="' +
+    escHtml(title) +
+    '">' +
+    '<span class="' +
+    tagClass +
+    '">' +
+    escHtml(label) +
+    " · " +
+    escHtml(countLabel) +
+    "</span>" +
+    values +
+    "</div>"
+  );
 }
 
 function presenceSelfUserId() {
@@ -506,27 +622,47 @@ export function mountPortalLivePresenceBar(hostId = "portalLivePresenceBar") {
         connected: [],
       };
     const supplement = window.__PORTAL_PRESENCE_SUPPLEMENT__ || { connected: [] };
+    const pub =
+      window.__PORTAL_PUBLIC_PRESENCE__ || { parents: [], bookingCount: 0 };
     const merged = portalPresenceMergeSupplement(rt, supplement);
     const g = presenceFilterSelf(merged);
     const list = g.connected || [];
+    const parents = Array.isArray(pub.parents) ? pub.parents : [];
+    const bookingCount = Number(pub.bookingCount) || 0;
     const countLabel = list.length ? String(list.length) : "0";
     host.hidden = false;
     host.innerHTML =
       '<div class="sf-status-bar">' +
-      '<div class="sf-status-bar__main">' +
-      '<span class="sf-status-bar__tag" title="Connected now">Online · ' +
+      '<div class="sf-status-bar__lane sf-status-bar__lane--staff">' +
+      '<span class="sf-status-bar__tag" title="Staff dashboards connected now">Staff · ' +
       escHtml(countLabel) +
       "</span>" +
       '<div class="sf-status-bar__values">' +
       presencePillsHtml(list, "Nobody else online") +
       "</div></div>" +
+      publicPresenceLaneHtml(
+        "parent",
+        parents.length,
+        presencePillsHtml(parents, "Nobody"),
+        "Parents signed in to Parent Portal in the last 5 minutes",
+      ) +
+      publicPresenceLaneHtml(
+        "booking",
+        bookingCount,
+        null,
+        "Visitors on Booking Portal in the last 5 minutes",
+      ) +
       '<a class="sf-status-bar__guide" href="/OTROS/admin_architecture_guide.html" target="_blank" rel="noopener noreferrer">Guide</a>' +
       "</div>";
   }
 
   async function pollAdminSupplement() {
-    const supplement = await fetchAdminPresenceSupplement();
+    const [supplement, publicPresence] = await Promise.all([
+      fetchAdminPresenceSupplement(),
+      fetchPublicPortalPresence(),
+    ]);
     window.__PORTAL_PRESENCE_SUPPLEMENT__ = supplement;
+    window.__PORTAL_PUBLIC_PRESENCE__ = publicPresence;
     renderFromSources();
   }
 

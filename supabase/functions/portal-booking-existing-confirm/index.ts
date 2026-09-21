@@ -21,9 +21,32 @@ import { notifyOfficeRegistrationSubmitted } from "../_shared/portal_booking_lea
 import { sendFinishBookingAfterRegistration } from "../_shared/portal_booking_finish.ts";
 import { saveParticipantAvatarWithArchive } from "../_shared/participant_avatar.ts";
 
-const SLOT_HOLD_DAYS = 21;
+import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
+import {
+  notesWithInstructor,
+  pickOpenInstructorsForBand,
+} from "../_shared/portal_booking_reservation_ops.ts";
+import {
+  calendarDateIsoInLondon,
+  resolveSessionDateIso,
+} from "../_shared/portal_booking_context.ts";
+import {
+  loadAdminDayOverridesForBookingWindow,
+  resolveBookableSessionWithAdminOverrides,
+} from "../_shared/portal_booking_admin_day_override.ts";
+
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const BUCKET = "participant-documents";
+
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(label || "timeout")), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -149,29 +172,55 @@ async function childrenForLeadEmail(
   email: string,
   mobile: string,
 ) {
+  const contactSelect =
+    "contact_id, parent_person_id, child_display, child_first_name, child_last_name, parent_display, email, mobile, dob_iso, in_class";
   const en = emailNorm(email);
   const phone = phoneLast10(mobile);
-  let rows: Array<Record<string, unknown>> = [];
+  let seed: Array<Record<string, unknown>> = [];
   if (en) {
     const { data } = await admin
       .from("portal_parent_contacts")
-      .select(
-        "contact_id, child_display, child_first_name, child_last_name, parent_display, email, mobile, dob_iso, in_class",
-      )
+      .select(contactSelect)
       .eq("email_norm", en)
       .limit(20);
-    rows = data || [];
+    seed = data || [];
   }
-  if (!rows.length && phone.length >= 10) {
+  if (phone.length >= 10) {
     const { data } = await admin
       .from("portal_parent_contacts")
-      .select(
-        "contact_id, child_display, child_first_name, child_last_name, parent_display, email, mobile, dob_iso, in_class",
-      )
+      .select(contactSelect)
       .eq("phone_lookup", phone)
       .limit(20);
-    rows = data || [];
+    const have = new Set(seed.map((r) => String(r.contact_id || "")));
+    for (const row of data || []) {
+      const cid = String(row.contact_id || "");
+      if (cid && !have.has(cid)) {
+        seed.push(row);
+        have.add(cid);
+      }
+    }
   }
+
+  const parentIds = [
+    ...new Set(seed.map((r) => String(r.parent_person_id || "").trim()).filter(Boolean)),
+  ];
+  let rows = seed;
+  if (parentIds.length) {
+    const { data: family } = await admin
+      .from("portal_parent_contacts")
+      .select(contactSelect)
+      .in("parent_person_id", parentIds)
+      .limit(40);
+    if (family?.length) rows = family;
+  }
+
+  const byContact = new Map<string, Record<string, unknown>>();
+  for (const r of rows) {
+    const cid = String(r.contact_id || "").trim();
+    if (cid && !byContact.has(cid)) byContact.set(cid, r);
+  }
+  rows = [...byContact.values()];
+
   const ids = rows.map((r) => String(r.contact_id || "")).filter(Boolean);
   const { data: parts } = ids.length
     ? await admin
@@ -347,16 +396,66 @@ Deno.serve(async (req) => {
 
   if (photoBytes) {
     try {
-      await saveParticipantAvatarWithArchive(
-        admin,
-        child.contact_id,
-        photoBytes,
-        photoContentType,
-        "booking_existing_confirm",
+      await withTimeout(
+        saveParticipantAvatarWithArchive(
+          admin,
+          child.contact_id,
+          photoBytes,
+          photoContentType,
+          "booking_existing_confirm",
+        ),
+        12000,
+        "avatar_timeout",
       );
     } catch (avatarErr) {
       console.warn("[portal-booking-existing-confirm] avatar", avatarErr);
     }
+  }
+
+  const resolvedWithOv = resolveBookableSessionWithAdminOverrides(
+    {
+      dateIso: bookingRequest.date_iso,
+      day: bookingRequest.day,
+      time: bookingRequest.time,
+      venue: bookingRequest.venue,
+      asOfIso: calendarDateIsoInLondon(),
+      bookingKind: bookingRequest.booking_kind,
+    },
+    await loadAdminDayOverridesForBookingWindow(admin, {
+      fromIso: calendarDateIsoInLondon(),
+      daysAhead: 28,
+    }),
+  );
+  const resolvedDateIso =
+    resolvedWithOv.iso ||
+    resolveSessionDateIso({
+      dateIso: bookingRequest.date_iso,
+      day: bookingRequest.day,
+      time: bookingRequest.time,
+      asOfIso: calendarDateIsoInLondon(),
+      bookingKind: bookingRequest.booking_kind,
+    });
+
+  const seatsNeeded = 1;
+  let instructorStamp: string | null = null;
+  try {
+    const picked = await pickOpenInstructorsForBand(
+      admin,
+      {
+        slotId: bookingRequest.slot_id,
+        venue: bookingRequest.venue,
+        day: bookingRequest.day,
+        timeLabel: bookingRequest.time,
+      },
+      seatsNeeded,
+    );
+    instructorStamp = picked[0] || null;
+    if (!instructorStamp) {
+      return bookingLeadJson({ ok: false, error: "slot_unavailable" }, 409);
+    }
+  } catch (e) {
+    console.warn("[portal-booking-existing-confirm] seat check", e);
+    return bookingLeadJson({ ok: false, error: "slot_unavailable" }, 409);
   }
 
   const pdfBytes = buildStubPdf([
@@ -380,6 +479,7 @@ Deno.serve(async (req) => {
     ]
       .filter(Boolean)
       .join(" · ")}`,
+    `First session date: ${resolvedDateIso || bookingRequest.date_iso || "—"}`,
     `Slot id: ${bookingRequest.slot_id}`,
     "",
     photoBytes ? "Photo: updated with this request." : "Photo: already on file.",
@@ -438,7 +538,7 @@ Deno.serve(async (req) => {
     return bookingLeadJson({ ok: false, error: "save_failed" }, 500);
   }
 
-  const holdExpires = new Date(Date.now() + SLOT_HOLD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const holdExpires = bookingPayHoldExpiresAt();
   const tokenHash = await sha256Hex(token);
   const parentEmail = clean(lead.email, 200);
   if (parentEmail) {
@@ -468,7 +568,7 @@ Deno.serve(async (req) => {
       booking_mode: bookingRequest.booking_mode,
       week_id: bookingRequest.week_id,
       block_id: bookingRequest.block_id,
-      date_iso: bookingRequest.date_iso,
+      date_iso: resolvedDateIso || bookingRequest.date_iso,
       document_id: docRow.id,
       participant_name: child.display_name,
       parent_name: clean(lead.parent_name, 120) || null,
@@ -477,15 +577,21 @@ Deno.serve(async (req) => {
       booking_session_token_hash: tokenHash,
       status: "pending",
       hold_expires_at: holdExpires,
-      notes:
-        (bookingRequest.booking_kind === "trial"
-          ? "booking_kind=trial|"
-          : "booking_kind=term|") + "existing_client_confirm",
+      notes: notesWithInstructor(
+        null,
+        instructorStamp,
+        [
+          bookingRequest.booking_kind === "trial" ? "booking_kind=trial" : "booking_kind=term",
+          "existing_client_confirm",
+          "pay_hold_30m",
+        ],
+      ),
     })
     .select("id")
     .single();
   if (holdErr) {
     console.warn("[portal-booking-existing-confirm] hold", holdErr.message);
+    return bookingLeadJson({ ok: false, error: "slot_unavailable" }, 409);
   }
 
   const nowIso = new Date().toISOString();
@@ -511,23 +617,21 @@ Deno.serve(async (req) => {
     .filter(Boolean)
     .join(" · ");
 
-  try {
-    await notifyOfficeRegistrationSubmitted({
-      documentId: String(docRow.id),
-      formType: "client_registration",
-      participantName: child.display_name,
-      parentName: clean(lead.parent_name, 120) || null,
-      parentEmail: parentEmail || null,
-      parentPhone: clean(lead.mobile, 40) || null,
-      leadId: String(lead.id),
-      slotHeld: !!holdRow?.id,
-      bookingSummary,
-      pdfBytes,
-      pdfFilename: `ExistingClient_${safeName}.pdf`,
-    });
-  } catch (notifyErr) {
+  const officeNotify = notifyOfficeRegistrationSubmitted({
+    documentId: String(docRow.id),
+    formType: "client_registration",
+    participantName: child.display_name,
+    parentName: clean(lead.parent_name, 120) || null,
+    parentEmail: parentEmail || null,
+    parentPhone: clean(lead.mobile, 40) || null,
+    leadId: String(lead.id),
+    slotHeld: !!holdRow?.id,
+    bookingSummary,
+    pdfBytes,
+    pdfFilename: `ExistingClient_${safeName}.pdf`,
+  }).catch((notifyErr) => {
     console.warn("[portal-booking-existing-confirm] notify", notifyErr);
-  }
+  });
 
   let finishUrl: string | null = null;
   let finishUrlSent = false;
@@ -548,6 +652,12 @@ Deno.serve(async (req) => {
     finishUrlSent = sent.finish_url_sent;
   } catch (finishErr) {
     console.warn("[portal-booking-existing-confirm] finish link", finishErr);
+  }
+
+  try {
+    await withTimeout(officeNotify, 8000, "office_notify_timeout");
+  } catch (notifyWaitErr) {
+    console.warn("[portal-booking-existing-confirm] notify wait", notifyWaitErr);
   }
 
   return bookingLeadJson({

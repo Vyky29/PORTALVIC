@@ -1,6 +1,6 @@
 /**
- * Mandatory on-site location permission (staff/lead dashboards).
- * UI lives in alertsNotificationsSheet; tracker starts after grant.
+ * Portal feature permissions (alerts, camera, optional mic).
+ * Staff live-map GPS is retired — location is not required for setup.
  */
 
 /** @type {'unknown' | 'granted' | 'denied' | 'prompt' | 'unsupported' | 'insecure'} */
@@ -746,12 +746,6 @@ export function portalVoiceTypingOfferedForStaff() {
 }
 
 export function portalLocationRequiredForSetup() {
-  try {
-    if (typeof window !== "undefined" && typeof window.portalLiveMapLocationRequiredForWorker === "function") {
-      const box = window.__PORTAL_SUPABASE__ || {};
-      return !!window.portalLiveMapLocationRequiredForWorker(box.staff_profile, box.session?.user);
-    }
-  } catch (_) {}
   return false;
 }
 

@@ -44,25 +44,6 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   display: none !important;
 }
 
-/* Full-width help under the title (left-aligned, wraps across the page) */
-.portal-pnlog-info {
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  width: 100%;
-  max-width: none;
-  box-sizing: border-box;
-  text-align: left;
-  font-size: 13px;
-  line-height: 1.45;
-  color: #334155;
-  border-radius: 12px;
-  border: 1px solid rgba(45, 132, 179, 0.22);
-  background: #f4f9fc;
-  min-width: 0;
-  overflow-wrap: break-word;
-  flex: 0 0 auto;
-}
-
 .portal-pnlog-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -236,6 +217,34 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   font-weight: 800;
 }
 
+.portal-pnlog-conv--lead {
+  background: rgba(217, 119, 6, 0.06);
+  box-shadow: inset 3px 0 0 #d97706;
+}
+
+.portal-pnlog-conv--lead:hover {
+  background: rgba(217, 119, 6, 0.11);
+}
+
+.portal-pnlog-conv--lead.is-selected {
+  background: rgba(217, 119, 6, 0.14);
+  box-shadow: inset 3px 0 0 #d97706;
+}
+
+.portal-pnlog-conv--former {
+  background: rgba(100, 116, 139, 0.05);
+  box-shadow: inset 3px 0 0 #94a3b8;
+}
+
+.portal-pnlog-conv__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .portal-pnlog-conv__top {
   display: flex;
   width: 100%;
@@ -309,6 +318,10 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 }
 
 .portal-pnlog-pane-head__who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   font-weight: 800;
   font-size: 15px;
   overflow-wrap: anywhere;
@@ -528,6 +541,64 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   outline-offset: 2px;
 }
 
+.portal-pnlog-bubble--flash {
+  outline: 2px solid #2d84b3;
+  outline-offset: 2px;
+}
+
+.portal-pnlog-quote {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0 0 6px;
+  padding: 6px 8px;
+  border: 0;
+  border-left: 3px solid rgba(15, 61, 84, 0.45);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.06);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.portal-pnlog-bubble--in .portal-pnlog-quote {
+  border-left-color: rgba(138, 112, 0, 0.7);
+  background: rgba(92, 74, 0, 0.08);
+}
+
+.portal-pnlog-bubble--out .portal-pnlog-quote {
+  border-left-color: rgba(26, 95, 130, 0.65);
+  background: rgba(15, 61, 84, 0.08);
+}
+
+.portal-pnlog-quote__who {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-pnlog-quote__text {
+  font-size: 12px;
+  line-height: 1.35;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .portal-pnlog-chip--edited {
   background: rgba(15, 23, 42, 0.08);
 }
@@ -555,43 +626,56 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 }
 
 .portal-pnlog-composer__tpl-banner {
-  margin: 0 0 6px;
-  padding: 6px 9px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0 0 4px;
+  padding: 5px 8px;
   border-radius: 10px;
   background: #faf5ff;
   border: 1px solid #d8b4fe;
   color: #581c87;
   font-size: 11px;
-  line-height: 1.35;
+  line-height: 1.3;
   overflow-wrap: anywhere;
   min-width: 0;
+}
+
+.portal-pnlog-composer__tpl-banner-txt {
+  flex: 1 1 220px;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .portal-pnlog-composer__tpl-pick {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 8px;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
   min-width: 0;
+  flex: 0 1 auto;
 }
 
 .portal-pnlog-composer__tpl-opt {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
   max-width: 100%;
   margin: 0;
-  padding: 6px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
   border: 1px solid #c4b5fd;
   background: #fff;
   color: #5b21b6;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
   cursor: pointer;
   overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .portal-pnlog-composer__tpl-opt input {
@@ -634,10 +718,10 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 .portal-pnlog-composer__tpl-shell {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 0 0 6px;
-  padding: 8px;
-  border-radius: 12px;
+  gap: 2px;
+  margin: 0 0 4px;
+  padding: 6px 8px;
+  border-radius: 10px;
   border: 1px solid #c4b5fd;
   background: linear-gradient(180deg, #faf5ff 0%, #fff 55%);
   min-width: 0;
@@ -653,7 +737,7 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 
 .portal-pnlog-composer__tpl-mid-lab {
   margin: 0;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -666,60 +750,36 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 }
 
 .portal-pnlog-composer__tpl-len {
-  margin: 0 0 8px;
-  font-size: 12px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.portal-pnlog-composer__bar--tpl {
+  align-items: center;
+  gap: 6px;
+  margin-top: 0;
+}
+
+.portal-pnlog-composer__bar--tpl .portal-pnlog-composer__tpl-len {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.portal-pnlog-composer__bar--tpl .portal-pnlog-composer__status:empty {
+  display: none;
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.portal-pnlog-composer__bar--tpl .portal-pnlog-composer__status:not(:empty) {
+  flex: 1 1 100%;
+  order: -1;
 }
 
 .portal-pnlog-composer__tpl-len.is-over {
   color: #b91c1c;
   font-weight: 700;
-}
-
-.portal-pnlog-composer__tpl-preview {
-  margin: 0 0 6px;
-  padding: 6px 9px;
-  border-radius: 10px;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  min-width: 0;
-  max-height: 5.5rem;
-  overflow: auto;
-}
-
-.portal-pnlog-composer__tpl-preview-lab {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #64748b;
-  margin: 0 0 4px;
-}
-
-.portal-pnlog-composer__tpl-preview-body {
-  font-size: 13px;
-  line-height: 1.45;
-  color: #0f172a;
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-
-.portal-pnlog-composer__tpl-var {
-  display: inline-block;
-  font-weight: 700;
-  color: #6d28d9;
-  background: #ede9fe;
-  border-radius: 4px;
-  padding: 2px 4px;
-  max-width: 100%;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-
-.portal-pnlog-composer__tpl-var br {
-  display: block;
-  content: "";
-  margin: 0;
 }
 
 .portal-pnlog-composer__reply-banner {
@@ -859,11 +919,25 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   color: #8a6a00;
 }
 
+.portal-pnlog-chip--lead {
+  background: rgba(217, 119, 6, 0.18);
+  color: #9a3412;
+  font-weight: 700;
+  margin-top: 0;
+}
+
+.portal-pnlog-chip--former {
+  background: rgba(100, 116, 139, 0.16);
+  color: #475569;
+  font-weight: 700;
+  margin-top: 0;
+}
+
 .portal-pnlog-chip--unread {
   background: var(--pnlog-blue);
   color: #fff;
   font-weight: 700;
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 /* Composer sits in #portalPnlogComposerMount (scrollable when Meta template UI is tall) */
@@ -881,22 +955,19 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 }
 
 .portal-pnlog-composer--tpl {
-  gap: 4px;
-  padding: 8px 10px 10px;
+  gap: 2px;
+  padding: 8px 10px 8px;
 }
 .portal-pnlog-composer--tpl .portal-pnlog-composer__to {
   display: none;
 }
 .portal-pnlog-composer--tpl .portal-pnlog-composer__input {
-  min-height: 44px;
-  max-height: 9vh;
-}
-.portal-pnlog-composer--tpl .portal-pnlog-composer__tpl-preview {
-  max-height: 3.6rem;
+  min-height: 36px;
+  max-height: 7vh;
 }
 .portal-pnlog-composer--tpl .portal-pnlog-composer__tpl-shell {
-  padding: 6px 8px;
-  margin: 0 0 4px;
+  padding: 4px 6px;
+  margin: 0 0 2px;
 }
 
 .portal-pnlog-composer--disabled {
@@ -996,10 +1067,6 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 @media (max-width: 780px) {
   body:has(#portalParentNotifyLogRoot) .admin-workspace {
     padding: 8px 10px 6px !important;
-  }
-
-  .portal-pnlog-info {
-    display: none; /* reclaim vertical space on phone — desktop keeps the help banner */
   }
 
   .portal-pnlog-toolbar {

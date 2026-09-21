@@ -19,27 +19,40 @@
   function registerGeneralInfo(contactId, displayName, sheet) {
     sheet = String(sheet || "").trim();
     if (!sheet) return;
+    /* Staff UI hides Other Notes; keep full sheet in STORE for admin if needed via name key. */
     var id = String(contactId || "").trim();
     if (id) STORE.byContactId[id] = sheet;
     var nk = normName(displayName);
     if (nk) STORE.byName[nk] = sheet;
   }
 
+  function stripOtherNotesForStaff(sheet) {
+    var t = String(sheet || "").replace(/\r\n|\r/g, "\n").trim();
+    if (!t) return "";
+    t = t.replace(/(?:^|\n)\s*15\.\s*Other Notes:\s*[\s\S]*$/i, "").trim();
+    t = t.replace(/(?:^|\n)\s*15\.\s*[^:\n]+:\s*[\s\S]*$/i, "").trim();
+    return t;
+  }
+
   function portalParticipantGeneralInfoText(clientId, displayName) {
     var id = String(clientId || "").trim();
-    if (id && STORE.byContactId[id]) return STORE.byContactId[id];
-    var nk = normName(displayName);
-    if (nk && STORE.byName[nk]) return STORE.byName[nk];
-    if (global.PortalParticipantIdentity && typeof global.PortalParticipantIdentity.canonicalClientId === "function") {
+    var sheet = "";
+    if (id && STORE.byContactId[id]) sheet = STORE.byContactId[id];
+    if (!sheet) {
+      var nk = normName(displayName);
+      if (nk && STORE.byName[nk]) sheet = STORE.byName[nk];
+    }
+    if (!sheet && global.PortalParticipantIdentity && typeof global.PortalParticipantIdentity.canonicalClientId === "function") {
       var want = global.PortalParticipantIdentity.canonicalClientId(displayName || clientId);
       var keys = Object.keys(STORE.byName);
       for (var i = 0; i < keys.length; i++) {
         if (global.PortalParticipantIdentity.canonicalClientId(keys[i]) === want) {
-          return STORE.byName[keys[i]];
+          sheet = STORE.byName[keys[i]];
+          break;
         }
       }
     }
-    return "";
+    return stripOtherNotesForStaff(sheet);
   }
 
   function applyToClientNotes(clientNotesById) {
@@ -62,7 +75,7 @@
         var note = clientNotesById[cid];
         if (!note) return;
         if (normName(note.name || cid) === nk) {
-          note.generalInfoSheet = STORE.byName[nk];
+          note.generalInfoSheet = stripOtherNotesForStaff(STORE.byName[nk]);
           var infoText = String(note.generalInfoSheet || "").trim();
           if (infoText && typeof global.portalDeriveMedicalAlertFromInfo === "function") {
             note.hasMedicalAlert = !!global.portalDeriveMedicalAlertFromInfo(infoText);

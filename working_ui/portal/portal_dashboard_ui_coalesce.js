@@ -35,6 +35,9 @@
     }, 140);
   }
 
+  /** Repair participant photos after sheet close / skipped list re-render. */
+  global.portalScheduleParticipantPhotoRepair = scheduleParticipantPhotoRepair;
+
   global.portalPreloadParticipantPhotoUrls = function portalPreloadParticipantPhotoUrls(urls) {
     if (!global.__PORTAL_PARTICIPANT_PHOTO_PRELOAD__) {
       global.__PORTAL_PARTICIPANT_PHOTO_PRELOAD__ = Object.create(null);
@@ -79,31 +82,76 @@
     }, delayMs == null ? 48 : delayMs);
   };
 
+  var heavyRefreshTimer = null;
+  var heavyRefreshQueue = [];
+  var heavyRefreshGen = 0;
+
   /**
    * Yield out of click/rAF handlers before heavy DOM work (term grid, week lists).
-   * Chrome logs [Violation] when a handler runs >50ms; deferring clears the click
-   * stack so the absence/save path feels instant and the console stays quieter.
+   * Coalesce bursts into one timer, but run every queued callback — dropping all but
+   * the last fn left Term open with an empty grid when calendar/absence stole the slot.
    */
   global.portalDeferHeavyDashboardRefresh = function portalDeferHeavyDashboardRefresh(fn, delayMs) {
     if (typeof fn !== "function") return;
+    heavyRefreshQueue.push(fn);
+    heavyRefreshGen += 1;
+    var gen = heavyRefreshGen;
     var wait = delayMs == null ? 0 : Math.max(0, Number(delayMs) || 0);
-    var run = function () {
-      try {
-        fn();
-      } catch (e) {
-        try {
-          console.warn("[portal] deferred dashboard refresh", e);
-        } catch (_) {}
-      }
-    };
-    global.setTimeout(function () {
+    if (heavyRefreshTimer) global.clearTimeout(heavyRefreshTimer);
+    heavyRefreshTimer = global.setTimeout(function () {
+      heavyRefreshTimer = null;
+      if (gen !== heavyRefreshGen) return;
+      var batch = heavyRefreshQueue.splice(0, heavyRefreshQueue.length);
+      if (!batch.length) return;
+  var kick = function () {
+        var i = 0;
+        var step = function () {
+          if (i >= batch.length) return;
+          try {
+            batch[i++]();
+          } catch (e) {
+            try {
+              console.warn("[portal] deferred dashboard refresh", e);
+            } catch (_) {}
+          }
+          if (i < batch.length) {
+            if (typeof global.portalYieldToMain === "function") {
+              void global.portalYieldToMain().then(step);
+            } else {
+              global.setTimeout(step, 0);
+            }
+          }
+        };
+        step();
+      };
       if (typeof global.requestAnimationFrame === "function") {
         global.requestAnimationFrame(function () {
-          global.setTimeout(run, 0);
+          global.setTimeout(kick, 0);
         });
       } else {
-        run();
+        kick();
       }
+    }, wait);
+  };
+
+  /** One coalesced lead-team strip sync — never stack from every renderToday paint. */
+  var leadTeamSyncTimer = null;
+  global.portalScheduleLeadTeamShiftUi = function portalScheduleLeadTeamShiftUi(delayMs) {
+    if (typeof global.portalSyncLeadTeamShiftUi !== "function") return;
+    var wait = delayMs == null ? 320 : Math.max(0, Number(delayMs) || 0);
+    /* Roberto Sunday = programme-wide pool lead — give Today paint room before lead scan. */
+    if (delayMs == null) {
+      try {
+        var sid = String(global.STAFF_DASHBOARD_ID || global.__PORTAL_STAFF_ID__ || "").toLowerCase();
+        if (sid.indexOf("roberto") >= 0) wait = 900;
+      } catch (_) {}
+    }
+    if (leadTeamSyncTimer) return;
+    leadTeamSyncTimer = global.setTimeout(function () {
+      leadTeamSyncTimer = null;
+      try {
+        global.portalSyncLeadTeamShiftUi();
+      } catch (_) {}
     }, wait);
   };
 
@@ -131,7 +179,32 @@
       });
       previewSig = parts.join(";");
     }
-    return (mode ? "mode:" + mode + "|" : "") + previewSig;
+    var coverSig = "";
+    try {
+      var sid = String(opts.staffId || "").trim().toLowerCase();
+      if (
+        sid &&
+        typeof global.portalStaffHasNoAutumnTermSessions === "function" &&
+        global.portalStaffHasNoAutumnTermSessions(sid) &&
+        typeof global.portalStaffInstructorCoverCalendarIsoKeys === "function"
+      ) {
+        var fromIso = "2026-09-01";
+        var toIso = "2026-12-31";
+        try {
+          if (typeof dashboardData !== "undefined" && dashboardData) {
+            if (dashboardData.termDashboardCalendarFrom) {
+              fromIso = String(dashboardData.termDashboardCalendarFrom).slice(0, 10);
+            }
+            if (dashboardData.termDashboardCalendarTo) {
+              toIso = String(dashboardData.termDashboardCalendarTo).slice(0, 10);
+            }
+          }
+        } catch (_d) {}
+        var covers = global.portalStaffInstructorCoverCalendarIsoKeys(sid, fromIso, toIso) || [];
+        coverSig = "|covers:" + covers.join(",");
+      }
+    } catch (_c) {}
+    return (mode ? "mode:" + mode + "|" : "") + previewSig + coverSig;
   };
 
   global.portalTomorrowListSignature = function portalTomorrowListSignature(rows) {
@@ -332,6 +405,10 @@
         return [
           String(row.sessionKey || ""),
           String(row.kind || ""),
+          String(row.name || ""),
+          String(row.time || ""),
+          String(row.areaLabel || ""),
+          String(row.poolLocationLabel || ""),
           String(row.portalOverrideAlertPill || ""),
           reviewCls,
           photo,

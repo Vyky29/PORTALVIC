@@ -29,6 +29,14 @@ function clean(v: unknown, max = 200): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+/** Voided after re-enrol when first payment missed (Aug 15 release etc.). */
+function isLostSlotInvoice(inv: { payment_status?: unknown; notes?: unknown }): boolean {
+  const pay = clean(inv.payment_status, 20).toLowerCase();
+  if (pay !== "void") return false;
+  const notes = String(inv.notes || "");
+  return /place released|never paid|aug\s*15|unpaid_autumn_first|auto-released/i.test(notes);
+}
+
 function num(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -312,6 +320,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     limit?: number;
     filter?: string;
     billing_amount?: string;
+    skip_pdf_urls?: boolean;
   } = {};
   try {
     body = await req.json();
@@ -326,7 +335,9 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     (body as { billing_amount?: string }).billing_amount || CURRENT_BILLING_TERM,
   );
   const contactId = clean(body.contact_id, 120);
-  const limit = Math.min(Math.max(Number(body.limit) || 200, 1), 400);
+  /* Payments + Re-enrolments need the full autumn cohort (300+ non-void shares). */
+  const limit = Math.min(Math.max(Number(body.limit) || 200, 1), 800);
+  const skipPdfUrls = (body as { skip_pdf_urls?: boolean }).skip_pdf_urls === true;
 
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -341,7 +352,10 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     .limit(limit);
 
   if (shareFilter === "ready" || shareFilter === "hidden") q = q.eq("share_status", shareFilter);
-  if (["unpaid", "paid", "partial", "void", "pending_confirmation"].includes(payFilter)) {
+  if (listFilter === "lost_slot") {
+    /* Re-enrolled but never paid / place released (Aug 15 etc.) — void INV-Ps for office follow-up. */
+    q = q.eq("payment_status", "void");
+  } else if (["unpaid", "paid", "partial", "void", "pending_confirmation"].includes(payFilter)) {
     q = q.eq("payment_status", payFilter);
   } else {
     // Default list: hide voided orphan / cancelled INV-Ps (e.g. old monthly trackers).
@@ -355,10 +369,41 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       .in("payment_status", ["paid", "partial"]);
   }
 
-  const { data: shares, error } = await q;
+  const { data: sharesMain, error } = await q;
   if (error) {
     console.error("[portal-admin-parent-invoices-list]", error.message);
     return portalAdminJson(500, { ok: false, error: "list_failed" });
+  }
+
+  let shares = sharesMain || [];
+  /* Default All: also surface lost-slot void INV-Ps (re-enrolled, never paid, place released). */
+  if (
+    listFilter !== "lost_slot" &&
+    !["unpaid", "paid", "partial", "void", "pending_confirmation"].includes(payFilter)
+  ) {
+    let qLost = admin
+      .from("portal_parent_invoice_share")
+      .select(
+        "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, ready_by, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, parent_reported_notes, paid_at, paid_via, xero_invoice_id, xero_payment_id, xero_synced_at, xero_push_status, xero_push_error, created_via, vat_mode, line_description, line_items, quantity, unit_price_gbp, reference_text, billing_term, payment_schedule, amount_paid_gbp, next_instalment_due",
+      )
+      .eq("payment_status", "void")
+      .or(
+        "notes.ilike.%place released%,notes.ilike.%never paid%,notes.ilike.%Aug15%,notes.ilike.%aug 15%",
+      )
+      .order("updated_at", { ascending: false })
+      .limit(80);
+    if (contactId) qLost = qLost.eq("contact_id", contactId);
+    const { data: lostShares } = await qLost;
+    const seen = new Set(shares.map((s) => String(s.id || "")));
+    for (const row of lostShares || []) {
+      if (!isLostSlotInvoice(row)) continue;
+      const id = String(row.id || "");
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      shares.push(row);
+    }
+  } else if (listFilter === "lost_slot") {
+    shares = (shares || []).filter((s) => isLostSlotInvoice(s));
   }
 
   const docIds = (shares || []).map((s) => String(s.document_id || "")).filter(Boolean);
@@ -377,6 +422,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   const nameByContact = new Map<string, string>();
   const parentByContact = new Map<string, string>();
   const inClassByContact = new Map<string, boolean>();
+  const contactFundingLabelById = new Map<string, string>();
   if (contactIds.length) {
     const { data: pax } = await admin
       .from("portal_participants")
@@ -392,7 +438,9 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     }
     const { data: parents } = await admin
       .from("portal_parent_contacts")
-      .select("contact_id, parent_display, parent_first_name, parent_last_name")
+      .select(
+        "contact_id, parent_display, parent_first_name, parent_last_name, funding_label",
+      )
       .in("contact_id", contactIds);
     for (const p of parents || []) {
       const id = clean(p.contact_id, 120);
@@ -400,6 +448,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         clean(p.parent_display, 120) ||
         [p.parent_first_name, p.parent_last_name].filter(Boolean).join(" ").trim();
       if (id && name) parentByContact.set(id, name);
+      if (id) contactFundingLabelById.set(id, clean(p.funding_label, 120));
     }
   }
 
@@ -408,7 +457,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     const { data: holds } = await admin
       .from("portal_family_payment_holds")
       .select(
-        "id, contact_id, status, reminder_count, held_session_date, held_session_label, advance_buffer_gbp, updated_at",
+        "id, contact_id, status, reason, reminder_count, held_session_date, held_session_label, advance_buffer_gbp, amount_gbp, grace_deadline_at, whatsapp_sent_at, gocardless_payment_id, updated_at",
       )
       .in("contact_id", contactIds)
       .in("status", ["soft_hold", "session_held", "hard_cut"])
@@ -419,24 +468,12 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     }
   }
 
+  /*
+   * Buffer checks are expensive (extra queries per contact). Only run for
+   * Own-way families we already know from re-enrol payloads — never N×all.
+   * Deferred until reenrolByContact is filled below.
+   */
   const bufferByContact = new Map<string, Record<string, unknown>>();
-  await Promise.all(
-    contactIds.map(async (cid) => {
-      try {
-        const ev = await evaluateOwnArrangementBuffer(admin, cid);
-        if (ev.is_own_arrangement) {
-          bufferByContact.set(cid, {
-            required_gbp: ev.required_gbp,
-            available_gbp: ev.available_gbp,
-            shortfall_gbp: ev.shortfall_gbp,
-            is_low: ev.is_low,
-          });
-        }
-      } catch (err) {
-        console.error("[portal-admin-parent-invoices-list] buffer", cid, err);
-      }
-    }),
-  );
 
   // Latest re-enrolment submission per contact (2026-27) for sort + booked totals + funding chips.
   type ReenrolMeta = {
@@ -494,6 +531,35 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       if (nameKey && !reenrolByName.has(nameKey)) {
         reenrolByName.set(nameKey, { submitted_at: submittedAt, totals, contact_id: cid });
       }
+    }
+  }
+
+  /* Own-way buffer only — skips hundreds of empty lookups that used to time out the list. */
+  {
+    const ownWayIds = contactIds.filter((cid) => {
+      const meta = reenrolByContact.get(cid);
+      return meta && clean(meta.payment_method_code, 40) === "own_way_flexible";
+    });
+    const CONCURRENCY = 8;
+    for (let i = 0; i < ownWayIds.length; i += CONCURRENCY) {
+      const slice = ownWayIds.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        slice.map(async (cid) => {
+          try {
+            const ev = await evaluateOwnArrangementBuffer(admin, cid);
+            if (ev.is_own_arrangement) {
+              bufferByContact.set(cid, {
+                required_gbp: ev.required_gbp,
+                available_gbp: ev.available_gbp,
+                shortfall_gbp: ev.shortfall_gbp,
+                is_low: ev.is_low,
+              });
+            }
+          } catch (err) {
+            console.error("[portal-admin-parent-invoices-list] buffer", cid, err);
+          }
+        }),
+      );
     }
   }
 
@@ -573,25 +639,94 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   const fundingByContact = new Map<string, Awaited<ReturnType<typeof resolveParticipantInvoiceFunding>>>();
   const invoiceContactIds = new Set<string>();
 
+  /* Batch-sign PDFs (sequential createSignedUrl was timing out the whole list). */
+  const pdfUrlByPath = new Map<string, string>();
+  if (!skipPdfUrls) {
+    const paths: string[] = [];
+    const seenPath = new Set<string>();
+    for (const share of shares || []) {
+      const doc = docsById.get(String(share.document_id)) || {};
+      const path = clean(doc.file_url, 500);
+      if (!path || seenPath.has(path)) continue;
+      seenPath.add(path);
+      paths.push(path);
+    }
+    const CHUNK = 40;
+    for (let i = 0; i < paths.length; i += CHUNK) {
+      const chunk = paths.slice(i, i + CHUNK);
+      try {
+        const { data: signedRows, error: signErr } = await admin.storage
+          .from(BUCKET)
+          .createSignedUrls(chunk, 3600);
+        if (signErr) {
+          console.error("[portal-admin-parent-invoices-list] signedUrls", signErr.message);
+          continue;
+        }
+        for (let j = 0; j < chunk.length; j++) {
+          const row = (signedRows || [])[j] as
+            | { path?: string; signedUrl?: string; error?: string }
+            | undefined;
+          if (!row || row.error) continue;
+          const path = clean(row.path, 500) || chunk[j];
+          const url = clean(row.signedUrl, 2000);
+          if (path && url) pdfUrlByPath.set(path, url);
+        }
+      } catch (err) {
+        console.error("[portal-admin-parent-invoices-list] signedUrls chunk", err);
+      }
+    }
+  }
+
   for (const share of shares || []) {
     const doc = docsById.get(String(share.document_id)) || {};
-    let pdfUrl: string | null = null;
-    if (doc.file_url) {
-      const { data: signed } = await admin.storage
-        .from(BUCKET)
-        .createSignedUrl(String(doc.file_url), 3600);
-      pdfUrl = signed?.signedUrl || null;
-    }
+    const filePath = clean(doc.file_url, 500);
+    const pdfUrl = filePath ? pdfUrlByPath.get(filePath) || null : null;
     const cid = clean(share.contact_id, 120);
     if (cid) invoiceContactIds.add(cid);
     const displayName =
       nameByContact.get(cid) || clean(doc.related_client, 120) || "";
     let funding = fundingByContact.get(cid);
     if (!funding) {
-      funding = await resolveParticipantInvoiceFunding(admin, {
-        contactId: cid,
-        displayName,
-      });
+      const labelFromContact = contactFundingLabelById.get(cid) || "";
+      const laPack = cid ? (laPayByContact.get(cid) || [])[0] : null;
+      if (laPack || labelFromContact || reenrolByContact.has(cid)) {
+        const sheet = laPack ? clean(laPack.sheet, 40) : "";
+        const sheetUp = sheet.toUpperCase();
+        const fundFromLa = laPack
+          ? clean(
+              (laPack.row.data && typeof laPack.row.data === "object"
+                ? (laPack.row.data as Record<string, unknown>).Funder ||
+                  (laPack.row.data as Record<string, unknown>).Funding
+                : "") as unknown,
+              120,
+            )
+          : "";
+        const fundingLabel = fundFromLa || labelFromContact || "";
+        const fl = fundingLabel.toLowerCase();
+        const vatMode: "exempt" | "vat_20" =
+          sheetUp === "LA" ||
+          sheetUp === "DIRECT_PAYMENTS" ||
+          /nhs|local authority|direct.?payment|funds from/i.test(fl)
+            ? "exempt"
+            : "vat_20";
+        funding = {
+          vatMode,
+          fundingLabel: fundingLabel || (vatMode === "exempt" ? "Local Authority" : "Private"),
+          clientId: cid,
+          po: "",
+          source: laPack ? "client_payments" : labelFromContact ? "funding_label" : "fallback",
+          paymentSheet: sheet || (vatMode === "exempt" && /direct.?payment|funds from/i.test(fl)
+            ? "DIRECT_PAYMENTS"
+            : sheetUp === "LA" || /nhs|local authority|la managed/i.test(fl)
+              ? "LA"
+              : "PARENTS"),
+        };
+      } else {
+        funding = await resolveParticipantInvoiceFunding(admin, {
+          contactId: cid,
+          displayName,
+        });
+      }
       fundingByContact.set(cid, funding);
     }
     const reenrol =
@@ -848,11 +983,16 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
 
   /*
    * Hidden chip / list: only future instalments (and LA office autos) for clients who
-   * still hold a re-enrolled place. Place-released / out-of-class shares stay in DB
-   * for audit but must not appear in admin Finance.
+   * still hold a re-enrolled place. Place-released / out-of-class shares stay hidden
+   * unless they are lost-slot voids (shown in red for office follow-up).
    */
   invoices = invoices.filter((inv) => {
     if (isHfYearDraftInvoice({ readyBy: inv.ready_by, notes: inv.notes })) return false;
+    const lost = isLostSlotInvoice(inv);
+    if (lost) {
+      inv.lost_slot = true;
+      return true;
+    }
     const share = clean(inv.share_status, 20).toLowerCase();
     if (share !== "hidden") return true;
     if (inv.is_la_office_auto === true || clean(inv.created_via, 40) === "la_office_auto") {
@@ -866,6 +1006,10 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       (cid ? reenrolByContact.has(cid) : false);
     return hasReenrol;
   });
+
+  if (listFilter === "lost_slot") {
+    invoices = invoices.filter((inv) => inv.lost_slot === true);
+  }
 
   if (listFilter === "buffer_low") {
     invoices = invoices.filter((inv) => inv.buffer_status && (inv.buffer_status as { is_low?: boolean }).is_low);
@@ -932,6 +1076,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
 
   const bufferLowContacts = [...bufferByContact.values()].filter((b) => b.is_low).length;
   const laAutoCount = invoices.filter((inv) => inv.created_via === "la_office_auto").length;
+  const lostSlotCount = invoices.filter((inv) => inv.lost_slot === true).length;
 
   return portalAdminJson(200, {
     ok: true,
@@ -943,6 +1088,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       buffer_low_contacts: bufferLowContacts,
       xero_unsynced: xeroUnsynced || 0,
       la_office_auto: laAutoCount,
+      lost_slot: lostSlotCount,
       billing_term: amountKey === "year" ? "year" : amountKey,
       billing_term_label: termLabel(amountKey === "year" ? "year" : amountKey),
       billing_amount: amountKey,

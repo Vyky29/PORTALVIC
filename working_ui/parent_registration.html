@@ -402,8 +402,8 @@
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="/portal/parent_form_submit.js?v=20260817-pdf-thumb"></script>
-  <script src="/portal/parent_registration_portal.js?v=20260817-pdf-thumb"></script>
+  <script src="/portal/parent_form_submit.js?v=20260909-slot-hold"></script>
+  <script src="/portal/parent_registration_portal.js?v=20260909-sibling-reg"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260724-returning-no-privacy"></script>
   <script>
@@ -591,13 +591,19 @@
             </div>
           </div>
           <div class="field-followup" id="ehcpFollowup" hidden>
-            <div class="field" data-icon="note" style="margin-bottom:0">
+            <div class="field" data-icon="note">
               <label class="field-label" for="ehcp_details"><span class="field-label__text">EHCP details <span class="required-mark">*</span></span></label>
               <textarea id="ehcp_details" name="ehcp_details"></textarea>
+            </div>
+            <div class="field" data-icon="clipboard" style="margin-bottom:0">
+              <label class="field-label" for="ehcp_file"><span class="field-label__text">Upload EHCP (PDF or photo) <span class="required-mark">*</span></span></label>
+              <p class="hint">Required when EHCP is Yes or In progress. Needed if sessions will be funded via Local Authority / NHS referral.</p>
+              <input type="file" id="ehcp_file" name="ehcp_file" accept=".pdf,application/pdf,image/*" />
             </div>
           </div>
           <div class="field" data-icon="users">
             <label class="field-label"><span class="field-label__text">Is the participant supported by a social worker? <span class="required-mark">*</span></span></label>
+            <p class="hint">If a Social Worker (LA) or NHS manager will fund / refer the booking, choose Yes and enter their name and email.</p>
             <div class="checks">
               <label class="check-row"><input type="radio" name="social_worker" value="Yes" required /> Yes</label>
               <label class="check-row"><input type="radio" name="social_worker" value="No" /> No</label>
@@ -605,9 +611,14 @@
             </div>
           </div>
           <div class="field-followup" id="socialWorkerFollowup" hidden>
+            <div class="field" data-icon="users">
+              <label class="field-label" for="social_worker_name"><span class="field-label__text">Social worker / NHS manager name <span class="required-mark">*</span></span></label>
+              <input type="text" id="social_worker_name" name="social_worker_name" autocomplete="name" />
+            </div>
             <div class="field" data-icon="email" style="margin-bottom:0">
-              <label class="field-label" for="social_worker_contact"><span class="field-label__text">Social worker name &amp; email <span class="required-mark">*</span></span></label>
-              <input type="text" id="social_worker_contact" name="social_worker_contact" />
+              <label class="field-label" for="social_worker_email"><span class="field-label__text">Social worker / NHS manager email <span class="required-mark">*</span></span></label>
+              <input type="email" id="social_worker_email" name="social_worker_email" autocomplete="email" inputmode="email" />
+              <input type="hidden" id="social_worker_contact" name="social_worker_contact" value="" />
             </div>
           </div>
           <div class="field" data-icon="star">
@@ -867,30 +878,57 @@
 
     function setupYesNoFollowups() {
       var rules = [
-        { radio: 'ehcp', show: ['Yes', 'In progress'], panel: 'ehcpFollowup', input: 'ehcp_details' },
-        { radio: 'social_worker', show: ['Yes'], panel: 'socialWorkerFollowup', input: 'social_worker_contact' },
-        { radio: 'health_plan', show: ['Yes'], panel: 'healthPlanFollowup', input: 'health_plan_details' }
+        {
+          radio: 'ehcp',
+          show: ['Yes', 'In progress'],
+          panel: 'ehcpFollowup',
+          inputs: ['ehcp_details', 'ehcp_file']
+        },
+        {
+          radio: 'social_worker',
+          show: ['Yes'],
+          panel: 'socialWorkerFollowup',
+          inputs: ['social_worker_name', 'social_worker_email']
+        },
+        {
+          radio: 'health_plan',
+          show: ['Yes'],
+          panel: 'healthPlanFollowup',
+          inputs: ['health_plan_details']
+        }
       ];
       rules.forEach(function (rule) {
         var panel = document.getElementById(rule.panel);
-        var input = document.getElementById(rule.input);
+        var inputIds = rule.inputs || (rule.input ? [rule.input] : []);
         function sync() {
           var v = radio(rule.radio);
           var open = rule.show.indexOf(v) >= 0;
           if (panel) panel.hidden = !open;
-          if (input) {
+          inputIds.forEach(function (id) {
+            var input = document.getElementById(id);
+            if (!input) return;
             if (open) input.setAttribute('required', 'required');
             else {
               input.removeAttribute('required');
-              input.value = '';
+              if (input.type === 'file') input.value = '';
+              else input.value = '';
             }
-          }
+          });
         }
         form.querySelectorAll('[name="' + rule.radio + '"]').forEach(function (el) {
           el.addEventListener('change', sync);
         });
         sync();
       });
+    }
+
+    function syncSocialWorkerContactHidden() {
+      var name = val('social_worker_name');
+      var email = val('social_worker_email');
+      var combined = [name, email].filter(Boolean).join(' · ');
+      var hidden = document.getElementById('social_worker_contact');
+      if (hidden) hidden.value = combined;
+      return combined;
     }
 
     function validateCheckboxGroups() {
@@ -1083,6 +1121,10 @@
           booking_kind: (function () {
             var k = String(q.get('booking_kind') || '').trim().toLowerCase();
             return k === 'trial' || k === 'trial_session' || k === 'taster' ? 'trial' : 'term';
+          })(),
+          support_regulated: (function () {
+            var r = String(q.get('support_regulated') || '').trim().toLowerCase().replace(/\s+/g, '');
+            return r === '2to1' || r === '2:1' ? '2to1' : r === '1to1' || r === '1:1' ? '1to1' : null;
           })()
         };
       } catch (_e) {
@@ -1110,6 +1152,12 @@
 
     var bookingRequest = bookingRequestFromUrl() || restoreBookingRequest();
     if (bookingRequest && bookingRequest.slot_id) persistBookingRequest(bookingRequest);
+    if (bookingRequest && bookingRequest.support_regulated) {
+      var ratioEl = form.querySelector(
+        'input[name="support_regulated"][value="' + bookingRequest.support_regulated + '"]',
+      );
+      if (ratioEl) ratioEl.checked = true;
+    }
 
     (function applyBookingLeadPrefill() {
       var gate = window.PortalBookingLeadGate;
@@ -1476,8 +1524,11 @@
         y = addSection(doc, y, 'Medical & support plans', [
           ['EHCP', radio('ehcp')],
           ['EHCP details', val('ehcp_details')],
+          ['EHCP upload', (document.getElementById('ehcp_file') && document.getElementById('ehcp_file').files && document.getElementById('ehcp_file').files[0]) ? 'Attached' : ''],
           ['Social worker', radio('social_worker')],
-          ['Social worker contact', val('social_worker_contact')],
+          ['Social worker name', val('social_worker_name')],
+          ['Social worker email', val('social_worker_email')],
+          ['Social worker contact', syncSocialWorkerContactHidden()],
           ['Motivators', val('motivators')],
           ['Dislikes', val('dislikes')],
           ['Medication', val('medication')],
@@ -1529,6 +1580,25 @@
           photoInput.focus();
           return;
         }
+        var ehcpNeedsFile = radio('ehcp') === 'Yes' || radio('ehcp') === 'In progress';
+        var ehcpInput = document.getElementById('ehcp_file');
+        var ehcpFile = (ehcpInput && ehcpInput.files && ehcpInput.files[0]) || null;
+        if (ehcpNeedsFile && !ehcpFile) {
+          alert('Please upload the EHCP (PDF or photo) before submitting.');
+          btn.disabled = false;
+          btn.textContent = 'Submit form';
+          if (ehcpInput) ehcpInput.focus();
+          return;
+        }
+        if (radio('social_worker') === 'Yes') {
+          if (!val('social_worker_name') || !val('social_worker_email')) {
+            alert('Please enter the social worker / NHS manager name and email.');
+            btn.disabled = false;
+            btn.textContent = 'Submit form';
+            return;
+          }
+        }
+        syncSocialWorkerContactHidden();
         var submitPayload = window.ParentRegistrationPortal
           ? ParentRegistrationPortal.collectFullPayload(form, formHelpers)
           : {
@@ -1536,10 +1606,16 @@
               participant_gender: val('participant_gender'),
               participant_school: val('participant_school'),
               ehcp: radio('ehcp'),
-              social_worker: radio('social_worker')
+              social_worker: radio('social_worker'),
+              social_worker_name: val('social_worker_name'),
+              social_worker_email: val('social_worker_email'),
+              social_worker_contact: syncSocialWorkerContactHidden(),
+              support_regulated: radio('support_regulated')
             };
         if (bookingRequest) {
-          submitPayload.booking_request = bookingRequest;
+          submitPayload.booking_request = Object.assign({}, bookingRequest, {
+            support_regulated: radio('support_regulated') || bookingRequest.support_regulated || null,
+          });
         }
         function downloadParentPdfCopy() {
           try {
@@ -1577,6 +1653,8 @@
           pdf_filename: filename,
           photo: photoFile,
           photo_filename: 'participant-photo.jpg',
+          ehcp_file: ehcpFile || null,
+          ehcp_filename: ehcpFile ? (ehcpFile.name || 'ehcp.pdf') : null,
           payload: submitPayload
         }).catch(function (uploadErr) {
           /* Auto-retry once with a text-only PDF if the first PDF was still too large.
@@ -1627,8 +1705,11 @@
           Ly = addSection(lean, Ly, 'Medical & support plans', [
             ['EHCP', radio('ehcp')],
             ['EHCP details', val('ehcp_details')],
+            ['EHCP upload', ehcpFile ? 'Attached' : ''],
             ['Social worker', radio('social_worker')],
-            ['Social worker contact', val('social_worker_contact')],
+            ['Social worker name', val('social_worker_name')],
+            ['Social worker email', val('social_worker_email')],
+            ['Social worker contact', syncSocialWorkerContactHidden()],
             ['Motivators', val('motivators')],
             ['Dislikes', val('dislikes')],
             ['Medication', val('medication')],
@@ -1671,6 +1752,8 @@
             pdf_filename: filename,
             photo: photoFile,
             photo_filename: 'participant-photo.jpg',
+            ehcp_file: ehcpFile || null,
+            ehcp_filename: ehcpFile ? (ehcpFile.name || 'ehcp.pdf') : null,
             payload: submitPayload
           });
         }).then(function(res){
@@ -1678,6 +1761,22 @@
           if (failEl) failEl.hidden = true;
           /* Same moment: club already has PDF+photo in Documents; parent gets their copy now. */
           downloadParentPdfCopy();
+          if (window.__portalAddParticipant) {
+            var addReturn = window.__portalAddParticipantReturn || "/parent";
+            if (window.portalFinishParentSubmit) {
+              window.portalFinishParentSubmit({
+                formEl: form,
+                successEl: document.getElementById("parentSubmitDone"),
+                noticeEl: document.getElementById("formNotice"),
+                submitBtn: btn,
+                message: "Form sent. Taking you back to the family portal — the new participant is on the same PIN.",
+              });
+            }
+            setTimeout(function () {
+              global.location.href = addReturn;
+            }, 1200);
+            return;
+          }
           if (portalMode && typeof portalMode.afterSubmitSuccess === 'function') {
             return portalMode.afterSubmitSuccess();
           }
@@ -1699,6 +1798,35 @@
               }
             } catch (_leadPing) {}
             if (finishUrl) {
+              var needTwoSeats = false;
+              try {
+                var supportAns = String(radio("support_regulated") || "")
+                  .trim()
+                  .toLowerCase()
+                  .replace(/\s+/g, "");
+                var mobilityAns = String(radio("mobility") || "").toLowerCase();
+                needTwoSeats =
+                  supportAns === "2to1" ||
+                  supportAns === "2:1" ||
+                  /wheelchair/.test(mobilityAns);
+              } catch (_need2) {}
+              if (needTwoSeats) {
+                window.portalFinishParentSubmit({
+                  formEl: form,
+                  successEl: document.getElementById("parentSubmitDone"),
+                  noticeEl: document.getElementById("formNotice"),
+                  submitBtn: btn,
+                  message:
+                    "Form sent. Your answers need two instructor places — taking you back to Booking to choose a time with two free seats…",
+                });
+                setTimeout(function () {
+                  var base = String(
+                    window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org",
+                  ).replace(/\/$/, "");
+                  global.location.href = base + "/bookingportal?seats=2";
+                }, 1200);
+                return;
+              }
               window.portalFinishParentSubmit({
                 formEl: form,
                 successEl: document.getElementById('parentSubmitDone'),

@@ -70,14 +70,25 @@
           }
         });
       }
+      function openParticipantAchievements(){
+        function go(){
+          mountSheet();
+          configure();
+          if(typeof openSheet === 'function') openSheet('achievementsSheet');
+        }
+        if(window.PortalParticipantAchievements){
+          go();
+          return;
+        }
+        whenLazyReady(go);
+      }
+      try{ window.portalOpenParticipantAchievements = openParticipantAchievements; }catch(_){}
       function bindQuickMenu(){
         var btn = document.getElementById('quickMenuParticipantAchievements');
         if(!btn || btn.getAttribute('data-achievements-bound') === '1') return;
         btn.setAttribute('data-achievements-bound','1');
         btn.addEventListener('click', function(){
-          mountSheet();
-          configure();
-          if(typeof openSheet === 'function') openSheet('achievementsSheet');
+          openParticipantAchievements();
         });
       }
       function syncTopbarForPhotos(){

@@ -24,6 +24,9 @@ const REASON_LABELS: Record<string, string> = {
   bank_holiday: "Bank holiday",
   strike: "Strike / disruption",
   office_other: "Office note",
+  club_cancelled: "Club cancelled session",
+  pool_closed: "Pool / venue closed",
+  facility: "Facility issue",
 };
 
 const NON_MISSED = new Set([
@@ -36,6 +39,15 @@ const NON_MISSED = new Set([
   "bank_holiday",
   "strike",
   "office_other",
+]);
+
+const CANCELLATION_REASONS = new Set([
+  "club_cancelled",
+  "pool_closed",
+  "facility",
+  "instructor_cancelled",
+  "bank_holiday",
+  "strike",
 ]);
 
 function clean(v: unknown, max = 500): string {
@@ -85,7 +97,9 @@ Deno.serve(async (req) => {
     body = {};
   }
 
-  const contactId = clean(body.contact_id, 120);
+  const contactIdRaw = clean(body.contact_id, 120);
+  const rosterSlug = clean(body.roster_slug || body.anchor_client_id, 120);
+  let contactId = contactIdRaw;
   let parentPersonId = clean(body.parent_person_id, 120);
   let participantDisplay = clean(body.participant_display, 160);
   const sessionDate = clean(body.session_date, 12);
@@ -94,8 +108,20 @@ Deno.serve(async (req) => {
   const reasonCode = clean(body.reason_code, 40).toLowerCase().replace(/\s+/g, "_");
   const reasonNote = clean(body.reason_text, 800);
   const statusOverride = clean(body.status, 20).toLowerCase();
+  const scheduleOverrideId = clean(body.schedule_override_id, 60) || null;
+  let caseKind = clean(body.case_kind, 20).toLowerCase() || "absence";
+  if (caseKind !== "absence" && caseKind !== "cancellation") caseKind = "absence";
+  // Cancellation reasons force the shared decision queue (pending_review, no proof).
+  if (CANCELLATION_REASONS.has(reasonCode) && clean(body.case_kind, 20) === "cancellation") {
+    caseKind = "cancellation";
+  }
+  if (caseKind === "cancellation" && !CANCELLATION_REASONS.has(reasonCode)) {
+    // Still allow office_other as cancellation when explicitly flagged.
+    if (reasonCode !== "office_other") {
+      return portalAdminJson(400, { ok: false, error: "cancellation_reason_required" });
+    }
+  }
 
-  if (!contactId) return portalAdminJson(400, { ok: false, error: "contact_id_required" });
   if (!isIsoDate(sessionDate)) {
     return portalAdminJson(400, { ok: false, error: "session_date_required" });
   }
@@ -109,6 +135,72 @@ Deno.serve(async (req) => {
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  const SLUG_CONTACT: Record<string, string> = {
+    abodi_pa: "155",
+    abodi_p: "155",
+    abodi: "155",
+    adam_p: "354",
+    adam_pi: "354",
+    amaar_ah: "105",
+    amar_rai: "130",
+    amar_ra: "130",
+    anas: "7560101",
+    cyrus: "79",
+    gabriel: "99",
+    joelle: "406",
+    junaid_f: "368",
+    maiyar: "48",
+    mia: "385",
+    mia_mesi: "385",
+    mia_m: "385",
+    yamik: "gap-yamik-limbu",
+    yassir: "119",
+    yunis: "232",
+  };
+
+  async function loadPax(id: string) {
+    if (!id) return null;
+    const { data } = await admin
+      .from("portal_participants")
+      .select("contact_id, display_name, parent_person_id")
+      .eq("contact_id", id)
+      .maybeSingle();
+    return data;
+  }
+
+  if (!contactId && rosterSlug) contactId = rosterSlug;
+  let pax = contactId ? await loadPax(contactId) : null;
+  if (!pax && contactId && SLUG_CONTACT[contactId.toLowerCase()]) {
+    pax = await loadPax(SLUG_CONTACT[contactId.toLowerCase()]);
+    if (pax) contactId = pax.contact_id;
+  }
+  if (!pax && rosterSlug && SLUG_CONTACT[rosterSlug.toLowerCase()]) {
+    pax = await loadPax(SLUG_CONTACT[rosterSlug.toLowerCase()]);
+    if (pax) contactId = pax.contact_id;
+  }
+  if (!pax && (rosterSlug || contactIdRaw)) {
+    const guess = clean(rosterSlug || contactIdRaw, 80).replace(/_/g, " ");
+    if (guess) {
+      const { data: rows } = await admin
+        .from("portal_participants")
+        .select("contact_id, display_name, parent_person_id")
+        .ilike("display_name", guess + "%")
+        .limit(3);
+      const ok = (rows || []).filter((r) => r.contact_id && r.parent_person_id);
+      if (ok.length === 1) {
+        pax = ok[0];
+        contactId = pax.contact_id;
+      }
+    }
+  }
+  if (pax) {
+    contactId = pax.contact_id;
+    parentPersonId = parentPersonId || clean(pax.parent_person_id, 120);
+    participantDisplay = participantDisplay || clean(pax.display_name, 160);
+  }
+
+  if (!contactId) return portalAdminJson(400, { ok: false, error: "contact_id_required" });
 
   if (!parentPersonId || !participantDisplay) {
     const { data: p } = await admin
@@ -142,20 +234,33 @@ Deno.serve(async (req) => {
   }
 
   let status = resolveStatus(reasonCode);
-  if (statusOverride === "missed" || statusOverride === "noted") {
+  if (statusOverride === "missed" || statusOverride === "noted" || statusOverride === "pending_review") {
     status = statusOverride;
+  }
+  if (caseKind === "cancellation") {
+    // Same Absents & credits queue — awaiting office credit/refund/makeup decision.
+    status = "pending_review";
+  }
+  // Schedule & Covers announced absent → decision queue (no parent proof required).
+  if (
+    caseKind === "absence" &&
+    scheduleOverrideId &&
+    (statusOverride === "pending_review" || statusOverride === "missed" || !statusOverride)
+  ) {
+    status = "pending_review";
   }
 
   const proofDeadline = addDaysIso(sessionDate, 14);
   const now = new Date().toISOString();
   const reasonLabel = REASON_LABELS[reasonCode];
+  const sourceLabel = caseKind === "cancellation" ? "Office cancel" : "Office phone";
   const reasonText = reasonNote
-    ? `Office phone · ${reasonLabel} — ${reasonNote}`
-    : `Office phone · ${reasonLabel}`;
+    ? `${sourceLabel} · ${reasonLabel} — ${reasonNote}`
+    : `${sourceLabel} · ${reasonLabel}`;
 
   const { data: existing } = await admin
     .from("portal_parent_absence_reports")
-    .select("id, status, proof_deadline")
+    .select("id, status, proof_deadline, case_kind")
     .eq("contact_id", contactId)
     .eq("session_date", sessionDate)
     .eq("service_label", serviceLabel)
@@ -171,7 +276,16 @@ Deno.serve(async (req) => {
 
   const payloadExtra = {
     reason_code: reasonCode,
-    source: "office_phone",
+    source:
+      caseKind === "cancellation"
+        ? scheduleOverrideId
+          ? "schedule_covers"
+          : "office_cancel"
+        : scheduleOverrideId
+          ? "schedule_covers_absent"
+          : "office_phone",
+    case_kind: caseKind,
+    schedule_override_id: scheduleOverrideId,
     created_by_admin: verified.userId || null,
   };
 
@@ -179,10 +293,12 @@ Deno.serve(async (req) => {
     reason_code: reasonCode,
     reason_text: reasonText,
     status,
+    case_kind: caseKind,
     session_time: sessionTime || "",
     participant_display: participantDisplay || "",
     proof_deadline: proofDeadline,
     payload: payloadExtra,
+    schedule_override_id: scheduleOverrideId,
     updated_at: now,
   };
 

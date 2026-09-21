@@ -35,12 +35,13 @@
   };
 
   // docFilter = the matching filter key in the admin Documents view.
+  // pathKey = uploads / upload_paths key used for counts and preferred open path.
   var DOC_CHIP_SPECS = [
-    { key: "passport", label: "Passport", docFilter: "passport" },
+    { key: "passport", label: "Passport / ID", docFilter: "passport" },
     { key: "checklist", label: "Checklist", docFilter: "checklist" },
     { key: "certificate", label: "Certificate", docFilter: "certificate" },
     { key: "firstaid", label: "First aid", docFilter: "firstaid" },
-    { key: "safeguarding", label: "Safeguarding", docFilter: "certificate" }
+    { key: "safeguarding", label: "Safeguarding", docFilter: "safeguarding" }
   ];
 
   function esc(s) {
@@ -113,13 +114,16 @@
     return '<span class="ob-pill ob-pill--' + (done ? "yes" : "no") + '">' + (done ? "Done" : "—") + "</span>";
   }
 
-  function docChips(uploads, sessionId, name) {
+  function docChips(uploads, sessionId, name, uploadPaths) {
     uploads = uploads || {};
+    uploadPaths = uploadPaths || {};
     var chips = [];
     DOC_CHIP_SPECS.forEach(function (spec) {
       var n = uploads[spec.key] || 0;
       if (!n) return;
       var label = spec.label + (n > 1 ? " \u00d7" + n : "");
+      var paths = uploadPaths[spec.key] || [];
+      var preferredPath = paths.length ? String(paths[0] || "") : "";
       var canOpen = !!deps.gotoDocuments;
       if (canOpen) {
         chips.push(
@@ -129,6 +133,8 @@
             esc(sessionId || "") +
             '" data-ob-name="' +
             esc(name || "") +
+            '" data-ob-path="' +
+            esc(preferredPath) +
             '" title="Open in Documents">' +
             esc(label) +
             "</button>"
@@ -191,7 +197,7 @@
           "</td><td>" +
           pill(!!a.health) +
           '</td><td class="ob-counts">' +
-          docChips(a.uploads, sid, name) +
+          docChips(a.uploads, sid, name, a.upload_paths) +
           '</td><td class="ob-counts">' +
           esc(fmtDate(a.last_online_at)) +
           '</td><td class="ob-counts">' +
@@ -240,7 +246,8 @@
         deps.gotoDocuments({
           filter: btn.getAttribute("data-ob-doc") || "all",
           sessionId: btn.getAttribute("data-ob-sid") || "",
-          name: btn.getAttribute("data-ob-name") || ""
+          name: btn.getAttribute("data-ob-name") || "",
+          path: btn.getAttribute("data-ob-path") || ""
         });
       });
     });

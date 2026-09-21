@@ -73,7 +73,28 @@
     return false;
   }
 
+  function parkGuardEl(el) {
+    if (!el) return;
+    el.classList.remove("is-active");
+    el.hidden = true;
+    el.setAttribute("aria-hidden", "true");
+    el.style.display = "none";
+    el.style.visibility = "hidden";
+    el.style.pointerEvents = "none";
+    el.style.touchAction = "auto";
+  }
+
+  function showGuardEl(el) {
+    if (!el) return;
+    el.hidden = false;
+    el.style.display = "";
+    el.style.visibility = "visible";
+    el.classList.add("is-active");
+  }
+
   function ensureEl() {
+    /* Staff PWA: never mount a full-viewport layer. iOS treats inset:0 as a tap block. */
+    if (isWorkerDashboardPage()) return null;
     var el = document.getElementById(GUARD_ID);
     if (el) return el;
     el = document.createElement("div");
@@ -92,6 +113,7 @@
       this.src = LOGO_FALLBACK;
     };
     el.appendChild(img);
+    parkGuardEl(el);
     var root = document.body || document.documentElement;
     root.appendChild(el);
     return el;
@@ -119,19 +141,26 @@
     global.clearTimeout(lingerTimer);
     setForegroundMask(false);
     var el = document.getElementById(GUARD_ID);
-    if (el) el.classList.remove("is-active");
+    if (el && el.parentNode) {
+      try {
+        el.parentNode.removeChild(el);
+      } catch (_rm) {
+        parkGuardEl(el);
+      }
+    }
     if (isPageVisible() && !isPhotoCaptureUiActive()) {
       setScreenshotWatermark(false);
     }
   }
 
   function triggerScreenshotMask(opts) {
+    if (isWorkerDashboardPage()) return;
     if (!armed || portalScreenshotGuardCaptureAllowed()) return;
     if (isPhotoCaptureUiActive()) return;
     opts = opts || {};
     global.clearTimeout(lingerTimer);
     var el = ensureEl();
-    el.classList.add("is-active");
+    showGuardEl(el);
     setScreenshotWatermark(true);
     setForegroundMask(true);
     var linger =
@@ -233,9 +262,17 @@
     if (options.mobileOnly !== false && !isMobilePortalDevice()) return false;
     armed = true;
     try {
-      document.documentElement.classList.add("portal-screenshot-guard-armed");
+      var skipHtmlArm = false;
+      try {
+        skipHtmlArm = !!(global.PORTAL_STAFF_APP) ||
+          !!(global.navigator && global.navigator.standalone) ||
+          (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches);
+      } catch (_skip) {}
+      /* iOS PWA: user-select:none on html/body drops taps. Keep image tagging only. */
+      if (!skipHtmlArm) {
+        document.documentElement.classList.add("portal-screenshot-guard-armed");
+      }
     } catch (_e7) {}
-    ensureEl();
     bindEvents();
     hideMaskForce();
     return true;
@@ -468,23 +505,8 @@
   function syncRolePolicy() {
     if (!isWorkerDashboardPage()) return;
     try {
-      if (portalScreenshotGuardCaptureAllowed()) {
-        document.documentElement.classList.remove("portal-screenshot-guard-workers");
-        disarm();
-        return;
-      }
-      document.documentElement.classList.add("portal-screenshot-guard-workers");
-      arm({ mobileOnly: false });
-      bindWorkerSafeguardEvents();
-      var deferObserver = function () {
-        startSensitiveImageObserver();
-      };
-      if (typeof global.requestIdleCallback === "function") {
-        global.requestIdleCallback(deferObserver, { timeout: 1200 });
-      } else {
-        global.setTimeout(deferObserver, 400);
-      }
-      if (document.hidden) setWorkerSensitiveHidden(true);
+      document.documentElement.classList.remove("portal-screenshot-guard-workers");
+      disarm();
     } catch (_e11) {}
   }
 
@@ -493,8 +515,7 @@
       var mode = document.documentElement.getAttribute("data-portal-screenshot-guard");
       if (mode === "off") return;
       if (isWorkerDashboardPage()) {
-        bindRolePolicyEvents();
-        syncRolePolicy();
+        disarm();
         return;
       }
       if (mode === "all") {

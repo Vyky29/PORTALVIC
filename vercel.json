@@ -56,7 +56,9 @@
     }
   ],
   "rewrites": [
-    { "source": "/favicon.ico", "destination": "/portal/app-icon/icon-192.png" },
+    { "source": "/favicon.ico", "destination": "/portal/F-02-1.png" },
+    { "source": "/heal", "destination": "/portal_heal.html" },
+    { "source": "/portal-heal", "destination": "/portal_heal.html" },
     { "source": "/lead_dashboard.html", "destination": "/staff_dashboard.html" },
     { "source": "/lead-dashboard.webmanifest", "destination": "/staff-dashboard.webmanifest" },
     { "source": "/", "destination": "/login.html" },
@@ -119,6 +121,8 @@
     { "source": "/bookingportal/", "destination": "/bookingportal.html" },
     { "source": "/splash", "destination": "/splash.html" },
     { "source": "/splash/", "destination": "/splash.html" },
+    { "source": "/timetable", "destination": "/timetable.html" },
+    { "source": "/timetable/", "destination": "/timetable.html" },
     { "source": "/booking-portal", "destination": "/bookingportal.html" },
     { "source": "/bookingservice", "destination": "/bookingportal.html" },
     { "source": "/bookingservice/", "destination": "/bookingportal.html" },
@@ -134,7 +138,8 @@
     { "source": "/climbing-registration", "destination": "/climbing_registration.html" },
     { "source": "/climbing_registration", "destination": "/climbing_registration.html" },
     { "source": "/parent_climbing_registration.html", "destination": "/climbing_registration.html" },
-    { "source": "/registration-form", "destination": "/parent_registration.html" }
+    { "source": "/registration-form", "destination": "/parent_registration.html" },
+    { "source": "/comunicaciones", "destination": "/comunicaciones.html" }
   ],
   "headers": [
     {
@@ -183,7 +188,8 @@
     {
       "source": "/admin_dashboard.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\"), screen-wake-lock=(self)" }
       ]
     },
     {
@@ -207,7 +213,15 @@
     {
       "source": "/staff_dashboard.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\"), screen-wake-lock=(self)" }
+      ]
+    },
+    {
+      "source": "/portal-venue-review.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self)" }
       ]
     },
     {
@@ -238,6 +252,13 @@
       "source": "/cs_cliq.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/comunicaciones.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\"), screen-wake-lock=(self)" }
       ]
     }
   ]

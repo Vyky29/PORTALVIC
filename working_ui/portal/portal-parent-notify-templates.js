@@ -39,6 +39,7 @@
     if (
       k !== "instructor_change" &&
       k !== "instructor_reassign" &&
+      k !== "instructor_change_update" &&
       k !== "makeup_scheduled"
     ) {
       return { url: "", name: "", slug: "" };
@@ -47,7 +48,11 @@
     var pl = (ov && ov.payload) || {};
     var slug = String(pl.covering_staff_id || "").trim();
     var name = String(pl.covering_staff_name || pl.to_staff_name || "").trim();
-    if (k === "instructor_change" || k === "instructor_reassign") {
+    if (
+      k === "instructor_change" ||
+      k === "instructor_reassign" ||
+      k === "instructor_change_update"
+    ) {
       if (ctx.newInstructorName) name = String(ctx.newInstructorName).trim();
       if (ctx.coverStaffId) slug = String(ctx.coverStaffId).trim();
     }
@@ -211,18 +216,29 @@
     );
   }
 
-  /** kind: instructor_change | instructor_reassign */
+  /** kind: instructor_change | instructor_reassign — first cover notice */
   function instructorChange(slot, ov, meta, newInstructorName, opts) {
     opts = opts || {};
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
     var when = sessionWhenWithDate(slot, ov);
     var venue = sessionVenue(slot);
-    var oldI = String((slot && slot.staffName) || "").trim();
+    var oldI = String(
+      (opts && (opts.previousInstructorName || opts.oldInstructorName)) ||
+        (slot && slot.staffName) ||
+        "",
+    ).trim();
     var newI =
       String(newInstructorName || "").trim() || "[new instructor — edit here]";
     var whenPart = when ? " on " + when : "";
     var venuePart = venue ? " at " + venue + "." : ".";
-    var swapPart = oldI ? " (instead of " + oldI + ")." : ".";
+    var changeLine = oldI
+      ? oldI +
+        " is not available today. There has been a change of instructor. The session will now be with " +
+        newI +
+        "."
+      : "There has been a change of instructor. The session will now be with " +
+        newI +
+        ".";
     var photoUrl = String((opts && opts.instructorPhotoUrl) || "").trim();
     var photoLine = instructorPhotoTextLine(newI, photoUrl);
     return (
@@ -234,9 +250,7 @@
       whenPart +
       venuePart +
       "\n\n" +
-      "There has been a change of instructor. The session will now be with " +
-      newI +
-      swapPart +
+      changeLine +
       photoLine +
       (photoUrl
         ? "Please show " +
@@ -244,6 +258,54 @@
           " the photo above so they know who to expect.\n\n"
         : "\n") +
       "If you have any questions, just reply to this message." +
+      signOff()
+    );
+  }
+
+  /**
+   * kind: instructor_change_update — second (or later) cover change after parents
+   * already had a first instructor-change message (e.g. Aurora → Javier).
+   */
+  function instructorChangeUpdate(slot, ov, meta, newInstructorName, opts) {
+    opts = opts || {};
+    var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
+    var when = sessionWhenWithDate(slot, ov);
+    var venue = sessionVenue(slot);
+    var prevCover = String(
+      (opts && (opts.previousInstructorName || opts.oldInstructorName)) || "",
+    ).trim();
+    var newI =
+      String(newInstructorName || "").trim() || "[new instructor - edit here]";
+    var whenPart = when ? " on " + when : "";
+    var venuePart = venue ? " at " + venue + "." : ".";
+    var changeLine = prevCover
+      ? "A quick update: we previously told you the session would be with " +
+        prevCover +
+        ". There has been a further change of instructor. The session will now be with " +
+        newI +
+        "."
+      : "A quick update on the instructor for this session: there has been a further change. The session will now be with " +
+        newI +
+        ".";
+    var photoUrl = String((opts && opts.instructorPhotoUrl) || "").trim();
+    var photoLine = instructorPhotoTextLine(newI, photoUrl);
+    return (
+      greet(meta && meta.parentCarerName) +
+      "This is ClubSENsational.\n\n" +
+      "We are writing about " +
+      client +
+      "'s session" +
+      whenPart +
+      venuePart +
+      "\n\n" +
+      changeLine +
+      photoLine +
+      (photoUrl
+        ? "Please show " +
+          client +
+          " the photo above so they know who to expect.\n\n"
+        : "\n") +
+      "Sorry for the extra change - if you have any questions, just reply to this message." +
       signOff()
     );
   }
@@ -316,6 +378,63 @@
       "We hope everything is well with " +
       client +
       " and we look forward to seeing them at the next session." +
+      signOff()
+    );
+  }
+
+  /**
+   * kind: time_change — same-day seat move (client_move) or admin time update.
+   * Uses ov.payload.moved_from_time / moved_to_time when present.
+   */
+  function timeChange(slot, ov, meta, opts) {
+    opts = opts || {};
+    var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
+    var venue = sessionVenue(slot);
+    var payload = (ov && ov.payload) || {};
+    var dateFriendly = friendlyDate(sessionDateIso(slot, ov));
+    var oldTime = String(
+      (opts && opts.oldTime) ||
+        payload.moved_from_time ||
+        payload.from_time ||
+        payload.previous_time ||
+        "",
+    ).trim();
+    var newTime = String(
+      (opts && opts.newTime) ||
+        payload.moved_to_time ||
+        payload.to_time ||
+        sessionWhen(slot) ||
+        "",
+    ).trim();
+    if (newTime.indexOf("\u00b7") >= 0) {
+      newTime = newTime.slice(newTime.lastIndexOf("\u00b7") + 1).trim();
+    }
+    var wherePart = "";
+    if (dateFriendly && venue) wherePart = " on " + dateFriendly + " at " + venue;
+    else if (dateFriendly) wherePart = " on " + dateFriendly;
+    else if (venue) wherePart = " at " + venue;
+    var timesPart = "";
+    if (oldTime && newTime) {
+      timesPart =
+        "\n\nPrevious time: " +
+        oldTime +
+        "\nNew time: " +
+        newTime;
+    } else if (newTime) {
+      timesPart = "\n\nNew time: " + newTime;
+    }
+    return (
+      greet(meta && meta.parentCarerName) +
+      "This is ClubSENsational.\n\n" +
+      "We are writing about " +
+      client +
+      "'s session" +
+      wherePart +
+      ".\n\n" +
+      "There has been a change of time for today only." +
+      timesPart +
+      "\n\n" +
+      "If you have any questions, just reply to this message." +
       signOff()
     );
   }
@@ -522,6 +641,12 @@
     if (k === "instructor_change" || k === "instructor_reassign") {
       return "Instructor update · " + client;
     }
+    if (k === "instructor_change_update") {
+      return "Instructor update (further change) · " + client;
+    }
+    if (k === "time_change" || k === "session_time_change") {
+      return "Time change · " + client;
+    }
     if (k === "absence_announced") return "Absence · " + client;
     if (k === "absence_thanks") return "Thank you — absence noted · " + client;
     if (k === "absence_followup") return "Absence check-in · " + client;
@@ -543,6 +668,10 @@
       if (payload.cancelled_by_admin) return "session_cancelled";
     }
     if (t === "client_replace_in_slot" || t === "replace_participant") {
+      var plRep = ov && ov.payload ? ov.payload : {};
+      if (plRep.client_move === true || plRep.client_move === "true") {
+        return "time_change";
+      }
       if (opts && opts.isTrialOverride && opts.isTrialOverride(ov)) {
         return "trial_scheduled";
       }
@@ -563,6 +692,23 @@
           .toLowerCase() === "makeup_scheduled"
       ) {
         opts.instructorName = photo.name;
+      }
+    }
+    if (
+      String(kind || "")
+        .trim()
+        .toLowerCase() === "instructor_change_update"
+    ) {
+      if (ctx.previousInstructorName) {
+        opts.previousInstructorName = String(ctx.previousInstructorName).trim();
+      } else {
+        var pl = (ctx.ov && ctx.ov.payload) || {};
+        var prior =
+          String(pl.prior_covering_staff_name || "").trim() ||
+          (Array.isArray(pl.prior_covering_staff_names) &&
+            String(pl.prior_covering_staff_names[0] || "").trim()) ||
+          "";
+        if (prior) opts.previousInstructorName = prior;
       }
     }
     return opts;
@@ -587,9 +733,15 @@
     if (k === "absence_followup") return absenceFollowup(slot, ov, meta, opts);
     if (k === "makeup_scheduled") return makeup(slot, ov, meta, opts);
     if (k === "trial_scheduled") return trial(slot, ov, meta, opts);
+    if (k === "time_change" || k === "session_time_change") {
+      return timeChange(slot, ov, meta, opts);
+    }
     if (k === "session_cancelled") return cancelled(slot, ov, meta, opts);
     if (k === "booking_confirmation") {
       return bookingConfirmation(slot, meta, ctx.svc);
+    }
+    if (k === "instructor_change_update") {
+      return instructorChangeUpdate(slot, ov, meta, ctx.newInstructorName, opts);
     }
     return instructorChange(slot, ov, meta, ctx.newInstructorName, opts);
   }
@@ -599,6 +751,8 @@
     signOff: signOff,
     payment: payment,
     instructorChange: instructorChange,
+    instructorChangeUpdate: instructorChangeUpdate,
+    timeChange: timeChange,
     absence: absence,
     absenceThanks: absenceThanks,
     absenceFollowup: absenceFollowup,

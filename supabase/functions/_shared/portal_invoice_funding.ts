@@ -12,8 +12,10 @@ import type { PortalInvoiceVatMode } from "./portal_tax_invoice_pdf.ts";
 import {
   isEalingFunder,
   isHammersmithFulhamFunder,
+  isNhsFunder,
   laBillToAdminNote,
   EALING_BST_BILL_TO,
+  NHS_WNL_ICB_BILL_TO,
   resolveHfBandOverride,
   resolveHfBillToProfile,
   type LaBillToProfile,
@@ -35,6 +37,8 @@ function pickPo(data: Record<string, unknown>): string {
 function looksLikeAuthorityClientId(v: string): boolean {
   const s = clean(v, 80);
   if (!s) return false;
+  /* NHS PDFs use NWL + digits (e.g. NWL474280). */
+  if (/^NWL\d{4,}$/i.test(s)) return true;
   /* H&F / Ealing / NHS IDs are numeric (sometimes with letters). Reject pure slugs. */
   if (/^\d{4,}$/.test(s)) return true;
   if (/\d{4,}/.test(s) && !/^[a-z]+(?:-[a-z0-9]+)*$/i.test(s)) return true;
@@ -326,6 +330,14 @@ export async function resolveLaFunderBillTo(
     isEalingFunder(fundingLabel)
   ) {
     return profileToBillTo(EALING_BST_BILL_TO);
+  }
+
+  if (
+    isNhsFunder(funderBlob) ||
+    isNhsFunder(funder) ||
+    isNhsFunder(fundingLabel)
+  ) {
+    return profileToBillTo(NHS_WNL_ICB_BILL_TO);
   }
 
   if (funder) {

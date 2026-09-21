@@ -22,7 +22,10 @@ export function isDayCentreService(service: string): boolean {
 }
 
 export function isBespokeSharedService(service: string): boolean {
-  return /bespoke.*shared|shared.*bespoke|bespoke_shared/i.test(String(service || ""));
+  const s = String(service || "");
+  if (/bespoke.*shared|shared.*bespoke|bespoke_shared/i.test(s)) return true;
+  /* Hub Tinashe-style books store service as "Bespoke Programme" + key |bespoke_shared. */
+  return /bespoke\s*programme/i.test(s);
 }
 
 export function feedbackAttendanceIsAbsent(attendance: unknown): boolean {
@@ -206,6 +209,7 @@ export function missingFeedbackClientsForShift(
   for (const r of rosterRows) {
     const client = String(r.client_name || "").trim();
     if (!client || /^closed$/i.test(client)) continue;
+    if (/^(office|manager|home|interview)\b/i.test(client)) continue;
     const slotKey = rosterDigestSlotKey(r, shiftDateIso);
     if (seenSlots.has(slotKey)) continue;
     seenSlots.add(slotKey);

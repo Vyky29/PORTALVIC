@@ -145,8 +145,10 @@
   }
 
   function openHref(name) {
-    var q = name ? "?q=" + encodeURIComponent(name) : "";
-    return "/Working_interview.html" + q;
+    var params = new URLSearchParams();
+    params.set("v", "20260904-interview-sync");
+    if (name) params.set("q", name);
+    return "/Working_interview.html?" + params.toString();
   }
 
   async function readAdminSessionForHandoff() {
@@ -302,6 +304,43 @@
     });
   }
 
+  function parseDobParts(raw) {
+    var s = String(raw || "").trim();
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (!m) return null;
+    return { y: Number(m[1]), mo: Number(m[2]), d: Number(m[3]) };
+  }
+
+  function ageFromDob(raw) {
+    var p = parseDobParts(raw);
+    if (!p) return null;
+    var ref = new Date();
+    var age = ref.getFullYear() - p.y;
+    var m = ref.getMonth() + 1 - p.mo;
+    if (m < 0 || (m === 0 && ref.getDate() < p.d)) age -= 1;
+    if (age < 0 || age > 120) return null;
+    return age;
+  }
+
+  function formatDobShort(raw) {
+    var p = parseDobParts(raw);
+    if (!p) return "";
+    var dt = new Date(p.y, p.mo - 1, p.d);
+    if (isNaN(dt.getTime())) return "";
+    return dt.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  }
+
+  function nameCellHtml(c) {
+    var name = esc(c.name || "—");
+    /* DOB / age belong on onboarding forms, not the interview list. */
+    var meta = "";
+    return "<strong>" + name + "</strong>" + meta;
+  }
+
   function tableFor(list) {
     if (!list.length) {
       return '<div class="ai-empty">None in this bucket yet.</div>';
@@ -314,9 +353,9 @@
         var role = (c.onboarding && c.onboarding.role) || "—";
         return (
           "<tr>" +
-          "<td><strong>" +
-          esc(c.name || "—") +
-          "</strong></td>" +
+          "<td>" +
+          nameCellHtml(c) +
+          "</td>" +
           "<td>" +
           esc(role) +
           "</td>" +

@@ -178,11 +178,9 @@
     return "not_tracked";
   }
 
-  /** All active staff with a shift must grant location during portal setup. */
-  function locationRequiredForRow(row) {
-    if (!row || !row.profile) return true;
-    if (row.profile.is_active === false) return false;
-    return true;
+  /** Live map retired — location is not part of portal setup. */
+  function locationRequiredForRow(_row) {
+    return false;
   }
 
   function formatGpsAgo(iso) {
@@ -718,26 +716,8 @@
 
   function permissionCell(row, field) {
     var s = row.setup || {};
-    var r = row.readiness;
     if (field === "location") {
-      if (!r.locationRequired) return statusBadge("muted", "Not Required");
-      var base = s.location_granted ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
-      var ping = row.liveLocation;
-      if (ping && ping.updated_at) {
-        var fresh = Date.now() - new Date(ping.updated_at).getTime() <= 20 * 60 * 1000;
-        var sub =
-          '<span class="muted portal-sready-subdate">' +
-          esc(fresh ? "GPS " + ping.ago : "No recent GPS") +
-          "</span>";
-        return base + sub;
-      }
-      if (s.location_granted) {
-        return (
-          base +
-          '<span class="muted portal-sready-subdate">No GPS ping yet — must open portal on their phone</span>'
-        );
-      }
-      return base;
+      return statusBadge("muted", "Off");
     }
     if (field === "camera") {
       return s.camera_granted ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
@@ -809,7 +789,7 @@
       '<div class="kpi-v">' +
       esc(String(appMiss)) +
       "</div>" +
-      '<div class="kpi-s muted">Alerts, location or features</div></div>' +
+      '<div class="kpi-s muted">Alerts or features</div></div>' +
       "</div>";
   }
 
@@ -1046,20 +1026,7 @@
 
     var setupRes = await client.from("portal_staff_setup_status").select("*");
 
-    var liveLocRes = await client.rpc("portal_admin_fetch_staff_live_locations", {
-      p_stale_minutes: 120,
-    });
-
     var liveLocRows = [];
-    if (!liveLocRes.error && liveLocRes.data != null) {
-      liveLocRows = Array.isArray(liveLocRes.data) ? liveLocRes.data : [];
-    } else {
-      var liveTable = await client
-        .from("portal_staff_live_locations")
-        .select("staff_user_id, updated_at, is_sharing")
-        .gte("updated_at", new Date(Date.now() - 120 * 60 * 1000).toISOString());
-      if (!liveTable.error) liveLocRows = liveTable.data || [];
-    }
 
     var annRes = await client
       .from("portal_staff_announcements")

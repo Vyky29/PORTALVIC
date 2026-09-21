@@ -33,14 +33,9 @@ Deno.serve(async (req) => {
 
   const portalUrl = (Deno.env.get("SUPABASE_URL") ?? "").trim();
   const portalService = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
-  const obUrl = (Deno.env.get("ONBOARDING_SUPABASE_URL") ?? "").trim();
-  const obService = (Deno.env.get("ONBOARDING_SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
 
   if (!portalUrl || !portalService) {
     return json(500, { ok: false, error: "misconfigured" });
-  }
-  if (!obUrl || !obService) {
-    return json(503, { ok: false, error: "onboarding_not_configured" });
   }
 
   const portalAdmin = createClient(portalUrl, portalService, {
@@ -74,20 +69,19 @@ Deno.serve(async (req) => {
     staffName = String(profile?.full_name || profile?.username || "").trim().slice(0, 200);
   }
 
-  const obAdmin = createClient(obUrl, obService, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
   const now = new Date().toISOString();
-  const { error } = await obAdmin.from("onboarding_applicant_sessions").upsert({
-    applicant_session_id: userId,
-    portal_staff_name: staffName || null,
-    updated_at: now,
-  });
+  const { error } = await portalAdmin.from("onboarding_applicant_sessions").upsert(
+    {
+      applicant_session_id: userId,
+      portal_staff_name: staffName || null,
+      updated_at: now,
+    },
+    { onConflict: "applicant_session_id" },
+  );
 
   if (error) {
     console.error("[portal-staff-onboarding-session-touch]", error);
-    return json(500, { ok: false, error: "touch_failed" });
+    return json(500, { ok: false, error: "touch_failed", detail: error.message || null });
   }
 
   return json(200, {

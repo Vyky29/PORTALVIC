@@ -5,20 +5,18 @@
  * v20260609-sw-syntax-fix (restore after chat cleanup script broke ternary)
  * v20260712-cs-portal-wa (Leader WhatsApp deep-link + CS Portal branding)
  * v20260711-always-os-banner (foreground skip broke alerts after chat UI removal)
+ * v20260904-comms-push (Communications message + incoming-call banners)
+ * v20260905-comms-36 (Home screen PWA numeric badge via Badging API)
+ * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
+ * v20260906-comms-inapp-49 (always OS banner for incoming calls)
+ * v20260910-sw-no-fetch (do not intercept JS/CSS — Cache API hangs on some iPhone PWAs)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
+var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
 
 self.addEventListener('install', function (event) {
-  event.waitUntil(
-    caches
-      .open('portal-push-icons-v1')
-      .then(function (cache) {
-        return cache.add(PORTAL_PUSH_ICON_PATH).catch(function () {});
-      })
-      .then(function () {
-        return self.skipWaiting();
-      })
-  );
+  /* Skip waiting immediately. Do not wait on Cache Storage — it hangs on some iPhone PWAs. */
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', function (event) {
@@ -29,6 +27,59 @@ var PORTAL_ALERT_VIBRATE = [200, 80, 200, 80, 280, 100, 200];
 var PORTAL_CALL_VIBRATE = [500, 180, 500, 180, 700, 180, 500];
 /** Auth user id stamped by the page after login — used to drop pushes meant for someone else. */
 var portalPushUserId = '';
+/** iOS often returns no clients during `push`. Page heartbeat covers that. */
+var portalForegroundUntil = 0;
+var portalForegroundSince = 0;
+var PORTAL_FG_CACHE = 'portal-fg-v1';
+var PORTAL_FG_TTL_MS = 3500;
+var PORTAL_FG_MIN_VISIBLE_MS = 2500;
+var PORTAL_BADGE_CACHE = 'portal-app-badge-v1';
+var portalStoredAppBadge = 0;
+
+function portalPersistBadgeCount(n) {
+  portalStoredAppBadge = Math.max(0, Number(n) || 0);
+  return caches
+    .open(PORTAL_BADGE_CACHE)
+    .then(function (c) {
+      return c.put('count', new Response(String(portalStoredAppBadge)));
+    })
+    .catch(function () {});
+}
+
+function portalReadPersistedBadgeCount() {
+  return caches
+    .open(PORTAL_BADGE_CACHE)
+    .then(function (c) {
+      return c.match('count').then(function (r) {
+        if (!r) return portalStoredAppBadge;
+        return r.text().then(function (t) {
+          var parsed = parseInt(t, 10);
+          if (parsed > 0) portalStoredAppBadge = parsed;
+          return portalStoredAppBadge;
+        });
+      });
+    })
+    .catch(function () {
+      return portalStoredAppBadge;
+    });
+}
+
+function portalPaintAppBadge(n) {
+  var count = Math.max(0, Number(n) || 0);
+  var persist = portalPersistBadgeCount(count);
+  if (!self.navigator || typeof self.navigator.setAppBadge !== 'function') return persist;
+  var paint =
+    count < 1 && typeof self.navigator.clearAppBadge === 'function'
+      ? self.navigator.clearAppBadge()
+      : self.navigator.setAppBadge(count);
+  return Promise.all([persist, Promise.resolve(paint)]).catch(function () {});
+}
+
+function portalBumpAppBadge() {
+  return portalReadPersistedBadgeCount().then(function (n) {
+    return portalPaintAppBadge(n + 1);
+  });
+}
 
 function portalAppendQueryParam(absUrl, key, value) {
   try {
@@ -39,6 +90,50 @@ function portalAppendQueryParam(absUrl, key, value) {
     var s = String(absUrl || '');
     var sep = s.indexOf('?') >= 0 ? '&' : '?';
     return s + sep + encodeURIComponent(key) + '=' + encodeURIComponent(value);
+  }
+}
+
+/** True when the open client is already a portal app page (do not navigate away). */
+function portalClientIsPortalApp(client) {
+  try {
+    var href = String((client && client.url) || '');
+    return /staff_dashboard|admin_dashboard|ceo_dashboard|office_portal|comunicaciones|parent_portal|cs_cliq|login\.html/i.test(
+      href
+    );
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Resolve a safe open URL for notification clicks / cold starts.
+ * Bare `/`, scope-only, or empty URLs blank the iOS/Android PWA (navigate to site root).
+ */
+function portalSafeOpenUrl(raw, portalOpen) {
+  var scope = (self.registration && self.registration.scope) || '/';
+  var fallback;
+  try {
+    fallback = new URL(PORTAL_DEFAULT_DASHBOARD, scope).href;
+  } catch (e0) {
+    fallback = '/' + PORTAL_DEFAULT_DASHBOARD;
+  }
+  var open = String(portalOpen || '').trim();
+  try {
+    var rawStr = String(raw || '').trim();
+    if (!rawStr || rawStr === '/' || rawStr === scope) {
+      return open ? portalAppendQueryParam(fallback, 'portalOpen', open) : fallback;
+    }
+    var abs = new URL(rawStr, scope);
+    var path = String(abs.pathname || '/');
+    if (path === '/' || path === '') {
+      abs.pathname = '/' + PORTAL_DEFAULT_DASHBOARD;
+    }
+    if (open && !abs.searchParams.get('portalOpen')) {
+      abs.searchParams.set('portalOpen', open);
+    }
+    return abs.href;
+  } catch (e) {
+    return open ? portalAppendQueryParam(fallback, 'portalOpen', open) : fallback;
   }
 }
 
@@ -71,7 +166,7 @@ function portalNotifyOpenClients(title, body, portalOpen, callData, chatData, me
           senderUserId: meta.senderUserId || '',
           targetUserId: meta.targetUserId || '',
         });
-        if (portalOpen === 'incoming_call' && typeof client.focus === 'function') {
+        if ((portalOpen === 'incoming_call' || portalOpen === 'communications_call') && typeof client.focus === 'function') {
           try {
             client.focus();
           } catch (eFocus) {}
@@ -81,14 +176,87 @@ function portalNotifyOpenClients(title, body, portalOpen, callData, chatData, me
   });
 }
 
-function portalHasVisiblePortalClient() {
-  return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
-    if (!clientList || !clientList.length) return false;
-    for (var i = 0; i < clientList.length; i++) {
-      var client = clientList[i];
-      if (client && client.visibilityState === 'visible') return true;
-    }
-    return false;
+function portalWriteForegroundState(until, since) {
+  portalForegroundUntil = Math.max(0, Number(until) || 0);
+  portalForegroundSince = Math.max(0, Number(since) || 0);
+  return caches
+    .open(PORTAL_FG_CACHE)
+    .then(function (c) {
+      return Promise.all([
+        c.put('until', new Response(String(portalForegroundUntil))),
+        c.put('since', new Response(String(portalForegroundSince))),
+      ]);
+    })
+    .catch(function () {});
+}
+
+function portalParseCacheNumber(r, fallback) {
+  if (!r) return Promise.resolve(fallback);
+  return r.text().then(function (t) {
+    var n = parseInt(t, 10);
+    return Number.isFinite(n) ? n : fallback;
+  });
+}
+
+function portalReadForegroundState() {
+  return caches
+    .open(PORTAL_FG_CACHE)
+    .then(function (c) {
+      return Promise.all([c.match('until'), c.match('since')]).then(function (pair) {
+        return Promise.all([
+          portalParseCacheNumber(pair[0], portalForegroundUntil),
+          portalParseCacheNumber(pair[1], portalForegroundSince),
+        ]).then(function (vals) {
+          portalForegroundUntil = vals[0];
+          portalForegroundSince = vals[1];
+          return { until: portalForegroundUntil, since: portalForegroundSince };
+        });
+      });
+    })
+    .catch(function () {
+      return { until: portalForegroundUntil, since: portalForegroundSince };
+    });
+}
+
+function portalTreatAsForeground() {
+  return portalReadForegroundState().then(function (st) {
+    var now = Date.now();
+    if (!st.until || now >= st.until) return false;
+    if (!st.since || now - st.since < PORTAL_FG_MIN_VISIBLE_MS) return false;
+    return true;
+  });
+}
+
+function portalWritePendingInapp(payload) {
+  return caches
+    .open('portal-comms-inapp-v1')
+    .then(function (c) {
+      return c.put(
+        'pending',
+        new Response(JSON.stringify(payload || {}), {
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+    })
+    .catch(function () {});
+}
+
+function portalCloseCommsOsBanners() {
+  return self.registration.getNotifications().then(function (list) {
+    (list || []).forEach(function (n) {
+      var open = String((n && n.data && n.data.portalOpen) || '');
+      var tag = String((n && n.tag) || '');
+      if (open === 'communications_call' || open === 'incoming_call') return;
+      if (
+        open === 'communications' ||
+        open === 'family_messages' ||
+        (tag.indexOf('comms') === 0 && tag.indexOf('comms-call') !== 0)
+      ) {
+        try {
+          n.close();
+        } catch (e) {}
+      }
+    });
   });
 }
 
@@ -97,6 +265,39 @@ self.addEventListener('message', function (event) {
   if (!d || !d.type) return;
   if (d.type === 'portal-push-set-user') {
     portalPushUserId = String(d.userId || '').trim();
+    return;
+  }
+  if (d.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+  if (d.type === 'portal-client-visibility') {
+    if (d.visible) {
+      var since = Math.max(0, Number(d.since) || Date.now());
+      event.waitUntil(portalWriteForegroundState(Date.now() + PORTAL_FG_TTL_MS, since));
+    } else {
+      event.waitUntil(portalWriteForegroundState(0, 0));
+    }
+    return;
+  }
+  if (d.type === 'portal-close-comms-notifications') {
+    event.waitUntil(
+      self.registration.getNotifications().then(function (list) {
+        (list || []).forEach(function (n) {
+          var open = String((n && n.data && n.data.portalOpen) || '');
+          var tag = String((n && n.tag) || '');
+          if (open === 'communications' || tag.indexOf('comms') === 0) {
+            try {
+              n.close();
+            } catch (e) {}
+          }
+        });
+      })
+    );
+    return;
+  }
+  if (d.type === 'portal-set-app-badge') {
+    event.waitUntil(portalPaintAppBadge(d.count));
     return;
   }
   if (d.type === 'portal-show-local-test') {
@@ -113,7 +314,10 @@ self.addEventListener('message', function (event) {
         requireInteraction: true,
         silent: false,
         vibrate: PORTAL_ALERT_VIBRATE,
-        data: { url: self.registration.scope || '/', portalOpen: 'alerts' },
+        data: {
+          url: portalSafeOpenUrl('', 'alerts'),
+          portalOpen: 'alerts',
+        },
       })
     );
     return;
@@ -137,7 +341,7 @@ self.addEventListener('message', function (event) {
 self.addEventListener('push', function (event) {
   var title = 'clubSENsational';
   var body = 'Schedule update';
-  var url = '/';
+  var url = portalSafeOpenUrl('', 'alerts');
   var portalOpen = 'alerts';
   var tag = 'portal-' + Date.now();
   var requireInteraction = false;
@@ -146,6 +350,7 @@ self.addEventListener('push', function (event) {
   var chatData = null;
   var senderUserId = '';
   var targetUserId = '';
+  var appBadgeCount = null;
   try {
     if (event.data) {
       var j = event.data.json();
@@ -160,6 +365,9 @@ self.addEventListener('push', function (event) {
       if (j && j.chat) chatData = j.chat;
       if (j && j.senderUserId) senderUserId = String(j.senderUserId);
       if (j && j.targetUserId) targetUserId = String(j.targetUserId);
+      if (j && j.appBadge != null && isFinite(Number(j.appBadge))) {
+        appBadgeCount = Math.max(0, Number(j.appBadge));
+      }
     }
   } catch (e) {
     try {
@@ -182,11 +390,17 @@ self.addEventListener('push', function (event) {
     portalOpen === 'chat' ||
     portalOpen === 'portal_staff_whatsapp' ||
     portalOpen === 'staff_whatsapp' ||
-    portalOpen === 'incoming_call'
+    portalOpen === 'incoming_call' ||
+    portalOpen === 'communications' ||
+    portalOpen === 'communications_call' ||
+    portalOpen === 'family_messages'
   ) {
     requireInteraction = true;
     if (!vibrate) {
-      vibrate = portalOpen === 'incoming_call' ? PORTAL_CALL_VIBRATE : PORTAL_ALERT_VIBRATE;
+      vibrate =
+        portalOpen === 'incoming_call' || portalOpen === 'communications_call'
+          ? PORTAL_CALL_VIBRATE
+          : PORTAL_ALERT_VIBRATE;
     }
   }
   var icon = portalPushIconUrl();
@@ -201,27 +415,58 @@ self.addEventListener('push', function (event) {
     data: { url: url, portalOpen: portalOpen, call: callData, chat: chatData },
   };
   if (vibrate) notifyOpts.vibrate = vibrate;
+  var isCallPush = portalOpen === 'communications_call' || portalOpen === 'incoming_call';
+  var isCommsMessagePush = portalOpen === 'communications';
+  var isFamilyPush = portalOpen === 'family_messages';
   event.waitUntil(
-    Promise.all([
-      /* Always show the OS banner (app open, background, or sleeping). Skipping
-         when a portal tab was visible broke alerts after the in-app handlers
-         were removed with the old chat UI. */
-      self.registration.showNotification(title, notifyOpts),
-      portalNotifyOpenClients(title, body, portalOpen, callData, chatData, {
+    portalTreatAsForeground().then(function (hasVisibleClient) {
+      var pending = {
+        at: Date.now(),
+        title: title,
+        body: body,
+        portalOpen: portalOpen,
         senderUserId: senderUserId,
-        targetUserId: targetUserId,
-      }),
-    ])
+        conversationId:
+          (chatData && (chatData.conversationId || chatData.conversation_id)) ||
+          (callData && (callData.conversationId || callData.conversation_id)) ||
+          '',
+        callId: (callData && (callData.callId || callData.id)) || '',
+        callType: (callData && callData.type) || '',
+      };
+      var tasks = [
+        portalNotifyOpenClients(title, body, portalOpen, callData, chatData, {
+          senderUserId: senderUserId,
+          targetUserId: targetUserId,
+        }),
+      ];
+      /* Calls always use the iOS logo toaster. A locked phone cannot show
+         the in-app overlay; skipping showNotification drops the ring. */
+      if (isCallPush) {
+        tasks.unshift(self.registration.showNotification(title, notifyOpts));
+        tasks.push(portalWritePendingInapp(pending));
+      } else if ((isCommsMessagePush || isFamilyPush) && hasVisibleClient) {
+        tasks.push(portalCloseCommsOsBanners());
+        tasks.push(portalWritePendingInapp(pending));
+      } else {
+        tasks.unshift(self.registration.showNotification(title, notifyOpts));
+      }
+      if (!hasVisibleClient || isCallPush) {
+        tasks.push(
+          appBadgeCount != null ? portalPaintAppBadge(appBadgeCount) : portalBumpAppBadge()
+        );
+      }
+      return Promise.all(tasks);
+    })
   );
 });
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
   var data = (event.notification && event.notification.data) || {};
-  var u = data.url || self.registration.scope || '/';
   var portalOpen = String(data.portalOpen || '');
   var callData = data.call || null;
   var chatData = data.chat || null;
+  var u = portalSafeOpenUrl(data.url, portalOpen);
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
       for (var i = 0; i < list.length; i++) {
@@ -235,7 +480,10 @@ self.addEventListener('notificationclick', function (event) {
               url: u,
             });
           } catch (e) {}
-          /* Deep-link into Leader WhatsApp / alerts / chat when a URL was provided. */
+          /* Already on a portal page: focus only. clients.navigate('/') blanks iOS PWAs. */
+          if (portalClientIsPortalApp(list[i])) {
+            return list[i].focus();
+          }
           if (u && typeof list[i].navigate === 'function') {
             try {
               return list[i].navigate(u).then(function () {

@@ -11,8 +11,14 @@ const DEFAULT_SUPABASE_URL = "https://cklpnwhlqsulpmkipmqb.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE";
 
 const STORAGE_KEY = "portal_staff_context";
-/** Last seen `staff_profiles.auth_session_generation` (localStorage — shared across portal tabs). */
+/** Last seen `staff_profiles.auth_session_generation` (localStorage — per auth user). */
 const PORTAL_AUTH_GEN_SESSION_KEY = "portalAuthSessionGenV1";
+
+function portalAuthGenStorageKey(userId) {
+  const id = String(userId || "").trim();
+  if (id) return PORTAL_AUTH_GEN_SESSION_KEY + ":" + id;
+  return PORTAL_AUTH_GEN_SESSION_KEY;
+}
 
 /** @type {import("@supabase/supabase-js").SupabaseClient | null} */
 let _client = null;
@@ -55,6 +61,16 @@ export function isSupabaseConfigured() {
  */
 export function getSupabaseClient() {
   if (_client) return _client;
+  const w = typeof window !== "undefined" ? window : undefined;
+  const existing =
+    (w && w.__PORTAL_SUPABASE_JS_CLIENT__) ||
+    (w && w.__PORTAL_SUPABASE__ && w.__PORTAL_SUPABASE__.client) ||
+    (w && w.__PORTAL_SUPABASE_SINGLETON__);
+  if (existing) {
+    _client = existing;
+    if (w) w.__PORTAL_SUPABASE_JS_CLIENT__ = existing;
+    return _client;
+  }
   const { url, key } = readConfig();
   if (!url || !key) {
     throw new Error(
@@ -68,6 +84,7 @@ export function getSupabaseClient() {
       detectSessionInUrl: true,
     },
   });
+  if (w) w.__PORTAL_SUPABASE_JS_CLIENT__ = _client;
   return _client;
 }
 
@@ -118,9 +135,9 @@ export function clearPortalStaffContext() {
   }
 }
 
-export function portalGetCachedAuthSessionGeneration() {
+export function portalGetCachedAuthSessionGeneration(userId) {
   try {
-    const raw = localStorage.getItem(PORTAL_AUTH_GEN_SESSION_KEY);
+    const raw = localStorage.getItem(portalAuthGenStorageKey(userId));
     if (raw == null || raw === "") return null;
     const n = Number(raw);
     return Number.isFinite(n) ? n : null;
@@ -129,17 +146,18 @@ export function portalGetCachedAuthSessionGeneration() {
   }
 }
 
-export function portalSetCachedAuthSessionGeneration(n) {
+export function portalSetCachedAuthSessionGeneration(n, userId) {
   try {
-    localStorage.setItem(PORTAL_AUTH_GEN_SESSION_KEY, String(Number(n) || 0));
+    localStorage.setItem(portalAuthGenStorageKey(userId), String(Number(n) || 0));
   } catch {
     /* ignore */
   }
 }
 
-export function portalClearCachedAuthSessionGeneration() {
+export function portalClearCachedAuthSessionGeneration(userId) {
   try {
-    localStorage.removeItem(PORTAL_AUTH_GEN_SESSION_KEY);
+    localStorage.removeItem(portalAuthGenStorageKey(userId));
+    if (userId) localStorage.removeItem(PORTAL_AUTH_GEN_SESSION_KEY);
   } catch {
     /* ignore */
   }
@@ -149,12 +167,13 @@ export function portalClearCachedAuthSessionGeneration() {
  * Call once after each successful password login. Other devices/tabs polling
  * `staff_profiles.auth_session_generation` will see a higher value and sign out.
  * @param {import("@supabase/supabase-js").SupabaseClient} supabase
+ * @param {string} [userId]
  */
-export async function portalBumpAuthSessionGeneration(supabase) {
+export async function portalBumpAuthSessionGeneration(supabase, userId) {
   const { data, error } = await supabase.rpc("portal_bump_auth_session_generation");
   if (error) throw error;
   const v = typeof data === "number" ? data : Number(data);
-  if (Number.isFinite(v)) portalSetCachedAuthSessionGeneration(v);
+  if (Number.isFinite(v)) portalSetCachedAuthSessionGeneration(v, userId);
   return v;
 }
 
@@ -166,6 +185,21 @@ export async function portalBumpAuthSessionGeneration(supabase) {
  */
 export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys) {
   const out = new Set();
+  const DC = new Set(["ikram", "fadi", "timi", "acat"]);
+  function isDcClientToken(tok) {
+    const t = String(tok || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (!t) return false;
+    /* Exact only for Emanuel — prefix would match Emmanuel Abate. */
+    if (t === "emanuel" || t === "emmanuel") return true;
+    for (const d of DC) {
+      if (t === d || t.indexOf(d + "_") === 0) return true;
+    }
+    return false;
+  }
   for (const raw of rosterSessionKeys || []) {
     const rk = String(raw || "").trim();
     if (!rk) continue;
@@ -196,6 +230,25 @@ export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys)
       if (client) {
         out.add(`${date}||${client}`);
         out.add(`${date}|${client}|bespoke_shared`);
+        if (isDcClientToken(client)) out.add(`${date}|${client}|day_centre`);
+      }
+    }
+    /* Timed Hub cover of a DC client (Raul 3–4 Ikram) → still look up shared day_centre. */
+    for (let i = 1; i < parts.length; i++) {
+      const tok = String(parts[i] || "").trim().toLowerCase();
+      if (!tok || /^\d{1,2}:\d{2}$/.test(tok)) continue;
+      if (
+        tok === "day_centre" ||
+        tok === "bespoke_shared" ||
+        tok === "hub_room" ||
+        tok === "aquatic" ||
+        /pool|climb|multi|lane/.test(tok)
+      ) {
+        continue;
+      }
+      if (isDcClientToken(tok)) {
+        out.add(`${date}|${tok}|day_centre`);
+        out.add(`${date}||${tok}`);
       }
     }
   }
@@ -205,7 +258,8 @@ export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys)
 /** Keys for shared feedback units where co-instructor absent quick marks should propagate. */
 function portalSharedFeedbackUnitKeys(rosterSessionKeys) {
   const seen = new Set();
-  const out = [];
+  const dayCentreFirst = [];
+  const dateClient = [];
   for (const raw of rosterSessionKeys || []) {
     const k = String(raw || "").trim();
     if (!k || seen.has(k)) continue;
@@ -213,12 +267,17 @@ function portalSharedFeedbackUnitKeys(rosterSessionKeys) {
     const last = String(parts[parts.length - 1] || "")
       .trim()
       .toLowerCase();
-    if (last === "bespoke_shared" || last === "day_centre" || parts[1] === "") {
+    if (last === "bespoke_shared" || last === "day_centre") {
       seen.add(k);
-      out.push(k);
+      dayCentreFirst.push(k);
+    } else if (parts[1] === "") {
+      seen.add(k);
+      dateClient.push(k);
     }
   }
-  return out;
+  /* Prefer day_centre / bespoke before date||client so the RPC 120-key cap
+     never drops Ikram peer clears under a flood of aquatic aliases. */
+  return dayCentreFirst.concat(dateClient);
 }
 
 /**
@@ -498,6 +557,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
         opts && Array.isArray(opts.feedbackMergeRules) ? opts.feedbackMergeRules : [],
     };
     if (!Array.isArray(peerRows)) return { present, absent };
+    const rosterByDate = portalGroupSessionKeysByDate(rosterSessionKeys);
     for (const r of peerRows) {
       if (!r || typeof r !== "object") continue;
       const pk = String(
@@ -507,7 +567,23 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       const isAbs = portalFeedbackAttendanceIsAbsent(
         /** @type {{ attendance?: string }} */ (r).attendance
       );
-      for (const rk of rosterSessionKeys) {
+      /*
+       * Day Centre / Bespoke shared: keep the exact unit key so every co-worker
+       * (Michelle submits → Raul/Luliya green) resolves even before roster fan-out.
+       */
+      if (portalRosterKeyIsSharedFeedbackUnit(pk)) {
+        if (isAbs) {
+          if (!seenA.has(pk)) {
+            seenA.add(pk);
+            absent.push(pk);
+          }
+        } else if (!seenP.has(pk)) {
+          seenP.add(pk);
+          present.push(pk);
+        }
+      }
+      const rosterCands = portalRosterCandidatesForSubmittedKey(pk, rosterByDate);
+      for (const rk of rosterCands) {
         if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, matchOpts)) continue;
         if (
           portalRosterKeyNeedsSubmitterOwnership(rk, perStaffOwnOnly) &&
@@ -640,6 +716,8 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     if (!pk || seenOwnPk.has(pk)) continue;
     seenOwnPk.add(pk);
     ownFeedbackPortalKeys.push(pk);
+    /* One portal key can cover several roster halves (e.g. Stephanie 4.30+5.00).
+       Collect every match — do not stop at the first timed key. */
     for (const rk of rosterSessionKeys) {
       if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, ownMatchOpts)) {
         continue;
@@ -648,7 +726,6 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
         seenOwnRk.add(rk);
         ownFeedbackKeys.push(rk);
       }
-      break;
     }
   }
 
@@ -704,6 +781,15 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     return cancelSplit.before.indexOf(k) < 0;
   });
 
+  const fetchDegraded = !!(
+    (fb && fb.error) ||
+    (inc && inc.error) ||
+    (can && can.error) ||
+    (quickMarks && quickMarks.error) ||
+    (fbCatchUp && fbCatchUp.error) ||
+    (rosterSessionKeys.length && fbPeerShared && fbPeerShared.error)
+  );
+
   return {
     feedbackKeys: feedbackMerged,
     ownFeedbackKeys,
@@ -717,6 +803,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     lateFeedbackKeys,
     lateFeedbackDates,
     latePayClearedDates,
+    fetchDegraded,
   };
 }
 
@@ -829,8 +916,24 @@ const PORTAL_ROSTER_CLIENT_SLUG_CANON = Object.freeze({
   khalid: "khalid",
   rayyan_fi: "rayyan_f",
   rayyan_f: "rayyan_f",
+  zaid_alfadhl: "zaid",
+  zaid_al: "zaid",
+  zaid_trial: "zaid",
+  trial_zaid: "zaid",
+  zaid: "zaid",
   chaitanya_trial_28_06: "chaitanya",
   chaitanya: "chaitanya",
+  mia_mesi: "mia",
+  mia: "mia",
+  christian_abate: "christian",
+  christian: "christian",
+  emmanuel_abate: "emmanuel",
+  emmanuel: "emmanuel",
+  adam_mahmmoud: "adam_ma",
+  adam_mahmoud: "adam_ma",
+  adam_ma: "adam_ma",
+  yunis_hussein: "yunis",
+  yunis: "yunis",
 });
 
 /** Known client_id / slug aliases (roster spreadsheet vs ClassForKids). */
@@ -902,6 +1005,8 @@ function portalRosterKeyIsSharedFeedbackUnit(rosterKey) {
     .trim()
     .toLowerCase();
   if (last === "day_centre" || last === "bespoke_shared") return true;
+  /* 2:1 aquatic (Joelle): iso|client|HH:mm|aquatic is the same key on both instructors. */
+  if (last === "aquatic") return true;
   if (parts.length >= 3 && parts[1] === "") return true;
   return false;
 }
@@ -930,7 +1035,6 @@ function portalRosterKeyIsPerSlotServiceUnit(rosterKey) {
   if (!rTime) return false;
   if (r.indexOf("climb") >= 0) return true;
   if (/multi[-\s]?activity/.test(r) || r.split("|").indexOf("multi") >= 0) return true;
-  if (/\|aquatic$/i.test(r) || /\|\d{1,2}:\d{2}\|aquatic/i.test(r)) return true;
   const parts = r.split("|").map((p) => String(p || "").trim().toLowerCase()).filter(Boolean);
   if (parts.length >= 4 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0])) {
     const last = parts[parts.length - 1];
@@ -1089,6 +1193,32 @@ function portalTimedKeyCoversMergeCardRosterKey(submittedKey, mergeRosterKey, me
   return allowed.has(sTime);
 }
 
+/**
+ * Lead aquatic unit (DATE|client|aquatic) covers Today merge cards for that client
+ * (Zaid AA 9–9.30 → also clears Multi 9.30 via zaid_javier_sun_swim).
+ */
+function portalLeadAquaticKeyCoversMergeCardRosterKey(submittedKey, mergeRosterKey, mergeRules) {
+  const s = String(submittedKey || "").trim();
+  const r = String(mergeRosterKey || "").trim();
+  if (!portalSubmittedKeyIsLeadAquaticUnit(s) || !r) return false;
+  const m = r.match(/^(\d{4}-\d{2}-\d{2})\|merge\|(.+)$/i);
+  if (!m) return false;
+  const date = m[1];
+  const mergeKey = String(m[2] || "").trim();
+  if (s.split("|")[0] !== date) return false;
+  const sSlugs = portalFeedbackParticipantSlugTokensFromKey(s);
+  if (!sSlugs.length) return false;
+  const rules = Array.isArray(mergeRules) ? mergeRules : [];
+  const rule = rules.find((x) => String(x && x.mergeKey ? x.mergeKey : "").trim() === mergeKey);
+  if (!rule) return false;
+  const clientSlug = portalSlugifyFeedbackName(rule.client_name);
+  if (!clientSlug) return false;
+  if (!sSlugs.some((ss) => portalClientSlugTokensEquivalent(ss, clientSlug))) return false;
+  const wd = portalLondonWeekdayLongFromIso(date);
+  if (rule.day && String(rule.day).trim() !== wd) return false;
+  return true;
+}
+
 /** Participant client slug tokens only (excludes aquatic, day_centre, pool area, …). */
 function portalFeedbackParticipantSlugTokensFromKey(key) {
   return clientSlugTokensFromPortalSessionKey(key).filter(
@@ -1114,6 +1244,9 @@ function portalSessionKeyAreaToken(key) {
     .split("|")
     .map((p) => String(p || "").trim().toLowerCase())
     .filter(Boolean);
+  const lastEarly = String(parts[parts.length - 1] || "").trim().toLowerCase();
+  /* date|client|day_centre (3 pipes) — must not fall through as empty area. */
+  if (lastEarly === "day_centre" || lastEarly === "bespoke_shared") return lastEarly;
   if (parts.length < 4) return "";
   /* date|client|HH:mm|service|area|instructor — trailing token is instructor, not area */
   if (
@@ -1258,6 +1391,92 @@ function portalSubmittedKeyIsLeadAquaticUnit(submittedKey) {
   return false;
 }
 
+function portalIsoShiftDays(iso, deltaDays) {
+  const s = String(iso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+  const t = Date.parse(s + "T12:00:00");
+  if (!Number.isFinite(t)) return "";
+  const d = new Date(t + deltaDays * 86400000);
+  return (
+    d.getFullYear() +
+    "-" +
+    String(d.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(d.getDate()).padStart(2, "0")
+  );
+}
+
+/** Group `YYYY-MM-DD|…` keys by calendar date so matching is O(keys in that day), not N×M. */
+export function portalGroupSessionKeysByDate(keys) {
+  const map = new Map();
+  for (const k of keys || []) {
+    const s = String(k || "").trim();
+    if (!s) continue;
+    const d = s.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+    let arr = map.get(d);
+    if (!arr) {
+      arr = [];
+      map.set(d, arr);
+    }
+    arr.push(s);
+  }
+  return map;
+}
+
+function portalSubmittedCandidatesForRosterKey(rosterKey, submittedByDate, submittedExact) {
+  const rk = String(rosterKey || "").trim();
+  if (!rk) return [];
+  if (submittedExact && submittedExact.has(rk)) return [rk];
+  const rDate = rk.slice(0, 10);
+  const out = [];
+  const seen = new Set();
+  function addDate(iso) {
+    const arr = submittedByDate.get(iso);
+    if (!arr) return;
+    for (const fk of arr) {
+      if (seen.has(fk)) continue;
+      seen.add(fk);
+      out.push(fk);
+    }
+  }
+  addDate(rDate);
+  /* Matcher allows submitted date = roster date + 1 day. */
+  addDate(portalIsoShiftDays(rDate, 1));
+  return out;
+}
+
+function portalRosterCandidatesForSubmittedKey(submittedKey, rosterByDate) {
+  const s = String(submittedKey || "").trim();
+  if (!s) return [];
+  const sDate = s.slice(0, 10);
+  const out = [];
+  const seen = new Set();
+  function addDate(iso) {
+    const arr = rosterByDate.get(iso);
+    if (!arr) return;
+    for (const rk of arr) {
+      if (seen.has(rk)) continue;
+      seen.add(rk);
+      out.push(rk);
+    }
+  }
+  addDate(sDate);
+  addDate(portalIsoShiftDays(sDate, -1));
+  return out;
+}
+
+function portalRosterKeyMatchesSubmittedSet(rosterKey, submittedByDate, submittedExact, opts) {
+  const rk = String(rosterKey || "").trim();
+  if (!rk) return false;
+  if (submittedExact && submittedExact.has(rk)) return true;
+  const cands = portalSubmittedCandidatesForRosterKey(rk, submittedByDate, submittedExact);
+  for (const fk of cands) {
+    if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rk, opts)) return true;
+  }
+  return false;
+}
+
 /**
  * Roster keys use `YYYY-MM-DD|HH:mm|client_id`; Supabase often stores `YYYY-MM-DD||client_slug`.
  * @param {string} submittedKey
@@ -1274,7 +1493,10 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   }
   /* Timed DB key → Today merged card (date|merge|…). */
   if (portalSubmittedKeyIsMergeFeedback(r)) {
-    return portalTimedKeyCoversMergeCardRosterKey(s, r, opts.feedbackMergeRules);
+    return (
+      portalTimedKeyCoversMergeCardRosterKey(s, r, opts.feedbackMergeRules) ||
+      portalLeadAquaticKeyCoversMergeCardRosterKey(s, r, opts.feedbackMergeRules)
+    );
   }
   const rParts = r.split("|");
   const sParts = s.split("|");
@@ -1323,6 +1545,16 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
 }
 
 /**
+ * True when a shared Day Centre / Bespoke / date||client submit covers this roster key.
+ */
+function portalSubmittedSharedUnitCoversRosterKey(submittedKey, rosterKey, opts) {
+  const fk = String(submittedKey || "").trim();
+  const rk = String(rosterKey || "").trim();
+  if (!fk || !rk || !portalRosterKeyIsSharedFeedbackUnit(fk)) return false;
+  return portalFeedbackSubmittedKeyMatchesRosterKey(fk, rk, opts || {});
+}
+
+/**
  * Map submitted portal_session_key values onto roster session review keys in memory.
  * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory
  * @param {string[]} submittedKeys
@@ -1350,13 +1582,26 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
     cancelled: false,
   });
   let changed = false;
+  const submittedExact = new Set(
+    (submittedKeys || []).map((k) => String(k || "").trim()).filter(Boolean)
+  );
+  const submittedByDate = portalGroupSessionKeysByDate(submittedKeys);
   for (const rk of rosterKeys || []) {
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
+    const fanCandsPreview = portalSubmittedCandidatesForRosterKey(
+      rosterKey,
+      submittedByDate,
+      submittedExact
+    );
+    const sharedPeerCover = fanCandsPreview.some((fk) =>
+      portalSubmittedSharedUnitCoversRosterKey(fk, rosterKey, opts)
+    );
     if (
       !markAbsent &&
       portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) &&
-      !ownOnly.has(rosterKey)
+      !ownOnly.has(rosterKey) &&
+      !sharedPeerCover
     ) {
       continue;
     }
@@ -1369,7 +1614,12 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
       !ownOnly.has(rosterKey)
     ) {
       let allowPeerAbsent = false;
-      for (const fk0 of submittedKeys || []) {
+      const absentCands = portalSubmittedCandidatesForRosterKey(
+        rosterKey,
+        submittedByDate,
+        submittedExact
+      );
+      for (const fk0 of absentCands) {
         const fk = String(fk0 || "").trim();
         if (!fk || !portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) continue;
         if (fk === rosterKey) {
@@ -1389,7 +1639,12 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
       }
       if (!allowPeerAbsent) continue;
     }
-    for (const fk of submittedKeys || []) {
+    const fanCands = portalSubmittedCandidatesForRosterKey(
+      rosterKey,
+      submittedByDate,
+      submittedExact
+    );
+    for (const fk of fanCands) {
       if (!portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) continue;
       const prev = memory[rosterKey] || base();
       if (markAbsent) {
@@ -1528,6 +1783,16 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
       .map((k) => String(k || "").trim())
       .filter(Boolean)
   );
+  /* Expand portal keys onto every matching roster key before fan-out. Otherwise a
+     day-unit submit (date|client|aquatic) only greened the first 30' half and Term
+     kept the sibling half pending (Youssef · Stephanie Wed 9). */
+  for (const rk of portalOwnRosterKeysFromPortalFeedbackKeys(
+    packs.ownFeedbackPortalKeys,
+    rosterKeys,
+    opts
+  )) {
+    ownOnly.add(rk);
+  }
   const fanOutOpts = Object.assign({}, opts, {
     perStaffOwnFeedbackOnlyKeys: [...perStaffOwnOnly],
     ownFeedbackKeys: [...ownOnly],
@@ -1567,9 +1832,23 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
   )) {
     expandedOwnOnly.add(rk);
   }
+  const wipeSubmittedExact = new Set(submittedFb.map((k) => String(k || "").trim()).filter(Boolean));
+  const wipeSubmittedByDate = portalGroupSessionKeysByDate(submittedFb);
   if (perStaffOwnOnly.size) {
     for (const rk of perStaffOwnOnly) {
       if (expandedOwnOnly.has(rk)) continue;
+      /* Never strip shared Day Centre / Bespoke peer completion. */
+      if (portalRosterKeyIsSharedFeedbackUnit(rk)) continue;
+      const wipeCands = portalSubmittedCandidatesForRosterKey(
+        rk,
+        wipeSubmittedByDate,
+        wipeSubmittedExact
+      );
+      if (
+        wipeCands.some((fk) => portalSubmittedSharedUnitCoversRosterKey(fk, rk, fanOutOpts))
+      ) {
+        continue;
+      }
       const prev = memory[rk];
       if (prev && prev.feedbackDone && !prev.absent && !prev.cancelled) {
         memory[rk] = { ...prev, feedbackDone: false };
@@ -1681,14 +1960,15 @@ function portalReviewMemoryBase() {
 function portalOwnRosterKeysFromPortalFeedbackKeys(ownPortalKeys, rosterKeys, opts = {}) {
   /** @type {Set<string>} */
   const out = new Set();
+  const submittedExact = new Set(
+    (ownPortalKeys || []).map((k) => String(k || "").trim()).filter(Boolean)
+  );
+  const submittedByDate = portalGroupSessionKeysByDate(ownPortalKeys);
   for (const rk of rosterKeys || []) {
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
-    for (const pk of ownPortalKeys || []) {
-      if (portalFeedbackSubmittedKeyMatchesRosterKey(String(pk || "").trim(), rosterKey, opts)) {
-        out.add(rosterKey);
-        break;
-      }
+    if (portalRosterKeyMatchesSubmittedSet(rosterKey, submittedByDate, submittedExact, opts)) {
+      out.add(rosterKey);
     }
   }
   return out;
@@ -1717,13 +1997,15 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
   const cancelNeedsFeedback = new Set();
 
   function fanOut(keys, target) {
+    const submittedExact = new Set(
+      (keys || []).map((k) => String(k || "").trim()).filter(Boolean)
+    );
+    const submittedByDate = portalGroupSessionKeysByDate(keys);
     for (const rk of rosterKeys || []) {
       const rosterKey = String(rk || "").trim();
       if (!rosterKey) continue;
-      for (const fk of keys || []) {
-        if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) {
-          target.add(rosterKey);
-        }
+      if (portalRosterKeyMatchesSubmittedSet(rosterKey, submittedByDate, submittedExact, opts)) {
+        target.add(rosterKey);
       }
     }
   }
@@ -1810,13 +2092,15 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   /** @type {Set<string>} */
   const resolved = new Set();
   function markResolved(keys) {
+    const submittedExact = new Set(
+      (keys || []).map((k) => String(k || "").trim()).filter(Boolean)
+    );
+    const submittedByDate = portalGroupSessionKeysByDate(keys);
     for (const rk of rosterKeys) {
       const rosterKey = String(rk || "").trim();
       if (!rosterKey) continue;
-      for (const fk of keys || []) {
-        if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) {
-          resolved.add(rosterKey);
-        }
+      if (portalRosterKeyMatchesSubmittedSet(rosterKey, submittedByDate, submittedExact, opts)) {
+        resolved.add(rosterKey);
       }
     }
   }
@@ -1937,7 +2221,7 @@ export function bindPortalRemoteLogoutOnStaleAuthGeneration(supabase, userId, op
       .maybeSingle();
     if (error || !data) return;
     const remote = Number(data.auth_session_generation) || 0;
-    const cached = portalGetCachedAuthSessionGeneration();
+    const cached = portalGetCachedAuthSessionGeneration(userId);
     if (cached != null && remote > cached) {
       stopped = true;
       if (intervalId != null) clearInterval(intervalId);
@@ -1949,7 +2233,7 @@ export function bindPortalRemoteLogoutOnStaleAuthGeneration(supabase, userId, op
       window.location.href = loginUrl;
       return;
     }
-    portalSetCachedAuthSessionGeneration(remote);
+    portalSetCachedAuthSessionGeneration(remote, userId);
   }
 
   void tick();
@@ -2057,8 +2341,15 @@ export async function portalLogout() {
       /* ignore */
     }
   }
+  let uid = "";
+  try {
+    const box = typeof window !== "undefined" ? window.__PORTAL_SUPABASE__ : null;
+    uid = String((box && box.session && box.session.user && box.session.user.id) || "").trim();
+  } catch {
+    uid = "";
+  }
   clearPortalStaffContext();
-  portalClearCachedAuthSessionGeneration();
+  portalClearCachedAuthSessionGeneration(uid);
   try {
     const supabase = getSupabaseClient();
     const { error } = await supabase.auth.signOut({ scope: "local" });

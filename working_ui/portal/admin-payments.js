@@ -953,13 +953,27 @@
     };
   }
 
+  function summerMarchInvoiceGbp(r) {
+    var d = (r && r.data) || {};
+    var mar = Number(d["March invoice (25/26)"]);
+    return mar > 0 ? mar : 0;
+  }
+
+  function summerJulPaidExtraGbp(r) {
+    var d = (r && r.data) || {};
+    var n = Number(d["July paid Inv 0384 (25/26)"]);
+    return n > 0 ? n : 0;
+  }
+
   function summerAprMayInvoicesGbp(r) {
     var d = (r && r.data) || {};
     var apr = Number(d["April invoice (25/26)"]);
     var may = Number(d["May invoice (25/26)"]);
+    var aprPaidAmt = Number(d["April paid (25/26)"]);
     var mayPaid = Number(d["May paid (25/26)"]);
     var tot = Number(d["April–May invoices (25/26)"]);
-    if (!(apr > 0) && !(may > 0) && !(tot > 0) && !(mayPaid > 0)) {
+    var paidBlob = [d["Summer basis"], d["NHS due months"], d.Next].join(" ");
+    if (!(apr > 0) && !(may > 0) && !(tot > 0) && !(mayPaid > 0) && !(aprPaidAmt > 0)) {
       var blob = [d.Extras, d["Summer basis"], d.Next, d.Sessions].join(" ");
       var mApr = blob.match(/\bapr(?:il|\.)?\b[^\d£]{0,12}£?\s*([\d,]+(?:\.\d+)?)/i);
       var mMay = blob.match(/\bmay\b[^\d£]{0,12}£?\s*([\d,]+(?:\.\d+)?)/i);
@@ -974,7 +988,7 @@
         }
       }
     }
-    if (!(apr > 0)) apr = 0;
+    if (!(apr > 0)) apr = aprPaidAmt > 0 ? aprPaidAmt : 0;
     if (!(may > 0)) may = mayPaid > 0 ? mayPaid : 0;
     if (!(tot > 0)) tot = apr + may;
     if (!(tot > 0)) return null;
@@ -982,9 +996,8 @@
       april: apr,
       may: may,
       total: tot,
-      mayPaid: mayPaid > 0 || /may[^\n]{0,40}\bpaid\b/i.test(
-        [d["Summer basis"], d["NHS due months"], d.Next].join(" "),
-      ),
+      aprilPaid: aprPaidAmt > 0 || nhsMonthMarkedPaid(paidBlob, "apr"),
+      mayPaid: mayPaid > 0 || nhsMonthMarkedPaid(paidBlob, "may") || /may[^\n]{0,40}\bpaid\b/i.test(paidBlob),
     };
   }
 
@@ -1277,11 +1290,22 @@
           + money(termAmt)
           + "</span>";
       }
+      var marInv = summerMarchInvoiceGbp(r);
+      var julPaidExtra = summerJulPaidExtraGbp(r);
       var monthBits = "";
+      if (marInv > 0) {
+        monthBits +=
+          '<span class="pay-amt-season" title="NHS March invoice (DC + transport)">Mar '
+          + money(marInv)
+          + "</span>";
+      }
       if (aprMay && aprMay.april > 0) {
         monthBits +=
-          '<span class="pay-amt-season" title="NHS April invoice">Apr '
+          '<span class="pay-amt-season" title="'
+          + (aprMay.aprilPaid ? "April invoice already paid" : "NHS April invoice")
+          + '">Apr '
           + money(aprMay.april)
+          + (aprMay.aprilPaid ? " paid" : "")
           + "</span>";
       }
       if (aprMay && aprMay.may > 0) {
@@ -1306,7 +1330,13 @@
           + (julPaid ? " paid" : "")
           + "</span>";
       }
-      if (!julyPay && !ealingCreditBal && !aprMay && !junJul && !uplift && payCat !== "partial") {
+      if (julPaidExtra > 0) {
+        monthBits +=
+          '<span class="pay-amt-season" title="July Inv 0384 paid (separate from unpaid Jul line)">Jul 0384 '
+          + money(julPaidExtra)
+          + " paid</span>";
+      }
+      if (!julyPay && !ealingCreditBal && !aprMay && !junJul && !uplift && !marInv && !julPaidExtra && payCat !== "partial") {
         return summerMain;
       }
       return '<span class="pay-amt-stack" title="'
@@ -1329,9 +1359,11 @@
             + " · FA "
             + money(uplift.fa)
             + "</span>"
-            + '<span class="pay-amt-season" title="INV-0391 Emanuel · INV-0392 Timi">ED '
-            + money(uplift.ed)
-            + " · TD "
+            + '<span class="pay-amt-season" title="'
+            + (uplift.ed > 0 ? "INV-0391 Emanuel · INV-0392 Timi" : "INV-0392 Timi")
+            + '">'
+            + (uplift.ed > 0 ? ("ED " + money(uplift.ed) + " · ") : "")
+            + "TD "
             + money(uplift.td)
             + "</span>"
           : "")
@@ -1930,7 +1962,7 @@
     }
     if (s.indexOf("saaib") === 0 || s.indexOf("saiib") === 0) return "saaib";
     if (s.indexOf("ikram") === 0) return "ikram";
-    if (s.indexOf("emanuel") === 0 || s.indexOf("emmanuel") === 0) return "emanuel";
+    if (s.indexOf("emanuel") === 0) return "emanuel";
     if (s.indexOf("fadi") === 0) return "fadi";
     /* ACAT cohort — roster / payments keys vary (jacks vs jack_s / Jack S (ACAT)). */
     if (s === "jacks" || s.indexOf("jack_s") === 0 || /^jacks?_acat/.test(s)) return "jacks";
@@ -1983,30 +2015,31 @@
     });
   }
 
-  /** Cyrus Day Centre stream = Thursday 90' Bespoke only (not aquatic / multi). */
+  /** Cyrus Day Centre stream = weekday 90' Bespoke only (Tue from Autumn; was Thu). */
   function isCyrusThursdayBespokeRow(r) {
     if (r && r._cyrusPart === "thu_bespoke") return true;
     if (r && r._cyrusPart === "afterschool") return false;
     var s = rowServiceBlob(r);
     if (!s) return false;
-    var thu = /\bthu(?:rs(?:day)?)?\b/.test(s);
+    var wd = /\b(?:tue(?:s(?:day)?)?|thu(?:rs(?:day)?)?)\b/.test(s);
     var bespoke90 = /90\s*['′']?\s*bespoke|bespoke[^.]{0,24}90|90[^.]{0,24}bespoke|90\s*['′']?\s*ff\b/.test(s);
-    return thu && bespoke90;
+    return wd && bespoke90;
   }
 
   /**
-   * Cyrus catalogue (friendly Thu 90' @ £90 + private afterschool package).
-   * Day Centre stream = Thursday only. Afterschool = Wed MA + Sun MA + Wed aquatic.
+   * Cyrus package faces for Finance stream split (Autumn 26/27).
+   * Day Centre = 90' Bespoke @ £90 (was Thu; now Tue 15:30–17:00).
+   * Afterschool = Wed Aquatic 60' £100 + Sun Multi £120.
+   * One GC mandate still collects the combined package; UI streams are synthetic.
    */
   function cyrusPackageSeasonTotals() {
-    var thuRate = 90;
+    var bespokeRate = 90;
     var multiRate = 120;
-    /* Wed Multi removed; Wed Aquatic is 60' (£100), Sun Multi kept. */
     var aqRate = 100;
     var wd = { autumn: 14, spring: 11, summer: 13, annual: 38 };
     var we = { autumn: 13, spring: 9, summer: 11, annual: 33 };
     function term(period) {
-      var dc = thuRate * wd[period];
+      var dc = bespokeRate * wd[period];
       var as = multiRate * we[period] + aqRate * wd[period];
       return { dc: dc, as: as, total: dc + as };
     }
@@ -2018,17 +2051,17 @@
     };
   }
 
-  /** Roster session → Cyrus Day Centre (Thu 90' Bespoke) only. */
+  /** Roster session → Cyrus Day Centre (Tue/Thu 90' Bespoke) only. */
   function isCyrusThuBespokeSession(sess) {
     if (!sess || typeof sess !== "object") return false;
     var blob = [sess.service, sess.day, sess.timeSlot, sess.time, sess.label]
       .map(function (x) { return String(x || ""); })
       .join(" ")
       .toLowerCase();
-    return /bespoke|\bff\b/.test(blob) && /\bthu/.test(blob);
+    return /bespoke|\bff\b/.test(blob) && /\b(?:tue|thu)/.test(blob);
   }
 
-  /** Roster session → Cyrus Afterschool (multi / aquatic; never Thu bespoke). */
+  /** Roster session → Cyrus Afterschool (multi / aquatic; never weekday bespoke). */
   function isCyrusAfterschoolSession(sess) {
     if (!sess || typeof sess !== "object") return false;
     if (isCyrusThuBespokeSession(sess)) return false;
@@ -2040,8 +2073,8 @@
   }
 
   /**
-   * Split Cyrus into Day Centre (Thu 90' Bespoke) vs Afterschool & Weekends (rest).
-   * Summer workbook + Autumn 26/27 re-enrol rows.
+   * Split Cyrus into Day Centre (Bespoke) vs Afterschool & Weekends (rest).
+   * One GoCardless mandate pays both — UI streams are synthetic for Finance filters.
    */
   function splitCyrusServiceRows(r) {
     if (!r || r._cyrusPart || r._crash) return null;
@@ -2050,15 +2083,15 @@
     if (bucket !== "summer_2526" && bucket !== "autumn_2627") return null;
     var d = r.data || {};
     var svc = String(d.Services || d.Service || "");
-    var thuNote = String(d["Thursday Bespoke"] || "");
+    var thuNote = String(d["Thursday Bespoke"] || d["Tuesday Bespoke"] || "");
     var blob = (svc + " " + thuNote + " " + String(r.client_name || "")).toLowerCase();
-    var hasThu = /90\s*['′']?\s*ff\b|\bff\s*\(\s*thu|thursday\s*bespoke|90\s*['′']?\s*bespoke|bespoke[^.]{0,40}thu/.test(blob)
-      && /\bthu/.test(blob);
+    var hasThu = /90\s*['′']?\s*ff\b|\bff\s*\(\s*(?:thu|tue)|(?:thursday|tuesday)\s*bespoke|90\s*['′']?\s*bespoke|bespoke[^.]{0,40}(?:thu|tue)/.test(blob)
+      && /\b(?:thu|tue)/.test(blob);
     var hasOther = /30\s*['′']?\s*sw\b|aquatic|s\s*&\s*c|multi-?activity|admin\s*fee/.test(blob);
     var isAutumn = bucket === "autumn_2627";
     /*
      * Always split Cyrus in these terms: roster enrich can leave Services empty
-     * or without a clear Thu token until after clone filters sessions.
+     * or without a clear Thu/Tue token until after clone filters sessions.
      */
     if (isAutumn || /bespoke|multi|aquatic|mahdavi|cyrus/i.test(blob) || (Array.isArray(r._participantSessions) && r._participantSessions.length)) {
       hasThu = true;
@@ -2068,7 +2101,7 @@
     if (bucket === "summer_2526" && !hasOther) return null;
 
     var pack = cyrusPackageSeasonTotals();
-    var thuSvcLabel = "90' Bespoke Programme - 3.30 pm to 5 pm - Thursday";
+    var thuSvcLabel = "90' Bespoke Programme - 3.30 pm to 5 pm - Tuesday (was Thursday)";
     var afterSvcLines = [
       "90' Multi-Activity - 11 am to 12.30 pm - Sunday",
       "60' Aquatic Activity - 4 pm to 5 pm - Wednesday",
@@ -2083,7 +2116,27 @@
       out._syntheticSplit = true;
       out.amount = amount;
       out.amount_billed = amount;
-      out.amount_out = amount;
+      /* Pro-rate any cash already received across Day Centre vs Afterschool faces. */
+      var srcPaid = Number(r._amountPaid) || 0;
+      var srcBill = Math.max(
+        Number(r.amount_billed) || 0,
+        Number(r._amountAutumn) || 0,
+        Number(r.amount) || 0,
+      );
+      var partPaid = 0;
+      if (srcPaid > 0.009 && srcBill > 0.009 && amount > 0) {
+        partPaid = Math.round(srcPaid * (amount / srcBill) * 100) / 100;
+      }
+      out._amountPaid = partPaid;
+      out.amount_out = Math.max(0, Math.round((amount - partPaid) * 100) / 100);
+      if (partPaid + 0.009 >= amount) {
+        out.payment_status = "Paid";
+        out.amount_out = 0;
+      } else if (partPaid > 0.009) {
+        out.payment_status = "Partial";
+      } else {
+        out.payment_status = "Outstanding";
+      }
       if (seasons) {
         out._amountAutumn = seasons.autumn;
         out._amountSpring = seasons.spring;
@@ -2112,10 +2165,12 @@
         Stream: part === "thu_bespoke" ? "Day Centre" : "Afterschool & Weekends",
       });
       if (part === "thu_bespoke") {
-        out.data["Thursday Bespoke"] = thuNote
-          || "90' Bespoke Programme · Thu 15:30–17:00 · Victor · SwimFarm Hub · £90/session";
+        out.data["Tuesday Bespoke"] = thuNote
+          || "90' Bespoke · Tue 15:30–17:00 · Victor · SwimFarm Hub · £90/session (was Thursday)";
+        out.data["Thursday Bespoke"] = out.data["Tuesday Bespoke"];
       } else {
         delete out.data["Thursday Bespoke"];
+        delete out.data["Tuesday Bespoke"];
       }
       if (isAutumn) out._termBucket = "autumn_2627";
       return out;
@@ -2129,7 +2184,7 @@
           pack.autumn.dc,
           thuSvcLabel,
           "14 / 11 / 13 / 38",
-          "£90 / session (friendly rate; std £125/hr)",
+          "£90 / session · Tue 15:30–17:00 (was Thursday Bespoke)",
           {
             autumn: pack.autumn.dc,
             spring: pack.spring.dc,
@@ -2143,7 +2198,7 @@
           pack.autumn.as,
           afterSvcLines.join("\n"),
           "weekday 14/11/13 · weekend 13/9/11",
-          d.Cost || "Catalogue Multi £120 · Aquatic 60' £100",
+          "Catalogue Multi £120 · Aquatic 60' £100",
           {
             autumn: pack.autumn.as,
             spring: pack.spring.as,
@@ -2154,7 +2209,7 @@
       ];
     }
 
-    /* Summer 25/26 — keep prior workbook session split, map Thu @ £90. */
+    /* Summer 25/26 — workbook session split; Bespoke stays £90/session. */
     var sessParts = String(d.Sessions || "")
       .split("/")
       .map(function (x) { return parseInt(String(x).trim(), 10); })
@@ -2173,7 +2228,7 @@
         thuAmt,
         thuSvcLabel,
         String(thuSessions),
-        "£90 / session (friendly rate; std £125/hr)",
+        "£90 / session (Bespoke)",
         null
       ),
       clonePart(
@@ -2200,8 +2255,8 @@
       return null;
     }
     if (termBucketFor(r) !== "autumn_2627") return null;
-    /* Jack S: Multi paid on main INV-P — no separate ACAT Outstanding line in this table. */
-    if (slug === "jacks" && r._officeSplitPaidOnly) {
+    /* Multi-only paid INV-P (ACAT on a sibling invoice) — do not invent a Paid ACAT Day Centre half. */
+    if (r._officeSplitPaidOnly) {
       return null;
     }
     var blob = rowServiceBlob(r);
@@ -2250,13 +2305,18 @@
       out.amount = amount;
       out.amount_billed = amount;
       /*
-       * Inherit Paid/Partial from the combined INV-P. Forcing Outstanding here
-       * made Jack Walker look unpaid after INV-P-0342 was marked paid (£2260).
+       * Afterschool Multi half may inherit Paid from the Multi INV-P.
+       * ACAT Day Centre half must NOT — Multi cash is not ACAT (Jacks were showing
+       * Paid £750 DC while ACAT invoices were void / unpaid).
        */
       var srcSt = String(r.payment_status || "").toLowerCase();
       var srcPaidAmt = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
       var srcFace = Number(r.amount_billed) || Number(r.amount) || Number(r._amountAutumn) || 0;
-      if (srcSt.indexOf("paid") === 0 && srcSt.indexOf("partial") < 0) {
+      if (part === "aquatic_mon") {
+        out.amount_out = amount;
+        out.payment_status = amount > 0 ? "Outstanding" : "Paid";
+        out._amountPaid = 0;
+      } else if (srcSt.indexOf("paid") === 0 && srcSt.indexOf("partial") < 0) {
         out.amount_out = 0;
         out.payment_status = "Paid";
         out._amountPaid = amount;
@@ -2338,9 +2398,8 @@
   }
 
   /**
-   * ACAT Mon 11–12 Aquatic (Jack S / Jack W / Kate / Kamy) — Day Centre stream.
-   * Prefer explicit Cohort/Stream; do not rely on Services alone (roster enrich can overwrite).
-   * Autumn 26/27 payment rows only after re-enrolment (Kate/Kamy not yet enrolled for autumn).
+   * ACAT Day Centre (Jack S / Jack W / Kate / Kamy) — Mon aquatic (summer) or
+   * Tue Day Centre Hub (autumn board). Prefer Cohort/Stream over roster enrich.
    */
   function isAcatMondayAquaticRow(r) {
     if (r && r._acatPart === "aquatic_mon") return true;
@@ -2361,6 +2420,7 @@
     var name = String((r && r.client_name) || "");
     if (/\(\s*acat\s*\)/i.test(name) || /\*/.test(name)) {
       var s0 = rowServiceBlob(r);
+      if (/day\s*centre/i.test(s0) && !/multi/i.test(s0)) return true;
       if (/aquatic/i.test(s0) && /\bmon(day)?\b/i.test(s0) && !/multi/i.test(s0)) return true;
     }
     var s = rowServiceBlob(r);
@@ -3367,14 +3427,14 @@
 
   function isCyrusBespokeServiceLine(line) {
     var s = String(line || "").toLowerCase();
-    return /bespoke|\bff\b/.test(s) && /\bthu/.test(s);
+    return /bespoke|\bff\b/.test(s) && /\b(?:tue|thu)/.test(s);
   }
 
   /** Cyrus package lines (paid together) — emphasis follows Day Centre vs Afterschool stream. */
   function cyrusPackageServiceLines() {
     return [
       "90' Multi-Activity - 11 am to 12.30 pm - Sunday",
-      "90' Bespoke Programme - 3.30 pm to 5 pm - Thursday",
+      "90' Bespoke Programme - 3.30 pm to 5 pm - Tuesday (was Thursday)",
       "60' Aquatic Activity - 4 pm to 5 pm - Wednesday",
       "Admin Fee (GoCardless)",
     ];
@@ -4474,7 +4534,7 @@
     s = s.replace(/\bCL\b/g, "Climbing Activity");
     s = s.replace(/\bFT\b/g, "Physical Activity");
     s = s.replace(/\bFIT\b/g, "Physical Activity");
-    /* Workbook "90' FF (Thu)" = Thursday Bespoke Programme (£90 friendly). */
+    /* Workbook "90' FF (Thu/Tue)" = Bespoke Programme (£90/session). */
     s = s.replace(/(\d+\s*['′']?\s*)FF\b/gi, "$1Bespoke Programme");
     s = s.replace(/\bBS\b/g, "Bespoke");
     /* "30' Aquatic (Sat)" → "30' Aquatic Activity (Sat)" */
@@ -5748,7 +5808,48 @@
     (payments || []).forEach(stampLaCouncilOnRow);
   }
 
+  /**
+   * H&F / NHS / LA office invoices pay a mes vencido (after the month ends).
+   * Never treat catalogue / exempt status as cash received without amount_paid_gbp.
+   */
+  function isArrearsLaNhsInvoice(inv) {
+    if (!inv) return false;
+    var hint = String(inv.payment_method_hint || "").toLowerCase();
+    var via = String(inv.created_via || "").toLowerCase();
+    var sheet = String(inv.payment_sheet || "").toUpperCase();
+    var fund = String(inv.funding_label || "").toLowerCase();
+    var vat = String(inv.vat_mode || "").toLowerCase();
+    if (hint === "la_funded" || via === "la_office_auto" || inv.is_la_office_auto === true) {
+      return true;
+    }
+    if (sheet === "LA" && vat === "exempt") return true;
+    if (/funded by (la|nhs)|nhs \(exempt|local authority \(exempt|h\s*&\s*f|hammer|fulham|\bnnen\b|\bnen\b|\bsbs\b/.test(fund)) {
+      return true;
+    }
+    return String(inv.funding_category || "") === "la_managed"
+      || String(inv.funding_category || "") === "nhs_managed";
+  }
+
+  function isArrearsLaNhsPaymentRow(row) {
+    if (!row) return false;
+    var hint = String(row._paymentMethodHint || "").toLowerCase();
+    if (hint === "la_funded" || row._laOfficeAuto) return true;
+    var paid = String((row.data && row.data.Paid) || "");
+    var invType = String((row.data && row.data["Invoice type"]) || "");
+    if (paid === PAID_BY.FUNDED_BY_LA || paid === PAID_BY.FUNDED_BY_NHS) return true;
+    if (invType === INVOICE_TYPE.LA_EXEMPT || invType === INVOICE_TYPE.NHS_EXEMPT) return true;
+    if (/h\s*&\s*f|ealing|westminster|rbkc|brent|nhs/i.test(invType)) return true;
+    return String(row.sheet || "").toUpperCase() === "LA";
+  }
+
   function isAutumnReenrolInvoice(inv) {
+    if (!inv) return false;
+    /* Jul crash / Year 25/26 intensives must not feed Autumn Paid (Adam INV-P-0001). */
+    if (inv.is_standalone_year_2526 === true) return false;
+    if (crashCourseGbpFromInvoice(inv) > 0.009 && !String(inv.billing_term || "").trim()) {
+      var ready = String(inv.ready_by || "").toLowerCase();
+      if (/crash|admin_crash/.test(ready)) return false;
+    }
     var via = String((inv && inv.created_via) || "");
     // Family re-enrol INV-Ps + LA office-auto booked places (no family INV-P yet).
     if (via === "reenrolment" || via === "la_office_auto") return true;
@@ -6018,6 +6119,21 @@
     if (via === "la_office_auto") {
       return String((inv && inv.id) || ("la-auto-" + cid));
     }
+    /*
+     * ACAT Tue Day Centre office INV-P must not merge into the Multi-Activity
+     * re-enrol row (same contact) — otherwise Paid Multi hides Outstanding ACAT.
+     */
+    var ready = String((inv && inv.ready_by) || "").toLowerCase();
+    if (
+      /office_acat_tue_dc_autumn_2627_|office_.*autumn_acat_2627|acat_tue_dc/.test(ready)
+      || (
+        /aquatic|day\s*centre/i.test(String((inv && inv.line_description) || ""))
+        && /acat/i.test(ready + " " + String((inv && inv.notes) || ""))
+        && !/multi/i.test(String((inv && inv.line_description) || ""))
+      )
+    ) {
+      return cid + "::acat-dc";
+    }
     return cid;
   }
 
@@ -6061,7 +6177,10 @@
     var key = anonKey();
     if (!base || !key) return Promise.resolve([]);
     return portalAuthToken().then(function (token) {
-      if (!token) return [];
+      if (!token) {
+        console.warn("[AdminPayments] missing auth token for parent invoices");
+        return [];
+      }
       return fetch(base + "/functions/v1/portal-admin-parent-invoices-list", {
         method: "POST",
         headers: {
@@ -6073,14 +6192,26 @@
           share_status: "all",
           payment_status: "all",
           billing_amount: "autumn",
-          limit: 400,
+          limit: 800,
+          /* List paint does not need PDF links; opens stay faster. */
+          skip_pdf_urls: true,
         }),
       }).then(function (res) { return res.json().then(function (j) { return { res: res, j: j }; }); })
         .then(function (pack) {
-          if (!pack.res.ok || !pack.j || !pack.j.ok) return [];
+          if (!pack.res.ok || !pack.j || !pack.j.ok) {
+            console.warn(
+              "[AdminPayments] parent invoices list failed",
+              pack.res && pack.res.status,
+              pack.j && (pack.j.error || pack.j.message),
+            );
+            return [];
+          }
           return pack.j.invoices || [];
         })
-        .catch(function () { return []; });
+        .catch(function (err) {
+          console.warn("[AdminPayments] parent invoices list error", err);
+          return [];
+        });
     });
   }
 
@@ -6105,6 +6236,22 @@
       }
       var row = agg[key];
       mergeServiceLabelsIntoRow(row, inv);
+      if (String(key).indexOf("::acat-dc") >= 0) {
+        row._acatPart = "aquatic_mon";
+        row.data = row.data || {};
+        row.data.Cohort = "ACAT";
+        row.data.Stream = "Day Centre";
+        row.data.Paid = PAID_BY.FUNDS_FROM_LA;
+        row.data["Invoice type"] = INVOICE_TYPE.PARENT_EXEMPT;
+        row._vatMode = "exempt";
+        if (!row.data.Services || /multi/i.test(String(row.data.Services))) {
+          row.data.Services = "60' Day Centre - 11 am to 12 pm - Tuesday";
+        }
+        var nm = String(row.client_name || "").trim();
+        if (nm && !/\(\s*acat\s*\)/i.test(nm)) {
+          row.client_name = nm.replace(/\s*\*$/, "").trim() + " (ACAT)";
+        }
+      }
       if (isLaAuto) {
         row._laOfficeAuto = true;
         row._paymentMethodHint = "la_funded";
@@ -6167,14 +6314,25 @@
         row.amount_billed = Math.max(Number(row.amount_billed) || 0, amt);
       }
       if (st === "paid") {
-        var paidOnInv = Number(inv.amount_paid_gbp) || amt;
-        if (paidOnInv > 0) {
+        var cashPaid = Number(inv.amount_paid_gbp) || 0;
+        /*
+         * LA/H&F/NHS (mes vencido): status "paid" without amount_paid_gbp is not cash —
+         * do not invent Received = face (H&F Autumn was showing Paid / £0 out).
+         * Parent bank/GC may still use face when admin marked paid without a paid £.
+         */
+        var paidOnInv = isArrearsLaNhsInvoice(inv) ? cashPaid : (cashPaid || amt);
+        if (isArrearsLaNhsInvoice(inv) && !(cashPaid > 0)) {
+          if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+            row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
+            row.payment_status = "Outstanding";
+          }
+        } else if (paidOnInv > 0) {
           row._amountPaid = Math.max(Number(row._amountPaid) || 0, paidOnInv);
-        }
-        /* Paid Autumn INV-P — clear outstanding unless a later autumn sibling is open. */
-        if (!(Number(row.amount_out) > 0) && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
-          row.amount_out = 0;
-          row.payment_status = "Paid";
+          /* Paid Autumn INV-P — clear outstanding unless a later autumn sibling is open. */
+          if (!(Number(row.amount_out) > 0) && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+            row.amount_out = 0;
+            row.payment_status = "Paid";
+          }
         }
       } else if (st === "partial") {
         /* Flexi (2 bank) or GC monthly: only when amount_paid > 0 (ignore false GC partials). */
@@ -6209,6 +6367,10 @@
          */
         if (isOfficeSplitAutumnSibling(inv)) {
           row._officeSplitSiblingUnpaid = true;
+          /* Keep sibling face so the Multi row can show Partial (£700 ACAT still due). */
+          if (amt > 0) {
+            row._officeSplitSiblingOut = Math.max(Number(row._officeSplitSiblingOut) || 0, amt);
+          }
           return;
         }
         /* Outstanding: catalogue autumn still unpaid (don't stack instalment GBP). */
@@ -6281,6 +6443,18 @@
           if (!(Number(row._amountPaid) > 0)) {
             row.amount_out = row._amountAutumn;
           }
+        } else if (!(Number(row._amountPaid) > 0)) {
+          /*
+           * Catalogue autumn with amount_out still at initial 0 (common for NHS/LA
+           * exempt invoices) — still owed until a real payment is recorded.
+           */
+          row.amount_out = row._amountAutumn;
+          if (
+            String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0
+          ) {
+            /* Fake "Paid" with no cash (H&F / NHS mes vencido) → Outstanding. */
+            row.payment_status = "Outstanding";
+          }
         }
       } else {
         row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
@@ -6303,32 +6477,79 @@
         && autumnFaceFix > 0
         && paidFix + 0.009 < autumnFaceFix
       ) {
-        row._amountPaid = paidFix || Number(row.amount_billed) || 0;
-        row.amount_out = Math.max(
-          0,
-          Math.round((autumnFaceFix - row._amountPaid) * 100) / 100,
-        );
-        row.payment_status = "Partial";
+        if (!(paidFix > 0)) {
+          /* Never invent _amountPaid from billed face (was collapsing H&F to Paid). */
+          row._amountPaid = 0;
+          row.amount_out = autumnFaceFix;
+          row.payment_status = "Outstanding";
+        } else {
+          row._amountPaid = paidFix;
+          row.amount_out = Math.max(
+            0,
+            Math.round((autumnFaceFix - row._amountPaid) * 100) / 100,
+          );
+          row.payment_status = "Partial";
+        }
       }
       if (String(row.payment_status || "").toLowerCase().indexOf("partial") === 0) {
         /* Keep Flexi / GoCardless partial — do not collapse to Paid/Outstanding. */
       } else if (row.amount_out <= 0 && row.amount_billed > 0) {
-        row.payment_status = "Paid";
+        var billedFace = Math.max(
+          Number(row.amount_billed) || 0,
+          Number(row._amountAutumn) || 0,
+        );
+        var paidProve = Number(row._amountPaid) || 0;
+        if (paidProve + 0.009 >= billedFace && billedFace > 0) {
+          row.payment_status = "Paid";
+          row.amount_out = 0;
+        } else {
+          /*
+           * Do not treat "out never set" as Paid (NHS/LA Exempt Invoice rows were
+           * collapsing Received = Billed with £0 outstanding while nothing was paid).
+           */
+          row.amount_out = billedFace;
+          row.payment_status = "Outstanding";
+        }
       } else if (row.amount_out > 0) {
         row.payment_status = "Outstanding";
       }
       /*
-       * Paid Multi-only re-enrol when ACAT aquatic lives on a separate office INV-P
-       * (Jack Stratton INV-P-0115 £1560 paid; INV-P-0445 £700 tracked separately).
+       * Mes vencido safety net: LA/H&F/NHS Autumn stays Outstanding until cash
+       * is recorded on the row (amount_paid_gbp → _amountPaid).
+       */
+      if (
+        isArrearsLaNhsPaymentRow(row)
+        && Number(row._amountAutumn) > 0
+        && !(Number(row._amountPaid) > 0)
+      ) {
+        row.amount_out = Number(row._amountAutumn);
+        row.payment_status = "Outstanding";
+      }
+      /*
+       * Paid Multi + unpaid office ACAT sibling (Jack Stratton INV-P-0115 £1560 paid;
+       * INV-P-0445 £700 open) → Partially paid with sibling still outstanding.
        */
       if (row._officeSplitSiblingUnpaid && Number(row._amountPaid) > 0) {
         var paidOnly = Math.round(Number(row._amountPaid) * 100) / 100;
-        row.payment_status = "Paid";
-        row.amount_out = 0;
-        row._amountAutumn = paidOnly;
-        row.amount = paidOnly;
-        row.amount_billed = paidOnly;
-        row._officeSplitPaidOnly = true;
+        var siblingOut = Math.round(Number(row._officeSplitSiblingOut) * 100) / 100;
+        if (siblingOut > 0) {
+          var placeFace = Math.round((paidOnly + siblingOut) * 100) / 100;
+          row.payment_status = "Partial";
+          row.amount_out = siblingOut;
+          row._amountPaid = paidOnly;
+          row._amountAutumn = placeFace;
+          row.amount = placeFace;
+          row.amount_billed = placeFace;
+          /* Avoid inventing a Paid ACAT Day Centre half from Multi cash. */
+          row._officeSplitPaidOnly = true;
+        } else {
+          row.payment_status = "Paid";
+          row.amount_out = 0;
+          row._amountAutumn = paidOnly;
+          row.amount = paidOnly;
+          row.amount_billed = paidOnly;
+          row._officeSplitPaidOnly = true;
+        }
       }
       row.sheet = classifyPayGroup({
         sheet: row.sheet,

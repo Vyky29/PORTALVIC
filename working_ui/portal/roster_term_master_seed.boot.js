@@ -1,7 +1,7 @@
 /* Auto-generated from roster_term_master_seed.json — do not edit by hand */
 window.PORTAL_ROSTER_TERM_MASTER_SEED = {
   "meta": {
-    "note": "Edit in roster_term_master_review.html. Each slot: service + pool_note (Big Pool, Small Pool, Teaching Pool, Lane\u2026). Export JSON when approved. Youssef\u2192Ikram lun/mi\u00e9/vie from 2026-06-12; Michelle\u2192Emanuel lun/mi\u00e9/vie; Michelle\u2192Ikram martes.",
+    "note": "Look: local_madre_live.html (Autumn Sep calendar) + local_dc_staff_week.html. Old roster_term_master_review.html grid is retired. Each slot: service + pool_note. Bulk edits via roster_term_master.json + apply_madre_after_manual_edit.py.",
     "notes": [
       "2026-07-20 raul: OFF (morning DC cleared)",
       "2026-07-21 roberto: Fadi 12.30\u20131 (Day Centre) \u00b7 Zak 1\u20132 \u00b7 Fadi 2\u20133",

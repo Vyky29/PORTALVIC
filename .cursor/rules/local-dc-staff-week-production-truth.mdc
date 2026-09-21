@@ -1,0 +1,47 @@
+---
+description: LOCAL HTML is optional Autumn authoring/port only; Overview is the only day look-here; commit/push when LOCAL + canonical change.
+alwaysApply: true
+---
+
+# LOCAL DC staff week = optional Autumn authoring (not look-here)
+
+`working_ui/local_dc_staff_week.html` is an **optional machine authoring draft** for week-1 DC, standing start dates, weekend/after-school phases, and Sep-specific covers **before** day-of `schedule_overrides`.
+
+**Only day look-here for Victor:** **Sessions Overview** (see `overview-day-truth.mdc`). LOCAL is not opened in production admin. Prefer live DB offs/covers (`staff_unavailability` + `schedule_overrides`) over new LOCAL/canonical hardcodes.
+
+## When this file changes
+
+**Always commit and push to `main` immediately** (unless the user explicitly says "local only" / "no push").
+
+1. Stage `working_ui/local_dc_staff_week.html` and any companion updates needed for production to match (typically `portal_roster_canonical.js`, cache-bust query strings on dashboards, calendar HTML if term colours change).
+2. Commit with a message that states what week/phase changed (e.g. week-1 DC, Sep 6 cover, standing from Mon 7).
+3. Push to origin so Vercel deploys `working_ui/`.
+
+Do **not** leave this file changed only on disk when you did use it to port standing logic — production roster still derives from `portal_roster_canonical.js`.
+
+## Truth model (do not regress)
+
+- **Tue 1 – Fri 4 Sep:** week-1 Day Centre (`WEEK1_DC_BOARD`) — different from standing DC.
+- **Thu 3 Sep:** closed (Fadi off; Roberto + Youssef empty).
+- **Sat 5 Sep:** first weekend / after-school.
+- **Mon 7 Sep:** standing Day Centre + weekday after-school.
+- **Sun 6 Sep:** John covers Emanuel Hub book; Berta Lead keeps Jack W…Aydaan book.
+
+Never park week-1 / `DATE_EXTRA` / phase painting behind `STANDING_ONLY = true` without explicit user request.
+
+## Day offs — DB owns live truth
+
+- Admin **Validate day** and **HR Add day off** write `staff_unavailability` (+ COVER NEEDED `schedule_overrides` when booked slots exist). That is live truth for Overview / Staff Today only — parents do not see instructor day offs.
+- Do **not** add new day-off hardcodes in LOCAL/canonical when DB + overrides can own them.
+- Optional: paint historical offs on LOCAL via `STAFF_DAY_OFF` only when authoring a board draft — not required for Overview.
+- Do **not** expect Validate day to rewrite LOCAL HTML by itself.
+
+## Stripe / Mark paid → roster
+
+- Finish-booking paid (Stripe / bank) runs `syncOpsAfterFinishBookingPaid` → MADRE fold + trial `schedule_overrides` (+ dated `portal_roster_rows`). Overview should show the trial without editing LOCAL; LOCAL card preview is optional.
+
+## Related files
+
+- Roster merge: `working_ui/portal/portal_roster_canonical.js` (`applyAutumnWeek1DayCentre`, `resolveAutumnInstructorsForCalendarDate`)
+- Local preview only: open at `http://127.0.0.1:8765/local_dc_staff_week.html` (not `file://`)
+- Optional Supabase MADRE sync (after local is pushed): `database/local-vault/office-madre-sync-local-board-mon-fri.mjs`

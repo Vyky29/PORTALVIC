@@ -70,6 +70,42 @@
       align-items:end;
     }
 
+    .interview-exit-row{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+      margin:0 0 12px;
+      min-width:0;
+    }
+    .btn-exit-interviews{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:44px;
+      padding:10px 16px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--ink);
+      font:inherit;
+      font-weight:700;
+      font-size:14px;
+      text-decoration:none;
+      cursor:pointer;
+      box-shadow:0 1px 2px rgba(15,23,42,.06);
+      max-width:100%;
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .btn-exit-interviews:hover{
+      background:var(--blueSoft);
+      border-color:rgba(45,132,179,.35);
+      color:var(--blue);
+    }
+
     .brand h1{
       margin:0 0 6px;
       font-size:clamp(24px, 2.8vw, 38px);
@@ -88,7 +124,7 @@
 
     .search-panel{
       display:grid;
-      grid-template-columns:minmax(260px, 1fr) auto auto;
+      grid-template-columns:minmax(200px, 1.2fr) minmax(180px, 1fr) auto auto;
       gap:12px;
       align-items:end;
     }
@@ -286,6 +322,118 @@
       font-size:12px;
       color:var(--muted);
       line-height:1.5;
+    }
+    .candidate-meta .btn-link-cv{
+      display:inline;
+      margin:0;
+      padding:0;
+      border:0;
+      background:none;
+      color:var(--blue);
+      font:inherit;
+      font-weight:700;
+      text-decoration:underline;
+      cursor:pointer;
+    }
+    .candidate-meta .btn-link-cv:hover{
+      color:var(--ink);
+    }
+    .cv-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      min-width:0;
+    }
+    .cv-actions .input[type="file"]{
+      max-width:100%;
+      min-width:0;
+    }
+
+    .candidate-details-split{
+      display:flex;
+      gap:16px;
+      align-items:stretch;
+      min-width:0;
+    }
+    .candidate-details-fields{
+      flex:1 1 0;
+      min-width:0;
+    }
+    .candidate-cv-preview{
+      flex:0 0 400px;
+      max-width:46%;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:440px;
+      min-width:0;
+    }
+    .candidate-cv-preview-head{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--line);
+      min-width:0;
+      background:#f8fafc;
+    }
+    .candidate-cv-preview-title{
+      flex:1;
+      min-width:0;
+      font-weight:700;
+      font-size:13px;
+      color:var(--ink);
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .candidate-cv-preview-body{
+      flex:1;
+      min-height:360px;
+      background:#f1f5f9;
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
+      overflow:hidden;
+      position:relative;
+    }
+    .candidate-cv-preview-body iframe,
+    .candidate-cv-preview-body img{
+      width:100%;
+      height:100%;
+      min-height:360px;
+      border:0;
+      background:#fff;
+      object-fit:contain;
+      display:block;
+    }
+    .candidate-cv-preview-empty{
+      margin:auto;
+      padding:20px;
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+      max-width:16rem;
+      overflow-wrap:break-word;
+    }
+    .candidate-cv-preview-foot{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      justify-content:flex-end;
+      padding:10px 12px;
+      border-top:1px solid var(--line);
+      background:#fff;
+      min-width:0;
+    }
+    .candidate-cv-replace{
+      margin-top:14px;
+      min-width:0;
     }
 
     .status-pill{
@@ -644,6 +792,10 @@
       border:1px solid var(--line);
       border-radius:16px;
       background:#fff;
+      min-width:0;
+      max-width:100%;
+      box-sizing:border-box;
+      overflow:hidden;
     }
     .check-card:has(.question-controls),
     .check-card:has(.question-row),
@@ -810,38 +962,59 @@
       color:var(--muted);
       font-style:italic;
     }
+    .question-audio{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      box-sizing:border-box;
+      overflow:hidden;
+    }
     .question-audio .audio-wrap{
       display:flex;
-      flex-wrap:wrap;
-      align-items:center;
-      gap:10px 12px;
+      flex-direction:column;
+      align-items:stretch;
+      gap:8px;
       position:relative;
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      box-sizing:border-box;
     }
     .question-audio .audio-controls-row{
       display:flex;
+      flex-wrap:wrap;
       align-items:center;
-      gap:10px;
-      flex:1 1 100%;
+      gap:8px 10px;
+      width:100%;
+      max-width:100%;
       min-width:0;
+      box-sizing:border-box;
     }
     .question-audio .audio-progress-wrap{
-      flex:1 1 120px;
+      flex:1 1 160px;
       min-width:0;
+      max-width:100%;
       display:flex;
       align-items:center;
       gap:8px;
+      box-sizing:border-box;
     }
     .question-audio .audio-seek{
-      flex:1;
+      flex:1 1 auto;
       min-width:0;
       max-width:100%;
+      width:100%;
       height:6px;
       accent-color:var(--blue);
     }
     .question-audio .audio-time{
+      flex:0 0 auto;
       font-size:12px;
+      font-variant-numeric:tabular-nums;
       color:var(--muted);
       white-space:nowrap;
+      min-width:5.5em;
+      text-align:right;
     }
     .question-audio audio{
       position:absolute;
@@ -851,6 +1024,7 @@
       pointer-events:none;
     }
     .question-audio .audio-play-pause{
+      flex:0 0 auto;
       padding:8px 14px;
       font-size:14px;
       border:1px solid var(--line);
@@ -865,7 +1039,10 @@
     }
     .question-audio .audio-speed{
       display:flex;
+      flex:0 0 auto;
+      flex-wrap:wrap;
       gap:6px;
+      min-width:0;
     }
     .question-audio .audio-speed button{
       padding:6px 10px;
@@ -879,6 +1056,11 @@
     .question-audio .audio-speed button:hover{
       border-color:var(--blue);
       color:var(--blue);
+    }
+    .question-audio .audio-speed button.is-active{
+      border-color:var(--blue);
+      color:var(--blue);
+      background:var(--blueSoft);
     }
 
     .subsection{
@@ -1024,6 +1206,14 @@
 
     .phase-block--org{
       background:var(--blueSoft);
+    }
+
+    .phase-block--dc{
+      background:rgba(111,66,193,.08);
+    }
+
+    .phase-block--call-filter{
+      background:rgba(45,132,179,.07);
     }
 
     .phase-block--exp{
@@ -1177,6 +1367,15 @@
         grid-template-columns:1fr;
       }
 
+      .candidate-details-split{
+        flex-direction:column;
+      }
+      .candidate-cv-preview{
+        flex:1 1 auto;
+        max-width:none;
+        width:100%;
+      }
+
       .info-grid .field{
         min-width:0;
         width:100%;
@@ -1290,6 +1489,66 @@
     .auth-set-password .field label{ color:rgba(255,255,255,.85); }
     .auth-set-password .input{ max-width:200px; }
     .auth-set-password-title{ color:#fff; font-size:15px; font-weight:700; margin:0 0 8px; width:100%; }
+
+    .save-toast{
+      position:fixed;
+      left:50%;
+      bottom:max(18px, env(safe-area-inset-bottom));
+      transform:translateX(-50%);
+      z-index:10050;
+      width:min(520px, calc(100% - 28px));
+      display:none;
+      align-items:flex-start;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:16px;
+      background:#1f2f3a;
+      color:#fff;
+      box-shadow:0 16px 40px rgba(0,0,0,.28);
+      min-width:0;
+    }
+    .save-toast.is-open{ display:flex; }
+    .save-toast__msg{
+      flex:1 1 auto;
+      min-width:0;
+      font-size:14px;
+      line-height:1.45;
+      overflow-wrap:break-word;
+    }
+    .save-toast__msg strong{ display:block; margin-bottom:4px; font-size:15px; }
+    .sync-banner{
+      margin:0 0 14px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #cbd5e1;
+      background:#f8fafc;
+      color:#0f172a;
+      font-size:13px;
+      line-height:1.4;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 12px;
+      align-items:center;
+      justify-content:space-between;
+      min-width:0;
+    }
+    .sync-banner strong{ font-weight:700; }
+    .sync-banner--ok{ border-color:#86efac; background:#f0fdf4; }
+    .sync-banner--pending{ border-color:#fde68a; background:#fffbeb; }
+    .sync-banner--err{ border-color:#fecaca; background:#fef2f2; color:#7f1d1d; }
+    .sync-banner .btn{ flex:0 0 auto; }
+    .save-toast__close{
+      flex:0 0 auto;
+      border:0;
+      background:transparent;
+      color:#8ec8ef;
+      font:inherit;
+      font-weight:700;
+      cursor:pointer;
+      padding:4px 2px;
+      min-height:44px;
+      min-width:52px;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260419-99"></script>
   <script>
@@ -1305,14 +1564,24 @@
 <body>
   <div id="recordingIndicator" class="recording-indicator" aria-live="polite" aria-atomic="true">
     <span class="dot"></span>
-    <span>Recording in progress...</span>
+    <span>Recording <span id="recordingIndicatorTime">0:00</span></span>
+  </div>
+  <div id="saveToast" class="save-toast" role="alertdialog" aria-modal="true" aria-labelledby="saveToastTitle" aria-describedby="saveToastBody" hidden>
+    <div class="save-toast__msg">
+      <strong id="saveToastTitle">Could not save to the club database</strong>
+      <span id="saveToastBody"></span>
+    </div>
+    <button type="button" class="save-toast__close" id="saveToastClose">Close</button>
   </div>
   <div class="page">
 
     <div id="mainPortal">
+    <div class="interview-exit-row">
+      <a class="btn-exit-interviews" id="interviewExitBtn" href="/staff_dashboard.html">← Exit Interviews</a>
+    </div>
     <div id="interviewAuthStatus" class="auth-status-bar" role="status" aria-live="polite">
       <span class="auth-status-msg" id="interviewAuthStatusMsg">Checking staff login…</span>
-      <a id="interviewAuthLoginLink" class="hidden" href="/admin_dashboard.html#interviews">Back to Admin → Interviews</a>
+      <a id="interviewAuthLoginLink" class="hidden" href="/staff_dashboard.html">Back to Staff portal</a>
     </div>
     <section class="topbar">
       <div class="topbar-grid">
@@ -1320,7 +1589,7 @@
           <h1>Interview and Onboarding Portal</h1>
           <p>Search candidates, create records, continue interview stages, complete onboarding, and review a saved history log from the same page.</p>
           <p id="portalOnboardingSupabaseHint" class="hidden" style="margin-top:10px;font-size:13px;line-height:1.5;color:var(--muted);max-width:720px;">
-            Open this page from <strong>Admin → Interviews → Start a new interview</strong> (same browser). You should not need to sign in again.
+            Open this page from <strong>Admin → Interviews</strong> or Staff → Interviews (same browser). You should not need to sign in again.
           </p>
         </div>
 
@@ -1328,6 +1597,10 @@
           <div class="field">
             <label for="searchInput">Candidate name</label>
             <input id="searchInput" class="input" type="text" placeholder="e.g. Laura Smith" />
+          </div>
+          <div class="field">
+            <label for="newCandidateCv">CV (required to create)</label>
+            <input id="newCandidateCv" class="input" type="file" accept=".pdf,.doc,.docx,image/*,.heic,.heif" />
           </div>
           <button class="btn btn-gold" id="addCandidateBtn">Add New Candidate</button>
           <button class="btn btn-primary" id="searchBtn">Search Candidate</button>
@@ -1343,7 +1616,7 @@
       <div class="panel-body">
         <div id="searchResults" class="result-list"></div>
         <div class="footer-note">
-          Search by name above. Select a candidate card to open the full record below.
+          Search by name above. To create a candidate, enter the name, attach the CV (document or photo), then tap Add New Candidate.
         </div>
       </div>
     </section>
@@ -1373,6 +1646,14 @@
       "clubsensational_interview_onboarding_portal_v1",
       "clubsensational_interview_onboarding_portal"
     ];
+    /** Audio clips live here - not inside onboarding_candidates JSON (iPad payload failures). */
+    const INTERVIEW_AUDIO_BUCKET = "interview-audio";
+    const INTERVIEW_CV_BUCKET = "interview-cvs";
+    const INTERVIEW_CV_MAX_BYTES = 20 * 1024 * 1024;
+    const INLINE_AUDIO_MAX_CHARS = 12000;
+    const localAudioObjectUrls = Object.create(null);
+    const localCvObjectUrls = Object.create(null);
+    let syncUi = { state: "idle", message: "Not synced yet", at: null, error: "" };
 
     /** Populated only from onboarding_portal_config.js (not from this file). */
     function readPortalOnboardingSupabaseConfig() {
@@ -1394,21 +1675,153 @@
     let sharedRefreshTimer = null;
     let sharedRealtimeChannel = null;
 
-    function interviewLoginUrl() {
-      // Do NOT return to Working_interview.html — that caused a login loop when the
-      // interview page failed to read the new session. Land on Admin; open Interviews from there.
+    const INTERVIEWER_OPTIONS = [
+      { value: "Victor", label: "Victor" },
+      { value: "Raul", label: "Raul" },
+      { value: "Javi", label: "Javi" },
+      { value: "Michelle", label: "Michelle" },
+    ];
+
+    function renderInterviewerSelect(selectId, selectedRaw) {
+      const selected = String(selectedRaw || "").trim();
+      const opts = INTERVIEWER_OPTIONS.slice();
+      if (selected && !opts.some(function (o) { return o.value.toLowerCase() === selected.toLowerCase(); })) {
+        opts.unshift({ value: selected, label: selected });
+      }
+      const optionsHtml =
+        '<option value="">Select who completed the interview</option>' +
+        opts
+          .map(function (o) {
+            const sel =
+              selected && o.value.toLowerCase() === selected.toLowerCase() ? " selected" : "";
+            return (
+              '<option value="' +
+              escapeHtml(o.value) +
+              '"' +
+              sel +
+              ">" +
+              escapeHtml(o.label) +
+              "</option>"
+            );
+          })
+          .join("");
+      return (
+        '<select id="' +
+        escapeHtml(selectId) +
+        '" class="input" required>' +
+        optionsHtml +
+        "</select>"
+      );
+    }
+
+    function localDateInputValue(d) {
+      const x = d instanceof Date ? d : new Date();
+      const y = x.getFullYear();
+      const m = String(x.getMonth() + 1).padStart(2, "0");
+      const day = String(x.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + day;
+    }
+
+    function localTimeInputValue(d) {
+      const x = d instanceof Date ? d : new Date();
+      const h = String(x.getHours()).padStart(2, "0");
+      const min = String(x.getMinutes()).padStart(2, "0");
+      return h + ":" + min;
+    }
+
+    /** Stamp day + live clock when an interview stage is opened with empty date/time. */
+    function stampInterviewOpenMeta(interview) {
+      if (!interview || typeof interview !== "object") return false;
+      const now = new Date();
+      let changed = false;
+      if (!String(interview.date || "").trim()) {
+        interview.date = localDateInputValue(now);
+        changed = true;
+      }
+      if (!String(interview.time || "").trim()) {
+        interview.time = localTimeInputValue(now);
+        changed = true;
+      }
+      return changed;
+    }
+
+    function syncInterviewDateTimeInputs(prefix, interview) {
+      if (!interview) return;
+      const dateEl = document.getElementById(prefix + "Date");
+      const timeEl = document.getElementById(prefix + "Time");
+      if (dateEl && interview.date) dateEl.value = interview.date;
+      if (timeEl && interview.time) timeEl.value = interview.time;
+    }
+
+    function interviewReturnUrl() {
       try {
-        return "/login.html?next=" + encodeURIComponent(new URL("/admin_dashboard.html", window.location.href).href);
+        const sp = new URLSearchParams(window.location.search || "");
+        const from = String(sp.get("from") || "").trim().toLowerCase();
+        if (from === "staff") return new URL("/staff_dashboard.html", window.location.href).href;
+        if (from === "admin") return new URL("/admin_dashboard.html#interviews", window.location.href).href;
+        const raw = sp.get("portalReturn");
+        if (raw) {
+          const u = new URL(raw, window.location.href);
+          if (u.origin === window.location.origin) return u.href;
+        }
+      } catch (_e) {}
+      try {
+        const ref = String(document.referrer || "");
+        if (ref) {
+          const u = new URL(ref);
+          if (u.origin === window.location.origin) {
+            const path = String(u.pathname || "").toLowerCase();
+            if (path.indexOf("staff_dashboard") >= 0) return u.href;
+            if (path.indexOf("admin_dashboard") >= 0) return new URL("/admin_dashboard.html#interviews", window.location.href).href;
+          }
+        }
+      } catch (_r) {}
+      return new URL("/admin_dashboard.html#interviews", window.location.href).href;
+    }
+
+    function interviewLoginUrl() {
+      try {
+        const back = interviewReturnUrl();
+        return "/login.html?next=" + encodeURIComponent(back);
       } catch (_e) {
-        return "/login.html?next=/admin_dashboard.html";
+        return "/login.html?next=/staff_dashboard.html";
       }
     }
 
     function interviewAdminUrl() {
+      return interviewReturnUrl();
+    }
+
+    function interviewExitLabel(backHref) {
+      const h = String(backHref || "");
+      if (/staff_dashboard/i.test(h)) return "← Exit to Staff portal";
+      if (/admin_dashboard/i.test(h)) return "← Exit to Admin Interviews";
+      if (/ceo_dashboard/i.test(h)) return "← Exit to CEO portal";
+      return "← Exit Interviews";
+    }
+
+    function syncInterviewExitButton() {
+      const btn = document.getElementById("interviewExitBtn");
+      if (!btn) return;
+      const back = interviewReturnUrl();
+      btn.href = back;
+      btn.textContent = interviewExitLabel(back);
+      btn.setAttribute("aria-label", btn.textContent.replace(/^←\s*/, "Exit Interviews — "));
+    }
+
+    function exitInterviews(ev) {
       try {
-        return new URL("/admin_dashboard.html", window.location.href).href;
-      } catch (_e) {
-        return "/admin_dashboard.html";
+        if (isInterviewEmbedded() && window.parent && window.parent !== window) {
+          if (ev) ev.preventDefault();
+          window.parent.postMessage({ type: "portal-interview-close" }, window.location.origin);
+          return;
+        }
+      } catch (_e) {}
+      const back = interviewReturnUrl();
+      try {
+        window.location.href = back;
+      } catch (_nav) {
+        window.location.assign(back);
       }
     }
 
@@ -1418,13 +1831,16 @@
       const link = document.getElementById("interviewAuthLoginLink");
       if (msg) msg.textContent = message || "";
       if (bar) bar.classList.toggle("is-ok", !!ok);
+      syncInterviewExitButton();
       if (link) {
         if (ok) {
           link.classList.add("hidden");
         } else {
-          // Never send to login when the user is already in Admin — that felt like a loop.
-          link.href = interviewAdminUrl() + "#interviews";
-          link.textContent = "Back to Admin → Interviews";
+          const back = interviewReturnUrl();
+          link.href = back;
+          link.textContent = /staff_dashboard/i.test(back)
+            ? "Back to Staff portal"
+            : "Back to Admin → Interviews";
           link.classList.remove("hidden");
         }
       }
@@ -1436,15 +1852,15 @@
       if (portalUseSupabase) hint.classList.add("hidden");
       else hint.classList.remove("hidden");
       if (portalUseSupabase) {
-        setInterviewAuthStatus(true, "Using your Admin login — interviews save to the shared list.");
+        setInterviewAuthStatus(true, "Using your portal login — interviews save to the shared list.");
       } else if (isInterviewEmbedded()) {
-        setInterviewAuthStatus(false, "Connecting to your Admin login…");
+        setInterviewAuthStatus(false, "Connecting to your portal login…");
         const link = document.getElementById("interviewAuthLoginLink");
         if (link) link.classList.add("hidden");
       } else {
         setInterviewAuthStatus(
           false,
-          "Open Interviews from Admin with Start / Open — stay inside Admin (do not open this page alone)."
+          "Open Interviews from your Staff or Admin portal so your login carries over."
         );
       }
     }
@@ -1682,19 +2098,525 @@
       return supabaseClient;
     }
 
+    var saveToastCooldownUntil = 0;
+    var saveToastLastKey = "";
+    var saveInFlight = null;
+
+    function hideSaveToast() {
+      var el = document.getElementById("saveToast");
+      if (!el) return;
+      el.classList.remove("is-open");
+      el.hidden = true;
+    }
+
+    function showSaveToast(title, body) {
+      var el = document.getElementById("saveToast");
+      var titleEl = document.getElementById("saveToastTitle");
+      var bodyEl = document.getElementById("saveToastBody");
+      if (!el || !titleEl || !bodyEl) return;
+      titleEl.textContent = title || "Could not save to the club database";
+      bodyEl.textContent = body || "";
+      el.hidden = false;
+      el.classList.add("is-open");
+    }
+
+    function bindSaveToastOnce() {
+      var closeBtn = document.getElementById("saveToastClose");
+      var el = document.getElementById("saveToast");
+      if (!closeBtn || closeBtn.dataset.bound === "1") return;
+      closeBtn.dataset.bound = "1";
+      closeBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideSaveToast();
+      });
+      if (el) {
+        el.addEventListener("click", function (e) {
+          /* Keep toast itself from bubbling into page handlers */
+          e.stopPropagation();
+        });
+      }
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") hideSaveToast();
+      });
+    }
+
+    function notifySaveSuccess() {
+      saveToastLastKey = "";
+      saveToastCooldownUntil = 0;
+      hideSaveToast();
+      setSyncUi("ok", "Saved to club database", "");
+    }
+
     function notifySaveFailure(err, context) {
+      bindSaveToastOnce();
       const raw = String((err && (err.message || err.error_description || err.code)) || err || "unknown").trim();
       console.error("Save error", context || "", err);
       const hint =
         /jwt|auth|row-level|rls|permission|not authenticated/i.test(raw)
-          ? " Open Admin while signed in, then Interviews → Start a new interview."
-          : /payload|too large|413|statement timeout|bytes/i.test(raw)
-            ? " A recording may be too large — record a shorter clip, then Save again."
-            : "";
+          ? " Open Interviews again from Staff or Admin while signed in."
+          : /payload|too large|413|statement timeout|bytes|Load failed|Failed to fetch|NetworkError/i.test(raw)
+            ? " A recording may be too large or the connection dropped. Answers stay on this device until Save succeeds."
+            : " Your answers stay on this device. Check the connection and try Save again.";
+      const key = raw.slice(0, 120);
+      const now = Date.now();
+      if (key === saveToastLastKey && now < saveToastCooldownUntil) return;
+      saveToastLastKey = key;
+      saveToastCooldownUntil = now + 12000;
+      setSyncUi("err", "Not on club database yet", raw);
+      showSaveToast(
+        "Could not save interview to the club database",
+        "(" + raw + ")." + hint
+      );
+    }
+
+    function setSyncUi(state, message, error) {
+      syncUi = {
+        state: state || "idle",
+        message: message || "",
+        at: new Date().toISOString(),
+        error: error || "",
+      };
+      const el = document.getElementById("interviewSyncBanner");
+      if (el) el.outerHTML = renderSyncBannerHtml();
+    }
+
+    function renderSyncBannerHtml() {
+      const cls =
+        syncUi.state === "ok"
+          ? "sync-banner sync-banner--ok"
+          : syncUi.state === "err"
+            ? "sync-banner sync-banner--err"
+            : syncUi.state === "pending"
+              ? "sync-banner sync-banner--pending"
+              : "sync-banner";
+      const when = syncUi.at
+        ? new Date(syncUi.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : "";
+      const detail = syncUi.error
+        ? " · " + escapeHtml(String(syncUi.error).slice(0, 120))
+        : when
+          ? " · " + escapeHtml(when)
+          : "";
+      return (
+        '<div class="' +
+        cls +
+        '" id="interviewSyncBanner">' +
+        "<div style=\"min-width:0;overflow-wrap:break-word\"><strong>Club sync:</strong> " +
+        escapeHtml(syncUi.message || "Idle") +
+        detail +
+        "</div>" +
+        '<button type="button" class="btn" id="interviewForceSaveBtn">Save to club now</button>' +
+        "</div>"
+      );
+    }
+
+    function localAudioKey(candidateId, questionId) {
+      return String(candidateId || "") + "::" + String(questionId || "");
+    }
+
+    function preferNonEmptyString(localVal, remoteVal) {
+      const l = String(localVal || "");
+      const r = String(remoteVal || "");
+      if (l.trim()) return l;
+      if (r.trim()) return r;
+      return l || r || "";
+    }
+
+    function mergeInterviewSections(localSec, remoteSec) {
+      const out = Object.assign({}, remoteSec || {}, localSec || {});
+      const keys = new Set([
+        ...Object.keys(remoteSec || {}),
+        ...Object.keys(localSec || {}),
+      ]);
+      keys.forEach(function (k) {
+        const lv = localSec ? localSec[k] : undefined;
+        const rv = remoteSec ? remoteSec[k] : undefined;
+        if (/Audio$/i.test(k) && typeof lv === "string" && typeof rv === "string") {
+          out[k] = lv.length >= rv.length ? lv : rv;
+          return;
+        }
+        if (/AudioPath$/i.test(k)) {
+          out[k] = preferNonEmptyString(lv, rv);
+          return;
+        }
+        if (/Notes$/i.test(k) || k === "comments" || k === "followUpNotes" || k === "phase1Impressions") {
+          out[k] = preferNonEmptyString(lv, rv);
+          return;
+        }
+        if (
+          typeof lv === "number" &&
+          typeof rv === "number" &&
+          !/Audio/i.test(k)
+        ) {
+          out[k] = lv > 0 ? lv : rv;
+        }
+      });
+      return out;
+    }
+
+    function mergeCandidateWithRemote(localCand, remoteCand) {
+      if (!remoteCand) return localCand;
+      const local = ensureCandidateShape(localCand);
+      const remote = ensureCandidateShape(remoteCand);
+      return ensureCandidateShape({
+        ...remote,
+        ...local,
+        callInterview: mergeInterviewSections(local.callInterview, remote.callInterview),
+        faceToFaceInterview: mergeInterviewSections(
+          local.faceToFaceInterview,
+          remote.faceToFaceInterview
+        ),
+        onboarding: Object.assign({}, remote.onboarding || {}, local.onboarding || {}),
+        updatedAt: local.updatedAt || remote.updatedAt,
+      });
+    }
+
+    function stripHeavyInlineAudio(section) {
+      if (!section || typeof section !== "object") return section;
+      const out = Object.assign({}, section);
+      Object.keys(out).forEach(function (k) {
+        if (!/Audio$/i.test(k) || /AudioPath$/i.test(k) || /AudioMime$/i.test(k)) return;
+        const v = out[k];
+        if (typeof v !== "string") return;
+        const pathKey = k + "Path"; // orgQ1Audio -> orgQ1AudioPath
+        if (out[pathKey] && v.length > INLINE_AUDIO_MAX_CHARS) {
+          out[k] = "";
+        } else if (!out[pathKey] && v.length > 180000) {
+          out[k] = "";
+        }
+      });
+      return out;
+    }
+
+    function prepareCandidatePayload(candidate) {
+      const c = ensureCandidateShape(candidate);
+      const { id, ...rest } = c;
+      const face = stripHeavyInlineAudio(rest.faceToFaceInterview);
+      const call = stripHeavyInlineAudio(rest.callInterview);
+      if (call && call.uploadedAudioDataUrl && String(call.uploadedAudioDataUrl).length > INLINE_AUDIO_MAX_CHARS) {
+        call.uploadedAudioDataUrl = "";
+      }
+      return {
+        ...rest,
+        id,
+        faceToFaceInterview: face,
+        callInterview: call,
+      };
+    }
+
+    async function uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType) {
+      const sb = getSupabase();
+      if (!sb || !blob || !candidateId || !questionId) {
+        return { ok: false, error: "missing_client_or_blob" };
+      }
+      const safeQ = String(questionId).replace(/[^a-zA-Z0-9_-]/g, "_");
+      const ext =
+        /mp4|m4a/i.test(mimeType || "") ? "m4a" : /ogg/i.test(mimeType || "") ? "ogg" : "webm";
+      const path =
+        String(candidateId) + "/" + safeQ + "_" + Date.now() + "." + ext;
+      const { error } = await sb.storage.from(INTERVIEW_AUDIO_BUCKET).upload(path, blob, {
+        contentType: mimeType || "audio/webm",
+        upsert: true,
+      });
+      if (error) return { ok: false, error: error.message || String(error) };
+      return { ok: true, path: path };
+    }
+
+    function isAllowedCvFile(file) {
+      if (!file) return false;
+      const mime = String(file.type || "").toLowerCase();
+      const name = String(file.name || "").toLowerCase();
+      if (file.size > INTERVIEW_CV_MAX_BYTES) return false;
+      if (
+        mime === "application/pdf" ||
+        mime === "application/msword" ||
+        mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        mime.indexOf("image/") === 0
+      ) {
+        return true;
+      }
+      return /\.(pdf|doc|docx|jpe?g|png|webp|gif|heic|heif)$/i.test(name);
+    }
+
+    function cvExtFromFile(file) {
+      const name = String((file && file.name) || "");
+      const m = /\.([a-z0-9]+)$/i.exec(name);
+      if (m) return m[1].toLowerCase();
+      const mime = String((file && file.type) || "").toLowerCase();
+      if (mime === "application/pdf") return "pdf";
+      if (mime.indexOf("jpeg") >= 0) return "jpg";
+      if (mime.indexOf("png") >= 0) return "png";
+      if (mime.indexOf("webp") >= 0) return "webp";
+      if (mime.indexOf("heic") >= 0) return "heic";
+      if (mime.indexOf("heif") >= 0) return "heif";
+      if (mime.indexOf("wordprocessingml") >= 0) return "docx";
+      if (mime === "application/msword") return "doc";
+      return "bin";
+    }
+
+    async function uploadInterviewCvBlob(candidateId, file) {
+      const sb = getSupabase();
+      if (!sb || !file || !candidateId) {
+        return { ok: false, error: "missing_client_or_file" };
+      }
+      if (!isAllowedCvFile(file)) {
+        return { ok: false, error: "unsupported_or_too_large" };
+      }
+      const ext = cvExtFromFile(file);
+      const path = String(candidateId) + "/cv_" + Date.now() + "." + ext;
+      const { error } = await sb.storage.from(INTERVIEW_CV_BUCKET).upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: true,
+      });
+      if (error) return { ok: false, error: error.message || String(error) };
+      return {
+        ok: true,
+        path: path,
+        fileName: file.name || ("cv." + ext),
+        mime: file.type || "application/octet-stream",
+        size: file.size || 0,
+      };
+    }
+
+    async function resolveInterviewCvSignedUrl(candidate) {
+      if (!candidate) return "";
+      const path = String(candidate.cvStoragePath || "").trim();
+      if (!path) return "";
+      const sb = getSupabase();
+      if (!sb) return "";
       try {
-        alert("Could not save interview to the club database (" + raw + ")." + hint);
+        const { data, error } = await sb.storage
+          .from(INTERVIEW_CV_BUCKET)
+          .createSignedUrl(path, 60 * 60 * 12);
+        if (error || !data || !data.signedUrl) return "";
+        return data.signedUrl;
       } catch (_e) {
-        /* ignore */
+        return "";
+      }
+    }
+
+    async function resolveInterviewCvUrl(candidate) {
+      if (!candidate) return "";
+      const key = String(candidate.id || "");
+      if (key && localCvObjectUrls[key]) return localCvObjectUrls[key];
+      return resolveInterviewCvSignedUrl(candidate);
+    }
+
+    function candidateHasCv(candidate) {
+      return !!(candidate && String(candidate.cvStoragePath || "").trim());
+    }
+
+    function cvPreviewKind(candidate) {
+      const mime = String((candidate && candidate.cvMime) || "").toLowerCase();
+      const name = String((candidate && candidate.cvFileName) || "").toLowerCase();
+      const path = String((candidate && candidate.cvStoragePath) || "").toLowerCase();
+      const blob = name || path;
+      if (mime.indexOf("image/") === 0 || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(blob)) {
+        return "image";
+      }
+      if (mime === "application/pdf" || /\.pdf$/i.test(blob)) {
+        return "pdf";
+      }
+      if (
+        mime.indexOf("wordprocessingml") >= 0 ||
+        mime === "application/msword" ||
+        mime === "application/rtf" ||
+        mime === "text/rtf" ||
+        /\.(docx?|rtf)$/i.test(blob)
+      ) {
+        return "office";
+      }
+      return "other";
+    }
+
+    function isBrowserFetchableHttpUrl(url) {
+      return /^https?:\/\//i.test(String(url || ""));
+    }
+
+    function officeOnlineEmbedUrl(fileUrl) {
+      return (
+        "https://view.officeapps.live.com/op/embed.aspx?src=" +
+        encodeURIComponent(String(fileUrl || ""))
+      );
+    }
+
+    function officeOnlineViewUrl(fileUrl) {
+      return (
+        "https://view.officeapps.live.com/op/view.aspx?src=" +
+        encodeURIComponent(String(fileUrl || ""))
+      );
+    }
+
+    async function mountCandidateCvPreview(candidate) {
+      const titleEl = document.getElementById("candidateCvPreviewTitle");
+      const bodyEl = document.getElementById("candidateCvPreviewBody");
+      const openBtn = document.getElementById("candidateCvPreviewOpen");
+      const dlBtn = document.getElementById("candidateCvPreviewDownload");
+      if (!bodyEl) return;
+
+      const fileLabel = String((candidate && candidate.cvFileName) || "CV").trim() || "CV";
+      if (titleEl) titleEl.textContent = candidateHasCv(candidate) ? fileLabel : "CV preview";
+
+      function wireActions(downloadUrl, openUrl) {
+        const openHref = openUrl || downloadUrl || "";
+        if (openBtn) {
+          openBtn.disabled = !openHref;
+          openBtn.onclick = function () {
+            if (!openHref) return;
+            window.open(openHref, "_blank", "noopener,noreferrer");
+          };
+        }
+        if (dlBtn) {
+          dlBtn.disabled = !downloadUrl;
+          dlBtn.onclick = function () {
+            if (!downloadUrl) return;
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = fileLabel;
+            a.target = "_blank";
+            a.rel = "noopener";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          };
+        }
+      }
+
+      if (!candidateHasCv(candidate)) {
+        bodyEl.innerHTML =
+          '<div class="candidate-cv-preview-empty">No CV on file yet. Upload a PDF, Word file, or photo on the left and it will open here.</div>';
+        wireActions("", "");
+        return;
+      }
+
+      bodyEl.innerHTML =
+        '<div class="candidate-cv-preview-empty">Opening CV…</div>';
+      wireActions("", "");
+
+      const kind = cvPreviewKind(candidate);
+      /* Word/Office need a public https signed URL for the online viewer (blob: will not work). */
+      const signedUrl = await resolveInterviewCvSignedUrl(candidate);
+      const localOrSigned = await resolveInterviewCvUrl(candidate);
+      const fileUrl = kind === "office" ? signedUrl || localOrSigned : localOrSigned || signedUrl;
+      if (!fileUrl) {
+        bodyEl.innerHTML =
+          '<div class="candidate-cv-preview-empty">Could not load the CV. Try Open / Download, or replace the file.</div>';
+        return;
+      }
+      if (String(currentCandidateId || "") !== String(candidate.id || "")) return;
+
+      if (kind === "image") {
+        bodyEl.innerHTML =
+          '<img id="candidateCvPreviewImg" alt="CV photo preview" />';
+        const img = document.getElementById("candidateCvPreviewImg");
+        if (img) img.src = fileUrl;
+        wireActions(fileUrl, fileUrl);
+      } else if (kind === "pdf") {
+        bodyEl.innerHTML =
+          '<iframe id="candidateCvPreviewFrame" title="CV preview"></iframe>';
+        const frame = document.getElementById("candidateCvPreviewFrame");
+        if (frame) frame.src = fileUrl;
+        wireActions(fileUrl, fileUrl);
+      } else if (kind === "office" && isBrowserFetchableHttpUrl(signedUrl || fileUrl)) {
+        const remote = signedUrl || fileUrl;
+        const embedUrl = officeOnlineEmbedUrl(remote);
+        const viewUrl = officeOnlineViewUrl(remote);
+        bodyEl.innerHTML =
+          '<iframe id="candidateCvPreviewFrame" title="CV Word preview"></iframe>';
+        const frame = document.getElementById("candidateCvPreviewFrame");
+        if (frame) frame.src = embedUrl;
+        wireActions(remote, viewUrl);
+      } else if (kind === "office") {
+        bodyEl.innerHTML =
+          '<div class="candidate-cv-preview-empty">Word CV is on file. Use <strong>Open</strong> to view it (same as the old Open CV), or Download a copy.</div>';
+        wireActions(fileUrl, fileUrl);
+      } else {
+        bodyEl.innerHTML =
+          '<div class="candidate-cv-preview-empty">This file type has no inline preview. Use Open or Download.</div>';
+        wireActions(fileUrl, fileUrl);
+      }
+    }
+
+    function candidateCvMetaHtml(candidate) {
+      if (!candidateHasCv(candidate)) {
+        return '<div class="candidate-meta">CV: Missing</div>';
+      }
+      const name = String(candidate.cvFileName || "CV").trim() || "CV";
+      return (
+        '<div class="candidate-meta">CV: ' +
+        escapeHtml(name) +
+        ' <button type="button" class="btn-link-cv" data-open-cv="' +
+        escapeHtml(candidate.id) +
+        '">Open</button></div>'
+      );
+    }
+
+    async function openCandidateCv(candidateId) {
+      const candidate = findCandidateById(candidateId);
+      if (!candidate || !candidateHasCv(candidate)) {
+        alert("No CV uploaded for this candidate yet.");
+        return;
+      }
+      const kind = cvPreviewKind(candidate);
+      const signedUrl = await resolveInterviewCvSignedUrl(candidate);
+      const url = signedUrl || (await resolveInterviewCvUrl(candidate));
+      if (!url) {
+        alert("Could not open the CV. Check connection and try again.");
+        return;
+      }
+      if (kind === "office" && isBrowserFetchableHttpUrl(signedUrl || url)) {
+        window.open(officeOnlineViewUrl(signedUrl || url), "_blank", "noopener,noreferrer");
+        return;
+      }
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+
+    async function replaceCandidateCv(candidateId, file) {
+      const candidate = findCandidateById(candidateId);
+      if (!candidate || !file) return { ok: false, error: "missing" };
+      if (!isAllowedCvFile(file)) {
+        return { ok: false, error: "Please choose a PDF, Word document, or photo under 20MB." };
+      }
+      const up = await uploadInterviewCvBlob(candidateId, file);
+      if (!up.ok) {
+        return { ok: false, error: up.error || "upload_failed" };
+      }
+      try {
+        if (localCvObjectUrls[candidateId]) URL.revokeObjectURL(localCvObjectUrls[candidateId]);
+      } catch (_e) {}
+      localCvObjectUrls[candidateId] = URL.createObjectURL(file);
+      candidate.cvStoragePath = up.path;
+      candidate.cvFileName = up.fileName;
+      candidate.cvMime = up.mime;
+      candidate.cvSize = up.size;
+      candidate.cvUploadedAt = new Date().toISOString();
+      candidate.updatedAt = new Date().toISOString();
+      await saveCandidates(candidate.id);
+      return { ok: true };
+    }
+
+    async function resolveInterviewAudioSrc(faceOrCall, questionId, candidateId) {
+      const key = localAudioKey(candidateId, questionId);
+      if (localAudioObjectUrls[key]) return localAudioObjectUrls[key];
+      const section = faceOrCall || {};
+      const inline = section[questionId + "Audio"];
+      const mime = section[questionId + "AudioMime"] || "audio/webm";
+      if (inline && String(inline).length > 32) {
+        return "data:" + mime + ";base64," + inline;
+      }
+      const path = section[questionId + "AudioPath"];
+      if (!path) return "";
+      const sb = getSupabase();
+      if (!sb) return "";
+      try {
+        const { data, error } = await sb.storage
+          .from(INTERVIEW_AUDIO_BUCKET)
+          .createSignedUrl(path, 60 * 60 * 12);
+        if (error || !data || !data.signedUrl) return "";
+        return data.signedUrl;
+      } catch (_e) {
+        return "";
       }
     }
 
@@ -1801,16 +2723,36 @@
     async function saveCandidateToSupabase(candidate) {
       const sb = getSupabase();
       if (!sb) return;
-      const c = candidate;
-      const { id, ...rest } = c;
+      const c = ensureCandidateShape(candidate);
+      setSyncUi("pending", "Saving to club database…", "");
+      let remoteCand = null;
+      try {
+        const { data: remoteRow } = await sb
+          .from("onboarding_candidates")
+          .select("id, data")
+          .eq("id", c.id)
+          .maybeSingle();
+        if (remoteRow && remoteRow.data) {
+          remoteCand = ensureCandidateShape({ ...remoteRow.data, id: remoteRow.id });
+        }
+      } catch (_e) {
+        /* merge best-effort */
+      }
+      const merged = mergeCandidateWithRemote(c, remoteCand);
+      const payload = prepareCandidatePayload(merged);
       const { error } = await sb.from("onboarding_candidates").upsert({
-        id: c.id,
-        updated_at: c.updatedAt || new Date().toISOString(),
-        data: { ...rest, id: c.id }
+        id: payload.id,
+        updated_at: payload.updatedAt || new Date().toISOString(),
+        data: payload
       }, { onConflict: "id" });
       if (error) {
         console.error("Supabase save error for", c.id, error);
         throw error;
+      }
+      const idx = candidates.findIndex(function (x) { return x && x.id === c.id; });
+      if (idx >= 0) {
+        candidates[idx] = merged;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
       }
     }
 
@@ -1820,19 +2762,44 @@
         return;
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
-      try {
-        if (candidateId) {
-          const target = candidates.find(c => c.id === candidateId);
-          if (target) await saveCandidateToSupabase(target);
-          return;
-        }
-        for (const c of candidates) {
-          await saveCandidateToSupabase(c);
-        }
-      } catch (e) {
-        notifySaveFailure(e, candidateId || "all");
-        throw e;
+
+      if (saveInFlight) {
+        saveInFlight._pendingId = candidateId || saveInFlight._pendingId || null;
+        return saveInFlight;
       }
+
+      const runSave = async function (id) {
+        try {
+          if (id) {
+            const target = candidates.find(c => c.id === id);
+            if (target) await saveCandidateToSupabase(target);
+          } else {
+            for (const c of candidates) {
+              await saveCandidateToSupabase(c);
+            }
+          }
+          notifySaveSuccess();
+        } catch (e) {
+          notifySaveFailure(e, id || "all");
+          throw e;
+        }
+      };
+
+      saveInFlight = (async function () {
+        var id = candidateId || null;
+        try {
+          await runSave(id);
+          while (saveInFlight && saveInFlight._pendingId !== undefined) {
+            id = saveInFlight._pendingId;
+            saveInFlight._pendingId = undefined;
+            await runSave(id);
+          }
+        } finally {
+          saveInFlight = null;
+        }
+      })();
+      saveInFlight._pendingId = undefined;
+      return saveInFlight;
     }
 
     function startSharedRealtimeSync() {
@@ -1873,6 +2840,9 @@
       "Support Worker": [
         "First Aid Training"
       ],
+      "Day Centre Support Worker": [
+        "First Aid Training"
+      ],
       "Swimming Teacher": [
         "STA Level 1",
         "STA Level 2",
@@ -1884,8 +2854,265 @@
       ]
     };
 
+    var CALL_FILTER_QUESTIONS = [
+      {
+        id: "filterQ1",
+        title: "How did you find us?",
+        tip: "Note the channel (Indeed, referral, Instagram, friend at the club, etc.). Helps you see where good candidates come from and if someone recommended them."
+      },
+      {
+        id: "filterQ2",
+        title: "What do you know about clubSENsational?",
+        tip: "Listen for autism / learning disabilities, sessions, community work - not a perfect speech. Vague \"I just need a job\" is a weak signal."
+      },
+      {
+        id: "filterQ3",
+        title: "Why do you want this role / why work with us?",
+        tip: "Look for genuine interest in the people we support and the role, not only hours or location."
+      },
+      {
+        id: "filterQ4",
+        title: "What experience do you have with autism or learning disabilities?",
+        tip: "Ask briefly: 1:1, group, or both; what kind of support. Even \"none yet, but...\" is fine if attitude is strong - capture it in writing."
+      },
+      {
+        id: "filterQ5",
+        title: "What is your availability, and how would you travel to our venues?",
+        tip: "Days, mornings/afternoons/weekends, hours wanted. Car / public transport / which venues they can reach. Filters people who cannot actually do the shifts."
+      },
+      {
+        id: "filterQ6",
+        title: "When could you start, and do you have a notice period?",
+        tip: "Earliest start date and any notice with a current employer. Avoid booking face-to-face if they cannot start in a useful window."
+      },
+      {
+        id: "filterQ7",
+        title: "For this role we need to complete a DBS check. Is there anything we should know that could affect or delay that check?",
+        tip: "The company arranges the DBS. Soft yes/no + short note; if they won't proceed with DBS, don't take them to Stage 2."
+      },
+      {
+        id: "filterQ8",
+        title: "Is there anything that would stop you doing a face-to-face interview or the role as we described it?",
+        tip: "Open catch-all: can't attend wet/dry sessions, can't travel, long notice, won't do shadowing, etc. If there's a hard blocker, don't progress them."
+      }
+    ];
+
+    var CALL_PROCESS_QUESTIONS = [
+      {
+        id: "processQ1",
+        title: "Explain role scales / pay for this position - then note their reaction.",
+        tip: "Interviewer covers this. Confirm they understand the pay band. Stars = how clear/comfortable their response felt (fine, surprised, or pushed back on money)."
+      },
+      {
+        id: "processQ2",
+        title: "Explain the shadowing process and the shadowing rate - then note their reaction.",
+        tip: "Interviewer covers this. Cover how shadowing works and the rate (paid/unpaid as applicable). Stars = how clear/comfortable their response felt."
+      },
+      {
+        id: "processQ3",
+        title: "Explain that Stage 2 is a face-to-face interview (dry and wet where relevant) - then note their reaction.",
+        tip: "Interviewer covers this. Make sure they know it is in person and may include a wet session for swimming roles. Stars = how clear/comfortable their response felt."
+      }
+    ];
+
+    function allCallScreeningQuestions() {
+      return CALL_FILTER_QUESTIONS.concat(CALL_PROCESS_QUESTIONS);
+    }
+
+    function isDayCentreSupportRole(role) {
+      var r = String(role || "").trim().toLowerCase();
+      return r === "day centre support worker" || r === "day center support worker";
+    }
+
+    /** Stage 2 bank for Day Centre Support Worker (replaces standard face-to-face question set). */
+    var FACE_DC_SUPPORT_QUESTIONS = [
+      {
+        id: "dcQ1",
+        title: "Tell me about your understanding of autism. How might autism affect a young person's communication, emotional regulation, sensory processing and behaviour?",
+        tip: "Listen for curiosity about the whole person - communication, sensory needs and regulation - not only labels or stereotypes."
+      },
+      {
+        id: "dcQ2",
+        title: "What experience have you had supporting autistic young people, particularly those who may present with behaviours that challenge?",
+        tip: "Quality of reflection matters more than perfect CVs. Note whether they talk about the person behind the behaviour."
+      },
+      {
+        id: "dcQ3",
+        title: "If a young person suddenly became highly distressed or dysregulated, what would you do in that moment?",
+        tip: "Look for safety, reducing demand, co-regulation and seeking help - not control or punishment."
+      },
+      {
+        id: "dcQ4",
+        title: "How do you keep yourself calm and regulated when somebody is shouting, being aggressive or behaving in a way that feels challenging?",
+        tip: "Self-regulation is a big one. They need to lend the young person their calm rather than join the dysregulation."
+      },
+      {
+        id: "dcQ5",
+        title: "What do you think might be happening underneath a behaviour that appears aggressive or challenging? What would you be curious about?",
+        tip: "Prefer curiosity over judgement: What is this communicating? What changed? Sensory issue? Too much demand?"
+      },
+      {
+        id: "dcQ6",
+        title: "Imagine you have asked the young person to do something and they repeatedly refuse. How would you approach this without creating a power struggle?",
+        tip: "Watch for flexibility, offering choices, and stepping back from control battles."
+      },
+      {
+        id: "dcQ7",
+        title: "How would you recognise that a young person is beginning to become dysregulated before they reach crisis point?",
+        tip: "Early signs / proactive support is stronger than only describing crisis responses."
+      },
+      {
+        id: "dcQ8",
+        title: "Tell me about a situation where you had to remain patient despite somebody repeatedly testing your boundaries. How did you manage yourself?",
+        tip: "Look for honest self-management, not perfection."
+      },
+      {
+        id: "dcQ9",
+        title: "This young person needs somebody who is energetic and genuinely engaged. How would you build a relationship with them and discover what motivates and interests them?",
+        tip: "Relationship and motivation first - not only task completion."
+      },
+      {
+        id: "dcQ10",
+        title: "How would you balance being warm, playful and approachable with maintaining clear and consistent boundaries?",
+        tip: "Warmth + boundaries together; not one without the other."
+      },
+      {
+        id: "dcQ11",
+        title: "If something you were trying wasn't working with the young person, what would you do next?",
+        tip: "Adaptability and reflection beat sticking rigidly to one approach."
+      },
+      {
+        id: "dcQ12",
+        title: "How do you feel about receiving feedback or being told that your approach with a young person needs to change?",
+        tip: "Openness to coaching is essential for Day Centre support."
+      },
+      {
+        id: "dcQ13",
+        title: "What does co-regulation mean to you, and why might your own emotional state be particularly important when supporting an autistic young person?",
+        tip: "Their calm is part of the support - theory without self-awareness is a weak signal."
+      },
+      {
+        id: "dcQ14",
+        title: "After a particularly challenging incident, what would you do once the young person was calm again?",
+        tip: "Repair, reconnect, learn - not shame or long lectures."
+      },
+      {
+        id: "dcQ15",
+        title: "What do you think makes someone exceptional at supporting an autistic young person rather than simply being competent at the job?",
+        tip: "Listen for relationship, curiosity, regulation and genuine care - not only task competence."
+      }
+    ];
+
+    var FACE_DC_SUPPORT_SCENARIO = {
+      id: "dcScenQ1",
+      title:
+        "Scenario: The young person is becoming increasingly agitated. They are shouting, refusing instructions and beginning to direct their anger towards you. You can feel yourself becoming frustrated too. Talk me through exactly what you would do - including what you would do internally to manage yourself.",
+      tip:
+        "Pay close attention to curiosity vs judgement. Strong answers ask what the behaviour is communicating, what changed, sensory load, or demand level - not only \"tell them to calm down / remind them of the rules\". Self-regulation under pressure is critical."
+    };
+
+    var FACE_STANDARD_SCORE_IDS = [
+      "orgQ1", "orgQ2",
+      "expQ1", "expQ2", "expQ3", "expQ4",
+      "scenQ1", "scenQ2", "scenQ3", "scenQ4",
+      "engQ1", "engQ2", "engQ3", "engQ4", "engQ5",
+      "engScenQ1", "engScenQ2", "engScenQ3", "engScenQ4",
+      "collabQ1", "collabQ2",
+      "probQ1", "probQ2",
+      "obsQ1", "obsQ2"
+    ];
+
+    function faceDcSupportScoreIds() {
+      return FACE_DC_SUPPORT_QUESTIONS.map(function (q) {
+        return q.id;
+      }).concat([FACE_DC_SUPPORT_SCENARIO.id]);
+    }
+
+    function allFaceScoreIds() {
+      return FACE_STANDARD_SCORE_IDS
+        .concat(faceDcSupportScoreIds())
+        .concat(["shadQ1", "shadQ2", "shadQ3", "finalKnowledge", "finalAttitude"]);
+    }
+
+    function renderFaceStageQuestionBlocks(candidate) {
+      var face = candidate.faceToFaceInterview || {};
+      var role = (candidate.onboarding && candidate.onboarding.role) || "";
+      if (isDayCentreSupportRole(role)) {
+        var cards = FACE_DC_SUPPORT_QUESTIONS.map(function (q, i) {
+          return renderFaceRatedQuestion(face, q.id, (i + 1) + ". " + q.title, q.tip);
+        }).join("");
+        var scen = renderFaceRatedQuestion(
+          face,
+          FACE_DC_SUPPORT_SCENARIO.id,
+          "Scenario. " + FACE_DC_SUPPORT_SCENARIO.title,
+          FACE_DC_SUPPORT_SCENARIO.tip
+        );
+        return `
+                  <div class="field full phase-block phase-block--dc">
+                    <label>Day Centre Support Worker - Face to Face questions</label>
+                    <p class="question-helper" style="margin:0 0 12px">These Stage 2 questions apply when the role is Day Centre Support Worker. Look for curiosity rather than judgement, and for self-regulation when faced with aggression, rejection or repeated challenging behaviour.</p>
+                    <div class="check-grid">
+                      ${cards}
+                    </div>
+                  </div>
+                  <div class="field full phase-block phase-block--scen">
+                    <label>Scenario question</label>
+                    <div class="check-grid">
+                      ${scen}
+                    </div>
+                  </div>`;
+      }
+
+      /* General Stage 2 for swimming / climbing / fitness / support worker:
+         organisation, experience, session scenarios, problem-solving.
+         The young-person 1:1 engagement bank is Day Centre only. */
+      return `
+                  <div class="field full phase-block phase-block--org">
+                    <label>Understanding Our Organisation</label>
+                    <div class="check-grid">
+                      ${renderFaceRatedQuestion(face, "orgQ1", "1. What do you know about our company and the work we do with people with autism and learning disabilities?")}
+                      ${renderFaceRatedQuestion(face, "orgQ2", "2. Why do you want to work with us? What makes you interested in this role?")}
+                    </div>
+                  </div>
+
+                  <div class="field full phase-block phase-block--exp">
+                    <label>About Your Experience and Knowledge</label>
+                    <div class="check-grid">
+                      ${renderFaceRatedQuestion(face, "expQ1", "1. How would you describe your experience working with individuals with autism or learning disabilities?", "Please include whether this has been in group settings, 1:1, or both, and the type of support you have provided.")}
+                      ${renderFaceRatedQuestion(face, "expQ2", "2. How do you ensure that your sessions feel inclusive, safe, and comfortable for every individual, regardless of age or ability?", "We are particularly interested in how you adapt your approach to meet different needs.")}
+                      ${renderFaceRatedQuestion(face, "expQ3", "3. How would you describe yourself as a practitioner when delivering sessions?", "For example: your approach, communication style, energy, and how you build connection with participants.")}
+                      ${renderFaceRatedQuestion(face, "expQ4", "4. What is one weakness you are currently working to improve?", "Example: \"I am improving my confidence when providing feedback to parents.\"")}
+                    </div>
+                  </div>
+
+                  <div class="field full phase-block phase-block--scen">
+                    <label>Scenario-Based Questions</label>
+                    <div class="check-grid">
+                      ${renderFaceRatedQuestion(face, "scenQ1", "1. How would you respond if a participant refuses to take part and does not want to access the session?", "Please explain the steps you would take to engage them safely and positively.")}
+                      ${renderFaceRatedQuestion(face, "scenQ2", "2. How would you manage the situation if a participant becomes upset or dysregulated and tries to hit or bite?", "We want to hear how you would keep everyone safe while supporting regulation.")}
+                      ${renderFaceRatedQuestion(face, "scenQ3", "3. How would you keep participants with short attention spans engaged throughout the session?", "Please give practical examples of strategies or adaptations you would use.")}
+                      ${renderFaceRatedQuestion(face, "scenQ4", "4. How would you react if a participant starts throwing, breaking, or biting resources during the session?", "Please explain what you would do immediately and how you would follow up.")}
+                    </div>
+                  </div>
+
+                  <div class="field full phase-block phase-block--prob">
+                    <label>Problem-Solving and Professional Growth</label>
+                    <div class="check-grid">
+                      ${renderFaceRatedQuestion(face, "probQ1", "1. Can you share a real situation where you had a challenge with a participant or group, and explain how you handled it?", "Example: a participant became dysregulated, refused to participate, or disrupted the session. We want to hear what you did, why you chose that approach, and the outcome.")}
+                      ${renderFaceRatedQuestion(face, "probQ2", "2. What motivates you to keep developing professionally in this field?", "Please share what drives your professional growth, such as improving outcomes for participants, gaining new skills, taking on more responsibility, or staying up to date with best practice.")}
+                    </div>
+                  </div>`;
+    }
+
+    function isCallScreeningAudioQuestion(questionId) {
+      const id = String(questionId || "");
+      return allCallScreeningQuestions().some(function (q) {
+        return q.id === id;
+      });
+    }
+
     function getDefaultCallInterview() {
-      return {
+      var base = {
         interviewerName: "",
         date: "",
         time: "",
@@ -1914,10 +3141,18 @@
         uploadedTextDataUrl: "",
         uploadedTextMime: ""
       };
+      allCallScreeningQuestions().forEach(function (q) {
+        base[q.id] = 0;
+        base[q.id + "Notes"] = "";
+        base[q.id + "Audio"] = "";
+        base[q.id + "AudioMime"] = "";
+        base[q.id + "AudioPath"] = "";
+      });
+      return base;
     }
 
     function getDefaultFaceToFace() {
-      return {
+      var base = {
         interviewerName: "",
         date: "",
         time: "",
@@ -1934,6 +3169,24 @@
         orgQ2Notes: "",
         orgQ1Audio: "",
         orgQ2Audio: "",
+        engQ1: 0,
+        engQ2: 0,
+        engQ3: 0,
+        engQ4: 0,
+        engQ5: 0,
+        engQ1Audio: "",
+        engQ2Audio: "",
+        engQ3Audio: "",
+        engQ4Audio: "",
+        engQ5Audio: "",
+        engScenQ1: 0,
+        engScenQ2: 0,
+        engScenQ3: 0,
+        engScenQ4: 0,
+        engScenQ1Audio: "",
+        engScenQ2Audio: "",
+        engScenQ3Audio: "",
+        engScenQ4Audio: "",
         expQ1: 0,
         expQ2: 0,
         expQ3: 0,
@@ -1992,6 +3245,14 @@
         followUpNotes: "",
         outcomeCompletedAt: ""
       };
+      faceDcSupportScoreIds().forEach(function (id) {
+        base[id] = 0;
+        base[id + "Audio"] = "";
+        base[id + "AudioMime"] = "";
+        base[id + "AudioPath"] = "";
+        base[id + "Notes"] = "";
+      });
+      return base;
     }
 
     function getDefaultOnboarding() {
@@ -2028,7 +3289,9 @@
         starterChecklistCompleted: false,
         onboardingCompleted: false,
         readyToStart: false,
-        onboardingNotes: ""
+        onboardingNotes: "",
+        portalUserId: "",
+        inviteSentAt: ""
       };
     }
 
@@ -2049,6 +3312,14 @@
       return {
         id: "cand_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
         name: name.trim(),
+        email: "",
+        phone: "",
+        dateOfBirth: "",
+        cvStoragePath: "",
+        cvFileName: "",
+        cvMime: "",
+        cvSize: 0,
+        cvUploadedAt: "",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         callInterview: getDefaultCallInterview(),
@@ -2060,6 +3331,14 @@
 
     function ensureCandidateShape(candidate) {
       const nowIso = new Date().toISOString();
+      candidate.email = candidate.email || "";
+      candidate.phone = candidate.phone || "";
+      candidate.dateOfBirth = candidate.dateOfBirth || "";
+      candidate.cvStoragePath = candidate.cvStoragePath || "";
+      candidate.cvFileName = candidate.cvFileName || "";
+      candidate.cvMime = candidate.cvMime || "";
+      candidate.cvSize = Number(candidate.cvSize || 0) || 0;
+      candidate.cvUploadedAt = candidate.cvUploadedAt || "";
       candidate.callInterview = { ...getDefaultCallInterview(), ...(candidate.callInterview || {}) };
       candidate.faceToFaceInterview = { ...getDefaultFaceToFace(), ...(candidate.faceToFaceInterview || {}) };
       candidate.onboarding = { ...getDefaultOnboarding(), ...(candidate.onboarding || {}) };
@@ -2067,6 +3346,45 @@
       candidate.createdAt = candidate.createdAt || candidate.updatedAt || nowIso;
       candidate.updatedAt = candidate.updatedAt || candidate.createdAt || nowIso;
       return candidate;
+    }
+
+    function parseDobParts(raw) {
+      const s = String(raw || "").trim();
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+      if (!m) return null;
+      const y = Number(m[1]);
+      const mo = Number(m[2]);
+      const d = Number(m[3]);
+      if (!y || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+      return { y: y, mo: mo, d: d };
+    }
+
+    function formatDobDisplay(raw) {
+      const p = parseDobParts(raw);
+      if (!p) return "";
+      const dt = new Date(p.y, p.mo - 1, p.d);
+      if (isNaN(dt.getTime())) return "";
+      return dt.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
+    }
+
+    function ageFromDob(raw, asOf) {
+      const p = parseDobParts(raw);
+      if (!p) return null;
+      const ref = asOf instanceof Date ? asOf : new Date();
+      let age = ref.getFullYear() - p.y;
+      const m = ref.getMonth() + 1 - p.mo;
+      if (m < 0 || (m === 0 && ref.getDate() < p.d)) age -= 1;
+      if (age < 0 || age > 120) return null;
+      return age;
+    }
+
+    function candidateDobMetaHtml() {
+      /* DOB is collected on onboarding forms, not in Working interview. */
+      return "";
     }
 
     function formatDateTime(iso) {
@@ -2114,7 +3432,16 @@
       if (candidate.faceToFaceInterview.status === "unsuccessful") return "face-unsuccessful";
       if (candidate.callInterview.status === "successful") return "face-to-face";
       if (candidate.callInterview.status === "unsuccessful") return "call-unsuccessful";
-      if (candidate.callInterview.date || candidate.callInterview.time || candidate.callInterview.comments || candidate.callInterview.generalNotes || (candidate.callInterview.callNotesAudio && candidate.callInterview.callNotesAudio.length > 0)) return "call-interview";
+      if (
+        candidate.callInterview.date ||
+        candidate.callInterview.time ||
+        candidate.callInterview.comments ||
+        candidate.callInterview.generalNotes ||
+        callHasFilterAnswers(candidate.callInterview) ||
+        (candidate.callInterview.callNotesAudio && candidate.callInterview.callNotesAudio.length > 0)
+      ) {
+        return "call-interview";
+      }
       return "new";
     }
 
@@ -2193,55 +3520,150 @@
       return m || "audio/webm";
     }
 
-    function renderQuestionAudio(face, questionId) {
-      const audio = (face && face[questionId + "Audio"]) ? face[questionId + "Audio"] : "";
-      const mime = getAudioMime(face, questionId);
-      const wrapId = "wrap-" + questionId;
-      if (!audio) {
-        return `<div class="question-audio" id="${escapeHtml(wrapId)}"><span class="audio-placeholder">No recording</span></div>`;
-      }
-      return `<div class="question-audio" id="${escapeHtml(wrapId)}">
-        <div class="audio-wrap">
-          <audio preload="metadata" data-question="${escapeHtml(questionId)}" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
+    function knownAudioDurationSec(section, questionId) {
+      if (!section) return 0;
+      const raw =
+        questionId === "callNotes"
+          ? section.callNotesAudioDurationSec
+          : section[questionId + "AudioDurationSec"];
+      const n = Number(raw);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    }
+
+    function storeAudioDurationSec(section, questionId, sec) {
+      if (!section) return;
+      const n = Number(sec);
+      if (!Number.isFinite(n) || n <= 0) return;
+      const rounded = Math.round(n * 10) / 10;
+      if (questionId === "callNotes") section.callNotesAudioDurationSec = rounded;
+      else section[questionId + "AudioDurationSec"] = rounded;
+    }
+
+    function formatAudioTime(sec) {
+      const n = Number(sec);
+      if (!Number.isFinite(n) || n < 0) return "0:00";
+      const total = Math.floor(n + 0.0001);
+      const m = Math.floor(total / 60);
+      const s = total % 60;
+      return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    function audioPlayerInnerHtml(questionId, src, path, knownDurationSec) {
+      const pathAttr = path ? ` data-audio-path="${escapeHtml(path)}"` : "";
+      const srcAttr = src ? ` src="${escapeHtml(src)}"` : "";
+      const dur = Number(knownDurationSec);
+      const hasKnown = Number.isFinite(dur) && dur > 0;
+      const durAttr = hasKnown ? ` data-known-duration="${dur}"` : "";
+      const initialTotal = hasKnown ? formatAudioTime(dur) : "--:--";
+      return `<div class="audio-wrap">
+          <audio preload="auto" data-question="${escapeHtml(questionId)}"${pathAttr}${srcAttr}${durAttr}></audio>
           <div class="audio-controls-row">
             <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
             <div class="audio-progress-wrap">
-              <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
-              <span class="audio-time">0:00 / 0:00</span>
+              <input type="range" class="audio-seek" min="0" max="100" value="0" step="0.1" title="Seek" />
+              <span class="audio-time">0:00 / ${initialTotal}</span>
             </div>
             <span class="audio-speed">
-              <button type="button" data-speed="1">1×</button>
+              <button type="button" data-speed="1" class="is-active">1×</button>
               <button type="button" data-speed="1.5">1.5×</button>
               <button type="button" data-speed="2">2×</button>
             </span>
           </div>
-        </div>
+        </div>`;
+    }
+
+    function renderQuestionAudio(face, questionId, candidateId) {
+      const audio = (face && face[questionId + "Audio"]) ? face[questionId + "Audio"] : "";
+      const path = (face && face[questionId + "AudioPath"]) ? face[questionId + "AudioPath"] : "";
+      const mime = getAudioMime(face, questionId);
+      const wrapId = "wrap-" + questionId;
+      const localUrl = localAudioObjectUrls[localAudioKey(candidateId, questionId)] || "";
+      if (!audio && !path && !localUrl) {
+        return `<div class="question-audio" id="${escapeHtml(wrapId)}"><span class="audio-placeholder">No recording</span></div>`;
+      }
+      const src = localUrl
+        ? localUrl
+        : audio
+          ? `data:${escapeHtml(mime)};base64,${audio}`
+          : "";
+      const known = knownAudioDurationSec(face, questionId);
+      return `<div class="question-audio" id="${escapeHtml(wrapId)}">
+        ${audioPlayerInnerHtml(questionId, src, path, known)}
       </div>`;
+    }
+
+    function renderFaceRatedQuestion(face, questionId, title, helper) {
+      const helperHtml = helper
+        ? `<p class="question-helper">${helper}</p>`
+        : "";
+      return `<div class="check-card">
+<div class="question-label"><label for="${escapeHtml(questionId)}">${title}</label>${helperHtml}</div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="${escapeHtml(questionId)}" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="${escapeHtml(questionId)}" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(face, questionId, currentCandidateId)}
+                        <input type="hidden" id="${escapeHtml(questionId)}" value="${face && face[questionId] ? face[questionId] : 0}" />
+                      </div>`;
+    }
+
+    function renderCallFilterQuestion(call, question, index) {
+      const id = question.id;
+      const notesId = id + "Notes";
+      const score = call && call[id] ? Number(call[id]) : 0;
+      const notes = call && call[notesId] ? String(call[notesId]) : "";
+      return `<div class="check-card">
+<div class="question-label"><label for="${escapeHtml(notesId)}">${index}. ${escapeHtml(question.title)}</label><p class="question-helper">${escapeHtml(question.tip)}</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="${escapeHtml(id)}" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="${escapeHtml(id)}" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(call, id, currentCandidateId)}
+                        <input type="hidden" id="${escapeHtml(id)}" value="${score || 0}" />
+                        <div class="question-notes">
+                          <textarea id="${escapeHtml(notesId)}" class="textarea" rows="3" placeholder="Write the answer / notes...">${escapeHtml(notes)}</textarea>
+                        </div>
+                      </div>`;
+    }
+
+    function callHasFilterAnswers(call) {
+      if (!call) return false;
+      return allCallScreeningQuestions().some(function (q) {
+        const notes = String(call[q.id + "Notes"] || "").trim();
+        const score = Number(call[q.id] || 0);
+        const audio = String(call[q.id + "Audio"] || "");
+        const path = String(call[q.id + "AudioPath"] || "");
+        return !!notes || score > 0 || audio.length > 0 || path.length > 0;
+      });
     }
 
     function renderCallNotesAudio(call) {
       const audio = (call && call.callNotesAudio) ? call.callNotesAudio : "";
+      const path = (call && call.callNotesAudioPath) ? call.callNotesAudioPath : "";
       const mime = (call && call.callNotesAudioMime) ? call.callNotesAudioMime : "audio/webm";
       const wrapId = "wrap-callNotes";
-      if (!audio) {
+      const localUrl = localAudioObjectUrls[localAudioKey(currentCandidateId, "callNotes")] || "";
+      if (!audio && !path && !localUrl) {
         return `<div class="question-audio" id="${wrapId}"><span class="audio-placeholder">No recording</span></div>`;
       }
+      const src = localUrl
+        ? localUrl
+        : audio
+          ? `data:${escapeHtml(mime)};base64,${audio}`
+          : "";
+      const known = knownAudioDurationSec(call, "callNotes");
       return `<div class="question-audio" id="${wrapId}">
-        <div class="audio-wrap">
-          <audio preload="metadata" data-question="callNotes" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
-          <div class="audio-controls-row">
-            <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
-            <div class="audio-progress-wrap">
-              <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
-              <span class="audio-time">0:00 / 0:00</span>
-            </div>
-            <span class="audio-speed">
-              <button type="button" data-speed="1">1×</button>
-              <button type="button" data-speed="1.5">1.5×</button>
-              <button type="button" data-speed="2">2×</button>
-            </span>
-          </div>
-        </div>
+        ${audioPlayerInnerHtml("callNotes", src, path, known)}
       </div>`;
     }
 
@@ -2285,6 +3707,8 @@
             <div class="candidate-top">
               <div>
                 <h3 class="candidate-name">${escapeHtml(candidate.name)}</h3>
+                ${candidateDobMetaHtml(candidate)}
+                ${candidateCvMetaHtml(candidate)}
                 <div class="candidate-meta">Last updated: ${formatDateTime(candidate.updatedAt)}</div>
               </div>
               <span class="status-pill ${status.cls}">${status.text}</span>
@@ -2298,6 +3722,14 @@
             renderSearchResults(filterCandidates(searchInput.value.trim()));
             renderCandidateDetail(candidate.id);
           });
+          const openCvBtn = card.querySelector("[data-open-cv]");
+          if (openCvBtn) {
+            openCvBtn.addEventListener("click", function (ev) {
+              ev.preventDefault();
+              ev.stopPropagation();
+              void openCandidateCv(openCvBtn.getAttribute("data-open-cv"));
+            });
+          }
           searchResults.appendChild(card);
         });
     }
@@ -2341,10 +3773,10 @@
       return parts.join(" | ");
     }
 
-    function addNewCandidateFromInput() {
+    async function addNewCandidateFromInput() {
       if (!portalUseSupabase) {
         if (isInterviewEmbedded()) {
-          alert("Still connecting to your Admin login — wait a second and try again.");
+          alert("Still connecting to your Admin login - wait a second and try again.");
           try {
             if (window.parent && window.parent !== window) {
               window.parent.postMessage({ type: "portal-interview-auth-request" }, window.location.origin);
@@ -2359,10 +3791,21 @@
         return;
       }
       const name = searchInput.value.trim();
+      const cvInput = document.getElementById("newCandidateCv");
+      const cvFile = cvInput && cvInput.files && cvInput.files[0] ? cvInput.files[0] : null;
 
       if (!name) {
         alert("Please enter the candidate name first.");
         searchInput.focus();
+        return;
+      }
+      if (!cvFile) {
+        alert("Please attach the CV (document or photo) before creating the candidate.");
+        if (cvInput) cvInput.focus();
+        return;
+      }
+      if (!isAllowedCvFile(cvFile)) {
+        alert("CV must be a PDF, Word document, or photo under 20MB.");
         return;
       }
 
@@ -2379,10 +3822,42 @@
       const candidate = createCandidate(name);
       addHistoryEntry(candidate, "Candidate profile created.");
       candidates.push(candidate);
-      saveCandidates(candidate.id).catch(function () {});
       currentCandidateId = candidate.id;
-      renderSearchResults(filterCandidates(searchInput.value.trim()));
-      renderCandidateDetail(candidate.id);
+
+      const btn = document.getElementById("addCandidateBtn");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Uploading CV...";
+      }
+      try {
+        const up = await uploadInterviewCvBlob(candidate.id, cvFile);
+        if (!up.ok) {
+          candidates = candidates.filter(function (c) { return c.id !== candidate.id; });
+          currentCandidateId = null;
+          alert("Could not upload the CV: " + (up.error || "unknown error") + ". Candidate was not created.");
+          return;
+        }
+        localCvObjectUrls[candidate.id] = URL.createObjectURL(cvFile);
+        candidate.cvStoragePath = up.path;
+        candidate.cvFileName = up.fileName;
+        candidate.cvMime = up.mime;
+        candidate.cvSize = up.size;
+        candidate.cvUploadedAt = new Date().toISOString();
+        addHistoryEntry(candidate, "CV uploaded: " + up.fileName);
+        await saveCandidates(candidate.id);
+        if (cvInput) cvInput.value = "";
+        renderSearchResults(filterCandidates(searchInput.value.trim()));
+        renderCandidateDetail(candidate.id);
+      } catch (err) {
+        candidates = candidates.filter(function (c) { return c.id !== candidate.id; });
+        currentCandidateId = null;
+        alert("Could not create candidate: " + ((err && err.message) || "unknown error"));
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Add New Candidate";
+        }
+      }
     }
 
     async function deleteCurrentCandidate() {
@@ -2445,6 +3920,8 @@
       ensureCandidateShape(candidate);
 
       const candidateName = document.getElementById("candidateName");
+      const candidateEmail = document.getElementById("candidateEmail");
+      const candidatePhone = document.getElementById("candidatePhone");
 
       const callInterviewerName = document.getElementById("callInterviewerName");
       const callDate = document.getElementById("callDate");
@@ -2465,27 +3942,6 @@
       const faceFollowUpNotes = document.getElementById("faceFollowUpNotes");
       const phase1Date = document.getElementById("phase1Date");
       const phase1Impressions = document.getElementById("phase1Impressions");
-      const orgQ1 = document.getElementById("orgQ1");
-      const orgQ2 = document.getElementById("orgQ2");
-      const expQ1 = document.getElementById("expQ1");
-      const expQ2 = document.getElementById("expQ2");
-      const expQ3 = document.getElementById("expQ3");
-      const expQ4 = document.getElementById("expQ4");
-      const scenQ1 = document.getElementById("scenQ1");
-      const scenQ2 = document.getElementById("scenQ2");
-      const scenQ3 = document.getElementById("scenQ3");
-      const scenQ4 = document.getElementById("scenQ4");
-      const collabQ1 = document.getElementById("collabQ1");
-      const collabQ2 = document.getElementById("collabQ2");
-      const probQ1 = document.getElementById("probQ1");
-      const probQ2 = document.getElementById("probQ2");
-      const obsQ1 = document.getElementById("obsQ1");
-      const obsQ2 = document.getElementById("obsQ2");
-      const shadQ1 = document.getElementById("shadQ1");
-      const shadQ2 = document.getElementById("shadQ2");
-      const shadQ3 = document.getElementById("shadQ3");
-      const finalKnowledge = document.getElementById("finalKnowledge");
-      const finalAttitude = document.getElementById("finalAttitude");
       const onboardingRole = document.getElementById("onboardingRole");
       const britishStatus = document.getElementById("britishStatus");
       const onboardingNotes = document.getElementById("onboardingNotes");
@@ -2529,6 +3985,8 @@
         }
       }
       candidate.name = name;
+      candidate.email = candidateEmail ? String(candidateEmail.value || "").trim() : (candidate.email || "");
+      candidate.phone = candidatePhone ? String(candidatePhone.value || "").trim() : (candidate.phone || "");
 
       candidate.callInterview.interviewerName = callInterviewerName ? callInterviewerName.value.trim() : "";
       candidate.callInterview.date = callDate.value;
@@ -2544,9 +4002,22 @@
       candidate.callInterview.safeguardingAwareness = getCheckboxValue("callSafeguardingAwareness");
       candidate.callInterview.motivation = getCheckboxValue("callMotivation");
       candidate.callInterview.locationTravel = getCheckboxValue("callLocationTravel");
-      candidate.callInterview.roleScales = getCheckboxValue("callRoleScales");
-      candidate.callInterview.shadowingProcessRate = getCheckboxValue("callShadowingProcessRate");
-      candidate.callInterview.faceToFaceSessionWet = getCheckboxValue("callFaceToFaceSessionWet");
+      allCallScreeningQuestions().forEach(function (q) {
+        var scoreEl = document.getElementById(q.id);
+        var notesEl = document.getElementById(q.id + "Notes");
+        candidate.callInterview[q.id] = scoreEl ? Number(scoreEl.value || 0) : 0;
+        candidate.callInterview[q.id + "Notes"] = notesEl ? notesEl.value.trim() : "";
+      });
+      // Keep legacy booleans in sync for older records / admin views.
+      candidate.callInterview.roleScales =
+        Number(candidate.callInterview.processQ1 || 0) > 0 ||
+        !!String(candidate.callInterview.processQ1Notes || "").trim();
+      candidate.callInterview.shadowingProcessRate =
+        Number(candidate.callInterview.processQ2 || 0) > 0 ||
+        !!String(candidate.callInterview.processQ2Notes || "").trim();
+      candidate.callInterview.faceToFaceSessionWet =
+        Number(candidate.callInterview.processQ3 || 0) > 0 ||
+        !!String(candidate.callInterview.processQ3Notes || "").trim();
 
       candidate.faceToFaceInterview.interviewerName = callStatus.value === "successful" && faceInterviewerName ? faceInterviewerName.value.trim() : "";
       candidate.faceToFaceInterview.date = callStatus.value === "successful" ? faceDate.value : "";
@@ -2558,27 +4029,12 @@
       candidate.faceToFaceInterview.readyOnboardingNotes = (callStatus.value === "successful" && (faceStatus.value === "successful-ready" || faceStatus.value === "successful") && faceReadyOnboardingNotes) ? faceReadyOnboardingNotes.value.trim() : "";
       candidate.faceToFaceInterview.phase1Date = callStatus.value === "successful" && phase1Date ? phase1Date.value : "";
       candidate.faceToFaceInterview.phase1Impressions = callStatus.value === "successful" && phase1Impressions ? phase1Impressions.value.trim() : "";
-      candidate.faceToFaceInterview.orgQ1 = callStatus.value === "successful" && orgQ1 ? Number(orgQ1.value || 0) : 0;
-      candidate.faceToFaceInterview.orgQ2 = callStatus.value === "successful" && orgQ2 ? Number(orgQ2.value || 0) : 0;
-      candidate.faceToFaceInterview.expQ1 = callStatus.value === "successful" && expQ1 ? Number(expQ1.value || 0) : 0;
-      candidate.faceToFaceInterview.expQ2 = callStatus.value === "successful" && expQ2 ? Number(expQ2.value || 0) : 0;
-      candidate.faceToFaceInterview.expQ3 = callStatus.value === "successful" && expQ3 ? Number(expQ3.value || 0) : 0;
-      candidate.faceToFaceInterview.expQ4 = callStatus.value === "successful" && expQ4 ? Number(expQ4.value || 0) : 0;
-      candidate.faceToFaceInterview.scenQ1 = callStatus.value === "successful" && scenQ1 ? Number(scenQ1.value || 0) : 0;
-      candidate.faceToFaceInterview.scenQ2 = callStatus.value === "successful" && scenQ2 ? Number(scenQ2.value || 0) : 0;
-      candidate.faceToFaceInterview.scenQ3 = callStatus.value === "successful" && scenQ3 ? Number(scenQ3.value || 0) : 0;
-      candidate.faceToFaceInterview.scenQ4 = callStatus.value === "successful" && scenQ4 ? Number(scenQ4.value || 0) : 0;
-      candidate.faceToFaceInterview.collabQ1 = callStatus.value === "successful" && collabQ1 ? Number(collabQ1.value || 0) : 0;
-      candidate.faceToFaceInterview.collabQ2 = callStatus.value === "successful" && collabQ2 ? Number(collabQ2.value || 0) : 0;
-      candidate.faceToFaceInterview.probQ1 = callStatus.value === "successful" && probQ1 ? Number(probQ1.value || 0) : 0;
-      candidate.faceToFaceInterview.probQ2 = callStatus.value === "successful" && probQ2 ? Number(probQ2.value || 0) : 0;
-      candidate.faceToFaceInterview.obsQ1 = callStatus.value === "successful" && obsQ1 ? Number(obsQ1.value || 0) : 0;
-      candidate.faceToFaceInterview.obsQ2 = callStatus.value === "successful" && obsQ2 ? Number(obsQ2.value || 0) : 0;
-      candidate.faceToFaceInterview.shadQ1 = callStatus.value === "successful" && shadQ1 ? Number(shadQ1.value || 0) : 0;
-      candidate.faceToFaceInterview.shadQ2 = callStatus.value === "successful" && shadQ2 ? Number(shadQ2.value || 0) : 0;
-      candidate.faceToFaceInterview.shadQ3 = callStatus.value === "successful" && shadQ3 ? Number(shadQ3.value || 0) : 0;
-      candidate.faceToFaceInterview.finalKnowledge = callStatus.value === "successful" && finalKnowledge ? Number(finalKnowledge.value || 0) : 0;
-      candidate.faceToFaceInterview.finalAttitude = callStatus.value === "successful" && finalAttitude ? Number(finalAttitude.value || 0) : 0;
+      allFaceScoreIds().forEach(function (qid) {
+        var el = document.getElementById(qid);
+        if (!el) return;
+        candidate.faceToFaceInterview[qid] =
+          callStatus.value === "successful" ? Number(el.value || 0) : 0;
+      });
       candidate.faceToFaceInterview.followUpNotes = callStatus.value === "successful" && faceFollowUpNotes ? faceFollowUpNotes.value.trim() : "";
 
       const selectedOnboardingRole = onboardingRole ? onboardingRole.value : "";
@@ -2652,6 +4108,12 @@
         faceLockedNotice.classList.add("hidden");
         stage2Chip.classList.add("active");
         stage2Chip.classList.remove("locked", "alert");
+        const faceCandidate = ensureCandidateShape(findCandidateById(currentCandidateId));
+        if (faceCandidate && stampInterviewOpenMeta(faceCandidate.faceToFaceInterview)) {
+          syncInterviewDateTimeInputs("face", faceCandidate.faceToFaceInterview);
+        } else if (faceCandidate) {
+          syncInterviewDateTimeInputs("face", faceCandidate.faceToFaceInterview);
+        }
       } else if (status === "unsuccessful") {
         unsuccessBtn.classList.add("active-unsuccess");
         callUnsuccessfulWrap.classList.remove("hidden");
@@ -2753,12 +4215,114 @@
       updateCandidateFromForm(true);
     }
 
-    function triggerReadyForOnboardingNotification(candidate) {
-      // Placeholder hook: email/app notification workflow can be connected here later.
-      console.log("Ready for onboarding notification trigger:", candidate.id);
+    /** staff_profiles CHECK slugs — never send display labels like "Support Worker". */
+    function mapOnboardingRoleToStaffRole(raw) {
+      var trimmed = String(raw || "").trim();
+      var lower = trimmed.toLowerCase().replace(/\s+/g, " ");
+      var allowed = { support: 1, swimming: 1, fitness: 1, climbing: 1, manager: 1, admin: 1 };
+      if (allowed[lower]) return lower;
+      var aliases = {
+        "support worker": "support",
+        "day centre support worker": "support",
+        "specialist support worker": "support",
+        "specialist support worker — hub & community": "support",
+        "specialist support worker - hub & community": "support",
+        "specialist support worker — session lead": "support",
+        "specialist support worker - session lead": "support",
+        "service lead": "support",
+        "programme lead": "support",
+        "swimming instructor": "swimming",
+        "swimming teacher": "swimming",
+        "specialist support worker — swimming": "swimming",
+        "specialist support worker - swimming": "swimming",
+        "climbing instructor": "climbing",
+        "climbing teacher": "climbing",
+        "specialist support worker — climbing": "climbing",
+        "specialist support worker - climbing": "climbing",
+        "fitness instructor": "fitness",
+        "pt / fitness instructor": "fitness",
+        "specialist support worker — fitness": "fitness",
+        "specialist support worker - fitness": "fitness",
+        administrator: "admin",
+        admin: "admin",
+        manager: "manager"
+      };
+      if (aliases[lower]) return aliases[lower];
+      if (/swim/.test(lower)) return "swimming";
+      if (/climb/.test(lower)) return "climbing";
+      if (/fitness|\bpt\b/.test(lower)) return "fitness";
+      if (/manager/.test(lower)) return "manager";
+      if (/admin/.test(lower)) return "admin";
+      return "support";
     }
 
-    function completeFaceOutcome() {
+    async function triggerReadyForOnboardingNotification(candidate) {
+      const email = String((candidate && candidate.email) || "").trim().toLowerCase();
+      const fullName = String((candidate && candidate.name) || "").trim();
+      const phone = String((candidate && candidate.phone) || "").trim();
+      const roleLabel = String(
+        (candidate && candidate.onboarding && candidate.onboarding.role) || "Support Worker"
+      ).trim() || "Support Worker";
+      const role = mapOnboardingRoleToStaffRole(roleLabel);
+      if (!email || email.indexOf("@") < 0) {
+        return { ok: false, error: "email_required" };
+      }
+      try {
+        const sb = typeof getSupabase === "function" ? getSupabase() : supabaseClient;
+        if (!sb || !sb.auth) {
+          return { ok: false, error: "not_signed_in" };
+        }
+        const sessRes = await sb.auth.getSession();
+        const token =
+          (sessRes &&
+            sessRes.data &&
+            sessRes.data.session &&
+            sessRes.data.session.access_token) ||
+          "";
+        if (!token) return { ok: false, error: "not_signed_in" };
+        let url = "https://cklpnwhlqsulpmkipmqb.supabase.co";
+        let anon = "";
+        try {
+          const mod = await import(PORTAL_SUPABASE_CLIENT_MODULE);
+          if (mod && typeof mod.getSupabaseUrl === "function") url = mod.getSupabaseUrl() || url;
+          if (mod && typeof mod.getSupabaseAnonKey === "function") anon = mod.getSupabaseAnonKey() || "";
+        } catch (_e) {
+          /* use defaults */
+        }
+        if (!anon) {
+          try {
+            anon = String((sb && sb.supabaseKey) || "").trim();
+          } catch (_e2) {}
+        }
+        const res = await fetch(String(url).replace(/\/$/, "") + "/functions/v1/portal-staff-onboarding-invite", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token,
+            apikey: anon || token
+          },
+          body: JSON.stringify({
+            candidate_id: candidate.id,
+            email: email,
+            phone: phone,
+            full_name: fullName,
+            role: role
+          })
+        });
+        const body = await res.json().catch(function () {
+          return {};
+        });
+        if (!res.ok || !body.ok) {
+          return { ok: false, error: (body && body.error) || "invite_failed", detail: body };
+        }
+        return body;
+      } catch (e) {
+        console.warn("[interview] onboarding invite", e);
+        return { ok: false, error: "invite_failed", detail: String(e && e.message || e) };
+      }
+    }
+
+    async function completeFaceOutcome() {
       if (!currentCandidateId) return;
       const statusEl = document.getElementById("faceStatusValue");
       const unsuccessfulReasonEl = document.getElementById("faceUnsuccessfulReason");
@@ -2790,10 +4354,42 @@
       if (!candidate) return;
       ensureCandidateShape(candidate);
 
+      if (status === "successful-ready" || status === "successful") {
+        const email = String(candidate.email || "").trim();
+        if (!email || email.indexOf("@") < 0) {
+          alert("Add the candidate email before marking Ready for onboarding. We use it to create their Portal login.");
+          const emailEl = document.getElementById("candidateEmail");
+          if (emailEl) emailEl.focus();
+          return;
+        }
+      }
+
       candidate.faceToFaceInterview.outcomeCompletedAt = new Date().toISOString();
+      let inviteNote = "";
       if (status === "successful-ready" || status === "successful") {
         candidate.onboarding.readyToStart = true;
-        triggerReadyForOnboardingNotification(candidate);
+        const invite = await triggerReadyForOnboardingNotification(candidate);
+        if (invite && invite.ok) {
+          candidate.onboarding.welcomeEmailSent = true;
+          candidate.onboarding.portalUserId = invite.user_id || candidate.onboarding.portalUserId || "";
+          candidate.onboarding.inviteSentAt = new Date().toISOString();
+          inviteNote = invite.email_sent
+            ? " Onboarding invite email sent."
+            : (invite.temporary_password
+              ? " Account created; email not sent — temporary password: " + invite.temporary_password
+              : " Account created; email delivery failed — check logs.");
+          addHistoryEntry(
+            candidate,
+            "Onboarding invite sent to " + String(candidate.email || "").trim() +
+              (invite.email_sent ? "" : " (email delivery issue)")
+          );
+        } else {
+          inviteNote =
+            " Outcome saved, but invite failed" +
+            (invite && invite.error ? " (" + invite.error + ")" : "") +
+            ". You can retry by completing Ready again after fixing email/login.";
+          addHistoryEntry(candidate, "Onboarding invite failed: " + ((invite && invite.error) || "unknown"));
+        }
       } else {
         candidate.onboarding.readyToStart = false;
       }
@@ -2803,7 +4399,7 @@
       saveCandidates(candidate.id).catch(function () {});
       renderSearchResults(filterCandidates(searchInput.value.trim()));
       renderCandidateDetail(candidate.id);
-      alert("Outcome completed and saved.");
+      alert("Outcome completed and saved." + inviteNote);
     }
 
     function renderRoleCertificates(role) {
@@ -2950,17 +4546,51 @@
             const next = v === current ? 0 : v;
             hidden.value = String(next);
             render(next);
+            if (typeof updateCandidateFromForm === "function" && currentCandidateId) {
+              updateCandidateFromForm(true);
+            }
           });
         });
       });
     }
 
-    let recordState = { stream: null, recorder: null, btn: null, questionId: null, candidateId: null };
+    let recordState = {
+      stream: null,
+      recorder: null,
+      btn: null,
+      questionId: null,
+      candidateId: null,
+      startedAt: 0,
+      tickTimer: null
+    };
+
+    function clearRecordingTick() {
+      if (recordState.tickTimer) {
+        clearInterval(recordState.tickTimer);
+        recordState.tickTimer = null;
+      }
+      const timeEl = document.getElementById("recordingIndicatorTime");
+      if (timeEl) timeEl.textContent = "0:00";
+    }
+
+    function startRecordingTick() {
+      clearRecordingTick();
+      recordState.startedAt = Date.now();
+      const tick = function () {
+        const timeEl = document.getElementById("recordingIndicatorTime");
+        if (!timeEl || !recordState.startedAt) return;
+        const sec = (Date.now() - recordState.startedAt) / 1000;
+        timeEl.textContent = formatAudioTime(sec);
+      };
+      tick();
+      recordState.tickTimer = setInterval(tick, 250);
+    }
 
     function updateRecordingIndicator(isRecording) {
       const indicator = document.getElementById("recordingIndicator");
       if (!indicator) return;
       indicator.classList.toggle("active", !!isRecording);
+      if (!isRecording) clearRecordingTick();
     }
 
     function stopCurrentRecording() {
@@ -2978,7 +4608,7 @@
       /* do not clear questionId here – onstop needs it to update the correct wrap */
     }
 
-    function updateAudioWrap(questionId, base64, mimeType, targetCandidateId) {
+    function updateAudioWrap(questionId, base64, mimeType, targetCandidateId, durationSec) {
       const candidateId = targetCandidateId || currentCandidateId;
       const candidate = findCandidateById(candidateId);
       if (!candidate) return;
@@ -2986,79 +4616,166 @@
       const wrap = currentCandidateId === candidateId ? document.getElementById(wrapId) : null;
       if (questionId === "callNotes") {
         candidate.callInterview = candidate.callInterview || {};
-        candidate.callInterview.callNotesAudio = base64 || "";
+        if (base64 !== undefined && base64 !== null) {
+          candidate.callInterview.callNotesAudio = base64 || "";
+        }
         candidate.callInterview.callNotesAudioMime = mimeType || "audio/webm";
+        storeAudioDurationSec(candidate.callInterview, "callNotes", durationSec);
         const call = candidate.callInterview;
         const audio = (call && call.callNotesAudio) ? call.callNotesAudio : "";
+        const path = (call && call.callNotesAudioPath) ? call.callNotesAudioPath : "";
         const mime = (call && call.callNotesAudioMime) ? call.callNotesAudioMime : "audio/webm";
         if (!wrap) return;
-        if (!audio) {
+        const localUrl = localAudioObjectUrls[localAudioKey(candidateId, "callNotes")] || "";
+        if (!audio && !path && !localUrl) {
           wrap.innerHTML = '<span class="audio-placeholder">No recording</span>';
           return;
         }
-        wrap.innerHTML = `<div class="audio-wrap">
-          <audio preload="metadata" data-question="callNotes" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
-          <div class="audio-controls-row">
-            <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
-            <div class="audio-progress-wrap">
-              <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
-              <span class="audio-time">0:00 / 0:00</span>
-            </div>
-            <span class="audio-speed">
-              <button type="button" data-speed="1">1×</button>
-              <button type="button" data-speed="1.5">1.5×</button>
-              <button type="button" data-speed="2">2×</button>
-            </span>
-          </div>
-        </div>`;
+        const src = localUrl
+          ? localUrl
+          : audio
+            ? `data:${escapeHtml(mime)};base64,${audio}`
+            : "";
+        wrap.innerHTML = audioPlayerInnerHtml(
+          "callNotes",
+          src,
+          path,
+          knownAudioDurationSec(call, "callNotes")
+        );
         initAudioSpeedInWrap(wrap);
+        if (!src && path) void hydrateAudioElements(wrap, candidateId);
         return;
       }
-      if (!candidate.faceToFaceInterview) return;
-      candidate.faceToFaceInterview[questionId + "Audio"] = base64 || "";
-      candidate.faceToFaceInterview[questionId + "AudioMime"] = mimeType || "audio/webm";
-      const face = candidate.faceToFaceInterview;
-      const audio = (face && face[questionId + "Audio"]) ? face[questionId + "Audio"] : "";
-      const mime = getAudioMime(face, questionId);
+      const storeOnCall = isCallScreeningAudioQuestion(questionId);
+      const section = storeOnCall
+        ? (candidate.callInterview = candidate.callInterview || {})
+        : (candidate.faceToFaceInterview = candidate.faceToFaceInterview || {});
+      if (!section) return;
+      if (base64 !== undefined && base64 !== null) {
+        section[questionId + "Audio"] = base64 || "";
+      }
+      section[questionId + "AudioMime"] = mimeType || "audio/webm";
+      storeAudioDurationSec(section, questionId, durationSec);
+      const audio = section[questionId + "Audio"] || "";
+      const path = section[questionId + "AudioPath"] || "";
+      const mime = getAudioMime(section, questionId);
       if (!wrap) return;
-      if (!audio) {
+      const localUrl = localAudioObjectUrls[localAudioKey(candidateId, questionId)] || "";
+      if (!audio && !path && !localUrl) {
         wrap.innerHTML = '<span class="audio-placeholder">No recording</span>';
         return;
       }
-      wrap.innerHTML = `<div class="audio-wrap">
-        <audio preload="metadata" data-question="${escapeHtml(questionId)}" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
-        <div class="audio-controls-row">
-          <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
-          <div class="audio-progress-wrap">
-            <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
-            <span class="audio-time">0:00 / 0:00</span>
-          </div>
-          <span class="audio-speed">
-            <button type="button" data-speed="1">1×</button>
-            <button type="button" data-speed="1.5">1.5×</button>
-            <button type="button" data-speed="2">2×</button>
-          </span>
-        </div>
-      </div>`;
+      const src = localUrl
+        ? localUrl
+        : audio
+          ? `data:${escapeHtml(mime)};base64,${audio}`
+          : "";
+      wrap.innerHTML = audioPlayerInnerHtml(
+        questionId,
+        src,
+        path,
+        knownAudioDurationSec(section, questionId)
+      );
       initAudioSpeedInWrap(wrap);
+      if (!src && path) void hydrateAudioElements(wrap, candidateId);
     }
 
-    function formatAudioTime(sec) {
-      if (!isFinite(sec) || isNaN(sec)) return "0:00";
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
-      return m + ":" + (s < 10 ? "0" : "") + s;
+    async function hydrateAudioElements(root, candidateId) {
+      const scope = root || document;
+      const nodes = scope.querySelectorAll
+        ? scope.querySelectorAll("audio[data-audio-path]")
+        : [];
+      for (let i = 0; i < nodes.length; i++) {
+        const audioEl = nodes[i];
+        if (audioEl.getAttribute("src")) continue;
+        const path = audioEl.getAttribute("data-audio-path");
+        const qid = audioEl.getAttribute("data-question") || "";
+        if (!path) continue;
+        const face = { [qid + "AudioPath"]: path };
+        const src = await resolveInterviewAudioSrc(face, qid, candidateId);
+        if (src) {
+          audioEl.setAttribute("src", src);
+          try { audioEl.load(); } catch (_e) {}
+          const wrap = audioEl.closest(".audio-wrap");
+          if (wrap && wrap.dataset.audioWired === "1") {
+            discoverWebmDuration(audioEl);
+          } else {
+            initAudioSpeedInWrap(wrap || audioEl.parentElement);
+          }
+        }
+      }
     }
 
-    function initAudioSpeedInWrap(wrap) {
+    function resolvePlaybackDuration(audio) {
+      if (!audio) return 0;
+      const native = Number(audio.duration);
+      if (Number.isFinite(native) && native > 0) return native;
+      const known = Number(audio.dataset.knownDuration || 0);
+      if (Number.isFinite(known) && known > 0) return known;
+      const heard = Number(audio.dataset.heardMax || 0);
+      if (Number.isFinite(heard) && heard > 0) return heard;
+      return 0;
+    }
+
+    function discoverWebmDuration(audio) {
+      if (!audio) return;
+      const native = Number(audio.duration);
+      if (Number.isFinite(native) && native > 0) {
+        audio.dataset.knownDuration = String(native);
+        return;
+      }
+      if (audio.dataset.durationHack === "1") return;
+      audio.dataset.durationHack = "1";
+      const onTimeUpdate = function () {
+        const d = Number(audio.duration);
+        if (Number.isFinite(d) && d > 0) {
+          audio.dataset.knownDuration = String(d);
+          try { audio.currentTime = 0; } catch (_e) {}
+          audio.removeEventListener("timeupdate", onTimeUpdate);
+        }
+      };
+      audio.addEventListener("timeupdate", onTimeUpdate);
+      try {
+        audio.currentTime = 1e101;
+      } catch (_e) {
+        audio.removeEventListener("timeupdate", onTimeUpdate);
+      }
+    }
+
+    function initAudioSpeedInWrap(root) {
+      if (!root) return;
+      const wrap =
+        root.classList && root.classList.contains("audio-wrap")
+          ? root
+          : root.querySelector(".audio-wrap");
+      if (!wrap || wrap.dataset.audioWired === "1") return;
+      wrap.dataset.audioWired = "1";
       const audio = wrap.querySelector("audio");
       const playBtn = wrap.querySelector(".audio-play-pause");
       const seekEl = wrap.querySelector(".audio-seek");
       const timeEl = wrap.querySelector(".audio-time");
+
+      function refreshTimeUi() {
+        if (!audio || !timeEl) return;
+        const cur = Number(audio.currentTime) || 0;
+        if (cur > 0) {
+          const prev = Number(audio.dataset.heardMax || 0);
+          if (cur > prev) audio.dataset.heardMax = String(cur);
+        }
+        const total = resolvePlaybackDuration(audio);
+        if (seekEl) {
+          const p = total > 0 ? Math.min(100, (cur / total) * 100) : 0;
+          seekEl.value = String(p);
+        }
+        timeEl.textContent =
+          formatAudioTime(cur) + " / " + (total > 0 ? formatAudioTime(total) : "--:--");
+      }
+
       if (playBtn && audio) {
         playBtn.addEventListener("click", () => {
           if (audio.paused) {
-            audio.play();
+            const p = audio.play();
+            if (p && typeof p.catch === "function") p.catch(function () {});
             playBtn.textContent = "❚❚";
           } else {
             audio.pause();
@@ -3067,26 +4784,46 @@
         });
         audio.addEventListener("play", () => { playBtn.textContent = "❚❚"; });
         audio.addEventListener("pause", () => { playBtn.textContent = "▶"; });
-        audio.addEventListener("ended", () => { playBtn.textContent = "▶"; });
+        audio.addEventListener("ended", () => {
+          playBtn.textContent = "▶";
+          const total = resolvePlaybackDuration(audio);
+          if (total > 0) audio.dataset.knownDuration = String(total);
+          refreshTimeUi();
+        });
       }
       if (audio && seekEl && timeEl) {
         audio.addEventListener("loadedmetadata", () => {
-          seekEl.max = 100;
-          timeEl.textContent = formatAudioTime(0) + " / " + formatAudioTime(audio.duration);
+          discoverWebmDuration(audio);
+          refreshTimeUi();
         });
-        audio.addEventListener("timeupdate", () => {
-          const p = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-          seekEl.value = String(p);
-          timeEl.textContent = formatAudioTime(audio.currentTime) + " / " + formatAudioTime(audio.duration);
+        audio.addEventListener("durationchange", () => {
+          const d = Number(audio.duration);
+          if (Number.isFinite(d) && d > 0) audio.dataset.knownDuration = String(d);
+          refreshTimeUi();
         });
+        audio.addEventListener("timeupdate", refreshTimeUi);
         seekEl.addEventListener("input", () => {
+          const total = resolvePlaybackDuration(audio);
           const p = Number(seekEl.value) / 100;
-          if (audio.duration) audio.currentTime = p * audio.duration;
+          if (total > 0) {
+            try { audio.currentTime = p * total; } catch (_e) {}
+          }
         });
+        if (audio.readyState >= 1) {
+          discoverWebmDuration(audio);
+          refreshTimeUi();
+        } else {
+          try { audio.load(); } catch (_e) {}
+          refreshTimeUi();
+        }
       }
       wrap.querySelectorAll(".audio-speed button").forEach(btn => {
         btn.addEventListener("click", () => {
-          if (audio) audio.playbackRate = Number(btn.getAttribute("data-speed") || 1);
+          if (!audio) return;
+          audio.playbackRate = Number(btn.getAttribute("data-speed") || 1);
+          wrap.querySelectorAll(".audio-speed button").forEach(function (b) {
+            b.classList.toggle("is-active", b === btn);
+          });
         });
       });
     }
@@ -3099,10 +4836,78 @@
       const candidate = findCandidateById(candidateId);
       if (!candidate) return;
       candidate.updatedAt = new Date().toISOString();
+      setSyncUi("pending", "Saving recording…", "");
       saveCandidates(candidate.id).catch(function () {});
       if (currentCandidateId === candidateId) {
         renderSearchResults(filterCandidates(searchInput.value.trim()));
       }
+    }
+
+    async function persistRecordingWithUpload(candidateId, questionId, blob, mimeType, durationSec) {
+      const candidate = findCandidateById(candidateId);
+      if (!candidate) return;
+      const key = localAudioKey(candidateId, questionId);
+      try {
+        if (localAudioObjectUrls[key]) URL.revokeObjectURL(localAudioObjectUrls[key]);
+      } catch (_e) {}
+      localAudioObjectUrls[key] = URL.createObjectURL(blob);
+      const up = await uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType);
+      let inlineBase64 = "";
+      if (!up.ok && blob.size < 90000) {
+        inlineBase64 = await new Promise(function (resolve) {
+          const reader = new FileReader();
+          reader.onload = function () {
+            const dataUrl = typeof reader.result === "string" ? reader.result : "";
+            resolve(
+              dataUrl.indexOf("base64,") >= 0 ? dataUrl.split("base64,")[1] : ""
+            );
+          };
+          reader.onerror = function () { resolve(""); };
+          reader.readAsDataURL(blob);
+        });
+      }
+      if (questionId === "callNotes") {
+        candidate.callInterview = candidate.callInterview || {};
+        if (up.ok) {
+          candidate.callInterview.callNotesAudioPath = up.path;
+          candidate.callInterview.callNotesAudio = "";
+        } else {
+          candidate.callInterview.callNotesAudio = inlineBase64;
+        }
+        candidate.callInterview.callNotesAudioMime = mimeType || "audio/webm";
+        storeAudioDurationSec(candidate.callInterview, "callNotes", durationSec);
+      } else if (isCallScreeningAudioQuestion(questionId)) {
+        candidate.callInterview = candidate.callInterview || {};
+        if (up.ok) {
+          candidate.callInterview[questionId + "AudioPath"] = up.path;
+          candidate.callInterview[questionId + "Audio"] = "";
+        } else {
+          candidate.callInterview[questionId + "Audio"] = inlineBase64;
+        }
+        candidate.callInterview[questionId + "AudioMime"] = mimeType || "audio/webm";
+        storeAudioDurationSec(candidate.callInterview, questionId, durationSec);
+      } else {
+        candidate.faceToFaceInterview = candidate.faceToFaceInterview || {};
+        if (up.ok) {
+          candidate.faceToFaceInterview[questionId + "AudioPath"] = up.path;
+          candidate.faceToFaceInterview[questionId + "Audio"] = "";
+        } else {
+          candidate.faceToFaceInterview[questionId + "Audio"] = inlineBase64;
+        }
+        candidate.faceToFaceInterview[questionId + "AudioMime"] = mimeType || "audio/webm";
+        storeAudioDurationSec(candidate.faceToFaceInterview, questionId, durationSec);
+      }
+      if (!up.ok) {
+        setSyncUi(
+          "pending",
+          inlineBase64
+            ? "Storage upload failed - saved short clip inline"
+            : "Storage upload failed - clip kept on this device only",
+          up.error || ""
+        );
+      }
+      updateAudioWrap(questionId, inlineBase64, mimeType || "audio/webm", candidateId, durationSec);
+      persistCandidateAfterRecording(candidateId);
     }
 
     function bindCallUploadHandlers() {
@@ -3150,26 +4955,14 @@
     }
 
     function applyMobileDateTimeInputs() {
-      const isMobile = window.matchMedia("(max-width: 768px)").matches;
-      document.querySelectorAll('input[data-input-type="date"]').forEach(inp => {
-        const originalType = inp.getAttribute("data-input-type") || "date";
-        if (isMobile) {
-          inp.type = "text";
-          inp.placeholder = "YYYY-MM-DD";
-        } else {
-          inp.type = originalType;
-          inp.placeholder = "";
-        }
+      /* Keep native date/time pickers on all viewports so Day is selectable and Time stays a clock control. */
+      document.querySelectorAll('input[data-input-type="date"]').forEach(function (inp) {
+        inp.type = "date";
+        inp.placeholder = "";
       });
-      document.querySelectorAll('input[data-input-type="time"]').forEach(inp => {
-        const originalType = inp.getAttribute("data-input-type") || "time";
-        if (isMobile) {
-          inp.type = "text";
-          inp.placeholder = "HH:MM";
-        } else {
-          inp.type = originalType;
-          inp.placeholder = "";
-        }
+      document.querySelectorAll('input[data-input-type="time"]').forEach(function (inp) {
+        inp.type = "time";
+        inp.placeholder = "";
       });
     }
 
@@ -3207,6 +5000,9 @@
             recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
             recorder.onstop = () => {
               const usedMime = (recorder.mimeType || chosenMime || "audio/webm").split(";")[0];
+              const elapsedSec = recordState.startedAt
+                ? Math.max(0.1, (Date.now() - recordState.startedAt) / 1000)
+                : 0;
               stream.getTracks().forEach(t => t.stop());
               if (recordState.btn) recordState.btn.classList.remove("recording");
               recordState.stream = null;
@@ -3217,20 +5013,19 @@
               const recordingCandidateId = recordState.candidateId;
               recordState.questionId = null;
               recordState.candidateId = null;
+              recordState.startedAt = 0;
               if (qid) {
                 if (chunks.length > 0) {
                   const blob = new Blob(chunks, { type: recorder.mimeType || chosenMime || "audio/webm" });
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const dataUrl = reader.result;
-                    const base64 = (dataUrl && typeof dataUrl === "string" && dataUrl.indexOf("base64,") >= 0) ? dataUrl.split("base64,")[1] : "";
-                    if (base64) updateAudioWrap(qid, base64, usedMime, recordingCandidateId);
-                    else updateAudioWrap(qid, "", usedMime, recordingCandidateId);
-                    persistCandidateAfterRecording(recordingCandidateId);
-                  };
-                  reader.readAsDataURL(blob);
+                  void persistRecordingWithUpload(
+                    recordingCandidateId,
+                    qid,
+                    blob,
+                    usedMime,
+                    elapsedSec
+                  );
                 } else {
-                  updateAudioWrap(qid, "", usedMime, recordingCandidateId);
+                  updateAudioWrap(qid, "", usedMime, recordingCandidateId, elapsedSec);
                   persistCandidateAfterRecording(recordingCandidateId);
                 }
               }
@@ -3242,6 +5037,7 @@
             recordState.questionId = questionId;
             recordState.candidateId = currentCandidateId;
             btn.classList.add("recording");
+            startRecordingTick();
             updateRecordingIndicator(true);
           } catch (err) {
             alert("Se necesita acceso al micrófono para grabar.");
@@ -3274,16 +5070,23 @@
       const onboardingStarted = isOnboardingStarted(onboarding);
       const readyForOnboarding = !!onboarding.readyToStart;
 
+      stampInterviewOpenMeta(candidate.callInterview);
+      if (callSuccessful) stampInterviewOpenMeta(candidate.faceToFaceInterview);
+
       mainContent.innerHTML = `
         <div class="content-header">
           <div class="candidate-summary">
             <h2>${escapeHtml(candidate.name)}</h2>
+            ${candidateDobMetaHtml(candidate)}
+            ${candidateCvMetaHtml(candidate)}
             <p>Open, update, and continue this recruitment and onboarding record at any time from the same page. The stage tracker below lights up so different team members can immediately see where the candidate currently is.</p>
           </div>
           <div class="summary-actions">
             <button class="btn btn-danger" id="deleteCandidateBtn">Delete Candidate</button>
           </div>
         </div>
+
+        ${renderSyncBannerHtml()}
 
         <div class="mini-meta">
           <div class="mini-card">
@@ -3323,26 +5126,62 @@
             <div class="section-head">
               <div>
                 <h3>Candidate Details</h3>
-                <p>Update the candidate name if needed.</p>
+                <p>Update name, email, and mobile if needed. CV opens on the right.</p>
               </div>
             </div>
             <div class="section-body">
-              <div class="info-grid">
-                <div class="field full">
-                  <label for="candidateName">Candidate name</label>
-                  <input id="candidateName" class="input" type="text" value="${escapeHtml(candidate.name)}" />
+              <div class="candidate-details-split">
+                <div class="candidate-details-fields">
+                  <div class="info-grid">
+                    <div class="field full">
+                      <label for="candidateName">Candidate name</label>
+                      <input id="candidateName" class="input" type="text" value="${escapeHtml(candidate.name)}" />
+                    </div>
+
+                    <div class="field full">
+                      <label for="candidateEmail">Email (for onboarding invite)</label>
+                      <input id="candidateEmail" class="input" type="email" autocomplete="email" placeholder="name@example.com" value="${escapeHtml(candidate.email || "")}" />
+                    </div>
+
+                    <div class="field full">
+                      <label for="candidatePhone">Mobile (optional)</label>
+                      <input id="candidatePhone" class="input" type="tel" autocomplete="tel" placeholder="+44…" value="${escapeHtml(candidate.phone || "")}" />
+                    </div>
+
+                    <div class="field full">
+                      <label for="onboardingRole">Role</label>
+                      <select id="onboardingRole" class="select">
+                        <option value="">Select role</option>
+                        <option value="Swimming Instructor" ${(selectedRole === "Swimming Instructor" || selectedRole === "Swimming Teacher") ? "selected" : ""}>Swimming Instructor</option>
+                        <option value="Climbing Instructor" ${(selectedRole === "Climbing Instructor" || selectedRole === "Climbing Teacher") ? "selected" : ""}>Climbing Instructor</option>
+                        <option value="Fitness Instructor" ${selectedRole === "Fitness Instructor" ? "selected" : ""}>Fitness Instructor</option>
+                        <option value="Support Worker" ${selectedRole === "Support Worker" ? "selected" : ""}>Support Worker</option>
+                        <option value="Day Centre Support Worker" ${selectedRole === "Day Centre Support Worker" ? "selected" : ""}>Day Centre Support Worker</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="field candidate-cv-replace">
+                    <label for="replaceCandidateCv">CV file (replace)</label>
+                    <div class="cv-actions">
+                      <input id="replaceCandidateCv" class="input" type="file" accept=".pdf,.doc,.docx,image/*,.heic,.heif" />
+                    </div>
+                    <p class="question-helper" style="margin-top:8px;">Required when creating a candidate. PDF, photo, and Word open on the right. Use Open if you need a full-size view.</p>
+                  </div>
                 </div>
 
-                <div class="field full">
-                  <label for="onboardingRole">Role</label>
-                  <select id="onboardingRole" class="select">
-                    <option value="">Select role</option>
-                    <option value="Swimming Instructor" ${(selectedRole === "Swimming Instructor" || selectedRole === "Swimming Teacher") ? "selected" : ""}>Swimming Instructor</option>
-                    <option value="Climbing Instructor" ${(selectedRole === "Climbing Instructor" || selectedRole === "Climbing Teacher") ? "selected" : ""}>Climbing Instructor</option>
-                    <option value="Fitness Instructor" ${selectedRole === "Fitness Instructor" ? "selected" : ""}>Fitness Instructor</option>
-                    <option value="Support Worker" ${selectedRole === "Support Worker" ? "selected" : ""}>Support Worker</option>
-                  </select>
-                </div>
+                <aside class="candidate-cv-preview" aria-label="CV preview">
+                  <div class="candidate-cv-preview-head">
+                    <span class="candidate-cv-preview-title" id="candidateCvPreviewTitle">CV preview</span>
+                  </div>
+                  <div class="candidate-cv-preview-body" id="candidateCvPreviewBody">
+                    <div class="candidate-cv-preview-empty">Loading…</div>
+                  </div>
+                  <div class="candidate-cv-preview-foot">
+                    <button type="button" class="btn" id="candidateCvPreviewOpen" disabled>Open</button>
+                    <button type="button" class="btn btn-primary" id="candidateCvPreviewDownload" disabled>Download</button>
+                  </div>
+                </aside>
               </div>
             </div>
           </section>
@@ -3351,14 +5190,14 @@
             <div class="section-head">
               <div>
                 <h3>Stage 1 · Call Interview</h3>
-                <p>Use this section for the first screening call. Topics covered are now integrated inside the main summary section.</p>
+                <p>First screening call. Questions 1-8 are asked to the candidate. Questions 9-11 are for the interviewer: explain pay, shadowing and Stage 2, then note their reaction.</p>
               </div>
             </div>
             <div class="section-body">
               <div class="info-grid">
                 <div class="field full">
-                  <label for="callInterviewerName">Interviewer name</label>
-                  <input id="callInterviewerName" class="input" type="text" placeholder="e.g. Jane Smith" value="${escapeHtml(candidate.callInterview.interviewerName || "")}" />
+                  <label for="callInterviewerName">Who completed this interview</label>
+                  ${renderInterviewerSelect("callInterviewerName", candidate.callInterview.interviewerName)}
                 </div>
 
                 <div class="field full">
@@ -3368,7 +5207,7 @@
 
                 <div class="field full">
                   <label for="callTime">Time</label>
-                  <input id="callTime" class="input" type="time" data-input-type="time" value="${escapeHtml(candidate.callInterview.time)}" />
+                  <input id="callTime" class="input" type="time" data-input-type="time" step="60" value="${escapeHtml(candidate.callInterview.time)}" />
                 </div>
 
                 <div class="field full hidden">
@@ -3376,52 +5215,22 @@
                   <textarea id="callComments" class="textarea" placeholder="Add your summary from the call interview...">${escapeHtml(candidate.callInterview.comments)}</textarea>
                 </div>
 
-                <div class="field full">
-                  <label>Topics covered inside call summary</label>
+                <div class="field full phase-block phase-block--call-filter">
+                  <label>Screening filter questions</label>
                   <div class="check-grid">
-                    <div class="check-card">
-                      <input type="checkbox" id="callPreviousExperience" ${candidate.callInterview.previousExperience ? "checked" : ""}>
-                      <label for="callPreviousExperience">Previous experience</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callSendExperience" ${candidate.callInterview.sendExperience ? "checked" : ""}>
-                      <label for="callSendExperience">SEN experience</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callMotivation" ${candidate.callInterview.motivation ? "checked" : ""}>
-                      <label for="callMotivation">Why joining clubSENsational</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callLocationTravel" ${candidate.callInterview.locationTravel ? "checked" : ""}>
-                      <label for="callLocationTravel">Location and travel</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callRoleScales" ${candidate.callInterview.roleScales ? "checked" : ""}>
-                      <label for="callRoleScales">Role scales</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callShadowingProcessRate" ${candidate.callInterview.shadowingProcessRate ? "checked" : ""}>
-                      <label for="callShadowingProcessRate">Shadowing process and rate</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callFaceToFaceSessionWet" ${candidate.callInterview.faceToFaceSessionWet ? "checked" : ""}>
-                      <label for="callFaceToFaceSessionWet">Face to Face Interview (Dry & Wet)</label>
-                    </div>
+                    ${CALL_FILTER_QUESTIONS.map(function (q, i) {
+                      return renderCallFilterQuestion(candidate.callInterview, q, i + 1);
+                    }).join("")}
                   </div>
                 </div>
 
-                <div class="field full">
-                  <label>Call interview notes (audio)</label>
-                  <div class="question-controls" style="margin-bottom: 8px;">
-                    <button type="button" class="btn-record" title="Record" data-question="callNotes" aria-label="Record">⏺</button>
+                <div class="field full phase-block phase-block--call-filter">
+                  <label>Process we must explain</label>
+                  <div class="check-grid">
+                    ${CALL_PROCESS_QUESTIONS.map(function (q, i) {
+                      return renderCallFilterQuestion(candidate.callInterview, q, CALL_FILTER_QUESTIONS.length + i + 1);
+                    }).join("")}
                   </div>
-                  ${renderCallNotesAudio(candidate.callInterview)}
                 </div>
 
                 <div class="field full">
@@ -3457,15 +5266,15 @@
             <div class="section-head">
               <div>
                 <h3>Stage 2 · Face to Face Interview</h3>
-                <p>This stage becomes active when the call interview is marked as successful. Use the structured questions below to guide the Face to Face conversation and score responses consistently.</p>
+                <p>This stage becomes active when the call interview is marked as successful. Day Centre Support Worker uses the Day Centre question bank. Other roles use the general Stage 2 set (organisation, experience, session scenarios, problem-solving).</p>
               </div>
             </div>
             <div class="section-body">
               <div id="faceSectionWrap" class="${callSuccessful ? "" : "hidden"}">
                 <div class="info-grid">
                   <div class="field full">
-                    <label for="faceInterviewerName">Interviewer name</label>
-                    <input id="faceInterviewerName" class="input" type="text" placeholder="e.g. Jane Smith" value="${escapeHtml(candidate.faceToFaceInterview.interviewerName || "")}" />
+                    <label for="faceInterviewerName">Who completed this interview</label>
+                    ${renderInterviewerSelect("faceInterviewerName", candidate.faceToFaceInterview.interviewerName)}
                   </div>
 
                   <div class="field full">
@@ -3475,243 +5284,10 @@
 
                   <div class="field full">
                     <label for="faceTime">Time</label>
-                    <input id="faceTime" class="input" type="time" data-input-type="time" value="${escapeHtml(candidate.faceToFaceInterview.time)}" />
+                    <input id="faceTime" class="input" type="time" data-input-type="time" step="60" value="${escapeHtml(candidate.faceToFaceInterview.time)}" />
                   </div>
 
-                  <div class="field full phase-block phase-block--org">
-                    <label>Understanding Our Organisation</label>
-                    <div class="check-grid">
-                      <div class="check-card">
-<div class="question-label"><label for="orgQ1">1. What do you know about our company and the work we do with people with autism and learning disabilities?</label></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="orgQ1" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="orgQ1" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "orgQ1")}
-                        <input type="hidden" id="orgQ1" value="${candidate.faceToFaceInterview.orgQ1 || 0}" />
-                      </div>
-
-                      <div class="check-card">
-<div class="question-label"><label for="orgQ2">2. Why do you want to work with us? What makes you interested in this role?</label></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="orgQ2" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="orgQ2" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "orgQ2")}
-                        <input type="hidden" id="orgQ2" value="${candidate.faceToFaceInterview.orgQ2 || 0}" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="field full phase-block phase-block--exp">
-                    <label>About Your Experience and Knowledge</label>
-                    <div class="check-grid">
-                      <div class="check-card">
-<div class="question-label"><label for="expQ1">1. How would you describe your experience working with individuals with autism or learning disabilities?</label><p class="question-helper">(Please include whether this has been in group settings, 1:1, or both, and the type of support you have provided.)</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="expQ1" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="expQ1" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "expQ1")}
-                        <input type="hidden" id="expQ1" value="${candidate.faceToFaceInterview.expQ1 || 0}" />
-                      </div>
-
-                      <div class="check-card">
-<div class="question-label"><label for="expQ2">2. How do you ensure that your sessions feel inclusive, safe, and comfortable for every individual, regardless of age or ability?</label><p class="question-helper">(We are particularly interested in how you adapt your approach to meet different needs.)</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="expQ2" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="expQ2" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "expQ2")}
-                        <input type="hidden" id="expQ2" value="${candidate.faceToFaceInterview.expQ2 || 0}" />
-                      </div>
-
-                      <div class="check-card">
-<div class="question-label"><label for="expQ3">3. How would you describe yourself as a practitioner when delivering sessions?</label><p class="question-helper">(For example: your approach, communication style, energy, and how you build connection with participants.)</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="expQ3" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="expQ3" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "expQ3")}
-                        <input type="hidden" id="expQ3" value="${candidate.faceToFaceInterview.expQ3 || 0}" />
-                      </div>
-
-                      <div class="check-card">
-<div class="question-label"><label for="expQ4">4. What is one weakness you are currently working to improve?</label><p class="question-helper">(Example: "I am improving my confidence when providing feedback to parents.")</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="expQ4" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="expQ4" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "expQ4")}
-                        <input type="hidden" id="expQ4" value="${candidate.faceToFaceInterview.expQ4 || 0}" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="field full phase-block phase-block--scen">
-                    <label>Scenario-Based Questions</label>
-                    <div class="check-grid">
-                      <div class="check-card">
-<div class="question-label"><label for="scenQ1">1. How would you respond if a participant refuses to take part and does not want to access the session?</label><p class="question-helper">(Please explain the steps you would take to engage them safely and positively.)</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="scenQ1" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="scenQ1" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ1")}
-                        <input type="hidden" id="scenQ1" value="${candidate.faceToFaceInterview.scenQ1 || 0}" />
-                      </div>
-
-                      <div class="check-card">
-<div class="question-label"><label for="scenQ2">2. How would you manage the situation if a participant becomes upset or dysregulated and tries to hit or bite?</label><p class="question-helper">(We want to hear how you would keep everyone safe while supporting regulation.)</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="scenQ2" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="scenQ2" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ2")}
-                        <input type="hidden" id="scenQ2" value="${candidate.faceToFaceInterview.scenQ2 || 0}" />
-                      </div>
-
-                      <div class="check-card">
-<div class="question-label"><label for="scenQ3">3. How would you keep participants with short attention spans engaged throughout the session?</label><p class="question-helper">(Please give practical examples of strategies or adaptations you would use.)</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="scenQ3" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="scenQ3" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ3")}
-                        <input type="hidden" id="scenQ3" value="${candidate.faceToFaceInterview.scenQ3 || 0}" />
-                      </div>
-
-                      <div class="check-card">
-<div class="question-label"><label for="scenQ4">4. How would you react if a participant starts throwing, breaking, or biting resources during the session?</label><p class="question-helper">(Please explain what you would do immediately and how you would follow up.)</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="scenQ4" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="scenQ4" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ4")}
-                        <input type="hidden" id="scenQ4" value="${candidate.faceToFaceInterview.scenQ4 || 0}" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="field full phase-block phase-block--collab">
-                    <label>Collaboration and Communication</label>
-                    <div class="check-grid">
-                      <div class="check-card">
-<div class="question-label"><label for="collabQ1">1. Communication skills with parents/carers about progress and challenges.</label></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="collabQ1" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="collabQ1" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "collabQ1")}
-                        <input type="hidden" id="collabQ1" value="${candidate.faceToFaceInterview.collabQ1 || 0}" />
-                      </div>
-
-                      <div class="check-card">
-<div class="question-label"><label for="collabQ2">2. Collaboration with colleagues and openness to feedback.</label></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="collabQ2" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="collabQ2" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "collabQ2")}
-                        <input type="hidden" id="collabQ2" value="${candidate.faceToFaceInterview.collabQ2 || 0}" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="field full phase-block phase-block--prob">
-                    <label>Problem-Solving and Professional Growth</label>
-                    <div class="check-grid">
-                      <div class="check-card">
-<div class="question-label"><label for="probQ1">1. Can you share a real situation where you had a challenge with a participant or group, and explain how you handled it?</label><p class="question-helper">(Example: a participant became dysregulated, refused to participate, or disrupted the session. We want to hear what you did, why you chose that approach, and the outcome.)</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="probQ1" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="probQ1" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "probQ1")}
-                        <input type="hidden" id="probQ1" value="${candidate.faceToFaceInterview.probQ1 || 0}" />
-                      </div>
-
-                      <div class="check-card">
-<div class="question-label"><label for="probQ2">2. What motivates you to keep developing professionally in this field?</label><p class="question-helper">(Please share what drives your professional growth, such as improving outcomes for participants, gaining new skills, taking on more responsibility, or staying up to date with best practice.)</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="probQ2" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="probQ2" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "probQ2")}
-                        <input type="hidden" id="probQ2" value="${candidate.faceToFaceInterview.probQ2 || 0}" />
-                      </div>
-                    </div>
-                  </div>
+                  ${renderFaceStageQuestionBlocks(candidate)}
 
                   <div class="field full phase-block phase-block--shad">
                     <label>Shadowing (15 min)</label>
@@ -3863,6 +5439,38 @@
       }
       scheduleAutoSave();
       document.getElementById("deleteCandidateBtn").addEventListener("click", deleteCurrentCandidate);
+      void mountCandidateCvPreview(candidate);
+      mainContent.querySelectorAll("[data-open-cv]").forEach(function (btn) {
+        btn.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          void openCandidateCv(btn.getAttribute("data-open-cv") || id);
+        });
+      });
+      const replaceCvInput = document.getElementById("replaceCandidateCv");
+      if (replaceCvInput) {
+        replaceCvInput.addEventListener("change", async function () {
+          const file = replaceCvInput.files && replaceCvInput.files[0] ? replaceCvInput.files[0] : null;
+          if (!file) return;
+          const res = await replaceCandidateCv(id, file);
+          replaceCvInput.value = "";
+          if (!res.ok) {
+            alert(res.error || "Could not upload CV.");
+            return;
+          }
+          renderCandidateDetail(id);
+          renderSearchResults(filterCandidates(searchInput.value.trim()));
+        });
+      }
+      const forceSaveBtn = document.getElementById("interviewForceSaveBtn");
+      if (forceSaveBtn) {
+        forceSaveBtn.addEventListener("click", function () {
+          if (!currentCandidateId) return;
+          updateCandidateFromForm(true);
+          setSyncUi("pending", "Manual save…", "");
+          saveCandidates(currentCandidateId).catch(function () {});
+        });
+      }
 
       document.getElementById("btnCallSuccessful").addEventListener("click", () => {
         setCallStatus("successful");
@@ -3894,7 +5502,18 @@
 
       if (onboardingRoleEl) {
         onboardingRoleEl.addEventListener("change", () => {
-          renderRoleCertificates(onboardingRoleEl.value);
+          const nextRole = onboardingRoleEl.value;
+          renderRoleCertificates(nextRole);
+          /* Persist role then re-render so Stage 2 swaps question banks. */
+          if (currentCandidateId) {
+            const c = findCandidateById(currentCandidateId);
+            if (c) {
+              if (!c.onboarding) c.onboarding = getDefaultOnboarding();
+              c.onboarding.role = nextRole;
+              updateCandidateFromForm(true);
+              renderCandidateDetail(currentCandidateId);
+            }
+          }
         });
       }
 
@@ -3922,6 +5541,7 @@
       bindCallUploadHandlers();
       initAudioSpeedButtons();
       applyMobileDateTimeInputs();
+      void hydrateAudioElements(mainContent, id);
       if (!window._mobileDateTimeResizeBound) {
         window._mobileDateTimeResizeBound = true;
         window.addEventListener("resize", applyMobileDateTimeInputs);
@@ -3929,8 +5549,17 @@
     }
 
     (async function portalOnboardingEntry() {
+      syncInterviewExitButton();
+      const exitBtn = document.getElementById("interviewExitBtn");
+      if (exitBtn && !exitBtn.dataset.bound) {
+        exitBtn.dataset.bound = "1";
+        exitBtn.addEventListener("click", function (ev) {
+          exitInterviews(ev);
+        });
+      }
       await bootstrapPortalOnboardingSupabase();
       syncPortalOnboardingHintVisibility();
+      syncInterviewExitButton();
       if (!portalUseSupabase) {
         candidates = loadCandidatesFromStorage().map(ensureCandidateShape);
       }

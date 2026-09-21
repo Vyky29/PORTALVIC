@@ -85,6 +85,7 @@
     if (s === "hub room") return "hub-room";
     if (s === "room 2" || s === "room2") return "room-2";
     if (s === "gym" || s === "fitness" || s === "fitness gym") return "gym";
+    if (s.indexOf("physical") >= 0) return "gym";
     if (s === "wall" || s.indexOf("climbing") >= 0) return "climbing-wall";
     if (s.indexOf("day centre") >= 0 || s.indexOf("day center") >= 0) return "day-center";
     if (s === "bespoke") return "bespoke";
@@ -152,6 +153,30 @@
         ? String(item.areaLabel).trim()
         : "";
     var pool = item.poolLocationLabel ? String(item.poolLocationLabel).trim() : "";
+    /* Last gate: capacity/open-seat Teaching Pool → Autumn standing note for this participant. */
+    try {
+      var Canon = global.PortalRosterCanonical;
+      if (
+        Canon &&
+        typeof Canon.lookupStandingPoolArea === "function" &&
+        (!area || /^teaching pool$/i.test(area) || !portalNormalizeAreaNoteKey(area))
+      ) {
+        var base = item.__portalBaseSession || {};
+        var hit = Canon.lookupStandingPoolArea({
+          client_name: item.name || item.clientId || base.clientName || base.clientId || "",
+          day: item.day || base.day || (typeof DEMO_VIEW_DAY !== "undefined" ? DEMO_VIEW_DAY : "") || "",
+          time_slot:
+            item.time ||
+            base.timeSlotLabel ||
+            base.time_slot ||
+            "",
+          instructors: base.__portalRosterInstructorsRaw || base.staffId || item.staffId || "",
+          venue: item.sessionVenue || base.venue || "",
+          service: item.activity || base.rosterService || "",
+        });
+        if (hit) area = hit;
+      }
+    } catch (_e) {}
     if (area) {
       var areaKey = portalNormalizeAreaNoteKey(area);
       if (areaKey) return area;
@@ -220,13 +245,16 @@
     );
   }
 
-  /** Icon + label metrics for TODAY session rows — fixed tile size for every row count. */
+  /** Icon + label metrics for TODAY session rows — shrink with denser boards (no inner scroll). */
   function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl, nameFs) {
-    var areaIconPx = scrollMode ? 36 : 40;
-    var labelFs = scrollMode ? 7 : 8;
-    var stackGap = 2;
-    var symbolColMax = scrollMode ? 52 : 56;
-    var iconPx = scrollMode ? 28 : 32;
+    var n = Math.max(1, Math.min(9, Number(sessionCount) || 1));
+    var dense = n >= 5;
+    var veryDense = n >= 7;
+    var areaIconPx = veryDense ? 28 : (dense ? 32 : (scrollMode ? 36 : 40));
+    var labelFs = veryDense ? 6 : (dense ? 7 : (scrollMode ? 7 : 8));
+    var stackGap = veryDense ? 1 : 2;
+    var symbolColMax = veryDense ? 44 : (dense ? 50 : (scrollMode ? 52 : 56));
+    var iconPx = veryDense ? 22 : (dense ? 26 : (scrollMode ? 28 : 32));
     return {
       iconPx: iconPx,
       areaIconPx: areaIconPx,

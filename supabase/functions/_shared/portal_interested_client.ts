@@ -18,6 +18,8 @@ export type InterestedClientInput = {
   postcode?: string | null;
   registrationDate?: string | null; // YYYY-MM-DD
   generalInfoLines?: string[];
+  /** Signed-in Family Portal hub — new sibling (twins/triplets) stays on this PIN. */
+  attachParentPersonId?: string | null;
 };
 
 function clean(v: unknown, max = 200): string {
@@ -32,6 +34,72 @@ function splitName(full: string): { first: string; last: string } {
   if (!parts.length) return { first: "Unknown", last: "" };
   if (parts.length === 1) return { first: parts[0], last: "" };
   return { first: parts.slice(0, -1).join(" "), last: parts[parts.length - 1] };
+}
+
+function emailNorm(v: unknown): string {
+  return clean(v, 200).toLowerCase();
+}
+
+function phoneLast10(v: unknown): string {
+  return String(v ?? "").replace(/\D/g, "").slice(-10);
+}
+
+/**
+ * Same child only when the full display name matches.
+ * Date of birth is a tie-break, never an identity on its own (twins share a DOB).
+ */
+function isSameChild(
+  row: { display_name?: unknown; dob_iso?: unknown },
+  participantNorm: string,
+  dob: string | null,
+): boolean {
+  if (normalizeParticipantLookupName(String(row.display_name || "")) !== participantNorm) {
+    return false;
+  }
+  if (dob && row.dob_iso) {
+    return String(row.dob_iso).slice(0, 10) === dob;
+  }
+  return true;
+}
+
+async function findExistingFamilyParentPersonId(
+  admin: SupabaseClient,
+  input: InterestedClientInput,
+): Promise<string> {
+  const forced = clean(input.attachParentPersonId, 80);
+  if (forced) {
+    const { data } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_person_id")
+      .eq("parent_person_id", forced)
+      .limit(1)
+      .maybeSingle();
+    if (data?.parent_person_id) return String(data.parent_person_id);
+  }
+
+  const email = emailNorm(input.parentEmail);
+  if (email) {
+    const { data } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_person_id")
+      .eq("email_norm", email)
+      .limit(1)
+      .maybeSingle();
+    if (data?.parent_person_id) return String(data.parent_person_id);
+  }
+
+  const phone = phoneLast10(input.parentPhone);
+  if (phone.length >= 10) {
+    const { data } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_person_id")
+      .eq("phone_lookup", phone)
+      .limit(1)
+      .maybeSingle();
+    if (data?.parent_person_id) return String(data.parent_person_id);
+  }
+
+  return "";
 }
 
 async function nextNumericContactId(admin: SupabaseClient): Promise<string> {
@@ -64,22 +132,42 @@ export async function ensureInterestedClientFromRegistration(
 
   const { data: parts } = await admin
     .from("portal_participants")
-    .select("contact_id, display_name, dob_iso, in_class, on_waiting_list");
+    .select("contact_id, display_name, dob_iso, parent_person_id, in_class, on_waiting_list");
 
-  const matches = (parts || []).filter((p) => {
-    if (normalizeParticipantLookupName(p.display_name) !== norm) return false;
-    if (dob && p.dob_iso) return String(p.dob_iso).slice(0, 10) === dob;
-    return true;
-  });
+  const familyParentId = await findExistingFamilyParentPersonId(admin, input);
 
-  let contactId = matches[0]?.contact_id ? String(matches[0].contact_id) : "";
+  const matches = (parts || []).filter((p) => isSameChild(p, norm, dob));
+  const familyMatches = familyParentId
+    ? matches.filter((p) => String(p.parent_person_id || "") === familyParentId)
+    : [];
+  const chosen = familyMatches[0] || matches[0];
+
+  let contactId = chosen?.contact_id ? String(chosen.contact_id) : "";
   let created = false;
 
   if (!contactId) {
     contactId = await nextNumericContactId(admin);
     created = true;
     const child = splitName(participantName);
-    const parentPersonId = `portal-${contactId}-parent`;
+    let parentPersonId = familyParentId || `portal-${contactId}-parent`;
+    let parentName = clean(input.parentName, 200) || "Parent / carer";
+    let parent = splitName(parentName);
+
+    if (familyParentId) {
+      const { data: hub } = await admin
+        .from("portal_parent_contacts")
+        .select("parent_display, parent_first_name, parent_last_name, address_line1, city, postcode")
+        .eq("parent_person_id", familyParentId)
+        .limit(1)
+        .maybeSingle();
+      if (hub?.parent_display) {
+        parentName = clean(hub.parent_display, 200) || parentName;
+        parent = {
+          first: clean(hub.parent_first_name, 80) || parent.first,
+          last: clean(hub.parent_last_name, 80) || parent.last,
+        };
+      }
+    }
 
     const { error: pErr } = await admin.from("portal_participants").insert({
       contact_id: contactId,
@@ -95,8 +183,6 @@ export async function ensureInterestedClientFromRegistration(
     });
     if (pErr) throw pErr;
 
-    const parentName = clean(input.parentName, 200) || "Parent / carer";
-    const parent = splitName(parentName);
     const { error: cErr } = await admin.from("portal_parent_contacts").insert({
       contact_id: contactId,
       parent_person_id: parentPersonId,

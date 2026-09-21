@@ -1,5 +1,6 @@
 /* Admin — spreadsheet reference (sessions + staff hours) */
 .asr-root {
+  position: relative;
   min-width: 0;
   max-width: 100%;
 }
@@ -32,16 +33,182 @@
   border-radius: 4px;
   background: #fff;
 }
+.asr-cell-wrap {
+  display: block;
+  position: relative;
+  width: 100%;
+  min-width: 5.5rem;
+  max-width: 11rem;
+  min-height: 2.55rem;
+}
+.asr-cell-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  pointer-events: none;
+  padding: 4px 6px;
+  min-height: 3.1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.55);
+  line-height: 1.2;
+  text-align: center;
+}
+.asr-cell-face__name {
+  display: block;
+  width: 100%;
+  font-size: 12px;
+  font-weight: 800;
+  color: #111827;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+.asr-cell-face__time {
+  display: block;
+  width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+.asr-cell-face__paid {
+  display: block;
+  width: 100%;
+  font-size: 10px;
+  font-weight: 700;
+  color: #15803d;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+.asr-cell-wrap .asr-cell-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  max-width: none;
+  min-height: 100%;
+  pointer-events: none;
+}
+.asr-cell-wrap {
+  cursor: pointer;
+}
+.asr-cell-wrap--picking .asr-cell-face {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+.asr-cell-wrap--type .asr-cell-face {
+  opacity: 0;
+}
+.asr-cell-wrap--type .asr-cell-input--type {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: text;
+  z-index: 2;
+}
+.asr-cell-wrap:focus-within .asr-cell-face {
+  opacity: 1;
+}
+.asr-cell-wrap--type:focus-within .asr-cell-face {
+  opacity: 0;
+}
+.asr-pick {
+  position: absolute;
+  z-index: 40;
+  width: min(22rem, calc(100% - 16px));
+  max-width: 24rem;
+  max-height: min(80vh, 36rem);
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+  min-width: 0;
+}
+.asr-pick__title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.asr-pick__sec {
+  margin: 0 0 10px;
+  min-width: 0;
+}
+.asr-pick__lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.asr-pick__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.asr-pick-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #0f172a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: center;
+}
+.asr-pick-chip:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+.asr-pick-chip.is-active {
+  border-color: var(--blue, #2d84b3);
+  background: var(--blue, #2d84b3);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 0 0 3px rgba(45, 132, 179, 0.32);
+}
+.asr-pick__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  align-items: center;
+  min-width: 0;
+}
+.asr-cell-wrap.asr-cell-input--dirty .asr-cell-face,
 .asr-cell-input--dirty {
   border-color: #2563eb;
   background: #eff6ff;
+}
+.asr-cell-wrap.asr-cell-input--dirty .asr-cell-face__name,
+.asr-cell-wrap.asr-cell-input--dirty .asr-cell-face__time,
+.asr-cell-wrap.asr-cell-input--dirty .asr-cell-face__paid {
   color: #2563eb;
 }
+.asr-cell-wrap.asr-cell-input--saved .asr-cell-face,
 .asr-cell-input--saved {
   color: #2563eb;
   font-weight: 600;
   border-color: #93c5fd;
   background: #eff6ff;
+}
+.asr-cell-wrap.asr-cell-input--saved .asr-cell-face__name {
+  color: #2563eb;
+}
+.asr-subtabs--range {
+  margin: 0 0 10px;
 }
 .asr-changelog {
   margin-top: 28px;
@@ -150,6 +317,7 @@
   border-collapse: collapse;
   font-size: 12px;
   min-width: max-content;
+  width: max-content;
 }
 .asr-grid th,
 .asr-grid td {
@@ -209,25 +377,224 @@
 .asr-cell--client {
   background: #fff;
 }
-.asr-hours .asr-venue--westway th {
-  background: #fecaca;
-  color: #7f1d1d;
+.asr-cell--booked {
+  vertical-align: top;
+  min-width: 0;
 }
-.asr-hours .asr-venue--northolt th {
+.asr-booked-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 100%;
+  margin: 1px 0;
+  padding: 2px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #0f172a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.asr-booked-chip__area {
+  display: block;
+  width: 100%;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  overflow-wrap: anywhere;
+}
+.asr-booked-chip:hover,
+.asr-booked-chip:focus-visible {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  outline: none;
+}
+.asr-booked-chip.available {
+  background: #fef9c3;
+  border-color: #eab308;
+  font-weight: 500;
+}
+.asr-hours th.asr-venue--westway {
+  background: #fde68a;
+  color: #92400e;
+}
+.asr-hours th.asr-venue--northolt {
   background: #93c5fd;
   color: #1e3a8a;
 }
-.asr-hours .asr-venue--acton th {
-  background: #bae6fd;
-  color: #0c4a6e;
+.asr-hours th.asr-venue--acton {
+  background: #86efac;
+  color: #14532d;
 }
-.asr-hours .asr-venue--swimfarm th {
-  background: #bae6fd;
-  color: #0c4a6e;
+.asr-hours th.asr-venue--swimfarm {
+  background: #f9a8d4;
+  color: #9d174d;
 }
-.asr-hours .asr-venue--swimfarm-ma th {
-  background: #e9d5ff;
+.asr-hours th.asr-venue--swimfarm-ma {
+  background: #d8b4fe;
   color: #581c87;
+}
+.asr-hours th.asr-venue--default {
+  background: #cbd5e1;
+  color: #334155;
+}
+.asr-hours td.asr-venue-body--westway { background: #fffbeb; }
+.asr-hours td.asr-venue-body--northolt { background: #eff6ff; }
+.asr-hours td.asr-venue-body--acton { background: #f0fdf4; }
+.asr-hours td.asr-venue-body--swimfarm { background: #fdf2f8; }
+.asr-hours td.asr-venue-body--swimfarm-ma { background: #faf5ff; }
+/* SwimFarm service pinks only (do not paint Acton/Northolt service rows pink) */
+.asr-hours th.asr-venue--swimfarm.asr-svc--bespoke,
+.asr-hours th.asr-venue--swimfarm-ma.asr-svc--bespoke {
+  background: #f472b6 !important;
+  color: #831843 !important;
+}
+.asr-hours th.asr-venue--swimfarm.asr-svc--day-centre,
+.asr-hours th.asr-venue--swimfarm-ma.asr-svc--day-centre {
+  background: #fda4af !important;
+  color: #9f1239 !important;
+}
+.asr-hours th.asr-venue--swimfarm.asr-svc--aquatic-activity-and-multi-activity,
+.asr-hours th.asr-venue--swimfarm.asr-svc--aquatic-multi-activity,
+.asr-hours th.asr-venue--swimfarm.asr-svc--aquatic-activity,
+.asr-hours th.asr-venue--swimfarm-ma.asr-svc--aquatic-activity {
+  background: #f472b6 !important;
+  color: #831843 !important;
+}
+.asr-hours th.asr-venue--swimfarm.asr-svc--multi-activity,
+.asr-hours th.asr-venue--swimfarm-ma.asr-svc--multi-activity {
+  background: #fda4af !important;
+  color: #9f1239 !important;
+}
+.asr-hours th.asr-seat {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 4px 6px;
+  white-space: nowrap;
+  color: #475569;
+  background: #f8fafc;
+}
+.asr-hours th.asr-seat.asr-seat--office {
+  color: #9a3412;
+  background: #ffedd5;
+}
+.asr-hours th.asr-seat.asr-svc--aquatic-activity,
+.asr-hours th.asr-seat.asr-svc--aquatic-activity-and-multi-activity {
+  background: #fce7f3;
+  color: #9d174d;
+}
+.asr-hours th.asr-seat.asr-svc--multi-activity {
+  background: #fff1f2;
+  color: #9f1239;
+}
+.asr-hours th.asr-seat.asr-svc--bespoke {
+  background: #fce7f3;
+  color: #9d174d;
+}
+.asr-hours th.asr-seat.asr-svc--day-centre {
+  background: #fff1f2;
+  color: #9f1239;
+}
+.asr-hours td.asr-sf-svc--bespoke { background: #fce7f3 !important; }
+.asr-hours td.asr-sf-svc--day-centre { background: #fff1f2 !important; }
+.asr-hours td.asr-sf-svc--aquatic-activity-and-multi-activity,
+.asr-hours td.asr-sf-svc--aquatic-multi-activity,
+.asr-hours td.asr-sf-svc--aquatic-activity { background: #fce7f3 !important; }
+.asr-hours td.asr-sf-svc--multi-activity { background: #fff1f2 !important; }
+.asr-hours th.asr-svc.asr-venue--acton {
+  background: #4ade80;
+  color: #14532d;
+}
+.asr-hours th.asr-svc.asr-venue--northolt {
+  background: #60a5fa;
+  color: #1e3a8a;
+}
+.asr-hours th.asr-svc.asr-venue--westway {
+  background: #fbbf24;
+  color: #92400e;
+}
+.asr-hours .asr-svc-start {
+  border-left: 3px solid #be185d;
+}
+.asr-hours td.asr-venue-body--default { background: #f8fafc; }
+.asr-hours td.asr-venue-start,
+.asr-hours th.asr-venue-start {
+  border-left: 3px solid rgba(15, 23, 42, 0.28);
+}
+.asr-hours .asr-venue--northolt.asr-venue-start,
+.asr-hours .asr-venue-body--northolt.asr-venue-start { border-left-color: #2563eb; }
+.asr-hours .asr-venue--acton.asr-venue-start,
+.asr-hours .asr-venue-body--acton.asr-venue-start { border-left-color: #16a34a; }
+.asr-hours .asr-venue--swimfarm.asr-venue-start,
+.asr-hours .asr-venue-body--swimfarm.asr-venue-start { border-left-color: #db2777; }
+.asr-hours .asr-venue--swimfarm-ma.asr-venue-start,
+.asr-hours .asr-venue-body--swimfarm-ma.asr-venue-start { border-left-color: #7c3aed; }
+.asr-hours .asr-venue--westway.asr-venue-start,
+.asr-hours .asr-venue-body--westway.asr-venue-start { border-left-color: #d97706; }
+.asr-hours .asr-date {
+  text-align: center;
+  background: #f1f5f9;
+  font-weight: 700;
+}
+.asr-hours thead .asr-date {
+  background: #e2e8f0;
+  color: #334155;
+}
+.asr-hours th {
+  text-align: center;
+  vertical-align: middle;
+}
+.asr-hours td {
+  text-align: center;
+  vertical-align: middle;
+}
+.asr-hours .asr-cell-wrap {
+  margin: 0 auto;
+}
+.asr-head {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.asr-head__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+  line-height: 1.15;
+}
+.asr-head__venue { font-weight: 800; }
+.asr-head__svc {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.92;
+  overflow-wrap: break-word;
+}
+.asr-ico {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  opacity: 0.9;
+}
+.asr-hours th.asr-svc {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 .asr-hours-day-section {
   margin: 0 0 28px;
@@ -304,4 +671,55 @@
 .asr-subtabs .btn {
   font-size: 12px;
   padding: 5px 10px;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+/* Ghost buttons lock color with !important — selected chip must win or you cannot see who is on. */
+.asr-subtabs .btn.is-active,
+.asr-subtabs .btn.btn--ghost.is-active,
+.asr-tabs .btn.is-active,
+.asr-tabs .btn.btn--ghost.is-active {
+  background: var(--blue, #2d84b3) !important;
+  border-color: var(--blue, #2d84b3) !important;
+  color: #fff !important;
+  font-weight: 800;
+  box-shadow: 0 0 0 3px rgba(45, 132, 179, 0.32);
+}
+
+/* Day off / COVER — same source as Overview (staff_unavailability) */
+.asr-date-dayoffs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  min-width: 0;
+}
+.asr-dayoff-chip,
+.asr-dayoff-badge {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid #fdba74;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.asr-dayoff-badge {
+  margin-top: 2px;
+}
+.asr-cell-wrap--dayoff {
+  background: #fff7ed;
+  border-radius: 6px;
+  outline: 1px solid #fdba74;
+}
+.asr-cell-wrap--dayoff .asr-cell-face__name {
+  color: #9a3412;
+}
+.asr-row--has-dayoff > .asr-date {
+  vertical-align: top;
 }

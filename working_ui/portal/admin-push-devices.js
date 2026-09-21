@@ -54,11 +54,36 @@
 
   function endpointPlatform(endpoint) {
     var e = String(endpoint || "").toLowerCase();
-    if (e.indexOf("web.push.apple.com") >= 0) return "Apple Safari";
+    if (e.indexOf("web.push.apple.com") >= 0) return "iPhone / iPad";
     if (e.indexOf("fcm.googleapis.com") >= 0) return "Android / Chrome";
     if (e.indexOf("notify.windows.com") >= 0) return "Windows";
     if (e.indexOf("mozilla") >= 0) return "Firefox";
     return "Browser";
+  }
+
+  function setupMeta(setup) {
+    return (setup && setup.client_meta && typeof setup.client_meta === "object" && setup.client_meta) || {};
+  }
+
+  function lastHostLabel(setup) {
+    var meta = setupMeta(setup);
+    var channel = String(meta.channel || "").trim().toLowerCase();
+    if (channel === "staff_app") return "Staff app";
+    if (channel === "portalvic") return "portalvic";
+    var host = String(meta.host || "").trim().toLowerCase();
+    if (/clubsensational-staff/.test(host)) return "Staff app";
+    if (/portalvic/.test(host)) return "portalvic";
+    if (host) return host;
+    return "";
+  }
+
+  function lastAppLabel(setup) {
+    if (!setup || !setup.last_seen_at) return "Unknown";
+    var pwa = !!(setup.is_pwa || String(setup.last_shell || "").toLowerCase() === "pwa");
+    var host = lastHostLabel(setup);
+    var ua = String(setupMeta(setup).ua || "").toLowerCase();
+    var shell = pwa ? "PWA" : /iphone|ipad/.test(ua) ? "Safari tab" : /android/.test(ua) ? "Chrome tab" : "Browser tab";
+    return host ? shell + " · " + host : shell;
   }
 
   function endpointShort(endpoint) {
@@ -156,6 +181,8 @@
         latestAt: latest ? latest.updated_at || latest.created_at : null,
         platforms: uniquePlatforms,
         setupSeenAt: setup ? setup.last_seen_at : null,
+        lastApp: lastAppLabel(setup),
+        isPwa: !!(setup && (setup.is_pwa || String(setup.last_shell || "").toLowerCase() === "pwa")),
       };
     });
 
@@ -179,6 +206,12 @@
     });
     if (f === "browser_off") return rows.filter(function (r) {
       return !r.browserAllowed;
+    });
+    if (f === "pwa") return rows.filter(function (r) {
+      return r.isPwa;
+    });
+    if (f === "not_pwa") return rows.filter(function (r) {
+      return !r.isPwa;
     });
     return rows;
   }
@@ -268,7 +301,7 @@
           : statusBadge("bad", "No");
         var browserBadge = row.browserAllowed
           ? statusBadge("ok", "Allowed")
-          : statusBadge("bad", "Blocked / off");
+          : statusBadge("warn", "Stale / off");
         var deliveryBadge = row.hasPush
           ? statusBadge("ok", "Can receive")
           : row.browserAllowed
@@ -297,6 +330,9 @@
           "<td>" +
           deliveryBadge +
           "</td>" +
+          "<td>" +
+          esc(row.lastApp || "Unknown") +
+          "</td>" +
           '<td class="portal-sready-cell">' +
           devicesDetailHtml(row) +
           "</td>" +
@@ -317,8 +353,9 @@
       "<th>Worker</th>" +
       "<th>Push registered</th>" +
       "<th>Devices</th>" +
-      "<th>Browser permission</th>" +
+      "<th>Setup Allow</th>" +
       "<th>Background alerts</th>" +
+      "<th>Last app</th>" +
       "<th>Registered devices</th>" +
       "<th>Last push update</th>" +
       "<th>Last portal open</th>" +
@@ -427,7 +464,7 @@
 
     var setupRes = await client
       .from("portal_staff_setup_status")
-      .select("staff_user_id, push_enabled, last_seen_at");
+      .select("staff_user_id, push_enabled, last_seen_at, is_pwa, last_shell, client_meta");
 
     state.loading = false;
     if (btn) btn.disabled = false;
@@ -496,7 +533,7 @@
       '<div id="portalPushDevicesRoot" class="portal-activity-embed portal-day-ops-embed portal-tprog-embed portal-sready-embed portal-push-devices-embed" data-portal-push-bound="0">' +
       '<h1 class="page-title">Staff push devices</h1>' +
       '<p class="page-desc">Who can receive background alerts when the portal is closed</p>' +
-      '<p class="page-intro portal-activity-intro">Live from <code>portal_push_subscriptions</code> — one row per phone/browser that completed Web Push registration. This is stronger than the browser &ldquo;Allow&rdquo; flag in <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_training_progress">Staff readiness</button>: a worker can tap Allow and still fail to register until they open the portal again.</p>' +
+      '<p class="page-intro portal-activity-intro">Push rows say <strong>iPhone / iPad</strong> or <strong>Android / Chrome</strong> because that is the push pipe (Apple vs Google). The installed <strong>PWA</strong> on iPhone still uses Apple push, so it will not say &ldquo;PWA&rdquo; on the device line. Use <strong>Last app</strong> for that: PWA vs Safari/Chrome tab, and Staff app vs portalvic. Background alerts work when a device row exists &mdash; the Setup Allow chip can be stale.</p>' +
       '<div id="portalPushDevicesKpis" class="portal-sready-kpis-wrap" aria-live="polite"></div>' +
       '<div id="portalPushDevicesStatus" class="portal-forms-status" role="status"></div>' +
       '<div class="portal-activity-toolbar">' +
@@ -506,7 +543,9 @@
       '<option value="has_push">Has push registered</option>' +
       '<option value="no_push">No push yet</option>' +
       '<option value="mismatch">Allowed but not registered</option>' +
-      '<option value="browser_off">Browser permission off</option>' +
+      '<option value="browser_off">Setup Allow off</option>' +
+      '<option value="pwa">Last open was PWA</option>' +
+      '<option value="not_pwa">Last open was a browser tab</option>' +
       "</select></label>" +
       '<button type="button" class="btn btn--sec btn--sm" id="portalPushDevicesRefresh">Refresh</button>' +
       "</div>" +

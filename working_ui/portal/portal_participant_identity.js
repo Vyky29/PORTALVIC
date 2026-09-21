@@ -42,6 +42,14 @@
     fadi_ab: "fadi",
     cyrus_mahdavi: "cyrus",
     cyrus_ma: "cyrus",
+    adam_pilcher: "adam_p",
+    adam_pilch: "adam_p",
+    zaid_alfadhl: "zaid",
+    zaid_al: "zaid",
+    yossi_sium: "yossi",
+    yossi_si: "yossi",
+    yosiyas: "yossi",
+    yosiyas_sium: "yossi",
   };
 
   var CLIENT_INFO_SHEET_ALIASES = {
@@ -49,8 +57,16 @@
     aadam_ah: "adaam_ah",
   };
 
+  function stripBookingDecorators(slug) {
+    var s = String(slug || "");
+    return s
+      .replace(/^(trial|makeup|make_up|cover)_+/g, "")
+      .replace(/_+(trial|makeup|make_up)$/g, "")
+      .replace(/^(trial|makeup)_+/g, "");
+  }
+
   function rosterSlugAlias(slug) {
-    var s = slugify(slug);
+    var s = stripBookingDecorators(slugify(slug));
     if (!s) return s;
     return (
       ROSTER_SPELLING_ALIASES[s] ||
@@ -62,7 +78,7 @@
   }
 
   function canonicalClientId(nameRaw) {
-    return rosterSlugAlias(slugify(nameRaw));
+    return rosterSlugAlias(nameRaw);
   }
 
   function normName(v) {

@@ -11,6 +11,8 @@ export type ParentAttendanceSummary = {
   makeup_absent: number;
   /** ISO dates with at least one absent/missed slot (admin absence, staff absent feedback, replace). */
   absent_dates: string[];
+  /** Club cancel / slot_close on the child's seat (chip red — no WhatsApp required). */
+  cancelled_dates: string[];
 };
 
 export type ParentAttendanceFeedbackRow = {
@@ -134,8 +136,12 @@ export function scheduleOverrideCountsAsMissedForClient(
 
   const type = cleanStr(ov.override_type, 80);
   if (type === "client_absence_announced") return true;
-  /** Cleared place / left mid-term — count as missed for parent hub chips. */
-  if (type === "slot_clear_client") return true;
+  /** Cleared place / left mid-term — count as missed for parent hub chips.
+   *  Admin/instructor cancel (cancelled_by_admin) is cancelled, not absent. */
+  if (type === "slot_clear_client") {
+    if (overrideIsAdminOrClubCancel(ov.payload)) return false;
+    return true;
+  }
 
   if (type === "client_replace_in_slot") {
     const rep = rosterParticipantSlugAlias(slugifyParticipantKey(overrideReplacementClientId(ov.payload)));
@@ -145,17 +151,75 @@ export function scheduleOverrideCountsAsMissedForClient(
   return false;
 }
 
+function overrideIsAdminOrClubCancel(payload: unknown): boolean {
+  const p = payload && typeof payload === "object"
+    ? (payload as Record<string, unknown>)
+    : {};
+  if (p.cancelled_by_admin === true) return true;
+  const res = cleanStr(p.feedback_resolution, 40).toLowerCase();
+  return res === "cancelled" || res === "cancel";
+}
+
+/** Club closed the child's slot (cancel chip) — does not require parent notify message. */
+export function scheduleOverrideCountsAsCancelledForClient(
+  ov: ParentScheduleOverrideRow,
+  clientSlugs: Set<string>,
+  termStartIso = PARENT_SESSION_TERM_START_ISO,
+): boolean {
+  const status = cleanStr(ov.status, 20).toLowerCase();
+  if (status && status !== "active") return false;
+  const iso = isoFromSessionDate(ov.session_date);
+  if (!iso || iso < termStartIso) return false;
+  if (overrideIsTrial(ov.payload)) return false;
+
+  const anchor = rosterParticipantSlugAlias(slugifyParticipantKey(cleanStr(ov.anchor_client_id, 80)));
+  if (!anchor || !clientSlugs.has(anchor) || isOpenSlotAnchor(anchor)) return false;
+
+  const type = cleanStr(ov.override_type, 80);
+  if (type === "slot_close" || type === "client_cancelled") return true;
+  if (type === "slot_clear_client" && overrideIsAdminOrClubCancel(ov.payload)) return true;
+  return false;
+}
+
+export type ParentQuickMarkRow = {
+  session_date?: unknown;
+  portal_session_key?: unknown;
+  mark_type?: unknown;
+};
+
+/** Staff/admin Absent tap (portal_staff_session_quick_marks) — not session_feedback. */
+export function quickMarkCountsAsAbsentForClient(
+  mark: ParentQuickMarkRow,
+  clientSlugs: Set<string>,
+  termStartIso = PARENT_SESSION_TERM_START_ISO,
+): boolean {
+  if (cleanStr(mark.mark_type, 40).toLowerCase() !== "absent") return false;
+  const iso = isoFromSessionDate(mark.session_date);
+  if (!iso || iso < termStartIso) return false;
+  const rawKey = cleanStr(mark.portal_session_key, 240).toLowerCase();
+  if (!rawKey) return false;
+  for (const slug of clientSlugs) {
+    if (!slug) continue;
+    if (rawKey.includes("|" + slug + "|") || rawKey.endsWith("|" + slug)) return true;
+    const parts = rawKey.split("|").map((p) => rosterParticipantSlugAlias(slugifyParticipantKey(p)));
+    if (parts.includes(slug)) return true;
+  }
+  return false;
+}
+
 export function buildParentAttendanceSummary(
   feedbackRows: ParentAttendanceFeedbackRow[],
   overrideRows: ParentScheduleOverrideRow[],
   clientSlugs: string[],
   termStartIso = PARENT_SESSION_TERM_START_ISO,
+  quickMarkRows: ParentQuickMarkRow[] = [],
 ): ParentAttendanceSummary {
   const slugSet = new Set(
     clientSlugs.map((s) => rosterParticipantSlugAlias(slugifyParticipantKey(s))).filter(Boolean),
   );
   const attendedSlots = new Set<string>();
   const absentSlots = new Set<string>();
+  const cancelledDates = new Set<string>();
 
   for (const row of feedbackRows || []) {
     const iso = isoFromSessionDate(row.session_date);
@@ -176,6 +240,10 @@ export function buildParentAttendanceSummary(
 
   let makeupAbsent = 0;
   for (const ov of overrideRows || []) {
+    if (scheduleOverrideCountsAsCancelledForClient(ov, slugSet, termStartIso)) {
+      const iso = isoFromSessionDate(ov.session_date);
+      if (iso) cancelledDates.add(iso);
+    }
     if (!scheduleOverrideCountsAsMissedForClient(ov, slugSet, termStartIso)) continue;
     const iso = isoFromSessionDate(ov.session_date);
     const anchor = rosterParticipantSlugAlias(slugifyParticipantKey(cleanStr(ov.anchor_client_id, 80)));
@@ -183,6 +251,14 @@ export function buildParentAttendanceSummary(
     if (attendedSlots.has(key) || absentSlots.has(key)) continue;
     absentSlots.add(key);
     makeupAbsent++;
+  }
+
+  for (const mark of quickMarkRows || []) {
+    if (!quickMarkCountsAsAbsentForClient(mark, slugSet, termStartIso)) continue;
+    const iso = isoFromSessionDate(mark.session_date);
+    if (!iso) continue;
+    /* One absent day chip per ISO is enough for parent hub TODAY / term paint. */
+    absentSlots.add(`${iso}|quick|~`);
   }
 
   const attended = attendedSlots.size;
@@ -200,6 +276,7 @@ export function buildParentAttendanceSummary(
     total: attended + absent,
     makeup_absent: makeupAbsent,
     absent_dates: absentDates,
+    cancelled_dates: [...cancelledDates].sort(),
   };
 }
 

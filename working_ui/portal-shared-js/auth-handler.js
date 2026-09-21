@@ -443,7 +443,7 @@ function bindLogin() {
       return;
     }
     try {
-      await portalBumpAuthSessionGeneration(supabase);
+      await portalBumpAuthSessionGeneration(supabase, data.user.id);
     } catch (bumpErr) {
       console.warn(
         "[portal] portal_bump_auth_session_generation failed — apply migration 20260420_portal_auth_generation_and_review_select.sql?",
@@ -619,7 +619,8 @@ export async function bootstrapDashboardSupabase(_opts) {
 
     if (profile && !singleSessionExempt) {
       const gen = Number(profile.auth_session_generation) || 0;
-      const cached = portalGetCachedAuthSessionGeneration();
+      const uid = String((session && session.user && session.user.id) || "").trim();
+      const cached = portalGetCachedAuthSessionGeneration(uid);
       if (cached != null && gen > cached) {
         try {
           await portalLogout();
@@ -629,9 +630,12 @@ export async function bootstrapDashboardSupabase(_opts) {
         window.location.href = loginRedirect;
         return;
       }
-      portalSetCachedAuthSessionGeneration(gen);
+      portalSetCachedAuthSessionGeneration(gen, uid);
     } else if (profile) {
-      portalSetCachedAuthSessionGeneration(Number(profile.auth_session_generation) || 0);
+      portalSetCachedAuthSessionGeneration(
+        Number(profile.auth_session_generation) || 0,
+        String((session && session.user && session.user.id) || "").trim()
+      );
     }
 
     if (typeof window !== "undefined" && profile && page === "lead") {

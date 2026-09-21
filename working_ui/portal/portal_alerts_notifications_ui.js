@@ -486,7 +486,9 @@
     } else if (t.id === "portalStaffWaAlertsOpenBtn") {
       e.preventDefault();
       flashAlertsButton(t);
-      if (typeof global.portalStaffWaOpen === "function") {
+      if (typeof global.portalCommsOpen === "function") {
+        global.portalCommsOpen();
+      } else if (typeof global.portalStaffWaOpen === "function") {
         global.portalStaffWaOpen();
       }
     }
@@ -537,9 +539,11 @@
       global.navigator.serviceWorker.addEventListener("message", function (ev) {
         var d = ev && ev.data;
         if (!d || d.type !== "portal-push-received") return;
-        if (d.portalOpen === "incoming_call") return;
+        if (d.portalOpen === "incoming_call" || d.portalOpen === "communications_call") return;
         /* Leader-facing WA pushes belong on staff dashboard only; never toast them on admin. */
         if (d.portalOpen === "staff_whatsapp") return;
+        if (d.portalOpen === "family_messages") return;
+        if (d.portalOpen === "communications") return;
         if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(d)) {
           return;
         }

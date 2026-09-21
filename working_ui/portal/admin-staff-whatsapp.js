@@ -1,13 +1,14 @@
 /**
  * Admin — CS WhatsApp threads (all active staff).
  * Parallel to Family messages; uses portal_staff_* tables.
- * Unread = inbound from staff newer than localStorage seen cursor (per username).
+ * Unread = inbound from staff newer than the office seen cursor (shared across this login's devices).
  * Supports photo / file / voice attachments (Meta WhatsApp).
  */
 (function (global) {
   "use strict";
 
   var SEEN_STORE_KEY = "portalStaffWaAdminSeenV1";
+  var remoteSeen = {};
   var MAX_ATTACH_BYTES = 4 * 1024 * 1024;
   var WA_TEMPLATE_BODY_MAX = 700;
   /** Same Meta Utility shell as Family cold outbound (portal_parent_update / staff template). */
@@ -59,13 +60,38 @@
       .replace(/"/g, "&quot;");
   }
 
-  function readSeenMap() {
+  function readLocalSeenMap() {
     try {
       var raw = global.localStorage && global.localStorage.getItem(SEEN_STORE_KEY);
       var parsed = raw ? JSON.parse(raw) : {};
       return parsed && typeof parsed === "object" ? parsed : {};
     } catch (_e) {
       return {};
+    }
+  }
+
+  function writeLocalSeenMap(map) {
+    try {
+      if (global.localStorage) {
+        global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map || {}));
+      }
+    } catch (_e) {}
+  }
+
+  function readSeenMap() {
+    if (typeof global.portalOfficeInboxSeenMerge === "function") {
+      return global.portalOfficeInboxSeenMerge(readLocalSeenMap(), remoteSeen);
+    }
+    return readLocalSeenMap();
+  }
+
+  async function hydrateOfficeSeen() {
+    if (typeof global.portalOfficeInboxSeenLoad !== "function") return;
+    try {
+      remoteSeen = await global.portalOfficeInboxSeenLoad("staff_wa");
+      writeLocalSeenMap(readSeenMap());
+    } catch (_e) {
+      remoteSeen = remoteSeen || {};
     }
   }
 
@@ -78,12 +104,14 @@
       var next = String(iso || "");
       if (!next || next > prev) {
         map[key] = next || prev || new Date().toISOString();
-        if (global.localStorage) {
-          global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map));
-        }
+        remoteSeen[key] = map[key];
+        writeLocalSeenMap(map);
         try {
           global.dispatchEvent(new CustomEvent("portal:staff-wa-seen"));
         } catch (_ev) {}
+        if (typeof global.portalOfficeInboxSeenUpsert === "function") {
+          void global.portalOfficeInboxSeenUpsert("staff_wa", key, map[key]);
+        }
       }
     } catch (_e) {}
   }
@@ -385,9 +413,8 @@
       '<p class="portal-staff-wa-admin__attach-blocked muted" id="portalStaffWaAttachBlocked" hidden role="status"></p>' +
       '<div class="portal-staff-wa-admin__tpl-shell" id="portalStaffWaTplShell" hidden>' +
       '<div class="portal-staff-wa-admin__tpl-fixed" id="portalStaffWaTplPrefix" aria-hidden="true"></div>' +
-      '<label class="portal-staff-wa-admin__tpl-mid-lab muted" for="portalStaffWaDraft">Editable {{1}}</label>' +
       "</div>" +
-      '<textarea id="portalStaffWaDraft" rows="2" placeholder="Message…" maxlength="4000"></textarea>' +
+      '<textarea id="portalStaffWaDraft" rows="2" placeholder="Message…" maxlength="4000" aria-label="Message"></textarea>' +
       '<div class="portal-staff-wa-admin__tpl-fixed" id="portalStaffWaTplSuffix" hidden aria-hidden="true"></div>' +
       '<p class="portal-staff-wa-admin__tpl-len muted" id="portalStaffWaTplLen" hidden></p>' +
       '<div class="portal-staff-wa-admin__tpl-preview" id="portalStaffWaTplPreview" hidden></div>' +
@@ -428,21 +455,7 @@
   }
 
   function compareStaffWaDirectory(a, b) {
-    /* Keep the open chat pinned so 5s poll re-sort does not jump the selection. */
-    var sel = staffUsernameKey(state.selected);
-    if (sel) {
-      var aSel = staffUsernameKey(a && a.username) === sel ? 0 : 1;
-      var bSel = staffUsernameKey(b && b.username) === sel ? 0 : 1;
-      if (aSel !== bSel) return aSel - bSel;
-    }
-    /* Unread inbound first (any date), then most recent received, then any activity. */
-    var ua = isLeaderUnread(a) ? 0 : 1;
-    var ub = isLeaderUnread(b) ? 0 : 1;
-    if (ua !== ub) return ua - ub;
-    var cmpIn = String((b && b.lastInboundAt) || "").localeCompare(
-      String((a && a.lastInboundAt) || ""),
-    );
-    if (cmpIn) return cmpIn;
+    /* Same as Family Messages / parents: whoever wrote last floats to the top. */
     var cmp = String(staffWaLastActivityAt(b) || "").localeCompare(
       String(staffWaLastActivityAt(a) || ""),
     );
@@ -461,7 +474,7 @@
       total +
       " staff" +
       (unread ? " · " + unread + " unread" : "") +
-      " · unread first";
+      " · latest first";
     el.classList.toggle("portal-staff-wa-admin__count--has-unread", unread > 0);
   }
 
@@ -663,6 +676,21 @@
     });
   }
 
+  function friendlyStaffWaError(detail) {
+    var d = String(detail || "").trim();
+    if (!d) return "";
+    if (/131049|healthy ecosystem/i.test(d)) {
+      return "Meta blocked this template (131049). This phone has had too many office templates without a reply from the WhatsApp app. Message the club number on Phone first, then free-text works.";
+    }
+    if (/131047|re-engagement/i.test(d)) {
+      return "Outside WhatsApp 24h window — send the approved template, or wait until they reply on Phone.";
+    }
+    if (/131026|undeliverable|not on whatsapp/i.test(d)) {
+      return "Number may not be on WhatsApp or cannot receive messages.";
+    }
+    return d.length > 160 ? d.slice(0, 157) + "…" : d;
+  }
+
   /** Match Family messages: Sent / Delivered ✓✓ / Read ✓✓ */
   function waDeliveryChip(m) {
     var st = String((m && m.whatsapp_status) || "").toLowerCase();
@@ -698,6 +726,10 @@
       cls += " is-muted";
     }
     var titleBits = [];
+    if (st === "failed") {
+      var errTip = friendlyStaffWaError(m && (m.error_detail || m.errorDetail));
+      if (errTip) titleBits.push(errTip);
+    }
     if (portalDelivery) {
       titleBits.push("Staff opened/replied in portal CS WhatsApp");
       titleBits.push("WhatsApp phone delivery failed (Meta undeliverable)");
@@ -874,6 +906,7 @@
 
   async function loadDirectory(opts) {
     opts = opts || {};
+    await hydrateOfficeSeen();
     var prevUnread = unreadLeadersCount();
     var res = await api("portal-staff-messages-list", { directory: true });
     if (!res.ok) {
@@ -1071,7 +1104,9 @@
       draftEl.placeholder = needsTpl
         ? "Write {{1}} here — blank line between paragraphs…"
         : "Message…";
-      draftEl.rows = needsTpl ? 4 : 2;
+      draftEl.rows = needsTpl
+        ? (window.matchMedia && window.matchMedia("(max-width:720px)").matches ? 3 : 4)
+        : 2;
     }
     if (sendBtn) {
       sendBtn.textContent = needsTpl ? "Send template" : "Send WhatsApp";
@@ -1371,6 +1406,7 @@
   async function fetchUnreadCount() {
     try {
       if (!(await getAccessToken())) return 0;
+      await hydrateOfficeSeen();
       var res = await api("portal-staff-messages-list", { directory: true });
       if (!res.ok) return 0;
       var dir = Array.isArray(res.data.directory) ? res.data.directory : [];

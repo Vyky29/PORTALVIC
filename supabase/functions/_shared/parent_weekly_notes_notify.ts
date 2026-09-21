@@ -8,6 +8,7 @@ import {
   normalizeParentPhoneE164,
   sendParentMobileMessage,
 } from "./portal_parent_messaging.ts";
+import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
 
 function clean(v: unknown, max = 4000): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -117,7 +118,7 @@ export async function notifyParentWeeklyNoteReady(
       : "sent"
     : "failed";
 
-  await supabase.from("portal_parent_notify_log").insert({
+  const { data: insertedNoteLog } = await supabase.from("portal_parent_notify_log").insert({
     sent_by_user_id: null,
     sent_by_email: "weekly-notes-cron",
     kind: "weekly_note",
@@ -143,7 +144,13 @@ export async function notifyParentWeeklyNoteReady(
       parent_phone_masked: maskPhoneForLog(phone),
       automated: true,
     },
-  });
+  }).select("id").maybeSingle();
+  if (insertedNoteLog?.id) {
+    void notifyFamilyWebPushForParentNotify({
+      notifyLogId: String(insertedNoteLog.id),
+      kind: "weekly_note",
+    });
+  }
 
   if (!sent.ok) {
     return { ok: false, error: clean(sent.error, 200) || "send_failed", whatsapp_status: whatsappStatus };

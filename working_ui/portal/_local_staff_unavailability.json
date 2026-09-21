@@ -1,0 +1,103 @@
+{
+  "localOnly": true,
+  "note": "LOCAL Timetable day offs from staff_unavailability. Dates column = who requested off; work cells show coverName when known.",
+  "term_from": "2026-09-01",
+  "term_to": "2026-12-17",
+  "generated_at": "2026-09-14T11:56:48.000Z",
+  "byDate": {
+    "2026-09-07": [
+      {
+        "key": "sandrabartolome",
+        "label": "Sandra Bartolome",
+        "reason": "Time off requested — Javi Palankas covers Westway Physical (Ayaan / Serine)",
+        "coverName": "Javi"
+      }
+    ],
+    "2026-09-08": [
+      {
+        "key": "auroragarcia",
+        "label": "Aurora Garcia",
+        "reason": "Time off requested — Javi covers Acton Aquatic",
+        "coverName": "Javi"
+      },
+      {
+        "key": "javiermarquez",
+        "label": "Javier Marquez",
+        "reason": "Time off requested — Same-Day Absence — Illness",
+        "coverName": ""
+      }
+    ],
+    "2026-09-09": [
+      {
+        "key": "john",
+        "label": "John Kyei-Fram",
+        "reason": "Time off requested — Emmanuel covers John on Tinashe Hub Bespoke",
+        "coverName": "Emmanuel"
+      }
+    ],
+    "2026-09-13": [
+      {
+        "key": "auroragarcia",
+        "label": "Aurora Garcia",
+        "reason": "Time off requested — Luliya covers Aquatic",
+        "coverName": "Luliya"
+      },
+      {
+        "key": "berta",
+        "label": "Berta Trapero",
+        "reason": "Time off requested — Raul covers Hub Lead Multi",
+        "coverName": "Raul"
+      }
+    ],
+    "2026-09-15": [
+      {
+        "key": "auroragarcia",
+        "label": "Aurora Garcia",
+        "reason": "Time off requested — Javi covers Acton Aquatic",
+        "coverName": "Javi"
+      }
+    ],
+    "2026-09-16": [
+      {
+        "key": "johnkyei",
+        "label": "John Kyei-Fram",
+        "reason": "Time off requested — Emmanuel covers John on Tinashe Hub Bespoke",
+        "coverName": "Emmanuel"
+      }
+    ],
+    "2026-09-20": [
+      {
+        "key": "berta",
+        "label": "Berta Trapero",
+        "reason": "Time off requested — Victor covers Hub Lead Multi",
+        "coverName": "Victor"
+      },
+      {
+        "key": "carlosherrero",
+        "label": "Carlos Herrero",
+        "reason": "Time off requested — Andres covers Westway Climbing",
+        "coverName": "Andres"
+      }
+    ],
+    "2026-10-04": [
+      {
+        "key": "berta",
+        "label": "Berta Trapero",
+        "reason": "Time off requested — Javi covers Hub Lead Multi",
+        "coverName": "Javi"
+      },
+      {
+        "key": "auroragarcia",
+        "label": "Aurora Garcia",
+        "reason": "Time off requested — Luliya covers Aquatic",
+        "coverName": "Luliya"
+      },
+      {
+        "key": "carlosherrero",
+        "label": "Carlos Herrero",
+        "reason": "Time off requested — Andres covers Westway Climbing",
+        "coverName": "Andres"
+      }
+    ]
+  }
+}

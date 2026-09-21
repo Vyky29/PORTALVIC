@@ -145,6 +145,69 @@
     return n === "youssef" || n === "yousef" || n === "yusef";
   }
 
+  function isRobertoBandKey(v) {
+    return normKey(v) === "roberto";
+  }
+
+  /** Roberto Sunday SwimFarm pool lead: 8:45-3:15 (6.5h), not last-client + buffer. */
+  function rowsAreRobertoSundaySwimfarm(rows, iso) {
+    var dayName = dayNameFromIso(iso);
+    if (dayName !== "Sunday") return false;
+    var list = Array.isArray(rows) ? rows : [];
+    if (!list.length) return false;
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      if (!isRobertoBandKey(r && r.anchor_staff_id)) return false;
+      var venue = normKey(r && r.anchor_venue);
+      if (venue && venue.indexOf("swimfarm") < 0 && venue.indexOf("hub") < 0) return false;
+    }
+    return true;
+  }
+
+  function isSundayMaProgrammeLeadKey(v) {
+    var n = normKey(v);
+    return n === "berta" || n === "michelle";
+  }
+
+  function isMichelleBandKey(v) {
+    return normKey(v) === "michelle";
+  }
+
+  /** Michelle Day Centre Mon/Tue/Wed/Fri: paid 10:45–16:15 (5.5h) even when clients are 11–4. */
+  function rowsAreMichelleDayCentre(rows, iso) {
+    var dayName = dayNameFromIso(iso);
+    if (dayName !== "Monday" && dayName !== "Tuesday" && dayName !== "Wednesday" && dayName !== "Friday") {
+      return false;
+    }
+    var list = Array.isArray(rows) ? rows : [];
+    if (!list.length) return false;
+    var anyDc = false;
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      if (!isMichelleBandKey(r && r.anchor_staff_id)) return false;
+      var svc = String(serviceLabelFromRow(r) || "").toLowerCase();
+      if (/day\s*centre/.test(svc) || /daycentre/.test(svc) || /day_centre/.test(svc)) anyDc = true;
+    }
+    return anyDc;
+  }
+
+  /** Sunday Multi SwimFarm programme leads: fixed 9:00–2:30 (5.5h). */
+  function rowsAreSundayMaLeadSwimfarm(rows, iso) {
+    var dayName = dayNameFromIso(iso);
+    if (dayName !== "Sunday") return false;
+    var list = Array.isArray(rows) ? rows : [];
+    if (!list.length) return false;
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      if (!isSundayMaProgrammeLeadKey(r && r.anchor_staff_id)) return false;
+      var venue = normKey(r && r.anchor_venue);
+      if (venue && venue.indexOf("swimfarm") < 0 && venue.indexOf("hub") < 0) return false;
+      var svc = String(serviceLabelFromRow(r) || "").toLowerCase();
+      if (svc && !/multi[-\s]?activity/.test(svc) && !/hub/.test(svc)) return false;
+    }
+    return true;
+  }
+
   /** Youssef Acton term last day (inclusive). */
   var YOUSSEF_ACTON_LAST_DATE = "2026-07-15";
 
@@ -230,6 +293,15 @@
     }
     if (rowsAreWeekdayMaBespokeBand(list, isoNorm)) {
       return formatBandLabel("16:15", "18:15");
+    }
+    if (rowsAreRobertoSundaySwimfarm(list, isoNorm)) {
+      return formatBandLabel("08:45", "15:15");
+    }
+    if (rowsAreSundayMaLeadSwimfarm(list, isoNorm)) {
+      return formatBandLabel("09:00", "14:30");
+    }
+    if (rowsAreMichelleDayCentre(list, isoNorm)) {
+      return formatBandLabel("10:45", "16:15");
     }
     var dayName = dayNameFromIso(isoNorm);
     var minStart = Infinity;

@@ -1,0 +1,31 @@
+---
+description: Aquatic booking/storage = 30' halves; parent/staff merge to one hour card
+alwaysApply: true
+---
+
+# Aquatic half-hour storage vs display merge
+
+## Product rule
+
+- **Booking Portal:** aquatic offer is always **30′** slots (never hour-long swimming picks). Parents may take **two consecutive** halves with the **same instructor**.
+- **Parent hub + Staff Today / Team:** consecutive same-instructor aquatic halves **merge to one card** (e.g. 5–5.30 + 5.30–6 → one 5–6 card + one feedback).
+- **Schedule & Covers:** always show **two 30′ cards** for that place so one half can cancel / COVER / reoffer without touching the other.
+
+## Storage / finish-booking
+
+- Standing aquatic seats (`portal_roster_canonical.js`, LOCAL authoring, `portal_roster_rows`) = **one row per 30′**, not a single 60′ band.
+- Finish-booking paid → `schedule_overrides` `client_replace_in_slot`: **one OV per 30′ band** (never one OV spanning 60′ for aquatic).
+- MADRE fold seats **each open half** under the window; do not collapse aquatic into one hour MADRE slot.
+- Service lines may store two 30′ sessions; parent `buildServicesDetail` still merges same day+programme into one hub label.
+
+## Do not
+
+- “Fix” duplicate Staff Today cards by collapsing standing to one hour row — use the aquatic merge helper instead.
+- Mint a single 60′ finish-booking override for aquatic “because the parent booked an hour”.
+- Show instructor day-off / COVER NEEDED halves on the **parent** hub (office/staff only).
+
+## Related
+
+- Offer expand: `aquaticOfferTimeSegments` in `portal_booking_seat_helper.ts`
+- Staff merge: `portalMergeStaffLeadTodayAquaticCards` / `portal_staff_lead_aquatic_slots.js`
+- Schedule expand (legacy hour rows): `schedExpandAquaticHalfHourSlots` in `admin_dashboard.html`

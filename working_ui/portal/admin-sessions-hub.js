@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260712-emanuel-victor";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260915-cyrus-cancel-fb";
   // Optional "Notes" (relevant_information) only became a genuinely separate,
   // worker-written optional field on 7 Jul 2026. Before that date,
   // relevant_information was the AI "internal relevant" split of the feedback and
@@ -179,23 +179,26 @@
       countLabel = noteN === 1 ? "note" : "notes";
       if (noteN > 0) innerPct = 100;
     } else if (hub.tab === "feedback" || hub.mode === "feedback") {
-      var dsFb = hub.dayStats(iso);
-      if (dsFb.total) {
-        innerPct = Math.round((100 * dsFb.done) / dsFb.total);
-        if (dsFb.done > 0 && innerPct < 8) innerPct = 8;
-      }
-      countStrong = dsFb.total ? dsFb.done + "/" + dsFb.total : "0";
-      countLabel = "feedbacks";
-      if (dsFb.total && dsFb.done === 0) stateCls = " ash-day-card--none";
-      else if (dsFb.total && dsFb.done < dsFb.total) stateCls = " ash-day-card--partial";
-      else if (dsFb.total && dsFb.done >= dsFb.total) stateCls = " ash-day-card--complete";
+      /* Light counts only — dayStats expandSlots x 7 freezes Register after the 1000-row payload. */
+      var submittedN = hub.feedbackCountForDateLight
+        ? hub.feedbackCountForDateLight(iso)
+        : hub.feedbackCountForDate(iso);
+      countStrong = String(submittedN);
+      countLabel = submittedN === 1 ? "session" : "sessions";
+      if (submittedN > 0) innerPct = 100;
+      if (submittedN > 0) stateCls = " ash-day-card--complete";
     } else if (hub.tab === "tracking") {
-      var dsTrack = hub.dayStats(iso);
+      /* Overview: each board seat = 1 session = 1 feedback. Swim AA+MA pairs count as 2;
+       * slotFeedbackComplete still paints both when either half is submitted. */
+      var dsTrack =
+        typeof hub.staffingSessionStats === "function"
+          ? hub.staffingSessionStats(iso)
+          : hub.dayStats(iso);
       if (dsTrack.total) {
         innerPct = Math.round((100 * dsTrack.done) / dsTrack.total);
         if (dsTrack.done > 0 && innerPct < 12) innerPct = 12;
       }
-      countStrong = dsTrack.done + "/" + dsTrack.total;
+      countStrong = dsTrack.total ? dsTrack.done + "/" + dsTrack.total : "0";
       countLabel = "feedbacks";
       var stateClsTrack = "";
       if (dsTrack.total && dsTrack.done === 0) stateClsTrack = " ash-day-card--none";
@@ -451,10 +454,35 @@
     chaitanya_trial_28_06: "chaitanya",
     junaid: "junaid_f",
     khalid: "khalid_ab",
+    /* Same child, fuller / trial-labelled names in overrides vs short roster ids. */
+    yossi_sium: "yossi",
+    yossi_si: "yossi",
+    yosiyas: "yossi",
+    yosiyas_sium: "yossi",
+    yunis_hussein: "yunis",
+    zaid_alfadhl: "zaid",
+    zaid_al: "zaid",
+    /* Same CLIENT — finish-booking often stores full legal name vs short roster id. */
+    ayman_el_bakry: "ayman",
+    /* Feedback sometimes stores Saib; roster / LOCAL use Saaib. */
+    saib: "saaib",
+    /* Board short label "Mia"; feedback / portal often "Mia Mesi". */
+    mia_mesi: "mia",
+    /* Abate twins — unique first names on board (never full surname for workers). */
+    christian_abate: "christian",
+    emmanuel_abate: "emmanuel",
+    /* Repeated Adam → two letters of surname (Mahmmoud). */
+    adam_mahmmoud: "adam_ma",
+    adam_mahmoud: "adam_ma",
   };
 
   function canonicalClientSlug(name) {
     var s = slugify(name);
+    /* "Trial - Zaid Alfadhl (Trial)" / "MakeUp - Yossi" → same person as roster short id. */
+    s = s
+      .replace(/^(trial|makeup|make_up|cover)_+/g, "")
+      .replace(/_+(trial|makeup|make_up)$/g, "")
+      .replace(/^(trial|makeup)_+/g, "");
     return CLIENT_SLUG_ALIASES[s] || s;
   }
 
@@ -579,6 +607,10 @@
   }
 
   function clientAllowedOnWeekday(clientName, weekdayLong) {
+    var Vis = global.PortalClientDayVisibility;
+    if (Vis && typeof Vis.clientAllowedOnWeekday === "function") {
+      return Vis.clientAllowedOnWeekday(clientName, weekdayLong);
+    }
     var allow = clientConfigMapEntry(
       global.STAFF_DASHBOARD_SOURCE && global.STAFF_DASHBOARD_SOURCE.clientWeekdaysOnly,
       clientName
@@ -587,15 +619,150 @@
     return allow.indexOf(weekdayLong) !== -1;
   }
 
-  /** First calendar day this client appears on roster (ISO date). */
+  /** Fadi CLIENT is off worker rotas 1-19 Sep 2026 (starts 20 Sep) — not Cancelled. */
+  function clientIsFadiOffRota(clientName, isoDate) {
+    var Vis = global.PortalClientDayVisibility;
+    if (Vis && typeof Vis.isFadiOffRota === "function") {
+      return Vis.isFadiOffRota(clientName, isoDate);
+    }
+    var name = clean(clientName);
+    var canon = global.PortalRosterCanonical;
+    var isFadi =
+      canon && typeof canon.isFadiClientName === "function"
+        ? canon.isFadiClientName(name)
+        : /^fadi\b/i.test(name);
+    if (!isFadi) return false;
+    if (canon && typeof canon.isFadiOffRotaIso === "function") {
+      return !!canon.isFadiOffRotaIso(isoDate);
+    }
+    return !!(isoDate && isoDate >= "2026-09-01" && isoDate < "2026-09-20");
+  }
+
+  function overrideIsFadiOffRota(ov) {
+    if (!ov) return false;
+    var iso = clean(ov.session_date).substring(0, 10);
+    if (clientIsFadiOffRota(ov.anchor_client_id, iso)) return true;
+    var p = overridePayloadObj(ov);
+    if (p && clientIsFadiOffRota(p.to_client_name || p.client_name, iso)) return true;
+    return false;
+  }
+
+  /**
+   * Fallback when capacity chain wiped bundle starts (admin Overview often has no bundle).
+   * Kept in sync with PortalClientDayVisibility.FALLBACK_CLIENT_STARTS (Option A shared).
+   */
+  var ASH_FALLBACK_CLIENT_STARTS =
+    (global.PortalClientDayVisibility && global.PortalClientDayVisibility.FALLBACK_CLIENT_STARTS) ||
+    {
+      "Emmanuel Abate": "2026-09-15",
+      "Emmanuel": "2026-09-15",
+      "Christian Abate": "2026-09-15",
+      "Christian": "2026-09-15",
+      "Amaar Ah": "2026-09-06",
+      Muhammad: "2026-09-07",
+      "Adaam Ah": "2026-09-06",
+      "Aydaan Ah": "2026-09-06",
+      Ayman: "2026-09-08",
+      "Ayman El Bakry": "2026-09-08",
+    };
+
+  /** First calendar day this client appears on roster (ISO date). Shared with Staff Today. */
   function clientAllowedOnDate(clientName, isoDate) {
+    var Vis = global.PortalClientDayVisibility;
+    if (Vis && typeof Vis.clientAllowedOnDate === "function") {
+      return Vis.clientAllowedOnDate(clientName, isoDate);
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return true;
+    if (clientIsFadiOffRota(clientName, isoDate)) return false;
     var start = clientConfigMapEntry(
       global.STAFF_DASHBOARD_SOURCE && global.STAFF_DASHBOARD_SOURCE.clientRosterStartDates,
       clientName
     );
-    if (!start || !/^\d{4}-\d{2}-\d{2}$/.test(String(start))) return true;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return true;
-    return isoDate >= String(start);
+    var ovStart = clientConfigMapEntry(global.__PORTAL_ASH_CLIENT_FIRST_SESSION__, clientName);
+    var fbStart = clientConfigMapEntry(ASH_FALLBACK_CLIENT_STARTS, clientName);
+    function earlierIso(a, b) {
+      if (!a) return b || "";
+      if (!b) return a;
+      return String(a) <= String(b) ? a : b;
+    }
+    start = earlierIso(earlierIso(start, ovStart), fbStart);
+    if (start && /^\d{4}-\d{2}-\d{2}$/.test(String(start)) && isoDate < String(start)) {
+      return false;
+    }
+    var goneFrom = clientConfigMapEntry(
+      global.STAFF_DASHBOARD_SOURCE && global.STAFF_DASHBOARD_SOURCE.clientRosterGoneFromDates,
+      clientName
+    );
+    if (goneFrom && /^\d{4}-\d{2}-\d{2}$/.test(String(goneFrom)) && isoDate >= String(goneFrom)) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * NEW CLIENT / finish-booking overrides carry first_session — Register must not
+   * list "Awaiting feedback" on earlier weeks when MADRE already folded the seat.
+   */
+  function rebuildClientFirstSessionIndex(overrides) {
+    var Vis = global.PortalClientDayVisibility;
+    if (Vis && typeof Vis.noteFirstSessionFromOverrides === "function") {
+      return Vis.noteFirstSessionFromOverrides(overrides);
+    }
+    var map = Object.create(null);
+    function note(name, iso) {
+      var n = clean(name);
+      var d = clean(iso).slice(0, 10);
+      if (!n || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+      if (isOpenRosterSlot(n) || slotIsHoldWaitlistNoFeedback(n)) return;
+      var slug = canonicalClientSlug(n);
+      if (!slug) return;
+      if (!map[slug] || d < map[slug]) map[slug] = d;
+    }
+    var list = Array.isArray(overrides) ? overrides : [];
+    for (var i = 0; i < list.length; i++) {
+      var ov = list[i];
+      if (!ov) continue;
+      if (String(ov.status || "active").trim() !== "active") continue;
+      var p = overridePayloadObj(ov);
+      var first = clean(p.first_session || p.firstSession).slice(0, 10);
+      var isNew =
+        overrideIsNewClientReplace(ov) ||
+        p.new_client === true ||
+        p.new_client === "true" ||
+        p.term_new_participant === true ||
+        p.term_new_participant === "true" ||
+        p.finish_booking === true ||
+        p.finish_booking === "true";
+      if (!first && isNew) first = clean(ov.session_date).slice(0, 10);
+      if (!first) continue;
+      if (!isNew && !clean(p.first_session || p.firstSession)) continue;
+      note(p.to_client_name || p.toClientName, first);
+      note(p.replacement_client_name || p.replacementClientName, first);
+      note(p.client_name || p.clientName, first);
+      note(p.participant_name || p.participantName, first);
+      note(ov.anchor_client_id, first);
+      try {
+        note(overrideClientName(ov), first);
+      } catch (_n) {}
+    }
+    try {
+      global.__PORTAL_ASH_CLIENT_FIRST_SESSION__ = map;
+    } catch (_g) {}
+    return map;
+  }
+
+  /** HOLD / waitlist / Elia office-hold seats never owe session feedback. */
+  function slotIsHoldWaitlistNoFeedback(name) {
+    var low = clean(name).toLowerCase();
+    if (!low) return false;
+    if (low === "hold waitlist" || low === "hold_waitlist" || low === "hold-waitlist") {
+      return true;
+    }
+    if (low === "waitlist" || low === "waiting list" || low === "waiting") return true;
+    if (/^hold\b/.test(low) && /wait/.test(low)) return true;
+    /* Westway climb office hold label (Tue/Thu Andres/Angel 4–6). */
+    if (low === "elia" || low === "elia · closed" || /^elia\b/.test(low)) return true;
+    return false;
   }
 
   function parseHm(token) {
@@ -642,7 +809,8 @@
     var h = parseInt(hour, 10);
     if (!Number.isFinite(h)) return hour;
     if (day === "Sunday") {
-      if (h >= 13 && h <= 15) return h - 12;
+      /* Climb ends 4pm → 16:00; show "3 to 4" not "3 to 16". */
+      if (h >= 13 && h <= 19) return h - 12;
       return h;
     }
     if (h >= 13 && h <= 21) return h - 12;
@@ -702,22 +870,39 @@
 
   function makeupOpenAnchorKey(ov, wd) {
     var oStart = normTimeShort(ov.anchor_start) || normTimeKey(ov.anchor_time_slot_label, wd);
+    var staffRaw = clean(ov.anchor_staff_id);
     return [
       clean(ov.session_date),
       clean(ov.anchor_venue).toLowerCase(),
-      normalizeAnchorStaffId(ov.anchor_staff_id),
+      canonicalStaffMatchKey(staffRaw) || normalizeAnchorStaffId(staffRaw),
       oStart || "",
     ].join("|");
   }
 
   function openSlotMakeupAnchorKey(slot, wd) {
     var st = slot.time_start || normTimeKey(slot.time_slot, wd);
+    var insts = slotInstructors(slot);
+    var staffRaw = insts.length ? insts[0] : clean(slot.anchor_staff_id);
     return [
       clean(slot.session_date),
       clean(slot.venue).toLowerCase(),
-      slotAnchorStaffKey(slot),
+      canonicalStaffMatchKey(staffRaw) || slotAnchorStaffKey(slot),
       st || "",
     ].join("|");
+  }
+
+  /** Mark every SwimFarm / alias twin so suppress does not miss open seats. */
+  function markMakeupOpenConsumedKeys(consumed, ov, wd) {
+    var base = makeupOpenAnchorKey(ov, wd);
+    if (base) consumed[base] = true;
+    var aliases = swimfarmInstructorAnchorAliases(ov.anchor_staff_id);
+    if (!aliases || aliases.length < 2) return;
+    var oStart = normTimeShort(ov.anchor_start) || normTimeKey(ov.anchor_time_slot_label, wd);
+    var venue = clean(ov.anchor_venue).toLowerCase();
+    var day = clean(ov.session_date);
+    for (var i = 0; i < aliases.length; i++) {
+      consumed[[day, venue, aliases[i], oStart || ""].join("|")] = true;
+    }
   }
 
   /** MakeUp on NO PARTICIPANT anchor replaces the open line — do not show both rows. */
@@ -729,12 +914,68 @@
       if (!overrideIsReplaceType(ov)) continue;
       if (clean(ov.session_date) !== isoDate) continue;
       if (!overrideAnchorIsOpenSlot(ov.anchor_client_id)) continue;
-      consumed[makeupOpenAnchorKey(ov, wd)] = true;
+      markMakeupOpenConsumedKeys(consumed, ov, wd);
     }
     if (!Object.keys(consumed).length) return out;
     return out.filter(function (slot) {
       if (!isOpenRosterSlot(slot.client_name)) return true;
       return !consumed[openSlotMakeupAnchorKey(slot, wd)];
+    });
+  }
+
+  function slotRangeMinutesForCover(slot, wd) {
+    if (!slot) return null;
+    var start = normTimeShort(slot.time_start) || "";
+    var end = normTimeShort(slot.time_end) || "";
+    if ((!start || !end) && slot.time_slot) {
+      var pt = parseTimeSlot(slot.time_slot, wd || slot.day || "");
+      if (!start) start = pt.start || "";
+      if (!end) end = pt.end || "";
+    }
+    function toMin(hm) {
+      var m = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+      if (!m) return null;
+      return parseInt(m[1], 10) * 60 + (parseInt(m[2], 10) || 0);
+    }
+    var a = toMin(start);
+    var b = toMin(end);
+    if (a == null || b == null) return null;
+    if (b <= a) b += 12 * 60;
+    return { start: a, end: b };
+  }
+
+  /**
+   * Hour (or longer) booked seat on the same instructor absorbs open half-hours inside it.
+   * e.g. Ayman 5–6 on Javier must not leave a free 5.30–6 NO PARTICIPANT under it.
+   */
+  function suppressOpenSlotsCoveredByBookedHours(out, wd) {
+    if (!out || out.length < 2) return out;
+    var booked = [];
+    for (var i = 0; i < out.length; i++) {
+      var s = out[i];
+      if (!s || isOpenRosterSlot(s.client_name) || !isRosterClient(s.client_name)) continue;
+      var range = slotRangeMinutesForCover(s, wd);
+      if (!range || range.end - range.start < 45) continue;
+      booked.push({
+        staff: slotAnchorStaffKey(s),
+        venue: clean(s.venue).toLowerCase(),
+        range: range,
+      });
+    }
+    if (!booked.length) return out;
+    return out.filter(function (slot) {
+      if (!isOpenRosterSlot(slot.client_name)) return true;
+      var or = slotRangeMinutesForCover(slot, wd);
+      if (!or) return true;
+      var staff = slotAnchorStaffKey(slot);
+      var venue = clean(slot.venue).toLowerCase();
+      for (var j = 0; j < booked.length; j++) {
+        var b = booked[j];
+        if (b.staff !== staff) continue;
+        if (b.venue && venue && b.venue !== venue) continue;
+        if (or.start >= b.range.start && or.end <= b.range.end) return false;
+      }
+      return true;
     });
   }
 
@@ -815,7 +1056,49 @@
 
   function rosterRowToSlot(isoDate, wd, r) {
     var slot = parseTimeSlot(r.time_slot, wd);
-    var instructors = parseInstructors(applySundayInstructorOverride(isoDate, r.instructors));
+    var origInstRaw = clean(r.instructors);
+    /* Timetable owns slash pools before parse — never ship Roberto/Youssef as two columns. */
+    try {
+      var ChainSlot = global.PortalOverviewCapacityChain;
+      if (ChainSlot && typeof ChainSlot.resolveSlashInstructorsForIso === "function") {
+        var collapsed = ChainSlot.resolveSlashInstructorsForIso(
+          origInstRaw,
+          isoDate,
+          clean(r.service)
+        );
+        if (collapsed) origInstRaw = clean(collapsed);
+      }
+    } catch (_slashSlot) {}
+    var instRaw = applySundayInstructorOverride(isoDate, origInstRaw);
+    var standingInstRaw = instRaw;
+    var remappedEmpty = false;
+    try {
+      var src = global.STAFF_DASHBOARD_SOURCE;
+      var skipAutumnRemap =
+        !!(src && (src.capacityChainNoCanonicalRemap || src.localNoCanonicalResolve));
+      var canon = global.PortalRosterCanonical;
+      if (
+        !skipAutumnRemap &&
+        canon &&
+        typeof canon.resolveAutumnInstructorsForCalendarDate === "function"
+      ) {
+        var remapped = canon.resolveAutumnInstructorsForCalendarDate(instRaw, isoDate, {
+          service: r.service,
+          venue: r.venue,
+          area: r.area,
+          day: wd,
+          client_name: r.client_name,
+          clientName: r.client_name,
+        });
+        remapped = clean(remapped);
+        /* Intentional strip (e.g. John off Wed 9 Tinashe) — keep the seat on the original worker. */
+        if (!remapped && instRaw) remappedEmpty = true;
+        instRaw = remapped;
+      }
+    } catch (_remap) {}
+    var origInstructors = parseInstructors(standingInstRaw);
+    var usedInstRaw = remappedEmpty ? standingInstRaw : instRaw;
+    var instructors = parseInstructors(usedInstRaw);
     var slotRow = {
       session_date: isoDate,
       day: wd,
@@ -827,13 +1110,48 @@
       venue: clean(r.venue),
       area: clean(r.area),
       instructors: instructors,
-      instructor_label: instructors.join(", ") || clean(r.instructors),
+      instructor_label: instructors.join(", ") || clean(usedInstRaw),
       session_key: buildSessionKey(isoDate, r),
       __portal_roster_row_id: r.__portal_roster_row_id || null,
       portalRosterTimeUpdated: !!r.__portal_roster_time_updated,
     };
+    if (origInstructors.length) {
+      var origKeySet = Object.create(null);
+      var newKeySet = Object.create(null);
+      var oi;
+      for (oi = 0; oi < origInstructors.length; oi++) {
+        origKeySet[canonicalStaffMatchKey(origInstructors[oi]) || String(origInstructors[oi]).toLowerCase()] = true;
+      }
+      for (oi = 0; oi < instructors.length; oi++) {
+        newKeySet[canonicalStaffMatchKey(instructors[oi]) || String(instructors[oi]).toLowerCase()] = true;
+      }
+      var keysChanged = false;
+      for (oi = 0; oi < origInstructors.length; oi++) {
+        var ok = canonicalStaffMatchKey(origInstructors[oi]) || String(origInstructors[oi]).toLowerCase();
+        if (ok && !newKeySet[ok]) keysChanged = true;
+      }
+      for (oi = 0; oi < instructors.length; oi++) {
+        var nk = canonicalStaffMatchKey(instructors[oi]) || String(instructors[oi]).toLowerCase();
+        if (nk && !origKeySet[nk]) keysChanged = true;
+      }
+      if (keysChanged || remappedEmpty) {
+        slotRow.portalOriginalInstructors = origInstructors;
+        if (!remappedEmpty) {
+          var added = [];
+          for (oi = 0; oi < instructors.length; oi++) {
+            var addKey = canonicalStaffMatchKey(instructors[oi]) || String(instructors[oi]).toLowerCase();
+            if (addKey && !origKeySet[addKey]) added.push(instructors[oi]);
+          }
+          if (added.length) {
+            slotRow.portalInstructorReassigned = true;
+            slotRow.portalCoveringStaffName = added.join(", ");
+          }
+        }
+      }
+    }
     slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
-    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow);
+    /* Skip auto swim merge here — expandSlotsForDate assigns it once with the day list. */
+    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow, { skipAutoSwim: true });
     return slotRow;
   }
 
@@ -906,10 +1224,45 @@
     return !!(s && s >= HUB_STANDING_CRASH_FROM);
   }
 
-  /** Latest pre-crash summer ISO for this weekday in the roster (standing truth). */
+  /** Latest standing snap ISO for this weekday (summer Jul window, else Autumn weekend stamps). */
+  var _hubStandingIsoByDowCache = Object.create(null);
+  var _hubStandingIsoByDowCacheN = -1;
   function hubLatestStandingIsoForDow(rosterRows, wd) {
     var want = clean(wd);
     if (!want || !rosterRows || !rosterRows.length) return "";
+    var n = rosterRows.length;
+    if (_hubStandingIsoByDowCacheN !== n) {
+      _hubStandingIsoByDowCache = Object.create(null);
+      _hubStandingIsoByDowCacheN = n;
+    }
+    if (_hubStandingIsoByDowCache[want] !== undefined) return _hubStandingIsoByDowCache[want];
+    /* B1: shared snap picker (same as timesheet / Staff). */
+    try {
+      var RDB = global.PortalResolveDayBoard;
+      if (RDB && typeof RDB.standingSnapIsoForDow === "function") {
+        var shared = RDB.standingSnapIsoForDow(rosterRows, want, {});
+        if (shared) {
+          _hubStandingIsoByDowCache[want] = shared;
+          return shared;
+        }
+      }
+    } catch (_rdb) {}
+    var canon = global.PortalRosterCanonical;
+    var weekendKey = String(want || "").trim().toLowerCase();
+    if (canon && canon.WEEKEND_STANDING_ISO && canon.WEEKEND_STANDING_ISO[weekendKey]) {
+      var stamp = String(canon.WEEKEND_STANDING_ISO[weekendKey] || "").slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(stamp)) {
+        for (var j = 0; j < rosterRows.length; j++) {
+          var rj = rosterRows[j];
+          if (rosterRowSessionDate(rj) !== stamp) continue;
+          var dj = clean(rj.day) || weekdayLongFromIso(stamp);
+          if (dj === want) {
+            _hubStandingIsoByDowCache[want] = stamp;
+            return stamp;
+          }
+        }
+      }
+    }
     var best = "";
     for (var i = 0; i < rosterRows.length; i++) {
       var r = rosterRows[i];
@@ -921,35 +1274,240 @@
       if (d !== want) continue;
       if (!best || iso > best) best = iso;
     }
+    _hubStandingIsoByDowCache[want] = best;
     return best;
+  }
+
+  /**
+   * True when this client already has a *same-calendar-day* dated roster row for the
+   * same feedback family (and for Multi, same hub/pool area). Used so a dated cover
+   * on that day replaces standing projection for that day only.
+   * Do NOT scan the whole week — a Mon 7 dated Emanuel/Tinashe cover must not wipe
+   * Fri standing Emanuel / Roberto Tinashe / Victor+Raul DC.
+   */
+  function clientHasDatedRosterInWeekSameFamily(rosterRows, standingRow, isoDate) {
+    var cid = canonicalClientSlug(standingRow && standingRow.client_name);
+    if (!cid || !rosterRows || !rosterRows.length) return false;
+    var dayIso = String(isoDate || "").trim().substring(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dayIso)) return false;
+    var standSvc = clean(standingRow && standingRow.service);
+    var standMulti = isMultiActivityService(standSvc);
+    var standArea = standMulti ? slotAreaKind(standingRow) : "";
+    for (var i = 0; i < rosterRows.length; i++) {
+      var o = rosterRows[i];
+      var sd = rosterRowSessionDate(o);
+      if (!sd || sd !== dayIso) continue;
+      if (canonicalClientSlug(o.client_name) !== cid) continue;
+      var oSvc = clean(o.service);
+      if (!standSvc || !oSvc) continue;
+      if (isMultiActivityService(standSvc) && isMultiActivityService(oSvc)) {
+        if (standArea && slotAreaKind(o) && standArea !== slotAreaKind(o)) continue;
+        return true;
+      }
+      if (isClimbingService(standSvc) && isClimbingService(oSvc)) return true;
+      if (isAquaticService(standSvc) && isAquaticService(oSvc)) return true;
+      if (isDayCentreService(standSvc) && isDayCentreService(oSvc)) return true;
+      if (isBespokeService(standSvc) && isBespokeService(oSvc)) return true;
+      if (serviceKey(standSvc) === serviceKey(oSvc)) return true;
+    }
+    return false;
   }
 
   /**
    * Dated week rows on their calendar day; autumn also projects summer standing onto the
    * calendar date and merges sparse portal_roster_rows overlays (new bookings). Undated
    * templates only when this client has no dated rows that week.
+   *
+   * Week-1 DC (Tue 1 – Fri 4 Sep): LOCAL board is authoritative — do NOT project the
+   * Jul standing Day Centre snap (Fadi / Roberto+Youssef Thu) onto those dates.
    */
   function rosterRowAppliesOnDate(rosterRows, r, isoDate, wd) {
     if (clean(r.day) !== wd) return false;
     var sd = rosterRowSessionDate(r);
     var project = hubUsesAutumnStandingProjection(isoDate);
     var standIso = project ? hubLatestStandingIsoForDow(rosterRows, wd) : "";
+    var canon = global.PortalRosterCanonical;
+    var week1Dc =
+      canon && typeof canon.isAutumnWeek1DcIso === "function" && canon.isAutumnWeek1DcIso(isoDate);
+    var fadiAbsentDcBoard =
+      canon &&
+      typeof canon.isFadiAbsentDcBoardIso === "function" &&
+      canon.isFadiAbsentDcBoardIso(isoDate);
+    var isDcStanding =
+      canon && typeof canon.isAutumnDcStandingTemplateRow === "function"
+        ? canon.isAutumnDcStandingTemplateRow(r)
+        : /day\s*centre/i.test(String((r && r.service) || "")) &&
+          /^2026-07-1[3-7]$/.test(String(sd || ""));
+    if ((week1Dc || fadiAbsentDcBoard) && isDcStanding) return false;
     if (sd) {
       if (sd === isoDate) return true;
       if (project && standIso && standIso !== isoDate && sd === standIso) {
-        if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
+        if (
+          (week1Dc || fadiAbsentDcBoard) &&
+          /day\s*centre/i.test(String((r && r.service) || ""))
+        ) {
+          return false;
+        }
+        if (
+          canon &&
+          typeof canon.shouldProjectSnapRosterRow === "function" &&
+          !canon.shouldProjectSnapRosterRow(r, standIso, isoDate)
+        ) {
+          return false;
+        }
+        /*
+         * Sun 6 Sep Hub Multi is fully owned by scrubAndEnsureSep6HubCover (John + Berta books).
+         * Do not also project summer standing Hub Multi onto that day.
+         * Pool Multi still projects unless blocked below; climb is dated via scrubAndEnsureSep6Climbing.
+         */
+        if (
+          isoDate === "2026-09-06" &&
+          /multi/i.test(String((r && r.service) || "")) &&
+          /swimfarm/i.test(String((r && r.venue) || "SwimFarm")) &&
+          /hub/i.test(String((r && r.area) || ""))
+        ) {
+          return false;
+        }
+        /*
+         * Sun 6 Sep Javier pool is owned by scrubAndEnsureSep6JavierPool (dated LOCAL book
+         * including Zaid Aquatic trial 9–9.30). Do not also project Jul standing pool rows
+         * (would miss Rayyan Fi / trial or duplicate Multi).
+         */
+        if (
+          isoDate === "2026-09-06" &&
+          /\bjavier\b/i.test(String((r && r.instructors) || "")) &&
+          /swimfarm/i.test(String((r && r.venue) || "SwimFarm")) &&
+          !/hub/i.test(String((r && r.area) || "")) &&
+          (/multi/i.test(String((r && r.service) || "")) ||
+            /aquatic|swim/i.test(String((r && r.service) || "")))
+        ) {
+          return false;
+        }
+        /*
+         * Sun 6 Sep Aurora/Roberto pool owned by scrubAndEnsureSep6AuroraRobertoPool
+         * (Yusuf↔Simon Aquatic swap). Do not project Jul standing pool onto that day.
+         */
+        if (
+          isoDate === "2026-09-06" &&
+          /\b(aurora|roberto)\b/i.test(String((r && r.instructors) || "")) &&
+          /swimfarm/i.test(String((r && r.venue) || "SwimFarm")) &&
+          !/hub/i.test(String((r && r.area) || "")) &&
+          (/multi/i.test(String((r && r.service) || "")) ||
+            /aquatic|swim/i.test(String((r && r.service) || "")))
+        ) {
+          return false;
+        }
+        /*
+         * Sun 6 Sep Westway climb owned by scrubAndEnsureSep6Climbing (dated LOCAL book).
+         * Do not also project 13 Sep standing climb (would duplicate opens / miss Sep-6-only truth).
+         */
+        if (
+          isoDate === "2026-09-06" &&
+          /climb/i.test(String((r && r.service) || "")) &&
+          /westway/i.test(String((r && r.venue) || ""))
+        ) {
+          return false;
+        }
+        /*
+         * Thu 10 Sep Yassir last Acton Aquatic (dated canonical). Standing seat is already
+         * No participant after cancel — do not also project the open onto today.
+         */
+        if (
+          isoDate === "2026-09-10" &&
+          /roberto/i.test(String((r && r.instructors) || "")) &&
+          /acton/i.test(String((r && r.venue) || "")) &&
+          /aquatic|swim/i.test(String((r && r.service) || ""))
+        ) {
+          var yassirSlot = String((r && r.time_slot) || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          if (
+            yassirSlot === "4.30 to 5" ||
+            yassirSlot === "4:30 to 5" ||
+            yassirSlot.indexOf("4.30 to 5") === 0
+          ) {
+            return false;
+          }
+        }
+        /*
+         * Fri 11 Sep Amaar last Acton Aquatic (dated canonical). Standing seat is already
+         * No participant from Fri 18 — do not also project the open onto last-session day.
+         */
+        if (
+          isoDate === "2026-09-11" &&
+          /youssef\b/i.test(String((r && r.instructors) || "")) &&
+          /acton/i.test(String((r && r.venue) || "")) &&
+          /aquatic|swim/i.test(String((r && r.service) || ""))
+        ) {
+          var amaarSlot = String((r && r.time_slot) || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          if (
+            amaarSlot === "5.30 to 6" ||
+            amaarSlot === "5:30 to 6" ||
+            amaarSlot.indexOf("5.30 to 6") === 0 ||
+            amaarSlot.indexOf("5:30 to 6") === 0
+          ) {
+            return false;
+          }
+        }
+        /*
+         * Mon 7 Sep Abodi last Acton Aquatic (dated canonical). Standing seat is already
+         * No participant after cancel — do not also project the open onto today.
+         */
+        if (
+          isoDate === "2026-09-07" &&
+          /youssef/i.test(String((r && r.instructors) || "")) &&
+          /acton/i.test(String((r && r.venue) || "")) &&
+          /aquatic|swim/i.test(String((r && r.service) || ""))
+        ) {
+          var abodiSlot = String((r && r.time_slot) || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          if (
+            abodiSlot === "5.30 to 6.30" ||
+            abodiSlot === "5:30 to 6:30" ||
+            abodiSlot.indexOf("5.30 to 6.30") === 0
+          ) {
+            return false;
+          }
+        }
+        /*
+         * Tue 8 Sep Acton Aquatic owned by scrubAndEnsureSep8ActonRedistribute
+         * (Aurora book → Roberto / Luliya / Javier; Javi free). Do not project Jul standing.
+         */
+        if (
+          isoDate === "2026-09-08" &&
+          /acton/i.test(String((r && r.venue) || "")) &&
+          /aquatic|swim/i.test(String((r && r.service) || "")) &&
+          /\b(roberto|luliya|lulia|javier|aurora|javi)\b/i.test(String((r && r.instructors) || ""))
+        ) {
+          return false;
+        }
+        if (clientHasDatedRosterInWeekSameFamily(rosterRows, r, isoDate)) return false;
         return true;
       }
       return false;
     }
     var cid = canonicalClientSlug(r.client_name);
     if (!cid) return true;
-    if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
+    if (
+      (week1Dc || fadiAbsentDcBoard) &&
+      /day\s*centre/i.test(String((r && r.service) || ""))
+    ) {
+      return false;
+    }
+    if (clientHasDatedRosterInWeekSameFamily(rosterRows, r, isoDate)) return false;
     for (var i = 0; i < rosterRows.length; i++) {
       var o = rosterRows[i];
       if (rosterRowSessionDate(o) !== isoDate) continue;
       if (clean(o.day) !== wd) continue;
-      if (canonicalClientSlug(o.client_name) === cid) return false;
+      if (canonicalClientSlug(o.client_name) !== cid) continue;
+      /* Same client dated today — only suppress undated row when same feedback family/area. */
+      if (clientHasDatedRosterInWeekSameFamily([o], r, isoDate)) return false;
     }
     return true;
   }
@@ -1194,7 +1752,7 @@
   function normTimeShort(v) {
     var s = String(v == null ? "" : v).trim();
     if (!s) return "";
-    var m = s.match(/(\d{1,2}):(\d{2})/);
+    var m = s.match(/(\d{1,2}):(\d{2})/) || s.match(/(\d{1,2})\.(\d{2})/);
     if (!m) return s.length >= 5 ? s.slice(0, 5) : s;
     return String(parseInt(m[1], 10)).padStart(2, "0") + ":" + m[2];
   }
@@ -1253,9 +1811,17 @@
   function overrideIsCancelledType(ov) {
     var t = String(ov && ov.override_type || "").trim();
     if (String(ov && ov.status || "active").trim() !== "active") return false;
-    if (t === "slot_close") return true;
+    if (t === "slot_close" || t === "client_cancelled") return true;
     var p = overridePayloadObj(ov);
-    return t === "slot_clear_client" && !!p.cancelled_by_admin;
+    if (t !== "slot_clear_client" || !p.cancelled_by_admin) return false;
+    /* Day reassign / seat move: clear source seat, not a true cancel (Junaid→Roberto Tue 8). */
+    if (p.day_reassign === true || p.not_makeup === true) return false;
+    if (p.client_move === true || p.client_move === "true") return false;
+    var kind = clean(p.booking_kind || p.session_kind || p.replace_kind || p.clear_kind).toLowerCase();
+    if (kind === "day_reassign" || kind === "instructor_day_cover" || kind === "slot_move") {
+      return false;
+    }
+    return true;
   }
 
   function overrideFeedbackResolution(ov) {
@@ -1292,9 +1858,17 @@
     );
   }
 
-  function overrideIsInstructorReassignType(ov) {
+  function overrideIsInstructorCoverNeededType(ov) {
     return (
-      String(ov && ov.override_type || "").trim() === "instructor_reassign" &&
+      String(ov && ov.override_type || "").trim() === "instructor_cover_needed" &&
+      String(ov && ov.status || "active").trim() === "active"
+    );
+  }
+
+  function overrideIsInstructorReassignType(ov) {
+    var t = String(ov && ov.override_type || "").trim();
+    return (
+      (t === "instructor_reassign" || t === "instructor_cover_needed") &&
       String(ov && ov.status || "active").trim() === "active"
     );
   }
@@ -1331,12 +1905,13 @@
     return false;
   }
 
-  function shadowingOverrideMatchesSlot(slot, ov) {
+  /** Session window + venue + client for a shadowing session_add (staff role checked separately). */
+  function shadowingOverrideSameSessionWindow(slot, ov) {
     if (!slot || !overrideIsShadowingSessionAdd(ov)) return false;
     if (clean(ov.session_date) !== slot.session_date) return false;
-    var p = overridePayloadObj(ov);
-    var insts = slotInstructors(slot);
-    if (!trainerMatchesSlotInstructors(p.trainer, insts)) return false;
+    var oCid = canonicalClientSlug(ov.anchor_client_id);
+    var sCid = canonicalClientSlug(slot.client_name || slot.client_slug || slot.clientSlug);
+    if (oCid && sCid && oCid !== sCid) return false;
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();
     if (oVen && sVen && oVen !== sVen) return false;
@@ -1345,6 +1920,27 @@
     var sStart = normTimeShort(slot.time_start || slot.anchor_start || slot.time_slot);
     var sEnd = normTimeShort(slot.time_end || slot.anchor_end || slot.time_start);
     return hmRangesOverlap(oStart, oEnd, sStart, sEnd);
+  }
+
+  /**
+   * Host = payload.trainer on the seat. Observer = anchor_staff_id on the seat.
+   * Peers = other instructors on the same Tinashe/Hub book (Emanuel is shadowing the slot).
+   */
+  function shadowingOverrideRoleForSlot(slot, ov) {
+    if (!shadowingOverrideSameSessionWindow(slot, ov)) return "";
+    var p = overridePayloadObj(ov);
+    var insts = slotInstructors(slot);
+    var trainerRaw = clean(p.trainer || p.trainer_staff_id);
+    var isHost = !!(trainerRaw && trainerMatchesSlotInstructors(trainerRaw, insts));
+    var isObserver = staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, insts);
+    if (isHost) return "host";
+    if (isObserver) return "observer";
+    if (insts.length) return "peer";
+    return "";
+  }
+
+  function shadowingOverrideMatchesSlot(slot, ov) {
+    return !!shadowingOverrideRoleForSlot(slot, ov);
   }
 
   function shadowingOverrideForSlot(hub, slot) {
@@ -1370,21 +1966,34 @@
     return slots.map(function (slot) {
       var ov = shadowingOverrideForSlot(hub, slot);
       if (!ov) return slot;
+      var role = shadowingOverrideRoleForSlot(slot, ov);
+      if (!role) return slot;
       var observerName = resolveStaffDisplayName(ov.anchor_staff_id);
       var origInst =
         slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
           ? normalizeInstructorList(slot.portalOriginalInstructors).slice()
           : slotInstructors(slot).slice();
+      if (role === "host" || role === "peer") {
+        return Object.assign({}, slot, {
+          instructors: origInst,
+          instructor_label: origInst.join(", "),
+          portalInstructorReassigned: false,
+          portalCoveringStaffId: "",
+          portalCoveringStaffName: "",
+          portalShadowingHost: true,
+          portalShadowingObserver: false,
+          portalShadowingObserverName: observerName,
+          portalShadowingObserverId: clean(ov.anchor_staff_id).toLowerCase(),
+          portalOriginalInstructors: origInst,
+          __portalShadowingOverride: ov,
+        });
+      }
+      /* Observer column (Emanuel): mark Shadowing only — not a host chip. */
       return Object.assign({}, slot, {
-        instructors: origInst,
-        instructor_label: origInst.join(", "),
-        portalInstructorReassigned: false,
-        portalCoveringStaffId: "",
-        portalCoveringStaffName: "",
-        portalShadowingHost: true,
+        portalShadowingHost: false,
+        portalShadowingObserver: true,
         portalShadowingObserverName: observerName,
         portalShadowingObserverId: clean(ov.anchor_staff_id).toLowerCase(),
-        portalOriginalInstructors: origInst,
         __portalShadowingOverride: ov,
       });
     });
@@ -1397,11 +2006,277 @@
     );
   }
 
+  /** Day ops seat move (not a parent-absence makeup). */
+  function overrideIsDayReassignReplace(ov) {
+    if (!overrideIsReplaceType(ov)) return false;
+    var p = overridePayloadObj(ov);
+    if (p.day_reassign === true || p.not_makeup === true) return true;
+    /* Schedule & Covers same-day move uses client_move on the destination replace. */
+    if (p.client_move === true || p.client_move === "true") return true;
+    var kind = clean(p.booking_kind || p.session_kind || p.replace_kind).toLowerCase();
+    return kind === "day_reassign" || kind === "instructor_day_cover" || kind === "slot_move";
+  }
+
+  /** Source seat of a same-day move — clear standing client so Feedbacks does not ghost them. */
+  function overrideIsClientMoveClear(ov) {
+    if (String(ov && ov.override_type || "").trim() !== "slot_clear_client") return false;
+    if (String(ov && ov.status || "active").trim() !== "active") return false;
+    var p = overridePayloadObj(ov);
+    if (p.client_move === true || p.client_move === "true") return true;
+    if (p.day_reassign === true || p.not_makeup === true) return true;
+    var kind = clean(p.booking_kind || p.session_kind || p.replace_kind || p.clear_kind).toLowerCase();
+    return kind === "day_reassign" || kind === "instructor_day_cover" || kind === "slot_move";
+  }
+
+  /**
+   * Paint slot_clear client_move onto standing seats: Anas left Aurora 6–6.30 → No participant.
+   * Without this, Feedbacks still lists the moved-out half as Awaiting (Aurora).
+   */
+  function applyClientMoveSlotClears(hub, out) {
+    var ovs = (hub && hub.payload && hub.payload.schedule_overrides) || [];
+    if (!out || !out.length || !ovs.length) return out;
+    var clears = [];
+    for (var i = 0; i < ovs.length; i++) {
+      if (overrideIsClientMoveClear(ovs[i])) clears.push(ovs[i]);
+    }
+    if (!clears.length) return out;
+    return out.map(function (slot) {
+      if (!slot || isOpenRosterSlot(slot.client_name)) return slot;
+      for (var c = 0; c < clears.length; c++) {
+        var ov = clears[c];
+        if (!hub.overrideMatchesSlot(slot, ov)) continue;
+        return Object.assign({}, slot, {
+          client_name: "No participant",
+          portalClientMovedOut: true,
+          __portalScheduleOverride: ov,
+          portalOverrideMakeUpTag: false,
+          portalOverrideTrialTag: false,
+          portalOverrideNewClientTag: false,
+        });
+      }
+      return slot;
+    });
+  }
+
+  /**
+   * Staff Today paints replace onto the open card in place. Hub used to inject a synthetic
+   * row + suppress the open — fragile when staff aliases / venue differ. Prefer mutate open.
+   */
+  function applyOpenSeatReplaceInPlace(hub, out, isoDate, wd) {
+    var ovs = (hub && hub.payload && hub.payload.schedule_overrides) || [];
+    hub._openSeatReplacePaintedIds = Object.create(null);
+    if (!out || !out.length || !ovs.length) return out;
+    var paintedOvIds = hub._openSeatReplacePaintedIds;
+    var next = out.map(function (slot) {
+      if (!slot || !isOpenRosterSlot(slot.client_name)) return slot;
+      var sStart = normTimeShort(slot.time_start || normTimeKey(slot.time_slot, wd));
+      var sVenue = clean(slot.venue).toLowerCase();
+      var sStaff = canonicalStaffMatchKey(
+        (slotInstructors(slot)[0] || clean(slot.anchor_staff_id) || "")
+      );
+      var best = null;
+      for (var i = 0; i < ovs.length; i++) {
+        var ov = ovs[i];
+        if (!overrideIsReplaceType(ov)) continue;
+        if (clean(ov.session_date) !== isoDate) continue;
+        if (!overrideAnchorIsOpenSlot(ov.anchor_client_id)) continue;
+        var p = overridePayloadObj(ov);
+        if (!overrideReplacementClientId(p) && !overrideReplacementClientName(p)) continue;
+        var oStart =
+          normTimeShort(ov.anchor_start) ||
+          normTimeShort(normTimeKey(ov.anchor_time_slot_label, wd));
+        if (oStart && sStart && oStart !== sStart) continue;
+        var oVenue = clean(ov.anchor_venue).toLowerCase();
+        if (oVenue && sVenue && oVenue !== sVenue) continue;
+        var oStaff = canonicalStaffMatchKey(ov.anchor_staff_id);
+        if (oStaff && sStaff && oStaff !== sStaff) {
+          var aliases = swimfarmInstructorAnchorAliases(ov.anchor_staff_id);
+          if (!aliases.length || aliases.indexOf(sStaff) < 0) continue;
+        }
+        if (
+          !best ||
+          (ov.created_at && (!best.created_at || String(ov.created_at) > String(best.created_at)))
+        ) {
+          best = ov;
+        }
+      }
+      if (!best) return slot;
+      if (best.id) paintedOvIds[String(best.id)] = true;
+      var bp = overridePayloadObj(best);
+      var repId = overrideReplacementClientId(bp);
+      var repName = overrideReplacementClientName(bp);
+      var clientName = repName || resolveRosterClientName(repId) || (repId ? repId.replace(/_/g, " ") : "");
+      if (!clientName) return slot;
+      var rosterName = resolveRosterClientName(canonicalClientSlug(clientName || repId));
+      if (rosterName) clientName = rosterName;
+      return Object.assign({}, slot, {
+        client_name: clientName,
+        __portalScheduleOverride: best,
+        portalOverrideMakeUpTag: overrideIsMakeupReplaceType(best),
+        portalOverrideTrialTag: overrideIsTrialType(best),
+        portalOverrideNewClientTag: overrideIsNewClientReplace(best),
+        portalOverrideDayMoveTag: overrideIsDayReassignReplace(best),
+      });
+    });
+    hub._openSeatReplacePaintedIds = paintedOvIds;
+    return next;
+  }
+
+  /** Previous clock on a term/Schedule time edit (standing still has this until we paint). */
+  function slotUpdatePreviousStart(ov, wd) {
+    var p = overridePayloadObj(ov);
+    return (
+      normTimeShort(p.previous_start) ||
+      normTimeShort(normTimeKey(p.previous_time_slot, wd)) ||
+      ""
+    );
+  }
+
+  /**
+   * New window from slot_update. When previous_start differs from anchor_start, anchors win
+   * (label on the OV sometimes lags, e.g. still "12 to 1" after a 4.30 move).
+   */
+  function slotUpdateNewBounds(ov, wd) {
+    var p = overridePayloadObj(ov);
+    var prev = slotUpdatePreviousStart(ov, wd);
+    var anchorStart = normTimeShort(ov.anchor_start);
+    var anchorEnd = normTimeShort(ov.anchor_end);
+    var labelRaw =
+      clean(p.time_slot) ||
+      clean(p.new_time_slot) ||
+      clean(ov.anchor_time_slot_label) ||
+      "";
+    var parsed = labelRaw ? parseTimeSlot(labelRaw, wd) : { start: "", end: "", label: "" };
+    var start = anchorStart || (parsed && parsed.start) || "";
+    var end = anchorEnd || (parsed && parsed.end) || "";
+    if (prev && anchorStart && prev !== anchorStart) {
+      start = anchorStart;
+      end = anchorEnd || start;
+    } else if (parsed && parsed.start) {
+      start = parsed.start;
+      end = parsed.end || end || start;
+    }
+    var label =
+      rosterTimeSlotLabelFromBounds(start, end, wd) ||
+      labelRaw ||
+      (start && end ? start + " to " + end : "");
+    return { start: start, end: end, label: label };
+  }
+
+  /**
+   * Paint schedule_overrides slot_update onto standing seats so Feedbacks / Overview clocks
+   * match Staff Today when dated roster rows are thin.
+   */
+  function applySlotUpdateOverrides(hub, out) {
+    var ovs = (hub && hub.payload && hub.payload.schedule_overrides) || [];
+    if (!out || !out.length || !ovs.length) return out;
+    var updates = [];
+    for (var i = 0; i < ovs.length; i++) {
+      if (overrideIsSlotUpdateType(ovs[i])) updates.push(ovs[i]);
+    }
+    if (!updates.length) return out;
+    return out.map(function (slot) {
+      if (!slot || isOpenRosterSlot(slot.client_name)) return slot;
+      /* Stronger paints already on the seat — do not clobber move/replace/cover. */
+      if (
+        slot.portalClientMovedOut ||
+        slot.portalOverrideMakeUpTag ||
+        slot.portalOverrideTrialTag ||
+        slot.portalOverrideNewClientTag ||
+        slot.portalInstructorReassigned
+      ) {
+        return slot;
+      }
+      var wd = slot.day || weekdayLongFromIso(slot.session_date);
+      var sCid = canonicalClientSlug(slot.client_name);
+      var sStart = normTimeShort(slot.time_start || normTimeKey(slot.time_slot, wd));
+      var sVenue = clean(slot.venue).toLowerCase();
+      var best = null;
+      for (var u = 0; u < updates.length; u++) {
+        var ov = updates[u];
+        if (clean(ov.session_date) !== clean(slot.session_date)) continue;
+        var p = overridePayloadObj(ov);
+        /* Brand-new participant on open seat is handled by replace/inject, not clock paint. */
+        if (p.term_new_participant === true || p.term_new_participant === "true") continue;
+        var oCid = canonicalClientSlug(ov.anchor_client_id);
+        var toName = canonicalClientSlug(overrideReplacementClientName(p) || p.to_client_name);
+        if (oCid && sCid && oCid !== sCid && (!toName || toName !== sCid)) continue;
+        if (
+          clean(ov.anchor_staff_id) &&
+          !staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)
+        ) {
+          continue;
+        }
+        var oVen = clean(ov.anchor_venue).toLowerCase();
+        if (oVen && sVenue && oVen !== sVenue) continue;
+        var prev = slotUpdatePreviousStart(ov, wd);
+        var next = slotUpdateNewBounds(ov, wd).start;
+        var timeOk = false;
+        if (prev && sStart && prev === sStart) timeOk = true;
+        else if (next && sStart && next === sStart) timeOk = true;
+        else if (
+          !prev &&
+          next &&
+          sStart &&
+          next !== sStart &&
+          clean(ov.anchor_time_slot_label).toLowerCase() === clean(slot.time_slot).toLowerCase()
+        ) {
+          timeOk = true;
+        }
+        if (!timeOk) continue;
+        if (
+          !best ||
+          (ov.created_at && (!best.created_at || String(ov.created_at) > String(best.created_at)))
+        ) {
+          best = ov;
+        }
+      }
+      if (!best) return slot;
+      var bounds = slotUpdateNewBounds(best, wd);
+      if (!bounds.start) return slot;
+      if (sStart && bounds.start === sStart && (!bounds.end || bounds.end === normTimeShort(slot.time_end))) {
+        return Object.assign({}, slot, {
+          __portalScheduleOverride: slot.__portalScheduleOverride || best,
+          portalRosterTimeUpdated: true,
+          scheduleAdminAdjusted: true,
+        });
+      }
+      return Object.assign({}, slot, {
+        time_start: bounds.start,
+        time_end: bounds.end || bounds.start,
+        time_slot: bounds.label || slot.time_slot,
+        __portalScheduleOverride: best,
+        portalRosterTimeUpdated: true,
+        scheduleAdminAdjusted: true,
+      });
+    });
+  }
+
   function overrideIsTrialType(ov) {
     if (!ov || !overrideIsReplaceType(ov)) return false;
     var p = overridePayloadObj(ov);
     if (p.is_trial === true || clean(p.booking_kind).toLowerCase() === "trial") return true;
     return clean(p.session_kind).toLowerCase() === "trial";
+  }
+
+  /** Finish-booking / term seat into an open slot — not a parent-absence makeup. */
+  function overrideIsNewClientReplace(ov) {
+    if (!overrideIsReplaceType(ov) || overrideIsTrialType(ov)) return false;
+    var p = overridePayloadObj(ov);
+    if (p.new_client === true || p.new_client === "true") return true;
+    if (p.term_new_participant === true || p.term_new_participant === "true") return true;
+    if (p.finish_booking === true || p.finish_booking === "true") return true;
+    var kind = clean(p.booking_kind || p.session_kind || p.replace_kind).toLowerCase();
+    return kind === "term" && (p.finish_booking || p.new_client || p.term_new_participant);
+  }
+
+  function overrideIsMakeupReplaceType(ov) {
+    return (
+      overrideIsReplaceType(ov) &&
+      !overrideIsTrialType(ov) &&
+      !overrideIsDayReassignReplace(ov) &&
+      !overrideIsNewClientReplace(ov)
+    );
   }
 
   function overrideAnchorIsOpenSlot(anchorClientId) {
@@ -1413,9 +2288,10 @@
     var p = payload;
     if (!p) return "";
     var toId = p.to_client_id != null ? String(p.to_client_id).trim().toLowerCase() : "";
-    if (toId) return toId;
     var repId = p.replacement_client_id != null ? String(p.replacement_client_id).trim().toLowerCase() : "";
-    return repId || "";
+    var raw = toId || repId || "";
+    /* Canonicalize so "ayman_el_bakry" OV paints onto standing "Ayman" (not a duplicate card). */
+    return raw ? canonicalClientSlug(raw) : "";
   }
 
   function overrideReplacementClientName(payload) {
@@ -1433,15 +2309,40 @@
     if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
       return window.portalStaffDisplayName(sid);
     }
+    var k = canonicalStaffMatchKey(sid);
+    if (k === "lulia") return "Luliya";
     return sid.charAt(0).toUpperCase() + sid.slice(1).toLowerCase();
   }
 
   /** Collapse staff aliases (luliya/lulia/aida, javi/javier) so override anchors bind to roster names. */
   function canonicalStaffMatchKey(value) {
-    var k = clean(value).toLowerCase().split(/\s+/)[0] || "";
-    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "lulia";
-    if (k === "javiermarquez") return "javier";
-    if (k === "javiarranz" || k === "javiarranzescorial" || k === "palankas" || k === "palankasarranz") return "javi";
+    if (
+      typeof globalThis !== "undefined" &&
+      globalThis.PortalStaffMatchKey &&
+      typeof globalThis.PortalStaffMatchKey.canonicalStaffMatchKey === "function"
+    ) {
+      return globalThis.PortalStaffMatchKey.canonicalStaffMatchKey(value);
+    }
+    var raw = clean(value).toLowerCase();
+    var joined = raw.replace(/[^a-z0-9]+/g, "");
+    var k = raw.split(/\s+/)[0] || "";
+    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "luliya";
+    if (k === "youssef" || joined.indexOf("youssef") === 0 || k === "yousef" || k === "yusef") return "youssef";
+    if (k === "aurora" || joined === "auroragarcia") return "aurora";
+    if (k === "javiermarquez" || joined === "javiermarquez") return "javier";
+    if (
+      k === "javiarranz" ||
+      k === "javiarranzescorial" ||
+      k === "palankas" ||
+      k === "palankasarranz" ||
+      joined === "javiarranz" ||
+      joined === "javiarranzescorial" ||
+      joined === "palankas" ||
+      joined === "palankasarranz" ||
+      joined === "palankasarranzescorial"
+    ) {
+      return "javi";
+    }
     return k;
   }
 
@@ -1460,8 +2361,17 @@
     var canonSid = canonicalStaffMatchKey(sid);
     for (var i = 0; i < list.length; i++) {
       var inst = clean(list[i]).toLowerCase();
-      if (inst === sid || inst.indexOf(sid) === 0 || sid.indexOf(inst) === 0) return true;
-      if (canonSid && canonicalStaffMatchKey(inst) === canonSid) return true;
+      var canonInst = canonicalStaffMatchKey(inst);
+      if (staffKeysAreJaviJavierPair(canonSid, canonInst)) continue;
+      if (canonSid && canonInst && canonSid === canonInst) return true;
+      if (inst === sid) return true;
+      /* Prefix match only when not javi/javier (otherwise "javi" steals "javier"). */
+      if (
+        !staffKeysAreJaviJavierPair(canonSid || sid, canonInst || inst) &&
+        (inst.indexOf(sid) === 0 || sid.indexOf(inst) === 0)
+      ) {
+        return true;
+      }
     }
     return false;
   }
@@ -1479,12 +2389,16 @@
     if (fromPayload) return fromPayload;
     var venue = clean(ov && ov.anchor_venue).toLowerCase();
     var staff = clean(ov && ov.anchor_staff_id).toLowerCase();
+    var area = clean(p.area || p.pool_note || "").toLowerCase();
     if (staff === "carlos") {
       if (venue === "westway") return "Climbing Activity";
       if (venue === "swimfarm") return "Day Centre";
       return "Climbing Activity";
     }
-    if (venue === "westway" || overrideIsTrialType(ov)) return "Climbing Activity";
+    /* Trials follow venue/area — never force Climbing (that duplicated Zaid aquatic as Wall). */
+    if (venue === "westway" || /wall|climb/.test(area)) return "Climbing Activity";
+    if (/hub/.test(area)) return "Multi-Activity";
+    if (venue === "acton" || venue === "northolt" || venue === "swimfarm") return "Aquatic Activity";
     return "Aquatic Activity";
   }
 
@@ -1496,6 +2410,9 @@
     var repName = overrideReplacementClientName(p);
     if (!repId && !repName) return null;
     var clientName = repName || resolveRosterClientName(repId) || repId.replace(/_/g, " ");
+    var cid = canonicalClientSlug(clientName || repId);
+    var rosterName = resolveRosterClientName(cid);
+    if (rosterName) clientName = rosterName;
     var timeLabel = clean(ov.anchor_time_slot_label);
     var slotTimes = parseTimeSlot(
       timeLabel ||
@@ -1533,18 +2450,41 @@
         area: area,
         instructors: staffLabel,
       }),
-      portalOverrideMakeUpTag: !overrideIsTrialType(ov),
+      portalOverrideMakeUpTag: overrideIsMakeupReplaceType(ov),
       portalOverrideTrialTag: overrideIsTrialType(ov),
+      portalOverrideNewClientTag: overrideIsNewClientReplace(ov),
       __portalScheduleOverride: ov,
     };
     slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
-    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow);
+    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow, { skipAutoSwim: true });
     return slotRow;
+  }
+
+  function compareOverviewSlotsTimeThenCancelled(hub, a, b) {
+    var ta = clean(a && (a.time_start || a.time_slot)) || "";
+    var tb = clean(b && (b.time_start || b.time_slot)) || "";
+    if (ta !== tb) return ta < tb ? -1 : ta > tb ? 1 : 0;
+    var aCan = 1;
+    var bCan = 1;
+    try {
+      if (hub && typeof hub.slotHasCancellation === "function") {
+        aCan = hub.slotHasCancellation(a) ? 0 : 1;
+        bCan = hub.slotHasCancellation(b) ? 0 : 1;
+      }
+    } catch (_c) {}
+    if (aCan !== bCan) return aCan - bCan;
+    var aMk = a && a.portalOverrideMakeUpTag ? 1 : 0;
+    var bMk = b && b.portalOverrideMakeUpTag ? 1 : 0;
+    if (aMk !== bMk) return aMk - bMk;
+    return clean(a && a.client_name).localeCompare(clean(b && b.client_name), "en", {
+      sensitivity: "base",
+    });
   }
 
   function injectOrphanMakeupOverrideSlots(hub, out, isoDate, wd) {
     var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
     if (!ovs.length) return out;
+    var paintedOpen = hub._openSeatReplacePaintedIds || Object.create(null);
     var seenOvIds = Object.create(null);
     var seenRepKeys = Object.create(null);
     for (var i = 0; i < out.length; i++) {
@@ -1560,7 +2500,7 @@
       var ov = ovs[j];
       if (!overrideIsReplaceType(ov)) continue;
       if (clean(ov.session_date) !== isoDate) continue;
-      if (ov.id && seenOvIds[String(ov.id)]) continue;
+      if (ov.id && (seenOvIds[String(ov.id)] || paintedOpen[String(ov.id)])) continue;
       var p = overridePayloadObj(ov);
       if (!overrideReplacementClientId(p) && !overrideReplacementClientName(p)) continue;
       var syn = slotFromMakeupOverride(isoDate, wd, ov);
@@ -1574,7 +2514,119 @@
     if (!added.length) return out;
     out = out.concat(added);
     out.sort(function (a, b) {
-      return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
+      return compareOverviewSlotsTimeThenCancelled(hub, a, b);
+    });
+    return out;
+  }
+
+  /** Schedule & Covers "+ Add session card" (session_add kind=session), not training/shadowing. */
+  function overrideIsCreatedSessionAdd(ov) {
+    if (String(ov && ov.override_type || "").trim() !== "session_add") return false;
+    if (String(ov && ov.status || "active").trim() !== "active") return false;
+    var p = overridePayloadObj(ov);
+    var k = String((p && p.kind) || ov.anchor_client_id || "").trim().toLowerCase();
+    return k === "session" || k === "client" || k === "office";
+  }
+
+  function slotFromCreatedSessionAdd(isoDate, wd, ov) {
+    if (!overrideIsCreatedSessionAdd(ov)) return null;
+    if (clean(ov.session_date) !== isoDate) return null;
+    var p = overridePayloadObj(ov);
+    var clientSlug = canonicalClientSlug(p.client_id || ov.anchor_client_id || "");
+    if (clientSlug === "training" || clientSlug === "shadowing" || clientSlug === "meeting") {
+      return null;
+    }
+    var clientName =
+      clean(p.client_name || p.to_client_name) ||
+      resolveRosterClientName(clientSlug) ||
+      (clientSlug ? String(clientSlug).replace(/_/g, " ") : "");
+    if (clientSlug === "office") clientName = "Office";
+    if (clientSlug === "no_participant" || clientSlug === "noparticipant") {
+      clientName = "No participant";
+    }
+    var rosterName = resolveRosterClientName(canonicalClientSlug(clientName || clientSlug));
+    if (rosterName) clientName = rosterName;
+    if (!clientName) return null;
+    var timeLabel = clean(ov.anchor_time_slot_label);
+    var slotTimes = parseTimeSlot(
+      timeLabel ||
+        (normTimeShort(ov.anchor_start) + " to " + normTimeShort(ov.anchor_end || ov.anchor_start)),
+      wd
+    );
+    var startHm = normTimeShort(ov.anchor_start) || slotTimes.start;
+    var endHm = normTimeShort(ov.anchor_end) || slotTimes.end;
+    var rosterTimeLabel =
+      rosterTimeSlotLabelFromBounds(startHm, endHm, wd) || timeLabel || slotTimes.label;
+    var staffLabel = resolveStaffDisplayName(ov.anchor_staff_id);
+    var instructors = staffLabel ? [staffLabel] : [];
+    var service = inferOverrideSlotService(ov, p);
+    var area = clean(p.area || "");
+    if (!area && serviceKey(service).indexOf("day") >= 0) area = "Hub Room";
+    var slotRow = {
+      session_date: isoDate,
+      day: wd,
+      client_name: clientName,
+      service: service,
+      time_slot: rosterTimeLabel,
+      time_start: startHm,
+      time_end: endHm,
+      venue: clean(ov.anchor_venue) || "SwimFarm",
+      area: area,
+      instructors: instructors,
+      instructor_label: instructors.join(", "),
+      anchor_staff_id: clean(ov.anchor_staff_id).toLowerCase(),
+      session_key: buildSessionKey(isoDate, {
+        client_name: clientName,
+        service: service,
+        time_slot: rosterTimeLabel,
+        venue: clean(ov.anchor_venue) || "SwimFarm",
+        area: area,
+        instructors: staffLabel,
+      }),
+      portalCreatedSession: true,
+      __portalScheduleOverride: ov,
+    };
+    slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
+    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow, { skipAutoSwim: true });
+    return slotRow;
+  }
+
+  function injectCreatedSessionAddSlots(hub, out, isoDate, wd) {
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    if (!ovs.length) return out;
+    var seenOvIds = Object.create(null);
+    var seenKeys = Object.create(null);
+    for (var i = 0; i < (out || []).length; i++) {
+      var s = out[i];
+      var ov0 = s && s.__portalScheduleOverride;
+      if (ov0 && ov0.id) seenOvIds[String(ov0.id)] = true;
+      var staff0 = canonicalStaffMatchKey(
+        ((s && s.instructors && s.instructors[0]) || (s && s.anchor_staff_id) || "")
+      );
+      var cid0 = canonicalClientSlug(s && s.client_name);
+      var st0 = s && (s.time_start || "");
+      if (staff0 && cid0 && st0) seenKeys[staff0 + "|" + cid0 + "|" + st0] = true;
+    }
+    var added = [];
+    for (var j = 0; j < ovs.length; j++) {
+      var ov = ovs[j];
+      if (clean(ov.session_date) !== isoDate) continue;
+      if (ov.id && seenOvIds[String(ov.id)]) continue;
+      var syn = slotFromCreatedSessionAdd(isoDate, wd, ov);
+      if (!syn) continue;
+      var staffK = canonicalStaffMatchKey(
+        (syn.instructors && syn.instructors[0]) || syn.anchor_staff_id || ""
+      );
+      var key = staffK + "|" + canonicalClientSlug(syn.client_name) + "|" + (syn.time_start || "");
+      if (seenKeys[key]) continue;
+      if (ov.id) seenOvIds[String(ov.id)] = true;
+      seenKeys[key] = true;
+      added.push(syn);
+    }
+    if (!added.length) return out;
+    out = (out || []).concat(added);
+    out.sort(function (a, b) {
+      return compareOverviewSlotsTimeThenCancelled(hub, a, b);
     });
     return out;
   }
@@ -1601,6 +2653,8 @@
       var ov = ovs[i];
       if (!overrideIsReplaceType(ov)) continue;
       if (overrideIsTrialType(ov)) continue;
+      /* Seat moves / NEW CLIENT are not absence-makeup displacement. */
+      if (overrideIsDayReassignReplace(ov) || overrideIsNewClientReplace(ov)) continue;
       if (clean(ov.session_date) !== slot.session_date) continue;
       if (overrideAnchorIsOpenSlot(ov.anchor_client_id)) continue;
       if (canonicalClientSlug(ov.anchor_client_id) !== sCid) continue;
@@ -1633,6 +2687,15 @@
     if (!ov || overrideAnchorIsOpenSlot(ov.anchor_client_id)) return false;
     var anchorSlug = canonicalClientSlug(ov.anchor_client_id);
     if (!anchorSlug || anchorSlug === canonicalClientSlug(slot.client_name)) return false;
+    /* Avoid re-entering expandSlotsForDate while that date is still building (freeze / crash). */
+    var isoKey = String(slot.session_date || "").trim().substring(0, 10);
+    var slotsCache = hub._slotsByIso;
+    if (
+      hub._expandingSlotsIso === isoKey &&
+      (!slotsCache || !slotsCache[isoKey])
+    ) {
+      return false;
+    }
     var daySlots = hub.expandSlotsForDate(slot.session_date) || [];
     for (var i = 0; i < daySlots.length; i++) {
       var s = daySlots[i];
@@ -1646,45 +2709,141 @@
   function hubOverrideLabel(ov) {
     if (!ov) return "";
     if (overrideIsShadowingSessionAdd(ov)) return "Shadowing";
+    if (overrideIsAbsentType(ov) || overrideFeedbackResolution(ov) === "absent") return "Absent";
+    if (overrideIsCancelledType(ov) || overrideFeedbackResolution(ov) === "cancelled") return "Cancelled";
     if (overrideIsSlotUpdateType(ov)) return "Updated";
+    if (overrideIsInstructorCoverNeededType(ov)) return "COVER NEEDED";
     if (overrideIsInstructorReassignType(ov)) return "Changed instructor";
     if (overrideIsTrialType(ov)) return "Trial";
-    if (overrideIsReplaceType(ov)) return "MakeUp";
+    if (overrideIsNewClientReplace(ov)) return "NEW PARTICIPANT";
+    if (overrideIsDayReassignReplace(ov)) return "Moved";
+    if (overrideIsMakeupReplaceType(ov)) return "MakeUp";
     return String(ov.override_type || "").trim() || "Override";
   }
 
   function hubOverrideChipClass(ov) {
     if (overrideIsShadowingSessionAdd(ov)) return "override--shadowing";
     if (overrideIsSlotUpdateType(ov)) return "override--updated";
+    if (overrideIsInstructorCoverNeededType(ov)) return "override--cover-needed";
     if (overrideIsInstructorReassignType(ov)) return "override--instructor";
     if (overrideIsTrialType(ov)) return "override--trial";
-    if (overrideIsReplaceType(ov)) return "override--replace";
+    if (overrideIsNewClientReplace(ov)) return "override--updated";
+    if (overrideIsDayReassignReplace(ov)) return "override--instructor";
+    if (overrideIsMakeupReplaceType(ov)) return "override--replace";
     if (overrideIsAbsentType(ov)) return "override--absent";
     if (overrideIsCancelledType(ov)) return "override--cancelled";
     return "";
   }
 
   function hubSlotShowsTrialChip(slot, slotOv) {
-    return overrideIsTrialType(slotOv) || !!(slot && slot.portalOverrideTrialTag);
+    if (overrideIsTrialType(slotOv) || !!(slot && slot.portalOverrideTrialTag)) return true;
+    var nm = clean(slot && slot.client_name);
+    if (/\(\s*trial\s*\)/i.test(nm) || /^trial\b/i.test(nm)) return true;
+    return false;
   }
 
   function hubSlotShowsUpdatedChip(slot, slotOv) {
+    /* Trial / MakeUp chips win over Updated. NEW CLIENT may coexist with Updated on first session. */
+    if (hubSlotShowsTrialChip(slot, slotOv)) return false;
+    if (hubSlotShowsMakeupChip(slot, slotOv)) return false;
+    /* Never paint Shadowing session_add as Updated (label would wrongly say Shadowing). */
+    if (overrideIsShadowingSessionAdd(slotOv)) return false;
+    if (slot && (slot.portalShadowingHost || slot.portalShadowingObserver)) return false;
+    /* Standing Hub Bespoke: kid 4.30–6 · staff 4.15–6.15 is not an admin update. */
+    if (hubSlotIsStandingTinasheStaffBand(slot)) return false;
     if (overrideIsSlotUpdateType(slotOv)) return true;
+    if (hubSlotShowsNewClientChip(slot, slotOv)) {
+      return !!(slot && (slot.portalRosterTimeUpdated || slot.scheduleAdminAdjusted));
+    }
     return !!(slot && slot.portalRosterTimeUpdated);
+  }
+
+  /** Tinashe Hub Bespoke standing book — never an Updated chip (staff 4.15–6.15 vs kid 4.30–6). */
+  function hubSlotIsStandingTinasheStaffBand(slot) {
+    if (!slot || !isBespokeService(slot.service)) return false;
+    if (!/^tinashe\b/i.test(clean(slot.client_name))) return false;
+    var venue = clean(slot.venue).toLowerCase();
+    var area = clean(slot.area).toLowerCase();
+    return venue.indexOf("swimfarm") >= 0 || /hub/i.test(area);
   }
 
   function hubSlotShowsMakeupChip(slot, slotOv) {
     if (hubSlotShowsTrialChip(slot, slotOv)) return false;
-    return overrideIsReplaceType(slotOv) || !!(slot && slot.portalOverrideMakeUpTag);
+    if (overrideIsNewClientReplace(slotOv)) return false;
+    /* Day-reassign replaces are seat moves, not MakeUp. */
+    if (overrideIsMakeupReplaceType(slotOv)) return true;
+    return !!(slot && slot.portalOverrideMakeUpTag && !overrideIsDayReassignReplace(slotOv) && !overrideIsNewClientReplace(slotOv));
+  }
+
+  function hubSlotShowsNewClientChip(slot, slotOv) {
+    if (hubSlotShowsTrialChip(slot, slotOv)) return false;
+    var tagged =
+      overrideIsNewClientReplace(slotOv) || !!(slot && slot.portalOverrideNewClientTag);
+    if (!tagged) return false;
+    /* NEW CLIENT only on first session day (payload.first_session), not every week. */
+    var p = overridePayloadObj(slotOv || (slot && slot.__portalScheduleOverride));
+    var first = String((p && (p.first_session || p.firstSession)) || "").slice(0, 10);
+    var iso = String((slot && slot.session_date) || "").slice(0, 10);
+    if (first && /^\d{4}-\d{2}-\d{2}$/.test(first) && iso && first !== iso) return false;
+    return true;
   }
 
   function hubSlotShowsInstructorReassignChip(slot, slotOv) {
-    if (slot && slot.portalShadowingHost) return false;
+    if (slot && (slot.portalShadowingHost || slot.portalShadowingObserver)) return false;
     return overrideIsInstructorReassignType(slotOv) || !!(slot && slot.portalInstructorReassigned);
   }
 
   function hubSlotShowsShadowingChip(slot) {
-    return !!(slot && slot.portalShadowingHost && slot.__portalShadowingOverride);
+    if (!slot || !slot.__portalShadowingOverride) return false;
+    return !!(slot.portalShadowingHost || slot.portalShadowingObserver);
+  }
+
+  /**
+   * Makeup painted onto an open seat (Anas on Aurora available 6-6.30) plus
+   * instructor_reassign also anchored on that open seat. Client ids differ
+   * (available vs Anas) so overrideMatchesSlot can miss; match staff + clock + venue.
+   */
+  function instructorReassignOnSameOpenSeat(hub, slot) {
+    if (!hub || !slot) return null;
+    if (!slot.portalOverrideMakeUpTag && !isOpenRosterSlot(slot.client_name)) return null;
+    var makeup = slot.__portalScheduleOverride;
+    var staff = normalizeAnchorStaffId(
+      (makeup && makeup.anchor_staff_id) || slot.anchor_staff_id
+    );
+    if (!staff) {
+      var insts = slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
+        ? slot.portalOriginalInstructors
+        : slotInstructors(slot);
+      if (insts && insts.length) staff = normalizeAnchorStaffId(insts[0]);
+    }
+    var start = normTimeShort((makeup && makeup.anchor_start) || slot.time_start);
+    var venue = clean((makeup && makeup.anchor_venue) || slot.venue).toLowerCase();
+    if (!staff || !start) return null;
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    var best = null;
+    for (var i = 0; i < ovs.length; i++) {
+      var ov = ovs[i];
+      if (!overrideIsInstructorReassignType(ov)) continue;
+      if (clean(ov.session_date) !== slot.session_date) continue;
+      if (String(ov.status || "active").trim() !== "active") continue;
+      if (normalizeAnchorStaffId(ov.anchor_staff_id) !== staff) continue;
+      if (!overrideAnchorIsOpenSlot(ov.anchor_client_id)) {
+        var oCid = canonicalClientSlug(ov.anchor_client_id);
+        var sCid = canonicalClientSlug(slot.client_name);
+        if (oCid && sCid && oCid !== sCid) continue;
+      }
+      var ovStart = normTimeShort(ov.anchor_start);
+      if (ovStart && ovStart !== start) continue;
+      var oVen = clean(ov.anchor_venue).toLowerCase();
+      if (venue && oVen && oVen !== venue) continue;
+      if (
+        !best ||
+        (ov.created_at && (!best.created_at || String(ov.created_at) > String(best.created_at)))
+      ) {
+        best = ov;
+      }
+    }
+    return best;
   }
 
   function instructorReassignOverrideForSlot(hub, slot) {
@@ -1697,15 +2856,27 @@
     for (var i = 0; i < ovs.length; i++) {
       if (!overrideIsInstructorReassignType(ovs[i])) continue;
       if (!hub.overrideMatchesSlot(slot, ovs[i])) continue;
+      var cand = ovs[i];
+      if (!best) {
+        best = cand;
+        continue;
+      }
+      var bestIsReal = String(best.override_type || "").trim() === "instructor_reassign";
+      var candIsReal = String(cand.override_type || "").trim() === "instructor_reassign";
+      /* Prefer a real cover assignment over COVER NEEDED. */
+      if (candIsReal && !bestIsReal) {
+        best = cand;
+        continue;
+      }
+      if (!candIsReal && bestIsReal) continue;
       if (
-        !best ||
-        (ovs[i].created_at &&
-          (!best.created_at || String(ovs[i].created_at) > String(best.created_at)))
+        cand.created_at &&
+        (!best.created_at || String(cand.created_at) > String(best.created_at))
       ) {
-        best = ovs[i];
+        best = cand;
       }
     }
-    return best;
+    return best || instructorReassignOnSameOpenSeat(hub, slot);
   }
 
   function applyInstructorReassignOverrides(hub, slots) {
@@ -1717,11 +2888,44 @@
       var coverId = clean(p.covering_staff_id).toLowerCase();
       var coverName =
         clean(p.covering_staff_name || p.to_staff_name) || resolveStaffDisplayName(coverId);
-      if (!coverId && !coverName) return slot;
       var anchorId = clean(ov.anchor_staff_id).toLowerCase();
-      if (anchorId && !staffIdMatchesInstructorWithSwimAliases(anchorId, slot.instructors)) return slot;
-      var origInst = slotInstructors(slot).slice();
-      var effective = swapInstructorCoverInList(origInst, anchorId, coverName, coverId);
+      var matchInst =
+        slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
+          ? slot.portalOriginalInstructors
+          : slot.instructors;
+      if (
+        anchorId &&
+        !staffIdMatchesInstructorWithSwimAliases(anchorId, slot.instructors) &&
+        !staffIdMatchesInstructorWithSwimAliases(anchorId, matchInst)
+      ) {
+        return slot;
+      }
+      /* COVER NEEDED with no named cover yet — keep seat on original staff, attach override. */
+      if (!coverId && !coverName) {
+        if (!overrideIsInstructorCoverNeededType(ov)) return slot;
+        return Object.assign({}, slot, {
+          __portalScheduleOverride: ov,
+          portalCoverNeeded: true,
+        });
+      }
+      if (overrideIsInstructorCoverNeededType(ov)) {
+        return Object.assign({}, slot, {
+          __portalScheduleOverride: ov,
+          portalCoverNeeded: true,
+        });
+      }
+      var origInst =
+        slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
+          ? normalizeInstructorList(slot.portalOriginalInstructors).slice()
+          : slotInstructors(slot).slice();
+      var effective = dedupeInstructorNames(
+        swapInstructorCoverInList(
+          slotInstructors(slot).slice(),
+          anchorId,
+          coverName,
+          coverId
+        )
+      );
       var reassigned = Object.assign({}, slot, {
         instructors: effective,
         instructor_label: effective.join(", "),
@@ -1730,37 +2934,10 @@
         portalOriginalInstructors: origInst,
         portalCoveringStaffId: coverId,
         portalCoveringStaffName: coverName || resolveStaffDisplayName(coverId),
+        portalCoverNeeded: false,
       });
       return reassigned;
     });
-  }
-
-  function hubInstructorCellHtml(slot, slotOv) {
-    if (!slot) return "\u2014";
-    if (slot.portalShadowingHost && slot.portalShadowingObserverName) {
-      var origInstSh = normalizeInstructorList(slot.portalOriginalInstructors || slot.instructors);
-      var origHtmlSh = origInstSh.map(formatInstructorPillOut).join("");
-      var obsHtml = formatInstructorPill(slot.portalShadowingObserverName);
-      return (
-        '<span class="ash-instructor-reassign ash-instructor-shadowing">' +
-        origHtmlSh +
-        '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
-        obsHtml +
-        "</span>"
-      );
-    }
-    if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
-      var origHtml = normalizeInstructorList(slot.portalOriginalInstructors).map(formatInstructorPillOut).join("");
-      var coverHtml = slotInstructors(slot).map(formatInstructorPill).join("");
-      return (
-        '<span class="ash-instructor-reassign">' +
-        origHtml +
-        '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
-        coverHtml +
-        "</span>"
-      );
-    }
-    return slotInstructors(slot).map(formatInstructorPill).join(" ") || "\u2014";
   }
 
   /** schedule_overrides client_replace_in_slot — instructor receiving the client owes feedback for that anchor time. */
@@ -1769,7 +2946,7 @@
     if (slot.portalOverrideTrialTag) return false;
     if (slot.portalOverrideMakeUpTag) return true;
     var ov = slot.__portalScheduleOverride;
-    return !!(ov && overrideIsReplaceType(ov) && !overrideIsTrialType(ov));
+    return !!(ov && overrideIsMakeupReplaceType(ov));
   }
 
   /** Make-up row satisfied when same client already has aquatic feedback that day (e.g. Roberto 5–5.30). */
@@ -1778,7 +2955,10 @@
     var day = clean(slot.session_date);
     var cid = canonicalClientSlug(slot.client_name);
     if (!day || !cid) return false;
-    var list = (hub.payload && hub.payload.session_feedback) || [];
+    var list =
+      (hub._fbByDate && day && hub._fbByDate[day]) ||
+      (hub.payload && hub.payload.session_feedback) ||
+      [];
     for (var i = 0; i < list.length; i++) {
       var fb = list[i];
       if (!fb || isAbsentFeedbackRow(fb)) continue;
@@ -1796,7 +2976,10 @@
     if (!slot) return false;
     if (slot.portalOverrideTrialTag) return true;
     var ov = slot.__portalScheduleOverride;
-    return overrideIsTrialType(ov);
+    if (overrideIsTrialType(ov)) return true;
+    var nm = clean(slot.client_name);
+    if (/\(\s*trial\s*\)/i.test(nm) || /^trial\b/i.test(nm)) return true;
+    return false;
   }
 
   /** Active overrides from the loaded admin hub payload (makeup slot counting + matching). */
@@ -1892,6 +3075,11 @@
     return resolveRosterClientName(slug) || slug.replace(/_/g, " ");
   }
 
+  /** Reviewed by for absents/cancels from Schedule & Covers (admin), not a staff submit. */
+  function overrideOfficeActorLabel(_ov) {
+    return "Office";
+  }
+
   function overrideToAbsentMark(ov) {
     if (!ov || !overrideIsAbsentType(ov)) return null;
     var sd = clean(ov.session_date);
@@ -1904,8 +3092,8 @@
       session_time: st,
       client_name: overrideClientName(ov),
       service: "\u2014",
-      staff_user_id: "",
-      staff_name: clean(ov.reason) ? "Schedule override \u2014 " + clean(ov.reason) : "Schedule override",
+      staff_user_id: clean(ov && ov.created_by) || "",
+      staff_name: overrideOfficeActorLabel(ov),
       created_at: ov.created_at || null,
       mark_type: "absent",
       source: "schedule_override",
@@ -1918,6 +3106,7 @@
     var slug = canonicalClientSlug(ov.anchor_client_id);
     if (!sd || !slug) return null;
     var reason = clean(ov.reason) || "Admin cancellation (schedule override)";
+    var by = overrideOfficeActorLabel(ov);
     return {
       id: "schedule_override:" + String(ov.id || ""),
       created_at: ov.created_at || null,
@@ -1925,9 +3114,9 @@
       session_time: normTimeShort(ov.anchor_start),
       client_name: overrideClientName(ov),
       service: "\u2014",
-      cancellation_timing: "Schedule override",
+      cancellation_timing: "Office",
       reason_category: reason,
-      submitted_by_name: "Schedule override",
+      submitted_by_name: by,
       portal_session_key: normTimeShort(ov.anchor_start)
         ? sd + "||" + normTimeShort(ov.anchor_start) + "||" + slug
         : sd + "||" + slug,
@@ -2274,6 +3463,17 @@
     if (up === "HOME" || up === "CASA") return "home";
     if (up === "MANAGER") return "manager";
     if (low === "closed") return "closed";
+    /* Duty / ops seats — never parent session feedback (Office, Interviews, …). */
+    if (
+      low === "office" ||
+      low === "interviews" ||
+      low === "interview" ||
+      low === "admin" ||
+      low === "ops" ||
+      low === "operations"
+    ) {
+      return "staff_duty";
+    }
     if (
       low === "shadowing" ||
       low === "training" ||
@@ -2302,10 +3502,32 @@
     return rosterSlotKind(name) === "client";
   }
 
-  /** Shadowing / training / meeting rows never owe parent session feedback. */
+  /**
+   * Overview staffing board seats: clients + opens + duty (Office / Manager / HOME / …).
+   * Feedback stats still exclude duty via slotIsStaffDutyNoFeedback / slotIncludedInDayStats.
+   */
+  function isOverviewExpandableSeat(name) {
+    var k = rosterSlotKind(name);
+    return (
+      k === "client" ||
+      k === "open" ||
+      k === "closed" ||
+      k === "staff_duty" ||
+      k === "manager" ||
+      k === "home"
+    );
+  }
+
+  /** Shadowing / training / meeting / Office / Interviews never owe parent session feedback. */
   function slotIsStaffDutyNoFeedback(slot) {
     if (!slot) return false;
     if (rosterSlotKind(slot.client_name) === "staff_duty") return true;
+    if (rosterSlotKind(slot.client_name) === "home") return true;
+    if (rosterSlotKind(slot.client_name) === "manager") return true;
+    var svc = serviceKey(slot.service);
+    if (svc === "interview" || svc === "interviews" || svc.indexOf("interview") === 0) {
+      return true;
+    }
     if (overrideIsShadowingSessionAdd(slot.__portalScheduleOverride)) return true;
     var ov =
       slot.__portalScheduleOverride ||
@@ -2327,6 +3549,11 @@
     var esc = escFn || esc;
     if (slotOpt && hubSlotIsTrial(slotOpt)) {
       var trialName = clean(name) || "Trial";
+      trialName = trialName
+        .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
+        .replace(/^trial\s*[-·:]?\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim() || "Trial";
       return '<span class="ash-pill ash-pill--trial">Trial · ' + esc(trialName) + "</span>";
     }
     var kind = rosterSlotKind(name);
@@ -2507,7 +3734,7 @@
       return solo ? [solo] : [];
     }
     var cover = coverName || resolveStaffDisplayName(coverId) || coverId;
-    if (!anchorId) return cover ? [cover] : list.slice();
+    if (!anchorId) return cover ? dedupeInstructorNames([cover]) : dedupeInstructorNames(list);
     var hit = false;
     var out = list.map(function (name) {
       if (staffIdMatchesInstructorWithSwimAliases(anchorId, [name])) {
@@ -2520,7 +3747,115 @@
       return cover ? [cover] : list.slice();
     }
     if (!hit && cover) return [cover];
-    return out.length ? out : list.slice();
+    return dedupeInstructorNames(out.length ? out : list);
+  }
+
+  function dedupeInstructorNames(list) {
+    var out = [];
+    var seen = Object.create(null);
+    (Array.isArray(list) ? list : []).forEach(function (name) {
+      var n = clean(name);
+      if (!n) return;
+      var k = canonicalStaffMatchKey(n) || clean(n).toLowerCase();
+      if (!k || seen[k]) return;
+      seen[k] = true;
+      out.push(n);
+    });
+    return out;
+  }
+
+  /**
+   * Feedback "Reviewed by" / awaiting: workers still on duty.
+   * Day-off requested (staff_unavailability) and COVER NEEDED do not owe a submit.
+   */
+  function feedbackWhoOwesInstructors(hub, slot) {
+    if (!slot) return [];
+    var iso = String(slot.session_date || (hub && hub.selectedDay) || "").slice(0, 10);
+    var names = dedupeInstructorNames(slotInstructors(slot));
+    var out = [];
+    for (var i = 0; i < names.length; i++) {
+      var n = names[i];
+      if (!n) continue;
+      if (/^cover[\s_]*needed$/i.test(n) || canonicalStaffMatchKey(n) === "coverneeded") continue;
+      if (hub && iso && hubStaffAwayOnIso(hub, iso, n)) continue;
+      out.push(n);
+    }
+    return out;
+  }
+
+  function slotHasOnDutyFeedbackStaff(hub, slot) {
+    return feedbackWhoOwesInstructors(hub, slot).length > 0;
+  }
+
+  function hubInstructorCellHtml(slot, slotOv, opts) {
+    if (!slot) return "\u2014";
+    opts = opts || {};
+    /* Register / who-owes: only the cover on duty — not Aurora struck + Luliya. */
+    var whoOwes = !!opts.feedbackWhoOwes;
+    if (slot.portalShadowingHost && slot.portalShadowingObserverName) {
+      if (whoOwes) {
+        var obs = slot.portalShadowingObserverName;
+        if (opts.hub && hubStaffAwayOnIso(opts.hub, slot.session_date, obs)) {
+          obs = "";
+        }
+        return (
+          (obs ? formatInstructorPill(obs) : "") ||
+          feedbackWhoOwesInstructors(opts.hub, slot).map(formatInstructorPill).join(" ") ||
+          "\u2014"
+        );
+      }
+      var origInstSh = normalizeInstructorList(slot.portalOriginalInstructors || slot.instructors);
+      var origHtmlSh = origInstSh.map(formatInstructorPillOut).join("");
+      var obsHtml = formatInstructorPill(slot.portalShadowingObserverName);
+      return (
+        '<span class="ash-instructor-reassign ash-instructor-shadowing">' +
+        origHtmlSh +
+        '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
+        obsHtml +
+        "</span>"
+      );
+    }
+    if (whoOwes) {
+      var oweNames = feedbackWhoOwesInstructors(opts.hub, slot);
+      var coverNeededWho = !!(
+        slot.__portalScheduleOverride &&
+        overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride)
+      );
+      if (oweNames.length) {
+        return oweNames
+          .map(function (n) {
+            return coverNeededWho ? formatInstructorPillCoverNeeded(n) : formatInstructorPill(n);
+          })
+          .join(" ") || "\u2014";
+      }
+      if (coverNeededWho) return formatInstructorPillCoverNeeded("COVER NEEDED");
+      return "\u2014";
+    }
+    if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
+      var coverNeeded = !!(
+        slot.__portalScheduleOverride &&
+        overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride)
+      );
+      var effective = dedupeInstructorNames(slotInstructors(slot));
+      var origHtml = normalizeInstructorList(slot.portalOriginalInstructors).map(formatInstructorPillOut).join("");
+      var coverHtml = effective
+        .map(function (n) {
+          return coverNeeded ? formatInstructorPillCoverNeeded(n) : formatInstructorPill(n);
+        })
+        .join("");
+      return (
+        '<span class="ash-instructor-reassign' +
+        (coverNeeded ? " ash-instructor-reassign--cover-needed" : "") +
+        '">' +
+        origHtml +
+        '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
+        coverHtml +
+        "</span>"
+      );
+    }
+    return (
+      dedupeInstructorNames(slotInstructors(slot)).map(formatInstructorPill).join(" ") || "\u2014"
+    );
   }
 
   function dayCentreFeedbackServiceCompatible(fb, slot) {
@@ -2627,12 +3962,20 @@
     }
     if (rule.time_slot && clean(slot.time_slot) !== clean(rule.time_slot)) return false;
     if (rule.service && serviceKey(slot.service) !== serviceKey(rule.service)) return false;
+    var except = rule.exceptSessionDates;
+    if (Array.isArray(except) && except.length) {
+      var iso = clean(slot.session_date).slice(0, 10);
+      for (var ei = 0; ei < except.length; ei++) {
+        if (clean(except[ei]).slice(0, 10) === iso) return false;
+      }
+    }
     return true;
   }
 
   function shouldOmitOverviewSlot(hub, slot) {
     if (!slot) return false;
     if (makeupSlotAbsorbedByDisplacedRow(hub, slot)) return true;
+    if (shouldOmitMislabelledTrialClimbing(slot)) return true;
     var cfg = acatGroupCoverageConfig();
     if (cfg && slotMatchesAcatCoverage(slot, cfg)) {
       if (cfg.always_hide_individual_rows === true) return true;
@@ -2647,6 +3990,44 @@
       if (slotMatchesOverviewOmitRule(slot, omitRules[oi])) return true;
     }
     if (shouldOmitAutoMergedSwimDuplicate(slot)) return true;
+    /*
+     * Angel / Giuseppe / Andres have no Autumn standing — scrub summer leftovers.
+     * Do NOT omit when they are a real dated cover (e.g. Angel → Carlos Westway Sun 20):
+     * that seat still owes Feedbacks and must count in expected units.
+     */
+    try {
+      var PRC = global.PortalRosterCanonical;
+      if (PRC && typeof PRC.isAutumnNoSessionStaffKey === "function") {
+        var instList = normalizeInstructorList(slot.instructors || []);
+        if (instList.length) {
+          var anyAutumn = false;
+          for (var ni = 0; ni < instList.length; ni++) {
+            if (!PRC.isAutumnNoSessionStaffKey(dayBoardStaffKey(instList[ni]))) {
+              anyAutumn = true;
+              break;
+            }
+          }
+          if (!anyAutumn) {
+            var isDatedCover =
+              !!(slot.portalInstructorReassigned ||
+                slot.portalCoveringStaffId ||
+                slot.portalCoveringStaffName ||
+                (slot.__portalScheduleOverride &&
+                  overrideIsInstructorReassignType(slot.__portalScheduleOverride)));
+            if (!isDatedCover) return true;
+          }
+        }
+      }
+    } catch (_omitNs) {}
+    return false;
+  }
+
+  /** Trial overrides used to default service=Climbing even for pool trials (SwimFarm Wall ghost). */
+  function shouldOmitMislabelledTrialClimbing(slot) {
+    if (!slot || !isClimbingService(slot.service)) return false;
+    if (clean(slot.venue).toLowerCase() === "westway") return false;
+    if (slot.portalOverrideTrialTag) return true;
+    if (/^trial\b/i.test(clean(slot.client_name))) return true;
     return false;
   }
 
@@ -2796,19 +4177,56 @@
     var bStart = b.time_start || "";
     var bEnd = b.time_end || bStart;
     if (!aStart || !bStart) return false;
-    return aStart < bEnd && bStart < aEnd;
+    /* Overlap (strict) OR abutting halves (e.g. Cyrus Wed 4–4.30 + 4.30–5). */
+    if (aStart < bEnd && bStart < aEnd) return true;
+    if (aEnd === bStart || bEnd === aStart) return true;
+    return false;
   }
 
-  function autoConsecutiveSwimInstructorMergeKey(slot) {
+  function aquaticClockTeamKey(pool, cid, startHm) {
+    var want = clean(startHm);
+    if (!want || !cid || !pool) return "";
+    var names = [];
+    for (var i = 0; i < pool.length; i++) {
+      var s = pool[i];
+      if (canonicalClientSlug(s.client_name) !== cid) continue;
+      if (!isAquaticService(s.service)) continue;
+      var st = clean(s.time_start || normTimeKey(s.time_slot, s.day));
+      if (st !== want) continue;
+      names = names.concat(slotInstructors(s));
+    }
+    return instructorSetKeyFromNames(names);
+  }
+
+  function autoConsecutiveSwimInstructorMergeKey(slot, daySlots) {
     if (!isConsecutiveSwimMergeableSlot(slot)) return "";
     if (isTeflonDemoRosterSlot(slot)) return "";
     var iso = slot.session_date;
     var cid = canonicalClientSlug(slot.client_name);
     if (!iso || !cid) return "";
-    var candidates = rosterSlotsForDate(iso).filter(function (s) {
+    /* Prefer the day board already in hand — never re-walk the full roster while
+     * Overview is expanding that ISO (nested O(n²) freezes Chrome: RESULT_CODE_HUNG). */
+    var pool = Array.isArray(daySlots) ? daySlots : null;
+    if (!pool) {
+      try {
+        var expanding =
+          typeof global.__PORTAL_ASH_EXPANDING_ISO__ === "string"
+            ? global.__PORTAL_ASH_EXPANDING_ISO__
+            : "";
+        if (expanding && expanding === String(iso).slice(0, 10)) return "";
+      } catch (_e) {}
+      pool = rosterSlotsForDate(iso);
+    }
+    var slotStart = clean(slot.time_start || normTimeKey(slot.time_slot, slot.day));
+    var teamKey = isAquaticService(slot.service) ? aquaticClockTeamKey(pool, cid, slotStart) : "";
+    var candidates = pool.filter(function (s) {
       if (canonicalClientSlug(s.client_name) !== cid) return false;
       if (!isConsecutiveSwimMergeableSlot(s)) return false;
-      return slotsShareSwimInstructor(slot, s);
+      if (slotsShareSwimInstructor(slot, s)) return true;
+      if (!isAquaticService(slot.service) || !isAquaticService(s.service)) return false;
+      if (!teamKey || teamKey.indexOf("+") < 0) return false;
+      var otherStart = clean(s.time_start || normTimeKey(s.time_slot, s.day));
+      return aquaticClockTeamKey(pool, cid, otherStart) === teamKey;
     });
     if (candidates.length < 2) return "";
     var id = rosterSlotIdentity(slot);
@@ -2850,16 +4268,16 @@
       if (Object.prototype.hasOwnProperty.call(parent, k) && find(k) === root) componentSize++;
     }
     if (componentSize < 2) return "";
-    return "consec_swim|" + cid + "|" + primaryInstructorKey(slot);
+    return "consec_swim|" + cid + "|" + (teamKey || primaryInstructorKey(slot));
   }
 
-  function shouldOmitAutoMergedSwimDuplicate(slot) {
+  function shouldOmitAutoMergedSwimDuplicate(slot, daySlots) {
     if (!slot || !isAquaticService(slot.service)) return false;
-    var mg = slot.feedback_merge_group || feedbackMergeGroupForSlot(slot);
+    var mg = slot.feedback_merge_group || feedbackMergeGroupForSlot(slot, { daySlots: daySlots });
     if (!mg) return false;
     var iso = slot.session_date;
     if (!iso) return false;
-    var slots = rosterSlotsForDate(iso);
+    var slots = Array.isArray(daySlots) ? daySlots : rosterSlotsForDate(iso);
     for (var i = 0; i < slots.length; i++) {
       var s = slots[i];
       if (isAquaticService(s.service)) continue;
@@ -2868,25 +4286,56 @@
       if (!isSwimInstructorPoolAreaKind(kind)) continue;
       if (canonicalClientSlug(s.client_name) !== canonicalClientSlug(slot.client_name)) continue;
       if (!slotsShareSwimInstructor(slot, s)) continue;
-      var sMg = feedbackMergeGroupForSlot(s);
+      var sMg = s.feedback_merge_group || feedbackMergeGroupForSlot(s, { daySlots: slots });
       if (sMg === mg) return true;
     }
     return false;
   }
 
-  function feedbackMergeGroupForSlot(slot) {
+  function feedbackMergeGroupForSlot(slot, opts) {
+    opts = opts || {};
     var rules = feedbackMergeRules();
     var wd = slot.day || weekdayLongFromIso(slot.session_date);
+    var slotIso = clean(slot.session_date).slice(0, 10);
     for (var i = 0; i < rules.length; i++) {
       var rule = rules[i];
       if (rule.day && clean(rule.day) !== wd) continue;
       if (canonicalClientSlug(rule.client_name) !== canonicalClientSlug(slot.client_name)) continue;
       if (!instructorRuleMatches(rule.instructors, slot.instructors)) continue;
+      var exceptMerge = rule.exceptSessionDates;
+      if (Array.isArray(exceptMerge) && exceptMerge.length && slotIso) {
+        var skipMerge = false;
+        for (var em = 0; em < exceptMerge.length; em++) {
+          if (clean(exceptMerge[em]).slice(0, 10) === slotIso) {
+            skipMerge = true;
+            break;
+          }
+        }
+        if (skipMerge) continue;
+      }
       var sub = rule.slots || [];
       for (var j = 0; j < sub.length; j++) {
+        var ruleSvc = serviceKey(sub[j].service);
+        var slotSvc = serviceKey(slot.service);
+        if (ruleSvc !== slotSvc) continue;
+        var ruleTs = clean(sub[j].time_slot);
+        var slotTs = clean(slot.time_slot);
+        if (ruleTs === slotTs) {
+          return (
+            clean(rule.mergeKey) ||
+            canonicalClientSlug(rule.client_name) + "_" + slugify(rule.instructors) + "_merged"
+          );
+        }
+        /* Label variants: "4.30 to 5" vs "4.30 to 5.00" — match on parsed bounds. */
+        var rulePt = parseTimeSlot(ruleTs, wd);
+        var slotPt = parseTimeSlot(slotTs, wd);
         if (
-          clean(sub[j].time_slot) === clean(slot.time_slot) &&
-          serviceKey(sub[j].service) === serviceKey(slot.service)
+          rulePt &&
+          slotPt &&
+          rulePt.start &&
+          slotPt.start &&
+          rulePt.start === slotPt.start &&
+          rulePt.end === slotPt.end
         ) {
           return (
             clean(rule.mergeKey) ||
@@ -2895,8 +4344,10 @@
         }
       }
     }
-    var autoSwim = autoConsecutiveSwimInstructorMergeKey(slot);
-    if (autoSwim) return autoSwim;
+    if (!opts.skipAutoSwim) {
+      var autoSwim = autoConsecutiveSwimInstructorMergeKey(slot, opts.daySlots);
+      if (autoSwim) return autoSwim;
+    }
     if (
       wd === "Sunday" &&
       isMultiActivityService(slot.service) &&
@@ -2963,18 +4414,47 @@
     return pkArea;
   }
 
+  /** CEO Javi Palankas (javi) vs swimming Javier (javier) — never the same person. */
+  function staffKeysAreJaviJavierPair(a, b) {
+    return (a === "javi" && b === "javier") || (a === "javier" && b === "javi");
+  }
+
   function completedByMatchesInstructor(completedBy, instructorRaw) {
     var by = clean(completedBy).toLowerCase();
     var inst = clean(instructorRaw).toLowerCase();
     if (!by || !inst) return false;
+    /* Canonical keys first — blocks "javier".indexOf("javi") false positives. */
+    var byKey = canonicalStaffMatchKey(by);
+    var instKey = canonicalStaffMatchKey(inst);
+    if (staffKeysAreJaviJavierPair(byKey, instKey)) return false;
+    if (byKey && instKey && byKey === instKey) return true;
     if (by === inst) return true;
-    if (by.indexOf(inst) >= 0 || inst.indexOf(by) >= 0) return true;
+    /* Substring only when neither side is the javi/javier pair. */
+    if (!staffKeysAreJaviJavierPair(byKey || by.split(/\s+/)[0], instKey || inst.split(/\s+/)[0])) {
+      if (by.indexOf(inst) >= 0 || inst.indexOf(by) >= 0) return true;
+    }
     var tokens = by.split(/\s+/).filter(Boolean);
     if (tokens.indexOf(inst) >= 0) return true;
-    if (tokens[0] && (tokens[0] === inst || inst.indexOf(tokens[0]) >= 0 || tokens[0].indexOf(inst) >= 0)) {
-      return true;
+    if (tokens[0]) {
+      var t0Key = canonicalStaffMatchKey(tokens[0]);
+      if (staffKeysAreJaviJavierPair(t0Key, instKey)) return false;
+      if (
+        !staffKeysAreJaviJavierPair(t0Key || tokens[0], instKey || inst.split(/\s+/)[0]) &&
+        (tokens[0] === inst || inst.indexOf(tokens[0]) >= 0 || tokens[0].indexOf(inst) >= 0)
+      ) {
+        return true;
+      }
+      if (t0Key && instKey && t0Key === instKey) return true;
     }
-    if ((inst === "luliya" || inst === "lulia") && (by.indexOf("luliya") >= 0 || by.indexOf("lulia") >= 0 || by.indexOf("aida") >= 0)) {
+    /* Javi Palankas submits as "Palankas Arranz Escorial" — joined surname → javi. */
+    var byJoined = by.replace(/[^a-z0-9]+/g, "");
+    var byJoinedKey = canonicalStaffMatchKey(byJoined);
+    if (staffKeysAreJaviJavierPair(byJoinedKey, instKey)) return false;
+    if (byJoinedKey && instKey && byJoinedKey === instKey) return true;
+    if (
+      (instKey === "luliya" || inst === "luliya" || inst === "lulia") &&
+      (by.indexOf("luliya") >= 0 || by.indexOf("lulia") >= 0 || by.indexOf("aida") >= 0)
+    ) {
       return true;
     }
     return false;
@@ -3012,39 +4492,53 @@
     var label = cfg.label;
     var val = clean(cfg.value);
     var opts = cfg.options || [];
-    var display = "";
-    if (val) {
-      for (var i = 0; i < opts.length; i++) {
-        if (opts[i] === val || completedByMatchesInstructor(opts[i], val)) {
-          display = opts[i];
-          break;
-        }
-      }
-      if (!display) display = val;
-    }
     var ph = cfg.placeholder || "All " + String(label || "").toLowerCase() + "s";
-    return (
+    var html =
       '<label class="ash-filter-label">' +
       esc(label) +
-      '<div class="ash-filter-combo" id="' +
+      '<select id="' +
       id +
-      'Combo">' +
-      '<input type="hidden" id="' +
-      id +
-      '" value="' +
-      esc(val) +
-      '" />' +
-      '<input type="text" class="ash-input ash-input--instructor ash-filter-combo__inp" id="' +
-      id +
-      'Input" value="' +
-      esc(display) +
-      '" placeholder="' +
+      '" class="ash-input ash-input--filter-select" aria-label="' +
+      esc(label) +
+      '">' +
+      '<option value="">' +
       esc(ph) +
-      '" autocomplete="off" spellcheck="false" aria-autocomplete="list" />' +
-      '<div class="ash-filter-suggest" id="' +
-      id +
-      'Suggest" role="listbox" hidden></div></div></label>'
-    );
+      "</option>";
+    var seen = Object.create(null);
+    if (val) seen[String(val).toLowerCase()] = true;
+    for (var i = 0; i < opts.length; i++) {
+      var n = clean(opts[i]);
+      if (!n) continue;
+      var key = n.toLowerCase();
+      if (seen[key]) continue;
+      seen[key] = true;
+      var selected = false;
+      if (val) {
+        if (n === val) selected = true;
+        else if (
+          id === "ashInstructorFilter" &&
+          typeof completedByMatchesInstructor === "function" &&
+          completedByMatchesInstructor(n, val)
+        ) {
+          selected = true;
+        }
+      }
+      html +=
+        '<option value="' +
+        esc(n) +
+        '"' +
+        (selected ? " selected" : "") +
+        ">" +
+        esc(n) +
+        "</option>";
+    }
+    if (val && !seen[String(val).toLowerCase()]) {
+      /* Keep a stale filter visible until cleared. */
+      html +=
+        '<option value="' + esc(val) + '" selected>' + esc(val) + "</option>";
+    }
+    html += "</select></label>";
+    return html;
   }
 
   /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks when instructors differ. */
@@ -3067,15 +4561,51 @@
     return n;
   }
 
-  /** True when the client has 2+ aquatic blocks that day with the same instructor (e.g. Serine both with Roberto). */
+  function instructorSetKeyFromNames(names) {
+    var seen = Object.create(null);
+    var keys = [];
+    (names || []).forEach(function (name) {
+      var raw = clean(name);
+      if (!raw) return;
+      String(raw)
+        .split(/,|\/|&|\band\b/gi)
+        .map(function (p) {
+          return clean(p);
+        })
+        .filter(Boolean)
+        .forEach(function (part) {
+          var k = canonicalStaffMatchKey(part) || String(part).toLowerCase().replace(/[^a-z0-9]+/g, "");
+          if (!k || seen[k]) return;
+          seen[k] = true;
+          keys.push(k);
+        });
+    });
+    keys.sort();
+    return keys.join("+");
+  }
+
+  function slotInstructorSetKey(slot) {
+    return instructorSetKeyFromNames(slotInstructors(slot).concat(slot && slot.instructor_label ? [slot.instructor_label] : []));
+  }
+
+  /**
+   * Same aquatic team across every clock that day (1:1 hour with Aurora, or 2:1
+   * Joelle with Aurora+Simon on both 30' halves) → one feedback, not per half.
+   * Different instructors on different clocks (Eiji 17:30 vs 18:00) stay per-slot.
+   */
   function aquaticSameInstructorAllSlotsOnDate(iso, clientName) {
     var cid = canonicalClientSlug(clientName);
     if (!iso || !cid) return false;
     var src = global.STAFF_DASHBOARD_SOURCE;
     var rows = src && Array.isArray(src.rows) ? src.rows : [];
     var wd = weekdayLongFromIso(iso);
-    var lead = "";
+    var byStart = Object.create(null);
     var n = 0;
+    function addAtStart(startHm, instBlob) {
+      var st = clean(startHm) || "_";
+      if (!byStart[st]) byStart[st] = [];
+      if (instBlob) byStart[st].push(instBlob);
+    }
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
       if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
@@ -3083,20 +4613,47 @@
       if (!isAquaticService(r.service)) continue;
       if (!isRosterClient(r.client_name)) continue;
       n++;
-      var inst = clean(r.instructors).toUpperCase();
-      if (!inst) continue;
-      if (!lead) lead = inst;
-      else if (lead !== inst) return false;
+      var pt = parseTimeSlot(r.time_slot, wd);
+      addAtStart(pt && pt.start, r.instructors);
     }
     var makeups = aquaticMakeupSlotsForClientOnDate(iso, clientName);
     for (var m = 0; m < makeups.length; m++) {
       n++;
-      var minst = clean(makeups[m].instructor).toUpperCase();
-      if (!minst) continue;
-      if (!lead) lead = minst;
-      else if (lead !== minst) return false;
+      addAtStart(makeups[m].time_start || makeups[m].start, makeups[m].instructor);
     }
-    return n > 1 && !!lead;
+    var starts = Object.keys(byStart);
+    if (n < 2 || !starts.length) return false;
+    var lead = "";
+    for (var s = 0; s < starts.length; s++) {
+      var setKey = instructorSetKeyFromNames(byStart[starts[s]]);
+      if (!setKey) return false;
+      if (!lead) lead = setKey;
+      else if (lead !== setKey) return false;
+    }
+    return !!lead;
+  }
+
+  function aquaticRosterClockIsTwoToOne(slot) {
+    if (!slot || !isAquaticService(slot.service)) return false;
+    var iso = slot.session_date;
+    var cid = canonicalClientSlug(slot.client_name);
+    var wd = slot.day || weekdayLongFromIso(iso);
+    var want = clean(slot.time_start || ((parseTimeSlot(slot.time_slot, wd) || {}).start));
+    if (!iso || !cid || !want) return false;
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    var names = [];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
+      if (canonicalClientSlug(r.client_name) !== cid) continue;
+      if (!isAquaticService(r.service)) continue;
+      if (!isRosterClient(r.client_name)) continue;
+      var pt = parseTimeSlot(r.time_slot, wd);
+      if (!pt || pt.start !== want) continue;
+      names.push(r.instructors);
+    }
+    return instructorSetKeyFromNames(names).indexOf("+") >= 0;
   }
 
   function clientNeedsPerSlotAquaticFeedback(slot) {
@@ -3142,10 +4699,10 @@
       return false;
     }
     var kind = slotAreaKind(slot);
-    if (kind === "hub") return /godsway|giuseppe|lulia|luliya|bismark|john|berta/.test(by);
-    if (kind === "pool") return /aurora|javier|roberto|dan|youssef/.test(by);
-    if (kind === "climb") return /carlos|alex|bismark/.test(by);
-    if (kind === "aquatic") return /aurora|javier|roberto|dan|youssef|bismark/.test(by);
+    if (kind === "hub") return /godsway|giuseppe|lulia|luliya|bismark|john|berta|raul|emmanuel|emanuel|victor|javi\b/.test(by);
+    if (kind === "pool") return /aurora|javier|roberto|dan|youssef|luliya|lulia|aida/.test(by);
+    if (kind === "climb") return /carlos|alex|bismark|angel|andres/.test(by);
+    if (kind === "aquatic") return /aurora|javier|roberto|dan|youssef|bismark|luliya|lulia|aida/.test(by);
     return true;
   }
 
@@ -3204,6 +4761,10 @@
       if (parts.length >= 3 && normTimeKey(parts[2]) === st) return true;
       var pkTime = (parts.length >= 2 && normTimeKey(parts[1])) || (parts.length >= 3 && normTimeKey(parts[2])) || "";
       if (pkTime && st && (staffBandTimeEquiv(pkTime) === st || staffBandTimeEquiv(st) === pkTime)) return true;
+    }
+    /* Same-team aquatic hour: Simon's 5.30–6 submit covers Joelle 6–6.30 (and Aqsa 4.30–5.30). */
+    if (isAquaticService(slot.service) && !clientNeedsPerSlotAquaticFeedback(slot)) {
+      return true;
     }
     if (clientNeedsPerSlotAquaticFeedback(slot)) return false;
     return !ft;
@@ -3505,6 +5066,7 @@
       return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
     }
     if (clientNeedsPerSlotAquaticFeedback(slot)) {
+      if (aquaticRosterClockIsTwoToOne(slot)) return true;
       return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
     }
     return true;
@@ -3533,7 +5095,16 @@
 
   /** Day Centre: one feedback per client per calendar day (any worker, any roster block). */
   function feedbackUnitKey(slot) {
-    var mergeGroup = feedbackMergeGroupForSlot(slot);
+    var mergeGroup = clean(slot && slot.feedback_merge_group) || feedbackMergeGroupForSlot(slot);
+    if (
+      mergeGroup &&
+      isAquaticService(slot.service) &&
+      !clientNeedsPerSlotAquaticFeedback(slot) &&
+      String(mergeGroup).indexOf("consec_swim|") === 0
+    ) {
+      /* Same-team aquatic hour (Aqsa 4.30–5.30 / Joelle 2:1): one unit, not per instructor. */
+      mergeGroup = "";
+    }
     if (mergeGroup) {
       return slot.session_date + "|merge|" + mergeGroup;
     }
@@ -3677,16 +5248,42 @@
       if ((slots[si].time_start || "") < (rep.time_start || "")) rep = slots[si];
     }
     var unitKey = (unit && unit.key) || clean(rep.feedback_unit_key) || feedbackUnitKey(rep);
+    /*
+     * Day Centre / bespoke teams + aquatic 2:1 (Joelle · Aurora + Simon): one feedback
+     * unit can span several instructor seats — Reviewed by must list every worker who owes.
+     */
     var mergeInstructors =
       slots.length > 1 &&
-      (isDayCentreService(rep.service) || unitKey.indexOf("bespoke_shared") >= 0);
+      (isDayCentreService(rep.service) ||
+        unitKey.indexOf("bespoke_shared") >= 0 ||
+        isAquaticService(rep.service) ||
+        isClimbingService(rep.service) ||
+        isMultiActivityService(rep.service) ||
+        isBespokeService(rep.service));
     if (!mergeInstructors) return rep;
     var last = rep;
     for (si = 0; si < slots.length; si++) {
       if ((slots[si].time_start || "") >= (last.time_start || "")) last = slots[si];
     }
     var merged = Object.assign({}, rep);
-    if (last !== rep && isDayCentreService(rep.service)) {
+    var minStart = "";
+    var maxEnd = "";
+    for (si = 0; si < slots.length; si++) {
+      var st = clean(slots[si].time_start);
+      var en = clean(slots[si].time_end) || st;
+      if (st && (!minStart || st < minStart)) minStart = st;
+      if (en && (!maxEnd || en > maxEnd)) maxEnd = en;
+    }
+    if (
+      minStart &&
+      maxEnd &&
+      (isDayCentreService(rep.service) || isAquaticService(rep.service))
+    ) {
+      merged.time_start = minStart;
+      merged.time_end = maxEnd;
+      var spanLbl = rosterTimeSlotLabelFromBounds(minStart, maxEnd, rep.day || weekdayLongFromIso(rep.session_date));
+      if (spanLbl) merged.time_slot = spanLbl;
+    } else if (last !== rep && isDayCentreService(rep.service)) {
       var a = clean(rep.time_slot);
       var b = clean(last.time_slot);
       if (a && b && a !== b) {
@@ -3712,13 +5309,20 @@
     return merged;
   }
 
+  /** Same child + instructor + start must not appear twice (name variants / mislabelled trial service).
+   * Hub vs pool with different instructors (e.g. Jack S · John + Javier) stay separate. */
   function overviewSlotDedupeKey(slot) {
     var cid = canonicalClientSlug(slot && slot.client_name);
     var day = clean(slot && slot.session_date);
     if (!cid || !day) return "";
     var wd = slot.day || weekdayLongFromIso(day);
     var t = slot.time_start || normTimeKey(slot.time_slot, wd);
-    return t ? day + "|" + cid + "|" + t : "";
+    var inst = primaryInstructorKey(slot);
+    if (cid && t && inst) return day + "|" + cid + "|" + t + "|" + inst;
+    var uk = clean(slot && (slot.feedback_unit_key || feedbackUnitKey(slot)));
+    if (uk) return uk;
+    var area = sessionAreaKey(slot && slot.area);
+    return t ? day + "|" + cid + "|" + t + "|" + area + "|" + inst : "";
   }
 
   function overviewSlotRichnessScore(slot) {
@@ -3727,8 +5331,16 @@
     if (clean(slot.area)) score += 2;
     if (clean(slot.venue)) score += 1;
     if (!slot.portalOverrideMakeUpTag && !slot.portalOverrideTrialTag) score += 2;
+    if (isAquaticService(slot.service)) score += 3;
+    if (isClimbingService(slot.service) && (slot.portalOverrideTrialTag || /^trial\b/i.test(clean(slot.client_name)))) {
+      score -= 4;
+    }
+    /* Prefer admin Updated / dated fold over bare standing twin (Yossi vs Yossi Sium). */
+    if (slot.portalRosterTimeUpdated || slot.__portalScheduleOverride) score += 8;
+    if (overrideIsSlotUpdateType(slot.__portalScheduleOverride)) score += 4;
     var resolved = resolveRosterClientName(slot.client_name);
     if (resolved && clean(slot.client_name) === resolved) score += 1;
+    if (/^trial\b/i.test(clean(slot.client_name))) score -= 2;
     return score;
   }
 
@@ -3752,7 +5364,12 @@
       }
     }
     return order.map(function (o) {
-      return o.slot;
+      var s = o.slot;
+      var shortNm = dayBoardParticipantDisplayName(s && s.client_name);
+      if (shortNm && shortNm !== clean(s.client_name)) {
+        return Object.assign({}, s, { client_name: shortNm });
+      }
+      return s;
     });
   }
 
@@ -3760,11 +5377,95 @@
     var units = groupSlotsForFeedback(slots);
     var out = [];
     for (var i = 0; i < units.length; i++) {
-      var rep = pickOverviewRepresentativeSlot(hub, units[i]);
+      var unit = units[i];
+      var expanded = expandOverviewSlotsForSwimMergeUnit(hub, unit);
+      if (expanded && expanded.length) {
+        for (var ei = 0; ei < expanded.length; ei++) out.push(expanded[ei]);
+        continue;
+      }
+      var rep = pickOverviewRepresentativeSlot(hub, unit);
       if (!rep) continue;
       out.push(rep);
     }
     return dedupeOverviewDisplaySlots(out);
+  }
+
+  /**
+   * Yusuf / Zaid / Cyrus swim merges: one overview row covering Aquatic + Multi
+   * (e.g. Zaid trial 9–9.30 folds into Multi display 9–10.15). One feedback still
+   * validates both bands via sundayFeedbackMerges.
+   */
+  function expandOverviewSlotsForSwimMergeUnit(hub, unit) {
+    var slots = unit && unit.slots ? unit.slots : [];
+    if (!slots.length) return null;
+    var mergeId = "";
+    var uk = clean(unit && unit.key);
+    if (uk.indexOf("|merge|") >= 0) mergeId = uk.split("|merge|").pop() || "";
+    if (!mergeId) {
+      for (var mi = 0; mi < slots.length; mi++) {
+        mergeId =
+          clean(slots[mi].feedback_merge_group) || feedbackMergeGroupForSlot(slots[mi]) || "";
+        if (mergeId) break;
+      }
+    }
+    if (
+      mergeId !== "zaid_javier_sun_swim" &&
+      mergeId !== "yusuf_ah_roberto_sun_swim" &&
+      mergeId !== "cyrus_javier_wed_swim"
+    ) {
+      return null;
+    }
+    var omittedAquatic = null;
+    var multiPool = null;
+    var visible = [];
+    for (var si = 0; si < slots.length; si++) {
+      var s = slots[si];
+      if (shouldOmitOverviewSlot(hub, s)) {
+        if (isAquaticService(s.service)) omittedAquatic = s;
+        continue;
+      }
+      visible.push(s);
+      if (isMultiActivityService(s.service) && isSwimInstructorPoolAreaKind(slotAreaKind(s))) {
+        multiPool = s;
+      }
+      if (isAquaticService(s.service) && !omittedAquatic) omittedAquatic = s;
+    }
+    if (!multiPool) {
+      for (var mj = 0; mj < slots.length; mj++) {
+        if (
+          isMultiActivityService(slots[mj].service) &&
+          isSwimInstructorPoolAreaKind(slotAreaKind(slots[mj]))
+        ) {
+          multiPool = slots[mj];
+          break;
+        }
+      }
+    }
+    if (!multiPool) return null;
+    var aqStart = "";
+    if (omittedAquatic) aqStart = clean(omittedAquatic.time_start);
+    if (!aqStart) {
+      var rules = feedbackMergeRules();
+      for (var ri = 0; ri < rules.length; ri++) {
+        if (clean(rules[ri].mergeKey) !== mergeId) continue;
+        var rslots = rules[ri].slots || [];
+        for (var rj = 0; rj < rslots.length; rj++) {
+          if (!isAquaticService(rslots[rj].service)) continue;
+          var ptAq = parseTimeSlot(rslots[rj].time_slot, multiPool.day);
+          aqStart = (ptAq && ptAq.start) || "";
+          break;
+        }
+        break;
+      }
+    }
+    if (!aqStart) aqStart = "09:00";
+    var maEnd = clean(multiPool.time_end) || "10:15";
+    var merged = Object.assign({}, multiPool);
+    merged.time_start = aqStart;
+    merged.time_end = maEnd;
+    merged.time_slot =
+      rosterTimeSlotLabelFromBounds(aqStart, maEnd, multiPool.day) || "9 to 10.15";
+    return [merged];
   }
 
   /** Prefer a visible roster row when merge groups hide duplicate aquatic blocks (e.g. Yusuf + Roberto). */
@@ -3879,34 +5580,115 @@
   function formatInstructorPill(name) {
     var n = clean(name);
     if (!n) return "";
-    var title =
-      typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
-        ? window.portalStaffDisplayName(n)
-        : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
-    return '<span class="ash-pill">' + esc(title) + "</span>";
+    if (/^cover[\s_]*needed$/i.test(n) || canonicalStaffMatchKey(n) === "coverneeded") {
+      return '<span class="ash-pill ash-pill--cover-needed">COVER NEEDED</span>';
+    }
+    var title = staffPillFirstName(n);
+    var color = ashStaffChipColor(n);
+    var styleAttr = color
+      ? ' style="--ash-staff-bg:' +
+        color.bg +
+        ";--ash-staff-fg:" +
+        color.fg +
+        ";--ash-staff-bd:" +
+        color.bd +
+        '"'
+      : "";
+    return '<span class="ash-pill ash-pill--staff"' + styleAttr + ">" + esc(title) + "</span>";
+  }
+
+  function formatInstructorPillCoverNeeded(name) {
+    var n = clean(name);
+    if (!n || /^cover[\s_]*needed$/i.test(n) || canonicalStaffMatchKey(n) === "coverneeded") {
+      return '<span class="ash-pill ash-pill--cover-needed">COVER NEEDED</span>';
+    }
+    return formatInstructorPill(n);
   }
 
   function formatInstructorPillOut(name) {
     var n = clean(name);
     if (!n) return "";
-    var title =
-      typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
-        ? window.portalStaffDisplayName(n)
-        : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+    var title = staffPillFirstName(n);
     return '<span class="ash-pill ash-pill--out">' + esc(title) + "</span>";
+  }
+
+  /** Chip / Reviewed-by label: first name only (no surname from staff profiles). */
+  function staffPillFirstName(name) {
+    var n = clean(name);
+    if (!n) return "";
+    var key = canonicalStaffMatchKey(n);
+    if (key === "luliya") return "Luliya";
+    if (key === "javi") return "Javi";
+    if (key === "javier") return "Javier";
+    var title = "";
+    if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+      title = clean(window.portalStaffDisplayName(n));
+    }
+    if (!title) title = canonicalInstructorFilterName(n) || n;
+    var first = title.split(/\s+/)[0] || title;
+    if (/^[A-Z]{2,}$/.test(first)) return first.charAt(0) + first.slice(1).toLowerCase();
+    return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+  }
+
+  /**
+   * Same stable per-instructor palette as Schedule & Covers (schedStaffChipColor).
+   * Hash the roster key so Youssef / Roberto / etc. keep one colour across boards.
+   */
+  var ASH_STAFF_CHIP_PALETTE = [
+    { bg: "#dbeafe", fg: "#1e3a8a", bd: "rgba(30,58,138,.32)" },
+    { bg: "#fce7f3", fg: "#9d174d", bd: "rgba(157,23,77,.32)" },
+    { bg: "#fef3c7", fg: "#92400e", bd: "rgba(146,64,14,.32)" },
+    { bg: "#d1fae5", fg: "#065f46", bd: "rgba(6,95,70,.32)" },
+    { bg: "#e0e7ff", fg: "#3730a3", bd: "rgba(55,48,163,.32)" },
+    { bg: "#ffedd5", fg: "#9a3412", bd: "rgba(154,52,18,.32)" },
+    { bg: "#cffafe", fg: "#155e75", bd: "rgba(21,94,117,.32)" },
+    { bg: "#f3e8ff", fg: "#6b21a8", bd: "rgba(107,33,168,.32)" },
+    { bg: "#ecfccb", fg: "#3f6212", bd: "rgba(63,98,18,.32)" },
+    { bg: "#ffe4e6", fg: "#9f1239", bd: "rgba(159,18,57,.32)" },
+    { bg: "#e2e8f0", fg: "#334155", bd: "rgba(51,65,85,.32)" },
+    { bg: "#fae8ff", fg: "#86198f", bd: "rgba(134,25,143,.32)" },
+    { bg: "#ccfbf1", fg: "#115e59", bd: "rgba(17,94,89,.32)" },
+    { bg: "#fde68a", fg: "#78350f", bd: "rgba(120,53,15,.32)" },
+    { bg: "#bfdbfe", fg: "#1e40af", bd: "rgba(30,64,175,.32)" },
+    { bg: "#fecdd3", fg: "#9f1239", bd: "rgba(159,18,57,.28)" },
+  ];
+
+  function ashStaffChipColor(rosterKey) {
+    var k = canonicalStaffMatchKey(rosterKey) || slugify(clean(rosterKey));
+    if (!k) return null;
+    var h = 2166136261;
+    for (var i = 0; i < k.length; i++) {
+      h ^= k.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return ASH_STAFF_CHIP_PALETTE[Math.abs(h) % ASH_STAFF_CHIP_PALETTE.length];
   }
 
   /** One display label per instructor for filter dropdowns (roster may mix LULIYA / Luliya). */
   function canonicalInstructorFilterName(name) {
     var n = clean(name);
     if (!n) return "";
+    var key = canonicalStaffMatchKey(n);
+    /* Force distinct labels — never let display helpers collapse swimming Javier into CEO Javi. */
+    if (key === "javier") return "Javier";
+    if (key === "javi") return "Javi Palankas";
+    if (key === "luliya") return "Luliya";
     if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
-      return window.portalStaffDisplayName(n);
+      var portal = window.portalStaffDisplayName(n);
+      if (portal) return portal;
     }
     if (/^[A-Z]{2,}$/.test(n)) {
       return n.charAt(0) + n.slice(1).toLowerCase();
     }
-    return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+    /* Title-case words: "alex stone" / "Alex stone" → "Alex Stone" */
+    return n
+      .split(/\s+/)
+      .map(function (w) {
+        if (!w) return "";
+        if (/^[A-Z]{2,}$/.test(w)) return w.charAt(0) + w.slice(1).toLowerCase();
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      })
+      .join(" ");
   }
 
   function uniqueInstructorFilterNames(rawLabels) {
@@ -3915,8 +5697,26 @@
     for (var i = 0; i < list.length; i++) {
       var raw = clean(list[i]);
       if (!raw) continue;
-      var key = raw.toLowerCase();
-      if (!byKey[key]) byKey[key] = canonicalInstructorFilterName(raw);
+      var key = canonicalStaffMatchKey(raw) || raw.toLowerCase();
+      if (!key) continue;
+      var label = canonicalInstructorFilterName(raw);
+      if (key === "javier") label = "Javier";
+      if (key === "javi") label = "Javi Palankas";
+      var prev = byKey[key];
+      if (!prev) {
+        byKey[key] = label;
+        continue;
+      }
+      if (key === "javier" || key === "javi") {
+        byKey[key] = label;
+        continue;
+      }
+      /* Prefer fuller label (roster first name + feedback surname → keep surname). */
+      var prevParts = prev.split(/\s+/).length;
+      var nextParts = label.split(/\s+/).length;
+      if (nextParts > prevParts || (nextParts === prevParts && label.length > prev.length)) {
+        byKey[key] = label;
+      }
     }
     return Object.keys(byKey)
       .map(function (k) {
@@ -4069,6 +5869,21 @@
       );
     }
     return out.length ? '<span class="ash-regulation-group">' + out.join("") + "</span>" : "\u2014";
+  }
+
+  function emotionFacesLite(fb, escFn) {
+    var tokens = emotionTokens(fb.client_emotions);
+    if (!tokens.length && clean(fb.client_emotions)) return escFn(fb.client_emotions);
+    if (!tokens.length) return "\u2014";
+    var labels = [];
+    var seen = {};
+    for (var i = 0; i < tokens.length; i++) {
+      var cat = categorizeEmotion(tokens[i]);
+      if (!cat || seen[cat]) continue;
+      seen[cat] = true;
+      labels.push(cat.replace(/_/g, " "));
+    }
+    return labels.length ? escFn(labels.join(", ")) : "\u2014";
   }
 
   function termLabelFromRange(fromIso) {
@@ -4328,6 +6143,11 @@
     } catch (e) {
       this._reviewedKeys = {};
     }
+    /* Overview is always the staffing day board (no Table layout). */
+    this.overviewLayout = "board";
+    try {
+      localStorage.removeItem("ash_overview_layout_v1");
+    } catch (_lay) {}
     this.weekStart = mondayOfWeek(isoToday());
     this.selectedDay = isoToday();
     this.feedbackMetricsDay = null;
@@ -4350,13 +6170,30 @@
     this._absentBySessionKey = {};
     this._slotsByIso = null;
     this._dayStatsByIso = null;
+    this._rosterByIso = null;
+    this._rosterUndatedByDow = null;
+    this._standingIsoByDow = null;
     this._fbIndexSig = "";
   }
 
   AdminSessionsHub.prototype.invalidateComputeCaches = function () {
     this._slotsByIso = null;
     this._dayStatsByIso = null;
+    this._rosterByIso = null;
+    this._rosterUndatedByDow = null;
+    this._standingIsoByDow = null;
     this._fbIndexSig = "";
+    this._expandingSlotsIso = "";
+    this._fbLogByIso = null;
+    this._termLogHtml = "";
+    this._termLogSig = "";
+  };
+
+  AdminSessionsHub.prototype.invalidateFeedbackIndexOnly = function () {
+    this._fbIndexSig = "";
+    this._fbLogByIso = null;
+    this._termLogHtml = "";
+    this._termLogSig = "";
   };
 
   AdminSessionsHub.prototype.dayStatsCacheKey = function (iso) {
@@ -4367,11 +6204,14 @@
       "|" +
       clean(this.serviceFilter) +
       "|" +
-      clean(this.clientSearch)
+      clean(this.clientSearch) +
+      "|" +
+      (this.mode === "feedback" || this.tab === "feedback" ? "fbseat" : "unit")
     );
   };
 
-  AdminSessionsHub.prototype.setPayload = function (payload) {
+  AdminSessionsHub.prototype.setPayload = function (payload, setOpts) {
+    setOpts = setOpts || {};
     this.payload = payload || {};
     if (
       (!this.payload.schedule_overrides || !this.payload.schedule_overrides.length) &&
@@ -4387,7 +6227,10 @@
     ) {
       this.payload.incident_reports = global.__PORTAL_INCIDENT_REPORTS__.slice();
     }
-    this.invalidateComputeCaches();
+    rebuildClientFirstSessionIndex(this.payload.schedule_overrides);
+    if (!setOpts.quiet) {
+      this.invalidateComputeCaches();
+    }
     var adamDates = buildAdamAbSessionDateSet(this.rosterRows, this.payload.session_feedback);
     if (Array.isArray(this.payload.session_feedback)) {
       this.payload.session_feedback = normalizeMisnamedAdamAbFeedbackRows(
@@ -4407,6 +6250,23 @@
     if (this.mode === "feedback" && !this._feedbackDateRangeReady) {
       this.initFeedbackDateRange();
     }
+    if (setOpts.quiet) {
+      var quietHub = this;
+      if (quietHub._fbIndexTimer) clearTimeout(quietHub._fbIndexTimer);
+      quietHub._fbIndexTimer = setTimeout(function () {
+        quietHub._fbIndexTimer = null;
+        quietHub.invalidateFeedbackIndexOnly();
+        try {
+          if (quietHub.opts && quietHub.opts.externalTabs) quietHub.indexFeedback();
+        } catch (_idx) {}
+      }, 80);
+      return;
+    }
+    if (this.mode === "feedback" && typeof this.softPaintFeedbackDay === "function" && this.feedbackSurfaceReady()) {
+      this.indexFeedback();
+      this.softPaintFeedbackDay();
+      return;
+    }
     if (this.opts && this.opts.externalTabs) {
       this.indexFeedback();
       this.renderPanels();
@@ -4415,9 +6275,56 @@
     }
   };
 
+  AdminSessionsHub.prototype.adoptLiveSessionFeedbackIfEmpty = function () {
+    var cur = this.payload && this.payload.session_feedback;
+    if (Array.isArray(cur) && cur.length) return;
+    var src = null;
+    try {
+      var live =
+        global.PortalDayOps && typeof global.PortalDayOps.getPayload === "function"
+          ? global.PortalDayOps.getPayload()
+          : null;
+      if (live && Array.isArray(live.session_feedback) && live.session_feedback.length) {
+        src = live.session_feedback;
+        if (!this.payload) this.payload = live;
+        else if (this.payload !== live) {
+          this.payload.session_feedback = src;
+          this.payload.session_feedback_loaded = true;
+          this.payload.session_feedback_total = src.length;
+          return;
+        } else {
+          return;
+        }
+      }
+    } catch (_live) {}
+    try {
+      var cache = global.__PORTAL_ADMIN_SESSION_FEEDBACK_CACHE__;
+      if (Array.isArray(cache) && cache.length) src = cache;
+    } catch (_cache) {}
+    if (!src || !src.length) return;
+    if (!this.payload) this.payload = {};
+    this.payload.session_feedback = src;
+    this.payload.session_feedback_loaded = true;
+    this.payload.session_feedback_total = src.length;
+  };
+
   AdminSessionsHub.prototype.indexAbsentMarks = function () {
+    var listSrc = this.payload.session_quick_marks || [];
+    var ovs = this.payload.schedule_overrides || [];
+    var fbsCount = (this.payload.session_feedback || []).length;
+    var skipSlotLookup = this.mode === "feedback";
+    var sig =
+      String(listSrc.length) +
+      "|" +
+      String(ovs.length) +
+      "|" +
+      String(fbsCount) +
+      "|" +
+      (skipSlotLookup ? "lite" : "full");
+    if (sig === this._absentIndexSig && this._absentMarksMerged && this._absentBySessionKey) return;
+    this._absentIndexSig = sig;
     var byKey = {};
-    var list = (this.payload.session_quick_marks || []).slice();
+    var list = listSrc.slice();
     var seen = {};
     function absentDedupeKey(mk) {
       var sd = clean(mk.session_date);
@@ -4479,6 +6386,40 @@
     for (var n = 0; n < list.length; n++) {
       list[n] = enrichAbsentMarkFromKey(list[n]);
     }
+    /*
+     * Collapse duplicates: quick_marks + attendance "No" feedback often both exist
+     * for the same session with different portal_session_key shapes.
+     */
+    var collapsed = [];
+    var seenId = Object.create(null);
+    function markIdentityKeys(m) {
+      var keys = [];
+      var sd = clean(m.session_date) || absentMarkDateIso(m);
+      var sk = normalizePortalSessionKey(clean(m.portal_session_key));
+      if (sk && sd) keys.push("sk|" + String(sk).toLowerCase() + "|" + sd);
+      var cid = canonicalClientSlug(m.client_name) || slugify(m.client_name);
+      var tk = normTimeKey(m.session_time);
+      var svc = slugify(m.service || "");
+      if (sd && cid) keys.push("ct|" + sd + "|" + cid + "|" + (tk || "") + "|" + svc);
+      var dk = absentDedupeKey(m);
+      if (dk) keys.push("dk|" + dk);
+      return keys;
+    }
+    for (var c = 0; c < list.length; c++) {
+      var mCollapse = list[c];
+      var idKeys = markIdentityKeys(mCollapse);
+      var already = false;
+      for (var ki = 0; ki < idKeys.length; ki++) {
+        if (seenId[idKeys[ki]]) {
+          already = true;
+          break;
+        }
+      }
+      if (already) continue;
+      for (var kj = 0; kj < idKeys.length; kj++) seenId[idKeys[kj]] = true;
+      collapsed.push(mCollapse);
+    }
+    list = collapsed;
     for (var n2 = 0; n2 < list.length; n2++) {
       var m2 = list[n2];
       var aliasFb = {
@@ -4496,7 +6437,7 @@
         if (!byKey[ak]) byKey[ak] = [];
         byKey[ak].push(m2);
       }
-      var slotMatch = this.slotForAbsentMark(m2);
+      var slotMatch = skipSlotLookup ? null : this.slotForAbsentMark(m2);
       if (slotMatch) {
         var slotKey = clean(slotMatch.session_key).toLowerCase();
         if (slotKey) {
@@ -4652,6 +6593,7 @@
     for (var i = 0; i < list.length; i++) {
       if (this.portalReportDateIso(list[i]) !== iso) continue;
       var k0 = cancelDedupeKey(list[i]);
+      if (k0 && seen[k0]) continue;
       if (k0) seen[k0] = true;
       out.push({ row: list[i], idx: i });
     }
@@ -4889,7 +6831,8 @@
         clean(mark.service) +
         (clean(mark.session_time) ? " \u2013 " + clean(mark.session_time) : "");
     }
-    var staff = clean(mark.staff_name) || "Staff";
+    var staffRaw = clean(mark.staff_name) || "Staff";
+    var staff = staffPillFirstName(staffRaw) || staffRaw;
     var whenParts = mark.created_at ? absentMarkedWhenParts(mark.created_at) : { date: "\u2014", time: "" };
     return {
       client: client,
@@ -4943,6 +6886,13 @@
   AdminSessionsHub.prototype.loadBundle = async function () {
     try {
       await loadScriptOnce(BUNDLE_SRC);
+      /* Spreadsheet bundle stomps STAFF_DASHBOARD_SOURCE — restore capacity chain for Overview. */
+      try {
+        global.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ = true;
+        if (typeof global.portalRefreshStaffDashboardSourceFromPortal === "function") {
+          global.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
+        }
+      } catch (_restoreChain) {}
       this.refreshRosterRowsFromResolvedSource();
     } catch (e) {
       this.rosterRows = [];
@@ -4953,8 +6903,20 @@
 
   AdminSessionsHub.prototype.refreshRosterRowsFromResolvedSource = function () {
     try {
-      if (typeof global.portalResolveStaffDashboardSource === "function") {
-        global.portalResolveStaffDashboardSource();
+      try {
+        global.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ = true;
+      } catch (_flag) {}
+      var resolved =
+        typeof global.portalResolveStaffDashboardSource === "function"
+          ? global.portalResolveStaffDashboardSource({ forSessionsOverview: true })
+          : null;
+      if (resolved && typeof resolved === "object") {
+        global.STAFF_DASHBOARD_SOURCE = resolved;
+        if (resolved.capacityChainNoCanonicalRemap && Array.isArray(resolved.rows) && resolved.rows.length) {
+          try {
+            global.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__ = resolved;
+          } catch (_pin) {}
+        }
       }
       var src = global.STAFF_DASHBOARD_SOURCE;
       this.invalidateComputeCaches();
@@ -4977,21 +6939,36 @@
     if (global.__PORTAL_ASH_ROSTER_SOURCE_LISTENER__) return;
     global.__PORTAL_ASH_ROSTER_SOURCE_LISTENER__ = true;
     // The roster source can fire several times in quick succession (initial load
-    // + live MADRE refresh + portal_roster_rows). Each full hub render over ~865
-    // feedback rows costs ~1-2s, so coalesce bursts into a single render.
+    // + live MADRE refresh + portal_roster_rows). Full hub.render() wipes the DOM
+    // and feels like multi-refresh; coalesce into one soft Overview body paint.
     var deb = null;
+    function softOrFull(hub) {
+      if (!hub) return;
+      if (hub.tab === "tracking" && typeof hub.softRefreshOverview === "function") {
+        hub.softRefreshOverview();
+      } else if (typeof hub.render === "function") {
+        hub.render();
+      }
+    }
     function runRosterUpdate() {
       if (!global.document) return;
       var roots = global.document.querySelectorAll(".admin-sessions-hub-root");
+      var needFeedbackRefresh = false;
       for (var i = 0; i < roots.length; i++) {
         var hub = roots[i]._ashHubInstance;
         if (!hub || typeof hub.refreshRosterRowsFromResolvedSource !== "function") continue;
         hub.refreshRosterRowsFromResolvedSource();
-        // Only re-render hubs whose panel is actually on screen — hidden tabs
-        // re-render lazily when the admin opens them.
-        if (hub.root && hub.root.isConnected && hubRootIsVisible(hub.root)) hub.render();
+        var visible = hub.root && hub.root.isConnected && hubRootIsVisible(hub.root);
+        if (visible) {
+          if (hub.tab === "tracking") softOrFull(hub);
+          else {
+            needFeedbackRefresh = true;
+            softOrFull(hub);
+          }
+        }
       }
       if (
+        needFeedbackRefresh &&
         global.PortalDayOps &&
         typeof global.PortalDayOps.refreshSessionFeedback === "function"
       ) {
@@ -5007,7 +6984,18 @@
         } catch (e) {
           console.warn("[AdminSessionsHub] roster update", e);
         }
-      }, 350);
+      }, 1000);
+    });
+    global.addEventListener("portal:staff-roster-live-ready", function () {
+      if (deb) clearTimeout(deb);
+      deb = setTimeout(function () {
+        deb = null;
+        try {
+          runRosterUpdate();
+        } catch (e) {
+          console.warn("[AdminSessionsHub] roster live-ready", e);
+        }
+      }, 50);
     });
   }
 
@@ -5026,10 +7014,48 @@
     var hub = this;
     var list = this.payload.session_feedback || [];
     var n = 0;
+    var daySlots = null;
+    function dayHasRosterSeats() {
+      if (daySlots) return daySlots.length > 0;
+      daySlots = hub.expandSlotsForDate(iso) || [];
+      return daySlots.length > 0;
+    }
     for (var i = 0; i < list.length; i++) {
       var fb = list[i];
       if (feedbackSessionDate(fb) !== iso) continue;
-      if (!hub.feedbackAllowedOnCalendarDay(fb)) continue;
+      if (isTeflonDemoFeedbackRow(hub, fb)) continue;
+      if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) continue;
+      /*
+       * Roster-day match (Tom Thu / Gabriel Sun) only when the day has seats.
+       * Empty Autumn days (e.g. Sat Acton before standing stamp) still count submitted FB.
+       */
+      if (dayHasRosterSeats() && !hub.feedbackAllowedOnCalendarDay(fb)) continue;
+      n++;
+    }
+    return n;
+  };
+
+  /** Register week strip: count by date only (no expandSlots — avoids Autumn freeze). */
+  AdminSessionsHub.prototype.feedbackCountForDateLight = function (iso) {
+    var hub = this;
+    var want = clean(iso);
+    if (!want) return 0;
+    if (this._fbByDate && this._fbByDate[want]) {
+      var indexed = this._fbByDate[want];
+      var nIdx = 0;
+      for (var ii = 0; ii < indexed.length; ii++) {
+        var fbI = indexed[ii];
+        if (isTeflonDemoFeedbackRow(hub, fbI)) continue;
+        if (fbI.attendance && String(fbI.attendance).toLowerCase().indexOf("no") === 0) continue;
+        nIdx++;
+      }
+      return nIdx;
+    }
+    var list = this.payload.session_feedback || [];
+    var n = 0;
+    for (var i = 0; i < list.length; i++) {
+      var fb = list[i];
+      if (feedbackSessionDate(fb) !== want) continue;
       if (isTeflonDemoFeedbackRow(hub, fb)) continue;
       if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) continue;
       n++;
@@ -5054,6 +7080,7 @@
   AdminSessionsHub.prototype.indexFeedback = function () {
     var hub = this;
     syncScheduleOverridesForMatching(this.payload && this.payload.schedule_overrides);
+    rebuildClientFirstSessionIndex(this.payload && this.payload.schedule_overrides);
     var list = this.payload.session_feedback || [];
     var sig =
       String(list.length) +
@@ -5103,6 +7130,16 @@
     this._fbByDateClient = byDateClient;
     this._absentFbByDateClient = absentByDateClient;
     this._acatFeedbackByDate = acatByDate;
+    /* Date-scoped lists so findFeedbackForSlot never scans the whole term payload. */
+    var byDate = Object.create(null);
+    for (var di = 0; di < list.length; di++) {
+      var row = list[di];
+      var dIso = hub.feedbackRowDate(row);
+      if (!dIso) continue;
+      if (!byDate[dIso]) byDate[dIso] = [];
+      byDate[dIso].push(row);
+    }
+    this._fbByDate = byDate;
     this.indexPortalReports();
   };
 
@@ -5126,7 +7163,11 @@
     if (!slot) return false;
     if (shouldOmitOverviewSlot(this, slot) || isTeflonDemoRosterSlot(slot)) return false;
     if (slotIsStaffDutyNoFeedback(slot)) return false;
+    if (slotIsHoldWaitlistNoFeedback(slot.client_name)) return false;
     if (isOpenRosterSlot(slot.client_name) || rosterSlotKind(slot.client_name) === "closed") {
+      return false;
+    }
+    if (!clientAllowedOnDate(slot.client_name, clean(slot.session_date).slice(0, 10))) {
       return false;
     }
     if (clean(this.instructorFilter) || clean(this.serviceFilter) || clean(this.clientSearch)) {
@@ -5157,9 +7198,9 @@
           typeof global.portalCancellationTimingNeedsFeedback === "function"
             ? global.portalCancellationTimingNeedsFeedback(c.cancellation_timing)
             : /during/i.test(String(c.cancellation_timing || ""));
-        /* Before-start wins if both exist. */
+        /* Feedbacks ratios: every cancel counts as submitted (before-start and during). */
         if (can[ck] && can[ck].countsAsSubmitted) continue;
-        can[ck] = { countsAsSubmitted: !needsFb, during: !!needsFb, row: c };
+        can[ck] = { countsAsSubmitted: true, during: !!needsFb, row: c };
       }
     }
     var listOv = this.payload.schedule_overrides || [];
@@ -5180,8 +7221,14 @@
     return !!(this._incidentByDateClient && this._incidentByDateClient[k]);
   };
 
+  /** Fadi is off the worker rotas until 20 Sep — not Cancelled, not a seat. */
+  function hubSlotIsFadiDcCancelled(slot) {
+    return false;
+  }
+
   AdminSessionsHub.prototype.slotHasCancellation = function (slot) {
     if (hubSlotIsTrial(slot)) return false;
+    if (hubSlotIsFadiDcCancelled(slot)) return true;
     if (this.slotHasFeedbackResolution(slot, "cancelled")) return true;
     var ovCan = this.overrideForSlotByType(slot, overrideIsCancelledType);
     if (ovCan) return true;
@@ -5189,20 +7236,16 @@
     return !!(this._cancelByDateClient && this._cancelByDateClient[k]);
   };
 
-  /** Before-start (or admin override) cancel counts as Submitted; during-session cancel still awaits feedback. */
+  /** Cancelled (before-start or during) counts as Feedback Submitted; Absent already does via slotIsAbsent. */
   AdminSessionsHub.prototype.slotCancellationCountsAsSubmitted = function (slot) {
     if (hubSlotIsTrial(slot)) return false;
+    if (hubSlotIsFadiDcCancelled(slot)) return true;
     if (this.slotHasFeedbackResolution(slot, "cancelled")) return true;
     var ovCan = this.overrideForSlotByType(slot, overrideIsCancelledType);
     if (ovCan) return true;
     var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
     var meta = this._cancelByDateClient && this._cancelByDateClient[k];
-    if (!meta) return false;
-    if (meta.countsAsSubmitted) return true;
-    /* During cancel + real feedback already submitted. */
-    if (this.findFeedbackForSlot(slot) && !isAbsentFeedbackRow(this.findFeedbackForSlot(slot))) {
-      return true;
-    }
+    if (meta) return true;
     return false;
   };
 
@@ -5231,7 +7274,10 @@
       canonicalClientSlug(slot.client_name) === "chaitanya" &&
       isClimbingService(slot.service)
     ) {
-      var trialList = this.payload.session_feedback || [];
+      var trialList =
+        (this._fbByDate && slot.session_date && this._fbByDate[slot.session_date]) ||
+        this.payload.session_feedback ||
+        [];
       for (var ti = 0; ti < trialList.length; ti++) {
         var tfb = trialList[ti];
         if (canonicalClientSlug(tfb.client_name) !== "chaitanya") continue;
@@ -5252,7 +7298,9 @@
       var hit = map[clean(aliases[i]).toLowerCase()];
       if (hit && feedbackFitsSlot(hit, slot)) return hit;
     }
-    var list = this.payload.session_feedback || [];
+    var dayList =
+      (this._fbByDate && slot.session_date && this._fbByDate[slot.session_date]) || null;
+    var list = dayList || [];
     for (var j = 0; j < list.length; j++) {
       if (feedbackFitsSlot(list[j], slot)) return list[j];
     }
@@ -5299,8 +7347,11 @@
         if (canonicalClientSlug(fbt.client_name) !== clientSlug) continue;
         if (isAbsentFeedbackRow(fbt)) continue;
         if (!feedbackFromSundayHubTeamWorker(fbt, teamKey)) continue;
+        /* Hub half only — pool Multi is a separate feedback unit (90' MA = 2 feedbacks). */
         var fk = feedbackAreaKindFromFb(fbt);
-        if (fk === "hub" || fk === "pool" || isMultiActivityService(fbt.service)) return true;
+        if (fk === "hub") return true;
+        if (fk === "pool" || fk === "aquatic" || fk === "climb") continue;
+        if (isMultiActivityService(fbt.service) && !fk) return true;
       }
       return false;
     }
@@ -5318,12 +7369,24 @@
     return false;
   };
 
-  AdminSessionsHub.prototype.slotFeedbackComplete = function (slot) {
-    if (slot && !slot.portalOverrideMakeUpTag) {
+  AdminSessionsHub.prototype.slotFeedbackComplete = function (slot, _seen) {
+    if (!slot) return false;
+    var guard = _seen || Object.create(null);
+    var guardKey =
+      clean(slot.session_date) +
+      "|" +
+      clean(slot.client_name) +
+      "|" +
+      clean(slot.time_start || slot.time_slot) +
+      "|" +
+      (slot.portalOverrideMakeUpTag ? "mk" : "r");
+    if (guard[guardKey]) return false;
+    guard[guardKey] = true;
+    if (!slot.portalOverrideMakeUpTag) {
       var disp = makeupOverrideDisplacingSlot(this, slot);
       if (disp && disp.makeupSlot) {
         if (this.slotIsAbsent(disp.makeupSlot)) return true;
-        return this.slotFeedbackComplete(disp.makeupSlot);
+        return this.slotFeedbackComplete(disp.makeupSlot, guard);
       }
     }
     if (this.acatGroupCoversSlot(slot)) return true;
@@ -5364,11 +7427,26 @@
     if (this.feedbackUnitAbsent(unit)) return true;
     if (this.feedbackUnitComplete(unit)) return true;
     for (var si = 0; si < unit.slots.length; si++) {
+      if (this.slotCancellationCountsAsSubmitted(unit.slots[si])) return true;
       var stEx = this.statusExportRowForSlot(unit.slots[si]);
       if (stEx && statusExportRowIsResolved(stEx)) return true;
     }
     if (this.opts && this.opts.feedbackMixAwaitingSlots && this.feedbackUnitHasSubmitted(unit)) {
       return true;
+    }
+    /* Day-off requested / not on duty: nobody left to submit (Youssef Fri 18). */
+    if (!this.feedbackUnitHasOnDutyStaff(unit)) return true;
+    return false;
+  };
+
+  AdminSessionsHub.prototype.feedbackUnitHasOnDutyStaff = function (unit) {
+    if (!unit || !unit.slots || !unit.slots.length) return false;
+    var hub = this;
+    for (var i = 0; i < unit.slots.length; i++) {
+      var slot = unit.slots[i];
+      if (shouldOmitOverviewSlot(hub, slot)) continue;
+      if (hub.opts && hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(slot)) continue;
+      if (slotHasOnDutyFeedbackStaff(hub, slot)) return true;
     }
     return false;
   };
@@ -5421,9 +7499,10 @@
       var hit = map[clean(aliases[a]).toLowerCase()];
       if (hit && absentFeedbackFitsSlot(hit, slot)) return hit;
     }
-    var list = this.payload.session_feedback || [];
-    for (var i = 0; i < list.length; i++) {
-      if (absentFeedbackFitsSlot(list[i], slot)) return list[i];
+    var dayList =
+      (this._fbByDate && slot.session_date && this._fbByDate[slot.session_date]) || [];
+    for (var i = 0; i < dayList.length; i++) {
+      if (absentFeedbackFitsSlot(dayList[i], slot)) return dayList[i];
     }
     return null;
   };
@@ -5471,6 +7550,27 @@
       return true;
     }
     return false;
+  };
+
+  /** Display row when standing/override cancel has no session_cancellations row (Fadi DC). */
+  AdminSessionsHub.prototype.syntheticCancellationDisplayRow = function (slot) {
+    if (!slot) return null;
+    return {
+      client_name: slot.client_name,
+      service: slot.service || "\u2014",
+      session_date: slot.session_date,
+      session_time: slot.time_start || slot.time_slot || "",
+      attendance: "No",
+      completed_by_name: (slotInstructors(slot) || []).join(", ") || "\u2014",
+      created_at: null,
+      engagement_rating: null,
+      client_emotions: null,
+      engagement_patterns: null,
+      positive_feedback: null,
+      relevant_information: "Cancelled",
+      _ashCancellationMark: true,
+      _ashDisplaySlot: slot,
+    };
   };
 
   /** Display row for feedback tab when overview already shows absent but no session_feedback row. */
@@ -5521,49 +7621,148 @@
     return false;
   };
 
+  /**
+   * Index roster by session_date (and undated by weekday) so expandSlotsForDate
+   * does not walk the full Autumn-materialised list on every day paint (Register freeze).
+   */
+  AdminSessionsHub.prototype.ensureRosterDateIndex = function () {
+    if (this._rosterByIso && this._rosterUndatedByDow) return;
+    var byIso = Object.create(null);
+    var undated = Object.create(null);
+    var rows = this.rosterRows || [];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r) continue;
+      var sd = rosterRowSessionDate(r);
+      if (sd) {
+        if (!byIso[sd]) byIso[sd] = [];
+        byIso[sd].push(r);
+        continue;
+      }
+      var dow = clean(r.day);
+      if (!dow) continue;
+      if (!undated[dow]) undated[dow] = [];
+      undated[dow].push(r);
+    }
+    this._rosterByIso = byIso;
+    this._rosterUndatedByDow = undated;
+  };
+
+  AdminSessionsHub.prototype.rosterCandidateRowsForDate = function (isoDate, wd) {
+    this.ensureRosterDateIndex();
+    var out = [];
+    var seen = Object.create(null);
+    function pushList(list) {
+      if (!list || !list.length) return;
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i];
+        if (!r) continue;
+        var id =
+          String(r.id || "") ||
+          String(r.session_date || "") +
+            "|" +
+            String(r.client_name || "") +
+            "|" +
+            String(r.time_slot || "") +
+            "|" +
+            String(r.instructors || "");
+        if (seen[id]) continue;
+        seen[id] = 1;
+        out.push(r);
+      }
+    }
+    pushList(this._rosterByIso[isoDate]);
+    var project = hubUsesAutumnStandingProjection(isoDate);
+    if (project) {
+      if (!this._standingIsoByDow) this._standingIsoByDow = Object.create(null);
+      var standIso = this._standingIsoByDow[wd];
+      if (standIso === undefined) {
+        standIso = hubLatestStandingIsoForDow(this.rosterRows, wd) || "";
+        this._standingIsoByDow[wd] = standIso;
+      }
+      if (standIso && standIso !== isoDate) pushList(this._rosterByIso[standIso]);
+    }
+    pushList(this._rosterUndatedByDow[wd]);
+    return out;
+  };
+
   AdminSessionsHub.prototype.expandSlotsForDate = function (isoDate) {
     var isoKey = String(isoDate || "").trim().substring(0, 10);
     if (!this._slotsByIso) this._slotsByIso = Object.create(null);
     if (this._slotsByIso[isoKey]) return this._slotsByIso[isoKey];
-    var wd = weekdayLongFromIso(isoDate);
-    var sunSwimOv = wd === "Sunday" ? sundayDateSwimOverride(isoDate) : null;
-    var out = [];
-    for (var i = 0; i < this.rosterRows.length; i++) {
-      var r = this.rosterRows[i];
-      if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
-      if (!rosterServiceAllowedOnAutumnDate(r.service, isoDate)) continue;
-      if (!isRosterClient(r.client_name) && !isOpenRosterSlot(r.client_name)) continue;
-      if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
-      if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
-      if (sunSwimOv && sunSwimOv.replaceSwimFarm && clean(r.venue) === "SwimFarm") continue;
-      out.push(rosterRowToSlot(isoDate, wd, r));
-    }
-    if (sunSwimOv && sunSwimOv.rows && sunSwimOv.rows.length) {
-      for (var j = 0; j < sunSwimOv.rows.length; j++) {
-        var orow = sunSwimOv.rows[j];
-        if (!orow || !isRosterClient(orow.client_name)) continue;
-        if (!clientAllowedOnDate(orow.client_name, isoDate)) continue;
-        out.push(rosterRowToSlot(isoDate, wd, orow));
+    this._expandingSlotsIso = isoKey;
+    try {
+      global.__PORTAL_ASH_EXPANDING_ISO__ = isoKey;
+    } catch (_g) {}
+    try {
+      var wd = weekdayLongFromIso(isoDate);
+      var sunSwimOv = wd === "Sunday" ? sundayDateSwimOverride(isoDate) : null;
+      var candidates = this.rosterCandidateRowsForDate(isoDate, wd);
+      var out = [];
+      for (var i = 0; i < candidates.length; i++) {
+        var r = candidates[i];
+        if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
+        if (!rosterServiceAllowedOnAutumnDate(r.service, isoDate)) continue;
+        if (!isOverviewExpandableSeat(r.client_name)) continue;
+        /* Start/gone maps apply to real clients only — never drop Office / Manager duty seats. */
+        if (isRosterClient(r.client_name)) {
+          if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
+          if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
+        }
+        if (sunSwimOv && sunSwimOv.replaceSwimFarm && clean(r.venue) === "SwimFarm") continue;
+        var slotRow = rosterRowToSlot(isoDate, wd, r);
+        if (slotRow) out.push(slotRow);
       }
+      if (sunSwimOv && sunSwimOv.rows && sunSwimOv.rows.length) {
+        for (var j = 0; j < sunSwimOv.rows.length; j++) {
+          var orow = sunSwimOv.rows[j];
+          if (!orow || !isRosterClient(orow.client_name)) continue;
+          if (!clientAllowedOnDate(orow.client_name, isoDate)) continue;
+          var oSlot = rosterRowToSlot(isoDate, wd, orow);
+          if (oSlot) out.push(oSlot);
+        }
+      }
+      out.sort(function (a, b) {
+        var ta = clean(a && a.time_start) || "";
+        var tb = clean(b && b.time_start) || "";
+        if (ta !== tb) return ta < tb ? -1 : 1;
+        var ca = clean(a && a.client_name) || "";
+        var cb = clean(b && b.client_name) || "";
+        return ca.localeCompare(cb, "en", { sensitivity: "base" });
+      });
+      out = applyOpenSeatReplaceInPlace(this, out, isoDate, wd);
+      out = injectOrphanMakeupOverrideSlots(this, out, isoDate, wd);
+      out = suppressOpenSlotsConsumedByMakeupOverrides(
+        out,
+        isoDate,
+        wd,
+        (this.payload && this.payload.schedule_overrides) || []
+      );
+      out = suppressOpenSlotsCoveredByBookedHours(out, wd);
+      /* Same-day moves: clear source seat before cover paint (Anas left Aurora 6–6.30). */
+      out = applyClientMoveSlotClears(this, out);
+      /* Term/Schedule time edits: rewrite standing clocks before cover match. */
+      out = applySlotUpdateOverrides(this, out);
+      out = applyInstructorReassignOverrides(this, out);
+      out = injectCreatedSessionAddSlots(this, out, isoDate, wd);
+      out = annotateBespokeSharedUnitKeys(out);
+      out = applyShadowingHostDisplay(this, out);
+      /* One pass: auto consecutive swim merge using this day's slots only. */
+      for (var mi = 0; mi < out.length; mi++) {
+        out[mi].feedback_merge_group = feedbackMergeGroupForSlot(out[mi], { daySlots: out });
+        out[mi].feedback_unit_key = feedbackUnitKey(out[mi]);
+      }
+      if (this.opts && typeof this.opts.slotScopeFilter === "function") {
+        out = out.filter(this.opts.slotScopeFilter);
+      }
+      this._slotsByIso[isoKey] = out;
+      return out;
+    } finally {
+      if (this._expandingSlotsIso === isoKey) this._expandingSlotsIso = "";
+      try {
+        if (global.__PORTAL_ASH_EXPANDING_ISO__ === isoKey) global.__PORTAL_ASH_EXPANDING_ISO__ = "";
+      } catch (_c) {}
     }
-    out.sort(function (a, b) {
-      return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
-    });
-    out = injectOrphanMakeupOverrideSlots(this, out, isoDate, wd);
-    out = suppressOpenSlotsConsumedByMakeupOverrides(
-      out,
-      isoDate,
-      wd,
-      (this.payload && this.payload.schedule_overrides) || []
-    );
-    out = applyInstructorReassignOverrides(this, out);
-    out = annotateBespokeSharedUnitKeys(out);
-    out = applyShadowingHostDisplay(this, out);
-    if (this.opts && typeof this.opts.slotScopeFilter === "function") {
-      out = out.filter(this.opts.slotScopeFilter);
-    }
-    this._slotsByIso[isoKey] = out;
-    return out;
   };
 
   AdminSessionsHub.prototype.weekDays = function () {
@@ -5611,6 +7810,11 @@
     var cacheKey = hub.dayStatsCacheKey(iso);
     if (!hub._dayStatsByIso) hub._dayStatsByIso = Object.create(null);
     if (hub._dayStatsByIso[cacheKey]) return hub._dayStatsByIso[cacheKey];
+    /*
+     * Feedbacks + Overview progress: count expected feedback units (one per unit key),
+     * not raw staffing seats. Omit/ghost seats and 2:1 instructor twins share a unit;
+     * completion still fans out via slotFeedbackComplete / sundayFeedbackMerges.
+     */
     var slots = this.expandSlotsForDate(iso).filter(function (s) {
       return hub.slotIncludedInDayStats(s);
     });
@@ -5633,11 +7837,15 @@
       unitAbsent[units[ui].key] = hub.feedbackUnitAbsent(units[ui]);
     }
     var displaySlots = overviewDisplaySlotsFromUnits(hub, slots);
-    var total = displaySlots.length;
+    var total = 0;
     var rosterDone = 0;
+    var seenUnit = Object.create(null);
     for (var di = 0; di < displaySlots.length; di++) {
       var slot = displaySlots[di];
       var ukey = feedbackUnitKey(slot);
+      if (!ukey || seenUnit[ukey]) continue;
+      seenUnit[ukey] = true;
+      total++;
       if (unitAbsent[ukey] || hub.slotIsAbsent(slot)) {
         rosterDone++;
         continue;
@@ -5693,14 +7901,27 @@
     var hub = this;
     var ws = this.weekStart;
     var we = addDaysIso(ws, 6);
-    var rows = this.feedbackInRange().filter(function (fb) {
-      var d = hub.feedbackRowDate(fb);
-      return d && d >= ws && d <= we;
-    });
-    if (this.feedbackMetricsDay) {
-      rows = rows.filter(function (fb) {
-        return hub.feedbackRowDate(fb) === hub.feedbackMetricsDay;
+    var dayWant = this.feedbackMetricsDay || "";
+    var rows = [];
+    if (this._fbByDate) {
+      var d = dayWant || ws;
+      var last = dayWant || we;
+      while (d && d <= last) {
+        var dayRows = this._fbByDate[d] || [];
+        for (var di = 0; di < dayRows.length; di++) rows.push(dayRows[di]);
+        if (dayWant) break;
+        d = addDaysIso(d, 1);
+      }
+    } else {
+      rows = this.feedbackInRange().filter(function (fb) {
+        var iso = hub.feedbackRowDate(fb);
+        return iso && iso >= ws && iso <= we;
       });
+      if (dayWant) {
+        rows = rows.filter(function (fb) {
+          return hub.feedbackRowDate(fb) === dayWant;
+        });
+      }
     }
     var inst = clean(this.instructorFilter);
     if (inst) {
@@ -5711,7 +7932,7 @@
     var svcFilter = clean(this.serviceFilter);
     if (svcFilter) {
       rows = rows.filter(function (fb) {
-        return clean(hub.feedbackDisplayService(fb)) === svcFilter;
+        return clean(fb.service) === svcFilter;
       });
     }
     return rows;
@@ -5742,6 +7963,14 @@
       var n = clean(rows[i].completed_by_name);
       if (n) raw.push(n);
     }
+    if (this.mode !== "feedback") {
+      var overview = this.overviewFilterOptionsForDay(dayIso);
+      if (overview && overview.instructors) {
+        for (var j = 0; j < overview.instructors.length; j++) {
+          raw.push(overview.instructors[j]);
+        }
+      }
+    }
     return uniqueInstructorFilterNames(raw);
   };
 
@@ -5771,17 +8000,58 @@
     for (var i = 0; i < displaySlots.length; i++) addInstructorsFromSlot(displaySlots[i]);
     for (var k = 0; k < visible.length; k++) addInstructorsFromSlot(visible[k]);
 
+    var paxMap = {};
+    for (var pi = 0; pi < displaySlots.length; pi++) {
+      var pn = clean(displaySlots[pi].client_name);
+      if (pn && !isOpenRosterSlot(pn) && rosterSlotKind(pn) !== "closed") paxMap[pn] = true;
+    }
+    for (var pj = 0; pj < visible.length; pj++) {
+      var pn2 = clean(visible[pj].client_name);
+      if (pn2 && !isOpenRosterSlot(pn2) && rosterSlotKind(pn2) !== "closed") paxMap[pn2] = true;
+    }
+
     return {
       instructors: uniqueInstructorFilterNames(instRaw),
       services: Object.keys(svcMap).sort(function (a, b) {
         return a.localeCompare(b, "en", { sensitivity: "base" });
       }),
+      participants: Object.keys(paxMap).sort(function (a, b) {
+        return a.localeCompare(b, "en", { sensitivity: "base" });
+      }),
     };
   };
 
+  function clientNameMatchesFilter(clientName, filterRaw) {
+    var q = clean(filterRaw);
+    if (!q) return true;
+    var cn = clean(clientName);
+    if (!cn) return false;
+    return cn.toLowerCase() === q.toLowerCase();
+  }
+
+  AdminSessionsHub.prototype.clientFilterOptionsForDay = function (dayIso) {
+    var hub = this;
+    var seen = {};
+    if (hub.mode !== "feedback") {
+      var roster = (hub.overviewFilterOptionsForDay(dayIso) || {}).participants || [];
+      for (var ri = 0; ri < roster.length; ri++) {
+        if (roster[ri]) seen[roster[ri]] = true;
+      }
+    }
+    if (hub.tab === "feedback" || hub.mode === "feedback") {
+      var rows = hub.feedbackLogRowsForDay(dayIso);
+      for (var i = 0; i < rows.length; i++) {
+        var n = clean(rows[i].client_name);
+        if (n) seen[n] = true;
+      }
+    }
+    return Object.keys(seen).sort(function (a, b) {
+      return a.localeCompare(b, "en", { sensitivity: "base" });
+    });
+  };
+
   AdminSessionsHub.prototype.slotPassesOverviewFilters = function (slot) {
-    var q = clean(this.clientSearch).toLowerCase();
-    if (q && slot.client_name.toLowerCase().indexOf(q) === -1) return false;
+    if (!clientNameMatchesFilter(slot.client_name, this.clientSearch)) return false;
     var inst = clean(this.instructorFilter);
     if (inst) {
       var labels = slotInstructors(slot);
@@ -5804,9 +8074,14 @@
     var opts = this.overviewFilterOptionsForDay(this.selectedDay);
     return (
       '<div class="ash-filter-row ash-filter-row--feedback">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
-      esc(this.clientSearch) +
-      '"></label>' +
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashClientFilter",
+        label: "Participant",
+        value: this.clientSearch,
+        options: opts.participants || [],
+        placeholder: "All participants",
+      }) +
       buildAshFilterComboHtml({
         esc: esc,
         id: "ashInstructorFilter",
@@ -5831,9 +8106,15 @@
     var esc = this.escapeHtml;
     return (
       '<div class="ash-filter-row">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
-      esc(this.clientSearch) +
-      '"></label></div>'
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashClientFilter",
+        label: "Participant",
+        value: this.clientSearch,
+        options: this.clientFilterOptionsForDay(this.selectedDay),
+        placeholder: "All participants",
+      }) +
+      "</div>"
     );
   };
 
@@ -5841,9 +8122,14 @@
     var esc = this.escapeHtml;
     return (
       '<div class="ash-filter-row ash-filter-row--feedback">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
-      esc(this.clientSearch) +
-      '"></label>' +
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashClientFilter",
+        label: "Participant",
+        value: this.clientSearch,
+        options: this.clientFilterOptionsForDay(this.selectedDay),
+        placeholder: "All participants",
+      }) +
       buildAshFilterComboHtml({
         esc: esc,
         id: "ashInstructorFilter",
@@ -5870,6 +8156,10 @@
     if (hub.opts && typeof hub.opts.onViewFiltersChange === "function") {
       hub.opts.onViewFiltersChange(hub);
     }
+    if (hub.tab === "tracking" && typeof hub.softRefreshOverview === "function" && hub.overviewSurfaceReady()) {
+      hub.softRefreshOverview();
+      return;
+    }
     if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
     else hub.render();
   };
@@ -5877,7 +8167,7 @@
   AdminSessionsHub.prototype.feedbackInRange = function () {
     var from = this.rangeFrom;
     var to = this.rangeTo;
-    var q = clean(this.clientSearch).toLowerCase();
+    var q = clean(this.clientSearch);
     var hub = this;
     return (this.payload.session_feedback || []).filter(function (fb) {
       if (hub.isFeedbackAbsent(fb)) return false;
@@ -5888,7 +8178,8 @@
       var d = hub.feedbackRowDate(fb);
       if (!d) return true;
       if (d < from || d > to) return false;
-      if (q && clean(fb.client_name).toLowerCase().indexOf(q) === -1) return false;
+      if (!clientAllowedOnDate(fb.client_name, d)) return false;
+      if (!clientNameMatchesFilter(fb.client_name, q)) return false;
       if (hub.feedbackNoteFilter === "positive" && !clean(fb.positive_feedback)) return false;
       if (hub.feedbackNoteFilter === "relevant" && !clean(fb.relevant_information)) return false;
       return true;
@@ -5953,6 +8244,13 @@
     if (!slot || !ov) return false;
     if (clean(ov.session_date) !== slot.session_date) return false;
     if (String(ov.status || "active").trim() !== "active") return false;
+    if (overrideIsFadiOffRota(ov) || clientIsFadiOffRota(slot.client_name, slot.session_date)) {
+      return false;
+    }
+    /* Shadowing session_add: only trainer (host) or observer seat — not every co-worker. */
+    if (overrideIsShadowingSessionAdd(ov)) {
+      return !!shadowingOverrideRoleForSlot(slot, ov);
+    }
     var sCid = canonicalClientSlug(slot.client_name || slot.client_slug || slot.clientSlug);
     if (overrideIsReplaceType(ov)) {
       var repPayload = overridePayloadObj(ov);
@@ -5969,9 +8267,47 @@
       if (!staffIdMatchesInstructor(ov.anchor_staff_id, slot.instructors)) return false;
     } else {
       var oCid = canonicalClientSlug(ov.anchor_client_id);
-      if (oCid && sCid && oCid !== sCid) return false;
+      if (oCid && sCid && oCid !== sCid) {
+        var openCoverOk = false;
+        if (
+          overrideIsInstructorReassignType(ov) &&
+          overrideAnchorIsOpenSlot(ov.anchor_client_id)
+        ) {
+          if (isOpenRosterSlot(slot.client_name) || slot.portalOverrideMakeUpTag) {
+            openCoverOk = true;
+          } else {
+            var sibs = (this.payload && this.payload.schedule_overrides) || [];
+            for (var si = 0; si < sibs.length; si++) {
+              var mk = sibs[si];
+              if (!overrideIsReplaceType(mk)) continue;
+              if (clean(mk.session_date) !== clean(ov.session_date)) continue;
+              if (!overrideAnchorIsOpenSlot(mk.anchor_client_id)) continue;
+              if (normalizeAnchorStaffId(mk.anchor_staff_id) !== normalizeAnchorStaffId(ov.anchor_staff_id)) continue;
+              var mkStart = normTimeShort(mk.anchor_start);
+              var ovStart = normTimeShort(ov.anchor_start);
+              if (mkStart && ovStart && mkStart !== ovStart) continue;
+              var painted = overrideReplacementClientId(overridePayloadObj(mk)) ||
+                canonicalClientSlug(overrideReplacementClientName(overridePayloadObj(mk)));
+              if (painted && sCid && painted === sCid) {
+                openCoverOk = true;
+                break;
+              }
+            }
+          }
+        }
+        if (!openCoverOk) return false;
+      }
       if (overrideIsInstructorReassignType(ov)) {
         if (!staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)) return false;
+      }
+      /*
+       * slot_clear Cancelled on 2:1 Day Centre (Fadi · Roberto + Youssef): each
+       * override must bind to its own instructor column, not both seats.
+       */
+      if (overrideIsCancelledType(ov) && clean(ov.anchor_staff_id)) {
+        if (!staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)) {
+          return false;
+        }
       }
     }
     var oVen = clean(ov.anchor_venue).toLowerCase();
@@ -6010,10 +8346,20 @@
       }
       return false;
     }
-    if (oStart && sStart && oStart !== sStart) {
+    /* slot_update: standing may still be on previous_start until expand paints the new clock. */
+    if (overrideIsSlotUpdateType(ov) && oStart && sStart && oStart !== sStart) {
+      var wdUp = slot.day || weekdayLongFromIso(slot.session_date);
+      var prevStart = slotUpdatePreviousStart(ov, wdUp);
+      if (prevStart && prevStart === sStart) return true;
       var oLabel = clean(ov.anchor_time_slot_label).toLowerCase();
       var sLabel = clean(slot.time_slot).toLowerCase();
       if (oLabel && sLabel && oLabel === sLabel) return true;
+      return false;
+    }
+    if (oStart && sStart && oStart !== sStart) {
+      var oLabel2 = clean(ov.anchor_time_slot_label).toLowerCase();
+      var sLabel2 = clean(slot.time_slot).toLowerCase();
+      if (oLabel2 && sLabel2 && oLabel2 === sLabel2) return true;
       return false;
     }
     return true;
@@ -6153,6 +8499,128 @@
     if (el) el.remove();
   };
 
+  AdminSessionsHub.prototype.findFeedbackById = function (id) {
+    id = String(id || "").trim();
+    if (!id) return null;
+    var lists = [this.feedbackRowsForSelectedDay(), (this.payload && this.payload.session_feedback) || []];
+    for (var li = 0; li < lists.length; li++) {
+      var rows = lists[li] || [];
+      for (var i = 0; i < rows.length; i++) {
+        var fb = rows[i];
+        if (!fb || fb._ashAwaitingSlot) continue;
+        if (String(fb.id || fb.session_feedback_id || "") === id) return fb;
+      }
+    }
+    return null;
+  };
+
+  AdminSessionsHub.prototype.openFilterModal = function (fb) {
+    if (!fb) return;
+    var hub = this;
+    var escFn = this.escapeHtml;
+    var terminal = isTerminalFeedbackRow(fb);
+    var raw = clean(fb.session_narrative) || clean(fb.positive_feedback) || "\u2014";
+    hub.closeModal();
+    hub._modalFb = fb;
+    hub._modalStep = "filter";
+    var backdrop = document.createElement("div");
+    backdrop.className = "ash-modal-backdrop";
+    backdrop.innerHTML =
+      '<div class="ash-modal ash-modal--wide" role="dialog" aria-modal="true" aria-labelledby="ashModalTitle">' +
+      '<h3 id="ashModalTitle" class="ash-modal__title">Filter for parents</h3>' +
+      '<p class="ash-modal__meta">' +
+      escFn(fb.client_name || "\u2014") +
+      " \u2013 " +
+      escFn(formatFbDate(fb.session_date)) +
+      " \u2013 " +
+      escFn(fb.service || hub.feedbackDisplayService(fb) || "\u2014") +
+      "</p>" +
+      '<p class="ash-modal__meta ash-modal__meta--sub">Instructor: ' +
+      escFn(fb.completed_by_name || "\u2014") +
+      "</p>" +
+      '<p class="ash-modal__lead">Does not change the register. Filter when a parent asks, then Save &amp; release if families should see it.</p>' +
+      '<div class="ash-modal__box"><div class="ash-modal__box-label">SESSION FEEDBACK</div><p class="ash-modal__box-text">' +
+      escFn(raw).replace(/\n/g, "<br>") +
+      "</p></div>" +
+      hub.htmlFamilySummaryInner(fb, escFn, terminal) +
+      '<div class="ash-modal-actions ash-modal-actions--portal">' +
+      '<button type="button" class="btn btn--ghost" data-ash-modal-close>Close</button></div></div>';
+    hub.root.appendChild(backdrop);
+  };
+
+  AdminSessionsHub.prototype.openNoteActionsModal = function (fb) {
+    if (!fb) return;
+    var hub = this;
+    var escFn = this.escapeHtml;
+    var noteText = clean(fb.relevant_information);
+    hub.closeModal();
+    hub._modalFb = fb;
+    hub._modalStep = "note";
+    var sessionDay = formatFbDateShort(fb.session_date) || formatFbDate(fb.session_date);
+    var svcLabel = hub.feedbackDisplayService(fb) || clean(fb.service) || "";
+    var writer = clean(fb.completed_by_name) || "the instructor";
+    var first = writer.split(/\s+/)[0] || "there";
+    var shareData =
+      'data-ash-note-who="' +
+      escFn(fb.client_name || "") +
+      '" data-ash-note-svc="' +
+      escFn(svcLabel) +
+      '" data-ash-note-date="' +
+      escFn(sessionDay || "") +
+      '" data-ash-note-by="' +
+      escFn(writer) +
+      '" data-ash-note-text="' +
+      escFn(noteText) +
+      '"';
+    var askText =
+      "Hi " +
+      first +
+      ", can you clarify this internal note about " +
+      (fb.client_name || "the participant") +
+      " (" +
+      (sessionDay || "") +
+      (svcLabel ? ", " + svcLabel : "") +
+      ")?\n\n" +
+      noteText;
+    var backdrop = document.createElement("div");
+    backdrop.className = "ash-modal-backdrop";
+    backdrop.innerHTML =
+      '<div class="ash-modal ash-modal--wide" role="dialog" aria-modal="true" aria-labelledby="ashModalTitle">' +
+      '<h3 id="ashModalTitle" class="ash-modal__title">Internal note</h3>' +
+      '<p class="ash-modal__meta">' +
+      escFn(fb.client_name || "\u2014") +
+      " \u2013 " +
+      escFn(formatFbDate(fb.session_date)) +
+      " \u2013 " +
+      escFn(svcLabel || "\u2014") +
+      "</p>" +
+      '<p class="ash-modal__meta ash-modal__meta--sub">Written by: ' +
+      escFn(writer) +
+      "</p>" +
+      '<p class="ash-modal__lead">Internal only \u2014 not shown to parents. Escalate in the company, or open Comms to ask the instructor who wrote it.</p>' +
+      '<div class="ash-modal__box"><div class="ash-modal__box-label">NOTE</div><p class="ash-modal__box-text">' +
+      (noteText
+        ? escFn(noteText).replace(/\n/g, "<br>")
+        : '<span class="ash-cell-muted">No internal note on this session.</span>') +
+      "</p></div>" +
+      '<div class="ash-modal-actions ash-modal-actions--portal">' +
+      '<button type="button" class="btn btn--ghost" data-ash-note-share="email" ' +
+      shareData +
+      ">Email CEOs</button>" +
+      '<button type="button" class="btn btn--ghost" data-ash-note-share="announce" ' +
+      shareData +
+      ">Announce to staff</button>" +
+      '<button type="button" class="btn btn--pri" data-ash-note-share="comms" ' +
+      shareData +
+      ' data-ash-note-ask-text="' +
+      escFn(askText) +
+      '" data-ash-note-staff="' +
+      escFn(writer) +
+      '">Open in Comms</button>' +
+      '<button type="button" class="btn btn--ghost" data-ash-modal-close>Close</button></div></div>';
+    hub.root.appendChild(backdrop);
+  };
+
   AdminSessionsHub.prototype.isFeedbackNotesTab = function () {
     return this.tab === "positive" || this.tab === "relevant";
   };
@@ -6177,12 +8645,12 @@
     var hub = this;
     var day = clean(iso);
     if (!day) return [];
-    var q = clean(this.clientSearch).toLowerCase();
+    var q = clean(this.clientSearch);
     return (this.payload.session_feedback || [])
       .filter(function (fb) {
         if (hub.feedbackRowDate(fb) !== day) return false;
         if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) return false;
-        if (q && clean(fb.client_name).toLowerCase().indexOf(q) === -1) return false;
+        if (!clientNameMatchesFilter(fb.client_name, q)) return false;
         if (kind === "positive") return !!clean(fb.positive_feedback);
         if (kind === "relevant")
           return !!clean(fb.relevant_information) && feedbackNoteDateAllowed(hub, fb);
@@ -6361,8 +8829,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     "</th><th>Regulation</th><th>Independence</th>" +
     "<th>Session feedback</th><th>Filtered feedback</th><th>Notes</th><th>Reviewed by:</th>";
 
-  // Register tab: raw session feedback exactly as staff submitted it. No filtered
-  // column — filtering lives on the "Feedback (filtered)" tab.
+  // Register tab: raw session feedback as staff submitted it. Filter / notes
+  // actions open from the Session feedback and Notes cells (no extra screens).
   AdminSessionsHub.REGISTER_TABLE_HEAD =
     '<th>Participant / service</th><th class="ash-th-star" title="Engagement (1–5)">' +
     AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
@@ -6496,33 +8964,28 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     runGenerate();
   };
 
-  AdminSessionsHub.prototype.htmlFamilySummaryCell = function (fb, escFn, terminal) {
+  AdminSessionsHub.prototype.htmlFamilySummaryInner = function (fb, escFn, terminal) {
     var esc = escFn || this.escapeHtml;
-    if (terminal) return '<td class="ash-cell-note"><span class="ash-cell-muted">N/A</span></td>';
+    if (terminal) return '<p class="ash-cell-muted">N/A</p>';
     var fbId = String((fb && (fb.id || fb.session_feedback_id)) || "").trim();
-    if (!fbId) {
-      return '<td class="ash-cell-note ash-cell-family"><span class="ash-cell-muted">—</span></td>';
-    }
+    if (!fbId) return '<p class="ash-cell-muted">\u2014</p>';
     var share = this.parentShareForFeedback(fb);
     var msg = share && share.parent_message ? String(share.parent_message) : "";
     var status = share ? String(share.share_status || "") : "";
-    // No auto-preparation: the filtered version is only created on demand,
-    // when an admin taps "Filter with AI" (e.g. because a parent asked).
     var pending = !share || status === "pending";
     var edited = !!(share && share.admin_edited_at);
     var hint = pending
-      ? "Not filtered yet — use Filter with AI when a parent asks"
+      ? "Not filtered yet \u2014 use Filter with AI when a parent asks"
       : status === "hidden" && !msg
         ? "Hidden from families"
         : "";
     return (
-      '<td class="ash-cell-note ash-cell-family">' +
       '<div class="ash-family-summary">' +
       (edited ? '<span class="ash-family-summary__tag">Edited</span>' : "") +
       '<textarea class="ash-family-summary__input" rows="3" data-ash-family-msg="' +
       esc(fbId) +
       '" placeholder="' +
-      esc(pending ? "Family summary — filter on demand" : "Family summary for parents") +
+      esc(pending ? "Family summary \u2014 filter on demand" : "Family summary for parents") +
       '">' +
       esc(msg) +
       "</textarea>" +
@@ -6530,15 +8993,21 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<span class="ash-family-summary__relevant" data-ash-family-relevant="' +
       esc(fbId) +
       '" style="display:none;font-size:11px;color:#6b7280;white-space:pre-wrap"></span>' +
-      '<div class="ash-family-summary__btns" style="display:flex;gap:8px;flex-wrap:wrap">' +
-      '<button type="button" class="ash-family-summary__filter" data-ash-family-filter="' +
+      '<div class="ash-family-summary__btns ash-modal-actions ash-modal-actions--portal">' +
+      '<button type="button" class="btn btn--pri ash-family-summary__filter" data-ash-family-filter="' +
       esc(fbId) +
       '">Filter with AI</button>' +
-      '<button type="button" class="ash-family-summary__save" data-ash-family-save="' +
+      '<button type="button" class="btn btn--ghost ash-family-summary__save" data-ash-family-save="' +
       esc(fbId) +
       '">Save &amp; release</button>' +
-      "</div>" +
-      "</div></td>"
+      "</div></div>"
+    );
+  };
+
+  AdminSessionsHub.prototype.htmlFamilySummaryCell = function (fb, escFn, terminal) {
+    if (terminal) return '<td class="ash-cell-note"><span class="ash-cell-muted">N/A</span></td>';
+    return (
+      '<td class="ash-cell-note ash-cell-family">' + this.htmlFamilySummaryInner(fb, escFn, terminal) + "</td>"
     );
   };
 
@@ -6585,6 +9054,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.feedbackLogRowsForDay = function (iso) {
     var hub = this;
     var day = clean(iso);
+    if (!this._fbLogByIso) this._fbLogByIso = Object.create(null);
+    var logSig =
+      day +
+      "|" +
+      String((this.payload.session_feedback || []).length) +
+      "|" +
+      String((this.payload.session_quick_marks || []).length) +
+      "|" +
+      String((this.payload.cancellation_reports || []).length);
+    if (this._fbLogByIso[logSig]) return this._fbLogByIso[logSig];
     var byKey = {};
     var out = [];
 
@@ -6619,11 +9098,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       out.push(row);
     }
 
-    var fbs = this.payload.session_feedback || [];
+    var indexedDay = this._fbByDate && this._fbByDate[day];
+    var fbs = indexedDay || this.payload.session_feedback || [];
     for (var i = 0; i < fbs.length; i++) {
       var fb = fbs[i];
-      var fbDay = hub.feedbackRowDate(fb) || feedbackSessionDate(fb);
-      if (fbDay !== day) continue;
+      if (!indexedDay) {
+        var fbDay = hub.feedbackRowDate(fb) || feedbackSessionDate(fb);
+        if (fbDay !== day) continue;
+      }
       if (isMislabeledRosterAreaClientName(fb.client_name)) continue;
       if (hub.mode !== "feedback" && !hub.feedbackAllowedOnCalendarDay(fb)) continue;
       pushRow(fb);
@@ -6721,6 +9203,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       return bySlot[k];
     });
     out.sort(feedbackSortNewestFirst);
+    this._fbLogByIso[logSig] = out;
     return out;
   };
 
@@ -6753,6 +9236,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var slots = scopedSlots(unit);
       if (!slots.length) continue;
       var rep = slots[0];
+      if (
+        isOpenRosterSlot(rep.client_name) ||
+        rosterSlotKind(rep.client_name) === "closed" ||
+        slotIsStaffDutyNoFeedback(rep)
+      ) {
+        continue;
+      }
       if (hub.feedbackUnitAbsent(unit) || hub.slotIsAbsent(rep)) {
         var afb =
           hub.findAbsentFeedbackForSlot(rep) || hub.syntheticAbsentDisplayRow(rep);
@@ -6839,6 +9329,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var out = [];
     for (var i = 0; i < displaySlots.length; i++) {
       var slot = displaySlots[i];
+      /* Open / closed / duty seats are staffing seats — never awaiting client feedback. */
+      if (
+        isOpenRosterSlot(slot.client_name) ||
+        rosterSlotKind(slot.client_name) === "closed" ||
+        slotIsStaffDutyNoFeedback(slot) ||
+        slotIsHoldWaitlistNoFeedback(slot.client_name)
+      ) {
+        continue;
+      }
       var ukey = feedbackUnitKey(slot);
       var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
       var isCancelledSubmitted = hub.slotCancellationCountsAsSubmitted(slot);
@@ -6870,6 +9369,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (afb && !isUsed(afb)) {
           out.push(afb);
           markUsed(afb);
+        } else if (isCancelledSubmitted) {
+          var synthCan = hub.syntheticCancellationDisplayRow(slot);
+          if (synthCan) {
+            out.push(synthCan);
+            markUsed(synthCan);
+          }
         } else if (isAbsent) {
           var synthAbsent = hub.syntheticAbsentDisplayRow(slot);
           if (synthAbsent) {
@@ -6887,6 +9392,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         continue;
       }
+      if (!slotHasOnDutyFeedbackStaff(hub, slot)) continue;
       out.push({ _ashAwaitingSlot: true, slot: slot });
     }
     for (var j = 0; j < submitted.length; j++) {
@@ -6919,7 +9425,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var day = clean(this.selectedDay);
     if (!day) return [];
     var rows = this.feedbackLogRowsForDay(day);
-    if (hub.opts && hub.opts.feedbackMixAwaitingSlots) {
+    if (hub.opts && hub.opts.feedbackMixAwaitingSlots && !hub._registerLitePaint) {
       var mixed = this.feedbackMixRowsForDay(day);
       var seen = {};
       for (var i = 0; i < rows.length; i++) {
@@ -6939,12 +9445,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
       }
     }
-    var q = clean(this.clientSearch).toLowerCase();
+    var q = clean(this.clientSearch);
     var inst = clean(this.instructorFilter);
     if (!q && !inst && !this.feedbackNoteFilter) return rows;
     return rows.filter(function (fb) {
       var clientName = fb._ashAwaitingSlot && fb.slot ? fb.slot.client_name : fb.client_name;
-      if (q && clean(clientName).toLowerCase().indexOf(q) === -1) return false;
+      if (!clientNameMatchesFilter(clientName, q)) return false;
       if (inst && !submittedFeedbackMatchesInstructorFilter(hub, fb, inst)) {
         return false;
       }
@@ -6957,6 +9463,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.feedbackDisplayService = function (fb) {
     var svc = clean(fb && fb.service);
     if (svc) return svc;
+    if (fb && fb._ashDisplaySlot && clean(fb._ashDisplaySlot.service)) {
+      return clean(fb._ashDisplaySlot.service);
+    }
+    if (this._registerLitePaint) return "";
     var iso = this.feedbackRowDate(fb);
     if (!iso) return "";
     var slots = this.expandSlotsForDate(iso);
@@ -6975,40 +9485,65 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     // Column variants: 'register' (raw only, no filtered column),
     // 'filtered' (participant/service/raw/filtered/reviewed only), or default (full).
     var variant = opts.variant || "full";
+    if (variant === "register") opts.clickable = false;
     var awaitMidColspan = variant === "filtered" ? 2 : variant === "register" ? 5 : 6;
 
     if (fb && fb._ashAwaitingSlot && fb.slot) {
       var awaitSlot = fb.slot;
+      if (hub.slotCancellationCountsAsSubmitted(awaitSlot)) {
+        var canRow = hub.syntheticCancellationDisplayRow(awaitSlot);
+        if (canRow) return hub.htmlFeedbackTableRow(canRow, escFn, opts);
+      }
+      var awaitOpen =
+        isOpenRosterSlot(awaitSlot.client_name) ||
+        rosterSlotKind(awaitSlot.client_name) === "closed" ||
+        slotIsStaffDutyNoFeedback(awaitSlot) ||
+        slotIsHoldWaitlistNoFeedback(awaitSlot.client_name);
       var awaitSvc = clean(awaitSlot.service) || "\u2014";
       var awaitTime = awaitSlot.time_slot
         ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(awaitSlot)) + "</div>"
         : "";
       var awaitDate = formatFbDateShort(awaitSlot.session_date || awaitSlot.date);
+      var awaitPaxPill = htmlParticipantPill(awaitSlot.client_name, esc, awaitSlot);
       var awaitParticipantServiceCell =
-        '<td class="ash-cell-participant-service"><span class="ash-pill ash-pill--client">' +
-        esc(awaitSlot.client_name) +
-        '</span><div class="ash-cell-service">' +
+        '<td class="ash-cell-participant-service">' +
+        awaitPaxPill +
+        '<div class="ash-cell-service">' +
         esc(awaitSvc) +
         "</div>" +
         (awaitDate ? '<div class="ash-cell-sub">' + esc(awaitDate) + "</div>" : "") +
         awaitTime +
         "</td>";
+      var awaitPaxOnlyCell = "<td>" + awaitPaxPill + "</td><td>" + esc(awaitSvc) + awaitTime + "</td>";
+      if (awaitOpen) {
+        var awaitInstOpen = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot), {
+          feedbackWhoOwes: true,
+          hub: hub,
+        });
+        return (
+          '<tr class="ash-fb-row ash-fb-row--open-seat">' +
+          (variant === "register" ? awaitParticipantServiceCell : awaitPaxOnlyCell) +
+          '<td colspan="' +
+          awaitMidColspan +
+          '" class="ash-td-center"><span class="ash-muted">N/A</span></td>' +
+          '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
+          awaitInstOpen +
+          "</div></td>" +
+          "</tr>"
+        );
+      }
       if (hub.slotIsAbsent(awaitSlot)) {
         var absentRow =
           hub.findAbsentFeedbackForSlot(awaitSlot) ||
           hub.syntheticAbsentDisplayRow(awaitSlot);
         if (absentRow) return hub.htmlFeedbackTableRow(absentRow, escFn, opts);
-        var awaitInstAbsent = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
+        var awaitInstAbsent = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot), {
+          feedbackWhoOwes: true,
+          hub: hub,
+        });
         return (
           '<tr class="ash-fb-row ash-fb-row--awaiting">' +
-          (variant === "register"
-            ? awaitParticipantServiceCell
-            : '<td><span class="ash-pill ash-pill--client">' +
-              esc(awaitSlot.client_name) +
-              "</span></td><td>" +
-              esc(awaitSvc) +
-              awaitTime +
-              "</td>") +
+          (variant === "register" ? awaitParticipantServiceCell : awaitPaxOnlyCell) +
           '<td colspan="' + awaitMidColspan + '" class="ash-td-center">' +
           rosterFeedbackStatusHtml(true, false) +
           "</td>" +
@@ -7018,17 +9553,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</tr>"
         );
       }
-      var awaitInst = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
+      var awaitInst = hubInstructorCellHtml(
+        awaitSlot,
+        instructorReassignOverrideForSlot(hub, awaitSlot) || hub.overrideForSlot(awaitSlot),
+        { feedbackWhoOwes: true, hub: hub }
+      );
       return (
         '<tr class="ash-fb-row ash-fb-row--awaiting">' +
-        (variant === "register"
-          ? awaitParticipantServiceCell
-          : '<td><span class="ash-pill ash-pill--client">' +
-            esc(awaitSlot.client_name) +
-            "</span></td><td>" +
-            esc(awaitSvc) +
-            awaitTime +
-            "</td>") +
+        (variant === "register" ? awaitParticipantServiceCell : awaitPaxOnlyCell) +
         '<td colspan="' + awaitMidColspan + '" class="ash-td-center">' +
         rosterFeedbackStatusHtml(false, false) +
         "</td>" +
@@ -7042,6 +9574,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     function cellNoteHtml(text) {
       var t = clean(text);
       if (!t) return "\u2014";
+      if (variant === "register") {
+        var clipped = t.split(/\n+/).slice(0, 3).join("\n");
+        if (clipped.length > 180) clipped = clipped.slice(0, 180).replace(/\s+\S*$/, "") + "\u2026";
+        t = clipped;
+      }
       return t
         .split(/\n+/)
         .map(function (line) {
@@ -7088,10 +9625,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var sessionDay = formatFbDateShort(fb.session_date) || formatFbDateShort(hub.feedbackRowDate(fb));
     var reviewDate = formatFbDate(submittedAt);
     var rowIdx = opts.rowIdx;
-    var rowAttr =
-      opts.clickable !== false && rowIdx != null && !isNaN(rowIdx)
-        ? ' class="ash-fb-row' + reviewCls + '" data-ash-fb-row="' + rowIdx + '" tabindex="0" role="button"'
-        : ' class="ash-fb-row' + reviewCls + '"';
+    var rowAttr = ' class="ash-fb-row' + reviewCls + '"';
+    if (rowIdx != null && !isNaN(rowIdx)) {
+      rowAttr += ' data-ash-fb-row="' + rowIdx + '"';
+      if (opts.clickable !== false) rowAttr += ' tabindex="0" role="button"';
+    }
 
     var participantCell =
       '<td><span class="ash-link">' +
@@ -7108,7 +9646,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       esc(svcLabel) +
       svcTimeSub +
       (sessionDay && !svcTimeSub ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
-      (global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
+      (variant !== "register" &&
+      global.PortalSwimSessionAxes &&
+      typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
         ? global.PortalSwimSessionAxes.swimAxesDisplayHtml(fb, esc).replace("pcso-swim-addon", "ash-swim-addon")
         : "") +
       "</td>";
@@ -7125,7 +9665,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         : absent
           ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent">Submitted (Absent)</span></div>'
           : "") +
-      (global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
+      (variant !== "register" &&
+      global.PortalSwimSessionAxes &&
+      typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
         ? global.PortalSwimSessionAxes.swimAxesDisplayHtml(fb, esc).replace("pcso-swim-addon", "ash-swim-addon")
         : "") +
       "</td>";
@@ -7133,56 +9675,78 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "<td>" +
       (terminal ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "\u2014") +
       "</td>";
-    var emotionCell = "<td>" + (terminal ? cellNa() : emotionFacesHtml(fb, esc)) + "</td>";
+    var emotionCell =
+      "<td>" +
+      (terminal
+        ? cellNa()
+        : variant === "register"
+          ? emotionFacesLite(fb, esc)
+          : emotionFacesHtml(fb, esc)) +
+      "</td>";
     var independenceCell =
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
       "</td>";
-    // Raw "Session feedback" (positive_feedback) exactly as the instructor
-    // submitted it — informative only, not edited or released here.
+    var fbId = String((fb && (fb.id || fb.session_feedback_id)) || "").trim();
+    var canFilter = variant === "register" && !terminal && !!fbId;
+    var canNoteAct = variant === "register" && !terminal && !!fbId;
+    // Raw "Session feedback" exactly as the instructor submitted it.
+    // On Register, click opens Filter with AI / Save & release (on demand).
     var rawFeedbackCell =
-      '<td class="ash-cell-note ash-cell-raw-feedback">' +
+      '<td class="ash-cell-note ash-cell-raw-feedback' +
+      (canFilter ? " ash-cell--action" : "") +
+      '"' +
+      (canFilter
+        ? ' data-ash-open-filter="' +
+          esc(fbId) +
+          '" tabindex="0" role="button" title="Click to filter for parents"'
+        : "") +
+      ">" +
       (terminal ? cellNa() : cellNoteHtml(rawFeedback === "\u2014" ? "" : rawFeedback)) +
+      (canFilter ? '<div class="ash-cell-open">Open to filter</div>' : "") +
       "</td>";
-    // Feedback (filtered) tab, "Session feedback" column:
-    //  - from 7 Jul 2026: show only the session-feedback narrative (notes live
-    //    on the Notes tab, not here);
-    //  - up to 6 Jul 2026: keep the old positive_feedback + relevant_information
-    //    together, as they were captured before the notes split.
-    var rowDateForModel =
-      (typeof hub.feedbackRowDate === "function" ? hub.feedbackRowDate(fb) : "") ||
-      clean(fb.session_date);
-    var isLegacyNotesRow = rowDateForModel && rowDateForModel < NOTES_FIRST_DATE_ISO;
-    var filteredRawText;
-    if (isLegacyNotesRow) {
-      // Legacy: keep positive + relevant together; but if they're still empty
-      // (a raw narrative awaiting filtering, e.g. Bismark's), show the narrative
-      // so it can be filtered here.
-      filteredRawText =
-        [clean(fb.positive_feedback), clean(fb.relevant_information)]
-          .filter(Boolean)
-          .join("\n\n") ||
-        clean(fb.session_narrative) ||
-        "\u2014";
-    } else {
-      filteredRawText = clean(fb.session_narrative) || clean(fb.positive_feedback) || "\u2014";
+    var filteredRawCell = "";
+    var filteredCell = "";
+    if (variant !== "register") {
+      var rowDateForModel =
+        (typeof hub.feedbackRowDate === "function" ? hub.feedbackRowDate(fb) : "") ||
+        clean(fb.session_date);
+      var isLegacyNotesRow = rowDateForModel && rowDateForModel < NOTES_FIRST_DATE_ISO;
+      var filteredRawText;
+      if (isLegacyNotesRow) {
+        filteredRawText =
+          [clean(fb.positive_feedback), clean(fb.relevant_information)]
+            .filter(Boolean)
+            .join("\n\n") ||
+          clean(fb.session_narrative) ||
+          "\u2014";
+      } else {
+        filteredRawText = clean(fb.session_narrative) || clean(fb.positive_feedback) || "\u2014";
+      }
+      filteredRawCell =
+        '<td class="ash-cell-note ash-cell-raw-feedback">' +
+        (terminal ? cellNa() : cellNoteHtml(filteredRawText === "\u2014" ? "" : filteredRawText)) +
+        "</td>";
+      filteredCell = hub.htmlFamilySummaryCell(fb, esc, terminal);
     }
-    var filteredRawCell =
-      '<td class="ash-cell-note ash-cell-raw-feedback">' +
-      (terminal ? cellNa() : cellNoteHtml(filteredRawText === "\u2014" ? "" : filteredRawText)) +
-      "</td>";
-    // Filtered feedback = the parent-safe version released to families.
-    // Operational release control (Filter with AI + Save & release).
-    var filteredCell = hub.htmlFamilySummaryCell(fb, esc, terminal);
-    // Notes (Relevant information) — internal, informative only. Never
-    // filtered or released to families.
+    // Notes (Relevant information) — internal only. On Register, click opens
+    // escalate / ask-the-writer. Never released to families from here.
     var notesCell =
-      '<td class="ash-cell-note">' +
+      '<td class="ash-cell-note' +
+      (canNoteAct ? " ash-cell--action" : "") +
+      '"' +
+      (canNoteAct
+        ? ' data-ash-open-note="' +
+          esc(fbId) +
+          '" tabindex="0" role="button" title="Click to escalate internally or ask the instructor"'
+        : "") +
+      ">" +
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
+      (canNoteAct ? '<div class="ash-cell-open">Open to act</div>' : "") +
       "</td>";
     var reviewedByCell =
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
-      esc(fb.completed_by_name || "\u2014") +
+      (clean(fb.completed_by_name) ? formatInstructorPill(fb.completed_by_name) : "\u2014") +
       '</div><div class="ash-cell-sub">' +
       esc(reviewDate) +
       (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
@@ -7261,7 +9825,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         " \u2013 " +
         esc(formatLongDate(opts.filterDayIso)) +
         "</summary>" +
-        '<p class="ash-feedback-log__note">Includes attended feedback, <strong>absents</strong>, and <strong>cancellations</strong> (N/A except Reviewed by / reason). See also Absents and Cancellations tabs.</p>' +
+        '<p class="ash-feedback-log__note">Includes attended feedback, <strong>absents</strong>, and <strong>cancellations</strong> (N/A except Reviewed by / reason). Decide credit / makeup under <strong>Absents &amp; credits</strong>.</p>' +
         '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback"><thead><tr>' +
         AdminSessionsHub.FEEDBACK_TABLE_HEAD +
         "</tr></thead><tbody>" +
@@ -7361,9 +9925,23 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return out;
   };
 
-  AdminSessionsHub.prototype.htmlOverviewTermWeekLog = function () {
+  AdminSessionsHub.prototype.htmlOverviewTermWeekLog = function (opts) {
     var esc = this.escapeHtml;
     var hub = this;
+    opts = opts || {};
+    /* Day board must paint fast — expanding every feedback date freezes Overview. */
+    if (opts.lazy) {
+      return (
+        '<details class="ash-overview-log" data-ash-overview-log-lazy="1">' +
+        '<summary class="ash-overview-log__summary">' +
+        esc("Overview log (past weeks)") +
+        " — expand to load</summary>" +
+        '<div class="ash-overview-log__body" data-ash-overview-log-body>' +
+        '<p class="ash-muted">' +
+        esc("Expand this section to load the full week log.") +
+        "</p></div></details>"
+      );
+    }
     return renderTermWeekLogHtml({
       escapeHtml: esc,
       title: "Overview log",
@@ -7384,6 +9962,54 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var root = this.root;
     if (!root || root.getAttribute("data-ash-events") === "1") return;
     root.setAttribute("data-ash-events", "1");
+    root.addEventListener(
+      "toggle",
+      function (ev) {
+        var det = ev.target;
+        if (!det || !det.getAttribute || det.getAttribute("data-ash-overview-log-lazy") !== "1") return;
+        if (!det.open) return;
+        var body = det.querySelector("[data-ash-overview-log-body]");
+        if (!body || body.getAttribute("data-loaded") === "1") return;
+        body.setAttribute("data-loaded", "1");
+        try {
+          body.innerHTML = hub.htmlOverviewTermWeekLog({ lazy: false });
+        } catch (err) {
+          console.warn("[AdminSessionsHub] overview log", err);
+          body.innerHTML =
+            '<p class="ash-bundle-warn" role="alert">' +
+            hub.escapeHtml((err && err.message) || "Could not load overview log.") +
+            "</p>";
+        }
+      },
+      true
+    );
+    root.addEventListener(
+      "toggle",
+      function (ev) {
+        var det = ev.target;
+        if (!det || !det.getAttribute || det.getAttribute("data-ash-feedback-term-log-lazy") !== "1") return;
+        if (!det.open) return;
+        var body = det.querySelector("[data-ash-feedback-term-log-body]");
+        if (!body || body.getAttribute("data-loaded") === "1") return;
+        body.setAttribute("data-loaded", "1");
+        try {
+          body.innerHTML = hub.htmlFeedbackTermWeekLog({
+            title: "Session feedback log",
+            flatWeeks: true,
+            weekJumpOnly: true,
+            hint:
+              "Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to jump to that week at the top \u2013 day buttons and feedback for the selected day.",
+          });
+        } catch (err) {
+          console.warn("[AdminSessionsHub] feedback term log", err);
+          body.innerHTML =
+            '<p class="ash-bundle-warn" role="alert">' +
+            hub.escapeHtml((err && err.message) || "Could not load feedback log.") +
+            "</p>";
+        }
+      },
+      true
+    );
     root.addEventListener("click", function (ev) {
       var t = ev.target;
       if (!t || !t.closest) return;
@@ -7470,11 +10096,44 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         bodyLines.push("Relevant information:");
         bodyLines.push(neText);
         var body = bodyLines.join("\r\n");
-        if (shareMode === "whatsapp") {
-          // Share to WhatsApp — no fixed number, so the admin picks the CEO chat.
-          var waText = subject + "\r\n\r\n" + body;
-          var waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(waText);
-          window.open(waUrl, "_blank", "noopener");
+        if (shareMode === "comms") {
+          var askBody =
+            noteShareBtn.getAttribute("data-ash-note-ask-text") ||
+            ("Hi, can you clarify this internal note?\n\n" + neText);
+          var staffQ = String(noteShareBtn.getAttribute("data-ash-note-staff") || neBy || "").trim();
+          hub.closeModal();
+          try {
+            sessionStorage.setItem("portal_comms_prefill", askBody);
+            if (staffQ) sessionStorage.setItem("portal_comms_staff", staffQ);
+          } catch (_ss) {}
+          var commsUrl = "comunicaciones.html?from=admin&mode=administration";
+          if (staffQ) commsUrl += "&staff=" + encodeURIComponent(staffQ);
+          window.location.href = commsUrl;
+          return;
+        }
+        if (shareMode === "askstaff") {
+          var staffU = String(noteShareBtn.getAttribute("data-ash-note-staff") || "").trim();
+          hub.closeModal();
+          try {
+            if (staffU) sessionStorage.setItem("portal_comms_staff", staffU);
+          } catch (_as) {}
+          window.location.href =
+            "comunicaciones.html?from=admin&mode=administration" +
+            (staffU ? "&staff=" + encodeURIComponent(staffU) : "");
+          return;
+        }
+        if (shareMode === "askback" || shareMode === "whatsapp") {
+          var staffWa = String(noteShareBtn.getAttribute("data-ash-note-staff") || neBy || "").trim();
+          var askWa =
+            noteShareBtn.getAttribute("data-ash-note-ask-text") || subject + "\r\n\r\n" + body;
+          hub.closeModal();
+          try {
+            sessionStorage.setItem("portal_comms_prefill", askWa);
+            if (staffWa) sessionStorage.setItem("portal_comms_staff", staffWa);
+          } catch (_wa) {}
+          window.location.href =
+            "comunicaciones.html?from=admin&mode=administration" +
+            (staffWa ? "&staff=" + encodeURIComponent(staffWa) : "");
           return;
         }
         if (shareMode === "announce") {
@@ -7590,8 +10249,43 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         ev.stopPropagation();
         return;
       }
+      var filterCell = t.closest("[data-ash-open-filter]");
+      if (filterCell && hub.root.contains(filterCell)) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var openFid = filterCell.getAttribute("data-ash-open-filter") || "";
+        var openFb = hub.findFeedbackById(openFid);
+        if (openFb) hub.openFilterModal(openFb);
+        return;
+      }
+      var noteCell = t.closest("[data-ash-open-note]");
+      if (noteCell && hub.root.contains(noteCell)) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var openNid = noteCell.getAttribute("data-ash-open-note") || "";
+        var openNoteFb = hub.findFeedbackById(openNid);
+        if (openNoteFb) hub.openNoteActionsModal(openNoteFb);
+        return;
+      }
       var fbRow = t.closest("[data-ash-fb-row]");
       if (fbRow && hub.mode === "feedback") {
+        if (hub.tab === "feedback") {
+          var filterInRow = fbRow.querySelector("[data-ash-open-filter]");
+          var noteInRow = fbRow.querySelector("[data-ash-open-note]");
+          if (filterInRow) {
+            var fid = filterInRow.getAttribute("data-ash-open-filter") || "";
+            var fbf = hub.findFeedbackById(fid);
+            if (fbf) hub.openFilterModal(fbf);
+            return;
+          }
+          if (noteInRow) {
+            var nid = noteInRow.getAttribute("data-ash-open-note") || "";
+            var nfb = hub.findFeedbackById(nid);
+            if (nfb) hub.openNoteActionsModal(nfb);
+            return;
+          }
+          return;
+        }
         var idx = parseInt(fbRow.getAttribute("data-ash-fb-row"), 10);
         var noteField = fbRow.getAttribute("data-ash-note-field") || "";
         var rows = hub.isFeedbackNotesTab()
@@ -7612,6 +10306,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         return;
       }
+      var layoutBtn = t.closest("[data-ash-overview-layout]");
+      if (layoutBtn) {
+        /* Table layout removed — Overview is board-only. */
+        return;
+      }
       var tabBtn = t.closest("[data-ash-tab]");
       if (tabBtn) {
         hub.tab = tabBtn.getAttribute("data-ash-tab");
@@ -7622,7 +10321,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (fbMetricDay && hub.mode === "feedback") {
         hub.feedbackMetricsDay = fbMetricDay.getAttribute("data-ash-feedback-metric-day");
         hub.selectedDay = hub.feedbackMetricsDay;
-        hub.renderPanels();
+        if (typeof hub.softPaintFeedbackDay === "function" && hub.feedbackSurfaceReady()) {
+          hub.softPaintFeedbackDay();
+        } else {
+          hub.renderPanels();
+        }
         hub.scrollToWeekPicker();
         return;
       }
@@ -7649,7 +10352,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (dayBtn) {
         hub.selectedDay = dayBtn.getAttribute("data-ash-day");
         if (hub.mode === "feedback") hub.feedbackMetricsDay = hub.selectedDay;
-        if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
+        if (
+          hub.tab === "tracking" &&
+          typeof hub.softRefreshOverview === "function" &&
+          hub.overviewSurfaceReady()
+        ) {
+          hub.softRefreshOverview();
+        } else if (
+          hub.mode === "feedback" &&
+          typeof hub.softPaintFeedbackDay === "function" &&
+          hub.feedbackSurfaceReady()
+        ) {
+          hub.softPaintFeedbackDay();
+        } else if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
         else hub.render();
         hub.scrollToWeekPicker();
         return;
@@ -7742,8 +10457,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     this.root.addEventListener("change", function (ev) {
       var t = ev.target;
       if (!t) return;
-      if (t.id === "ashClientSearch") {
-        hub.clientSearch = t.value;
+      if (t.id === "ashClientFilter") {
+        hub.clientSearch = t.value || "";
         hub.refreshClientFilterView();
         return;
       }
@@ -7761,14 +10476,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (t.id === "ashRangeTo") hub.rangeTo = t.value || hub.rangeTo;
       if (t.id === "ashScheduleDate") hub.scheduleDate = t.value || hub.scheduleDate;
     });
-    this.root.addEventListener("input", function (ev) {
-      if (ev.target && ev.target.id === "ashClientSearch") {
-        hub.clientSearch = ev.target.value;
-        hub.refreshClientFilterView();
-      }
-    });
     this.root.addEventListener("keydown", function (ev) {
       if (ev.key !== "Enter" && ev.key !== " ") return;
+      var actionCell = ev.target && ev.target.closest && ev.target.closest("[data-ash-open-filter], [data-ash-open-note]");
+      if (actionCell && hub.root.contains(actionCell)) {
+        ev.preventDefault();
+        actionCell.click();
+        return;
+      }
       var jump = ev.target && ev.target.closest && ev.target.closest("[role='button'].ash-log-jump");
       if (jump) {
         ev.preventDefault();
@@ -7781,12 +10496,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       row.click();
     });
     this.root.addEventListener("dblclick", function (ev) {
+      if (ev.target && ev.target.closest && ev.target.closest("[data-ash-open-filter], [data-ash-open-note], .ash-family-summary")) {
+        return;
+      }
       var fbRow = ev.target && ev.target.closest && ev.target.closest("[data-ash-fb-row]");
       if (fbRow && hub.mode === "feedback") {
         ev.preventDefault();
         clearTimeout(hub._fbRowClickTimer);
         var idx = parseInt(fbRow.getAttribute("data-ash-fb-row"), 10);
-        var rows = hub.isFeedbackNotesTab()
+        var rows = hub.tab === "feedback"
+          ? hub.feedbackRowsForSelectedDay()
+          : hub.isFeedbackNotesTab()
           ? hub.feedbackNotesRows(hub.tab)
           : hub.feedbackInRange().filter(function (fb) {
               return !fb.attendance || String(fb.attendance).toLowerCase().indexOf("no") !== 0;
@@ -7816,136 +10536,66 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   AdminSessionsHub.prototype.bindAshFilterCombos = function () {
     var hub = this;
-    var comboApi = global.PortalAdminSearchCombo;
-    ["ashInstructorFilter", "ashServiceFilter"].forEach(function (baseId) {
-      function optionsForCombo() {
-        if (baseId === "ashInstructorFilter") {
-          if (hub.tab === "feedback" || hub.mode === "feedback") {
-            return hub.instructorFilterOptionsForDay(hub.selectedDay);
-          }
-          return (hub.overviewFilterOptionsForDay(hub.selectedDay) || {}).instructors || [];
-        }
-        return (hub.overviewFilterOptionsForDay(hub.selectedDay) || {}).services || [];
-      }
-
-      if (comboApi) {
-        comboApi.ensure({
-          id: baseId,
-          placeholder: baseId === "ashInstructorFilter" ? "All instructors" : "All services",
-          allLabel: baseId === "ashInstructorFilter" ? "All instructors" : "All services",
-          maxVisible: 24,
-          onChange: function (val) {
-            if (baseId === "ashInstructorFilter") hub.instructorFilter = val || "";
-            else hub.serviceFilter = val || "";
-            hub.refreshClientFilterView();
-          },
-        });
-        comboApi.setOptions(baseId, optionsForCombo(), { keepValue: true });
-        var cur = baseId === "ashInstructorFilter" ? hub.instructorFilter : hub.serviceFilter;
-        if (cur) comboApi.setValue(baseId, cur, cur);
-        return;
-      }
-
-      var hid = document.getElementById(baseId);
-      var inp = document.getElementById(baseId + "Input");
-      var sug = document.getElementById(baseId + "Suggest");
-      if (!inp || !hid || !sug || inp.getAttribute("data-ash-filter-bound") === "1") return;
-      inp.setAttribute("data-ash-filter-bound", "1");
-
-      function renderSuggest(query) {
-        sug.replaceChildren();
-        var qt = String(query || "").trim().toLowerCase();
-        var opts = optionsForCombo();
-        var matches = [];
-        if (!qt) matches = opts.slice(0, 24);
-        else {
-          for (var i = 0; i < opts.length; i++) {
-            if (String(opts[i] || "").toLowerCase().indexOf(qt) !== -1) matches.push(opts[i]);
-            if (matches.length >= 24) break;
-          }
-        }
-        var clearBtn = document.createElement("button");
-        clearBtn.type = "button";
-        clearBtn.className = "ash-filter-suggest__btn ash-filter-suggest__btn--all";
-        clearBtn.textContent = baseId === "ashInstructorFilter" ? "All instructors" : "All services";
-        clearBtn.addEventListener("mousedown", function (ev) {
-          ev.preventDefault();
-          hid.value = "";
-          inp.value = "";
-          sug.hidden = true;
-          if (baseId === "ashInstructorFilter") hub.instructorFilter = "";
-          else hub.serviceFilter = "";
-          hub.refreshClientFilterView();
-        });
-        sug.appendChild(clearBtn);
-        matches.forEach(function (label) {
-          var btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "ash-filter-suggest__btn";
-          btn.textContent = label;
-          btn.addEventListener("mousedown", function (ev) {
-            ev.preventDefault();
-            hid.value = label;
-            inp.value = label;
-            sug.hidden = true;
-            if (baseId === "ashInstructorFilter") hub.instructorFilter = label;
-            else hub.serviceFilter = label;
-            hub.refreshClientFilterView();
-          });
-          sug.appendChild(btn);
-        });
-        if (!matches.length && !qt) {
-          var empty = document.createElement("div");
-          empty.className = "portal-search-combo__empty muted";
-          empty.textContent = opts.length ? "Type to search" : "No options loaded";
-          sug.appendChild(empty);
-        }
-        sug.hidden = false;
-      }
-
-      inp.addEventListener("input", function () {
-        hid.value = "";
-        if (baseId === "ashInstructorFilter") hub.instructorFilter = "";
-        else hub.serviceFilter = "";
-        renderSuggest(inp.value);
-      });
-      inp.addEventListener("focus", function () {
-        renderSuggest(inp.value);
-      });
-      inp.addEventListener("keydown", function (ev) {
-        if (ev.key === "Escape") {
-          sug.hidden = true;
-          return;
-        }
-        if (ev.key !== "Enter") return;
-        var first = sug.querySelector(".ash-filter-suggest__btn:not(.ash-filter-suggest__btn--all)");
-        if (first) {
-          ev.preventDefault();
-          first.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-        }
-      });
-      inp.addEventListener("blur", function () {
-        setTimeout(function () {
-          sug.hidden = true;
-        }, 160);
+    ["ashClientFilter", "ashInstructorFilter", "ashServiceFilter"].forEach(function (baseId) {
+      var sel = document.getElementById(baseId);
+      if (!sel || String(sel.tagName || "").toLowerCase() !== "select") return;
+      if (sel.getAttribute("data-ash-filter-bound") === "1") return;
+      sel.setAttribute("data-ash-filter-bound", "1");
+      sel.addEventListener("change", function () {
+        var next = clean(sel.value);
+        if (baseId === "ashClientFilter") hub.clientSearch = next;
+        else if (baseId === "ashInstructorFilter") hub.instructorFilter = next;
+        else hub.serviceFilter = next;
+        hub.refreshClientFilterView();
       });
     });
   };
 
   AdminSessionsHub.prototype.renderPanels = function () {
-    this.indexAbsentMarks();
-    this.indexFeedback();
+    if (!this.root || !this.root.isConnected) return;
+    this.adoptLiveSessionFeedbackIfEmpty();
+    /* Overview staffing board does not need feedback indexes (1000+ rows). */
+    if (this.tab !== "tracking") {
+      try {
+        this.indexAbsentMarks();
+        this.indexFeedback();
+      } catch (idxErr) {
+        console.warn("[AdminSessionsHub] renderPanels index", idxErr);
+      }
+    }
     var shell = this.root.querySelector(".ash-panels") || this.root.querySelector(".ash-panels--feedback-only");
     if (!shell) return;
-    if (this.tab === "tracking") shell.innerHTML = this.htmlTracking();
-    else if (this.tab === "absents") shell.innerHTML = this.htmlAbsents();
-    else if (this.tab === "incidents") shell.innerHTML = this.htmlIncidents();
-    else if (this.tab === "cancellations") shell.innerHTML = this.htmlCancellations();
-    else if (this.tab === "positive") shell.innerHTML = this.htmlFeedbackFiltered();
-    else if (this.tab === "relevant") shell.innerHTML = this.htmlFeedbackNotes("relevant");
-    else if (this.tab === "feedback") shell.innerHTML = this.htmlFeedback();
-    else if (this.tab === "schedule") shell.innerHTML = this.htmlSchedule();
-    this.bindAshFilterCombos();
+    try {
+      if (this.tab === "positive" || this.tab === "relevant") this.tab = "feedback";
+      if (this.tab === "tracking") {
+        shell.innerHTML = this.htmlTracking();
+        this.scheduleOverviewBodyPaint();
+      } else if (this.tab === "absents") shell.innerHTML = this.htmlAbsents();
+      else if (this.tab === "incidents") shell.innerHTML = this.htmlIncidents();
+      else if (this.tab === "cancellations") shell.innerHTML = this.htmlCancellations();
+      else if (this.tab === "feedback") {
+        shell.innerHTML = this.htmlFeedback();
+        this.scheduleRegisterBodyPaint();
+      } else if (this.tab === "schedule") shell.innerHTML = this.htmlSchedule();
+      this.bindAshFilterCombos();
+    } catch (err) {
+      console.warn("[AdminSessionsHub] renderPanels", err);
+      var msg = err && err.message ? String(err.message) : String(err || "render failed");
+      shell.innerHTML =
+        '<p class="ash-bundle-warn" role="alert"><strong>Sessions Overview could not render.</strong> ' +
+        this.escapeHtml(msg) +
+        " Try Table layout, Refresh, or hard-reload.</p>";
+    }
+  };
+
+  AdminSessionsHub.prototype.htmlStickyWeekChrome = function (innerHtml) {
+    var top = this._stickyTopHtml || "";
+    return (
+      '<div class="ash-sticky-chrome ash-week-sticky-anchor">' +
+      top +
+      innerHtml +
+      "</div>"
+    );
   };
 
   AdminSessionsHub.prototype.htmlWeekHeader = function () {
@@ -7958,8 +10608,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         return htmlWeekDayCard(hub, iso, idx, esc);
       })
       .join("");
-    return (
-      '<div class="ash-week-sticky-anchor"><div class="ash-week-block">' +
+    return this.htmlStickyWeekChrome(
+      '<div class="ash-week-block">' +
       '<div class="ash-week-head">' +
       '<div class="ash-week-head__row">' +
       '<div class="ash-week-head__titles">' +
@@ -7971,7 +10621,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "</div></div>" +
       '<div class="ash-day-row ash-day-row--week">' +
       cards +
-      "</div></div></div>"
+      "</div></div>"
     );
   };
 
@@ -7990,13 +10640,90 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var rankA = overviewSlotFeedbackRank(absentA, doneA, cancelledA);
       var rankB = overviewSlotFeedbackRank(absentB, doneB, cancelledB);
       if (rankA !== rankB) return rankA - rankB;
-      return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
+      var ta = clean(a && a.time_start) || "";
+      var tb = clean(b && b.time_start) || "";
+      if (ta !== tb) return ta < tb ? -1 : 1;
+      var ca = clean(a && a.client_name) || "";
+      var cb = clean(b && b.client_name) || "";
+      return ca.localeCompare(cb, "en", { sensitivity: "base" });
     });
     return list;
   };
 
+  /** Who works / who sits — no feedback resolution (Overview staffing guide). */
+  AdminSessionsHub.prototype.staffingDisplayContextForDay = function (iso) {
+    var hub = this;
+    iso = clean(iso) || hub.selectedDay;
+    var slots = hub.expandSlotsForDate(iso);
+    var scopedSlots = slots.filter(function (s) {
+      return !isTeflonDemoRosterSlot(s) && hub.slotPassesOverviewFilters(s);
+    });
+    /*
+     * Do NOT apply overviewOmitRosterSlots / swim-merge duplicate omit here.
+     * Those hide Zaid Aquatic 9–9.30 (and Yusuf aquatic) for feedback merging —
+     * staffing board must show the trial card separately from Multi 9.30–10.15.
+     * DO collapse same CLIENT name variants (Yossi / Yossi Sium) after filters.
+     */
+    var displaySlots = scopedSlots.filter(function (s) {
+      try {
+        if (makeupSlotAbsorbedByDisplacedRow(hub, s)) return false;
+        if (shouldOmitMislabelledTrialClimbing(s)) return false;
+        var cfg = acatGroupCoverageConfig();
+        if (cfg && slotMatchesAcatCoverage(s, cfg) && cfg.always_hide_individual_rows === true) {
+          return false;
+        }
+        return true;
+      } catch (_om) {
+        return true;
+      }
+    });
+    displaySlots = dedupeOverviewDisplaySlots(displaySlots);
+    displaySlots.sort(function (a, b) {
+      return compareOverviewSlotsTimeThenCancelled(hub, a, b);
+    });
+    return {
+      iso: iso,
+      units: [],
+      unitComplete: {},
+      unitAbsent: {},
+      displaySlots: displaySlots,
+    };
+  };
+
+  /**
+   * Overview week strip / progress: count each staffing seat as one session (= one feedback).
+   * sundayFeedbackMerges (Yusuf/Zaid AA+MA) still share completion — one submit paints both.
+   */
+  AdminSessionsHub.prototype.staffingSessionStats = function (iso) {
+    var hub = this;
+    iso = clean(iso) || hub.selectedDay;
+    var ctx = hub.staffingDisplayContextForDay(iso);
+    var slots = (ctx && ctx.displaySlots) || [];
+    var total = 0;
+    var done = 0;
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (!s || isTeflonDemoRosterSlot(s)) continue;
+      if (slotIsStaffDutyNoFeedback(s)) continue;
+      var kind = rosterSlotKind(s.client_name);
+      if (kind === "open" || kind === "closed" || kind === "manager" || kind === "home") continue;
+      if (!isRosterClient(s.client_name)) continue;
+      total++;
+      try {
+        if (hub.slotIsAbsent(s) || hub.slotCancellationCountsAsSubmitted(s) || hub.slotFeedbackComplete(s)) {
+          done++;
+        }
+      } catch (_fb) {}
+    }
+    return { total: total, done: done };
+  };
+
   AdminSessionsHub.prototype.trackingDisplayContextForDay = function (iso) {
     var hub = this;
+    /* Overview tab = staffing guide only. */
+    if (hub.tab === "tracking") {
+      return hub.staffingDisplayContextForDay(iso);
+    }
     iso = clean(iso) || hub.selectedDay;
     var slots = hub.expandSlotsForDate(iso);
     var units = hub.getFeedbackUnitsForDate(iso);
@@ -8028,7 +10755,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.missingFeedbackRowFromSlot = function (slot, ctx, meta) {
     var hub = this;
     meta = meta || {};
-    var inst = slotInstructors(slot);
+    var inst = feedbackWhoOwesInstructors(hub, slot);
+    if (!inst.length) inst = slotInstructors(slot);
     return {
       client: clean(slot.client_name),
       service: clean(slot.service) || "\u2014",
@@ -8041,9 +10769,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     };
   };
 
-  AdminSessionsHub.prototype.missingFeedbackForDay = function (iso) {
+  AdminSessionsHub.prototype.missingFeedbackForDay = function (iso, ctxOpt) {
     var hub = this;
-    var ctx = hub.trackingDisplayContextForDay(iso);
+    var ctx =
+      ctxOpt && ctxOpt.displaySlots
+        ? ctxOpt
+        : hub.trackingDisplayContextForDay(iso);
     var missing = [];
     var counts = { submitted: 0, absent: 0, cancelled: 0, open: 0 };
     // A single make-up override can surface twice: once folded onto the displaced
@@ -8080,7 +10811,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         counts.open++;
         continue;
       }
+      if (rosterSlotKind(slot.client_name) === "closed") {
+        continue;
+      }
+      if (slotIsHoldWaitlistNoFeedback(slot.client_name)) {
+        counts.open++;
+        continue;
+      }
       if (slotIsStaffDutyNoFeedback(slot)) {
+        continue;
+      }
+      if (!clientAllowedOnDate(slot.client_name, clean(slot.session_date).slice(0, 10))) {
         continue;
       }
       var makeupDisp = makeupOverrideDisplacingSlot(hub, slot);
@@ -8101,6 +10842,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       if (fbDone) {
         counts.submitted++;
+        continue;
+      }
+      if (!slotHasOnDutyFeedbackStaff(hub, slot)) {
         continue;
       }
       pushMissing(slot, { kind: "awaiting" });
@@ -8138,9 +10882,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return { from: from, to: to, days: days, totalMissing: totalMissing };
   };
 
-  AdminSessionsHub.prototype.htmlOverviewMissingFeedbackBlock = function (iso) {
+  AdminSessionsHub.prototype.htmlOverviewMissingFeedbackBlock = function (iso, ctxOpt) {
     var hub = this;
-    var report = hub.missingFeedbackForDay(iso || hub.selectedDay);
+    var report = hub.missingFeedbackForDay(iso || hub.selectedDay, ctxOpt);
     if (!report.missing.length) return "";
     var esc = hub.escapeHtml;
     var rows = report.missing
@@ -8185,7 +10929,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       })
       .join("");
     return (
-      '<details class="ash-missing-fb" open>' +
+      '<details class="ash-missing-fb">' +
       '<summary class="ash-missing-fb__summary">' +
       "<strong>" +
       esc(String(report.missing.length)) +
@@ -8220,14 +10964,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var liveLoad = global.__PORTAL_ADMIN_LIVE_LOAD__ || {};
     var ovMeta = liveLoad.schedule_overrides || null;
     if (!ovCount && ovMeta && ovMeta.count) ovCount = ovMeta.count;
-    var ovToday = 0;
-    try {
-      ovToday = this.activeOverridesForDate(this.selectedDay).length;
-    } catch (_ovDay) {}
-    var dayDiag = null;
-    try {
-      dayDiag = this.diagnoseDay(this.selectedDay);
-    } catch (_diag) {}
     if (fbCount === 0) {
       var errLine = loadMeta && loadMeta.error
         ? " Error: " + esc(String(loadMeta.error)) + "."
@@ -8242,98 +10978,1691 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         " Hard-refresh and sign in again as admin. Console: portalAdminLiveLoadStatus()</p>"
       );
     }
-    var missingToday = 0;
-    try {
-      missingToday = this.missingFeedbackForDay(this.selectedDay).missing.length;
-    } catch (_miss) {}
-    var matched =
-      dayDiag && typeof dayDiag.submitted === "number"
-        ? dayDiag.submitted + "/" + dayDiag.total + " roster slots resolved today"
-        : "";
-    var awaitingLine = missingToday
-      ? " · <strong>" + esc(String(missingToday)) + "</strong> awaiting feedback today"
-      : "";
-    var orphan =
-      dayDiag && dayDiag.orphanFeedback && dayDiag.orphanFeedback.length
-        ? " · " + dayDiag.orphanFeedback.length + " orphan feedback row(s) for this day"
-        : "";
-    var nearMissHint = "";
-    try {
-      var missReport = this.missingFeedbackForDay(this.selectedDay);
-      var nearN = 0;
-      (missReport.missing || []).forEach(function (m) {
-        if (m.nearMissFeedback && m.nearMissFeedback.length) nearN += 1;
-      });
-      if (nearN) {
-        nearMissHint =
-          " · <strong>" + esc(String(nearN)) + "</strong> awaiting with unmatched feedback in Supabase (time/instructor)";
-      }
-    } catch (_nm) {}
     var ovLine = ovCount
-      ? " · <strong>" + esc(String(ovCount)) + "</strong> schedule overrides loaded" +
-        (ovToday ? " (<strong>" + esc(String(ovToday)) + "</strong> active this day)" : "")
+      ? " · <strong>" + esc(String(ovCount)) + "</strong> schedule overrides loaded"
       : (ovMeta && ovMeta.error ? " · overrides failed: " + esc(String(ovMeta.error)) : "");
+    /* Keep this hint O(1) — diagnoseDay / missingFeedbackForDay freeze Overview on large payloads. */
     return (
       '<p class="ash-feedback-filter-hint" role="status">Live feedback: <strong>' +
       esc(String(fbCount)) +
       "</strong> rows from Supabase" +
-      (matched ? " · " + esc(matched) : "") +
-      awaitingLine +
-      esc(orphan) +
-      nearMissHint +
       ovLine +
       " · Console: <code>portalAdminMissingFeedbackReport()</code></p>"
     );
   };
 
-  AdminSessionsHub.prototype.htmlTracking = function () {
-    var esc = this.escapeHtml;
-    var hub = this;
-    if (hubDayIsClubClosed(hub, this.selectedDay)) {
-      return (
-        this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
-        this.overviewFilterRowHtml() +
-        '<h3 class="ash-table-title">' +
-        esc(formatLongDate(this.selectedDay)) +
-        ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Closed</span></h3>' +
-        /* closed day — no count hint */
-        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="9">' +
-        '<div class="ash-empty">Club closed \u2014 no sessions on this date.</div></td></tr></tbody></table></div>'
+  /** Preferred column order (LOCAL weekday / weekend staff). Unknown staff append A-Z. */
+  var DAY_BOARD_STAFF_PREF = [
+    "Roberto",
+    "Javier",
+    "Aurora",
+    "Luliya",
+    "Dan",
+    "Youssef",
+    "Michelle",
+    "Simon",
+    "Berta",
+    "Godsway",
+    "John",
+    "Emmanuel",
+    "Raul",
+    "Victor",
+    "Bismark",
+    "Carlos",
+    "Alex",
+    "Sandra",
+    "Javi",
+    "Sevitha",
+  ];
+
+  /* Thursday pool: Roberto + Youssef (Day Centre pair) then Acton (Javier, Aurora, Simon). */
+  var DAY_BOARD_STAFF_PREF_THU_HEAD = ["Roberto", "Youssef", "Javier", "Aurora", "Simon"];
+
+  function dayBoardStaffPrefForIso(iso) {
+    var wd = weekdayLongFromIso(String(iso || "").slice(0, 10)).toLowerCase();
+    if (wd !== "thursday") return DAY_BOARD_STAFF_PREF;
+    var seen = Object.create(null);
+    var out = [];
+    function add(name) {
+      var k = dayBoardStaffKey(name);
+      if (!k || seen[k]) return;
+      seen[k] = 1;
+      out.push(name);
+    }
+    var i;
+    for (i = 0; i < DAY_BOARD_STAFF_PREF_THU_HEAD.length; i++) add(DAY_BOARD_STAFF_PREF_THU_HEAD[i]);
+    for (i = 0; i < DAY_BOARD_STAFF_PREF.length; i++) add(DAY_BOARD_STAFF_PREF[i]);
+    return out;
+  }
+
+  /** Board layout bands: swimming instructors | support workers, climbing below. */
+  var DAY_BOARD_SWIM = {
+    roberto: 1,
+    javier: 1,
+    aurora: 1,
+    luliya: 1,
+    dan: 1,
+    youssef: 1,
+    simon: 1,
+    michelle: 1,
+    angel: 1,
+  };
+  var DAY_BOARD_SUPPORT = {
+    berta: 1,
+    godsway: 1,
+    john: 1,
+    emanuel: 1,
+    emmanuel: 1,
+    raul: 1,
+    victor: 1,
+    sandra: 1,
+    javi: 1,
+    sevitha: 1,
+    bismark: 1,
+  };
+  var DAY_BOARD_CLIMB = {
+    alex: 1,
+    carlos: 1,
+    andres: 1,
+  };
+
+  function dayBoardStaffRole(staffKey, items) {
+    var k = String(staffKey || "").toLowerCase();
+    if (DAY_BOARD_CLIMB[k]) return "climbing";
+    if (DAY_BOARD_SWIM[k]) return "swimming";
+    if (DAY_BOARD_SUPPORT[k]) return "support";
+    var climbN = 0;
+    var hubN = 0;
+    var poolN = 0;
+    (items || []).forEach(function (it) {
+      var s = it && it.slot;
+      if (!s) return;
+      if (isClimbingService(s.service)) climbN += 1;
+      else if (/hub/i.test(clean(s.area))) hubN += 1;
+      else poolN += 1;
+    });
+    if (climbN >= hubN && climbN >= poolN && climbN > 0) return "climbing";
+    if (hubN > poolN) return "support";
+    return "swimming";
+  }
+
+  function dayBoardStaffPhotoHtml(label, esc) {
+    try {
+      if (typeof global.portalStaffAvatarInnerHtml === "function") {
+        return global.portalStaffAvatarInnerHtml(label, {
+          displayName: label,
+          esc: esc,
+          className: "portal-roster-avatar portal-roster-avatar--staff ash-db-col__photo",
+        });
+      }
+    } catch (_ph) {}
+    var initials = String(label || "?")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(function (p) {
+        return p.charAt(0);
+      })
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?";
+    return (
+      '<span class="portal-roster-avatar portal-roster-avatar--staff ash-db-col__photo" aria-hidden="true">' +
+      esc(initials) +
+      "</span>"
+    );
+  }
+
+  function hmToMinutesOfDay(hm) {
+    var s = normTimeShort(hm);
+    var m = String(s || "").match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+
+  function minutesOfDayToHm(mins) {
+    if (!Number.isFinite(mins) || mins < 0) return "";
+    var h = Math.floor(mins / 60) % 24;
+    var m = Math.round(mins % 60);
+    if (m === 60) {
+      h = (h + 1) % 24;
+      m = 0;
+    }
+    return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+  }
+
+  function coerceSlotHm(raw, wd) {
+    var s = clean(raw);
+    if (!s) return "";
+    var colon = normTimeShort(s);
+    if (/^\d{2}:\d{2}$/.test(colon)) return colon;
+    return normTimeKey(s, wd);
+  }
+
+  /** Start/end minutes for one roster card. Prefers time_start/time_end; falls back to time_slot. */
+  function slotWorkBoundsMinutes(slot, staffKey) {
+    if (!slot) return null;
+    var wd = slot.day || weekdayLongFromIso(slot.session_date);
+    var raw = clean(slot.time_slot);
+    var pt = raw && /to|-/i.test(raw) ? parseTimeSlot(raw, wd) : null;
+    var startHm = coerceSlotHm(slot.time_start || (pt && pt.start) || "", wd);
+    var endHm = coerceSlotHm(slot.time_end || (pt && pt.end) || "", wd);
+    if (!startHm && raw) startHm = coerceSlotHm(raw, wd);
+    var startMin = hmToMinutesOfDay(startHm);
+    var endMin = hmToMinutesOfDay(endHm);
+    if (startMin == null) return null;
+    if (endMin == null || endMin <= startMin) endMin = startMin + 30;
+    return expandStaffPaidBandForHoursLabel(slot, { start: startMin, end: endMin, day: wd }, staffKey);
+  }
+
+  function nearMinutesOfDay(mins, target, slack) {
+    if (!Number.isFinite(mins) || !Number.isFinite(target)) return false;
+    return Math.abs(mins - target) <= (Number.isFinite(slack) ? slack : 10);
+  }
+
+  /**
+   * Participant seat times ≠ paid staff band for some books.
+   * Overview column hours must show who works (staff), not only the kid clock.
+   * - Tinashe Bespoke: kid 4.30–6 · staff 4.15–6.15
+   * - Sunday SwimFarm Hub Multi: kids 9.30–2 · Hub staff 9.15–2.15 (pad ends)
+   * - Michelle Day Centre Mon/Tue/Wed/Fri: kids 11–4 · staff 10.45–4.15
+   */
+  function expandStaffPaidBandForHoursLabel(slot, bounds, staffKey) {
+    if (!slot || !bounds) return bounds;
+    var svc = clean(slot.service);
+    var client = clean(slot.client_name).toLowerCase();
+    var day = bounds.day || slot.day || "";
+    var dayLc = String(day).toLowerCase();
+    var area = clean(slot.area).toLowerCase();
+    var venue = clean(slot.venue).toLowerCase();
+    var staff = canonicalStaffMatchKey(staffKey || "");
+
+    if (
+      isBespokeService(svc) &&
+      /^tinashe\b/.test(client) &&
+      bounds.start === 16 * 60 + 30 &&
+      bounds.end === 18 * 60
+    ) {
+      return { start: 16 * 60 + 15, end: 18 * 60 + 15, day: day };
+    }
+    /* Also catch label-only / slight drift around the client band. */
+    if (
+      isBespokeService(svc) &&
+      /^tinashe\b/.test(client) &&
+      bounds.start >= 16 * 60 + 20 &&
+      bounds.start <= 16 * 60 + 40 &&
+      bounds.end >= 17 * 60 + 50 &&
+      bounds.end <= 18 * 60 + 10
+    ) {
+      return { start: 16 * 60 + 15, end: 18 * 60 + 15, day: day };
+    }
+
+    if (
+      dayLc === "sunday" &&
+      isMultiActivityService(svc) &&
+      /swimfarm/i.test(venue) &&
+      /hub/i.test(area)
+    ) {
+      return {
+        start: Math.max(0, bounds.start - 15),
+        end: bounds.end + 15,
+        day: day,
+      };
+    }
+
+    /* Michelle DC: 15 min before 11 / after 4. Do not apply to Luliya on the same Ikram book. */
+    if (
+      staff === "michelle" &&
+      (dayLc === "monday" || dayLc === "tuesday" || dayLc === "wednesday" || dayLc === "friday") &&
+      (isDayCentreService(svc) || /manager/.test(area))
+    ) {
+      var start = bounds.start;
+      var end = bounds.end;
+      if (nearMinutesOfDay(start, 11 * 60, 10)) start = 10 * 60 + 45;
+      if (nearMinutesOfDay(end, 16 * 60, 10)) end = 16 * 60 + 15;
+      if (start !== bounds.start || end !== bounds.end) {
+        return { start: start, end: end, day: day };
+      }
+    }
+    return bounds;
+  }
+
+  /** Merge overlapping / touching client slots into work windows (gap <= 15 min stays one block). */
+  function mergeContiguousWorkBlocks(ranges, gapMins) {
+    var grace = Number.isFinite(gapMins) ? gapMins : 15;
+    var list = (ranges || [])
+      .filter(function (r) {
+        return r && Number.isFinite(r.start) && Number.isFinite(r.end) && r.end > r.start;
+      })
+      .slice()
+      .sort(function (a, b) {
+        return a.start - b.start || a.end - b.end;
+      });
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var cur = { start: list[i].start, end: list[i].end };
+      var last = out.length ? out[out.length - 1] : null;
+      if (last && cur.start <= last.end + grace) {
+        if (cur.end > last.end) last.end = cur.end;
+      } else {
+        out.push(cur);
+      }
+    }
+    return out;
+  }
+
+  /** Spanish-style duration: 2h, 4h, 1'5h (half hours). */
+  function formatSpanishHourDuration(mins) {
+    if (!Number.isFinite(mins) || mins <= 0) return "";
+    var rounded = Math.round(mins / 30) * 30;
+    if (rounded <= 0) rounded = 30;
+    var whole = Math.floor(rounded / 60);
+    var rem = rounded % 60;
+    if (rem === 0) return String(whole) + "h";
+    return (whole === 0 ? "0" : String(whole)) + "'5h";
+  }
+
+  function formatWorkBlocksHoursLabel(blocks, dayWord) {
+    if (!blocks || !blocks.length) return "";
+    var ranges = [];
+    var durs = [];
+    for (var i = 0; i < blocks.length; i++) {
+      var a = rosterHmTokenFrom24(minutesOfDayToHm(blocks[i].start), dayWord);
+      var b = rosterHmTokenFrom24(minutesOfDayToHm(blocks[i].end), dayWord);
+      if (!a || !b) continue;
+      ranges.push(a + "-" + b);
+      durs.push(formatSpanishHourDuration(blocks[i].end - blocks[i].start));
+    }
+    if (!ranges.length) return "";
+    return ranges.join(" & ") + " (" + durs.join("/") + ")";
+  }
+
+  function minutesRangeOverlap(a0, a1, b0, b1) {
+    var lo = Math.max(a0, b0);
+    var hi = Math.min(a1, b1);
+    return hi > lo ? hi - lo : 0;
+  }
+
+  /**
+   * Hours this column works on the selected Overview day.
+   * Away / day-off cards are skipped (remaining work only). COVER mirror cards count.
+   *
+   * Per block: full clock in red when the book has opens/gaps; paid (green) is real-client
+   * minutes. Incomplete afternoon AS floors at 1.5h. Trailing total = paid (green).
+   * e.g. Luliya 11-3 (4h) & 4.30-6.30 (2h / 1'5h) 5'5h
+   *      Javier 4-6.30 (2'5h / 1'5h) 1'5h
+   */
+  function dayBoardStaffWorkHoursParts(items, staffKey) {
+    var frameRanges = [];
+    var seats = [];
+    var dayWord = "";
+    var AFTERNOON_FROM = 15 * 60;
+
+    for (var i = 0; i < (items || []).length; i++) {
+      var it = items[i];
+      if (!it || !it.slot) continue;
+      var st = it.st || {};
+      if (st.boardPlace === "away" || st.isStaffDayOff) continue;
+      var b = slotWorkBoundsMinutes(it.slot, staffKey);
+      if (!b) continue;
+      if (!dayWord) dayWord = b.day;
+      frameRanges.push(b);
+
+      var kind = rosterSlotKind(it.slot.client_name);
+      var isOpen =
+        kind === "open" ||
+        !!st.isOpenSlot ||
+        kind === "closed" ||
+        !!st.isClosed;
+      var isDuty = kind === "staff_duty" || kind === "manager" || !!st.isDuty;
+      var isCancelled = !!st.isCancelled;
+      seats.push({
+        start: b.start,
+        end: b.end,
+        isOpen: isOpen,
+        isClient: !isOpen && !isDuty && !isCancelled && b.end > b.start,
+      });
+    }
+
+    var frameBlocks = mergeContiguousWorkBlocks(frameRanges, 15);
+    var frameLabel = formatWorkBlocksHoursLabel(frameBlocks, dayWord);
+    if (!frameLabel) return { frame: "", paid: "", title: "", blocks: [], showPaidTotal: false };
+
+    var isSunday = String(dayWord || "").toLowerCase() === "sunday";
+    var outBlocks = [];
+    var paidMinsTotal = 0;
+    var frameMinsTotal = 0;
+    var anyIncomplete = false;
+
+    for (var f = 0; f < frameBlocks.length; f++) {
+      var block = frameBlocks[f];
+      var frameMins = block.end - block.start;
+      if (!(frameMins > 0)) continue;
+      frameMinsTotal += frameMins;
+      var clientMins = 0;
+      var hasOpen = false;
+      for (var s = 0; s < seats.length; s++) {
+        var seat = seats[s];
+        var ov = minutesRangeOverlap(seat.start, seat.end, block.start, block.end);
+        if (ov <= 0) continue;
+        if (seat.isOpen) hasOpen = true;
+        if (seat.isClient) clientMins += ov;
+      }
+      var isAfternoon = block.start >= AFTERNOON_FROM || block.end > AFTERNOON_FROM;
+      var paidMins = clientMins;
+      var incomplete = hasOpen || clientMins + 1 < frameMins;
+      if (!isSunday && isAfternoon && incomplete && paidMins > 0 && paidMins < 90) {
+        paidMins = 90;
+      }
+      if (Math.round(paidMins / 30) * 30 >= Math.round(frameMins / 30) * 30) {
+        incomplete = false;
+        paidMins = frameMins;
+      }
+      paidMinsTotal += paidMins;
+      if (incomplete) anyIncomplete = true;
+      var a = rosterHmTokenFrom24(minutesOfDayToHm(block.start), dayWord);
+      var c = rosterHmTokenFrom24(minutesOfDayToHm(block.end), dayWord);
+      if (!a || !c) continue;
+      outBlocks.push({
+        range: a + "-" + c,
+        frameDur: formatSpanishHourDuration(frameMins),
+        paidDur: formatSpanishHourDuration(paidMins),
+        incomplete: incomplete,
+      });
+    }
+
+    var paidLabel = "";
+    if (anyIncomplete && paidMinsTotal > 0) {
+      paidLabel = formatSpanishHourDuration(paidMinsTotal);
+    } else if (
+      paidMinsTotal > 0 &&
+      Math.round(paidMinsTotal / 30) * 30 !== Math.round(frameMinsTotal / 30) * 30
+    ) {
+      paidLabel = formatSpanishHourDuration(paidMinsTotal);
+    }
+
+    var title = frameLabel + (paidLabel ? " · paid " + paidLabel : "");
+    return {
+      frame: frameLabel,
+      paid: paidLabel,
+      title: title,
+      blocks: outBlocks,
+      showPaidTotal: !!paidLabel,
+    };
+  }
+
+  function dayBoardStaffWorkHoursLabel(items, staffKey) {
+    var parts = dayBoardStaffWorkHoursParts(items, staffKey);
+    if (!parts.frame) return "";
+    if (parts.blocks && parts.blocks.length) {
+      var bits = parts.blocks.map(function (bk) {
+        if (bk.incomplete) return bk.range + " (" + bk.frameDur + "/" + bk.paidDur + ")";
+        return bk.range + " (" + bk.paidDur + ")";
+      });
+      return bits.join(" & ") + (parts.paid ? " " + parts.paid : "");
+    }
+    return parts.frame + (parts.paid ? " " + parts.paid : "");
+  }
+
+  function dayBoardColHtml(hub, key, label, items, esc) {
+    var dayIso = String((hub && hub.selectedDay) || "").slice(0, 10);
+    var isCoverCol = key === "coverneeded";
+    var away =
+      !isCoverCol && !!(dayIso && hubStaffAwayOnIso(hub, dayIso, label || key));
+    var coverStaff = false;
+    if (!isCoverCol && !away) {
+      for (var ci = 0; ci < items.length; ci++) {
+        if (items[ci] && items[ci].st && items[ci].st.boardPlace === "cover") {
+          coverStaff = true;
+          break;
+        }
+      }
+    }
+    var hoursParts = dayBoardStaffWorkHoursParts(items, key || label);
+    var cards = items
+      .map(function (it) {
+        return htmlDayBoardCard(hub, it.slot, it.st, esc);
+      })
+      .join("");
+    var headExtra = "";
+    if (away) {
+      headExtra =
+        '<span class="ash-db-col__dayoff" title="Staff unavailability">Day off requested</span>';
+    } else if (isCoverCol) {
+      headExtra =
+        '<span class="ash-db-col__cover">COVER NEEDED</span>' +
+        '<p class="ash-db-col__cover-hint">Still open — assign in Schedule &amp; Covers</p>';
+    } else if (coverStaff) {
+      headExtra = '<span class="override-chip override--instructor">Cover</span>';
+    }
+    var metaHtml = "";
+    if (hoursParts.frame) {
+      var hoursInner = "";
+      var blocks = hoursParts.blocks || [];
+      if (blocks.length) {
+        hoursInner = blocks
+          .map(function (bk, idx) {
+            var durHtml;
+            if (bk.incomplete) {
+              durHtml =
+                '<span class="ash-db-col__hrs-gap">' +
+                esc(bk.frameDur) +
+                "</span>" +
+                '<span class="ash-db-col__hrs-slash">/</span>' +
+                '<span class="ash-db-col__hrs-ok">' +
+                esc(bk.paidDur) +
+                "</span>";
+            } else {
+              durHtml = '<span class="ash-db-col__hrs-ok">' + esc(bk.paidDur) + "</span>";
+            }
+            return (
+              (idx ? '<span class="ash-db-col__hrs-and"> &amp; </span>' : "") +
+              '<span class="ash-db-col__hrs-block">' +
+              esc(bk.range) +
+              " (" +
+              durHtml +
+              ")</span>"
+            );
+          })
+          .join("");
+      } else {
+        hoursInner = '<span class="ash-db-col__frame">' + esc(hoursParts.frame) + "</span>";
+      }
+      metaHtml =
+        '<span class="ash-db-col__meta" title="' +
+        esc(hoursParts.title || hoursParts.frame) +
+        '">' +
+        hoursInner +
+        (hoursParts.showPaidTotal && hoursParts.paid
+          ? '<span class="ash-db-col__paid" title="Paid hours">' +
+            esc(hoursParts.paid) +
+            "</span>"
+          : "") +
+        "</span>";
+    }
+    return (
+      '<section class="ash-db-col' +
+      (away ? " ash-db-col--day-off" : "") +
+      (isCoverCol ? " ash-db-col--cover" : "") +
+      '">' +
+      '<div class="ash-db-col__head">' +
+      dayBoardStaffPhotoHtml(isCoverCol ? "!" : label, esc) +
+      '<h4 class="ash-db-col__staff">' +
+      (isCoverCol ? esc("COVER NEEDED") : formatInstructorPill(label)) +
+      "</h4>" +
+      headExtra +
+      metaHtml +
+      "</div>" +
+      '<div class="ash-db-col__slots">' +
+      (cards || '<p class="ash-db-empty">No sessions</p>') +
+      "</div></section>"
+    );
+  }
+
+  function hubStaffUnavailabilityRows(hub) {
+    var rows = (hub && hub.payload && hub.payload.staff_unavailability) || [];
+    if ((!rows || !rows.length) && typeof global !== "undefined" && global.__PORTAL_STAFF_UNAVAILABILITY__) {
+      rows = global.__PORTAL_STAFF_UNAVAILABILITY__;
+    }
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  /** True when staff_unavailability marks this worker off on iso (name_key / staff_name). */
+  function hubStaffAwayOnIso(hub, iso, staffRaw) {
+    var want = String(iso || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(want)) return false;
+    var staffKey = canonicalStaffMatchKey(staffRaw) || dayBoardStaffKey(staffRaw);
+    if (!staffKey || staffKey === "coverneeded") return false;
+    var rows = hubStaffUnavailabilityRows(hub);
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r) continue;
+      if (String(r.off_date || "").slice(0, 10) !== want) continue;
+      var nk = canonicalStaffMatchKey(r.name_key || "") || dayBoardStaffKey(r.name_key || "");
+      var sn = canonicalStaffMatchKey(r.staff_name || "") || dayBoardStaffKey(r.staff_name || "");
+      if (nk && nk === staffKey) return true;
+      if (sn && sn === staffKey) return true;
+      if (dayBoardStaffKey(r.name_key || r.staff_name || "") === dayBoardStaffKey(staffRaw)) return true;
+    }
+    return false;
+  }
+
+  function dayBoardOriginalInstructorsForSlot(slot) {
+    if (slot && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
+      var orig = normalizeInstructorList(slot.portalOriginalInstructors);
+      if (orig.length) return orig;
+    }
+    return dayBoardInstructorsForSlot(slot);
+  }
+
+  function dayBoardStaffKeysEqual(a, b) {
+    var ka = dayBoardStaffKey(a);
+    var kb = dayBoardStaffKey(b);
+    return !!(ka && kb && ka === kb);
+  }
+
+  /** Who is running this seat while `awayStaff` is on day-off requested. */
+  function dayBoardAwayCoverLabel(hub, slot, iso, awayStaff) {
+    var names = [];
+    var seen = Object.create(null);
+    function pushName(raw) {
+      var key = dayBoardStaffKey(raw);
+      var label = dayBoardStaffLabel(raw);
+      if (!key || key === "coverneeded" || !label) return;
+      if (dayBoardStaffKeysEqual(raw, awayStaff)) return;
+      if (hubStaffAwayOnIso(hub, iso, raw)) return;
+      if (seen[key]) return;
+      seen[key] = 1;
+      names.push(label);
+    }
+    var named = slot && (slot.portalCoveringStaffName || slot.portalCoveringStaffId);
+    if (named) {
+      var namedParts = normalizeInstructorList(named);
+      if (!namedParts.length) namedParts = [named];
+      for (var n = 0; n < namedParts.length; n++) pushName(namedParts[n]);
+    }
+    if (!names.length) {
+      try {
+        /* Do not probe Day Centre with awayStaff name — Wed 9 Emanuel remap turned John→Roberto. */
+        if (!isDayCentreService(slot && slot.service)) {
+          var PRC = global.PortalRosterCanonical;
+          if (PRC && typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {
+            var mapped = clean(
+              PRC.resolveAutumnInstructorsForCalendarDate(awayStaff, iso, {
+                service: slot && slot.service,
+                venue: slot && slot.venue,
+                area: slot && slot.area,
+                day: slot && slot.day,
+                client_name: slot && slot.client_name,
+                clientName: slot && slot.client_name,
+              })
+            );
+            if (mapped && !dayBoardStaffKeysEqual(mapped, awayStaff)) {
+              var mappedParts = normalizeInstructorList(mapped);
+              for (var m = 0; m < mappedParts.length; m++) pushName(mappedParts[m]);
+            }
+          }
+        }
+      } catch (_mapCover) {}
+    }
+    if (!names.length) {
+      var fromUnavail = hubAwayCoverNameFromUnavailability(hub, iso, awayStaff);
+      if (fromUnavail) return fromUnavail;
+    }
+    if (!names.length) {
+      var live = dayBoardInstructorsForSlot(slot);
+      for (var i = 0; i < live.length; i++) pushName(live[i]);
+    }
+    return names.join(" + ");
+  }
+
+  function awayColumnBoardState(st, coverByLabel) {
+    var out = Object.assign({}, st || {});
+    out.boardPlace = "away";
+    out.isStaffDayOff = true;
+    out.isCoverNeeded = !coverByLabel;
+    out.isInstructorReassign = false;
+    out.isRealCover = false;
+    out.coverByLabel = coverByLabel || "";
+    out.tone = "dayoff";
+    return out;
+  }
+
+  /**
+   * Standing Hub Bespoke seat remapped off this away worker (John Wed 9/16 Tinashe).
+   * Clone the live Tinashe card onto their day-off column instead of "No sessions".
+   * Never use this path for Day Centre — John has no DC standing (Emanuel = Roberto).
+   */
+  function hubSlotShouldStayOnAwayColumn(hub, slot, iso, staffRaw) {
+    if (!hub || !slot || !staffRaw) return false;
+    var want = dayBoardStaffKey(staffRaw);
+    if (!want || want === "coverneeded") return false;
+    var orig = dayBoardOriginalInstructorsForSlot(slot);
+    var i;
+    for (i = 0; i < orig.length; i++) {
+      if (dayBoardStaffKeysEqual(orig[i], staffRaw)) return true;
+    }
+    var cur = dayBoardInstructorsForSlot(slot);
+    for (i = 0; i < cur.length; i++) {
+      if (dayBoardStaffKeysEqual(cur[i], staffRaw)) return true;
+    }
+    /* Day Centre / climbing: only stay if this worker was on the seat (above).
+     * Autumn remap probes with staffRaw="John" + client Emanuel wrongly became ROBERTO. */
+    if (isDayCentreService(slot.service) || isClimbingService(slot.service)) return false;
+    try {
+      var PRC = global.PortalRosterCanonical;
+      if (PRC && typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {
+        var mapped = clean(
+          PRC.resolveAutumnInstructorsForCalendarDate(staffRaw, iso, {
+            service: slot.service,
+            venue: slot.venue,
+            area: slot.area,
+            day: slot.day,
+            client_name: slot.client_name,
+            clientName: slot.client_name,
+          })
+        );
+        if (!mapped) return false;
+        if (dayBoardStaffKeysEqual(mapped, staffRaw)) return false;
+        var mappedParts = normalizeInstructorList(mapped);
+        for (i = 0; i < cur.length; i++) {
+          for (var mi = 0; mi < mappedParts.length; mi++) {
+            if (dayBoardStaffKeysEqual(cur[i], mappedParts[mi])) return true;
+          }
+        }
+      }
+    } catch (_mapAway) {}
+    return false;
+  }
+
+  /**
+   * Standing Hub Bespoke seat remapped off this away worker (John Wed 9/16 Tinashe).
+   * Clone the live Tinashe card onto their day-off column instead of "No sessions".
+   */
+  function hubAwayJohnWedTinasheCoverWindow(iso, dayName, staffRaw) {
+    var d = String(iso || "").slice(0, 10);
+    if (!/^wednesday$/i.test(String(dayName || "").trim())) return false;
+    if (!/^john\b/i.test(String(staffRaw || "").trim())) return false;
+    /* Timetable: Emmanuel SHADOWING on Wed 9 + 16; John resumes Wed 23. */
+    return d >= "2026-09-09" && d < "2026-09-23";
+  }
+
+  function hubAwayCoverNameFromUnavailability(hub, iso, awayStaff) {
+    var want = String(iso || "").slice(0, 10);
+    var staffKey = canonicalStaffMatchKey(awayStaff) || dayBoardStaffKey(awayStaff);
+    if (!want || !staffKey) return "";
+    var rows = hubStaffUnavailabilityRows(hub);
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r || String(r.off_date || "").slice(0, 10) !== want) continue;
+      var nk = canonicalStaffMatchKey(r.name_key || "") || dayBoardStaffKey(r.name_key || "");
+      var sn = canonicalStaffMatchKey(r.staff_name || "") || dayBoardStaffKey(r.staff_name || "");
+      if (nk !== staffKey && sn !== staffKey && dayBoardStaffKey(r.name_key || r.staff_name || "") !== dayBoardStaffKey(awayStaff)) {
+        continue;
+      }
+      var cover = clean(r.cover_name || r.coverName || "");
+      if (cover) return dayBoardStaffLabel(cover) || cover;
+    }
+    return "";
+  }
+
+  function hubAwayStaffLostHubBespokeSlot(hub, iso, dayName, staffRaw, displaySlots) {
+    var PRC = global.PortalRosterCanonical;
+    if (!PRC) return null;
+    var onStanding =
+      typeof PRC.autumnHubBespokeStandingHasStaff === "function" &&
+      PRC.autumnHubBespokeStandingHasStaff(dayName, staffRaw);
+    var johnWed = hubAwayJohnWedTinasheCoverWindow(iso, dayName, staffRaw);
+    if (!onStanding && !johnWed) return null;
+    if (!johnWed && typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {
+      var kept = PRC.resolveAutumnInstructorsForCalendarDate(staffRaw, iso, {
+        service: "Bespoke Programme",
+        client_name: "Tinashe",
+        clientName: "Tinashe",
+        day: dayName,
+        venue: "SwimFarm",
+        area: "Hub Room",
+      });
+      if (clean(kept)) return null;
+    }
+    var list = Array.isArray(displaySlots) ? displaySlots : [];
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      if (!s || !isBespokeService(s.service)) continue;
+      if (!/^tinashe\b/i.test(clean(s.client_name))) continue;
+      var area = clean(s.area).toLowerCase();
+      var venue = clean(s.venue).toLowerCase();
+      if (!/hub/i.test(area) && venue.indexOf("swimfarm") < 0) continue;
+      return s;
+    }
+    return null;
+  }
+
+  /** Slot still under an away instructor with no cover / COVER NEEDED override yet. */
+  function hubSlotShowsStaffDayOff(hub, slot) {
+    if (!hub || !slot) return false;
+    var iso = String(slot.session_date || (hub && hub.selectedDay) || "").slice(0, 10);
+    if (!iso) return false;
+    if (slot.portalInstructorReassigned) {
+      if (
+        slot.__portalScheduleOverride &&
+        overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride)
+      ) {
+        return false;
+      }
+      if (
+        slot.__portalScheduleOverride &&
+        String(slot.__portalScheduleOverride.override_type || "").trim() === "instructor_reassign"
+      ) {
+        return false;
+      }
+    }
+    var list = normalizeInstructorList(slot.portalOriginalInstructors || slot.instructors);
+    for (var i = 0; i < list.length; i++) {
+      if (hubStaffAwayOnIso(hub, iso, list[i])) return true;
+    }
+    return false;
+  }
+
+  function dayBoardServiceBand(slot) {
+    var svc = clean(slot && slot.service);
+    if (isDayCentreService(svc)) return "Day Centre";
+    if (isClimbingService(svc)) return "CLIMB";
+    if (isMultiActivityService(svc)) return "MULTI";
+    if (/aquatic|swim/i.test(svc)) return "AQUATIC";
+    if (/bespoke/i.test(svc)) return "BESPOKE";
+    /* Trial mark is the chip beside the band — do not also append "· Trial" in the label. */
+    return svc || "Session";
+  }
+
+  function dayBoardStaffLabel(raw) {
+    return staffPillFirstName(raw) || clean(raw) || "Staff";
+  }
+
+  function dayBoardStaffKey(raw) {
+    return canonicalStaffMatchKey(raw) || slugify(clean(raw)) || "staff";
+  }
+
+  /** Instructors that own a visible column for this slot (cover / reassign already on slot). */
+  function dayBoardInstructorsForSlot(slot) {
+    var list = slotInstructors(slot);
+    if (!list.length && clean(slot && slot.instructor_label)) {
+      list = parseInstructors(slot.instructor_label);
+    }
+    if (!list.length) list = ["Unassigned"];
+    return list;
+  }
+
+  /**
+   * Collapse Places slash pools to Timetable who-works for the session ISO.
+   * Keeps Dan / Youssef / Directors off Sundays until Timetable names them.
+   * Always run this before painting columns (incl. day-off / cover paths).
+   */
+  function dayBoardResolveInstructorsForIso(insts, iso, slot) {
+    var list = Array.isArray(insts) ? insts.slice() : [];
+    if (!list.length) return list;
+    var joined = list.join("/");
+    var svc = clean((slot && slot.service) || "");
+    try {
+      var Chain = global.PortalOverviewCapacityChain;
+      if (Chain && typeof Chain.resolveSlashInstructorsForIso === "function") {
+        var resolved = Chain.resolveSlashInstructorsForIso(joined, iso, svc);
+        if (resolved) {
+          var parts = normalizeInstructorList(resolved);
+          if (parts.length) list = parts;
+        }
+      }
+      /* Hard filter: if Timetable has a row for this ISO, drop anyone not on it. */
+      if (Chain && typeof Chain.timetableStaffKeysForIso === "function") {
+        var tt = Chain.timetableStaffKeysForIso(iso);
+        if (tt && typeof tt === "object") {
+          var ttKeys = Object.keys(tt);
+          if (ttKeys.length) {
+            list = list.filter(function (tok) {
+              var want = normStaffTokCompat(tok);
+              if (!want) return false;
+              if (tt[want]) return true;
+              for (var ti = 0; ti < ttKeys.length; ti++) {
+                if (normStaffTokCompat(ttKeys[ti]) === want) return true;
+                if (normStaffTokCompat(tt[ttKeys[ti]]) === want) return true;
+              }
+              return false;
+            });
+          }
+        }
+      }
+    } catch (_r) {}
+    /* Fallback: drop role tokens (Directors → DI) when chain helper missing. */
+    return list.filter(function (tok) {
+      return !/^(directors?|manager|office)$/i.test(String(tok || "").trim());
+    });
+  }
+
+  function normStaffTokCompat(raw) {
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function overviewSlotBoardIsAbsent(hub, slot, slotOv) {
+    /* Staffing board: override / resolution only — avoid full feedback scans. */
+    if (overrideIsAbsentType(slotOv) || overrideFeedbackResolution(slotOv) === "absent") {
+      return true;
+    }
+    if (slot && slot.__portalScheduleOverride) {
+      var so = slot.__portalScheduleOverride;
+      if (overrideIsAbsentType(so) || overrideFeedbackResolution(so) === "absent") return true;
+    }
+    try {
+      if (hub && typeof hub.overrideForSlotByType === "function") {
+        if (hub.overrideForSlotByType(slot, overrideIsAbsentType)) return true;
+      }
+    } catch (_a) {}
+    try {
+      if (typeof window !== "undefined" && window.PortalSessionStatus) {
+        var ovType = clean((slotOv && (slotOv.override_type || slotOv.type)) || "");
+        var r = window.PortalSessionStatus.resolve({
+          overrideType: ovType,
+          attendance: clean((slot && slot.attendance) || ""),
+        });
+        if (r && r.status === "absent") return true;
+      }
+    } catch (_p) {}
+    return false;
+  }
+
+  function overviewSlotBoardIsCancelled(hub, slot, slotOv) {
+    if (hubSlotIsFadiDcCancelled(slot)) return true;
+    if (overrideIsCancelledType(slotOv) || overrideFeedbackResolution(slotOv) === "cancelled") {
+      return true;
+    }
+    if (slot && slot.__portalScheduleOverride) {
+      var so = slot.__portalScheduleOverride;
+      if (overrideIsCancelledType(so) || overrideFeedbackResolution(so) === "cancelled") return true;
+    }
+    try {
+      if (hub && typeof hub.overrideForSlotByType === "function") {
+        if (hub.overrideForSlotByType(slot, overrideIsCancelledType)) return true;
+      }
+    } catch (_c) {}
+    return false;
+  }
+
+  function overviewSlotBoardState(hub, slot, unitComplete, unitAbsent) {
+    /* Staffing guide only — no feedback matching (that froze Overview on 1000+ rows). */
+    var slotOv = hub.overrideForSlot(slot);
+    if (slot.__portalShadowingOverride) slotOv = slot.__portalShadowingOverride;
+    var isCancelled = overviewSlotBoardIsCancelled(hub, slot, slotOv);
+    var isAbsent =
+      !isCancelled && overviewSlotBoardIsAbsent(hub, slot, slotOv);
+    var isUpdated = !isAbsent && !isCancelled && hubSlotShowsUpdatedChip(slot, slotOv);
+    var isShadowing = hubSlotShowsShadowingChip(slot);
+    var isInstructorReassign = hubSlotShowsInstructorReassignChip(slot, slotOv);
+    var isCoverNeeded =
+      !!(slot && slot.portalCoverNeeded) ||
+      overrideIsInstructorCoverNeededType(slotOv) ||
+      (slot.__portalScheduleOverride &&
+        overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride));
+    var isRealCover =
+      !!(slot && slot.portalInstructorReassigned) &&
+      !isCoverNeeded &&
+      !!(slot.portalCoveringStaffName || slot.portalCoveringStaffId);
+    if (isRealCover) isCoverNeeded = false;
+    var isStaffDayOff = !isCoverNeeded && !isRealCover && hubSlotShowsStaffDayOff(hub, slot);
+    if (isCoverNeeded && hubSlotShowsStaffDayOff(hub, slot)) {
+      /* Away + COVER NEEDED: seat stays day-off on staff column; mirror uses cover chip. */
+      isStaffDayOff = true;
+    }
+    var isTrial =
+      hubSlotShowsTrialChip(slot, slotOv) ||
+      /\(\s*trial\s*\)/i.test(clean(slot.client_name)) ||
+      /^trial\b/i.test(clean(slot.client_name)) ||
+      (canonicalClientSlug(slot.client_name) === "zaid" &&
+        isAquaticService(slot.service) &&
+        /9\s*to\s*9\.?30/i.test(clean(slot.time_slot) || clean(slot.time_start)));
+    var isNewClient = hubSlotShowsNewClientChip(slot, slotOv);
+    var isMakeup = !isNewClient && hubSlotShowsMakeupChip(slot, slotOv);
+    var kind = rosterSlotKind(slot.client_name);
+    var isOpenSlot = kind === "open";
+    var isClosed = kind === "closed";
+    /* Shadowing a real client (Tinashe) is still a client card — not a duty pill. */
+    var isDuty =
+      kind === "staff_duty" ||
+      kind === "manager" ||
+      (slotIsStaffDutyNoFeedback(slot) && kind !== "client");
+    var makeupDisp = null;
+    try {
+      makeupDisp = isOpenSlot ? null : makeupOverrideDisplacingSlot(hub, slot);
+    } catch (_mk) {
+      makeupDisp = null;
+    }
+    var tone = "client";
+    if (isClosed) tone = "closed";
+    else if (isOpenSlot) tone = "open";
+    else if (isDuty) tone = "duty";
+    else if (isCancelled) tone = "cancelled";
+    else if (isAbsent) tone = "absent";
+    else if (isTrial) tone = "trial";
+    else if (isCoverNeeded) tone = "cover";
+    else if (isStaffDayOff) tone = "dayoff";
+    else if (isMakeup || makeupDisp) tone = "makeup";
+    else if (isDayCentreService(slot.service)) tone = "dc";
+    return {
+      ukey: "",
+      fbDone: false,
+      isAbsent: isAbsent,
+      isCancelled: isCancelled,
+      slotOv: slotOv,
+      isUpdated: isUpdated,
+      isShadowing: isShadowing,
+      isInstructorReassign: isInstructorReassign,
+      isCoverNeeded: isCoverNeeded,
+      isRealCover: isRealCover,
+      isStaffDayOff: isStaffDayOff,
+      isTrial: isTrial,
+      isNewClient: isNewClient,
+      isMakeup: isMakeup,
+      isOpenSlot: isOpenSlot,
+      isClosed: isClosed,
+      isDuty: isDuty,
+      makeupDisp: makeupDisp,
+      fbKind: "na",
+      tone: tone,
+      boardPlace: "",
+      coverForLabel: "",
+      coverFromLabel: "",
+    };
+  }
+
+  function htmlDayBoardFbBadge(st, esc) {
+    /* Overview is a staffing board — feedback status lives on Register / Session Feedback. */
+    return "";
+  }
+
+  function dayBoardShadowingChipLabel(slot) {
+    if (slot && slot.portalShadowingObserver && !slot.portalShadowingHost) {
+      return "Shadowing";
+    }
+    var obs =
+      clean(slot && slot.portalShadowingObserverName) ||
+      resolveStaffDisplayName(slot && slot.portalShadowingObserverId) ||
+      "";
+    var first = staffPillFirstName(obs) || dayBoardStaffLabel(obs);
+    if (first) return first + " Shadowing";
+    return hubOverrideLabel(slot && slot.__portalShadowingOverride) || "Shadowing";
+  }
+
+  function dayBoardCoverChipLabel(st) {
+    var forName = clean(st && (st.coverForLabel || st.coverFromLabel));
+    if (forName) return "Cover · " + forName;
+    return "Cover";
+  }
+
+  function htmlDayBoardOverrideChipList(hub, slot, st, esc) {
+    var chips = [];
+    if (st.isCancelled) {
+      chips.push('<span class="override-chip override--cancelled">Cancelled</span>');
+    } else if (st.isAbsent) {
+      chips.push('<span class="override-chip override--absent">Absent</span>');
+    } else if (st.makeupDisp) {
+      var dispLab =
+        (st.makeupDisp.ov && hubOverrideLabel(st.makeupDisp.ov)) || "MakeUp";
+      chips.push(
+        '<span class="override-chip ' +
+          esc(hubOverrideChipClass(st.makeupDisp.ov) || "override--replace") +
+          '">' +
+          esc(dispLab) +
+          "</span>"
+      );
+    } else if (st.isTrial) {
+      chips.push('<span class="override-chip override--trial">Trial</span>');
+    } else if (st.isNewClient) {
+      chips.push('<span class="override-chip override--updated">NEW PARTICIPANT</span>');
+      if (st.isUpdated) {
+        chips.push(
+          '<span class="override-chip override--updated">' +
+            esc(st.slotOv && overrideIsSlotUpdateType(st.slotOv) ? hubOverrideLabel(st.slotOv) : "Updated") +
+            "</span>"
+        );
+      }
+    } else if (st.isMakeup) {
+      chips.push('<span class="override-chip override--replace">MakeUp</span>');
+    }
+    if (st.isShadowing) {
+      chips.push(
+        '<span class="override-chip override--shadowing">' +
+          esc(dayBoardShadowingChipLabel(slot)) +
+          "</span>"
       );
     }
-    var slots = this.expandSlotsForDate(this.selectedDay);
-    var units = this.getFeedbackUnitsForDate(this.selectedDay);
-    var unitComplete = {};
-    var unitAbsent = {};
-    for (var u = 0; u < units.length; u++) {
-      unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
-      unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
+    if (st.boardPlace === "mirror" || (st.isCoverNeeded && st.boardPlace !== "away" && st.boardPlace !== "cover")) {
+      chips.push('<span class="override-chip override--cover-needed">COVER NEEDED</span>');
+    } else if (st.boardPlace === "cover" || (st.isRealCover && st.boardPlace === "cover")) {
+      chips.push(
+        '<span class="override-chip override--instructor">' +
+          esc(dayBoardCoverChipLabel(st)) +
+          "</span>"
+      );
+    } else if (st.boardPlace === "away" || st.isStaffDayOff) {
+      if (st.coverByLabel) {
+        chips.push(
+          '<span class="override-chip override--instructor">' +
+            esc("Cover · " + st.coverByLabel) +
+            "</span>"
+        );
+      } else {
+        chips.push('<span class="override-chip override--cover-needed">COVER NEEDED</span>');
+      }
+    } else if (st.isInstructorReassign && !st.isCoverNeeded) {
+      chips.push(
+        '<span class="override-chip override--instructor">' +
+          esc(dayBoardCoverChipLabel(st) || (st.slotOv ? hubOverrideLabel(st.slotOv) : "Cover")) +
+          "</span>"
+      );
     }
-    var scopedSlots = slots.filter(function (s) {
-      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
-    });
-    var displaySlots = hub.sortOverviewSlotsForDisplay(
-      overviewDisplaySlotsFromUnits(hub, scopedSlots).filter(function (s) {
-        return hub.slotPassesOverviewFilters(s);
-      }),
-      unitComplete,
-      unitAbsent
+    if (
+      st.isUpdated &&
+      !st.isCoverNeeded &&
+      !st.isInstructorReassign &&
+      !st.isRealCover &&
+      !st.isTrial &&
+      !st.isNewClient &&
+      !st.isMakeup &&
+      !st.isAbsent &&
+      !st.isCancelled &&
+      st.boardPlace !== "away" &&
+      st.boardPlace !== "mirror"
+    ) {
+      chips.push(
+        '<span class="override-chip override--updated">' +
+          esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Updated") +
+          "</span>"
+      );
+    }
+    return chips;
+  }
+
+  function htmlDayBoardOverrideBadges(hub, slot, st, esc) {
+    var chips = htmlDayBoardOverrideChipList(hub, slot, st, esc);
+    return chips.length ? '<div class="ash-db-card__chips">' + chips.join(" ") + "</div>" : "";
+  }
+
+  function dayBoardParticipantDisplayName(raw) {
+    var s = clean(raw);
+    if (!s) return s;
+    try {
+      var A = global.StaffDashboardSpreadsheetAdapter;
+      if (A && typeof A.resolveWorkerDisplayName === "function") {
+        var resolved = A.resolveWorkerDisplayName(s, s);
+        if (resolved) return clean(resolved);
+      }
+    } catch (_dn) {}
+    try {
+      if (typeof global.portalParticipantDisplayName === "function") {
+        var p = global.portalParticipantDisplayName(s);
+        if (p) return clean(p);
+      }
+    } catch (_p) {}
+    return s;
+  }
+
+  function htmlDayBoardCard(hub, slot, st, esc) {
+    var band = dayBoardServiceBand(slot);
+    var nameHtml;
+    if (st.isAbsent || st.isCancelled || st.boardPlace === "away" || st.isStaffDayOff) {
+      nameHtml =
+        '<span class="ash-db-card__name-text">' +
+        esc(
+          dayBoardParticipantDisplayName(slot.client_name) ||
+            clean(slot.client_name) ||
+            "\u2014"
+        ) +
+        "</span>";
+    } else if (st.makeupDisp) {
+      var mkName =
+        dayBoardParticipantDisplayName(
+          (st.makeupDisp.makeupSlot && st.makeupDisp.makeupSlot.client_name) ||
+            overrideReplacementClientName(overridePayloadObj(st.makeupDisp.ov))
+        ) || "MakeUp";
+      nameHtml = '<span class="ash-db-card__name-text">' + esc(mkName) + "</span>";
+    } else if (st.isTrial) {
+      var tName =
+        dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name) || "";
+      tName = tName
+        .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
+        .replace(/^trial\s*[-·:]?\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      nameHtml =
+        '<span class="ash-db-card__name-text">' +
+        esc(tName || "Trial") +
+        "</span>";
+    } else if (st.isOpenSlot || st.isClosed) {
+      nameHtml = htmlParticipantPill(slot.client_name, esc, slot);
+    } else if (st.isDuty) {
+      /* Match Staff Today: OFFICE / MANAGER as board name, not muted pill. */
+      var dutyDisp = clean(slot.client_name) || "Duty";
+      var dutyLow = dutyDisp.toLowerCase();
+      if (dutyLow === "office") dutyDisp = "OFFICE";
+      else if (dutyLow === "manager") dutyDisp = "MANAGER";
+      else if (dutyLow === "interview" || dutyLow === "interviews") dutyDisp = "INTERVIEW";
+      else if (dutyLow === "admin") dutyDisp = "ADMIN";
+      else if (dutyLow === "home" || dutyLow === "casa") dutyDisp = "HOME";
+      else dutyDisp = dutyDisp.toUpperCase();
+      nameHtml = '<span class="ash-db-card__name-text">' + esc(dutyDisp) + "</span>";
+    } else {
+      nameHtml =
+        '<span class="ash-db-card__name-text">' +
+        esc(dayBoardParticipantDisplayName(slot.client_name) || "\u2014") +
+        "</span>";
+    }
+    var venue = clean(slot.venue);
+    var area = clean(slot.area);
+    var timeLabel = rosterTimeDisplay(slot) || clean(slot.time_slot) || "";
+    if (st.boardPlace === "mirror" && st.coverFromLabel) {
+      timeLabel = (timeLabel ? timeLabel + " · " : "") + "from " + st.coverFromLabel;
+    } else if (st.boardPlace === "cover" && st.coverForLabel) {
+      timeLabel = (timeLabel ? timeLabel + " · " : "") + "covering " + st.coverForLabel;
+    }
+    var whenHtml = "";
+    if (timeLabel || area) {
+      whenHtml =
+        '<div class="ash-db-card__when">' +
+        esc(timeLabel || "") +
+        (area && !/from |covering /i.test(timeLabel)
+          ? (timeLabel ? " · " : "") + esc(area)
+          : "") +
+        "</div>";
+    }
+    var chips = htmlDayBoardOverrideChipList(hub, slot, st, esc);
+    var chipsHtml = chips.length
+      ? '<div class="ash-db-card__chips">' + chips.join("") + "</div>"
+      : "";
+    var cardTone = st.tone;
+    if (st.boardPlace === "away" || st.isStaffDayOff) cardTone = "dayoff";
+    if (st.boardPlace === "mirror") cardTone = "cover";
+    return (
+      '<article class="ash-db-card ash-db-card--' +
+      esc(cardTone) +
+      (st.boardPlace === "away" || st.isStaffDayOff ? " ash-db-card--needs-cover" : "") +
+      (st.boardPlace === "mirror" ? " ash-db-card--cover-mirror" : "") +
+      (st.isCoverNeeded && st.boardPlace !== "away" ? " ash-db-card--cover-needed" : "") +
+      '">' +
+      '<div class="ash-db-card__band">' +
+      esc(band) +
+      "</div>" +
+      '<div class="ash-db-card__name">' +
+      nameHtml +
+      "</div>" +
+      whenHtml +
+      (venue ? '<span class="ash-db-card__venue">' + esc(venue) + "</span>" : "") +
+      chipsHtml +
+      "</article>"
     );
+  }
+
+  AdminSessionsHub.prototype.htmlOverviewLayoutToggle = function () {
+    return "";
+  };
+
+  AdminSessionsHub.prototype.htmlDayBoard = function (displaySlots, unitComplete, unitAbsent) {
+    var esc = this.escapeHtml;
+    var hub = this;
+    if (!displaySlots || !displaySlots.length) {
+      return (
+        '<div class="ash-db-empty">' +
+        esc(this.bundleError || "No roster slots for this day.") +
+        "</div>"
+      );
+    }
+    var byKey = Object.create(null);
+    var labelByKey = Object.create(null);
+    var COVER_KEY = "coverneeded";
+
+    function pushBoardItem(key, label, slot, st) {
+      if (!key) return;
+      if (!byKey[key]) byKey[key] = [];
+      labelByKey[key] = label || key;
+      byKey[key].push({ slot: slot, st: st });
+    }
+
+    function cloneBoardState(base, extra) {
+      var out = Object.assign({}, base || {}, extra || {});
+      return out;
+    }
+
+    for (var i = 0; i < displaySlots.length; i++) {
+      var slot = displaySlots[i];
+      var st;
+      try {
+        st = overviewSlotBoardState(hub, slot, unitComplete, unitAbsent);
+      } catch (_stErr) {
+        st = {
+          fbKind: "na",
+          tone: "client",
+          makeupDisp: null,
+          isOpenSlot: false,
+          isClosed: false,
+          isDuty: false,
+          isTrial: false,
+          isMakeup: false,
+          isAbsent: false,
+          isCancelled: false,
+          isCoverNeeded: false,
+          isRealCover: false,
+          isStaffDayOff: false,
+          isInstructorReassign: false,
+          isUpdated: false,
+          isShadowing: false,
+          slotOv: null,
+          boardPlace: "",
+          coverForLabel: "",
+          coverFromLabel: "",
+        };
+      }
+      /* Cancelled Office / Interviews / Manager: drop the card so the column does not stack. */
+      if (st.isCancelled && st.isDuty) continue;
+      var iso = String(slot.session_date || hub.selectedDay || "").slice(0, 10);
+      var origInsts = dayBoardResolveInstructorsForIso(
+        dayBoardOriginalInstructorsForSlot(slot),
+        iso,
+        slot
+      );
+      if (!origInsts.length) origInsts = ["Unassigned"];
+      var awayOrig = [];
+      for (var oi = 0; oi < origInsts.length; oi++) {
+        if (hubStaffAwayOnIso(hub, iso, origInsts[oi])) awayOrig.push(origInsts[oi]);
+      }
+      var fromLabel = dayBoardStaffLabel((awayOrig[0] || origInsts[0]));
+      var realCover = !!(st.isRealCover && (slot.portalCoveringStaffName || slot.portalCoveringStaffId));
+      var pushedNamedCover = false;
+      var coverDedupe = Object.create(null);
+      function pushCoverColumn(coverRaw, forWho) {
+        var parts = normalizeInstructorList(coverRaw);
+        if (!parts.length && coverRaw) parts = [coverRaw];
+        for (var cpi = 0; cpi < parts.length; cpi++) {
+          if (hubStaffAwayOnIso(hub, iso, parts[cpi])) continue;
+          if (forWho && dayBoardStaffKeysEqual(parts[cpi], forWho)) continue;
+          var ck = dayBoardStaffKey(parts[cpi]);
+          var dedupeKey =
+            ck +
+            "|" +
+            clean(slot.client_name) +
+            "|" +
+            clean(slot.time_slot) +
+            "|" +
+            clean(slot.service);
+          if (!ck || coverDedupe[dedupeKey]) continue;
+          coverDedupe[dedupeKey] = 1;
+          pushedNamedCover = true;
+          pushBoardItem(
+            ck,
+            dayBoardStaffLabel(parts[cpi]),
+            slot,
+            cloneBoardState(st, {
+              boardPlace: "cover",
+              coverForLabel: dayBoardStaffLabel(forWho || fromLabel),
+              isCoverNeeded: false,
+              isStaffDayOff: false,
+              isInstructorReassign: true,
+              isRealCover: true,
+              tone: st.isAbsent
+                ? "absent"
+                : st.isCancelled
+                  ? "cancelled"
+                  : st.isTrial
+                    ? "trial"
+                    : "client",
+            })
+          );
+        }
+      }
+
+      /* Day-off requested: seats stay on that worker's column (red), even after cover remap. */
+      for (var oa = 0; oa < awayOrig.length; oa++) {
+        var awayCoverLbl = dayBoardAwayCoverLabel(hub, slot, iso, awayOrig[oa]);
+        pushBoardItem(
+          dayBoardStaffKey(awayOrig[oa]),
+          dayBoardStaffLabel(awayOrig[oa]),
+          slot,
+          awayColumnBoardState(st, awayCoverLbl)
+        );
+        /*
+         * Named cover from unavailability / override chip (e.g. Andres covering Carlos) must
+         * also get a Cover column — same as Victor covering Berta — not only a chip on the
+         * away column.
+         */
+        if (awayCoverLbl) pushCoverColumn(awayCoverLbl, awayOrig[oa]);
+      }
+
+      if (realCover) {
+        pushCoverColumn(slot.portalCoveringStaffName || slot.portalCoveringStaffId, fromLabel);
+        /*
+         * Slash Multi seats: after Timetable resolve, still paint sibling workers
+         * who remain on the seat (not the covered-away token).
+         */
+        var coverInstsRaw = origInsts.length ? origInsts : dayBoardInstructorsForSlot(slot);
+        var coverInsts = dayBoardResolveInstructorsForIso(coverInstsRaw, iso, slot);
+        var coverWho = slot.portalCoveringStaffName || slot.portalCoveringStaffId || "";
+        for (var ci = 0; ci < coverInsts.length; ci++) {
+          var sib = coverInsts[ci];
+          if (hubStaffAwayOnIso(hub, iso, sib)) continue;
+          if (dayBoardStaffKeysEqual(sib, fromLabel)) continue;
+          if (awayOrig.some(function (a) { return dayBoardStaffKeysEqual(a, sib); })) continue;
+          if (dayBoardStaffKeysEqual(sib, coverWho)) continue;
+          var coverParts = normalizeInstructorList(coverWho);
+          var sibIsCover = false;
+          for (var cp = 0; cp < coverParts.length; cp++) {
+            if (dayBoardStaffKeysEqual(sib, coverParts[cp])) {
+              sibIsCover = true;
+              break;
+            }
+          }
+          if (sibIsCover) continue;
+          pushBoardItem(
+            dayBoardStaffKey(sib),
+            dayBoardStaffLabel(sib),
+            slot,
+            cloneBoardState(st, {
+              boardPlace: "normal",
+              isCoverNeeded: false,
+              isStaffDayOff: false,
+              isRealCover: false,
+              isInstructorReassign: false,
+              coverForLabel: "",
+              coverFromLabel: "",
+            })
+          );
+        }
+        continue;
+      }
+
+      if (st.isStaffDayOff || st.isCoverNeeded || awayOrig.length) {
+        if (pushedNamedCover) continue;
+        var currentInsts = dayBoardResolveInstructorsForIso(
+          dayBoardInstructorsForSlot(slot),
+          iso,
+          slot
+        );
+        var hasLiveWorker = false;
+        for (var od = 0; od < currentInsts.length; od++) {
+          if (hubStaffAwayOnIso(hub, iso, currentInsts[od])) continue;
+          hasLiveWorker = true;
+          var alreadyAway = false;
+          for (var ax = 0; ax < awayOrig.length; ax++) {
+            if (dayBoardStaffKeysEqual(awayOrig[ax], currentInsts[od])) {
+              alreadyAway = true;
+              break;
+            }
+          }
+          if (alreadyAway) continue;
+          pushBoardItem(
+            dayBoardStaffKey(currentInsts[od]),
+            dayBoardStaffLabel(currentInsts[od]),
+            slot,
+            cloneBoardState(st, {
+              boardPlace: st.isCoverNeeded ? "host" : "normal",
+              isStaffDayOff: false,
+              isCoverNeeded: !!st.isCoverNeeded,
+              tone: st.isCoverNeeded ? "cover" : st.tone,
+            })
+          );
+        }
+        if (!hasLiveWorker) {
+          pushBoardItem(
+            COVER_KEY,
+            "COVER NEEDED",
+            slot,
+            cloneBoardState(st, {
+              boardPlace: "mirror",
+              coverFromLabel: fromLabel,
+              isCoverNeeded: true,
+              isStaffDayOff: false,
+              tone: "cover",
+            })
+          );
+        }
+        continue;
+      }
+
+      var insts = dayBoardInstructorsForSlot(slot);
+      /*
+       * Sunday Hub Multi seats ship slash labels (Javier/Dan/Emmanuel,
+       * Roberto/Youssef/Godsway, Aurora/…/Directors). Timetable owns who
+       * works that ISO — paint only resolved names (no Dan/Youssef/DI unless
+       * Timetable lists them).
+       */
+      var targets = dayBoardResolveInstructorsForIso(insts, iso, slot);
+      for (var j = 0; j < targets.length; j++) {
+        var raw = targets[j];
+        var staffKey = dayBoardStaffKey(raw);
+        try {
+          var PRCSkip = global.PortalRosterCanonical;
+          if (
+            PRCSkip &&
+            typeof PRCSkip.isAutumnNoSessionStaffKey === "function" &&
+            PRCSkip.isAutumnNoSessionStaffKey(staffKey) &&
+            !(st && (st.boardPlace === "cover" || st.isRealCover))
+          ) {
+            continue;
+          }
+        } catch (_ns) {}
+        pushBoardItem(staffKey, dayBoardStaffLabel(raw), slot, cloneBoardState(st, {
+          boardPlace: "normal",
+        }));
+      }
+    }
+
+    /* Staff with day-off on this date but no remaining seats (e.g. John Wed 9/15/16 Tinashe
+     * remapped to Godsway+Bismark+Emanuel) still need a red column — and the Tinashe card. */
+    (function ensureAwayStaffColumns() {
+      var iso = String(hub.selectedDay || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+      var dayName = weekdayLongFromIso(iso);
+      var unavail = hubStaffUnavailabilityRows(hub);
+      for (var u = 0; u < unavail.length; u++) {
+        var row = unavail[u];
+        if (!row) continue;
+        if (String(row.off_date || "").slice(0, 10) !== iso) continue;
+        var rawName = clean(row.staff_name) || clean(row.name_key);
+        if (!rawName) continue;
+        var key = dayBoardStaffKey(rawName);
+        if (!key || key === COVER_KEY) continue;
+        try {
+          var PRCNs = global.PortalRosterCanonical;
+          if (PRCNs && typeof PRCNs.isAutumnNoSessionStaffKey === "function" && PRCNs.isAutumnNoSessionStaffKey(key)) {
+            continue;
+          }
+        } catch (_nsAway) {}
+        if (byKey[key] && byKey[key].length) continue;
+        try {
+          var PRC = global.PortalRosterCanonical;
+          if (
+            PRC &&
+            typeof PRC.autumnStaffStandingOffOnIso === "function" &&
+            PRC.autumnStaffStandingOffOnIso(iso, rawName)
+          ) {
+            continue;
+          }
+        } catch (_standOff) {}
+        var attached = 0;
+        for (var si = 0; si < displaySlots.length; si++) {
+          var lost = displaySlots[si];
+          if (!lost || !hubSlotShouldStayOnAwayColumn(hub, lost, iso, rawName)) continue;
+          var lostSt;
+          try {
+            lostSt = overviewSlotBoardState(hub, lost, unitComplete, unitAbsent);
+          } catch (_lostSt) {
+            lostSt = { tone: "dayoff", boardPlace: "away" };
+          }
+          pushBoardItem(
+            key,
+            dayBoardStaffLabel(rawName),
+            lost,
+            awayColumnBoardState(
+              cloneBoardState(lostSt, {
+                isUpdated: false,
+                isShadowing: false,
+                isCancelled: false,
+              }),
+              dayBoardAwayCoverLabel(hub, lost, iso, rawName)
+            )
+          );
+          attached++;
+        }
+        if (attached) continue;
+        var lostSlot = hubAwayStaffLostHubBespokeSlot(hub, iso, dayName, rawName, displaySlots);
+        if (lostSlot) {
+          var lostHubSt;
+          try {
+            lostHubSt = overviewSlotBoardState(hub, lostSlot, unitComplete, unitAbsent);
+          } catch (_lostHubSt) {
+            lostHubSt = { tone: "dayoff", boardPlace: "away" };
+          }
+          var coverFromUnavail = hubAwayCoverNameFromUnavailability(hub, iso, rawName);
+          var coverLbl =
+            coverFromUnavail || dayBoardAwayCoverLabel(hub, lostSlot, iso, rawName);
+          pushBoardItem(
+            key,
+            dayBoardStaffLabel(rawName),
+            lostSlot,
+            awayColumnBoardState(
+              cloneBoardState(lostHubSt, {
+                isUpdated: false,
+                isShadowing: false,
+                isCancelled: false,
+              }),
+              coverLbl
+            )
+          );
+          /* Emmanuel (cover) Tinashe card → Cover · John, same pattern as Javi → Cover · Aurora. */
+          if (coverLbl) {
+            var coverKey = dayBoardStaffKey(coverLbl);
+            var coverItems = byKey[coverKey] || [];
+            for (var ci = 0; ci < coverItems.length; ci++) {
+              var cit = coverItems[ci];
+              var cs = cit && cit.slot;
+              if (!cs || !isBespokeService(cs.service)) continue;
+              if (!/^tinashe\b/i.test(clean(cs.client_name))) continue;
+              cit.st = cloneBoardState(cit.st || {}, {
+                boardPlace: "cover",
+                coverForLabel: dayBoardStaffLabel(rawName),
+                isRealCover: true,
+                isInstructorReassign: true,
+                isShadowing: false,
+                isStaffDayOff: false,
+                isCoverNeeded: false,
+                tone:
+                  (cit.st && cit.st.isAbsent)
+                    ? "absent"
+                    : (cit.st && cit.st.isCancelled)
+                      ? "cancelled"
+                      : (cit.st && cit.st.isTrial)
+                        ? "trial"
+                        : "client",
+              });
+            }
+          }
+          continue;
+        }
+        byKey[key] = [];
+        labelByKey[key] = dayBoardStaffLabel(rawName);
+      }
+    })();
+
+    function sortStaffKeys(list) {
+      var pref = dayBoardStaffPrefForIso(hub.selectedDay);
+      return list.slice().sort(function (a, b) {
+        if (a === COVER_KEY) return 1;
+        if (b === COVER_KEY) return -1;
+        var la = labelByKey[a] || a;
+        var lb = labelByKey[b] || b;
+        var ia = -1;
+        var ib = -1;
+        for (var p = 0; p < pref.length; p++) {
+          if (dayBoardStaffKey(pref[p]) === a) ia = p;
+          if (dayBoardStaffKey(pref[p]) === b) ib = p;
+        }
+        if (ia >= 0 && ib >= 0) return ia - ib;
+        if (ia >= 0) return -1;
+        if (ib >= 0) return 1;
+        return la.localeCompare(lb, "en", { sensitivity: "base" });
+      });
+    }
+    function sortedItems(key) {
+      return byKey[key].slice().sort(function (x, y) {
+        return compareOverviewSlotsTimeThenCancelled(hub, x.slot, y.slot);
+      });
+    }
+    var swimKeys = [];
+    var supportKeys = [];
+    var climbKeys = [];
+    Object.keys(byKey).forEach(function (key) {
+      if (key === COVER_KEY) {
+        supportKeys.push(key);
+        return;
+      }
+      try {
+        var PRC = global.PortalRosterCanonical;
+        /* Never drop a column that already has cover / away cards (e.g. Andres covering Carlos). */
+        var hasLiveBoardItems = !!(byKey[key] && byKey[key].length);
+        if (
+          !hasLiveBoardItems &&
+          PRC &&
+          typeof PRC.isAutumnNoSessionStaffKey === "function" &&
+          PRC.isAutumnNoSessionStaffKey(key)
+        ) {
+          return;
+        }
+        /* Standing-off weekdays (Victor Mon/Thu) hide empty columns only.
+         * Keep the column when Add session / cover already put cards on it. */
+        if (
+          !hasLiveBoardItems &&
+          PRC &&
+          typeof PRC.autumnStaffStandingOffOnIso === "function" &&
+          PRC.autumnStaffStandingOffOnIso(hub.selectedDay, labelByKey[key] || key)
+        ) {
+          return;
+        }
+      } catch (_off) {}
+      var role = dayBoardStaffRole(key, byKey[key]);
+      if (role === "climbing") climbKeys.push(key);
+      else if (role === "support") supportKeys.push(key);
+      else swimKeys.push(key);
+    });
+    swimKeys = sortStaffKeys(swimKeys);
+    supportKeys = sortStaffKeys(supportKeys);
+    climbKeys = sortStaffKeys(climbKeys);
+
+    function renderCols(keys) {
+      return keys
+        .map(function (key) {
+          return dayBoardColHtml(hub, key, labelByKey[key], sortedItems(key), esc);
+        })
+        .join("");
+    }
+
+    /*
+     * Row 1: swimming instructors + hub support (typically 6 on Sunday).
+     * Row 2: climbing only (typically Alex + Carlos) — same 6-track grid so
+     * card width matches the row above (not stretched to half-width).
+     */
+    var poolKeys = swimKeys.concat(supportKeys);
+    if (!poolKeys.length && !climbKeys.length) {
+      return (
+        '<div class="ash-day-board" data-ash-day-board="1">' +
+        '<div class="ash-db-empty">' +
+        esc(this.bundleError || "No roster slots for this day.") +
+        "</div></div>"
+      );
+    }
+    var html = '<div class="ash-day-board" data-ash-day-board="1">';
+    if (poolKeys.length) {
+      html +=
+        '<div class="ash-day-board__group ash-day-board__group--pool">' +
+        renderCols(poolKeys) +
+        "</div>";
+    }
+    if (climbKeys.length) {
+      html +=
+        '<div class="ash-day-board__group ash-day-board__group--climb" aria-label="Climbing">' +
+        renderCols(climbKeys) +
+        "</div>";
+    }
+    html += "</div>";
+    return html;
+  };
+
+  AdminSessionsHub.prototype.htmlTrackingTableBody = function (displaySlots, unitComplete, unitAbsent) {
+    var esc = this.escapeHtml;
+    var hub = this;
     var rows = displaySlots
       .map(function (slot) {
-        var ukey = feedbackUnitKey(slot);
-        var fbDone = unitComplete[ukey] || hub.slotFeedbackComplete(slot);
-        var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
-        var isCancelled = hub.slotHasCancellation(slot);
-        var slotOv = hub.overrideForSlot(slot);
-        if (slot.__portalShadowingOverride) slotOv = slot.__portalShadowingOverride;
-        var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
-        var isShadowing = hubSlotShowsShadowingChip(slot);
-        var isInstructorReassign = hubSlotShowsInstructorReassignChip(slot, slotOv);
-        var isTrial = hubSlotShowsTrialChip(slot, slotOv);
-        var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
-        var isOpenSlot = isOpenRosterSlot(slot.client_name);
-        var makeupDisp = isOpenSlot ? null : makeupOverrideDisplacingSlot(hub, slot);
+        var st = overviewSlotBoardState(hub, slot, unitComplete, unitAbsent);
+        var makeupDisp = st.makeupDisp;
         var fbCell;
         if (makeupDisp) {
           var mkSlotDisp = makeupDisp.makeupSlot;
@@ -8342,54 +12671,65 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           fbCell = mkAbsentDisp
             ? '<span class="ash-status ash-status--absent">Submitted (Absent)</span>'
             : rosterFeedbackStatusHtml(false, mkDoneDisp);
-        } else if (isOpenSlot) {
+        } else if (st.isOpenSlot) {
           fbCell = '<span class="ash-muted">N/A</span>';
-        } else if (isTrial) {
-          fbCell = rosterFeedbackStatusHtml(false, fbDone);
-        } else if (isAbsent) {
-          fbCell = rosterFeedbackStatusHtml(true, fbDone);
-        } else if (isCancelled) {
+        } else if (st.isTrial) {
+          fbCell = rosterFeedbackStatusHtml(false, st.fbDone);
+        } else if (st.isAbsent) {
+          fbCell = rosterFeedbackStatusHtml(true, st.fbDone);
+        } else if (st.isCancelled) {
           fbCell = '<span class="ash-status ash-status--absent">Cancelled</span>';
         } else {
           fbCell = rosterFeedbackStatusHtml(
             false,
-            fbDone,
-            fbDone ? "" : awaitingFeedbackTitleForSlot(hub, slot)
+            st.fbDone,
+            st.fbDone ? "" : awaitingFeedbackTitleForSlot(hub, slot)
           );
         }
         var statusCell = makeupDisp
-          ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
-          : isOpenSlot
+          ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip ' +
+            esc(hubOverrideChipClass(makeupDisp.ov) || "override--replace") +
+            '">' +
+            esc((makeupDisp.ov && hubOverrideLabel(makeupDisp.ov)) || "MakeUp") +
+            "</span>"
+          : st.isOpenSlot
           ? htmlOpenSlotStatusBadge(esc)
-          : isTrial
+          : st.isTrial
             ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--trial">Trial</span>'
-          : isCancelled
+          : st.isCancelled
           ? '<span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Cancelled</span>'
-          : isAbsent
+          : st.isAbsent
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
-            : isMakeup
+            : st.isMakeup
               ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
-              : isShadowing
+              : st.isShadowing
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--shadowing">' +
                   esc(hubOverrideLabel(slot.__portalShadowingOverride)) +
                   "</span>"
-              : isInstructorReassign
+              : st.isCoverNeeded
+                ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--cover-needed">COVER NEEDED</span>'
+              : st.isInstructorReassign
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--instructor">' +
-                  esc(slotOv ? hubOverrideLabel(slotOv) : "Changed instructor") +
+                  esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Changed instructor") +
                   "</span>"
-              : isUpdated
+              : st.isUpdated
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
-                  esc(isUpdated && slotOv ? hubOverrideLabel(slotOv) : "Updated") +
+                  esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Updated") +
                   "</span>"
                 : '<span class="ash-badge ash-badge--booked">Booked</span>';
         var svcLabel =
           clean(slot.service) ||
-          (hubSlotIsMakeup(slot) ? inferOverrideSlotService(slot.__portalScheduleOverride, overridePayloadObj(slot.__portalScheduleOverride)) : "") ||
+          (hubSlotIsMakeup(slot)
+            ? inferOverrideSlotService(
+                slot.__portalScheduleOverride,
+                overridePayloadObj(slot.__portalScheduleOverride)
+              )
+            : "") ||
           "\u2014";
         var svc =
           esc(svcLabel) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(slot)) + "</div>" : "");
-        var inst = hubInstructorCellHtml(slot, slotOv);
+        var inst = hubInstructorCellHtml(slot, st.slotOv);
         var venue = clean(slot.venue) || "\u2014";
         var notes = clean(slot.area) || "\u2014";
         var participantCell;
@@ -8409,7 +12749,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           participantCell = htmlParticipantPill(slot.client_name, esc, slot);
         }
         return (
-          "<tr>" +
+          '<tr class="' +
+          (st.isCoverNeeded ? "ash-row--cover-needed" : "") +
+          '">' +
           '<td class="ash-td-center">' +
           svc +
           "</td>" +
@@ -8435,7 +12777,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           yesNoCell(hub.slotHasIncident(slot)) +
           "</td>" +
           '<td class="ash-td-center">' +
-          yesNoCell(isCancelled) +
+          yesNoCell(st.isCancelled) +
           "</td>" +
           "</tr>"
         );
@@ -8448,28 +12790,411 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         (this.bundleError ? esc(this.bundleError) : "No roster slots for this day.") +
         "</div></td></tr>";
     }
-
     return (
-      this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
-      this.htmlOverviewFeedbackLoadHint() +
-      this.htmlOverviewMissingFeedbackBlock(this.selectedDay) +
-      this.overviewFilterRowHtml() +
-      '<h3 class="ash-table-title">' +
-      esc(formatLongDate(this.selectedDay)) +
-      ' <span class="ash-badge ash-badge--booked">Roster</span>' +
-      htmlOverviewSessionCountHint(hub, this.selectedDay, displaySlots.filter(function (s) {
-        return !isTeflonDemoRosterSlot(s);
-      }), esc) +
-      "</h3>" +
       '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><thead><tr>' +
       '<th class="ash-td-center">Service</th><th class="ash-td-center">Instructor</th><th class="ash-td-center">Participant</th><th class="ash-td-center">Venue</th><th class="ash-td-center">Notes</th><th class="ash-td-center">Status</th><th class="ash-td-center">Feedback</th>' +
       TH_ICON_INCIDENT +
       TH_ICON_CANCELLATION +
       "</tr></thead><tbody data-ash-client-filter-tbody>" +
       rows +
-      "</tbody></table></div>" +
-      this.htmlOverviewTermWeekLog()
+      "</tbody></table></div>"
     );
+  };
+
+  AdminSessionsHub.prototype.htmlTracking = function () {
+    var esc = this.escapeHtml;
+    var hub = this;
+    if (hubDayIsClubClosed(hub, this.selectedDay)) {
+      return (
+        '<div class="ash-overview-pin">' +
+        this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
+        '<div class="ash-overview-scroll">' +
+        this.overviewFilterRowHtml() +
+        '<h3 class="ash-table-title">' +
+        esc(formatLongDate(this.selectedDay)) +
+        ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Closed</span></h3>' +
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="9">' +
+        '<div class="ash-empty">Club closed \u2014 no sessions on this date.</div></td></tr></tbody></table></div>' +
+        "</div></div>"
+      );
+    }
+    var srcNote = global.STAFF_DASHBOARD_SOURCE || {};
+    var chainOn = !!(srcNote.capacityChainNoCanonicalRemap || global.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__);
+    var boardHint = chainOn
+      ? "Capacity chain + Schedule & Covers — who works and which seats today."
+      : "Staffing board — who works and which seats today.";
+    /* Pin week chrome; only the board body scrolls (sticky was letting cards paint above/below). */
+    return (
+      '<div class="ash-overview-pin">' +
+      this.htmlFeedbackWeekDaysRow({ overviewPicker: true, staffingGuide: true }) +
+      '<div class="ash-overview-scroll">' +
+      '<p class="ash-feedback-filter-hint" role="status" data-ash-overview-source="' +
+      esc(chainOn ? "capacity-chain" : "other") +
+      '">' +
+      esc(boardHint) +
+      "</p>" +
+      this.overviewFilterRowHtml() +
+      '<div class="ash-table-title-row">' +
+      '<h3 class="ash-table-title">' +
+      esc(formatLongDate(this.selectedDay)) +
+      ' <span class="ash-badge ash-badge--booked">' +
+      esc("Who works") +
+      "</span>" +
+      (chainOn
+        ? ' <span class="ash-badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0">Places · Services · Timetable · Covers</span>'
+        : "") +
+      "</h3>" +
+      "</div>" +
+      '<div data-ash-overview-body class="ash-overview-body">' +
+      '<p class="ash-feedback-filter-hint" role="status">Building day board…</p>' +
+      "</div>" +
+      "</div></div>"
+    );
+  };
+
+  AdminSessionsHub.prototype.htmlTrackingBody = function () {
+    var hub = this;
+    if (hubDayIsClubClosed(hub, this.selectedDay)) return "";
+    var ctx = hub.staffingDisplayContextForDay(this.selectedDay);
+    return hub.htmlDayBoard(ctx.displaySlots, {}, {});
+  };
+
+  AdminSessionsHub.prototype.htmlTrackingTableBodyStaffing = function (displaySlots) {
+    var esc = this.escapeHtml;
+    var hub = this;
+    var rows = (displaySlots || [])
+      .map(function (slot) {
+        var st = overviewSlotBoardState(hub, slot, {}, {});
+        var name = clean(slot.client_name) || "No participant";
+        if (st.makeupDisp) {
+          var mkName =
+            (st.makeupDisp.makeupSlot && clean(st.makeupDisp.makeupSlot.client_name)) ||
+            clean(overrideReplacementClientName(overridePayloadObj(st.makeupDisp.ov))) ||
+            "MakeUp";
+          name = mkName + " (was " + clean(slot.client_name) + ")";
+        } else if (st.isAbsent) {
+          name =
+            "Absent" +
+            (clean(slot.client_name) ? " (" + clean(slot.client_name) + ")" : "");
+        } else if (st.isOpenSlot) {
+          name = rosterOpenSlotDisplayLabel();
+        } else if (st.isTrial && clean(slot.client_name)) {
+          name =
+            clean(slot.client_name)
+              .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
+              .replace(/^trial\s*[-·:]?\s*/i, "")
+              .replace(/\s+/g, " ")
+              .trim() || clean(slot.client_name);
+        }
+        return (
+          "<tr>" +
+          '<td class="ash-td-center">' +
+          esc(dayBoardServiceBand(slot)) +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(dayBoardInstructorsForSlot(slot).map(dayBoardStaffLabel).join(", ")) +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(name) +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(clean(slot.venue) || "—") +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(rosterTimeDisplay(slot) || clean(slot.time_slot) || "—") +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          (htmlDayBoardOverrideBadges(hub, slot, st, esc) || "—") +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+    if (!rows) {
+      rows =
+        '<tr><td colspan="6"><div class="ash-empty">' +
+        (this.bundleError ? esc(this.bundleError) : "No roster slots for this day.") +
+        "</div></td></tr>";
+    }
+    return (
+      '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><thead><tr>' +
+      '<th class="ash-td-center">Service</th><th class="ash-td-center">Instructor</th><th class="ash-td-center">Participant</th><th class="ash-td-center">Venue</th><th class="ash-td-center">Time</th><th class="ash-td-center">Notes</th>' +
+      "</tr></thead><tbody data-ash-client-filter-tbody>" +
+      rows +
+      "</tbody></table></div>"
+    );
+  };
+
+  AdminSessionsHub.prototype.feedbackSurfaceReady = function () {
+    if (this.mode !== "feedback") return false;
+    var root = this.root;
+    if (!root) return false;
+    return !!(
+      root.querySelector(".ash-metrics-dashboard") &&
+      root.querySelector("table.ash-table--register")
+    );
+  };
+
+  AdminSessionsHub.prototype.syncFeedbackChromeSelection = function () {
+    var root = this.root;
+    if (!root) return;
+    var day = this.selectedDay;
+    var cards = root.querySelectorAll("[data-ash-day], [data-ash-feedback-metric-day]");
+    for (var i = 0; i < cards.length; i++) {
+      var el = cards[i];
+      var iso = el.getAttribute("data-ash-day") || el.getAttribute("data-ash-feedback-metric-day");
+      el.classList.toggle("ash-day-card--sel", iso === day);
+    }
+  };
+
+  AdminSessionsHub.prototype.hubIsLive = function () {
+    return !!(this.root && this.root.isConnected);
+  };
+
+  AdminSessionsHub.prototype.htmlFeedbackRegisterTableBody = function () {
+    var hub = this;
+    var esc = this.escapeHtml;
+    var prevLite = hub._registerLitePaint;
+    hub._registerLitePaint = true;
+    var rows = [];
+    var tableRows = "";
+    try {
+      rows = this.feedbackRowsForSelectedDay();
+      tableRows = rows
+        .map(function (fb, rowIdx) {
+          var awaiting = fb && fb._ashAwaitingSlot;
+          return hub.htmlFeedbackTableRow(fb, esc, {
+            rowIdx: awaiting ? null : rowIdx,
+            clickable: false,
+            variant: "register",
+          });
+        })
+        .join("");
+    } finally {
+      hub._registerLitePaint = prevLite;
+    }
+    if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
+      return (
+        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>'
+      );
+    }
+    if (!tableRows) {
+      return '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
+    }
+    return tableRows;
+  };
+
+  /**
+   * Switch Register day without rebuilding the term log or all 7 day-stat cards
+   * (that full render hangs Chrome after the 1000-row payload lands).
+   */
+  AdminSessionsHub.prototype.softPaintFeedbackDay = function () {
+    if (!this.hubIsLive()) return;
+    if (!this.feedbackSurfaceReady()) {
+      this.renderPanels();
+      return;
+    }
+    this.syncFeedbackChromeSelection();
+    var root = this.root;
+    var metrics = root.querySelector(".ash-metrics-dashboard");
+    if (metrics) {
+      try {
+        var sum = this.engagementSummary(this.feedbackRowsForMetrics());
+        var wrap = document.createElement("div");
+        wrap.innerHTML = this.htmlFeedbackMetricStripLite(sum);
+        var next = wrap.firstElementChild;
+        if (next && metrics.parentNode) metrics.parentNode.replaceChild(next, metrics);
+      } catch (_m) {}
+    }
+    var tbody = root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
+    if (tbody) tbody.innerHTML = this.htmlFeedbackRegisterTableBody();
+  };
+
+  AdminSessionsHub.prototype.scheduleRegisterBodyPaint = function () {
+    var hub = this;
+    if (!hub.hubIsLive || !hub.hubIsLive()) return;
+    if (hub._registerBodyRaf != null && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(hub._registerBodyRaf);
+    }
+    if (hub._registerBodyIdle != null && typeof cancelIdleCallback === "function") {
+      try {
+        cancelIdleCallback(hub._registerBodyIdle);
+      } catch (_c) {}
+      hub._registerBodyIdle = null;
+    }
+    var paint = function () {
+      if (!hub.hubIsLive()) return;
+      var tbody =
+        hub.root &&
+        hub.root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
+      if (!tbody) return;
+      try {
+        tbody.innerHTML = hub.htmlFeedbackRegisterTableBody();
+      } catch (err) {
+        console.warn("[AdminSessionsHub] register body", err);
+        tbody.innerHTML =
+          '<tr><td colspan="7"><div class="ash-empty">Could not paint register.</div></td></tr>';
+      }
+    };
+    if (typeof requestAnimationFrame === "function") {
+      hub._registerBodyRaf = requestAnimationFrame(function () {
+        hub._registerBodyRaf = 0;
+        paint();
+      });
+    } else {
+      setTimeout(paint, 0);
+    }
+  };
+
+  AdminSessionsHub.prototype.overviewSurfaceReady = function () {
+    var root = this.root;
+    if (!root) return false;
+    return !!(
+      root.querySelector("[data-ash-overview-body]") ||
+      root.querySelector(".ash-day-board") ||
+      root.querySelector(".ash-table--overview")
+    );
+  };
+
+  AdminSessionsHub.prototype.overviewRosterReadyToPaint = function () {
+    if (typeof global.portalStaffRosterLiveReady === "function" && global.portalStaffRosterLiveReady()) {
+      return true;
+    }
+    if (global.__PORTAL_STAFF_ROSTER_LIVE_READY__) return true;
+    if (!this._overviewWaitStartedAt) this._overviewWaitStartedAt = Date.now();
+    /* Do not block forever if Supabase never answers. */
+    if (Date.now() - this._overviewWaitStartedAt > 10000) return true;
+    var inflight =
+      typeof global.portalStaffRosterRefreshInFlight === "function" &&
+      global.portalStaffRosterRefreshInFlight();
+    if (inflight) return false;
+    /* Bundle already has a full day and live refresh is not running — paint. */
+    try {
+      var n = (this.expandSlotsForDate(this.selectedDay) || []).length;
+      if (n >= 8) return true;
+      /* Avoid caching a sparse day while we wait for live MADRE. */
+      if (this._slotsByIso) delete this._slotsByIso[String(this.selectedDay || "").substring(0, 10)];
+    } catch (_n) {}
+    return false;
+  };
+
+  AdminSessionsHub.prototype.syncOverviewChromeSelection = function () {
+    var hub = this;
+    var root = hub.root;
+    if (!root) return;
+    var day = hub.selectedDay;
+    var cards = root.querySelectorAll("[data-ash-day]");
+    for (var i = 0; i < cards.length; i++) {
+      var el = cards[i];
+      var iso = el.getAttribute("data-ash-day");
+      var on = iso === day;
+      el.classList.toggle("ash-day-card--sel", on);
+      el.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    var title = root.querySelector(".ash-table-title-row .ash-table-title");
+    if (title) {
+      var srcNote = global.STAFF_DASHBOARD_SOURCE || {};
+      var chainOn = !!(
+        srcNote.capacityChainNoCanonicalRemap || global.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__
+      );
+      title.innerHTML =
+        hub.escapeHtml(formatLongDate(day)) +
+        ' <span class="ash-badge ash-badge--booked">' +
+        hub.escapeHtml("Who works") +
+        "</span>" +
+        (chainOn
+          ? ' <span class="ash-badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0">' +
+            hub.escapeHtml("Places · Services · Timetable · Covers") +
+            "</span>"
+          : "");
+    }
+  };
+
+  /**
+   * Update Overview without wiping week strip / filters (avoids multi-refresh flicker).
+   */
+  AdminSessionsHub.prototype.softRefreshOverview = function () {
+    if (this.tab !== "tracking") {
+      this.render();
+      return;
+    }
+    if (!this.overviewSurfaceReady()) {
+      this.render();
+      return;
+    }
+    /* Drop only the painted day — full invalidate recomputes every ISO and can hang Chrome.
+     * Must use selectedDay (selectedIso / overviewIso were never set — soft refresh left a
+     * stale _slotsByIso from the pre-capacity-chain paint, e.g. Dan Wed without Mia). */
+    var dayKey = String(this.selectedDay || "").trim().substring(0, 10);
+    if (dayKey && this._slotsByIso) delete this._slotsByIso[dayKey];
+    if (dayKey && this._dayStatsByIso) {
+      var statsKeys = Object.keys(this._dayStatsByIso);
+      for (var si = 0; si < statsKeys.length; si++) {
+        if (String(statsKeys[si] || "").indexOf(dayKey) === 0) delete this._dayStatsByIso[statsKeys[si]];
+      }
+    }
+    this.syncOverviewChromeSelection();
+    this.scheduleOverviewBodyPaint();
+  };
+
+  AdminSessionsHub.prototype.scheduleOverviewBodyPaint = function () {
+    var hub = this;
+    var root = hub.root;
+    if (!root || !root.isConnected) return;
+    var token = (hub._overviewPaintToken = (hub._overviewPaintToken || 0) + 1);
+    var run = function () {
+      if (hub._overviewPaintToken !== token) return;
+      if (!root.isConnected) return;
+      if (hub.tab !== "tracking") return;
+      var mount = root.querySelector("[data-ash-overview-body]");
+      if (!mount) return;
+      if (!hub.overviewRosterReadyToPaint()) {
+        mount.innerHTML =
+          '<p class="ash-feedback-filter-hint" role="status">Building day board…</p>';
+        if (!hub._overviewReadyListenerBound) {
+          hub._overviewReadyListenerBound = true;
+          var onReady = function () {
+            hub._overviewReadyListenerBound = false;
+            global.removeEventListener("portal:staff-roster-live-ready", onReady);
+            if (!root.isConnected) return;
+            if (hub.tab === "tracking") hub.scheduleOverviewBodyPaint();
+          };
+          global.addEventListener("portal:staff-roster-live-ready", onReady);
+          setTimeout(function () {
+            if (!root.isConnected) return;
+            if (hub._overviewPaintToken === token && hub.tab === "tracking") {
+              hub._overviewReadyListenerBound = false;
+              global.removeEventListener("portal:staff-roster-live-ready", onReady);
+              hub.scheduleOverviewBodyPaint();
+            }
+          }, 1200);
+        }
+        return;
+      }
+      try {
+        /* Roster may have become ready after an early expand cached a sparse day. */
+        var paintIso = String(hub.selectedDay || "").trim().substring(0, 10);
+        if (paintIso && hub._slotsByIso) delete hub._slotsByIso[paintIso];
+        mount.innerHTML = hub.htmlTrackingBody();
+      } catch (err) {
+        console.warn("[AdminSessionsHub] overview body", err);
+        mount.innerHTML =
+          '<p class="ash-bundle-warn" role="alert"><strong>Day board failed.</strong> ' +
+          hub.escapeHtml((err && err.message) || String(err)) +
+          " Try Table layout or Refresh.</p>";
+      }
+    };
+    if (typeof global.requestAnimationFrame === "function") {
+      global.requestAnimationFrame(function () {
+        setTimeout(run, 0);
+      });
+    } else {
+      setTimeout(run, 0);
+    }
+  };
+
+  AdminSessionsHub.prototype.refreshOverviewWeekStripStats = function () {
+    /* No-op: Overview is a staffing guide, not feedback progress. */
   };
 
   AdminSessionsHub.prototype.htmlRosterSessionsBreakdown = function (iso) {
@@ -8590,6 +13315,23 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       rows +
       "</tbody></table></div>" +
       this.htmlAbsentsTermWeekLog()
+    );
+  };
+
+  AdminSessionsHub.prototype.htmlFeedbackMetricStripLite = function (sum) {
+    var esc = this.escapeHtml;
+    var scored = sum && sum.scored != null ? String(sum.scored) : "0";
+    var avg = sum && sum.avg != null ? String(sum.avg) : "\u2014";
+    var notes = sum && sum.relevantNotes != null ? String(sum.relevantNotes) : "0";
+    return (
+      '<div class="ash-metrics-dashboard ash-metrics-dashboard--lite">' +
+      '<p class="ash-metric-lite">This week: <strong>' +
+      esc(scored) +
+      "</strong> scored \u00b7 avg <strong>" +
+      esc(avg) +
+      "</strong> \u00b7 <strong>" +
+      esc(notes) +
+      "</strong> notes</p></div>"
     );
   };
 
@@ -8870,12 +13612,49 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var dayAttr = opts.overviewPicker ? "data-ash-day" : "data-ash-feedback-metric-day";
     var weekLabel =
       formatShortDate(this.weekStart) + " \u2013 " + formatShortDate(addDaysIso(this.weekStart, 6));
+    /* Overview day picker is staffing nav only — no fake feedback bar / Day label. */
+    var dayPickerOnly = !!(opts.staffingGuide || (opts.overviewPicker && !opts.computeOverviewDayStats));
+
+    function overviewDayPickerFlagsHtml(iso) {
+      if (!dayPickerOnly) return "";
+      var flags = [];
+      var unavail = hubStaffUnavailabilityRows(hub);
+      var hasOff = false;
+      for (var u = 0; u < unavail.length; u++) {
+        if (String(unavail[u] && unavail[u].off_date || "").slice(0, 10) === iso) {
+          hasOff = true;
+          break;
+        }
+      }
+      var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+      var hasCoverNeeded = false;
+      for (var o = 0; o < ovs.length; o++) {
+        var ov = ovs[o];
+        if (!ov) continue;
+        if (String(ov.session_date || "").slice(0, 10) !== iso) continue;
+        if (overrideIsInstructorCoverNeededType(ov)) {
+          hasCoverNeeded = true;
+          break;
+        }
+      }
+      if (hasOff) {
+        flags.push('<span class="ash-day-flag ash-day-flag--staff">Day off req</span>');
+      }
+      if (hasCoverNeeded) {
+        flags.push('<span class="ash-day-flag ash-day-flag--cover">COVER</span>');
+      }
+      if (!flags.length) return "";
+      return '<span class="ash-day-card__flags">' + flags.join("") + "</span>";
+    }
+
     var cards = days
       .map(function (iso, idx) {
         var metricSel = hub.selectedDay === iso ? " ash-day-card--sel" : "";
+        var pickerCls = dayPickerOnly ? " ash-day-card--day-picker" : "";
         if (hubDayIsClubClosed(hub, iso)) {
           return (
             "<button type=\"button\" class=\"ash-day-card ash-day-card--feedback ash-day-card--closed" +
+            pickerCls +
             metricSel +
             '" ' +
             dayAttr +
@@ -8888,13 +13667,28 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             htmlWeekdayLabel(iso, esc) +
             '<span class="ash-day-card__dt">' +
             esc(formatShortDate(iso)) +
-            '</span></div>' +
-            '<div class="ash-day-card__bar" style="--ash-pct:0;--ash-col:#dc2626"></div>' +
-            '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Closed</span>' +
-            '<span class="ash-day-card__count-short" aria-hidden="true">Closed</span></span></button>'
+            "</span></div>" +
+            (dayPickerOnly
+              ? '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Closed</span><span class="ash-day-card__count-short" aria-hidden="true">Closed</span></span>'
+              : '<div class="ash-day-card__bar" style="--ash-pct:0;--ash-col:#dc2626"></div>' +
+                '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Closed</span>' +
+                '<span class="ash-day-card__count-short" aria-hidden="true">Closed</span></span>') +
+            "</button>"
           );
         }
-        var ds = hub.dayStats(iso);
+        /* Overview day picker: skip dayStats (7× expandSlots freezes the tab).
+         * Register: count submitted feedback only — same freeze if we expand Autumn roster. */
+        var ds;
+        if (opts.overviewPicker && !opts.computeOverviewDayStats) {
+          ds = { total: 0, done: 0 };
+        } else if (hub.mode === "feedback" && !opts.overviewPicker) {
+          var submittedN = hub.feedbackCountForDateLight
+            ? hub.feedbackCountForDateLight(iso)
+            : hub.feedbackCountForDate(iso);
+          ds = { total: submittedN, done: submittedN };
+        } else {
+          ds = hub.dayStats(iso);
+        }
         var col = DAY_COLORS[idx % DAY_COLORS.length];
         var tint = DAY_BG_TINTS[idx % DAY_BG_TINTS.length];
         var innerPct = 0;
@@ -8903,12 +13697,25 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           if (ds.done > 0 && innerPct < 12) innerPct = 12;
         }
         var stateCls = "";
-        if (ds.total && ds.done === 0) stateCls = " ash-day-card--none";
+        if (opts.overviewPicker && !opts.computeOverviewDayStats) {
+          stateCls = "";
+        } else if (ds.total && ds.done === 0) stateCls = " ash-day-card--none";
         else if (ds.total && ds.done < ds.total) stateCls = " ash-day-card--partial";
         else if (ds.total && ds.done >= ds.total) stateCls = " ash-day-card--complete";
+        var countHtml = dayPickerOnly
+          ? ""
+          : htmlAshRatioCount(esc, ds.done + "/" + ds.total);
+        var barHtml = dayPickerOnly
+          ? ""
+          : '<div class="ash-day-card__bar" style="--ash-pct:' +
+            innerPct +
+            ";--ash-col:" +
+            col +
+            '"></div>';
         var roCls = hub.opts && hub.opts.readOnlyOverview ? " ash-day-card--readonly" : "";
         return (
           '<button type="button" class="ash-day-card ash-day-card--feedback' +
+          pickerCls +
           metricSel +
           stateCls +
           roCls +
@@ -8925,28 +13732,32 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '">' +
           '<div class="ash-day-card__top">' +
           htmlWeekdayLabel(iso, esc) +
-          '</div>' +
-          '<div class="ash-day-card__bar" style="--ash-pct:' +
-          innerPct +
-          ";--ash-col:" +
-          col +
-          '"></div>' +
-          htmlAshRatioCount(esc, ds.done + "/" + ds.total) +
+          '<span class="ash-day-card__dt">' +
+          esc(formatShortDate(iso)) +
+          "</span></div>" +
+          barHtml +
+          countHtml +
+          overviewDayPickerFlagsHtml(iso) +
           "</button>"
         );
       })
       .join("");
-    return (
-      '<div class="ash-week-sticky-anchor"><div class="ash-feedback-week">' +
+    var weekTitle = opts.staffingGuide
+      ? "Week (Mon-Sun)"
+      : "Feedback progress";
+    return this.htmlStickyWeekChrome(
+      '<div class="ash-feedback-week">' +
       '<div class="ash-feedback-week__head">' +
-      '<h4 class="ash-feedback-week__title">Feedback progress <span class="ash-metric-term">(' +
+      '<h4 class="ash-feedback-week__title">' +
+      esc(weekTitle) +
+      ' <span class="ash-metric-term">(' +
       esc(weekLabel) +
       ")</span></h4>" +
       htmlWeekNavButtons(this, { shortLabels: true }) +
       "</div>" +
       '<div class="ash-day-row ash-day-row--feedback">' +
       cards +
-      "</div></div></div>"
+      "</div></div>"
     );
   };
 
@@ -8954,9 +13765,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hub = this;
     var weekStart = week.weekStart;
     var weekEnd = addDaysIso(weekStart, 6);
-    var q = hub.clientSearch.toLowerCase();
+    var q = hub.clientSearch;
     var items = week.items.filter(function (fb) {
-      if (q && clean(fb.client_name).toLowerCase().indexOf(q) === -1) return false;
+      if (!clientNameMatchesFilter(fb.client_name, q)) return false;
       return true;
     });
     var cards = [];
@@ -9070,32 +13881,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var sessionDay = formatFbDateShort(fb.session_date);
         var reviewDate = formatFbDate(submittedAt);
         var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
-        var emailCell = "";
-        if (kind === "relevant") {
-          if (noteText) {
-            var shareData =
-              'data-ash-note-who="' + esc(fb.client_name || "") + '" ' +
-              'data-ash-note-svc="' + esc(svcLabel) + '" ' +
-              'data-ash-note-date="' + esc(sessionDay || "") + '" ' +
-              'data-ash-note-by="' + esc(fb.completed_by_name || "") + '" ' +
-              'data-ash-note-text="' + esc(noteText) + '"';
-            emailCell =
-              '<td class="ash-cell-note-share">' +
-              '<div class="ash-note-share-wrap">' +
-              '<button type="button" class="ash-note-share-btn" data-ash-note-share="email" ' +
-              shareData +
-              ' title="Email this to the CEOs">Email CEOs</button>' +
-              '<button type="button" class="ash-note-share-btn ash-note-share-btn--wa" data-ash-note-share="whatsapp" ' +
-              shareData +
-              ' title="Share this on WhatsApp to the CEOs">WhatsApp</button>' +
-              '<button type="button" class="ash-note-share-btn ash-note-share-btn--ann" data-ash-note-share="announce" ' +
-              shareData +
-              ' title="Post as a dashboard announcement for staff">Announce to staff</button>' +
-              "</div></td>";
-          } else {
-            emailCell = '<td class="ash-cell-note-share"><span class="ash-cell-muted">\u2014</span></td>';
-          }
-        }
         return (
           '<tr class="ash-fb-row' +
           reviewCls +
@@ -9117,22 +13902,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           cellNoteHtml(noteText) +
           "</td>" +
           '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
-          esc(fb.completed_by_name || "\u2014") +
+          (clean(fb.completed_by_name) ? formatInstructorPill(fb.completed_by_name) : "\u2014") +
           '</div><div class="ash-cell-sub">' +
           esc(reviewDate) +
           (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
-          "</div></td>" +
-          emailCell +
-          "</tr>"
+          "</div></td></tr>"
         );
       })
       .join("");
 
     if (!tableRows) {
       tableRows =
-        '<tr><td colspan="' +
-        (kind === "relevant" ? 5 : 4) +
-        '"><div class="ash-empty">' +
+        '<tr><td colspan="4"><div class="ash-empty">' +
         esc(emptyMsg) +
         "</div></td></tr>";
     }
@@ -9155,7 +13936,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "<th>Participant</th><th>Service</th><th>" +
       esc(noteLabel) +
       "</th><th>Reviewed by:</th>" +
-      (kind === "relevant" ? "<th>Send to</th>" : "") +
       "</tr></thead><tbody data-ash-client-filter-tbody>" +
       tableRows +
       "</tbody></table></div>" +
@@ -9170,29 +13950,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.htmlFeedback = function () {
-    var esc = this.escapeHtml;
     var hub = this;
-    var rows = this.feedbackRowsForSelectedDay();
-    var sum = this.engagementSummary(this.feedbackRowsForMetrics());
-
-    var tableRows = rows
-      .map(function (fb, rowIdx) {
-        var awaiting = fb && fb._ashAwaitingSlot;
-        return hub.htmlFeedbackTableRow(fb, esc, {
-          rowIdx: awaiting ? null : rowIdx,
-          clickable: !awaiting,
-          variant: "register",
-        });
-      })
-      .join("");
-
-    if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
-      tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
-    } else if (!tableRows) {
-      tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
-    }
+    var tableRows =
+      '<tr><td colspan="7"><div class="ash-empty">Loading register\u2026</div></td></tr>';
 
     var weekBlock =
       hub.opts && hub.opts.showFullWeekDayStrip
@@ -9222,11 +13982,27 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '<button type="button" class="ash-btn ash-btn--ghost" data-ash-feedback-clear-note-filter>Show all</button></p>';
     }
 
+    var logSig = String(fbLoaded) + "|" + String(this.weekStart || "");
+    var logHtml = "";
+    if (this._termLogHtml && this._termLogSig === logSig) {
+      logHtml = this._termLogHtml;
+    } else {
+      /* Lazy: building the full 1000-row week jump log on first paint freezes Register. */
+      logHtml =
+        '<details class="ash-feedback-log" data-ash-feedback-term-log-lazy="1">' +
+        '<summary class="ash-feedback-log__summary">Session feedback log (past weeks) — expand to load</summary>' +
+        '<div class="ash-feedback-log__body" data-ash-feedback-term-log-body>' +
+        '<p class="ash-muted">Expand to load week jumps for older feedback.</p></div></details>';
+      this._termLogHtml = logHtml;
+      this._termLogSig = logSig;
+    }
+
     return (
-      this.htmlFeedbackMetricStrip(sum) +
+      this.htmlFeedbackMetricStripLite(this.engagementSummary(this.feedbackRowsForMetrics())) +
       weekBlock +
       truncateHtml +
       noteFilterHtml +
+      '<p class="ash-feedback-filter-hint">Click <strong>Session feedback</strong> to filter for parents when needed. Click <strong>Notes</strong> to escalate internally or ask the instructor who wrote it. Notes stay internal.</p>' +
       this.feedbackFilterRowHtml() +
       '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback ash-table--register"><thead><tr>' +
       AdminSessionsHub.REGISTER_TABLE_HEAD +
@@ -9236,13 +14012,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (hub.opts && hub.opts.showFullWeekDayStrip
         ? ""
         : '<p class="ash-metric-foot ash-metric-foot--center">Absents show as <strong>Submitted (Absent)</strong> with N/A (except Reviewed by). Use <strong>Sessions overview</strong> for the roster table.</p>') +
-      this.htmlFeedbackTermWeekLog({
-        title: "Session feedback log",
-        flatWeeks: true,
-        weekJumpOnly: true,
-        hint:
-          'Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to jump to that week at the top \u2013 day buttons and feedback for the selected day.',
-      })
+      logHtml
     );
   };
 
@@ -9530,13 +14300,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var ovLabel = ov ? esc(hubOverrideLabel(ov)) : "\u2014";
         var inst = hubInstructorCellHtml(slot, ov);
         var client = htmlParticipantPill(slot.client_name, esc, slot);
+        var coverNeeded = !!(ov && overrideIsInstructorCoverNeededType(ov));
         return (
-          "<tr>" +
+          '<tr class="' +
+          (coverNeeded ? "ash-row--cover-needed" : "") +
+          '">' +
           "<td>" + esc(rosterTimeDisplay(slot) || slot.time_start) + "</td>" +
           "<td>" + esc(slot.venue) + "</td>" +
           "<td>" + inst + "</td>" +
           "<td>" + client + "</td>" +
-          '<td><span class="ash-badge ash-badge--booked">Booked</span></td>' +
+          '<td><span class="ash-badge ash-badge--booked">Booked</span>' +
+          (coverNeeded
+            ? ' <span class="override-chip override--cover-needed">COVER NEEDED</span>'
+            : "") +
+          "</td>" +
           "<td>" + ovLabel + "</td>" +
           "</tr>"
         );
@@ -9560,14 +14337,30 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.render = function () {
-    this.indexAbsentMarks();
-    this.indexFeedback();
+    if (!this.root || !this.root.isConnected) return;
+    this.adoptLiveSessionFeedbackIfEmpty();
+    var skipHeavyIndex =
+      this.opts &&
+      this.opts.externalTabs &&
+      (this.tab === "tracking" || (this.mode === "feedback" && this._fbByKey));
+    try {
+      if (!skipHeavyIndex) {
+        this.indexAbsentMarks();
+        this.indexFeedback();
+      }
+    } catch (idxErr) {
+      console.warn("[AdminSessionsHub] indexFeedback", idxErr);
+    }
     var warn = this.bundleError
       ? '<p class="ash-bundle-warn">' + esc(this.bundleError) + "</p>"
       : "";
     var fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
     var fbLoaded = this.payload && this.payload.session_feedback_loaded;
     var loadMeta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
+    if (fbCount === 0 && loadMeta && Number(loadMeta.total) > 0) {
+      this.adoptLiveSessionFeedbackIfEmpty();
+      fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
+    }
     if ((this.opts && this.opts.externalTabs) && fbLoaded && fbCount === 0) {
       var metaLine = loadMeta ?
         ' Last attempt: ' + esc(String(loadMeta.via || 'rpc')) + ', ' + esc(String(loadMeta.total != null ? loadMeta.total : 0)) + ' rows' +
@@ -9584,23 +14377,64 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '</strong> rows from Supabase.</p>';
     }
     if (this.mode === "feedback") {
-      this.root.innerHTML = warn + '<div class="ash-panels ash-panels--feedback-only"></div>';
+      if (!this.hubIsLive()) return;
+      this._stickyTopHtml = warn;
+      if (
+        this.feedbackSurfaceReady() &&
+        typeof this.softPaintFeedbackDay === "function"
+      ) {
+        this.softPaintFeedbackDay();
+        return;
+      }
+      if (!this.root.querySelector(".ash-panels") && !this.root.querySelector(".ash-panels--feedback-only")) {
+        this.root.innerHTML = '<div class="ash-panels ash-panels--feedback-only"></div>';
+      }
       this.renderPanels();
       return;
     }
     if (this.opts && this.opts.externalTabs) {
-      this.root.innerHTML = warn + '<div class="ash-panels"></div>';
+      this._stickyTopHtml = warn;
+      /* Soft path: keep week strip + filters; only refresh day board (no flicker). */
+      if (
+        this.tab === "tracking" &&
+        !this._forceFullOverviewRender &&
+        typeof this.softRefreshOverview === "function" &&
+        this.overviewSurfaceReady()
+      ) {
+        var panels = this.root.querySelector(".ash-panels");
+        if (panels) {
+          var chrome = this.root.querySelector(".ash-sticky-chrome");
+          if (chrome) {
+            Array.prototype.slice
+              .call(
+                chrome.querySelectorAll(
+                  ":scope > .ash-feedback-filter-hint, :scope > .ash-bundle-warn"
+                )
+              )
+              .forEach(function (el) {
+                el.remove();
+              });
+            if (warn) chrome.insertAdjacentHTML("afterbegin", warn);
+          } else if (warn) {
+            this.root.insertAdjacentHTML("afterbegin", warn);
+          }
+          this.softRefreshOverview();
+          return;
+        }
+      }
+      this._forceFullOverviewRender = false;
+      this.root.innerHTML = '<div class="ash-panels"></div>';
       this.renderPanels();
       return;
     }
+    this._stickyTopHtml = warn;
     var tabs =
       '<button type="button" class="ash-tab' +
       (this.tab === "tracking" ? " is-active" : "") +
       '" data-ash-tab="tracking">Overview</button>' +
       '<button type="button" class="ash-tab ash-tab--portal" data-ash-portal-nav="sessions-feedback">Feedback</button>' +
       '<button type="button" class="ash-tab ash-tab--portal" data-ash-portal-nav="lead-reports">Lead report</button>' +
-      '<button type="button" class="ash-tab ash-tab--portal" data-ash-portal-nav="incidents">Incidents</button>' +
-      '<button type="button" class="ash-tab ash-tab--portal" data-ash-portal-nav="cancellations">Cancellations</button>';
+      '<button type="button" class="ash-tab ash-tab--portal" data-ash-portal-nav="incidents">Incidents</button>';
     if (this.mode === "full") {
       tabs +=
         '<button type="button" class="ash-tab' +
@@ -9608,7 +14442,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '" data-ash-tab="feedback">Session feedback</button>';
     }
     this.root.innerHTML =
-      '<div class="ash-tabs ash-tabs--service-overview">' + tabs + "</div>" + warn + '<div class="ash-panels"></div>';
+      '<div class="ash-tabs ash-tabs--service-overview">' + tabs + "</div>" + '<div class="ash-panels"></div>';
     this.renderPanels();
   };
 

@@ -635,6 +635,9 @@
         }
       });
     });
+    if (!total) {
+      return '<p class="pcso-kpi-empty">No regulation / emotion tags yet.</p>';
+    }
     const order = [
       { key: "happy", label: "Happy", colors: { hi: "#4ade80", lo: "#15803d", track: "#ecfdf5" } },
       { key: "anxious", label: "Anxious", colors: { hi: "#fde047", lo: "#ca8a04", track: "#fffbeb" } },
@@ -691,10 +694,10 @@
     });
     if (!total) return '<p class="pcso-kpi-empty">No independence labels yet.</p>';
     const order = [
-      { key: "independent", label: "Independent", color: "#ddd6fe" },
-      { key: "prompts", label: "With prompts", color: "#c4b5fd" },
-      { key: "regular", label: "Regular support", color: "#a78bfa" },
-      { key: "full", label: "Full support", labelLines: ["Full", "Support"], color: "#7c3aed" },
+      { key: "independent", label: "Independent", short: "Indep.", color: "#ddd6fe" },
+      { key: "prompts", label: "With prompts", short: "Prompts", color: "#c4b5fd" },
+      { key: "regular", label: "Regular support", short: "Regular", color: "#a78bfa" },
+      { key: "full", label: "Full support", short: "Full", color: "#7c3aed" },
     ];
     return (
       '<div class="pcso-ind-bars" role="img" aria-label="Independence distribution">' +
@@ -704,11 +707,11 @@
           const pct = (n / total) * 100;
           const h = n > 0 ? Math.max(10, Math.round(pct)) : 0;
           const lbl =
-            o.labelLines && o.labelLines.length
-              ? '<span class="pcso-ind-bar__lbl">' +
-                o.labelLines.map(function (line) { return esc(line); }).join("<br>") +
-                "</span>"
-              : '<span class="pcso-ind-bar__lbl">' + esc(o.label) + "</span>";
+            '<span class="pcso-ind-bar__lbl" title="' +
+            esc(o.label) +
+            '">' +
+            esc(o.short || o.label) +
+            "</span>";
           return (
             '<div class="pcso-ind-bar">' +
             '<span class="pcso-ind-bar__pct">' + Math.round(pct) + "%</span>" +
@@ -726,6 +729,35 @@
   function kpiSlabHtml(feedback, termLabel, opts) {
     var term = clean(termLabel || TERM_LABEL);
     var includeAttendance = !!(opts && opts.includeAttendance);
+    var list = feedback || [];
+    /*
+     * Parent portal: never paint demo/empty KPI chrome. If there is no real
+     * attendance / engagement / emotion / independence data, show one empty line.
+     */
+    if (opts && opts.parentStrictEmpty) {
+      var attSum = opts.attendanceSummary;
+      var attTotal =
+        attSum && Number(attSum.total) > 0
+          ? Number(attSum.total)
+          : list.length;
+      var hasEng = list.some(function (r) {
+        var n = Number(r && r.engagement_rating);
+        return !Number.isNaN(n) && n >= 1 && n <= 5;
+      });
+      var hasEmo = list.some(function (r) {
+        var em = clean(r && r.client_emotions);
+        return !!(em && em !== "—");
+      });
+      var hasInd = list.some(function (r) {
+        var b = independenceBucket(r && r.engagement_patterns);
+        return !!(b && b !== "other");
+      });
+      if (!attTotal && !hasEng && !hasEmo && !hasInd) {
+        return (
+          '<p class="pcso-empty" role="status">No session stats or feedback for this term yet.</p>'
+        );
+      }
+    }
     var attendanceCard = includeAttendance
       ? '<article class="pcso-kpi-card pcso-kpi-card--att"><header class="pcso-kpi-card__head"><h4>Attendance</h4><p>(' + esc(term) + ")</p></header>" +
         attendanceKpiHtml(feedback, opts && opts.attendanceSummary) +
@@ -832,6 +864,8 @@
     var kpiOpts = {
       includeAttendance: !!(opts && opts.includeAttendance),
       attendanceSummary: null,
+      parentStrictEmpty: !!(opts && (opts.parentStrictEmpty || opts.parentTable)),
+      parentTable: !!(opts && opts.parentTable),
     };
     return (
       '<section class="pcso-service-block pcso-service-block--' +
@@ -864,6 +898,11 @@
   function overviewByServiceHtml(feedback, termLabel, opts) {
     var groups = groupFeedbackByService(feedback);
     if (!groups.length) {
+      if (opts && opts.parentStrictEmpty) {
+        return (
+          '<p class="pcso-empty" role="status">No session stats or feedback for this term yet.</p>'
+        );
+      }
       return kpiSlabHtml(feedback, termLabel, opts);
     }
     if (groups.length === 1) {
@@ -1321,20 +1360,42 @@
 
   function renderParent(hostEl, opts) {
     if (!hostEl) return;
-    var sessions = (opts && opts.sessions) || [];
-    var achievements = (opts && opts.achievements) || [];
-    var hideAchievements = !!(opts && opts.hideAchievements);
-    var term = clean((opts && opts.term_label) || TERM_LABEL);
+    hostEl.innerHTML = parentOverviewHtml(opts);
+  }
+
+  /** HTML for parent Sessions Overview KPIs (+ optional session table). */
+  function parentOverviewHtml(opts) {
+    opts = opts || {};
+    var sessions = opts.sessions || [];
+    var achievements = opts.achievements || [];
+    var hideAchievements = !!opts.hideAchievements;
+    var term = clean(opts.term_label || TERM_LABEL);
     var feedback = mergeAbsentDatesIntoParentFeedback(
       parentFacingFeedbackRows(sessions.map(mapParentSessionRow)),
-      opts && opts.attendance_summary,
+      opts.attendance_summary,
     );
-    hostEl.innerHTML =
+    var includeTable = opts.includeTable !== false;
+    var att = opts.attendance_summary || null;
+    var hasAtt = !!(att && Number(att.total) > 0);
+    /* Parent-facing: zero rows + zero attendance = no KPI / table chrome at all. */
+    if (!feedback.length && !hasAtt) {
+      return (
+        '<p class="pcso-empty" role="status">No session stats or feedback for this term yet.</p>' +
+        (hideAchievements
+          ? ""
+          : '<section class="pcso-feed-section pp-ach-section">' +
+            '<div class="pcso-feed-head"><h4 class="pcso-section__title">Achievements</h4></div>' +
+            achievementsGalleryHtml(achievements) +
+            "</section>")
+      );
+    }
+    return (
       overviewByServiceHtml(feedback, term, {
         includeAttendance: true,
-        attendanceSummary: null,
-        includeTable: true,
+        attendanceSummary: att,
+        includeTable: includeTable,
         parentTable: true,
+        parentStrictEmpty: true,
         tableTitle: "Session feedback",
       }) +
       (hideAchievements
@@ -1342,12 +1403,14 @@
         : '<section class="pcso-feed-section pp-ach-section">' +
           '<div class="pcso-feed-head"><h4 class="pcso-section__title">Achievements</h4></div>' +
           achievementsGalleryHtml(achievements) +
-          "</section>");
+          "</section>")
+    );
   }
 
   global.PortalClientSessionsOverview = {
     render: render,
     renderParent: renderParent,
+    parentOverviewHtml: parentOverviewHtml,
     achievementsGalleryHtml: achievementsGalleryHtml,
   };
 })(typeof window !== "undefined" ? window : globalThis);

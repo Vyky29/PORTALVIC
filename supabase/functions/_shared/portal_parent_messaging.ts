@@ -58,7 +58,13 @@ export function normalizePublicPhotoUrl(raw: string): string {
 }
 
 export function parentNotifyKindsWithInstructorPhoto(): Set<string> {
-  return new Set(["instructor_change", "instructor_reassign", "makeup_scheduled"]);
+  return new Set([
+    "instructor_change",
+    "instructor_reassign",
+    "makeup_scheduled",
+    "trial_scheduled",
+    "trial_booking_completed",
+  ]);
 }
 
 export function maskPhoneForLog(phone: string): string {
@@ -516,7 +522,7 @@ export const WHATSAPP_TEMPLATE_BODY_MAX = 700;
 export function flattenWhatsappTemplateBody(body: string, max = WHATSAPP_TEMPLATE_BODY_MAX): string {
   // Meta {{1}} rejects raw newlines/tabs. Blank line → " — " (paragraph);
   // single line break → " · " (soft list separator).
-  return String(body || "")
+  let flat = String(body || "")
     .replace(/\r\n/g, "\n")
     .replace(/\t+/g, " ")
     .replace(/\n{2,}/g, "\n<<P>>\n")
@@ -526,8 +532,20 @@ export function flattenWhatsappTemplateBody(body: string, max = WHATSAPP_TEMPLAT
     .replace(/\s{2,}/g, " ")
     .replace(/(?: · ){2,}/g, " · ")
     .replace(/(?: — ){2,}/g, " — ")
-    .trim()
-    .slice(0, max);
+    .trim();
+  if (flat.length <= max) return flat;
+  /* Never chop a finish-booking / parent magic link — truncated tokens show as invalid_token. */
+  const urlMatch = flat.match(
+    /https?:\/\/[^\s]+\/(?:parent\/)?finish-booking\?t=[a-f0-9]{32,128}/i,
+  );
+  if (urlMatch && urlMatch[0]) {
+    const url = urlMatch[0];
+    const without = flat.replace(url, " ").replace(/\s+/g, " ").trim();
+    const budget = Math.max(24, max - url.length - 3);
+    const head = without.slice(0, budget).trim();
+    return (head ? head + " — " : "") + url;
+  }
+  return flat.slice(0, max);
 }
 
 function whatsappTemplateBodyParam(body: string, template: string): string {

@@ -15,9 +15,30 @@
     return false;
   }
 
+  function detectStaffAppHost() {
+    try {
+      var host = String((global.location && global.location.hostname) || "").toLowerCase();
+      if (/clubsensational-staff\.vercel\.app$/i.test(host)) return true;
+      if (/^clubsensational-staff/i.test(host) && /\.vercel\.app$/i.test(host)) return true;
+      /* Local staff_dashboard = same as clubsensational-staff (no portalvic migrate banner). */
+      if (
+        (host === "localhost" || host === "127.0.0.1" || host === "[::1]") &&
+        /staff_dashboard/i.test(String(global.location.pathname || ""))
+      ) {
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   var isHandheld = detectHandheldStaff();
   var isStaffDashboard = /staff_dashboard/i.test(String(global.location.pathname || ""));
-  var isStaffApp = !!global.PORTAL_STAFF_APP;
+  var isStaffApp = !!global.PORTAL_STAFF_APP || detectStaffAppHost();
+  if (isStaffApp) {
+    try {
+      global.PORTAL_STAFF_APP = true;
+    } catch (_) {}
+  }
   var isPortalvicStaff = !isStaffApp && isStaffDashboard;
 
   if (!isStaffApp && !isPortalvicStaff) return;
@@ -58,11 +79,16 @@
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
-    preloadScript("/portal/staff-dashboard-feedback.js?v=20260727-fb-keys-perf");
+    preloadScript("/portal/staff-dashboard-feedback.js?v=20260915-2to1-shared");
   }
 
   if ("serviceWorker" in global.navigator) {
     try {
+      if (isStaffApp) {
+        var swUrl = "/clubsensational-portal-sw.js?v=20260910-sw-no-fetch";
+        var scopeBase = new URL("./", global.location.href).href;
+        global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
+      }
       /* Keep the portal push SW; only drop stale unrelated registrations. */
       global.navigator.serviceWorker.getRegistrations().then(function (regs) {
         regs.forEach(function (reg) {
@@ -78,6 +104,21 @@
         });
       });
     } catch (_) {}
+  }
+
+  function portalStaffGhostTokenInUrl() {
+    try {
+      var q = new URLSearchParams(String(global.location && global.location.search || ""));
+      return !!(q.get("ghostToken") || q.get("ghost"));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  var GHOST_VER = "20260911-teleport-iso";
+  if (isStaffDashboard && portalStaffGhostTokenInUrl()) {
+    loadCss("/portal/portal_ghost_view.css?v=" + GHOST_VER);
+    loadScript("/portal/portal-ghost-view.js?v=" + GHOST_VER);
   }
 
   function loadScript(src, asModule) {
@@ -141,12 +182,12 @@
   }
 
   var STAFF_DEFERRED_HEAVY = [
-    "/portal/clients_info_embed.js?v=20260608-anas-ismail",
+    "/portal/clients_info_embed.js?v=20260910-joelle-406",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
-      "/portal/portal_staff_lead_aquatic_slots.js?v=20260805-cover-half-merge",
-    "/portal/portal_participant_general_hydrate.js?v=20260711-next-med",
+      "/portal/portal_staff_lead_aquatic_slots.js?v=20260919-aquatic-hour-2to1",
+    "/portal/portal_participant_general_hydrate.js?v=20260910-no-other-notes",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_staff_photos.js?v=20260624-rt-debug",
+    "/portal/portal_staff_photos.js?v=20260911-emmanuel-photo",
   ];
 
   function portalStaffStartDeferredDashboardScripts() {
@@ -221,7 +262,7 @@
       return;
     }
     var urls = [
-      "/portal/portal_web_push_support.js?v=20260711-test-sw-fix",
+      "/portal/portal_web_push_support.js?v=20260914-audio-gesture-only",
       "/portal/portal_ensure_web_push.js?v=20260619-inflight-fix",
       "/portal/portal_alerts_notifications_ui.js?v=20260711-wa-unread-push",
     ];
@@ -230,7 +271,7 @@
       if (i >= urls.length) return;
       loadScript(urls[i++]).then(next);
     }
-    scheduleIdle(next, isHandheld ? 1500 : 800);
+    scheduleIdle(next, isHandheld ? 4000 : 800);
   };
 
   function portalStaffDeferHeadExtras() {
@@ -241,7 +282,7 @@
       void loadSequential(
         [
           "/portal/portal_orientation_lock.js?v=20260622-next-chip-client",
-          "/portal/portal_venue_report_schedule.js?v=20260621-venue-duty-fix",
+          "/portal/portal_venue_report_schedule.js?v=20260913-roberto-open850",
         ],
         false
       );
@@ -253,8 +294,8 @@
     global.__PORTAL_STAFF_EXTRAS_DEFERRED__ = true;
     if (!isStaffDashboard) return;
     var run = function () {
-      loadCss("/portal/portal_ghost_view.css?v=20260712-ghost-inapp");
-      loadScript("/portal/portal-ghost-view.js?v=20260712-ghost-inapp");
+      loadCss("/portal/portal_ghost_view.css?v=" + GHOST_VER);
+      loadScript("/portal/portal-ghost-view.js?v=" + GHOST_VER);
       loadScript("/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off");
       loadCss("/portal/portal_achievements.css?v=20260713-ios-video-save");
     };

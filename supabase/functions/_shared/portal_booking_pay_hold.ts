@@ -8,8 +8,17 @@ import {
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
 } from "./portal_parent_messaging.ts";
+import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
+export {
+  BOOKING_SLOT_HOLD_STATUSES,
+  bookingActiveHoldExpiresFilter,
+  bookingHoldStillActive,
+  filterActiveBookingHolds,
+} from "./portal_booking_hold_status.ts";
 
 export const BOOKING_PAY_HOLD_MINUTES = 30;
+/** After parent taps WhatsApp/Email (says paid), office gets this window to confirm Tide. */
+export const BOOKING_OFFICE_CONFIRM_HOLD_MINUTES = 30;
 /** Reminder when this many minutes remain before hold_expires_at (30' - 5' = minute 25). */
 export const BOOKING_PAY_HOLD_NUDGE_BEFORE_EXPIRY_MINUTES = 5;
 const NUDGE_NOTE_TAG = "pay_hold_nudge_25m";
@@ -18,12 +27,9 @@ export function bookingPayHoldExpiresAt(fromMs = Date.now()): string {
   return new Date(fromMs + BOOKING_PAY_HOLD_MINUTES * 60 * 1000).toISOString();
 }
 
-/** Active reservation statuses that occupy a Booking Portal seat. */
-export const BOOKING_SLOT_HOLD_STATUSES = [
-  "pending",
-  "validated",
-  "awaiting_payment",
-] as const;
+export function bookingOfficeConfirmHoldExpiresAt(fromMs = Date.now()): string {
+  return new Date(fromMs + BOOKING_OFFICE_CONFIRM_HOLD_MINUTES * 60 * 1000).toISOString();
+}
 
 function portalPublicOrigin(): string {
   return (
@@ -46,10 +52,25 @@ async function shouldSkipTermPayHoldExpiry(
 ): Promise<boolean> {
   const { data: toks } = await admin
     .from("portal_booking_completion_tokens")
-    .select("invoice_share_id, choices_json")
+    .select("invoice_share_id, choices_json, status, pay_plan")
     .eq("document_id", documentId)
     .not("invoice_share_id", "is", null);
   if (!toks?.length) return false;
+
+  // Parent already told the office they paid — keep seat until Mark paid / Tide.
+  if (
+    toks.some((t) => {
+      const st = String(t.status || "").toLowerCase();
+      if (st === "awaiting_office_payment") return true;
+      const c =
+        t.choices_json && typeof t.choices_json === "object"
+          ? (t.choices_json as Record<string, unknown>)
+          : {};
+      return Boolean(String(c.office_paid_notified_at || "").trim());
+    })
+  ) {
+    return true;
+  }
 
   const isTrial = toks.some((t) => {
     const c =
@@ -93,6 +114,23 @@ async function shouldSkipTermPayHoldExpiry(
     .limit(1)
     .maybeSingle();
   if (completedTok?.id) return true;
+
+  const thisBookingIsGocardless = toks.some((t) => {
+    const plan = String(t.pay_plan || "").toLowerCase();
+    const c =
+      t.choices_json && typeof t.choices_json === "object"
+        ? (t.choices_json as Record<string, unknown>)
+        : {};
+    const cjPlan = String(c.pay_plan || "").toLowerCase();
+    return plan.includes("gocardless") || cjPlan.includes("gocardless");
+  }) ||
+    (invRows || []).some(
+      (inv) => String(inv.payment_method_hint || "").toLowerCase() === "gocardless",
+    );
+
+  // Bank / card unpaid term holds must expire — do not keep them because the family
+  // has an unrelated GoCardless mandate on another invoice.
+  if (!thisBookingIsGocardless) return false;
 
   const contactIds = [
     ...new Set(
@@ -269,7 +307,7 @@ export async function nudgeUnpaidBookingPayHolds(
         : phone
           ? "failed"
           : "skipped";
-      await admin.from("portal_parent_notify_log").insert({
+      const { data: insertedNudgeLog } = await admin.from("portal_parent_notify_log").insert({
         sent_by_user_id: null,
         sent_by_email: "system@finish-booking",
         kind: "booking_pay_hold_nudge_25m",
@@ -292,7 +330,13 @@ export async function nudgeUnpaidBookingPayHolds(
           hold_expires_at: row.hold_expires_at,
           mins_left: minsLeft,
         },
-      });
+      }).select("id").maybeSingle();
+      if (insertedNudgeLog?.id) {
+        void notifyFamilyWebPushForParentNotify({
+          notifyLogId: String(insertedNudgeLog.id),
+          kind: "booking_pay_hold_nudge_25m",
+        });
+      }
     } catch (e) {
       console.warn("[nudgeUnpaidBookingPayHolds] log", e);
     }
@@ -326,8 +370,13 @@ export async function expireUnpaidBookingPayHolds(
     .from("portal_booking_slot_reservations")
     .select("id, document_id")
     .eq("status", "validated")
-    .ilike("notes", "%pay_hold_30m%")
-    .lt("hold_expires_at", now);
+    .or(
+      "notes.ilike.%pay_hold_30m%,notes.ilike.%auto_finish_link%,notes.ilike.%existing_client_confirm%",
+    )
+    .lt("hold_expires_at", now)
+    .not("notes", "ilike", "%booking_paid%")
+    .not("notes", "ilike", "%ops_synced%")
+    .not("notes", "ilike", "%trial_paid%");
 
   if (selTaggedErr) {
     console.warn("[expireUnpaidBookingPayHolds] select tagged", selTaggedErr.message);
@@ -366,14 +415,15 @@ export async function expireUnpaidBookingPayHolds(
     if (!docId) continue;
     expired += 1;
 
+    // DB check allows `expired` (not `expired_unpaid`) — parent finish-booking treats that as released.
     await admin
       .from("portal_booking_completion_tokens")
       .update({
-        status: "expired_unpaid",
+        status: "expired",
         updated_at: now,
       })
       .eq("document_id", docId)
-      .in("status", ["awaiting_payment", "awaiting_office_payment", "choices_saved"]);
+      .in("status", ["awaiting_payment", "awaiting_office_payment", "choices_saved", "pending"]);
 
     const { data: toks } = await admin
       .from("portal_booking_completion_tokens")

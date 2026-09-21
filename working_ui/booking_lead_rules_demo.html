@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Booking lead rules — local demo</title>
+  <style>
+    :root {
+      --ink: #12263a;
+      --muted: #5b6b7c;
+      --line: #d7e0ea;
+      --ok: #0f7a4c;
+      --warn: #9a5b00;
+      --bg: #f3f7fb;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 10% -10%, #d9ecff 0%, transparent 55%),
+        radial-gradient(700px 380px at 100% 0%, #ffe8d2 0%, transparent 50%),
+        var(--bg);
+      min-height: 100vh;
+      padding: 28px 18px 48px;
+    }
+    main { max-width: 820px; margin: 0 auto; }
+    h1 { font-size: 1.55rem; margin: 0 0 8px; letter-spacing: -0.02em; }
+    .lead { color: var(--muted); margin: 0 0 22px; line-height: 1.45; max-width: 62ch; }
+    .now {
+      display: inline-flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+      padding: 10px 14px; margin-bottom: 18px; font-size: 0.95rem;
+    }
+    .now strong { font-variant-numeric: tabular-nums; }
+    .grid { display: grid; gap: 12px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px 16px; min-width: 0;
+    }
+    .card h2 { margin: 0 0 6px; font-size: 1.05rem; }
+    .card p { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.4; }
+    .row {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start;
+      margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);
+    }
+    .from { font-size: 0.88rem; color: var(--muted); overflow-wrap: break-word; min-width: 0; }
+    .to {
+      font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap;
+      color: var(--ok);
+    }
+    .to.bump { color: var(--warn); }
+    .rules {
+      margin-top: 20px; padding: 14px 16px; border-radius: 14px;
+      background: #12263a; color: #e8f1fa;
+    }
+    .rules h2 { margin: 0 0 8px; font-size: 1rem; }
+    .rules ul { margin: 0; padding-left: 1.15rem; line-height: 1.5; font-size: 0.92rem; }
+    .rules li { margin: 0 0 6px; }
+    a.btn {
+      display: inline-block; margin-top: 16px; padding: 10px 14px; border-radius: 999px;
+      background: #0b6bcb; color: #fff; text-decoration: none; font-weight: 600; font-size: 0.92rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Booking lead rules (local)</h1>
+    <p class="lead">Same logic as production: weekday trial needs 2 hours; Sat/Sun must be booked by Friday 18:00 London. After that cutoff you get the next weekend. If admin already overrode that venue/time band on the candidate day, first session bumps to the following week and the place stays available for term.</p>
+    <div class="now" id="nowBox">Loading London clock…</div>
+    <div class="grid" id="cases"></div>
+    <div class="rules">
+      <h2>What you should see today</h2>
+      <ul>
+        <li>If it is <strong>Sunday</strong> after Friday 18:00: Saturday → next Saturday; Sunday → next Sunday.</li>
+        <li>Weekday trial same day only if start is ≥ 2 hours from now; otherwise next week same day.</li>
+      </ul>
+    </div>
+    <a class="btn" href="/bookingportal.html" target="_blank" rel="noopener">Open Booking Portal</a>
+  </main>
+  <script>
+    function londonTodayIso() {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+    }
+    function londonClockParts() {
+      var now = new Date();
+      var iso = londonTodayIso();
+      var hour = 0, minute = 0;
+      var parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/London",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+        weekday: "long",
+      }).formatToParts(now);
+      var weekday = "";
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type === "hour") hour = Number(parts[i].value) || 0;
+        if (parts[i].type === "minute") minute = Number(parts[i].value) || 0;
+        if (parts[i].type === "weekday") weekday = parts[i].value;
+      }
+      return { iso: iso, hour: hour, minute: minute, weekday: weekday };
+    }
+    function addDaysIso(iso, days) {
+      var p = String(iso || "").slice(0, 10).split("-").map(Number);
+      var dt = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+      dt.setUTCDate(dt.getUTCDate() + days);
+      return dt.toISOString().slice(0, 10);
+    }
+    function nextWeekdayOnOrAfter(dayName, asOfIso) {
+      var days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+      var target = days.indexOf(String(dayName || "").trim().toLowerCase());
+      var base = String(asOfIso || "").slice(0, 10);
+      if (target < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(base)) return "";
+      var p = base.split("-").map(Number);
+      var dt = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+      for (var i = 0; i < 8; i++) {
+        if (dt.getUTCDay() === target) return dt.toISOString().slice(0, 10);
+        dt.setUTCDate(dt.getUTCDate() + 1);
+      }
+      return "";
+    }
+    function fridayBeforeWeekend(iso) {
+      var p = String(iso || "").slice(0, 10).split("-").map(Number);
+      var wd = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay();
+      if (wd === 6) return addDaysIso(iso, -1);
+      if (wd === 0) return addDaysIso(iso, -2);
+      return "";
+    }
+    function weekendPastFridayCutoff(sessionIso) {
+      var friday = fridayBeforeWeekend(sessionIso);
+      if (!friday) return false;
+      var clock = londonClockParts();
+      if (clock.iso > friday) return true;
+      if (clock.iso < friday) return false;
+      return clock.hour >= 18;
+    }
+    function parseSessionStartMinutes(timeLabel) {
+      var s = String(timeLabel || "").trim().toLowerCase();
+      if (!s) return null;
+      var range = s.match(/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\s*(?:[-–—]|to)\s*(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i);
+      var one = range ? null : s.match(/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i);
+      var hRaw = range ? Number(range[1]) : one ? Number(one[1]) : NaN;
+      var mRaw = range ? Number(range[2] || 0) : one ? Number(one[2] || 0) : 0;
+      var ap = String((range ? range[3] : one ? one[3] : "") || "").toLowerCase();
+      if (!Number.isFinite(hRaw)) return null;
+      var hh = hRaw;
+      if (ap === "pm" && hh < 12) hh += 12;
+      if (ap === "am" && hh === 12) hh = 0;
+      if (!ap && hh >= 1 && hh <= 8) hh += 12;
+      return hh * 60 + mRaw;
+    }
+    function resolveBookableSessionDateIso(dayName, preferredIso, opts) {
+      opts = opts || {};
+      var bookingKind = String(opts.bookingKind || "term").trim().toLowerCase();
+      var timeLabel = opts.timeLabel || "";
+      var day = String(dayName || "").trim().toLowerCase();
+      var weekend = day === "saturday" || day === "sunday";
+      var today = londonTodayIso();
+      var candidate = preferredIso && /^\d{4}-\d{2}-\d{2}$/.test(preferredIso)
+        ? preferredIso
+        : nextWeekdayOnOrAfter(dayName, today);
+      if (!candidate) return preferredIso || "";
+      if (weekend) {
+        for (var w = 0; w < 12; w++) {
+          if (!weekendPastFridayCutoff(candidate)) break;
+          candidate = addDaysIso(candidate, 7) || candidate;
+        }
+        return candidate;
+      }
+      if (bookingKind === "trial") {
+        var clock = londonClockParts();
+        if (candidate === clock.iso) {
+          var start = parseSessionStartMinutes(timeLabel);
+          var nowMins = clock.hour * 60 + clock.minute;
+          if (start == null || start < nowMins + 120) {
+            candidate = addDaysIso(candidate, 7) || candidate;
+          }
+        }
+      }
+      return candidate;
+    }
+    function fmt(iso) {
+      if (!iso) return "—";
+      var p = iso.split("-").map(Number);
+      var dt = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+      return dt.toLocaleDateString("en-GB", {
+        timeZone: "UTC",
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }) + " (" + iso + ")";
+    }
+
+    var clock = londonClockParts();
+    document.getElementById("nowBox").innerHTML =
+      "<span>London now:</span> <strong>" +
+      clock.weekday + " " + clock.iso + " · " +
+      String(clock.hour).padStart(2, "0") + ":" + String(clock.minute).padStart(2, "0") +
+      "</strong>";
+
+    var cases = [
+      {
+        title: "Saturday place / trial",
+        note: "Weekend — Friday 18:00 cutoff",
+        day: "Saturday",
+        preferred: nextWeekdayOnOrAfter("Saturday", clock.iso),
+        kind: "trial",
+        time: "9:00-9:30",
+      },
+      {
+        title: "Sunday place / trial",
+        note: "Weekend — cannot book this Sunday after Friday 18:00",
+        day: "Sunday",
+        preferred: nextWeekdayOnOrAfter("Sunday", clock.iso),
+        kind: "trial",
+        time: "9:00-9:30",
+      },
+      {
+        title: "Weekday trial — less than 2h (example Mon)",
+        note: "Pretend Monday now + session in 45 min → next Monday",
+        day: "Monday",
+        preferred: nextWeekdayOnOrAfter("Monday", clock.iso),
+        kind: "trial",
+        time: (function () {
+          var m = clock.hour * 60 + clock.minute + 45;
+          var h = Math.floor(m / 60) % 24;
+          var mm = m % 60;
+          return h + ":" + String(mm).padStart(2, "0") + "-" + ((h + 1) % 24) + ":00";
+        })(),
+        forceSameDay: true,
+      },
+      {
+        title: "Weekday trial — 2h+ ahead (example Mon)",
+        note: "Pretend Monday now + session in 2h30 → same Monday OK",
+        day: "Monday",
+        preferred: nextWeekdayOnOrAfter("Monday", clock.iso),
+        kind: "trial",
+        time: (function () {
+          var m = clock.hour * 60 + clock.minute + 150;
+          var h = Math.floor(m / 60) % 24;
+          var mm = m % 60;
+          return h + ":" + String(mm).padStart(2, "0") + "-" + ((h + 1) % 24) + ":00";
+        })(),
+        forceSameDay: true,
+      },
+    ];
+
+    var host = document.getElementById("cases");
+    cases.forEach(function (c) {
+      var preferred = c.preferred;
+      var got;
+      if (c.forceSameDay) {
+        // Simulate "today is that Monday" with current London clock time.
+        var fakeIso = preferred;
+        var start = parseSessionStartMinutes(c.time);
+        var nowMins = clock.hour * 60 + clock.minute;
+        if (start == null || start < nowMins + 120) {
+          got = addDaysIso(fakeIso, 7) || fakeIso;
+        } else {
+          got = fakeIso;
+        }
+      } else {
+        got = resolveBookableSessionDateIso(c.day, preferred, {
+          bookingKind: c.kind,
+          timeLabel: c.time,
+        });
+      }
+      var bumped = got !== preferred;
+      var el = document.createElement("article");
+      el.className = "card";
+      el.innerHTML =
+        "<h2>" + c.title + "</h2>" +
+        "<p>" + c.note + " · slot " + c.day + " " + c.time + "</p>" +
+        '<div class="row">' +
+          '<div class="from">Naive next date: <strong>' + fmt(preferred) + "</strong></div>" +
+          '<div class="to' + (bumped ? " bump" : "") + '">Bookable: ' + fmt(got) + "</div>" +
+        "</div>";
+      host.appendChild(el);
+    });
+  </script>
+</body>
+</html>

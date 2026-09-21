@@ -1,0 +1,313 @@
+// @ts-nocheck — Web Push for Communications messages, calls, and group invites.
+//
+// Deploy:
+//   npx supabase functions deploy portal-push-dispatch-communications --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb
+//
+// Trigger: database/migrations/20260904010000_portal_comunicaciones_push_calls_presence.sql
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  clampPushBody,
+  initVapidFromEnv,
+  insertDedupeOrSkip,
+  jsonPushResponse,
+  sendPushPayloadToUserIds,
+  staffPushOpenBase,
+  verifyPortalPushWebhook,
+} from "../_shared/portal_webpush_util.ts";
+
+const DEDUPE_TABLE = "portal_webpush_communications_sent";
+
+type WebhookPayload = {
+  type?: string;
+  table?: string;
+  record?: Record<string, unknown>;
+};
+
+function communicationsOpenUrl(): string {
+  const staff = staffPushOpenBase();
+  if (/staff_dashboard\.html$/i.test(staff)) {
+    return staff.replace(/staff_dashboard\.html$/i, "comunicaciones.html");
+  }
+  if (/\/[^/]+\.html$/i.test(staff)) {
+    return staff.replace(/\/[^/]+\.html$/i, "/comunicaciones.html");
+  }
+  return staff ? `${staff.replace(/\/$/, "")}/comunicaciones.html` : "";
+}
+
+function firstPushName(raw: unknown): string {
+  const t = String(raw || "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  if (/^admin$/i.test(t) || /^administraci[oó]n$/i.test(t) || /^communications$/i.test(t)) {
+    return "";
+  }
+  return t.split(" ")[0] || t;
+}
+
+async function staffFirstPushName(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<string> {
+  const id = String(userId || "").trim();
+  if (!id) return "";
+  try {
+    const { data: label } = await admin.rpc("communication_staff_label", { p_user_id: id });
+    const n = firstPushName(label);
+    if (n) return n;
+  } catch (_rpc) {}
+  const { data: prof } = await admin
+    .from("staff_profiles")
+    .select("full_name,username")
+    .eq("id", id)
+    .maybeSingle();
+  return firstPushName(prof?.full_name || prof?.username || "");
+}
+
+async function callIsFromAdmin(
+  admin: ReturnType<typeof createClient>,
+  conversationId: string,
+  initiatorId: string,
+): Promise<boolean> {
+  const convId = String(conversationId || "").trim();
+  const initiator = String(initiatorId || "").trim();
+  if (!convId) return false;
+  const { data: conv } = await admin
+    .from("communication_conversations")
+    .select("type,employee_id")
+    .eq("id", convId)
+    .maybeSingle();
+  if (!conv) return false;
+  const t = String(conv.type || "").toUpperCase();
+  if (t !== "ADMIN_STAFF") return false;
+  const employee = String(conv.employee_id || "").trim();
+  if (!employee) return true;
+  return initiator !== employee;
+}
+
+function withQuery(base: string, params: Record<string, string>): string {
+  const root = String(base || "").trim();
+  try {
+    const u = new URL(root);
+    Object.entries(params).forEach(([k, v]) => {
+      if (v) u.searchParams.set(k, v);
+    });
+    return u.href;
+  } catch {
+    const qs = Object.entries(params)
+      .filter(([, v]) => v)
+      .map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v))
+      .join("&");
+    if (!qs) return root;
+    return root + (root.includes("?") ? "&" : "?") + qs;
+  }
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return jsonPushResponse("ok");
+  if (req.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405 });
+  }
+
+  const forbidden = verifyPortalPushWebhook(req);
+  if (forbidden) return forbidden;
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const openUrl = communicationsOpenUrl();
+  if (!initVapidFromEnv() || !supabaseUrl || !serviceKey || !openUrl) {
+    console.error("[portal-push-comms] missing env");
+    return new Response("Server misconfigured", { status: 500 });
+  }
+
+  let payload: WebhookPayload;
+  try {
+    payload = await req.json();
+  } catch {
+    return jsonPushResponse({ skipped: true, reason: "bad json" }, 400);
+  }
+
+  const table = String(payload.table || "").trim();
+  const record = payload.record;
+  if (!record || typeof record !== "object") {
+    return jsonPushResponse({ skipped: true, reason: "no record" });
+  }
+
+  const admin = createClient(supabaseUrl, serviceKey);
+  let sourceId = String(record.id || "").trim();
+  let sourceTable = table;
+  let recipientIds: string[] = [];
+  let title = "Communications";
+  let body = "New message";
+  let url = openUrl;
+  let portalOpen = "communications";
+  let tag = "comms";
+  let requireInteraction = false;
+  let callData: Record<string, unknown> | null = null;
+  let chatData: Record<string, unknown> | null = null;
+  let senderUserId = "";
+  let ttl = 86400;
+  let urgency = "high";
+
+  if (table === "communication_messages") {
+    if (!sourceId) return jsonPushResponse({ skipped: true, reason: "no id" });
+    const msgType = String(record.message_type || "text").toLowerCase();
+    if (msgType === "system" || msgType === "call") {
+      return jsonPushResponse({ skipped: true, reason: "system" });
+    }
+    const { data: ids, error } = await admin.rpc("communication_push_recipient_ids", {
+      p_table: table,
+      p_id: sourceId,
+    });
+    if (error) {
+      console.error("[portal-push-comms] recipients", error);
+      return jsonPushResponse({ error: "recipients" }, 500);
+    }
+    recipientIds = ((ids as string[]) || []).map(String).filter(Boolean);
+    const ctx = String(record.sender_context || "").toUpperCase();
+    const preview = clampPushBody(String(record.body || record.file_name || ""), 120);
+    if (msgType === "audio") body = "Voice note";
+    else if (msgType === "image") body = "Photo";
+    else if (msgType === "file") body = String(record.file_name || "File");
+    else body = preview || "New message";
+    title = ctx === "ADMINISTRATION" ? "ADMIN" : "Communications";
+    const conv = String(record.conversation_id || "").trim();
+    senderUserId = String(record.performed_by_user_id || record.sender_user_id || "").trim();
+    if (ctx !== "ADMINISTRATION" && senderUserId) {
+      const nm = await staffFirstPushName(admin, senderUserId);
+      if (nm) title = nm;
+    }
+    url = withQuery(openUrl, conv ? { conv } : {});
+    tag = `comms-msg-${sourceId.slice(0, 24)}`;
+    chatData = conv ? { conversationId: conv } : null;
+  } else if (table === "communication_calls") {
+    if (!sourceId) return jsonPushResponse({ skipped: true, reason: "no id" });
+    const { data: ids, error } = await admin.rpc("communication_push_recipient_ids", {
+      p_table: table,
+      p_id: sourceId,
+    });
+    if (error) {
+      console.error("[portal-push-comms] call recipients", error);
+      return jsonPushResponse({ error: "recipients" }, 500);
+    }
+    recipientIds = ((ids as string[]) || []).map(String).filter(Boolean);
+    const kind = String(record.type || "AUDIO").toUpperCase();
+    const action = kind === "VIDEO" ? "Incoming video call" : "Incoming call";
+    const initiator = String(record.initiated_by || "").trim();
+    senderUserId = initiator;
+    const fromAdmin = await callIsFromAdmin(
+      admin,
+      String(record.conversation_id || ""),
+      initiator,
+    );
+    if (fromAdmin) {
+      title = "Incoming call from ADMIN";
+      if (kind === "VIDEO") title = "Incoming video call from ADMIN";
+      body = "Tap to answer";
+    } else {
+      const nm = await staffFirstPushName(admin, initiator);
+      if (nm) {
+        title = kind === "VIDEO" ? "Incoming video call from " + nm : "Incoming call from " + nm;
+        body = "Tap to answer";
+      } else {
+        title = action;
+        body = "Tap to answer";
+      }
+    }
+    url = withQuery(openUrl, { call: sourceId });
+    portalOpen = "communications_call";
+    tag = `comms-call-${sourceId.slice(0, 24)}`;
+    requireInteraction = true;
+    senderUserId = initiator;
+    callData = {
+      callId: sourceId,
+      type: kind,
+      conversationId: String(record.conversation_id || ""),
+    };
+    ttl = 180;
+    urgency = "high";
+  } else if (table === "communication_group_members") {
+    const userId = String(record.user_id || "").trim();
+    const addedBy = String(record.added_by || "").trim();
+    const groupId = String(record.group_id || "").trim();
+    if (!userId || !groupId) return jsonPushResponse({ skipped: true, reason: "member keys" });
+    if (userId && addedBy && userId === addedBy) {
+      return jsonPushResponse({ skipped: true, reason: "self add" });
+    }
+    if (record.removed_at) return jsonPushResponse({ skipped: true, reason: "removed" });
+    sourceTable = `communication_group_members:${groupId}`;
+    sourceId = userId;
+    recipientIds = [userId];
+    let groupName = "a group";
+    const { data: grp } = await admin
+      .from("communication_groups")
+      .select("name")
+      .eq("id", groupId)
+      .maybeSingle();
+    if (grp && grp.name) groupName = String(grp.name);
+    title = "Communications";
+    body = `You were added to ${groupName}`;
+    url = withQuery(openUrl, { group: groupId });
+    tag = `comms-invite-${groupId.slice(0, 18)}`;
+  } else {
+    return jsonPushResponse({ skipped: true, reason: "table" });
+  }
+
+  if (!recipientIds.length) {
+    return jsonPushResponse({ skipped: true, reason: "no recipients" });
+  }
+  recipientIds = [...new Set(recipientIds.map(String).filter(Boolean))].filter(
+    (id) => !senderUserId || id !== senderUserId,
+  );
+  if (!recipientIds.length) {
+    return jsonPushResponse({ skipped: true, reason: "sender only" });
+  }
+
+  const dedupe = await insertDedupeOrSkip(admin, DEDUPE_TABLE, sourceTable, sourceId);
+  if (dedupe === "duplicate") {
+    return jsonPushResponse({ skipped: true, reason: "already sent" });
+  }
+  if (dedupe === "error") {
+    return jsonPushResponse({ error: "dedupe failed" }, 500);
+  }
+
+  let sent = 0;
+  let targets = 0;
+  for (const rid of recipientIds) {
+    const pushPayload = JSON.stringify({
+      title,
+      body,
+      url,
+      portalOpen,
+      tag,
+      requireInteraction,
+      vibrate: portalOpen === "communications_call" ? [500, 180, 500, 180, 700] : [200, 80, 200],
+      senderUserId,
+      targetUserId: rid,
+      call: callData,
+      chat: chatData,
+    });
+    const result = await sendPushPayloadToUserIds(admin, [rid], pushPayload, {
+      TTL: ttl,
+      urgency,
+      topic: portalOpen === "communications_call" ? "" : tag.slice(0, 32),
+      excludeUserIds: senderUserId ? [senderUserId] : [],
+    });
+    sent += result.sent || 0;
+    targets += result.targets || 0;
+  }
+
+  console.log("[portal-push-comms]", {
+    table,
+    sourceId,
+    recipients: recipientIds.length,
+    sent,
+  });
+
+  return jsonPushResponse({
+    ok: true,
+    table,
+    sent,
+    targets,
+    note: sent === 0 ? "no portal_push_subscriptions or all sends failed" : "ok",
+  });
+});

@@ -2,7 +2,8 @@
 //
 // portal-push-dispatch-parent-notify
 // ----------------------------------
-// Send Family Web Push for hub alert kinds after portal_parent_notify_log insert.
+// Send Family Web Push after portal_parent_notify_log insert (messages + session
+// changes + other parent-facing kinds). WhatsApp/email stay unchanged.
 // Auth: x-portal-webhook-secret (PORTAL_PUSH_WEBHOOK_SECRET).
 //
 // Body: { notify_log_id } or webhook-style { record: { id, ... } }
@@ -12,6 +13,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   clampPushBody,
   familyPushOpenBase,
+  familyPushPortalOpenForKind,
   initVapidFromEnv,
   insertFamilyNotifyDedupeOrSkip,
   isFamilyPushNotifyKind,
@@ -22,6 +24,8 @@ import {
   verifyPortalPushWebhook,
 } from "../_shared/portal_webpush_util.ts";
 
+const FAMILY_ALERT_VIBRATE = [200, 80, 200, 80, 280, 100, 200];
+
 function hubKindTitle(kind: string): string {
   const k = String(kind || "").toLowerCase();
   if (k === "instructor_change" || k === "instructor_reassign") {
@@ -29,6 +33,17 @@ function hubKindTitle(kind: string): string {
   }
   if (k === "session_cancelled") return "Session cancelled";
   if (k === "absence_announced") return "Absence noted";
+  if (k === "custom") return "New message";
+  if (k === "weekly_note") return "Weekly note";
+  if (k === "makeup_scheduled") return "Make-up session";
+  if (k === "trial_scheduled") return "Trial session";
+  if (k === "booking_confirmation") return "Booking confirmation";
+  if (k === "payment_due") return "Payment reminder";
+  if (k.includes("gocardless")) return "Payment update";
+  if (k.includes("pay_hold") || k.includes("booking") || k.includes("finish")) {
+    return "Booking update";
+  }
+  if (k.includes("contact_update")) return "Club message";
   return "Club update";
 }
 
@@ -82,7 +97,7 @@ Deno.serve(async (req) => {
     const { data, error } = await admin
       .from("portal_parent_notify_log")
       .select(
-        "id, kind, subject, body_text, client_display, parent_email, parent_phone, session_date, venue",
+        "id, kind, channel, subject, body_text, client_display, parent_email, parent_phone, session_date, venue",
       )
       .eq("id", notifyLogId)
       .maybeSingle();
@@ -94,8 +109,9 @@ Deno.serve(async (req) => {
   }
 
   const kind = String(row.kind || "").trim().toLowerCase();
-  if (!isFamilyPushNotifyKind(kind)) {
-    return jsonPushResponse({ ok: true, skipped: "kind_not_pushable", kind });
+  const channel = String(row.channel || "").trim().toLowerCase();
+  if (channel === "office" || !isFamilyPushNotifyKind(kind)) {
+    return jsonPushResponse({ ok: true, skipped: "kind_not_pushable", kind, channel });
   }
 
   const dedupe = await insertFamilyNotifyDedupeOrSkip(admin, notifyLogId);
@@ -121,22 +137,25 @@ Deno.serve(async (req) => {
   }
 
   const openBase = familyPushOpenBase();
-  const openUrl = `${openBase}${openBase.includes("?") ? "&" : "?"}view=messages`;
+  const portalOpen = familyPushPortalOpenForKind(kind);
+  const openUrl = `${openBase}${openBase.includes("?") ? "&" : "?"}view=${portalOpen}`;
   const child = String(row.client_display || "").trim();
   const bodyText = clampPushBody(
     String(row.body_text || row.subject || "").trim() || hubKindTitle(kind),
   );
   const title = child
-    ? `${hubKindTitle(kind)} — ${child}`
+    ? `${hubKindTitle(kind)} - ${child}`
     : hubKindTitle(kind);
 
   const payload = JSON.stringify({
     title,
     body: bodyText,
     url: openUrl,
-    portalOpen: "messages",
+    portalOpen,
     tag: `family-notify-${notifyLogId}`,
     requireInteraction: true,
+    vibrate: FAMILY_ALERT_VIBRATE,
+    appBadge: 1,
   });
 
   try {

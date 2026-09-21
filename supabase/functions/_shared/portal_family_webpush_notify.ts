@@ -1,5 +1,6 @@
 /**
- * Fire-and-forget Family Web Push after a hub-alert parent notify log insert.
+ * Fire-and-forget Family Web Push after a parent-facing notify log insert.
+ * WhatsApp / email stay as they are — this is the extra PWA banner.
  */
 export async function notifyFamilyWebPushForParentNotify(opts: {
   notifyLogId: string;
@@ -9,13 +10,6 @@ export async function notifyFamilyWebPushForParentNotify(opts: {
   if (!id) return;
 
   const kind = String(opts?.kind || "").trim().toLowerCase();
-  const allowed = new Set([
-    "instructor_change",
-    "instructor_reassign",
-    "session_cancelled",
-    "absence_announced",
-  ]);
-  if (kind && !allowed.has(kind)) return;
 
   const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
   const secret = (Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") || "").trim();

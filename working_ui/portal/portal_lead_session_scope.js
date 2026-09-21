@@ -6,6 +6,15 @@ import { resolveStaffKeyFromAuthEmail } from "./auth-map.js";
 
 const LEAD_OVERVIEW_KEYS = new Set(["berta", "john", "michelle"]);
 
+/** Team-of-the-day viewers who are not programme Session Overview leads. */
+const TEAM_VIEWER_OPS_KEYS = new Set(["victor", "raul", "javi"]);
+const TEAM_VIEWER_OPS_EMAILS = new Set([
+  "victor@clubsensational.org",
+  "raul@clubsensational.org",
+  "javi@clubsensational.org",
+  "javier@clubsensational.org",
+]);
+
 /** Auth email → programme lead key (wins over staff_profiles.username e.g. stf012). */
 const LEAD_PROGRAMME_EMAIL_TO_KEY = {
   "johnnyosti37@gmail.com": "john",
@@ -58,41 +67,55 @@ export function portalLeadProgrammeKey(profile, authEmail) {
   return LEAD_OVERVIEW_KEYS.has(inferred) ? inferred : "";
 }
 
+/**
+ * Team-of-the-Day strip viewer key (programme leads + Roberto + ops).
+ * Does not grant Session Overview — use portalLeadProgrammeKey for that.
+ * @returns {"john"|"berta"|"michelle"|"roberto"|"ops"|""}
+ */
+export function portalLeadTeamViewerKey(profile, authEmail) {
+  const prog = portalLeadProgrammeKey(profile, authEmail);
+  if (prog) return prog;
+  const em = portalLeadNormalizeAuthEmail(authEmail);
+  if (em && TEAM_VIEWER_OPS_EMAILS.has(em)) return "ops";
+  const staffKeyFromEmail = resolveStaffKeyFromAuthEmail(em);
+  if (staffKeyFromEmail === "roberto") return "roberto";
+  if (TEAM_VIEWER_OPS_KEYS.has(staffKeyFromEmail)) return "ops";
+  const usernameKey = normKey(profile && profile.username);
+  if (usernameKey === "roberto" || usernameKey === "stf002") return "roberto";
+  if (TEAM_VIEWER_OPS_KEYS.has(usernameKey)) return "ops";
+  const firstNameKey = normKey(
+    String((profile && profile.full_name) || "")
+      .trim()
+      .split(/\s+/)[0]
+  );
+  if (firstNameKey === "roberto") return "roberto";
+  if (TEAM_VIEWER_OPS_KEYS.has(firstNameKey)) return "ops";
+  const fullNameKey = normKey(profile && profile.full_name);
+  if (fullNameKey.indexOf("roberto") >= 0) return "roberto";
+  const inferred = portalInferStaffKey(profile, authEmail);
+  if (inferred === "roberto") return "roberto";
+  if (TEAM_VIEWER_OPS_KEYS.has(inferred)) return "ops";
+  return "";
+}
+
 const JOHN_SCOPES = [
   {
-    id: "bespoke-mwf",
-    label: "Mon / Fri — Bespoke Programme (SwimFarm)",
-    weekdays: ["Monday", "Friday"],
+    id: "bespoke-mw",
+    label: "Mon / Wed — Bespoke Programme (SwimFarm)",
+    weekdays: ["Monday", "Wednesday"],
     serviceKeys: ["bespoke"],
     venues: ["swimfarm"],
     leadTeamBanner: true,
   },
-  {
-    id: "wednesday-ma-acton",
-    label: "Wednesday — Multi-Activity (Acton)",
-    weekdays: ["Wednesday"],
-    serviceKeys: ["multi", "aquatic"],
-    venues: ["acton"],
-    /* Team banner lists who is on shift; Today cards stay lead-instructor / cover only. */
-    leadTeamBanner: true,
-  },
-  {
-    id: "sunday-ma-swimfarm",
-    label: "Sunday — Multi-Activity (SwimFarm)",
-    weekdays: ["Sunday"],
-    serviceKeys: ["multi"],
-    venues: ["swimfarm"],
-    /* Team banner lists everyone on shift; Today cards stay lead-instructor only (one client per 45'). */
-    leadTeamBanner: true,
-  },
+  /* Sunday Multi Lead is Berta. John covers Hub Multi on 6 Sep only — not programme lead. */
 ];
 
 const MICHELLE_SCOPES = [
   {
     id: "day-centre-all",
-    label: "Day Centre — all programme days",
-    /* Day Centre is Mon–Fri only — weekend scopes freeze/slow Michelle's PWA lead paths. */
-    weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    label: "Day Centre — Mon to Thu",
+    /* Team of the Day: Michelle Mon–Thu (not Friday). */
+    weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday"],
     serviceKeys: ["daycentre"],
     programmeWideRoster: true,
     leadTeamBanner: true,
@@ -103,20 +126,48 @@ const MICHELLE_SCOPES = [
 
 const BERTA_SCOPES = [
   {
-    id: "wednesday-ma-acton",
-    label: "Wednesday — Multi-Activity (Acton)",
-    weekdays: ["Wednesday"],
-    serviceKeys: ["multi"],
-    venues: ["acton"],
-    /* Team + absent chips: whole MA Acton programme. Today cards: Berta's clients only. */
-    leadTeamBanner: true,
-  },
-  {
     id: "sunday-ma-swimfarm",
     label: "Sunday — Multi-Activity (SwimFarm)",
     weekdays: ["Sunday"],
-    serviceKeys: ["multi"],
+    /* Multi Hub + Aquatic pool (morning 1:1s / trials). Programme-wide Today
+     * cards so Lead sees Hub kids when she works (not an empty "No sessions"). */
+    serviceKeys: ["multi", "aquatic"],
     venues: ["swimfarm"],
+    programmeWideRoster: true,
+    leadTeamBanner: true,
+  },
+];
+
+/** Roberto: Thu Day Centre + Sunday pool (SwimFarm). Not Session Overview. */
+const ROBERTO_SCOPES = [
+  {
+    id: "thu-day-centre",
+    label: "Thursday — Day Centre",
+    weekdays: ["Thursday"],
+    serviceKeys: ["daycentre"],
+    programmeWideRoster: true,
+    leadTeamBanner: true,
+  },
+  {
+    id: "sunday-pool-swimfarm",
+    label: "Sunday — Pool (SwimFarm)",
+    weekdays: ["Sunday"],
+    serviceKeys: ["aquatic"],
+    venues: ["swimfarm"],
+    programmeWideRoster: true,
+    leadTeamBanner: true,
+  },
+];
+
+/** Victor / Javi / Raul: Team of the Day every calendar day (viewer only). */
+const OPS_TEAM_SCOPES = [
+  {
+    id: "ops-club-all-days",
+    label: "Club — Team of the Day",
+    weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    serviceKeys: [],
+    includeAllServices: true,
+    programmeWideRoster: true,
     leadTeamBanner: true,
   },
 ];
@@ -144,9 +195,19 @@ function isDayCentreService(serviceRaw) {
   return normService(serviceRaw) === "daycentre";
 }
 
-function serviceExcludedForLeadOverview(serviceRaw) {
+function serviceExcludedForLeadOverview(serviceRaw, scopes) {
   const sk = normService(serviceRaw);
-  return sk === "climbing" || sk === "aquatic";
+  if (sk !== "climbing" && sk !== "aquatic") return false;
+  if (
+    Array.isArray(scopes) &&
+    scopes.some(function (sc) {
+      if (sc && sc.includeAllServices === true) return true;
+      return Array.isArray(sc.serviceKeys) && sc.serviceKeys.indexOf(sk) >= 0;
+    })
+  ) {
+    return false;
+  }
+  return true;
 }
 
 function normVenue(v) {
@@ -160,7 +221,7 @@ export const PORTAL_LEAD_SUMMER_TERM_START = "2026-04-13";
 
 /** Club closed (no sessions) — show on lead week picker in red. */
 const PORTAL_LEAD_CLOSED_RANGES = [{ from: "2026-05-23", to: "2026-05-31" }];
-const PORTAL_LEAD_CLOSED_SINGLE_DATES = ["2026-05-04"];
+const PORTAL_LEAD_CLOSED_SINGLE_DATES = ["2026-05-04", "2026-09-03"];
 
 export function portalLeadOnOrAfterSummerTerm(iso) {
   const d = String(iso || "")
@@ -224,6 +285,17 @@ export function portalLeadSessionScopesForProfile(profile, authEmail) {
   if (key === "john") return JOHN_SCOPES.slice();
   if (key === "berta") return BERTA_SCOPES.slice();
   if (key === "michelle") return MICHELLE_SCOPES.slice();
+  return [];
+}
+
+/** Scopes for Team of the Day strip (includes Roberto + ops viewers). */
+export function portalLeadTeamSessionScopesForProfile(profile, authEmail) {
+  const key = portalLeadTeamViewerKey(profile, authEmail);
+  if (key === "john") return JOHN_SCOPES.slice();
+  if (key === "berta") return BERTA_SCOPES.slice();
+  if (key === "michelle") return MICHELLE_SCOPES.slice();
+  if (key === "roberto") return ROBERTO_SCOPES.slice();
+  if (key === "ops") return OPS_TEAM_SCOPES.slice();
   return [];
 }
 
@@ -324,7 +396,7 @@ export function portalLeadSlotHasLeadInstructor(slot, leadProfileKey) {
 /** Roster slot object from AdminSessionsHub.expandSlotsForDate */
 export function portalLeadSlotInScope(slot, scopes) {
   if (!slot || !scopes || !scopes.length) return false;
-  if (serviceExcludedForLeadOverview(slot.service)) return false;
+  if (serviceExcludedForLeadOverview(slot.service, scopes)) return false;
   const iso = String(slot.iso || slot.session_date || "").slice(0, 10);
   return scopesMatchRow(scopes, iso, slot.service, slot.venue);
 }
@@ -336,7 +408,7 @@ export function portalLeadSlotInScopeForLead(slot, scopes, leadProfileKey) {
 
 export function portalLeadFeedbackInScope(fb, scopes) {
   if (!fb || !scopes || !scopes.length) return false;
-  if (serviceExcludedForLeadOverview(fb.service)) return false;
+  if (serviceExcludedForLeadOverview(fb.service, scopes)) return false;
   const iso = String(fb.session_date || fb.date || "").trim().slice(0, 10);
   const venue = portalLeadInferFeedbackVenue(fb);
   return scopesMatchRow(scopes, iso, fb.service, venue, { allowEmptyVenue: true });
@@ -356,7 +428,7 @@ export function portalLeadReportInScope(report, scopes) {
 /** Quick absent marks — same weekday/service/venue rules as feedback rows. */
 export function portalLeadAbsentMarkInScope(mark, scopes) {
   if (!mark || !scopes || !scopes.length) return false;
-  if (serviceExcludedForLeadOverview(mark.service)) return false;
+  if (serviceExcludedForLeadOverview(mark.service, scopes)) return false;
   const iso = String(mark.session_date || "")
     .trim()
     .slice(0, 10);
@@ -378,7 +450,7 @@ export function portalLeadSessionScopeFilterFns(scopes, leadProfileKey) {
       return portalLeadSlotInScopeForLead(slot, scopes, leadKey);
     },
     feedbackRowScopeFilter: function (fb) {
-      if (serviceExcludedForLeadOverview(fb.service)) return false;
+      if (serviceExcludedForLeadOverview(fb.service, scopes)) return false;
       return portalLeadFeedbackInScope(fb, scopes);
     },
     absentMarkScopeFilter: function (mark) {
@@ -618,6 +690,33 @@ export function portalLeadProgrammeLeadWorkingOnIso(leadKey, iso, scopes) {
   if (!lk || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
   try {
     const g = typeof globalThis !== "undefined" ? globalThis : null;
+    if (g) {
+      const cache = g.__PORTAL_LEAD_WORKING_ISO_CACHE__ || (g.__PORTAL_LEAD_WORKING_ISO_CACHE__ = Object.create(null));
+      const cacheKey = lk + "|" + day;
+      const hit = cache[cacheKey];
+      if (hit && Date.now() - hit.at < 4000) return hit.ok;
+      const ok = portalLeadProgrammeLeadWorkingOnIsoUncached(lk, day, scopes);
+      cache[cacheKey] = { ok: ok, at: Date.now() };
+      return ok;
+    }
+  } catch (_) {}
+  return portalLeadProgrammeLeadWorkingOnIsoUncached(lk, day, scopes);
+}
+
+function portalLeadProgrammeLeadWorkingOnIsoUncached(lk, day, scopes) {
+  /* Ops team-banner days: show Team of the Day without fixed-session gate. */
+  if (lk === "ops") return portalLeadDayIsProgrammeWorkDay(day, scopes);
+  /*
+   * Roberto is Team Lead only for Thursday Day Centre when he still has an active
+   * DC client. If that client is Cancelled (e.g. Fadi away), he is not lead that day —
+   * no Team strip / lead-scope alerts (Acton aquatic alone does not make him lead).
+   */
+  if (lk === "roberto") {
+    if (!portalLeadDayIsProgrammeWorkDay(day, scopes)) return false;
+    return portalRobertoHasActiveDayCentreLeadSeat(day, scopes);
+  }
+  try {
+    const g = typeof globalThis !== "undefined" ? globalThis : null;
     if (g && typeof g.portalStaffHasShiftOnCalendarDate === "function") {
       const on = g.portalStaffHasShiftOnCalendarDate(day, lk);
       if (on === true) return true;
@@ -632,6 +731,96 @@ export function portalLeadProgrammeLeadWorkingOnIso(leadKey, iso, scopes) {
     }
   } catch (_) {}
   return false;
+}
+
+function portalRobertoDcClientLooksDutyOnly(name) {
+  const n = normKey(name);
+  return (
+    !n ||
+    n === "closed" ||
+    n === "available" ||
+    n === "noclient" ||
+    n === "noparticipant" ||
+    n === "office" ||
+    n === "manager" ||
+    n === "interview" ||
+    n === "interviews" ||
+    n === "home" ||
+    n === "admin"
+  );
+}
+
+function portalRobertoDcClientIsCancelledOnIso(iso, clientName) {
+  const day = String(iso || "").trim().slice(0, 10);
+  const nm = String(clientName || "").trim();
+  if (!day || !nm) return true;
+  if (/^fadi\b/i.test(nm)) {
+    /* Off rota until 20 Sep — not a Cancelled DC seat. */
+    return false;
+  }
+  try {
+    const rows =
+      typeof globalThis !== "undefined" && typeof globalThis.portalScheduleOverrideRowsForIso === "function"
+        ? globalThis.portalScheduleOverrideRowsForIso(day)
+        : typeof globalThis !== "undefined" &&
+            globalThis.__PORTAL_SCHEDULE_OVERRIDE_BY_ISO__ &&
+            Array.isArray(globalThis.__PORTAL_SCHEDULE_OVERRIDE_BY_ISO__[day])
+          ? globalThis.__PORTAL_SCHEDULE_OVERRIDE_BY_ISO__[day]
+          : typeof globalThis !== "undefined" && Array.isArray(globalThis.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+            ? globalThis.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
+            : [];
+    for (let i = 0; i < rows.length; i++) {
+      const ov = rows[i];
+      if (!ov || String(ov.status || "active") !== "active") continue;
+      if (String(ov.session_date || "").slice(0, 10) !== day) continue;
+      if (String(ov.override_type || "").trim() !== "slot_clear_client") continue;
+      if (normKey(ov.anchor_staff_id) !== "roberto") continue;
+      let pl = ov.payload;
+      if (typeof pl === "string") {
+        try {
+          pl = JSON.parse(pl);
+        } catch (_p) {
+          pl = {};
+        }
+      }
+      if (!(pl && pl.cancelled_by_admin)) continue;
+      const anchor = String(ov.anchor_client_id || "").trim();
+      const a = normKey(anchor);
+      const n = normKey(nm);
+      if (!a || !n) continue;
+      if (a === n || n.indexOf(a) === 0 || a.indexOf(n) === 0) return true;
+    }
+  } catch (_) {}
+  return false;
+}
+
+/** Roberto Thu DC lead seat: real Day Centre client that is not Cancelled. */
+function portalRobertoHasActiveDayCentreLeadSeat(iso, scopes) {
+  const day = String(iso || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  const wd = weekdayFromIso(day);
+  if (wd !== "Thursday") {
+    /* Sunday pool team banner keeps existing working check via scopes weekdays. */
+    return portalLeadProgrammeLeadOnRosterForIso("roberto", day, scopes);
+  }
+  const src =
+    typeof globalThis !== "undefined" && globalThis.STAFF_DASHBOARD_SOURCE
+      ? globalThis.STAFF_DASHBOARD_SOURCE
+      : null;
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  let sawActive = false;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !isDayCentreService(r.service)) continue;
+    if (!rosterRowAppliesOnIso(rows, r, day, wd)) continue;
+    if (!/\broberto\b/i.test(String(r.instructors || ""))) continue;
+    const nm = String(r.client_name || "").trim();
+    if (portalRobertoDcClientLooksDutyOnly(nm)) continue;
+    if (portalRobertoDcClientIsCancelledOnIso(day, nm)) continue;
+    sawActive = true;
+    break;
+  }
+  return sawActive;
 }
 
 function activeScopeUsesOwnClientsOnly(scopes, iso) {
@@ -773,7 +962,7 @@ export function portalLeadProgrammeWideTodayForStaff(staffId, iso, profile, auth
 export function portalLeadSpreadsheetSessionInScopeForLead(s, iso, leadKey, scopes) {
   if (!s || !iso || !scopes || !scopes.length) return false;
   const cid = normKey(s.clientId);
-  if (!cid || cid === "closed" || cid === "available" || cid === "home" || cid === "manager") {
+  if (!cid || cid === "closed" || cid === "available" || cid === "home" || cid === "manager" || cid === "office" || cid === "interview" || cid === "admin") {
     return false;
   }
   const slot = {

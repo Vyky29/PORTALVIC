@@ -16,6 +16,8 @@ import {
   bookingRequestSummary,
   normalizePendingBookingRequest,
 } from "../_shared/portal_booking_context.ts";
+import { mergeReservationNotes } from "../_shared/portal_booking_reservation_ops.ts";
+import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
 
 function clean(v: unknown, max = 80): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -122,22 +124,31 @@ async function mintAndNotify(
     parent_phone: string | null;
     payload_json?: unknown;
   },
-  variant: "accepted" | "registration_submitted" = "accepted",
+  variant: "accepted" | "registration_submitted" | "resend_pay_hold" = "accepted",
 ): Promise<{
   finish_url_sent: boolean;
   email_ok: boolean;
   wa_ok: boolean;
   token_id: string | null;
+  slot_held: boolean;
+  hold_expires_at: string | null;
+  rehold_error: string | null;
+  reservations_prepared: number;
 }> {
   const sent = await sendFinishBookingAfterRegistration(admin, doc, {
     variant,
     notify: true,
+    reholdReleased: variant === "resend_pay_hold" || variant === "accepted",
   });
   return {
     finish_url_sent: sent.finish_url_sent,
     email_ok: sent.email_ok,
     wa_ok: sent.wa_ok,
     token_id: sent.token_id,
+    slot_held: sent.slot_held,
+    hold_expires_at: sent.hold_expires_at,
+    rehold_error: sent.rehold_error,
+    reservations_prepared: sent.reservations_prepared,
   };
 }
 
@@ -209,7 +220,16 @@ Deno.serve(async (req) => {
 
   if (action === "resend_finish_link") {
     try {
-      const sent = await mintAndNotify(admin, doc, "accepted");
+      const sent = await mintAndNotify(admin, doc, "resend_pay_hold");
+      if (sent.rehold_error === "slot_unavailable") {
+        return portalAdminJson(409, {
+          ok: false,
+          error: "slot_unavailable",
+          message:
+            "Could not re-hold the seat — the slot looks full. Finish link was not sent.",
+          ...sent,
+        });
+      }
       return portalAdminJson(200, {
         ok: true,
         action: "resend_finish_link",
@@ -252,29 +272,20 @@ Deno.serve(async (req) => {
   } else {
     for (const hold of holds || []) {
       const prevNotes = String(hold.notes || "").trim();
-      const keepTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
-      if (keepTrial) {
-        const { error: rErr } = await admin
-          .from("portal_booking_slot_reservations")
-          .update({
-            status: "released",
-            released_at: nowIso,
-            updated_at: nowIso,
-            notes: "accepted_by_admin|booking_kind=trial|awaiting_stripe_pay",
-          })
-          .eq("id", hold.id)
-          .eq("status", "pending");
-        if (!rErr) reservationsValidated += 0;
-        else console.warn("[portal-admin-participant-document-review] trial release", rErr.message);
-        continue;
-      }
-      const nextNotes = "accepted_by_admin";
+      const isTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
+      const nextNotes = mergeReservationNotes(prevNotes, [
+        "accepted_by_admin",
+        "pay_hold_30m",
+        isTrial ? "booking_kind=trial" : null,
+      ]);
       const { error: vErr } = await admin
         .from("portal_booking_slot_reservations")
         .update({
           status: "validated",
           validated_at: nowIso,
           updated_at: nowIso,
+          released_at: null,
+          hold_expires_at: bookingPayHoldExpiresAt(),
           notes: nextNotes,
         })
         .eq("id", hold.id)

@@ -27,8 +27,8 @@
 
   /**
    * Display-only breakdown for combined Day Centre slots (pool hour + centre),
-   * e.g. Fadi: Big Pool 12.30–1 + Day Centre 1–3; Ikram: Day Centre + Big Pool +
-   * Day Centre across 11–4. The static bundle carries `segments`, but the live
+   * e.g. Fadi: Big Pool 12.30–1 + Day Centre 1–3; Ikram / Emanuel: Hub + Big Pool +
+   * Hub across 11–4. The static bundle carries `segments`, but the live
    * MADRE document may omit them, which made the card render combined on first
    * paint then revert to a single block after the live roster refresh.
    * Synthesizing the same breakdown here keeps the combined card stable from ANY
@@ -38,36 +38,41 @@
   var PORTAL_COMBINED_DAY_CENTRE_SEGMENTS = {
     "fadi|12.30to3": [
       { time_slot: "12.30 to 1", area: "Big Pool" },
-      { time_slot: "1 to 3", area: "Day Centre" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
+    // Ikram Mon/Wed/Fri: Hub 11–12 · swim 12–1 · Hub 1–4 (same as Emanuel).
     "ikram|11to4": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "1 to 4", area: "Day Centre" },
+      { time_slot: "1 to 4", area: "Hub Room" },
     ],
-    // Cover split (e.g. Wed 8 Jul): Luliya/Youssef take 11-3, Victor takes 3-4.
+    // Cover split (shorter morning): Hub 11–12 · swim 12–1 · Hub 1–3.
     "ikram|11to3": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "1 to 3", area: "Day Centre" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     // Michelle Tue after Manager block: Ikram 12.30–4 (no swim Tue).
-    "ikram|12.30to4": [{ time_slot: "12.30 to 4", area: "Day Centre" }],
-    // Emanuel (Roberto Mon/Fri long block): Hub 11–12 · swim 12–1 · Hub 2–4 (gap 1–2).
-    // Wednesday morning block 11–12.30: Day Centre 11–12 · Big Pool 12–12.30 (then Fadi).
+    "ikram|12.30to4": [{ time_slot: "12.30 to 4", area: "Hub Room" }],
+    // Emanuel always swims 12–1; whoever is with him 12–1 sees Big Pool.
     "emanuel|11to4": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "2 to 4", area: "Hub Room" },
+      { time_slot: "1 to 4", area: "Hub Room" },
     ],
     "emanuel|11to12.30": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 12.30", area: "Big Pool" },
+    ],
+    // Victor Wed mid-block with Emanuel: swim 12.30–1 · Hub 1–3.
+    "emanuel|12.30to3": [
+      { time_slot: "12.30 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     "emanuel|11to3": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "2 to 3", area: "Hub Room" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     "emanuel|11to2": [
       { time_slot: "11 to 12", area: "Hub Room" },
@@ -77,10 +82,12 @@
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
     ],
+    /* Fri Victor/Raul: Emanuel Hub 1–4 after Timi. */
+    "emanuel|1to4": [{ time_slot: "1 to 4", area: "Hub Room" }],
   };
-  // Days with no pool hour inside the block: SPECIAL card = one Day Centre /
-  // Hub segment only. Fadi + Ikram swim Mon/Wed/Fri only (like Emanuel);
-  // Tue/Thu = centre only.
+  // Days with no pool hour inside the block: SPECIAL card = one Hub / centre
+  // segment only. Ikram + Emanuel swim Mon/Wed/Fri; Tue/Thu stay land-only.
+  // Fadi: Mon Small Pool · Wed Small Pool · Fri Big Pool (Tue/Thu land-only).
   var PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS = {
     "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
     "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
@@ -89,15 +96,15 @@
   var PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE = {
     "fadi|12.30to3|monday": [
       { time_slot: "12.30 to 1", area: "Small Pool" },
-      { time_slot: "2 to 3", area: "Day Centre" },
+      { time_slot: "2 to 3", area: "Hub Room" },
     ],
     "fadi|12.30to3|wednesday": [
       { time_slot: "12.30 to 1", area: "Small Pool" },
-      { time_slot: "2 to 3", area: "Day Centre" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     "fadi|12.30to3|friday": [
       { time_slot: "12.30 to 1", area: "Big Pool" },
-      { time_slot: "1 to 3", area: "Day Centre" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
   };
   function portalSynthesizeCombinedSegments(nameLower, service, timeSlot, day, areaHint) {
@@ -112,7 +119,13 @@
     const areaFallback =
       name === "manager"
         ? "Hub · Manager"
-        : String(areaHint || "").trim() || "Day Centre";
+        : name === "office"
+          ? "Hub · Office"
+          : name === "interview" || name === "interviews"
+            ? "Hub · Interview"
+            : name === "emanuel" || name === "emmanuel" || name === "ikram" || name === "fadi"
+              ? "Hub Room"
+              : String(areaHint || "").trim() || "Day Centre";
     const plainDays = PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS[key];
     if (plainDays && plainDays.indexOf(dayKey) !== -1) {
       return [{ time_slot: timeLabel, area: areaFallback }];
@@ -127,8 +140,7 @@
 
   /**
    * Display-only merge of a participant's TWO same-day Day Centre blocks into ONE
-   * segmented card. Emanuel Mon/Fri: Hub 11–12 · Big Pool 12–1 · Hub 2–4.
-   * Wednesday is separate blocks (11–12.30 + 3–4) with Fadi in between — do not merge.
+   * segmented card. Emanuel Mon/Wed/Fri: Hub 11–12 · Big Pool 12–1 · Hub 1–4.
    * Pay is driven by the continuous shift band, so collapsing the two blocks for display
    * does not change hours; the merged slot is one feedback session (like other combined
    * Day Centre cards). Keyed by canonical clientId + weekday.
@@ -140,7 +152,16 @@
       segments: [
         { time_slot: "11 to 12", area: "Hub Room" },
         { time_slot: "12 to 1", area: "Big Pool" },
-        { time_slot: "2 to 4", area: "Hub Room" },
+        { time_slot: "1 to 4", area: "Hub Room" },
+      ],
+    },
+    "emanuel|wednesday": {
+      blockStarts: ["11:00", "14:00"],
+      merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
+      segments: [
+        { time_slot: "11 to 12", area: "Hub Room" },
+        { time_slot: "12 to 1", area: "Big Pool" },
+        { time_slot: "1 to 4", area: "Hub Room" },
       ],
     },
     "emanuel|friday": {
@@ -149,7 +170,7 @@
       segments: [
         { time_slot: "11 to 12", area: "Hub Room" },
         { time_slot: "12 to 1", area: "Big Pool" },
-        { time_slot: "2 to 4", area: "Hub Room" },
+        { time_slot: "1 to 4", area: "Hub Room" },
       ],
     },
   };
@@ -309,23 +330,84 @@
       .replace(/[^a-z0-9]+/g, "")
       .trim();
     if (!v) return "";
-    if (v === "yousef" || v === "youssef" || v === "yusef") return "youssef";
-    if (v === "luliya") return "lulia";
-    if (v === "aida") return "lulia";
+    /* Import codes → roster keys (same map as auth-map). */
+    const CODE = {
+      stf001: "sandra",
+      stf002: "roberto",
+      stf003: "dan",
+      stf004: "angel",
+      stf005: "youssef",
+      stf006: "john",
+      stf007: "bismark",
+      stf008: "emmanuel",
+      stf009: "godsway",
+      stf010: "javier",
+      stf011: "aurora",
+      stf012: "berta",
+      stf013: "victor",
+      stf014: "carlos",
+      stf015: "alex",
+      stf016: "simon",
+      stf017: "javi",
+      stf018: "raul",
+      stf019: "sevitha",
+      stf020: "teflon",
+      stf021: "luliya",
+      stf022: "andres",
+    };
+    if (CODE[v]) return CODE[v];
+    if (v === "yousef" || v === "youssef" || v === "yusef" || v === "yousseff" || v === "josep") {
+      return "youssef";
+    }
+    if (v === "lulia" || v === "lulya" || v === "aida" || v === "aidalulia" || v === "aidaluliyajemal") {
+      return "luliya";
+    }
+    if (v === "javiermarquez") return "javier";
+    if (
+      v === "javiarranz" ||
+      v === "javiarranzescorial" ||
+      v === "palankas" ||
+      v === "palankasarranz" ||
+      v === "palankasarranzescorial"
+    ) {
+      return "javi";
+    }
+    if (v === "michelleemmacaleb" || (v.indexOf("michelle") === 0 && v !== "michelle")) {
+      return "michelle";
+    }
+    if (v === "auroragarcia") return "aurora";
+    if (v === "emmanuel" || v === "emmanuelamoakohene" || v === "nanaamoakohene745") {
+      return "emmanuel";
+    }
+    if (v === "emanuel") return "emmanuel";
+    if (typeof window !== "undefined" && typeof window.portalCanonicalStaffRosterKey === "function") {
+      const canon = String(window.portalCanonicalStaffRosterKey(v) || "")
+        .trim()
+        .toLowerCase();
+      if (canon) return canon;
+    }
     return v;
   }
 
-  /** Apply dated sunday overrides (e.g. BISMARK → JAVI cover on 2026-06-21). */
-  function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source) {
-    var raw = String(instructorsRaw || "").trim();
+  /** Apply dated sunday overrides + Autumn calendar remaps. */
+  function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source, meta) {
+    var out = String(instructorsRaw || "").trim();
     var iso = String(sessionDate || "").trim().slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return raw;
+    /* Capacity chain already owns who-works; do not remap through Jul/canonical Sunday stamps. */
+    if (!(source && source.capacityChainNoCanonicalRemap)) {
+      try {
+        var canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
+        if (canon && typeof canon.resolveAutumnInstructorsForCalendarDate === "function") {
+          out = canon.resolveAutumnInstructorsForCalendarDate(out, iso, meta || {});
+        }
+      } catch (_) {}
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return out;
     var overrides =
       source && source.sundayDateOverrides ? source.sundayDateOverrides : null;
     var day = overrides && overrides[iso] ? overrides[iso] : null;
     var map = day && day.replaceInstructor ? day.replaceInstructor : null;
-    if (!map) return raw;
-    var out = raw;
+    if (!map) return out;
     Object.keys(map).forEach(function (fromKey) {
       var to = String(map[fromKey] || "").trim();
       if (!fromKey || !to) return;
@@ -354,6 +436,9 @@
       if (!hit && n === "yusef") {
         hit = keys.find((k) => String(k).toLowerCase() === "youssef");
       }
+      /* Capacity chain standing has no staffProfiles map — keep the token itself
+         so buildForStaff still matches Javier / Dan / Emmanuel on Multi pools. */
+      if (!hit) hit = n;
       if (hit && !seen.has(hit)) {
         seen.add(hit);
         out.push(hit);
@@ -483,9 +568,32 @@
     steven_ce: "steven",
     yusuf: "yusuf_ah",
     yusef: "yusuf_ah",
+    /* One CLIENT — never show Zaid Alfadhl as a different person. */
+    zaid_alfadhl: "zaid",
+    zaid_al: "zaid",
+    zaid_trial: "zaid",
+    trial_zaid: "zaid",
+    trial_zaid_alfadhl: "zaid",
+    trial_zaid_al: "zaid",
+    /* Same CLIENT — rebooked as Yossi Sium after losing place; office unified to Yossi. */
+    yossi_sium: "yossi",
+    yossi_si: "yossi",
+    yosiyas: "yossi",
+    yosiyas_sium: "yossi",
+    /* Office short label — never show full surname on boards. */
+    yunis_hussein: "yunis",
+    /* Finish-booking legal name vs short roster id (Wed Acton Ayman). */
+    ayman_el_bakry: "ayman",
     // Worker display label is "Eddie Mc"; collapse its slug back to the roster id "eddie".
     eddie_mc: "eddie",
     rayyan_fi: "rayyan_f",
+    /* Board short "Mia"; feedback often "Mia Mesi". */
+    mia_mesi: "mia",
+    /* Abate twins — unique first names (no full surname on worker boards). */
+    christian_abate: "christian",
+    emmanuel_abate: "emmanuel",
+    adam_mahmmoud: "adam_ma",
+    adam_mahmoud: "adam_ma",
   };
 
   /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */
@@ -511,8 +619,11 @@
   }
 
   function canonicalParticipantClientId(nameRaw) {
-    const slug = slugify(String(nameRaw || "").trim());
+    var slug = slugify(String(nameRaw || "").trim());
     if (!slug) return slug;
+    slug = slug
+      .replace(/^(trial|makeup|make_up|cover)_+/g, "")
+      .replace(/_+(trial|makeup|make_up)$/g, "");
     return rosterParticipantSlugAlias(slug);
   }
 
@@ -532,6 +643,26 @@
     put("eddie", "Eddie Mc");
     put("rayyan_f", "Rayyan F");
     put("rayyan_fi", "Rayyan F");
+    put("zaid", "Zaid");
+    put("zaid_alfadhl", "Zaid");
+    put("mia", "Mia");
+    put("mia_mesi", "Mia");
+    put("christian", "Christian");
+    put("christian_abate", "Christian");
+    put("emmanuel", "Emmanuel");
+    put("emmanuel_abate", "Emmanuel");
+    put("adam_ma", "Adam Ma");
+    put("adam_mahmmoud", "Adam Ma");
+    put("yossi", "Yossi");
+    put("yossi_sium", "Yossi");
+    put("yosiyas", "Yossi");
+    put("yunis", "Yunis");
+    put("yunis_hussein", "Yunis");
+    put("yusuf_ah", "Yusuf Ah");
+    put("yusef", "Yusuf Ah");
+    put("yusuf", "Yusuf Ah");
+    put("tinashe", "Tinashe");
+    put("tinashe_nekati", "Tinashe");
     try {
       const rows =
         typeof window !== "undefined" && Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)
@@ -569,13 +700,39 @@
 
   /** Canonical worker-facing label for dashboards and session_feedback.client_name. */
   function resolveWorkerDisplayName(nameRaw, clientIdRaw) {
+    var rawIn = String(nameRaw || "").trim();
+    var trialMark =
+      /^(trial|makeup|make[\s_-]*up)\s*[-–—:]\s*/i.test(rawIn) ||
+      /\(\s*trial\s*\)\s*$/i.test(rawIn);
+    var coreName = rawIn
+      .replace(/^(trial|makeup|make[\s_-]*up)\s*[-–—:]\s*/i, "")
+      .replace(/\s*\(\s*trial\s*\)\s*$/i, "")
+      .trim();
     const cid = rosterParticipantSlugAlias(
-      slugify(String(clientIdRaw || "").trim()) || slugify(String(nameRaw || "").trim())
+      slugify(String(clientIdRaw || "").trim()) || slugify(coreName || rawIn)
     );
     const map = workerDisplayNameBySlug();
+    if (cid === "zaid") {
+      return trialMark ? "Zaid (Trial)" : "Zaid";
+    }
+    if (cid === "yossi") {
+      return "Yossi";
+    }
+    if (cid === "yunis") {
+      return "Yunis";
+    }
+    if (cid === "yusuf_ah" || cid === "yusef" || cid === "yusuf") {
+      return "Yusuf Ah";
+    }
     if (cid && map[cid]) return map[cid];
-    const name = String(nameRaw || "").trim();
-    if (name && !isParticipantCatalogExcludedName(name)) return name;
+    const name = coreName || rawIn;
+    if (name && !isParticipantCatalogExcludedName(name)) {
+      /* Slug-only labels (e.g. cover override anchor_client_id "tinashe") → Title Case. */
+      if (/^[a-z0-9]+(?:[_\s-][a-z0-9]+)*$/.test(name) && name === name.toLowerCase()) {
+        return name.replace(/[_\s-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      }
+      return name;
+    }
     if (cid) {
       return cid.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     }
@@ -784,34 +941,40 @@
 
     rows.forEach((row) => {
       const sessionDate = String(row.session_date || row.date || "").trim().slice(0, 10);
+      const instructorsRaw = String(row.instructors || "").trim();
+      const remapMeta = {
+        service: row.service,
+        day: row.day,
+        venue: row.venue,
+        clientName: row.client_name,
+        client_name: row.client_name,
+      };
       const instructorsResolved = resolveInstructorsForSessionDate(
-        row.instructors,
+        instructorsRaw,
         sessionDate,
-        source
+        source,
+        remapMeta
       );
-      const targets = instructorProfileKeysForRow(instructorsResolved, profiles);
-      if (!targets.some((k) => normalizePersonId(k) === wanted)) return;
+      /*
+       * Standing template stamps (Jul 13–17) must not drop staff who only appear
+       * after a *calendar* remap (Emmanuel Fri Tinashe from 11 Sep). Keep anyone
+       * named on the raw row; Today/Term drop them when the viewed day remaps them off.
+       */
+      const instructorKeys = instructorProfileKeysForRow(instructorsResolved, profiles)
+        .concat(instructorProfileKeysForRow(instructorsRaw, profiles));
+      const targetSet = Object.create(null);
+      instructorKeys.forEach(function (k) {
+        targetSet[normalizePersonId(k)] = true;
+      });
+      if (!targetSet[wanted]) return;
 
-      const nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
-      const nameLower = nameRaw.toLowerCase();
-      const isClosed = nameLower === "closed";
-      const isOpenSlot =
-        !nameRaw ||
-        nameLower === "no client" ||
-        nameLower === "no participant" ||
-        nameLower === "noclient" ||
-        nameLower === "no_participant";
+      let nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
       // Fictitious office holds stay off the worker dashboard (waitlist probe seats).
       if (isOfficeHoldWaitlistClient(nameRaw)) return;
       const timeSlotLabel = String(row.time_slot || "").trim();
       const rosterService = String(row.service || "").trim();
       const rosterArea =
         row.area !== undefined && row.area !== null ? String(row.area).trim() : "";
-      const isHomeSlot =
-        nameLower === "casa" ||
-        nameLower === "home" ||
-        String(rosterArea || "").trim().toUpperCase() === "HOME";
-      const isManagerSlot = nameLower === "manager";
       const venue = String(row.venue || "").trim();
       const day = String(row.day || "").trim();
 
@@ -837,12 +1000,63 @@
           startIso = String(startIso || "").trim().slice(0, 10);
           if (/^\d{4}-\d{2}-\d{2}$/.test(startIso) && sessionDate < startIso) return;
         }
+        /* OLD / released: keep the seat as No participant (available), do not paint the name. */
+        const goneMap =
+          (typeof window !== "undefined" &&
+            window.STAFF_DASHBOARD_SOURCE &&
+            window.STAFF_DASHBOARD_SOURCE.clientRosterGoneFromDates) ||
+          null;
+        if (goneMap) {
+          const slugG = nameRaw.toLowerCase();
+          let goneIso = goneMap[nameRaw] || goneMap[slugG] || "";
+          if (!goneIso) {
+            for (const gk of Object.keys(goneMap)) {
+              const gkl = String(gk).trim().toLowerCase();
+              /* Exact Joel, never Joelle. */
+              if (gkl === "joel") {
+                if (slugG === "joel" || slugG.indexOf("joel ") === 0) {
+                  goneIso = goneMap[gk];
+                  break;
+                }
+                continue;
+              }
+              if (gkl === slugG || slugG.indexOf(gkl + " ") === 0) {
+                goneIso = goneMap[gk];
+                break;
+              }
+            }
+          }
+          goneIso = String(goneIso || "").trim().slice(0, 10);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(goneIso) && sessionDate >= goneIso) {
+            nameRaw = "No participant";
+          }
+        }
       }
 
+      const nameLower = String(nameRaw || "").toLowerCase();
+      const isClosed = nameLower === "closed";
+      const isOpenSlot =
+        !nameRaw ||
+        nameLower === "no client" ||
+        nameLower === "no participant" ||
+        nameLower === "noclient" ||
+        nameLower === "no_participant";
+      const isHomeSlot =
+        nameLower === "casa" ||
+        nameLower === "home" ||
+        String(rosterArea || "").trim().toUpperCase() === "HOME";
+      /* Manager / Office / Interview = duty blocks — never session feedback. */
+      const isManagerSlot = nameLower === "manager";
+      const isOfficeSlot = nameLower === "office";
+      const isInterviewSlot = nameLower === "interview" || nameLower === "interviews";
+      const isAdminDutySlot = nameLower === "admin";
+      const isDutySeatSlot = isManagerSlot || isOfficeSlot || isInterviewSlot || isAdminDutySlot;
+
       const selfKey =
-        targets.find((k) => normalizePersonId(k) === wanted) ||
+        instructorKeys.find((k) => normalizePersonId(k) === wanted) ||
         String(staffIdForMatch || "").trim().toLowerCase();
-      const staffKeyOut = stored || String(selfKey).toLowerCase();
+      /* Always stamp canonical roster id (luliya not lulia) so Today/Week filters match auth. */
+      const staffKeyOut = normalizePersonId(stored || selfKey) || String(stored || selfKey || "").toLowerCase();
 
       // Only enforce service/date gates for rows inside this term's calendar view.
       // Summer MADRE dated rows (Jun–Jul) stay in the model as weekday standing
@@ -880,6 +1094,8 @@
         rosterService,
         rosterArea,
         timeSlotLabel,
+        __portalRosterInstructorsRaw: instructorsRaw,
+        clientName: nameRaw,
       };
       if (Array.isArray(row.segments) && row.segments.length) {
         baseSession.segments = row.segments;
@@ -899,15 +1115,15 @@
         );
         if (synthSegments) baseSession.segments = synthSegments;
       }
-      /* Prefer current Emanuel Mon/Fri SPECIAL shape even if an older MADRE/bundle
-         row still carries a stale 11–4 contiguous 1–4 Day Centre third segment. */
+      /* Prefer current Emanuel Mon/Wed/Fri SPECIAL shape even if an older MADRE/bundle
+         row still carries a stale contiguous third segment. */
       if (
         nameLower === "emanuel" &&
         String(rosterService || "").trim().toLowerCase() === "day centre" &&
         String(timeSlotLabel || "").replace(/\s+/g, "").toLowerCase() === "11to4"
       ) {
         const dayKey = String(day || "").trim().toLowerCase();
-        if (dayKey === "monday" || dayKey === "friday") {
+        if (dayKey === "monday" || dayKey === "wednesday" || dayKey === "friday") {
           const prefer = portalSynthesizeCombinedSegments(
             nameLower,
             rosterService,
@@ -932,7 +1148,6 @@
         );
         if (fallback) baseSession.segments = fallback;
       }
-      const instructorsRaw = String(row.instructors || "").trim();
       if (
         instructorsRaw &&
         instructorsResolved &&
@@ -962,9 +1177,25 @@
         return;
       }
 
-      if (isHomeSlot || isManagerSlot) {
-        const dutyId = isHomeSlot ? "home" : "manager";
-        let dutyName = isHomeSlot ? "HOME" : "MANAGER";
+      if (isHomeSlot || isDutySeatSlot) {
+        const dutyId = isHomeSlot
+          ? "home"
+          : isOfficeSlot
+            ? "office"
+            : isInterviewSlot
+              ? "interview"
+              : isAdminDutySlot
+                ? "admin"
+                : "manager";
+        let dutyName = isHomeSlot
+          ? "HOME"
+          : isOfficeSlot
+            ? "OFFICE"
+            : isInterviewSlot
+              ? "INTERVIEW"
+              : isAdminDutySlot
+                ? "ADMIN"
+                : "MANAGER";
         if (
           isManagerSlot &&
           typeof window !== "undefined" &&
@@ -976,7 +1207,13 @@
             ? window.portalOpsAdminDisplay.workerFacingLabel()
             : "ADMIN";
         }
-        const dutyArea = isHomeSlot ? "HOME" : "Hub Room";
+        const dutyArea = isHomeSlot
+          ? "HOME"
+          : isOfficeSlot
+            ? "Hub · Office"
+            : isInterviewSlot
+              ? "Hub · Interview"
+              : "Hub Room";
         sessionsModel.push(
           Object.assign({}, baseSession, {
             clientId: dutyId,
@@ -1068,10 +1305,21 @@
     const source = (options && options.source) || window.STAFF_DASHBOARD_SOURCE || {};
     const rawId = String((options && options.staffId) || "").trim().toLowerCase();
     const profiles = (source && source.staffProfiles) || {};
-    const profile = profiles[rawId] || {};
+    const wantedCanon = normalizePersonId(rawId) || rawId;
+    let profileKey = rawId;
+    if (!profiles[profileKey] && wantedCanon) {
+      const keys = Object.keys(profiles);
+      for (let pi = 0; pi < keys.length; pi++) {
+        if (normalizePersonId(keys[pi]) === wantedCanon) {
+          profileKey = keys[pi];
+          break;
+        }
+      }
+    }
+    const profile = profiles[profileKey] || profiles[rawId] || {};
 
-    const isDemoAcct = rawId === "teflon";
-    const effectiveRowStaffId = isDemoAcct ? "teflon" : rawId;
+    const isDemoAcct = rawId === "teflon" || wantedCanon === "teflon";
+    const effectiveRowStaffId = isDemoAcct ? "teflon" : wantedCanon || rawId;
     let rosterSource = source;
     if (
       typeof window !== "undefined" &&
@@ -1080,7 +1328,7 @@
     ) {
       rosterSource = window.portalOpsAdminDutyRoster.mergeDutyRows(source, effectiveRowStaffId);
     }
-    const built = buildForStaff(rosterSource, effectiveRowStaffId, isDemoAcct ? "teflon" : null);
+    const built = buildForStaff(rosterSource, effectiveRowStaffId, isDemoAcct ? "teflon" : wantedCanon || rawId);
     const allRows = Array.isArray(rosterSource && rosterSource.rows) ? rosterSource.rows : [];
     mergeCompanyClientsFromRosterRows(built.clientNotesById, allRows);
 
@@ -1121,4 +1369,5 @@
     deriveMedicalAlertFromInfo: deriveMedicalAlertFromInfo,
   };
   window.portalDeriveMedicalAlertFromInfo = deriveMedicalAlertFromInfo;
+  window.portalSynthesizeCombinedSegments = portalSynthesizeCombinedSegments;
 })();

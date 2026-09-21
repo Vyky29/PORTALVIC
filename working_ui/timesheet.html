@@ -314,23 +314,28 @@
     }
     html.portal-force-landscape,body.portal-force-landscape{min-height:100dvh}
   </style>
-  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260712-ghost-inapp" />
-  <script src="portal/portal-ghost-view.js?v=20260712-ghost-inapp"></script>
+  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260911-teleport-iso" />
+  <script src="portal/portal-ghost-view.js?v=20260911-teleport-iso"></script>
   <script src="portal/portal_return_and_shell.js?v=20260510-portal-admin"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260423-1"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js?v=20260419-99"></script>
-  <script src="/portal/staff_roster_resolve.js?v=20260625-simon-stf016"></script>
-  <script src="/portal/term_from_timetable.js?v=roster-19c3aeeb8d"></script>
+  <script src="/portal/staff_roster_resolve.js?v=20260911-emmanuel-staff"></script>
+  <script src="/portal/portal_staff_display_names.js?v=20260909-luliya-first"></script>
+  <script src="/portal/term_from_timetable.js?v=20260909-bismark-full"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260625-payroll-june"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=roster-19c3aeeb8d"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260720-michelle-dayoff-31"></script>
-  <script src="/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260831-trial-overlay"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
+  <script src="/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260920-team-day-truth"></script>
+  <script src="/portal/autumn_staff_hours_reference.js?v=20260916-timesheet-tt-gate"></script>
+  <script src="/portal/portal-staff-timetable-merge.js?v=20260917-paid-hours"></script>
+  <script src="/portal/portal_client_day_visibility.js?v=20260916-short-names"></script>
+  <script src="/portal/portal_resolve_day_board.js?v=20260920-victor-week1-snap"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
-  <script src="/portal/portal_madre_fold.js?v=20260713-authoritative-week"></script>
-  <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260705-live-madre-autorefresh"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260724-youssef-acton-end"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260805-cover-half-merge"></script>
+  <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
+  <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260916-timesheet-roberto"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260909-michelle-1045"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260919-aquatic-hour-2to1"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
   <main class="page">
@@ -489,12 +494,12 @@
       stf018: "raul",
       stf019: "sevitha",
       stf020: "teflon",
-      stf021: "lulia",
+      stf021: "luliya",
       stf022: "andres"
     };
     /**
-     * Manual-entry staff (none currently). Roberto uses the same roster timesheet
-     * as everyone else, with a fixed monthly salary and no £/h rate shown.
+     * Manual-entry staff (none currently). Roberto uses the roster timesheet:
+     * Day Centre PT monthly + Acton/Sunday at £28/h from 1 Sep 2026.
      */
     const MANUAL_TIMESHEET_ROSTER_KEYS = new Set([]);
     /**
@@ -502,13 +507,111 @@
      * Shown instead of hourly rate on the timesheet UI/PDF.
      */
     const FIXED_MONTHLY_SALARY_BY_ROSTER_KEY = {
-      /* Roberto: fijo custom £26k/yr desde ene 2026 (no Scala £/h). */
+      /* Roberto until 31 Aug 2026: custom £26k/yr all-in (no Scala £/h). */
       roberto: 2166.67,
       raul: 4167,
       victor: 4167
     };
+    /** Roberto from 1 Sep 2026: Day Centre PT £18,060/yr = £1,505/mo; Acton + Sunday @ £28/h. */
+    const ROBERTO_PT_FROM_ISO = "2026-09-01";
+    const ROBERTO_PT_MONTHLY = 1505;
+    const ROBERTO_ZH_HOURLY = 28;
+    function isRobertoRosterKey(key) {
+      return String(key != null ? key : state.staffRosterKey || "").trim().toLowerCase() === "roberto";
+    }
+    function robertoHybridPayActive(key) {
+      if (!isRobertoRosterKey(key)) return false;
+      const end = String(state.periodEnd || "").slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(end) && end >= ROBERTO_PT_FROM_ISO;
+    }
+    function sessionVenueBlob(session) {
+      return [
+        session && session.venue,
+        session && session.sessionVenue,
+        session && session.area,
+        session && session.rosterArea
+      ]
+        .map((v) => String(v || "").toLowerCase())
+        .join(" ");
+    }
+    function isRobertoTrainingSession(session) {
+      const svc = String(
+        (session && (session.rosterService || session.service || session.activity)) || ""
+      ).toLowerCase();
+      return /shadow|training/.test(svc);
+    }
+    /** Weekday Day Centre / Hub (incl. Fri Tinashe) inside the 21h PT band. Acton + Sunday = ZH. */
+    function isRobertoDayCentrePtSession(session, dateObj) {
+      if (!isRobertoRosterKey()) return false;
+      const iso = isoDate(dateObj);
+      if (!iso || iso < ROBERTO_PT_FROM_ISO) return false;
+      if (isRobertoTrainingSession(session)) return false;
+      const dow = dateObj && dateObj.getDay();
+      if (dow === 0 || dow === 6) return false;
+      if (sessionVenueBlob(session).indexOf("acton") >= 0) return false;
+      return true;
+    }
+    function applyRobertoPayBandEntries(entries, band) {
+      const list = Array.isArray(entries) ? entries : [];
+      if (!band || !list.length) return list;
+      if (band === "pt") {
+        list.forEach((e) => {
+          if (!e || e.dayOff) return;
+          e.payBand = "pt";
+          e.rate = 0;
+          e.role = "Day Centre PT";
+          e.roleLabel = "Day Centre PT";
+          if (!e.serviceName || /aquatic/i.test(String(e.serviceName || ""))) {
+            e.service = "Day Centre";
+            e.serviceName = "Day Centre";
+            if (e.timeRange) e.serviceLabel = `${e.timeRange} Day Centre`;
+          }
+        });
+        return list;
+      }
+      if (band === "zh") {
+        list.forEach((e) => {
+          if (!e || e.dayOff) return;
+          e.payBand = "zh";
+          e.rate = ROBERTO_ZH_HOURLY;
+          e.role = "Swimming Instructor";
+        });
+      }
+      return list;
+    }
+    /**
+     * Hire Emmanuel Amoakohene: did not work Sun 6 Sep (John had the Hub book).
+     * Wed 9 + Fri 11 Tinashe were shadowing (£13.50). Contract £18/h from 13 Sep.
+     */
+    const EMMANUEL_HIRE_PAID_FROM_ISO = "2026-09-13";
+    const EMMANUEL_HIRE_SHADOW_ISOS = new Set(["2026-09-09", "2026-09-11"]);
+    const EMMANUEL_HIRE_SKIP_ISOS = new Set(["2026-09-06"]);
+    function isEmmanuelHireRosterKey(key) {
+      return String(key != null ? key : state.staffRosterKey || "").trim().toLowerCase() === "emmanuel";
+    }
+    function emmanuelHireTimesheetIncludeIso(iso) {
+      const d = String(iso || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return true;
+      if (EMMANUEL_HIRE_SKIP_ISOS.has(d)) return false;
+      if (d < EMMANUEL_HIRE_PAID_FROM_ISO) return EMMANUEL_HIRE_SHADOW_ISOS.has(d);
+      return true;
+    }
+    function applyEmmanuelHireShadowingEntry(e) {
+      if (!e) return e;
+      const iso = String(e.date || "").slice(0, 10);
+      if (!EMMANUEL_HIRE_SHADOW_ISOS.has(iso)) return e;
+      const timeRange = String(e.timeRange || "").trim();
+      e.service = "Shadowing";
+      e.serviceName = "Shadowing";
+      e.serviceLabel = timeRange ? timeRange + " Shadowing" : "Shadowing";
+      e.role = "Shadowing";
+      e.roleLabel = "Shadowing";
+      e.rate = 13.5;
+      return e;
+    }
     function fixedMonthlySalaryForRosterKey(key) {
       const k = String(key || "").trim().toLowerCase();
+      if (k === "roberto" && robertoHybridPayActive(k)) return ROBERTO_PT_MONTHLY;
       const v = Number(FIXED_MONTHLY_SALARY_BY_ROSTER_KEY[k] || 0);
       return v > 0 ? v : 0;
     }
@@ -562,12 +665,12 @@
       "johnnyosti37@gmail.com": "john",
       "stf012@staff.import.pending": "berta",
       "stf006@staff.import.pending": "john",
-      "stf021@staff.import.pending": "lulia",
+      "stf021@staff.import.pending": "luliya",
       "stf016@staff.import.pending": "simon"
     };
     /** Fallback when `staff_pay_rates` has no row for this auth user (seed names in DB migration).
      * Afternoon / swimming instructor rates (Autumn 26/27):
-     *   Simon £24 · Roberto £24 · Luliya £22 · Youssef £24 · Aurora/Dan/Javier £28
+     *   Simon £24 · Roberto ZH £28 · Luliya £22 · Youssef £24 · Aurora/Dan/Javier £28
      * Morning Day Centre / support rates still TBD for most — leave SW rows as-is.
      * Youssef (Josep): morning (incl. piscina) stays Support Worker £20; afternoon swim £24. */
     const PAY_RATE_BY_ROSTER_KEY = {
@@ -586,11 +689,11 @@
         role_label: "Swimming Instructor 2"
       },
       roberto: {
-        roleRates: { "Support Worker": 20, "Swimming Instructor": 24 },
-        roleScales: { "Support Worker": "Scale 2", "Swimming Instructor": "Scale 2" },
+        roleRates: { "Support Worker": 0, "Swimming Instructor": 28, "Day Centre PT": 0 },
+        roleScales: { "Support Worker": "Scale 2", "Swimming Instructor": "Scale 3" },
         primaryRole: "Swimming Instructor",
-        hourly_rate: 24,
-        role_label: "Swimming Instructor 2"
+        hourly_rate: 28,
+        role_label: "Swimming Instructor 3"
       },
       aurora: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
       angel: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
@@ -599,11 +702,33 @@
       alex: { hourly_rate: 30, role_label: "Climbing Instructor 3" },
       carlos: { hourly_rate: 30, role_label: "Climbing Instructor 3" },
       sandra: { hourly_rate: 28, role_label: "Fitness Instructor 1" },
-      godsway: { hourly_rate: 18, role_label: "Support Worker 1" },
+      /* Godsway 2026/27: Scale 2 £20 (not new-hire Scale 1 £18). */
+      godsway: {
+        hourly_rate: 20,
+        role_label: "Support Worker 2",
+        primaryRole: "Support Worker",
+        roleRates: { "Support Worker": 20 },
+        roleScales: { "Support Worker": "Scale 2" }
+      },
       giuseppe: { hourly_rate: 20, role_label: "Support Worker 2" },
       bismark: { hourly_rate: 23, role_label: "Support Worker 3" },
-      john: { hourly_rate: 30, role_label: "Service Lead" },
+      john: {
+        hourly_rate: 25,
+        role_label: "Support Worker 2",
+        primaryRole: "Support Worker",
+        roleRates: { "Support Worker": 25 },
+        roleScales: { "Support Worker": "Scale 2" },
+      },
       berta: { hourly_rate: 30, role_label: "Service Lead" },
+      /* Emmanuel Amoakohene: £18 from 13 Sep 2026 (Wed 9 + Fri 11 shadowing @ £13.50). */
+      emmanuel: { hourly_rate: 18, role_label: "Support Worker 1" },
+      luliya: {
+        roleRates: { "Support Worker": 18, "Swimming Instructor": 22 },
+        roleScales: { "Support Worker": "Scale 1", "Swimming Instructor": "Scale 1" },
+        primaryRole: "Support Worker",
+        hourly_rate: 18,
+        role_label: "Support Worker"
+      },
       lulia: {
         roleRates: { "Support Worker": 18, "Swimming Instructor": 22 },
         roleScales: { "Support Worker": "Scale 1", "Swimming Instructor": "Scale 1" },
@@ -911,7 +1036,7 @@
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "")
         .trim();
-      if (k === "luliya" || k === "aida") return "lulia";
+      if (k === "lulia" || k === "aida") return "luliya";
       return k;
     }
     function rosterKeyFromAuthEmail(email) {
@@ -968,6 +1093,12 @@
         return raw;
       }
       if (rosterKey) {
+        try {
+          if (typeof window.portalStaffDisplayName === "function") {
+            const dn = String(window.portalStaffDisplayName(rosterKey) || "").trim();
+            if (dn) return dn;
+          }
+        } catch (_) {}
         const label = rosterKey.charAt(0).toUpperCase() + rosterKey.slice(1);
         return label;
       }
@@ -993,7 +1124,7 @@
       const k = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
         .trim()
         .toLowerCase();
-      if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+      if (k === "lulia" || k === "aida" || k === "stf021") return "luliya";
       return k;
     }
     function onTimeDeadlineDayForPeriodEnd(periodEndIso, rosterKey) {
@@ -1155,15 +1286,354 @@
       }
     }
 
+    /**
+     * Prefer exact session_date rows for the calendar day. When missing (or sparse),
+     * project weekday standing templates the same way Overview/Services do — summer
+     * MADRE dates are standing snaps, not "only that summer day". Without this,
+     * Autumn timesheets only show days that happen to have a dated portal_roster_rows
+     * overlay (e.g. Roberto Sep showing Tue 8 / Wed 9 / Wed 16 only).
+     *
+     * Gate: never project standing onto an ISO where Autumn Instructor Timetable
+     * has no band for this worker (John Sun 6 Hub cover must not invent Sun 13/20).
+     * Exact dated rows + cover injects still count.
+     */
+    function timesheetAutumnStaffHoursDoc() {
+      try {
+        return typeof window !== "undefined" ? window.PORTAL_AUTUMN_STAFF_HOURS : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    /** true = named on Timetable that day; false = Timetable day exists but not them; null = unknown/no doc. */
+    function timesheetWorkerOnAutumnTimetableIso(rosterKey, dateKey) {
+      const R =
+        typeof window !== "undefined" ? window.PortalResolveDayBoard : null;
+      if (R && typeof R.workerOnAutumnTimetableIso === "function") {
+        return R.workerOnAutumnTimetableIso(rosterKey, dateKey);
+      }
+      const doc = timesheetAutumnStaffHoursDoc();
+      const key = String(rosterKey || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
+      const iso = String(dateKey || "").slice(0, 10);
+      if (!doc || !key || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+      const hours = doc.staffHours || {};
+      const dowKeys = Object.keys(hours);
+      for (let d = 0; d < dowKeys.length; d++) {
+        const dates = (hours[dowKeys[d]] && hours[dowKeys[d]].dates) || [];
+        for (let i = 0; i < dates.length; i++) {
+          const row = dates[i];
+          if (String((row && row.date) || "").slice(0, 10) !== iso) continue;
+          const cells = (row && row.cells) || [];
+          for (let c = 0; c < cells.length; c++) {
+            const text = String((cells[c] && cells[c].text) || "")
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "");
+            const tokens = text.split(/[^a-z0-9]+/).filter(Boolean);
+            if (tokens.indexOf(key) >= 0 || tokens[0] === key) return true;
+          }
+          return false;
+        }
+      }
+      return false;
+    }
+
+    /** Merge Admin Timetable cell overrides (incl. green paid_hours) into PORTAL_AUTUMN_STAFF_HOURS. */
+    async function timesheetEnsureTimetablePaidMerge(supabase) {
+      try {
+        if (
+          !supabase ||
+          !window.PortalStaffTimetableMerge ||
+          typeof window.PortalStaffTimetableMerge.loadAndCache !== "function" ||
+          !window.PORTAL_AUTUMN_STAFF_HOURS ||
+          !window.PORTAL_AUTUMN_STAFF_HOURS.staffHours
+        ) {
+          return;
+        }
+        if (!window.__PORTAL_AUTUMN_STAFF_HOURS_BASE__) {
+          window.__PORTAL_AUTUMN_STAFF_HOURS_BASE__ = JSON.parse(
+            JSON.stringify(window.PORTAL_AUTUMN_STAFF_HOURS)
+          );
+        }
+        const map = await window.PortalStaffTimetableMerge.loadAndCache(supabase, 0);
+        window.PORTAL_AUTUMN_STAFF_HOURS = JSON.parse(
+          JSON.stringify(window.__PORTAL_AUTUMN_STAFF_HOURS_BASE__)
+        );
+        window.PortalStaffTimetableMerge.applyToStaffHours(
+          window.PORTAL_AUTUMN_STAFF_HOURS.staffHours,
+          map
+        );
+      } catch (e) {
+        console.warn("[timesheet] timetable paid merge skipped", e);
+      }
+    }
+
+    function timesheetParseHmTokenToMinutes(raw) {
+      const s = String(raw || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\./g, ":");
+      if (!s) return NaN;
+      const m = s.match(/^(\d{1,2})(?::(\d{2}))?$/);
+      if (!m) return NaN;
+      let h = parseInt(m[1], 10);
+      const min = parseInt(m[2] || "0", 10);
+      if (!Number.isFinite(h) || !Number.isFinite(min)) return NaN;
+      /* Club bands: 1–7 without am/pm → afternoon (13–19), same as roster. */
+      if (h >= 1 && h <= 7) h += 12;
+      if (h === 24) h = 0;
+      return h * 60 + min;
+    }
+
+    /**
+     * Parse Timetable green paid_hours: "10.30-12.30", "10:30-12:30", "1.5", "1.5h".
+     * Empty = same as shift (no override).
+     */
+    function timesheetParsePaidHoursSpec(raw) {
+      const s0 = String(raw || "").trim();
+      if (!s0) return null;
+      const compact = s0.replace(/\s+/g, "");
+      if (!/[-–]|to/i.test(compact)) {
+        const durOnly = compact.match(/^(\d+(?:\.\d+)?)h(?:ours?)?$/i) || compact.match(/^(\d+(?:\.\d+)?)$/);
+        if (durOnly) {
+          const h = Number(durOnly[1]);
+          if (Number.isFinite(h) && h > 0 && h < 24) {
+            return { hours: Number(h.toFixed(2)), startMin: null, endMin: null };
+          }
+        }
+      }
+      const range = compact.replace(/–/g, "-").replace(/to/gi, "-").split("-");
+      if (range.length === 2) {
+        const a = timesheetParseHmTokenToMinutes(range[0]);
+        let b = timesheetParseHmTokenToMinutes(range[1]);
+        if (Number.isFinite(a) && Number.isFinite(b)) {
+          if (b < a) b += 24 * 60;
+          return {
+            hours: Number(((b - a) / 60).toFixed(2)),
+            startMin: a,
+            endMin: b,
+          };
+        }
+      }
+      return null;
+    }
+
+    function timesheetCellNamesStaff(rosterKey, cellText) {
+      const key = String(rosterKey || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
+      if (!key) return false;
+      const text = String(cellText || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const tokens = text.split(/[^a-z0-9]+/).filter(Boolean);
+      return tokens.indexOf(key) >= 0 || tokens[0] === key;
+    }
+
+    /**
+     * Green Timetable paid_hours for this worker on this ISO (sum if several seats).
+     * Only non-empty paid_hours count — empty means same-as-shift (use session logic).
+     */
+    function timesheetTimetablePaidForStaffDay(rosterKey, dateKey) {
+      const doc = timesheetAutumnStaffHoursDoc();
+      const iso = String(dateKey || "").slice(0, 10);
+      if (!doc || !iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+      const hoursDoc = doc.staffHours || {};
+      const specs = [];
+      Object.keys(hoursDoc).forEach((dow) => {
+        const sheet = hoursDoc[dow];
+        if (!sheet) return;
+        function scan(dates) {
+          (dates || []).forEach((row) => {
+            if (String((row && row.date) || "").slice(0, 10) !== iso) return;
+            (row.cells || []).forEach((cell) => {
+              if (!cell || !timesheetCellNamesStaff(rosterKey, cell.text)) return;
+              const paidRaw = String(cell.paidHours || "").trim();
+              if (!paidRaw) return;
+              const spec = timesheetParsePaidHoursSpec(paidRaw);
+              if (spec && spec.hours > 0) specs.push(spec);
+            });
+          });
+        }
+        scan(sheet.dates);
+        (sheet.blocks || []).forEach((block) => scan(block.dates));
+      });
+      if (!specs.length) return null;
+      let hours = 0;
+      let startMin = Infinity;
+      let endMin = -Infinity;
+      let hasWindow = false;
+      specs.forEach((sp) => {
+        hours += sp.hours;
+        if (sp.startMin != null && sp.endMin != null) {
+          hasWindow = true;
+          if (sp.startMin < startMin) startMin = sp.startMin;
+          if (sp.endMin > endMin) endMin = sp.endMin;
+        }
+      });
+      hours = Number(hours.toFixed(2));
+      if (!(hours > 0)) return null;
+      return hasWindow
+        ? { hours, startMin, endMin }
+        : { hours, startMin: null, endMin: null };
+    }
+
+    function timesheetStandingSnapIsoForDow(sessions, dayName, dateKey) {
+      const R =
+        typeof window !== "undefined" ? window.PortalResolveDayBoard : null;
+      if (R && typeof R.standingSnapIsoForDow === "function") {
+        return R.standingSnapIsoForDow(sessions, dayName, {
+          anchorIso: dateKey,
+        });
+      }
+      const want = String(dayName || "").trim();
+      if (!want) return "";
+      const TEMPLATE_START = "2026-04-13";
+      const TEMPLATE_END = "2026-07-19";
+      const iso = String(dateKey || "").slice(0, 10);
+      let bestSummer = "";
+      let bestWeekend = "";
+      let bestAutumnOrEqual = "";
+      const weekendStamps =
+        (typeof window !== "undefined" &&
+          window.PortalRosterCanonical &&
+          window.PortalRosterCanonical.WEEKEND_STANDING_ISO) ||
+        null;
+      const weekendWant =
+        weekendStamps &&
+        (weekendStamps[want.toLowerCase()] ||
+          weekendStamps[String(want || "").trim()]);
+      (sessions || []).forEach((s) => {
+        if (String((s && s.day) || "").trim() !== want) return;
+        const sd = String((s && s.session_date) || "")
+          .trim()
+          .slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(sd)) return;
+        if (sd >= TEMPLATE_START && sd <= TEMPLATE_END) {
+          if (!bestSummer || sd > bestSummer) bestSummer = sd;
+        }
+        if (weekendWant && sd === String(weekendWant).slice(0, 10)) {
+          bestWeekend = sd;
+        }
+        if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && sd <= iso && sd >= "2026-09-01") {
+          if (!bestAutumnOrEqual || sd > bestAutumnOrEqual) bestAutumnOrEqual = sd;
+        }
+      });
+      if (bestWeekend) return bestWeekend;
+      if (bestSummer) return bestSummer;
+      return bestAutumnOrEqual;
+    }
+
+    function timesheetSessionActiveOnCalendarDate(session, dateKey, rosterKey) {
+      if (isEmmanuelHireRosterKey(rosterKey) && !emmanuelHireTimesheetIncludeIso(dateKey)) {
+        return false;
+      }
+      const ptd =
+        typeof window !== "undefined" ? window.PortalTermCalendarDashboard : null;
+      if (
+        ptd &&
+        typeof ptd.staffSessionServiceActiveOnDate === "function" &&
+        rosterKey
+      ) {
+        return !!ptd.staffSessionServiceActiveOnDate(rosterKey, session, dateKey);
+      }
+      return true;
+    }
+
+    function timesheetMergeExactAndStandingSessions(exact, standing, dateObj) {
+      const out = [];
+      const seen = new Set();
+      (exact || []).concat(standing || []).forEach((s) => {
+        if (!s) return;
+        const k = timesheetCoverSessionDedupeKey(s, dateObj);
+        if (seen.has(k)) return;
+        seen.add(k);
+        out.push(s);
+      });
+      return out;
+    }
+
     function sessionsForCalendarDate(sessions, dateObj) {
       const dateKey = isoDate(dateObj);
       const dayName = WEEKDAY[dateObj.getDay()];
       const list = sessions || [];
-      const dated = list.filter((s) => String(s.session_date || "").trim().slice(0, 10) === dateKey);
-      if (dated.length) return dated;
-      const rosterUsesDates = list.some((s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s.session_date || "").trim().slice(0, 10)));
-      if (rosterUsesDates) return [];
-      return list.filter((s) => String(s.day || "").trim() === dayName);
+      const rosterKey = String(state.staffRosterKey || "")
+        .trim()
+        .toLowerCase();
+      const exact = list.filter(
+        (s) => String(s.session_date || "").trim().slice(0, 10) === dateKey
+      );
+      const sameDow = list.filter((s) => String(s.day || "").trim() === dayName);
+      const undated = sameDow.filter(
+        (s) =>
+          !/^\d{4}-\d{2}-\d{2}$/.test(String(s.session_date || "").trim().slice(0, 10))
+      );
+      const snapIso = timesheetStandingSnapIsoForDow(list, dayName, dateKey);
+      let standing = undated.length
+        ? undated
+        : snapIso
+          ? sameDow.filter(
+              (s) => String(s.session_date || "").trim().slice(0, 10) === snapIso
+            )
+          : [];
+      /* Do not project a standing snap onto its own calendar day twice. */
+      if (snapIso && snapIso === dateKey) standing = [];
+      const canon =
+        typeof window !== "undefined" ? window.PortalRosterCanonical : null;
+      const week1Dc =
+        canon && typeof canon.isAutumnWeek1DcIso === "function" && canon.isAutumnWeek1DcIso(dateKey);
+      const fadiAbsentDc =
+        canon &&
+        typeof canon.isFadiAbsentDcBoardIso === "function" &&
+        canon.isFadiAbsentDcBoardIso(dateKey);
+      if ((week1Dc || fadiAbsentDc) && standing.length) {
+        standing = standing.filter((s) => {
+          if (canon && typeof canon.isAutumnDcStandingTemplateRow === "function") {
+            return !canon.isAutumnDcStandingTemplateRow({
+              service: s.rosterService || s.service || s.activity,
+              session_date: s.session_date,
+            });
+          }
+          return !/day\s*centre/i.test(String(s.rosterService || s.service || s.activity || ""));
+        });
+      }
+      standing = standing.filter((s) =>
+        timesheetSessionActiveOnCalendarDate(s, dateKey, rosterKey)
+      );
+      /*
+       * Timetable owns who works which calendar day. Dated one-off covers (John Sun 6
+       * Hub) must not project onto later Sundays when Timetable has no John band.
+       */
+      if (standing.length && rosterKey) {
+        const onTt = timesheetWorkerOnAutumnTimetableIso(rosterKey, dateKey);
+        if (onTt === false) standing = [];
+      }
+      const exactActive = exact.filter((s) =>
+        timesheetSessionActiveOnCalendarDate(s, dateKey, rosterKey)
+      );
+      /* If every exact seat is closed, fall back to standing (Aurora Thu Acton was
+         all-closed dated rows → empty timesheet while day-offs still painted). */
+      const exactOpen = exactActive.filter((s) => {
+        const st = String((s && s.status) || "").toLowerCase();
+        return st !== "closed";
+      });
+      const exactForMerge = exactOpen.length ? exactActive : [];
+      if (exactForMerge.length && standing.length) {
+        return timesheetMergeExactAndStandingSessions(exactForMerge, standing, dateObj);
+      }
+      if (exactForMerge.length) return exactForMerge;
+      if (standing.length) return standing;
+      /* Legacy undated-only rosters (no session_date anywhere). */
+      const rosterUsesDates = list.some((s) =>
+        /^\d{4}-\d{2}-\d{2}$/.test(String(s.session_date || "").trim().slice(0, 10))
+      );
+      if (!rosterUsesDates) return sameDow;
+      return [];
     }
 
     function timesheetSlugAreaKey(area) {
@@ -1220,6 +1690,15 @@
       }
       if (timesheetSessionIsBespokeShared(s)) {
         return `${dateKey}|${cid}|bespoke_shared`;
+      }
+      /* Hub support Sunday Multi feedback is stored as hub_room, not aquatic/pool. */
+      if (
+        dayWord === "Sunday" &&
+        isSundayHubSupportRosterKey() &&
+        /multi[-\s]?activity|bespoke/.test(act)
+      ) {
+        const start = String(s.start || "").trim();
+        return `${dateKey}|${start}|${cid}|hub_room`;
       }
       if (
         typeof window.portalStaffLeadIsAquaticActivity === "function" &&
@@ -1391,8 +1870,9 @@
 
     function timesheetNormStaffKey(v) {
       const k = normTimesheetStaffKey(v);
-      if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+      if (k === "lulia" || k === "aida" || k === "stf021") return "luliya";
       if (k === "yousef" || k === "yusef") return "youssef";
+      if (k === "emanuel") return "emmanuel";
       return k;
     }
 
@@ -1563,7 +2043,7 @@
     }
 
     function timesheetIsLuliaSession(s) {
-      return timesheetNormStaffKey(s && s.staffId) === "lulia";
+      return timesheetNormStaffKey(s && s.staffId) === "luliya";
     }
 
     function timesheetIsLuliaIkramMorning(s) {
@@ -1597,9 +2077,14 @@
 
     function timesheetDayRowsForPay(sessions, dateObj, rosterKey) {
       const dateKey = isoDate(dateObj);
+      if (isEmmanuelHireRosterKey(rosterKey) && !emmanuelHireTimesheetIncludeIso(dateKey)) {
+        return [];
+      }
+      /* Keep open seats (status available) for paid hours — staff still worked the band.
+         Closed seats stay out. Feedback completion treats available as done. */
       const rosterSessions = sessionsForCalendarDate(sessions, dateObj).filter((s) => {
         const st = String(s.status || "").toLowerCase();
-        return st !== "closed" && st !== "available";
+        return st !== "closed";
       });
       const me = timesheetNormStaffKey(rosterKey);
       /* One-off instructor_reassign overrides hand the worker's own shift to a cover instructor.
@@ -1626,7 +2111,18 @@
         seen.add(k);
         rows.push(s);
       });
-      return me === "lulia" ? timesheetApplyLuliaIkramMorningCutoff(rows) : rows;
+      let out = me === "luliya" ? timesheetApplyLuliaIkramMorningCutoff(rows) : rows;
+      /* Godsway / Hub support: Sunday pay + feedback is Hub Multi only — drop stray pool SI seats. */
+      if (isSundayHubSupportRosterKey(me) && WEEKDAY[dateObj.getDay()] === "Sunday") {
+        out = out.filter((s) => {
+          const svc = String((s && (s.rosterService || s.service || s.activity)) || "").toLowerCase();
+          const area = String((s && (s.rosterArea || s.area)) || "").toLowerCase();
+          if (/aquatic/.test(svc) && !/multi/.test(svc)) return false;
+          if (/big pool|small pool|teaching pool|\blane\b/.test(area) && !/hub/.test(area)) return false;
+          return true;
+        });
+      }
+      return out;
     }
 
     /** Mirror dashboard: admin absence / cancel / no-pax counts as done for timesheet pay. */
@@ -1773,7 +2269,16 @@
         .flatMap((d) => dailyEntriesFromSessions(sessionsWithCover, d, reviewMap, state.staffRosterKey))
         .filter(Boolean);
       if (Array.isArray(extraSessions) && extraSessions.length) {
-        state.entries = state.entries.concat(extraSessions);
+        const haveIso = new Set(state.entries.map((e) => String((e && e.date) || "").slice(0, 10)));
+        state.entries = state.entries.concat(
+          extraSessions.filter((e) => {
+            const iso = String((e && e.date) || "").slice(0, 10);
+            if (isEmmanuelHireRosterKey() && EMMANUEL_HIRE_SHADOW_ISOS.has(iso) && haveIso.has(iso)) {
+              return false;
+            }
+            return true;
+          })
+        );
       }
       const offDates = Object.create(null);
       (Array.isArray(dayOffRows) ? dayOffRows : []).forEach((r) => {
@@ -1788,6 +2293,9 @@
         });
       }
       state.entries.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      if (isEmmanuelHireRosterKey()) {
+        state.entries = state.entries.filter((e) => emmanuelHireTimesheetIncludeIso(e && e.date));
+      }
       const lateDateSet = new Set(
         (Array.isArray(state.lateFeedbackDates) ? state.lateFeedbackDates : [])
           .map((d) => String(d || "").slice(0, 10))
@@ -1804,6 +2312,7 @@
         if (e.rate == null) {
           e.rate = flat != null ? flat : rateForRole(e.role);
         }
+        if (isEmmanuelHireRosterKey()) applyEmmanuelHireShadowingEntry(e);
         const iso = String(e.date || "").slice(0, 10);
         const todayIso = isoDate(londonPayrollAnchor(new Date()));
         e.upcoming = !!(/^\d{4}-\d{2}-\d{2}$/.test(iso) && /^\d{4}-\d{2}-\d{2}$/.test(todayIso) && iso > todayIso);
@@ -1835,9 +2344,37 @@
         ? Number((state.totalCost / state.totalHours).toFixed(2))
         : (state.primaryRate != null ? state.primaryRate : Number(state.hourlyRate || 0));
 
-      /* Fixed monthly (part-time): same roster sheet, no £/h — pay is the monthly cycle amount. */
+      /* Fixed monthly (part-time): same roster sheet, no £/h — pay is the monthly cycle amount.
+       * Roberto from Sep 2026: monthly PT + £28/h Acton/Sunday (ZH rows keep their rate). */
       const fixedMonthly = fixedMonthlySalaryForRosterKey(state.staffRosterKey);
-      if (fixedMonthly > 0) {
+      if (robertoHybridPayActive()) {
+        state.entries.forEach((e) => {
+          if (e.dayOff) return;
+          if (e.payBand === "pt" || e.role === "Day Centre PT") e.rate = 0;
+          else if (String(e.date || "").slice(0, 10) < ROBERTO_PT_FROM_ISO) e.rate = 0;
+          else if (serviceFlatRate(e.service || e.role) != null) {
+            if (e.rate == null) e.rate = serviceFlatRate(e.service || e.role);
+          } else {
+            e.payBand = e.payBand || "zh";
+            e.rate = ROBERTO_ZH_HOURLY;
+          }
+        });
+        const zhCostOf = (list) =>
+          Number(
+            (list || []).reduce((acc, e) => {
+              if (e.payBand === "pt" || e.role === "Day Centre PT") return acc;
+              return acc + e.hours * Number(e.rate || 0);
+            }, 0).toFixed(2)
+          );
+        const zhPay = zhCostOf(state.payableEntries);
+        const zhPotential = zhCostOf(state.entries.filter((e) => !e.dayOff && !e.upcoming));
+        const zhLate = zhCostOf(state.lateHoldEntries);
+        state.totalCost = Number((ROBERTO_PT_MONTHLY + zhPay).toFixed(2));
+        state.potentialCost = Number((ROBERTO_PT_MONTHLY + zhPotential).toFixed(2));
+        state.lateHoldCost = zhLate;
+        state.pendingCost = Number((zhPotential - zhPay - zhLate).toFixed(2));
+        state.effectiveRate = null;
+      } else if (fixedMonthly > 0) {
         state.entries.forEach((e) => {
           if (!e.dayOff) e.rate = 0;
         });
@@ -1947,7 +2484,7 @@
       const map = timesheetTermCfg().termStaffTimesheetFeedbackTrustThroughIsoByProfileKey;
       const aliases =
         id === "lulia" || id === "luliya" || id === "aida"
-          ? ["lulia", "luliya", "aida"]
+          ? ["luliya", "lulia", "aida"]
           : [id];
       for (let i = 0; i < aliases.length; i += 1) {
         const through = map && map[aliases[i]];
@@ -1987,12 +2524,22 @@
       if (sessionIsCompleted(rec)) return true;
       const dateKey = isoDate(dateObj);
       if (timesheetDayMarkedComplete(dateKey, staffKey)) return true;
-      const cid = String(
+      const st = String((session && session.status) || "").toLowerCase();
+      const cidRaw = String(
         (session && (session.clientId || session.client_id || session.client_name)) || ""
       )
         .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "_");
+        .toLowerCase();
+      if (
+        st === "available" ||
+        cidRaw === "available" ||
+        cidRaw === "no_participant" ||
+        cidRaw === "noparticipant" ||
+        /^no\s*participant$/.test(cidRaw.replace(/_/g, " "))
+      ) {
+        return true;
+      }
+      const cid = cidRaw.replace(/\s+/g, "_");
       return timesheetCatchUpClientMarkedDone(dateKey, staffKey, cid);
     }
 
@@ -2081,6 +2628,12 @@
       if (isYoussefActonAfternoonBand(dayName, key, rows, youssefDateKey)) {
         return { startMin: 16 * 60 + 30, endMin: 18 * 60 + 30 };
       }
+      if (dayName === "Sunday" && key === "roberto") {
+        return { startMin: 8 * 60 + 45, endMin: 15 * 60 + 15 };
+      }
+      if (isRobertoActonZhBand(dayName, key, rows, dateKey || isoDateFromDayRows(rows))) {
+        return { startMin: ROBERTO_ACTON_ZH_START_MIN, endMin: ROBERTO_ACTON_ZH_END_MIN };
+      }
       /* Weekday MA/Bespoke Support only — not Day Centre / other morning support. */
       const looksMaBespoke = (rows || []).some((s) => isMaOrBespokeService(sessionServiceLower(s)));
       if (
@@ -2097,6 +2650,13 @@
         (Number(hours) === SUNDAY_LEAD_MA_PAY_HOURS || Number(hours) >= 5)
       ) {
         return { startMin: 9 * 60, endMin: 14 * 60 + 30 };
+      }
+      if (
+        dayName === "Sunday" &&
+        SUNDAY_JOHN_SUPPORT_KEYS.has(key) &&
+        (Number(hours) === SUNDAY_SUPPORT_MA_PAY_HOURS || Number(hours) >= 5)
+      ) {
+        return { startMin: 9 * 60 + 15, endMin: 14 * 60 + 15 };
       }
       if (Number.isFinite(minStart) && Number.isFinite(maxEnd) && maxEnd > minStart) {
         return { startMin: minStart, endMin: maxEnd };
@@ -2135,6 +2695,9 @@
         if (/aquatic/.test(svc)) return "Swimming Instructor";
         if (/multi[-\s]?activity|day\s*centre|bespoke|support|hub/.test(svc)) return "Support Worker";
       }
+      /* Hub Room / Room 2 Multi-Bespoke is Support even if a pool area leaked onto the row. */
+      if (/hub\s*room|room\s*2/.test(area)) return "Support Worker";
+      if (/multi[-\s]?activity|bespoke/.test(svc) && /hub/.test(area)) return "Support Worker";
       /* Day-centre aquatic hour (e.g. Emanuel Big Pool) — swim rate before generic day-centre support. */
       if (/big pool|small pool|teaching pool|\blane\b/.test(area)) {
         return "Swimming Instructor";
@@ -2158,11 +2721,25 @@
     /** Weekday Multi-Activity / Bespoke: Support Workers paid 4:15–6:15 (2h) even when client slots are 4:30–6:00. */
     const WEEKDAY_MA_BESPOKE_PAY_HOURS = 2;
 
-    /** Sunday SwimFarm support: 9:15–2:15 (5h). John/Michelle leads: 9:00–2:30 (5.5h). Berta Sundays: 9:15–2:15 (5h). */
+    /** Sunday SwimFarm support: 9:15–2:15 (5h). Berta/Michelle leads: 9:00–2:30 (5.5h). John from 6 Sep: 9:15–2:15 @ £25 (support band). */
     const SUNDAY_SUPPORT_MA_PAY_HOURS = 5;
     const SUNDAY_LEAD_MA_PAY_HOURS = 5.5;
-    const SUNDAY_MA_LEAD_KEYS = new Set(["john", "michelle"]);
-    const SUNDAY_BERTA_SUPPORT_KEYS = new Set(["berta"]);
+    const SUNDAY_MA_LEAD_KEYS = new Set(["berta", "michelle"]);
+    const SUNDAY_JOHN_SUPPORT_KEYS = new Set(["john"]);
+    /** Hub Multi books — never the Sunday 6h swim-instructor band (pool leftovers must not steal pay/feedback). */
+    const SUNDAY_HUB_SUPPORT_KEYS = new Set([
+      "godsway",
+      "emmanuel",
+      "emanuel",
+      "john",
+      "bismark",
+      "giuseppe"
+    ]);
+    function isSundayHubSupportRosterKey(key) {
+      return SUNDAY_HUB_SUPPORT_KEYS.has(
+        String(key != null ? key : state.staffRosterKey || "").trim().toLowerCase()
+      );
+    }
 
     /** Michelle day-centre Mon–Wed + Fri: 10:45–16:15 (5.5h) even when clients are 11–4. */
     const MICHELLE_DAY_CENTRE_PAY_HOURS = 5.5;
@@ -2174,7 +2751,7 @@
       const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
         .trim()
         .toLowerCase();
-      if (!SUNDAY_MA_LEAD_KEYS.has(key) && !SUNDAY_BERTA_SUPPORT_KEYS.has(key)) return pay;
+      if (!SUNDAY_MA_LEAD_KEYS.has(key)) return pay;
       if (/^support\s*worker$/i.test(pay)) return "Lead";
       return pay;
     }
@@ -2446,6 +3023,29 @@
       if (!isYoussefActonAfternoonBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
       return YOUSSEF_ACTON_AFTERNOON_PAY_HOURS;
     }
+    /** True when every Day Centre client that day was admin-cancelled (24h+ notice → not paid). */
+    function dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, dayRows) {
+      const iso = String(dateKey || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      const me = timesheetNormStaffKey(rosterKey);
+      const dcRows = (dayRows || []).filter((s) => /day\s*centre/.test(sessionServiceLower(s)));
+      if (!dcRows.length) return false;
+      const cancelOvs = (state.scheduleOverrides || []).filter((ov) => {
+        if (String(ov.status || "").trim().toLowerCase() === "cancelled") return false;
+        if (String(ov.session_date || "").trim().slice(0, 10) !== iso) return false;
+        if (timesheetNormStaffKey(ov.anchor_staff_id) !== me) return false;
+        return timesheetOverrideCompletionFlag(ov) === "cancelled";
+      });
+      function isFadiWindowCancel(s) {
+        /* Fadi is off rota until 20 Sep — not a Cancelled seat that zeros a DC day. */
+        return false;
+      }
+      return dcRows.every(
+        (s) =>
+          isFadiWindowCancel(s) ||
+          cancelOvs.some((ov) => sessionMatchesScheduleOverride(s, iso, ov))
+      );
+    }
     function youssefActonSaturdayPayableHours(dayName, rosterKey, role, computedHours, dayRows, dateKey) {
       if (!isYoussefActonSaturdayMorningBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
       if (youssefActonSaturdayAllCancelled(dateKey, rosterKey, dayRows)) return 0;
@@ -2481,7 +3081,6 @@
       const svc = String(service || "").toLowerCase();
       const isLeadRole =
         SUNDAY_MA_LEAD_KEYS.has(key) ||
-        SUNDAY_BERTA_SUPPORT_KEYS.has(key) ||
         /^service\s*lead$/i.test(r) ||
         /^lead$/i.test(r);
       if (
@@ -2511,13 +3110,18 @@
     function sundayMaSupportPayableHours(dayName, rosterKey, role, service, computedHours, dayRows) {
       if (!isSundayMaSupportPayBand(dayName, role, service, dayRows, rosterKey)) return computedHours;
       const key = String(rosterKey || "").trim().toLowerCase();
-      if (SUNDAY_BERTA_SUPPORT_KEYS.has(key)) return SUNDAY_SUPPORT_MA_PAY_HOURS;
       return SUNDAY_MA_LEAD_KEYS.has(key) ? SUNDAY_LEAD_MA_PAY_HOURS : SUNDAY_SUPPORT_MA_PAY_HOURS;
     }
 
     /** Roberto Sunday SwimFarm pool lead: 8:45–3:15 (6.5h). Other swim instructors: 9–3 (6h). */
     const SUNDAY_SWIM_PAY_HOURS = 6;
     const SUNDAY_ROBERTO_SWIM_PAY_HOURS = 6.5;
+    /** Roberto weekday Acton aquatic from 6 Sep 2026: Mon/Tue/Thu 4:00–6:30 (2.5h @ £28). */
+    const ROBERTO_ACTON_ZH_FROM_ISO = "2026-09-06";
+    const ROBERTO_ACTON_ZH_PAY_HOURS = 2.5;
+    const ROBERTO_ACTON_ZH_DAYS = new Set(["Monday", "Tuesday", "Thursday"]);
+    const ROBERTO_ACTON_ZH_START_MIN = 16 * 60;
+    const ROBERTO_ACTON_ZH_END_MIN = 18 * 60 + 30;
 
     function sundaySwimInstructorPayHours(rosterKey) {
       const key = String(rosterKey || "").trim().toLowerCase();
@@ -2533,13 +3137,33 @@
       return { startMin: 9 * 60, endMin: 15 * 60 };
     }
 
+    function isRobertoActonZhBand(dayName, rosterKey, dayRows, dateKey) {
+      if (!isRobertoRosterKey(rosterKey)) return false;
+      if (!robertoHybridPayActive(rosterKey)) return false;
+      const iso = String(dateKey || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || iso < ROBERTO_ACTON_ZH_FROM_ISO) return false;
+      if (!ROBERTO_ACTON_ZH_DAYS.has(String(dayName || ""))) return false;
+      const rows = dayRows || [];
+      if (!rows.length) return false;
+      return rows.some((s) => {
+        if (isRobertoTrainingSession(s)) return false;
+        return sessionVenueBlob(s).indexOf("acton") >= 0;
+      });
+    }
+
+    function robertoActonZhPayableHours(dayName, rosterKey, role, computedHours, dayRows, dateKey) {
+      if (!isRobertoActonZhBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
+      if (String(role || "").trim() !== "Swimming Instructor") return computedHours;
+      return ROBERTO_ACTON_ZH_PAY_HOURS;
+    }
+
     /** Sunday SwimFarm day where this worker is paid as swimming instructor (aquatic and/or pool MA). */
     function isSundaySwimfarmSwimInstructorDay(dayName, rosterKey, dayRows) {
       if (String(dayName || "") !== "Sunday") return false;
       const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
         .trim()
         .toLowerCase();
-      if (SUNDAY_MA_LEAD_KEYS.has(key)) return false;
+      if (SUNDAY_MA_LEAD_KEYS.has(key) || isSundayHubSupportRosterKey(key)) return false;
       const rows = dayRows || [];
       if (!rows.length) return false;
       let onSwimfarm = false;
@@ -2621,12 +3245,17 @@
         youssef: 1,
         simon: 1,
         roberto: 1,
+        luliya: 1,
         lulia: 1,
         aurora: 1,
         dan: 1,
-        javier: 1
+        javier: 1,
+        john: 1,
+        godsway: 1,
       };
       if (forceKeys[key] && fb.roleRates && typeof fb.roleRates === "object") {
+        /* Authoritative map replaces DB roles (avoids stale Service Lead £30 next to John £25). */
+        state.roleRates = {};
         Object.keys(fb.roleRates).forEach((role) => {
           state.roleRates[role] = Number(fb.roleRates[role]);
         });
@@ -2671,6 +3300,7 @@
     function roleDisplayLabel(role, scale) {
       const raw = String(role || "").trim();
       if (!raw) return "";
+      if (/^day\s*centre\s*pt$/i.test(raw)) return "Day Centre PT";
       if (/^(lead|service\s*lead)$/i.test(raw)) return "Lead";
       const numbered = raw.match(
         /^(support\s*worker|swimming\s*instructor|climbing\s*instructor|fitness\s*instructor)\s*(\d+)\s*$/i
@@ -2709,6 +3339,7 @@
     }
 
     function formatRoleHeaderText() {
+      if (robertoHybridPayActive()) return "Day Centre PT · Swimming Instructor";
       const roles = sortedPayRoles();
       if (roles.length > 1) {
         return roles.map((r) => roleDisplayLabel(r, state.roleScales && state.roleScales[r])).join(" · ");
@@ -2718,6 +3349,9 @@
     }
 
     function formatRateHeaderText() {
+      if (robertoHybridPayActive()) {
+        return `DC PT £${money(ROBERTO_PT_MONTHLY)}/mo · Swim/AS £${money(ROBERTO_ZH_HOURLY)}/h`;
+      }
       const fixed = fixedMonthlySalaryForRosterKey(state.staffRosterKey);
       if (fixed > 0) {
         const daily = dailyRateFromMonthly(fixed, state.periodStart, state.periodEnd);
@@ -2764,7 +3398,7 @@
 
     /** Training/shadowing sessions an admin added via schedule_overrides (override_type='session_add'). */
     async function fetchTrainingShadowingEntries(supabase, rosterKey, startIso, endIso){
-      const key = String(rosterKey || "").trim().toLowerCase();
+      const key = timesheetNormStaffKey(rosterKey);
       if (!key) return [];
       const { data, error } = await supabase
         .from("schedule_overrides")
@@ -2775,7 +3409,7 @@
         .lte("session_date", endIso);
       if (error || !data) return [];
       return data
-        .filter((r) => String(r.anchor_staff_id || "").trim().toLowerCase() === key)
+        .filter((r) => timesheetNormStaffKey(r.anchor_staff_id) === key)
         .map((r) => {
           const kind = String((r.payload && r.payload.kind) || "").toLowerCase();
           const label = kind === "shadowing" ? "Shadowing" : "Training";
@@ -3054,6 +3688,9 @@
       if (isYoussefSwimfarmMiddayAquatic(dayName, rosterKey, dominantRole, rows)) {
         applySupportBuffer = false;
       }
+      if (isRobertoActonZhBand(dayName, rosterKey, rows, dateKey)) {
+        applySupportBuffer = false;
+      }
       if (
         applySupportBuffer &&
         (typeof portalStaffShouldApplyPayrollBandBuffer === "function"
@@ -3074,6 +3711,18 @@
       hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
       hours = youssefActonAfternoonPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
       hours = youssefActonSaturdayPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
+      hours = robertoActonZhPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
+      /* Admin cancel with notice (e.g. Fadi DC): day not payable — not a day-off request. */
+      if (dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, rows)) hours = 0;
+      /*
+       * Instructor Timetable green paid_hours wins when set (late arrival / gap pay).
+       * Empty paid = same as shift → keep session / hardcode logic above.
+       */
+      let ttPay = null;
+      if (hours > 0) {
+        ttPay = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
+        if (ttPay && ttPay.hours > 0) hours = ttPay.hours;
+      }
       if (!(hours > 0)) return null;
       const role = dominantRole || "";
       const rate = rateForRole(role);
@@ -3083,7 +3732,16 @@
       const dcSpec =
         rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, rows) &&
         youssefSwimfarmDayCentrePaySpec(dayName);
-      if (dcSpec) {
+      if (ttPay && ttPay.hours > 0) {
+        if (ttPay.startMin != null && ttPay.endMin != null) {
+          timeRange = clubTimeRangeFromMinutes(ttPay.startMin, ttPay.endMin);
+        } else if (dcSpec) {
+          timeRange = clubTimeRangeFromSegments(dcSpec.segments);
+        } else {
+          const window = timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours, dateKey);
+          timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
+        }
+      } else if (dcSpec) {
         hours = dcSpec.hours;
         timeRange = clubTimeRangeFromSegments(dcSpec.segments);
       } else {
@@ -3094,6 +3752,7 @@
         date: dateKey,
         day: dayName,
         hours,
+        /* Feedback complete → green / payable; pending → orange, hours still show Timetable minimum. */
         completed: completedAll,
         service: serviceName || dominantService,
         serviceName: serviceName || dominantService,
@@ -3104,6 +3763,37 @@
         rate,
         blendedRate: null
       };
+    }
+
+    /**
+     * Timetable green paid_hours = payable band (minimum / agreed pay).
+     * Feedback completion only flips completed (orange vs green) — never shrinks hours to
+     * "only the 1h session that has feedback".
+     */
+    function applyTimetablePaidBandToDayEntries(entries, rosterKey, dateKey) {
+      const list = Array.isArray(entries) ? entries : [];
+      if (!list.length) return list;
+      const tt = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
+      if (!tt || !(tt.hours > 0)) return list;
+      const live = list.filter((e) => e && !e.dayOff && Number(e.hours) > 0);
+      if (!live.length) return list;
+      if (live.length === 1) {
+        live[0].hours = tt.hours;
+        if (tt.startMin != null && tt.endMin != null) {
+          const tr = clubTimeRangeFromMinutes(tt.startMin, tt.endMin);
+          live[0].timeRange = tr;
+          const named = timesheetStripVenueSuffix(live[0].serviceName || live[0].service || "") || "";
+          live[0].serviceLabel = tr ? `${tr} ${named}`.trim() : named;
+        }
+        return list;
+      }
+      const sum = live.reduce((acc, e) => acc + Number(e.hours || 0), 0);
+      if (!(sum > 0)) return list;
+      const factor = tt.hours / sum;
+      live.forEach((e) => {
+        e.hours = Number((Number(e.hours || 0) * factor).toFixed(2));
+      });
+      return list;
     }
 
     /** Split AM support / PM swim (etc.): one row per role + service group. */
@@ -3161,6 +3851,7 @@
             !isWeekdayMaBespokeGroup &&
             !isYoussefActonAfternoonGroup &&
             !skipYoussefMiddayBuffer &&
+            !isRobertoActonZhBand(dayName, rosterKey, groupRows, dateKey) &&
             ((role === "Support Worker" &&
               typeof portalStaffSupportShiftBufferApplies === "function" &&
               portalStaffSupportShiftBufferApplies(svc, dayName)) ||
@@ -3196,6 +3887,12 @@
           hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, groupRows);
           hours = youssefActonAfternoonPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           hours = youssefActonSaturdayPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
+          hours = robertoActonZhPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
+          if (dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, groupRows)) hours = 0;
+          /*
+           * Day-level Timetable paid_hours applied after all groups (see
+           * applyTimetablePaidBandToDayEntries). Keep session/hardcode hours here.
+           */
           if (!(hours > 0)) return;
           const serviceName =
             timesheetStripVenueSuffix(
@@ -3255,10 +3952,39 @@
     }
 
     /** Build 1+ paid rows per calendar day (multi-role days split by rate). */
-    function dailyEntriesFromSessions(sessions, dateObj, reviewMap, staffKey) {
+    function dailyEntriesFromSessions(sessions, dateObj, reviewMap, staffKey, robertoBand, precomputedRows) {
       const rosterKey = String(staffKey != null ? staffKey : state.staffRosterKey || "").trim().toLowerCase();
-      const rows = timesheetDayRowsForPay(sessions, dateObj, rosterKey);
+      const rows = Array.isArray(precomputedRows)
+        ? precomputedRows
+        : timesheetDayRowsForPay(sessions, dateObj, rosterKey);
       if (!rows.length) return [];
+      if (!robertoBand && robertoHybridPayActive(rosterKey) && isoDate(dateObj) >= ROBERTO_PT_FROM_ISO) {
+        const ptRows = rows.filter((s) => isRobertoDayCentrePtSession(s, dateObj));
+        const trainRows = rows.filter((s) => isRobertoTrainingSession(s));
+        const zhRows = rows.filter(
+          (s) => !isRobertoDayCentrePtSession(s, dateObj) && !isRobertoTrainingSession(s)
+        );
+        const out = [];
+        if (ptRows.length) {
+          out.push.apply(
+            out,
+            dailyEntriesFromSessions(sessions, dateObj, reviewMap, staffKey, "pt", ptRows)
+          );
+        }
+        if (zhRows.length) {
+          out.push.apply(
+            out,
+            dailyEntriesFromSessions(sessions, dateObj, reviewMap, staffKey, "zh", zhRows)
+          );
+        }
+        if (trainRows.length) {
+          out.push.apply(
+            out,
+            dailyEntriesFromSessions(sessions, dateObj, reviewMap, staffKey, "train", trainRows)
+          );
+        }
+        if (out.length) return out;
+      }
       const roleMinutes = {};
       const roleServices = {};
       const rolesSeen = Object.create(null);
@@ -3280,7 +4006,10 @@
       const dayName = WEEKDAY[dateObj.getDay()];
       let built = null;
       /* Sunday SwimFarm swim instructors: one paid band (6h / Roberto 6.5) — never Aquatic 6 + Multi 5. */
-      if (isSundaySwimfarmSwimInstructorDay(dayName, rosterKey, rows)) {
+      if (
+        isSundaySwimfarmSwimInstructorDay(dayName, rosterKey, rows) ||
+        (dayName === "Sunday" && rosterKey === "roberto")
+      ) {
         const single = dailyHoursSingleRoleFromSessions(
           rows,
           dateObj,
@@ -3333,6 +4062,7 @@
         dateObj,
         rosterKey
       );
+      out = applyTimetablePaidBandToDayEntries(out, rosterKey, isoDate(dateObj));
       /* Fully cancelled Saturday Acton morning → Day Off row (Time off requested), not a blank day. */
       if (
         isYoussefRosterKey(rosterKey) &&
@@ -3357,7 +4087,7 @@
           }
         ];
       }
-      return out;
+      return applyRobertoPayBandEntries(out, robertoBand);
     }
 
     /** @deprecated use dailyEntriesFromSessions — kept for callers expecting one object. */
@@ -3462,13 +4192,41 @@
     }
 
     async function timesheetEnsureLiveRoster(supabase) {
+      function timesheetApplyAutumnCanonicalRoster() {
+        try {
+          if (
+            window.PortalRosterCanonical &&
+            typeof window.PortalRosterCanonical.resolveCanonicalStaffDashboardSource === "function"
+          ) {
+            window.STAFF_DASHBOARD_SOURCE =
+              window.PortalRosterCanonical.resolveCanonicalStaffDashboardSource(
+                window.STAFF_DASHBOARD_SOURCE
+              );
+            return;
+          }
+          if (typeof window.portalRefreshStaffDashboardSourceFromPortal === "function") {
+            /* Non-staff pages keep the summer bundle unless force is honored — call canon above first. */
+            window.portalRefreshStaffDashboardSourceFromPortal({ force: true });
+          }
+        } catch (e) {
+          console.warn("[timesheet] autumn canonical roster skipped", e);
+        }
+      }
       try {
+        /*
+         * Timesheet is neither Staff Today nor Sessions Overview — portal source
+         * refresh otherwise keeps the summer bundle. Always expand Autumn standing
+         * so DC from 1 Sep + AS/weekend from 6 Sep appear (Roberto hybrid pay).
+         */
+        timesheetApplyAutumnCanonicalRoster();
         if (typeof window.portalRefreshPortalRosterRowsFromSupabase === "function") {
           await withTimeout(
             window.portalRefreshPortalRosterRowsFromSupabase(supabase),
             10000,
             "live_madre_roster"
           );
+          timesheetApplyAutumnCanonicalRoster();
+          await timesheetEnsureTimetablePaidMerge(supabase);
           return;
         }
         if (
@@ -3480,12 +4238,11 @@
             10000,
             "live_madre"
           );
-          if (typeof window.portalRefreshStaffDashboardSourceFromPortal === "function") {
-            window.portalRefreshStaffDashboardSourceFromPortal();
-          }
+          timesheetApplyAutumnCanonicalRoster();
         }
       } catch (e) {
         console.warn("[timesheet] live MADRE skipped; using static bundle", e);
+        timesheetApplyAutumnCanonicalRoster();
       }
     }
 
@@ -3558,6 +4315,10 @@
           const daily = e.dayOff || e.lateHold || e.upcoming
             ? 0
             : e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
+          const dailyCell =
+            !e.dayOff && (e.payBand === "pt" || e.role === "Day Centre PT")
+              ? "incl."
+              : money(daily);
           const cls = e.dayOff
             ? "day-row--off"
             : (e.upcoming
@@ -3569,7 +4330,7 @@
             <td class="td-date">${displayDateDayStatusCellHtml(e)}</td>
             <td class="td-service">${timesheetEntryServiceCellHtml(e)}</td>
             <td class="num td-hours">${money(e.hours)}</td>
-            <td class="num td-daily">${money(daily)}</td>
+            <td class="num td-daily">${dailyCell}</td>
           </tr>`;
         }).join("");
         if (note) {
@@ -3580,10 +4341,10 @@
             ? ` ${lateN} day(s) submitted late are green at £0 until an admin validates them.`
             : "";
           note.textContent = state.pendingEntries.length
-            ? `${state.pendingEntries.length} day(s) pending feedback are shown in orange and are excluded from payable total.${lateBit}${offBit}`
+            ? `${state.pendingEntries.length} day(s) pending feedback are orange (unpaid until complete). Hours stay the Timetable paid band / minimum — not only sessions already reviewed.${lateBit}${offBit}`
             : (lateN
               ? `Feedback is complete; late days stay at £0 (green) until admin validates.${offBit}`
-              : `All shift days are completed (green) and included in payable total.${offBit}`);
+              : `All shift days are completed (green) and included in payable total. Hours follow Timetable paid (green line) when set.${offBit}`);
         }
       }
       document.getElementById("totalHours").textContent = money(state.totalHours);
@@ -3817,6 +4578,7 @@
       }
 
       await timesheetEnsureLiveRoster(supabase);
+      await timesheetEnsureTimetablePaidMerge(supabase);
 
       let sessionsModel = [];
       try {
@@ -3957,6 +4719,9 @@
         fixedSalary > 0
           ? dailyRateFromMonthly(fixedSalary, state.periodStart, state.periodEnd)
           : 0;
+      const zhPayNow = robertoHybridPayActive()
+        ? Number((Number(state.totalCost || 0) - ROBERTO_PT_MONTHLY).toFixed(2))
+        : 0;
       const summaryRows = state.manual
         ? (fixedSalary > 0
             ? [
@@ -3971,6 +4736,16 @@
                 { label: "Rate", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
                 { label: "Total to pay", value: `£${money(state.totalCost)}`, tone: "okStrong" }
               ])
+        : robertoHybridPayActive()
+          ? [
+              { label: "Hours logged (green)", value: money(state.totalHours), tone: "ok" },
+              { label: "Day Centre PT (monthly)", value: `£${money(ROBERTO_PT_MONTHLY)}`, tone: "neutral" },
+              { label: "After-school / Sunday £28/h", value: `£${money(zhPayNow)}`, tone: "neutral" },
+              { label: "Ready to pay now", value: `£${money(state.totalCost)}`, tone: "okStrong" },
+              { label: "Held — feedback submitted late", value: `£${money(state.lateHoldCost || 0)}`, tone: "warn" },
+              { label: "Pending until feedback is completed", value: `£${money(state.pendingCost)}`, tone: "warn" },
+              { label: "Total if all feedback is completed", value: `£${money(state.potentialCost)}`, tone: "neutral" }
+            ]
         : fixedSalary > 0
           ? [
               { label: "Hours logged (green)", value: money(state.totalHours), tone: "ok" },
@@ -4089,7 +4864,9 @@
       doc.setFontSize(8.5 * S);
       for (let i = 0; i < state.entries.length; i++) {
         const e = state.entries[i];
-        const daily = money(
+        const daily = (e.payBand === "pt" || e.role === "Day Centre PT") && !e.dayOff
+          ? "incl."
+          : money(
           e.dayOff || e.lateHold || e.upcoming
             ? 0
             : e.hours * Number(e.rate != null ? e.rate : state.hourlyRate)

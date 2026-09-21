@@ -31,10 +31,11 @@
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260713-ios-video-save" />
 <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal/portal_participant_achievements.js?v=20260713-ios-video-save"></script>
-<script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
+<script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
+<script src="/portal/portal_staff_display_names.js?v=20260909-luliya-first"></script>
 <script>window.PORTAL_FEEDBACK_ADMIN_FILTERS = true;</script>
 <script src="/portal/portal_feedback_narrative.js?v=20260714-voice-written-gold"></script>
 <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
@@ -1865,8 +1866,8 @@ button{
       var ctx = typeof buildResolvedContext === "function" ? buildResolvedContext() : null;
       clientName = clean(ctx && ctx.client_name);
     }
-    // One feedback form for everyone (including swimming): stars + 4 emotion zones + independence.
-    // Day Centre may still show an optional “did they swim?” addon; main axes stay classic.
+    // One feedback form for everyone (including Day Centre): stars + emotions + independence.
+    // Optional Day Centre "did they swim?" addon removed — it wiped the first part on toggle.
     window.PortalSwimSessionAxes.syncOptionalDayCentreSwim(feedbackExtendedSection, clientName, svc, {
       aquaticFullMode: false,
     });
@@ -2499,6 +2500,15 @@ button{
 
   let instructorDisplayName = "";
   let instructorAppRole = "";
+
+  function normalizeFeedbackAuthorName(raw){
+    const t = clean(raw);
+    if(!t) return "";
+    if(typeof window.portalStaffAuthorFirstName === "function"){
+      return window.portalStaffAuthorFirstName(t) || t.split(/\s+/)[0];
+    }
+    return t.split(/\s+/)[0];
+  }
 
   /** Optional webhook (e.g. Make.com): set before this script on the host page, e.g. window.PORTAL_SESSION_FEEDBACK_WEBHOOK_URL = "https://hook...". */
   function sessionFeedbackWebhookUrl(){
@@ -3559,12 +3569,10 @@ button{
         const submittedByUserId = String(profileRow.id).trim();
         const appRole = profileRow.app_role ? String(profileRow.app_role) : "";
         const feedbackRole = feedbackRoleFromProfile(appRole);
-        let completedByName = clean(
-          profileRow.full_name || profileRow.username
-            ? String(profileRow.full_name || profileRow.username)
-            : "",
+        let completedByName = normalizeFeedbackAuthorName(
+          (profileRow && (profileRow.username || profileRow.full_name)) || "",
         );
-        if(!completedByName) completedByName = clean(instructorDisplayName) || "Staff";
+        if(!completedByName) completedByName = normalizeFeedbackAuthorName(instructorDisplayName) || "Staff";
         if(!completedByName){
           alert("Your staff profile is missing a display name. Ask an admin to set full_name on your profile, then try again.");
           return;
@@ -3589,12 +3597,13 @@ button{
           );
           return;
         }
-        let completedByName = clean(instructorDisplayName) || pinName;
+        let completedByName = normalizeFeedbackAuthorName(instructorDisplayName || pinName);
         sessionKeyForSubmit = effectiveFeedbackSessionKey(ctx2, completedByName);
         row = buildFeedbackRow("pin-bridge", "staff", completedByName, sessionKeyForSubmit, ctx2, formFields);
         const pinResult = await submitFeedbackViaPinBridge(pinName, feedbackPayloadFromRow(row));
         if(pinResult && pinResult.completed_by_name){
-          row.completed_by_name = String(pinResult.completed_by_name);
+          row.completed_by_name = normalizeFeedbackAuthorName(pinResult.completed_by_name) ||
+            String(pinResult.completed_by_name);
         }
         if(pinResult && pinResult.submitted_by_user_id){
           row.submitted_by_user_id = String(pinResult.submitted_by_user_id);

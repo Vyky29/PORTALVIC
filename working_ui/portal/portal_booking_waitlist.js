@@ -82,13 +82,11 @@
 
   function formHtml(opts) {
     opts = opts || {};
-    var lead = leadPrefill();
-    var parent = String(lead.parent_name || "").trim() || "—";
-    var email = String(lead.email || "").trim() || "—";
-    var mobile = String(lead.mobile || "").trim() || "—";
-    var contactLine = [parent, mobile !== "—" ? mobile : "", email !== "—" ? email : ""]
-      .filter(Boolean)
-      .join(" · ");
+    /*
+     * Never echo name / email / mobile from local lead cache here.
+     * A stale unlock on a shared device previously leaked another family's
+     * contact into this sheet (P0). Server join still binds to the session token.
+     */
     return (
       '<div class="wl-join" data-wl-join="1">' +
       '<p class="wl-join__lede" style="margin:0 0 12px;font-size:0.92rem;overflow-wrap:break-word">' +
@@ -98,9 +96,9 @@
       '<input class="wl-join__input" id="wlParticipantName" name="participant_name" type="text" autocomplete="name" required maxlength="120" placeholder="Full name of the participant" />' +
       '<label class="wl-join__label" for="wlNote">Note <span class="muted">(optional)</span></label>' +
       '<textarea class="wl-join__input wl-join__textarea" id="wlNote" name="note" rows="2" maxlength="500" placeholder="Anything useful for the office"></textarea>' +
-      '<p class="wl-join__contact muted" style="margin:10px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">We’ll use your Booking Portal contact: <strong>' +
-      esc(contactLine) +
-      "</strong></p>" +
+      '<p class="wl-join__contact muted" style="margin:10px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">' +
+      "We’ll contact you using the email and phone from <strong>your</strong> Booking Portal unlock — not shown here." +
+      "</p>" +
       '<p class="wl-join__err" id="wlJoinErr" hidden style="margin:10px 0 0;color:#b42318;font-size:13px;overflow-wrap:break-word"></p>' +
       '<button type="button" class="btn sheet__choice--pri wl-join__submit" id="wlJoinSubmit" style="margin-top:14px;width:100%">Join waiting list</button>' +
       "</div>"

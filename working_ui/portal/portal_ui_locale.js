@@ -1,19 +1,15 @@
 /**
- * Portal UI locale — full Spanish UI for Víctor, Raúl, Javier Palankas (`javi`).
- * Walks the live DOM (text + labels/placeholders/titles) and keeps EN originals so
- * ES/EN can flip without reload. Everyone else stays English.
+ * Portal UI locale — Spanish UI was available for Víctor / Raúl / Javi Palankas
+ * (Aug 2026). Disabled Sep 2026: everyone stays English; dictionaries kept for
+ * a possible later revive. Toggle no longer mounts.
  */
 (function (global) {
   "use strict";
 
   var STORAGE_KEY = "portal_ui_lang_v1";
-  var EXEC_ES_KEYS = { victor: true, raul: true, javi: true };
-  var EXEC_EMAILS = {
-    "victor@clubsensational.org": "victor",
-    "raul@clubsensational.org": "raul",
-    "javier@clubsensational.org": "javi",
-    "javi@clubsensational.org": "javi",
-  };
+  /* Empty = Spanish UI off for all staff (was victor / raul / javi). */
+  var EXEC_ES_KEYS = Object.create(null);
+  var EXEC_EMAILS = Object.create(null);
 
   var ADMIN_NAV_ES = {
     nav_hub: "Panel",
@@ -30,8 +26,9 @@
     orders_all: "Todas",
     comms_bookings: "Avisos de staff y turnos",
     comms_ops: "Comunicaciones ops y registro",
-    portal_parent_notify_log: "Mensajes a familias",
-    portal_staff_whatsapp: "CS WhatsApp",
+    portal_parent_notify_log: "Mensajes familia (API)",
+    portal_staff_whatsapp: "Mensajes staff (API)",
+    portal_staff_comms: "Comms",
     portal_parent_broadcast: "Difusión a familias",
     clients: "Participantes",
     portal_nav_client_services: "Revisión de servicios de cliente",
@@ -50,7 +47,6 @@
     portal_activity: "Actividad del portal",
     portal_training_progress: "Formación y preparación",
     portal_push_devices: "Dispositivos push del staff",
-    staff_live_map: "Mapa en vivo del staff",
     staff_ghost_teleport: "Teleport al dashboard",
     staffhr: "H&R",
     onboarding: "Onboarding",
@@ -104,16 +100,24 @@
   };
 
   var ADMIN_GROUP_ES = {
-    g_operator: "Operador",
+    g_operator: "Hoy",
+    g_services: "Servicios y plazas",
+    g_clients: "Clientes y familias",
+    g_messages: "Mensajes",
+    g_more: "Más",
     g_c4k: "Servicios y participantes (CFK)",
     g_zoho: "H&R",
     g_supabase: "Documentos",
-    g_xero: "Finance",
-    g_settings_portal: "Ajustes y dashboards",
+    g_xero: "Dinero",
+    g_settings_portal: "Ajustes",
   };
 
   var ADMIN_SUBHEAD_ES = {
     Sessions: "Sesiones",
+    "More day tools": "Más del día",
+    "More HR": "Más H&R",
+    "More files": "Más archivos",
+    "Extra hubs": "Hubs extra",
     Intake: "Ingreso",
     Services: "Servicios",
     Participants: "Participantes",
@@ -121,11 +125,14 @@
     Communications: "Comunicaciones",
     Policies: "Políticas",
     "Day Centre": "Day Centre",
+    Forms: "Formularios",
     Workers: "Trabajadores",
     "This app": "Esta app",
     Monitoring: "Monitorización",
     "Other portals": "Otros portales",
     Session: "Sesión",
+    FAMILY: "FAMILIA",
+    STAFF: "STAFF",
   };
 
   /* Large phrase map — longest matches win when replacing inside longer strings. */
@@ -203,8 +210,9 @@
     "Absents, refunds &amp; credits": "Ausencias, reembolsos y créditos",
     "Receptionist hub": "Centro de recepción",
     Receptionist: "Recepción",
-    "Enquiries & intake": "Consultas e ingreso",
-    "Enquiries &amp; intake": "Consultas e ingreso",
+    "Enquiries & intake": "LEADS",
+    "Enquiries &amp; intake": "LEADS",
+    LEADS: "LEADS",
     Services: "Servicios",
     Bookings: "Reservas",
     "Staff & shift notices": "Avisos de staff y turnos",
@@ -212,15 +220,24 @@
     "Ops comms & log": "Comunicaciones ops y registro",
     "Ops comms &amp; log": "Comunicaciones ops y registro",
     "Family messages": "Mensajes a familias",
+    "Family messages (API)": "Mensajes familia (API)",
     "CS WhatsApp": "CS WhatsApp",
+    "Staff messages (API)": "Mensajes staff (API)",
+    Comms: "Comms",
     "Family broadcast": "Difusión a familias",
-    Participants: "Participantes",
+    Participants: "CLIENT",
+    CLIENT: "CLIENT",
     "Client services review": "Revisión de servicios de cliente",
     "Programme payments (operations)": "Pagos de programa (ops)",
     "LA / Commissioning Terms": "Términos LA / Commissioning",
     "Sessions overview": "Resumen de sesiones",
     "Session disruptions": "Incidencias de sesión",
-    "Waiting list": "Lista de espera",
+    "Waiting list": "WAITING",
+    WAITING: "WAITING",
+    REGISTERED: "REGISTERED",
+    OLD: "OLD",
+    "Registration forms": "REGISTERED",
+    "People buckets": "People buckets",
     "Office calendar": "Calendario de oficina",
     Reviews: "Reviews",
     "Report requests": "Solicitudes de informe",
@@ -228,7 +245,6 @@
     "Training & readiness": "Formación y preparación",
     "Training &amp; readiness": "Formación y preparación",
     "Staff push devices": "Dispositivos push del staff",
-    "Staff live map": "Mapa en vivo del staff",
     "Dashboard teleport": "Teleport al dashboard",
     "H&R": "H&R",
     "H&amp;R": "H&R",
@@ -579,6 +595,12 @@
     return false;
   }
 
+  function clearStoredLangPref() {
+    try {
+      if (global.localStorage) global.localStorage.removeItem(STORAGE_KEY);
+    } catch (_e) {}
+  }
+
   function getStoredPref() {
     try {
       var pref = clean(global.localStorage && global.localStorage.getItem(STORAGE_KEY)).toLowerCase();
@@ -923,13 +945,25 @@
     return ADMIN_SUBHEAD_ES[f] || STR_ES[f] || f;
   }
 
+  function removeLangToggle() {
+    var doc = global.document;
+    if (!doc) return;
+    var wrap = doc.getElementById("portalUiLangToggle");
+    if (!wrap) return;
+    try {
+      if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+    } catch (_e) {
+      wrap.hidden = true;
+    }
+  }
+
   function paintToggle() {
     var doc = global.document;
     if (!doc) return;
     var wrap = doc.getElementById("portalUiLangToggle");
     if (!wrap) return;
     if (!isExecSpanishEligible()) {
-      wrap.hidden = true;
+      removeLangToggle();
       return;
     }
     wrap.hidden = false;
@@ -1046,13 +1080,16 @@
 
   function boot(surface) {
     bootSurface = clean(surface) || bootSurface;
+    if (!isExecSpanishEligible()) {
+      clearStoredLangPref();
+      applyShell();
+      removeLangToggle();
+      wrapAdminSetView();
+      return getLang();
+    }
     applyShell();
     ensureLangToggle();
     wrapAdminSetView();
-    if (!isExecSpanishEligible()) {
-      paintToggle();
-      return getLang();
-    }
     ensureObserver();
     translateTree(global.document && global.document.body);
     try {

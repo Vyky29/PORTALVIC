@@ -35,7 +35,7 @@
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "");
     if (!k) return "";
-    if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "lulia" || k === "luliya" || k === "aida" || k === "stf021") return "luliya";
     if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
@@ -255,7 +255,13 @@
     if (fromProfile && !isGenericDisplayName(fromProfile)) return fromProfile;
     var key = inferStaffKey(profile, email);
     if (key && EXEC_DISPLAY_NAMES[key]) return EXEC_DISPLAY_NAMES[key];
-    if (key) return key.charAt(0).toUpperCase() + key.slice(1);
+    if (key) {
+      if (typeof global.portalStaffDisplayName === "function") {
+        var fromCanon = String(global.portalStaffDisplayName(key) || "").trim();
+        if (fromCanon) return fromCanon;
+      }
+      return key.charAt(0).toUpperCase() + key.slice(1);
+    }
     if (email) {
       var mapped = staffKeyFromEmail(email);
       if (mapped && EXEC_DISPLAY_NAMES[mapped]) return EXEC_DISPLAY_NAMES[mapped];
@@ -448,6 +454,67 @@
     }
     global.portalSyncAdminTopbarProfile(syncOpts);
     run();
+  }
+
+  function currentAdminViewId() {
+    try {
+      var h = String(global.location && global.location.hash ? global.location.hash : "").replace(/^#/, "");
+      if (h) return h;
+    } catch (_h) {}
+    return "";
+  }
+
+  function markTopbarBtnCurrent(el, on) {
+    if (!el) return;
+    el.classList.toggle("is-current", !!on);
+    if (on) el.setAttribute("aria-current", "page");
+    else el.removeAttribute("aria-current");
+  }
+
+  global.portalSyncAdminTopbarCurrent = function portalSyncAdminTopbarCurrent(viewId) {
+    var v = String(viewId || currentAdminViewId() || "").trim();
+    markTopbarBtnCurrent(document.getElementById("btnFamilyMsgs"), v === "portal_parent_notify_log");
+    markTopbarBtnCurrent(document.getElementById("btnStaffWa"), v === "portal_staff_whatsapp");
+    var comms = document.getElementById("btnComunicaciones");
+    if (comms) {
+      var onComms = false;
+      try {
+        onComms = /comunicaciones\.html/i.test(String(global.location && global.location.pathname ? global.location.pathname : ""));
+      } catch (_c) {}
+      markTopbarBtnCurrent(comms, onComms);
+    }
+    var alertsBtn = document.getElementById("btnAlerts");
+    var alertsPop = document.getElementById("alertsPop");
+    markTopbarBtnCurrent(alertsBtn, !!(alertsPop && alertsPop.classList.contains("open")));
+  };
+
+  function hookReplaceStateForTopbar() {
+    try {
+      if (!global.history || typeof global.history.replaceState !== "function") return;
+      if (global.history.replaceState.__portalTopbarCurrent) return;
+      var orig = global.history.replaceState.bind(global.history);
+      function wrapped() {
+        orig.apply(null, arguments);
+        global.portalSyncAdminTopbarCurrent();
+      }
+      wrapped.__portalTopbarCurrent = true;
+      global.history.replaceState = wrapped;
+    } catch (_rs) {}
+  }
+
+  hookReplaceStateForTopbar();
+  global.addEventListener("hashchange", function () {
+    global.portalSyncAdminTopbarCurrent();
+  });
+  global.addEventListener("portal:supabase-ready", function () {
+    global.portalSyncAdminTopbarCurrent();
+  });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      global.portalSyncAdminTopbarCurrent();
+    });
+  } else {
+    global.portalSyncAdminTopbarCurrent();
   }
 
   global.addEventListener("portal:supabase-ready", syncFromPortalSession);

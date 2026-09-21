@@ -6,15 +6,21 @@
 
   var SETS = {
     roster: [
-      "/portal/term_from_timetable.js?v=20260703-bundle-iife",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260828-aurora-javier-hours",
-      "/portal/clients_info_embed.js?v=20260707-social-workers",
-      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only",
+      "/portal/term_from_timetable.js?v=20260911-emmanuel-no-tue",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260912-amaar-mon-keep",
+      "/portal/clients_info_embed.js?v=20260910-joelle-406",
+      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
-      "/portal/portal-roster-rows-merge.js?v=20260831-dated-slot-instructor",
-      "/portal/portal_madre_fold.js?v=20260809-staff-map",
-      "/portal/portal_roster_canonical.js?v=20260901-weekend-as-victor-off",
-      "/portal/staff_dashboard_portal_roster_source.js?v=20260704-roster-seq",
+      "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
+      "/portal/portal_madre_fold.js?v=20260903-cover-needed",
+      "/portal/portal_roster_canonical.js?v=20260920-team-day-truth",
+      "/portal/autumn_staff_hours_reference.js?v=20260914-youssef-fri-ikram",
+      "/portal/portal_dc_services_local.js?v=20260914-overview-pin2",
+      "/portal/portal_capacity_chain_occupants.js?v=20260916-emmanuel-abate-dc",
+      "/portal/portal_overview_capacity_chain.js?v=20260916-muhammad-mon7",
+      "/portal/portal_client_day_visibility.js?v=20260916-short-names",
+      "/portal/portal_resolve_day_board.js?v=20260920-victor-week1-snap",
+      "/portal/staff_dashboard_portal_roster_source.js?v=20260914-term-open-fast",
     ],
     feedback: [
       "/portal/cancellations_portal_data.js?v=20260528-timi-cancel",
@@ -28,8 +34,8 @@
     oldpax: ["/portal/old_participants_portal_data.js?v=20260430-oldpax-export"],
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: [
-      "/portal/spreadsheet_reference_data.js?v=20260828-autumn-hours-base",
-      "/portal/autumn_staff_hours_reference.js?v=20260901-shift-bands",
+      "/portal/spreadsheet_reference_data.js?v=20260911-autumn-labels",
+      "/portal/autumn_staff_hours_reference.js?v=20260914-youssef-fri-ikram",
     ],
   };
 
@@ -67,7 +73,33 @@
       .then(function () {
         inflight[key] = null;
         done[key] = Promise.resolve();
-        if (key === "roster") window.__PORTAL_ADMIN_ROSTER_LOAD_FAILED__ = false;
+        if (key === "roster") {
+          window.__PORTAL_ADMIN_ROSTER_LOAD_FAILED__ = false;
+          try {
+            var hash = String(
+              (window.location && window.location.hash) || ""
+            ).toLowerCase();
+            var wantFullClubChain =
+              !!(window.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ ||
+                window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__ ||
+                /c4k_sessions/i.test(hash) ||
+                /scheduling/i.test(hash) ||
+                /c4k_services|servicecap|term_roster|absents_refunds/i.test(hash));
+            /*
+             * Admin Schedule / Overview / Services need the full capacity-chain club
+             * board. Never call refresh with {} here — that staff-scoped path empties
+             * STAFF_DASHBOARD_SOURCE on admin (no staffId) and shows "bundle empty".
+             */
+            if (
+              wantFullClubChain &&
+              typeof window.portalRefreshStaffDashboardSourceFromPortal === "function"
+            ) {
+              window.portalRefreshStaffDashboardSourceFromPortal({
+                forSessionsOverview: true,
+              });
+            }
+          } catch (_restoreOverview) {}
+        }
         return done[key];
       })
       .catch(function (err) {

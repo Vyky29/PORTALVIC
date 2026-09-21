@@ -332,6 +332,8 @@
     rayyan: "rayyan_fi",
     rayyan_f: "rayyan_fi",
     junaid: "junaid_f",
+    /* Finish-booking full name vs short roster id — same CLIENT. */
+    ayman_el_bakry: "ayman",
   };
 
   function canonicalClientSlug(name) {
@@ -1112,9 +1114,9 @@
     var p = payload;
     if (!p) return "";
     var toId = p.to_client_id != null ? String(p.to_client_id).trim().toLowerCase() : "";
-    if (toId) return toId;
     var repId = p.replacement_client_id != null ? String(p.replacement_client_id).trim().toLowerCase() : "";
-    return repId || "";
+    var raw = toId || repId || "";
+    return raw ? canonicalClientSlug(raw) : "";
   }
 
   function overrideReplacementClientName(payload) {
@@ -1132,13 +1134,15 @@
     if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
       return window.portalStaffDisplayName(sid);
     }
+    var k = canonicalStaffMatchKey(sid);
+    if (k === "lulia") return "Luliya";
     return sid.charAt(0).toUpperCase() + sid.slice(1).toLowerCase();
   }
 
   /** Collapse staff aliases (luliya/lulia/aida, javi/javier) so override anchors bind to roster names. */
   function canonicalStaffMatchKey(value) {
     var k = clean(value).toLowerCase().split(/\s+/)[0] || "";
-    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "luliya";
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial" || k === "palankas" || k === "palankasarranz") return "javi";
     return k;
@@ -1378,8 +1382,8 @@
       session_time: st,
       client_name: overrideClientName(ov),
       service: "\u2014",
-      staff_user_id: "",
-      staff_name: clean(ov.reason) ? "Schedule override \u2014 " + clean(ov.reason) : "Schedule override",
+      staff_user_id: clean(ov && ov.created_by) || "",
+      staff_name: "Office",
       created_at: ov.created_at || null,
       mark_type: "absent",
       source: "schedule_override",
@@ -1399,9 +1403,9 @@
       session_time: normTimeShort(ov.anchor_start),
       client_name: overrideClientName(ov),
       service: "\u2014",
-      cancellation_timing: "Schedule override",
+      cancellation_timing: "Office",
       reason_category: reason,
-      submitted_by_name: "Schedule override",
+      submitted_by_name: "Office",
       portal_session_key: normTimeShort(ov.anchor_start)
         ? sd + "||" + normTimeShort(ov.anchor_start) + "||" + slug
         : sd + "||" + slug,
@@ -2111,7 +2115,10 @@
     var bStart = b.time_start || "";
     var bEnd = b.time_end || bStart;
     if (!aStart || !bStart) return false;
-    return aStart < bEnd && bStart < aEnd;
+    /* Overlap (strict) OR abutting halves (e.g. Cyrus Wed 4–4.30 + 4.30–5). */
+    if (aStart < bEnd && bStart < aEnd) return true;
+    if (aEnd === bStart || bEnd === aStart) return true;
+    return false;
   }
 
   function autoConsecutiveSwimInstructorMergeKey(slot) {
@@ -2948,7 +2955,9 @@
     var title =
       typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
         ? window.portalStaffDisplayName(n)
-        : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+        : canonicalStaffMatchKey(n) === "luliya"
+          ? "Luliya"
+          : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
     return '<span class="ash-pill">' + esc(title) + "</span>";
   }
 

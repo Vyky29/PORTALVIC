@@ -515,7 +515,7 @@ def main() -> None:
     payload = {
         "meta": {
             "sessionSource": SESSION_WEEK_CSV.name,
-            "sessionWeekLabel": "1–7 Jun 2026 (Summer term 2)",
+            "sessionWeekLabel": "Autumn Term 2026 standing week (DC from 1 Sep, weekends Sat 5, after-school Mon 7)",
             "hoursFrom": HOURS_FROM,
             "timetableSource": "working_ui/induction-assets/Timetable 1 de junio a 17 julio.xlsx",
             "termBreakFrom": TERM_BREAK_FROM,

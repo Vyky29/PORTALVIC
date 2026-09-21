@@ -1,14 +1,15 @@
-import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalStaffDisplayName, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260713-javier-topbar";
+import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalStaffDisplayName, portalStaffAuthorFirstName, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260920-no-live-map";
 import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260818-es-exec";
 import {
   portalEnforceStaffAppPilotGate,
   portalSyncStaffAppPilotBanner,
-} from "/portal/portal_staff_app_pilot.js?v=20260712-wrong-app";
+} from "/portal/portal_staff_app_pilot.js?v=20260911-no-cliq-banner";
 
 window.__PORTAL_LOGOUT_FN__ = portalLogout;
 window.portalInferStaffKey = portalInferStaffKey;
 window.portalCanonicalStaffRosterKey = portalCanonicalStaffRosterKey;
 window.portalStaffDisplayName = portalStaffDisplayName;
+window.portalStaffAuthorFirstName = portalStaffAuthorFirstName;
 window.portalCanAccessCeoDashboard = portalCanAccessCeoDashboard;
 window.portalIsStaffHomeProgrammeLead = portalIsStaffHomeProgrammeLead;
 window.portalIsProgrammeLeadUser = portalIsProgrammeLeadUser;
@@ -54,17 +55,30 @@ if (typeof window.portalStaffResolveIdentityEarlyFromSession === "function") {
 }
 
 if (window.dashboardData) {
+  var ghostTokenInUrl = false;
+  try {
+    if (typeof window.portalGhostTokenInUrl === "function") {
+      ghostTokenInUrl = !!window.portalGhostTokenInUrl();
+    } else {
+      var qg = new URLSearchParams(String(window.location && window.location.search || ""));
+      ghostTokenInUrl = !!(qg.get("ghostToken") || qg.get("ghost"));
+    }
+  } catch (_g) {}
   const ghostEarly =
     window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active
       ? window.__PORTAL_GHOST_VIEW__
       : null;
-  if (!ghostEarly) {
+  if (!ghostEarly && !ghostTokenInUrl) {
     const displayName =
-      typeof window.portalTopbarDisplayNameFromAuth === "function"
+      (typeof portalStaffAuthorFirstName === "function"
+        ? portalStaffAuthorFirstName(
+            profile ? String(profile.username || profile.full_name || "").trim() : "",
+          )
+        : "") ||
+      (typeof window.portalTopbarDisplayNameFromAuth === "function"
         ? window.portalTopbarDisplayNameFromAuth(profile, session)
-        : profile
-          ? String(profile.full_name || profile.username || "").trim()
-          : "";
+        : "") ||
+      (profile ? String(profile.username || "").trim() : "");
     if (displayName) window.dashboardData.staffName = displayName;
   }
 }
@@ -82,11 +96,22 @@ if (typeof window.__PORTAL_STAFF_REHYDRATE__ === "function") {
         window.dashboardData.portalIdentityResolved === false &&
         typeof window.portalStaffFinishIdentityUi === "function"
       ) {
+        var ghostStillPending = false;
+        try {
+          if (typeof window.portalGhostTokenInUrl === "function") {
+            ghostStillPending = !!window.portalGhostTokenInUrl();
+          } else {
+            var qf = new URLSearchParams(String(window.location && window.location.search || ""));
+            ghostStillPending = !!(qf.get("ghostToken") || qf.get("ghost"));
+          }
+        } catch (_gf) {}
+        if (!ghostStillPending) {
         window.portalStaffFinishIdentityUi(
           (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {},
           window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile,
           window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session
         );
+        }
       }
     } catch (_) {}
   });
@@ -97,9 +122,8 @@ if (typeof window.__PORTAL_STAFF_REHYDRATE__ === "function") {
 if (typeof window.portalSyncServiceLeadsQuickMenu === "function") {
   window.portalSyncServiceLeadsQuickMenu();
 }
-if (typeof window.portalSyncLeadTeamShiftUi === "function") {
-  window.portalSyncLeadTeamShiftUi();
-}
+if (typeof window.portalScheduleLeadTeamShiftUi === 'function') window.portalScheduleLeadTeamShiftUi();
+else if (typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
 if (typeof window.__PORTAL_LOGOUT_FN__ !== "function") {
   window.__PORTAL_LOGOUT_FN__ = portalLogout;
 }

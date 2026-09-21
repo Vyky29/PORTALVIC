@@ -98,63 +98,132 @@
     return j;
   }
 
+  function formatDayOnly(iso) {
+    if (!iso) return '—';
+    try {
+      var s = String(iso).slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        var p = s.split('-');
+        return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+      return formatDate(iso);
+    } catch (_e) {
+      return String(iso);
+    }
+  }
+
+  function statusLabel(status) {
+    var st = String(status || '').toLowerCase();
+    if (st === 'consumed') return 'Make up';
+    if (st === 'offered') return 'Offered';
+    if (st === 'open') return 'Open';
+    if (st === 'cancelled') return 'Cancelled';
+    if (st === 'forfeited') return 'Forfeited';
+    return status || '—';
+  }
+
+  function statusChipClass(status) {
+    var st = String(status || '').toLowerCase();
+    if (st === 'open') return 'pend';
+    if (st === 'offered') return 'info';
+    if (st === 'consumed') return 'makeup';
+    if (st === 'cancelled') return 'urg';
+    if (st === 'forfeited') return 'warn';
+    return 'pend';
+  }
+
   function rowHtml(g) {
     var pending = g.pending_offer;
+    var makeupDay = String(g.makeup_day || '').slice(0, 10);
+    var makeupTime = String(g.makeup_time || '').trim();
+    var absentDay = String(g.absence_session_date || '').slice(0, 10);
     var actions = '';
+    var reopenBtn = g.absence_report_id
+      ? ' <button type="button" class="btn btn--sm btn--ghost" data-makeup-reopen-decide="' +
+        esc(g.absence_report_id) +
+        '" data-grant-id="' +
+        esc(g.id) +
+        '">Back to decide</button>'
+      : '';
     if (g.status === 'open') {
       actions =
         '<button type="button" class="btn btn--sm btn--primary" data-makeup-offer="' +
         esc(g.id) +
         '" data-venue="' +
         esc(g.preferred_venue || '') +
-        '">Offer slot</button>';
+        '">Offer slot</button>' +
+        ' <button type="button" class="btn btn--sm btn--ghost" data-makeup-cancel="' +
+        esc(g.id) +
+        '">Cancel grant</button>' +
+        reopenBtn;
     } else if (g.status === 'offered' && pending) {
       actions =
         '<span class="muted" style="display:block;margin-bottom:4px;overflow-wrap:break-word">' +
-        esc(formatDate(pending.session_date)) +
+        esc(formatDayOnly(pending.session_date)) +
         (pending.session_time ? ' · ' + esc(pending.session_time) : '') +
         (pending.instructor_name ? ' · ' + esc(pending.instructor_name) : '') +
         '</span>' +
         '<button type="button" class="btn btn--sm btn--ghost" data-makeup-withdraw="' +
         esc(pending.id) +
-        '">Withdraw offer</button>';
+        '">Withdraw offer</button>' +
+        ' <button type="button" class="btn btn--sm btn--ghost" data-makeup-cancel="' +
+        esc(g.id) +
+        '">Cancel grant</button>' +
+        reopenBtn;
     } else if (g.status === 'consumed') {
       var accepted = (g.offers || []).find(function (o) {
         return o && o.status === 'accepted';
       });
       actions =
         '<span class="muted" style="overflow-wrap:break-word">On roster' +
-        (accepted && accepted.roster_override_id ? ' ✓' : ' (pending link)') +
-        (accepted
-          ? '<br>' +
-            esc(formatDate(accepted.session_date)) +
-            (accepted.session_time ? ' · ' + esc(accepted.session_time) : '')
-          : '') +
-        '</span>';
+        (accepted && accepted.roster_override_id ? ' ✓' : makeupDay ? '' : ' (pending link)') +
+        '</span>' +
+        reopenBtn;
     } else {
-      actions = '<span class="muted">' + esc(g.status) + '</span>';
+      actions = '<span class="muted">' + esc(statusLabel(g.status)) + '</span>' + reopenBtn;
     }
+
+    var makeupCell =
+      makeupDay
+        ? '<strong>' +
+          esc(formatDayOnly(makeupDay)) +
+          '</strong>' +
+          (makeupTime
+            ? '<div class="muted" style="font-size:11px;margin-top:2px;overflow-wrap:break-word">' +
+              esc(makeupTime) +
+              '</div>'
+            : '')
+        : '<span class="muted">—</span>';
+
     return (
       '<tr>' +
-      '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
+      '<td style="min-width:0;overflow-wrap:break-word;text-align:left">' +
+      '<strong style="display:block">' +
       esc(g.participant_display || '—') +
-      '</strong></td>' +
+      '</strong>' +
+      '<span class="muted" style="display:block;font-size:11px;margin-top:2px;overflow-wrap:break-word">' +
+      esc(g.service_label || '—') +
+      '</span></td>' +
       '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
       esc(g.preferred_venue || '—') +
       '</strong></td>' +
-      '<td style="min-width:0;overflow-wrap:break-word">' +
-      esc(g.service_label || '—') +
-      '</td>' +
-      '<td><span class="chip chip--' +
-      (g.status === 'open' ? 'pend' : g.status === 'offered' ? 'info' : 'ok') +
+      '<td style="text-align:center;vertical-align:middle"><span class="chip chip--' +
+      statusChipClass(g.status) +
       '">' +
-      esc(g.status) +
+      esc(statusLabel(g.status)) +
       '</span></td>' +
       '<td class="muted">' +
       esc(String(g.source || '').replace(/_/g, ' ')) +
       '</td>' +
       '<td class="muted" style="white-space:nowrap">' +
-      esc(formatDate(g.created_at)) +
+      esc(formatDayOnly(absentDay)) +
+      '</td>' +
+      '<td style="min-width:0;overflow-wrap:break-word;white-space:nowrap">' +
+      makeupCell +
       '</td>' +
       '<td style="min-width:0">' +
       actions +
@@ -169,8 +238,8 @@
     }
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
-      '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Participant</th><th>Venue</th><th>Service</th><th>Status</th><th>Source</th><th>Since</th><th>Actions</th>' +
+      '<table class="tbl tbl--center tbl--dense pp-queue-tbl"><thead><tr>' +
+      '<th>Participant</th><th>Venue</th><th>Status</th><th>Source</th><th>Absent date</th><th>Makeup day</th><th>Actions</th>' +
       '</tr></thead><tbody>' +
       grants.map(rowHtml).join('') +
       '</tbody></table></div></div>'
@@ -183,7 +252,7 @@
       '<div class="card-h"><h3>Makeup grants (by venue)</h3>' +
       '<span class="chip chip--pend" id="portalMakeupMeta">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Waiting-list style: offer a concrete slot at the family&apos;s <strong>preferred venue</strong> (instructor + time required). If they <strong>Accept</strong>, MakeUp is written to the roster automatically. If they <strong>Decline</strong>, they forfeit the grant and the slot can go to the next family. Use <strong>Add makeup</strong> when a parent phones in.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Waiting-list style: offer a concrete slot at the family&apos;s <strong>preferred venue</strong> (instructor + time required). If they <strong>Accept</strong>, MakeUp is written to the roster automatically. If they <strong>Decline</strong>, they forfeit the grant and the slot can go to the next family. Wrong grant? <strong>Cancel grant</strong>. Use <strong>Add makeup</strong> when a parent phones in.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-makeup-filter="open">Open</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-makeup-filter="offered">Offered</button>' +
@@ -283,6 +352,60 @@
             void renderHost(global.document.getElementById('portalMakeupHost'));
           }
         );
+      });
+    });
+    hostEl.querySelectorAll('[data-makeup-cancel]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var grantId = btn.getAttribute('data-makeup-cancel');
+        if (
+          !global.confirm(
+            'Cancel this makeup grant? It leaves the Open list (view under All as cancelled).'
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        void api('portal-admin-makeup-grant', { action: 'cancel', grant_id: grantId }).then(
+          function (r) {
+            if (r.error) {
+              cfg.toast(r.message || r.error, 'error');
+              btn.disabled = false;
+              return;
+            }
+            cfg.toast('Makeup grant cancelled', 'ok');
+            void renderHost(global.document.getElementById('portalMakeupHost'));
+          }
+        );
+      });
+    });
+    hostEl.querySelectorAll('[data-makeup-reopen-decide]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var absenceId = btn.getAttribute('data-makeup-reopen-decide');
+        if (!absenceId) {
+          cfg.toast('No linked absence to reopen', 'error');
+          return;
+        }
+        if (
+          !global.confirm(
+            'Reopen the linked absence to decide again? This cancels open makeup grants / open credits for that row.'
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        void api('portal-admin-parent-absence-decide', {
+          action: 'reopen',
+          report_id: absenceId,
+          notes: 'Reopened from Makeup grants — office to decide again'
+        }).then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Reopen failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast('Reopened — back in Absents Open. Refresh if needed.', 'ok');
+          void renderHost(global.document.getElementById('portalMakeupHost'));
+        });
       });
     });
   }

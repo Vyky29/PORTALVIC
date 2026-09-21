@@ -1,12 +1,14 @@
 /**
- * Finish-booking after Accept: mint magic link, notify parent, complete PIN after pay
- * (bank/Stripe) or after GoCardless mandate setup (billing_requests.fulfilled).
+ * Finish-booking after Accept: mint magic link, notify parent.
+ * Term: Parent Portal PIN after first instalment / settle (bank/Stripe/GC mandate).
+ * Trial: booking-completed message only (no PIN) except an explicit office allowlist.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   maskEmailForLog,
   maskPhoneForLog,
   normalizeParentPhoneE164,
+  normalizePublicPhotoUrl,
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
@@ -18,6 +20,7 @@ import {
   bookingRequestSummary,
   normalizePendingBookingRequest,
 } from "./portal_booking_context.ts";
+import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
 import {
   type BookingTermKey,
   type NewClientPayPlan,
@@ -33,13 +36,37 @@ import {
   stripeCreateCheckoutSession,
   stripeGrossUpFromGbp,
 } from "./stripe_checkout.ts";
-import { foldValidatedReservationOntoMadre, preferredInstructorForReservation } from "./portal_booking_fold_madre.ts";
+import {
+  foldValidatedReservationOntoMadre,
+  preferredInstructorForReservation,
+} from "./portal_booking_fold_madre.ts";
+import {
+  extractInstructorFromNotes,
+  mergeReservationNotes,
+  notesWithInstructor,
+  pickOpenInstructorForBand,
+} from "./portal_booking_reservation_ops.ts";
+import { ensurePostTrialOfferAfterPaid } from "./portal_post_trial_offers.ts";
 import { unitPriceFor } from "./reenrolment_catalog.ts";
 import { resolvePortalInvoiceOwnerUserId } from "./portal_create_family_invoice.ts";
+import {
+  BOOKING_SLOT_HOLD_STATUSES,
+  bookingActiveHoldExpiresFilter,
+  bookingPayHoldExpiresAt,
+} from "./portal_booking_pay_hold.ts";
+import { mandateIsActive } from "./gocardless_portal.ts";
 
 export const FINISH_TOKEN_TTL_DAYS = 14;
 /** Fallback only when service cannot be classified (legacy aquatic 30'). */
 export const DEFAULT_SESSION_GBP = 50;
+
+/** Danielle / Reggie trial (Sep 2026) - still mint Parent Portal PIN. */
+const TRIAL_PORTAL_PIN_DOCUMENT_IDS = new Set([
+  "c38e7fdb-cba5-4c6b-ac85-18217d1e8740",
+]);
+const TRIAL_PORTAL_PIN_EMAILS = new Set([
+  "mcmullan_danielle@icloud.com",
+]);
 
 export type CompletionTokenRow = {
   id: string;
@@ -62,6 +89,103 @@ export type CompletionTokenRow = {
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function finishBookingTokenIsTrial(token: CompletionTokenRow): boolean {
+  const choices =
+    token.choices_json && typeof token.choices_json === "object"
+      ? token.choices_json
+      : {};
+  if (parseBookingScope(choices.booking_scope) === "trial_session") return true;
+  const kind = clean(choices.booking_kind, 40).toLowerCase();
+  return kind === "trial" || kind === "trial_session" || kind === "taster";
+}
+
+function finishTrialGetsPortalPin(
+  token: CompletionTokenRow,
+  contact?: { email?: unknown } | null,
+): boolean {
+  const docId = clean(token.document_id, 80).toLowerCase();
+  if (docId && TRIAL_PORTAL_PIN_DOCUMENT_IDS.has(docId)) return true;
+  const email = clean(contact?.email, 200).toLowerCase();
+  return !!email && TRIAL_PORTAL_PIN_EMAILS.has(email);
+}
+
+function instructorStaffPhotoUrl(instructorName: string): {
+  url: string;
+  name: string;
+} {
+  const name = clean(instructorName, 40);
+  const first = name.split(/\s+/)[0] || "";
+  let stem = first.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  if (stem === "lulia") stem = "luliya";
+  const rel = stem ? `/portal/staff_photos/${stem}.png` : "";
+  return { url: rel ? normalizePublicPhotoUrl(rel) : "", name };
+}
+
+function formatTrialSessionWhen(reservation: Record<string, unknown> | null): string {
+  if (!reservation) return "";
+  const day = clean(reservation.day_label, 40);
+  const time = clean(reservation.time_label, 80).replace(/[–—]/g, "-");
+  const iso = clean(reservation.date_iso, 12);
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const dateBit = m ? `${Number(m[3])} ${months[Number(m[2]) - 1]}` : "";
+  return [day, dateBit, time].filter(Boolean).join(" ");
+}
+
+/** First instalment collected by bank (mid-month GoCardless join). */
+function paymentScheduleBankFirst(schedule: unknown): boolean {
+  const rows = Array.isArray(schedule) ? schedule : [];
+  const first = rows[0] as Record<string, unknown> | undefined;
+  if (!first) return false;
+  const via = String(first.collect_via || "").toLowerCase();
+  if (via === "bank_transfer" || via === "bank") return true;
+  return /bank transfer/i.test(String(first.label || ""));
+}
+
+/** Bank-first GoCardless: PIN only after mandate is active (not on admin Mark paid alone). */
+async function finishBookingNeedsGocardlessMandateBeforePin(
+  admin: SupabaseClient,
+  token: CompletionTokenRow,
+  inv: {
+    payment_schedule?: unknown;
+    payment_method_hint?: unknown;
+    contact_id?: unknown;
+  },
+): Promise<boolean> {
+  const plan = clean(token.pay_plan, 40).toLowerCase();
+  const hint = String(inv.payment_method_hint || "").toLowerCase();
+  const isGc =
+    plan === "gocardless_monthly" ||
+    plan === "gocardless" ||
+    hint === "gocardless";
+  if (!isGc || !paymentScheduleBankFirst(inv.payment_schedule)) return false;
+
+  const contactId =
+    clean(token.contact_id, 40) || clean(inv.contact_id, 40);
+  if (!contactId) return true;
+
+  const { data: mandateRow } = await admin
+    .from("portal_parent_gocardless_mandates")
+    .select("gocardless_mandate_id, mandate_status")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  const mandateId = clean(mandateRow?.gocardless_mandate_id, 80);
+  return !(mandateId && mandateIsActive(mandateRow?.mandate_status));
 }
 
 /** Public family site (booking + parent pages). Staff app stays on portalvic.vercel.app. */
@@ -212,13 +336,19 @@ export function inferServiceKey(serviceName?: string | null, timeLabel?: string 
 }
 
 export function clientKeyFromName(name: string): string {
-  return clean(name, 80)
+  const raw = clean(name, 80)
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40) || "client";
+  /* Full legal / finish-booking names → short roster ids (avoid duplicate cards). */
+  const ALIAS: Record<string, string> = {
+    "ayman-el-bakry": "ayman",
+    ayman_el_bakry: "ayman",
+  };
+  return ALIAS[raw] || ALIAS[raw.replace(/-/g, "_")] || raw;
 }
 
 export async function loadCompletionByRawToken(
@@ -313,7 +443,7 @@ async function logFinishBookingNotify(
           : opts.emailOk
             ? "email"
             : "whatsapp";
-    await admin.from("portal_parent_notify_log").insert({
+    const { data: insertedFinishLog } = await admin.from("portal_parent_notify_log").insert({
       sent_by_user_id: null,
       sent_by_email: "system@finish-booking",
       kind: opts.kind,
@@ -340,7 +470,13 @@ async function logFinishBookingNotify(
           ? `Hello,\n${opts.bodyText.trim()}\nThank you.`
           : null,
       },
-    });
+    }).select("id").maybeSingle();
+    if (insertedFinishLog?.id) {
+      void notifyFamilyWebPushForParentNotify({
+        notifyLogId: String(insertedFinishLog.id),
+        kind: opts.kind,
+      });
+    }
   } catch (e) {
     console.warn("[finish-booking-notify] log failed", e);
   }
@@ -355,22 +491,37 @@ export async function notifyParentFinishBooking(opts: {
   rawToken: string;
   admin?: SupabaseClient | null;
   /** registration_submitted = pay-now copy after form submit (no suitability wording) */
-  variant?: "accepted" | "registration_submitted";
+  variant?: "accepted" | "registration_submitted" | "resend_pay_hold";
+  /** Trial pay links must not promise a Parent Portal PIN. */
+  isTrial?: boolean;
 }): Promise<{ emailOk: boolean; waOk: boolean; waError?: string }> {
   const name = clean(opts.parentName, 120) || "Parent / carer";
   const participant = clean(opts.participantName, 120) || "your child";
   const link = finishBookingUrl(opts.rawToken);
   const slot = clean(opts.slotSummary, 200);
   const autoPay = opts.variant === "registration_submitted";
-  // Flat body for Meta contact_update template (newlines are stripped).
-  const bodyText = autoPay
-    ? `clubSENsational received the registration for ${participant}. ` +
-      (slot ? `Place: ${slot}. ` : "") +
-      `Complete booking and payment now: ${link}`
-    : `clubSENsational accepted the registration for ${participant}. ` +
-      (slot ? `Place: ${slot}. ` : "") +
-      `Finish booking (funding, payment, first instalment): ${link} ` +
-      `After the office confirms your payment we send your Parent Portal PIN.`;
+  const resendHold = opts.variant === "resend_pay_hold";
+  const trial = !!opts.isTrial;
+  const pinLine = trial
+    ? ""
+    : " After the office confirms payment we send your Parent Portal PIN.";
+  // Put the magic link FIRST so WhatsApp / Meta {{1}} truncation cannot cut the token
+  // (chopped ?t=… shows as "This link is not valid").
+  const bodyText = resendHold
+    ? `Complete booking now: ${link} ` +
+      `Place held 30 minutes for ${participant}` +
+      (slot ? ` — ${slot}` : "") +
+      `.`
+    : autoPay
+      ? `Complete booking and payment now: ${link} ` +
+        `Registration received for ${participant}` +
+        (slot ? ` — ${slot}` : "") +
+        `. Place held 30 minutes.`
+      : `Finish booking now: ${link} ` +
+        `Registration accepted for ${participant}` +
+        (slot ? ` — ${slot}` : "") +
+        `. Place held 30 minutes.` +
+        pinLine;
 
   let emailOk = false;
   let waOk = false;
@@ -385,20 +536,32 @@ export async function notifyParentFinishBooking(opts: {
     const mail = await sendParentEmailViaSmtp({
       config: smtp,
       to: email,
-      subject: autoPay
-        ? `Complete booking · ${participant}`
+      subject: resendHold || autoPay
+        ? `Complete booking · ${participant} · 30 minutes`
         : `Finish booking · ${participant}`,
-      bodyText: autoPay
+      bodyText: resendHold
         ? `Hi ${name},\n\n` +
-          `Thank you — we received the registration for ${participant}.\n\n` +
-          (slot ? `Requested place: ${slot}\n\n` : "") +
-          `Please complete booking and payment now:\n${link}\n\n` +
-          `Your place is held for 30 minutes while you pay.\n\n— clubSENsational`
-        : `Hi ${name},\n\n` +
-          `clubSENsational has accepted the registration for ${participant}.\n\n` +
-          (slot ? `Requested place: ${slot}\n\n` : "") +
-          `Please finish your booking:\n${link}\n\n` +
-          `After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`,
+          `Please finish booking for ${participant} now.\n\n` +
+          `${link}\n\n` +
+          (slot ? `Place: ${slot}\n\n` : "") +
+          `Your place is held for 30 minutes only while you complete funding, payment and the first instalment.\n\n` +
+          `If the window ends without payment, the seat returns to the Booking Portal.\n\n` +
+          (trial
+            ? `After payment we send a booking-completed message with the day, time, venue and instructor.\n\n— clubSENsational`
+            : `After the office confirms your payment we send your Parent Portal PIN.\n\n— clubSENsational`)
+        : autoPay
+          ? `Hi ${name},\n\n` +
+            `Thank you — we received the registration for ${participant}.\n\n` +
+            `Please complete booking and payment now:\n${link}\n\n` +
+            (slot ? `Requested place: ${slot}\n\n` : "") +
+            `Your place is held for 30 minutes while you pay.\n\n— clubSENsational`
+          : `Hi ${name},\n\n` +
+            `clubSENsational has accepted the registration for ${participant}.\n\n` +
+            `Please finish your booking:\n${link}\n\n` +
+            (slot ? `Requested place: ${slot}\n\n` : "") +
+            (trial
+              ? `Your place is held for 30 minutes while you pay. After payment we send a booking-completed message with the day, time, venue and instructor.\n\n— clubSENsational`
+              : `Your place is held for 30 minutes while you pay. After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`),
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-notify] email", mail.error);
@@ -561,29 +724,21 @@ export async function prepareReservationsForFinishBooking(
   let prepared = 0;
   for (const hold of holds || []) {
     const prevNotes = String(hold.notes || "").trim();
-    const keepTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
-    if (keepTrial) {
-      const { error: rErr } = await admin
-        .from("portal_booking_slot_reservations")
-        .update({
-          status: "released",
-          released_at: nowIso,
-          updated_at: nowIso,
-          notes: "auto_finish_link|booking_kind=trial|awaiting_stripe_pay",
-        })
-        .eq("id", hold.id)
-        .eq("status", "pending");
-      if (!rErr) prepared += 1;
-      else console.warn("[prepareReservationsForFinishBooking] trial release", rErr.message);
-      continue;
-    }
+    const isTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
     const { error: vErr } = await admin
       .from("portal_booking_slot_reservations")
       .update({
         status: "validated",
         validated_at: nowIso,
         updated_at: nowIso,
-        notes: "auto_finish_link",
+        released_at: null,
+        // Fresh 30' clock when finish-booking link is minted (trial + term).
+        hold_expires_at: bookingPayHoldExpiresAt(),
+        notes: mergeReservationNotes(prevNotes, [
+          "auto_finish_link",
+          "pay_hold_30m",
+          isTrial ? "booking_kind=trial" : null,
+        ]),
       })
       .eq("id", hold.id)
       .eq("status", "pending");
@@ -591,6 +746,115 @@ export async function prepareReservationsForFinishBooking(
     else console.warn("[prepareReservationsForFinishBooking] validate", vErr.message);
   }
   return prepared;
+}
+
+/**
+ * Office resend / remint: if the doc's seat was released or expired unpaid,
+ * put it back on hold for 30' when the slot still has space.
+ */
+export async function reholdReleasedReservationForFinishBooking(
+  admin: SupabaseClient,
+  documentId: string,
+): Promise<{
+  ok: boolean;
+  reservationId: string | null;
+  holdExpiresAt: string | null;
+  error?: string;
+}> {
+  const docId = clean(documentId, 80);
+  if (!docId) return { ok: false, reservationId: null, holdExpiresAt: null, error: "document_required" };
+
+  const { data: active } = await admin
+    .from("portal_booking_slot_reservations")
+    .select("id, hold_expires_at, status")
+    .eq("document_id", docId)
+    .in("status", [...BOOKING_SLOT_HOLD_STATUSES])
+    .or(bookingActiveHoldExpiresFilter())
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (active?.id) {
+    const holdExpires = bookingPayHoldExpiresAt();
+    await admin
+      .from("portal_booking_slot_reservations")
+      .update({
+        hold_expires_at: holdExpires,
+        updated_at: new Date().toISOString(),
+        notes: "auto_finish_link|pay_hold_30m|office_resend_refresh",
+        released_at: null,
+      })
+      .eq("id", String(active.id));
+    return {
+      ok: true,
+      reservationId: String(active.id),
+      holdExpiresAt: holdExpires,
+    };
+  }
+
+  const { data: prior } = await admin
+    .from("portal_booking_slot_reservations")
+    .select(
+      "id, slot_id, status, notes, service_id, service_name, venue, day_label, time_label, activity, booking_mode, week_id, block_id, date_iso, participant_name, parent_name, parent_email, parent_phone",
+    )
+    .eq("document_id", docId)
+    .in("status", ["released", "expired"])
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!prior?.id || !prior.slot_id) {
+    return { ok: false, reservationId: null, holdExpiresAt: null, error: "no_reservation" };
+  }
+
+  const slotId = String(prior.slot_id);
+  const freeForRehold = await pickOpenInstructorForBand(admin, {
+    slotId,
+    venue: prior.venue,
+    day: prior.day_label,
+    timeLabel: prior.time_label,
+    excludeReservationId: String(prior.id),
+  });
+  if (!freeForRehold) {
+    return {
+      ok: false,
+      reservationId: String(prior.id),
+      holdExpiresAt: null,
+      error: "slot_unavailable",
+    };
+  }
+
+  const holdExpires = bookingPayHoldExpiresAt();
+  const nowIso = new Date().toISOString();
+  const prevNotes = String(prior.notes || "").trim();
+
+  const { error: updErr } = await admin
+    .from("portal_booking_slot_reservations")
+    .update({
+      status: "validated",
+      validated_at: nowIso,
+      hold_expires_at: holdExpires,
+      released_at: null,
+      updated_at: nowIso,
+      notes: notesWithInstructor(prevNotes, freeForRehold, [
+        "auto_finish_link",
+        "pay_hold_30m",
+        "office_resend_rehold",
+      ]),
+    })
+    .eq("id", String(prior.id));
+  if (updErr) {
+    console.warn("[reholdReleasedReservationForFinishBooking] update", updErr.message);
+    return {
+      ok: false,
+      reservationId: String(prior.id),
+      holdExpiresAt: null,
+      error: "rehold_failed",
+    };
+  }
+  return {
+    ok: true,
+    reservationId: String(prior.id),
+    holdExpiresAt: holdExpires,
+  };
 }
 
 /**
@@ -611,7 +875,9 @@ export async function sendFinishBookingAfterRegistration(
     reservationId?: string | null;
     leadId?: string | null;
     notify?: boolean;
-    variant?: "accepted" | "registration_submitted";
+    variant?: "accepted" | "registration_submitted" | "resend_pay_hold";
+    /** When true (office resend): re-hold released/expired seat for 30' if still free. */
+    reholdReleased?: boolean;
   },
 ): Promise<{
   finish_url: string;
@@ -620,16 +886,48 @@ export async function sendFinishBookingAfterRegistration(
   wa_ok: boolean;
   token_id: string | null;
   reservations_prepared: number;
+  slot_held: boolean;
+  hold_expires_at: string | null;
+  rehold_error: string | null;
 }> {
-  const reservationsPrepared = await prepareReservationsForFinishBooking(admin, doc.id);
+  let reservationsPrepared = await prepareReservationsForFinishBooking(admin, doc.id);
+  let slotHeld = reservationsPrepared > 0;
+  let holdExpiresAt: string | null = null;
+  let reholdError: string | null = null;
+  let reservationIdHint = opts?.reservationId ? String(opts.reservationId) : null;
+
+  if (opts?.reholdReleased || opts?.variant === "resend_pay_hold") {
+    const rehold = await reholdReleasedReservationForFinishBooking(admin, doc.id);
+    if (rehold.ok) {
+      slotHeld = true;
+      holdExpiresAt = rehold.holdExpiresAt;
+      if (rehold.reservationId) reservationIdHint = rehold.reservationId;
+      reservationsPrepared = Math.max(reservationsPrepared, 1);
+    } else {
+      reholdError = rehold.error || "rehold_failed";
+      if (reholdError === "slot_unavailable") {
+        return {
+          finish_url: "",
+          finish_url_sent: false,
+          email_ok: false,
+          wa_ok: false,
+          token_id: null,
+          reservations_prepared: reservationsPrepared,
+          slot_held: false,
+          hold_expires_at: null,
+          rehold_error: reholdError,
+        };
+      }
+    }
+  }
 
   const resolved = await resolveFinishBookingLeadAndReservation(
     admin,
     doc,
-    opts?.reservationId ? String(opts.reservationId) : null,
+    reservationIdHint,
   );
   const leadId = opts?.leadId ? String(opts.leadId) : resolved.leadId;
-  const reservationId = resolved.reservationId;
+  const reservationId = resolved.reservationId || reservationIdHint;
 
   const minted = await mintFinishBookingToken(admin, {
     leadId,
@@ -641,6 +939,25 @@ export async function sendFinishBookingAfterRegistration(
   let emailOk = false;
   let waOk = false;
   if (opts?.notify !== false) {
+    const br = extractBookingRequest(
+      (doc.payload_json && typeof doc.payload_json === "object"
+        ? doc.payload_json
+        : {}) as Record<string, unknown>,
+    );
+    const rawReq =
+      doc.payload_json &&
+      typeof doc.payload_json === "object" &&
+      !Array.isArray(doc.payload_json)
+        ? (doc.payload_json as Record<string, unknown>).booking_request
+        : null;
+    const rawKind =
+      rawReq && typeof rawReq === "object" && !Array.isArray(rawReq)
+        ? String((rawReq as Record<string, unknown>).booking_kind || "")
+          .toLowerCase()
+        : "";
+    const kind = String(br?.booking_kind || rawKind).toLowerCase();
+    const isTrial =
+      kind === "trial" || kind === "trial_session" || kind === "taster";
     const notify = await notifyParentFinishBooking({
       parentName: doc.parent_name,
       parentEmail: doc.parent_email,
@@ -650,6 +967,7 @@ export async function sendFinishBookingAfterRegistration(
       rawToken: minted.rawToken,
       admin,
       variant: opts?.variant || "registration_submitted",
+      isTrial,
     });
     emailOk = notify.emailOk;
     waOk = notify.waOk;
@@ -682,6 +1000,9 @@ export async function sendFinishBookingAfterRegistration(
     wa_ok: waOk,
     token_id: minted.tokenId,
     reservations_prepared: reservationsPrepared,
+    slot_held: slotHeld,
+    hold_expires_at: holdExpiresAt,
+    rehold_error: reholdError,
   };
 }
 
@@ -744,6 +1065,155 @@ export async function notifyParentPortalPin(opts: {
     emailOk,
     wa: waResult,
   });
+}
+
+export async function notifyParentTrialBookingCompleted(opts: {
+  parentName: string | null;
+  parentEmail: string | null;
+  parentPhone: string | null;
+  participantName: string;
+  reservation: Record<string, unknown> | null;
+  instructorName: string | null;
+  admin?: SupabaseClient | null;
+}): Promise<{ emailOk: boolean; waOk: boolean }> {
+  const name = clean(opts.parentName, 120) || "Parent / carer";
+  const participant = clean(opts.participantName, 120) || "your child";
+  const venue = opts.reservation ? clean(opts.reservation.venue, 80) : "";
+  const when = formatTrialSessionWhen(opts.reservation);
+  const instructor = clean(opts.instructorName, 40);
+  const photo = instructorStaffPhotoUrl(instructor);
+  const whenPart = when || "your booked time";
+  const venuePart = venue ? ` at ${venue}` : "";
+  const withWho = instructor ? `, with ${instructor}` : "";
+  const bodyText =
+    `Booking completed for ${participant}. Trial: ${whenPart}${venuePart}${withWho}. ` +
+    (photo.url
+      ? `Please show them the photo so they know who to expect. See you there.`
+      : `See you there.`);
+
+  let emailOk = false;
+  let waResult: { ok: boolean; id?: string; channel?: string; error?: string } = {
+    ok: false,
+  };
+
+  const smtp = readParentNotifySmtpConfig();
+  const email = clean(opts.parentEmail, 200);
+  if (smtp && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const mail = await sendParentEmailViaSmtp({
+      config: smtp,
+      to: email,
+      subject: `Booking completed · ${participant}`,
+      bodyText:
+        `Hi ${name},\n\n` +
+        `Booking completed for ${participant}.\n\n` +
+        `Trial: ${whenPart}${venuePart}${withWho}.\n\n` +
+        (photo.url
+          ? `Please show them the photo so they know who to expect.\n\n`
+          : "") +
+        `See you there.\n\n— clubSENsational`,
+      instructorPhotoUrl: photo.url || undefined,
+      instructorPhotoName: photo.name || undefined,
+    });
+    emailOk = mail.ok;
+    if (!mail.ok) console.warn("[finish-booking-trial] email", mail.error);
+  }
+
+  const phone = normalizeParentPhoneE164(String(opts.parentPhone || ""));
+  if (phone) {
+    const wa = await sendParentMobileMessage(phone, bodyText, {
+      kind: "instructor_change",
+      instructorPhotoUrl: photo.url || undefined,
+      instructorPhotoName: photo.name || undefined,
+    });
+    waResult = wa;
+    if (!wa.ok) console.warn("[finish-booking-trial] whatsapp", wa.error);
+  }
+
+  await logFinishBookingNotify(opts.admin, {
+    kind: "trial_booking_completed",
+    parentName: name,
+    parentEmail: email || null,
+    parentPhone: phone,
+    participantName: participant,
+    subject: `Booking completed · ${participant}`,
+    bodyText,
+    emailOk,
+    wa: waResult,
+  });
+
+  return { emailOk, waOk: waResult.ok };
+}
+
+/** After bank-first GC is confirmed paid, remind parent to complete Step 3 (mandate). */
+export async function notifyParentCompleteGocardlessStep3(opts: {
+  parentName: string | null;
+  parentEmail: string | null;
+  parentPhone: string | null;
+  participantName: string;
+  gocardlessUrl: string | null;
+  admin?: SupabaseClient | null;
+}): Promise<{ emailOk: boolean; waOk: boolean }> {
+  const name = clean(opts.parentName, 120) || "Parent / carer";
+  const participant = clean(opts.participantName, 120) || "your child";
+  const gcUrl = clean(opts.gocardlessUrl, 500);
+  const portalUrl = `${portalPublicOrigin()}/parent`;
+  const bodyText = gcUrl
+    ? `clubSENsational confirmed the first bank payment for ${participant}. ` +
+      `Please complete Step 3 and set up GoCardless so monthly collections run on the 1st: ${gcUrl} ` +
+      `Or sign in at ${portalUrl} and open Invoices.`
+    : `clubSENsational confirmed the first bank payment for ${participant}. ` +
+      `Please sign in at ${portalUrl}, open Invoices, and set up GoCardless (Direct Debit) for monthly payments on the 1st.`;
+
+  let emailOk = false;
+  let waOk = false;
+  let waResult: { ok: boolean; id?: string; channel?: string; error?: string } = {
+    ok: false,
+  };
+
+  const smtp = readParentNotifySmtpConfig();
+  const email = clean(opts.parentEmail, 200);
+  if (smtp && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const mail = await sendParentEmailViaSmtp({
+      config: smtp,
+      to: email,
+      subject: `Set up GoCardless · ${participant}`,
+      bodyText:
+        `Hi ${name},\n\n` +
+        `Thank you — we have confirmed your first bank payment for ${participant}.\n\n` +
+        `One more step: please set up GoCardless (Direct Debit) so we can collect the remaining monthly payments on the 1st of each month, same as other families.\n\n` +
+        (gcUrl
+          ? `Complete Step 3 here:\n${gcUrl}\n\n`
+          : "") +
+        `Or sign in to the Parent Portal (${portalUrl}) → Invoices → Set up Direct Payment.\n\n` +
+        `We cannot schedule future collections until GoCardless is completed.\n\n— clubSENsational`,
+    });
+    emailOk = mail.ok;
+    if (!mail.ok) console.warn("[finish-booking-gc-step3] email", mail.error);
+  }
+
+  const phone = normalizeParentPhoneE164(String(opts.parentPhone || ""));
+  if (phone) {
+    const wa = await sendParentMobileMessage(phone, bodyText, {
+      kind: "contact_update",
+    });
+    waResult = wa;
+    waOk = wa.ok;
+    if (!wa.ok) console.warn("[finish-booking-gc-step3] whatsapp", wa.error);
+  }
+
+  await logFinishBookingNotify(opts.admin, {
+    kind: "gocardless_step3",
+    parentName: name,
+    parentEmail: email || null,
+    parentPhone: phone,
+    participantName: participant,
+    subject: `Set up GoCardless · ${participant}`,
+    bodyText,
+    emailOk,
+    wa: waResult,
+  });
+
+  return { emailOk, waOk };
 }
 
 export async function issueParentPortalPinForCompletion(
@@ -811,22 +1281,41 @@ async function findFinishTokenForInvoice(
     .eq("invoice_share_id", invId)
     .order("created_at", { ascending: false })
     .limit(8);
-  if (error || !rows?.length) return null;
-  const open = rows.find((r) =>
-    [
-      "awaiting_payment",
-      "awaiting_office_payment",
-      "choices_saved",
-      "scope_saved",
-      "funding_saved",
-      "pending",
-      "la_office",
-    ].includes(String(r.status || "")),
+  if (!error && rows?.length) {
+    const open = rows.find((r) =>
+      [
+        "awaiting_payment",
+        "awaiting_gocardless",
+        "awaiting_office_payment",
+        "choices_saved",
+        "scope_saved",
+        "funding_saved",
+        "pending",
+        "la_office",
+      ].includes(String(r.status || "")),
+    );
+    if (open) return open as CompletionTokenRow;
+    const completed = rows.find((r) => String(r.status) === "completed");
+    if (completed) return completed as CompletionTokenRow;
+    return rows[0] as CompletionTokenRow;
+  }
+
+  // Fallback: invoice notes stamp the finish token id when share_id was cleared by a resend.
+  const { data: inv } = await admin
+    .from("portal_parent_invoice_share")
+    .select("notes")
+    .eq("id", invId)
+    .maybeSingle();
+  const noteTok = String(inv?.notes || "").match(
+    /\btoken\s+([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i,
   );
-  if (open) return open as CompletionTokenRow;
-  const completed = rows.find((r) => String(r.status) === "completed");
-  if (completed) return completed as CompletionTokenRow;
-  return rows[0] as CompletionTokenRow;
+  if (!noteTok?.[1]) return null;
+  const { data: byNote } = await admin
+    .from("portal_booking_completion_tokens")
+    .select("*")
+    .eq("id", noteTok[1])
+    .maybeSingle();
+  return (byNote as CompletionTokenRow) || null;
 }
 
 function parseClockToSqlTime(raw: string): string | null {
@@ -864,6 +1353,60 @@ function timeLabelToSqlStartEnd(timeLabel: string): { start: string; end: string
   return { start, end };
 }
 
+/** Sheet-style afternoon token (17:00 → "5", 17:30 → "5.30"). */
+function sqlTimeToSheetTok(sqlTime: string): string {
+  const h = Number(String(sqlTime || "").slice(0, 2));
+  const m = Number(String(sqlTime || "").slice(3, 5));
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return "";
+  let hh = h;
+  if (hh >= 13 && hh <= 23) hh -= 12;
+  if (m === 0) return String(hh);
+  if (m === 30) return `${hh}.30`;
+  return `${hh}.${String(m).padStart(2, "0")}`;
+}
+
+/**
+ * Aquatic finish-booking / Schedule truth: always 30' bands.
+ * A 60' (or longer) place becomes N half-hour OV anchors so one half can cancel/reoffer.
+ */
+function aquaticSqlHalfHourBands(
+  startSql: string,
+  endSql: string,
+): Array<{ start: string; end: string; label: string }> {
+  const sm = Number(startSql.slice(0, 2)) * 60 + Number(startSql.slice(3, 5));
+  const em = Number(endSql.slice(0, 2)) * 60 + Number(endSql.slice(3, 5));
+  if (!Number.isFinite(sm) || !Number.isFinite(em) || em <= sm) {
+    return [{ start: startSql, end: endSql, label: `${sqlTimeToSheetTok(startSql)} to ${sqlTimeToSheetTok(endSql)}` }];
+  }
+  if (em - sm <= 30) {
+    return [{
+      start: startSql,
+      end: endSql,
+      label: `${sqlTimeToSheetTok(startSql)} to ${sqlTimeToSheetTok(endSql)}`,
+    }];
+  }
+  const out: Array<{ start: string; end: string; label: string }> = [];
+  for (let t = sm; t < em; t += 30) {
+    const te = Math.min(t + 30, em);
+    if (te <= t) break;
+    const s = `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}:00`;
+    const e = `${String(Math.floor(te / 60) % 24).padStart(2, "0")}:${String(te % 60).padStart(2, "0")}:00`;
+    out.push({ start: s, end: e, label: `${sqlTimeToSheetTok(s)} to ${sqlTimeToSheetTok(e)}` });
+  }
+  return out.length
+    ? out
+    : [{ start: startSql, end: endSql, label: `${sqlTimeToSheetTok(startSql)} to ${sqlTimeToSheetTok(endSql)}` }];
+}
+
+function reservationIsAquatic(reservation: Record<string, unknown>): boolean {
+  return inferServiceTypeLabel({
+    serviceName: clean(reservation.service_name, 120),
+    timeLabel: clean(reservation.time_label, 80),
+    activity: clean(reservation.activity, 80),
+    venue: clean(reservation.venue, 80),
+  }) === "Aquatic Activity";
+}
+
 async function upsertServiceLinesForPaidBooking(
   admin: SupabaseClient,
   opts: {
@@ -894,24 +1437,59 @@ async function upsertServiceLinesForPaidBooking(
   const instructor = preferredInstructorForReservation(reservation);
   const child = clean(opts.participantName, 120) || "Participant";
   const clientKey = clientKeyFromName(child);
-  const session = {
-    day,
-    service: serviceName,
-    timeSlot,
-    durationMin,
-    venue,
-    instructor: instructor || "",
-    area: /climb/i.test(serviceName) || /westway/i.test(venue) ? "Wall" : "Teaching Pool",
-    weeks: opts.isTrial ? 1 : undefined,
-    isTrial: opts.isTrial || undefined,
-  };
+  const isAquatic = serviceName === "Aquatic Activity";
+  const times = timeLabelToSqlStartEnd(timeSlot);
+  /* Aquatic: store one service-line session per 30' half so Schedule capacity stays cancellable. */
+  const halfLabels =
+    isAquatic && times
+      ? aquaticSqlHalfHourBands(times.start, times.end).map((b) => b.label)
+      : [timeSlot];
+  const sessionKey = (s: Record<string, unknown>) =>
+    [
+      clean(s.day, 40).toLowerCase(),
+      clean(s.timeSlot, 80).toLowerCase().replace(/[–—]/g, "-").replace(/\s+/g, ""),
+      clean(s.venue, 80).toLowerCase(),
+      clean(s.service, 120).toLowerCase(),
+    ].join("|");
+  const { data: existingLine } = await admin
+    .from("portal_participant_service_lines")
+    .select("sessions")
+    .eq("client_key", clientKey)
+    .maybeSingle();
+  const prevSessions = Array.isArray(existingLine?.sessions)
+    ? (existingLine.sessions as Record<string, unknown>[])
+    : [];
+  const nextKeys = new Set(
+    halfLabels.map((lab) =>
+      sessionKey({
+        day,
+        timeSlot: lab,
+        venue,
+        service: serviceName,
+      }),
+    ),
+  );
+  const merged = prevSessions.filter((s) => !nextKeys.has(sessionKey(s || {})));
+  for (const lab of halfLabels) {
+    merged.push({
+      day,
+      service: serviceName,
+      timeSlot: lab,
+      durationMin: isAquatic ? 30 : durationMin,
+      venue,
+      instructor: instructor || "",
+      area: /climb/i.test(serviceName) || /westway/i.test(venue) ? "Wall" : "Teaching Pool",
+      weeks: opts.isTrial ? 1 : undefined,
+      isTrial: opts.isTrial || undefined,
+    });
+  }
   const { error } = await admin.from("portal_participant_service_lines").upsert(
     {
       client_key: clientKey,
       client_name: child,
       client_name_norm: child.toLowerCase(),
-      sessions: [session],
-      services_count: 1,
+      sessions: merged,
+      services_count: merged.length,
       source: opts.isTrial
         ? `booking_finish_trial_${clean(opts.contactId, 40) || "x"}`
         : `booking_finish_${clean(opts.contactId, 40) || "x"}`,
@@ -928,11 +1506,13 @@ async function upsertServiceLinesForPaidBooking(
   return "service_line_ok";
 }
 
-async function ensureTrialScheduleOverride(
+async function ensurePaidBookingScheduleOverride(
   admin: SupabaseClient,
   reservation: Record<string, unknown>,
   participantName: string,
+  opts?: { isTrial?: boolean },
 ): Promise<string> {
+  const isTrial = !!opts?.isTrial;
   const iso = clean(reservation.date_iso, 12).slice(0, 10);
   const venue = clean(reservation.venue, 80) || "Venue";
   const timeLabel = clean(reservation.time_label, 80);
@@ -940,69 +1520,99 @@ async function ensureTrialScheduleOverride(
   if (!iso || !times) return "override_skip_time";
 
   let instructor = preferredInstructorForReservation(reservation);
-  if (!instructor) instructor = /westway|climb/i.test(`${venue} ${clean(reservation.service_name, 80)}`)
-    ? "Carlos"
-    : "";
+  if (!instructor) {
+    instructor = /westway|climb/i.test(`${venue} ${clean(reservation.service_name, 80)}`)
+      ? "Carlos"
+      : "";
+  }
   if (!instructor) return "override_skip_staff";
 
   const staffId = instructor.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-  const client = clean(participantName, 80) || "Trial";
+  let client = clean(participantName, 80) || (isTrial ? "Trial" : "Participant");
   const clientSlug = clientKeyFromName(client).replace(/-/g, "_");
+  /* Prefer short roster label when finish doc used full legal name (Ayman El Bakry → Ayman). */
+  if (clientSlug === "ayman") client = "Ayman";
   const actorId = await resolvePortalInvoiceOwnerUserId(admin);
   if (!actorId) return "override_skip_actor";
 
-  const { data: existing } = await admin
-    .from("schedule_overrides")
-    .select("id, payload")
-    .eq("session_date", iso)
-    .eq("status", "active")
-    .ilike("anchor_staff_id", staffId)
-    .eq("anchor_start", times.start)
-    .eq("override_type", "client_replace_in_slot")
-    .limit(8);
-  const already = (existing || []).some((row) => {
-    const p = row.payload && typeof row.payload === "object"
-      ? (row.payload as Record<string, unknown>)
-      : {};
-    return p.is_trial === true || String(p.booking_kind || "").toLowerCase() === "trial";
-  });
-  if (already) return "override_exists";
+  const isAquatic = reservationIsAquatic(reservation);
+  const bands = isAquatic
+    ? aquaticSqlHalfHourBands(times.start, times.end)
+    : [{ start: times.start, end: times.end, label: timeLabel }];
 
-  const { error } = await admin.from("schedule_overrides").insert({
-    session_date: iso,
-    anchor_staff_id: staffId,
-    anchor_start: times.start,
-    anchor_end: times.end,
-    anchor_venue: venue,
-    anchor_client_id: "available",
-    anchor_time_slot_label: timeLabel,
-    override_type: "client_replace_in_slot",
-    payload: {
-      booking_kind: "trial",
-      is_trial: true,
-      session_kind: "trial",
-      replacement_client_id: clientSlug,
-      replacement_client_name: `${client} (Trial)`,
-      to_client_id: clientSlug,
-      to_client_name: `${client} (Trial)`,
-      finish_booking: true,
-    },
-    reason: `Finish booking trial · ${client} · ${venue} · ${timeLabel}`,
-    status: "active",
-    spreadsheet_revision: "finish_booking_auto",
-    created_by: actorId,
-    updated_by: actorId,
-  });
-  if (error) {
-    console.warn("[syncOpsAfterFinishBookingPaid] schedule_override", error.message);
-    return "override_failed:" + error.message.slice(0, 80);
+  let inserted = 0;
+  let existed = 0;
+  for (const band of bands) {
+    const { data: existing } = await admin
+      .from("schedule_overrides")
+      .select("id, payload")
+      .eq("session_date", iso)
+      .eq("status", "active")
+      .ilike("anchor_staff_id", staffId)
+      .eq("anchor_start", band.start)
+      .eq("override_type", "client_replace_in_slot")
+      .limit(8);
+    const already = (existing || []).some((row) => {
+      const p = row.payload && typeof row.payload === "object"
+        ? (row.payload as Record<string, unknown>)
+        : {};
+      const name = String(p.replacement_client_name || p.to_client_name || "").toLowerCase();
+      if (name && name.indexOf(client.toLowerCase()) >= 0) return true;
+      if (isTrial) {
+        return p.is_trial === true || String(p.booking_kind || "").toLowerCase() === "trial";
+      }
+      return String(p.finish_booking || "") === "true" &&
+        String(p.replacement_client_id || p.to_client_id || "") === clientSlug;
+    });
+    if (already) {
+      existed++;
+      continue;
+    }
+
+    const { error } = await admin.from("schedule_overrides").insert({
+      session_date: iso,
+      anchor_staff_id: staffId,
+      anchor_start: band.start,
+      anchor_end: band.end,
+      anchor_venue: venue,
+      anchor_client_id: "available",
+      anchor_time_slot_label: band.label,
+      override_type: "client_replace_in_slot",
+      payload: {
+        booking_kind: isTrial ? "trial" : "term",
+        is_trial: isTrial,
+        session_kind: isTrial ? "trial" : "term",
+        replacement_client_id: clientSlug,
+        replacement_client_name: isTrial ? `${client} (Trial)` : client,
+        to_client_id: clientSlug,
+        to_client_name: isTrial ? `${client} (Trial)` : client,
+        finish_booking: true,
+        new_client: !isTrial,
+        term_new_participant: !isTrial,
+        aquatic_half_band: isAquatic && bands.length > 1,
+      },
+      reason: `Finish booking ${isTrial ? "trial" : "term"} · ${client} · ${venue} · ${band.label}`,
+      status: "active",
+      spreadsheet_revision: "finish_booking_auto",
+      created_by: actorId,
+      updated_by: actorId,
+    });
+    if (error) {
+      console.warn("[syncOpsAfterFinishBookingPaid] schedule_override", error.message);
+      return "override_failed:" + error.message.slice(0, 80);
+    }
+    inserted++;
   }
+
+  if (inserted === 0 && existed > 0) return "override_exists";
+  if (inserted > 0) return bands.length > 1 ? `override_ok_halves:${inserted}` : "override_ok";
   return "override_ok";
 }
 
 /**
  * After Stripe / bank Mark paid / Tide: lock seat, fold MADRE+roster,
- * service lines, trial override for staff dashboard / Scheduling & Cover.
+ * service lines, schedule override for staff dashboard / Scheduling & Cover.
+ * Stamps ops_synced only when critical steps succeed.
  */
 export async function syncOpsAfterFinishBookingPaid(
   admin: SupabaseClient,
@@ -1040,36 +1650,108 @@ export async function syncOpsAfterFinishBookingPaid(
     reservation = data;
   }
 
-  if (reservation?.id) {
-    const prevNotes = String(reservation.notes || "").trim();
-    const noteTag = isTrial
-      ? `trial_paid_${paidVia}|booking_kind=trial|ops_synced`
-      : `booking_paid_${paidVia}|ops_synced`;
-    await admin
-      .from("portal_booking_slot_reservations")
-      .update({
-        status: "validated",
-        validated_at: now,
-        hold_expires_at: holdFar,
-        released_at: null,
-        notes: [prevNotes.replace(/\|?pay_hold_30m/gi, ""), noteTag]
-          .filter(Boolean)
-          .join("|")
-          .slice(0, 500),
-        updated_at: now,
-      })
-      .eq("id", String(reservation.id));
-    notes.push("seat_validated");
-
-    try {
-      const fold = await foldValidatedReservationOntoMadre(admin, String(reservation.id));
-      notes.push(fold.ok ? `fold:${fold.note}` : `fold_fail:${fold.note}`);
-    } catch (e) {
-      notes.push("fold_error");
-      console.warn("[syncOpsAfterFinishBookingPaid] fold", e);
-    }
-  } else {
+  if (!reservation?.id) {
     notes.push("no_reservation");
+    return { ok: false, notes };
+  }
+
+  let instructor =
+    preferredInstructorForReservation(reservation) ||
+    extractInstructorFromNotes(reservation.notes);
+  if (!instructor) {
+    try {
+      instructor =
+        (await pickOpenInstructorForBand(admin, {
+          slotId: clean(reservation.slot_id, 160),
+          venue: clean(reservation.venue, 80),
+          day: clean(reservation.day_label, 20),
+          timeLabel: clean(reservation.time_label, 80),
+          excludeReservationId: String(reservation.id),
+        })) || "";
+    } catch (e) {
+      console.warn("[syncOpsAfterFinishBookingPaid] pick instructor", e);
+    }
+  }
+  if (!instructor) {
+    notes.push("missing_instructor");
+    return { ok: false, notes };
+  }
+
+  const prevNotes = String(reservation.notes || "").trim();
+  const payTag = isTrial
+    ? `trial_paid_${paidVia}`
+    : `booking_paid_${paidVia}`;
+  const notesBeforeSync = mergeReservationNotes(prevNotes, [
+    `instructor=${instructor}`,
+    payTag,
+    isTrial ? "booking_kind=trial" : null,
+  ]);
+  await admin
+    .from("portal_booking_slot_reservations")
+    .update({
+      status: "validated",
+      validated_at: now,
+      hold_expires_at: holdFar,
+      released_at: null,
+      notes: notesBeforeSync,
+      updated_at: now,
+    })
+    .eq("id", String(reservation.id));
+  notes.push("seat_validated");
+  reservation.notes = notesBeforeSync;
+
+  /* Linked half-hours for the same finish doc (e.g. 5–5.30 + 5.30–6 under a 60' place). */
+  if (token.document_id) {
+    const { data: siblings } = await admin
+      .from("portal_booking_slot_reservations")
+      .select(
+        "id, notes, participant_name, date_iso, day_label, time_label, venue, service_name, activity, status",
+      )
+      .eq("document_id", token.document_id)
+      .neq("id", String(reservation.id))
+      .in("status", ["pending", "awaiting_payment", "validated", "confirmed", "paid", "held"]);
+    for (const sib of siblings || []) {
+      const sibStatus = clean(sib.status, 40).toLowerCase();
+      if (["pending", "awaiting_payment", "held"].includes(sibStatus)) {
+        const sibNotes = mergeReservationNotes(String(sib.notes || ""), [
+          `instructor=${instructor}`,
+          payTag,
+          "linked_hour_validated",
+          isTrial ? "booking_kind=trial" : "booking_kind=term",
+        ]);
+        await admin
+          .from("portal_booking_slot_reservations")
+          .update({
+            status: "validated",
+            validated_at: now,
+            hold_expires_at: holdFar,
+            released_at: null,
+            notes: sibNotes,
+            updated_at: now,
+          })
+          .eq("id", String(sib.id));
+        notes.push("linked_seat_validated:" + String(sib.id).slice(0, 8));
+        (sib as Record<string, unknown>).notes = sibNotes;
+      }
+      try {
+        const foldSib = await foldValidatedReservationOntoMadre(admin, String(sib.id));
+        notes.push(
+          foldSib.ok
+            ? `fold_linked:${foldSib.note}`
+            : `fold_linked_fail:${foldSib.note}`,
+        );
+      } catch (_e) {
+        notes.push("fold_linked_error");
+      }
+    }
+  }
+
+  try {
+    const fold = await foldValidatedReservationOntoMadre(admin, String(reservation.id));
+    notes.push(fold.ok ? `fold:${fold.note}` : `fold_fail:${fold.note}`);
+  } catch (e) {
+    notes.push("fold_error");
+    console.warn("[syncOpsAfterFinishBookingPaid] fold", e);
   }
 
   let participantName = "";
@@ -1093,22 +1775,80 @@ export async function syncOpsAfterFinishBookingPaid(
     participantName = clean(c?.child_display, 120);
   }
 
-  notes.push(
-    await upsertServiceLinesForPaidBooking(admin, {
-      contactId: token.contact_id,
-      participantName: participantName || "Participant",
-      reservation,
-      isTrial,
-    }),
-  );
+  const svcNote = await upsertServiceLinesForPaidBooking(admin, {
+    contactId: token.contact_id,
+    participantName: participantName || "Participant",
+    reservation,
+    isTrial,
+  });
+  notes.push(svcNote);
 
-  if (isTrial && reservation) {
-    notes.push(
-      await ensureTrialScheduleOverride(admin, reservation, participantName || "Participant"),
+  const overrideNote = await ensurePaidBookingScheduleOverride(
+    admin,
+    reservation,
+    participantName || "Participant",
+    { isTrial },
+  );
+  notes.push(overrideNote);
+
+  /* Linked aquatic halves: one OV per sibling reservation time (not a single hour OV). */
+  if (token.document_id) {
+    const { data: linkedForOv } = await admin
+      .from("portal_booking_slot_reservations")
+      .select(
+        "id, date_iso, day_label, time_label, venue, service_name, activity, notes, participant_name",
+      )
+      .eq("document_id", token.document_id)
+      .neq("id", String(reservation.id))
+      .in("status", ["validated", "confirmed", "paid"]);
+    for (const sib of linkedForOv || []) {
+      const sibOv = await ensurePaidBookingScheduleOverride(
+        admin,
+        sib as Record<string, unknown>,
+        participantName || clean(sib.participant_name, 120) || "Participant",
+        { isTrial },
+      );
+      notes.push("linked_" + sibOv);
+    }
+  }
+
+  if (isTrial) {
+    try {
+      notes.push(await ensurePostTrialOfferAfterPaid(admin, reservation));
+    } catch (e) {
+      notes.push("post_trial_offer_error");
+      console.warn("[syncOpsAfterFinishBookingPaid] post_trial", e);
+    }
+  }
+
+  const foldOk = notes.some((n) => n.startsWith("fold:") && !n.startsWith("fold_fail"));
+  const svcOk = svcNote === "service_line_ok";
+  const overrideOk =
+    overrideNote === "override_ok" ||
+    overrideNote === "override_exists" ||
+    overrideNote === "override_skip_time" ||
+    /^override_ok_halves:\d+$/.test(overrideNote);
+  const criticalOk = foldOk && svcOk && overrideOk;
+
+  if (criticalOk) {
+    await admin
+      .from("portal_booking_slot_reservations")
+      .update({
+        notes: mergeReservationNotes(notesBeforeSync, ["ops_synced"]),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", String(reservation.id));
+    notes.push("ops_synced");
+  } else {
+    notes.push("ops_sync_incomplete");
+    console.warn(
+      "[syncOpsAfterFinishBookingPaid] incomplete",
+      String(reservation.id),
+      notes.join(","),
     );
   }
 
-  return { ok: true, notes };
+  return { ok: criticalOk, notes };
 }
 
 /** After Stripe pays a trial invoice, mark the slot validated + sync ops. */
@@ -1130,6 +1870,8 @@ export async function createFinishBookingStripeCheckout(
     participantName: string;
     amountGbp: number;
     rawFinishToken: string;
+    /** Product line label; defaults to finish-booking payment. */
+    productLabel?: string | null;
   },
 ): Promise<
   | { ok: true; checkout_url: string; session_id: string; charge_gbp: number; fee_gbp: number }
@@ -1153,9 +1895,10 @@ export async function createFinishBookingStripeCheckout(
 
   const invNo = clean(opts.invoiceNumber, 40);
   const displayName = clean(opts.participantName, 80) || "participant";
+  const baseLabel = clean(opts.productLabel, 80) || "Finish booking";
   const productName = invNo
-    ? `Trial session · Invoice ${invNo} · ${displayName}`
-    : `Trial session · ${displayName}`;
+    ? `${baseLabel} · Invoice ${invNo} · ${displayName}`
+    : `${baseLabel} · ${displayName}`;
   const productNameWithFee =
     gross.fee_pence > 0
       ? `${productName} (incl. £${gross.fee_gbp.toFixed(2)} card fee)`
@@ -1198,7 +1941,7 @@ export async function createFinishBookingStripeCheckout(
     .from("portal_parent_invoice_share")
     .update({
       stripe_checkout_session_id: created.id,
-      payment_method_hint: "stripe",
+      payment_method_hint: "payment_link",
       updated_at: new Date().toISOString(),
     })
     .eq("id", opts.invoiceShareId);
@@ -1232,7 +1975,9 @@ async function completeFinishBookingWithPin(
 
   const { data: inv } = await admin
     .from("portal_parent_invoice_share")
-    .select("id, payment_status, amount_paid_gbp, payment_schedule, contact_id")
+    .select(
+      "id, payment_status, amount_paid_gbp, payment_schedule, contact_id, payment_method_hint, gocardless_url",
+    )
     .eq("id", invId)
     .maybeSingle();
   if (!inv) return { completed: false, reason: "invoice_missing" };
@@ -1258,6 +2003,86 @@ async function completeFinishBookingWithPin(
   const parentPersonId =
     clean(token.parent_person_id, 80) || clean(contact?.parent_person_id, 80);
   const contactId = clean(inv.contact_id, 40) || clean(token.contact_id, 40);
+
+  if (finishBookingTokenIsTrial(token) && !finishTrialGetsPortalPin(token, contact)) {
+    const now = new Date().toISOString();
+    if (parentPersonId) {
+      const familyIds = await familyPersonIdsForParent(admin, parentPersonId);
+      const { data: existingCreds } = await admin
+        .from("portal_parent_portal_credentials")
+        .select("parent_person_id, pin_hash")
+        .in("parent_person_id", familyIds.length ? familyIds : [parentPersonId]);
+      const hasPin = (existingCreds || []).some((c) =>
+        String(c.pin_hash || "").trim().length > 0
+      );
+      if (hasPin) {
+        await activateContactInClassAfterPaidBooking(admin, contactId);
+      }
+    }
+    const sync = await syncOpsAfterFinishBookingPaid(admin, token as CompletionTokenRow, {
+      paidVia: "paid",
+    });
+    let reservation: Record<string, unknown> | null = null;
+    const reservationId = clean(token.reservation_id, 80);
+    if (reservationId) {
+      const { data } = await admin
+        .from("portal_booking_slot_reservations")
+        .select("*")
+        .eq("id", reservationId)
+        .maybeSingle();
+      reservation = data;
+    }
+    if (!reservation?.id && token.document_id) {
+      const { data } = await admin
+        .from("portal_booking_slot_reservations")
+        .select("*")
+        .eq("document_id", token.document_id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      reservation = data;
+    }
+    const instructor =
+      (reservation && preferredInstructorForReservation(reservation)) ||
+      (reservation ? extractInstructorFromNotes(reservation.notes) : "") ||
+      "";
+    try {
+      await notifyParentTrialBookingCompleted({
+        admin,
+        parentName: contact?.parent_display || null,
+        parentEmail: contact?.email || null,
+        parentPhone: contact?.mobile || null,
+        participantName: contact?.child_display || "Participant",
+        reservation,
+        instructorName: instructor || null,
+      });
+    } catch (e) {
+      console.warn(
+        "[finish-booking] trial completed notify",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
+    await admin
+      .from("portal_booking_completion_tokens")
+      .update({
+        status: "completed",
+        consumed_at: now,
+        updated_at: now,
+      })
+      .eq("id", token.id);
+    if (token.lead_id) {
+      await admin
+        .from("portal_booking_leads")
+        .update({
+          booking_status: "booking_completed",
+          last_activity_at: now,
+          updated_at: now,
+        })
+        .eq("id", token.lead_id);
+    }
+    console.log("[finish-booking] trial no portal", sync.notes.join("|"));
+    return { completed: true, pinSent: false, reason: "trial_no_portal" };
+  }
 
   // Office resend / mint can leave contact fields null — backfill before PIN.
   if (
@@ -1321,6 +2146,42 @@ async function completeFinishBookingWithPin(
     return { completed: false, reason: "parent_person_missing" };
   }
 
+  // New family + bank-first GoCardless: seat confirmed; PIN only after mandate (webhook).
+  if (await finishBookingNeedsGocardlessMandateBeforePin(admin, token, inv)) {
+    const nowDefer = new Date().toISOString();
+    await activateContactInClassAfterPaidBooking(admin, contactId);
+    const sync = await syncOpsAfterFinishBookingPaid(admin, token as CompletionTokenRow, {
+      paidVia: "paid",
+    });
+    await admin
+      .from("portal_booking_completion_tokens")
+      .update({
+        status: "awaiting_gocardless",
+        updated_at: nowDefer,
+      })
+      .eq("id", token.id);
+    try {
+      await notifyParentCompleteGocardlessStep3({
+        admin,
+        parentName: contact?.parent_display || null,
+        parentEmail: contact?.email || null,
+        parentPhone: contact?.mobile || null,
+        participantName: contact?.child_display || "Participant",
+        gocardlessUrl: clean(inv.gocardless_url, 500) || null,
+      });
+    } catch (e) {
+      console.warn(
+        "[finish-booking] gc step3 notify",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
+    console.log(
+      "[finish-booking] deferred pin for GC mandate",
+      sync.notes.join("|"),
+    );
+    return { completed: false, pinSent: false, reason: "awaiting_gocardless_mandate" };
+  }
+
   const result = await issueParentPortalPinForCompletion(admin, token as CompletionTokenRow, {
     parentName: contact?.parent_display || null,
     parentEmail: contact?.email || null,
@@ -1371,6 +2232,7 @@ export async function tryCompleteBookingAfterGocardlessMandateSetup(
       const isGc = plan === "gocardless_monthly" || plan === "gocardless";
       const open = [
         "awaiting_payment",
+        "awaiting_gocardless",
         "awaiting_office_payment",
         "choices_saved",
         "scope_saved",
@@ -1392,7 +2254,7 @@ export async function tryCompleteBookingAfterGocardlessMandateSetup(
   return { ...result, invoice_id: invId };
 }
 
-/** Mark family active in Parent Portal after Stripe/bank confirm (trial or term). */
+/** Mark family active in Parent Portal after term first payment (or existing PIN family). */
 async function activateContactInClassAfterPaidBooking(
   admin: SupabaseClient,
   contactId: string | null,
@@ -1410,10 +2272,21 @@ async function activateContactInClassAfterPaidBooking(
     .eq("contact_id", cid);
 }
 
-export function parseFundingCode(raw: unknown): "privately_funded" | "la_direct_payments" | null {
+export function parseFundingCode(
+  raw: unknown,
+): "privately_funded" | "la_direct_payments" | "sw_nhs_referral" | null {
   const s = clean(raw, 40).toLowerCase();
   if (s === "privately_funded" || s === "private" || s === "privately") {
     return "privately_funded";
+  }
+  if (
+    s === "sw_nhs_referral" ||
+    s === "social_worker_referral" ||
+    s === "nhs_referral" ||
+    s === "sw_nhs" ||
+    s === "referred_sw_nhs"
+  ) {
+    return "sw_nhs_referral";
   }
   if (
     s === "la_direct_payments" ||
@@ -1425,6 +2298,53 @@ export function parseFundingCode(raw: unknown): "privately_funded" | "la_direct_
     return "la_direct_payments";
   }
   return null;
+}
+
+/** Split legacy "Name email@x" social_worker_contact into name + email. */
+export function splitSocialWorkerContact(raw: unknown): { name: string; email: string } {
+  const s = clean(raw, 400);
+  if (!s) return { name: "", email: "" };
+  const emailMatch = s.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  const email = emailMatch ? emailMatch[0] : "";
+  let name = s;
+  if (email) {
+    name = s.replace(email, "").replace(/[,;|/·]+/g, " ").replace(/\s+/g, " ").trim();
+  }
+  return { name: clean(name, 200), email: clean(email, 200).toLowerCase() };
+}
+
+export function registrationSupportFromPayload(
+  payload: Record<string, unknown> | null | undefined,
+): {
+  ehcp: string | null;
+  ehcp_details: string | null;
+  ehcp_storage_path: string | null;
+  social_worker: string | null;
+  social_worker_name: string | null;
+  social_worker_email: string | null;
+  social_worker_contact: string | null;
+  support_regulated: string | null;
+  support_dysregulated: string | null;
+} {
+  const p = payload && typeof payload === "object" ? payload : {};
+  const split = splitSocialWorkerContact(p.social_worker_contact);
+  const name = clean(p.social_worker_name, 200) || split.name || null;
+  const email = clean(p.social_worker_email, 200).toLowerCase() || split.email || null;
+  const contact =
+    clean(p.social_worker_contact, 400) ||
+    [name, email].filter(Boolean).join(" · ") ||
+    null;
+  return {
+    ehcp: clean(p.ehcp, 40) || null,
+    ehcp_details: clean(p.ehcp_details, 800) || null,
+    ehcp_storage_path: clean(p.ehcp_storage_path, 400) || null,
+    social_worker: clean(p.social_worker, 40) || null,
+    social_worker_name: name,
+    social_worker_email: email,
+    social_worker_contact: contact,
+    support_regulated: clean(p.support_regulated, 40) || null,
+    support_dysregulated: clean(p.support_dysregulated, 200) || null,
+  };
 }
 
 export {

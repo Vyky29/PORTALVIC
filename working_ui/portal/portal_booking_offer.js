@@ -78,11 +78,15 @@
 
   /**
    * Fetch live offer. Resolves with the API object (same helpers).
+   * @param {object} [opts]
+   * @param {boolean} [opts.office] — include staff + bookedNames (local/admin check)
    * @returns {Promise<object>}
    */
-  function load() {
+  function load(opts) {
     var key = anonKey();
+    var office = !!(opts && opts.office);
     var url = supabaseUrl() + "/functions/v1/portal-booking-offer";
+    if (office) url += "?office=1";
     if (!key) {
       state.source = "error";
       state.error = "missing_anon_key";
@@ -117,11 +121,22 @@
     if (slot && slot.bandLeft != null) {
       return Math.max(0, Number(slot.bandLeft));
     }
+    if (slot && slot.openSeats != null) {
+      return Math.max(0, Number(slot.openSeats) || 0);
+    }
     return Math.max(0, Number(slot.capacity || 0) - Number(slot.taken || 0));
   }
 
-  function isFull(slot) {
-    return seatsLeft(slot) <= 0;
+  /** Instructor seats this booking needs (2to1 = two places on the same band). */
+  function seatsNeededForSupport(supportRegulated) {
+    var s = String(supportRegulated || "").toLowerCase().replace(/\s+/g, "");
+    if (s === "2to1" || s === "2:1" || s.indexOf("2to1") >= 0) return 2;
+    return 1;
+  }
+
+  function isFull(slot, minSeats) {
+    var need = Math.max(1, Number(minSeats) || 1);
+    return seatsLeft(slot) < need;
   }
 
   function serviceById(id) {
@@ -318,61 +333,30 @@
     );
   }
 
-  /** Aquatic weekly rows → 30-minute bands with summed places (overlapping 30'/60' sessions). */
+  /**
+   * Aquatic Places: keep MADRE native bands (30' and 60').
+   * Expanding a 60' seat into two half-hour rows and summing capacity invented
+   * plazas (e.g. Acton 5.30–6.30 counted twice as 5.30–6 + 6–6.30).
+   * Parallel instructors on the exact same start–end stay as separate MADRE
+   * lines (already merged server-side when timeLabel matches).
+   */
   function aggregateSlotsToHalfHourBands(slots) {
     if (!shouldAggregateDaySlots(slots)) return slots;
-    var bands = Object.create(null);
-    (slots || []).forEach(function (slot) {
-      var range = slotRangeMinutes(slot);
-      if (!range) return;
-      var bandStart = Math.floor(range.start / 30) * 30;
-      for (var b = bandStart; b < range.end; b += 30) {
-        var bandEnd = b + 30;
-        if (bandEnd > range.end) continue;
-        var key = pad2(Math.floor(b / 60)) + ":" + pad2(b % 60);
-        if (!bands[key]) {
-          bands[key] = { start: b, end: bandEnd, parts: [] };
-        }
-        var seen = bands[key].parts.some(function (p) {
-          return p.id === slot.id;
-        });
-        if (!seen) bands[key].parts.push(slot);
-      }
-    });
-    return Object.keys(bands)
-      .sort()
-      .map(function (key) {
-        var band = bands[key];
-        var ref = band.parts[0];
-        var left = band.parts.reduce(function (n, p) {
-          return n + seatsLeft(p);
-        }, 0);
-        var capacity = band.parts.reduce(function (n, p) {
-          return n + (Number(p.capacity) || 0);
-        }, 0);
-        var taken = band.parts.reduce(function (n, p) {
-          return n + (Number(p.taken) || 0);
-        }, 0);
-        var openIds = band.parts
-          .filter(function (p) {
-            return !isFull(p);
-          })
-          .map(function (p) {
-            return p.id;
-          });
-        return {
-          id: openIds[0] || ref.id,
-          serviceId: ref.serviceId,
-          venue: ref.venue,
-          day: ref.day,
-          sortTime: key,
-          timeLabel: formatClubHalfHour(band.start) + " – " + formatClubHalfHour(band.end),
-          capacity: capacity,
-          taken: taken,
-          activityName: ref.activityName,
-          bandPickIds: openIds.join(","),
-          bandLeft: left,
-        };
+    return (slots || [])
+      .slice()
+      .sort(function (a, b) {
+        var t = String(a.sortTime || "").localeCompare(String(b.sortTime || ""));
+        if (t) return t;
+        var lenA = 0;
+        var lenB = 0;
+        try {
+          var ra = slotRangeMinutes(a);
+          var rb = slotRangeMinutes(b);
+          lenA = ra ? ra.end - ra.start : 0;
+          lenB = rb ? rb.end - rb.start : 0;
+        } catch (_e) {}
+        if (lenA !== lenB) return lenA - lenB;
+        return String(a.timeLabel || "").localeCompare(String(b.timeLabel || ""));
       });
   }
 
@@ -508,12 +492,14 @@
 
   function filterSlots(filters) {
     filters = filters || {};
+    var minSeats = Math.max(1, Number(filters.minSeats) || 1);
     return state.MOCK_SLOTS.filter(function (slot) {
       if (filters.serviceId && slot.serviceId !== filters.serviceId) return false;
       if (filters.venue && slot.venue !== filters.venue) return false;
       if (filters.day && slot.day !== filters.day) return false;
       if (filters.timeLabel && slotStartKey(slot) !== filters.timeLabel) return false;
-      if (filters.hideFull && isFull(slot)) return false;
+      if (filters.hideFull && isFull(slot, minSeats)) return false;
+      if (filters.requireSeats && isFull(slot, minSeats)) return false;
       return true;
     }).sort(function (a, b) {
       var da = DAY_ORDER[a.day];
@@ -567,10 +553,12 @@
     venueLabel: venueLabel,
     blockById: blockById,
     seatsLeft: seatsLeft,
+    seatsNeededForSupport: seatsNeededForSupport,
     isFull: isFull,
     filterOptions: filterOptions,
     filterSlots: filterSlots,
     groupSlotsByVenueThenDay: groupSlotsByVenueThenDay,
+    aggregateSlotsToHalfHourBands: aggregateSlotsToHalfHourBands,
     groupIntensiveByBlock: groupIntensiveByBlock,
     termDatesForWeekday: termDatesForWeekday,
     remainingTermPrice: remainingTermPrice,

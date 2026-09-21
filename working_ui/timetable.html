@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="clubSENsational timetable 2026/27 - weekly sessions, Day Centre, and term dates." />
+  <link rel="canonical" href="https://www.clubsensational.org/timetable" />
+  <title>Term dates 2026/27 - clubSENsational</title>
+  <script src="/portal-static-bootstrap.js"></script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueDeep: #1f6a94;
+      --blueSoft: #eaf5fb;
+      --gold: #f4b740;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.12);
+      --white: #ffffff;
+      --ok: #157347;
+      --okSoft: #e8f7ef;
+      --radius: 18px;
+      --pad-x: clamp(16px, 3.5vw, 40px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+    html, body {
+      margin: 0;
+      min-height: 100dvh;
+      max-width: 100%;
+      overflow-x: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+      line-height: 1.45;
+    }
+    .page {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) var(--pad-x) max(48px, env(safe-area-inset-bottom));
+      min-width: 0;
+    }
+    .brand { text-align: center; margin: 0 0 22px; min-width: 0; }
+    .brand img {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 8px;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+      color: var(--ink);
+    }
+    .lede {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-weight: 600;
+      overflow-wrap: break-word;
+    }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px 16px 18px;
+      margin: 0 0 16px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .card--cal {
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    .cal-host {
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .cal-host .dc-cal {
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+    .card h2 {
+      margin: 0 0 8px;
+      color: var(--ink);
+      font-size: 1.15rem;
+    }
+    .card p, .card li {
+      margin: 0 0 8px;
+      overflow-wrap: break-word;
+    }
+    .note {
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    table.grid {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 0.88rem;
+    }
+    table.grid th, table.grid td {
+      border: 1px solid var(--line);
+      padding: 8px 7px;
+      text-align: left;
+      vertical-align: top;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    table.grid th {
+      background: var(--blueSoft);
+      color: var(--ink);
+      font-weight: 800;
+    }
+    .svc {
+      display: block;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .time { color: var(--text); }
+    .venue { color: var(--muted); font-weight: 600; }
+    .chip {
+      display: inline-block;
+      background: var(--okSoft);
+      color: var(--ok);
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin: 0 6px 6px 0;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0 0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 800;
+      text-decoration: none;
+      overflow-wrap: break-word;
+    }
+    .btn--ghost {
+      background: var(--white);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    .dc-list { margin: 0; padding-left: 1.15rem; }
+    .live-status { font-size: 0.85rem; font-weight: 700; color: var(--muted); margin: 0 0 10px; }
+    .venue-block { margin: 0 0 14px; min-width: 0; }
+    .venue-block h3 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+    .slot-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line);
+      min-width: 0;
+    }
+    .slot-line span { min-width: 0; overflow-wrap: break-word; }
+    #calHost { min-width: 0; overflow: auto; }
+    @media (max-width: 720px) {
+      .grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table.grid { min-width: 640px; table-layout: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="brand">
+      <img src="/portal/F-02-1.png" width="96" height="96" alt="clubSENsational" />
+      <h1>Term dates 2026/27</h1>
+    </header>
+
+    <section id="panel-dates" class="card card--cal">
+      <div id="calHost" class="cal-host">Loading calendars…</div>
+      <div class="actions">
+        <a class="btn" href="/bookingportal_preview.html">Back to services</a>
+        <a class="btn btn--ghost" href="/bookingportal.html">Booking Portal</a>
+      </div>
+    </section>
+  </main>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260904-bh"></script>
+  <script>
+    (function () {
+      var CAL_URL = "/portal/day-centre-calendar-2026-27-section.html?v=20260904-bh";
+      var host = document.getElementById("calHost");
+      fetch(CAL_URL)
+        .then(function (r) { return r.text(); })
+        .then(function (html) {
+          var doc = new DOMParser().parseFromString(html, "text/html");
+          var cal = doc.querySelector(".dc-cal");
+          host.innerHTML = "";
+          if (!cal) {
+            host.textContent = "Could not load term calendars. Email info@clubsensational.org.";
+            return;
+          }
+          var back = cal.querySelector(".dc-cal__back-wrap");
+          if (back) back.remove();
+          host.appendChild(document.importNode(cal, true));
+          if (typeof window.portalInitCalendar202627Tabs === "function") {
+            window.portalInitCalendar202627Tabs(host.querySelector(".dc-cal"));
+          }
+        })
+        .catch(function () {
+          host.textContent = "Could not load term calendars. Email info@clubsensational.org.";
+        });
+    })();
+  </script>
+</body>
+</html>

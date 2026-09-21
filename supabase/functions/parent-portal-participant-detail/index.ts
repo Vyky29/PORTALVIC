@@ -5,7 +5,7 @@
 // Sessions overview + parent-safe feedback + achievement photos for one linked child.
 //
 // Headers: x-parent-portal-session
-// Body: { contact_id: string, sections?: ("general"|"sessions"|"achievements"|"swim"|"weekly_notes")[] }
+// Body: { contact_id: string, sections?: ("general"|"sessions"|"achievements"|"swim"|"weekly_notes"|"team")[] }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
@@ -22,6 +22,10 @@ import {
   lookupClientsInfoSheetForParticipant,
   parseGeneralInfoSheet,
 } from "../_shared/participant_general_info.ts";
+import {
+  canonicalStaffMatchKey,
+  isBlankOrCoverNeededStaffId,
+} from "../_shared/portal_staff_match_key.ts";
 import {
   expandParticipantClientSlugs,
   isAcatGroupClientId,
@@ -55,6 +59,19 @@ import {
   buildParentReenrolUi,
   servicesDetailHasDayCentre,
 } from "../_shared/parent_reenrol_ui.ts";
+import { identityLooksLikeDayCentreWeeklyNotes } from "../_shared/parent_weekly_notes.ts";
+import {
+  standingInstructorNamesFromOccupants,
+  standingSessionsForParticipantFromOccupants,
+  type CapacityChainStandingSlot,
+} from "../_shared/portal_parent_standing_from_occupants.ts";
+import standingOccupants from "../_shared/portal_capacity_chain_standing_occupants.json" with {
+  type: "json",
+};
+
+function capacityChainStandingBySlotId(): Record<string, CapacityChainStandingSlot> | undefined {
+  return (standingOccupants as { bySlotId?: Record<string, CapacityChainStandingSlot> })?.bySlotId;
+}
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
@@ -67,7 +84,13 @@ const PARENT_ACH_QUERY_LIMIT = 500;
 const PARENT_FEEDBACK_LIMIT = 60;
 const TERM_LABEL = "Autumn Term 2026/27";
 
-type DetailSection = "general" | "sessions" | "achievements" | "swim" | "weekly_notes";
+type DetailSection =
+  | "general"
+  | "sessions"
+  | "achievements"
+  | "swim"
+  | "weekly_notes"
+  | "team";
 
 function parseSections(raw: unknown): Set<DetailSection> {
   const all = new Set<DetailSection>([
@@ -76,6 +99,7 @@ function parseSections(raw: unknown): Set<DetailSection> {
     "achievements",
     "swim",
     "weekly_notes",
+    "team",
   ]);
   if (!Array.isArray(raw) || !raw.length) return all;
   const out = new Set<DetailSection>();
@@ -86,7 +110,8 @@ function parseSections(raw: unknown): Set<DetailSection> {
       t === "sessions" ||
       t === "achievements" ||
       t === "swim" ||
-      t === "weekly_notes"
+      t === "weekly_notes" ||
+      t === "team"
     ) {
       out.add(t as DetailSection);
     }
@@ -94,21 +119,47 @@ function parseSections(raw: unknown): Set<DetailSection> {
   return out.size ? out : all;
 }
 
-const TEAM_FEEDBACK_SINCE = "2026-06-01";
+/** Parent Team: this academic term only (not prior summer / prior years). */
+const TEAM_TERM_START_ISO = PARENT_SESSION_TERM_START_ISO;
 
-function staffKeyFromName(raw: string): string {
-  let k = String(raw || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .split(/\s+/)[0] || "";
-  if (k === "yousef" || k === "yusef") k = "youssef";
-  if (k === "lulia") k = "luliya";
-  if (k === "javi") k = "javier";
-  return k;
+/**
+ * Sunday Hub Multi Lead — people who may cover Berta across Autumn cover Sundays.
+ * Shown in Team for MA Hub kids without an "Instructor change" badge / WA reminder.
+ */
+const SUNDAY_HUB_COVER_POOL: Array<{ id: string; name: string }> = [
+  { id: "bismark", name: "Bismark" },
+  { id: "victor", name: "Victor" },
+  { id: "raul", name: "Raul" },
+  { id: "javi", name: "Javi" },
+];
+
+/** Roster staff_id from a name or id — never invents cover_needed. */
+function staffIdFromRaw(raw: string): string {
+  const id = canonicalStaffMatchKey(raw);
+  return isBlankOrCoverNeededStaffId(id) ? "" : id;
+}
+
+function isPlaceholderStaffName(raw: string): boolean {
+  const s = clean(raw, 80).toLowerCase();
+  if (!s) return true;
+  return (
+    /no\s*participant|open\s*slot|hold\s*waitlist|cover\s*needed|tbc|tba|vacant|unassigned/.test(s) ||
+    s === "open" ||
+    s === "extra"
+  );
+}
+
+function londonTodayIso(): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  } catch (_e) {
+    return new Date().toISOString().slice(0, 10);
+  }
 }
 
 function upsertTeamMember(
@@ -116,9 +167,10 @@ function upsertTeamMember(
   key: string,
   patch: Record<string, unknown>,
 ) {
-  const k = String(key || "").trim().toLowerCase();
-  if (!k) return;
+  const k = staffIdFromRaw(key) || canonicalStaffMatchKey(key);
+  if (!k || isBlankOrCoverNeededStaffId(k) || isPlaceholderStaffName(k)) return;
   const prev = map.get(k) || {
+    staff_id: k,
     staff_key: k,
     name: "",
     avatar_url: "/portal/staff_photos/" + k + ".png",
@@ -126,40 +178,212 @@ function upsertTeamMember(
   };
   const name =
     clean(patch.name, 80) || clean(prev.name, 80) || k.charAt(0).toUpperCase() + k.slice(1);
+  /* Cover badge only when an active upcoming cover patch says so — never sticky from history. */
+  let nextRole = clean(prev.role, 40) || "instructor";
+  if (clean(patch.role, 40) === "cover") nextRole = "cover";
+  else if (clean(patch.role, 40) === "instructor" && clean(prev.role, 40) !== "cover") {
+    nextRole = "instructor";
+  } else if (clean(patch.role, 40) === "instructor" && patch.force_standing === true) {
+    nextRole = "instructor";
+  }
   map.set(k, {
     ...prev,
     ...patch,
+    staff_id: k,
     staff_key: k,
     name,
+    role: nextRole,
     avatar_url:
       clean(patch.avatar_url, 200) ||
       clean(prev.avatar_url, 200) ||
       "/portal/staff_photos/" + k + ".png",
   });
+  delete (map.get(k) as Record<string, unknown>).force_standing;
 }
 
-/** Instructors from feedback + covering staff from schedule_overrides. */
+function addStandingInstructorNames(
+  map: Map<string, Record<string, unknown>>,
+  raw: unknown,
+) {
+  const text = clean(raw, 120);
+  if (!text || isPlaceholderStaffName(text)) return;
+  for (const part of text.split(/[,/&+]|\band\b|\s+·\s+/i)) {
+    const name = clean(part, 80);
+    if (!name || isPlaceholderStaffName(name)) continue;
+    const key = staffIdFromRaw(name);
+    if (!key) continue;
+    upsertTeamMember(map, key, {
+      name: feedbackAuthorFirstName(name) || name,
+      role: "instructor",
+      force_standing: true,
+    });
+  }
+}
+
+/**
+ * Standing instructors for this child: capacity-chain board first, then live
+ * roster + service-line snapshot (legacy fill).
+ */
+async function loadStandingInstructorsForTeam(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+  lookupNames: string[],
+  map: Map<string, Record<string, unknown>>,
+) {
+  const fromBoard = standingInstructorNamesFromOccupants(
+    capacityChainStandingBySlotId(),
+    identityInput,
+  );
+  for (const name of fromBoard) addStandingInstructorNames(map, name);
+
+  const slugs = [
+    ...new Set(
+      expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput))
+        .map((s) => slugifyParticipantKey(s))
+        .filter(Boolean),
+    ),
+  ];
+  const memberSlugs = slugs.filter((s) => s !== "acat" && s !== "acat_group");
+  const lookupKeys = memberSlugs.length ? memberSlugs : slugs;
+  if (lookupKeys.length) {
+    const rawKeys = [
+      ...new Set(
+        lookupKeys.flatMap((k) => {
+          const dashed = k.replace(/_/g, "-");
+          return [k, dashed, `${k}-nhs`, `${dashed}-nhs`, `${k}_nhs`];
+        }),
+      ),
+    ];
+    try {
+      const { data } = await supabase
+        .from("portal_participant_service_lines")
+        .select("sessions")
+        .in("client_key", rawKeys)
+        .limit(12);
+      for (const row of data || []) {
+        const sessions = Array.isArray(row.sessions) ? row.sessions : [];
+        for (const slot of sessions) {
+          if (!slot || typeof slot !== "object") continue;
+          const s = slot as Record<string, unknown>;
+          const svc = clean(s.service || s.serviceType, 80);
+          if (/crash|intensiv/i.test(svc)) continue;
+          addStandingInstructorNames(map, s.instructor || s.instructors);
+        }
+      }
+    } catch (e) {
+      console.warn("[parent-portal-participant-detail] team service_lines", e);
+    }
+  }
+
+  const names = [
+    ...new Set(
+      [...lookupNames.slice(0, 6), identityInput.displayName || "", identityInput.firstName || ""]
+        .map((n) => clean(n, 80))
+        .filter(Boolean),
+    ),
+  ];
+  if (!names.length) return;
+
+  const queries = names.map((nm) =>
+    supabase
+      .from("portal_roster_rows")
+      .select("client_name, service, instructors, status, session_date")
+      .eq("status", "active")
+      .ilike("client_name", nm.includes(" ") ? nm : `${nm}%`)
+      .limit(80),
+  );
+  const results = await Promise.all(queries);
+  const seen = new Set<string>();
+  for (const { data } of results) {
+    for (const row of data || []) {
+      if (!row) continue;
+      if (!participantIdentityMatches(identityInput, String(row.client_name || ""), "")) continue;
+      const svc = clean(row.service, 80);
+      if (/crash|intensiv/i.test(svc)) continue;
+      const date = isoFromAny(row.session_date);
+      const key = [
+        clean(row.client_name, 80),
+        svc,
+        clean(row.instructors, 80),
+        date,
+      ]
+        .join("|")
+        .toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      addStandingInstructorNames(map, row.instructors);
+    }
+  }
+}
+
+/**
+ * Instructors who deliver this child's sessions this term + covering staff from overrides.
+ * Does not include prior-term / summer feedback authors.
+ */
 async function buildParentTeam(
   // deno-lint-ignore no-explicit-any
   supabase: any,
   clientSlugs: string[],
   feedbackRows: Record<string, unknown>[],
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+  lookupNames: string[],
 ): Promise<Record<string, unknown>[]> {
   const map = new Map<string, Record<string, unknown>>();
 
+  await loadStandingInstructorsForTeam(supabase, identityInput, lookupNames, map);
+
+  let hasMultiActivity = false;
+  try {
+    const slugs = [
+      ...new Set(
+        expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput))
+          .map((s) => slugifyParticipantKey(s))
+          .filter(Boolean),
+      ),
+    ];
+    if (slugs.length) {
+      const { data: slRows } = await supabase
+        .from("portal_participant_service_lines")
+        .select("sessions")
+        .in("client_key", slugs)
+        .limit(12);
+      for (const row of slRows || []) {
+        for (const slot of Array.isArray(row.sessions) ? row.sessions : []) {
+          const svc = clean((slot as Record<string, unknown>)?.service, 80);
+          if (/multi/i.test(svc)) hasMultiActivity = true;
+        }
+      }
+    }
+  } catch (_e) {
+    /* ignore */
+  }
+
   for (const row of feedbackRows || []) {
     const date = isoFromAny(row.session_date);
-    if (!date || date < TEAM_FEEDBACK_SINCE) continue;
+    if (!date || date < TEAM_TERM_START_ISO) continue;
     const name = clean(row.completed_by_name, 120);
-    const key = staffKeyFromName(name);
+    const key = staffIdFromRaw(name);
     if (!key) continue;
     upsertTeamMember(map, key, {
       name: feedbackAuthorFirstName(name) || name,
       role: "instructor",
+      force_standing: true,
     });
   }
 
   const slugSet = new Set(clientSlugs.map((s) => String(s || "").toLowerCase()).filter(Boolean));
+  const todayIso = londonTodayIso();
 
   if (slugSet.size) {
     const { data: ovRows, error } = await supabase
@@ -167,7 +391,7 @@ async function buildParentTeam(
       .select("session_date, override_type, status, payload, anchor_staff_id, anchor_client_id")
       .eq("status", "active")
       .in("override_type", ["instructor_reassign", "client_replace_in_slot"])
-      .gte("session_date", PARENT_SESSION_TERM_START_ISO)
+      .gte("session_date", TEAM_TERM_START_ISO)
       .limit(300);
     if (error) {
       console.error("[parent-portal-participant-detail] team overrides", error.message);
@@ -184,31 +408,76 @@ async function buildParentTeam(
         (anchorClient && slugSet.has(anchorClient)) || (toClient && slugSet.has(toClient));
       if (!forThisChild) continue;
 
+      const sessionDate = isoFromAny(ov.session_date) || "";
+
       if (ot === "instructor_reassign") {
-        const slug =
-          clean(pl.covering_staff_id, 80) || staffKeyFromName(clean(pl.covering_staff_name, 120));
-        const name = clean(pl.covering_staff_name, 120) || clean(pl.to_staff_name, 120);
-        if (slug) {
-          upsertTeamMember(map, staffKeyFromName(slug) || slug.toLowerCase(), {
-            name: name || slug,
-            role: "cover",
+        /* Prefer covering_staff_id (roster key). Never staffKeyFromName on the id. */
+        const coverId =
+          staffIdFromRaw(clean(pl.covering_staff_id, 80)) ||
+          staffIdFromRaw(clean(pl.covering_staff_name, 120));
+        if (!coverId) continue;
+        const name =
+          clean(pl.covering_staff_name, 120) ||
+          clean(pl.to_staff_name, 120) ||
+          coverId.charAt(0).toUpperCase() + coverId.slice(1);
+        const activeCover = !!sessionDate && sessionDate >= todayIso;
+        /*
+         * MA: list covers in Team as normal instructors (no "Instructor change" badge /
+         * WA reminder). Still stamp cover_session_date so the hub card shows who is on that day.
+         */
+        if (hasMultiActivity) {
+          upsertTeamMember(map, coverId, {
+            name,
+            role: "instructor",
+            force_standing: true,
+            ...(activeCover ? { cover_session_date: sessionDate } : {}),
+          });
+        } else {
+          upsertTeamMember(map, coverId, {
+            name,
+            role: activeCover ? "cover" : "instructor",
+            force_standing: !activeCover,
+            ...(activeCover ? { cover_session_date: sessionDate } : {}),
           });
         }
       } else if (ot === "client_replace_in_slot") {
-        const staffSlug = clean(ov.anchor_staff_id, 80);
-        if (staffSlug && (pl.open_slot_makeup || pl.parent_portal_makeup || toClient)) {
-          upsertTeamMember(map, staffKeyFromName(staffSlug) || staffSlug.toLowerCase(), {
-            name: staffSlug,
-            role: "cover",
-          });
-        }
+        /* Child placed into an instructor's slot (trial / makeup) — standing instructor for that seat. */
+        const staffSlug = staffIdFromRaw(clean(ov.anchor_staff_id, 80));
+        if (!staffSlug) continue;
+        const nice =
+          clean(pl.covering_staff_name, 120) ||
+          staffSlug.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+        upsertTeamMember(map, staffSlug, {
+          name: nice || staffSlug,
+          role: "instructor",
+          force_standing: true,
+        });
       }
     }
   }
 
-  return [...map.values()].sort((a, b) =>
-    String(a.name || "").localeCompare(String(b.name || "")),
-  );
+  /* Hub Multi: always offer the Sunday Lead cover pool in Team (who could be on the day). */
+  if (hasMultiActivity) {
+    const hubKeys = new Set(["berta", "bismark", "victor", "raul", "javi", "emmanuel", "godsway"]);
+    const touchesHub = [...map.keys()].some((k) => hubKeys.has(String(k || "").toLowerCase()));
+    if (touchesHub) {
+      for (const c of SUNDAY_HUB_COVER_POOL) {
+        upsertTeamMember(map, c.id, {
+          name: c.name,
+          role: "instructor",
+          force_standing: true,
+        });
+      }
+    }
+  }
+
+  return [...map.values()]
+    .map((m) => {
+      const out = { ...m };
+      delete out.force_standing;
+      return out;
+    })
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 }
 
 async function detectHasAquatics(
@@ -590,9 +859,37 @@ function sessionsFromReenrolKeptSlots(
   return out;
 }
 
+/** Split roster instructor blobs ("BERTA, EMMANUEL" / "Berta & John") into tokens. */
+function splitInstructorTokens(raw: string): string[] {
+  return clean(raw, 120)
+    .split(/\s*[,/&+]+\s*|\s+\band\b\s+/i)
+    .map((p) => clean(p, 40))
+    .filter(Boolean);
+}
+
+/** Merge instructor names when Multi halves / co-taught rows collapse to one day. */
+function mergeInstructorNames(existing: string, next: string): string {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const tok of [...splitInstructorTokens(existing), ...splitInstructorTokens(next)]) {
+    const key = tok.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(tok);
+  }
+  return out.join(", ");
+}
+
 function buildServicesDetail(
   sessions: unknown,
-): Array<{ label: string; day: string; time: string; venue: string; area: string }> {
+): Array<{
+  label: string;
+  day: string;
+  time: string;
+  venue: string;
+  area: string;
+  instructor?: string;
+}> {
   const list = Array.isArray(sessions) ? sessions : [];
   type Group = {
     svc: string;
@@ -604,6 +901,7 @@ function buildServicesDetail(
     rawTime: string;
     venue: string;
     area: string;
+    instructor: string;
   };
   const groups = new Map<string, Group>();
 
@@ -612,6 +910,17 @@ function buildServicesDetail(
     const svcRaw = clean(s.service, 80);
     // Crash / intensives are separate bookings — never drive weekly term chips.
     if (/crash|intensiv/i.test(svcRaw)) continue;
+    /*
+     * One-off trials (isTrial / weeks:1 trial) must not expand onto every matching
+     * weekday for the term — hub chips / Tomorrow would paint false term Sundays.
+     * Trials surface via upcoming_booked_sessions only.
+     */
+    const isTrialSession =
+      s.isTrial === true ||
+      s.is_trial === true ||
+      String(s.booking_kind || s.session_kind || "").toLowerCase() === "trial" ||
+      (Number(s.weeks) === 1 && /\btrial\b/i.test(String(s.notes || s.label || "")));
+    if (isTrialSession) continue;
     const svc = canonicalProgrammeName(s.service) || svcRaw || "Service";
     const day = clean(s.day, 20);
     const key = (svc + "|" + day).toLowerCase();
@@ -627,11 +936,17 @@ function buildServicesDetail(
         rawTime: clean(s.timeSlot, 40),
         venue: "",
         area: "",
+        instructor: "",
       };
       groups.set(key, g);
     }
     if (!g.venue) g.venue = clean(s.venue, 80);
     if (!g.area) g.area = clean(s.area, 80);
+    /* Multi / co-taught slots: keep every unique instructor on one line. */
+    g.instructor = mergeInstructorNames(
+      g.instructor,
+      clean(s.instructor || s.instructors, 80),
+    );
     const tok = parseSlotTokens(s.timeSlot, day);
     if (tok) {
       if (tok.start != null && (g.startMin == null || tok.start < g.startMin)) {
@@ -663,12 +978,81 @@ function buildServicesDetail(
         time,
         venue: g.venue,
         area: g.area,
+        instructor: g.instructor,
         _order: DAY_ORDER[g.day.toLowerCase()] || 8,
         _start: g.startMin ?? 9999,
       };
     })
     .sort((a, b) => (a._order !== b._order ? a._order - b._order : a._start - b._start))
-    .map(({ label, day, time, venue, area }) => ({ label, day, time, venue, area }));
+    .map(({ label, day, time, venue, area, instructor }) => ({
+      label,
+      day,
+      time,
+      venue,
+      area,
+      ...(instructor ? { instructor } : {}),
+    }));
+}
+
+/**
+ * Live Autumn weekly templates (session_date NULL). Prefer these over the
+ * Summer roster-review snapshot so withdrawn weekdays (Eiji/Hazem aquatic)
+ * do not paint onto the parent hub as Tomorrow.
+ */
+async function fetchStandingWeeklyRosterSessions(
+  supabase: ReturnType<typeof createClient>,
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+): Promise<unknown[]> {
+  const names = [
+    ...new Set(
+      resolveParticipantLookupNames(identityInput)
+        .map((n) => clean(n, 80))
+        .filter(Boolean),
+    ),
+  ];
+  if (!names.length) return [];
+  const queries = names.slice(0, 6).map((nm) => {
+    const token = nm.includes(" ") ? nm : `${nm}%`;
+    return supabase
+      .from("portal_roster_rows")
+      .select("client_name, day, time_slot, service, venue, area, instructors, status")
+      .eq("status", "active")
+      .is("session_date", null)
+      .ilike("client_name", token)
+      .limit(40);
+  });
+  const results = await Promise.all(queries);
+  const out: unknown[] = [];
+  const seen = new Set<string>();
+  for (const { data } of results) {
+    for (const row of data || []) {
+      if (!row) continue;
+      const clientName = clean(row.client_name, 80);
+      if (!participantIdentityMatches(identityInput, clientName, clientName)) continue;
+      if (/no\s*participant|^closed$|^open$/i.test(clientName)) continue;
+      const svc = clean(row.service, 80);
+      if (/crash|intensiv/i.test(svc)) continue;
+      const day = clean(row.day, 20);
+      const timeSlot = clean(row.time_slot, 40);
+      const key = [day, svc, timeSlot, clean(row.venue, 80)].join("|").toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({
+        day,
+        service: svc,
+        timeSlot,
+        venue: clean(row.venue, 80),
+        area: clean(row.area, 80),
+        instructor: clean(row.instructors, 80),
+      });
+    }
+  }
+  return out;
 }
 
 /**
@@ -701,6 +1085,22 @@ async function fetchRosterServiceLines(
   const lookupKeys = memberSlugs.length ? memberSlugs : slugs;
   if (!lookupKeys.length) return null;
 
+  // B3: capacity-chain board first (same standing as Overview / Places).
+  const fromOccupants = standingSessionsForParticipantFromOccupants(
+    capacityChainStandingBySlotId(),
+    identityInput,
+  );
+  if (fromOccupants.length) {
+    const boardDetail = buildServicesDetail(fromOccupants);
+    if (boardDetail.length) return { count: boardDetail.length, detail: boardDetail };
+  }
+
+  const standing = await fetchStandingWeeklyRosterSessions(supabase, identityInput);
+  if (standing.length) {
+    const standingDetail = buildServicesDetail(standing);
+    if (standingDetail.length) return { count: standingDetail.length, detail: standingDetail };
+  }
+
   // Payment sheet often splits one child across keys (e.g. tinashe Mon/Wed LA +
   // tinashe-nhs Friday). Include hyphenated / *-nhs variants + same display name.
   const rawKeys = [
@@ -720,7 +1120,7 @@ async function fetchRosterServiceLines(
 
   const { data, error } = await supabase
     .from("portal_participant_service_lines")
-    .select("client_key, client_name, client_name_norm, sessions, services_count")
+    .select("client_key, client_name, client_name_norm, sessions, services_count, term_label")
     .in("client_key", rawKeys)
     .limit(12);
 
@@ -733,7 +1133,7 @@ async function fetchRosterServiceLines(
   if (nameNorm) {
     const { data: byName, error: nameErr } = await supabase
       .from("portal_participant_service_lines")
-      .select("client_key, client_name, client_name_norm, sessions, services_count")
+      .select("client_key, client_name, client_name_norm, sessions, services_count, term_label")
       .eq("client_name_norm", nameNorm)
       .limit(12);
     if (nameErr) {
@@ -758,8 +1158,10 @@ async function fetchRosterServiceLines(
   if (!rows.length) return null;
 
   // Merge every matching row so Mon/Wed (LA) + Fri (NHS) all appear.
+  // Do not paint July Summer Term 2026 leftovers onto Autumn hubs.
   const mergedSessions: unknown[] = [];
   for (const row of rows) {
+    if (/summer/i.test(String((row as { term_label?: string }).term_label || ""))) continue;
     if (Array.isArray(row.sessions)) mergedSessions.push(...row.sessions);
   }
   const detail = buildServicesDetail(mergedSessions);
@@ -852,6 +1254,7 @@ Deno.serve(async (req) => {
   const wantAchievements = sections.has("achievements");
   const wantSwim = sections.has("swim");
   const wantWeeklyNotes = sections.has("weekly_notes");
+  const wantTeam = sections.has("team") || wantGeneral || wantSessions;
 
   const { data: linked } = await supabase
     .from("portal_parent_contacts")
@@ -903,6 +1306,7 @@ Deno.serve(async (req) => {
     lastName: clean(participant.last_name, 80),
   };
   const suppressSessionProgress = parentPortalSuppressSessionProgress(identityInput);
+  const weeklyNotesDayCentreOnly = identityLooksLikeDayCentreWeeklyNotes(identityInput, contactId);
   const clientSlugs = suppressSessionProgress
     ? expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput)).filter(
       (s) => !["acat", "acat_group"].includes(slugifyParticipantKey(s)),
@@ -1023,7 +1427,12 @@ Deno.serve(async (req) => {
     rosterServicesDetail = rosterForFeedback.detail;
   }
 
-  if (wantSessions && !suppressSessionProgress && feedbackYearResolved) {
+  /*
+   * Hub loads "general" first (not "sessions"). Still pull feedback so
+   * attendance_summary.absent_dates includes staff Absent marks (attendance No)
+   * and so sessionsOut can mark TODAY completed (not AWAITING) after staff submit.
+   */
+  if ((wantSessions || wantGeneral) && !suppressSessionProgress && feedbackYearResolved) {
     const fbSel =
       "id, session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, created_at";
 
@@ -1077,6 +1486,12 @@ Deno.serve(async (req) => {
       return clean(b.session_time).localeCompare(clean(a.session_time));
     });
 
+    /*
+     * Build sessions for hub "general" too — resolveHubSessionStatus reads
+     * data.sessions by session_date. Without this, TODAY stays AWAITING after
+     * staff submit until the parent opens Sessions Overview.
+     */
+    if (wantSessions || wantGeneral) {
     const feedbackIds = rawFeedback.map((r) => String(r.id)).filter(Boolean);
     const cacheById = new Map<string, Record<string, unknown>>();
     const venueByService = await loadParticipantVenueByService(supabase, identityInput, lookupNames);
@@ -1136,6 +1551,8 @@ Deno.serve(async (req) => {
         independence: independenceLabel(patterns),
         feedback_by_name: instructor,
         feedback_by_role: staffName ? resolveFeedbackAuthorRole(staffName, service) : "",
+        completed_by_name: instructor,
+        positive_feedback: positiveText ? "1" : "",
         comment: commentPack.comment,
         parent_message: commentPack.comment,
         message_pending: commentPack.pending,
@@ -1148,6 +1565,7 @@ Deno.serve(async (req) => {
       if (da !== db) return db.localeCompare(da);
       return clean(b.session_time).localeCompare(clean(a.session_time));
     });
+    }
   }
 
   let attendanceSummary = {
@@ -1156,6 +1574,7 @@ Deno.serve(async (req) => {
     total: 0,
     makeup_absent: 0,
     absent_dates: [] as string[],
+    cancelled_dates: [] as string[],
   };
   /** Earliest slot_clear_client date (left mid-term) — used to paint later missed chips red. */
   let placeLeftFromIso = "";
@@ -1169,6 +1588,8 @@ Deno.serve(async (req) => {
         "client_replace_in_slot",
         "client_absence_announced",
         "slot_clear_client",
+        "slot_close",
+        "client_cancelled",
       ])
       .gte("session_date", feedbackTermStartIso)
       .lte("session_date", feedbackTermEndIso)
@@ -1185,18 +1606,79 @@ Deno.serve(async (req) => {
         placeLeftFromIso = iso;
       }
     }
+    /* Staff/admin Absent taps live here — not always in session_feedback. */
+    let quickMarkRows: Array<Record<string, unknown>> = [];
+    const slugOr = clientSlugs
+      .slice(0, 12)
+      .map((s) => String(s || "").trim().toLowerCase())
+      .filter(Boolean)
+      .map((s) => `portal_session_key.ilike.%${s}%`)
+      .join(",");
+    if (slugOr) {
+      const { data: qm, error: qmErr } = await supabase
+        .from("portal_staff_session_quick_marks")
+        .select("portal_session_key, session_date, mark_type")
+        .eq("mark_type", "absent")
+        .gte("session_date", feedbackTermStartIso)
+        .lte("session_date", feedbackTermEndIso)
+        .or(slugOr)
+        .limit(400);
+      if (qmErr) {
+        console.error("[parent-portal-participant-detail] quick_marks error", qmErr);
+      } else {
+        quickMarkRows = Array.isArray(qm) ? qm : [];
+      }
+    }
     attendanceSummary = buildParentAttendanceSummary(
       rawFeedback,
       overrideRows || [],
       clientSlugs,
       feedbackTermStartIso,
+      quickMarkRows,
     );
+    /* Staff/office cancellation decide rows (no slot_close OV yet) still paint cancelled chips. */
+    if (contactId) {
+      const { data: cancelAbs, error: caErr } = await supabase
+        .from("portal_parent_absence_reports")
+        .select("session_date, case_kind, reason_code, status")
+        .eq("contact_id", contactId)
+        .gte("session_date", feedbackTermStartIso)
+        .lte("session_date", feedbackTermEndIso)
+        .limit(200);
+      if (caErr) {
+        console.error("[parent-portal-participant-detail] cancel absences", caErr.message);
+      } else {
+        const cancelSet = new Set(attendanceSummary.cancelled_dates || []);
+        const absentSet = new Set(attendanceSummary.absent_dates || []);
+        for (const row of cancelAbs || []) {
+          const iso = String(row.session_date || "").slice(0, 10);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+          const kind = String(row.case_kind || "").toLowerCase();
+          const reason = String(row.reason_code || "").toLowerCase();
+          if (
+            kind === "cancellation" ||
+            reason === "instructor_cancelled" ||
+            reason === "admin_cancelled"
+          ) {
+            cancelSet.add(iso);
+            absentSet.delete(iso);
+          }
+        }
+        attendanceSummary = {
+          ...attendanceSummary,
+          cancelled_dates: [...cancelSet].sort(),
+          absent_dates: [...absentSet].sort(),
+          absent: Math.max(0, [...absentSet].length),
+        };
+      }
+    }
   } else if (wantAttendanceChips && rawFeedback.length) {
     attendanceSummary = buildParentAttendanceSummary(
       rawFeedback,
       [],
       clientSlugs,
       feedbackTermStartIso,
+      [],
     );
   }
 
@@ -1403,11 +1885,11 @@ Deno.serve(async (req) => {
       : null;
     reenrolmentSummary = buildReenrolmentParentSummary(payload, submittedAt);
 
-    // Re-enrolled families with no summer/payment-sheet roster yet still need
-    // weekday chips (Next session / Calendar) from kept 2026/27 slots.
-    if (!rosterServicesDetail.length && reenrolmentSummary.continuing) {
+    // Re-enrolled families: kept 2026/27 slots beat a stale Summer snapshot
+    // when live weekly templates were missing (withdrawn weekdays stay gone).
+    if (reenrolmentSummary.continuing) {
       const fromReenrol = buildServicesDetail(sessionsFromReenrolKeptSlots(payload));
-      if (fromReenrol.length) {
+      if (fromReenrol.length && !rosterServicesDetail.length) {
         rosterServicesDetail = fromReenrol;
         rosterServicesCount = fromReenrol.length;
       }
@@ -1535,7 +2017,7 @@ Deno.serve(async (req) => {
     const { data: parentShares } = await supabase
       .from("portal_parent_invoice_share")
       .select(
-        "invoice_number, reference_text, line_description, billing_term, due_date, next_instalment_due, payment_method_hint, payment_status, amount_gbp, amount_paid_gbp, payment_schedule, share_status",
+        "invoice_number, reference_text, line_description, billing_term, due_date, next_instalment_due, payment_method_hint, payment_status, amount_gbp, amount_paid_gbp, payment_schedule, share_status, line_items, quantity",
       )
       .eq("contact_id", contactId)
       .eq("share_status", "ready")
@@ -1640,11 +2122,16 @@ Deno.serve(async (req) => {
 
     if (hubRows.length) {
       const statuses = hubRows.map(effectivePayStatus);
+      const hasPaid = statuses.some((st) => st === "paid");
+      const hasUnpaid = statuses.some((st) => st === "unpaid");
+      const hasPartial = statuses.some((st) => st === "partial");
+      const hasPending = statuses.some((st) => st === "pending_confirmation");
       if (statuses.every((st) => st === "paid")) hubPayStateFromShares = "settled";
-      else if (statuses.some((st) => st === "unpaid")) hubPayStateFromShares = "unpaid";
-      else if (statuses.some((st) => st === "pending_confirmation")) {
-        hubPayStateFromShares = "pending";
-      } else if (statuses.some((st) => st === "partial")) hubPayStateFromShares = "partial";
+      /* Multi paid + ACAT sibling still due (Jack Stratton £700) → partially paid. */
+      else if (hasPaid && (hasUnpaid || hasPartial)) hubPayStateFromShares = "partial";
+      else if (hasUnpaid) hubPayStateFromShares = "unpaid";
+      else if (hasPending) hubPayStateFromShares = "pending";
+      else if (hasPartial) hubPayStateFromShares = "partial";
       else hubPayStateFromShares = "unpaid";
     }
   }
@@ -1701,7 +2188,7 @@ Deno.serve(async (req) => {
   }
 
   let teamOut: Record<string, unknown>[] = [];
-  if (wantGeneral || wantSessions) {
+  if (wantTeam) {
     // Prefer feedback already loaded for sessions; otherwise a light pull for hub/team.
     let fbForTeam = rawFeedback;
     if (!fbForTeam.length && clientSlugs.length) {
@@ -1709,17 +2196,23 @@ Deno.serve(async (req) => {
         .from("session_feedback")
         .select("session_date, completed_by_name, client_id")
         .in("client_id", clientSlugs)
-        .gte("session_date", TEAM_FEEDBACK_SINCE)
+        .gte("session_date", TEAM_TERM_START_ISO)
         .order("session_date", { ascending: false })
         .limit(80);
       fbForTeam = fbLite || [];
     }
-    teamOut = await buildParentTeam(supabase, clientSlugs, fbForTeam);
+    teamOut = await buildParentTeam(
+      supabase,
+      clientSlugs,
+      fbForTeam,
+      identityInput,
+      lookupNames,
+    );
   }
 
   let weeklyNotes: Record<string, unknown>[] = [];
   let weeklyNoteLatest: Record<string, unknown> | null = null;
-  if (wantWeeklyNotes && !suppressSessionProgress && feedbackYearResolved) {
+  if (wantWeeklyNotes && weeklyNotesDayCentreOnly && !suppressSessionProgress && feedbackYearResolved) {
     const { data: noteRows, error: noteErr } = await supabase
       .from("portal_parent_weekly_notes")
       .select(
@@ -1756,10 +2249,19 @@ Deno.serve(async (req) => {
     }
   }
 
-  const inClassFlag = participant.in_class ?? contactRow?.in_class ?? null;
-  const isFormerClient = inClassFlag === false;
+  /* True wins if either table was restored (office often updates contacts first). */
+  const inClassFlag =
+    participant.in_class === true || contactRow?.in_class === true
+      ? true
+      : participant.in_class === false || contactRow?.in_class === false
+        ? false
+        : participant.in_class ?? contactRow?.in_class ?? null;
+  /* Office term place pending pay is CLIENT, not OLD — even if an in_class flag lagged. */
+  let isFormerClient = inClassFlag === false;
+  if (isFormerClient && hasOfficeTermInvoice) isFormerClient = false;
   const hasSessionFeedback =
     sessionsOut.length > 0 ||
+    rawFeedback.length > 0 ||
     weeklyNotes.length > 0 ||
     !!(weeklyNoteLatest && weeklyNoteLatest.week_start);
 
@@ -1774,7 +2276,10 @@ Deno.serve(async (req) => {
     kind?: string;
   }> = [];
   let isTrialOnlyPlace = false;
-  if (wantGeneral && !isFormerClient) {
+  /** First paid / held term session (hub chips before this stay red — not in the paid place). */
+  let bookedFromIso: string | null = null;
+  /* Always resolve for active clients — section-only loads must not wipe hub booked_from. */
+  if (!isFormerClient) {
     const todayIso = new Date().toISOString().slice(0, 10);
     const nameCandidates = [
       clean(displayName, 80),
@@ -1810,9 +2315,8 @@ Deno.serve(async (req) => {
         )
         .in("document_id", docIds)
         .in("status", ["validated", "held", "confirmed", "paid"])
-        .gte("date_iso", todayIso)
         .order("date_iso", { ascending: true })
-        .limit(12);
+        .limit(24);
       bookedRows = Array.isArray(data) ? data : [];
     }
     if (!bookedRows.length && nameCandidates.length) {
@@ -1822,10 +2326,9 @@ Deno.serve(async (req) => {
           "date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id, notes",
         )
         .in("status", ["validated", "held", "confirmed", "paid"])
-        .gte("date_iso", todayIso)
         .ilike("participant_name", nameCandidates[0])
         .order("date_iso", { ascending: true })
-        .limit(12);
+        .limit(24);
       bookedRows = (data || []).filter((row) => {
         const pname = clean(row.participant_name, 80).toLowerCase();
         const nameOk = nameCandidates.some(
@@ -1837,11 +2340,78 @@ Deno.serve(async (req) => {
       });
     }
 
+    for (const row of bookedRows) {
+      const iso = clean(row.date_iso, 12).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+      const trialish = /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(
+        String(row.notes || ""),
+      );
+      if (!trialish && (!bookedFromIso || iso < bookedFromIso)) bookedFromIso = iso;
+    }
+
+    /* Invoice line "Dates: 22, 29 Sept; …" — first paid autumn date if reservation missing. */
+    if (!bookedFromIso) {
+      const { data: dateShares } = await supabase
+        .from("portal_parent_invoice_share")
+        .select("line_items, billing_term, payment_status, share_status")
+        .eq("contact_id", contactId)
+        .eq("share_status", "ready")
+        .limit(20);
+      for (const sh of dateShares || []) {
+        if (clean(sh.payment_status, 40).toLowerCase() === "void") continue;
+        const items = Array.isArray(sh.line_items) ? sh.line_items : [];
+        for (const it of items) {
+          const dates = String((it as { dates?: unknown })?.dates || "");
+          const m = dates.match(
+            /Dates:\s*(\d{1,2})\s*,?\s*[^;]*?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)/i,
+          );
+          if (!m) continue;
+          const dayN = Number(m[1]);
+          const mon = m[2].toLowerCase().slice(0, 3);
+          const monMap: Record<string, string> = {
+            jan: "01",
+            feb: "02",
+            mar: "03",
+            apr: "04",
+            may: "05",
+            jun: "06",
+            jul: "07",
+            aug: "08",
+            sep: "09",
+            oct: "10",
+            nov: "11",
+            dec: "12",
+          };
+          const monKey = mon.startsWith("sep") ? "sep" : mon;
+          const mm = monMap[monKey];
+          if (!mm || !dayN) continue;
+          const year = Number(mm) >= 9 ? "2026" : "2027";
+          const iso =
+            year + "-" + mm + "-" + String(dayN).padStart(2, "0");
+          if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && (!bookedFromIso || iso < bookedFromIso)) {
+            bookedFromIso = iso;
+          }
+        }
+      }
+    }
+
+    const futureBooked = bookedRows.filter((row) => {
+      const iso = clean(row.date_iso, 12).slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso >= todayIso;
+    });
+
     const hasTrialReservation = bookedRows.some((row) =>
       /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(String(row.notes || "")),
     );
 
-    upcomingBookedSessions = bookedRows
+    /* Past trials stay on the hub as purple chips (e.g. Reggie trial 15 Sep, term from 22). */
+    const pastTrialBooked = bookedRows.filter((row) => {
+      const iso = clean(row.date_iso, 12).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || iso >= todayIso) return false;
+      return /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(String(row.notes || ""));
+    });
+
+    upcomingBookedSessions = [...pastTrialBooked, ...futureBooked]
       .map((row) => {
         const iso = clean(row.date_iso, 12).slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
@@ -1902,6 +2472,11 @@ Deno.serve(async (req) => {
         postcode: contactRow?.postcode && contactRow.postcode !== "—" ? contactRow.postcode : null,
         /** When set, hub session chips start on/after this date (not full-term weekday projection). */
         registration_date: registrationDateIso,
+        /**
+         * First paid term session (reservation / invoice). Dates before this on the
+         * weekday board paint red — not included in the 12-session mid-term place.
+         */
+        booked_from: bookedFromIso,
         avatar_url: avatar.avatar_url,
         has_avatar: !!(avatar.avatar_url || participant.avatar_storage_path),
       },
@@ -1917,9 +2492,11 @@ Deno.serve(async (req) => {
         updated_at: generalUpdatedAt,
         editable: !isFormerClient,
       },
-      team: isFormerClient ? [] : teamOut,
+      ...(wantTeam ? { team: isFormerClient ? [] : teamOut } : {}),
       sessions: sessionsOut,
-      attendance_summary: isFormerClient ? null : attendanceSummary,
+      ...(wantAttendanceChips || wantSessions
+        ? { attendance_summary: attendanceSummary }
+        : {}),
       achievements: isFormerClient && !hasAchievementPhotos ? [] : achievements,
       swim_term_reviews: isFormerClient ? [] : swimTermReviews,
       swim_term_review_available: isFormerClient ? false : swimTermReviewAvailable,
@@ -1997,14 +2574,18 @@ Deno.serve(async (req) => {
         sessions_overview: isFormerClient
           ? hasSessionFeedback
           : !suppressSessionProgress,
-        weekly_notes: isFormerClient ? hasSessionFeedback : !suppressSessionProgress,
+        weekly_notes: isFormerClient
+          ? hasSessionFeedback && weeklyNotesDayCentreOnly
+          : !suppressSessionProgress && weeklyNotesDayCentreOnly,
         reason: isFormerClient
           ? hasSessionFeedback
             ? "Former client — past session notes only."
             : "Former client — limited portal access."
           : suppressSessionProgress
             ? "Irregular ACAT attendance — session overview and weekly notes are not shown for this participant."
-            : "",
+            : !weeklyNotesDayCentreOnly
+              ? "Weekly notes are for Day Centre places only."
+              : "",
       },
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },

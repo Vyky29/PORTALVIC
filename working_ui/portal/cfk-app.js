@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "One place for Autumn 26/27: (1) roster — who’s booked and teaching, (2) fill open roster lines with Assign, (3) live Booking Portal seats with Place. Covers stay in Scheduling.";
+    "Places first (Booking Portal seats + who is taken), then Services roster (who is booked + normal instructor). Day covers / day offs stay on Schedule & Covers; Timetable owns who-works shift/paid (dated overrides can differ from standing).";
 
   var deps = {
     $: function (id) {
@@ -249,14 +249,8 @@
     } catch (_e) {}
   }
 
+  /** Former mock §2 capacity table removed — only live roster + Booking Portal places. */
   function capacityEmbedHtml() {
-    if (typeof deps.renderCapacityEmbedHtml === "function") {
-      try {
-        return deps.renderCapacityEmbedHtml() || "";
-      } catch (_e) {
-        return "";
-      }
-    }
     return "";
   }
 
@@ -310,18 +304,16 @@
       "</span>" +
       ' <span class="chip" style="vertical-align:middle;margin-left:4px">Autumn 26/27</span></p>' +
       '<div class="c4k-svc-jumpbar" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;min-width:0" role="navigation" aria-label="Jump on this page">' +
-      '<button type="button" class="btn btn--ghost btn--sm" id="c4kServicesJumpRoster" title="Jump to the roster">' +
-      "1 · Roster</button>" +
-      '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to Assign on open roster lines">' +
-      "2 · Fill seats</button>" +
-      '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to live Booking Portal seats">' +
-      "3 · Live open places</button></div>" +
+      '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to Booking Portal places">' +
+      "1 · Places (Booking Portal)</button>" +
+      '<button type="button" class="btn btn--ghost btn--sm" id="c4kServicesJumpRoster" title="Jump to standing roster">' +
+      "2 · Services roster</button></div>" +
       '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>' +
       '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>' +
       '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class, instructor or participant</summary>' +
       '<div class="c4k-svc-filters__body">' +
       '<div class="c4k-svc-filters__grid">' +
-      '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterDay">Day</label>' +
+      '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterDay">Weekday</label>' +
       '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterDay" aria-label="Filter by weekday">' +
       '<option value="">Any day</option>' +
       '<option value="monday">Monday</option><option value="tuesday">Tuesday</option><option value="wednesday">Wednesday</option>' +
@@ -348,14 +340,14 @@
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterSpace"><span>Space available</span> <input type="checkbox" id="c4kSvcFilterSpace" /></label>' +
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterWait"><span>Participants on waiting list</span> <input type="checkbox" id="c4kSvcFilterWait" /></label>' +
       "</div></div></details>" +
+      openPlacesEmbedHtml() +
+      capacityEmbedHtml() +
       '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
-      '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster</h2>' +
-      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who is booked, instructors, and open lines on each band. Use <strong>Open places ↓</strong> on a day to filter live seats below.</p>' +
+      '<h2 class="page-title" style="font-size:1.15rem;margin:28px 0 6px;min-width:0;overflow-wrap:break-word">2 · Services roster</h2>' +
+      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who is booked on each standing seat + the <strong>normal instructor</strong> for that seat (from Timetable / roster). Day covers stay on Schedule &amp; Overview; shift/paid edits on Instructor timetable.</p>' +
       '<div id="c4kServicesRosterRoot" style="min-width:0">' +
       rosterPart +
-      "</div></section>" +
-      capacityEmbedHtml() +
-      openPlacesEmbedHtml()
+      "</div></section>"
     );
   }
 

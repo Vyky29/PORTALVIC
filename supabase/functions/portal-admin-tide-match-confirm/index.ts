@@ -12,6 +12,7 @@ import {
 } from "../_shared/portal_admin_auth.ts";
 import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
+import { clearGcFailHoldOnPay } from "../_shared/portal_gocardless_fail_grace.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 import { tryCompleteBookingAfterInvoicePayment } from "../_shared/portal_booking_finish.ts";
 
@@ -206,7 +207,12 @@ Deno.serve(async (req) => {
   }
   try {
     const cid = clean(updatedInv.contact_id, 120);
-    if (cid) hold = await clearPaymentHoldForContact(admin, cid, "admin", verified.userId || null);
+    if (cid) {
+      hold = await clearGcFailHoldOnPay(admin, cid, "tide_match", verified.userId || null);
+      if (!(hold && hold.cleared)) {
+        hold = await clearPaymentHoldForContact(admin, cid, "tide_match", verified.userId || null);
+      }
+    }
   } catch (e) {
     console.error(
       "[portal-admin-tide-match-confirm] hold",

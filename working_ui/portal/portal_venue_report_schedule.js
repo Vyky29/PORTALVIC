@@ -159,25 +159,18 @@
     serviceEnd: mins(17, 0),
   };
 
-  /** Berta — Acton Wednesday (afternoon). */
-  var BERTA_WED_ACTON = {
-    venue: "Acton",
-    label: "Acton (Wed)",
-    openEnd: mins(16, 25),
-    closeEnd: mins(18, 45),
-    serviceStart: mins(16, 30),
-    serviceEnd: mins(18, 30),
-  };
-
-  /** Sunday — pool (Roberto) and programme leaders (John, Berta). */
+  /** Sunday — pool (Roberto) and programme leader (Berta). No Wednesday Acton MA. */
   var SUNDAY = {
     roberto: {
       venue: "SwimFarm",
       label: "Sunday pool (Roberto)",
-      openEnd: mins(8, 40),
+      /** Late after service start + 5 min (8:45 → remind from 8:50). */
+      openEnd: mins(8, 50),
       closeEnd: mins(15, 30),
       serviceStart: mins(8, 45),
       serviceEnd: mins(15, 15),
+      /** Opening + closing each need an in-app walkthrough video (internal Storage). */
+      requireWalkthroughVideo: true,
     },
     berta: {
       venue: "SwimFarm",
@@ -202,7 +195,7 @@
     michelle: { dows: [2], slot: "day_centre" },
     roberto: { sun: "roberto" },
     victor: { dows: [4], slot: "victor_thu" },
-    berta: { wedActon: true, sun: "berta" },
+    berta: { sun: "berta" },
   };
 
   function normViewDateIso(v) {
@@ -242,24 +235,15 @@
       };
     }
 
-    if (id === "berta" && dow === 3 && staffOnVenueRoster(id, dayName, "acton", sessionsModel)) {
-      return {
-        kind: "open",
-        scopeKey: "berta_wed_acton_open",
-        venue: BERTA_WED_ACTON.venue,
-        label: BERTA_WED_ACTON.label,
-        openEnd: BERTA_WED_ACTON.openEnd,
-      };
-    }
-
     if (dow === 0) {
-      if (id === "roberto" && staffHasRosterOnDay(id, dayName, sessionsModel)) {
+      if (id === "roberto") {
         return {
           kind: "open",
           scopeKey: "sun_roberto_open",
           venue: SUNDAY.roberto.venue,
           label: SUNDAY.roberto.label,
           openEnd: SUNDAY.roberto.openEnd,
+          requireWalkthroughVideo: !!SUNDAY.roberto.requireWalkthroughVideo,
         };
       }
       if (id === "berta" && staffOnVenueRoster(id, dayName, "swimfarm", sessionsModel)) {
@@ -355,13 +339,14 @@
           closeEnd: ROBERTO_THU.closeEnd,
         };
       }
-      if (dow === 0 && staffHasRosterOnDay(id, dayName, sessionsModel)) {
+      if (dow === 0) {
         return {
           kind: "close",
           scopeKey: "sun_roberto_close",
           venue: SUNDAY.roberto.venue,
           label: SUNDAY.roberto.label,
           closeEnd: SUNDAY.roberto.closeEnd,
+          requireWalkthroughVideo: !!SUNDAY.roberto.requireWalkthroughVideo,
         };
       }
     }
@@ -382,15 +367,6 @@
     }
 
     if (id === "berta") {
-      if (dow === 3 && staffOnVenueRoster(id, dayName, "acton", sessionsModel)) {
-        return {
-          kind: "close",
-          scopeKey: "berta_wed_acton_close",
-          venue: BERTA_WED_ACTON.venue,
-          label: BERTA_WED_ACTON.label,
-          closeEnd: BERTA_WED_ACTON.closeEnd,
-        };
-      }
       if (dow === 0 && staffOnVenueRoster(id, dayName, "swimfarm", sessionsModel)) {
         return {
           kind: "close",
@@ -461,14 +437,37 @@
       .slice(0, 64);
   }
 
+  function portalVenueDutyRequiresWalkthroughVideo(duty) {
+    return !!(duty && duty.requireWalkthroughVideo);
+  }
+
+  /** True when this staff's opening and/or closing duty for the view needs a walkthrough video. */
+  function portalVenueReportRequiresWalkthroughVideo(staffId, ctx, kind) {
+    var duty = portalVenueReportDutyForStaff(staffId, ctx);
+    var k = String(kind || "").trim().toLowerCase();
+    if (k === "open" || k === "opening") {
+      return portalVenueDutyRequiresWalkthroughVideo(duty.opening);
+    }
+    if (k === "close" || k === "closing") {
+      return portalVenueDutyRequiresWalkthroughVideo(duty.closing);
+    }
+    return (
+      portalVenueDutyRequiresWalkthroughVideo(duty.opening) ||
+      portalVenueDutyRequiresWalkthroughVideo(duty.closing)
+    );
+  }
+
   var api = {
     OPEN_GRACE_MIN: OPEN_GRACE_MIN,
     CLOSE_GRACE_MIN: CLOSE_GRACE_MIN,
     DAY_CENTRE: DAY_CENTRE,
+    SUNDAY: SUNDAY,
     portalVenueReportDutyForStaff: portalVenueReportDutyForStaff,
     portalVenueReportScopeApplies: portalVenueReportScopeApplies,
     portalVenueTimeWindowsForStaff: portalVenueTimeWindowsForStaff,
     portalVenueLocalScopeSlug: portalVenueLocalScopeSlug,
+    portalVenueDutyRequiresWalkthroughVideo: portalVenueDutyRequiresWalkthroughVideo,
+    portalVenueReportRequiresWalkthroughVideo: portalVenueReportRequiresWalkthroughVideo,
     staffOnDayCentreRoster: staffOnDayCentreRoster,
     staffHasRosterOnDay: staffHasRosterOnDay,
     staffOnVenueRoster: staffOnVenueRoster,

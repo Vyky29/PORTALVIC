@@ -8,7 +8,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
 import { applyAcceptedMakeupToRoster } from "../_shared/parent_portal_makeup_roster.ts";
-import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
+import { notifyMakeupConfirmed } from "../_shared/portal_makeup_confirmed_notify.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -112,49 +112,35 @@ Deno.serve(async (req) => {
       .update({ status: "consumed", closed_at: now, updated_at: now })
       .eq("id", offer.grant_id);
 
-    // Soft notify parent inbox that makeup is on the roster.
+    // Confirmed makeup: notify parent + instructor (real WA/email, not soft inbox only).
+    let makeup_notify = null;
     try {
-      const { data: parentMeta } = await supabase
-        .from("portal_parent_contacts")
-        .select("parent_display, mobile")
-        .eq("parent_person_id", session.parent_person_id)
-        .limit(1)
-        .maybeSingle();
-      const phone = normalizeParentPhoneE164(String(parentMeta?.mobile || "").trim());
-      if (phone) {
-        const who = clean(grant?.participant_display, 120) || "participant";
-        const bodyText =
-          `Makeup confirmed for ${who}` +
-          `\n${clean(offer.venue, 80)} · ${clean(offer.session_date, 12)}` +
-          (offer.session_time ? ` · ${clean(offer.session_time, 40)}` : "") +
-          (offer.instructor_name ? `\nInstructor: ${clean(offer.instructor_name, 120)}` : "") +
-          `\n\nThis session is now on the club roster.`;
-        await supabase.from("portal_parent_whatsapp_inbound").insert({
-          wa_message_id: `app:makeup-accepted:${offerId}`,
-          from_phone: phone,
-          contact_name: clean(parentMeta?.parent_display, 120) || "Parent",
-          message_type: "text",
-          body_text: bodyText,
-          context_wa_id: null,
-          created_at: now,
-          meta: {
-            source: "parent_portal_makeup_accepted",
-            parent_person_id: session.parent_person_id,
-            contact_id: offer.contact_id,
-            offer_id: offerId,
-            roster_override_id: roster.override_id,
-            direction_hint: "club_to_parent",
-          },
-        });
-      }
+      makeup_notify = await notifyMakeupConfirmed(supabase, {
+        parentPersonId: session.parent_person_id,
+        contactId: offer.contact_id || grant?.contact_id || null,
+        participantDisplay: grant?.participant_display || null,
+        venue: offer.venue || grant?.preferred_venue || null,
+        sessionDate: offer.session_date || null,
+        sessionTime: offer.session_time || null,
+        serviceLabel: offer.service_label || grant?.service_label || null,
+        instructorName: offer.instructor_name || null,
+        instructorStaffKey: offer.anchor_staff_id || offer.instructor_name || null,
+        source: "parent_portal_makeup_accept",
+        overrideId: roster.override_id,
+        offerId: offerId,
+        grantId: offer.grant_id,
+        actorEmail: "parent-portal-makeup-respond",
+      });
     } catch (e) {
-      console.error("[parent-portal-makeup-respond] notify", e);
+      console.error("[parent-portal-makeup-respond] makeup_notify", e);
+      makeup_notify = { ok: false, error: "notify_failed" };
     }
 
     return json(200, {
       ok: true,
       offer: updated,
       roster_override_id: roster.override_id,
+      makeup_notify,
       message: "Accepted. This makeup is now on the club roster.",
     });
   }

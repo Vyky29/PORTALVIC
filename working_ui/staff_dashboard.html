@@ -1,6 +1,27 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-screenshot-guard="workers">
+<html lang="en-GB" data-portal-screenshot-guard="off">
 <head>
+  <script>
+    (function () {
+      try {
+        var q = new URLSearchParams(String(location.search || ""));
+        if (!(q.get("ghostToken") || q.get("ghost"))) return;
+        document.documentElement.classList.add("portal-ghost-view-pending");
+        window.__PORTAL_GHOST_VIEW__ = { active: false, pending: true };
+        var el = document.createElement("div");
+        el.id = "portalGhostViewPending";
+        el.setAttribute("role", "status");
+        el.textContent = "Loading dashboard...";
+        el.setAttribute(
+          "style",
+          "position:fixed;inset:0;z-index:14000;display:flex;align-items:center;justify-content:center;padding:24px;background:#edf4fb;color:#1e3a5f;font:700 15px/1.4 -apple-system,system-ui,sans-serif;text-align:center"
+        );
+        (document.body || document.documentElement).appendChild(el);
+      } catch (_e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260911-teleport-iso" />
+  <script src="/portal/portal-ghost-view.js?v=20260911-teleport-iso"></script>
   <!--
     Deploy: Vercel/static desde `working_ui/` (mismo origen + `portal/`). `portal-app-shell` oculta chrome del host si la página va embebida.
 
@@ -10,76 +31,184 @@
     Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ debe ser la MISMA cadena que el secret Supabase VAPID_PUBLIC_KEY (la privada solo en Edge Secrets).
     En Elementor: bloque «HTML personalizado» encima del iframe con <script>window.__PORTAL_VAPID_PUBLIC_KEY__="…";</script>
     Edge Functions: portal-push-subscribe · portal-push-dispatch-schedule-override · webhook DB en schedule_overrides + header x-portal-webhook-secret.
+    Eligible push types: makeup / absence / slot_open / instructor_reassign (cover worker).
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/staff_dashboard.html en producción.
   -->
   <script>
-    /* Zombie service-worker purge (runs inline so a stale cache-first SW cannot
-       intercept it). A legacy build (Jun 2026) registered /portal/staff-app-sw.js
-       which cached JS in `clubsensational-staff-static-*`. On installed PWAs (esp.
-       iOS) that SW + its caches survive removing the home-screen icon, so workers
-       kept seeing old roster/icons while Chrome/Safari (separate storage) were
-       fine. Delete every non-push cache + unregister every non-push SW, then
-       reload once (guarded by a session flag so it can never loop). */
+    /* Auto-heal installed PWA. One-shot per version. Do not cover the whole
+       screen (iOS treats inset:0 layers as a tap block). Reload only when
+       caches were actually deleted or a foreign SW was unregistered. */
     (function () {
-      var FLAG = "portalPwaFreshV7";
+      var FLAG = "portalPwaHealV12";
       var KEEP = "clubsensational-portal-sw";
+      var force = false;
+      var healedQ = false;
+      var storageOk = true;
+      function cookieHealed() {
+        try {
+          return /(?:^|; )portalPwaHealV12=1(?:;|$)/.test(String(document.cookie || ""));
+        } catch (eC) {
+          return false;
+        }
+      }
+      function markStored() {
+        try { localStorage.setItem(FLAG, "1"); } catch (eS1) {}
+        try { sessionStorage.setItem("portalPwaFreshV12", "1"); } catch (eS2) {}
+        try {
+          document.cookie = "portalPwaHealV12=1; path=/; max-age=31536000; SameSite=Lax";
+        } catch (eS3) {}
+      }
       try {
-        if (sessionStorage.getItem(FLAG)) return;
-      } catch (e) { return; }
+        var q = new URLSearchParams(String(location.search || ""));
+        force = q.get("portalHeal") === "1" || q.get("heal") === "1";
+        healedQ = q.get("healed") === "1";
+      } catch (e0) {}
+      try {
+        if (healedQ) {
+          markStored();
+          return;
+        }
+        if (!force && (localStorage.getItem(FLAG) === "1" || cookieHealed())) return;
+      } catch (e1) {
+        storageOk = false;
+        if (!force && cookieHealed()) return;
+      }
+      if (!force) {
+        markStored();
+        return;
+      }
+      var banner = null;
+      try {
+        banner = document.createElement("div");
+        banner.id = "portal-pwa-heal-banner";
+        banner.setAttribute("role", "status");
+        banner.textContent = "Updating CS Portal…";
+        banner.setAttribute(
+          "style",
+          "position:fixed;top:0;left:0;right:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;" +
+            "padding:10px 12px;background:#edf4fb;font:600 13px/1.3 -apple-system,system-ui,sans-serif;color:#1e3a5f;" +
+            "pointer-events:none"
+        );
+        (document.documentElement || document.body).appendChild(banner);
+      } catch (e2) {}
+      function dropBanner() {
+        try {
+          if (banner && banner.parentNode) banner.parentNode.removeChild(banner);
+        } catch (e7) {}
+        banner = null;
+      }
       var jobs = [];
       var foundStale = false;
       try {
         if ("caches" in window) {
           jobs.push(
             caches.keys().then(function (keys) {
-              var bad = (keys || []).filter(function (k) {
-                return String(k).indexOf("portal-push-icons") < 0;
-              });
-              if (bad.length) foundStale = true;
-              return Promise.all(bad.map(function (k) { return caches.delete(k); }));
+              var list = keys || [];
+              return Promise.all(
+                list.map(function (k) {
+                  var name = String(k);
+                  if (name.indexOf("portal-push-icons") >= 0) return null;
+                  if (name.indexOf("clubsensational-static-") === 0) return null;
+                  if (name.indexOf("clubsensational-staff-static-") === 0) return null;
+                  if (name.indexOf("portal-fg") >= 0) return null;
+                  if (name.indexOf("portal-app-badge") >= 0) return null;
+                  foundStale = true;
+                  return caches.delete(k);
+                })
+              );
             }).catch(function () {})
           );
         }
-      } catch (e) {}
+      } catch (e3) {}
       try {
         if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
           jobs.push(
             navigator.serviceWorker.getRegistrations().then(function (regs) {
-              var bad = (regs || []).filter(function (r) {
-                var s = (r.active && r.active.scriptURL) ||
-                        (r.waiting && r.waiting.scriptURL) ||
-                        (r.installing && r.installing.scriptURL) || "";
-                return String(s).indexOf(KEEP) < 0;
-              });
-              if (bad.length) foundStale = true;
-              return Promise.all(bad.map(function (r) { return r.unregister(); }));
+              return Promise.all(
+                (regs || []).map(function (r) {
+                  var s =
+                    (r.active && r.active.scriptURL) ||
+                    (r.waiting && r.waiting.scriptURL) ||
+                    (r.installing && r.installing.scriptURL) ||
+                    "";
+                  if (String(s).indexOf(KEEP) >= 0) {
+                    return r.update().catch(function () {});
+                  }
+                  foundStale = true;
+                  return r.unregister().catch(function () {});
+                })
+              );
             }).catch(function () {})
           );
         }
-      } catch (e) {}
-      Promise.all(jobs).then(function () {
-        try { sessionStorage.setItem(FLAG, "1"); } catch (e) {}
-        if (foundStale) {
-          try { window.location.reload(); } catch (e) {}
+      } catch (e4) {}
+      var finished = false;
+      function finish(allowReload) {
+        if (finished) return;
+        finished = true;
+        if (!allowReload) {
+          dropBanner();
+          return;
         }
+        markStored();
+        var path = String(location.pathname || "");
+        var onRoot = path === "/" || path === "";
+        if (storageOk) {
+          try {
+            var u = new URL(location.href);
+            u.searchParams.delete("portalHeal");
+            u.searchParams.delete("heal");
+            if (onRoot) {
+              u.pathname = "/login.html";
+              u.searchParams.set("healed", "1");
+              location.replace(u.pathname + u.search + u.hash);
+              return;
+            }
+            if (force || foundStale) {
+              u.searchParams.set("healed", "1");
+              u.searchParams.set("_", String(Date.now()));
+              location.replace(u.pathname + u.search + u.hash);
+              return;
+            }
+          } catch (e6) {
+            if (onRoot) {
+              location.replace("/login.html?healed=1");
+              return;
+            }
+          }
+        }
+        dropBanner();
+      }
+      Promise.race([
+        Promise.all(jobs).then(function () {
+          finish(true);
+        }),
+        new Promise(function (resolve) {
+          setTimeout(function () {
+            finish(false);
+            resolve();
+          }, 1600);
+        }),
+      ]).catch(function () {
+        finish(false);
       });
     })();
   </script>
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
-  <script src="/portal/staff-app-boot.js?v=20260820-clients-info-handheld"></script>
-  <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
+  <script src="/portal/staff-app-boot.js?v=20260916-pool-note-paint"></script>
+  <script src="/portal/portal_auth_page_gate.js?v=20260910-staff-open"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
-  <script src="/portal/portal_ui_locale.js?v=20260820-es-full"></script>
+  <script src="/portal/portal_ui_locale.js?v=20260911-en-only"></script>
   <script src="/portal/portal-vapid-public.js?v=20260619-vapid-load-fix"></script>
-  <script defer src="/portal/portal_web_push_support.js?v=20260712-no-self-wa-push"></script>
+  <script defer src="/portal/portal_web_push_support.js?v=20260914-audio-gesture-only"></script>
   <script defer src="/portal/portal_ensure_web_push.js?v=20260619-inflight-fix"></script>
-<script defer src="/portal/portal_alerts_notifications_ui.js?v=20260712-no-self-wa-push"></script>
+<script defer src="/portal/portal_alerts_notifications_ui.js?v=20260906-comms-inapp-39"></script>
   <script defer src="/portal/portal_announcement_media.js?v=20260713-ann-photos-ceo"></script>
-  <script defer src="/portal/portal_announcement_ack.js?v=20260713-ghost-inbox"></script>
+  <script defer src="/portal/portal_announcement_ack.js?v=20260920-sched-ov-reminder"></script>
   <script defer src="/portal/portal_calendar_2026_27.js?v=20260714-w2-80pct"></script>
   <link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign">
   <script defer src="/portal/portal_admin_surface_map.js?v=20260704-login-map-fix"></script>
-  <script src="/portal-static-bootstrap.js?v=20260722-plan-bridge"></script>
+  <script src="/portal-static-bootstrap.js?v=20260910-ios-touch"></script>
   <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260705-ceo-gallery-topbar"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
@@ -154,12 +283,127 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260602-footerlogo" />
   <link rel="manifest" href="/staff-dashboard.webmanifest?v=20260712-cs-portal" />
-  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
-  <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
+  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260910-staff-open" />
+  <style>
+    /* iOS PWA: a full-viewport overlay (even opacity 0) eats every tap. */
+    #portalScreenshotGuard{
+      display:none !important;
+      visibility:hidden !important;
+      pointer-events:none !important;
+      width:0 !important;
+      height:0 !important;
+      inset:auto !important;
+    }
+    #backdrop:not(.open){
+      display:none !important;
+      pointer-events:none !important;
+      visibility:hidden !important;
+    }
+    /* Fullscreen sheets cover the dimmer. If the dimmer stacks on top, Close dies. */
+    body:has(.sheet.sheet--fullscreen.open) #backdrop,
+    body:has(.sheet.sheet--fullscreen.open) #backdrop.open{
+      pointer-events:none !important;
+    }
+    .sheet:not(.open),
+    [id$="Sheet"]:not(.open){
+      display:none !important;
+      pointer-events:none !important;
+      visibility:hidden !important;
+    }
+  </style>
+  <script>
+    (function () {
+      function peel() {
+        try {
+          var g = document.getElementById("portalScreenshotGuard");
+          if (g && g.parentNode) g.parentNode.removeChild(g);
+        } catch (e1) {}
+        try {
+          var l = document.getElementById("portal-auth-page-gate-loader");
+          if (l && document.documentElement.classList.contains("portal-auth-ready") && l.parentNode) {
+            l.parentNode.removeChild(l);
+          }
+        } catch (e2) {}
+        var sheetOpen = false;
+        try {
+          sheetOpen = !!document.querySelector(".sheet.open");
+        } catch (e0) {}
+        try {
+          var b = document.getElementById("backdrop");
+          var fsOpen = !!document.querySelector(".sheet.sheet--fullscreen.open");
+          if (b && b.classList.contains("open") && !sheetOpen) {
+            b.classList.remove("open");
+            b.classList.remove("sheet-backdrop--focus");
+          }
+          if (b && (fsOpen || !b.classList.contains("open"))) {
+            b.style.pointerEvents = "none";
+          }
+          if (b && !b.classList.contains("open")) {
+            b.style.removeProperty("display");
+          }
+        } catch (e3) {}
+        try {
+          var cam = document.getElementById("portalAchievementsCameraFullscreen");
+          var ach = document.getElementById("achievementsSheet");
+          if (cam && !cam.hidden && !(ach && ach.classList.contains("open"))) {
+            cam.hidden = true;
+            cam.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("portal-achievements-camera-open");
+          }
+          var viewer = document.getElementById("portalAchievementsGalleryViewer");
+          if (viewer && !viewer.hidden && !(ach && ach.classList.contains("open"))) {
+            viewer.hidden = true;
+            document.body.classList.remove("portal-achievements-viewer-open");
+          }
+        } catch (e3b) {}
+        try {
+          var annOpen = !!document.getElementById("announcementsSheet") &&
+            document.getElementById("announcementsSheet").classList.contains("open");
+          if (!annOpen && document.body) {
+            document.body.classList.remove("dock-context-announcement-lock");
+          }
+        } catch (e4) {}
+        try {
+          var scroll = document.getElementById("appBodyScroll");
+          var anySheet = !!document.querySelector(".sheet.open");
+          if (
+            scroll &&
+            document.documentElement.classList.contains("portal-auth-ready") &&
+            !anySheet &&
+            !document.body.classList.contains("dock-context-announcement-lock")
+          ) {
+            scroll.style.pointerEvents = "auto";
+            scroll.style.removeProperty("pointer-events");
+          }
+        } catch (e5) {}
+        try {
+          var dock = document.querySelector(".dock-bar");
+          if (dock && document.documentElement.classList.contains("portal-auth-ready")) {
+            dock.style.pointerEvents = "auto";
+          }
+        } catch (e6) {}
+        try {
+          if (document.documentElement.classList.contains("portal-auth-ready")) {
+            document.documentElement.style.pointerEvents = "auto";
+            if (document.body) document.body.style.pointerEvents = "auto";
+          }
+        } catch (e7) {}
+      }
+      peel();
+      var n = 0;
+      var t = setInterval(function () {
+        peel();
+        n += 1;
+        if (n > 24) clearInterval(t);
+      }, 500);
+      setInterval(peel, 2000);
+    })();
+  </script>
+  <script defer src="/portal/portal_screenshot_guard.js?v=20260910-staff-open"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260901-roberto-wed-fadi-only" />
-  <link rel="stylesheet" href="/portal/portal_staff_whatsapp.css?v=20260729-photo-edit-above-name" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260729-photo-edit-above-name" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260917-ann-gate-blur" />
+  <link rel="stylesheet" href="/portal/portal_staff_whatsapp.css?v=20260906-comms-40" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260911-today-tight-junaid" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260709-overview-by-service" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260704-area-note-fixed" />
 </head>
@@ -346,9 +590,6 @@
               </svg>
             </div>
           </div>
-          <button type="button" class="topbar-staff-photo__edit topbar-staff-photo__edit--above-name" id="topbarStaffPhotoEdit" aria-label="Change your profile photo">
-            <span class="topbar-staff-photo__edit-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
-          </button>
           <h1 class="topbar-name topbar-name--under-halo" id="staffName">
             <span class="topbar-name__given" id="staffNameGiven">…</span>
             <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
@@ -363,10 +604,16 @@
                 <span class="topbar-tool-label" aria-hidden="true">Venue</span>
               </button>
             </div>
-            <div class="topbar-tool-cell" id="topbarToolCellTermReview">
+            <div class="topbar-tool-cell" id="topbarToolCellTermReview" hidden aria-hidden="true">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--term-review" id="topbarToolTermReview" data-portal-external-url="swtermreview.html" aria-label="Swimming term review">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"/></svg></span>
                 <span class="topbar-tool-label" aria-hidden="true">Swim Rev</span>
+              </button>
+            </div>
+            <div class="topbar-tool-cell" id="topbarToolCellInterviews" hidden aria-hidden="true">
+              <button type="button" class="topbar-tool-btn topbar-tool-btn--interviews" id="topbarToolInterviews" data-portal-external-url="Working_interview.html?from=staff" aria-label="Interviews — Day Centre part 2">
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M12 11h4"/><path d="M14 9v4"/></svg></span>
+                <span class="topbar-tool-label" aria-hidden="true">Interviews</span>
               </button>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellLeadReport" hidden aria-hidden="true">
@@ -381,7 +628,13 @@
                 <span class="topbar-tool-label" aria-hidden="true">Team Rev</span>
               </button>
             </div>
-            <div class="topbar-tool-cell topbar-tool-cell--staff-wa topbar-tool-cell--span2" id="topbarToolCellStaffWa" hidden aria-hidden="true"></div>
+            <div class="topbar-tool-cell topbar-tool-cell--staff-wa topbar-tool-cell--span2" id="topbarToolCellStaffWa">
+              <a href="comunicaciones.html?from=staff" id="topbarStaffWaBtn" class="topbar-tool-btn topbar-tool-btn--staff-wa" aria-label="Communications" data-comms-unread-host>
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg></span>
+                <span class="topbar-tool-label">COMMS</span>
+                <span class="comms-badge topbar-staff-wa-btn__badge is-empty" data-comms-unread aria-hidden="true">0</span>
+              </a>
+            </div>
           </div>
         </div>
         <div id="topbarToolsGrid" hidden aria-hidden="true"></div>
@@ -493,11 +746,15 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
               <div class="menu-btn-copy"><strong>Guide</strong><span class="menu-btn-sub">clubSENsational portal guide</span></div>
             </button>
-            <button type="button" class="menu-btn menu-btn--portal-guide menu-btn--portal-guide-promo portal-onboarding-menu-hidden" id="quickMenuOnboardingJobTop" data-portal-external-url="onboarding_job_application.html" hidden aria-hidden="true" aria-label="Job application — complete your application form">
+            <button type="button" class="menu-btn menu-btn--portal-guide menu-btn--portal-guide-promo portal-onboarding-menu-hidden" id="quickMenuOnboardingHubTop" data-portal-external-url="onboarding_portal.html" hidden aria-hidden="true" aria-label="Onboarding — photo, documents, job and health">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></div>
+              <div class="menu-btn-copy"><strong>Onboarding</strong><span class="menu-btn-sub">Photo, documents, job and health</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--portal-guide menu-btn--portal-guide-promo portal-onboarding-menu-hidden" id="quickMenuOnboardingJobTop" data-portal-external-url="onboarding_portal.html#job" hidden aria-hidden="true" aria-label="Job application — complete your application form">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></div>
               <div class="menu-btn-copy"><strong>Job application</strong><span class="menu-btn-sub">Complete your application form</span></div>
             </button>
-            <button type="button" class="menu-btn menu-btn--portal-guide menu-btn--portal-guide-promo portal-onboarding-menu-hidden" id="quickMenuOnboardingHealthTop" data-portal-external-url="onboarding_health_questionnaire.html" hidden aria-hidden="true" aria-label="Health questionnaire — pre-employment health form">
+            <button type="button" class="menu-btn menu-btn--portal-guide menu-btn--portal-guide-promo portal-onboarding-menu-hidden" id="quickMenuOnboardingHealthTop" data-portal-external-url="onboarding_portal.html#health" hidden aria-hidden="true" aria-label="Health questionnaire — pre-employment health form">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
               <div class="menu-btn-copy"><strong>Health questionnaire</strong><span class="menu-btn-sub">Pre-employment health form</span></div>
             </button>
@@ -553,6 +810,10 @@
             <button type="button" class="menu-btn menu-btn--work-expenses" id="quickMenuStaffTermReview" data-portal-external-url="swtermreview.html" aria-label="Swimming term review — review each participant per term" hidden aria-hidden="true">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"/></svg></div>
               <div class="menu-btn-copy"><strong>Swimming Term Review</strong><span class="menu-btn-sub">Review each participant per term</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--interviews" id="quickMenuStaffInterviews" data-portal-external-url="Working_interview.html?from=staff" aria-label="Interviews — Day Centre part 2" hidden aria-hidden="true">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M12 11h4"/><path d="M14 9v4"/></svg></div>
+              <div class="menu-btn-copy"><strong>Interviews</strong><span class="menu-btn-sub">Day Centre part 2 interviews</span></div>
             </button>
           </div>
         </div>
@@ -664,6 +925,10 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg></div>
               <div class="menu-btn-copy"><strong>Payslips</strong><span class="menu-btn-sub">View and download your monthly payslips</span></div>
             </button>
+            <button type="button" class="menu-btn menu-btn--mydocs-uniform" id="quickMenuMyDocsUniform" data-portal-external-url="staff_uniform.html">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/></svg></div>
+              <div class="menu-btn-copy"><strong>Uniform</strong><span class="menu-btn-sub">Issued kit, sizes and receipt confirmation</span></div>
+            </button>
           </div>
         </div>
         <div class="menu-group" id="portalQuickMenuSettingsGroup">
@@ -672,11 +937,15 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
               <div class="menu-btn-copy"><strong>Staff help guide</strong><span class="menu-btn-sub">Illustrated topics — halo, cards &amp; forms</span></div>
             </button>
-            <button type="button" class="menu-btn menu-btn--portal-guide portal-onboarding-menu-hidden" id="quickMenuOnboardingJobSettings" data-portal-external-url="onboarding_job_application.html" hidden aria-hidden="true" aria-label="Job application — view completed form">
+            <button type="button" class="menu-btn menu-btn--portal-guide portal-onboarding-menu-hidden" id="quickMenuOnboardingHubSettings" data-portal-external-url="onboarding_portal.html" hidden aria-hidden="true" aria-label="Onboarding hub — photo, documents, job and health">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></div>
+              <div class="menu-btn-copy"><strong>Onboarding</strong><span class="menu-btn-sub">Photo, documents, job and health</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--portal-guide portal-onboarding-menu-hidden" id="quickMenuOnboardingJobSettings" data-portal-external-url="onboarding_portal.html#job" hidden aria-hidden="true" aria-label="Job application — view completed form">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></div>
               <div class="menu-btn-copy"><strong>Job application</strong><span class="menu-btn-sub">View your completed application</span></div>
             </button>
-            <button type="button" class="menu-btn menu-btn--portal-guide portal-onboarding-menu-hidden" id="quickMenuOnboardingHealthSettings" data-portal-external-url="onboarding_health_questionnaire.html" hidden aria-hidden="true" aria-label="Health questionnaire — view completed form">
+            <button type="button" class="menu-btn menu-btn--portal-guide portal-onboarding-menu-hidden" id="quickMenuOnboardingHealthSettings" data-portal-external-url="onboarding_portal.html#health" hidden aria-hidden="true" aria-label="Health questionnaire — view completed form">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
               <div class="menu-btn-copy"><strong>Health questionnaire</strong><span class="menu-btn-sub">View your completed health form</span></div>
             </button>
@@ -756,21 +1025,10 @@
             </span>
           </button>
         </div>
-        <div class="client-info-row client-info-row--general" id="clientSwimTermReviewRow" hidden aria-hidden="true">
-          <button type="button" class="client-info-btn--icon client-info-btn--swim-term-review" id="clientBtnSwimTermReview" aria-label="Swimming term review for this participant" title="Swimming term review">
-            <span class="client-info-btn-stack">
-              <svg class="client-info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"/></svg>
-              <span class="client-info-btn-caption">Swimming term review</span>
-            </span>
-          </button>
-        </div>
-        <div class="client-info-row client-info-row--general">
-          <button type="button" class="client-info-btn--icon client-info-btn--support-plan" id="clientBtnSupportPlan" aria-expanded="false" aria-controls="clientSupportPlanSheet" aria-label="Individual Support Plan" title="Individual Support Plan">
-            <span class="client-info-btn-stack">
-              <svg class="client-info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-              <span class="client-info-btn-caption">Individual Support Plan</span>
-            </span>
-          </button>
+        <!-- Swimming term review + Individual Support Plan removed from staff (ISP lives in Admin CLIENT drawer). -->
+        <div class="client-info-row client-info-row--general" id="clientSwimTermReviewRow" hidden aria-hidden="true" style="display:none"></div>
+        <div class="client-info-row client-info-row--general" id="clientSupportPlanRow" hidden aria-hidden="true" style="display:none">
+          <button type="button" class="client-info-btn--icon client-info-btn--support-plan" id="clientBtnSupportPlan" hidden aria-hidden="true" aria-expanded="false" aria-controls="clientSupportPlanSheet" tabindex="-1"></button>
         </div>
         <div class="client-info-services-stack" id="clientServiceButtonsRow" hidden></div>
       </div>
@@ -873,11 +1131,11 @@
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalNotifyEnableBtn">Turn on notifications</button>
           <button type="button" class="portal-alerts-action-btn portal-alerts-test-btn" id="portalNotifyTestBtn">Send test alert</button>
         </div>
-        <div class="portal-alerts-block" id="portalStaffWaAlertsBlock" hidden>
-          <h4 class="portal-alerts-section-title">Portal WhatsApp</h4>
-          <p class="portal-alerts-hint muted">Messages from the club (same thread as under your photo).</p>
+        <div class="portal-alerts-block" id="portalStaffWaAlertsBlock">
+          <h4 class="portal-alerts-section-title">Communications</h4>
+          <p class="portal-alerts-hint muted">Internal messages with ADMIN and your groups.</p>
           <p id="portalStaffWaAlertsStatus" class="portal-alerts-status" aria-live="polite">Checking messages…</p>
-          <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalStaffWaAlertsOpenBtn">Open WhatsApp messages</button>
+          <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalStaffWaAlertsOpenBtn">Open Communications</button>
         </div>
         <div class="portal-alerts-block portal-alerts-block--voice" id="portalVoiceFeedbackBlock">
           <h4 class="portal-alerts-section-title">Voice typing</h4>
@@ -949,7 +1207,7 @@
       <button type="button" class="term-sheet-close-btn" id="termSheetCloseBtn" aria-label="Close and return to sessions">Close</button>
       <h3 id="termSheetTitle">Autumn Term 2026</h3>
       <p class="term-sheet-subtitle">Days confirmed to work this term</p>
-      <p class="term-sheet-hint" id="termSheetHint">Tap a <strong>green</strong> or <strong>blue</strong> day to open that day&apos;s session cards. Red = not your shift.</p>
+      <p class="term-sheet-hint" id="termSheetHint">Tap a <strong>green</strong>, <strong>blue</strong>, or <strong>red cancelled</strong> day to open that day&apos;s session cards. Pale red (no tap) = not your shift.</p>
     </div>
     <div class="sheet-body" id="termSheetBody">
       <div class="term-cal-intro-banner" id="termCalIntroLayer" hidden aria-hidden="true">
@@ -1010,54 +1268,62 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260831-autumn-northolt"></script>
-  <script src="/portal/term_calendar_dashboard_shared.js?v=20260828-luliya-bank-asw7"></script>
+  <script>window.__PORTAL_STAFF_DASHBOARD_PAGE__ = true;</script>
+  <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
+  <script src="/portal/term_from_timetable.js?v=20260914-raul-fri18-off"></script>
+  <script src="/portal/term_calendar_dashboard_shared.js?v=20260911-emmanuel-no-tue"></script>
   <script src="/portal/portal_ops_admin_duty_roster.js?v=20260704-ops-admin-duty"></script>
   <script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
   <script src="/portal/portal_ops_admin_staff_ui.js?v=20260704-ops-admin-duty"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=roster-19c3aeeb8d"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only"></script>
-  <script src="/portal/portal_staff_feedback_data_loader.js?v=20260727-yusuf-merge-card"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260916-cyrus-wed-aa"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260916-ayman-slug-unify"></script>
+  <script src="/portal/portal_staff_feedback_data_loader.js?v=20260910-pwa-off-joelle"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
-  <script src="/portal/portal-roster-rows-merge.js?v=20260831-dated-slot-instructor"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260901-weekend-as-victor-off"></script>
+  <script src="/portal/portal-roster-rows-merge.js?v=20260910-yunis-se"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260920-team-day-truth"></script>
+  <script src="/portal/portal_staff_match_key.js?v=20260919-youssef-namekey"></script>
+  <script src="/portal/autumn_staff_hours_reference.js?v=20260914-raul-fri18-off"></script>
+  <script src="/portal/portal_dc_services_local.js?v=20260914-staff-chain"></script>
+  <script src="/portal/portal_capacity_chain_occupants.js?v=20260916-emmanuel-abate-dc"></script>
+  <script src="/portal/portal_overview_capacity_chain.js?v=20260916-muhammad-mon7"></script>
+  <script src="/portal/portal_client_day_visibility.js?v=20260916-short-names"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
-  <script src="/portal/portal_madre_fold.js?v=20260713-authoritative-week"></script>
-  <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260705-live-madre-autorefresh"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260724-youssef-acton-end"></script>
-  <script src="/portal/portal_participants_sheet.js?v=20260729-ceo-lead-all-clients"></script>
+  <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
+  <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260915-kareena-return"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260909-michelle-1045"></script>
+  <script src="/portal/portal_participants_sheet.js?v=20260909-mohamed-new-client"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
-  <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
-  <script src="/portal/staff_roster_resolve.js?v=20260703-victor-identity"></script>
-  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260713-defer-heavy"></script>
-  <script src="/portal/portal_participant_photos.js?v=20260720-zakariya-photo"></script>
-  <script src="/portal/portal_participant_avatars_hydrate.js?v=20260702-avatar-shared"></script>
-  <script src="/portal/portal_participant_identity.js?v=20260712-rayyan-f"></script>
-  <script src="/portal/portal_swimming_instructor_menus.js?v=20260721-aurora-no-plan"></script>
-  <script src="/portal/portal_topbar_header.js?v=20260729-ceo-lead-all-clients"></script>
-  <script src="/portal/portal_staff_whatsapp.js?v=20260722-wa-fit"></script>
+  <script src="/portal/portal_staff_display_names.js?v=20260911-emmanuel-no-tue"></script>
+  <script src="/portal/staff_roster_resolve.js?v=20260914-emmanuel-sun13"></script>
+  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260915-angel-cover-term"></script>
+  <script src="/portal/portal_participant_identity.js?v=20260906-yossi-unify"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260910-reg-photo-slug"></script>
+  <script src="/portal/portal_participant_avatars_hydrate.js?v=20260910-reg-photo-slug"></script>
+  <script src="/portal/portal_swimming_instructor_menus.js?v=20260916-isp-admin-only"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260916-comms-stay"></script>
+  <script src="/portal/portal_comunicaciones_entry.js?v=20260920-sidebar-fit"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
-  <script src="/portal/portal_area_note_icons.js?v=20260704-area-note-fixed"></script>
-  <script src="/portal/portal_today_next_chips.js?v=20260711-home-fulltext"></script>
-  <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster"></script>
-  <script type="module" src="/portal/portal_lead_team_shift.js?v=20260719-michelle-raul-mon"></script>
-<script src="/portal/portal_sheet_back.js?v=20260824-participants-back-to-menu"></script>
+  <script src="/portal/portal_area_note_icons.js?v=20260916-ayman-area-nc"></script>
+  <script src="/portal/portal_today_next_chips.js?v=20260910-next-chips-ov"></script>
+  <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260910-roberto-taps3"></script>
+  <script type="module" src="/portal/portal_lead_team_shift.js?v=20260920-team-day-truth"></script>
+<script src="/portal/portal_sheet_back.js?v=20260910-staff-debug4"></script>
   <script src="/portal/staff-dashboard-dock-boot.js?v=20260712-no-photo-signout"></script>
-  <script src="/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav"></script>
-  <script src="/portal/staff-dashboard-feedback.js?v=20260727-fb-keys-perf"></script>
-  <script src="/portal/staff-dashboard-calendar.js?v=20260828-term-day-tap"></script>
-  <script src="/portal/staff-dashboard-term.js?v=20260722-ceo-fb-once"></script>
-  <script src="/portal/staff-dashboard-participants.js?v=20260901-roberto-wed-fadi-only"></script>
+  <script src="/portal/staff-dashboard-topbar.js?v=20260905-admin-changes-nav"></script>
+  <script src="/portal/staff-dashboard-feedback.js?v=20260920-venue-pick"></script>
+  <script src="/portal/staff-dashboard-calendar.js?v=20260914-aurora-anas-cover"></script>
+  <script src="/portal/staff-dashboard-term.js?v=20260916-emmanuel-abate-dc"></script>
+  <script src="/portal/staff-dashboard-participants.js?v=20260920-team-day-truth"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260805-cover-half-merge"></script>
-  <script src="/portal/staff-dashboard-today.js?v=20260828-term-day-tap"></script>
-  <script src="/portal/staff-dashboard-ui.js?v=20260901-roberto-wed-fadi-only"></script>
-  <script src="/portal/portal_today_time_fit.js?v=20260706-time-one-line"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260919-aquatic-hour-2to1"></script>
+  <script src="/portal/staff-dashboard-today.js?v=20260920-team-day-truth"></script>
+  <script src="/portal/staff-dashboard-ui.js?v=20260920-sched-ov-next"></script>
+  <script src="/portal/portal_today_time_fit.js?v=20260911-roberto-ui-unfreeze"></script>
   <script src="/portal/staff-dashboard-auth-bridge.js?v=20260625-lead-day-cards-nav"></script>
-  <script src="/portal/staff-dashboard-rehydrate.js?v=20260716-simon-cover-fix"></script>
+  <script src="/portal/staff-dashboard-rehydrate.js?v=20260914-emmanuel-sun13"></script>
   <script src="/portal/portal-logout-bind.js?v=20260712-no-photo-signout"></script>
-  <script type="module" src="/portal/staff-dashboard-auth-supabase.js?v=20260818-es-exec"></script>
-  <script src="/portal/staff-dashboard-achievements-boot.js?v=20260705-ceo-gallery-topbar"></script>
+  <script type="module" src="/portal/staff-dashboard-auth-supabase.js?v=20260920-no-live-map"></script>
+  <script src="/portal/staff-dashboard-achievements-boot.js?v=20260910-no-dbg-chip"></script>
     
   
   

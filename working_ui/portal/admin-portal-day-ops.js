@@ -15,6 +15,7 @@
     venue_reviews: [],
     cancellation_reports: [],
     schedule_overrides: [],
+    staff_unavailability: [],
     session_quick_marks: []
   };
   var loadInFlight = null;
@@ -23,7 +24,14 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260723-lead-view-by-id';
+  var PORTAL_DAY_OPS_BUILD = '20260920-register-fast';
+  var venueReviewFilters = {
+    venue: '',
+    staff: '',
+    term: '',
+    kind: ''
+  };
+  var venueAdminVideoUploading = {};
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -55,15 +63,78 @@
     }
   }
 
-  function promiseWithTimeout(promise, ms, fallback) {
+  var FB_FETCH_TIMEOUT = { __portalFbTimeout: true };
+
+  function promiseWithTimeout(promise, ms, fallback, onLate) {
+    var timedOut = false;
+    var timer = null;
+    var tracked = Promise.resolve(promise).then(
+      function (value) {
+        if (timedOut && typeof onLate === 'function') {
+          try {
+            onLate(value);
+          } catch (_late) {}
+        }
+        return value;
+      },
+      function (err) {
+        if (timedOut) {
+          console.warn('[PortalDayOps] late fetch error', err);
+          return fallback;
+        }
+        throw err;
+      }
+    );
     return Promise.race([
-      promise,
+      tracked,
       new Promise(function (resolve) {
-        setTimeout(function () {
+        timer = setTimeout(function () {
+          timedOut = true;
           resolve(fallback);
         }, ms);
       })
-    ]);
+    ]).finally(function () {
+      if (timer) clearTimeout(timer);
+    });
+  }
+
+  function feedbackRowMergeKey(row) {
+    if (!row) return '';
+    var id = String(row.id || '').trim();
+    if (id) return 'id:' + id;
+    return [
+      String(row.session_date || '').slice(0, 10),
+      String(row.client_name || '').trim().toLowerCase(),
+      String(row.session_time || '').trim(),
+      String(row.completed_by_name || '').trim().toLowerCase(),
+      String(row.portal_session_key || '').trim()
+    ].join('|');
+  }
+
+  function mergeSessionFeedbackRows(current, incoming) {
+    if (!Array.isArray(incoming) || !incoming.length) {
+      return Array.isArray(current) ? current : [];
+    }
+    if (!Array.isArray(current) || !current.length) return incoming.slice();
+    var out = [];
+    var at = Object.create(null);
+    function add(row) {
+      if (!row) return;
+      var key = feedbackRowMergeKey(row);
+      if (!key) {
+        out.push(row);
+        return;
+      }
+      if (Object.prototype.hasOwnProperty.call(at, key)) {
+        out[at[key]] = row;
+        return;
+      }
+      at[key] = out.length;
+      out.push(row);
+    }
+    current.forEach(add);
+    incoming.forEach(add);
+    return out;
   }
 
   function fetchWithTimeout(url, options, ms) {
@@ -184,6 +255,8 @@
       lead_session_reports: [],
       venue_reviews: [],
       cancellation_reports: [],
+      schedule_overrides: [],
+      staff_unavailability: [],
       session_quick_marks: []
     };
   }
@@ -201,6 +274,13 @@
       if (Array.isArray(cachedInc) && cachedInc.length) {
         if (!payload.incident_reports || !payload.incident_reports.length) {
           payload.incident_reports = cachedInc.slice();
+        }
+      }
+      var cachedOff = global.__PORTAL_STAFF_UNAVAILABILITY__;
+      if (Array.isArray(cachedOff) && cachedOff.length) {
+        var curOff = (payload.staff_unavailability || []).length;
+        if (!curOff || cachedOff.length > curOff) {
+          payload.staff_unavailability = cachedOff.slice();
         }
       }
     } catch (_syncOv) {}
@@ -230,21 +310,28 @@
     if (!j) return;
     if (j.counts) payload.counts = j.counts;
     if (Array.isArray(j.session_feedback)) {
-      if (j.session_feedback.length || !Array.isArray(payload.session_feedback) || !payload.session_feedback.length) {
+      if (j.session_feedback.length) {
+        payload.session_feedback = mergeSessionFeedbackRows(payload.session_feedback, j.session_feedback);
+      } else if (!Array.isArray(payload.session_feedback) || !payload.session_feedback.length) {
         payload.session_feedback = j.session_feedback;
       }
     }
-    if (j.session_feedback_loaded !== undefined) payload.session_feedback_loaded = j.session_feedback_loaded;
+    if (j.session_feedback_loaded !== undefined) {
+      if (j.session_feedback_loaded === true || !(payload.session_feedback || []).length) {
+        payload.session_feedback_loaded = j.session_feedback_loaded;
+      }
+    }
     if (j.session_feedback_total != null) {
-      payload.session_feedback_total = j.session_feedback_total;
-    } else if (Array.isArray(j.session_feedback) && j.session_feedback.length) {
-      payload.session_feedback_total = j.session_feedback.length;
+      payload.session_feedback_total = Math.max(Number(j.session_feedback_total) || 0, (payload.session_feedback || []).length);
+    } else if (Array.isArray(payload.session_feedback) && payload.session_feedback.length) {
+      payload.session_feedback_total = payload.session_feedback.length;
     }
     mergeArrayField('incident_reports', j.incident_reports);
     mergeArrayField('lead_session_reports', j.lead_session_reports);
     mergeArrayField('venue_reviews', j.venue_reviews);
     mergeArrayField('cancellation_reports', j.cancellation_reports);
     mergeArrayField('schedule_overrides', j.schedule_overrides);
+    mergeArrayField('staff_unavailability', j.staff_unavailability);
     mergeArrayField('session_quick_marks', j.session_quick_marks);
     mergeArrayField('parent_feedback_shares', j.parent_feedback_shares);
     try {
@@ -252,6 +339,15 @@
         global.__PORTAL_LEAD_SESSION_REPORTS__ = payload.lead_session_reports;
       }
     } catch (_syncLead) {}
+    try {
+      if (Array.isArray(payload.staff_unavailability)) {
+        global.__PORTAL_STAFF_UNAVAILABILITY__ = payload.staff_unavailability.slice();
+      }
+    } catch (_syncOff) {}
+  }
+
+  function portalDayOpsHubIsLive(hub) {
+    return !!(hub && hub.root && hub.root.isConnected);
   }
 
   function portalDayOpsAfterFeedbackPayloadMerge() {
@@ -259,14 +355,12 @@
     if (typeof window.portalInvalidateAdminFeedbackStatusCache === 'function') {
       window.portalInvalidateAdminFeedbackStatusCache();
     }
-    if (feedbackHub && typeof feedbackHub.setPayload === 'function') {
-      feedbackHub.setPayload(payload);
-      if (typeof feedbackHub.render === 'function') feedbackHub.render();
+    if (portalDayOpsHubIsLive(feedbackHub) && typeof feedbackHub.setPayload === 'function') {
+      feedbackHub.setPayload(payload, { quiet: true });
     }
-    if (trackingHub && typeof trackingHub.setPayload === 'function') {
-      trackingHub.setPayload(payload);
-      if (typeof trackingHub.render === 'function') trackingHub.render();
-      else if (typeof trackingHub.renderPanels === 'function') trackingHub.renderPanels();
+    /* Overview is a staffing board — do not re-paint on every feedback poll/realtime tick. */
+    if (portalDayOpsHubIsLive(trackingHub) && typeof trackingHub.setPayload === 'function') {
+      trackingHub.setPayload(payload, { quiet: true });
     }
     exposePortalAdminDebugGlobals();
     portalDayOpsRenderLiveLoadStatus();
@@ -287,18 +381,45 @@
   var sessionFeedbackRtBound = false;
   var sessionFeedbackRtDebounce = null;
 
+  function adoptSessionFeedbackRows(rows) {
+    if (!Array.isArray(rows) || !rows.length) return;
+    payload.session_feedback = mergeSessionFeedbackRows(payload.session_feedback, rows);
+    payload.session_feedback_total = payload.session_feedback.length;
+    payload.session_feedback_loaded = true;
+    portalDayOpsAfterFeedbackPayloadMerge();
+  }
+
   async function refreshSessionFeedbackLive() {
     if (!cfg.fetchSessionFeedback) return;
     try {
-      var dbFb = (await promiseWithTimeout(cfg.fetchSessionFeedback(), SESSION_FEEDBACK_FETCH_MS, [])) || [];
-      payload.session_feedback = dbFb;
+      var dbFb = await promiseWithTimeout(
+        cfg.fetchSessionFeedback(),
+        SESSION_FEEDBACK_FETCH_MS,
+        FB_FETCH_TIMEOUT,
+        function (late) {
+          if (Array.isArray(late) && late.length) adoptSessionFeedbackRows(late);
+        }
+      );
+      if (dbFb && dbFb.__portalFbTimeout) {
+        if ((payload.session_feedback || []).length) {
+          payload.session_feedback_loaded = true;
+        }
+        portalDayOpsRenderLiveLoadStatus();
+        return;
+      }
+      if (Array.isArray(dbFb) && dbFb.length) {
+        payload.session_feedback = mergeSessionFeedbackRows(payload.session_feedback, dbFb);
+      } else if (!Array.isArray(payload.session_feedback) || !payload.session_feedback.length) {
+        payload.session_feedback = Array.isArray(dbFb) ? dbFb : [];
+      }
       payload.session_feedback_total = payload.session_feedback.length;
+      payload.session_feedback_loaded = true;
       await fetchParentFeedbackSharesInto(payload);
       portalDayOpsAfterFeedbackPayloadMerge();
     } catch (eFb) {
       console.error('[PortalDayOps] refreshSessionFeedbackLive', eFb);
+      if ((payload.session_feedback || []).length) payload.session_feedback_loaded = true;
     } finally {
-      payload.session_feedback_loaded = true;
       portalDayOpsRenderLiveLoadStatus();
     }
   }
@@ -370,13 +491,13 @@
     if (!portalRows.length) return;
     var byKey = {};
     var out = [];
-    portalRows.forEach(function (r) {
+    (payload.venue_reviews || []).forEach(function (r) {
       var k = venueReviewMergeKey(r);
       if (!k || byKey[k]) return;
       byKey[k] = true;
       out.push(r);
     });
-    (payload.venue_reviews || []).forEach(function (r) {
+    portalRows.forEach(function (r) {
       var k = venueReviewMergeKey(r);
       if (!k || byKey[k]) return;
       byKey[k] = true;
@@ -449,6 +570,31 @@
     } catch (eOv2) {}
   }
 
+  async function fetchStaffUnavailabilityInto(out, client) {
+    if (!client) return;
+    var sinceOff = new Date();
+    sinceOff.setDate(sinceOff.getDate() - 14);
+    var untilOff = new Date();
+    untilOff.setDate(untilOff.getDate() + 120);
+    var sinceOffIso = sinceOff.toISOString().slice(0, 10);
+    var untilOffIso = untilOff.toISOString().slice(0, 10);
+    try {
+      var offRes = await client
+        .from('staff_unavailability')
+        .select('id, name_key, staff_name, staff_id, off_date, reason')
+        .gte('off_date', sinceOffIso)
+        .lte('off_date', untilOffIso)
+        .order('off_date', { ascending: true })
+        .limit(800);
+      if (!offRes.error) {
+        out.staff_unavailability = offRes.data || [];
+        try {
+          global.__PORTAL_STAFF_UNAVAILABILITY__ = (out.staff_unavailability || []).slice();
+        } catch (_g) {}
+      }
+    } catch (eOff) {}
+  }
+
   /** Fast path for Sessions overview — parallel, no incidents/lead/venue/DB feedback merge. */
   async function fetchOverviewSupabaseExtras() {
     var client = cfg.getClient && cfg.getClient();
@@ -469,6 +615,11 @@
     } else if (client) {
       tasks.push(fetchScheduleOverridesInto(out, client));
     }
+    if (client) {
+      tasks.push(fetchStaffUnavailabilityInto(out, client));
+    } else if (Array.isArray(global.__PORTAL_STAFF_UNAVAILABILITY__)) {
+      out.staff_unavailability = global.__PORTAL_STAFF_UNAVAILABILITY__.slice();
+    }
     if (cfg.fetchSessionFeedback) {
       tasks.push(
         (async function () {
@@ -477,25 +628,48 @@
             if (!client && cfg.waitForSupabaseClient) {
               client = await cfg.waitForSupabaseClient(SUPABASE_WAIT_MS);
             }
-            live = (await promiseWithTimeout(cfg.fetchSessionFeedback(), SESSION_FEEDBACK_FETCH_MS, [])) || [];
-            out.session_feedback = live;
-            out.session_feedback_total = out.session_feedback.length;
-            if (!live.length) {
-              var meta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
-              var err = meta && meta.error ? String(meta.error) : '';
-              console.warn(
-                '[PortalDayOps] session_feedback live rows: 0' + (err ? ' (' + err + ')' : '')
-              );
+            live = await promiseWithTimeout(
+              cfg.fetchSessionFeedback(),
+              SESSION_FEEDBACK_FETCH_MS,
+              FB_FETCH_TIMEOUT,
+              function (late) {
+                if (Array.isArray(late) && late.length) adoptSessionFeedbackRows(late);
+              }
+            );
+            if (live && live.__portalFbTimeout) {
+              if ((payload.session_feedback || []).length) {
+                out.session_feedback = payload.session_feedback;
+                out.session_feedback_total = payload.session_feedback.length;
+                out.session_feedback_loaded = true;
+              } else {
+                console.warn('[PortalDayOps] session_feedback still loading (timeout kept empty payload)');
+              }
             } else {
-              console.log('[PortalDayOps] session_feedback live rows:', live.length);
+              live = Array.isArray(live) ? live : [];
+              out.session_feedback = live;
+              out.session_feedback_total = live.length;
+              out.session_feedback_loaded = true;
+              if (!live.length) {
+                var meta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
+                var err = meta && meta.error ? String(meta.error) : '';
+                console.warn(
+                  '[PortalDayOps] session_feedback live rows: 0' + (err ? ' (' + err + ')' : '')
+                );
+              } else {
+                console.log('[PortalDayOps] session_feedback live rows:', live.length);
+              }
+              dayOpsDebug('[PortalDayOps] session_feedback live rows:', live.length);
             }
-            dayOpsDebug('[PortalDayOps] session_feedback live rows:', live.length);
           } catch (taskErr) {
             console.error('[PortalDayOps] session_feedback task failed', taskErr);
-            out.session_feedback = out.session_feedback || [];
-            out.session_feedback_total = out.session_feedback.length;
-          } finally {
-            out.session_feedback_loaded = true;
+            if ((payload.session_feedback || []).length) {
+              out.session_feedback = payload.session_feedback;
+              out.session_feedback_total = payload.session_feedback.length;
+              out.session_feedback_loaded = true;
+            } else {
+              out.session_feedback = out.session_feedback || [];
+              out.session_feedback_total = out.session_feedback.length;
+            }
           }
         })()
       );
@@ -546,6 +720,7 @@
       }
     } catch (_ovFallback) {}
     console.log('[PortalDayOps] schedule_overrides live rows:', (out.schedule_overrides || []).length);
+    console.log('[PortalDayOps] staff_unavailability live rows:', (out.staff_unavailability || []).length);
     return out;
   }
 
@@ -600,15 +775,26 @@
           });
       });
     }
-    if (client) {
+    if (cfg.fetchVenueReviews) {
+      tasks.push(function () {
+        return cfg.fetchVenueReviews().then(function (rows) {
+          out.venue_reviews = rows || [];
+        });
+      });
+    } else if (client) {
       tasks.push(function () {
         return client
           .from('venue_reviews')
           .select('*')
+          .order('review_date', { ascending: false })
           .order('created_at', { ascending: false })
-          .limit(400)
+          .limit(500)
           .then(function (ven) {
-            if (!ven.error) out.venue_reviews = ven.data || [];
+            if (ven.error) {
+              console.warn('[PortalDayOps] venue_reviews', ven.error.message || ven.error);
+              return;
+            }
+            out.venue_reviews = ven.data || [];
           });
       });
     }
@@ -625,6 +811,7 @@
       }
     }
     console.log('[PortalDayOps] incident_reports live rows:', (out.incident_reports || []).length);
+    console.log('[PortalDayOps] venue_reviews live rows:', (out.venue_reviews || []).length);
     return out;
   }
 
@@ -702,7 +889,19 @@
     }
     var incMeta = live.incident_reports || null;
     if (incMeta && incMeta.count && !incCount) incCount = incMeta.count;
+    var venueCount = (payload.venue_reviews || []).length;
+    if (!venueCount && global.__PORTAL_VENUE_REVIEWS__ && global.__PORTAL_VENUE_REVIEWS__.length) {
+      venueCount = global.__PORTAL_VENUE_REVIEWS__.length;
+    }
     var loaded = payload.session_feedback_loaded === true;
+    var cache = global.__PORTAL_ADMIN_SESSION_FEEDBACK_CACHE__;
+    if (!fbCount && Array.isArray(cache) && cache.length) {
+      payload.session_feedback = mergeSessionFeedbackRows(payload.session_feedback, cache);
+      payload.session_feedback_total = payload.session_feedback.length;
+      payload.session_feedback_loaded = true;
+      fbCount = payload.session_feedback.length;
+      loaded = true;
+    }
     if (!loaded) {
       el.className = 'portal-forms-status';
       el.innerHTML =
@@ -729,6 +928,8 @@
       esc(String(ovCount)) +
       '</strong> · Incidents: <strong>' +
       esc(String(incCount)) +
+      '</strong> · Venue: <strong>' +
+      esc(String(venueCount)) +
       '</strong> · build <code>' +
       esc(PORTAL_DAY_OPS_BUILD) +
       '</code>';
@@ -782,14 +983,14 @@
   } catch (_buildLog) {}
 
   function hubScriptNeedsReload() {
-    if (global.AdminSessionsHub) return false;
     var tagged = document.querySelector('script[data-admin-sessions-hub="1"]');
     var build = portalHubBuildToken();
-    if (tagged && build && tagged.src.indexOf(build) === -1) return true;
+    if (tagged && build && tagged.src && tagged.src.indexOf(build) === -1) return true;
+    if (!global.AdminSessionsHub) return false;
     if (
-      global.AdminSessionsHub &&
-      (!global.AdminSessionsHub.prototype ||
-        typeof global.AdminSessionsHub.prototype.htmlOverviewFeedbackLoadHint !== 'function')
+      !global.AdminSessionsHub.prototype ||
+      typeof global.AdminSessionsHub.prototype.htmlOverviewFeedbackLoadHint !== 'function' ||
+      typeof global.AdminSessionsHub.prototype.htmlDayBoard !== 'function'
     ) {
       return true;
     }
@@ -852,6 +1053,28 @@
 
   function reRenderHub(hub) {
     if (!hub || !hub.root || !hub.root.isConnected) return;
+    if (
+      hub.tab === 'tracking' &&
+      typeof hub.softRefreshOverview === 'function' &&
+      typeof hub.overviewSurfaceReady === 'function' &&
+      hub.overviewSurfaceReady()
+    ) {
+      hub.softRefreshOverview();
+      return;
+    }
+    if (
+      hub.mode === 'feedback' &&
+      typeof hub.scheduleRegisterBodyPaint === 'function' &&
+      typeof hub.feedbackSurfaceReady === 'function' &&
+      hub.feedbackSurfaceReady()
+    ) {
+      hub.scheduleRegisterBodyPaint();
+      return;
+    }
+    if (typeof hub.renderPanels === 'function' && hub.root.querySelector('.ash-panels, .ash-panels--feedback-only')) {
+      hub.renderPanels();
+      return;
+    }
     if (typeof hub.render === 'function') {
       hub.render();
     } else if (typeof hub.renderPanels === 'function') {
@@ -880,7 +1103,7 @@
       mode: mode,
       externalTabs: true,
       payload: payload,
-      feedbackMixAwaitingSlots: mode === 'feedback',
+      feedbackMixAwaitingSlots: false,
       getFeedbackDayStats: cfg.getFeedbackDayStats,
       isClubClosedDay: cfg.isClubClosedDay,
       showFullWeekDayStrip: cfg.showFullWeekDayStrip,
@@ -894,7 +1117,15 @@
               ? trackingHub
               : null;
         syncHubViewFilters(changedHub, other);
-        reRenderHub(other);
+        /* Only re-paint the sibling hub when that panel is actually visible. */
+        if (
+          other &&
+          other.root &&
+          other.root.isConnected &&
+          other.root.offsetParent !== null
+        ) {
+          reRenderHub(other);
+        }
       }
     };
   }
@@ -918,13 +1149,9 @@
   function applyPendingFeedbackNav(hub) {
     if (!hub || pendingFeedbackNoteFilter === undefined) return;
     var nf = pendingFeedbackNoteFilter;
-    // "positive" tab = Feedback (filtered) — all submitted narratives, not positive_feedback notes.
     hub.feedbackNoteFilter = nf === 'relevant' ? 'relevant' : '';
     pendingFeedbackNoteFilter = undefined;
-    if (hub.tab === 'positive' || hub.tab === 'relevant') {
-      if (typeof hub.syncWeekPickerToCurrentWeek === 'function') hub.syncWeekPickerToCurrentWeek();
-    }
-    hub.render();
+    if (hub.tab === 'positive' || hub.tab === 'relevant') hub.tab = 'feedback';
   }
 
   function overviewTabForC4k(tabId) {
@@ -935,8 +1162,6 @@
   }
 
   function feedbackSetupForC4k(tabId) {
-    if (tabId === 'positive') return { tab: 'positive', filter: '' };
-    if (tabId === 'relevant') return { tab: 'relevant', filter: 'relevant' };
     return { tab: 'feedback', filter: '' };
   }
 
@@ -983,6 +1208,9 @@
     try {
       await global.portalRefreshPortalRosterRowsFromSupabase(client);
       refreshHubRosterFromLiveSource();
+      try {
+        global.__PORTAL_STAFF_ROSTER_LIVE_READY__ = true;
+      } catch (_ready) {}
       console.log('[PortalDayOps] live MADRE + portal_roster_rows refreshed');
     } catch (eRoster) {
       console.warn('[PortalDayOps] live roster refresh failed', eRoster);
@@ -1192,9 +1420,11 @@
     }
     if (feedbackHub && feedbackHub.root === root) {
       feedbackHub.refreshRosterRowsFromResolvedSource();
-      feedbackHub.setPayload(payload);
+      feedbackHub.setPayload(payload, { quiet: true });
       ensureSessionFeedbackLoadedSoon();
-      if (typeof feedbackHub.render === 'function') {
+      if (typeof feedbackHub.scheduleRegisterBodyPaint === 'function' && feedbackHub.feedbackSurfaceReady()) {
+        feedbackHub.scheduleRegisterBodyPaint();
+      } else if (typeof feedbackHub.render === 'function') {
         if (typeof requestAnimationFrame === 'function') {
           requestAnimationFrame(function () {
             feedbackHub.render();
@@ -1354,16 +1584,360 @@
     });
   }
 
+  function venueReviewIso(row) {
+    return String((row && (row.review_date || row.created_at)) || '').slice(0, 10);
+  }
+  function venueReviewTermId(iso) {
+    var d = String(iso || '').slice(0, 10);
+    if (d >= '2026-09-01' && d <= '2026-12-18') return 'autumn-2026';
+    if (d >= '2026-04-13' && d <= '2026-08-31') return 'summer-2026';
+    if (d >= '2026-01-06' && d <= '2026-04-12') return 'spring-2026';
+    return 'earlier';
+  }
+  function venueReviewTermLabel(id) {
+    if (id === 'autumn-2026') return 'Autumn 2026';
+    if (id === 'summer-2026') return 'Summer 2026';
+    if (id === 'spring-2026') return 'Spring 2026';
+    if (id === 'earlier') return 'Earlier';
+    return 'All terms';
+  }
+  function venueReviewKindKey(row) {
+    var k = String((row && row.opening_or_closing) || '').trim().toLowerCase();
+    if (k === 'open' || k === 'opening') return 'Opening';
+    if (k === 'close' || k === 'closing') return 'Closing';
+    return '';
+  }
+  function venueReviewLondonTodayIso() {
+    try {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/London',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(new Date());
+    } catch (_tz) {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }
+  function venueReviewDayFinished(row) {
+    var day = venueReviewIso(row);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return true;
+    return day < venueReviewLondonTodayIso();
+  }
+  function venueReviewAdminClient() {
+    var c = cfg.getClient && cfg.getClient();
+    if (c && c.storage) return c;
+    var box = global.__PORTAL_SUPABASE__;
+    return box && box.client ? box.client : null;
+  }
+  function venueAdminVideoMime(mime) {
+    var raw = String(mime || '')
+      .split(';')[0]
+      .trim()
+      .toLowerCase();
+    if (
+      raw === 'video/webm' ||
+      raw === 'video/mp4' ||
+      raw === 'video/quicktime' ||
+      raw === 'video/ogg' ||
+      raw === 'video/x-matroska'
+    ) {
+      return raw;
+    }
+    if (raw.indexOf('quicktime') >= 0 || raw.indexOf('mov') >= 0) return 'video/quicktime';
+    if (raw.indexOf('mp4') >= 0 || raw.indexOf('m4v') >= 0) return 'video/mp4';
+    if (raw.indexOf('ogg') >= 0) return 'video/ogg';
+    if (raw.indexOf('matroska') >= 0 || raw.indexOf('mkv') >= 0) return 'video/x-matroska';
+    return 'video/webm';
+  }
+  function venueAdminVideoExt(mime) {
+    var m = String(mime || '').toLowerCase();
+    if (m.indexOf('mp4') >= 0 || m.indexOf('m4v') >= 0) return 'mp4';
+    if (m.indexOf('quicktime') >= 0 || m.indexOf('mov') >= 0) return 'mov';
+    if (m.indexOf('ogg') >= 0) return 'ogv';
+    return 'webm';
+  }
+  function ensureVenueAdminVideoInput() {
+    var inp = document.getElementById('portalVenueAdminVideoFile');
+    if (inp) return inp;
+    inp = document.createElement('input');
+    inp.type = 'file';
+    inp.id = 'portalVenueAdminVideoFile';
+    inp.accept = 'video/*,video/mp4,video/quicktime,.mov,.mp4,.webm';
+    inp.setAttribute('hidden', 'hidden');
+    document.body.appendChild(inp);
+    inp.addEventListener('change', function () {
+      var file = inp.files && inp.files[0];
+      var reviewId = String(inp.getAttribute('data-review-id') || '').trim();
+      try {
+        inp.value = '';
+      } catch (_clr) {}
+      if (!file || !reviewId) return;
+      void uploadVenueReviewAdminVideo(reviewId, file);
+    });
+    return inp;
+  }
+  function patchVenueReviewVideoLocal(reviewId, path, mime) {
+    (payload.venue_reviews || []).forEach(function (r) {
+      if (String((r && r.id) || '') === reviewId) {
+        r.video_storage_path = path;
+        r.video_mime_type = mime;
+      }
+    });
+    try {
+      if (Array.isArray(window.__PORTAL_VENUE_REVIEWS__)) {
+        window.__PORTAL_VENUE_REVIEWS__.forEach(function (r) {
+          if (String((r && r.id) || '') === reviewId) {
+            r.video_storage_path = path;
+            r.video_mime_type = mime;
+          }
+        });
+      }
+    } catch (_cache) {}
+  }
+  async function uploadVenueReviewAdminVideo(reviewId, file) {
+    var MAX = 50 * 1024 * 1024;
+    if (file.size > MAX) {
+      alert('Video is too large (max 50 MB).');
+      return;
+    }
+    var client = venueReviewAdminClient();
+    if (!client || !client.storage) {
+      alert('Sign in required to upload venue videos.');
+      return;
+    }
+    var row = (payload.venue_reviews || []).filter(function (r) {
+      return String((r && r.id) || '') === reviewId;
+    })[0];
+    if (!row) {
+      alert('Could not find that venue review.');
+      return;
+    }
+    if (!venueReviewDayFinished(row)) {
+      alert('This day has not finished yet. Attach the walkthrough after closing.');
+      return;
+    }
+    var mime = venueAdminVideoMime(file.type || 'video/mp4');
+    var ext = venueAdminVideoExt(mime);
+    var day = String(row.review_date || '').slice(0, 10) || 'undated';
+    var kind = venueReviewKindKey(row) === 'Closing' ? 'close' : 'open';
+    var uid = String(row.submitted_by_user_id || 'admin').trim() || 'admin';
+    var path = uid + '/' + day + '/' + kind + '_admin_' + String(Date.now()) + '.' + ext;
+    var uploadBlob = String(file.type || '').indexOf(';') >= 0 ? new Blob([file], { type: mime }) : file;
+    venueAdminVideoUploading[reviewId] = true;
+    try {
+      await renderLeadVenueTables();
+      var up = await client.storage.from('venue-review-videos').upload(path, uploadBlob, {
+        contentType: mime,
+        upsert: false
+      });
+      if (up.error) throw up.error;
+      var patch = await client
+        .from('venue_reviews')
+        .update({
+          video_storage_path: path,
+          video_mime_type: mime
+        })
+        .eq('id', reviewId)
+        .select('id, video_storage_path, video_mime_type')
+        .maybeSingle();
+      if (patch.error) throw patch.error;
+      if (!patch.data || !patch.data.video_storage_path) {
+        throw new Error('Saved the file but could not attach it to this review. Try again.');
+      }
+      patchVenueReviewVideoLocal(reviewId, path, mime);
+    } catch (err) {
+      console.error(err);
+      var msg = String((err && err.message) || err || '');
+      if (/mime|not allowed|invalid|content type/i.test(msg)) {
+        msg = 'This video format was not accepted. Use MP4 or MOV from Photos.';
+      }
+      alert('Could not attach the video.\n' + msg);
+    } finally {
+      delete venueAdminVideoUploading[reviewId];
+      await renderLeadVenueTables();
+    }
+  }
+  function venueReviewPhotoPaths(r) {
+    var raw = r && r.photo_storage_paths;
+    if (Array.isArray(raw)) return raw.filter(function (p) { return String(p || '').trim(); });
+    if (typeof raw === 'string') {
+      try {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(function (p) { return String(p || '').trim(); });
+        }
+      } catch (_e) {}
+    }
+    return [];
+  }
+  function venueReviewVideoCellHtml(r) {
+    if (!venueReviewDayFinished(r)) return '—';
+    var reviewId = String((r && r.id) || '').trim();
+    var videoPath = String((r && r.video_storage_path) || '').trim();
+    var photoPaths = venueReviewPhotoPaths(r);
+    var uploading = !!(reviewId && venueAdminVideoUploading[reviewId]);
+    var playBtn = videoPath
+      ? '<button type="button" class="portal-forms-view-btn" data-venue-video-path="' +
+        esc(videoPath) +
+        '" aria-label="Play venue walkthrough video">Play video</button>'
+      : '';
+    var photoBtns = photoPaths
+      .map(function (p, i) {
+        return (
+          '<button type="button" class="portal-forms-view-btn" data-venue-video-path="' +
+          esc(String(p)) +
+          '" aria-label="Open venue photo ' +
+          (i + 1) +
+          '">Photo ' +
+          (i + 1) +
+          '</button>'
+        );
+      })
+      .join('');
+    var uploadLabel = uploading ? 'Uploading...' : videoPath ? 'Replace video' : 'Upload video';
+    var uploadBtn = reviewId
+      ? '<button type="button" class="portal-forms-view-btn" data-venue-video-upload="' +
+        esc(reviewId) +
+        '" aria-label="' +
+        (videoPath ? 'Replace' : 'Upload') +
+        ' venue walkthrough video"' +
+        (uploading ? ' disabled' : '') +
+        '>' +
+        uploadLabel +
+        '</button>'
+      : '';
+    if (!playBtn && !uploadBtn && !photoBtns) return '—';
+    return '<div class="portal-venue-video-actions">' + playBtn + photoBtns + uploadBtn + '</div>';
+  }
+  function uniqueVenueFilterValues(vals) {
+    var seen = {};
+    var out = [];
+    (vals || []).forEach(function (raw) {
+      var s = String(raw || '').trim();
+      if (!s || s === '—') return;
+      var key = s.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push(s);
+    });
+    out.sort(function (a, b) {
+      return a.localeCompare(b, 'en', { sensitivity: 'base' });
+    });
+    return out;
+  }
+  function venueReviewSelectHtml(id, label, value, options, allLabel) {
+    var html =
+      '<label class="portal-venue-review-filter">' +
+      esc(label) +
+      '<select id="' +
+      esc(id) +
+      '">' +
+      '<option value="">' +
+      esc(allLabel) +
+      '</option>';
+    (options || []).forEach(function (opt) {
+      var v = String(opt.value != null ? opt.value : opt);
+      var lab = String(opt.label != null ? opt.label : v);
+      html +=
+        '<option value="' +
+        esc(v) +
+        '"' +
+        (value === v ? ' selected' : '') +
+        '>' +
+        esc(lab) +
+        '</option>';
+    });
+    html += '</select></label>';
+    return html;
+  }
+  function venueReviewRowMatchesFilters(row) {
+    var venueWant = String(venueReviewFilters.venue || '').trim().toLowerCase();
+    var staffWant = String(venueReviewFilters.staff || '').trim().toLowerCase();
+    var termWant = String(venueReviewFilters.term || '').trim();
+    var kindWant = String(venueReviewFilters.kind || '').trim();
+    if (venueWant) {
+      if (String((row && row.venue) || '').trim().toLowerCase() !== venueWant) return false;
+    }
+    if (staffWant) {
+      if (String((row && row.submitted_by_name) || '').trim().toLowerCase() !== staffWant) return false;
+    }
+    if (termWant && venueReviewTermId(venueReviewIso(row)) !== termWant) return false;
+    if (kindWant && venueReviewKindKey(row) !== kindWant) return false;
+    return true;
+  }
+  function paintVenueReviewFilters(allRows) {
+    var host = document.getElementById('portalFormsVenueFilters');
+    if (!host) return;
+    var venues = uniqueVenueFilterValues(
+      (allRows || []).map(function (r) {
+        return r && r.venue;
+      })
+    ).map(function (v) {
+      return { value: v, label: v };
+    });
+    var staff = uniqueVenueFilterValues(
+      (allRows || []).map(function (r) {
+        return r && r.submitted_by_name;
+      })
+    ).map(function (v) {
+      return { value: v, label: v };
+    });
+    var termIds = {};
+    (allRows || []).forEach(function (r) {
+      termIds[venueReviewTermId(venueReviewIso(r))] = true;
+    });
+    var termOrder = ['autumn-2026', 'summer-2026', 'spring-2026', 'earlier'];
+    var terms = termOrder
+      .filter(function (id) {
+        return termIds[id];
+      })
+      .map(function (id) {
+        return { value: id, label: venueReviewTermLabel(id) };
+      });
+    var kinds = [
+      { value: 'Opening', label: 'Opening' },
+      { value: 'Closing', label: 'Closing' }
+    ];
+    host.innerHTML =
+      venueReviewSelectHtml('portalVenueFilterVenue', 'Venue', venueReviewFilters.venue, venues, 'Any venue') +
+      venueReviewSelectHtml('portalVenueFilterStaff', 'Instructor', venueReviewFilters.staff, staff, 'Any instructor') +
+      venueReviewSelectHtml('portalVenueFilterTerm', 'Term', venueReviewFilters.term, terms, 'All terms') +
+      venueReviewSelectHtml('portalVenueFilterKind', 'Open / close', venueReviewFilters.kind, kinds, 'Opening or closing') +
+      '<p class="portal-venue-review-filter-count" id="portalFormsVenueFilterCount"></p>';
+    if (!host._venueFilterBound) {
+      host._venueFilterBound = true;
+      host.addEventListener('change', function (ev) {
+        var t = ev.target;
+        if (!t || t.tagName !== 'SELECT') return;
+        if (t.id === 'portalVenueFilterVenue') venueReviewFilters.venue = String(t.value || '');
+        if (t.id === 'portalVenueFilterStaff') venueReviewFilters.staff = String(t.value || '');
+        if (t.id === 'portalVenueFilterTerm') venueReviewFilters.term = String(t.value || '');
+        if (t.id === 'portalVenueFilterKind') venueReviewFilters.kind = String(t.value || '');
+        void renderLeadVenueTables();
+      });
+    }
+  }
   async function renderLeadVenueTables() {
     var leadTbody = document.getElementById('portalFormsLeadTbody');
     var venueTbody = document.getElementById('portalFormsVenueTbody');
     if (!leadTbody && !venueTbody) return;
     var lead = payload.lead_session_reports || [];
     var venue = (payload.venue_reviews || []).slice().sort(function (a, b) {
-      var ca = String(a.created_at || a.review_date || '');
-      var cb = String(b.created_at || b.review_date || '');
-      if (ca !== cb) return cb.localeCompare(ca);
-      return String(b.review_time || '').localeCompare(String(a.review_time || ''));
+      var da = venueReviewIso(a);
+      var db = venueReviewIso(b);
+      if (da !== db) return db.localeCompare(da);
+      var ta = String((a && a.review_time) || '');
+      var tb = String((b && b.review_time) || '');
+      if (ta && tb && ta !== tb) return ta.localeCompare(tb);
+      var ka = venueReviewKindKey(a) === 'Closing' ? 1 : venueReviewKindKey(a) === 'Opening' ? 0 : 2;
+      var kb = venueReviewKindKey(b) === 'Closing' ? 1 : venueReviewKindKey(b) === 'Opening' ? 0 : 2;
+      if (ka !== kb) return ka - kb;
+      return String((a && a.submitted_by_name) || '').localeCompare(
+        String((b && b.submitted_by_name) || ''),
+        'en',
+        { sensitivity: 'base' }
+      );
     });
     var Hub = null;
     if (leadTbody || document.getElementById('portalFormsLeadLog')) {
@@ -1429,12 +2003,26 @@
       renderLeadTermWeekLog(Hub, lead);
     }
     if (venueTbody) {
+      paintVenueReviewFilters(venue);
+      var filteredVenue = venue.filter(venueReviewRowMatchesFilters);
+      var countEl = document.getElementById('portalFormsVenueFilterCount');
+      if (countEl) {
+        countEl.textContent =
+          filteredVenue.length === venue.length
+            ? String(venue.length) + ' reviews'
+            : String(filteredVenue.length) + ' of ' + String(venue.length) + ' reviews';
+      }
       if (!venue.length) {
         venueTbody.innerHTML =
-          '<tr><td colspan="6"><div class="submission-state">No venue reviews yet.</div></td></tr>';
+          '<tr><td colspan="8"><div class="submission-state">No venue reviews yet.</div></td></tr>';
+      } else if (!filteredVenue.length) {
+        venueTbody.innerHTML =
+          '<tr><td colspan="8"><div class="submission-state">No reviews match these filters.</div></td></tr>';
       } else {
-        venueTbody.innerHTML = venue
+        venueTbody.innerHTML = filteredVenue
           .map(function (r) {
+            var videoCell = venueReviewVideoCellHtml(r);
+            var kind = venueReviewKindKey(r) || '—';
             return (
               '<tr class="portal-forms-static-row">' +
               '<td class="cell-wrap col-venue-name">' +
@@ -1442,6 +2030,12 @@
               '</td>' +
               '<td>' +
               esc(cellText(r.review_date)) +
+              '</td>' +
+              '<td class="cell-wrap col-submitted-by"><div class="portal-forms-cell-main">' +
+              esc(cellText(r.submitted_by_name)) +
+              '</div></td>' +
+              '<td>' +
+              esc(kind) +
               '</td>' +
               '<td>' +
               esc(cellText(r.review_time)) +
@@ -1452,9 +2046,9 @@
               '<td class="cell-wrap col-issues-detail">' +
               esc(cellText(r.issues_reported)) +
               '</td>' +
-              '<td><div class="portal-forms-cell-main">' +
-              esc(cellText(r.submitted_by_name)) +
-              '</div></td>' +
+              '<td>' +
+              videoCell +
+              '</td>' +
               '</tr>'
             );
           })
@@ -1462,6 +2056,49 @@
       }
     }
     ensurePortalFormsShellClicks();
+    try {
+      if (venueTbody && !venueTbody.__venueVideoBound) {
+        venueTbody.__venueVideoBound = true;
+        venueTbody.addEventListener('click', function (ev) {
+          var uploadBtn =
+            ev.target && ev.target.closest ? ev.target.closest('[data-venue-video-upload]') : null;
+          if (uploadBtn) {
+            ev.preventDefault();
+            if (uploadBtn.disabled) return;
+            var reviewId = String(uploadBtn.getAttribute('data-venue-video-upload') || '').trim();
+            if (!reviewId || venueAdminVideoUploading[reviewId]) return;
+            var inp = ensureVenueAdminVideoInput();
+            inp.setAttribute('data-review-id', reviewId);
+            try {
+              inp.click();
+            } catch (_click) {}
+            return;
+          }
+          var btn = ev.target && ev.target.closest ? ev.target.closest('[data-venue-video-path]') : null;
+          if (!btn) return;
+          ev.preventDefault();
+          var path = String(btn.getAttribute('data-venue-video-path') || '').trim();
+          if (!path) return;
+          void (async function () {
+            try {
+              var client = venueReviewAdminClient();
+              if (!client || !client.storage) {
+                alert('Sign in required to play venue videos.');
+                return;
+              }
+              var signed = await client.storage.from('venue-review-videos').createSignedUrl(path, 3600);
+              if (signed.error || !(signed.data && signed.data.signedUrl)) {
+                throw signed.error || new Error('Could not create play link');
+              }
+              window.open(signed.data.signedUrl, '_blank', 'noopener,noreferrer');
+            } catch (errPlay) {
+              console.error(errPlay);
+              alert('Could not open the venue video.');
+            }
+          })();
+        });
+      }
+    } catch (_vidBind) {}
   }
 
   global.PortalDayOps = {
@@ -1621,8 +2258,8 @@
             if (enrichWait) {
               await promiseWithTimeout(enrichWait, ENRICH_WAIT_MS, null);
               if (th && typeof th.setPayload === 'function') {
-                th.setPayload(payload);
-                reRenderHub(th);
+                /* Quiet: keep Overview stable; feedback land on Register hub only. */
+                th.setPayload(payload, { quiet: true });
               }
             }
             if (tabId === 'incidents' || tabId === 'cancellations' || tabId === 'lead' || tabId === 'venue') {
@@ -1633,9 +2270,9 @@
               if (deferWait) {
                 await promiseWithTimeout(deferWait, ENRICH_WAIT_MS, null);
                 if (th && typeof th.setPayload === 'function') {
-                  th.setPayload(payload);
-                  reRenderHub(th);
+                  th.setPayload(payload, { quiet: true });
                 }
+                if (tabId !== 'overview') reRenderHub(th);
               }
             }
           } catch (_enrichWait) {}
@@ -1654,7 +2291,7 @@
           }
           function paintFeedbackHubFromPayload() {
             if (!fh) return;
-            if (typeof fh.setPayload === 'function') fh.setPayload(payload);
+            if (typeof fh.setPayload === 'function') fh.setPayload(payload, { quiet: true });
             fh.tab = fs.tab;
             fh.feedbackNoteFilter = fs.filter;
             applyPendingFeedbackNav(fh);
@@ -1662,10 +2299,8 @@
           }
           try {
             var enrichWaitFb = global.__PORTAL_DAY_OPS_ENRICH__;
-            if (enrichWaitFb) {
-              /* Short wait so Register paints quickly; late enrich still re-renders. */
-              await promiseWithTimeout(enrichWaitFb, ENRICH_WAIT_MS, null);
-              paintFeedbackHubFromPayload();
+            if (enrichWaitFb && typeof enrichWaitFb.then === 'function') {
+              /* Do not block Register on enrich — late payload still re-paints the table body. */
               enrichWaitFb.then(function () {
                 paintFeedbackHubFromPayload();
               }).catch(function () {});
@@ -1686,6 +2321,21 @@
               payload.lead_session_reports = (await cfg.fetchLeadReports()) || [];
             } catch (eLeadTab) {
               console.debug('[PortalDayOps] fetchLeadReports', eLeadTab);
+            }
+          }
+          if (tabId === 'venue' && cfg.fetchVenueReviews) {
+            try {
+              var deferWait = global.__PORTAL_DAY_OPS_DEFER__;
+              if (deferWait && typeof deferWait.then === 'function') {
+                await promiseWithTimeout(deferWait, 8000, null);
+              }
+            } catch (_deferVenue) {}
+            try {
+              var liveVenue = (await cfg.fetchVenueReviews()) || [];
+              if (liveVenue.length) payload.venue_reviews = liveVenue;
+              mergePortalVenueIntoPayload();
+            } catch (eVenueTab) {
+              console.debug('[PortalDayOps] fetchVenueReviews', eVenueTab);
             }
           }
           await renderLeadVenueTables();
@@ -1716,6 +2366,8 @@
       try {
         if (typeof window !== 'undefined') {
           window.__PORTAL_SCHEDULE_OVERRIDES__ = null;
+          window.__PORTAL_STAFF_UNAVAILABILITY__ = null;
+          window.__PORTAL_VENUE_REVIEWS__ = null;
         }
       } catch (_eOv) {}
       try {
@@ -1727,14 +2379,18 @@
     refreshSessionFeedback: function () {
       return refreshSessionFeedbackLive();
     },
+    adoptSessionFeedback: adoptSessionFeedbackRows,
     ensureLiveRoster: function (force) {
       return ensureLiveRosterForHub(!!force);
     }
   };
 
+  global.portalAdminAdoptSessionFeedback = adoptSessionFeedbackRows;
+
   if (typeof global.addEventListener === 'function') {
     global.addEventListener('portal:supabase-ready', function () {
       if (!cfg.fetchSessionFeedback) return;
+      if (payload.session_feedback && payload.session_feedback.length) return;
       void refreshSessionFeedbackLive();
     });
   }

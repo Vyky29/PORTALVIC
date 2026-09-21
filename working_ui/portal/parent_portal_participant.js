@@ -108,7 +108,7 @@
     if (clientsInfoEmbedPromise) return clientsInfoEmbedPromise;
     clientsInfoEmbedPromise = new Promise(function (resolve) {
       var s = document.createElement("script");
-      s.src = "/portal/clients_info_embed.js?v=20260608-anas-ismail";
+      s.src = "/portal/clients_info_embed.js?v=20260910-joelle-406";
       s.async = true;
       s.onload = function () {
         resolve();
@@ -573,7 +573,7 @@
     else if (/^aquatic\b/i.test(s)) {
       /* Pool sessions are 30' bands unless the source already carried a duration. */
       if (!dur) dur = "30' ";
-      base = dur + "AQUATIC ACTIVITY";
+      base = dur + "Aquatic Activity";
     }
     else if (/climb/i.test(s)) base = dur + "Climbing";
     else if (/day\s*centre/i.test(s)) base = dur + "Day centre";
@@ -586,14 +586,56 @@
     return base;
   }
 
+  /** Hub profile chips: duration + programme initials (30' AA, 90' MA, 60' CL, …). */
+  function compactServiceChipLabel(rawLabel) {
+    var s = String(rawLabel || "").trim();
+    if (!s) return "";
+    var dur = "";
+    var m = s.match(/^(\d+)\s*'\s*(.+)$/);
+    if (m) {
+      var mins = parseInt(m[1], 10) || 0;
+      if (mins > 90) {
+        var h = Math.round((mins / 60) * 10) / 10;
+        dur = h + "h ";
+      } else if (mins) {
+        dur = mins + "' ";
+      }
+      s = m[2];
+    }
+    var low = s.toLowerCase();
+    var code = "";
+    if (/multi[- ]?activity|s\s*&\s*c|splash/.test(low)) code = "MA";
+    else if (/aquatic|swim/.test(low)) {
+      if (!dur) dur = "30' ";
+      code = "AA";
+    } else if (/climb/.test(low)) code = "CL";
+    else if (/fitness|physical\s*activity|fit\s*fun/.test(low)) code = "FT";
+    else if (/bespoke/.test(low)) code = "BS";
+    else if (/crash|intensive|camp/.test(low)) code = "CC";
+    else if (/counsel|counsell/.test(low)) code = "CO";
+    else if (/day\s*centre|daycentre/.test(low)) code = "DC";
+    else {
+      var words = s.replace(/[^a-zA-Z\s]/g, " ").trim().split(/\s+/).filter(Boolean);
+      code = words
+        .slice(0, 2)
+        .map(function (w) {
+          return w.charAt(0).toUpperCase();
+        })
+        .join("");
+    }
+    return (dur + code).trim();
+  }
+
   function serviceChipToneClass(label) {
     var s = String(label || "").toLowerCase();
-    if (/aquatic|swim/.test(s)) return "aquatic";
-    if (/climb/.test(s)) return "climb";
-    if (/physical/.test(s)) return "physical";
-    if (/multi/.test(s)) return "multi";
-    if (/bespoke/.test(s)) return "bespoke";
-    if (/day\s*centre|daycentre/.test(s)) return "daycentre";
+    if (/aquatic|swim/.test(s) || /\baa\b/.test(s)) return "aquatic";
+    if (/climb|\bcl\b/.test(s)) return "climb";
+    if (/fitness|physical|\bft\b/.test(s)) return "physical";
+    if (/multi|\bma\b/.test(s)) return "multi";
+    if (/bespoke|\bbs\b/.test(s)) return "bespoke";
+    if (/crash|\bcc\b|intensive|camp/.test(s)) return "other";
+    if (/counsel|counsell|\bco\b/.test(s)) return "other";
+    if (/day\s*centre|daycentre|\bdc\b/.test(s)) return "daycentre";
     return "other";
   }
 
@@ -608,9 +650,10 @@
       '<div class="pp-svc-chips" aria-label="Booked services">' +
       detail
         .map(function (s) {
-          var label = shortServiceChipLabel(s.label || "Service", s.day);
-          var tip = [s.day, s.time].filter(Boolean).join(" / ");
-          var tone = serviceChipToneClass(s.label || label);
+          var full = shortServiceChipLabel(s.label || "Service", s.day);
+          var label = compactServiceChipLabel(s.label || "Service") || full;
+          var tip = [full, s.day, s.time].filter(Boolean).join(" / ");
+          var tone = serviceChipToneClass(s.label || full);
           return (
             '<span class="pp-svc-chip pp-svc-chip--' +
             esc(tone) +
@@ -719,6 +762,274 @@
     return p.in_class === false;
   }
 
+  function downloadTextFile(filename, text) {
+    var name = String(filename || "download.txt").replace(/[^\w.\-]+/g, "_");
+    var blob = new Blob([String(text || "")], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (_e) {}
+    }, 1000);
+  }
+
+  function historyPdfApi() {
+    return global.PortalParentHistoryPdf || null;
+  }
+
+  function setDownloadBusy(btn, busy, labelWhenDone) {
+    if (!btn) return;
+    if (busy) {
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+      btn.setAttribute("data-pp-dl-label", btn.textContent || "");
+      btn.textContent = "Preparing PDF…";
+    } else {
+      btn.disabled = false;
+      btn.removeAttribute("aria-busy");
+      btn.textContent =
+        labelWhenDone || btn.getAttribute("data-pp-dl-label") || btn.textContent || "Download PDF";
+      btn.removeAttribute("data-pp-dl-label");
+    }
+  }
+
+  function participantDownloadSlug(data) {
+    var p = (data && data.participant) || {};
+    var raw = String(p.display_name || p.first_name || "participant")
+      .trim()
+      .replace(/[^\w]+/g, "-")
+      .replace(/^-|-$/g, "");
+    return raw || "participant";
+  }
+
+  function weeklyNoteDownloadText(data, note) {
+    var p = (data && data.participant) || {};
+    var range = weekRangeLabel(note && note.week_start, note && note.week_end);
+    return (
+      "clubSENsational — Weekly note\n" +
+      "Participant: " +
+      String(p.display_name || "Participant") +
+      "\n" +
+      "Week: " +
+      String(range || note.week_start || "") +
+      "\n\n" +
+      String((note && note.body) || "").trim() +
+      "\n"
+    );
+  }
+
+  function sessionFeedbackDownloadText(data, row) {
+    var p = (data && data.participant) || {};
+    var bits = [
+      "clubSENsational — Session feedback",
+      "Participant: " + String(p.display_name || "Participant"),
+      "Date: " + formatDate(row && row.session_date),
+      "Service: " + String((row && row.service) || "").trim(),
+      "Time: " + String((row && row.session_time) || "").trim(),
+      "Instructor: " +
+        String((row && (row.instructor || row.feedback_by_name || row.completed_by_name)) || "").trim(),
+      "Engagement: " +
+        (row && row.engagement_rating != null && String(row.engagement_rating).trim() !== ""
+          ? String(row.engagement_rating)
+          : "—"),
+      "Regulation: " + String((row && row.client_emotions) || "").trim(),
+      "Independence: " + String((row && (row.independence || row.engagement_patterns)) || "").trim(),
+      "",
+      String((row && (row.comment || row.parent_message)) || "").trim(),
+      "",
+    ];
+    return bits
+      .filter(function (line, i, arr) {
+        if (line !== "") return true;
+        return i === 0 || arr[i - 1] !== "";
+      })
+      .join("\n");
+  }
+
+  function bindFormerHistoryDownloads(host, data) {
+    if (!host || !isFormerClient(data)) return;
+    var pName = ((data && data.participant) || {}).display_name || "Participant";
+    var term =
+      (data && data.term_label) ||
+      (data && data.general && data.general.term_label) ||
+      "";
+    var pdf = historyPdfApi();
+
+    host.querySelectorAll("[data-pp-dl-week-note]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = Number(btn.getAttribute("data-pp-dl-week-note"));
+        var notes = Array.isArray(data._ppDownloadWeeklyNotes)
+          ? data._ppDownloadWeeklyNotes
+          : Array.isArray(data.weekly_notes)
+            ? data.weekly_notes
+            : [];
+        var note = notes[idx];
+        if (!note) return;
+        var week = String(note.week_start || "week").slice(0, 10);
+        var range = weekRangeLabel(note.week_start, note.week_end);
+        setDownloadBusy(btn, true);
+        var done = function () {
+          setDownloadBusy(btn, false, "Download PDF");
+        };
+        if (pdf && typeof pdf.downloadWeeklyNote === "function") {
+          void pdf
+            .downloadWeeklyNote({
+              participantName: pName,
+              weekLabel: range,
+              body: note.body || "",
+              filenameSlug: participantDownloadSlug(data) + "-weekly-note-" + week,
+            })
+            .then(done)
+            .catch(function () {
+              downloadTextFile(
+                participantDownloadSlug(data) + "-weekly-note-" + week + ".txt",
+                weeklyNoteDownloadText(data, note),
+              );
+              done();
+            });
+        } else {
+          downloadTextFile(
+            participantDownloadSlug(data) + "-weekly-note-" + week + ".txt",
+            weeklyNoteDownloadText(data, note),
+          );
+          done();
+        }
+      });
+    });
+
+    var allNotes = host.querySelector("[data-pp-dl-all-week-notes]");
+    if (allNotes) {
+      allNotes.addEventListener("click", function () {
+        var notes = Array.isArray(data._ppDownloadWeeklyNotes)
+          ? data._ppDownloadWeeklyNotes
+          : Array.isArray(data.weekly_notes)
+            ? data.weekly_notes
+            : [];
+        if (!notes.length) return;
+        setDownloadBusy(allNotes, true);
+        var done = function () {
+          setDownloadBusy(allNotes, false, "Download all notes (PDF)");
+        };
+        var mapped = notes.map(function (n) {
+          return {
+            weekLabel: weekRangeLabel(n.week_start, n.week_end),
+            week_start: n.week_start,
+            body: n.body || "",
+          };
+        });
+        if (pdf && typeof pdf.downloadWeeklyNotesAll === "function") {
+          void pdf
+            .downloadWeeklyNotesAll({
+              participantName: pName,
+              notes: mapped,
+              filenameSlug: participantDownloadSlug(data) + "-weekly-notes",
+            })
+            .then(done)
+            .catch(function () {
+              var body = notes
+                .map(function (n) {
+                  return weeklyNoteDownloadText(data, n);
+                })
+                .join("\n--------------------\n\n");
+              downloadTextFile(participantDownloadSlug(data) + "-weekly-notes-all.txt", body);
+              done();
+            });
+        } else {
+          var body = notes
+            .map(function (n) {
+              return weeklyNoteDownloadText(data, n);
+            })
+            .join("\n--------------------\n\n");
+          downloadTextFile(participantDownloadSlug(data) + "-weekly-notes-all.txt", body);
+          done();
+        }
+      });
+    }
+
+    host.querySelectorAll("[data-pp-dl-session]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = Number(btn.getAttribute("data-pp-dl-session"));
+        var sessions = Array.isArray(data.sessions) ? data.sessions : [];
+        var row = sessions[idx];
+        if (!row) return;
+        var day = String(row.session_date || "session").slice(0, 10);
+        setDownloadBusy(btn, true);
+        var done = function () {
+          setDownloadBusy(btn, false, "Download PDF");
+        };
+        if (pdf && typeof pdf.downloadSingleSession === "function") {
+          void pdf
+            .downloadSingleSession({
+              participantName: pName,
+              termLabel: term,
+              session: row,
+              filenameSlug: participantDownloadSlug(data) + "-session-" + day,
+            })
+            .then(done)
+            .catch(function () {
+              downloadTextFile(
+                participantDownloadSlug(data) + "-session-" + day + ".txt",
+                sessionFeedbackDownloadText(data, row),
+              );
+              done();
+            });
+        } else {
+          downloadTextFile(
+            participantDownloadSlug(data) + "-session-" + day + ".txt",
+            sessionFeedbackDownloadText(data, row),
+          );
+          done();
+        }
+      });
+    });
+
+    var allSess = host.querySelector("[data-pp-dl-all-sessions]");
+    if (allSess) {
+      allSess.addEventListener("click", function () {
+        var sessions = Array.isArray(data.sessions) ? data.sessions : [];
+        if (!sessions.length) return;
+        setDownloadBusy(allSess, true);
+        var done = function () {
+          setDownloadBusy(allSess, false, "Download overview (PDF)");
+        };
+        if (pdf && typeof pdf.downloadSessionsOverview === "function") {
+          void pdf
+            .downloadSessionsOverview({
+              participantName: pName,
+              termLabel: term,
+              sessions: sessions,
+              filenameSlug: participantDownloadSlug(data) + "-sessions-overview",
+            })
+            .then(done)
+            .catch(function () {
+              var body = sessions
+                .map(function (row) {
+                  return sessionFeedbackDownloadText(data, row);
+                })
+                .join("\n--------------------\n\n");
+              downloadTextFile(participantDownloadSlug(data) + "-session-feedback-all.txt", body);
+              done();
+            });
+        } else {
+          var body = sessions
+            .map(function (row) {
+              return sessionFeedbackDownloadText(data, row);
+            })
+            .join("\n--------------------\n\n");
+          downloadTextFile(participantDownloadSlug(data) + "-session-feedback-all.txt", body);
+          done();
+        }
+      });
+    }
+  }
+
   function formerHasFeedback(data) {
     if (data && data.has_session_feedback === true) return true;
     var notes = Array.isArray(data && data.weekly_notes) ? data.weekly_notes : [];
@@ -744,21 +1055,9 @@
     );
   }
 
-  function crashQuickAccessBtnHtml(data, icoFn) {
-    var p = (data && data.participant) || {};
-    var contactId = p.contact_id || "";
-    var href =
-      "/parent/crash-summer" +
-      (contactId ? "?contact_id=" + encodeURIComponent(String(contactId)) : "");
-    return (
-      '<a class="pp-hub-shortcut pp-hub-shortcut--crash" href="' +
-      esc(href) +
-      '" aria-label="Crash course July">' +
-      '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
-      icoFn('<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>') +
-      "</span>" +
-      '<span class="pp-hub-shortcut__label">Crash course July</span></a>'
-    );
+  function crashQuickAccessBtnHtml() {
+    /* July 2026 crash course ended — hide booking entry points. */
+    return "";
   }
 
   function formerClientNoticeHtml(data) {
@@ -766,9 +1065,9 @@
     var unpaidRelease = isUnpaidAug15Released(data);
     var title = unpaidRelease ? "Place released" : "Former client";
     var body = unpaidRelease
-      ? "Your Autumn place was released because the first payment was not received by 15 August. You do not need to register again — use Booking services below to book a new place, or contact the office."
+      ? "Your Autumn place was released because the first payment was not received by 15 August. You can still open and download past weekly notes and session feedback below. You do not need to register again — use Booking services to book a new place, or contact the office."
       : hasFb
-        ? "Family portal access for this place has ended. You can still open past session notes below. To book again, use Booking services, or contact admin."
+        ? "Family portal access for this place has ended. You can still open and download past weekly notes and session feedback below. To book again, use Booking services, or contact admin."
         : "Family portal access for this place has ended. To book again, use Booking services, or contact admin.";
     return (
       '<aside class="pp-hub-reenrol pp-hub-reenrol--former" role="status" aria-label="' +
@@ -784,8 +1083,8 @@
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
       '<a class="pp-btn pp-btn--primary" href="' +
-      esc(BOOKING_PORTAL_URL) +
-      '" target="_blank" rel="noopener noreferrer">Booking services</a>' +
+      esc(bookingPortalHref({})) +
+      '" rel="noopener noreferrer">Booking Portal</a>' +
       '<a class="pp-btn pp-btn--ghost" href="' +
       esc(OFFICE_CONTACT_MAILTO) +
       '">Contact the office</a>' +
@@ -804,7 +1103,6 @@
     var needsPhoto = !isFormerClient(data) && participantNeedsPhoto(p, opts);
     var reenrolChip = isFormerClient(data) ? "" : hubReenrolledChipHtml(data);
     return (
-      hubSiblingsHtml(data, opts) +
       '<header class="pp-hub-hero' +
       (needsPhoto ? " pp-hub-hero--needs-photo" : "") +
       '">' +
@@ -986,7 +1284,7 @@
   function isOfficeBilledLaOrNhs(data) {
     var booking = bookingSummary(data);
     if (booking.show_invoices === false) return true;
-    return (
+      return (
       booking.parent_action === "auto" &&
       (booking.parent_action_reasons || []).indexOf("la_funded") >= 0
     );
@@ -1038,23 +1336,23 @@
 
     if (isOutstandingSummerAhmedSibling(data)) {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27 — Summer 2026 payments outstanding">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Enrolled for 2026/27 — Summer 2026 payments outstanding">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        "<span>Re-enrolled (Outstanding Payments Summer 2026)</span>" +
+        "<span>Enrolled (Outstanding Payments Summer 2026)</span>" +
         "</span>"
       );
     }
 
     /*
-     * LA / NHS office-billed term: plain Re-enrolled. An unpaid parent-pay extra
+     * LA / NHS office-billed term: plain Enrolled. An unpaid parent-pay extra
      * (e.g. a crash course billed to the family in the child's name) is chased on
      * the Invoices shortcut — it must not make the term place look unpaid.
      */
     if (isOfficeBilledLaOrNhs(data)) {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Enrolled for 2026/27">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        "<span>Re-enrolled</span>" +
+        "<span>Enrolled</span>" +
         "</span>"
       );
     }
@@ -1062,32 +1360,32 @@
     var pay = hubReenrolPayState(data);
     if (crashUnpaid || pay === "unpaid") {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — payment outstanding">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Enrolled — payment outstanding">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        "<span>Re-enrolled (unpaid)</span>" +
+        "<span>Enrolled (unpaid)</span>" +
         "</span>"
       );
     }
     if (pay === "partial") {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--partial" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — first instalment paid; later half still due">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--partial" data-pp-hub-reenrol-chip role="status" title="Enrolled — part paid; balance still due">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        "<span>Re-enrolled (partially paid)</span>" +
+        "<span>Enrolled (partially paid)</span>" +
         "</span>"
       );
     }
     if (pay === "pending") {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--pending" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — waiting for the office to confirm payment">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--pending" data-pp-hub-reenrol-chip role="status" title="Enrolled — waiting for the office to confirm payment">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        "<span>Re-enrolled (awaiting admin confirmation)</span>" +
+        "<span>Enrolled (awaiting admin confirmation)</span>" +
         "</span>"
       );
     }
     return (
-      '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
+      '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Enrolled for 2026/27">' +
       '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-      "<span>Re-enrolled</span>" +
+      "<span>Enrolled</span>" +
       "</span>"
     );
   }
@@ -1206,17 +1504,26 @@
   function termInvoicesHubPayState(term) {
     if (!term || !term.length) return null;
     if (term.every(isInvoiceFullyPaid)) return "settled";
+    var hasPaid = false;
     var hasUnpaid = false;
     var hasPartial = false;
     var hasPending = false;
     for (var i = 0; i < term.length; i++) {
       var st = invoiceEffectivePayStatus(term[i]);
-      if (st === "paid" || st === "void" || st === "cancelled") continue;
+      if (st === "void" || st === "cancelled") continue;
+      if (st === "paid") {
+        hasPaid = true;
+        continue;
+      }
       if (st === "pending_confirmation") hasPending = true;
       else if (st === "partial") hasPartial = true;
       else hasUnpaid = true;
     }
-    /* Worst open status wins: unpaid > pending confirm > partial. */
+    /*
+     * Paid Multi + open ACAT sibling (Jack Stratton £1560 paid / £700 due) → partial,
+     * not unpaid. Same when one flexi half is paid.
+     */
+    if (hasPaid && (hasUnpaid || hasPartial)) return "partial";
     if (hasUnpaid) return "unpaid";
     if (hasPending) return "pending";
     if (hasPartial) return "partial";
@@ -1419,7 +1726,9 @@
             ? "pp-hub-term-block--unpaid"
             : state === "pending"
               ? "pp-hub-term-block--pending"
-              : "pp-hub-term-block--settled",
+              : state === "partial"
+                ? "pp-hub-term-block--partial"
+                : "pp-hub-term-block--settled",
       );
       var acc = block.querySelector(".pp-hub-ops__term-accordion");
       if (acc) {
@@ -1459,7 +1768,7 @@
     var payStateFinal = false;
     if (crashPending) {
       data._hubCrashUnpaid = true;
-      /* LA / NHS term stays plain Re-enrolled; the crash is chased on Invoices. */
+      /* LA / NHS term stays plain Enrolled; the crash is chased on Invoices. */
       if (!officeBilled) applyHubReenrolPayVisual(host, data, "unpaid");
     }
     if (!familyAcceptedNextYear(data) && !crashPending && !hasCrashDates) {
@@ -1537,6 +1846,87 @@
   var RE_ENROL_SOFT_HOLD_CONTACT_IDS = { "176": true };
   var BOOKING_PORTAL_URL = "https://www.clubsensational.org/bookingportal";
   var OFFICE_CONTACT_MAILTO = "mailto:info@clubsensational.org";
+  /**
+   * Office help-to-book Quick Access tiles (temporary). Remove contact id when done.
+   * Mohamed Mohamud (56) — Thu Acton Javier 5.30–6.30 is office-arranged on MADRE/LOCAL;
+   * Booking Portal band is full — do not show a book CTA that points at that slot.
+   */
+  var HUB_BOOKING_HELP_BY_CONTACT = {};
+
+  /** Same-origin /bookingportal when possible so Parent Portal session can hand off (no second OTP). */
+  function bookingPortalHref(opts) {
+    opts = opts || {};
+    var q = new URLSearchParams();
+    q.set("from", "parent_portal");
+    if (opts.service) q.set("service", String(opts.service));
+    if (opts.intent) q.set("intent", String(opts.intent));
+    if (opts.slotId) q.set("slot_id", String(opts.slotId));
+    var qs = q.toString();
+    try {
+      var host = String(global.location && global.location.hostname || "").toLowerCase();
+      if (
+        host === "www.clubsensational.org" ||
+        host === "clubsensational.org" ||
+        host === "family.clubsensational.org" ||
+        /\.vercel\.app$/i.test(host) ||
+        host === "localhost" ||
+        host === "127.0.0.1"
+      ) {
+        return "/bookingportal" + (qs ? "?" + qs : "");
+      }
+    } catch (_e) {}
+    return BOOKING_PORTAL_URL + (qs ? "?" + qs : "");
+  }
+
+  function hubBookingHelpConfig(data) {
+    var id = String(((data && data.participant) || {}).contact_id || "").trim();
+    return id && HUB_BOOKING_HELP_BY_CONTACT[id] ? HUB_BOOKING_HELP_BY_CONTACT[id] : null;
+  }
+
+  /** True when Thursday Acton 5.30 aquatic (or configured help slot) is already on file. */
+  function hubBookingHelpSlotAlreadyBooked(data, cfg) {
+    if (!cfg) return false;
+    var wantStart = Number(cfg.startMins);
+    function startNear(time) {
+      var m = parseServiceStartMinutes(time);
+      if (m >= 9999 || !Number.isFinite(wantStart)) return false;
+      return Math.abs(m - wantStart) <= 20;
+    }
+    function blobMatches(day, label, venue, area, time) {
+      var dayOk = cfg.matchDay ? cfg.matchDay.test(String(day || "") + " " + String(label || "")) : true;
+      var svcOk = cfg.matchService
+        ? cfg.matchService.test(String(label || "") + " " + String(time || ""))
+        : true;
+      var place = String(venue || "") + " " + String(area || "") + " " + String(label || "");
+      var venueOk = cfg.matchVenue ? cfg.matchVenue.test(place) : true;
+      return dayOk && svcOk && venueOk && startNear(time);
+    }
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    for (var i = 0; i < detail.length; i++) {
+      var s = detail[i] || {};
+      if (blobMatches(s.day, s.label || s.service, s.venue, s.area, s.time)) return true;
+    }
+    var upcoming =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    for (var j = 0; j < upcoming.length; j++) {
+      var u = upcoming[j] || {};
+      if (cfg.slotId && String(u.slot_id || u.slotId || "") === String(cfg.slotId)) return true;
+      if (blobMatches(u.day, u.label || u.service, u.venue, u.area, u.time)) return true;
+    }
+    return false;
+  }
+
+  function showHubBookingHelpCta(data) {
+    if (isFormerClient(data)) return false;
+    if (participantBlocksExtraBookingLocal(data)) return false;
+    var cfg = hubBookingHelpConfig(data);
+    if (!cfg) return false;
+    if (hubBookingHelpSlotAlreadyBooked(data, cfg)) return false;
+    return true;
+  }
 
   function localIsoToday() {
     var now = new Date();
@@ -1623,18 +2013,43 @@
   }
 
   function bookingPortalQuickAccessBtnHtml(data, icoFn) {
-    /* Former + re-enrolled (incl. LA/NHS office-auto): booking portal for extra services. */
-    if (!isFormerClient(data) && !familyAcceptedNextYear(data)) return "";
+    /* Any signed-in family can book a trial (or term place) via Booking Portal — handoff uses Parent Portal session. */
+    if (participantBlocksExtraBookingLocal(data)) return "";
     return (
       '<a class="pp-hub-shortcut pp-hub-shortcut--book-portal" href="' +
-      esc(BOOKING_PORTAL_URL) +
-      '" target="_blank" rel="noopener noreferrer" aria-label="Book more services">' +
+      esc(bookingPortalHref({ intent: "trial" })) +
+      '" rel="noopener noreferrer" aria-label="Booking Portal">' +
+      '<span class="pp-hub-shortcut__ico pp-hub-shortcut__ico--club-logo" aria-hidden="true">' +
+      '<img class="pp-hub-shortcut__logo" src="/portal/F-02-1.png" alt="" width="22" height="22" decoding="async" />' +
+      "</span>" +
+      '<span class="pp-hub-shortcut__label">Booking Portal</span></a>'
+    );
+  }
+
+  /** Temporary office help: deep-link to a specific Booking Portal slot (e.g. Mohamed Thu 5.30). */
+  function hubBookingHelpQuickAccessBtnHtml(data, icoFn) {
+    if (!showHubBookingHelpCta(data)) return "";
+    var cfg = hubBookingHelpConfig(data);
+    if (!cfg) return "";
+    var href = bookingPortalHref({
+      service: cfg.service || "aquatic",
+      slotId: cfg.slotId,
+      intent: "term",
+    });
+    return (
+      '<a class="pp-hub-shortcut pp-hub-shortcut--book-help" href="' +
+      esc(href) +
+      '" rel="noopener noreferrer" aria-label="' +
+      esc(cfg.aria || cfg.label || "Finish booking") +
+      '">' +
       '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
       icoFn(
-        '<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8l4 4-4 4"/>',
+        '<circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 1.5"/><path d="M9 16h6"/>',
       ) +
       "</span>" +
-      '<span class="pp-hub-shortcut__label">Booking services</span></a>'
+      '<span class="pp-hub-shortcut__label">' +
+      esc(cfg.label || "Book help") +
+      "</span></a>"
     );
   }
 
@@ -1646,7 +2061,7 @@
         return String(x || "").toLowerCase();
       })
       .join(" ");
-    if (/\bemanuel\b/.test(blob) || /\bemmanuel\b/.test(blob)) return "emanuel";
+    if (/\bemanuel\b/.test(blob)) return "emanuel";
     if (/\btimi\b/.test(blob) || /oluwatimilehin/.test(blob)) return "timi";
     if (/\bikram\b/.test(blob)) return "ikram";
     if (/\bfadi\b/.test(blob)) return "fadi";
@@ -1684,8 +2099,8 @@
       "</div>" +
       '<div class="pp-hub-slot-live__actions">' +
       '<a class="pp-btn pp-btn--primary" href="' +
-      esc(BOOKING_PORTAL_URL) +
-      '" target="_blank" rel="noopener noreferrer">Book online</a>' +
+      esc(bookingPortalHref({})) +
+      '" rel="noopener noreferrer">Booking Portal</a>' +
       '<a class="pp-btn pp-btn--ghost" href="' +
       esc(OFFICE_CONTACT_MAILTO) +
       '">Contact the office</a>' +
@@ -1698,20 +2113,16 @@
     if (isFormerClient(data)) return "";
     if (needsUnconfirmedSlotBanner(data)) return "";
     var startBtn = startReenrolBtnHtml(data);
-    var crashBtn = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
-    if (!startBtn && !crashBtn) return "";
-    var hint = startBtn
-      ? isReenrolSoftHoldContact(data)
-        ? '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Mon 31 Aug 23:59 · place held until then</p>'
-        : '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Wed 22 Jul · place held until then</p>'
-      : "";
+    if (!startBtn) return "";
+    var hint = isReenrolSoftHoldContact(data)
+      ? '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Mon 31 Aug 23:59 · place held until then</p>'
+      : '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Wed 22 Jul · place held until then</p>';
     return (
       '<section class="pp-hub-menu-reenr" aria-label="Re-enrolments and intensive courses">' +
       '<p class="pp-pax-info-section-label">Re-enrolments &amp; Intensive Courses</p>' +
       hint +
       '<div class="pp-hub-menu-reenr__actions">' +
       startBtn +
-      crashBtn +
       "</div></section>"
     );
   }
@@ -1767,7 +2178,6 @@
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
       startReenrolBtnHtml(data) +
-      (canBookExtrasFor(data) ? crashBookBtnHtml(data) : "") +
       "</div>" +
       '<button type="button" class="pp-btn pp-btn--ghost pp-reenrol-popup__dismiss" data-pp-reenrol-popup-close>Close</button>' +
       "</aside></div>";
@@ -1811,26 +2221,9 @@
     return "";
   }
 
-  function crashBookBtnHtml(data) {
-    if (!canBookExtrasFor(data)) {
-      return (
-        '<p class="pp-muted pp-hub-reenrol__no-extra" role="note">' +
-        "Extra holiday sessions are not available for this place." +
-        "</p>"
-      );
-    }
-    var p = (data && data.participant) || {};
-    var contactId = p.contact_id || "";
-    var href =
-      "/parent/crash-summer" +
-      (contactId ? "?contact_id=" + encodeURIComponent(String(contactId)) : "");
-    return (
-      '<a class="pp-btn pp-btn--ghost pp-hub-reenrol__cta pp-hub-reenrol__cta--crash" href="' +
-      esc(href) +
-      '">' +
-      '<svg class="pp-hub-reenrol__cta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>' +
-      "<span>Crash course July</span></a>"
-    );
+  function crashBookBtnHtml() {
+    /* July 2026 crash course ended — keep helper for callers, return nothing. */
+    return "";
   }
 
   function contactLinkHtml(opts) {
@@ -1927,6 +2320,7 @@
   }
 
   function unreadWeeklyNotesCount(data, opts) {
+    if (!weeklyNotesEnabled(data)) return 0;
     var notes = Array.isArray(data && data.weekly_notes) ? data.weekly_notes : [];
     if (!notes.length) return 0;
     var seen = weeklyNotesSeenWeekStart(weeklyNotesContactId(data, opts));
@@ -1986,7 +2380,7 @@
         '<p class="pp-pax-info-section-label">Quick access</p>' +
         '<div class="pp-hub-shortcuts__grid">' +
         bookingPortalQuickAccessBtnHtml(data, icoF) +
-        (formerHasFeedback(data)
+        (formerHasFeedback(data) && weeklyNotesEnabled(data)
           ? hubShortcutBtn(
               "weekly_notes",
               "Notes",
@@ -1997,21 +2391,22 @@
             ) +
             hubShortcutBtn(
               "sessions",
-              "Sessions",
+              "Sessions Overview",
               icoF('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
               { extraClass: " pp-hub-shortcut--sessions" },
             )
-          : "") +
+          : formerHasFeedback(data)
+            ? hubShortcutBtn(
+                "sessions",
+                "Sessions Overview",
+                icoF('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
+                { extraClass: " pp-hub-shortcut--sessions" },
+              )
+            : "") +
         (hasAchievementPhotos(data) ? photosShortcutBtnHtml(icoF) : "") +
         "</div></section>"
       );
     }
-    var msgUnread =
-      opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
-    var msgBadge =
-      opts && typeof opts.unreadBadgeHtml === "function" && msgUnread > 0
-        ? opts.unreadBadgeHtml(msgUnread, "Unread messages")
-        : "";
     var consentPending =
       opts && typeof opts.consentsPendingCount === "function" ? opts.consentsPendingCount() : 0;
     var consentBadge =
@@ -2038,20 +2433,15 @@
         "</svg>"
       );
     };
+    var firstPos = firstNamePossessive(data);
     return (
       '<section class="pp-hub-shortcuts" aria-label="Quick access">' +
       '<p class="pp-pax-info-section-label">Quick access</p>' +
       '<div class="pp-hub-shortcuts__grid">' +
-      hubShortcutBtn(
-        "messages",
-        "Messages",
-        ico('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
-        { unreadBadge: msgBadge, extraClass: " pp-hub-shortcut--messages" },
-      ) +
       (sessionProgressEnabled
         ? hubShortcutBtn(
             "sessions",
-            "Sessions",
+            "Sessions Overview",
             ico('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
             { extraClass: " pp-hub-shortcut--sessions" },
           )
@@ -2059,7 +2449,7 @@
       (hasAchievementPhotos(data) ? photosShortcutBtnHtml(ico) : "") +
       hubShortcutBtn(
         "calendar",
-        "Calendar",
+        firstPos + " Calendar",
         ico(
           '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
         ),
@@ -2067,7 +2457,7 @@
       ) +
       hubShortcutBtn(
         "booking",
-        "Booking",
+        firstPos + " Bookings",
         ico(
           '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/>',
         ),
@@ -2105,7 +2495,7 @@
             { extraClass: " pp-hub-shortcut--invoices" },
           )
         : "") +
-      (sessionProgressEnabled
+      (weeklyNotesEnabled(data)
         ? hubShortcutBtn(
             "weekly_notes",
             "Notes",
@@ -2116,29 +2506,16 @@
           )
         : "") +
       reenrolQuickAccessBtnHtml(data, ico) +
+      hubBookingHelpQuickAccessBtnHtml(data, ico) +
       bookingPortalQuickAccessBtnHtml(data, ico) +
       summerSocialStoryQuickAccessBtnHtml(data, ico) +
       "</div></section>"
     );
   }
 
-  function hubMenuHeadActionsHtml(opts) {
-    var infoIco =
-      '<svg class="pp-hub-menu-sheet__action-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7h.01"/></svg>';
-    var detailsIco =
-      '<svg class="pp-hub-menu-sheet__action-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>';
-    return (
-      '<button type="button" class="pp-hub-menu-sheet__action" data-pp-open="general" aria-label="General Info">' +
-      infoIco +
-      '<span class="pp-hub-menu-sheet__action-label">General Info</span>' +
-      "</button>" +
-      (opts && typeof opts.openContactDetails === "function"
-        ? '<button type="button" class="pp-hub-menu-sheet__action" data-pp-open-contact aria-label="Details on file">' +
-          detailsIco +
-          '<span class="pp-hub-menu-sheet__action-label">Details on file</span>' +
-          "</button>"
-        : "")
-    );
+  function hubMenuHeadActionsHtml() {
+    /* General Info + Details on file live under Participant Details in the menu body. */
+    return "";
   }
 
   function hubMenuBodyHtml(data, opts) {
@@ -2185,6 +2562,33 @@
     if (doc.body) doc.body.classList.add("pp-hub-menu-open");
   }
 
+  function syncHubChromeMessages(data, opts) {
+    var doc = global.document;
+    if (!doc) return;
+    var btn = doc.getElementById("ppParticipantMessages");
+    if (!btn) return;
+    if (isFormerClient(data)) {
+      btn.hidden = true;
+      return;
+    }
+    btn.hidden = false;
+    var msgUnread =
+      opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
+    var badgeHost = btn.querySelector(".pp-hub-chrome-btn__badge");
+    if (!badgeHost) return;
+    if (msgUnread > 0 && opts && typeof opts.unreadBadgeHtml === "function") {
+      badgeHost.innerHTML = opts.unreadBadgeHtml(msgUnread, "Unread messages");
+      badgeHost.hidden = false;
+      btn.classList.add("pp-hub-chrome-btn--has-unread");
+      btn.setAttribute("aria-label", "Admin Messages (" + msgUnread + " unread)");
+    } else {
+      badgeHost.innerHTML = "";
+      badgeHost.hidden = true;
+      btn.classList.remove("pp-hub-chrome-btn--has-unread");
+      btn.setAttribute("aria-label", "Admin Messages");
+    }
+  }
+
   function syncHubMenuChrome(host, data, opts) {
     var doc = global.document;
     if (!doc) return;
@@ -2192,6 +2596,7 @@
     var sheetBody = doc.getElementById("ppHubMenuSheetBody");
     var headActions = doc.getElementById("ppHubMenuSheetHeadActions");
     var sheet = doc.getElementById("ppHubMenuSheet");
+    syncHubChromeMessages(data, opts);
     if (isFormerClient(data)) {
       if (btn) btn.hidden = true;
       if (sheet) sheet.hidden = true;
@@ -2200,9 +2605,14 @@
     }
     if (btn) btn.hidden = false;
     if (headActions) {
-      headActions.innerHTML = hubMenuHeadActionsHtml(opts);
-      bindHubOpenButtons(host, data, opts, headActions);
-      headActions.querySelectorAll("[data-pp-open-contact]").forEach(function (el) {
+      headActions.innerHTML = hubMenuHeadActionsHtml();
+      headActions.hidden = true;
+    }
+    if (sheetBody) {
+      var menuOpts = Object.assign({}, opts || {}, { host: host });
+      sheetBody.innerHTML = hubMenuBodyHtml(data, menuOpts);
+      bindHubOpenButtons(host, data, opts, sheetBody);
+      sheetBody.querySelectorAll("[data-pp-open-contact]").forEach(function (el) {
         if (el.__ppBoundContact) return;
         el.__ppBoundContact = true;
         el.addEventListener("click", function () {
@@ -2210,12 +2620,17 @@
           if (opts && typeof opts.openContactDetails === "function") opts.openContactDetails();
         });
       });
+      sheetBody.querySelectorAll("[data-pp-hub-sign-out]").forEach(function (el) {
+        if (el.__ppBoundSignOut) return;
+        el.__ppBoundSignOut = true;
+        el.addEventListener("click", function () {
+          closeHubMenuSheet();
+          if (opts && typeof opts.signOut === "function") opts.signOut();
+        });
+      });
     }
-    if (sheetBody) {
-      var menuOpts = Object.assign({}, opts || {}, { host: host });
-      sheetBody.innerHTML = hubMenuBodyHtml(data, menuOpts);
-      bindHubOpenButtons(host, data, opts, sheetBody);
-    }
+    var chromeActions = doc.querySelector(".pp-participant-head-actions");
+    if (chromeActions) bindHubOpenButtons(host, data, opts, chromeActions);
     if (btn && !btn.__ppBoundMenu) {
       btn.__ppBoundMenu = true;
       btn.addEventListener("click", function () {
@@ -2298,8 +2713,31 @@
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>';
     var swimIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/><path d="M2 16c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/></svg>';
+    var generalIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7h.01"/></svg>';
+    var detailsIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>';
+    var detailsBtn =
+      opts && typeof opts.openContactDetails === "function"
+        ? '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--details" data-pp-open-contact aria-label="Details on file — Contact and household">' +
+          '<span class="pp-pax-info-btn-stack">' +
+          '<span class="pp-pax-info-icon-plate" aria-hidden="true">' +
+          detailsIcon +
+          "</span>" +
+          '<span class="pp-pax-info-caption">Details on file</span>' +
+          '<span class="pp-pax-info-subcaption">Contact &amp; household</span>' +
+          "</span></button>"
+        : "";
     return (
       '<div class="pp-pax-info-buttons">' +
+      '<p class="pp-pax-info-section-label pp-pax-info-section-label--details">Participant Details</p>' +
+      '<div class="pp-pax-info-row pp-pax-info-row--details">' +
+      infoBtnHtml("general", "General Info", generalIcon, {
+        extraClass: " pp-pax-info-btn--general",
+        subtitle: "Profile & support notes",
+      }) +
+      detailsBtn +
+      "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--schedule">Schedule</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--schedule">' +
       infoBtnHtml("calendar", "My Calendar", calIcon, {
@@ -2317,7 +2755,7 @@
           ? booking.hint || "2026/27 choices"
           : booking.parent_action === "auto"
             ? "2026/27 with the office"
-            : "Crash & 2026/27 places",
+            : "2026/27 places",
         extraClass: " pp-pax-info-btn--booking",
       }) +
       infoBtnHtml("absence", "Report absent", absentIcon, {
@@ -2332,7 +2770,7 @@
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--progress">Progress</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
-      (sessionProgressEnabled
+      (weeklyNotesEnabled(data)
         ? infoBtnHtml("weekly_notes", "Weekly notes", notesIcon, {
             extraClass:
               " pp-pax-info-btn--weekly-notes" +
@@ -2382,12 +2820,23 @@
         subtitle: announceCount ? announceCount + " active" : "Club notices",
         unreadBadge: announceBadge,
       }) +
-      infoBtnHtml("messages", "Messages", msgIcon, {
+      infoBtnHtml("messages", "Admin Messages", msgIcon, {
         extraClass:
           " pp-pax-info-btn--messages" +
           (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
         unreadBadge: msgBadge,
       }) +
+      "</div>" +
+      '<p class="pp-pax-info-section-label pp-pax-info-section-label--account">Account</p>' +
+      '<div class="pp-pax-info-row pp-pax-info-row--account">' +
+      '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--logout" data-pp-hub-sign-out aria-label="Log out">' +
+      '<span class="pp-pax-info-btn-stack">' +
+      '<span class="pp-pax-info-icon-plate" aria-hidden="true">' +
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' +
+      "</span>" +
+      '<span class="pp-pax-info-caption">Log out</span>' +
+      '<span class="pp-pax-info-subcaption">Sign out of Family Portal</span>' +
+      "</span></button>" +
       "</div></div>"
     );
   }
@@ -2587,15 +3036,62 @@
     var finished = isIsoSessionFinished(d.iso, data);
     d.past = finished;
     if (finished) d.isNext = false;
+    var paidFrom = participantPaidFromIso(data);
+    var isTrialDay =
+      !!d.trialBooked ||
+      trialBookedDateRows(data).some(function (t) {
+        return t && t.iso === d.iso;
+      });
+    if (isTrialDay) d.trialBooked = true;
+    /* Mid-term join: weekdays before paid start paint red — except the trial day (purple). */
+    if (paidFrom && d.iso < paidFrom && !isTrialDay) {
+      d.notBooked = true;
+      d.isNext = false;
+    }
     return d;
   }
 
   /**
-   * Earliest date this child should show on hub session chips.
-   * Uses registration_date from parent-portal-participant-detail when set
-   * (late joiners must not see projected weekdays from term start).
+   * Earliest paid / booked session for this child (invoice / reservation).
+   * Mid-term joiners: earlier weekday chips stay on the board but paint red.
+   */
+  function participantPaidFromIso(data) {
+    var p = (data && data.participant) || {};
+    var booked = String(p.booked_from || p.bookedFrom || "").trim().slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(booked)) return booked;
+    /* Fallback if older API omit booked_from — earliest non-trial booking row. */
+    var lists = [];
+    if (Array.isArray(data && data.upcoming_booked_sessions)) {
+      lists.push(data.upcoming_booked_sessions);
+    }
+    if (
+      data &&
+      data.reenrolment &&
+      Array.isArray(data.reenrolment.upcoming_booked_sessions)
+    ) {
+      lists.push(data.reenrolment.upcoming_booked_sessions);
+    }
+    var min = "";
+    lists.forEach(function (list) {
+      list.forEach(function (row) {
+        if (!row) return;
+        var kind = String(row.kind || "").toLowerCase();
+        if (kind === "trial") return;
+        var iso = String(row.iso || row.date_iso || "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+        if (!min || iso < min) min = iso;
+      });
+    });
+    return min;
+  }
+
+  /**
+   * Earliest date this child should show on hub session chips as a paid place.
+   * Prefer booked_from over registration_date (registration can be earlier than pay start).
    */
   function participantSessionStartIso(data) {
+    var paid = participantPaidFromIso(data);
+    if (paid) return paid;
     var p = (data && data.participant) || {};
     var iso = String(p.registration_date || p.registrationDate || "").trim().slice(0, 10);
     if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
@@ -2605,7 +3101,12 @@
   /** Raise a term window start so chips never begin before the child joined. */
   function chipWindowFromIso(termFromIso, data) {
     var from = String(termFromIso || "").trim().slice(0, 10);
-    var start = participantSessionStartIso(data);
+    /* Board may start at term open; paid_from only gates blue vs red (notBooked). */
+    var reg = "";
+    var p = (data && data.participant) || {};
+    var regIso = String(p.registration_date || p.registrationDate || "").trim().slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(regIso)) reg = regIso;
+    var start = reg || participantSessionStartIso(data);
     if (start && (!from || start > from)) return start;
     return from;
   }
@@ -2692,16 +3193,15 @@
   }
 
   /** True when this 26/27 date is before the service kind starts.
-   *  Day Centre from 1 Sep; weekend after-school from 5 Sep; weekday after-school from 8 Sep (week 2).
-   *  New Autumn starters (and explicit validated booking dates) may begin week 1 from Mon 7 Sep. */
+   *  Day Centre from 1 Sep; weekend from 5 Sep; weekday after-school from Mon 7 Sep
+   *  (Tue 1–Fri 4 Sep were Day Centre week-1 only — no AS those days). */
   function jsDowFromIso(iso) {
     var p = String(iso || "").split("-");
     if (p.length !== 3) return -1;
     return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay();
   }
 
-  var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM = "2026-09-08";
-  var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM_NEW_STARTER = "2026-09-07";
+  var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM = "2026-09-07";
 
   function hasExplicitBookedIso(data, iso) {
     var want = String(iso || "").slice(0, 10);
@@ -2745,12 +3245,22 @@
       .map(function (s) {
         var iso = String((s && s.iso) || "").slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+        /*
+         * Purple = trial only. Paid first / standing term seats arrive in the same
+         * upcoming_booked_sessions list with kind "session" (Abate twins Tue 15).
+         */
+        var kind = String((s && s.kind) || "").toLowerCase();
+        var label = String((s && s.label) || "");
+        var isTrial =
+          kind === "trial" ||
+          (!kind && /\btrial\b/i.test(label));
+        if (!isTrial) return null;
         return {
           iso: iso,
           shortLabel: formatTermChipLabel(iso),
           dayLabel: formatHubDateLabel(iso),
-          label: shortServiceChipLabel((s && s.label) || "Trial") || "Trial",
-          rawLabel: (s && s.label) || "Trial",
+          label: shortServiceChipLabel(label || "Trial") || "Trial",
+          rawLabel: label || "Trial",
           day: (s && s.day) || "",
           time: (s && s.time) || "",
           venue: String((s && s.venue) || "").trim(),
@@ -2769,10 +3279,7 @@
     if (dow === 0 || dow === 6) {
       return iso < NEXT_YEAR_AFTERSCHOOL_FROM;
     }
-    var weekdayFrom = isNewAutumnStarter(data)
-      ? NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM_NEW_STARTER
-      : NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM;
-    return iso < weekdayFrom;
+    return iso < NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM;
   }
 
   function currentYearTermToIso(data) {
@@ -2839,7 +3346,12 @@
     return true;
   }
 
-  function isNextYearClubClosedIso(iso) {
+  function isNextYearClubClosedIso(iso, serviceLabel) {
+    var PTC = global.PortalTermCalendar;
+    if (PTC && typeof PTC.isClosedIso === "function") {
+      if (serviceLabel) return !!PTC.isClosedIso(iso, { label: serviceLabel });
+      if (typeof PTC.isFullyClosedIso === "function") return !!PTC.isFullyClosedIso(iso);
+    }
     var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
     if (!cal) return false;
     if (cal.openFrom && iso < cal.openFrom) return true;
@@ -2854,6 +3366,18 @@
         return true;
       }
     }
+    var kind =
+      PTC && typeof PTC.inferServiceKind === "function"
+        ? PTC.inferServiceKind(serviceLabel || "")
+        : serviceIsDayCentre(serviceLabel)
+          ? "day_centre"
+          : "afterschool";
+    if (kind !== "day_centre") {
+      var asRanges = Array.isArray(cal.afterSchoolClosedRanges) ? cal.afterSchoolClosedRanges : [];
+      for (var a = 0; a < asRanges.length; a++) {
+        if (isoInRange(iso, asRanges[a].from, asRanges[a].to)) return true;
+      }
+    }
     var closures = Array.isArray(cal.weekendClosures) ? cal.weekendClosures : [];
     for (var j = 0; j < closures.length; j++) {
       if (isoInRange(iso, closures[j].from, closures[j].to)) return true;
@@ -2861,7 +3385,11 @@
     return false;
   }
 
-  function isClubClosedIso(iso, data) {
+  /**
+   * Club closed for this ISO. Pass serviceLabel when projecting a specific slot
+   * (Day Centre stays open through after-school half term weekdays).
+   */
+  function isClubClosedIso(iso, data, serviceLabel) {
     var termTo = currentYearTermToIso(data);
     // Until Booking 2026/27 is submitted: current-year roster only.
     if (!familyAcceptedNextYear(data)) {
@@ -2880,25 +3408,54 @@
     ) {
       return false;
     }
-    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
-    if (!cal) return false;
-    if (cal.openFrom && iso < cal.openFrom) return true;
-    if (cal.openTo && iso > cal.openTo) return true;
-    var terms = Array.isArray(cal.terms) ? cal.terms : [];
-    for (var i = 0; i < terms.length; i++) {
-      var t = terms[i] || {};
-      if (t.christmasClosed && isoInRange(iso, t.christmasClosed.from, t.christmasClosed.to)) {
-        return true;
-      }
-      if (t.easterClosed && isoInRange(iso, t.easterClosed.from, t.easterClosed.to)) {
-        return true;
-      }
+    return isNextYearClubClosedIso(iso, serviceLabel);
+  }
+
+  function resolveHubSessionStatus(data, iso, endMinutes) {
+    var PSS = global.PortalSessionStatus;
+    var today = new Date();
+    var todayIso = isoDateLocal(today);
+    var nowMins = today.getHours() * 60 + today.getMinutes();
+    var attendance = "";
+    var feedbackSubmitted = false;
+    ((data && data.sessions) || []).forEach(function (row) {
+      if (String((row && row.session_date) || "").slice(0, 10) !== iso) return;
+      var att = String((row && row.attendance) || "");
+      if (att) attendance = att;
+      var hasBody =
+        !!(row && row.id) ||
+        !!(row && String(row.positive_feedback || "").trim()) ||
+        row.engagement_rating != null ||
+        !!(row && String(row.completed_by_name || "").trim());
+      if (hasBody || att) feedbackSubmitted = true;
+    });
+    var summary = (data && data.attendance_summary) || {};
+    if (PSS && typeof PSS.resolve === "function") {
+      var absentOnly =
+        PSS.attendanceIsAbsent && PSS.attendanceIsAbsent(attendance);
+      return PSS.resolve({
+        iso: iso,
+        endMinutes: endMinutes,
+        todayIso: todayIso,
+        nowMinutes: nowMins,
+        attendance: attendance,
+        absentDates: summary.absent_dates,
+        cancelledDates: summary.cancelled_dates,
+        feedbackSubmitted: feedbackSubmitted && !absentOnly,
+      });
     }
-    var closures = Array.isArray(cal.weekendClosures) ? cal.weekendClosures : [];
-    for (var j = 0; j < closures.length; j++) {
-      if (isoInRange(iso, closures[j].from, closures[j].to)) return true;
+    var ended =
+      iso === todayIso && endMinutes != null && nowMins >= endMinutes;
+    if (
+      Array.isArray(summary.absent_dates) &&
+      summary.absent_dates.indexOf(iso) >= 0
+    ) {
+      return { status: "absent", label: "Absent", endedByClock: ended };
     }
-    return false;
+    if (ended) {
+      return { status: "awaiting_feedback", label: "Awaiting feedback", endedByClock: true };
+    }
+    return { status: "scheduled", label: "Scheduled", endedByClock: false };
   }
 
   function formatHubDateLabel(iso) {
@@ -2930,6 +3487,205 @@
       return h12 + ":" + (mm < 10 ? "0" : "") + mm;
     }
     return fmt(startMins) + " to " + fmt(endMins);
+  }
+
+  /**
+   * Hub session cards: always "9.00 – 9.30" (same shape as Aquatic booking rows).
+   * Strips roster junk like "Activity, Sunday - 9.30 to 11".
+   */
+  function hubSlotClockLabel(startMins, endMins) {
+    if (startMins == null || endMins == null || endMins <= startMins) return "";
+    function fmt(mins) {
+      var h24 = Math.floor(mins / 60) % 24;
+      var mm = mins % 60;
+      var h12 = h24 % 12;
+      if (h12 === 0) h12 = 12;
+      if (mm === 0) return h12 + ".00";
+      if (mm === 30) return h12 + ".30";
+      return h12 + ":" + (mm < 10 ? "0" : "") + mm;
+    }
+    return fmt(startMins) + " – " + fmt(endMins);
+  }
+
+  function hubOpsDisplayTime(time) {
+    var start = parseServiceStartMinutes(time);
+    var end = parseServiceEndMinutes(time);
+    if (start < 9999 && end != null && end > start) {
+      return hubSlotClockLabel(start, end);
+    }
+    var s = String(time || "").trim();
+    if (!s) return "";
+    var m = s.match(
+      /(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)\s*(?:[-–—]|to)\s*(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)/i,
+    );
+    return m ? String(m[1]).trim() + " – " + String(m[2]).trim() : s;
+  }
+
+  /** Split "BERTA, EMMANUEL" / "Berta & John" into tokens for hub cards. */
+  function hubOpsSplitInstructorTokens(raw) {
+    return String(raw || "")
+      .split(/\s*[,/&+]+\s*|\s+\band\b\s+/i)
+      .map(function (p) {
+        return String(p || "").trim();
+      })
+      .filter(Boolean);
+  }
+
+  function hubOpsPrettyInstructorToken(tok) {
+    var s = String(tok || "").trim();
+    if (!s) return "";
+    return s
+      .split(/\s+/)
+      .map(function (w) {
+        if (!w) return "";
+        if (w.length <= 2 && w === w.toUpperCase()) return w;
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      })
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  /**
+   * Parent-facing instructor name(s) for a hub session card.
+   * Prefer today's cover from Team; else slot / services_detail; Multi keeps all on one line.
+   */
+  function hubOpsInstructorNamesForSession(s, data) {
+    var iso = String((s && s.iso) || "").slice(0, 10);
+    var raw = "";
+    if (iso && data && Array.isArray(data.team)) {
+      var covers = [];
+      data.team.forEach(function (m) {
+        if (!m) return;
+        var covDate = String(m.cover_session_date || "").slice(0, 10);
+        /* Prefer stamped cover day (MA may list covers without role=cover). */
+        if (covDate && covDate === iso) {
+          var n0 = String(m.name || "").trim();
+          if (n0) covers.push(n0);
+          return;
+        }
+        if (String(m.role || "").toLowerCase() !== "cover") return;
+        if (covDate && covDate !== iso) return;
+        var n = String(m.name || "").trim();
+        if (n) covers.push(n);
+      });
+      if (covers.length) raw = covers.join(", ");
+    }
+    if (!raw) {
+      raw = String((s && (s.instructor || s.instructors)) || "").trim();
+    }
+    if (!raw && data && data.general && Array.isArray(data.general.services_detail)) {
+      var dayTok = String((s && s.day) || "").trim().toLowerCase().slice(0, 3);
+      if (!dayTok && iso) {
+        try {
+          var p = iso.split("-");
+          var dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+          dayTok = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][dt.getDay()] || "";
+        } catch (_e) {}
+      }
+      var wantStart = s && s._start != null ? s._start : parseServiceStartMinutes(s && s.time);
+      var labBlob = String((s && (s.rawLabel || s.label)) || "").toLowerCase();
+      var best = "";
+      data.general.services_detail.forEach(function (row) {
+        if (!row) return;
+        var rd = String(row.day || "")
+          .trim()
+          .toLowerCase()
+          .slice(0, 3);
+        if (dayTok && rd && rd !== dayTok) return;
+        var rLab = String(row.label || row.service || "").toLowerCase();
+        if (labBlob && rLab) {
+          var aquaticWant = /aquatic|swim/.test(labBlob) && !/multi/.test(labBlob);
+          var multiWant = /multi/.test(labBlob);
+          var climbWant = /climb/.test(labBlob);
+          if (aquaticWant && !/aquatic|swim/.test(rLab)) return;
+          if (multiWant && !/multi/.test(rLab)) return;
+          if (climbWant && !/climb/.test(rLab)) return;
+        }
+        var inst = String(row.instructor || row.instructors || "").trim();
+        if (!inst) return;
+        var rStart = parseServiceStartMinutes(row.time);
+        if (wantStart < 9999 && rStart < 9999 && Math.abs(rStart - wantStart) > 45) {
+          if (best) return;
+        }
+        best = inst;
+      });
+      if (best) raw = best;
+    }
+    if (!raw) {
+      var Team = global.PortalParentTeam;
+      if (Team && typeof Team.staffKeyFromFeedbackName === "function") {
+        var keyGuess = "";
+        if (typeof Team.standingInstructorKeyForBookedSlot === "function") {
+          keyGuess = Team.standingInstructorKeyForBookedSlot(s, data) || "";
+        }
+        if (keyGuess) {
+          var card0 =
+            typeof Team.catalogMember === "function" ? Team.catalogMember(keyGuess) : null;
+          raw = (card0 && card0.name) || hubOpsPrettyInstructorToken(keyGuess);
+        }
+      }
+    }
+    if (!raw) return [];
+    var Team2 = global.PortalParentTeam;
+    var seen = Object.create(null);
+    var names = [];
+    hubOpsSplitInstructorTokens(raw).forEach(function (tok) {
+      var card =
+        Team2 && typeof Team2.memberFromFeedbackName === "function"
+          ? Team2.memberFromFeedbackName(tok)
+          : null;
+      var name = (card && card.name) || hubOpsPrettyInstructorToken(tok);
+      if (!name) return;
+      var k = name.toLowerCase();
+      if (seen[k]) return;
+      seen[k] = true;
+      names.push(name);
+    });
+    return names;
+  }
+
+  /** Venue line for hub cards — programme defaults beat a generic SwimFarm preferred venue. */
+  function hubOpsDisplayPlace(s, data) {
+    var lab = String((s && (s.rawLabel || s.label)) || "").toLowerCase();
+    var venue = String((s && s.venue) || "").trim();
+    var area = String((s && s.area) || "").trim();
+    var placeBlob = (venue + " " + area).toLowerCase();
+
+    /* Climbing → Westway; Multi → Hub Room; Aquatic → SwimFarm (or Acton/Northolt). */
+    if (/climb/.test(lab)) {
+      if (/westway/.test(placeBlob) && venue && !/^swimfarm$/i.test(venue)) return venue;
+      return "Westway";
+    }
+    if (/multi/.test(lab)) {
+      if (/hub/.test(placeBlob)) return "Hub Room";
+      return "Hub Room";
+    }
+    if (/day\s*centre|daycentre|\bdc\b/.test(lab)) {
+      if (/swimfarm|swim\s*farm/.test(placeBlob)) return "SwimFarm";
+      if (/acton/.test(placeBlob)) return "Acton";
+      if (venue) return venue;
+      return "SwimFarm";
+    }
+    if (/aquatic|swim/.test(lab) && !/multi/.test(lab)) {
+      if (/acton/.test(placeBlob)) return "Acton";
+      if (/northolt/.test(placeBlob)) return "Northolt";
+      if (/swimfarm|swim\s*farm/.test(placeBlob)) return "SwimFarm";
+      if (venue && !/hub|westway/i.test(venue)) return venue;
+      return "SwimFarm";
+    }
+
+    if (venue && area && area.toLowerCase() !== venue.toLowerCase()) {
+      return venue + " · " + area;
+    }
+    if (venue) return venue;
+    if (area) return area;
+    var g = (data && data.general) || {};
+    var preferred = String(g.preferred_venue || g.venue || "").trim();
+    if (preferred) return preferred;
+    if (/acton/.test(lab)) return "Acton";
+    if (/northolt/.test(lab)) return "Northolt";
+    if (/swimfarm|swim\s*farm/.test(lab)) return "SwimFarm";
+    return "";
   }
 
   function crashVenueFromSlotLabel(slotLabel) {
@@ -2993,9 +3749,17 @@
         if (!venue) venue = crashVenueFromSlotLabel(row.slot_label);
       });
       if (minStart == null || maxEnd == null) return;
-      var completed = g.iso === todayIso && nowMins >= maxEnd;
-      /* Keep today's finished slots so the hub can show red "Session completed" cards. */
-      if (completed && !opts.includeCompletedToday) return;
+      var st = resolveHubSessionStatus(data, g.iso, maxEnd);
+      var completed = st.status === "completed";
+      var endedToday =
+        g.iso === todayIso &&
+        (st.endedByClock ||
+          completed ||
+          st.status === "absent" ||
+          st.status === "cancelled" ||
+          st.status === "awaiting_feedback");
+      /* Keep today's finished slots so the hub can show status chips. */
+      if (endedToday && !opts.includeCompletedToday) return;
       var dur = Math.max(0, maxEnd - minStart);
       var activityLabel = crashActivityRowLabel(g.activity);
       var rawLabel = (dur ? dur + "' " : "") + activityLabel;
@@ -3012,6 +3776,7 @@
         isTomorrow: g.iso === tomorrowIso,
         source: "crash",
         completed: completed,
+        status: st.status,
         _start: minStart,
         _end: maxEnd,
       });
@@ -3076,7 +3841,10 @@
       var iso = isoDateLocal(d);
       // Stop scanning past current-year end for this participant.
       if (!familyAcceptedNextYear(data) && iso > termTo) break;
-      if (isClubClosedIso(iso, data)) continue;
+      var PTC = global.PortalTermCalendar;
+      if (PTC && typeof PTC.isFullyClosedIso === "function" && PTC.isFullyClosedIso(iso)) {
+        continue;
+      }
       var startIso = participantSessionStartIso(data);
       if (startIso && iso < startIso) continue;
       // JS: Sun=0 … Sat=6 → calendar Mon=0 … Sun=6
@@ -3086,25 +3854,37 @@
       if (!slots || !slots.length) continue;
       slots.forEach(function (s) {
         if (out.length >= max) return;
-        if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(s.label || s.service), data)) {
+        var lab = s.label || s.service || "";
+        if (isClubClosedIso(iso, data, lab)) return;
+        if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(lab), data)) {
           return;
         }
         var endM = parseServiceEndMinutes(s.time);
-        var completed = iso === todayIso && endM != null && nowMins >= endM;
-        if (completed && !opts.includeCompletedToday) return;
+        var st = resolveHubSessionStatus(data, iso, endM);
+        var completed = st.status === "completed";
+        var endedToday =
+          iso === todayIso &&
+          (st.endedByClock ||
+            completed ||
+            st.status === "absent" ||
+            st.status === "cancelled" ||
+            st.status === "awaiting_feedback");
+        if (endedToday && !opts.includeCompletedToday) return;
         out.push({
           iso: iso,
           dayLabel: formatHubDateLabel(iso),
-          label: shortServiceChipLabel(s.label || "Service") || s.label || "Service",
-          rawLabel: s.label || "Service",
+          label: shortServiceChipLabel(lab) || lab || "Service",
+          rawLabel: lab || "Service",
           day: s.day || "",
-          time: s.time || "",
+          time: hubOpsDisplayTime(s.time) || s.time || "",
           venue: String(s.venue || "").trim(),
           area: String(s.area || "").trim(),
+          instructor: String(s.instructor || s.instructors || "").trim(),
           isToday: iso === todayIso,
           isTomorrow: iso === tomorrowIso,
           source: "roster",
           completed: completed,
+          status: st.status,
           _start: parseServiceStartMinutes(s.time),
           _end: endM,
         });
@@ -3133,21 +3913,32 @@
       if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
       if (iso < todayIso) return;
       var endM = parseServiceEndMinutes(raw.time);
-      var completed = iso === todayIso && endM != null && nowMins >= endM;
-      if (completed && !opts.includeCompletedToday) return;
+      var st = resolveHubSessionStatus(data, iso, endM);
+      var completed = st.status === "completed";
+      var endedToday =
+        iso === todayIso &&
+        (st.endedByClock ||
+          completed ||
+          st.status === "absent" ||
+          st.status === "cancelled" ||
+          st.status === "awaiting_feedback");
+      if (endedToday && !opts.includeCompletedToday) return;
+      if (isClubClosedIso(iso, data, raw.label || raw.service || "")) return;
       out.push({
         iso: iso,
         dayLabel: formatHubDateLabel(iso),
         label: shortServiceChipLabel(raw.label || "Service") || raw.label || "Service",
         rawLabel: raw.label || "Service",
         day: raw.day || "",
-        time: raw.time || "",
+        time: hubOpsDisplayTime(raw.time) || raw.time || "",
         venue: String(raw.venue || "").trim(),
         area: String(raw.area || "").trim(),
+        instructor: String(raw.instructor || raw.instructors || "").trim(),
         isToday: iso === todayIso,
         isTomorrow: iso === tomorrowIso,
         source: "booking",
         completed: completed,
+        status: st.status,
         _start: parseServiceStartMinutes(raw.time),
         _end: endM,
       });
@@ -3209,17 +4000,10 @@
       },
     );
     if (crash.length) return crash;
-    var booked = findBookedReservationSessionRows(data, { includeCompletedToday: true }).filter(
-      function (s) {
-        return s.iso === want;
-      },
-    );
-    if (booked.length) return booked;
-    return findRosterPatternNextSessions(data, 24, { includeCompletedToday: true }).filter(
-      function (s) {
-        return s.iso === want;
-      },
-    );
+    /* Same merge as findNextSessions — trial Aquatic must not hide Multi/Climbing. */
+    return findNextSessions(data, 24, { includeCompletedToday: true }).filter(function (s) {
+      return s.iso === want;
+    });
   }
 
   /** Hub section title: Today / Tomorrow / Next session from the next remaining booking. */
@@ -3256,8 +4040,6 @@
     }
 
     var todayIso = isoDateLocal(new Date());
-    var nextList = findNextSessions(data, 1);
-    var nextIso = nextList[0] ? nextList[0].iso : "";
     var startParts = fromIso.split("-");
     var cursor = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
     var out = [];
@@ -3266,9 +4048,14 @@
       guard++;
       var iso = isoDateLocal(cursor);
       if (iso > toIso) break;
-      if (!isClubClosedIso(iso, data)) {
-        var jsDow = cursor.getDay();
-        var col = jsDow === 0 ? 6 : jsDow - 1;
+      var jsDow = cursor.getDay();
+      var col = jsDow === 0 ? 6 : jsDow - 1;
+      var kind = dcCols[col] ? "day_centre" : "afterschool";
+      var closed =
+        global.PortalTermCalendar && typeof global.PortalTermCalendar.isClosedIso === "function"
+          ? global.PortalTermCalendar.isClosedIso(iso, { serviceKind: kind })
+          : isClubClosedIso(iso, data, kind === "day_centre" ? "Day Centre" : "Aquatic");
+      if (!closed) {
         // 1–4 Sept 2026: Day Centre only — other services start 5 Sept.
         var runs =
           cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false, data));
@@ -3280,7 +4067,7 @@
                 shortLabel: formatTermChipLabel(iso),
                 past: iso < todayIso,
                 isToday: iso === todayIso,
-                isNext: !!nextIso && iso === nextIso,
+                isNext: false,
               },
               data,
             ),
@@ -3289,6 +4076,16 @@
       }
       cursor = addDaysLocal(cursor, 1);
     }
+    var nextIso = "";
+    for (var ni = 0; ni < out.length; ni++) {
+      if (!out[ni].past && !out[ni].notBooked) {
+        nextIso = out[ni].iso;
+        break;
+      }
+    }
+    out.forEach(function (d) {
+      d.isNext = !!nextIso && !d.notBooked && d.iso === nextIso;
+    });
     return out;
   }
 
@@ -3341,14 +4138,17 @@
       cursor = addDaysLocal(cursor, 1);
     }
     for (var i = 0; i < out.length; i++) {
-      if (!out[i].past) {
-        nextIso = out[i].iso;
+      annotateChipDate(out[i], data);
+    }
+    var nextIso = "";
+    for (var j = 0; j < out.length; j++) {
+      if (!out[j].past && !out[j].notBooked) {
+        nextIso = out[j].iso;
         break;
       }
     }
     out.forEach(function (d) {
-      d.isNext = !!nextIso && d.iso === nextIso;
-      annotateChipDate(d, data);
+      d.isNext = !!nextIso && !d.notBooked && d.iso === nextIso;
     });
     return out;
   }
@@ -3435,6 +4235,15 @@
   function termChipToneMeta(d, statusByIso) {
     statusByIso = statusByIso || {};
     var st = statusByIso[d.iso] || "";
+    /* Purple — paid trial day wins over absent / not-yet-term paint. */
+    if (d.trialBooked) {
+      return {
+        tone: "trial",
+        title: "Trial session — " + d.iso,
+        icon: "",
+      };
+    }
+    /* Orange — parent / staff absent. */
     if (st === "absent") {
       return {
         tone: "absent",
@@ -3442,10 +4251,19 @@
         icon: CHIP_X_SVG,
       };
     }
+    /* Red — club cancel (admin / instructor). */
     if (st === "cancelled") {
       return {
         tone: "cancelled",
-        title: "Cancelled — " + d.iso,
+        title: "Cancelled (club) — " + d.iso,
+        icon: CHIP_X_SVG,
+      };
+    }
+    // Mid-term join: weekday before paid start (e.g. 8 / 15 Sep when place starts 22).
+    if (d.notBooked) {
+      return {
+        tone: "unconfirmed",
+        title: "Not included in paid place — " + d.iso,
         icon: CHIP_X_SVG,
       };
     }
@@ -3457,15 +4275,9 @@
         icon: CHIP_X_SVG,
       };
     }
-    if (d.trialBooked) {
-      return {
-        tone: d.isNext || d.isToday ? "next" : "upcoming",
-        title: "Trial session — " + d.iso,
-        icon: "",
-      };
-    }
-    if (d.past) {
-      return { tone: "done", title: "Completed — " + d.iso, icon: "" };
+    /* Green — attended / completed (past booked day, or explicit completed). */
+    if (st === "completed" || d.past) {
+      return { tone: "done", title: "Completed (attended) — " + d.iso, icon: "" };
     }
     if (d.isNext || d.isToday) {
       return { tone: "next", title: (d.isToday ? "Today — " : "Next session — ") + d.iso, icon: "" };
@@ -3785,28 +4597,28 @@
     }
     var nextIso = "";
     for (var i = 0; i < out.length; i++) {
-      if (!out[i].past) {
+      if (!out[i].past && !out[i].notBooked) {
         nextIso = out[i].iso;
         break;
       }
     }
     if (nextIso) {
       out.forEach(function (d) {
-        d.isNext = d.iso === nextIso;
+        d.isNext = !d.notBooked && d.iso === nextIso;
       });
     }
     return out;
   }
 
+  /**
+   * Keep all booked / status chips visible (green done, orange absent, red cancel).
+   * hideCompleted is retained for callers but no longer strips completed days —
+   * parents need to see attended sessions in green alongside upcoming blue.
+   */
   function filterChipListForDisplay(list, statusByIso, hideCompleted) {
     statusByIso = statusByIso || {};
-    if (!hideCompleted) return list || [];
-    return (list || []).filter(function (d) {
-      var st = statusByIso[d.iso] || "";
-      if (st === "absent" || st === "cancelled") return true;
-      var meta = termChipToneMeta(d, statusByIso);
-      return meta.tone !== "done";
-    });
+    void hideCompleted;
+    return list || [];
   }
 
   /** Icons for term half-rows (same size/style as crash activity icons). */
@@ -3844,7 +4656,7 @@
     );
   }
 
-  /** Blue / green / red key for date chips (hub + booking). */
+  /** Blue / green / orange / red key for date chips (hub + booking). */
   function termChipColorLegendHtml() {
     return (
       '<ul class="pp-hub-ops__chip-legend" aria-label="Date colour key">' +
@@ -3852,11 +4664,20 @@
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--blue" aria-hidden="true"></span>' +
       '<span class="pp-hub-ops__chip-legend__text"><strong>Blue</strong> — upcoming / next session</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--purple" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Purple</strong> — trial</span></li>' +
+      '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--green" aria-hidden="true"></span>' +
-      '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed</span></li>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed (attended)</span></li>' +
+      '<li class="pp-hub-ops__chip-legend__item">' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--orange" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Orange</strong> — absent</span></li>' +
+      '<li class="pp-hub-ops__chip-legend__item">' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--burgundy" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Burgundy</strong> — cancelled (club / instructor)</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--red" aria-hidden="true"></span>' +
-      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — absent, cancelled, or not re-enrolled for 2026/27</span></li>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — not booked</span></li>' +
       "</ul>"
     );
   }
@@ -3874,12 +4695,43 @@
     return false;
   }
 
-  /** Whole-year (or LA auto) bookings see Spring/Summer under Next session; term-by-term does not. */
+  /**
+   * Only the academic term that is current (or just finished, during a break).
+   * Future terms stay off the hub until that term begins — even for whole-year auto.
+   */
+  function hubActiveCalendarTerm(todayIso) {
+    var day = String(todayIso || isoDateLocal(new Date())).slice(0, 10);
+    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+    var terms = (cal && Array.isArray(cal.terms) ? cal.terms : []) || [];
+    if (!terms.length) return null;
+    var i;
+    for (i = 0; i < terms.length; i++) {
+      var t = terms[i];
+      var start = String((t && t.starts) || "").slice(0, 10);
+      var end = String((t && (t.mainTermEnds || t.ends || t.lastDay)) || "").slice(0, 10);
+      if (start && end && day >= start && day <= end) return t;
+    }
+    for (i = terms.length - 1; i >= 0; i--) {
+      var past = terms[i];
+      var endP = String((past && (past.mainTermEnds || past.ends || past.lastDay)) || "").slice(
+        0,
+        10,
+      );
+      if (!endP || day <= endP) continue;
+      var next = terms[i + 1];
+      var nextStart = next ? String(next.starts || "").slice(0, 10) : "";
+      if (!nextStart || day < nextStart) return past;
+    }
+    return terms[0];
+  }
+
+  /**
+   * Later terms (Spring / Summer while Autumn is current) stay hidden until that
+   * term is the active one. Whole-year auto re-enrol does not preview them early.
+   */
   function showLaterTermsOnHub(data) {
     if (isTrialOnlyBooking(data)) return false;
-    // Term-by-term bookings only see the current confirmed block; everyone else
-    // can see Later terms (incl. Summer history after term end / unconfirmed 26/27).
-    return !isTermByTermBooking(data);
+    return false;
   }
 
   /**
@@ -4003,8 +4855,8 @@
             list
               .map(function (d) {
                 return dateChipSpanHtml(d, statusByIso);
-              })
-              .join("") +
+        })
+        .join("") +
             "</div>"
           );
         }
@@ -4238,9 +5090,13 @@
       var calNy = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
       var termsNy = (calNy && Array.isArray(calNy.terms) ? calNy.terms : []) || [];
       var suffix = accordionLabelSuffix || " Term 26/27";
+      var activeTerm = hubActiveCalendarTerm(isoDateLocal(new Date()));
+      var activeId = activeTerm && activeTerm.id ? String(activeTerm.id) : "";
       if (termsNy.length) {
         termsNy.forEach(function (t) {
           if (!t || !t.starts) return;
+          /* One term at a time on the hub — no Spring/Summer under Later terms early. */
+          if (activeId && String(t.id || "") !== activeId) return;
           var termEnd = t.mainTermEnds || t.ends || t.lastDay || "";
           if (!termEnd) return;
           var labelBase =
@@ -4298,7 +5154,41 @@
        * still get their term days instead of an empty accordion.
        */
       if (!nextDates.length) nextDates = findUnconfirmedNextYearSessionDates(data);
-      pushTermAccordionsFromDates(nextDates, true, " Term 26/27 · Re-enrolled");
+      /* Mix-in one-off trial days (purple) — e.g. climb trial + aquatic term. */
+      try {
+        var trialIsoMap = Object.create(null);
+        trialBookedDateRows(data).forEach(function (t) {
+          if (!t || !t.iso || t.iso <= summerTo) return;
+          trialIsoMap[t.iso] = true;
+        });
+        nextDates.forEach(function (d) {
+          if (d && d.iso && trialIsoMap[d.iso]) d.trialBooked = true;
+        });
+        Object.keys(trialIsoMap).forEach(function (tIso) {
+          var have = nextDates.some(function (d) {
+            return d && d.iso === tIso;
+          });
+          if (have) return;
+          nextDates.push(
+            annotateChipDate(
+              {
+                iso: tIso,
+                shortLabel: formatTermChipLabel(tIso),
+                past: tIso < isoDateLocal(new Date()),
+                isToday: tIso === isoDateLocal(new Date()),
+                isNext: true,
+                pendingReenrol: false,
+                trialBooked: true,
+              },
+              data,
+            ),
+          );
+        });
+        nextDates.sort(function (a, b) {
+          return String(a.iso || "").localeCompare(String(b.iso || ""));
+        });
+      } catch (_trialMix) {}
+      pushTermAccordionsFromDates(nextDates, true, " Term 26/27");
     } else if (todayIso > summerTo) {
       // Summer 25/26 finished and still not confirmed → 26/27 chips in red.
       var pendingDates = findUnconfirmedNextYearSessionDates(data);
@@ -4312,7 +5202,7 @@
       // Summer 25/26 is never a Later term — after re-enrol it moves to Quick menu → Old Term Dates.
       var autumnSettled = hubReenrolPayState(data) === "settled";
       upcomingAccordions.forEach(function (term, idx) {
-        var html = termAccordionHtml(term.label, term.body, false, autumnSettled && acceptedNext);
+        var html = termAccordionHtml(term.label, term.body, idx === 0, autumnSettled && acceptedNext);
         if (idx === 0) thisChunks.push(html);
         else laterChunks.push(html);
       });
@@ -4428,18 +5318,19 @@
     }
     var nextIso = "";
     for (var i = 0; i < out.length; i++) {
-      if (!out[i].past) {
+      annotateChipDate(out[i], data);
+      if (!nextIso && !out[i].past && !out[i].notBooked) {
         nextIso = out[i].iso;
-        break;
       }
     }
     out.forEach(function (d) {
-      d.isNext = !!nextIso && d.iso === nextIso;
+      d.isNext = !!nextIso && !d.notBooked && d.iso === nextIso;
     });
     return out;
   }
 
-  function bookingDayCentreYearChipsHtml(data) {
+  function bookingDayCentreYearChipsHtml(data, statusByIso) {
+    statusByIso = statusByIso || {};
     var dates = findDayCentreYearSessionDates(data);
     if (!dates.length) return "";
     var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27 || {};
@@ -4453,7 +5344,7 @@
         '">' +
         list
           .map(function (d) {
-            return dateChipSpanHtml(d, {});
+            return dateChipSpanHtml(d, statusByIso);
           })
           .join("") +
         "</div>"
@@ -4526,6 +5417,16 @@
 
   function applyTermDateChipStatuses(host, data, statusByIso) {
     if (!host) return;
+    /* My booking Day Centre year board — same absent/cancel/done tones as Hub. */
+    var bookingWrap = host.querySelector(".pp-booking-year-dates");
+    if (bookingWrap) {
+      try {
+        host._ppTermStatusByIso = statusByIso || Object.create(null);
+      } catch (_bk) {}
+      var nextBooking = bookingDayCentreYearChipsHtml(data, statusByIso);
+      if (nextBooking) bookingWrap.outerHTML = nextBooking;
+      return;
+    }
     var parts;
     try {
       parts = buildTermSessionDateParts(data, statusByIso);
@@ -4632,6 +5533,14 @@
         if (d) statusByIso[d] = "absent";
       },
     );
+    // Club cancel from schedule_overrides (slot_close) — do not wait for WhatsApp notify.
+    ((data && data.attendance_summary && data.attendance_summary.cancelled_dates) || []).forEach(
+      function (iso) {
+        var d = String(iso || "").slice(0, 10);
+        if (!d) return;
+        if (statusByIso[d] !== "absent") statusByIso[d] = "cancelled";
+      },
+    );
     ((data && data.sessions) || []).forEach(function (s) {
       var iso = String((s && s.session_date) || "").slice(0, 10);
       if (!iso) return;
@@ -4641,6 +5550,19 @@
         /^(no|n|false|0)$/.test(att)
       ) {
         statusByIso[iso] = "absent";
+        return;
+      }
+      var present =
+        /\b(present|attended|yes|y|true|1)\b/.test(att) || att === "present";
+      var hasBody =
+        !!(s && s.id) ||
+        !!(s && String(s.positive_feedback || "").trim()) ||
+        s.engagement_rating != null ||
+        !!(s && String(s.completed_by_name || "").trim());
+      if (present || hasBody) {
+        if (statusByIso[iso] !== "absent" && statusByIso[iso] !== "cancelled") {
+          statusByIso[iso] = "completed";
+        }
       }
     });
     if (typeof opts.listAbsences === "function") {
@@ -4649,7 +5571,18 @@
           ((j && j.reports) || []).forEach(function (r) {
             var iso = String((r && r.session_date) || "").slice(0, 10);
             if (!iso) return;
-            // Any parent Absent report for that day marks the chip red.
+            var kind = String((r && r.case_kind) || "").toLowerCase();
+            var reason = String((r && r.reason_code) || "").toLowerCase();
+            // Club / instructor cancel → burgundy cancelled chip (not orange absent).
+            if (
+              kind === "cancellation" ||
+              reason === "instructor_cancelled" ||
+              reason === "admin_cancelled"
+            ) {
+              if (statusByIso[iso] !== "absent") statusByIso[iso] = "cancelled";
+              return;
+            }
+            // Parent Absent report → orange absent chip.
             statusByIso[iso] = "absent";
           });
         }),
@@ -4687,6 +5620,8 @@
       mergeAndPaint();
       return;
     }
+    /* Paint sync sources first (attendance_summary / sessions) so Absent is not stuck green. */
+    mergeAndPaint();
     void Promise.all(
       tasks.map(function (p) {
         return p.catch(function () {});
@@ -4766,32 +5701,72 @@
     return '<svg class="pp-hub-ops__slot-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>';
   }
 
-  function hubOpsSessionSlotHtml(s) {
+  function hubOpsSessionSlotHtml(s, data) {
     var tone = serviceChipToneClass(s.rawLabel || s.label || "");
-    var completed = !!s.completed;
-    var placeBits = [s.venue, s.area].filter(Boolean);
-    var place = placeBits.join(" · ");
+    var status = String(s.status || (s.completed ? "completed" : "") || "").toLowerCase();
+    if (!status && data) {
+      var st0 = resolveHubSessionStatus(data, s.iso, s._end);
+      status = st0.status;
+      s.completed = st0.status === "completed";
+    }
+    var completed = status === "completed";
+    var absent = status === "absent";
+    var awaiting = status === "awaiting_feedback";
+    var place = hubOpsDisplayPlace(s, data);
+    var instructorNames = hubOpsInstructorNamesForSession(s, data);
+    var clock = hubOpsDisplayTime(s.time);
     var pinIco =
       '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+    var personIco =
+      '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     var clockIco =
       '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
-    var timeBlock = s.time
+    var statusChip = "";
+    if (completed) {
+      statusChip =
+        '<span class="pp-hub-ops__session-done-chip"><span class="pp-hub-ops__session-done-chip__mark" aria-hidden="true">✓</span>SESSION COMPLETED</span>';
+    } else if (absent) {
+      statusChip =
+        '<span class="pp-hub-ops__session-done-chip pp-hub-ops__session-done-chip--absent">ABSENT</span>';
+    } else if (awaiting) {
+      statusChip =
+        '<span class="pp-hub-ops__session-done-chip pp-hub-ops__session-done-chip--awaiting">AWAITING FEEDBACK</span>';
+    }
+    var timeBlock = clock
       ? '<span class="pp-hub-ops__slot-end">' +
-        (completed
-          ? '<span class="pp-hub-ops__session-done-chip"><span class="pp-hub-ops__session-done-chip__mark" aria-hidden="true">✓</span>SESSION COMPLETED</span>'
-          : "") +
+        statusChip +
         '<span class="pp-hub-ops__slot-time">' +
         clockIco +
         "<span>" +
-        esc(s.time) +
+        esc(clock) +
         "</span></span></span>"
       : "";
+    var ariaExtra = completed
+      ? " — session completed"
+      : absent
+        ? " — absent"
+        : awaiting
+          ? " — awaiting feedback"
+          : "";
+    var instructorLine = "";
+    if (instructorNames.length) {
+      var instructorLabel = instructorNames.join(" · ");
+      instructorLine =
+        '<div class="pp-hub-ops__slot-instructor">' +
+        personIco +
+        '<button type="button" class="pp-hub-ops__slot-instructor-link" data-pp-open="team" aria-label="Open Team — ' +
+        esc(instructorLabel) +
+        '">' +
+        esc(instructorLabel) +
+        "</button></div>";
+    }
     return (
       '<li class="pp-hub-ops__slot pp-hub-ops__slot--' +
       esc(tone) +
       (completed ? " pp-hub-ops__slot--completed" : "") +
+      (absent ? " pp-hub-ops__slot--absent" : "") +
       '"' +
-      (completed ? ' aria-label="' + esc((s.label || "Session") + " — session completed") + '"' : "") +
+      (ariaExtra ? ' aria-label="' + esc((s.label || "Session") + ariaExtra) + '"' : "") +
       ">" +
       '<span class="pp-hub-ops__slot-ico" aria-hidden="true">' +
       hubOpsSlotGlyph(tone) +
@@ -4802,7 +5777,10 @@
       "</span>" +
       (place
         ? '<div class="pp-hub-ops__slot-place">' + pinIco + "<span>" + esc(place) + "</span></div>"
-        : "") +
+        : '<div class="pp-hub-ops__slot-place pp-hub-ops__slot-place--empty" aria-hidden="true">' +
+          pinIco +
+          "<span>—</span></div>") +
+      instructorLine +
       "</div>" +
       timeBlock +
       "</li>"
@@ -4835,10 +5813,10 @@
     } else {
       next = nextList[0] || null;
       sameDay = next
-        ? nextList.filter(function (x) {
-            return x.iso === next.iso;
-          })
-        : [];
+      ? nextList.filter(function (x) {
+          return x.iso === next.iso;
+        })
+      : [];
       if (next && next.source === "crash") {
         sameDay = sameDay.filter(function (x) {
           return x.source === "crash";
@@ -4856,7 +5834,7 @@
           ? "Your Autumn 2026/27 place is confirmed. The next class will show here once the first date is on the calendar (from early September)."
           : "Your 2026/27 place is on file. Open Booking to see kept services — weekly days appear here once the Autumn roster is published (from early September)."
         : summerEndedEmpty
-          ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 (or open Crash course July) from Quick access."
+          ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 from Quick access."
           : "No weekly services on the current roster yet — next sessions will show here when days are assigned.";
       nextBody =
         '<div class="pp-hub-ops__empty-wrap">' +
@@ -4895,7 +5873,11 @@
         esc(next.dayLabel) +
         "</strong></div>" +
         '<ul class="pp-hub-ops__slots">' +
-        sameDay.map(hubOpsSessionSlotHtml).join("") +
+        sameDay
+          .map(function (row) {
+            return hubOpsSessionSlotHtml(row, data);
+          })
+          .join("") +
         "</ul></div>";
     }
     var termParts = buildTermSessionDateParts(data);
@@ -4945,6 +5927,7 @@
   function hubAlertKindLabel(kind) {
     var k = String(kind || "").toLowerCase();
     if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
+    if (k === "time_change" || k === "session_time_change") return "Time change";
     if (k === "session_cancelled") return "Session cancelled";
     if (k === "absence_announced") return "Absence noted";
     return k.replace(/_/g, " ") || "Club update";
@@ -5207,6 +6190,13 @@
     return !(data && data.session_progress) || data.session_progress.enabled !== false;
   }
 
+  /** Weekly notes folder — Day Centre only (Sep 2026 office policy). */
+  function weeklyNotesEnabled(data) {
+    if (!sessionProgressEnabled(data)) return false;
+    if (data && data.session_progress && data.session_progress.weekly_notes === false) return false;
+    return true;
+  }
+
   function renderFeedbackYearPicker(host, data, opts, targetView) {
     var years = feedbackYearsAvailable(data);
     var title = targetView === "weekly_notes" ? "Weekly notes" : "Sessions Overview";
@@ -5264,6 +6254,41 @@
   function openSessionFeedbackEntry(host, data, opts, view, viewOpts) {
     viewOpts = viewOpts || {};
     var section = view === "weekly_notes" ? "weekly_notes" : "sessions";
+    /* Sessions Overview: no year picker / re-enrol date chips — term feedback accordions instead. */
+    if (view === "sessions") {
+      var yearKey =
+        viewOpts.feedbackYear ||
+        data.feedback_year ||
+        defaultFeedbackYearKey(data);
+      var loadOpts = { feedbackYear: yearKey };
+      if (
+        opts &&
+        typeof opts.isSectionLoaded === "function" &&
+        opts.isSectionLoaded(section, loadOpts)
+      ) {
+        openSubview(host, data, opts, view, Object.assign({}, viewOpts, {
+          feedbackYear: yearKey,
+          skipYearPicker: true,
+        }));
+        return Promise.resolve();
+      }
+      if (opts && typeof opts.loadSection === "function") {
+        host.innerHTML = '<p class="pcso-loading" role="status">Loading…</p>';
+        return opts
+          .loadSection(section, false, loadOpts)
+          .then(function (fresh) {
+            openSubview(host, fresh || data, opts, view, {
+              feedbackYear: yearKey,
+              skipYearPicker: true,
+            });
+          });
+      }
+      openSubview(host, data, opts, view, Object.assign({}, viewOpts, {
+        feedbackYear: yearKey,
+        skipYearPicker: true,
+      }));
+      return Promise.resolve();
+    }
     var yearKey =
       viewOpts.feedbackYear ||
       data.feedback_year ||
@@ -5296,59 +6321,172 @@
     return Promise.resolve();
   }
 
+  function sessionsFeedbackTermAccordionHtml(label, bodyHtml) {
+    if (!bodyHtml) return "";
+    return (
+      '<details class="pp-hub-ops__term-accordion pp-sessions-fb-acc">' +
+      '<summary class="pp-hub-ops__term-summary">' +
+      termHalfRowIcon(label) +
+      '<span class="pp-hub-ops__term-summary-title">' +
+      esc(label) +
+      "</span>" +
+      '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
+      "</summary>" +
+      '<div class="pp-hub-ops__term-body pp-sessions-fb-acc__body">' +
+      bodyHtml +
+      "</div></details>"
+    );
+  }
+
+  function sessionsHasFeedbackPayload(payload) {
+    if (!payload) return false;
+    if (Array.isArray(payload.sessions) && payload.sessions.length) return true;
+    var att = payload.attendance_summary;
+    if (att && (Number(att.total) > 0 || Number(att.attended) > 0 || Number(att.absent) > 0)) {
+      return true;
+    }
+    return false;
+  }
+
   function renderSessions(host, data, opts, viewOpts) {
     viewOpts = viewOpts || {};
     if (!sessionProgressEnabled(data)) {
-      host.innerHTML = subviewShell(
-        data,
-        "sessions",
-        '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
+    host.innerHTML = subviewShell(
+      data,
+      "sessions",
+      '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
           '<p class="pp-muted">Session overview and stats are not shown for this participant.</p>',
       );
       bindBack(host, data, opts);
       return;
     }
-    var termChips = termSessionDateChipsHtml(data, null, viewOpts);
-    var yearBadge = viewOpts.feedbackYear
-      ? '<p class="pp-feedback-year-badge" aria-label="Selected year">' +
-        esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
-        "</p>"
-      : "";
+    var former = isFormerClient(data);
+    var dlBar =
+      former && Array.isArray(data.sessions) && data.sessions.length
+        ? '<div class="pp-former-dl-bar"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-all-sessions>Download overview (PDF)</button></div>'
+        : "";
     host.innerHTML = subviewShell(
       data,
       "sessions",
       '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
-        yearBadge +
-        '<p class="pp-muted pp-pax-subview-note">Term dates below, then date, service, instructor, engagement, regulation and independence — absents are listed as Absent. Shown separately for each activity when your child does more than one.</p>' +
-        (termChips
-          ? '<section class="pp-sessions-term-dates" aria-label="Term session dates">' +
-            '<div class="pp-hub-ops__badge-row">' +
-            termChips +
-            "</div></section>"
-          : "") +
+        '<p class="pp-muted pp-pax-subview-note">' +
+        (former
+          ? "Attendance, engagement, regulation and independence for past sessions. Open a term below. Download a branded PDF to keep."
+          : "Open a term for attendance, engagement, regulation and independence. Future terms appear here once session feedback is recorded.") +
+        "</p>" +
+        dlBar +
         '<div id="ppPaxSessionsHost"><p class="pcso-loading" role="status">Loading sessions…</p></div>',
     );
     bindBack(host, data, opts);
-    var messagesPromise =
-      opts && typeof opts.loadMessages === "function"
-        ? opts.loadMessages({ markRead: false }).catch(function () {
-            return null;
-          })
-        : null;
-    mountTermDateChipStatuses(host, data, opts, messagesPromise);
+    bindFormerHistoryDownloads(host, data);
     var sessionsHost = host.querySelector("#ppPaxSessionsHost");
-    if (
-      sessionsHost &&
-      global.PortalClientSessionsOverview &&
-      typeof global.PortalClientSessionsOverview.renderParent === "function"
-    ) {
-      global.PortalClientSessionsOverview.renderParent(sessionsHost, {
-        sessions: data.sessions || [],
-        attendance_summary: data.attendance_summary || null,
-        term_label: data.term_label || (data.general && data.general.term_label) || "",
+    if (!sessionsHost) return;
+
+    var showSummer =
+      !isNewAutumnStarter(data) &&
+      (participantNeedsFeedbackYearPicker(data) ||
+        (Array.isArray(data.feedback_years_available) &&
+          data.feedback_years_available.some(function (y) {
+            return y && y.key === PARENT_FEEDBACK_PRIOR_YEAR;
+          })));
+
+    function overviewHtmlFor(payload, label) {
+      if (
+        !global.PortalClientSessionsOverview ||
+        typeof global.PortalClientSessionsOverview.parentOverviewHtml !== "function"
+      ) {
+        return '<p class="pp-muted">Session overview is unavailable. Please refresh.</p>';
+      }
+      return global.PortalClientSessionsOverview.parentOverviewHtml({
+        sessions: (payload && payload.sessions) || [],
+        attendance_summary: (payload && payload.attendance_summary) || null,
+        term_label: label || "",
         hideAchievements: true,
+        includeTable: true,
       });
     }
+
+    function paintAccordions(summerPayload, autumnPayload) {
+      if (!sessionsHost.isConnected) return;
+      var parts = [];
+      if (showSummer && sessionsHasFeedbackPayload(summerPayload)) {
+        parts.push(
+          sessionsFeedbackTermAccordionHtml(
+            "Summer 2026",
+            overviewHtmlFor(summerPayload, "Summer 2026"),
+          ),
+        );
+      }
+      var autumnHas = sessionsHasFeedbackPayload(autumnPayload || data);
+      if (autumnHas) {
+        parts.push(
+          sessionsFeedbackTermAccordionHtml(
+            "Autumn 2026",
+            overviewHtmlFor(autumnPayload || data, "Autumn 2026"),
+          ),
+        );
+      }
+      if (!parts.length) {
+        sessionsHost.innerHTML =
+          '<p class="pcso-empty" role="status">No session stats or feedback yet.</p>';
+        return;
+      }
+      sessionsHost.innerHTML =
+        '<div class="pp-sessions-fb-stack" aria-label="Session feedback by term">' +
+        parts.join("") +
+        "</div>";
+    }
+
+    var autumnReady = Promise.resolve({
+        sessions: data.sessions || [],
+        attendance_summary: data.attendance_summary || null,
+    });
+    var summerReady = Promise.resolve(null);
+    if (showSummer && opts && typeof opts.loadSection === "function") {
+      summerReady = opts
+        .loadSection("sessions", false, { feedbackYear: PARENT_FEEDBACK_PRIOR_YEAR })
+        .then(function (fresh) {
+          return {
+            sessions: (fresh && fresh.sessions) || [],
+            attendance_summary: (fresh && fresh.attendance_summary) || null,
+          };
+        })
+        .catch(function () {
+          return null;
+        })
+        .then(function (summerPayload) {
+          /* Reload current year so state is not left on prior-year sessions. */
+          return opts
+            .loadSection("sessions", false, { feedbackYear: PARENT_FEEDBACK_CURRENT_YEAR })
+            .then(function (fresh) {
+              return {
+                summer: summerPayload,
+                autumn: {
+                  sessions: (fresh && fresh.sessions) || data.sessions || [],
+                  attendance_summary:
+                    (fresh && fresh.attendance_summary) || data.attendance_summary || null,
+                },
+              };
+            })
+            .catch(function () {
+              return {
+                summer: summerPayload,
+                autumn: {
+                  sessions: data.sessions || [],
+                  attendance_summary: data.attendance_summary || null,
+                },
+              };
+            });
+        });
+      summerReady.then(function (pack) {
+        paintAccordions(pack && pack.summer, pack && pack.autumn);
+      });
+      return;
+    }
+
+    autumnReady.then(function (autumnPayload) {
+      paintAccordions(null, autumnPayload);
+    });
   }
 
   var AQUATIC_NO_PHOTOS_NOTE =
@@ -5691,6 +6829,10 @@
     var calHost = host.querySelector("#ppCalYearHost");
     if (!calHost) return;
     var loadOpts = { circles: true };
+    if (participantHasDayCentre(data)) {
+      /* Sessions HTML marks Oct half-term + 1–4 Sep red (after-school). DC stays open. */
+      loadOpts.dayCentreOpenThroughHalfTerm = true;
+    }
     if (isTrialOnlyBooking(data)) {
       /* Trial: highlight only booked ISO date(s), not every Monday of the term. */
       var mineIso = Object.create(null);
@@ -5797,7 +6939,17 @@
         '<path d="M12 21s7-5.3 7-11a7 7 0 10-14 0c0 5.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>'
       );
     }
+    if (kind === "no") {
+      return open + '<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>';
+    }
     return open + '<path d="M20 6L9 17l-5-5"/></svg>';
+  }
+
+  function bookingChoiceTone(choice) {
+    var c = String(choice || "").toLowerCase();
+    if (/not continuing|withdraw/.test(c)) return "withdraw";
+    if (/\bkeep\b|\bcontinue\b/.test(c)) return "keep";
+    return "";
   }
 
   function isBookingActivityItem(item) {
@@ -5836,8 +6988,11 @@
         esc(venue) +
         "</span></span>";
     }
+    var tone = bookingChoiceTone(choice);
     return (
-      '<li class="pp-booking-item">' +
+      '<li class="pp-booking-item' +
+      (tone ? " pp-booking-item--" + tone : "") +
+      '">' +
       '<div class="pp-booking-item__row">' +
       '<span class="pp-booking-item__badge" aria-hidden="true">' +
       bookingItemIconSvg(title) +
@@ -5849,7 +7004,7 @@
       (meta ? '<div class="pp-booking-item__metas">' + meta + "</div>" : "") +
       '<div class="pp-booking-item__choice">' +
       '<span class="pp-booking-item__choice-ico" aria-hidden="true">' +
-      bookingMetaIcon("ok") +
+      bookingMetaIcon(tone === "withdraw" ? "no" : "ok") +
       "</span>" +
       "<span>" +
       esc(choice) +
@@ -5937,25 +7092,43 @@
         (yearChips
           ? yearChips
           : '<p class="pp-muted">Day Centre dates will appear here once your weekdays are on the current roster.</p>');
-    } else if (!booking.submitted || !booking.items.length) {
-      var crashAction = canBookExtrasFor(data)
-        ? '<a class="pp-btn pp-btn--ghost" href="/parent/crash-summer?contact_id=' +
-          encodeURIComponent(String(contactId)) +
-          '">Crash course July</a>'
-        : '<p class="pp-muted">Extra holiday sessions are not available for this place.</p>';
+    } else if (needsReenrolCta(data)) {
+      /* July 2026 re-enrol window only — Summer clients confirming 26/27. */
       body =
         '<p class="pp-muted">You have not submitted re-enrolment choices for 2026/27 yet.</p>' +
-        '<p class="pp-muted">Please respond by <strong>Wednesday 22 July 2026</strong>. From Thursday 23 July, unconfirmed places may be released to new clients.' +
-        (canBookExtrasFor(data)
-          ? " You can book crash courses first if you prefer, then complete re-enrolment."
-          : "") +
-        "</p>" +
+        '<p class="pp-muted">Please respond by <strong>Wednesday 22 July 2026</strong>. From Thursday 23 July, unconfirmed places may be released to new clients.</p>' +
         '<div class="pp-hub-reenrol__actions" style="margin-top:10px">' +
         '<a class="pp-btn pp-btn--primary" href="' +
         esc(reenrolHref) +
         '">Open re-enrolment form</a>' +
-        crashAction +
         "</div>";
+    } else if (!booking.submitted || !booking.items.length) {
+      /*
+       * No July form submit — mid-term / Booking Portal places, or deadline passed.
+       * Never show the July deadline CTA after 22 July or when the place is already on file.
+       */
+      if (familyAcceptedNextYear(data)) {
+        note = "Your 2026/27 place for " + (firstNameOf(data) || "your child") + ".";
+        var svcDetail =
+          data && data.general && Array.isArray(data.general.services_detail)
+            ? data.general.services_detail
+            : [];
+        var svcBits = svcDetail
+          .map(function (s) {
+            return shortServiceChipLabel((s && (s.label || s.service)) || "") || "";
+          })
+          .filter(Boolean);
+        body =
+          '<p class="pp-muted">Your Autumn 2026/27 place is on file' +
+          (svcBits.length ? " (" + esc(svcBits.join(", ")) + ")" : "") +
+          ". Session dates are on the Hub schedule. The July re-enrolment form is closed.</p>";
+      } else {
+        note = "2026/27 place";
+        body =
+          '<p class="pp-muted">The July re-enrolment window closed on Wednesday 22 July 2026. Contact the office if you need a place for ' +
+          esc(firstNameOf(data) || "your child") +
+          ".</p>";
+      }
     } else {
       var activityItems = (booking.items || []).filter(isBookingActivityItem);
       body =
@@ -5970,7 +7143,7 @@
         (booking.parent_action === "auto"
           ? bookingDayCentreYearChipsHtml(data)
           : '<a class="pp-btn pp-btn--ghost" href="' +
-            esc(reenrolHref) +
+        esc(reenrolHref) +
             '">Update booking choices</a>');
     }
     var invoiceBlock = showInvoicesForParticipant(data)
@@ -6001,6 +7174,9 @@
         invoiceBlock,
     );
     bindBack(host, data, opts);
+    if (host.querySelector(".pp-booking-year-dates")) {
+      mountTermDateChipStatuses(host, data, opts, null);
+    }
     if (showInvoicesForParticipant(data)) bindInvoices(host, data, opts);
   }
 
@@ -6035,12 +7211,12 @@
 
   function renderWeeklyNotes(host, data, opts, viewOpts) {
     viewOpts = viewOpts || {};
-    if (!sessionProgressEnabled(data)) {
+    if (!weeklyNotesEnabled(data)) {
       host.innerHTML = subviewShell(
         data,
         "weekly_notes",
         '<h3 class="pp-pax-subview-title">Weekly notes</h3>' +
-          '<p class="pp-muted">Weekly notes are not shown for this participant.</p>',
+          '<p class="pp-muted">Weekly notes are for Day Centre places only.</p>',
       );
       bindBack(host, data, opts);
       return;
@@ -6059,12 +7235,17 @@
     notes.sort(function (a, b) {
       return String(b.week_start || "").localeCompare(String(a.week_start || ""));
     });
+    data._ppDownloadWeeklyNotes = notes;
+    var former = isFormerClient(data);
     var body;
     if (!notes.length) {
       body =
         '<p class="pp-muted">Weekly notes will collect here once session feedbacks for a Saturday–Friday week are ready. Each note is a short, warm summary of the week.</p>';
     } else {
       body =
+        (former
+          ? '<div class="pp-former-dl-bar"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-all-week-notes>Download all notes (PDF)</button></div>'
+          : "") +
         '<ul class="pp-week-notes-folder" aria-label="Weekly notes by week">' +
         notes
           .map(function (n, idx) {
@@ -6089,7 +7270,13 @@
               "</summary>" +
               '<p class="pp-week-notes-folder__body">' +
               esc(full) +
-              "</p></details></li>"
+              "</p>" +
+              (former
+                ? '<div class="pp-former-dl-row"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-week-note="' +
+                  idx +
+                  '">Download PDF</button></div>'
+                : "") +
+              "</details></li>"
             );
           })
           .join("") +
@@ -6104,10 +7291,15 @@
             esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
             "</p>"
           : "") +
-        '<p class="pp-muted pp-pax-subview-note">One short note per week. Open a week to read it — older notes stay collapsed so the list stays easy to scroll.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">' +
+        (former
+          ? "One short note per week. Open a week to read it, or download branded PDFs to keep on your device."
+          : "One short note per week. Open a week to read it — older notes stay collapsed so the list stays easy to scroll.") +
+        "</p>" +
         body,
     );
     bindBack(host, data, opts);
+    bindFormerHistoryDownloads(host, data);
   }
 
   function renderAnnouncements(host, data, opts) {
@@ -6120,6 +7312,8 @@
       var title = "";
       if (k === "instructor_change" || k === "instructor_reassign") {
         title = "Instructor update";
+      } else if (k === "time_change" || k === "session_time_change") {
+        title = "Time change";
       } else if (k === "session_cancelled") {
         title = "Session cancelled";
       } else if (k === "absence_announced") {
@@ -6208,6 +7402,13 @@
     return n.split(/\s+/)[0] || n;
   }
 
+  /** e.g. Mohamed → Mohamed's; James → James' */
+  function firstNamePossessive(data) {
+    var first = firstNameOf(data) || "Participant";
+    if (/s$/i.test(first)) return first + "'";
+    return first + "'s";
+  }
+
   function teamMembers(data) {
     if (typeof global.PortalParentTeam !== "undefined" && typeof global.PortalParentTeam.resolveTeam === "function") {
       return global.PortalParentTeam.resolveTeam(data);
@@ -6230,7 +7431,7 @@
       return (
         '<div class="pp-team-photo pp-team-photo--img"><img src="' +
         esc(url) +
-        '" alt="" width="72" height="72" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.remove(\'pp-team-photo--img\');" /><span class="pp-team-photo__init" aria-hidden="true">' +
+        '" alt="" width="72" height="72" loading="lazy" decoding="async" draggable="false" onerror="var p=this.parentElement;this.onerror=null;this.remove();if(p)p.classList.remove(\'pp-team-photo--img\');" /><span class="pp-team-photo__init" aria-hidden="true">' +
         esc(teamInitials(name)) +
         "</span></div>"
       );
@@ -6242,28 +7443,28 @@
     );
   }
 
-  function teamMemberCardHtml(m) {
+  function participantHasMultiActivity(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    for (var i = 0; i < detail.length; i++) {
+      var lab = String((detail[i] && (detail[i].label || detail[i].service)) || "");
+      if (/multi/i.test(lab)) return true;
+    }
+    var services = data && data.general && Array.isArray(data.general.services) ? data.general.services : [];
+    for (var j = 0; j < services.length; j++) {
+      if (/multi/i.test(String(services[j] || ""))) return true;
+    }
+    return false;
+  }
+
+  function teamMemberCardHtml(m, quietMa) {
     m = m || {};
-    var speaks = Array.isArray(m.speaks) ? m.speaks : [];
-    var speaksHtml = speaks.length
-      ? '<div class="pp-team-card__speaks"><span class="pp-team-card__speaks-label">Speaks</span><span class="pp-team-chips">' +
-        speaks
-          .map(function (l) {
-            return '<span class="pp-team-chip">' + esc(l) + "</span>";
-          })
-          .join("") +
-        "</span></div>"
-      : "";
-    var natHtml = m.nationality
-      ? '<p class="pp-team-card__nat">' +
-        (m.flag ? '<span class="pp-team-flag" aria-hidden="true">' + esc(m.flag) + "</span>" : "") +
-        esc(m.nationality) +
-        "</p>"
-      : "";
+    /* Badge only from effective assignment (API role=cover) — never from message heuristics.
+     * Multi-Activity: no "Instructor change" badge (no WA reminder; card shows day staff). */
     var isCover =
-      String(m.role || "").toLowerCase() === "cover" ||
-      !!m.is_cover ||
-      !!m.covering_after_change;
+      !quietMa && (String(m.role || "").toLowerCase() === "cover" || !!m.is_cover);
     var badgeHtml = isCover
       ? '<span class="pp-team-card__badge" title="Covering after an instructor change">Instructor change</span>'
       : "";
@@ -6279,8 +7480,6 @@
       "</h4>" +
       badgeHtml +
       "</div>" +
-      natHtml +
-      speaksHtml +
       (m.bio ? '<p class="pp-team-card__bio">' + esc(m.bio) + "</p>" : "") +
       "</div></article>"
     );
@@ -6304,6 +7503,7 @@
   function renderTeam(host, data, opts) {
     var p = (data && data.participant) || {};
     var pName = p.display_name || "Participant";
+    var quietMa = participantHasMultiActivity(data);
     setParticipantPageTitle(pName + "\u2019s Team");
 
     function paint(members, changeNote) {
@@ -6315,29 +7515,35 @@
             : members.length === 2
               ? " pp-team-grid--2"
               : " pp-team-grid--1";
-      var sinceLabel =
-        typeof global.PortalParentTeam !== "undefined" && global.PortalParentTeam.TEAM_FEEDBACK_SINCE
-          ? global.PortalParentTeam.TEAM_FEEDBACK_SINCE
-          : "2026-06-01";
       var bodyHtml = members.length
-        ? '<div class="pp-team-grid' + colClass + '">' + members.map(teamMemberCardHtml).join("") + "</div>"
-        : '<p class="pp-muted">No instructors on file yet for sessions since ' +
-          esc(sinceLabel.slice(0, 10).split("-").reverse().join("/")) +
-          ".</p>";
-      var noteHtml = changeNote
-        ? '<div class="pp-team-change-note" role="status">' +
-          "<strong>Recent instructor change</strong>" +
-          '<p class="pp-muted" style="margin:4px 0 0">' +
-          esc(changeNote) +
-          "</p></div>"
-        : "";
+        ? '<div class="pp-team-grid' +
+          colClass +
+          '">' +
+          members
+            .map(function (m) {
+              return teamMemberCardHtml(m, quietMa);
+            })
+            .join("") +
+          "</div>"
+        : '<p class="pp-muted">No instructors listed yet for this term. They appear here once places and session staff are confirmed.</p>';
+      var noteHtml =
+        !quietMa && changeNote
+          ? '<div class="pp-team-change-note" role="status">' +
+            "<strong>Recent instructor change</strong>" +
+            '<p class="pp-muted" style="margin:4px 0 0">' +
+            esc(changeNote) +
+            "</p></div>"
+          : "";
+      var intro = quietMa
+        ? '<p class="pp-muted pp-team-intro">Instructors for this term\'s Multi-Activity sessions. Everyone who may deliver your child\'s Hub sessions is listed here. On each day card you only see who is with them that day.</p>'
+        : '<p class="pp-muted pp-team-intro">Instructors for this term\'s sessions. If someone is covering after a change, they appear here with an <strong>Instructor change</strong> badge — show this to your child so they know who to expect.</p>';
       host.innerHTML =
         '<div class="pp-pax-shell" data-pp-view="team">' +
         '<div class="pp-pax-sticky-hero pp-team-backbar">' +
         hubBackButtonHtml(data) +
         "</div>" +
         '<div class="pp-pax-subview-body">' +
-        '<p class="pp-muted pp-team-intro">Instructors from recent sessions. If someone is covering after a change, they appear here with an <strong>Instructor change</strong> badge — show this to your child so they know who to expect.</p>' +
+        intro +
         noteHtml +
         bodyHtml +
         "</div></div>";
@@ -6347,6 +7553,19 @@
     var base = teamMembers(data);
     paint(base, "");
 
+    if (
+      !base.length &&
+      opts &&
+      typeof opts.loadSection === "function"
+    ) {
+      void opts.loadSection("team", true).then(function (fresh) {
+        if (!host.isConnected) return;
+        var next = teamMembers(fresh || data);
+        if (next.length) paint(next, "");
+      });
+    }
+
+    if (quietMa) return;
     if (!opts || typeof opts.loadMessages !== "function") return;
     void opts
       .loadMessages({ markRead: false })
@@ -6355,8 +7574,18 @@
         var msgs = ((payload && payload.messages) || []).filter(function (m) {
           return messageMatchesParticipant(m, data);
         });
-        var covers = coverInstructorsFromMessages(msgs);
+        /*
+         * Messages may explain a cover in copy, but must not invent Team members
+         * or force "Instructor change" badges — that comes from staff_id overrides.
+         */
         var changeNote = "";
+        var hasApiCover = base.some(function (m) {
+          return String((m && m.role) || "").toLowerCase() === "cover";
+        });
+        if (!hasApiCover) {
+          paint(base, "");
+          return;
+        }
         for (var i = 0; i < msgs.length; i++) {
           var m = msgs[i];
           if (!m || m.direction !== "out") continue;
@@ -6364,70 +7593,11 @@
           var k = String(m.kind || "").toLowerCase();
           if (k !== "instructor_change" && k !== "instructor_reassign") continue;
           var preview = String(m.body_text || "").trim().replace(/\s+/g, " ");
-          if (preview.length > 160) preview = preview.slice(0, 157) + "…";
+          if (preview.length > 160) preview = preview.slice(0, 157) + "...";
           changeNote = preview || "A covering instructor was assigned for a recent session.";
           break;
         }
-        var seen = Object.create(null);
-        var merged = [];
-        base.forEach(function (m) {
-          var key = String((m && (m.staff_key || m.key || m.username || m.name)) || "")
-            .trim()
-            .toLowerCase()
-            .split(/\s+/)[0];
-          if (key) seen[key] = true;
-          if (String((m && m.role) || "").toLowerCase() === "cover") {
-            merged.push(Object.assign({}, m, { covering_after_change: true }));
-          } else {
-            merged.push(m);
-          }
-        });
-        covers.forEach(function (c) {
-          if (seen[c.key]) {
-            for (var j = 0; j < merged.length; j++) {
-              var mk = String(
-                (merged[j] && (merged[j].staff_key || merged[j].key || merged[j].name)) || "",
-              )
-                .trim()
-                .toLowerCase()
-                .split(/\s+/)[0];
-              if (mk === c.key) {
-                merged[j] = Object.assign({}, merged[j], {
-                  role: "cover",
-                  covering_after_change: true,
-                });
-              }
-            }
-            return;
-          }
-          var card = null;
-          if (
-            global.PortalParentTeam &&
-            typeof global.PortalParentTeam.catalogMember === "function"
-          ) {
-            card = global.PortalParentTeam.catalogMember(c.key);
-          }
-          if (!card) {
-            card = {
-              name: c.name,
-              avatar_url: "/portal/staff_photos/" + c.key + ".png",
-              bio: "Covering instructor after a recent session change.",
-              role: "cover",
-              covering_after_change: true,
-            };
-          } else {
-            card = Object.assign({}, card, {
-              role: "cover",
-              covering_after_change: true,
-              bio:
-                (card.bio ? card.bio + " " : "") +
-                "Also covering after a recent instructor change.",
-            });
-          }
-          seen[c.key] = true;
-          merged.push(card);
-        });
-        paint(merged, changeNote);
+        paint(base, changeNote);
       })
       .catch(function () {});
   }
@@ -6454,6 +7624,7 @@
     var k = String(m.kind || "").trim();
     if (k === "custom" || k === "reply") return "Club message";
     if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
+    if (k === "time_change" || k === "session_time_change") return "Time change";
     if (k === "session_cancelled") return "Session cancelled";
     if (k === "absence_announced") return "Absence noted";
     if (!k) return "Club message";
@@ -6702,6 +7873,8 @@
       return (
         k === "instructor_change" ||
         k === "instructor_reassign" ||
+        k === "time_change" ||
+        k === "session_time_change" ||
         k === "session_cancelled" ||
         k === "absence_announced" ||
         k === "makeup_scheduled"
@@ -7048,10 +8221,11 @@
     return "£" + v.toFixed(2);
   }
 
-  function creditStatusLabel(status) {
+  function creditStatusLabel(status, kind) {
     var s = String(status || "");
-    if (s === "open") return "Open";
-    if (s === "applied") return "Applied";
+    var k = String(kind || "").toLowerCase();
+    if (s === "open") return k === "refund" ? "Pending payout" : "Available";
+    if (s === "applied") return "Applied to invoice";
     if (s === "refunded") return "Refunded";
     if (s === "cancelled") return "Cancelled";
     return s || "—";
@@ -7070,7 +8244,7 @@
       esc(title) +
       "</strong>" +
       '<span class="pp-absence-chip">' +
-      esc(creditStatusLabel(e.status)) +
+      esc(creditStatusLabel(e.status, e.kind)) +
       "</span></div>" +
       (money
         ? '<p class="pp-credit-card__amount">' + esc(money) + "</p>"
@@ -7081,6 +8255,9 @@
         ? " · " + esc(formatHubDateLabel(e.session_date) || e.session_date)
         : "") +
       "</p>" +
+      (String(e.status) === "open" && String(e.kind || "").toLowerCase() !== "refund"
+        ? '<p class="pp-muted pp-absence-card__hint">On your account — reduces the next term invoice (or Spring Direct Debit if you pay monthly).</p>'
+        : "") +
       (e.notes ? '<p class="pp-absence-card__reason">' + esc(e.notes) + "</p>" : "") +
       (e.close_notes && e.status !== "open"
         ? '<p class="pp-absence-card__meta muted">' + esc(e.close_notes) + "</p>"
@@ -7094,7 +8271,7 @@
       data,
       "balance",
       '<h3 class="pp-pax-subview-title">Credits &amp; refunds</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Balances appear here after the office validates an excused absence as a credit or refund. Open credits with a £ amount can be applied to an unpaid invoice under Invoices. Refunds stay open until the office marks them paid.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">Balances appear here after the office validates an excused absence as a credit or refund. <strong>Available</strong> credits with a £ amount reduce the next invoice (or Spring Direct Debit if you pay monthly). Refunds stay as pending payout until the office marks them paid.</p>' +
         '<div id="ppBalanceSummary" class="pp-balance-summary" hidden></div>' +
         '<div id="ppBalanceNotice" class="pp-notice" hidden></div>' +
         '<div id="ppBalanceListHost"><p class="pp-muted">Loading…</p></div>',
@@ -8048,7 +9225,9 @@
       );
     }
     return (
-      '<div class="pp-invoice-pay">' +
+      '<div class="pp-invoice-pay" id="pp-invoice-bank-' +
+      esc(String((inv && inv.id) || "")) +
+      '">' +
       '<p class="pp-invoice-pay__title">Pay by bank transfer (Tide)</p>' +
       '<dl class="pp-invoice-pay__dl">' +
       "<div><dt>Payee</dt><dd>" +
@@ -8077,8 +9256,8 @@
     if (!title) {
       title = String((inv && inv.title) || "Invoice")
         .replace(/^Invoice\s+/i, "")
-        .replace(/\s*[·•|]\s*VAT\s*(?:20%|Exempt)?/gi, "")
-        .replace(/\s*[·•|]\s*PAID\b/gi, "")
+          .replace(/\s*[·•|]\s*VAT\s*(?:20%|Exempt)?/gi, "")
+          .replace(/\s*[·•|]\s*PAID\b/gi, "")
         .trim();
       if (!title || /^Crash\b/i.test(title) || /£\s*\d/.test(title)) {
         title = "Invoice";
@@ -8127,15 +9306,16 @@
     var gcPending = !!(inv && inv.gocardless_pending_collection);
     var isGcInvoice =
       String((inv && inv.payment_method_hint) || "").toLowerCase() === "gocardless";
+    // Only office→funder (la_funded). VAT-exempt Direct Payments / ACAT still pay via
+    // bank transfer in the parent hub — do not treat vat_mode=exempt as hide-pay.
     var isLaInvoice =
-      String((inv && inv.payment_method_hint) || "").toLowerCase() === "la_funded" ||
-      String((inv && inv.vat_mode) || "").toLowerCase() === "exempt";
+      String((inv && inv.payment_method_hint) || "").toLowerCase() === "la_funded";
     var pl = isGcInvoice || isLaInvoice
       ? ""
       : String((inv && inv.payment_link_url) || "").trim();
     var surcharge = String((inv && inv.payment_link_surcharge_note) || "").trim();
     var suggestedRef = String((inv && inv.suggested_reference) || "").trim();
-    // Direct Payment (mandate) / LA funded: no Tide / card pay CTAs.
+    // Direct Payment (mandate) / LA funder-billed: no Tide / card pay CTAs.
     if (isGcInvoice || isLaInvoice) {
       canReport = false;
       canPay = false;
@@ -8266,7 +9446,7 @@
       var extraActs = "";
       if (canSetupGc) {
         extraActs +=
-          '<button type="button" class="pp-btn pp-btn--gc-setup-needed pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
+          '<button type="button" class="pp-btn pp-btn--gc-setup-needed pp-btn--needs-pay pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
           esc(inv.id) +
           '" aria-label="Set up Direct Payment — action required">' +
           invoiceBtnLabel("gocardless", "Set up Direct Payment") +
@@ -8274,7 +9454,7 @@
       }
       if (!canSetupGc && gc && !isGcInvoice) {
         extraActs +=
-          '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
+          '<a class="pp-btn pp-btn--primary pp-btn--needs-pay pp-invoice-card__btn-full" href="' +
           esc(gc) +
           '" target="_blank" rel="noopener noreferrer">' +
           invoiceBtnLabel("gocardless", "Pay with GoCardless") +
@@ -8282,7 +9462,7 @@
       }
       if (pl) {
         extraActs +=
-          '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
+          '<a class="pp-btn pp-btn--primary pp-btn--needs-pay pp-invoice-card__btn-full" href="' +
           esc(pl) +
           '" target="_blank" rel="noopener noreferrer">' +
           invoiceBtnLabel(
@@ -8306,10 +9486,19 @@
     }
     var payPairHtml = "";
     if (showDraftFlow && (canPay || showBankPanel)) {
-      var payBtn = canPay
-        ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn" data-pp-pay-invoice="' +
+      var bankBtn = showBankPanel
+        ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-pay-pair__btn pp-invoice-pay-pair__btn--needs-pay pp-btn--needs-pay" data-pp-scroll-bank="' +
           esc(inv.id) +
-          '">' +
+          '" aria-label="Pay by bank transfer — preferred, no fee">' +
+          invoiceBtnLabel("bank", "Bank transfer (no fee)") +
+          "</button>"
+        : "";
+      var payBtn = canPay
+        ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn' +
+          (showBankPanel ? "" : " pp-invoice-pay-pair__btn--needs-pay pp-btn--needs-pay") +
+          '" data-pp-pay-invoice="' +
+          esc(inv.id) +
+          '" aria-label="Pay now — invoice unpaid">' +
           invoiceBtnLabel(
             "card",
             "Card / Apple Pay" + (cardCharge ? " · " + esc(cardCharge) : ""),
@@ -8317,10 +9506,12 @@
           "</button>"
         : "";
       payPairHtml =
-        (payBtn ? '<div class="pp-invoice-pay-pair">' + payBtn + "</div>" : "") +
-        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">After you pay by bank transfer, open <strong>Messages</strong> (or WhatsApp / email <a href="' +
+        (bankBtn || payBtn
+          ? '<div class="pp-invoice-pay-pair">' + bankBtn + payBtn + "</div>"
+          : "") +
+        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">Prefer <strong>bank transfer</strong> (Tide details above). After you transfer, open <strong>Messages</strong> (or WhatsApp / email <a href="' +
         esc(OFFICE_CONTACT_MAILTO) +
-        '">info@clubsensational.org</a>) and tell us you have paid. A photo is optional. There is no "I\'ve paid" button - the office checks Tide and marks the invoice paid.</p>';
+        '">info@clubsensational.org</a>) and tell us you have paid. A photo is optional. The office checks Tide and marks the invoice paid.</p>';
     }
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
@@ -8407,11 +9598,11 @@
         ? ""
         : gcPending
           ? '<p class="pp-muted pp-invoice-pay__note">Direct Payment (GoCardless) — your mandate will collect this automatically around the due date. No bank transfer or card payment needed.</p>'
-          : "") +
+        : "") +
       (isPaid
         ? ""
         : isLaInvoice
-          ? '<p class="pp-muted pp-invoice-pay__note">LA funded (VAT exempt) — the office invoices the local authority / funded provision. No parent card or bank transfer is needed here.</p>'
+          ? '<p class="pp-muted pp-invoice-pay__note">LA / NHS funded — the office invoices the local authority or funder. No parent card or bank transfer is needed here.</p>'
           : "") +
       (isPaid
         ? ""
@@ -8424,10 +9615,10 @@
       (isPaid
         ? ""
         : pl
-          ? '<p class="pp-muted pp-invoice-pay__note">External card link may include a surcharge' +
-            (surcharge ? ": " + esc(surcharge) : "") +
-            ". Bank transfer is preferred (no fee).</p>"
-          : "") +
+        ? '<p class="pp-muted pp-invoice-pay__note">External card link may include a surcharge' +
+          (surcharge ? ": " + esc(surcharge) : "") +
+          ". Bank transfer is preferred (no fee).</p>"
+        : "") +
       "</article>"
     );
   }
@@ -8591,12 +9782,12 @@
             if (pendingPaid) {
               sessionStorage.removeItem("pp_invoice_return_pending");
               sessionStorage.removeItem("pp_invoice_return_tries");
-              showNotice(
-                "success",
+            showNotice(
+              "success",
                 "Payment received — " +
                   (pendingInv.invoice_number
                     ? "invoice " + pendingInv.invoice_number
-                    : "invoice") +
+                      : "invoice") +
                   " is marked paid. Open the PDF below.",
               );
               var paidCard = listHost.querySelector(
@@ -8709,7 +9900,7 @@
               .then(function (out) {
                 var url = out && out.blobUrl ? out.blobUrl : "";
                 if (!url) throw new Error("empty_preview");
-                openInvoicePreview(url, title);
+          openInvoicePreview(url, title);
               })
               .catch(function () {
                 if (fallbackUrl) openInvoicePreview(fallbackUrl, title);
@@ -8751,11 +9942,31 @@
                     ? "This invoice is already marked paid."
                     : code === "prior_invoice_unconfirmed"
                       ? "Please wait for the office to confirm your earlier invoice before paying this one."
-                      : code === "amount_required"
-                        ? "This invoice has no amount for card payment. Contact the office."
-                        : "Could not start card payment — please try bank transfer or contact the office.");
+                    : code === "amount_required"
+                      ? "This invoice has no amount for card payment. Contact the office."
+                      : "Could not start card payment — please try bank transfer or contact the office.");
               showNotice("error", msg);
             });
+        });
+      });
+
+      listHost.querySelectorAll("[data-pp-scroll-bank]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-pp-scroll-bank");
+          var panel = id
+            ? listHost.querySelector("#pp-invoice-bank-" + id)
+            : null;
+          if (panel && typeof panel.scrollIntoView === "function") {
+            try {
+              panel.scrollIntoView({ behavior: "smooth", block: "center" });
+            } catch (_e) {
+              panel.scrollIntoView(true);
+            }
+          }
+          showNotice(
+            "ok",
+            "Bank transfer details are above — Tide payee, sort code, and account. After you transfer, message the office so they can confirm.",
+          );
         });
       });
 
@@ -8922,7 +10133,7 @@
                     ? "This invoice is already marked paid."
                     : code === "prior_invoice_unconfirmed"
                       ? "Please wait for the office to confirm your earlier invoice before reporting this one."
-                      : "Could not save — please try again."),
+                    : "Could not save — please try again."),
               );
             });
         });
@@ -9390,7 +10601,7 @@
     if (isFormerClient(data)) {
       var allowed = { hub: true };
       if (formerHasFeedback(data)) {
-        allowed.weekly_notes = true;
+        if (weeklyNotesEnabled(data)) allowed.weekly_notes = true;
         allowed.sessions = true;
       }
       if (hasAchievementPhotos(data)) allowed.achievements = true;
@@ -9398,6 +10609,10 @@
         renderHub(host, data, opts);
         return;
       }
+    }
+    if (view === "weekly_notes" && !weeklyNotesEnabled(data)) {
+      renderHub(host, data, opts);
+      return;
     }
     if (opts && typeof opts.activityPing === "function") {
       var pingView =
@@ -9509,7 +10724,7 @@
               openSubview(host, fresh || data, opts, view);
             })
             .catch(function () {
-              openSubview(host, data, opts, view);
+        openSubview(host, data, opts, view);
             })
             .finally(function () {
               btn.disabled = false;

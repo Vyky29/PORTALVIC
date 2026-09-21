@@ -119,13 +119,47 @@
       border-color: #256f96;
       box-shadow: 0 0 0 2px rgba(45, 132, 179, 0.25);
     }
+    /* Live feedback tip + week day strip (default sticky for Register / other tabs).
+       Do NOT set overflow on this node (Chrome can crash when sticky + overflow-x share it). */
+    .ash-sticky-chrome,
     .ash-week-sticky-anchor {
       position: sticky;
       top: 0;
       z-index: 25;
-      background: linear-gradient(180deg, #f8fafc 92%, rgba(248, 250, 252, 0));
+      background: #f8fafc;
       padding-bottom: 10px;
       margin-bottom: 8px;
+      box-shadow: 0 8px 14px -12px rgba(15, 23, 42, 0.35);
+    }
+    .ash-sticky-chrome > .ash-feedback-filter-hint,
+    .ash-sticky-chrome > .ash-bundle-warn {
+      margin: 0 0 8px;
+    }
+    /* Overview: pin chrome outside the scrollport so cards never paint above/below it. */
+    .ash-overview-pin {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow: hidden;
+    }
+    .ash-overview-pin > .ash-sticky-chrome,
+    .ash-overview-pin > .ash-week-sticky-anchor {
+      position: static;
+      top: auto;
+      z-index: auto;
+      flex: 0 0 auto;
+      margin-bottom: 0;
+      box-shadow: 0 6px 10px -8px rgba(15, 23, 42, 0.28);
+    }
+    .ash-overview-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding-top: 8px;
     }
     .ash-log-jump, .ash-log-day-link {
       display: inline-block;
@@ -215,7 +249,7 @@
       color: #2d84b3;
     }
     .ash-log-week__body { padding: 0 8px 12px; }
-    .ash-log-week__expanded { display: flex; flex-direction: column; gap: 12px; }
+    .ash-log-week__expanded { display: flex; flex-direction: column; gap: 12px; min-width: 0; max-width: 100%; }
     .ash-feedback-week--log {
       margin: 0;
       padding: 0;
@@ -239,12 +273,15 @@
       margin: 0;
     }
     .ash-filter-label--muted { color: var(--muted); font-weight: 600; }
-    .ash-table-wrap--log { margin: 0 8px 8px; max-height: min(50vh, 420px); overflow: auto; }
+    .ash-table-wrap--log { margin: 0 8px 8px; max-height: min(50vh, 420px); overflow-x: hidden; overflow-y: auto; max-width: 100%; min-width: 0; }
     .ash-table-wrap--log-expanded {
       margin: 0;
       max-height: min(62vh, 560px);
-      overflow: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      max-width: 100%;
+      min-width: 0;
     }
     .ash-btn { border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer; color: var(--navy); }
     .ash-btn--ghost:hover { background: #f1f5fb; }
@@ -262,7 +299,7 @@
     .ash-day-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
     .ash-day-row--week { margin-top: 2px; }
     @media (max-width: 900px) {
-      .ash-week-sticky-anchor,
+      /* overflow only on inner week chrome — never on .ash-week-sticky-anchor */
       .ash-week-block,
       .ash-feedback-week {
         overflow-x: auto;
@@ -327,6 +364,21 @@
     body.admin-touch-compact .ash-day-card--feedback .ash-day-card__dt {
       display: none !important;
     }
+    body.admin-touch-compact .ash-day-card--day-picker .ash-day-card__dt {
+      display: block !important;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+    body.admin-touch-compact .ash-day-card--day-picker {
+      padding: 8px 4px 10px;
+    }
+    body.admin-touch-compact .ash-day-card--day-picker .ash-day-card__top {
+      margin-bottom: 0;
+    }
+    body.admin-touch-compact .ash-day-card--day-picker .ash-day-card__bar {
+      display: none !important;
+    }
     body.admin-touch-compact .ash-day-card--feedback .ash-day-card__wd-full,
     body.admin-touch-compact .ash-day-card--week .ash-day-card__wd-full {
       display: none !important;
@@ -364,7 +416,6 @@
       border-width: 2px;
       box-shadow: inset 0 0 0 2px var(--ash-day-col, #3b82f6);
     }
-    body.admin-touch-compact .ash-week-sticky-anchor,
     body.admin-touch-compact .ash-week-block,
     body.admin-touch-compact .ash-feedback-week {
       overflow-x: auto;
@@ -592,6 +643,59 @@
       font-size: 11px;
       font-weight: 600;
       color: var(--muted);
+    }
+    /* Overview "Who works this week": date is the main signal; no fake progress bar. */
+    .ash-day-card--day-picker {
+      padding: 12px 8px 14px;
+    }
+    .ash-day-card--day-picker .ash-day-card__top {
+      margin-bottom: 0;
+      gap: 4px;
+    }
+    .ash-day-card--day-picker .ash-day-card__dt {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+    .ash-day-card--day-picker.ash-day-card--closed .ash-day-card__count {
+      margin-top: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .ash-day-card__flags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3px;
+      margin-top: 6px;
+      min-width: 0;
+      width: 100%;
+    }
+    .ash-day-flag {
+      display: inline-block;
+      max-width: 100%;
+      padding: 1px 5px;
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+      line-height: 1.25;
+    }
+    .ash-day-flag--staff {
+      color: #b91c1c;
+      background: rgba(220, 38, 38, 0.14);
+      border: 1px solid rgba(185, 28, 28, 0.28);
+    }
+    .ash-day-flag--cover {
+      color: #9a3412;
+      background: rgba(234, 88, 12, 0.14);
+      border: 1px solid rgba(194, 65, 12, 0.28);
     }
     .ash-day-card--feedback .ash-day-card__bar {
       height: 8px;
@@ -1074,29 +1178,64 @@
       border: 1px solid rgba(91, 33, 182, 0.35);
     }
     .ash-pill--no-participant {
-      background: #fb923c;
-      color: #fff;
-      border: 1px solid rgba(15, 23, 42, 0.06);
+      background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+      color: #9f1239;
+      border: 1px solid rgba(244, 63, 94, 0.28);
+    }
+    .ash-pill--staff {
+      background: var(--ash-staff-bg, #ecfdf5);
+      color: var(--ash-staff-fg, #15803d);
+      border: 1px solid var(--ash-staff-bd, rgba(21, 128, 61, 0.28));
     }
     .ash-badge--available,
     .ash-badge--open-slot {
-      background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
-      color: #92400e;
-      border: 1px solid rgba(245, 158, 11, 0.42);
+      background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+      color: #9f1239;
+      border: 1px solid rgba(244, 63, 94, 0.28);
     }
     .ash-pill--closed { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
     .ash-pill--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
     .ash-pill--out { background: #fef2f2; color: #b91c1c; border: 1px solid rgba(220, 38, 38, 0.22); }
     .ash-pill--makeup { background: #dcfce7; color: #15803d; border: 1px solid rgba(22, 163, 74, 0.28); }
+    .ash-pill--absent { background: #ffedd5; color: #c2410c; border: 1px solid rgba(234, 88, 12, 0.45); }
     .ash-instructor-reassign { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; max-width: 100%; min-width: 0; }
+    .ash-instructor-reassign--cover-needed { gap: 6px; }
+    .ash-pill--cover-needed {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    .override-chip.override--cover-needed {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+      font-weight: 800;
+    }
+    .ash-card--cover-needed,
+    .ash-slot-card.ash-card--cover-needed {
+      border-color: #f87171 !important;
+      box-shadow: inset 0 0 0 1px rgba(185, 28, 28, 0.18);
+      background: linear-gradient(180deg, #fef2f2 0%, #fff 55%);
+    }
+    tr.ash-row--cover-needed > td {
+      background: #fef2f2;
+    }
+    tr.ash-row--cover-needed {
+      box-shadow: inset 3px 0 0 #ef4444;
+    }
     .ash-instructor-reassign-sep { color: #94a3b8; font-weight: 700; font-size: 12px; line-height: 1; }
     .ash-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
     .ash-badge--booked { background: #d1fae5; color: #065f46; }
     .override-chip { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; vertical-align: middle; }
     .override--updated { background: rgba(37,99,235,.12); color: #1d4ed8; border: 1px solid rgba(37,99,235,.28); }
     .override--instructor { background: rgba(249,191,46,.18); color: #92400e; border: 1px solid rgba(200,165,45,.42); }
-    .override--shadowing { background: rgba(14,165,233,.14); color: #0369a1; border: 1px solid rgba(14,165,233,.35); }
+    .override--shadowing { background: rgba(13,148,136,.16); color: #0f766e; border: 1px solid rgba(13,148,136,.42); }
     .override--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
+    .override--replace { background: #dcfce7; color: #15803d; border: 1px solid rgba(22, 163, 74, 0.28); }
+    .override--absent { background: #ffedd5; color: #c2410c; border: 1px solid rgba(234, 88, 12, 0.45); }
+    .override--cancelled { background: #ffedd5; color: #c2410c; border: 1px solid rgba(194, 65, 12, 0.32); }
     .ash-status--wait { color: #c2410c; font-weight: 700; font-size: 12px; }
     .ash-status__compact { display: none; }
     @media (max-width: 900px) {
@@ -1106,7 +1245,7 @@
     body.admin-touch-compact .ash-status--wait .ash-status__wide { display: none; }
     body.admin-touch-compact .ash-status--wait .ash-status__compact { display: inline; }
     .ash-status--done { color: #166534; font-weight: 700; font-size: 12px; }
-    .ash-status--absent { color: #b91c1c; font-weight: 700; font-size: 12px; }
+    .ash-status--absent { color: #c2410c; font-weight: 700; font-size: 12px; }
     .ash-status--cancelled { color: #c2410c; font-weight: 700; font-size: 12px; }
     .ash-cell-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .ash-cell-main { font-weight: 600; }
@@ -1364,6 +1503,16 @@
     .ash-review-sub { margin: 6px 0 0; font-size: 12px; color: #854d0e; line-height: 1.35; }
     .ash-filter-row--feedback { align-items: flex-end; }
     .ash-input--instructor { min-width: 11rem; max-width: 16rem; }
+    .ash-input--filter-select {
+      min-width: 11rem;
+      max-width: 16rem;
+      width: 100%;
+      cursor: pointer;
+      appearance: auto;
+      -webkit-appearance: menulist;
+      background: #fff;
+      color: var(--text, #243447);
+    }
     .ash-filter-combo { position: relative; min-width: 0; max-width: 16rem; }
     .ash-filter-combo__inp { width: 100%; min-width: 0; color: var(--text, #243447); background: #fff; }
     .ash-filter-suggest {
@@ -1408,13 +1557,23 @@
     .ash-filter-apply-btn { flex-shrink: 0; align-self: flex-end; }
     .ash-btn--secondary { background: #e2e8f0; border-color: #cbd5e1; color: var(--navy); }
     .ash-btn--secondary:hover { background: #cbd5e1; }
+    .ash-table--feedback {
+      table-layout: fixed;
+      width: 100%;
+      max-width: 100%;
+    }
     .ash-table--feedback th {
       text-align: center;
       vertical-align: middle;
+      white-space: normal;
+      overflow-wrap: break-word;
     }
     .ash-table--feedback td {
       text-align: center;
       vertical-align: middle;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      min-width: 0;
     }
     .ash-table--feedback .ash-cell-sub { text-align: center; }
     .ash-table--register .ash-cell-participant-service {
@@ -1438,7 +1597,7 @@
     .ash-table--register th:nth-child(5),
     .ash-table--register td:nth-child(5) {
       width: 38%;
-      min-width: 320px;
+      min-width: 0;
       max-width: none;
       overflow-wrap: break-word;
     }
@@ -1450,7 +1609,7 @@
       vertical-align: top;
     }
     .ash-table--feedback .ash-regulation-group { justify-content: center; }
-    .ash-table--feedback .ash-cell-note { max-width: min(260px, 28vw); white-space: normal; line-height: 1.35; font-size: 12px; hyphens: auto; }
+    .ash-table--feedback .ash-cell-note { max-width: none; width: 100%; white-space: normal; line-height: 1.35; font-size: 12px; hyphens: auto; overflow-wrap: break-word; }
     .ash-table--notes-only .ash-cell-note { max-width: min(520px, 55vw); }
     .ash-table--feedback th:nth-child(6),
     .ash-table--feedback th:nth-child(7),
@@ -1460,7 +1619,10 @@
     .ash-table--feedback td:nth-child(8) {
       text-align: left;
       vertical-align: top;
+      white-space: normal;
+      overflow-wrap: break-word;
     }
+    .ash-cell-raw-feedback { white-space: normal; overflow-wrap: break-word; }
     .ash-cell-family { min-width: 0; max-width: min(280px, 32vw); }
     .ash-family-summary { display: grid; gap: 6px; min-width: 0; }
     .ash-family-summary__input {
@@ -1503,9 +1665,9 @@
     .ash-cell-note-share { min-width: 0; }
     .ash-note-share-wrap {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
       gap: 6px;
-      align-items: stretch;
+      align-items: center;
       min-width: 0;
     }
     .ash-note-share-btn {
@@ -1543,7 +1705,7 @@
       text-align: left;
       vertical-align: top;
     }
-    .ash-table--feedback td.ash-cell-instructor { text-align: center; white-space: nowrap; }
+    .ash-table--feedback td.ash-cell-instructor { text-align: center; white-space: normal; }
     .ash-table--feedback .ash-emotion { width: 14px; height: 14px; }
     .ash-regulation-group { display: inline-flex; flex-wrap: wrap; gap: 5px; align-items: center; vertical-align: middle; }
     .ash-regulation-face { display: inline-flex; width: 24px; height: 24px; flex-shrink: 0; line-height: 0; }
@@ -1576,3 +1738,624 @@
     .ash-table--missing-fb td,
     .ash-table--missing-fb th { font-size: 12px; }
     .ash-near-miss { font-size: 11px; color: #b45309; overflow-wrap: anywhere; }
+
+    /* LOCAL-style day board (Sessions Overview) */
+    .ash-table-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+      margin: 0 0 10px;
+      min-width: 0;
+    }
+    .ash-table-title-row .ash-table-title {
+      margin: 0;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .ash-db-layout {
+      display: inline-flex;
+      flex: 0 0 auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .ash-db-layout__btn {
+      border: 0;
+      background: transparent;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .ash-db-layout__btn.is-active {
+      background: var(--navy);
+      color: #fff;
+    }
+    .ash-day-board {
+      margin: 0 0 16px;
+      min-width: 0;
+      display: grid;
+      gap: 14px;
+    }
+    .ash-day-board__group {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+      width: 100%;
+    }
+    /* Climbing shares the same 6-track width so the 2 cards match row-1 card width. */
+    .ash-day-board__group--climb {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    @media (max-width: 1400px) {
+      .ash-day-board__group,
+      .ash-day-board__group--climb {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 900px) {
+      .ash-day-board__group,
+      .ash-day-board__group--climb {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 560px) {
+      .ash-day-board__group,
+      .ash-day-board__group--climb {
+        grid-template-columns: 1fr;
+      }
+    }
+    .ash-db-col {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 8px 8px;
+      background: #f8fbfe;
+    }
+    .ash-db-col--day-off {
+      background: rgba(220, 38, 38, 0.06);
+      border-color: rgba(185, 28, 28, 0.35);
+    }
+    .ash-db-col--cover {
+      background: rgba(234, 88, 12, 0.05);
+      border-color: rgba(194, 65, 12, 0.28);
+    }
+    .ash-db-col__cover {
+      display: inline-block;
+      margin: 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #9a3412;
+      background: rgba(234, 88, 12, 0.12);
+      border: 1px solid rgba(194, 65, 12, 0.28);
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+    .ash-db-col__cover-hint {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 600;
+      color: #9a3412;
+      line-height: 1.35;
+      text-align: center;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .ash-db-col__head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 6px;
+      margin: 0 0 10px;
+      min-width: 0;
+      width: 100%;
+    }
+    .ash-db-col__dayoff {
+      display: inline-block;
+      margin: 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #b91c1c;
+      background: rgba(220, 38, 38, 0.12);
+      border: 1px solid rgba(185, 28, 28, 0.28);
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+    .override-chip.override--day-off {
+      color: #b91c1c;
+      background: rgba(220, 38, 38, 0.12);
+      border-color: rgba(185, 28, 28, 0.28);
+    }
+    .ash-db-col__photo,
+    .ash-db-col__head .portal-roster-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #dbe7f5;
+      color: var(--navy);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      position: relative;
+      box-sizing: border-box;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px rgba(15, 45, 80, 0.12);
+    }
+    .ash-db-col__head .portal-roster-avatar__img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .ash-db-col__staff {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+      min-width: 0;
+      text-align: center;
+    }
+    .ash-db-col__staff .ash-pill {
+      font-size: 13px;
+      max-width: 100%;
+      margin: 0;
+    }
+    .ash-db-card__name .ash-pill {
+      font-size: 12px;
+      margin: 0 4px 2px 0;
+      vertical-align: middle;
+    }
+    .ash-db-card__name-text {
+      font-weight: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
+    .ash-db-col__meta {
+      display: block;
+      margin: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: center;
+      min-width: 0;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .ash-db-col__frame {
+      color: inherit;
+    }
+    .ash-db-col__hrs-block {
+      display: inline;
+    }
+    .ash-db-col__hrs-and,
+    .ash-db-col__hrs-slash {
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .ash-db-col__hrs-slash {
+      margin: 0 0.12em;
+    }
+    .ash-db-col__hrs-ok {
+      color: #15803d;
+      font-weight: 800;
+    }
+    .ash-db-col__hrs-gap {
+      color: #b91c1c;
+      font-weight: 800;
+    }
+    .ash-db-col__paid {
+      display: inline;
+      margin-left: 0.35em;
+      color: #15803d;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .ash-db-col__slots {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+    .ash-db-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 3px;
+      align-items: start;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .ash-db-card__band {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .ash-db-card__when {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
+    .ash-db-card--needs-cover {
+      background: rgba(220, 38, 38, 0.08);
+      border-color: rgba(185, 28, 28, 0.35);
+    }
+    .ash-db-card--needs-cover .ash-db-card__name,
+    .ash-db-card--needs-cover .ash-db-card__band,
+    .ash-db-card--needs-cover .ash-db-card__when {
+      color: #991b1b;
+    }
+    .ash-db-card--cover-mirror {
+      background: rgba(234, 88, 12, 0.08);
+      border-color: rgba(194, 65, 12, 0.35);
+    }
+    .ash-db-card--dayoff {
+      background: rgba(220, 38, 38, 0.08);
+      border-color: rgba(185, 28, 28, 0.28);
+    }
+    .ash-db-card--dayoff .ash-db-card__name,
+    .ash-db-card--cancelled .ash-db-card__name {
+      color: #991b1b;
+    }
+    .ash-db-card__name {
+      font-weight: 800;
+      font-size: 15px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+      min-width: 0;
+      color: var(--text);
+    }
+    .ash-db-card__venue {
+      display: block;
+      margin-top: 3px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
+    .ash-db-card__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+      min-width: 0;
+    }
+    .ash-db-card__chips .override-chip {
+      margin-left: 0;
+      font-size: 11px;
+      padding: 2px 8px;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+    .ash-db-badge {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+    .ash-db-badge--done { color: #166534; }
+    .ash-db-badge--wait { color: #c2410c; }
+    .ash-db-badge--absent { color: #c2410c; }
+    .ash-db-badge--cancel { color: #b91c1c; }
+    .ash-db-badge--na { color: var(--muted); }
+    .ash-db-seg {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+      font-size: 12px;
+      min-width: 0;
+      text-align: right;
+    }
+    .ash-db-seg__time {
+      font-weight: 800;
+      color: #314555;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+    .ash-db-seg__area {
+      font-weight: 700;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      min-width: 0;
+      max-width: 100%;
+      line-height: 1.2;
+      font-size: 12px;
+    }
+    .ash-db-card--open {
+      background: #fff1f2;
+      border-color: #fecdd3;
+    }
+    .ash-db-card--open .ash-db-card__name { color: #9f1239; }
+    .ash-db-card--closed {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .ash-db-card--trial {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .ash-db-card--trial .ash-db-card__name { color: #1e40af; }
+    .ash-db-card--makeup {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+    }
+    .ash-db-card--absent {
+      background: #fff7ed;
+      border-color: #fdba74;
+      box-shadow: inset 3px 0 0 #ea580c;
+    }
+    .ash-db-card--absent .ash-db-card__name { color: #c2410c; }
+    .ash-db-card--cancelled {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+    .ash-db-card--cover,
+    .ash-db-card--cover-needed {
+      background: #fff1f2;
+      border-color: #fda4af;
+      box-shadow: inset 3px 0 0 #e11d48;
+    }
+    .ash-db-card--done {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .ash-db-card--wait {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+    .ash-db-card--dc {
+      border-left: 3px solid #2d84b3;
+    }
+    .ash-db-card--duty {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .ash-db-empty {
+      margin: 8px 0;
+      padding: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: #fff;
+    }
+    .ash-overview-log {
+      margin: 12px 0 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .ash-overview-log__summary {
+      cursor: pointer;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      list-style: none;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ash-overview-log__summary::-webkit-details-marker {
+      display: none;
+    }
+    .ash-overview-log__body {
+      padding: 0 8px 10px;
+      min-width: 0;
+    }
+
+    .ash-cell--action {
+      cursor: pointer;
+      min-width: 0;
+    }
+    .ash-cell--action:hover,
+    .ash-cell--action:focus {
+      background: #f0f7fb;
+      outline: none;
+    }
+    .ash-cell--action:focus-visible {
+      box-shadow: inset 0 0 0 2px #2d84b3;
+    }
+    .ash-cell-open {
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #2d84b3;
+      line-height: 1.2;
+    }
+    .ash-modal-actions--portal {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+    .ash-modal-actions--portal .btn {
+      flex: 0 0 auto;
+      width: auto;
+      max-width: 100%;
+      min-width: 0;
+      white-space: nowrap;
+    }
+    .ash-modal-actions--portal .btn.ash-family-summary__filter,
+    .ash-modal-actions--portal .btn.ash-family-summary__save {
+      justify-self: start;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .ash-modal-actions--portal .btn.ash-family-summary__filter {
+      border: 1px solid var(--blue, #2d84b3);
+      background: var(--blue, #2d84b3);
+      color: #fff;
+    }
+    .ash-modal-actions--portal .btn.ash-family-summary__save {
+      border: 1px solid var(--btnSecBorder, #c5d4de);
+      background: var(--btnSecBg, #eef5f8);
+      color: var(--ink, #173247);
+    }
+    .ash-modal-actions .ash-note-share-btn {
+      flex: 0 0 auto;
+      width: auto;
+      min-width: 0;
+      white-space: nowrap;
+    }
+    .ash-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 16px;
+      overflow: auto;
+    }
+    .ash-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px 22px;
+      width: min(560px, 100%);
+      min-width: 0;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.22);
+      display: grid;
+      gap: 10px;
+    }
+    .ash-modal--wide { width: min(720px, 100%); }
+    .ash-modal__title {
+      margin: 0;
+      font-size: 18px;
+      color: var(--navy, #173247);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ash-modal__meta {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted, #728290);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ash-modal__meta--sub { font-size: 12px; }
+    .ash-modal__lead {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ash-modal__box {
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 12px;
+      padding: 10px 12px;
+      min-width: 0;
+      background: #f8fafc;
+    }
+    .ash-modal__box-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--muted, #728290);
+      margin-bottom: 6px;
+    }
+    .ash-modal__box-text {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      white-space: normal;
+      overflow-wrap: break-word;
+    }
+    .ash-modal .ash-family-summary { max-width: none; }
+    .ash-modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
+    }
+    .ash-modal-btn {
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      justify-self: start;
+    }
+    .ash-modal-btn--primary {
+      border: 0;
+      background: var(--navy, #173247);
+      color: #fff;
+    }
+    .ash-modal-btn--ghost {
+      border: 1px solid var(--navy, #173247);
+      background: #fff;
+      color: var(--navy, #173247);
+    }
+    .ash-modal-btn--text {
+      border: 0;
+      background: transparent;
+      color: var(--muted, #728290);
+    }
+    .ash-metrics-dashboard--lite {
+      margin: 0 0 10px;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid #dbe7ef;
+      border-radius: 12px;
+      min-width: 0;
+    }
+    .ash-metric-lite {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text, #334155);
+      overflow-wrap: break-word;
+    }

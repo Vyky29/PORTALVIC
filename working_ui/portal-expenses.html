@@ -404,7 +404,7 @@
 
   <script type="module">
     async function portalImportDocumentsModule(tag) {
-      const v = "20260518-bridge-hub-first";
+      const v = "20260905-expense-amount";
       const custom =
         typeof window !== "undefined" && window.PORTAL_DOCUMENTS_BASE
           ? String(window.PORTAL_DOCUMENTS_BASE).trim().replace(/\/$/, "")
@@ -716,6 +716,8 @@
 
     async function hydrateEmployee() {
       hydrateExpenseHeaderSoft();
+      let nameResolved = "";
+      let roleResolved = "";
       try {
         const { user, supabase } = await portalRequireUser();
         const { data } = await supabase
@@ -732,7 +734,7 @@
         const meta = (user && user.user_metadata) || {};
         const emailLocal = String((user && user.email) || "").split("@")[0].trim().toLowerCase();
         const codeFallback = STAFF_CODE_FALLBACK[emailLocal] || null;
-        const nameResolved = firstNonEmpty(
+        nameResolved = firstNonEmpty(
           [
             profile.full_name,
             profile.username,
@@ -743,7 +745,7 @@
           ],
           ""
         );
-        const roleResolved = firstNonEmpty(
+        roleResolved = firstNonEmpty(
           [
             profile.role_track,
             profile.role,
@@ -766,6 +768,36 @@
           roleEl.textContent = rd;
         }
       } catch (_) {}
+      return {
+        name: String(nameResolved || "").trim(),
+        role: String(roleResolved || "").trim(),
+      };
+    }
+
+    async function resolveExpenseEmployeeForSubmit() {
+      const hydrated = await hydrateEmployee();
+      let empDisplay = (document.getElementById("employeeName")?.textContent || "").trim();
+      let roleDisplay = (document.getElementById("roleName")?.textContent || "").trim();
+      if ((!empDisplay || empDisplay === "-") && hydrated.name) {
+        empDisplay = hydrated.name;
+        const empEl = document.getElementById("employeeName");
+        if (empEl) empEl.textContent = empDisplay;
+      }
+      if ((!roleDisplay || roleDisplay === "-") && hydrated.role) {
+        roleDisplay = hydrated.role;
+        const roleEl = document.getElementById("roleName");
+        if (roleEl) roleEl.textContent = roleDisplay;
+      }
+      if (!empDisplay || empDisplay === "-") {
+        throw new Error(
+          "Your staff name is still loading. Wait a moment and try Submit again."
+        );
+      }
+      return {
+        employeeName: empDisplay,
+        roleName: roleDisplay && roleDisplay !== "-" ? roleDisplay : "Staff",
+        labelName: hubLabelName(empDisplay) || empDisplay,
+      };
     }
 
     function readFileAsDataURL(file) {
@@ -1059,12 +1091,12 @@
 
       submitBtn.disabled = true;
       try {
+        const staff = await resolveExpenseEmployeeForSubmit();
         const currentMonth = document.getElementById("monthName").textContent || monthLabelFromNow();
-        const empDisplay = (document.getElementById("employeeName").textContent || "").trim();
         const monthTag = String(currentMonth).split(/\s+/)[0] || "Expenses";
         const payload = {
-          employeeName: empDisplay || "-",
-          roleName: (document.getElementById("roleName").textContent || "").trim() || "-",
+          employeeName: staff.employeeName,
+          roleName: staff.roleName,
           monthName: currentMonth,
           submittedDate: new Date().toLocaleDateString("en-GB"),
           items,
@@ -1073,7 +1105,7 @@
         const pdfBlob = await generatePdfBlob(payload);
         const pdfFileName =
           sanitizeFileName(
-            (hubLabelName(empDisplay) || "Employee") +
+            (staff.labelName || "Employee") +
               "_" +
               String(monthTag).replace(/\s+/g, "_") +
               "_Expenses.pdf"
@@ -1083,12 +1115,13 @@
         const relatedDate = new Date().toISOString().slice(0, 10);
         await portalUploadPdfAndCreateDocument({
           blob: pdfBlob,
-          full_name: empDisplay && empDisplay !== "-" ? empDisplay : "",
+          related_client: staff.employeeName,
           document_type: "expense",
           category: "finance",
-          title: `${empDisplay && empDisplay !== "-" ? empDisplay + " · " : ""}${monthTag}'s Expenses`,
+          title: `${staff.labelName} · ${monthTag}'s Expenses`,
           related_date: relatedDate,
           source_page: "expenses",
+          expense_amount: payload.total,
         });
         if (typeof window.portalShowSubmitSuccessBanner === "function") {
           window.portalShowSubmitSuccessBanner("Expenses submitted successfully.");

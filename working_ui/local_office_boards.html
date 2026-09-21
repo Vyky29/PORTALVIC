@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>LOCAL · Office boards (redirect to Admin)</title>
+  <style>
+    :root { --ink: #173247; --muted: #728290; --bg: #eef4f9; --card: #fff; --line: rgba(23,50,71,.14); }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      padding: 20px 16px 48px;
+    }
+    h1 { margin: 0 0 8px; font-size: 1.25rem; }
+    p { margin: 0 0 16px; color: var(--muted); max-width: 40rem; line-height: 1.45; }
+    .grid {
+      display: grid;
+      gap: 12px;
+      max-width: 560px;
+    }
+    a.card {
+      display: block;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      text-decoration: none;
+      color: inherit;
+      min-width: 0;
+    }
+    a.card strong {
+      display: block;
+      font-size: 1.05rem;
+      margin-bottom: 4px;
+    }
+    a.card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.88rem;
+      overflow-wrap: break-word;
+    }
+    .banner {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+      font-size: 0.9rem;
+      max-width: 40rem;
+      overflow-wrap: break-word;
+    }
+    code { font-size: 0.85em; }
+  </style>
+</head>
+<body>
+  <h1>Capacity chain editors</h1>
+  <p class="banner">
+    Production truth lives in <strong>Admin portal</strong> (Services phases + Instructor timetable + Schedule &amp; Covers + Sessions Overview).
+    These links open Admin — not a separate localhost twin.
+  </p>
+  <p>
+    Chain: Places → Services → Timetable → Covers → Overview.
+  </p>
+  <div class="grid">
+    <a class="card" href="/admin_dashboard.html#open_places_2627">
+      <strong>1 · Places</strong>
+      <span>Admin Open Places (same occupants capacity as the chain).</span>
+    </a>
+    <a class="card" href="/admin_dashboard.html#c4k_services">
+      <strong>2 · Services</strong>
+      <span>Day Centre phased seats + AS/weekend clients — capacity-chain occupants.</span>
+    </a>
+    <a class="card" href="/admin_dashboard.html#roster_spreadsheets">
+      <strong>3 · Timetable</strong>
+      <span>Instructor timetable · who works (saves to portal_staff_timetable_cells).</span>
+    </a>
+    <a class="card" href="/admin_dashboard.html#scheduling">
+      <strong>4 · Schedule &amp; Covers</strong>
+      <span>Day patches — staff_unavailability + schedule_overrides.</span>
+    </a>
+    <a class="card" href="/admin_dashboard.html#c4k_sessions">
+      <strong>5 · Sessions Overview</strong>
+      <span>Only day look-here — standing chain + live Covers.</span>
+    </a>
+  </div>
+</body>
+</html>

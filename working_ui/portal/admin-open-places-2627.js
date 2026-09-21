@@ -1,7 +1,7 @@
 /**
- * Admin — Open places 2026/27 (Autumn).
+ * Admin — Places / Booking Portal publication (office).
  * Live seats from portal-booking-offer (same source as the public Booking Portal).
- * No participant PII — capacity / taken / free only.
+ * Public JSON stays anonymous; office UI resolves taken names from the local roster.
  */
 (function (global) {
   "use strict";
@@ -50,7 +50,7 @@
       day: "",
       service: "",
       venue: "",
-      openOnly: true,
+      openOnly: false,
     },
   };
 
@@ -73,8 +73,65 @@
     return document.getElementById(id);
   }
 
+  function isIntensiveOrCampSlot(slot) {
+    if (!slot) return false;
+    var sid = String(slot.serviceId || "").trim().toLowerCase();
+    if (sid === "intensive" || sid === "camp" || sid === "crash") return true;
+    if (String(slot.blockId || "").trim()) return true;
+    var day = String(slot.day || "").trim();
+    if (/^week\s*\d/i.test(day)) return true;
+    if (/\bjul(y)?\b/i.test(day) && /week/i.test(day)) return true;
+    return DAY_ORDER.indexOf(day) < 0 && !!day && !/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i.test(day);
+  }
+
+  function termWeekdaySlots(list) {
+    return (list || []).filter(function (s) {
+      return !isIntensiveOrCampSlot(s);
+    });
+  }
+
+  function intensiveCampSlots(list) {
+    return (list || []).filter(function (s) {
+      return isIntensiveOrCampSlot(s);
+    });
+  }
+
+  function dayFilterOptionsHtml(termDays, intensiveDays, selected) {
+    var html = '<option value="">All days</option>';
+    if (termDays.length) {
+      html += '<optgroup label="Autumn term weekdays">';
+      termDays.forEach(function (v) {
+        html +=
+          '<option value="' +
+          esc(v) +
+          '"' +
+          (v === selected ? " selected" : "") +
+          ">" +
+          esc(v) +
+          "</option>";
+      });
+      html += "</optgroup>";
+    }
+    if (intensiveDays.length) {
+      html += '<optgroup label="Intensive Courses & Camps">';
+      intensiveDays.forEach(function (v) {
+        html +=
+          '<option value="' +
+          esc(v) +
+          '"' +
+          (v === selected ? " selected" : "") +
+          ">" +
+          esc(v) +
+          "</option>";
+      });
+      html += "</optgroup>";
+    }
+    return html;
+  }
+
   function freeOf(slot) {
-    return Math.max(0, Number(slot.capacity || 0) - Number(slot.taken || 0));
+    var occ = bandSlotOccupancy(slot);
+    return Math.max(0, Number(occ.freeSeats) || 0);
   }
 
   function serviceName(id) {
@@ -102,20 +159,248 @@
       ".op2627-tbl-wrap{overflow-x:auto;min-width:0;width:100%}" +
       ".op2627-tbl{table-layout:fixed;width:100%;min-width:0}" +
       ".op2627-tbl th.op2627-th,.op2627-tbl td.op2627-td{" +
-      "text-align:center;vertical-align:middle;min-width:0;" +
+      "text-align:center;vertical-align:top;min-width:0;" +
       "overflow-wrap:break-word;word-break:break-word}" +
-      ".op2627-tbl .op2627-td--svc{width:22%}" +
+      ".op2627-tbl .op2627-td--svc{width:18%}" +
       ".op2627-tbl .op2627-td--venue{width:12%}" +
-      ".op2627-tbl .op2627-td--time{width:16%}" +
-      ".op2627-tbl .op2627-td--num{width:8%}" +
-      ".op2627-tbl .op2627-td--free{width:12%}" +
-      ".op2627-tbl .op2627-td--place{width:22%}" +
-      ".op2627-tbl .op2627-td--free .chip{justify-content:center;margin:0 auto}" +
+      ".op2627-tbl .op2627-td--time{width:14%}" +
+      ".op2627-tbl .op2627-td--seats{width:38%;text-align:left}" +
+      ".op2627-tbl .op2627-td--place{width:18%}" +
+      ".op2627-seat-summary{font-size:12px;font-weight:700;color:#0f172a;margin:0 0 6px;line-height:1.35;overflow-wrap:break-word}" +
+      ".op2627-seat-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;min-width:0}" +
+      ".op2627-seat-list li{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 10px;font-size:12px;line-height:1.35;min-width:0;padding:4px 8px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0}" +
+      ".op2627-seat-list li.is-open{background:#f0fdf4;border-color:#bbf7d0;color:#166534}" +
+      ".op2627-seat-list li.is-hold{background:#fff7ed;border-color:#fed7aa;color:#9a3412}" +
+      ".op2627-seat-list .op2627-seat-name{font-weight:700;color:#0f172a;min-width:0;overflow-wrap:break-word}" +
+      ".op2627-seat-list li.is-open .op2627-seat-name{color:#166534}" +
+      ".op2627-seat-list li.is-hold .op2627-seat-name{color:#9a3412}" +
+      ".op2627-seat-list .op2627-seat-n{font-weight:600;color:#64748b;white-space:nowrap;flex:0 0 auto}" +
+      ".op2627-seat-fallback{font-size:12px;color:#64748b;line-height:1.35;overflow-wrap:break-word}" +
       ".op2627-place{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;min-width:0}" +
       ".op2627-place .btn{white-space:nowrap}" +
       ".op2627-band-hint{margin:0 0 10px;font-size:13px;min-width:0;overflow-wrap:break-word}" +
       "</style>"
     );
+  }
+
+  function normOfferTimeKey(raw) {
+    return String(raw || "")
+      .toLowerCase()
+      .replace(/\u2013|\u2014/g, "-")
+      .replace(/\s*to\s*/g, "-")
+      .replace(/\s+/g, "")
+      .replace(/(\d)\.(\d)/g, "$1:$2")
+      .replace(/:(\d)\b/g, ":$10")
+      .replace(/\.00/g, "")
+      .replace(/:00/g, "");
+  }
+
+  function isEmptySeatName(name) {
+    var up = String(name || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[_\s-]+/g, " ");
+    if (!up) return true;
+    return (
+      up === "NO PARTICIPANT" ||
+      up === "NO CLIENT" ||
+      up === "NOPARTICIPANT" ||
+      up === "OPEN" ||
+      up === "AVAILABLE" ||
+      up === "FREE"
+    );
+  }
+
+  function isClosedSeatName(name) {
+    var up = String(name || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[_\s-]+/g, " ");
+    return up === "CLOSED";
+  }
+
+  function isOfficeHoldName(name) {
+    var up = String(name || "")
+      .trim()
+      .toUpperCase();
+    return up === "ELIA" || up.indexOf("ELIA ") === 0;
+  }
+
+  function venueKeysMatch(a, b) {
+    var va = String(a || "").trim().toLowerCase();
+    var vb = String(b || "").trim().toLowerCase();
+    if (!va || !vb) return !va && !vb;
+    return va === vb || va.indexOf(vb) >= 0 || vb.indexOf(va) >= 0;
+  }
+
+  function serviceKeysMatch(a, b) {
+    var sa = String(a || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    var sb = String(b || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    if (!sa || !sb) return true;
+    return sa === sb || sa.indexOf(sb) >= 0 || sb.indexOf(sa) >= 0;
+  }
+
+  function timesExactMatch(a, b) {
+    var ta = normOfferTimeKey(a);
+    var tb = normOfferTimeKey(b);
+    if (!ta || !tb) return false;
+    return ta === tb;
+  }
+
+  function occupantsSlotForOffer(slot) {
+    var root = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+    var by = root && root.bySlotId;
+    if (!by || !slot) return null;
+    if (slot.id && by[slot.id]) return by[slot.id];
+    var keys = Object.keys(by);
+    var i;
+    for (i = 0; i < keys.length; i++) {
+      var o = by[keys[i]];
+      if (!o) continue;
+      if (String(o.day || "") !== String(slot.day || "")) continue;
+      if (!venueKeysMatch(o.venue, slot.venue)) continue;
+      if (String(o.serviceId || "") !== String(slot.serviceId || "")) continue;
+      if (timesExactMatch(o.timeLabel, slot.timeLabel)) return o;
+    }
+    return null;
+  }
+
+  /**
+   * One standing slot per instructor that day — not every term week.
+   * Live Booking offer owns taken/free (what parents can still book).
+   * Occupant seat lines own the names for this office board.
+   */
+  function bandSlotOccupancy(slot) {
+    var cap = Math.max(0, Number(slot && slot.capacity) || 0);
+    var takenSeats = Math.max(0, Number(slot && slot.taken) || 0);
+    var freeSeats = Math.max(0, Number(slot && slot.openSeats) || 0);
+    if (cap > 0) {
+      if (takenSeats + freeSeats !== cap) {
+        if (freeSeats > cap) freeSeats = cap;
+        takenSeats = Math.max(0, cap - freeSeats);
+      }
+    } else {
+      cap = takenSeats + freeSeats;
+    }
+
+    var occ = occupantsSlotForOffer(slot);
+    var lines = occ && Array.isArray(occ.seatLines) ? occ.seatLines : [];
+    var byParticipant = [];
+    var seen = Object.create(null);
+
+    function pushName(raw, hold) {
+      var nm = String(raw || "").trim();
+      if (!nm || isEmptySeatName(nm) || isClosedSeatName(nm)) return;
+      var key = nm.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      byParticipant.push({
+        name: nm,
+        hold: !!hold || isOfficeHoldName(nm),
+      });
+    }
+
+    if (lines.length) {
+      var lineTaken = 0;
+      var lineOpen = 0;
+      lines.forEach(function (line) {
+        if (!line) return;
+        var kind = String(line.kind || "").trim().toLowerCase();
+        if (kind === "open") {
+          lineOpen += 1;
+          return;
+        }
+        lineTaken += 1;
+        pushName(line.client || line.trialClient, kind === "closed" || kind === "hold");
+      });
+      cap = lines.length;
+      takenSeats = lineTaken;
+      freeSeats = lineOpen;
+    } else {
+      (slot && slot.bookedNames ? slot.bookedNames : []).forEach(function (nm) {
+        pushName(nm, isOfficeHoldName(nm));
+      });
+      var instOpen = 0;
+      if (Array.isArray(slot && slot.openInstructors)) {
+        instOpen = slot.openInstructors.filter(function (n) {
+          return String(n || "").trim();
+        }).length;
+      }
+      if (instOpen > freeSeats) {
+        freeSeats = instOpen;
+        if (cap > 0) takenSeats = Math.max(0, cap - freeSeats);
+      }
+    }
+
+    byParticipant.sort(function (a, b) {
+      return String(a.name || "").localeCompare(String(b.name || ""), undefined, {
+        sensitivity: "base",
+      });
+    });
+
+    return {
+      capacity: cap,
+      takenSeats: takenSeats,
+      freeSeats: freeSeats,
+      byParticipant: byParticipant,
+      fromOccupants: lines.length > 0,
+    };
+  }
+
+  function seatOccupancyHtml(slot) {
+    var occ = bandSlotOccupancy(slot);
+    var cap = occ.capacity;
+    var summary =
+      '<div class="op2627-seat-summary">' +
+      esc(String(occ.takenSeats)) +
+      " / " +
+      esc(String(cap || "—")) +
+      (occ.freeSeats > 0
+        ? " · " + esc(String(occ.freeSeats)) + " free"
+        : "") +
+      "</div>";
+
+    var items = occ.byParticipant
+      .map(function (p) {
+        return (
+          "<li" +
+          (p.hold ? ' class="is-hold"' : "") +
+          ">" +
+          '<span class="op2627-seat-name">' +
+          esc(p.name) +
+          "</span>" +
+          (p.hold
+            ? '<span class="op2627-seat-n">office hold</span>'
+            : "") +
+          "</li>"
+        );
+      })
+      .join("");
+    if (occ.freeSeats > 0) {
+      items +=
+        '<li class="is-open">' +
+        '<span class="op2627-seat-name">Open</span>' +
+        '<span class="op2627-seat-n">' +
+        esc(String(occ.freeSeats)) +
+        "</span>" +
+        "</li>";
+    }
+    if (!items) {
+      items =
+        occ.takenSeats >= cap && cap > 0
+          ? '<li><span class="op2627-seat-name">Full</span></li>'
+          : '<li class="is-open"><span class="op2627-seat-name">Open</span>' +
+            '<span class="op2627-seat-n">' +
+            esc(String(cap || 0)) +
+            "</span></li>";
+    }
+    return summary + '<ul class="op2627-seat-list">' + items + "</ul>";
   }
 
   /**
@@ -125,16 +410,17 @@
   function viewHtml(opts) {
     var embedded = !!(opts && opts.embedded);
     var head = embedded
-      ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:28px;min-width:0;scroll-margin-top:14px;border-top:1px solid var(--line,#e5e7eb);padding-top:16px">' +
-        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">3 · Live open places (Booking Portal)</h2>' +
+      ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:0;min-width:0;scroll-margin-top:14px;padding-top:4px">' +
+        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">1 · Places (Booking Portal)</h2>' +
         '<p class="page-intro" style="max-width:52rem;margin:0 0 12px;min-width:0;overflow-wrap:break-word">' +
-        "Public seats still free (capacity / taken / free — no names). Same source as the Booking Portal. " +
-        "Use <strong>Place existing</strong> or <strong>Place new</strong> on a free band. Filters follow Services above." +
+        "Same bands as the public Booking Portal. Numbers are slots that day (taken / capacity), not weeks of term. " +
+        "Tuesday Acton 4.00 is 3 slots because Aurora starts at 4.30; from 4.30 it is 4 instructors. Climbing Tue/Thu Elia is an office hold (not bookable). " +
+        "Who works each seat is on <strong>Services</strong> below. Weekly Autumn days first; Intensive / Camps grouped below." +
         "</p>"
       : '<div class="page-head" style="min-width:0">' +
-        '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Open places 2026/27</h2>' +
+        '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Places 2026/27</h2>' +
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-        "This board now lives under <strong>Services</strong> (section 3). Opening this shortcut takes you there." +
+        "This board lives under <strong>Services</strong> (section 1 · Places). Opening this shortcut takes you there." +
         "</p></div>";
     var close = embedded ? "</div>" : "";
     return (
@@ -333,7 +619,7 @@
       '<div class="kpi card--premium"><div class="kpi-l">Open bands</div><div class="kpi-v">' +
       esc(String(openBands)) +
       '</div><div class="kpi-s muted">with at least 1 free</div></div>' +
-      '<div class="kpi card--premium"><div class="kpi-l">Free seats</div><div class="kpi-v">' +
+      '<div class="kpi card--premium"><div class="kpi-l">Free slots</div><div class="kpi-v">' +
       esc(String(freeSeats)) +
       '</div><div class="kpi-s muted">across filtered list</div></div>' +
       '<div class="kpi card--premium"><div class="kpi-l">Full bands</div><div class="kpi-v">' +
@@ -383,7 +669,6 @@
     var body = rows
       .map(function (slot) {
         var free = freeOf(slot);
-        var tone = free > 0 ? "ok" : "warn";
         var payload = encodeSlotAttr(slot);
         var placeBtns =
           free > 0
@@ -395,7 +680,7 @@
               esc(payload) +
               '">Place new</button>' +
               "</div>"
-            : '<span class="muted">—</span>';
+            : '<span class="muted">Full</span>';
         return (
           "<tr>" +
           '<td class="op2627-td op2627-td--svc">' +
@@ -407,17 +692,9 @@
           '<td class="op2627-td op2627-td--time">' +
           esc(slot.timeLabel || "—") +
           "</td>" +
-          '<td class="op2627-td op2627-td--num">' +
-          esc(String(slot.capacity || 0)) +
+          '<td class="op2627-td op2627-td--seats">' +
+          seatOccupancyHtml(slot) +
           "</td>" +
-          '<td class="op2627-td op2627-td--num">' +
-          esc(String(slot.taken || 0)) +
-          "</td>" +
-          '<td class="op2627-td op2627-td--free"><span class="chip chip--' +
-          tone +
-          '">' +
-          esc(String(free)) +
-          " free</span></td>" +
           '<td class="op2627-td op2627-td--place">' +
           placeBtns +
           "</td>" +
@@ -441,9 +718,7 @@
       '<th class="op2627-th op2627-td--svc">Service</th>' +
       '<th class="op2627-th op2627-td--venue">Venue</th>' +
       '<th class="op2627-th op2627-td--time">Time</th>' +
-      '<th class="op2627-th op2627-td--num">Cap</th>' +
-      '<th class="op2627-th op2627-td--num">Taken</th>' +
-      '<th class="op2627-th op2627-td--free">Free</th>' +
+      '<th class="op2627-th op2627-td--seats">Slots</th>' +
       '<th class="op2627-th op2627-td--place">Place</th>' +
       "</tr></thead><tbody>" +
       body +
@@ -472,11 +747,13 @@
     }
 
     var slots = filteredSlots();
+    var termSlots = termWeekdaySlots(slots);
+    var campSlots = intensiveCampSlots(slots);
     var byDay = {};
     DAY_ORDER.forEach(function (d) {
       byDay[d] = [];
     });
-    slots.forEach(function (slot) {
+    termSlots.forEach(function (slot) {
       var day = slot.day || "Monday";
       if (!byDay[day]) byDay[day] = [];
       byDay[day].push(slot);
@@ -491,17 +768,40 @@
       });
     });
 
+    var byCampDay = {};
+    campSlots.forEach(function (slot) {
+      var day = String(slot.day || "Intensive").trim() || "Intensive";
+      if (!byCampDay[day]) byCampDay[day] = [];
+      byCampDay[day].push(slot);
+    });
+    Object.keys(byCampDay).forEach(function (d) {
+      byCampDay[d].sort(function (a, b) {
+        var va = String(a.venue || "").localeCompare(String(b.venue || ""));
+        if (va) return va;
+        return String(a.sortTime || a.timeLabel || "").localeCompare(
+          String(b.sortTime || b.timeLabel || "")
+        );
+      });
+    });
+
     var venues = uniqueSorted(
       state.slots.map(function (s) {
         return s.venue;
       })
     );
-    var daysPresent = uniqueSorted(
-      state.slots.map(function (s) {
+    var termDaysPresent = uniqueSorted(
+      termWeekdaySlots(state.slots).map(function (s) {
         return s.day;
       })
     ).sort(function (a, b) {
       return DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b);
+    });
+    var intensiveDaysPresent = uniqueSorted(
+      intensiveCampSlots(state.slots).map(function (s) {
+        return s.day;
+      })
+    ).sort(function (a, b) {
+      return String(a).localeCompare(String(b));
     });
 
     var metaBits = [];
@@ -521,12 +821,35 @@
       return daySectionHtml(d, byDay[d] || []);
     }).join("");
 
+    var campDayKeys = Object.keys(byCampDay).sort(function (a, b) {
+      return String(a).localeCompare(String(b));
+    });
+    var campSections = campDayKeys
+      .map(function (d) {
+        return daySectionHtml(d, byCampDay[d] || []);
+      })
+      .join("");
+    if (campSections) {
+      campSections =
+        '<div class="op2627-intensive" style="margin-top:22px;padding-top:14px;border-top:1px dashed var(--line,#e5e7eb);min-width:0">' +
+        '<h3 style="margin:0 0 8px;font-size:1.05rem;min-width:0;overflow-wrap:break-word">Intensive Courses &amp; Camps</h3>' +
+        '<p class="muted" style="margin:0 0 12px;max-width:52rem;min-width:0;overflow-wrap:break-word">July crash / intensive weeks (not weekly Autumn term days). Kept for Booking Portal — not mixed into Mon–Sun standing.</p>' +
+        campSections +
+        "</div>";
+    }
+
     if (!slots.length) {
       sections =
         '<div class="card card-pad"><p class="muted" style="margin:0;min-width:0;overflow-wrap:break-word">' +
         (state.filters.openOnly
           ? "No open places match these filters. Turn off “Open places only” to see full bands."
           : "No bands match these filters.") +
+        "</p></div>";
+      campSections = "";
+    } else if (!termSlots.length && campSlots.length) {
+      sections =
+        '<div class="card card-pad" style="margin-bottom:12px"><p class="muted" style="margin:0;min-width:0;overflow-wrap:break-word">' +
+        "No Autumn weekday bands match these filters. Intensive / camp bands (if any) are below." +
         "</p></div>";
     }
 
@@ -554,8 +877,8 @@
       '<div class="toolbar" style="flex-wrap:wrap;gap:10px;align-items:flex-end;min-width:0">' +
       '<label style="min-width:0;display:grid;gap:4px;font-size:12px">' +
       "<span>Day</span>" +
-      '<select id="op2627Day" class="inp" style="min-width:8rem">' +
-      optionHtml(daysPresent, state.filters.day, "All days") +
+      '<select id="op2627Day" class="inp" style="min-width:10rem">' +
+      dayFilterOptionsHtml(termDaysPresent, intensiveDaysPresent, state.filters.day) +
       "</select></label>" +
       '<label style="min-width:0;display:grid;gap:4px;font-size:12px">' +
       "<span>Service</span>" +
@@ -573,7 +896,8 @@
       " /> Open places only</label>" +
       "</div></div>" +
       kpiHtml(slots) +
-      sections;
+      sections +
+      campSections;
   }
 
   function applyFiltersFromDom() {
@@ -584,7 +908,7 @@
     state.filters.day = dayEl ? String(dayEl.value || "") : "";
     state.filters.service = svcEl ? String(svcEl.value || "") : "";
     state.filters.venue = venueEl ? String(venueEl.value || "") : "";
-    state.filters.openOnly = openEl ? !!openEl.checked : true;
+    state.filters.openOnly = openEl ? !!openEl.checked : false;
   }
 
   function onRootClick(ev) {
@@ -599,7 +923,7 @@
       state.filters.day = "";
       state.filters.venue = "";
       state.filters.service = "";
-      state.filters.openOnly = true;
+      state.filters.openOnly = false;
       render();
       return;
     }
@@ -650,7 +974,11 @@
     (data.SERVICES || []).forEach(function (svc) {
       if (svc && svc.id) state.servicesById[svc.id] = svc;
     });
-    state.slots = Array.isArray(data.MOCK_SLOTS) ? data.MOCK_SLOTS.slice() : [];
+    state.slots = Array.isArray(data.SLOTS)
+      ? data.SLOTS.slice()
+      : Array.isArray(data.MOCK_SLOTS)
+        ? data.MOCK_SLOTS.slice()
+        : [];
   }
 
   function load(opts) {
@@ -665,7 +993,7 @@
       render();
       return Promise.resolve();
     }
-    var url = supabaseBase() + "/functions/v1/portal-booking-offer";
+    var url = supabaseBase() + "/functions/v1/portal-booking-offer?include_staff=1";
     return fetch(url, {
       method: "GET",
       headers: {
@@ -677,7 +1005,10 @@
       .then(function (res) {
         return res.json().then(function (body) {
           if (!res.ok || !body || body.ok === false) {
-            throw new Error((body && body.error) || "offer_http_" + res.status);
+            throw new Error(
+              (body && (body.error || body.message || body.code)) ||
+                "offer_http_" + res.status,
+            );
           }
           applyPayload(body);
           state.loading = false;
@@ -693,7 +1024,13 @@
       })
       .catch(function (err) {
         state.loading = false;
-        state.error = (err && err.message) || "offer_load_failed";
+        var raw = (err && err.message) || "offer_load_failed";
+        if (/Failed to fetch|NetworkError|BOOT_ERROR|offer_http_503/i.test(raw)) {
+          state.error =
+            "Booking offer is down (server). Tap Retry in a moment.";
+        } else {
+          state.error = raw;
+        }
         render();
       });
   }

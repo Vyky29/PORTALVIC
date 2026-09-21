@@ -153,6 +153,15 @@ export async function portalUploadPdfAndCreateDocument(options) {
       ? null
       : String(opts.related_date).trim().slice(0, 10);
 
+  let expenseAmount = null;
+  if (opts.expense_amount != null && opts.expense_amount !== "") {
+    const n = Number(opts.expense_amount);
+    if (Number.isFinite(n) && n >= 0) expenseAmount = Math.round(n * 100) / 100;
+  } else if (opts.amount != null && opts.amount !== "") {
+    const n = Number(opts.amount);
+    if (Number.isFinite(n) && n >= 0) expenseAmount = Math.round(n * 100) / 100;
+  }
+
   const row = {
     user_id: user.id,
     document_type: documentType,
@@ -164,6 +173,9 @@ export async function portalUploadPdfAndCreateDocument(options) {
     file_url: storagePath,
     source_page: sourcePage
   };
+  if (documentType === "expense" && expenseAmount != null) {
+    row.expense_amount = expenseAmount;
+  }
   const { data, error: insertError } = await supabase
     .from("documents")
     .insert([row])

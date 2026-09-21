@@ -247,8 +247,21 @@ export async function syncParentFormPhotoToParticipantAvatar(
   participantDob: string | null,
   photoBytes: Uint8Array,
   contentType: string,
+  contactIdHint?: string | null,
 ): Promise<string | null> {
   if (!photoBytes.length) return null;
+
+  const hint = String(contactIdHint || "").trim();
+  if (hint) {
+    const result = await saveParticipantAvatarWithArchive(
+      admin,
+      hint,
+      photoBytes,
+      contentType,
+      "parent_form",
+    );
+    return result?.avatar_path ?? null;
+  }
 
   const norm = normalizeParticipantLookupName(participantName);
   if (!norm) return null;
@@ -258,15 +271,36 @@ export async function syncParentFormPhotoToParticipantAvatar(
     .select("contact_id, display_name, dob_iso");
 
   const matches = (parts || []).filter((p) => {
-    if (normalizeParticipantLookupName(p.display_name) !== norm) return false;
-    if (participantDob && p.dob_iso) {
-      return String(p.dob_iso).slice(0, 10) === participantDob.slice(0, 10);
+    const dn = normalizeParticipantLookupName(p.display_name);
+    if (dn === norm) {
+      if (participantDob && p.dob_iso) {
+        return String(p.dob_iso).slice(0, 10) === participantDob.slice(0, 10);
+      }
+      return true;
     }
-    return true;
+    /* First-name match only when unique among portal_participants. */
+    return false;
   });
 
-  if (matches.length !== 1) return null;
-  const contactId = matches[0].contact_id;
+  let contactId = matches.length === 1 ? String(matches[0].contact_id || "") : "";
+
+  if (!contactId) {
+    const first = norm.split(/\s+/)[0] || "";
+    if (first.length >= 2) {
+      const firstHits = (parts || []).filter((p) => {
+        const dn = normalizeParticipantLookupName(p.display_name);
+        const pf = dn.split(/\s+/)[0] || "";
+        if (pf !== first) return false;
+        if (participantDob && p.dob_iso) {
+          return String(p.dob_iso).slice(0, 10) === participantDob.slice(0, 10);
+        }
+        return !participantDob;
+      });
+      if (firstHits.length === 1) contactId = String(firstHits[0].contact_id || "");
+    }
+  }
+
+  if (!contactId) return null;
   const result = await saveParticipantAvatarWithArchive(
     admin,
     contactId,

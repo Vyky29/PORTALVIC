@@ -195,10 +195,14 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
     formType === "climbing_registration"
       ? "Climbing registration"
       : "Client registration";
-  const bookingLine = String(opts.bookingSummary || "").trim();
+  const bookingSummary = String(opts.bookingSummary || "").trim();
+  const isExistingShort =
+    bookingSummary.toUpperCase().includes("EXISTING CLIENT");
   const holdLine = opts.slotHeld
-    ? "Selected session place is on a soft hold until they finish payment (no office Accept needed)."
-    : "";
+    ? "A short pay hold was opened on that session - finish-booking / Stripe or Mark paid confirms the seat."
+    : bookingSummary
+    ? "Requested session is above. Pay hold / invoice details follow when they finish funding or report paid."
+    : "If they already held a session in Booking Portal, finish-booking will refresh a short pay hold.";
   const reviewUrl = registrationReviewUrl();
   const pdfName =
     String(opts.pdfFilename || "").trim() ||
@@ -207,24 +211,28 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
   const smtp = readParentNotifySmtpConfig();
   const tos = officeNotifyEmails();
   if (smtp && tos.length) {
-    const subject = `${formLabel} submitted · ${participant} (${parent})`;
+    const subject = bookingSummary
+      ? `${formLabel} · ${participant} (${parent}) · ${bookingSummary}`
+      : `${formLabel} submitted · ${participant} (${parent})`;
     const lines = [
-      `${formLabel} received — FYI only. The parent can finish payment now; you do not need to Accept before they pay.`,
+      `${formLabel} received - FYI only. The parent can finish payment now; you do not need to Accept before they pay.`,
       "Review the PDF in Documents when useful. Suitability / form checks are after payment.",
     ];
-    if (String(opts.bookingSummary || "").toUpperCase().includes("EXISTING CLIENT")) {
+    if (bookingSummary) {
+      lines.push(`Requested session: ${bookingSummary}`);
+    }
+    if (isExistingShort) {
       lines.push(
-        "(Existing client — short place request; questionnaire already on file.)",
+        "(Existing client - short place request; questionnaire already on file.)",
       );
     }
     lines.push(
       "",
       `Participant: ${participant}`,
       `Parent: ${parent}`,
-      `Email: ${email || "—"}`,
-      `Phone: ${mobile || "—"}`,
+      `Email: ${email || "-"}`,
+      `Phone: ${mobile || "-"}`,
     );
-    if (bookingLine) lines.push(`Requested slot: ${bookingLine}`);
     if (holdLine) lines.push(holdLine);
     lines.push(`Document id: ${opts.documentId}`);
     if (opts.leadId) lines.push(`Lead id: ${opts.leadId}`);
@@ -235,7 +243,7 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
       lines.push("");
     } else {
       lines.push(
-        "Optional: Admin → Documents → Registration forms to open the PDF.",
+        "Optional: Admin -> Documents -> Registration forms to open the PDF.",
       );
       lines.push("");
     }
@@ -243,23 +251,31 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
       lines.push("The submitted PDF is attached to this email.");
       lines.push("");
     }
-    lines.push("— clubSENsational portal");
+    lines.push("- clubSENsational portal");
     const bodyText = lines.join("\n");
 
     const html =
       `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0f172a">` +
-      `<p><strong>${escapeHtml(formLabel)}</strong> received — <strong>FYI</strong>. Parent can pay now; no Accept gate before payment.</p>` +
+      `<p><strong>${escapeHtml(formLabel)}</strong> received - <strong>FYI</strong>. Parent can pay now; no Accept gate before payment.</p>` +
+      (bookingSummary
+        ? `<p style="margin:12px 0;padding:12px 14px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px">` +
+          `<strong>Requested session</strong><br/>` +
+          `<span style="font-size:16px;font-weight:700">${escapeHtml(bookingSummary)}</span>` +
+          `</p>`
+        : `<p style="color:#64748b;font-size:13px">No session attached to this form submit.</p>`) +
+      (isExistingShort
+        ? `<p style="color:#64748b;font-size:13px">Existing client - short place request (questionnaire already on file).</p>`
+        : "") +
       `<p>` +
       `Participant: <strong>${escapeHtml(participant)}</strong><br/>` +
       `Parent: ${escapeHtml(parent)}<br/>` +
-      `Email: ${escapeHtml(email || "—")}<br/>` +
-      `Phone: ${escapeHtml(mobile || "—")}` +
-      (bookingLine ? `<br/>Requested slot: ${escapeHtml(bookingLine)}` : "") +
+      `Email: ${escapeHtml(email || "-")}<br/>` +
+      `Phone: ${escapeHtml(mobile || "-")}` +
       (holdLine ? `<br/>${escapeHtml(holdLine)}` : "") +
       `</p>` +
       (reviewUrl
         ? `<p><a href="${escapeHtml(reviewUrl)}" style="display:inline-block;padding:10px 14px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:8px;font-weight:700">Open Registration forms</a></p>`
-        : `<p>Admin → Documents → Registration forms (optional PDF review).</p>`) +
+        : `<p>Admin -> Documents -> Registration forms (optional PDF review).</p>`) +
       (opts.pdfBytes && opts.pdfBytes.length
         ? `<p style="color:#64748b;font-size:13px">PDF attached.</p>`
         : "") +
@@ -310,11 +326,12 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
         "doc=",
         opts.documentId,
         attachment ? "with-pdf" : "no-pdf",
+        bookingSummary ? `slot=${bookingSummary}` : "no-slot",
       );
     }
   } else {
     console.log(
-      `[registration-office-notify] doc=${opts.documentId} participant=${participant} parent=${parent} email=${email} tos=${tos.join(",") || "none"} smtp=${smtp ? "yes" : "no"}`,
+      `[registration-office-notify] doc=${opts.documentId} participant=${participant} parent=${parent} email=${email} tos=${tos.join(",") || "none"} smtp=${smtp ? "yes" : "no"} summary=${bookingSummary || "-"}`,
     );
   }
 
@@ -508,8 +525,8 @@ export async function notifyOfficeStripePaymentReceived(opts: {
     `\nOpen Admin → Finance → Re-enrolments to review the paid invoice (optional).\n` +
     (adminUrl ? `${adminUrl}\n\n` : "") +
     `No need to Mark paid — Stripe already updated the invoice.\n` +
-    `No office "Validate" step for PIN: for Finish booking / trial Apple Pay, ` +
-    `Parent Portal PIN is sent automatically to the parent (email + WhatsApp) when Stripe confirms payment.\n` +
+    `Term bookings: Parent Portal PIN is sent automatically when Stripe confirms the first instalment / settle.\n` +
+    `Trial bookings: parent gets a booking-completed message (day, time, venue, instructor). No PIN - portal is for term places only.\n` +
     `— clubSENsational portal`;
 
   if (smtp && tos.length) {
@@ -580,6 +597,11 @@ export async function notifyOfficeBankPaymentReported(opts: {
   paymentRef?: string | null;
   /** When true, parent messaged (WhatsApp / Messages / email) instead of an in-app button. */
   viaParentMessage?: boolean;
+  /** Live session being held while Tide is checked. */
+  slotSummary?: string | null;
+  holdExpiresAt?: string | null;
+  fundingLabel?: string | null;
+  payPlanLabel?: string | null;
 }): Promise<void> {
   const invNo = String(opts.invoiceNumber || "").trim() || opts.invoiceShareId.slice(0, 8);
   const participant = String(opts.participantName || "").trim() || "Participant";
@@ -589,6 +611,10 @@ export async function notifyOfficeBankPaymentReported(opts: {
   const ref = String(opts.paymentRef || "").trim();
   const kind = opts.isTrial ? "Trial" : "Booking";
   const viaMsg = !!opts.viaParentMessage;
+  const slot = String(opts.slotSummary || "").trim();
+  const holdUntil = String(opts.holdExpiresAt || "").trim();
+  const funding = String(opts.fundingLabel || "").trim();
+  const payPlan = String(opts.payPlanLabel || "").trim();
 
   const smtp = readParentNotifySmtpConfig();
   const tos = officeNotifyEmails();
@@ -604,12 +630,16 @@ export async function notifyOfficeBankPaymentReported(opts: {
     `Participant: ${participant}\n` +
     `Parent / carer: ${parent}\n` +
     (email ? `Email: ${email}\n` : "") +
+    (slot ? `Held session: ${slot}\n` : "") +
+    (holdUntil ? `Office confirm hold until: ${holdUntil}\n` : "") +
+    (funding ? `Funding: ${funding}\n` : "") +
+    (payPlan ? `Pay plan: ${payPlan}\n` : "") +
     `Amount due: £${amount.toFixed(2)}\n` +
     (ref ? `Reference / phone noted: ${ref}\n` : "") +
-    `\nPlease check Tide and Mark paid in Admin → Finance → Re-enrolments.\n` +
+    `\nPlease check Tide and Mark paid in Admin -> Finance -> Re-enrolments.\n` +
     `Parent Portal PIN is sent only after you confirm payment.\n` +
     (adminUrl ? `${adminUrl}\n\n` : "\n") +
-    `— clubSENsational portal`;
+    `- clubSENsational portal`;
 
   if (smtp && tos.length) {
     for (const to of tos) {
@@ -625,7 +655,7 @@ export async function notifyOfficeBankPaymentReported(opts: {
     }
   } else {
     console.log(
-      `[bank-report-office-notify] invoice=${invNo} participant=${participant} amount=${amount} trial=${!!opts.isTrial}`,
+      `[bank-report-office-notify] invoice=${invNo} participant=${participant} amount=${amount} trial=${!!opts.isTrial} slot=${slot || "-"}`,
     );
   }
 
@@ -655,6 +685,8 @@ export async function notifyOfficeBankPaymentReported(opts: {
             notify_event: "bank_payment_reported",
             paid_via: "bank_transfer",
             is_trial: !!opts.isTrial,
+            slot_summary: slot || null,
+            hold_expires_at: holdUntil || null,
           },
         }),
       },
@@ -665,5 +697,210 @@ export async function notifyOfficeBankPaymentReported(opts: {
     }
   } catch (e) {
     console.warn("[bank-report-office-notify] push error", e);
+  }
+}
+
+/** Office FYI when finish-booking creates invoice + 30' pay hold on a live session. */
+export async function notifyOfficePayHoldStarted(opts: {
+  invoiceShareId: string;
+  invoiceNumber: string | null;
+  participantName: string;
+  parentName: string | null;
+  parentEmail: string | null;
+  amountGbp: number;
+  isTrial?: boolean;
+  slotSummary?: string | null;
+  holdExpiresAt?: string | null;
+  fundingLabel?: string | null;
+  payPlanLabel?: string | null;
+}): Promise<void> {
+  const invNo = String(opts.invoiceNumber || "").trim() || opts.invoiceShareId.slice(0, 8);
+  const participant = String(opts.participantName || "").trim() || "Participant";
+  const parent = String(opts.parentName || "").trim() || "Parent / carer";
+  const email = String(opts.parentEmail || "").trim();
+  const amount = Number(opts.amountGbp) || 0;
+  const kind = opts.isTrial ? "Trial" : "Booking";
+  const slot = String(opts.slotSummary || "").trim();
+  const holdUntil = String(opts.holdExpiresAt || "").trim();
+  const funding = String(opts.fundingLabel || "").trim();
+  const payPlan = String(opts.payPlanLabel || "").trim();
+
+  const smtp = readParentNotifySmtpConfig();
+  const tos = officeNotifyEmails();
+  const adminUrl = reenrolmentsReviewUrl();
+  const subject = `${kind} pay hold 30' · ${invNo} · ${participant}`;
+  const bodyText =
+    `Finish-booking: parent chose funding / payment and a ${kind.toLowerCase()} seat is on a 30 minute pay hold.\n\n` +
+    `Invoice: ${invNo}\n` +
+    `Participant: ${participant}\n` +
+    `Parent / carer: ${parent}\n` +
+    (email ? `Email: ${email}\n` : "") +
+    (slot ? `Held session: ${slot}\n` : "Held session: (see reservation / invoice)\n") +
+    (holdUntil ? `Hold until: ${holdUntil}\n` : "") +
+    (funding ? `Funding: ${funding}\n` : "") +
+    (payPlan ? `Pay plan: ${payPlan}\n` : "") +
+    `Amount due: £${amount.toFixed(2)}\n` +
+    `\nNo Mark paid yet - wait until the parent transfers and taps WhatsApp/email (or Stripe pays).\n` +
+    `Then check Tide and Mark paid in Admin -> Finance -> Re-enrolments.\n` +
+    (adminUrl ? `${adminUrl}\n\n` : "\n") +
+    `- clubSENsational portal`;
+
+  if (smtp && tos.length) {
+    for (const to of tos) {
+      const mail = await sendParentEmailViaSmtp({
+        config: smtp,
+        to,
+        subject,
+        bodyText,
+      });
+      if (!mail.ok) {
+        console.warn("[pay-hold-office-notify] email failed", to, mail.error);
+      }
+    }
+  } else {
+    console.log(
+      `[pay-hold-office-notify] invoice=${invNo} participant=${participant} slot=${slot || "-"} hold=${holdUntil || "-"}`,
+    );
+  }
+
+  const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const secret = (Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") || "").trim();
+  if (!baseUrl || !secret || !opts.invoiceShareId) return;
+
+  try {
+    const res = await fetch(
+      `${baseUrl}/functions/v1/portal-push-dispatch-admin-alert`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-portal-webhook-secret": secret,
+        },
+        body: JSON.stringify({
+          type: "UPDATE",
+          table: "portal_parent_invoice_share",
+          record: {
+            id: opts.invoiceShareId,
+            invoice_number: invNo,
+            participant_name: participant,
+            parent_name: parent,
+            payment_status: "unpaid",
+            amount_gbp: amount,
+            notify_event: "pay_hold_started",
+            is_trial: !!opts.isTrial,
+            slot_summary: slot || null,
+            hold_expires_at: holdUntil || null,
+          },
+        }),
+      },
+    );
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      console.warn("[pay-hold-office-notify] push failed", res.status, t.slice(0, 200));
+    }
+  } catch (e) {
+    console.warn("[pay-hold-office-notify] push error", e);
+  }
+}
+
+/** Office FYI: parent chose Local Authority / NHS referral. */
+export async function notifyOfficeSwNhsReferral(opts: {
+  participantName: string;
+  parentName: string | null;
+  parentEmail: string | null;
+  slotSummary?: string | null;
+  bookingScope?: string | null;
+  swName: string;
+  swEmail: string;
+  supportRegulated?: string | null;
+  ehcp?: string | null;
+  ehcpUploaded?: boolean;
+  documentId?: string | null;
+}): Promise<void> {
+  const participant = String(opts.participantName || "").trim() || "Participant";
+  const parent = String(opts.parentName || "").trim() || "Parent / carer";
+  const email = String(opts.parentEmail || "").trim();
+  const slot = String(opts.slotSummary || "").trim();
+  const scope = String(opts.bookingScope || "").trim();
+  const swName = String(opts.swName || "").trim() || "(not provided)";
+  const swEmail = String(opts.swEmail || "").trim() || "(not provided)";
+  const ratio = String(opts.supportRegulated || "").trim();
+  const ehcp = String(opts.ehcp || "").trim();
+
+  const smtp = readParentNotifySmtpConfig();
+  const tos = officeNotifyEmails();
+  const adminUrl = reenrolmentsReviewUrl();
+  const subject = `Local Authority / NHS referral · ${participant}`;
+  const bodyText =
+    `Finish-booking: parent chose Local Authority / NHS referral. Our team will contact the family to finalise the booking.\n\n` +
+    `Participant: ${participant}\n` +
+    `Parent / carer: ${parent}\n` +
+    (email ? `Parent email: ${email}\n` : "") +
+    (slot ? `Requested session: ${slot}\n` : "") +
+    (scope ? `Booking length: ${scope}\n` : "") +
+    `Social worker / NHS manager: ${swName}\n` +
+    `SW / NHS email: ${swEmail}\n` +
+    (ratio ? `Support when regulated: ${ratio}\n` : "") +
+    (ehcp ? `EHCP on form: ${ehcp}\n` : "") +
+    (opts.ehcpUploaded ? `EHCP file: uploaded with registration\n` : "") +
+    (opts.documentId ? `Registration document: ${opts.documentId}\n` : "") +
+    `\nContact the social worker / NHS manager and the family to finalise with LA or NHS.\n` +
+    (adminUrl ? `${adminUrl}\n\n` : "\n") +
+    `- clubSENsational portal`;
+
+  if (smtp && tos.length) {
+    for (const to of tos) {
+      const mail = await sendParentEmailViaSmtp({
+        config: smtp,
+        to,
+        subject,
+        bodyText,
+      });
+      if (!mail.ok) {
+        console.warn("[sw-nhs-referral-office-notify] email failed", to, mail.error);
+      }
+    }
+  } else {
+    console.log(
+      `[sw-nhs-referral-office-notify] participant=${participant} sw=${swName} <${swEmail}> slot=${slot || "-"}`,
+    );
+  }
+
+  const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const secret = (Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") || "").trim();
+  if (!baseUrl || !secret) return;
+
+  try {
+    const res = await fetch(
+      `${baseUrl}/functions/v1/portal-push-dispatch-admin-alert`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-portal-webhook-secret": secret,
+        },
+        body: JSON.stringify({
+          type: "UPDATE",
+          table: "portal_booking_completion_tokens",
+          record: {
+            participant_name: participant,
+            parent_name: parent,
+            parent_email: email || null,
+            notify_event: "sw_nhs_referral",
+            slot_summary: slot || null,
+            social_worker_name: swName,
+            social_worker_email: swEmail,
+            support_regulated: ratio || null,
+            document_id: opts.documentId || null,
+          },
+        }),
+      },
+    );
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      console.warn("[sw-nhs-referral-office-notify] push failed", res.status, t.slice(0, 200));
+    }
+  } catch (e) {
+    console.warn("[sw-nhs-referral-office-notify] push error", e);
   }
 }

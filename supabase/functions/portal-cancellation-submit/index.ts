@@ -2,13 +2,17 @@
 //
 // portal-cancellation-submit
 // --------------------------
-// PIN / portal-bridge path for cancellation.html when staff hub session has no
-// linked Supabase Auth JWT (or direct insert failed).
+// Staff/Lead cancellation form → cancellation_reports + Absents Open(decide).
 //
-// POST JSON: { full_name, portal_bridge_secret, cancellation: { ...row } }
-// 200 { ok: true, cancellation_id, submitted_by_user_id, submitted_by_name }
+// Auth (either):
+//   A) PIN bridge: { full_name, portal_bridge_secret, cancellation }
+//   B) Staff JWT: Authorization Bearer <user access token> + { cancellation }
+//
+// Deploy:
+//   npx supabase functions deploy portal-cancellation-submit --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { enqueueDecideFromStaffCancellation } from "../_shared/portal_enqueue_decide_from_cancellation.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -113,6 +117,11 @@ function resolveStaffProfile(
   return { profile: hits[0] };
 }
 
+function roleAllowed(appRole: string): boolean {
+  const role = clean(appRole).toLowerCase();
+  return role === "staff" || role === "lead" || role === "admin" || role === "ceo";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") {
@@ -130,23 +139,12 @@ Deno.serve(async (req) => {
     return jsonError("invalid", 400);
   }
 
-  const fullName = clean(body.full_name);
-  const submittedSecret = clean(body.portal_bridge_secret);
   const payload = body.cancellation && typeof body.cancellation === "object" ? body.cancellation : null;
-
-  if (!fullName || fullName.length < 2 || !payload) return jsonError("invalid", 400);
-
-  const configuredSecret = clean(Deno.env.get("STAFF_PROFILE_PORTAL_BRIDGE_SECRET") || "");
-  if (!configuredSecret || configuredSecret.length < 16) {
-    console.error("[portal-cancellation-submit] STAFF_PROFILE_PORTAL_BRIDGE_SECRET missing");
-    return jsonError("bridge_not_configured", 503);
-  }
-  if (!submittedSecret || !constantTimeEquals(submittedSecret, configuredSecret)) {
-    return jsonError("invalid_bridge_secret");
-  }
+  if (!payload) return jsonError("invalid", 400);
 
   const url = Deno.env.get("SUPABASE_URL") || "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const anon = Deno.env.get("SUPABASE_ANON_KEY") || "";
   if (!url || !serviceKey) {
     console.error("[portal-cancellation-submit] Missing SUPABASE env vars");
     return jsonError("invalid", 500);
@@ -156,23 +154,75 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: profiles, error: profErr } = await supabase
-    .from("staff_profiles")
-    .select("id, full_name, username, app_role, is_active")
-    .eq("is_active", true);
-  if (profErr) {
-    console.error("[portal-cancellation-submit] profile list", profErr);
-    return jsonError("invalid", 500);
+  const authHeader = req.headers.get("Authorization") || "";
+  const bearer = /^Bearer\s+(\S+)/i.exec(authHeader);
+  const token = bearer ? bearer[1] : "";
+  const looksLikeUserJwt = !!(token && token !== anon && token.split(".").length >= 3);
+
+  let profile: {
+    id: string;
+    full_name: string | null;
+    username: string | null;
+    app_role: string | null;
+  } | null = null;
+
+  if (looksLikeUserJwt) {
+    const userRes = await fetch(`${url.replace(/\/$/, "")}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: anon },
+    });
+    if (!userRes.ok) return jsonError("invalid_or_expired_session", 401);
+    let userBody: { id?: string } = {};
+    try {
+      userBody = await userRes.json();
+    } catch {
+      return jsonError("bad_auth_response", 502);
+    }
+    const userId = clean(userBody.id);
+    if (!userId) return jsonError("no_user_id_on_account", 403);
+    const { data: byId, error: byIdErr } = await supabase
+      .from("staff_profiles")
+      .select("id, full_name, username, app_role, is_active")
+      .eq("id", userId)
+      .maybeSingle();
+    if (byIdErr) {
+      console.error("[portal-cancellation-submit] profile by id", byIdErr);
+      return jsonError("invalid", 500);
+    }
+    if (!byId || byId.is_active === false) return jsonError("unknown_staff");
+    if (!roleAllowed(String(byId.app_role || ""))) return jsonError("role_not_allowed", 403);
+    profile = byId;
+  } else {
+    const fullName = clean(body.full_name);
+    const submittedSecret = clean(body.portal_bridge_secret);
+    if (!fullName || fullName.length < 2) return jsonError("invalid", 400);
+
+    const configuredSecret = clean(Deno.env.get("STAFF_PROFILE_PORTAL_BRIDGE_SECRET") || "");
+    if (!configuredSecret || configuredSecret.length < 16) {
+      console.error("[portal-cancellation-submit] STAFF_PROFILE_PORTAL_BRIDGE_SECRET missing");
+      return jsonError("bridge_not_configured", 503);
+    }
+    if (!submittedSecret || !constantTimeEquals(submittedSecret, configuredSecret)) {
+      return jsonError("invalid_bridge_secret");
+    }
+
+    const { data: profiles, error: profErr } = await supabase
+      .from("staff_profiles")
+      .select("id, full_name, username, app_role, is_active")
+      .eq("is_active", true);
+    if (profErr) {
+      console.error("[portal-cancellation-submit] profile list", profErr);
+      return jsonError("invalid", 500);
+    }
+
+    const resolved = resolveStaffProfile(profiles || [], fullName);
+    if ("error" in resolved) return jsonError(resolved.error);
+    if (!roleAllowed(String(resolved.profile.app_role || ""))) {
+      return jsonError("role_not_allowed", 403);
+    }
+    profile = resolved.profile;
   }
 
-  const resolved = resolveStaffProfile(profiles || [], fullName);
-  if ("error" in resolved) return jsonError(resolved.error);
-  const profile = resolved.profile;
-
-  const role = clean(profile.app_role).toLowerCase();
-  if (role !== "staff" && role !== "lead") {
-    return jsonError("role_not_allowed", 403);
-  }
+  if (!profile) return jsonError("unknown_staff");
 
   const clientName = clean(payload.client_name);
   const sessionDate = clean(payload.session_date);
@@ -194,7 +244,7 @@ Deno.serve(async (req) => {
   let service = clean(payload.service);
   if (!service) service = "Not specified";
 
-  const submittedByName = clean(profile.full_name || profile.username || fullName);
+  const submittedByName = clean(profile.full_name || profile.username || "");
   if (!submittedByName) return jsonError("invalid", 400);
 
   const row: Record<string, unknown> = {
@@ -229,10 +279,31 @@ Deno.serve(async (req) => {
     return jsonError("insert_failed", 500);
   }
 
+  const cancellationId = insertResp.data?.id ?? null;
+  let decide: Record<string, unknown> = { ok: false };
+  try {
+    decide = await enqueueDecideFromStaffCancellation(supabase, {
+      cancellation_id: cancellationId,
+      client_id: clean(payload.client_id) || null,
+      client_name: clientName,
+      session_date: sessionDate,
+      session_time: clean(payload.session_time) || null,
+      service,
+      reason_category: reasonCategory,
+      notes,
+      submitted_by_name: submittedByName,
+    });
+  } catch (enqErr) {
+    console.error("[portal-cancellation-submit] decide enqueue", enqErr);
+    decide = { ok: false, error: "enqueue_failed" };
+  }
+
   return json({
     ok: true,
-    cancellation_id: insertResp.data?.id ?? null,
+    cancellation_id: cancellationId,
     submitted_by_user_id: profile.id,
     submitted_by_name: submittedByName,
+    decide_queued: !!(decide && decide.ok),
+    decide,
   });
 });

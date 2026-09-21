@@ -18,23 +18,26 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 28;
+  var SOURCE_VERSION = 136;
 
-  /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
+  /**
+   * Autumn standing weekday stamps (first full standing week after week-1 DC).
+   * Worker / Overview boards must never snap to pre-Sep history for Sep+ days.
+   */
   var DAY_CENTRE_STANDING_ISO = {
-    monday: "2026-07-13",
-    tuesday: "2026-07-14",
-    wednesday: "2026-07-15",
-    thursday: "2026-07-16",
-    friday: "2026-07-17",
+    monday: "2026-09-07",
+    tuesday: "2026-09-08",
+    wednesday: "2026-09-09",
+    thursday: "2026-09-10",
+    friday: "2026-09-11",
   };
 
   var DAY_CENTRE_STANDING_ISO_SET = {
-    "2026-07-13": 1,
-    "2026-07-14": 1,
-    "2026-07-15": 1,
-    "2026-07-16": 1,
-    "2026-07-17": 1,
+    "2026-09-07": 1,
+    "2026-09-08": 1,
+    "2026-09-09": 1,
+    "2026-09-10": 1,
+    "2026-09-11": 1,
   };
 
   /**
@@ -42,7 +45,9 @@
    * Order = board column order. Times match MADRE-style "11 to 1" / "12.30 to 3".
    * Cyrus (Victor Tue 3.30-5) is Bespoke — not listed here; see CYRUS_BESPOKE_ROW.
    * Youssef Acton days (Mon/Thu): DC ends 15:00 then pool from 16:00.
-   * Friday: DC through 16:00 (Fadi + Emanuel) then Hub Bespoke 16:15–18:15 (same site).
+   * Friday (Fadi-absent board from 11): Roberto DC Emanuel 11-4 then Hub Bespoke Tinashe 4.15-6.15
+   * with Bismark + Emanuel; standing post-Fadi Fri still splits Emanuel / Fadi as below;
+   * Youssef DC through 16:00 then Acton aquatic.
    */
   var AUTUMN_DAY_CENTRE_BOARD = {
     monday: [
@@ -55,7 +60,7 @@
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      /* Victor OFF Mondays (DC) */
+      /* Victor OFF Mondays and Thursdays (DC) */
       { staff: "Victor", clients: [] },
       {
         staff: "Raul",
@@ -70,28 +75,24 @@
       {
         staff: "Roberto",
         clients: [
-          { name: "Ikram", time: "11 to 12.30" },
-          { name: "Fadi", time: "12.30 to 3" },
+          { name: "ACAT", time: "11 to 12" },
+          { name: "Ikram", time: "12 to 3" },
         ],
       },
-      /* Michelle Tue: Manager duty 11–12.30, then Ikram 12.30–4 */
+      /* Michelle Tue: Ikram 11–12, Manager 12–3, Ikram 3–4. */
       {
         staff: "Michelle",
         clients: [
-          { name: "Manager", time: "11 to 12.30" },
-          { name: "Ikram", time: "12.30 to 4" },
-        ],
-      },
-      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      /* Victor takes Raul's Tue DC; Raul OFF (column kept for board visibility) */
-      {
-        staff: "Victor",
-        clients: [
-          { name: "Fadi", time: "12.30 to 3" },
+          { name: "Ikram", time: "11 to 12" },
+          { name: "Manager", time: "12 to 3" },
           { name: "Ikram", time: "3 to 4" },
         ],
       },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      /* Raul OFF Tuesdays (no DC). Ikram 3-4 stays Michelle. */
       { staff: "Raul", clients: [] },
+      /* Victor Tue: Cyrus Bespoke 3.30–5 (not DC) — see CYRUS_BESPOKE_ROW. */
+      { staff: "Victor", clients: [] },
       { staff: "Youssef", clients: [] },
     ],
     wednesday: [
@@ -133,29 +134,26 @@
           { name: "Fadi", time: "1 to 3" },
         ],
       },
-      /* Michelle + Luliya + Youssef stay to 4 with Ikram / Emanuel; Victor + Raul end 3 */
+      /* Michelle + Luliya Ikram to 4; Victor + Raul Timi then Emanuel 1–4; Youssef Ikram 11–3 (Acton from 4). */
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
       {
         staff: "Victor",
         clients: [
           { name: "Timi", time: "11 to 1" },
-          { name: "Emanuel", time: "1 to 3" },
+          { name: "Emanuel", time: "1 to 4" },
         ],
       },
       {
         staff: "Raul",
         clients: [
           { name: "Timi", time: "11 to 1" },
-          { name: "Emanuel", time: "1 to 3" },
+          { name: "Emanuel", time: "1 to 4" },
         ],
       },
       {
         staff: "Youssef",
-        clients: [
-          { name: "Fadi", time: "12.30 to 3" },
-          { name: "Emanuel", time: "3 to 4" },
-        ],
+        clients: [{ name: "Ikram", time: "11 to 3" }],
       },
     ],
   };
@@ -172,9 +170,16 @@
   };
 
   /**
-   * Autumn 26/27 Hub afternoon Bespoke — same staff shifts as the Autumn rota
-   * (Godsway / John / Emanuel Mon+Wed 4.15–6.15; Fri Emanuel + Victor + Youssef; Tinashe booked).
-   * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30–5 only).
+   * Autumn 26/27 Hub afternoon Bespoke — LOCAL EXTRA standing (from Wed 9 Sep 2026):
+   * Mon: Godsway / John / Raul (3 seats; Bismark from Mon 14);
+   * Wed standing: Godsway / Bismark / John (Emmanuel only dated John-off Weds 9 + 16);
+   * Fri: Bismark / Roberto / Emmanuel (3 seats).
+   * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30-5 only).
+   */
+  /**
+   * Hub Bespoke Tinashe = 3 seats every working day (same count as Friday):
+   * Mon: Godsway + John + Bismark (Mon 7 only: Victor covers third seat) ·
+   * Wed: Godsway + Bismark + John · Fri: Bismark + Roberto + Emmanuel.
    */
   var AUTUMN_BESPOKE_HUB_ROWS = [
     {
@@ -183,7 +188,7 @@
       instructors: "GODSWAY",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-13",
     },
@@ -193,17 +198,17 @@
       instructors: "JOHN",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-13",
     },
     {
       client_name: "Tinashe",
       day: "Monday",
-      instructors: "EMANUEL",
+      instructors: "BISMARK",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-13",
     },
@@ -213,7 +218,17 @@
       instructors: "GODSWAY",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
+      venue: "SwimFarm",
+      session_date: "2026-07-15",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Wednesday",
+      instructors: "BISMARK",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-15",
     },
@@ -223,51 +238,708 @@
       instructors: "JOHN",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
-      venue: "SwimFarm",
-      session_date: "2026-07-15",
-    },
-    {
-      client_name: "Tinashe",
-      day: "Wednesday",
-      instructors: "EMANUEL",
-      service: "Bespoke Programme",
-      area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-15",
     },
     {
       client_name: "Tinashe",
       day: "Friday",
-      instructors: "EMANUEL",
+      instructors: "ROBERTO",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-17",
     },
     {
       client_name: "Tinashe",
       day: "Friday",
-      instructors: "VICTOR",
+      instructors: "BISMARK",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-17",
     },
     {
       client_name: "Tinashe",
       day: "Friday",
-      instructors: "YOUSSEF",
+      instructors: "EMMANUEL",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-17",
     },
   ];
+
+  /** Week 1 DC only (Tue 1 – Fri 4 Sep 2026). Dated rows so Today cards match ops, not Jul snap. */
+  var WEEK1_DC_ISO = {
+    tuesday: "2026-09-01",
+    wednesday: "2026-09-02",
+    thursday: "2026-09-03",
+    friday: "2026-09-04",
+  };
+  var WEEK1_DC_BOARD = {
+    tuesday: [
+      { staff: "Roberto", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      {
+        staff: "Michelle",
+        clients: [
+          { name: "Office", time: "1 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+    ],
+    wednesday: [
+      { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 4" }] },
+      { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+    ],
+    thursday: [
+      { staff: "Roberto", clients: [] },
+      { staff: "Youssef", clients: [] },
+    ],
+    friday: [
+      { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 4" }] },
+      { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Victor", clients: [{ name: "Timi", time: "11 to 1" }] },
+      { staff: "Raul", clients: [{ name: "Timi", time: "11 to 1" }] },
+      { staff: "Youssef", clients: [] },
+    ],
+  };
+
+  function autumnWeek1DayCentreRows() {
+    var out = [];
+    Object.keys(WEEK1_DC_BOARD).forEach(function (dk) {
+      var iso = WEEK1_DC_ISO[dk];
+      var dayTitle = DOW_TITLE[dk] || dk;
+      (WEEK1_DC_BOARD[dk] || []).forEach(function (col) {
+        (col.clients || []).forEach(function (c) {
+          out.push({
+            client_name: c.name,
+            day: dayTitle,
+            instructors: String(col.staff || "").toUpperCase(),
+            service: "Day Centre",
+            area:
+              c.name && String(c.name).toLowerCase() === "manager"
+                ? "Hub · Manager"
+                : c.name && String(c.name).toLowerCase() === "office"
+                  ? "Hub · Office"
+                  : "Hub Room",
+            time_slot: c.time,
+            venue: "SwimFarm",
+            session_date: iso,
+          });
+        });
+      });
+    });
+    return out;
+  }
+
+  /**
+   * Standing Tue Acton AS (from Mon 7 Sep): Roberto / Aurora / Javier / Luliya.
+   * Serine → Roberto 4.30–5.30 from Tue 15 Sep (open before); Logan → Luliya 5–5.30; Richard → Roberto; no Youssef.
+   */
+  var SERINE_ACTON_TUE_AQUATIC_FROM = "2026-09-15";
+
+  /**
+   * Acton Tue pool notes (office 16 Sep): summer keep / FIX / NEW.
+   * Abate brothers Teaching Pool; Logan Teaching Pool; Rayan Ta Teaching Pool;
+   * Ayman always Lane (DE); Kareena Lane (SE).
+   * Overview seats: 1 Aurora · 2 Javier · 3 Roberto · 4 Luliya.
+   * Brothers: Aydaan Javier 6–6.30; Adaam Luliya 6–6.30. Aurora 5.30 open.
+   */
+  var AUTUMN_ACTON_TUESDAY_BOARD = [
+    { staff: "ROBERTO", name: "Christian", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "Serine", time: "4.30 to 5.30", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Rayan Ta", time: "5.30 to 6", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
+    /* On shift from 4 — empty seat is open (No participant), never Closed. */
+    { staff: "LULIYA", name: "Emmanuel", time: "4 to 4.30", area: "Teaching Pool" },
+    /* Reggie term from Tue 22 Sep — trial was Luliya 15 Sep; not Aurora (Adam Ma). */
+    {
+      staff: "LULIYA",
+      name: "Reggie Conlon",
+      time: "4.30 to 5",
+      area: "Lane (DE)",
+      bookedFrom: "2026-09-22",
+    },
+    { staff: "LULIYA", name: "Logan", time: "5 to 5.30", area: "Teaching Pool" },
+    { staff: "LULIYA", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
+    /* Adaam NEW CLIENT first session Tue 15 Sep — open seat before (never paint / feedback early). */
+    {
+      staff: "LULIYA",
+      name: "Adaam Ah",
+      time: "6 to 6.30",
+      area: "Teaching Pool",
+      bookedFrom: "2026-09-15",
+    },
+    /* Invoice INV-P-0139: Aquatic 60' Tue 4–5 Acton (same as Thu). */
+    { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
+    { staff: "JAVIER", name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
+    /* Kareena (Chopi) from Tue 15 Sep — Private one-off; was Rayan Ta (now Roberto 5.30). */
+    { staff: "JAVIER", name: "Kareena", time: "5.30 to 6", area: "Lane (SE)", bookedFrom: "2026-09-15" },
+    /* Aydaan NEW CLIENT first session Tue 15 Sep with Javier (not before). */
+    {
+      staff: "JAVIER",
+      name: "Aydaan Ah",
+      time: "6 to 6.30",
+      area: "Lane (SE)",
+      bookedFrom: "2026-09-15",
+    },
+    { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
+    { staff: "AURORA", name: "Adam Ma", time: "4.30 to 5", area: "Teaching Pool" },
+    { staff: "AURORA", name: "Junaid", time: "5 to 5.30", area: "Lane (SE)" },
+    { staff: "AURORA", name: "No participant", time: "5.30 to 6", area: "Lane (SE)" },
+    { staff: "AURORA", name: "Anas", time: "6 to 6.30", area: "Lane (DE)" },
+  ];
+
+  function autumnActonTuesdayStandingRows() {
+    var iso = DAY_CENTRE_STANDING_ISO.tuesday;
+    return AUTUMN_ACTON_TUESDAY_BOARD.map(function (slot) {
+      return {
+        client_name: slot.name,
+        day: "Tuesday",
+        instructors: slot.staff,
+        service: "Aquatic Activity",
+        area: slot.area || "Lane (DE)",
+        time_slot: slot.time,
+        venue: "Acton",
+        session_date: iso,
+        bookedFrom: slot.bookedFrom || "",
+      };
+    });
+  }
+
+  function isAutumnWeek1DcIso(iso) {
+    var d = normIso(iso);
+    return d >= "2026-09-01" && d <= "2026-09-04";
+  }
+
+  /**
+   * Fadi (CLIENT) is off the worker rotas from 1 Sep through 19 Sep 2026.
+   * He starts 20 Sep — do not paint Cancelled seats or occupy override/slot space before that.
+   * DC who-with-whom while off: FADI_ABSENT_DC_BOARD for Mon 7 – Fri 19 (weekdays).
+   * Standing AUTUMN_DAY_CENTRE_BOARD from 20 Sep.
+   */
+  var FADI_START_ISO = "2026-09-20";
+  var FADI_ABSENT_DC_UNTIL = FADI_START_ISO;
+  /* Fadi off-rota DC reshuffle: Mon 7 Sep through Sat 19 Sep; standing from Sun 20. */
+  var FADI_ABSENT_DC_BOARD_FROM = "2026-09-07";
+  var FADI_ABSENT_DC_BOARD = {
+    monday: [
+      { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      /* Timetable Mon DC: Youssef 12.30-3 (not 11-3) — same hours as standing Fadi book window. */
+      { staff: "Youssef", clients: [{ name: "Ikram", time: "12.30 to 3" }] },
+      {
+        staff: "Victor",
+        clients: [
+          { name: "Timi", time: "11 to 1" },
+          { name: "Emanuel", time: "3 to 4" },
+        ],
+      },
+      {
+        staff: "Michelle",
+        clients: [
+          { name: "Timi", time: "11 to 1" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      {
+        staff: "Raul",
+        clients: [
+          { name: "Office", time: "11 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+    ],
+    tuesday: [
+      {
+        staff: "Roberto",
+        clients: [
+          { name: "ACAT", time: "11 to 12" },
+          { name: "Ikram", time: "12 to 3" },
+        ],
+      },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      /* Michelle Tue (Fadi-off): Ikram 11-12 + Interviews 12.30-3 + Ikram 3-4. */
+      {
+        staff: "Michelle",
+        clients: [
+          { name: "Ikram", time: "11 to 12" },
+          { name: "Interview", time: "12.30 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      {
+        staff: "Victor",
+        clients: [
+          { name: "Office", time: "11 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      { staff: "Raul", clients: [{ name: "Office", time: "11 to 4" }] },
+      { staff: "Youssef", clients: [] },
+    ],
+    wednesday: [
+      { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 4" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      {
+        staff: "Raul",
+        clients: [
+          { name: "Office", time: "11 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Victor", clients: [{ name: "Office", time: "11 to 4" }] },
+      { staff: "Youssef", clients: [] },
+    ],
+    thursday: [
+      /* No Fadi book — Roberto keeps Acton AS; Youssef has no DC this Thursday. */
+      { staff: "Roberto", clients: [] },
+      { staff: "Youssef", clients: [] },
+      { staff: "Luliya", clients: [] },
+      { staff: "Michelle", clients: [] },
+      { staff: "Raul", clients: [{ name: "Office", time: "11 to 4" }] },
+      { staff: "Victor", clients: [{ name: "Office", time: "11 to 4" }] },
+    ],
+    friday: [
+      /* Roberto keeps Emanuel through 16:00 (was 11-3 + Victor/Raul 3-4), then Hub Tinashe 4.15-6.15 */
+      { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 4" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Youssef", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      { staff: "Victor", clients: [{ name: "Timi", time: "11 to 1" }] },
+      {
+        staff: "Michelle",
+        clients: [
+          { name: "Timi", time: "11 to 1" },
+          { name: "Office", time: "1 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      /* Fri 18: Raul off rota (dated Services). Fadi-off Fridays: no Raul DC book. */
+    ],
+  };
+
+  function isFadiClientName(name) {
+    return /^fadi\b/i.test(String(name || "").trim());
+  }
+
+  /** True when Fadi must not appear on worker rotas (1 Sep through 19 Sep). */
+  function isFadiOffRotaIso(iso) {
+    var d = normIso(iso);
+    return !!(d && d >= "2026-09-01" && d < FADI_START_ISO);
+  }
+
+  function isFadiAbsentDcWindowIso(iso) {
+    return isFadiOffRotaIso(iso);
+  }
+
+  function isFadiAbsentDcBoardIso(iso) {
+    var d = normIso(iso);
+    if (!d || d < FADI_ABSENT_DC_BOARD_FROM || d >= FADI_ABSENT_DC_UNTIL) return false;
+    try {
+      var dow = new Date(d + "T12:00:00").getDay();
+      return dow >= 1 && dow <= 5;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function fadiAbsentDcBoardDates() {
+    var out = [];
+    var cur = new Date(FADI_ABSENT_DC_BOARD_FROM + "T12:00:00");
+    var end = new Date(FADI_ABSENT_DC_UNTIL + "T12:00:00");
+    while (cur < end) {
+      var dow = cur.getDay();
+      if (dow >= 1 && dow <= 5) {
+        var y = cur.getFullYear();
+        var m = String(cur.getMonth() + 1).padStart(2, "0");
+        var day = String(cur.getDate()).padStart(2, "0");
+        out.push(y + "-" + m + "-" + day);
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return out;
+  }
+
+  function areaForDcClient(name) {
+    var n = String(name || "").trim().toLowerCase();
+    if (n === "manager") return "Hub · Manager";
+    if (n === "office") return "Hub · Office";
+    if (n === "acat") return "Hub · ACAT";
+    if (n === "interview" || n === "interviews") return "Hub Room";
+    return "Hub Room";
+  }
+
+  function autumnFadiAbsentDayCentreRows() {
+    var out = [];
+    fadiAbsentDcBoardDates().forEach(function (iso) {
+      var dow = new Date(iso + "T12:00:00").getDay();
+      var dk =
+        dow === 1
+          ? "monday"
+          : dow === 2
+            ? "tuesday"
+            : dow === 3
+              ? "wednesday"
+              : dow === 4
+                ? "thursday"
+                : "friday";
+      var dayTitle = DOW_TITLE[dk] || dk;
+      (FADI_ABSENT_DC_BOARD[dk] || []).forEach(function (col) {
+        (col.clients || []).forEach(function (c) {
+          if (isFadiClientName(c.name)) return;
+          out.push({
+            client_name: c.name,
+            day: dayTitle,
+            instructors: String(col.staff || "").toUpperCase(),
+            service: "Day Centre",
+            area: areaForDcClient(c.name),
+            time_slot: c.time,
+            venue: "SwimFarm",
+            session_date: iso,
+          });
+        });
+      });
+    });
+    return out;
+  }
+
+  function autumnFadiCancelledSeatRows() {
+    /* Fadi is off rota until FADI_START_ISO — do not occupy Cancelled seats. */
+    return [];
+  }
+
+  function applyFadiAbsentDayCentre(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var d = normIso(r.session_date);
+      /* Dated Sep 1-19 Fadi rows (any programme) — drop, do not Cancelled-occupy. */
+      if (isFadiClientName(r.client_name) && isFadiOffRotaIso(d)) return;
+      if (isDayCentreService(r.service) && isFadiAbsentDcBoardIso(d)) return;
+      out.push(r);
+    });
+    autumnFadiAbsentDayCentreRows().forEach(function (row) {
+      out.push(row);
+    });
+    return out;
+  }
+
+  /**
+   * Mon 14 Sep 2026 — day DC reshuffle (Adam P absent → Roberto stays Hub to 4,
+   * Acton from 5.30). Timetable hours for this date match these windows.
+   */
+  var MONDAY_SEP14_DC_BOARD = [
+    { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 4" }] },
+    { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+    { staff: "Youssef", clients: [{ name: "Ikram", time: "11 to 3" }] },
+    { staff: "Victor", clients: [{ name: "Office", time: "11 to 4" }] },
+    {
+      staff: "Michelle",
+      clients: [
+        { name: "Timi", time: "11 to 1" },
+        { name: "Office", time: "1 to 3" },
+        { name: "Ikram", time: "3 to 4" },
+      ],
+    },
+    {
+      staff: "Raul",
+      clients: [
+        { name: "Timi", time: "11 to 1" },
+        { name: "Office", time: "1 to 3" },
+        { name: "Ikram", time: "3 to 4" },
+      ],
+    },
+  ];
+
+  function autumnMondaySep14DcRows() {
+    var iso = "2026-09-14";
+    var out = [];
+    MONDAY_SEP14_DC_BOARD.forEach(function (col) {
+      (col.clients || []).forEach(function (c) {
+        out.push({
+          client_name: c.name,
+          day: "Monday",
+          instructors: String(col.staff || "").toUpperCase(),
+          service: "Day Centre",
+          area: areaForDcClient(c.name),
+          time_slot: c.time,
+          venue: "SwimFarm",
+          session_date: iso,
+        });
+      });
+    });
+    return out;
+  }
+
+  function scrubAndEnsureSep14DayCentre(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) === "2026-09-14" && isDayCentreService(r.service)) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnMondaySep14DcRows().forEach(function (row) {
+      out.push(row);
+    });
+    return out;
+  }
+
+  /** True when this Day Centre row is the Jul standing snap used for Mon 7+ projection. */
+  function isAutumnDcStandingTemplateRow(row) {
+    if (!row || !isDayCentreService(row.service)) return false;
+    return isAutumnStandingTemplateIso(row.session_date);
+  }
+
+  function dcStandingStaffKey(raw) {
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .split(/[,\s/]+/)[0]
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function dcStandingTimeKey(raw) {
+    return String(raw || "")
+      .toLowerCase()
+      .replace(/:/g, ".")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  /** True when this DC seat is Autumn standing (not Fadi-off Office / extra halves). */
+  function isAutumnDayCentreStandingSeat(row) {
+    if (!row || !isDayCentreService(row.service)) return false;
+    var dk = normalizeDowKey(row.day);
+    var cols = AUTUMN_DAY_CENTRE_BOARD[dk];
+    if (!cols || !cols.length) return false;
+    var staff = dcStandingStaffKey(row.instructors);
+    var client = String(row.client_name || "")
+      .trim()
+      .toLowerCase();
+    var time = dcStandingTimeKey(row.time_slot);
+    if (!staff || !client) return false;
+    for (var i = 0; i < cols.length; i++) {
+      if (dcStandingStaffKey(cols[i].staff) !== staff) continue;
+      var clients = cols[i].clients || [];
+      for (var j = 0; j < clients.length; j++) {
+        if (String(clients[j].name || "").trim().toLowerCase() !== client) continue;
+        if (dcStandingTimeKey(clients[j].time) === time) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Fadi-off DC seats are dated 7–19 Sep but share the Monday standing stamp (7 Sep).
+   * Do not project Office / extra halves onto later Mondays once Fadi is back.
+   */
+  function shouldProjectDayCentreRowFromSnap(row, snapIso, targetIso) {
+    if (!row || !isDayCentreService(row.service)) return true;
+    if (!isFadiAbsentDcBoardIso(snapIso)) return true;
+    if (isFadiAbsentDcBoardIso(targetIso)) return true;
+    return isAutumnDayCentreStandingSeat(row);
+  }
+
+  function coerceSnapProjectRow(row) {
+    if (!row) return row;
+    if (row.client_name || row.instructors) return row;
+    return {
+      client_name: row.clientName || row.clientDisplay || row.clientId || "",
+      instructors: row.instructors || row.staffId || "",
+      service: row.rosterService || row.activity || row.service || "",
+      time_slot: row.time_slot || row.timeSlot || "",
+      day: row.day || "",
+      session_date: row.session_date || row.sessionDate || "",
+      venue: row.venue || "",
+      area: row.rosterArea || row.area || "",
+    };
+  }
+
+  /** Hub Tinashe: Mon 7 Victor cover is dated only — do not project onto later Mondays. */
+  function shouldProjectBespokeHubRowFromSnap(row, snapIso, targetIso) {
+    if (!row || !isBespokeService(row.service)) return true;
+    if (!/^tinashe\b/i.test(String(row.client_name || "").trim())) return true;
+    var snap = normIso(snapIso);
+    var target = normIso(targetIso);
+    if (!snap || !target || snap === target) return true;
+    return autumnHubBespokeStandingHasStaff(row.day, row.instructors);
+  }
+
+  function shouldProjectSnapRosterRow(row, snapIso, targetIso) {
+    var r = coerceSnapProjectRow(row);
+    if (!shouldProjectDayCentreRowFromSnap(r, snapIso, targetIso)) return false;
+    if (!shouldProjectBespokeHubRowFromSnap(r, snapIso, targetIso)) return false;
+    return true;
+  }
+
+  function isTuesdayActonAquaticStandingRow(row) {
+    if (!row) return false;
+    if (!isActonVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "tuesday") return false;
+    /*
+     * Empty-service junk (e.g. bundle "cayra"/"richard" 16.30 rows under ANGEL) must
+     * also be replaced — otherwise Autumn weekday snap resurrects Angel's old book.
+     */
+    if (!isAquaticService(row.service) && String(row.service || "").trim()) return false;
+    var d = normIso(row.session_date);
+    if (!d) return true;
+    if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
+    return false;
+  }
+
+  /**
+   * No Autumn Term 2026 standing sessions (LOCAL has no columns). Summer leftovers
+   * must not project onto Sep+ boards. Angel CAN cover Climbing (e.g. Sun 20 Carlos).
+   */
+  var AUTUMN_NO_SESSION_STAFF_KEYS = ["angel", "giuseppe", "andres"];
+  var AUTUMN_NO_SESSION_INSTRUCTOR_RE = /\b(angel|giuseppe|andres|andr[eé]s)\b/i;
+
+  function isAutumnNoSessionStaffKey(staffKey) {
+    var id = String(staffKey || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+    if (!id) return false;
+    return AUTUMN_NO_SESSION_STAFF_KEYS.indexOf(id) >= 0;
+  }
+
+  function scrubDepartedAutumnInstructorRows(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var row = r;
+      /* DB overlays may reintroduce summer Multi names — remap again before scrub. */
+      if (isMultiActivityService(row.service)) {
+        var mapped = remapAutumnMultiInstructorsStanding(row.instructors);
+        if (mapped !== String(row.instructors || "").trim()) {
+          row = Object.assign({}, row, { instructors: mapped });
+        }
+      }
+      var inst = String(row.instructors || "").trim();
+      if (!AUTUMN_NO_SESSION_INSTRUCTOR_RE.test(inst)) {
+        out.push(row);
+        return;
+      }
+      /* Strip departed co-instructors; keep the seat if anyone Autumn remains. */
+      var kept = inst
+        .split(/[,+/]| and /i)
+        .map(function (p) {
+          return String(p || "").trim();
+        })
+        .filter(function (p) {
+          return p && !AUTUMN_NO_SESSION_INSTRUCTOR_RE.test(p);
+        });
+      if (!kept.length) return;
+      out.push(Object.assign({}, row, { instructors: kept.join(", ").toUpperCase() }));
+    });
+    return out;
+  }
+
+  /** @deprecated use scrubDepartedAutumnInstructorRows */
+  function scrubDepartedAngelInstructorRows(rows) {
+    return scrubDepartedAutumnInstructorRows(rows);
+  }
+
+  function applyAutumnWeek1DayCentre(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isDayCentreService(r.service) && isAutumnWeek1DcIso(r.session_date)) return;
+      out.push(r);
+    });
+    autumnWeek1DayCentreRows().forEach(function (row) {
+      out.push(row);
+    });
+    return out;
+  }
+
+  /**
+   * Board re-inject (Tue Acton / Sunday pool) runs AFTER portal_roster_rows merge
+   * and would otherwise wipe pool/area notes saved from Edit term slot.
+   * Only honour an area that exists on an active cache row — never summer MADRE leftovers.
+   */
+  function dbAreaOverrideForStandingSlot(row) {
+    var list = global.PORTAL_ROSTER_ROWS_CACHE;
+    if (!row || !Array.isArray(list) || !list.length) return "";
+    var day = String(row.day || "").trim().toLowerCase();
+    var cn = String(row.client_name || "").trim().toLowerCase();
+    var ts = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+    var instr = String(row.instructors || "").trim().toLowerCase();
+    var venue = String(row.venue || "").trim().toLowerCase();
+    var i;
+    for (i = 0; i < list.length; i++) {
+      var d = list[i];
+      if (!d || String(d.status || "active") !== "active") continue;
+      if (String(d.client_name || "").trim().toLowerCase() !== cn) continue;
+      if (String(d.day || "").trim().toLowerCase() !== day) continue;
+      var dts = String(d.time_slot || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      if (dts !== ts) continue;
+      var din = String(d.instructors || "").trim().toLowerCase();
+      if (din && instr && din !== instr) continue;
+      var dv = String(d.venue || "").trim().toLowerCase();
+      if (dv && venue && dv !== venue) continue;
+      var a = String(d.area || "").trim();
+      if (a) return a;
+    }
+    return "";
+  }
+
+  function applyStandingSlotAreaFromDb(row) {
+    var copy = Object.assign({}, row);
+    var ov = dbAreaOverrideForStandingSlot(copy);
+    if (ov) copy.area = ov;
+    return copy;
+  }
+
+  function applyAutumnActonTuesdayStanding(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (isTuesdayActonAquaticStandingRow(r)) return;
+      out.push(r);
+    });
+    autumnActonTuesdayStandingRows().forEach(function (row) {
+      expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
+        out.push(exp);
+      });
+    });
+    return out;
+  }
+
+  /**
+   * Re-inject Thu Acton AFTER portal_roster_rows merge.
+   * Standing is materialised onto every Autumn Thursday (no Jul stamp projection).
+   */
+  function applyAutumnActonThursdayStanding(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (isThursdayActonAquaticStandingRow(r)) return;
+      out.push(r);
+    });
+    autumnActonThursdayStandingRows().forEach(function (row) {
+      expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
+        out.push(exp);
+      });
+    });
+    return out;
+  }
 
   var DOW_TITLE = {
     monday: "Monday",
@@ -275,6 +947,8 @@
     wednesday: "Wednesday",
     thursday: "Thursday",
     friday: "Friday",
+    saturday: "Saturday",
+    sunday: "Sunday",
   };
 
   function normIso(v) {
@@ -385,6 +1059,8 @@
   /**
    * Autumn 26/27 Northolt aquatic standing (Services truth — not summer Roberto book).
    * Source: admin Services Mon 7 Sep / Wed 9 Sep 2026 grids.
+   * Mon Dan 6–6.30: Adaam Ah through Mon 7; Amaar Ah from Mon 14 (Leila swap).
+   * Scrub `scrubAndEnsureMonNortholtDan630LeilaSwap` owns the pre-14 Adaam paint.
    */
   var AUTUMN_NORTHOLT_AQUATIC_BOARD = {
     monday: [
@@ -394,7 +1070,7 @@
           { name: "Muhammad", time: "4.30 to 5" },
           { name: "Amar Rai", time: "5 to 5.30" },
           { name: "Amar Rai", time: "5.30 to 6" },
-          { name: "Adaam Ah", time: "6 to 6.30" },
+          { name: "Amaar Ah", time: "6 to 6.30" },
         ],
       },
       {
@@ -477,6 +1153,516 @@
     return out;
   }
 
+  /**
+   * Mon 7 Sep 2026: Raul OFF — Victor covers his seats.
+   * Do NOT inject a Victor-only Tinashe / Emanuel dated row: Overview suppresses
+   * standing same-client Bespoke/DC for the week when a dated row exists, which
+   * dropped Godsway + John (and Roberto's Emanuel 11–1). Remap + schedule_overrides
+   * paint Raul→Victor; keep standing co-instructors.
+   * Dated rows here are only Westway Physical (Sandra→Javi) — those clients have
+   * no other standing instructors that day.
+   */
+  function autumnMondaySep7VictorCoverRows() {
+    return [];
+  }
+
+  /** Mon 7 Sep: Sandra OFF — Javi covers Westway Physical (Ayaan / Serine). */
+  function autumnMondaySep7JaviPhysicalCoverRows() {
+    return [
+      {
+        client_name: "Ayaan",
+        day: "Monday",
+        instructors: "JAVI",
+        service: "Physical Activity",
+        area: "Gym",
+        time_slot: "4 to 5",
+        venue: "Westway",
+        session_date: "2026-09-07",
+      },
+      {
+        client_name: "Serine",
+        day: "Monday",
+        instructors: "JAVI",
+        service: "Physical Activity",
+        area: "Gym",
+        time_slot: "5 to 6",
+        venue: "Westway",
+        session_date: "2026-09-07",
+      },
+    ];
+  }
+
+  /** Thu 10 Sep: Yassir last Acton Aquatic session (seat open from Thu 17). */
+  function autumnThursdaySep10YassirLastSessionRows() {
+    return [
+      {
+        client_name: "Yassir",
+        day: "Thursday",
+        instructors: "ROBERTO",
+        service: "Aquatic Activity",
+        area: "Teaching Pool",
+        time_slot: "4.30 to 5",
+        venue: "Acton",
+        session_date: "2026-09-10",
+      },
+    ];
+  }
+
+  /** Keep Yassir named on Thu 10; do not also leave a standing open twin that day. */
+  function scrubAndEnsureSep10YassirLastSession(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) !== "2026-09-10") {
+        out.push(r);
+        return;
+      }
+      var slot = String(r.time_slot || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      var isYassirBand =
+        /acton/i.test(String(r.venue || "")) &&
+        /aquatic|swim/i.test(String(r.service || "")) &&
+        /roberto/i.test(String(r.instructors || "")) &&
+        (slot === "4.30 to 5" || slot === "4:30 to 5" || slot.indexOf("4.30 to 5") === 0);
+      if (isYassirBand) return;
+      out.push(r);
+    });
+    autumnThursdaySep10YassirLastSessionRows().forEach(function (row) {
+      out.push(row);
+    });
+    return out;
+  }
+
+  /** Fri 11 Sep: Amaar last Acton Aquatic with Youssef (seat open from Fri 18). */
+  function autumnFridaySep11AmaarLastSessionRows() {
+    return [
+      {
+        client_name: "Amaar Ah",
+        day: "Friday",
+        instructors: "YOUSSEF",
+        service: "Aquatic Activity",
+        area: "Teaching Pool",
+        time_slot: "5.30 to 6",
+        venue: "Acton",
+        session_date: "2026-09-11",
+      },
+    ];
+  }
+
+  /**
+   * Leila swap: Mon Northolt Dan 6–6.30 was Adaam Ah (e.g. Mon 7 — Dan feedback);
+   * Amaar Ah takes that seat from Mon 14 Sep 2026. Adaam + Aydaan stand on Tue Acton 6–6.30.
+   */
+  var AMAAR_MON_NORTHOLT_DAN_630_FROM = "2026-09-14";
+
+  function isSerineActonTueAquaticSeat(row) {
+    if (!row) return false;
+    if (!/^serine\b/i.test(String(row.client_name || "").trim())) return false;
+    if (!isAquaticService(row.service)) return false;
+    if (!isActonVenue(row.venue)) return false;
+    var day = normalizeDowKey(row.day);
+    if (!day) {
+      var iso0 = normIso(row.session_date);
+      if (iso0) {
+        try {
+          day = normalizeDowKey(
+            new Date(iso0 + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long" })
+          );
+        } catch (_) {
+          day = "";
+        }
+      }
+    }
+    if (day !== "tuesday") return false;
+    if (!/\broberto\b/i.test(String(row.instructors || ""))) return false;
+    var slot = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      .replace(/:/g, ".");
+    return (
+      /^4\.30\s*to\s*5\.30$/.test(slot) ||
+      /^4\.30\s*to\s*5(\.00)?$/.test(slot) ||
+      /^5(\.00)?\s*to\s*5\.30$/.test(slot)
+    );
+  }
+
+  function scrubAndEnsureSerineActonTueFrom(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (!isSerineActonTueAquaticSeat(r)) {
+        out.push(r);
+        return;
+      }
+      var d = normIso(r.session_date);
+      if (d && d < SERINE_ACTON_TUE_AQUATIC_FROM) {
+        out.push(Object.assign({}, r, { client_name: "No participant" }));
+        return;
+      }
+      out.push(r);
+    });
+    return out;
+  }
+
+  function isMonNortholtDan630Aquatic(row) {
+    if (!row) return false;
+    /* Monday only — Wed Dan 6–6.30 is Mia (do not Leila-swap into Amaar/Adaam). */
+    var day = "";
+    var iso0 = normIso(row.session_date);
+    if (iso0) {
+      try {
+        day = normalizeDowKey(
+          new Date(iso0 + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long" })
+        );
+      } catch (_) {
+        day = "";
+      }
+    }
+    if (!day) day = normalizeDowKey(row.day);
+    if (day !== "monday") return false;
+    if (!/northolt/i.test(String(row.venue || ""))) return false;
+    if (!/aquatic|swim/i.test(String(row.service || ""))) return false;
+    if (!/\bdan\b/i.test(String(row.instructors || ""))) return false;
+    var slot = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      .replace(/:/g, ".");
+    return /^6(\.00)?\s*to\s*6\.30$/.test(slot);
+  }
+
+  function scrubAndEnsureMonNortholtDan630LeilaSwap(rows) {
+    var out = [];
+    var sealed = {};
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var d = normIso(r.session_date);
+      if (!d || !isMonNortholtDan630Aquatic(r)) {
+        out.push(r);
+        return;
+      }
+      if (sealed[d]) return;
+      sealed[d] = true;
+      var name = d < AMAAR_MON_NORTHOLT_DAN_630_FROM ? "Adaam Ah" : "Amaar Ah";
+      out.push(
+        Object.assign({}, r, {
+          client_name: name,
+          day: "Monday",
+          instructors: String(r.instructors || "DAN").replace(/\bdan\b/i, "DAN") || "DAN",
+          service: "Aquatic Activity",
+          area: r.area || "Teaching Pool",
+          time_slot: "6 to 6.30",
+          venue: "Northolt",
+          session_date: d,
+        })
+      );
+    });
+    return out;
+  }
+
+  /** Keep Amaar named on Fri 11; do not also leave a standing open twin that day. */
+  function scrubAndEnsureSep11AmaarLastSession(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) !== "2026-09-11") {
+        out.push(r);
+        return;
+      }
+      var slot = String(r.time_slot || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      var isAmaarBand =
+        /acton/i.test(String(r.venue || "")) &&
+        /aquatic|swim/i.test(String(r.service || "")) &&
+        /youssef\b/i.test(String(r.instructors || "")) &&
+        (slot === "5.30 to 6" ||
+          slot === "5:30 to 6" ||
+          slot.indexOf("5.30 to 6") === 0 ||
+          slot.indexOf("5:30 to 6") === 0);
+      if (isAmaarBand) return;
+      out.push(r);
+    });
+    autumnFridaySep11AmaarLastSessionRows().forEach(function (row) {
+      out.push(row);
+    });
+    return out;
+  }
+
+  /** Mon 7 Sep: Abodi last Acton Aquatic session (parent cancel; seat open from Mon 14). */
+  function autumnMondaySep7AbodiLastSessionRows() {
+    return [
+      {
+        client_name: "Abodi Pa",
+        day: "Monday",
+        instructors: "YOUSSEF",
+        service: "Aquatic Activity",
+        area: "Teaching Pool",
+        time_slot: "5.30 to 6.30",
+        venue: "Acton",
+        session_date: "2026-09-07",
+      },
+    ];
+  }
+
+  /** Drop Raul/Sandra Mon 7 dated seats if any; inject Javi Physical + Abodi last session. */
+  function scrubAndEnsureSep7VictorRaulCover(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) !== "2026-09-07") {
+        out.push(r);
+        return;
+      }
+      var inst = String(r.instructors || "");
+      var isRaulOnly = /\braul\b/i.test(inst) && !/\bvictor\b/i.test(inst);
+      var isSandraOnly = /\bsandra\b/i.test(inst) && !/\bjavi\b/i.test(inst);
+      var isDc = isDayCentreService(r.service);
+      var isTin =
+        isBespokeService(r.service) &&
+        /^tinashe\b/i.test(String(r.client_name || "").trim());
+      var isWestwayPa =
+        isPhysicalActivityService(r.service) &&
+        /westway/i.test(String(r.venue || ""));
+      if (isRaulOnly && (isDc || isTin)) return;
+      if (isSandraOnly && isWestwayPa) return;
+      if (
+        isDc &&
+        /^ikram\b/i.test(String(r.client_name || "").trim()) &&
+        /\byoussef\b/i.test(inst)
+      ) {
+        return;
+      }
+      /* Standing open 5.30–6.30 — replace with Abodi last session for Mon 7 only. */
+      if (
+        isYoussefInstructor(inst) &&
+        isActonVenue(r.venue) &&
+        isAquaticService(r.service)
+      ) {
+        var slotAb = String(r.time_slot || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+        if (
+          slotAb === "5.30 to 6.30" ||
+          slotAb === "5.30 to 6" ||
+          slotAb.indexOf("5.30 to 6") === 0
+        ) {
+          return;
+        }
+      }
+      /* Stale Victor-only Tinashe dated row (pre-fix) — drop so Godsway/John project. */
+      if (
+        isTin &&
+        /\bvictor\b/i.test(inst) &&
+        !/\b(godsway|john)\b/i.test(inst)
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnMondaySep7JaviPhysicalCoverRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    autumnMondaySep7AbodiLastSessionRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    autumnMondaySep7YoussefIkramRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
+  /** Mon 7 Sep: Youssef worked Ikram 12.30-3 (Fadi Cancelled stays above). */
+  function autumnMondaySep7YoussefIkramRows() {
+    return [
+      {
+        client_name: "Ikram",
+        day: "Monday",
+        instructors: "YOUSSEF",
+        service: "Day Centre",
+        area: "Hub Room",
+        time_slot: "12.30 to 3",
+        venue: "SwimFarm",
+        session_date: "2026-09-07",
+      },
+    ];
+  }
+
+  /**
+   * Tue 8 Sep: Aurora OFF — redistribute Acton Aquatic.
+   * Adam Ma → Roberto 4.30–5 · Junaid → Roberto 5.30–6 (+30') ·
+   * Aydaan Ah → Luliya 5.30–6 · Anas was on Javier then moved with his book.
+   * Javier Marquez OFF same day: Ayman 4–4.30 → Roberto; Ayman 4.30–5 + Linda / Rayan Ta → Javi Palankas.
+   * Anas: absent Tue 8 (was cover→Luliya); makeup Thu 10 Aurora only 6–6.30 (Simon leaves at 6).
+   */
+  function autumnTuesdaySep8ActonRedistributeRows() {
+    var iso = "2026-09-08";
+    function mapBook(staff, slots) {
+      return slots.map(function (slot) {
+        return {
+          client_name: slot.name,
+          day: "Tuesday",
+          instructors: staff,
+          service: "Aquatic Activity",
+          area: slot.area || "Lane (DE)",
+          time_slot: slot.time,
+          venue: "Acton",
+          session_date: iso,
+        };
+      });
+    }
+    /* Pool notes: Logan Teaching Pool; Rayan Ta Teaching Pool; Ayman Lane (DE). */
+    var roberto = [
+      { name: "Ayman", time: "4 to 4.30", area: "Lane (DE)" },
+      { name: "Adam Ma", time: "4.30 to 5", area: "Teaching Pool" },
+      { name: "Logan", time: "5 to 5.30", area: "Teaching Pool" },
+      { name: "Junaid", time: "5.30 to 6", area: "Lane (SE)" },
+      { name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
+    ];
+    var luliya = [
+      { name: "No participant", time: "4 to 4.30", area: "Lane (DE)" },
+      { name: "Serine", time: "4.30 to 5.30", area: "Lane (DE)" },
+      { name: "Aydaan Ah", time: "5.30 to 6", area: "Lane (SE)" },
+      { name: "No participant", time: "6 to 6.30", area: "Lane (DE)" },
+    ];
+    var javiPalankas = [
+      { name: "Ayman", time: "4.30 to 5", area: "Lane (DE)" },
+      { name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
+      { name: "Rayan Ta", time: "5.30 to 6", area: "Teaching Pool" },
+    ];
+    return []
+      .concat(mapBook("ROBERTO", roberto))
+      .concat(mapBook("LULIYA", luliya))
+      .concat(mapBook("JAVI", javiPalankas));
+  }
+
+  function scrubAndEnsureSep8ActonRedistribute(rows) {
+    var out = [];
+    var sawSep8Aquatic = false;
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) !== "2026-09-08") {
+        out.push(r);
+        return;
+      }
+      if (
+        isAquaticService(r.service) &&
+        /acton/i.test(String(r.venue || "")) &&
+        /\b(roberto|luliya|lulia|javier|aurora|javi)\b/i.test(String(r.instructors || ""))
+      ) {
+        sawSep8Aquatic = true;
+        return;
+      }
+      out.push(r);
+    });
+    /* Only mint the Tue 8 redistribute onto boards that actually include that ISO.
+       A single-day Team/Overview window (e.g. Tue 22) must keep standing Acton. */
+    if (sawSep8Aquatic) {
+      autumnTuesdaySep8ActonRedistributeRows().forEach(function (row) {
+        out.push(Object.assign({}, row));
+      });
+    }
+    return out;
+  }
+
+  /**
+   * Thu 10 Sep: Joelle 5.30-6 taught; 6-6.30 Cancelled on Aurora AND Simon
+   * (same Cancelled chip - not No participant). Anas makeup 6-6.30 is Javi Palankas
+   * (instructor_reassign), not Aurora. Roberto keeps Maiyar.
+   */
+  function autumnThursdaySep10AnasMakeupRows() {
+    var iso = "2026-09-10";
+    function mapBook(staff, slots) {
+      return slots.map(function (slot) {
+        var area = "Lane (DE)";
+        if (/^joelle\b/i.test(String(slot.name || ""))) area = "Teaching Pool";
+        if (/^no participant\b/i.test(String(slot.name || ""))) area = slot.area || "Teaching Pool";
+        return {
+          client_name: slot.name,
+          day: "Thursday",
+          instructors: staff,
+          service: "Aquatic Activity",
+          area: area,
+          time_slot: slot.time,
+          venue: "Acton",
+          session_date: iso,
+        };
+      });
+    }
+    return []
+      .concat(
+        mapBook("AURORA", [
+          { name: "Joelle", time: "5.30 to 6" },
+          { name: "Joelle", time: "6 to 6.30" },
+        ]),
+      )
+      .concat(
+        mapBook("SIMON", [
+          { name: "Joelle", time: "5.30 to 6" },
+          { name: "Joelle", time: "6 to 6.30" },
+        ]),
+      );
+  }
+
+  function scrubAndEnsureSep10AnasMakeup(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var d = normIso(r.session_date);
+      /*
+       * Thu Acton Joelle / Anas on Aurora+Simon for 10 Sep is owned by the dated inject below.
+       * Drop standing Jul Joelle (and any dated Sep 10 copies) so Aurora+Simon Joelle Cancelled
+       * + Aurora Anas makeup win — Roberto Maiyar is untouched.
+       */
+      if (
+        isAquaticService(r.service) &&
+        /acton/i.test(String(r.venue || "")) &&
+        /\b(aurora|simon)\b/i.test(String(r.instructors || "")) &&
+        /^(joelle|anas)\b/i.test(String(r.client_name || "").trim())
+      ) {
+        /* Dated 10 Sep only. Keep standing Thursday Joelle for 17 Sep onward. */
+        if (d === "2026-09-10") return;
+      }
+      if (d === "2026-09-10") {
+        if (
+          isAquaticService(r.service) &&
+          /acton/i.test(String(r.venue || "")) &&
+          /\bsimon\b/i.test(String(r.instructors || "")) &&
+          /^no participant\b/i.test(String(r.client_name || "").trim())
+        ) {
+          var simonOpen = String(r.time_slot || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          if (simonOpen === "6 to 6.30" || simonOpen.indexOf("6 to 6.30") === 0) return;
+        }
+        /* Stale Roberto open from the mistaken Maiyar clear — standing Maiyar owns the seat. */
+        if (
+          isAquaticService(r.service) &&
+          /acton/i.test(String(r.venue || "")) &&
+          /\broberto\b/i.test(String(r.instructors || "")) &&
+          /^no participant\b/i.test(String(r.client_name || "").trim())
+        ) {
+          var robOpen = String(r.time_slot || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          if (robOpen === "6 to 6.30" || robOpen.indexOf("6 to 6.30") === 0) return;
+        }
+      }
+      out.push(r);
+    });
+    autumnThursdaySep10AnasMakeupRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
   function rowDedupeKey(row) {
     return [
       String(row.session_date || "").trim().slice(0, 10),
@@ -498,17 +1684,650 @@
     return /multi[\s-]*activity/i.test(String(service || ""));
   }
 
+  function isPhysicalActivityService(service) {
+    return /physical|fitness/i.test(String(service || ""));
+  }
+
+  /** Sun 6 Sep 2026: Emanuel off — John covers his Hub Multi book (dated so Today matches). */
+  var SEP6_2026_JOHN_EMANUEL_HUB_MULTI = [
+    { client_name: "Jack S", time_slot: "9.30 to 10.15" },
+    { client_name: "Zaid", time_slot: "10.15 to 11" },
+    { client_name: "Eiji", time_slot: "11 to 11.45" },
+    { client_name: "Hazem", time_slot: "11.45 to 12.30" },
+    { client_name: "Haneef", time_slot: "12.30 to 1.15" },
+    { client_name: "Rayyan F", time_slot: "1.15 to 2" },
+  ];
+
+  /** Sun 6 Sep 2026: Berta Lead keeps the Hub Multi book that was on John. */
+  var SEP6_2026_BERTA_HUB_MULTI = [
+    { client_name: "Jack W", time_slot: "9.30 to 10.15" },
+    { client_name: "Adam Ab", time_slot: "10.15 to 11" },
+    { client_name: "Cyrus", time_slot: "11 to 11.45" },
+    { client_name: "Arthur Ma", time_slot: "11.45 to 12.30" },
+    { client_name: "Erik", time_slot: "12.30 to 1.15" },
+    { client_name: "Aydaan Ah", time_slot: "1.15 to 2" },
+  ];
+
+  function autumnSundaySep6HubCoverRows() {
+    var john = SEP6_2026_JOHN_EMANUEL_HUB_MULTI.map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "JOHN",
+        service: "Multi-Activity",
+        area: "Hub Room",
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+    var berta = SEP6_2026_BERTA_HUB_MULTI.map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "BERTA",
+        service: "Multi-Activity",
+        area: "Hub Room",
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+    var godsway = AUTUMN_SUNDAY_HUB_GODSWAY.map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "GODSWAY",
+        service: "Multi-Activity",
+        area: "Hub Room",
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+    return john.concat(berta).concat(godsway);
+  }
+
+  /** Sun 6 Sep: Javier pool book (LOCAL DATE_EXTRA) — Aquatic Zaid trial + Multi, dated so projection cannot drop the trial. */
+  function autumnSundaySep6JavierPoolRows() {
+    var seats = [
+      {
+        client_name: "Zaid (Trial)",
+        service: "Aquatic Activity",
+        area: "Small Pool",
+        time_slot: "9 to 9.30",
+      },
+      {
+        client_name: "Zaid",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "9.30 to 10.15",
+      },
+      {
+        client_name: "Jack S",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "10.15 to 11",
+      },
+      {
+        client_name: "Hazem",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "11 to 11.45",
+      },
+      {
+        client_name: "Eiji",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "11.45 to 12.30",
+      },
+      {
+        client_name: "Rayyan F",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "12.30 to 1.15",
+      },
+      {
+        client_name: "Haneef",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "1.15 to 2",
+      },
+      {
+        client_name: "Max",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2 to 2.30",
+      },
+      {
+        client_name: "Shaan",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2.30 to 3",
+      },
+    ];
+    return seats.map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "JAVIER",
+        service: slot.service,
+        area: slot.area,
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+  }
+
   /**
-   * Autumn Sunday Hub rota: Godsway + Emanuel replace departed Bismark / Giuseppe
-   * on Multi-Activity (same clients / 45′ halves).
+   * Sun 6: drop any dated Javier SwimFarm pool/aquatic rows then re-inject LOCAL book
+   * (Zaid trial 9–9.30 + Multi 9.30–10.15 …). Standing Autumn Sunday (13 Sep) is
+   * separate — never project summer weeks onto workers.
    */
-  function remapAutumnMultiInstructors(instructorsRaw) {
+  function scrubAndEnsureSep6JavierPool(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (
+        normIso(r.session_date) === "2026-09-06" &&
+        /\bjavier\b/i.test(String(r.instructors || "")) &&
+        /swimfarm/i.test(String(r.venue || "SwimFarm")) &&
+        !/hub/i.test(String(r.area || "")) &&
+        (isMultiActivityService(r.service) || isAquaticService(r.service))
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnSundaySep6JavierPoolRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
+  /**
+   * LOCAL EXTRA Sunday standing pool (SwimFarm) — Autumn truth, stamped 13 Sep.
+   * Sun 6 DATE_EXTRA overlay is applied separately (Yusuf↔Simon swap).
+   */
+  function autumnSundayStandingPoolRows() {
+    var iso = WEEKEND_STANDING_ISO.sunday;
+    function mapBook(staff, seats) {
+      return seats.map(function (slot) {
+        return {
+          client_name: slot.client_name,
+          day: "Sunday",
+          instructors: staff,
+          service: slot.service,
+          area: slot.area,
+          time_slot: slot.time_slot,
+          venue: "SwimFarm",
+          session_date: iso,
+        };
+      });
+    }
+    var roberto = [
+      { client_name: "Yusuf Ah", service: "Aquatic Activity", area: "Big Pool", time_slot: "9 to 9.30" },
+      { client_name: "Yusuf Ah", service: "Multi-Activity", area: "Big Pool", time_slot: "9.30 to 10.15" },
+      { client_name: "Samer", service: "Multi-Activity", area: "Big Pool", time_slot: "10.15 to 11" },
+      { client_name: "Gabriel", service: "Multi-Activity", area: "Big Pool", time_slot: "11 to 11.45" },
+      { client_name: "Arthur Mo", service: "Multi-Activity", area: "Big Pool", time_slot: "11.45 to 12.30" },
+      { client_name: "Amaar Ah", service: "Multi-Activity", area: "Big Pool", time_slot: "12.30 to 1.15" },
+      { client_name: "Adaam Ah", service: "Multi-Activity", area: "Big Pool", time_slot: "1.15 to 2" },
+      { client_name: "Rodin", service: "Aquatic Activity", area: "Big Pool", time_slot: "2 to 2.30" },
+      { client_name: "Yoan", service: "Aquatic Activity", area: "Big Pool", time_slot: "2.30 to 3" },
+    ];
+    var aurora = [
+      { client_name: "Simon", service: "Aquatic Activity", area: "Small Pool", time_slot: "9 to 9.30" },
+      { client_name: "Adam Ab", service: "Multi-Activity", area: "Small Pool", time_slot: "9.30 to 10.15" },
+      { client_name: "Jack W", service: "Multi-Activity", area: "Big Pool", time_slot: "10.15 to 11" },
+      { client_name: "Arthur Ma", service: "Multi-Activity", area: "Small Pool", time_slot: "11 to 11.45" },
+      { client_name: "Cyrus", service: "Multi-Activity", area: "Small Pool", time_slot: "11.45 to 12.30" },
+      { client_name: "Aydaan Ah", service: "Multi-Activity", area: "Big Pool", time_slot: "12.30 to 1.15" },
+      { client_name: "Erik", service: "Multi-Activity", area: "Big Pool", time_slot: "1.15 to 2" },
+      { client_name: "Zakariya", service: "Aquatic Activity", area: "Big Pool", time_slot: "2 to 2.30" },
+      { client_name: "Faris", service: "Aquatic Activity", area: "Big Pool", time_slot: "2.30 to 3" },
+    ];
+    var javier = [
+      /* Aquatic trial Sun 6 only stays open. From Sun 13: Jack S pool-first; Zaid Multi swimming 10.15. */
+      { client_name: "No participant", service: "Aquatic Activity", area: "Small Pool", time_slot: "9 to 9.30" },
+      { client_name: "Jack S", service: "Multi-Activity", area: "Big Pool", time_slot: "9.30 to 10.15" },
+      { client_name: "Zaid", service: "Multi-Activity", area: "Small Pool", time_slot: "10.15 to 11" },
+      { client_name: "Hazem", service: "Multi-Activity", area: "Big Pool", time_slot: "11 to 11.45" },
+      { client_name: "Eiji", service: "Multi-Activity", area: "Big Pool", time_slot: "11.45 to 12.30" },
+      { client_name: "Rayyan F", service: "Multi-Activity", area: "Small Pool", time_slot: "12.30 to 1.15" },
+      { client_name: "Haneef", service: "Multi-Activity", area: "Small Pool", time_slot: "1.15 to 2" },
+      { client_name: "Max", service: "Aquatic Activity", area: "Big Pool", time_slot: "2 to 2.30" },
+      { client_name: "Shaan", service: "Aquatic Activity", area: "Big Pool", time_slot: "2.30 to 3" },
+    ];
+    return mapBook("ROBERTO", roberto)
+      .concat(mapBook("AURORA", aurora))
+      .concat(mapBook("JAVIER", javier));
+  }
+
+  function isSundaySwimfarmPoolStaffRow(r) {
+    if (!r) return false;
+    if (!/\b(aurora|roberto|javier)\b/i.test(String(r.instructors || ""))) return false;
+    if (!/swimfarm/i.test(String(r.venue || "SwimFarm"))) return false;
+    if (/hub/i.test(String(r.area || ""))) return false;
+    if (!(isMultiActivityService(r.service) || isAquaticService(r.service))) return false;
+    var day = normalizeDowKey(r.day);
+    if (day === "sunday") return true;
+    var d = normIso(r.session_date);
+    if (!d) return false;
+    try {
+      var dt = new Date(d + "T12:00:00");
+      return !isNaN(dt.getTime()) && dt.getDay() === 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /** Drop summer/legacy Sunday pool books; inject LOCAL EXTRA standing (13 Sep stamp). */
+  function scrubAndEnsureAutumnSundayPoolStanding(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isSundaySwimfarmPoolStaffRow(r)) return;
+      out.push(r);
+    });
+    autumnSundayStandingPoolRows().forEach(function (row) {
+      expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
+        out.push(exp);
+      });
+    });
+    return out;
+  }
+
+  /**
+   * Sun 6 one-off: Aurora Yusuf Aquatic 9–9.30 (Small); Roberto Simon Aquatic 9–9.30 (Big)
+   * + Yusuf Multi 9.30–10.15 with Roberto. Full LOCAL DATE_EXTRA books for both staff.
+   * Different instructors → two Yusuf feedbacks (no AA↔MA merge that day).
+   */
+  function autumnSundaySep6AuroraRobertoPoolRows() {
+    var roberto = [
+      {
+        client_name: "Simon",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "9 to 9.30",
+      },
+      {
+        client_name: "Yusuf Ah",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "9.30 to 10.15",
+      },
+      {
+        client_name: "Samer",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "10.15 to 11",
+      },
+      {
+        client_name: "Gabriel",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "11 to 11.45",
+      },
+      {
+        client_name: "Arthur Mo",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "11.45 to 12.30",
+      },
+      {
+        client_name: "Amaar Ah",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "12.30 to 1.15",
+      },
+      {
+        client_name: "Adaam Ah",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "1.15 to 2",
+      },
+      {
+        client_name: "Rodin",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2 to 2.30",
+      },
+      {
+        client_name: "Yoan",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2.30 to 3",
+      },
+    ].map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "ROBERTO",
+        service: slot.service,
+        area: slot.area,
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+    var aurora = [
+      {
+        client_name: "Yusuf Ah",
+        service: "Aquatic Activity",
+        area: "Small Pool",
+        time_slot: "9 to 9.30",
+      },
+      {
+        client_name: "Adam Ab",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "9.30 to 10.15",
+      },
+      {
+        client_name: "Jack W",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "10.15 to 11",
+      },
+      {
+        client_name: "Arthur Ma",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "11 to 11.45",
+      },
+      {
+        client_name: "Cyrus",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "11.45 to 12.30",
+      },
+      {
+        client_name: "Aydaan Ah",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "12.30 to 1.15",
+      },
+      {
+        client_name: "Erik",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "1.15 to 2",
+      },
+      {
+        client_name: "Zakariya",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2 to 2.30",
+      },
+      {
+        client_name: "Faris",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2.30 to 3",
+      },
+    ].map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "AURORA",
+        service: slot.service,
+        area: slot.area,
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+    return roberto.concat(aurora);
+  }
+
+  function scrubAndEnsureSep6AuroraRobertoPool(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (
+        normIso(r.session_date) === "2026-09-06" &&
+        /\b(aurora|roberto)\b/i.test(String(r.instructors || "")) &&
+        /swimfarm/i.test(String(r.venue || "SwimFarm")) &&
+        !/hub/i.test(String(r.area || "")) &&
+        (isMultiActivityService(r.service) || isAquaticService(r.service))
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnSundaySep6AuroraRobertoPoolRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
+  /**
+   * Autumn Sunday Hub Multi standing remaps (snap-date agnostic).
+   * Standing books (already named): Emmanuel = Godsway summer; Godsway = Bismark summer;
+   * Berta Lead = John summer (John only worked Sun 6 via dated cover).
+   * Summer/DB leftovers still use old names:
+   * - BISMARK → GODSWAY; GIUSEPPE → EMMANUEL; JOHN → BERTA
+   * Do NOT map GODSWAY→EMMANUEL here — standing Godsway rows would steal Emmanuel's book.
+   * Sun 6 Sep: dated autumnSundaySep6HubCoverRows give John the Emmanuel Hub book.
+   */
+  function remapAutumnMultiInstructorsStanding(instructorsRaw) {
     var s = String(instructorsRaw || "").trim();
     if (!s) return s;
     return s
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
-      .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
+      .replace(/\bGIUSEPPE\b/gi, "EMMANUEL")
+      /* Standing: Berta Lead keeps the Hub book that summer stored under John.
+       * Sun 6 dated cover re-injects JOHN for the Emmanuel book after this remap. */
+      .replace(/\bJOHN\b/gi, "BERTA");
+  }
+
+  /**
+   * Resolve instructors for a *calendar* day (Today / team strip).
+   * Standing Multi remaps are usually already on the row; this adds date-specific covers.
+   */
+  function resolveAutumnInstructorsForCalendarDate(instructorsRaw, calendarIso, meta) {
+    meta = meta || {};
+    var s = String(instructorsRaw || "").trim();
+    if (!s) return s;
+    var iso = String(calendarIso || "").trim().slice(0, 10);
+    var service = meta.service || "";
+    var day = normalizeDowKey(meta.day) || "";
+    if (!day && iso) {
+      try {
+        var dt = new Date(iso + "T12:00:00");
+        if (!isNaN(dt.getTime())) {
+          day = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
+            dt.getDay()
+          ];
+        }
+      } catch (_) {}
+    }
+    if (isMultiActivityService(service)) {
+      if (iso === "2026-09-06") {
+        /*
+         * Sun 6 LOCAL: John covers Emmanuel Hub book; Berta Lead keeps Jack W book.
+         * Do NOT run JOHN→BERTA first — that turned John's dated cover into Berta and
+         * stacked both Hub books on Berta in Schedule & Covers / Today.
+         */
+        s = s
+          .replace(/\bBISMARK\b/gi, "GODSWAY")
+          .replace(/\bBISMARCK\b/gi, "GODSWAY")
+          .replace(/\bGIUSEPPE\b/gi, "EMMANUEL")
+          .replace(/\bEMMANUEL\b/gi, "JOHN")
+          .replace(/\bEMANUEL\b/gi, "JOHN");
+        /* Leave JOHN and BERTA as-is. */
+      } else {
+        s = remapAutumnMultiInstructorsStanding(s);
+      }
+    }
+    if (isBespokeService(service)) {
+      var clientTin = String((meta && meta.clientName) || (meta && meta.client_name) || "")
+        .trim()
+        .toLowerCase();
+      var isTinashe = /^tinashe\b/.test(clientTin) || clientTin === "tinashe";
+      /* Mon Tinashe: Godsway + John + Bismark (Timetable). Never Emmanuel alone. */
+      if (iso && day === "monday") {
+        if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|bismark|raul|victor)\b/i.test(s)) {
+          s = "";
+        } else {
+          s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
+        }
+        /* Standing third seat is Bismark — drop stale Raul if still present. */
+        if (iso >= "2026-09-14") {
+          s = s.replace(/\bRAUL\b/gi, "");
+        }
+      }
+      /* Wed: Emmanuel only on dated John-off covers (9 + 16 Sep shadow). Standing = John. */
+      if (iso && day === "wednesday") {
+        var emmanuelWedCover = iso === "2026-09-09" || iso === "2026-09-16";
+        if (!emmanuelWedCover) {
+          if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark)\b/i.test(s)) {
+            s = "";
+          } else {
+            s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
+          }
+        }
+      }
+      /* Fri: Emmanuel on Tinashe from Fri 11 Sep. */
+      if (iso && iso < "2026-09-11" && day === "friday") {
+        if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(roberto|bismark)\b/i.test(s)) {
+          s = "";
+        } else {
+          s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
+        }
+      }
+      /* Bismark: Mon from 14 Sep; Wed/Fri from 9 Sep. */
+      if (isTinashe && iso) {
+        if (day === "monday" && iso < "2026-09-14") {
+          if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|victor)\b/i.test(s)) {
+            s = "";
+          } else {
+            s = s.replace(/\bBISMARK\b/gi, "").replace(/\bBISMARCK\b/gi, "");
+          }
+        }
+        if ((day === "wednesday" || day === "friday") && iso < "2026-09-09") {
+          if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|roberto|emmanuel|emanuel)\b/i.test(s)) {
+            s = "";
+          } else {
+            s = s.replace(/\bBISMARK\b/gi, "").replace(/\bBISMARCK\b/gi, "");
+          }
+        }
+        /* Wed standing = Godsway + Bismark + John (drop Raul + Emmanuel).
+           Dated John-off Weds (9 + 16): remap John seat → Emmanuel. */
+        if (day === "wednesday" && iso >= "2026-09-09") {
+          var emmanuelWedCoverTin = iso === "2026-09-09" || iso === "2026-09-16";
+          if (/\braul\b/i.test(s) && !/\b(godsway|bismark|john|emmanuel|emanuel)\b/i.test(s)) {
+            s = "";
+          } else {
+            s = s.replace(/\bRAUL\b/gi, "");
+          }
+          if (emmanuelWedCoverTin) {
+            s = s.replace(/\bJOHN\b/gi, "EMMANUEL");
+          } else if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|bismark|john)\b/i.test(s)) {
+            s = "";
+          } else {
+            s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
+          }
+        }
+      }
+      /* Mon 7 Sep only: third seat cover = Victor (Timetable), not Raul/Bismark. */
+      if (iso === "2026-09-07" && day === "monday") {
+        s = s.replace(/\bRAUL\b/gi, "VICTOR").replace(/\bBISMARK\b/gi, "VICTOR");
+      }
+      s = String(s || "")
+        .replace(/^[,\s/|]+|[,\s/|]+$/g, "")
+        .replace(/\s*,\s*,+/g, ",")
+        .trim();
+    }
+    /* Mon 7 Sep: Raul OFF → Victor covers Day Centre (Timi + Emanuel). */
+    if (
+      iso === "2026-09-07" &&
+      day === "monday" &&
+      isDayCentreService(service)
+    ) {
+      s = s.replace(/\bRAUL\b/gi, "VICTOR");
+    }
+    /* Mon 7 Sep: Sandra day off → Javi Palankas covers Westway Physical (Ayaan / Serine). */
+    if (
+      iso === "2026-09-07" &&
+      day === "monday" &&
+      isPhysicalActivityService(service)
+    ) {
+      var venuePa = String((meta && meta.venue) || "").trim().toLowerCase();
+      if (!venuePa || venuePa.indexOf("westway") >= 0) {
+        s = s.replace(/\bSANDRA\b/gi, "JAVI");
+      }
+    }
+    /* Wed 9 Sep: Fadi absent — Victor has no DC after reshuffle (not a day-off request).
+     * Roberto covers full Emanuel; Raul takes Victor Ikram 3-4.
+     * Only rewrite Victor/Raul (or empty) seat lists — never invent DC ownership for John
+     * (Hub Bespoke only). Away-column probes pass staffRaw="John" here. */
+    if (iso === "2026-09-09" && day === "wednesday" && isDayCentreService(service)) {
+      var clientWed9 = String((meta && meta.clientName) || (meta && meta.client_name) || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+      if (!clientWed9 && meta && meta.client_id) clientWed9 = String(meta.client_id).toLowerCase();
+      if (/^emanuel\b/.test(clientWed9) || clientWed9 === "emanuel") {
+        if (/\bjohn\b/i.test(s) && !/\b(victor|raul|roberto)\b/i.test(s)) {
+          /* keep John — not his DC seat */
+        } else {
+          s = "ROBERTO";
+        }
+      } else if (/^ikram\b/.test(clientWed9) || clientWed9 === "ikram") {
+        /* Michelle 11-4 + Luliya 11-3 stay; Raul takes 3-4 (Victor's block). */
+        if (/\bvictor\b/i.test(s)) s = s.replace(/\bVICTOR\b/gi, "RAUL");
+      } else if (/^fadi\b/.test(clientWed9) || clientWed9 === "fadi") {
+        s = ""; /* off rota until 20 Sep — no Cancelled override seat */
+      } else if (/\bvictor\b/i.test(s) && !/\b(roberto|raul|michelle|luliya)\b/i.test(s)) {
+        s = "";
+      }
+    }
+    /* Tue 15 Sep only: Aurora day off → Javi Palankas covers her Acton Aquatic book. */
+    if (iso === "2026-09-15" && day === "tuesday" && isAquaticService(service)) {
+      if (!meta.venue || isActonVenue(meta.venue)) {
+        s = s.replace(/\bAURORA\b/gi, "JAVI");
+      }
+    }
+    /* Sun 13 Sep + 4 Oct only: Aurora day off → Luliya covers SwimFarm pool book. */
+    if (
+      (iso === "2026-09-13" || iso === "2026-10-04") &&
+      day === "sunday" &&
+      (isMultiActivityService(service) || isAquaticService(service))
+    ) {
+      var venueSun = String((meta && meta.venue) || "").trim().toLowerCase();
+      if (!venueSun || venueSun.indexOf("swimfarm") >= 0) {
+        var areaSun = String((meta && meta.area) || "").trim().toLowerCase();
+        if (areaSun.indexOf("hub") < 0) {
+          s = s.replace(/\bAURORA\b/gi, "LULIYA");
+        }
+      }
+    }
+    /* Berta day off Sun 13 / 20 Sep / 4 Oct — standing anchor stays Berta.
+     * Sun 13: Raul named cover + 11.45 Gabriel↔Arthur Ma with Godsway (schedule_overrides).
+     * Sun 20: Bismark Hub Lead cover (not Victor). Sun 4 Oct: Javi Hub Lead cover.
+     * Climbing: Carlos off those Sundays → Angel Westway cover (not Andres). */
+    if (
+      (iso === "2026-09-13" || iso === "2026-09-20" || iso === "2026-10-04") &&
+      day === "sunday" &&
+      isMultiActivityService(service)
+    ) {
+      var areaBerta = String((meta && meta.area) || "").trim().toLowerCase();
+      if (areaBerta.indexOf("hub") >= 0 || /\bberta\b/i.test(s)) {
+        s = s;
+      }
+    }
+    return s;
+  }
+
+  /** @deprecated use resolveAutumnInstructorsForCalendarDate for calendar days */
+  function remapAutumnMultiInstructors(instructorsRaw, sessionDateIso) {
+    return resolveAutumnInstructorsForCalendarDate(instructorsRaw, sessionDateIso, {
+      service: "Multi-Activity",
+    });
   }
 
   /** Autumn Acton pool remaps for departed / cover staff. */
@@ -530,23 +2349,40 @@
       return { instructors: "ROBERTO" };
     }
 
+    /* Friday: Acton aquatic (Adam Pi / Amaar) → Youssef (not Roberto). */
+    if (day === "friday" && isActonVenue(row.venue) && /\broberto\b/i.test(raw)) {
+      if (/\byoussef\b/i.test(raw)) return null;
+      return { instructors: "YOUSSEF" };
+    }
+
     if (day === "tuesday") {
-      /* Angel's remaining Tue Acton (Cayra) → Luliya; Rayan Ta / Richard stay Javier. */
-      if (/\bangel\b/i.test(raw)) {
-        if (/\bluliya\b|\blulia\b|\baida\b/i.test(raw)) return null;
-        return { instructors: "LULIYA" };
+      /* Standing Tue Acton: Roberto / Aurora / Javier / Luliya (no Youssef).
+         Serine stays with Roberto (capacity chain) — do not remap to Luliya. */
+      if (/^logan\b/.test(client) || client === "richard") {
+        if (/\broberto\b/i.test(raw)) return null;
+        return { instructors: "ROBERTO" };
       }
-      if (/^rayan\s*ta\b/.test(client) || client === "richard") {
+      if (/^rayan\s*ta\b/.test(client)) {
         if (/\bjavier\b/i.test(raw)) return null;
         return { instructors: "JAVIER" };
+      }
+      if (/\bangel\b/i.test(raw) && /^cayra\b/.test(client)) {
+        if (/\bluliya\b|\blulia\b|\baida\b/i.test(raw)) return null;
+        return { instructors: "LULIYA" };
       }
       return null;
     }
 
-    /* Thursday: Luliya takes Simon's Acton book (Yuri / Eiji). */
-    if (day === "thursday" && /\bsimon\b/i.test(raw)) {
-      if (/\bluliya\b|\blulia\b|\baida\b/i.test(raw)) return null;
-      return { instructors: "LULIYA" };
+    /* Thursday Acton: Simon keeps Elijah / Yuri (not Luliya). Elijah off Aurora → Simon. */
+    if (day === "thursday") {
+      if (/^elijah\b/.test(client)) {
+        if (/\bsimon\b/i.test(raw)) return null;
+        return { instructors: "SIMON" };
+      }
+      if (/^yuri\b/.test(client)) {
+        if (/\bsimon\b/i.test(raw)) return null;
+        return { instructors: "SIMON" };
+      }
     }
 
     return null;
@@ -584,27 +2420,173 @@
     );
   }
 
+  /**
+   * Erik Ndregjoni Multi Sun 12.30–2 (INV-P-0461 paid/partial).
+   * Restore name if a summer snap left the seat as No participant / HOLD WAITLIST.
+   */
+  function restoreErikSundayMultiSeat(row) {
+    if (!row || !isMultiActivityService(row.service)) return null;
+    if (normalizeDowKey(row.day) !== "sunday") return null;
+    if (!/swimfarm/i.test(String(row.venue || ""))) return null;
+    var cn = String(row.client_name || "").trim();
+    if (!/^(no participant|no client|hold waitlist|closed)$/i.test(cn)) return null;
+    var slot = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      .replace(/:/g, ".");
+    var area = String(row.area || "").toLowerCase();
+    var inst = String(row.instructors || "");
+    var hubHalf =
+      (slot === "12.30 to 1.15" || slot.indexOf("12.30 to 1.15") === 0) &&
+      (/hub/i.test(area) || /\bberta\b|\bjohn\b/i.test(inst));
+    var poolHalf =
+      (slot === "1.15 to 2" || slot.indexOf("1.15 to 2") === 0) &&
+      (/big\s*pool/i.test(area) || /\baurora\b|\bdan\b|\byoussef\b/i.test(inst));
+    if (!hubHalf && !poolHalf) return null;
+    return { client_name: "Erik" };
+  }
+
+  /**
+   * Former Jack S <-> Samer Sunday Multi swap (Jack pool-first) retired 5 Sep 2026.
+   * Standing now: Jack S Hub 9.30 then Big Pool 10.15; Samer Hub 9.30 then Big Pool 10.15
+   * (different instructor books). Keep no-op so older call sites stay safe.
+   */
+  function enforceJackSSamerSundayMultiSwap(row) {
+    return null;
+  }
+
+  function normSundayMultiTimeSlot(raw) {
+    return String(raw || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      .replace(/:/g, ".");
+  }
+
+  /**
+   * Autumn Sunday Javier pool book (standing from Sun 13):
+   * - Jack S: Big Pool 9.30–10.15 (swimming first, then Hub)
+   * - Zaid: Small Pool 10.15–11 (Hub 9.30 first, then swimming)
+   * Sun 6 DATE_EXTRA keeps the trial swap for that day only.
+   */
+  function enforceAutumnSundayJavierPoolBook(row) {
+    if (!row || !isMultiActivityService(row.service)) return null;
+    if (normalizeDowKey(row.day) !== "sunday") return null;
+    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return null;
+    if (!/\bjavier\b/i.test(String(row.instructors || ""))) return null;
+    /* Dated Sep 6 Javier pool is owned by scrubAndEnsureSep6JavierPool. */
+    if (normIso(row.session_date) === "2026-09-06") return null;
+    var cn = String(row.client_name || "").trim();
+    var slot = normSundayMultiTimeSlot(row.time_slot);
+    var area = String(row.area || "").toLowerCase();
+    if (/^zaid\b/i.test(cn) && /small\s*pool/i.test(area)) {
+      if (slot === "9.30 to 10.15" || slot.indexOf("9.30 to 10.15") === 0) {
+        return { time_slot: "10.15 to 11" };
+      }
+    }
+    if (/^jack\s*s\b/i.test(cn) && /big\s*pool/i.test(area)) {
+      if (slot === "10.15 to 11" || slot.indexOf("10.15 to 11") === 0) {
+        return { time_slot: "9.30 to 10.15" };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Autumn Sunday Hub Multi (standing from Sun 13):
+   * Zaid Hub 9.30 then pool 10.15; Jack S pool 9.30 then Hub 10.15.
+   * Sun 6 dated cover keeps trial Hub order that day.
+   */
+  function enforceAutumnSundayJackSZaidHubBook(row) {
+    if (!row || !isMultiActivityService(row.service)) return null;
+    if (normalizeDowKey(row.day) !== "sunday") return null;
+    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return null;
+    if (!/hub/i.test(String(row.area || ""))) return null;
+    /* Dated Sep 6 Hub cover owns that day — do not rewrite those rows. */
+    if (normIso(row.session_date) === "2026-09-06") return null;
+    var cn = String(row.client_name || "").trim();
+    var slot = normSundayMultiTimeSlot(row.time_slot);
+    if (/^jack\s*s\b/i.test(cn)) {
+      if (slot === "9.30 to 10.15" || slot.indexOf("9.30 to 10.15") === 0) {
+        return { time_slot: "10.15 to 11" };
+      }
+    }
+    if (/^zaid\b/i.test(cn)) {
+      if (slot === "10.15 to 11" || slot.indexOf("10.15 to 11") === 0) {
+        return { time_slot: "9.30 to 10.15" };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Autumn Sunday Roberto Big Pool: Yusuf is Aquatic 9–9.30 + Multi 9.30–10.15
+   * (same pattern as Zaid/Javier). Feedback merge still paints both as one unit.
+   * Collapse any summer "9 to 10.15" Multi back to Multi 9.30–10.15.
+   */
+  function enforceAutumnSundayRobertoYusufPoolBook(row) {
+    if (!row || !isMultiActivityService(row.service)) return null;
+    if (normalizeDowKey(row.day) !== "sunday") return null;
+    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return null;
+    if (!/\broberto\b/i.test(String(row.instructors || ""))) return null;
+    var cn = String(row.client_name || "").trim();
+    if (!/^yusuf\b/i.test(cn)) return null;
+    var area = String(row.area || "").toLowerCase();
+    if (area && area.indexOf("big") < 0) return null;
+    var slot = normSundayMultiTimeSlot(row.time_slot);
+    if (slot === "9 to 10.15" || slot.indexOf("9 to 10.15") === 0) {
+      return { time_slot: "9.30 to 10.15" };
+    }
+    return null;
+  }
+
+  /** Standing-template Aquatic 9–9.30 Yusuf+Roberto (pairs with Multi 9.30–10.15). */
+  function autumnSundayYusufRobertoAquaticStandingRows() {
+    return [
+      {
+        client_name: "Yusuf Ah",
+        day: "Sunday",
+        instructors: "ROBERTO",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "9 to 9.30",
+        venue: "SwimFarm",
+        session_date: WEEKEND_STANDING_ISO.sunday,
+      },
+    ];
+  }
+
+  /**
+   * Dated cover Sundays only (13 Sep / 4 Oct): Aurora pool → Luliya.
+   * Standing template rows stay AURORA; calendar remap applies on those dates.
+   */
+  function remapAutumnSundayAuroraPoolToLuliya(row) {
+    if (!row) return null;
+    var iso = normIso(row.session_date);
+    if (iso !== "2026-09-13" && iso !== "2026-10-04") return null;
+    if (normalizeDowKey(row.day) !== "sunday") return null;
+    if (!isMultiActivityService(row.service) && !isAquaticService(row.service)) return null;
+    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return null;
+    if (/hub/i.test(String(row.area || ""))) return null;
+    var raw = String(row.instructors || "").trim();
+    if (!/\baurora\b/i.test(raw)) return null;
+    var mapped = raw.replace(/\bAURORA\b/gi, "LULIYA");
+    if (mapped === raw) return null;
+    return { instructors: mapped };
+  }
+
+  /**
+   * Zaid Aquatic trial was Sun 6 Sep only (dated DATE_EXTRA / override).
+   * Standing Sundays keep Javier 9–9.30 Aquatic open — do not re-inject trial.
+   */
+  function autumnSundayZaidJavierAquaticStandingRows() {
+    return [];
+  }
+
   var YOUSSEF_ACTON_OPEN_430_ROWS = [
-    {
-      client_name: "No participant",
-      day: "Monday",
-      instructors: "YOUSSEF",
-      service: "Aquatic Activity",
-      area: "Teaching Pool",
-      time_slot: "4 to 4.30",
-      venue: "Acton",
-      session_date: "2026-07-13",
-    },
-    {
-      client_name: "No participant",
-      day: "Tuesday",
-      instructors: "YOUSSEF",
-      service: "Aquatic Activity",
-      area: "Teaching Pool",
-      time_slot: "4 to 4.30",
-      venue: "Acton",
-      session_date: "2026-07-14",
-    },
+    /* Monday Acton Youssef board owns 4–4.30 (Closed→open) — see AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD. */
+    /* Tuesday Acton: Youssef is not on the Autumn pool. Opens sit on Roberto. */
     {
       client_name: "No participant",
       day: "Wednesday",
@@ -651,29 +2633,562 @@
     },
   ];
 
-  /** Simon's Thursday Acton book → Luliya (inject if live MADRE dropped Simon without successor). */
-  var LULIYA_THURSDAY_ACTON_FROM_SIMON = [
+  /** Friday Acton aquatic → Youssef (was Roberto). */
+  var YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO = [
     {
-      client_name: "Yuri",
-      day: "Thursday",
-      instructors: "LULIYA",
+      client_name: "Adam Pi",
+      day: "Friday",
+      instructors: "YOUSSEF",
       service: "Aquatic Activity",
-      area: "Lane (SE)",
-      time_slot: "5 to 5.30",
+      area: "Teaching Pool",
+      time_slot: "4 to 5.30",
       venue: "Acton",
-      session_date: "2026-07-16",
+      session_date: "2026-07-17",
     },
     {
-      client_name: "Eiji",
-      day: "Thursday",
-      instructors: "LULIYA",
+      client_name: "No participant",
+      day: "Friday",
+      instructors: "YOUSSEF",
       service: "Aquatic Activity",
-      area: "Lane (DE)",
-      time_slot: "5.30 to 6.30",
+      area: "Teaching Pool",
+      time_slot: "5.30 to 6",
       venue: "Acton",
-      session_date: "2026-07-16",
+      session_date: "2026-07-17",
     },
   ];
+
+  /**
+   * Standing Thu Acton AS: Roberto / Simon / Javier / Aurora (no Luliya).
+   * Elijah + Yuri with Simon; Aurora CLOSED 4–4.30 (starts 4.30). Eiji aquatic withdrawn.
+   * Simon 4–6.30 (Joelle 2:1 last hour). Gap 4.30–5 is open (No participant), not Closed.
+   * Yunis + Maiyar with Roberto; Joelle 5.30–6.30 Aurora + Simon 2:1 (both halves).
+   */
+  var AUTUMN_ACTON_THURSDAY_BOARD = [
+    { staff: "ROBERTO", name: "Tom", time: "4 to 4.30", area: "Lane (SE)" },
+    /* Yassir last session Thu 10 Sep — standing open from Thu 17 (dated row keeps today). */
+    { staff: "ROBERTO", name: "No participant", time: "4.30 to 5", area: "Lane (SE)" },
+    { staff: "ROBERTO", name: "Yossi", time: "5 to 5.30", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Yunis", time: "5.30 to 6", area: "Lane (SE)" },
+    { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30", area: "Teaching Pool" },
+    { staff: "SIMON", name: "Elijah", time: "4 to 4.30", area: "Lane (SE)" },
+    { staff: "SIMON", name: "No participant", time: "4.30 to 5", area: "Lane (SE)" },
+    { staff: "SIMON", name: "Yuri", time: "5 to 5.30", area: "Lane (SE)" },
+    { staff: "SIMON", name: "Joelle", time: "5.30 to 6", area: "Teaching Pool" },
+    { staff: "SIMON", name: "Joelle", time: "6 to 6.30", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
+    { staff: "JAVIER", name: "Khalid Ab", time: "5 to 5.30", area: "Lane (SE)" },
+    /* Mohamed Yusuf / Anab — seated CLIENT (INV-P-0478); Thu Acton 5.30–6.30 Javier. */
+    { staff: "JAVIER", name: "Mohamed", time: "5.30 to 6.30", area: "Lane (SE)" },
+    { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
+    { staff: "AURORA", name: "Aqsa", time: "4.30 to 5.30", area: "Lane (DE)" },
+    { staff: "AURORA", name: "Joelle", time: "5.30 to 6", area: "Teaching Pool" },
+    { staff: "AURORA", name: "Joelle", time: "6 to 6.30", area: "Teaching Pool" },
+  ];
+
+  function autumnActonThursdayStandingRows() {
+    var iso = DAY_CENTRE_STANDING_ISO.thursday;
+    return AUTUMN_ACTON_THURSDAY_BOARD.map(function (slot) {
+      return {
+        client_name: slot.name,
+        day: "Thursday",
+        instructors: slot.staff,
+        service: "Aquatic Activity",
+        area: slot.area || "Teaching Pool",
+        time_slot: slot.time,
+        venue: "Acton",
+        session_date: iso,
+      };
+    });
+  }
+
+  /**
+   * Autumn Sunday Westway climbing (60' books).
+   * Scott de Wolff not renewing — 12–1 open. Alex 2–3 + 3–4 open. Patrick 3–4 Carlos.
+   * Stamp = first standing Autumn Sunday (13 Sep), never a summer week.
+   */
+  var WEEKEND_STANDING_ISO = {
+    saturday: "2026-09-12",
+    sunday: "2026-09-13",
+  };
+
+  /**
+   * Autumn Saturday Acton aquatic (LOCAL weekend board) — Youssef 9.30–1.
+   * Stamp = first standing Autumn Saturday (12 Sep). Projects onto Sat 5 Sep+ via
+   * WEEKEND_STANDING_ISO.saturday (summer Sat history is purged).
+   */
+  var AUTUMN_SATURDAY_ACTON_BOARD = [
+    { name: "No participant", time: "9.30 to 10" },
+    { name: "No participant", time: "10 to 10.30" },
+    { name: "Emani", time: "10.30 to 11" },
+    { name: "No participant", time: "11 to 11.30" },
+    { name: "No participant", time: "11.30 to 12" },
+    { name: "Saaib", time: "12 to 12.30" },
+    { name: "No participant", time: "12.30 to 1" },
+  ];
+
+  function autumnSaturdayActonStandingRows() {
+    var iso = WEEKEND_STANDING_ISO.saturday;
+    return AUTUMN_SATURDAY_ACTON_BOARD.map(function (slot) {
+      return {
+        client_name: slot.name,
+        day: "Saturday",
+        instructors: "YOUSSEF",
+        service: "Aquatic Activity",
+        area: "Teaching Pool",
+        time_slot: slot.time,
+        venue: "Acton",
+        session_date: iso,
+      };
+    });
+  }
+
+  function isSaturdayActonAquaticStandingRow(row) {
+    if (!row || !isAquaticService(row.service) || !isActonVenue(row.venue)) return false;
+    var day = normalizeDowKey(row.day);
+    var d = normIso(row.session_date);
+    if (day !== "saturday") {
+      if (!d) return false;
+      try {
+        var dt = new Date(d + "T12:00:00");
+        if (isNaN(dt.getTime()) || dt.getDay() !== 6) return false;
+      } catch (_) {
+        return false;
+      }
+    }
+    /* Undated + summer + Autumn term — rebuild from AUTUMN_SATURDAY_ACTON_BOARD. */
+    if (!d) return true;
+    if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    if (d === WEEKEND_STANDING_ISO.saturday) return true;
+    if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
+    return false;
+  }
+
+  var AUTUMN_SUNDAY_CLIMBING_BOARD = [
+    { staff: "ALEX", name: "Eiji", time: "10 to 11" },
+    { staff: "ALEX", name: "Yusuf Ah", time: "11 to 12" },
+    /* Trial Sun 13 Sep · Alex · 12–1 (Places + Overview). Later Sundays stay open via trialDate. */
+    { staff: "ALEX", name: "Muhammad", time: "12 to 1", trial: true, trialDate: "2026-09-13" },
+    { staff: "ALEX", name: "Rodin", time: "1 to 2" },
+    { staff: "ALEX", name: "No participant", time: "2 to 3" },
+    /* Alex 3–4: Elia blocked (not bookable) — office hold on Seat 1. */
+    { staff: "ALEX", name: "Elia", time: "3 to 4", closed: true },
+    { staff: "CARLOS", name: "Hazem", time: "10 to 11" },
+    { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
+    { staff: "CARLOS", name: "Serine", time: "12 to 1" },
+    { staff: "CARLOS", name: "Zakariya", time: "1 to 2" },
+    { staff: "CARLOS", name: "No participant", time: "2 to 3" },
+    { staff: "CARLOS", name: "Patrick", time: "3 to 4" },
+  ];
+
+  /**
+   * Autumn after-school Climbing @ Westway (Tue / Thu 4–6).
+   * Office holds (Elia label) — fully booked on Booking Portal, not real CLIENT sessions.
+   * Instructors: Andres (Tue) / Angel (Thu). No feedback / alerts until office opens them.
+   * Expanded onto every Autumn Tue/Thu (no summer projection).
+   */
+  var AUTUMN_WEEKDAY_CLIMBING_BOARD = [
+    { day: "Tuesday", staff: "ANDRES", name: "Elia", time: "4 to 5", closed: true },
+    { day: "Tuesday", staff: "ANDRES", name: "Elia", time: "5 to 6", closed: true },
+    { day: "Thursday", staff: "ANGEL", name: "Elia", time: "4 to 5", closed: true },
+    { day: "Thursday", staff: "ANGEL", name: "Elia", time: "5 to 6", closed: true },
+  ];
+
+  function isClimbingService(service) {
+    return /climb/i.test(String(service || ""));
+  }
+
+  function isWestwayVenue(venue) {
+    return /westway/i.test(String(venue || ""));
+  }
+
+  function autumnSundayClimbingStandingRows() {
+    var iso = WEEKEND_STANDING_ISO.sunday;
+    return autumnSundayClimbingRowsForIso(iso);
+  }
+
+  function autumnSundayClimbingRowsForIso(iso) {
+    var stamp = normIso(iso) || WEEKEND_STANDING_ISO.sunday;
+    return AUTUMN_SUNDAY_CLIMBING_BOARD.map(function (slot) {
+      var pax;
+      if (slot.closed) {
+        pax = "CLOSED";
+      } else if (slot.trial) {
+        /* Trial is dated Sep 13 only — standing template stays open; inject owns the seat. */
+        pax = "No participant";
+      } else {
+        pax = slot.name;
+      }
+      return {
+        client_name: pax,
+        day: "Sunday",
+        instructors: slot.staff,
+        service: "Climbing Activity",
+        area: "Wall",
+        time_slot: slot.time,
+        venue: "Westway",
+        session_date: stamp,
+      };
+    });
+  }
+
+  /** Dated one-off: Muhammad Climbing trial · Alex · Sun 13 Sep · 12–1. */
+  function autumnSundayMuhammadClimbTrialRows() {
+    return [
+      {
+        client_name: "Muhammad",
+        day: "Sunday",
+        instructors: "ALEX",
+        service: "Climbing Activity",
+        area: "Wall",
+        time_slot: "12 to 1",
+        venue: "Westway",
+        session_date: "2026-09-13",
+      },
+    ];
+  }
+
+  /**
+   * Keep Muhammad trial on Alex 12–1 for Sun 13 (DB rows were scrubbed with standing climb rebuild).
+   * Drop standing open twin + any leftover Carlos 2–3 / Alex 3–4 Muhammad.
+   */
+  function scrubAndEnsureMuhammadClimbTrial(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isClimbingService(r.service) && isWestwayVenue(r.venue)) {
+        var d = normIso(r.session_date);
+        var dk = normalizeDowKey(r.day);
+        var inst = String(r.instructors || "");
+        var t = String(r.time_slot || "")
+          .toLowerCase()
+          .replace(/:/g, ".")
+          .replace(/\s+/g, " ")
+          .trim();
+        var cn = String(r.client_name || "").trim();
+        if (
+          dk === "sunday" &&
+          d === "2026-09-13" &&
+          /\balex\b/i.test(inst) &&
+          /^12(\.00)?\s*to\s*1(\.00)?$/.test(t) &&
+          (/^no participant$/i.test(cn) || /^muhammad\b/i.test(cn))
+        ) {
+          return;
+        }
+        if (
+          dk === "sunday" &&
+          d === "2026-09-13" &&
+          /\bcarlos\b/i.test(inst) &&
+          /^2(\.00)?\s*to\s*3(\.00)?$/.test(t) &&
+          /^muhammad\b/i.test(cn)
+        ) {
+          return;
+        }
+        if (
+          dk === "sunday" &&
+          /\balex\b/i.test(inst) &&
+          /^3(\.00)?\s*to\s*4(\.00)?$/.test(t) &&
+          /^muhammad\b/i.test(cn)
+        ) {
+          return;
+        }
+      }
+      out.push(r);
+    });
+    autumnSundayMuhammadClimbTrialRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
+  function autumnWeekdayClimbingStandingRows() {
+    var tueIso = DAY_CENTRE_STANDING_ISO.tuesday;
+    var thuIso = DAY_CENTRE_STANDING_ISO.thursday;
+    return AUTUMN_WEEKDAY_CLIMBING_BOARD.map(function (slot) {
+      var dk = normalizeDowKey(slot.day);
+      return {
+        /* CLOSED = no feedback; Places/Booking still label Elia via closed + name. */
+        client_name: slot.closed ? "CLOSED" : slot.name,
+        day: slot.day,
+        instructors: slot.staff,
+        service: "Climbing Activity",
+        area: "Wall",
+        time_slot: slot.time,
+        venue: "Westway",
+        session_date: dk === "thursday" ? thuIso : tueIso,
+        office_hold_label: slot.closed ? slot.name : "",
+      };
+    });
+  }
+
+  /**
+   * Services Places / Overview-style Sunday Climbing board (Alex | Carlos columns).
+   * Times are 60' books 10–4. Open seats use name "No participant".
+   */
+  function buildSundayClimbingStaffBoard(filt) {
+    filt = filt || {};
+    var coachFilt = filt.coach ? String(filt.coach).trim().toLowerCase() : "";
+    var paxFilt = filt.participant ? String(filt.participant).trim().toLowerCase() : "";
+    var byStaff = {};
+    var staffOrder = [];
+    var timeOrder = [];
+    var timeSeen = {};
+    AUTUMN_SUNDAY_CLIMBING_BOARD.forEach(function (slot) {
+      var snm = String(slot.staff || "").trim();
+      if (!snm) return;
+      if (
+        coachFilt &&
+        snm.toLowerCase().indexOf(coachFilt) < 0 &&
+        coachFilt.indexOf(snm.toLowerCase()) < 0
+      ) {
+        return;
+      }
+      var snKey = snm.toLowerCase();
+      if (!byStaff[snKey]) {
+        byStaff[snKey] = { key: snKey, name: snm, clients: [] };
+        staffOrder.push(snKey);
+      }
+      var pax = String(slot.name || "").trim() || "No participant";
+      if (
+        paxFilt &&
+        pax.toLowerCase().indexOf(paxFilt) < 0 &&
+        paxFilt.indexOf(pax.toLowerCase()) < 0
+      ) {
+        return;
+      }
+      var time = String(slot.time || "").trim();
+      byStaff[snKey].clients.push({
+        client: pax,
+        time: time,
+        area: "Wall · Westway",
+        open: !slot.closed && !slot.trial && /^no participant$/i.test(pax),
+        closed: !!slot.closed,
+        trial: !!slot.trial,
+        trialDate: slot.trialDate || "",
+      });
+      if (time && !timeSeen[time]) {
+        timeSeen[time] = true;
+        timeOrder.push(time);
+      }
+    });
+    return { staffOrder: staffOrder, byStaff: byStaff, timeOrder: timeOrder };
+  }
+
+  function isWeekdayWestwayClimbingStandingRow(row) {
+    if (!row) return false;
+    if (!isClimbingService(row.service) || !isWestwayVenue(row.venue)) return false;
+    var dk = normalizeDowKey(row.day);
+    return dk === "tuesday" || dk === "thursday";
+  }
+
+  /**
+   * Sun 6 Sep Westway climb (LOCAL EXTRA Alex/Carlos) — dated for that day.
+   * Standing stamp stays 13 Sep for later Sundays; do not leave Sep 6 on July-only projection.
+   */
+  function scrubAndEnsureSep6Climbing(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (
+        isSundayWestwayClimbingStandingRow(r) &&
+        normIso(r.session_date) === "2026-09-06"
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnSundayClimbingRowsForIso("2026-09-06").forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
+  function isSundayWestwayClimbingStandingRow(row) {
+    if (!row) return false;
+    if (!isClimbingService(row.service) || !isWestwayVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "sunday") return false;
+    return true;
+  }
+
+  function isThursdayActonAquaticStandingRow(row) {
+    if (!row) return false;
+    if (!isAquaticService(row.service) || !isActonVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "thursday") return false;
+    var d = normIso(row.session_date);
+    if (!d) return true;
+    if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
+    return false;
+  }
+
+  /**
+   * Wed Acton Autumn: Javier + Youssef aquatic only (LOCAL). No Multi, no Berta, no Giuseppe.
+   * Summer Jul 15 stamp still ships Multi (Cyrus) + Giuseppe Room 2 — drop and rebuild.
+   */
+  var AUTUMN_ACTON_WEDNESDAY_BOARD = [
+    { staff: "YOUSSEF", name: "No participant", time: "4 to 4.30", area: "Teaching Pool" },
+    /* Stephanie = two 30' seats (Schedule halves; parent/staff merge). */
+    { staff: "YOUSSEF", name: "Stephanie", time: "4.30 to 5", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "Stephanie", time: "5 to 5.30", area: "Teaching Pool" },
+    /* Amaar Ah = Mon Northolt only (not Wed). Fri Acton left after 11 Sep. */
+    { staff: "YOUSSEF", name: "No participant", time: "5.30 to 6", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "No participant", time: "6 to 6.30", area: "Teaching Pool" },
+    /* Aquatic standing = 30' seats only. Parent/staff Today merge consecutive same-instructor halves. */
+    { staff: "JAVIER", name: "Cyrus", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "Cyrus", time: "4.30 to 5", area: "Teaching Pool" },
+    /* Wed Acton: first session Wed 16 Sep (finish-booking). Two 30' seats (Schedule keeps halves). */
+    { staff: "JAVIER", name: "Ayman", time: "5 to 5.30", area: "Lane (DE)", bookedFrom: "2026-09-16" },
+    { staff: "JAVIER", name: "Ayman", time: "5.30 to 6", area: "Lane (DE)", bookedFrom: "2026-09-16" },
+    { staff: "JAVIER", name: "Kayden", time: "6 to 6.30", area: "Teaching Pool" },
+  ];
+
+  /**
+   * Mon Acton Autumn — Youssef aquatic (LOCAL standing from Mon 14).
+   * Closed 4–4.30 · Eddie Mc 4.30–5 · open 5–5.30 · open 5.30–6.30.
+   * Mon 7 Abodi last session is dated via scrubAndEnsureSep7VictorRaulCover.
+   */
+  var AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD = [
+    { staff: "YOUSSEF", name: "Closed", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "Eddie Mc", time: "4.30 to 5", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "No participant", time: "5 to 5.30", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "No participant", time: "5.30 to 6.30", area: "Teaching Pool" },
+  ];
+
+  function autumnActonMondayYoussefStandingRows() {
+    /* Template date = first standing Autumn Monday (14 Sep), not a Jul placeholder. */
+    var iso = "2026-09-14";
+    return AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD.map(function (slot) {
+      return {
+        client_name: slot.name,
+        day: "Monday",
+        instructors: slot.staff,
+        service: "Aquatic Activity",
+        area: slot.area || "Teaching Pool",
+        time_slot: slot.time,
+        venue: "Acton",
+        session_date: iso,
+      };
+    });
+  }
+
+  function isMondayYoussefActonAquaticStandingRow(row) {
+    if (!row || !isActonVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "monday") return false;
+    if (!isYoussefInstructor(row.instructors)) return false;
+    if (!isAquaticService(row.service) && String(row.service || "").trim()) return false;
+    var d = normIso(row.session_date);
+    if (!d) return true;
+    if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    if (d === "2026-09-14" || d === "2026-09-07" || d === DAY_CENTRE_STANDING_ISO.monday) return true;
+    if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
+    return false;
+  }
+
+  /**
+   * Re-inject Mon Acton Youssef AFTER portal_roster_rows merge so Autumn Mondays
+   * always carry Eddie Mc + opens (LOCAL standing).
+   */
+  function applyAutumnActonMondayYoussefStanding(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isMondayYoussefActonAquaticStandingRow(r)) return;
+      out.push(r);
+    });
+    autumnActonMondayYoussefStandingRows().forEach(function (row) {
+      expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
+        /* Closed 4–4.30 shows as No participant on staff Today cards. */
+        if (isYoussefActon430ClosedSlot(exp)) {
+          out.push(Object.assign({}, exp, { client_name: "No participant" }));
+          return;
+        }
+        out.push(exp);
+      });
+    });
+    return out;
+  }
+
+  function autumnActonWednesdayStandingRows() {
+    var iso = DAY_CENTRE_STANDING_ISO.wednesday;
+    return AUTUMN_ACTON_WEDNESDAY_BOARD.map(function (slot) {
+      return {
+        client_name: slot.name,
+        day: "Wednesday",
+        instructors: slot.staff,
+        service: "Aquatic Activity",
+        area: slot.area || "Teaching Pool",
+        time_slot: slot.time,
+        venue: "Acton",
+        session_date: iso,
+        bookedFrom: slot.bookedFrom || "",
+      };
+    });
+  }
+
+  var AYMAN_WED_ACTON_FROM = "2026-09-16";
+
+  function scrubAymanWedActonBeforeFirstSession(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (!/^ayman\b/i.test(String(r.client_name || "").trim())) {
+        out.push(r);
+        return;
+      }
+      if (!isActonVenue(r.venue) || !isAquaticService(r.service)) {
+        out.push(r);
+        return;
+      }
+      if (normalizeDowKey(r.day) !== "wednesday") {
+        out.push(r);
+        return;
+      }
+      var d = normIso(r.session_date);
+      if (d && d < AYMAN_WED_ACTON_FROM) {
+        out.push(Object.assign({}, r, { client_name: "No participant" }));
+        return;
+      }
+      out.push(r);
+    });
+    return out;
+  }
+
+  /** Aquatic OR Multi on Wed Acton standing/summer stamps — replace with Autumn aquatic board. */
+  function isWednesdayActonStandingRow(row) {
+    if (!row || !isActonVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "wednesday") return false;
+    if (!(isAquaticService(row.service) || isMultiActivityService(row.service))) {
+      if (String(row.service || "").trim()) return false;
+    }
+    var d = normIso(row.session_date);
+    if (!d) return true;
+    if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    if (d === DAY_CENTRE_STANDING_ISO.wednesday) return true;
+    if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
+    return false;
+  }
+
+  function applyAutumnActonWednesdayStanding(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isWednesdayActonStandingRow(r)) return;
+      /* Never keep Wed Acton Multi after DB merge (Summer stamp / bad overlays). */
+      if (
+        isMultiActivityService(r.service) &&
+        isActonVenue(r.venue) &&
+        normalizeDowKey(r.day) === "wednesday"
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnActonWednesdayStandingRows().forEach(function (row) {
+      expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
+        out.push(exp);
+      });
+    });
+    return scrubAymanWedActonBeforeFirstSession(out);
+  }
 
   function mondayActonClientKey(name) {
     var s = String(name || "")
@@ -716,9 +3231,177 @@
     });
   }
 
-  /** Summer dated window whose Day Centre who-with-whom is replaced by Autumn board. */
+  function fridayActonClientKey(name) {
+    var s = String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    if (/^adam\s*pi/.test(s) || /^adam\s*p\b/.test(s)) return "adam_pi";
+    if (/^amaar/.test(s)) return "amaar";
+    return s.replace(/[^a-z0-9]+/g, "_");
+  }
+
+  function hasFridayActonClient(rows, clientKey) {
+    var iso = DAY_CENTRE_STANDING_ISO.friday;
+    return (rows || []).some(function (r) {
+      if (!r) return false;
+      if (normIso(r.session_date) !== iso) return false;
+      if (!isActonVenue(r.venue) || !isAquaticService(r.service)) return false;
+      return fridayActonClientKey(r.client_name) === clientKey;
+    });
+  }
+
+  /**
+   * Autumn term calendar — standing is materialised onto each real date.
+   * No Jul stamps and no Sep-13→other-Sunday projection.
+   */
+  var AUTUMN_TERM_FROM_ISO = "2026-09-01";
+  var AUTUMN_TERM_THROUGH_ISO = "2026-12-18";
+  var AUTUMN_AFTER_SCHOOL_FROM_ISO = "2026-09-05";
+  /** While applying Autumn patches, drop summer DC/Hub rows in this window before re-injecting LOCAL boards. */
   var AUTUMN_DC_REPLACE_FROM = "2026-06-01";
   var AUTUMN_DC_REPLACE_THROUGH = "2026-07-19";
+  /** @deprecated Kept empty — standing no longer lives on Jul/Sep-13 stamp dates. */
+  var AUTUMN_STANDING_TEMPLATE_ISO_SET = {};
+
+  function isAutumnStandingTemplateIso(iso) {
+    var d = normIso(iso);
+    return !!(d && AUTUMN_STANDING_TEMPLATE_ISO_SET[d]);
+  }
+
+  function isAutumnTermOrTemplateIso(iso) {
+    var d = normIso(iso);
+    if (!d) return false;
+    /* Autumn term only — never keep Jul/summer template stamps in the live source. */
+    return d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO;
+  }
+
+  function jsDayForDowKey(dowKey) {
+    var dk = normalizeDowKey(dowKey);
+    if (dk === "sunday") return 0;
+    if (dk === "monday") return 1;
+    if (dk === "tuesday") return 2;
+    if (dk === "wednesday") return 3;
+    if (dk === "thursday") return 4;
+    if (dk === "friday") return 5;
+    if (dk === "saturday") return 6;
+    return -1;
+  }
+
+  /** Every Mon…Sun ISO in Autumn term for a weekday key. */
+  function enumerateAutumnTermIsosForDow(dowKey) {
+    var want = jsDayForDowKey(dowKey);
+    if (want < 0) return [];
+    var out = [];
+    var cur = new Date(AUTUMN_TERM_FROM_ISO + "T12:00:00");
+    var end = new Date(AUTUMN_TERM_THROUGH_ISO + "T12:00:00");
+    if (isNaN(cur.getTime()) || isNaN(end.getTime())) return out;
+    for (; cur.getTime() <= end.getTime(); cur.setDate(cur.getDate() + 1)) {
+      if (cur.getDay() !== want) continue;
+      var y = cur.getFullYear();
+      var m = String(cur.getMonth() + 1);
+      if (m.length < 2) m = "0" + m;
+      var d = String(cur.getDate());
+      if (d.length < 2) d = "0" + d;
+      out.push(y + "-" + m + "-" + d);
+    }
+    return out;
+  }
+
+  function autumnStandingServiceAllowedOnIso(service, iso) {
+    var d = normIso(iso);
+    if (!d || d < AUTUMN_TERM_FROM_ISO || d > AUTUMN_TERM_THROUGH_ISO) return false;
+    if (isDayCentreService(service)) return true;
+    return d >= AUTUMN_AFTER_SCHOOL_FROM_ISO;
+  }
+
+  /**
+   * Clone one standing template row onto every Autumn term date of that weekday.
+   * This replaces Jul / single-Sunday stamp projection.
+   * Rows with bookedFrom stay "No participant" until that ISO (NEW CLIENT / first session).
+   */
+  function expandStandingRowAcrossAutumnTerm(row) {
+    if (!row) return [];
+    var dk = normalizeDowKey(row.day);
+    if (!dk) {
+      var sd0 = normIso(row.session_date);
+      if (sd0) {
+        try {
+          var dt0 = new Date(sd0 + "T12:00:00");
+          if (!isNaN(dt0.getTime())) {
+            dk = [
+              "sunday",
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+            ][dt0.getDay()];
+          }
+        } catch (_) {}
+      }
+    }
+    if (!dk) return [Object.assign({}, row)];
+    var dates = enumerateAutumnTermIsosForDow(dk);
+    var bookedFrom = normIso(row.bookedFrom || row.booked_from);
+    var out = [];
+    for (var i = 0; i < dates.length; i++) {
+      var iso = dates[i];
+      if (!autumnStandingServiceAllowedOnIso(row.service, iso)) continue;
+      if (bookedFrom && iso < bookedFrom) {
+        out.push(
+          Object.assign({}, row, {
+            session_date: iso,
+            day: DOW_TITLE[dk] || row.day,
+            client_name: "No participant",
+            bookedFrom: "",
+            booked_from: "",
+          })
+        );
+        continue;
+      }
+      out.push(
+        Object.assign({}, row, {
+          session_date: iso,
+          day: DOW_TITLE[dk] || row.day,
+        })
+      );
+    }
+    return out;
+  }
+
+  function expandStandingRowsAcrossAutumnTerm(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      expandStandingRowAcrossAutumnTerm(r).forEach(function (x) {
+        out.push(x);
+      });
+    });
+    return out;
+  }
+
+  function pushExpandedStanding(out, rows) {
+    expandStandingRowsAcrossAutumnTerm(rows).forEach(function (row) {
+      out.push(row);
+    });
+  }
+
+  /**
+   * Drop summer history weeks. Autumn dashboards only keep dated Sep–Dec term rows
+   * (standing already materialised onto those dates — no Jul stamps).
+   */
+  function purgeSummerHistoryOutsideAutumnTemplates(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var d = normIso(r.session_date);
+      if (!d) return;
+      if (!isAutumnTermOrTemplateIso(d)) return;
+      out.push(r);
+    });
+    return out;
+  }
 
   /**
    * Autumn 26/27 standing patches on snap dates (13–17 Jul):
@@ -726,18 +3409,25 @@
    *   (drop all DC rows in the summer dated window for weekdays on the board —
    *   not only 13–17 Jul — so June ACAT/Fadi snaps cannot win Autumn projection)
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
-   * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
+   * - Multi-Activity: Bismark→Godsway; Giuseppe→Emanuel; John keeps Hub book;
+   *   Berta Sunday = Leader (no Multi clients); Sun 6 only: Emanuel→John (Emanuel + Youssef off)
    * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
-   * - Acton Tue: Angel → Luliya (Cayra); Rayan Ta + Richard → Javier
-   * - Acton Thu: Simon → Luliya (Yuri / Eiji)
+   * - Acton Tue: Roberto / Aurora / Javier / Luliya (Serine Roberto; Logan Luliya; Richard Roberto; no Youssef)
+   * - Acton Thu: Roberto / Simon / Javier / Aurora (Luliya OFF; Simon keeps Elijah / Yuri)
    * - Northolt Mon/Wed: replace summer (Roberto/Dan) with Services Autumn Dan+Luliya book
-   * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11–4; pool Mon/Wed Northolt 4.30–6.30,
-   *   Tue Acton 4–6.30, Thu Acton 4.30–6.30
+   * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11-4; pool Mon/Wed Northolt 4.30–6.30,
+   *   Tue Acton 4–6.30 (not Thu — Simon covers Thu Acton AS)
    * - Roberto Wed DC: Emanuel 11–12.30 + Fadi 12.30–3 (ends 15:00; no Emanuel 3–4)
+   * - Tue DC: Roberto ACAT 11–12 + Ikram 12–3; Michelle Ikram 11–12 / Manager 12–3 / Ikram 3–4;
+   *   Luliya Ikram 11–3; Raul Fadi 12.30–3 + Ikram 3–4; Victor Cyrus Bespoke 3.30–5 (not DC)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
-   * - Fri DC: Victor+Raul end 15:00; Michelle+Luliya Ikram to 16:00; Youssef Emanuel 15–16
-   * - Victor OFF Mondays (DC)
+   * - Fri DC: Victor+Raul Emanuel 1–4 (after Timi); Michelle+Luliya Ikram to 16:00;
+   *   Youssef Ikram 11–3 (Acton from 16:00 — no Emanuel 3–4)
+   * - Acton Fri: Roberto → Youssef (Adam Pi; Amaar Fri left after 11 Sep — Mon Northolt only); Hub Fri Tinashe: Bismark + Roberto + Emanuel (from Fri 11)
+   * - Victor OFF Mondays and Thursdays (DC empty — do not show Overview column)
+   * - Raul OFF Tuesdays and Thursdays (DC empty — do not show Overview column)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
+   * - Acton Thu AS: Simon (Elijah 4–4.30, Yuri 5–5.30); Aurora CLOSED 4–4.30
    */
   function applyAutumnStandingParticipantRows(rows) {
     var out = [];
@@ -758,6 +3448,18 @@
       var d = normIso(r.session_date);
       /* Drop summer Luliya shadowing-only Northolt rows (not Autumn book). */
       if (isLuliyaInstructor(r.instructors) && isShadowingOnlyRow(r)) return;
+      /* Drop summer Tue Acton aquatic — rebuild from AUTUMN_ACTON_TUESDAY_BOARD. */
+      if (isTuesdayActonAquaticStandingRow(r)) return;
+      /* Drop summer Wed Acton aquatic + Multi — rebuild from AUTUMN_ACTON_WEDNESDAY_BOARD. */
+      if (isWednesdayActonStandingRow(r)) return;
+      /* Drop summer/live Thu Acton aquatic — rebuild from AUTUMN_ACTON_THURSDAY_BOARD. */
+      if (isThursdayActonAquaticStandingRow(r)) return;
+      /* Drop summer/live Sun Westway climbing — rebuild from AUTUMN_SUNDAY_CLIMBING_BOARD. */
+      if (isSundayWestwayClimbingStandingRow(r)) return;
+      /* Drop summer/live Tue/Thu Westway climbing — rebuild from AUTUMN_WEEKDAY_CLIMBING_BOARD (holds). */
+      if (isWeekdayWestwayClimbingStandingRow(r)) return;
+      /* Drop summer/live Sat Acton aquatic — rebuild from AUTUMN_SATURDAY_ACTON_BOARD. */
+      if (isSaturdayActonAquaticStandingRow(r)) return;
       if (isDayCentreService(r.service)) {
         var dkDc = normalizeDowKey(r.day);
         if (
@@ -797,6 +3499,54 @@
         );
         return;
       }
+      var erikPatch = restoreErikSundayMultiSeat(r);
+      if (erikPatch) {
+        out.push(Object.assign({}, r, erikPatch));
+        return;
+      }
+      var jackSamerPatch = enforceJackSSamerSundayMultiSwap(r);
+      if (jackSamerPatch) {
+        var swapped = Object.assign({}, r, jackSamerPatch);
+        /* Never JOHN→BERTA on dated Sun 6 — scrubAndEnsureSep6HubCover owns that day. */
+        if (
+          isMultiActivityService(swapped.service) &&
+          normIso(swapped.session_date) !== "2026-09-06"
+        ) {
+          var mappedSwap = remapAutumnMultiInstructorsStanding(swapped.instructors);
+          if (mappedSwap !== String(swapped.instructors || "").trim()) {
+            swapped.instructors = mappedSwap;
+          }
+        }
+        out.push(swapped);
+        return;
+      }
+      var javierPoolPatch = enforceAutumnSundayJavierPoolBook(r);
+      if (javierPoolPatch) {
+        out.push(Object.assign({}, r, javierPoolPatch));
+        return;
+      }
+      var yusufRobertoPatch = enforceAutumnSundayRobertoYusufPoolBook(r);
+      if (yusufRobertoPatch) {
+        out.push(Object.assign({}, r, yusufRobertoPatch));
+        return;
+      }
+      var auroraSunPatch = remapAutumnSundayAuroraPoolToLuliya(r);
+      if (auroraSunPatch) {
+        out.push(Object.assign({}, r, auroraSunPatch));
+        return;
+      }
+      var hubJackZaidPatch = enforceAutumnSundayJackSZaidHubBook(r);
+      if (hubJackZaidPatch) {
+        var hubPatched = Object.assign({}, r, hubJackZaidPatch);
+        if (isMultiActivityService(hubPatched.service) && normIso(hubPatched.session_date) !== "2026-09-06") {
+          var mappedHub = remapAutumnMultiInstructorsStanding(hubPatched.instructors);
+          if (mappedHub !== String(hubPatched.instructors || "").trim()) {
+            hubPatched.instructors = mappedHub;
+          }
+        }
+        out.push(hubPatched);
+        return;
+      }
       /* Standing Tue/Wed often omit Youssef 4–4.30 — treat CLOSED / NO CLIENT as open too. */
       if (
         isAquaticService(r.service) &&
@@ -822,13 +3572,41 @@
           }
         }
       }
+      /* Luliya Tue Acton 4–4.30: on shift — never leave stale Closed from summer snaps. */
+      if (
+        isAquaticService(r.service) &&
+        isActonVenue(r.venue) &&
+        normalizeDowKey(r.day) === "tuesday" &&
+        /\bluliya\b|\blulia\b|\baida\b/i.test(String(r.instructors || ""))
+      ) {
+        var slotL = String(r.time_slot || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+        if (
+          slotL === "4 to 4.30" ||
+          slotL === "4.00 to 4.30" ||
+          slotL.indexOf("4 to 4.30") === 0
+        ) {
+          var cnL = String(r.client_name || "").trim();
+          if (/^(closed|no client|noclient|no_client|available)?$/i.test(cnL) || !cnL) {
+            out.push(Object.assign({}, r, { client_name: "No participant" }));
+            return;
+          }
+        }
+      }
+      /* Wed Acton aquatic board owns Cyrus/Kayden — do not keep summer Multi patches. */
       var poolPatch = remapAutumnActonPoolInstructors(r);
       if (poolPatch) {
         out.push(Object.assign({}, r, poolPatch));
         return;
       }
-      if (isMultiActivityService(r.service)) {
-        var mapped = remapAutumnMultiInstructors(r.instructors);
+      /* Never project Summer Acton Multi onto Autumn (SwimFarm Hub Multi remaps separately). */
+      if (isMultiActivityService(r.service) && isActonVenue(r.venue)) {
+        return;
+      }
+      if (isMultiActivityService(r.service) && normIso(r.session_date) !== "2026-09-06") {
+        var mapped = remapAutumnMultiInstructorsStanding(r.instructors);
         if (mapped !== String(r.instructors || "").trim()) {
           out.push(Object.assign({}, r, { instructors: mapped }));
           return;
@@ -837,31 +3615,302 @@
       out.push(r);
     });
     autumnDayCentreStandingRows().forEach(function (row) {
-      out.push(row);
+      pushExpandedStanding(out, [row]);
     });
     autumnNortholtAquaticStandingRows().forEach(function (row) {
-      out.push(row);
+      pushExpandedStanding(out, [row]);
     });
-    AUTUMN_BESPOKE_HUB_ROWS.forEach(function (row) {
-      out.push(Object.assign({}, row));
-    });
-    out.push(Object.assign({}, CYRUS_BESPOKE_ROW));
+    pushExpandedStanding(out, AUTUMN_BESPOKE_HUB_ROWS);
+    pushExpandedStanding(out, [CYRUS_BESPOKE_ROW]);
     YOUSSEF_ACTON_OPEN_430_ROWS.forEach(function (row) {
       var dk = normalizeDowKey(row.day);
       if (opened430[dk]) return;
-      out.push(Object.assign({}, row));
+      pushExpandedStanding(out, [row]);
     });
     ROBERTO_MONDAY_ACTON_FROM_ANGEL.forEach(function (row) {
       var key = mondayActonClientKey(row.client_name);
-      if (hasMondayActonClient(out, key)) return;
-      out.push(Object.assign({}, row));
+      /* Expand first, then skip dates that already have this client. */
+      expandStandingRowAcrossAutumnTerm(row).forEach(function (exp) {
+        if (
+          (out || []).some(function (r) {
+            if (!r) return false;
+            if (normIso(r.session_date) !== normIso(exp.session_date)) return false;
+            if (!isActonVenue(r.venue) || !isAquaticService(r.service)) return false;
+            return mondayActonClientKey(r.client_name) === key;
+          })
+        ) {
+          return;
+        }
+        out.push(exp);
+      });
     });
-    LULIYA_THURSDAY_ACTON_FROM_SIMON.forEach(function (row) {
-      var key = thursdayActonClientKey(row.client_name);
-      if (hasThursdayActonClient(out, key)) return;
+    YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO.forEach(function (row) {
+      var key = fridayActonClientKey(row.client_name);
+      expandStandingRowAcrossAutumnTerm(row).forEach(function (exp) {
+        if (
+          (out || []).some(function (r) {
+            if (!r) return false;
+            if (normIso(r.session_date) !== normIso(exp.session_date)) return false;
+            if (!isActonVenue(r.venue) || !isAquaticService(r.service)) return false;
+            return fridayActonClientKey(r.client_name) === key;
+          })
+        ) {
+          return;
+        }
+        out.push(exp);
+      });
+    });
+    autumnActonTuesdayStandingRows().forEach(function (row) {
+      pushExpandedStanding(out, [row]);
+    });
+    autumnActonWednesdayStandingRows().forEach(function (row) {
+      pushExpandedStanding(out, [row]);
+    });
+    autumnActonThursdayStandingRows().forEach(function (row) {
+      pushExpandedStanding(out, [row]);
+    });
+    autumnSundayClimbingStandingRows().forEach(function (row) {
+      pushExpandedStanding(out, [row]);
+    });
+    autumnWeekdayClimbingStandingRows().forEach(function (row) {
+      pushExpandedStanding(out, [row]);
+    });
+    autumnSaturdayActonStandingRows().forEach(function (row) {
+      pushExpandedStanding(out, [row]);
+    });
+    autumnSundayZaidJavierAquaticStandingRows().forEach(function (row) {
+      pushExpandedStanding(out, [row]);
+    });
+    autumnSundayYusufRobertoAquaticStandingRows().forEach(function (row) {
+      pushExpandedStanding(out, [row]);
+    });
+    /* Sep 6 Hub cover is applied once in resolveCanonicalRosterRows (after DB rows). */
+    return out;
+  }
+
+  /** LOCAL EXTRA Sunday Hub Multi — Berta Lead book (Aurora pool kids' Hub half). */
+  var AUTUMN_SUNDAY_HUB_BERTA = [
+    { client_name: "Jack W", time_slot: "9.30 to 10.15" },
+    { client_name: "Adam Ab", time_slot: "10.15 to 11" },
+    { client_name: "Cyrus", time_slot: "11 to 11.45" },
+    { client_name: "Arthur Ma", time_slot: "11.45 to 12.30" },
+    { client_name: "Erik", time_slot: "12.30 to 1.15" },
+    { client_name: "Aydaan Ah", time_slot: "1.15 to 2" },
+  ];
+
+  /** LOCAL EXTRA Sunday Hub Multi — Emmanuel book (Javier pool kids' Hub half). */
+  var AUTUMN_SUNDAY_HUB_EMMANUEL = [
+    { client_name: "Zaid", time_slot: "9.30 to 10.15" },
+    { client_name: "Jack S", time_slot: "10.15 to 11" },
+    { client_name: "Eiji", time_slot: "11 to 11.45" },
+    { client_name: "Hazem", time_slot: "11.45 to 12.30" },
+    { client_name: "Haneef", time_slot: "12.30 to 1.15" },
+    { client_name: "Rayyan F", time_slot: "1.15 to 2" },
+  ];
+
+  /** LOCAL EXTRA Sunday Hub Multi — Godsway book (Roberto pool kids' Hub half). */
+  var AUTUMN_SUNDAY_HUB_GODSWAY = [
+    { client_name: "Samer", time_slot: "9.30 to 10.15" },
+    { client_name: "Yusuf Ah", time_slot: "10.15 to 11" },
+    { client_name: "Arthur Mo", time_slot: "11 to 11.45" },
+    { client_name: "Gabriel", time_slot: "11.45 to 12.30" },
+    { client_name: "Adaam Ah", time_slot: "12.30 to 1.15" },
+    { client_name: "Amaar Ah", time_slot: "1.15 to 2" },
+  ];
+
+  function isSundaySwimfarmHubMultiRow(r) {
+    if (!r || !isMultiActivityService(r.service)) return false;
+    if (!/swimfarm/i.test(String(r.venue || "SwimFarm"))) return false;
+    var day = normalizeDowKey(r.day);
+    var sunday = day === "sunday";
+    if (!sunday) {
+      var d = normIso(r.session_date);
+      if (d) {
+        try {
+          var dt = new Date(d + "T12:00:00");
+          if (!isNaN(dt.getTime()) && dt.getDay() === 0) sunday = true;
+        } catch (_) {}
+      }
+    }
+    if (!sunday) return false;
+    /* Prefer Hub, but also treat known Hub staff Sunday Multi as Hub books
+       (summer rows sometimes omit area and escaped the scrub). */
+    if (/hub/i.test(String(r.area || ""))) return true;
+    return /\b(berta|john|emmanuel|emanuel|giuseppe|godsway|bismark|bismarck|raul)\b/i.test(
+      String(r.instructors || "")
+    );
+  }
+
+  function autumnSundayStandingHubRows() {
+    var iso = WEEKEND_STANDING_ISO.sunday;
+    function mapBook(staff, book) {
+      return book.map(function (slot) {
+        return {
+          client_name: slot.client_name,
+          day: "Sunday",
+          instructors: staff,
+          service: "Multi-Activity",
+          area: "Hub Room",
+          time_slot: slot.time_slot,
+          venue: "SwimFarm",
+          session_date: iso,
+        };
+      });
+    }
+    /* LOCAL: Hub = Berta / Emmanuel / Godsway — never pool instructors Javier/Aurora/Roberto. */
+    return mapBook("BERTA", AUTUMN_SUNDAY_HUB_BERTA)
+      .concat(mapBook("EMMANUEL", AUTUMN_SUNDAY_HUB_EMMANUEL))
+      .concat(mapBook("GODSWAY", AUTUMN_SUNDAY_HUB_GODSWAY));
+  }
+
+  /**
+   * Sunday Hub Multi = LOCAL only.
+   * Standing = Berta | Emmanuel | Godsway (covers via overrides).
+   * Sun 6 dated John/Berta/Godsway cover rows own that day — do not also stamp standing Hub.
+   */
+  function scrubAndEnsureSep6HubCover(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isSundaySwimfarmHubMultiRow(r)) {
+        var inst = String(r.instructors || "");
+        if (
+          /\b(john|emmanuel|emanuel|giuseppe|berta|godsway|bismark|bismarck|aurora|javier|roberto|raul)\b/i.test(
+            inst
+          )
+        ) {
+          return;
+        }
+      }
+      out.push(r);
+    });
+    autumnSundayStandingHubRows().forEach(function (row) {
+      expandStandingRowAcrossAutumnTerm(row).forEach(function (exp) {
+        if (normIso(exp.session_date) === "2026-09-06") return;
+        out.push(exp);
+      });
+    });
+    autumnSundaySep6HubCoverRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     return out;
+  }
+
+  /**
+   * OLD / released clients — never keep their names on Autumn Sessions seats.
+   * Exact Joel only (never Joelle). Aug15 unpaid still OFF: Karo, Shire.
+   * Kareena returned Tue 15 Sep 2026 (Javier Acton 5.30) — do not scrub.
+   */
+  function isAug15ReleasedFormerClient(name) {
+    var n = String(name || "")
+      .trim()
+      .replace(/\s+/g, " ");
+    if (!n) return false;
+    if (/^karo\b/i.test(n)) return true;
+    if (/^shire\b/i.test(n)) return true;
+    return false;
+  }
+
+  var KAREENA_ACTON_TUE_FROM = "2026-09-15";
+  /** Tue Acton 6–6.30 NEW CLIENT (Adaam Luliya / Aydaan Javier) — not before Tue 15. */
+  var ADAAM_AYDAAN_ACTON_TUE_FROM = "2026-09-15";
+
+  function scrubKareenaActonTueBeforeFirstSession(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (!/^kareena\b/i.test(String(r.client_name || "").trim())) {
+        out.push(r);
+        return;
+      }
+      if (!isActonVenue(r.venue) || !isAquaticService(r.service)) {
+        out.push(r);
+        return;
+      }
+      if (normalizeDowKey(r.day) !== "tuesday") {
+        out.push(r);
+        return;
+      }
+      var d = normIso(r.session_date);
+      if (d && d < KAREENA_ACTON_TUE_FROM) {
+        out.push(Object.assign({}, r, { client_name: "No participant" }));
+        return;
+      }
+      out.push(r);
+    });
+    return out;
+  }
+
+  function isAdaamOrAydaanActonTue630Seat(row) {
+    if (!row) return false;
+    var name = String(row.client_name || "").trim();
+    if (!/^(adaam|aydaan)\b/i.test(name)) return false;
+    if (!isActonVenue(row.venue) || !isAquaticService(row.service)) return false;
+    var day = normalizeDowKey(row.day);
+    if (!day) {
+      var iso0 = normIso(row.session_date);
+      if (iso0) {
+        try {
+          day = normalizeDowKey(
+            new Date(iso0 + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long" })
+          );
+        } catch (_) {
+          day = "";
+        }
+      }
+    }
+    if (day !== "tuesday") return false;
+    var slot = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      .replace(/:/g, ".");
+    return /^6(\.00)?\s*to\s*6\.30$/.test(slot);
+  }
+
+  /** DB / MADRE may still name Adaam·Aydaan on Tue Acton 6–6.30 before first session. */
+  function scrubAdaamAydaanActonTueBeforeFirstSession(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (!isAdaamOrAydaanActonTue630Seat(r)) {
+        out.push(r);
+        return;
+      }
+      var d = normIso(r.session_date);
+      if (d && d < ADAAM_AYDAAN_ACTON_TUE_FROM) {
+        out.push(Object.assign({}, r, { client_name: "No participant" }));
+        return;
+      }
+      out.push(r);
+    });
+    return out;
+  }
+
+  /** Joel Hibbert-Nixon — not continuing Autumn 26/27 (exact Joel / Joel …, never Joelle). */
+  function isOldJoelNotContinuing(name) {
+    var n = String(name || "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+    return n === "joel" || n.indexOf("joel ") === 0;
+  }
+
+  function scrubReleasedFormerClientRows(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isAug15ReleasedFormerClient(r.client_name) || isOldJoelNotContinuing(r.client_name)) {
+        out.push(Object.assign({}, r, { client_name: "No participant" }));
+        return;
+      }
+      out.push(r);
+    });
+    return out;
+  }
+
+  function scrubAug15ReleasedFormerClientRows(rows) {
+    return scrubReleasedFormerClientRows(rows);
   }
 
   /**
@@ -920,20 +3969,72 @@
     /* Autumn standing first, then portal_roster_rows so dated trials (e.g. Muhammad Mon Northolt) win. */
     var withAutumn = applyAutumnStandingParticipantRows(base);
     var merged = opts.skipDb ? withAutumn.slice() : applyPortalRosterDbRows(withAutumn);
+    merged = applyAutumnActonMondayYoussefStanding(merged);
+    merged = applyAutumnActonTuesdayStanding(merged);
+    merged = applyAutumnActonWednesdayStanding(merged);
+    merged = applyAutumnActonThursdayStanding(merged);
+    merged = scrubDepartedAutumnInstructorRows(merged);
+    merged = applyAutumnWeek1DayCentre(merged);
+    merged = applyFadiAbsentDayCentre(merged);
+    merged = scrubAndEnsureSep14DayCentre(merged);
+    merged = scrubAndEnsureSep6HubCover(merged);
+    merged = scrubAndEnsureSep6Climbing(merged);
+    merged = scrubAndEnsureMuhammadClimbTrial(merged);
+    merged = scrubAndEnsureAutumnSundayPoolStanding(merged);
+    merged = scrubAndEnsureSep6JavierPool(merged);
+    merged = scrubAndEnsureSep6AuroraRobertoPool(merged);
+    merged = scrubAndEnsureSep7VictorRaulCover(merged);
+    merged = scrubAndEnsureSep10YassirLastSession(merged);
+    merged = scrubAndEnsureSep11AmaarLastSession(merged);
+    merged = scrubAndEnsureMonNortholtDan630LeilaSwap(merged);
+    merged = scrubAndEnsureSerineActonTueFrom(merged);
+    merged = scrubKareenaActonTueBeforeFirstSession(merged);
+    merged = scrubAdaamAydaanActonTueBeforeFirstSession(merged);
+    merged = scrubAndEnsureSep8ActonRedistribute(merged);
+    merged = scrubAndEnsureSep10AnasMakeup(merged);
+    merged = scrubAug15ReleasedFormerClientRows(merged);
+    /* After all Autumn patches: no summer history weeks left to snap onto Sep+. */
+    merged = purgeSummerHistoryOutsideAutumnTemplates(merged);
     return dedupeRosterAdapterRows(merged);
   }
 
-  function resolveCanonicalStaffDashboardSource() {
+  function resolveCanonicalStaffDashboardSource(opts) {
+    opts = opts || {};
     var base = global.STAFF_DASHBOARD_SOURCE || {};
-    var rows = resolveCanonicalRosterRows();
+    var rows = resolveCanonicalRosterRows(opts);
+    var starts = Object.assign({}, base.clientRosterStartDates || {}, {
+      Fadi: FADI_START_ISO,
+      /* Tue Acton Javier 4–5 from 8 Sep. Wed Acton 5–5.30 + 5.30–6 first session 16 Sep (bookedFrom + scrub). */
+      Ayman: "2026-09-08",
+      "Ayman El Bakry": "2026-09-08",
+      ayman: "2026-09-08",
+      ayman_el_bakry: "2026-09-08",
+      Kareena: KAREENA_ACTON_TUE_FROM,
+      "Kareena Al hassani": KAREENA_ACTON_TUE_FROM,
+      kareena: KAREENA_ACTON_TUE_FROM,
+      /* Term after Luliya trial 15 Sep — first standing Tue 22. */
+      "Reggie Conlon": "2026-09-22",
+      Reggie: "2026-09-22",
+      reggie: "2026-09-22",
+      reggie_conlon: "2026-09-22",
+    });
+    var gone = Object.assign({}, base.clientRosterGoneFromDates || {});
+    /* Kareena returned Tue 15 Sep 2026 — never keep Aug15 gone-from on live source. */
+    delete gone.Kareena;
+    delete gone.kareena;
+    delete gone["Kareena Al hassani"];
     return Object.assign({}, base, {
       rows: rows,
+      clientRosterStartDates: starts,
+      clientRosterGoneFromDates: gone,
       rosterSourceId: SOURCE_ID,
       rosterSourceVersion: SOURCE_VERSION,
       rosterSourceNote:
-        global.PORTAL_MADRE_LIVE && global.PORTAL_MADRE_LIVE.rows
-          ? "Live MADRE (portal_madre_document) + portal_roster_rows + Autumn standing (DC/Hub/Northolt/Acton)"
-          : "Bundle (MADRE snapshot) + portal_roster_rows + Autumn standing (DC/Hub/Northolt/Acton)",
+        opts.skipDb
+          ? "Autumn LOCAL standing (skipDb — no portal_roster_rows cache)"
+          : global.PORTAL_MADRE_LIVE && global.PORTAL_MADRE_LIVE.rows
+            ? "Autumn LOCAL standing templates + dated Sep+ (summer history purged)"
+            : "Autumn LOCAL standing templates + dated Sep+ (summer history purged)",
     });
   }
 
@@ -952,6 +4053,259 @@
     };
   }
 
+  /**
+   * Hub Bespoke Tinashe template staff for a weekday (before date remaps).
+   * Used so Overview can still paint a day-off Tinashe card when remap strips them (John Wed 9/16).
+   */
+  function autumnHubBespokeStandingHasStaff(dayName, staffRaw) {
+    var wantDay = String(dayName || "")
+      .trim()
+      .toLowerCase();
+    var wantStaff = String(staffRaw || "")
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0]
+      .replace(/[^a-z0-9]+/g, "");
+    if (!wantDay || !wantStaff) return false;
+    for (var i = 0; i < AUTUMN_BESPOKE_HUB_ROWS.length; i++) {
+      var row = AUTUMN_BESPOKE_HUB_ROWS[i];
+      if (String(row.day || "").trim().toLowerCase() !== wantDay) continue;
+      var inst = String(row.instructors || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
+      if (inst === wantStaff || inst.indexOf(wantStaff) === 0) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Standing "does not work this weekday" — hide empty Overview columns.
+   * Not the same as day-off-requested (staff_unavailability): that DOES paint Overview.
+   * Victor: Mon + Thu. Raul: Tue + Thu.
+   * Fri 11 – Fri 18 (Fadi away boards): Victor + Raul work Office those days;
+   * Thu: Luliya / Michelle have no DC seats (hide). Roberto keeps Acton AS. Youssef has no DC book.
+   */
+  function autumnStaffStandingOffOnIso(iso, staffRaw) {
+    var d = normIso(iso);
+    if (!d) return false;
+    var key = String(staffRaw || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+    if (!key) return false;
+    var dow = -1;
+    try {
+      var dt = new Date(d + "T12:00:00");
+      if (!isNaN(dt.getTime())) dow = dt.getDay();
+    } catch (_) {}
+    if (dow < 0) return false;
+    /* 0 Sun … 1 Mon 2 Tue 3 Wed 4 Thu 5 Fri 6 Sat */
+    if (isFadiAbsentDcBoardIso(d)) {
+      if (key === "victor" || key.indexOf("victor") === 0) return false;
+      if (key === "raul" || key.indexOf("raul") === 0) return false;
+      /* Roberto still works Acton Thu — not standing off. */
+      if (key === "roberto" || key.indexOf("roberto") === 0) return false;
+      if (
+        key === "luliya" ||
+        key.indexOf("luliya") === 0 ||
+        key === "michelle" ||
+        key.indexOf("michelle") === 0
+      ) {
+        return dow === 4;
+      }
+      /* Youssef has no Thursday DC book while Fadi is off rota. */
+      return false;
+    }
+    if (key === "victor" || key.indexOf("victor") === 0) {
+      return dow === 1 || dow === 4;
+    }
+    if (key === "raul" || key.indexOf("raul") === 0) {
+      return dow === 2 || dow === 4;
+    }
+    /* Hire Emmanuel: Tinashe Fri + Sunday Hub. Wed only dated covers (9 + 16). Not Tue/Thu. */
+    if (key === "emmanuel" || key === "emanuel" || key.indexOf("emmanuel") === 0) {
+      if (dow === 2 || dow === 4) return true;
+      if (dow === 3) {
+        return d !== "2026-09-09" && d !== "2026-09-16";
+      }
+      return false;
+    }
+    return false;
+  }
+
+  /**
+   * Capacity chain defaults Acton/Northolt aquatic to Teaching Pool. Staff Today / Overview
+   * must prefer standing pool notes (Lane SE/DE, Teaching Pool) from Autumn boards.
+   */
+  function poolAreaClientKey(name) {
+    return String(name || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\(trial\)/gi, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+  function poolAreaStaffKey(raw) {
+    return String(raw || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+  function poolAreaParseMins(label) {
+    var s = String(label || "")
+      .toLowerCase()
+      .replace(/[–—−]/g, "-")
+      .replace(/\s*-\s*/g, " to ")
+      .replace(/\s+/g, " ")
+      .trim();
+    var m = s.match(/(\d{1,2})(?:[.:](\d{2}))?\s*to\s*(\d{1,2})(?:[.:](\d{2}))?/);
+    if (!m) return null;
+    function hm(h, mm) {
+      var hh = Number(h);
+      var mi = mm != null && mm !== "" ? Number(mm) : 0;
+      if (!Number.isFinite(hh) || !Number.isFinite(mi)) return -1;
+      if (hh >= 1 && hh <= 6) hh += 12;
+      return hh * 60 + mi;
+    }
+    var a = hm(m[1], m[2]);
+    var b = hm(m[3], m[4]);
+    if (a < 0 || b < 0 || b <= a) return null;
+    return { start: a, end: b };
+  }
+  function poolAreaSlotsOverlap(aLabel, bLabel) {
+    var a = poolAreaParseMins(aLabel);
+    var b = poolAreaParseMins(bLabel);
+    if (!a || !b) return false;
+    return a.start < b.end && b.start < a.end;
+  }
+  var _standingPoolAreaIndex = null;
+  function standingPoolAreaIndex() {
+    if (_standingPoolAreaIndex) return _standingPoolAreaIndex;
+    var entries = [];
+    function pushBoard(day, venue, board) {
+      (Array.isArray(board) ? board : []).forEach(function (slot) {
+        if (!slot || !slot.area) return;
+        var name = String(slot.name || slot.client_name || "").trim();
+        if (!name || /^(no participant|closed|available)$/i.test(name)) return;
+        entries.push({
+          day: String(day || "").toLowerCase(),
+          venue: String(venue || "").toLowerCase(),
+          clientKey: poolAreaClientKey(name),
+          staffKey: poolAreaStaffKey(slot.staff || slot.instructors),
+          time: String(slot.time || slot.time_slot || "").trim(),
+          area: String(slot.area).trim(),
+        });
+      });
+    }
+    pushBoard("Monday", "Acton", AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD);
+    pushBoard("Tuesday", "Acton", AUTUMN_ACTON_TUESDAY_BOARD);
+    pushBoard("Wednesday", "Acton", AUTUMN_ACTON_WEDNESDAY_BOARD);
+    pushBoard("Thursday", "Acton", AUTUMN_ACTON_THURSDAY_BOARD);
+    pushBoard("Saturday", "Acton", AUTUMN_SATURDAY_ACTON_BOARD);
+    (Array.isArray(YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO) ? YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO : []).forEach(
+      function (row) {
+        if (!row || !row.area) return;
+        var name = String(row.client_name || "").trim();
+        if (!name || /^(no participant|closed|available)$/i.test(name)) return;
+        entries.push({
+          day: "friday",
+          venue: "acton",
+          clientKey: poolAreaClientKey(name),
+          staffKey: poolAreaStaffKey(row.instructors),
+          time: String(row.time_slot || "").trim(),
+          area: String(row.area).trim(),
+        });
+      }
+    );
+    Object.keys(AUTUMN_NORTHOLT_AQUATIC_BOARD || {}).forEach(function (dk) {
+      var cols = AUTUMN_NORTHOLT_AQUATIC_BOARD[dk] || [];
+      (Array.isArray(cols) ? cols : []).forEach(function (col) {
+        var staff = col && col.staff;
+        (Array.isArray(col && col.clients) ? col.clients : []).forEach(function (slot) {
+          if (!slot) return;
+          var area = String(slot.area || "Teaching Pool").trim();
+          var name = String(slot.name || "").trim();
+          if (!name || /^(no participant|closed|available)$/i.test(name)) return;
+          entries.push({
+            day: String(dk || "").toLowerCase(),
+            venue: "northolt",
+            clientKey: poolAreaClientKey(name),
+            staffKey: poolAreaStaffKey(staff),
+            time: String(slot.time || "").trim(),
+            area: area,
+          });
+        });
+      });
+    });
+    _standingPoolAreaIndex = entries;
+    return entries;
+  }
+  function lookupStandingPoolArea(opts) {
+    opts = opts || {};
+    var clientKey = poolAreaClientKey(opts.client_name || opts.name || "");
+    if (!clientKey) return "";
+    var day = String(opts.day || "").trim().toLowerCase();
+    var venue = String(opts.venue || "").trim().toLowerCase();
+    var time = String(opts.time_slot || opts.time || "").trim();
+    var staffKey = poolAreaStaffKey(opts.instructors || opts.staff || "");
+    var best = null;
+    var bestScore = -1;
+    standingPoolAreaIndex().forEach(function (e) {
+      var sameClient =
+        e.clientKey === clientKey ||
+        e.clientKey.indexOf(clientKey) === 0 ||
+        clientKey.indexOf(e.clientKey) === 0;
+      if (!sameClient) {
+        var e0 = e.clientKey.split(" ")[0];
+        var c0 = clientKey.split(" ")[0];
+        if (!e0 || e0 !== c0) return;
+      }
+      if (day && e.day) {
+        var d0 = day.slice(0, 3);
+        var e0d = e.day.slice(0, 3);
+        if (e.day !== day && e0d !== d0) return;
+      }
+      if (venue && e.venue && venue.indexOf(e.venue) < 0 && e.venue.indexOf(venue) < 0) return;
+      var score = 10;
+      if (staffKey && e.staffKey) {
+        if (
+          staffKey === e.staffKey ||
+          staffKey.indexOf(e.staffKey) === 0 ||
+          e.staffKey.indexOf(staffKey) === 0
+        ) {
+          score += 5;
+        } else {
+          score -= 2;
+        }
+      }
+      if (time && e.time) {
+        if (time.toLowerCase() === e.time.toLowerCase()) score += 8;
+        else if (poolAreaSlotsOverlap(time, e.time)) score += 6;
+        else score -= 4;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = e;
+      }
+    });
+    return best && bestScore >= 10 ? best.area : "";
+  }
+  function overlayStandingPoolAreasOntoRows(rows) {
+    return (Array.isArray(rows) ? rows : []).map(function (r) {
+      if (!r) return r;
+      var svc = String(r.service || "").toLowerCase();
+      if (!/aquatic|multi/.test(svc)) return r;
+      var hit = lookupStandingPoolArea(r);
+      if (!hit) return r;
+      if (String(r.area || "").trim() === hit) return r;
+      return Object.assign({}, r, { area: hit });
+    });
+  }
+
   global.PortalRosterCanonical = {
     SOURCE_ID: SOURCE_ID,
     SOURCE_VERSION: SOURCE_VERSION,
@@ -960,11 +4314,89 @@
     applyAutumnStandingParticipantRows: applyAutumnStandingParticipantRows,
     resolveCanonicalRosterRows: resolveCanonicalRosterRows,
     resolveCanonicalStaffDashboardSource: resolveCanonicalStaffDashboardSource,
+    remapAutumnMultiInstructorsStanding: remapAutumnMultiInstructorsStanding,
+    resolveAutumnInstructorsForCalendarDate: resolveAutumnInstructorsForCalendarDate,
+    remapAutumnMultiInstructors: remapAutumnMultiInstructors,
     getCanonicalRosterMeta: getCanonicalRosterMeta,
+    autumnStaffStandingOffOnIso: autumnStaffStandingOffOnIso,
+    autumnHubBespokeStandingHasStaff: autumnHubBespokeStandingHasStaff,
     buildDayCentreStaffBoard: buildDayCentreStaffBoard,
+    buildSundayClimbingStaffBoard: buildSundayClimbingStaffBoard,
     autumnDayCentreStandingRows: autumnDayCentreStandingRows,
     DAY_CENTRE_STANDING_ISO: DAY_CENTRE_STANDING_ISO,
+    WEEKEND_STANDING_ISO: WEEKEND_STANDING_ISO,
     AUTUMN_DAY_CENTRE_BOARD: AUTUMN_DAY_CENTRE_BOARD,
+    AUTUMN_ACTON_TUESDAY_BOARD: AUTUMN_ACTON_TUESDAY_BOARD,
+    AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD: AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD,
+    AUTUMN_ACTON_WEDNESDAY_BOARD: AUTUMN_ACTON_WEDNESDAY_BOARD,
+    AUTUMN_ACTON_THURSDAY_BOARD: AUTUMN_ACTON_THURSDAY_BOARD,
+    AUTUMN_SATURDAY_ACTON_BOARD: AUTUMN_SATURDAY_ACTON_BOARD,
+    ROBERTO_MONDAY_ACTON_FROM_ANGEL: ROBERTO_MONDAY_ACTON_FROM_ANGEL,
+    YOUSSEF_ACTON_OPEN_430_ROWS: YOUSSEF_ACTON_OPEN_430_ROWS,
+    YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO: YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO,
+    AUTUMN_NORTHOLT_AQUATIC_BOARD: AUTUMN_NORTHOLT_AQUATIC_BOARD,
+    AUTUMN_BESPOKE_HUB_ROWS: AUTUMN_BESPOKE_HUB_ROWS,
+    AUTUMN_SUNDAY_CLIMBING_BOARD: AUTUMN_SUNDAY_CLIMBING_BOARD,
+    AUTUMN_WEEKDAY_CLIMBING_BOARD: AUTUMN_WEEKDAY_CLIMBING_BOARD,
+    WEEK1_DC_BOARD: WEEK1_DC_BOARD,
+    isAutumnWeek1DcIso: isAutumnWeek1DcIso,
+    FADI_ABSENT_DC_BOARD: FADI_ABSENT_DC_BOARD,
+    FADI_ABSENT_DC_BOARD_FROM: FADI_ABSENT_DC_BOARD_FROM,
+    MONDAY_SEP14_DC_BOARD: MONDAY_SEP14_DC_BOARD,
+    scrubAndEnsureSep14DayCentre: scrubAndEnsureSep14DayCentre,
+    FADI_START_ISO: FADI_START_ISO,
+    isFadiClientName: isFadiClientName,
+    isFadiOffRotaIso: isFadiOffRotaIso,
+    isFadiAbsentDcWindowIso: isFadiAbsentDcWindowIso,
+    isFadiAbsentDcBoardIso: isFadiAbsentDcBoardIso,
+    isAutumnDcStandingTemplateRow: isAutumnDcStandingTemplateRow,
+    isAutumnDayCentreStandingSeat: isAutumnDayCentreStandingSeat,
+    shouldProjectDayCentreRowFromSnap: shouldProjectDayCentreRowFromSnap,
+    shouldProjectSnapRosterRow: shouldProjectSnapRosterRow,
+    AUTUMN_NO_SESSION_STAFF_KEYS: AUTUMN_NO_SESSION_STAFF_KEYS,
+    AUTUMN_TERM_FROM_ISO: AUTUMN_TERM_FROM_ISO,
+    AUTUMN_STANDING_TEMPLATE_ISO_SET: AUTUMN_STANDING_TEMPLATE_ISO_SET,
+    isAutumnStandingTemplateIso: isAutumnStandingTemplateIso,
+    isAutumnTermOrTemplateIso: isAutumnTermOrTemplateIso,
+    isAutumnNoSessionStaffKey: isAutumnNoSessionStaffKey,
+    applyAutumnActonMondayYoussefStanding: applyAutumnActonMondayYoussefStanding,
+    applyAutumnActonWednesdayStanding: applyAutumnActonWednesdayStanding,
+    isWednesdayActonStandingRow: isWednesdayActonStandingRow,
+    scrubDepartedAutumnInstructorRows: scrubDepartedAutumnInstructorRows,
+    scrubDepartedAngelInstructorRows: scrubDepartedAngelInstructorRows,
+    scrubAug15ReleasedFormerClientRows: scrubAug15ReleasedFormerClientRows,
+    isAug15ReleasedFormerClient: isAug15ReleasedFormerClient,
+    purgeSummerHistoryOutsideAutumnTemplates: purgeSummerHistoryOutsideAutumnTemplates,
     normIso: normIso,
+    lookupStandingPoolArea: lookupStandingPoolArea,
+    overlayStandingPoolAreasOntoRows: overlayStandingPoolAreasOntoRows,
+    scrubAdaamAydaanActonTueBeforeFirstSession: scrubAdaamAydaanActonTueBeforeFirstSession,
+    scrubKareenaActonTueBeforeFirstSession: scrubKareenaActonTueBeforeFirstSession,
+    scrubAndEnsureSep8ActonRedistribute: scrubAndEnsureSep8ActonRedistribute,
+    scrubAndEnsureSerineActonTueFrom: scrubAndEnsureSerineActonTueFrom,
+    /**
+     * Capacity-chain Overview skips full canonical remap. Still apply dated Acton
+     * exceptions so Tue 8 redistribute + NEW CLIENT bookedFrom match Sessions truth.
+     */
+    applyCapacityChainDayExceptions: function applyCapacityChainDayExceptions(rows) {
+      var out = Array.isArray(rows) ? rows.slice() : [];
+      try {
+        out = scrubAndEnsureSerineActonTueFrom(out);
+      } catch (_) {}
+      try {
+        out = scrubKareenaActonTueBeforeFirstSession(out);
+      } catch (_) {}
+      try {
+        out = scrubAdaamAydaanActonTueBeforeFirstSession(out);
+      } catch (_) {}
+      try {
+        out = scrubAndEnsureSep8ActonRedistribute(out);
+      } catch (_) {}
+      /* Mon Dan Northolt 6–6.30: Adaam through Mon 7; Amaar from Mon 14 (Leila swap). */
+      try {
+        out = scrubAndEnsureMonNortholtDan630LeilaSwap(out);
+      } catch (_) {}
+      return out;
+    },
   };
 })(typeof window !== "undefined" ? window : globalThis);

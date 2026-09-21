@@ -21,6 +21,7 @@ import { verifyPortalAdminAccessToken } from "../_shared/portal_admin_auth.ts";
 import {
   fridayWeekEnd,
   generateWeeklyNoteForContact,
+  identityLooksLikeDayCentreWeeklyNotes,
   listWeekStartsInclusive,
   londonTodayIso,
   saturdayWeekStart,
@@ -238,6 +239,19 @@ Deno.serve(async (req) => {
     if (error) return json(500, { ok: false, error: clean(error.message) });
     participants = (data || []) as ParticipantRow[];
   }
+
+  /* Day Centre only — skip aquatic/climb/multi kids before OpenAI. */
+  participants = participants.filter((p) =>
+    identityLooksLikeDayCentreWeeklyNotes(
+      {
+        contactId: String(p.contact_id),
+        displayName: clean(p.display_name, 200),
+        firstName: clean(p.first_name, 80),
+        lastName: clean(p.last_name, 80),
+      },
+      String(p.contact_id),
+    )
+  );
 
   const displayByContact = new Map<string, string>();
   for (const p of participants) {

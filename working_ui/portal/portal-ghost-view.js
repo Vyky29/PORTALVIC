@@ -5,12 +5,66 @@
 (function (global) {
   "use strict";
 
+  if (global.__PORTAL_GHOST_VIEW_SCRIPT__) return;
+  global.__PORTAL_GHOST_VIEW_SCRIPT__ = true;
+
   function parseGhostTokenFromUrl() {
     try {
       var q = new URLSearchParams(String(global.location && global.location.search || ""));
       return String(q.get("ghostToken") || q.get("ghost") || "").trim();
     } catch (_e) {
       return "";
+    }
+  }
+
+  function portalGhostTokenInUrl() {
+    return !!parseGhostTokenFromUrl();
+  }
+
+  function mountGhostPendingOverlay(label) {
+    if (!portalGhostTokenInUrl()) return;
+    try {
+      document.documentElement.classList.add("portal-ghost-view-pending");
+    } catch (_cls) {}
+    var host = document.getElementById("portalGhostViewPending");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "portalGhostViewPending";
+      host.setAttribute("role", "status");
+      var root = document.body || document.documentElement;
+      root.appendChild(host);
+    }
+    host.textContent = String(label || "Loading dashboard...");
+  }
+
+  function showGhostError(code) {
+    global.__PORTAL_GHOST_VIEW__ = {
+      active: false,
+      error: code || "verify_failed",
+    };
+    try {
+      document.documentElement.classList.add("portal-ghost-view-error");
+      if (document.body) document.body.classList.add("portal-ghost-view-error");
+      clearGhostPendingOverlay();
+      if (document.querySelector(".portal-ghost-view-error-panel")) return;
+      var err = document.createElement("div");
+      err.className = "portal-ghost-view-error-panel";
+      err.innerHTML =
+        "<strong>Ghost view unavailable</strong><p>Stay signed in to the admin portal on this device, then open Teleport again. If this keeps happening, close other portal tabs and retry.</p>";
+      var root = document.body || document.documentElement;
+      root.insertBefore(err, root.firstChild);
+    } catch (_e) {}
+  }
+
+  function clearGhostPendingOverlay() {
+    try {
+      document.documentElement.classList.remove("portal-ghost-view-pending");
+    } catch (_cls) {}
+    var host = document.getElementById("portalGhostViewPending");
+    if (host && host.parentNode) {
+      try {
+        host.parentNode.removeChild(host);
+      } catch (_rm) {}
     }
   }
 
@@ -270,9 +324,11 @@
     var token = parseGhostTokenFromUrl();
     if (!token) {
       global.__PORTAL_GHOST_VIEW__ = { active: false };
+      clearGhostPendingOverlay();
       return;
     }
 
+    mountGhostPendingOverlay("Loading dashboard...");
     await waitForSupabaseSession(8000);
 
     var result = await verifyGhostToken(token);
@@ -281,18 +337,7 @@
       result = await verifyGhostToken(token);
     }
     if (!result.ok || !result.data) {
-      global.__PORTAL_GHOST_VIEW__ = {
-        active: false,
-        error: result.error || "verify_failed",
-      };
-      try {
-        document.body.classList.add("portal-ghost-view-error");
-        var err = document.createElement("div");
-        err.className = "portal-ghost-view-error-panel";
-        err.innerHTML =
-          "<strong>Ghost view unavailable</strong><p>Stay signed in to the admin portal on this device, then open Teleport again. If this keeps happening, close other portal tabs and retry.</p>";
-        document.body.insertBefore(err, document.body.firstChild);
-      } catch (_e) {}
+      showGhostError(result.error || "verify_failed");
       return;
     }
 
@@ -311,13 +356,21 @@
 
     applyGhostBanner(global.__PORTAL_GHOST_VIEW__);
     bindReadOnlyGuards();
+    mountGhostPendingOverlay("Loading " + String(global.__PORTAL_GHOST_VIEW__.displayName || "dashboard") + "...");
     try {
       global.dispatchEvent(new CustomEvent("portal:ghost-ready", { detail: global.__PORTAL_GHOST_VIEW__ }));
     } catch (_e2) {}
+    global.setTimeout(function () {
+      if (global.__PORTAL_GHOST_VIEW__ && global.__PORTAL_GHOST_VIEW__.active) {
+        clearGhostPendingOverlay();
+      }
+    }, 8000);
   }
 
   var tokenEarly = parseGhostTokenFromUrl();
   if (tokenEarly) {
+    mountGhostPendingOverlay("Loading dashboard...");
+    global.__PORTAL_GHOST_VIEW__ = { active: false, pending: true };
     global.__PORTAL_GHOST_VERIFY_PROMISE__ = new Promise(function (resolve) {
       var started = false;
       function finish() {
@@ -329,7 +382,7 @@
         runGhostBootstrap()
           .then(finish)
           .catch(function () {
-            global.__PORTAL_GHOST_VIEW__ = { active: false, error: "verify_failed" };
+            showGhostError("verify_failed");
             finish();
           });
       }
@@ -360,6 +413,7 @@
 
   global.portalIsGhostViewMode = portalIsGhostViewMode;
   global.portalGhostViewToast = portalGhostViewToast;
+  global.portalGhostTokenInUrl = portalGhostTokenInUrl;
   global.portalParseGhostHandoffFromUrl = portalParseGhostHandoffFromUrl;
   global.portalAppendGhostHandoffToUrl = portalAppendGhostHandoffToUrl;
 })(typeof window !== "undefined" ? window : globalThis);

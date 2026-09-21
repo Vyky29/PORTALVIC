@@ -1,11 +1,12 @@
 /**
- * Parent portal — participant team (instructors with feedback since 1 Jun 2026).
- * Demo map from roster; replaced by API team[] when live data is wired.
+ * Parent portal — participant team (instructors for this term + covers/overrides).
+ * Demo map is last-resort only when API/roster has not yet returned anyone.
  */
 (function (global) {
   "use strict";
 
-  var TEAM_FEEDBACK_SINCE = "2026-06-01";
+  /** Autumn 2026/27 term start — align with PARENT_SESSION_TERM_START_ISO. */
+  var TEAM_FEEDBACK_SINCE = "2026-09-05";
 
   var STAFF_CATALOG = {
   "roberto": {
@@ -74,6 +75,17 @@
     ],
     "avatar_url": "/portal/staff_photos/javier.png",
     "bio": "Javier is confident in the pool and clear with structure. He explains activities step by step and helps children grow their water skills with patience and praise."
+  },
+  "javi": {
+    "name": "Javi Palankas",
+    "nationality": "Spanish",
+    "flag": "🇪🇸",
+    "speaks": [
+      "Spanish",
+      "English"
+    ],
+    "avatar_url": "/portal/staff_photos/javi.png",
+    "bio": "Javi Palankas is warm, clear and steady in the water. He helps children settle quickly and keeps sessions structured, encouraging and fun."
   },
   "raul": {
     "name": "Raul",
@@ -222,6 +234,16 @@
     ],
     "avatar_url": "/portal/staff_photos/youssef.png",
     "bio": "Youssef is confident in aquatic sessions and very attentive to detail. He keeps children motivated while making sure technique and safety stay front and centre."
+  },
+  "emmanuel": {
+    "name": "Emmanuel",
+    "nationality": "Ghanaian",
+    "flag": "🇬🇭",
+    "speaks": [
+      "English"
+    ],
+    "avatar_url": "/portal/staff_photos/emmanuel.png",
+    "bio": "Emmanuel is warm, steady and great with children who need clear structure. He brings calm energy to sessions and helps every participant feel welcome and supported."
   }
 };
 
@@ -296,8 +318,7 @@
     "andres"
   ],
   "ayman": [
-    "javier",
-    "youssef"
+    "javier"
   ],
   "bediako": [
     "aurora"
@@ -365,9 +386,7 @@
   ],
   "erik": [
     "aurora",
-    "berta",
-    "dan",
-    "john"
+    "berta"
   ],
   "fadi": [
     "roberto",
@@ -403,9 +422,10 @@
     "youssef"
   ],
   "jack_s": [
-    "bismark",
-    "godsway",
-    "roberto"
+    "emmanuel",
+    "giuseppe",
+    "javier",
+    "youssef"
   ],
   "jack_w": [
     "aurora",
@@ -491,8 +511,9 @@
     "youssef"
   ],
   "samer": [
-    "giuseppe",
-    "javier"
+    "bismark",
+    "godsway",
+    "roberto"
   ],
   "scott": [
     "alex",
@@ -571,10 +592,9 @@
     "roberto"
   ],
   "zaid": [
-    "bismark",
+    "javier",
     "carlos",
-    "giuseppe",
-    "javier"
+    "john"
   ],
   "zakariya": [
     "aurora",
@@ -626,17 +646,25 @@
   }
 
   function staffKeyFromFeedbackName(name) {
-    var k = String(name || "")
+    if (
+      global.PortalStaffMatchKey &&
+      typeof global.PortalStaffMatchKey.canonicalStaffMatchKey === "function"
+    ) {
+      return global.PortalStaffMatchKey.canonicalStaffMatchKey(name);
+    }
+    var raw = String(name || "")
       .trim()
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, " ");
-    if (!k) return "";
+      .replace(/[\u0300-\u036f]/g, "");
+    if (!raw) return "";
+    /* Javi Palankas (roster id javi) vs Javier Marquez (javier) — never collapse. */
+    if (/palankas|arranz/.test(raw)) return "javi";
+    if (/marquez/.test(raw)) return "javier";
+    var k = raw.replace(/[^a-z0-9]+/g, " ");
     k = k.split(/\s+/)[0] || "";
     if (k === "yousef" || k === "yusef") k = "youssef";
     if (k === "lulia") k = "luliya";
-    if (k === "javi") k = "javier";
     return k;
   }
 
@@ -668,8 +696,9 @@
   }
 
   /**
-   * One instructor for a booked aquatic slot (not the whole pool pair).
-   * Northolt Mon 4.30–5 trials / open band → Dan (ops standing).
+   * One instructor for a booked slot when the Edge team/services_detail left
+   * the seat unnamed. Prefer slot.instructor from the board (B3); venue heuristics
+   * are last-resort only (no Northolt invent when the board already named staff).
    */
   function normalizeSlotTimeToken(time) {
     return String(time || "")
@@ -682,61 +711,31 @@
 
   function standingInstructorKeyForBookedSlot(slot, data) {
     if (!slot) return "";
-    var venue = String(slot.venue || slot.area || "").toLowerCase();
+    var named = staffKeyFromFeedbackName(
+      slot.instructor || slot.staff || slot.instructors || "",
+    );
+    if (named && STAFF_CATALOG[named]) return named;
+
+    /* services_detail.instructor from Edge board — often on the chip, not the upcoming row */
+    var detail = data && Array.isArray(data.services_detail) ? data.services_detail : [];
     var dayTok = dayTokenFromIsoOrLabel(slot.iso, slot.day);
     var time = normalizeSlotTimeToken(slot.time || slot.time_label || "");
+    for (var i = 0; i < detail.length; i++) {
+      var d = detail[i] || {};
+      var dDay = dayTokenFromIsoOrLabel("", d.day);
+      if (dayTok && dDay && dayTok !== dDay) continue;
+      var dNamed = staffKeyFromFeedbackName(d.instructor || "");
+      if (dNamed && STAFF_CATALOG[dNamed]) return dNamed;
+    }
+
+    var venue = String(slot.venue || slot.area || "").toLowerCase();
     var kind = String(slot.kind || "").toLowerCase();
-    var isTrial =
-      kind === "trial" ||
-      (data && (data.is_trial_booking === true || data.place_kind === "trial"));
-
-    if (/northolt/.test(venue) && dayTok === "mon") {
-      /* Trial / first band 4.30–5 → Dan (see autumn crossref). */
-      if (isTrial || /^4\.?30\s+to\s+5(\.00)?$/.test(time) || time === "4.30 to 5") {
-        return "dan";
-      }
-      if (/^5\s+to\s+5\.?30$/.test(time)) return "luliya";
-      if (/^5\.?30\s+to\s+6(\.00)?$/.test(time)) return "luliya";
-      if (/^5\s+to\s+6(\.00)?$/.test(time)) return "dan";
-      if (/^6\s+to\s+6\.?30$/.test(time)) {
-        var pax = String(
-          (data && data.participant && (data.participant.display_name || data.participant.first_name)) ||
-            "",
-        )
-          .toLowerCase()
-          .trim();
-        if (/yamik/.test(pax)) return "luliya";
-        return "dan";
-      }
-      return "dan";
-    }
-
-    if (/northolt/.test(venue) && dayTok === "wed") {
-      if (/^4\.?30\s+to\s+5/.test(time)) {
-        var paxW = String(
-          (data && data.participant && (data.participant.display_name || data.participant.first_name)) ||
-            "",
-        )
-          .toLowerCase()
-          .trim();
-        if (/vithura/.test(paxW)) return "luliya";
-        return "dan";
-      }
-      if (/^5\s+to\s+5\.?30$/.test(time)) return "dan";
-      if (/^5\s+to\s+6/.test(time)) return "dan";
-      if (/^5\.?30\s+to\s+6/.test(time)) return "dan";
-      if (/^6\s+to\s+6\.?30$/.test(time)) return "luliya";
-      return "dan";
-    }
-
-    if (/acton/.test(venue) && (dayTok === "tue" || dayTok === "thu")) {
-      /* Prefer named instructor when API sends it; else do not invent the full pool. */
-      var named = staffKeyFromFeedbackName(slot.instructor || slot.staff || "");
-      if (named && STAFF_CATALOG[named]) return named;
+    if (/westway/.test(venue) && !named) return "sandra";
+    if (/swimfarm|hub/.test(venue) || /multi/.test(kind + " " + String(slot.service || slot.label || ""))) {
       return "";
     }
-
-    if (/westway/.test(venue)) return "sandra";
+    /* Dropped Northolt Mon/Wed invent — board / Edge must name Dan/Luliya. */
+    void time;
     return "";
   }
 
@@ -770,60 +769,105 @@
     upcoming.forEach(function (s) {
       pushKey(standingInstructorKeyForBookedSlot(s, data));
     });
-    if (!keys.length) {
-      var detail =
-        data && data.general && Array.isArray(data.general.services_detail)
-          ? data.general.services_detail
-          : [];
-      detail.forEach(function (s) {
-        if (!s) return;
-        var label = String(s.label || s.service || "").toLowerCase();
-        if (label && !/aquatic|swim|pool/.test(label)) return;
-        pushKey(
-          standingInstructorKeyForBookedSlot(
-            {
-              venue: s.venue || s.area,
-              day: s.day,
-              time: s.time || s.time_slot || s.slot,
-              kind: data && data.place_kind === "trial" ? "trial" : "",
-            },
-            data,
-          ),
-        );
-      });
-    }
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    detail.forEach(function (s) {
+      if (!s) return;
+      pushKey(
+        standingInstructorKeyForBookedSlot(
+          {
+            venue: s.venue || s.area,
+            day: s.day,
+            time: s.time || s.time_slot || s.slot,
+            instructor: s.instructor || s.staff || s.instructors,
+            kind: data && data.place_kind === "trial" ? "trial" : "",
+            service: s.label || s.service,
+          },
+          data,
+        ),
+      );
+    });
     return keys.map(catalogMember).filter(Boolean);
   }
 
-  function catalogMember(key) {
-    var k = String(key || "").trim().toLowerCase();
-    if (k === "javi") k = "javier";
+  /**
+   * Parent Team only shows staff with a real photo on file.
+   * Until a photo exists, that instructor is hidden (no initials placeholder).
+   */
+  var STAFF_WITH_TEAM_PHOTO = {
+    alex: 1,
+    andres: 1,
+    angel: 1,
+    aurora: 1,
+    berta: 1,
+    bismark: 1,
+    carlos: 1,
+    dan: 1,
+    emmanuel: 1,
+    giuseppe: 1,
+    godsway: 1,
+    javi: 1,
+    javier: 1,
+    john: 1,
+    luliya: 1,
+    michelle: 1,
+    raul: 1,
+    roberto: 1,
+    sandra: 1,
+    simon: 1,
+    victor: 1,
+    youssef: 1,
+  };
+
+  /**
+   * Staff Emmanuel Amoakohene uses key emmanuel.
+   * Client Emanuel Dodson is a participant — not a staff key.
+   */
+  function normalizeTeamStaffKey(key) {
+    var k = String(key || "")
+      .trim()
+      .toLowerCase();
     if (k === "lulia") k = "luliya";
     if (k === "yousef" || k === "yusef") k = "youssef";
-    if (!k || !STAFF_CATALOG[k]) return null;
+    if (k === "emanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") k = "emmanuel";
+    return k;
+  }
+
+  function staffHasTeamPhoto(key) {
+    return !!STAFF_WITH_TEAM_PHOTO[normalizeTeamStaffKey(key)];
+  }
+
+  function catalogMember(key) {
+    var k = normalizeTeamStaffKey(key);
+    if (!k || !STAFF_CATALOG[k] || !staffHasTeamPhoto(k)) return null;
     var card = Object.assign({ staff_key: k }, STAFF_CATALOG[k]);
     if (card.avatar_url && card.avatar_url.indexOf("?") === -1) {
-      card.avatar_url = card.avatar_url + "?v=20260710-team-photos";
+      card.avatar_url = card.avatar_url + "?v=20260911-emmanuel-photo";
     }
     return card;
   }
 
   function mergeTeamMember(base, patch) {
     var out = Object.assign({}, base || {}, patch || {});
-    if (Array.isArray(patch && patch.speaks) && patch.speaks.length) {
-      out.speaks = patch.speaks.slice();
-    } else if (base && Array.isArray(base.speaks)) {
-      out.speaks = base.speaks.slice();
-    }
-    /* Catalog is source of truth for photos / bio / nationality when present */
+    /* Catalog is source of truth for photos / bio when present */
     if (base) {
       if (base.avatar_url) out.avatar_url = base.avatar_url;
       if (base.bio) out.bio = base.bio;
-      if (base.nationality) out.nationality = base.nationality;
-      if (base.flag) out.flag = base.flag;
       if (base.name) out.name = base.name;
       if (base.staff_key) out.staff_key = base.staff_key;
+      if (base.staff_id) out.staff_id = base.staff_id;
     }
+    /* Keep effective cover role from API (staff_id assignment). */
+    if (patch && String(patch.role || "").toLowerCase() === "cover") {
+      out.role = "cover";
+    }
+    if (patch && patch.cover_session_date) out.cover_session_date = patch.cover_session_date;
+    delete out.nationality;
+    delete out.flag;
+    delete out.speaks;
+    delete out.force_standing;
     return out;
   }
 
@@ -838,36 +882,53 @@
     var out = [];
     function addCard(card) {
       if (!card) return;
-      var k = String(card.staff_key || staffKeyFromFeedbackName(card.name) || "")
-        .trim()
-        .toLowerCase();
-      if (!k) return;
-      if (seen[k]) return;
+      var k = normalizeTeamStaffKey(
+        card.staff_id ||
+          card.staff_key ||
+          staffKeyFromFeedbackName(card.name) ||
+          "",
+      );
+      if (!k || !staffHasTeamPhoto(k) || seen[k]) return;
+      var catalog = catalogMember(k);
+      if (!catalog) return;
       seen[k] = true;
-      out.push(card);
+      out.push(
+        mergeTeamMember(
+          catalog,
+          Object.assign({}, card, { staff_id: k, staff_key: k }),
+        ),
+      );
     }
 
-    if (data && Array.isArray(data.team)) {
-      data.team.forEach(function (m) {
+    var apiTeam = data && Array.isArray(data.team) ? data.team : [];
+    /*
+     * Prefer edge effective team (roster + staff_id covers). Do not invent
+     * venue heuristics on top when the API already returned assignments.
+     */
+    if (apiTeam.length) {
+      apiTeam.forEach(function (m) {
         if (!m) return;
-        var key = staffKeyFromFeedbackName(
-          m.staff_key || m.key || m.username || m.name || "",
+        var key = normalizeTeamStaffKey(
+          m.staff_id ||
+            m.staff_key ||
+            staffKeyFromFeedbackName(m.staff_key || m.key || m.username || m.name || ""),
         );
-        addCard(mergeTeamMember(catalogMember(key), Object.assign({ staff_key: key }, m)));
+        addCard(Object.assign({ staff_id: key, staff_key: key }, m));
       });
-    }
-    if (!out.length) {
+    } else {
       teamFromSessions(data).forEach(addCard);
-    }
-    /* Trial / new place: standing pool instructors before any session feedback. */
-    if (!out.length) {
       teamFromStandingPool(data).forEach(addCard);
+      /* Demo map only as last resort — never pad live team with prior-term names. */
+      if (!out.length) {
+        demoKeysForParticipant(data).forEach(function (key) {
+          addCard(catalogMember(key));
+        });
+      }
     }
-    /* Roster demo map fills gaps (and covers empty live team) for known children */
-    demoKeysForParticipant(data).forEach(function (key) {
-      addCard(catalogMember(key));
-    });
     out.sort(function (a, b) {
+      var aCover = String(a.role || "").toLowerCase() === "cover" ? 0 : 1;
+      var bCover = String(b.role || "").toLowerCase() === "cover" ? 0 : 1;
+      if (aCover !== bCover) return aCover - bCover;
       return String(a.name || "").localeCompare(String(b.name || ""));
     });
     return out;
@@ -880,5 +941,7 @@
     catalogMember: catalogMember,
     memberFromFeedbackName: memberFromFeedbackName,
     staffKeyFromFeedbackName: staffKeyFromFeedbackName,
+    staffHasTeamPhoto: staffHasTeamPhoto,
+    standingInstructorKeyForBookedSlot: standingInstructorKeyForBookedSlot,
   };
 })(typeof window !== "undefined" ? window : global);

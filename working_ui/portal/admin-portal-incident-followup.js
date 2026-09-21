@@ -576,7 +576,7 @@
     }
     if (st === "awaiting_instructor") {
       body.innerHTML =
-        '<p class="pfu-muted">Awaiting primary instructor review of the Support Plan Update. They can Approve or Reject from the participant Individual Support Plan sheet.</p>' +
+        '<p class="pfu-muted">Awaiting Support Plan Update review in Admin (CLIENT → participant → Individual Support Plan). Force-apply below if office should skip that step.</p>' +
         '<button type="button" class="pfu-btn" data-pfu-force-apply>Force Update Profile (skip instructor)</button>';
       return;
     }

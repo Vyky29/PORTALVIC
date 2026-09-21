@@ -15,6 +15,7 @@
     "wellbeing",
     "feedback",
     "relevant",
+    "session_disruption",
   ];
 
   /** Same identity key as admin DM read acks — per auth user, not shared across admins. */
@@ -234,7 +235,7 @@
   var HUB_TAB_TO_BADGE = {
     feedback: "feedback",
     positive: "feedback",
-    relevant: "relevant",
+    relevant: "feedback",
     cancellations: "cancellation",
     incidents: "incident",
     absents: "absent",
@@ -243,7 +244,7 @@
   var DAYOPS_ACT_TO_BADGE = {
     sessions_hub_feedback: "feedback",
     sessions_hub_positive: "feedback",
-    sessions_hub_relevant: "relevant",
+    sessions_hub_relevant: "feedback",
     sessions_hub_cancellations: "cancellation",
     sessions_hub_incidents: "incident",
     sessions_hub_absents: "absent",
@@ -252,6 +253,7 @@
   var VIEW_TO_BADGE = {
     c4k_late_submissions: "late_approval",
     c4k_registers: "feedback",
+    session_disruptions: "session_disruption",
   };
 
   function markSeenForHubTab(tabId) {

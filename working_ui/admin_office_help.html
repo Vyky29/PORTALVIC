@@ -1,0 +1,1294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Office help guide</title>
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-ops-help" />
+  <style>
+    :root{
+      --oh-navy:#173247;
+      --oh-blue:#2d84b3;
+      --oh-gold:#f4b740;
+      --oh-line:#e8eef4;
+      --oh-muted:#64748b;
+      --oh-bg:#f4f7fa;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{
+      margin:0;min-height:100%;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:var(--oh-bg);color:var(--oh-navy);
+    }
+    .oh-wrap{
+      max-width:960px;margin:0 auto;padding:clamp(16px,2.5vw,28px);
+      padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));
+      min-width:0;
+    }
+    .oh-top{
+      display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;
+      gap:12px;margin:0 0 14px;min-width:0;
+    }
+    .oh-top h1{
+      margin:0;font-size:clamp(22px,2vw + 14px,28px);font-weight:800;
+      letter-spacing:-.03em;line-height:1.15;min-width:0;
+    }
+    .oh-top p{
+      margin:6px 0 0;font-size:14px;line-height:1.45;color:var(--oh-muted);
+      max-width:40rem;overflow-wrap:break-word;
+    }
+    .oh-back{
+      display:inline-flex;align-items:center;gap:6px;padding:8px 12px;
+      border-radius:10px;border:1px solid var(--oh-line);background:#fff;
+      color:var(--oh-navy);font-size:13px;font-weight:700;text-decoration:none;
+      cursor:pointer;font:inherit;
+    }
+    .oh-back:hover,.oh-back:focus-visible{
+      border-color:#9fc6db;background:#eaf5fb;outline:none;
+    }
+    .oh-ask{
+      margin:0 0 16px;padding:14px 16px;border-radius:14px;
+      border:1px solid rgba(45,132,179,.28);background:#fff;
+      box-shadow:0 1px 2px rgba(15,23,42,.04);min-width:0;
+    }
+    .oh-ask__label{
+      margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.05em;
+      text-transform:uppercase;color:var(--oh-blue);
+    }
+    .oh-ask__row{
+      display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;min-width:0;
+    }
+    .oh-ask__input{
+      flex:1 1 220px;min-width:0;padding:11px 12px;border-radius:10px;
+      border:1px solid var(--oh-line);font:inherit;font-size:15px;color:var(--oh-navy);
+      background:#f8fafc;
+    }
+    .oh-ask__input:focus{
+      outline:none;border-color:#9fc6db;background:#fff;
+      box-shadow:0 0 0 3px rgba(45,132,179,.15);
+    }
+    .oh-ask__go{
+      flex:0 0 auto;padding:11px 16px;border-radius:10px;border:0;
+      background:var(--oh-navy);color:#fff;font:inherit;font-size:14px;font-weight:800;
+      cursor:pointer;
+    }
+    .oh-ask__go:hover,.oh-ask__go:focus-visible{background:#0f2433;outline:none}
+    .oh-ask__hints{
+      display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;min-width:0;
+    }
+    .oh-ask__hint{
+      max-width:100%;padding:6px 10px;border-radius:999px;
+      border:1px solid var(--oh-line);background:#f8fafc;
+      font:inherit;font-size:12px;font-weight:700;color:var(--oh-navy);
+      cursor:pointer;overflow-wrap:break-word;text-align:left;
+    }
+    .oh-ask__hint:hover,.oh-ask__hint:focus-visible{
+      border-color:#9fc6db;background:#eaf5fb;outline:none;
+    }
+    .oh-bot{
+      margin:0 0 16px;padding:14px 16px;border-radius:14px;
+      border:1px solid var(--oh-line);background:#fff;min-width:0;
+      display:none;
+    }
+    .oh-bot.is-on{display:block}
+    .oh-bot__q{
+      margin:0 0 8px;font-size:13px;color:var(--oh-muted);overflow-wrap:break-word;
+    }
+    .oh-bot__title{
+      margin:0 0 6px;font-size:17px;font-weight:800;overflow-wrap:break-word;
+    }
+    .oh-bot__sum{
+      margin:0 0 10px;font-size:14px;line-height:1.5;color:var(--oh-muted);
+      overflow-wrap:break-word;
+    }
+    .oh-bot__where{
+      margin:0 0 12px;padding:8px 10px;border-radius:8px;background:#eef6fc;
+      font-size:13px;line-height:1.4;overflow-wrap:break-word;
+    }
+    .oh-bot__steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+    .oh-bot__steps li{
+      display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:start;
+      min-width:0;font-size:14px;line-height:1.45;overflow-wrap:break-word;
+    }
+    .oh-bot__n{
+      width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+      background:var(--oh-navy);color:#fff;font-size:11px;font-weight:800;flex-shrink:0;
+    }
+    .oh-bot__actions{
+      display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0;min-width:0;
+    }
+    .oh-bot__open{
+      padding:9px 12px;border-radius:10px;border:0;background:var(--oh-blue);
+      color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer;
+    }
+    .oh-bot__open:hover,.oh-bot__open:focus-visible{background:#246d96;outline:none}
+    .oh-bot__miss{
+      margin:0;font-size:14px;line-height:1.5;color:var(--oh-muted);overflow-wrap:break-word;
+    }
+    .oh-bot__related{
+      margin:14px 0 0;padding-top:12px;border-top:1px solid var(--oh-line);min-width:0;
+    }
+    .oh-bot__related h3{
+      margin:0 0 8px;font-size:11px;font-weight:800;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--oh-muted);
+    }
+    .oh-bot__chips{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .oh-bot__chip{
+      display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+      text-align:left;width:100%;min-width:0;padding:10px 12px;border-radius:10px;
+      border:1px solid var(--oh-line);background:#f8fafc;cursor:pointer;font:inherit;color:inherit;
+    }
+    .oh-bot__chip:hover,.oh-bot__chip:focus-visible{
+      border-color:#9fc6db;background:#eaf5fb;outline:none;
+    }
+    .oh-bot__chip-t{font-size:14px;font-weight:800;overflow-wrap:break-word}
+    .oh-bot__chip-s{font-size:12px;line-height:1.35;color:var(--oh-muted);overflow-wrap:break-word}
+    .oh-op-list{display:flex;flex-direction:column;gap:8px;margin:10px 0 0;min-width:0}
+    .oh-op-card{
+      padding:10px 12px;border-radius:10px;border:1px solid var(--oh-line);
+      background:#f8fafc;min-width:0;
+    }
+    .oh-op-card__t{font-size:14px;font-weight:800;overflow-wrap:break-word}
+    .oh-op-card__s{margin-top:2px;font-size:12px;line-height:1.35;color:var(--oh-muted);overflow-wrap:break-word}
+    .oh-op-mini{
+      margin-top:8px;padding:6px 10px;border-radius:8px;border:1px solid var(--oh-line);
+      background:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer;color:var(--oh-navy);
+    }
+    .oh-op-mini:hover,.oh-op-mini:focus-visible{border-color:#9fc6db;background:#eaf5fb;outline:none}
+    .oh-op-banner{
+      margin:0 0 12px;padding:8px 12px;border-radius:10px;
+      background:#eef6fc;border:1px solid rgba(45,132,179,.28);
+      font-size:12px;line-height:1.4;color:var(--oh-navy);overflow-wrap:break-word;
+    }
+    .oh-demos{margin:16px 0 0;display:flex;flex-direction:column;gap:12px;min-width:0}
+    .oh-demo{
+      border:1px solid var(--oh-line);border-radius:12px;background:#f8fafc;
+      padding:12px;min-width:0;overflow:hidden;
+    }
+    .oh-demo__tag{
+      margin:0 0 8px;font-size:10px;font-weight:800;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--oh-blue);
+    }
+    .oh-demo__cap{
+      margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--oh-muted);
+      overflow-wrap:break-word;
+    }
+    .oh-mock{pointer-events:none;user-select:none;min-width:0}
+    .oh-mock--ops{
+      border-radius:10px;border:1px solid #d7e4ee;background:#fff;padding:10px;min-width:0;
+    }
+    .oh-mock__row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+    .oh-mock__title{font-size:14px;font-weight:800;color:var(--oh-navy)}
+    .oh-mock__help{
+      font-size:11px;font-weight:800;color:var(--oh-blue);padding:4px 8px;
+      border-radius:8px;border:1px solid #9fc6db;background:#eaf5fb;
+    }
+    .oh-mock__help.is-target,.oh-mock .is-target{
+      outline:2px solid var(--oh-gold);outline-offset:2px;
+      box-shadow:0 0 0 4px rgba(244,183,64,.25);
+    }
+    .oh-mock__glance{
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px;
+    }
+    .oh-mock__g{
+      padding:8px;border-radius:8px;border:1px solid var(--oh-line);background:#f4f7fa;
+      font-size:10px;font-weight:700;color:var(--oh-muted);min-width:0;
+    }
+    .oh-mock__g strong{display:block;font-size:13px;color:var(--oh-navy);margin-top:2px}
+    .oh-mock__cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}
+    .oh-mock__card{
+      padding:8px;border-radius:8px;border:1px solid var(--oh-line);background:#fff;
+      font-size:11px;font-weight:700;color:var(--oh-navy);min-width:0;overflow-wrap:break-word;
+    }
+    .oh-mock__card span{display:block;font-weight:600;color:var(--oh-muted);font-size:10px;margin-top:2px}
+    .oh-mock--board .oh-mock__seat{
+      display:flex;justify-content:space-between;gap:8px;padding:8px 10px;margin-top:6px;
+      border-radius:8px;border:1px solid var(--oh-line);background:#fff;font-size:12px;min-width:0;
+    }
+    .oh-mock__seat{
+      display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;margin-top:6px;
+      border-radius:8px;border:1px solid var(--oh-line);background:#fff;font-size:12px;min-width:0;
+    }
+    .oh-mock--board .oh-mock__seat strong,.oh-mock__seat strong{overflow-wrap:break-word;min-width:0}
+    .oh-mock--board .oh-mock__seat em,.oh-mock__seat em{font-style:normal;font-size:10px;font-weight:800;color:#b45309}
+    .oh-mock--sched{
+      display:grid;gap:8px;
+    }
+    .oh-mock__pill{
+      display:inline-block;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:800;
+      background:#eaf5fb;color:var(--oh-navy);margin-right:4px;margin-bottom:4px;
+    }
+    .oh-mock__pill--hot{background:#fff1f2;color:#be123c}
+    .oh-mock--parent{
+      border-radius:12px;border:1px solid #d7e4ee;background:#fff;padding:12px;min-width:0;
+    }
+    .oh-mock__inv-title{font-size:13px;font-weight:800;margin:0 0 4px}
+    .oh-mock__inv-meta{font-size:11px;color:var(--oh-muted);margin:0 0 10px}
+    .oh-mock__gc-btn{
+      display:block;width:100%;text-align:center;padding:11px 12px;border-radius:10px;
+      border:0;background:#dc2626;color:#fff;font-size:13px;font-weight:800;
+      animation:ohPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes ohPulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.45)}
+      50%{box-shadow:0 0 0 6px rgba(220,38,38,.08)}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .oh-mock__gc-btn{animation:none}
+    }
+    .oh-mock--ask{
+      border-radius:10px;border:1px solid rgba(45,132,179,.28);background:#fff;padding:10px;min-width:0;
+    }
+    .oh-mock__ask-bar{
+      display:flex;gap:6px;margin-top:8px;min-width:0;
+    }
+    .oh-mock__ask-bar span{
+      flex:1;min-width:0;padding:8px;border-radius:8px;border:1px solid var(--oh-line);
+      background:#f8fafc;font-size:11px;color:var(--oh-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .oh-mock__ask-bar b{
+      flex:0 0 auto;padding:8px 10px;border-radius:8px;background:var(--oh-navy);color:#fff;
+      font-size:11px;font-weight:800;
+    }
+    .oh-mock--pin{
+      border-radius:10px;border:1px solid var(--oh-line);background:#fff;padding:10px;min-width:0;
+    }
+    .oh-mock__confirm{
+      margin-top:8px;display:inline-block;padding:8px 12px;border-radius:8px;background:var(--oh-blue);
+      color:#fff;font-size:12px;font-weight:800;
+    }
+    /* Final gate before Operator acts (PIN reveal now; writes in later phases) */
+    .oh-op-gate{
+      margin:0;padding:14px 16px;border-radius:14px;
+      border:2px solid #c2410c;background:#fff7ed;
+      box-shadow:0 0 0 4px rgba(194,65,12,.12);
+      min-width:0;
+    }
+    .oh-op-gate__eyebrow{
+      margin:0 0 6px;font-size:11px;font-weight:800;letter-spacing:.08em;
+      text-transform:uppercase;color:#c2410c;
+    }
+    .oh-op-gate__title{
+      margin:0 0 8px;font-size:17px;font-weight:800;color:#7c2d12;
+      overflow-wrap:break-word;
+    }
+    .oh-op-gate__sum{
+      margin:0 0 10px;font-size:14px;line-height:1.5;color:#9a3412;
+      overflow-wrap:break-word;
+    }
+    .oh-op-gate__list{
+      margin:0 0 12px;padding:0 0 0 18px;color:#7c2d12;
+    }
+    .oh-op-gate__list li{
+      margin:0 0 6px;font-size:13px;line-height:1.45;overflow-wrap:break-word;
+    }
+    .oh-op-gate__actions{
+      display:flex;flex-wrap:wrap;gap:8px;min-width:0;
+    }
+    .oh-op-gate__cancel{
+      padding:10px 14px;border-radius:10px;border:1px solid #fdba74;
+      background:#fff;color:#9a3412;font:inherit;font-size:13px;font-weight:800;cursor:pointer;
+    }
+    .oh-op-gate__cancel:hover,.oh-op-gate__cancel:focus-visible{
+      background:#ffedd5;outline:none;
+    }
+    .oh-op-gate__go{
+      padding:10px 14px;border-radius:10px;border:0;
+      background:#c2410c;color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer;
+    }
+    .oh-op-gate__go:hover,.oh-op-gate__go:focus-visible{
+      background:#9a3412;outline:none;
+    }
+    .oh-op-draft{
+      margin:12px 0 0;padding:12px;border-radius:12px;
+      border:1px solid #9fc6db;background:#f0f9ff;min-width:0;
+    }
+    .oh-op-draft__label{
+      margin:0 0 8px;font-size:12px;font-weight:800;color:var(--oh-navy);
+      overflow-wrap:break-word;
+    }
+    .oh-op-draft__text{
+      display:block;width:100%;min-width:0;min-height:10rem;resize:vertical;
+      padding:10px 12px;border-radius:10px;border:1px solid var(--oh-line);
+      background:#fff;font:inherit;font-size:13px;line-height:1.45;color:var(--oh-navy);
+      white-space:pre-wrap;overflow-wrap:break-word;
+    }
+    .oh-op-draft__copied{
+      align-self:center;font-size:12px;font-weight:800;color:#15803d;
+    }
+    .oh-mock--gate{
+      border-radius:12px;border:2px solid #c2410c;background:#fff7ed;padding:12px;min-width:0;
+    }
+    .oh-mock--gate .oh-mock__confirm{
+      background:#c2410c;
+    }
+    .oh-crumb{
+      display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+      margin:0 0 14px;font-size:13px;color:var(--oh-muted);min-width:0;
+    }
+    .oh-crumb button{
+      border:0;background:none;padding:0;font:inherit;font-weight:700;
+      color:var(--oh-blue);cursor:pointer;text-decoration:underline;
+    }
+    .oh-grid{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:12px;min-width:0;
+    }
+    .oh-cat{
+      display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+      text-align:left;padding:16px;border-radius:14px;border:1px solid var(--oh-line);
+      background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);
+      cursor:pointer;font:inherit;color:inherit;min-width:0;width:100%;
+      transition:border-color .15s,box-shadow .15s;
+    }
+    .oh-cat:hover,.oh-cat:focus-visible{
+      border-color:#9fc6db;box-shadow:0 4px 16px rgba(23,50,71,.08);outline:none;
+    }
+    .oh-cat__prio{
+      font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+      color:var(--oh-blue);
+    }
+    .oh-cat__title{
+      font-size:16px;font-weight:800;line-height:1.2;overflow-wrap:break-word;
+    }
+    .oh-cat__blurb{
+      font-size:13px;line-height:1.4;color:var(--oh-muted);overflow-wrap:break-word;
+    }
+    .oh-cat__n{
+      margin-top:auto;padding-top:8px;font-size:12px;font-weight:700;color:var(--oh-navy);
+    }
+    .oh-list{display:flex;flex-direction:column;gap:8px;min-width:0}
+    .oh-lesson{
+      display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+      text-align:left;padding:14px 16px;border-radius:12px;border:1px solid var(--oh-line);
+      background:#fff;cursor:pointer;font:inherit;color:inherit;width:100%;min-width:0;
+    }
+    .oh-lesson:hover,.oh-lesson:focus-visible{
+      border-color:#9fc6db;background:#f8fafc;outline:none;
+    }
+    .oh-lesson__title{font-size:15px;font-weight:800;overflow-wrap:break-word}
+    .oh-lesson__sum{font-size:13px;line-height:1.4;color:var(--oh-muted);overflow-wrap:break-word}
+    .oh-detail{
+      border:1px solid var(--oh-line);border-radius:14px;background:#fff;
+      padding:clamp(16px,2vw,22px);min-width:0;box-shadow:0 1px 2px rgba(15,23,42,.04);
+    }
+    .oh-detail h2{
+      margin:0 0 8px;font-size:clamp(18px,1.2vw + 14px,22px);font-weight:800;
+      letter-spacing:-.02em;overflow-wrap:break-word;
+    }
+    .oh-detail__sum{
+      margin:0 0 12px;font-size:14px;line-height:1.5;color:var(--oh-muted);
+      overflow-wrap:break-word;
+    }
+    .oh-where{
+      margin:0 0 16px;padding:10px 12px;border-radius:10px;
+      background:#eef6fc;border:1px solid rgba(45,132,179,.25);
+      font-size:13px;line-height:1.45;overflow-wrap:break-word;
+    }
+    .oh-where strong{color:var(--oh-navy)}
+    .oh-steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+    .oh-steps li{
+      display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;
+      min-width:0;
+    }
+    .oh-steps__n{
+      width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+      background:var(--oh-navy);color:#fff;font-size:12px;font-weight:800;flex-shrink:0;
+    }
+    .oh-steps__t{
+      margin:0;padding-top:4px;font-size:14px;line-height:1.5;overflow-wrap:break-word;
+    }
+    .oh-tips{
+      margin:18px 0 0;padding:12px 14px;border-radius:12px;
+      border:1px solid rgba(244,183,64,.55);background:#fff8e8;min-width:0;
+    }
+    .oh-tips h3{
+      margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--oh-navy);
+    }
+    .oh-tips ul{margin:0;padding:0 0 0 18px}
+    .oh-tips li{margin:0 0 6px;font-size:13px;line-height:1.45;overflow-wrap:break-word}
+    .oh-loading,.oh-err{padding:24px;text-align:center;color:var(--oh-muted);font-size:14px}
+    .oh-err{color:#b91c1c}
+    .oh-foot{
+      margin:28px 0 0;font-size:12px;color:var(--oh-muted);text-align:center;
+    }
+  </style>
+</head>
+<body>
+  <div class="oh-wrap">
+    <div class="oh-top">
+      <div>
+        <h1 id="ohTitle">Office help guide</h1>
+        <p id="ohSub">Ask a question, or browse by category.</p>
+      </div>
+      <a class="oh-back" id="ohHubLink" href="/admin_dashboard.html">Back to Operations Hub</a>
+    </div>
+
+    <section class="oh-ask" aria-label="Ask Office help">
+      <p class="oh-ask__label">Ask Office help / Operator</p>
+      <p class="oh-op-banner">Operator (phase 1): list pending Direct Payment mandates; reveal parent portal PIN after orange Final check; give a WhatsApp draft to Copy (does not send). It does not write covers, day offs, or invoices alone.</p>
+      <form class="oh-ask__row" id="ohAskForm">
+        <input
+          class="oh-ask__input"
+          id="ohAskInput"
+          type="search"
+          name="q"
+          autocomplete="off"
+          placeholder="e.g. who has not authorised Direct Payment? / PIN for Adaam"
+          aria-label="Your question"
+        />
+        <button class="oh-ask__go" type="submit">Ask</button>
+      </form>
+      <div class="oh-ask__hints" id="ohAskHints"></div>
+    </section>
+
+    <div class="oh-bot" id="ohBot" hidden aria-live="polite"></div>
+
+    <nav class="oh-crumb" id="ohCrumb" hidden></nav>
+    <div id="ohRoot"><p class="oh-loading">Loading guide...</p></div>
+    <p class="oh-foot">PORTALVIC · Office help · v<span id="ohVer">-</span></p>
+  </div>
+  <script src="/portal/portal-admin-supabase-bridge.js?v=20260917-op1"></script>
+  <script src="/portal/admin_office_operator.js?v=20260917-op4"></script>
+  <script>
+(function () {
+  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v7";
+  var MIN_SCORE = 5;
+  var data = null;
+  var view = { mode: "cats", catId: "", lessonId: "" };
+  var lastAsk = "";
+
+  var STOP_WORDS = {
+    how: 1, do: 1, i: 1, the: 1, a: 1, an: 1, to: 1, where: 1, is: 1, what: 1,
+    can: 1, my: 1, me: 1, of: 1, on: 1, in: 1, at: 1, for: 1, and: 1, or: 1,
+    you: 1, please: 1, so: 1, them: 1, about: 1, this: 1, that: 1, with: 1,
+    de: 1, como: 1, donde: 1, que: 1, el: 1, la: 1, los: 1, las: 1, un: 1,
+    una: 1, por: 1, con: 1, if: 1, who: 1, have: 1, has: 1, had: 1, now: 1,
+    send: 1, make: 1
+  };
+
+  var HINTS = [
+    "Who has not authorised Direct Payment?",
+    "PIN for parent portal (type a child name)",
+    "Help parent authorise Direct Payment mandate",
+    "Sessions Overview day board",
+    "Schedule and Covers one day",
+    "What can the operator do?",
+    "Create invoice"
+  ];
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function buildDemo(key) {
+    var k = String(key || "").trim();
+    if (k === "ops_hub") {
+      return (
+        '<div class="oh-mock oh-mock--ops" aria-hidden="true">' +
+        '<div class="oh-mock__row">' +
+        '<span class="oh-mock__title">Operations Hub</span>' +
+        '<span class="oh-mock__help is-target">Office help</span></div>' +
+        '<div class="oh-mock__glance">' +
+        '<div class="oh-mock__g">Alerts<strong>3</strong></div>' +
+        '<div class="oh-mock__g">Calendar<strong>Notes</strong></div>' +
+        '<div class="oh-mock__g">Pending<strong>2</strong></div></div>' +
+        '<div class="oh-mock__cards">' +
+        '<div class="oh-mock__card">Sessions overview<span>Day board</span></div>' +
+        '<div class="oh-mock__card">Schedule &amp; Covers<span>One day</span></div>' +
+        '<div class="oh-mock__card">Finance<span>Invoices</span></div>' +
+        '<div class="oh-mock__card">H&amp;R<span>Timetable</span></div></div></div>'
+      );
+    }
+    if (k === "sessions_overview") {
+      return (
+        '<div class="oh-mock oh-mock--ops oh-mock--board" aria-hidden="true">' +
+        '<div class="oh-mock__row"><span class="oh-mock__title">Sessions Overview</span>' +
+        '<span class="oh-mock__pill">Tue 16 Sep</span></div>' +
+        '<div class="oh-mock__seat"><strong>Javier · Acton Aquatic 5.30</strong><em>COVER NEEDED</em></div>' +
+        '<div class="oh-mock__seat is-target"><strong>Berta · Hub Multi 4.00</strong><span>Booked</span></div>' +
+        '<div class="oh-mock__seat"><strong>Open seat · Community 5.00</strong><span>No participant</span></div></div>'
+      );
+    }
+    if (k === "schedule_covers") {
+      return (
+        '<div class="oh-mock oh-mock--ops oh-mock--sched" aria-hidden="true">' +
+        '<div class="oh-mock__title">Schedule &amp; Covers</div>' +
+        '<div><span class="oh-mock__pill">Date</span><span class="oh-mock__pill">Band</span></div>' +
+        '<div>' +
+        '<span class="oh-mock__pill">Cancel slot</span>' +
+        '<span class="oh-mock__pill is-target">Assign cover</span>' +
+        '<span class="oh-mock__pill">Client absence</span>' +
+        '<span class="oh-mock__pill">Replace</span></div>' +
+        '<div class="oh-mock__seat" style="margin:0"><strong>This date only</strong><span>Not rest of term</span></div></div>'
+      );
+    }
+    if (k === "parent_gc_setup") {
+      return (
+        '<div class="oh-mock oh-mock--parent" aria-hidden="true">' +
+        '<p class="oh-mock__inv-title">Parent portal · Invoices</p>' +
+        '<p class="oh-mock__inv-meta">Autumn Direct Payment · amount due</p>' +
+        '<span class="oh-mock__gc-btn is-target">Set up Direct Payment</span></div>'
+      );
+    }
+    if (k === "office_ask") {
+      return (
+        '<div class="oh-mock oh-mock--ask" aria-hidden="true">' +
+        '<div class="oh-demo__tag" style="margin:0">Ask Office help / Operator</div>' +
+        '<div class="oh-mock__ask-bar">' +
+        '<span>Who has not authorised Direct Payment?</span>' +
+        '<b class="is-target">Ask</b></div></div>'
+      );
+    }
+    if (k === "pin_confirm") {
+      return (
+        '<div class="oh-mock oh-mock--gate" aria-hidden="true">' +
+        '<div class="oh-demo__tag" style="margin:0 0 6px;color:#c2410c">Final check — Operator about to act</div>' +
+        '<div class="oh-mock__title" style="color:#7c2d12">Reveal parent portal PIN</div>' +
+        '<div class="oh-mock__inv-meta" style="color:#9a3412">Machine will show the PIN on screen. Check the family is correct.</div>' +
+        '<span class="oh-mock__confirm is-target">Confirm — Operator proceed</span></div>'
+      );
+    }
+    if (k === "finance") {
+      return (
+        '<div class="oh-mock oh-mock--ops" aria-hidden="true">' +
+        '<div class="oh-mock__title">Finance</div>' +
+        '<div class="oh-mock__cards" style="margin-top:8px">' +
+        '<div class="oh-mock__card is-target">Create invoice<span>Family / term</span></div>' +
+        '<div class="oh-mock__card">Mark paid<span>Bank / Stripe</span></div>' +
+        '<div class="oh-mock__card">Refunds &amp; credits<span>Absents</span></div>' +
+        '<div class="oh-mock__card">Direct Payments<span>GC stream</span></div></div></div>'
+      );
+    }
+    if (k === "pending_strip") {
+      return (
+        '<div class="oh-mock oh-mock--ops" aria-hidden="true">' +
+        '<div class="oh-mock__glance">' +
+        '<div class="oh-mock__g is-target">Alerts<strong>Inbox</strong></div>' +
+        '<div class="oh-mock__g">Calendar<strong>Notes</strong></div>' +
+        '<div class="oh-mock__g is-target">Pending<strong>Late / absents</strong></div></div></div>'
+      );
+    }
+    return "";
+  }
+
+  function renderDemos(list) {
+    if (!Array.isArray(list) || !list.length) return "";
+    var inner = list
+      .map(function (d) {
+        var key = String((d && d.demo) || "").trim();
+        var html = buildDemo(key);
+        if (!html) return "";
+        var cap = String((d && d.caption) || "").trim();
+        return (
+          '<figure class="oh-demo">' +
+          '<p class="oh-demo__tag">Where it looks</p>' +
+          html +
+          (cap ? '<figcaption class="oh-demo__cap">' + esc(cap) + "</figcaption>" : "") +
+          "</figure>"
+        );
+      })
+      .join("");
+    return inner ? '<div class="oh-demos">' + inner + "</div>" : "";
+  }
+
+  function renderOperatorGate(opts) {
+    opts = opts || {};
+    var bullets = Array.isArray(opts.bullets) ? opts.bullets : [];
+    var list =
+      bullets.length > 0
+        ? '<ul class="oh-op-gate__list">' +
+          bullets
+            .map(function (b) {
+              return "<li>" + esc(b) + "</li>";
+            })
+            .join("") +
+          "</ul>"
+        : "";
+    return (
+      '<div class="oh-op-gate" role="alertdialog" aria-labelledby="ohOpGateTitle">' +
+      '<p class="oh-op-gate__eyebrow">Final check — Operator about to act</p>' +
+      '<p class="oh-op-gate__title" id="ohOpGateTitle">' +
+      esc(opts.title || "Confirm before Operator proceeds") +
+      "</p>" +
+      '<p class="oh-op-gate__sum">' +
+      esc(
+        opts.summary ||
+          "This is the last screen before the machine runs. Check the details are correct.",
+      ) +
+      "</p>" +
+      list +
+      '<div class="oh-op-gate__actions">' +
+      '<button type="button" class="oh-op-gate__cancel" data-oh-op-gate-cancel="1">Cancel</button>' +
+      '<button type="button" class="oh-op-gate__go" data-oh-op-gate-go="' +
+      esc(opts.action || "") +
+      '" data-oh-op-gate-id="' +
+      esc(opts.id || "") +
+      '" data-oh-op-gate-label="' +
+      esc(opts.label || "") +
+      '">' +
+      esc(opts.goLabel || "Confirm — Operator proceed") +
+      "</button></div></div>"
+    );
+  }
+
+  window.PortalOfficeHelpRenderOperatorGate = renderOperatorGate;
+
+  function normalize(text) {
+    return String(text || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function allLessons() {
+    var out = [];
+    var cats = (data && data.categories) || [];
+    for (var i = 0; i < cats.length; i++) {
+      var cat = cats[i];
+      var list = cat.lessons || [];
+      for (var j = 0; j < list.length; j++) {
+        out.push({ cat: cat, lesson: list[j] });
+      }
+    }
+    return out;
+  }
+
+  function catById(id) {
+    if (!data || !data.categories) return null;
+    for (var i = 0; i < data.categories.length; i++) {
+      if (data.categories[i].id === id) return data.categories[i];
+    }
+    return null;
+  }
+
+  function lessonById(cat, id) {
+    var list = (cat && cat.lessons) || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) return list[i];
+    }
+    return null;
+  }
+
+  function scoreLesson(queryNorm, tokens, row) {
+    var les = row.lesson;
+    var cat = row.cat;
+    var score = 0;
+    var titleNorm = normalize(les.title);
+    var blob = normalize(
+      [les.title, les.summary, les.where, cat.title, cat.blurb]
+        .concat(les.steps || [])
+        .concat(les.tips || [])
+        .concat(les.keywords || [])
+        .join(" ")
+    );
+    var kws = les.keywords || [];
+    var i;
+    var nk;
+
+    for (i = 0; i < kws.length; i++) {
+      nk = normalize(kws[i]);
+      if (!nk) continue;
+      if (queryNorm.indexOf(nk) !== -1) score += nk.indexOf(" ") !== -1 ? 12 : 6;
+    }
+
+    for (i = 0; i < tokens.length; i++) {
+      var t = tokens[i];
+      if (titleNorm.indexOf(t) !== -1) score += 4;
+      if (blob.indexOf(t) !== -1) score += 2;
+      for (var j = 0; j < kws.length; j++) {
+        nk = normalize(kws[j]);
+        if (!nk) continue;
+        if (nk.indexOf(t) !== -1 || t.indexOf(nk) !== -1) score += 3;
+      }
+    }
+
+    if (queryNorm.indexOf(normalize(les.id).replace(/_/g, " ")) !== -1) score += 6;
+    return score;
+  }
+
+  function matchQuestion(question) {
+    var queryNorm = normalize(question);
+    if (!queryNorm) return { ok: false, reason: "empty", ranked: [] };
+    var tokens = queryNorm.split(" ").filter(function (t) {
+      return t.length > 1 && !STOP_WORDS[t];
+    });
+    var ranked = [];
+    var rows = allLessons();
+    for (var i = 0; i < rows.length; i++) {
+      var sc = scoreLesson(queryNorm, tokens, rows[i]);
+      if (sc > 0) ranked.push({ row: rows[i], score: sc });
+    }
+    ranked.sort(function (a, b) {
+      return b.score - a.score;
+    });
+    var best = ranked[0];
+    if (best && best.score >= MIN_SCORE) {
+      return {
+        ok: true,
+        best: best.row,
+        score: best.score,
+        related: ranked.slice(1, 5).map(function (r) {
+          return r.row;
+        })
+      };
+    }
+    return {
+      ok: false,
+      score: best ? best.score : 0,
+      related: ranked.slice(0, 5).map(function (r) {
+        return r.row;
+      })
+    };
+  }
+
+  function openLesson(catId, lessonId) {
+    view.catId = catId;
+    view.lessonId = lessonId;
+    view.mode = "lesson";
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function relatedHtml(rows) {
+    if (!rows || !rows.length) return "";
+    return (
+      '<div class="oh-bot__related"><h3>Related options</h3><div class="oh-bot__chips">' +
+      rows
+        .map(function (r) {
+          return (
+            '<button type="button" class="oh-bot__chip" data-oh-open-cat="' +
+            esc(r.cat.id) +
+            '" data-oh-open-lesson="' +
+            esc(r.lesson.id) +
+            '"><span class="oh-bot__chip-t">' +
+            esc(r.lesson.title) +
+            '</span><span class="oh-bot__chip-s">' +
+            esc(r.cat.title + (r.lesson.summary ? " · " + r.lesson.summary : "")) +
+            "</span></button>"
+          );
+        })
+        .join("") +
+      "</div></div>"
+    );
+  }
+
+  function showBotHtml(question, html) {
+    var el = document.getElementById("ohBot");
+    if (!el) return;
+    lastAsk = question;
+    el.hidden = false;
+    el.classList.add("is-on");
+    el.innerHTML =
+      '<p class="oh-bot__q">For: “' + esc(question) + '”</p>' + html;
+  }
+
+  function renderBotAnswer(question, match) {
+    var el = document.getElementById("ohBot");
+    if (!el) return;
+    lastAsk = question;
+    el.hidden = false;
+    el.classList.add("is-on");
+    if (match.ok && match.best) {
+      var les = match.best.lesson;
+      var cat = match.best.cat;
+      var steps = (les.steps || [])
+        .map(function (t, i) {
+          return (
+            "<li><span class=\"oh-bot__n\">" +
+            (i + 1) +
+            "</span><span>" +
+            esc(t) +
+            "</span></li>"
+          );
+        })
+        .join("");
+      var tips = (les.tips || []).filter(Boolean);
+      var tipsHtml = tips.length
+        ? '<div class="oh-tips" style="margin-top:12px"><h3>Tips</h3><ul>' +
+          tips
+            .map(function (t) {
+              return "<li>" + esc(t) + "</li>";
+            })
+            .join("") +
+          "</ul></div>"
+        : "";
+      el.innerHTML =
+        '<p class="oh-bot__q">For: “' +
+        esc(question) +
+        '”</p>' +
+        '<p class="oh-bot__title">' +
+        esc(les.title) +
+        "</p>" +
+        '<p class="oh-bot__sum">' +
+        esc(les.summary || "") +
+        "</p>" +
+        (les.where
+          ? '<p class="oh-bot__where"><strong>Where:</strong> ' + esc(les.where) + "</p>"
+          : "") +
+        renderDemos(les.demos) +
+        '<ol class="oh-bot__steps">' +
+        steps +
+        "</ol>" +
+        tipsHtml +
+        '<div class="oh-bot__actions">' +
+        '<button type="button" class="oh-bot__open" data-oh-open-cat="' +
+        esc(cat.id) +
+        '" data-oh-open-lesson="' +
+        esc(les.id) +
+        '">Open full lesson</button></div>' +
+        relatedHtml(match.related);
+      return;
+    }
+    el.innerHTML =
+      '<p class="oh-bot__q">For: “' +
+      esc(question) +
+      '”</p>' +
+      '<p class="oh-bot__miss">No exact match yet. Try one of these related lessons, or browse categories below. If this keeps coming up, tell Victor so we can add it to the guide.</p>' +
+      relatedHtml(match.related);
+  }
+
+  function runAsk(raw) {
+    var q = String(raw || "").trim();
+    if (!q || !data) return;
+    var input = document.getElementById("ohAskInput");
+    if (input) input.value = q;
+    var bot = document.getElementById("ohBot");
+    if (bot) {
+      bot.hidden = false;
+      bot.classList.add("is-on");
+      bot.innerHTML =
+        '<p class="oh-bot__q">For: “' + esc(q) + '”</p><p class="oh-bot__miss">Working…</p>';
+      bot.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    var op = window.PortalOfficeOperator;
+    var goGuide = function () {
+      renderBotAnswer(q, matchQuestion(q));
+    };
+
+    if (!op || typeof op.run !== "function") {
+      goGuide();
+      return;
+    }
+
+    op.run(q)
+      .then(function (res) {
+        if (res && res.handled) {
+          showBotHtml(q, res.html || "");
+          return;
+        }
+        goGuide();
+      })
+      .catch(function () {
+        goGuide();
+      });
+  }
+
+  function renderHints() {
+    var el = document.getElementById("ohAskHints");
+    if (!el) return;
+    el.innerHTML = HINTS.map(function (h) {
+      return (
+        '<button type="button" class="oh-ask__hint" data-oh-hint="' +
+        esc(h) +
+        '">' +
+        esc(h) +
+        "</button>"
+      );
+    }).join("");
+  }
+
+  function syncHash() {
+    if (view.mode === "lesson" && view.catId && view.lessonId) {
+      location.hash =
+        "cat=" +
+        encodeURIComponent(view.catId) +
+        "&lesson=" +
+        encodeURIComponent(view.lessonId);
+    } else if (view.mode === "lessons" && view.catId) {
+      location.hash = "cat=" + encodeURIComponent(view.catId);
+    } else if (location.hash) {
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+  }
+
+  function parseHash() {
+    var h = String(location.hash || "").replace(/^#/, "");
+    if (!h) return;
+    var parts = h.split("&");
+    var map = {};
+    parts.forEach(function (p) {
+      var kv = p.split("=");
+      map[decodeURIComponent(kv[0] || "")] = decodeURIComponent(kv[1] || "");
+    });
+    if (map.cat) {
+      view.catId = map.cat;
+      view.mode = map.lesson ? "lesson" : "lessons";
+      view.lessonId = map.lesson || "";
+    }
+  }
+
+  function renderCrumb() {
+    var el = document.getElementById("ohCrumb");
+    if (!el) return;
+    if (view.mode === "cats") {
+      el.hidden = true;
+      el.innerHTML = "";
+      return;
+    }
+    el.hidden = false;
+    var cat = catById(view.catId);
+    var html =
+      '<button type="button" data-oh-nav="cats">All categories</button>' +
+      '<span aria-hidden="true">/</span>' +
+      '<button type="button" data-oh-nav="cat">' +
+      esc(cat ? cat.title : view.catId) +
+      "</button>";
+    if (view.mode === "lesson") {
+      var les = lessonById(cat, view.lessonId);
+      html +=
+        '<span aria-hidden="true">/</span><span>' +
+        esc(les ? les.title : view.lessonId) +
+        "</span>";
+    }
+    el.innerHTML = html;
+  }
+
+  function renderCats() {
+    var cats = (data.categories || []).slice().sort(function (a, b) {
+      return (a.priority || 9) - (b.priority || 9);
+    });
+    var html = '<div class="oh-grid">';
+    cats.forEach(function (c) {
+      var n = (c.lessons || []).length;
+      html +=
+        '<button type="button" class="oh-cat" data-oh-cat="' +
+        esc(c.id) +
+        '">' +
+        '<span class="oh-cat__prio">Priority ' +
+        esc(String(c.priority || "")) +
+        "</span>" +
+        '<span class="oh-cat__title">' +
+        esc(c.title) +
+        "</span>" +
+        '<span class="oh-cat__blurb">' +
+        esc(c.blurb || "") +
+        "</span>" +
+        '<span class="oh-cat__n">' +
+        n +
+        (n === 1 ? " lesson" : " lessons") +
+        "</span></button>";
+    });
+    html += "</div>";
+    return html;
+  }
+
+  function renderLessons(cat) {
+    var html = '<div class="oh-list">';
+    (cat.lessons || []).forEach(function (l) {
+      html +=
+        '<button type="button" class="oh-lesson" data-oh-lesson="' +
+        esc(l.id) +
+        '">' +
+        '<span class="oh-lesson__title">' +
+        esc(l.title) +
+        "</span>" +
+        '<span class="oh-lesson__sum">' +
+        esc(l.summary || "") +
+        "</span></button>";
+    });
+    html += "</div>";
+    return html;
+  }
+
+  function renderLesson(cat, les) {
+    var steps = (les.steps || [])
+      .map(function (t, i) {
+        return (
+          '<li><span class="oh-steps__n">' +
+          (i + 1) +
+          '</span><p class="oh-steps__t">' +
+          esc(t) +
+          "</p></li>"
+        );
+      })
+      .join("");
+    var tips = (les.tips || []).filter(Boolean);
+    var tipsHtml = "";
+    if (tips.length) {
+      tipsHtml =
+        '<div class="oh-tips"><h3>Tips</h3><ul>' +
+        tips
+          .map(function (t) {
+            return "<li>" + esc(t) + "</li>";
+          })
+          .join("") +
+        "</ul></div>";
+    }
+    return (
+      '<article class="oh-detail">' +
+      "<h2>" +
+      esc(les.title) +
+      "</h2>" +
+      '<p class="oh-detail__sum">' +
+      esc(les.summary || "") +
+      "</p>" +
+      (les.where
+        ? '<p class="oh-where"><strong>Where:</strong> ' + esc(les.where) + "</p>"
+        : "") +
+      renderDemos(les.demos) +
+      '<ol class="oh-steps">' +
+      steps +
+      "</ol>" +
+      tipsHtml +
+      "</article>"
+    );
+  }
+
+  function render() {
+    var root = document.getElementById("ohRoot");
+    var title = document.getElementById("ohTitle");
+    var sub = document.getElementById("ohSub");
+    if (!root || !data) return;
+    renderCrumb();
+    syncHash();
+    if (view.mode === "cats") {
+      if (title) title.textContent = data.title || "Office help guide";
+      if (sub) sub.textContent = data.subtitle || "";
+      root.innerHTML = renderCats();
+      return;
+    }
+    var cat = catById(view.catId);
+    if (!cat) {
+      view.mode = "cats";
+      render();
+      return;
+    }
+    if (view.mode === "lessons") {
+      if (title) title.textContent = cat.title;
+      if (sub) sub.textContent = cat.blurb || "";
+      root.innerHTML = renderLessons(cat);
+      return;
+    }
+    var les = lessonById(cat, view.lessonId);
+    if (!les) {
+      view.mode = "lessons";
+      render();
+      return;
+    }
+    if (title) title.textContent = les.title;
+    if (sub) sub.textContent = cat.title;
+    root.innerHTML = renderLesson(cat, les);
+  }
+
+  function bind() {
+    var root = document.getElementById("ohRoot");
+    var crumb = document.getElementById("ohCrumb");
+    var form = document.getElementById("ohAskForm");
+    var hints = document.getElementById("ohAskHints");
+    var bot = document.getElementById("ohBot");
+
+    if (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var input = document.getElementById("ohAskInput");
+        runAsk(input ? input.value : "");
+      });
+    }
+    if (hints) {
+      hints.addEventListener("click", function (ev) {
+        var t = ev.target.closest("[data-oh-hint]");
+        if (!t) return;
+        runAsk(t.getAttribute("data-oh-hint"));
+      });
+    }
+    if (bot) {
+      bot.addEventListener("click", function (ev) {
+        var gateGo = ev.target.closest("[data-oh-op-gate-go]");
+        if (gateGo && window.PortalOfficeOperator) {
+          var action = gateGo.getAttribute("data-oh-op-gate-go") || "";
+          var gid = gateGo.getAttribute("data-oh-op-gate-id") || "";
+          var glabel = gateGo.getAttribute("data-oh-op-gate-label") || lastAsk || "Operator";
+          if (action === "reveal_pin" && gid) {
+            showBotHtml(glabel, '<p class="oh-bot__miss">Operator running…</p>');
+            window.PortalOfficeOperator.run(glabel, {
+              intent: {
+                kind: "lookup_family_access",
+                parent_person_id: gid,
+                confirm: true,
+                query: "",
+              },
+            }).then(function (res) {
+              showBotHtml(glabel, (res && res.html) || "");
+            });
+          }
+          return;
+        }
+        var copyBtn = ev.target.closest("[data-oh-op-copy-draft]");
+        if (copyBtn) {
+          var box = copyBtn.closest(".oh-op-draft");
+          var ta = box && box.querySelector(".oh-op-draft__text");
+          var text = ta ? String(ta.value || "") : "";
+          var done = function () {
+            var ok = box && box.querySelector(".oh-op-draft__copied");
+            if (ok) {
+              ok.hidden = false;
+              setTimeout(function () {
+                ok.hidden = true;
+              }, 2000);
+            }
+            copyBtn.textContent = "Copied";
+            setTimeout(function () {
+              copyBtn.textContent = "Copy message";
+            }, 2000);
+          };
+          if (text && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done).catch(function () {
+              if (ta) {
+                ta.focus();
+                ta.select();
+              }
+            });
+          } else if (ta) {
+            ta.focus();
+            ta.select();
+            try {
+              document.execCommand("copy");
+              done();
+            } catch (_) {}
+          }
+          return;
+        }
+        var gateCancel = ev.target.closest("[data-oh-op-gate-cancel]");
+        if (gateCancel) {
+          showBotHtml(
+            lastAsk || "Cancelled",
+            '<p class="oh-bot__miss">Cancelled — Operator did not run. Ask again or pick another family if needed.</p>',
+          );
+          return;
+        }
+        var confirmBtn = ev.target.closest("[data-oh-op-confirm-pin]");
+        if (confirmBtn) {
+          var pid = confirmBtn.getAttribute("data-oh-op-confirm-pin");
+          var fam = confirmBtn.getAttribute("data-oh-op-family") || "";
+          var kids = confirmBtn.getAttribute("data-oh-op-kids") || "";
+          var label = lastAsk || "Reveal parent portal PIN";
+          var gateFn =
+            typeof window.PortalOfficeHelpRenderOperatorGate === "function"
+              ? window.PortalOfficeHelpRenderOperatorGate
+              : null;
+          if (!gateFn) {
+            showBotHtml(label, '<p class="oh-bot__miss">Confirm UI missing — refresh the page.</p>');
+            return;
+          }
+          showBotHtml(
+            label,
+            gateFn({
+              title: "Reveal parent portal PIN",
+              summary:
+                "You are about to let the Operator show a live PIN on screen. Check this is the right family before you continue.",
+              bullets: [
+                fam || kids ? "Family: " + (fam || "") + (kids ? " · " + kids : "") : "Selected family from the list",
+                "PIN will appear on this page (sensitive)",
+                "A WhatsApp draft will be ready to Copy — Operator does not send it",
+                "Wrong family? Cancel and pick again",
+              ],
+              action: "reveal_pin",
+              id: pid,
+              label: label,
+              goLabel: "Confirm — Operator proceed",
+            }),
+          );
+          return;
+        }
+        var pinSearch = ev.target.closest("[data-oh-op-pin-search]");
+        if (pinSearch) {
+          runAsk("PIN for " + pinSearch.getAttribute("data-oh-op-pin-search"));
+          return;
+        }
+        var t = ev.target.closest("[data-oh-open-cat][data-oh-open-lesson]");
+        if (!t) return;
+        openLesson(t.getAttribute("data-oh-open-cat"), t.getAttribute("data-oh-open-lesson"));
+      });
+    }
+    if (root) {
+      root.addEventListener("click", function (ev) {
+        var t = ev.target.closest("[data-oh-cat],[data-oh-lesson]");
+        if (!t) return;
+        if (t.getAttribute("data-oh-cat")) {
+          view.catId = t.getAttribute("data-oh-cat");
+          view.lessonId = "";
+          view.mode = "lessons";
+          render();
+          window.scrollTo(0, 0);
+          return;
+        }
+        if (t.getAttribute("data-oh-lesson")) {
+          view.lessonId = t.getAttribute("data-oh-lesson");
+          view.mode = "lesson";
+          render();
+          window.scrollTo(0, 0);
+        }
+      });
+    }
+    if (crumb) {
+      crumb.addEventListener("click", function (ev) {
+        var t = ev.target.closest("[data-oh-nav]");
+        if (!t) return;
+        var nav = t.getAttribute("data-oh-nav");
+        if (nav === "cats") {
+          view.mode = "cats";
+          view.catId = "";
+          view.lessonId = "";
+        } else if (nav === "cat") {
+          view.mode = "lessons";
+          view.lessonId = "";
+        }
+        render();
+        window.scrollTo(0, 0);
+      });
+    }
+    window.addEventListener("hashchange", function () {
+      parseHash();
+      render();
+    });
+  }
+
+  fetch(DATA_URL, { credentials: "same-origin" })
+    .then(function (r) {
+      if (!r.ok) throw new Error("Could not load guide");
+      return r.json();
+    })
+    .then(function (json) {
+      data = json;
+      var ver = document.getElementById("ohVer");
+      if (ver) ver.textContent = json.version || "-";
+      parseHash();
+      renderHints();
+      bind();
+      render();
+      var params = new URLSearchParams(location.search);
+      var q = params.get("q") || params.get("ask");
+      if (q) runAsk(q);
+    })
+    .catch(function (err) {
+      var root = document.getElementById("ohRoot");
+      if (root) {
+        root.innerHTML =
+          '<p class="oh-err">' +
+          esc(err && err.message ? err.message : "Load failed") +
+          "</p>";
+      }
+    });
+})();
+  </script>
+</body>
+</html>

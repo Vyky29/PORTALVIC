@@ -23,7 +23,8 @@
     canvas{width:100%;display:block;border:2px dashed var(--grey-200);border-radius:var(--radius);background:#f7f9fb;touch-action:none;cursor:crosshair}
     .btn{padding:.65rem 1.2rem;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:1rem}
     .btn-gold{background:var(--gold);color:var(--navy);width:100%}
-    .btn-gold:disabled{opacity:.5;cursor:not-allowed}
+    .btn-gold:disabled,.btn-gold.is-blocked{opacity:.5;cursor:not-allowed}
+    .btn-gold.is-blocked:active{opacity:.65}
     .btn-sec{background:var(--grey-200);color:var(--navy);margin-top:.5rem;width:100%}
     .preview{padding:0;max-height:70vh;overflow:auto}
     .jd-box{max-height:42vh;overflow:auto;border:1px solid var(--grey-200);border-radius:var(--radius);background:#fafbfc;padding:0.85rem 1rem;margin:0 0 0.75rem}
@@ -97,7 +98,7 @@
       portalPersistContractAnnouncementAck,
       portalRepairCompletedContractDocument,
       portalEnsureHtml2Pdf
-    } from "./portal/portal_employment_contract.js?v=20260727-filled-hl";
+    } from "./portal/portal_employment_contract.js?v=20260915-dan-sign";
 
     const C = window.ContractCore;
     const $ = (id) => document.getElementById(id);
@@ -220,7 +221,10 @@
         hint.textContent = ok ? "Ready to sign." : "Still needed: " + missing.join("; ") + ".";
         hint.classList.toggle("ready", ok);
       }
-      $("submitBtn").disabled = !ok;
+      /* Keep the button clickable so taps explain what is missing (disabled buttons ignore clicks). */
+      $("submitBtn").disabled = false;
+      $("submitBtn").setAttribute("aria-disabled", ok ? "false" : "true");
+      $("submitBtn").classList.toggle("is-blocked", !ok);
     }
 
     async function init() {
@@ -320,6 +324,16 @@
       updateSubmit();
     });
     $("submitBtn").addEventListener("click", async () => {
+      if ($("submitBtn").dataset.busy === "1") return;
+      captureSignatureFromCanvas();
+      updateSubmit();
+      if ($("submitBtn").getAttribute("aria-disabled") === "true") {
+        const hint = $("submitHint");
+        const msg = (hint && hint.textContent) || "Complete all steps before signing.";
+        try { alert(msg); } catch (_) {}
+        return;
+      }
+      $("submitBtn").dataset.busy = "1";
       $("submitBtn").disabled = true;
       const hint = $("submitHint");
       if (hint) {
@@ -343,7 +357,9 @@
           hint.textContent = "Could not finish: " + msg + " — tap to try again.";
         }
         try { alert(msg); } catch (_) {}
+        $("submitBtn").dataset.busy = "";
         $("submitBtn").disabled = false;
+        updateSubmit();
       }
     });
 

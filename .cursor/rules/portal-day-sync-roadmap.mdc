@@ -1,0 +1,70 @@
+---
+description: Portal day sync — Option A done; Option B1 core landed; B2/B3 remaining
+alwaysApply: true
+---
+
+# Portal day sync roadmap (A → B)
+
+Victor chose **all of it**, starting with **A**. Capacity-chain **phases / occupants standing stay** — this roadmap consumes them; it does not replace them.
+
+## Option A — DONE (Staff = Overview client visibility)
+
+- Shared module: `working_ui/portal/portal_client_day_visibility.js` (`PortalClientDayVisibility`)
+- Overview (`admin-sessions-hub.js`) and Staff Today (`staff-dashboard-today.js`) use the **same** `clientAllowedOnDate` / weekday / Fadi-off / gone-from / fallback starts / finish-booking first_session index.
+- Staff still applies audience projection at the end: worker scope + aquatic merge + covers. Do **not** reintroduce a second start-date map on Staff only.
+
+## Hygiene (same root cause, before / during B)
+
+- **Timesheet** is another parallel reader. Do not invent shifts by projecting a dated cover onto later same-weekdays.
+- Gate: standing projection onto an ISO only if **Autumn Instructor Timetable** names that worker that day (`PORTAL_AUTUMN_STAFF_HOURS`). Exact dated rows + cover injects still apply.
+- Example fixed: John Hub Multi **Sun 6** cover must not paint **Sun 13 / 20** (Timetable has no John those days; Hub standing = Berta / Emmanuel / Godsway).
+
+## Option B1 — LANDED (shared day-board core + Feedback 20:30 board policy)
+
+Module: `working_ui/portal/portal_resolve_day_board.js` (`PortalResolveDayBoard`)
+
+```
+resolveDayBoard(iso, audience) → { seats, meta }
+  1. standing = capacity chain rows (STAFF_DASHBOARD_SOURCE)
+  2. dated overlays (session_date === iso) in those rows
+  3. schedule_overrides / unavailability — still hydrated by Overview/Staff callers
+  4. exceptions via PortalRosterCanonical.applyCapacityChainDayExceptions (on chain resolve)
+  5. PortalClientDayVisibility filter
+```
+
+| Wired | How |
+|-------|-----|
+| **Timesheet** | `workerOnAutumnTimetableIso` + `standingSnapIsoForDow` delegated to module |
+| **Overview** | `hubLatestStandingIsoForDow` prefers module snap |
+| **Staff** | `portalAutumnStandingSnapIsoForWeekday` prefers module stamp |
+| **Feedback 20:30** | `applyFeedback2030BoardPolicy` — roster wins over MADRE; cover twin remaps (Raul→Victor / Sandra→Javi) retired; OV owns covers; **B1c** occupants gap-fill when roster thin |
+
+Audience paint (aquatic merge, staff columns, pay bands) stays outside the core.
+
+## Option B2 — LANDED (Booking Places from capacity-chain occupants)
+
+- Edge: `buildWeeklyOfferFromOccupants` + `portal_capacity_chain_places_occupants.json`
+- Sync: `database/local-vault/sync-booking-places-occupants-json.py` (also writes parent standing twin)
+
+## Option B3 — LANDED (Parent chips / Team from capacity-chain board)
+
+- Edge: `portal_parent_standing_from_occupants.ts` + `portal_capacity_chain_standing_occupants.json`
+- `parent-portal-participant-detail`: chips prefer board → standing `portal_roster_rows` → `service_lines`; Team seeds instructors from board first
+- Client: `parent_portal_team.js` drops Northolt invent; uses `services_detail.instructor` when upcoming rows omit staff
+- OV absence / cancel / cover paint unchanged
+
+## Option B1c — LANDED (Feedback Edge occupants gap-fill)
+
+- `slotsFromCapacityChainOccupants` in `portal_feedback_2030_match.ts`
+- `portal-feedback-2030-whatsapp` merge order: roster → occupants → dated fallback → MADRE
+- Roster still wins on dedupe; occupants fill missing seats when `portal_roster_rows` thin
+
+### Rules while B ships
+
+- Do not add new `clientRosterStartDates` / Leila / Adaam copies outside `PortalClientDayVisibility` + one exception table.
+- Do not “fix” Booking/Parent/Timesheet by hardcoding Overview-only patches — that is the old failure mode.
+- After each B phase: smoke Overview vs Staff (same ISO), then that audience.
+
+### Look-here
+
+Day look-here remains **Sessions Overview**. Staff should match on **who is allowed that day**; card shape may still differ (aquatic merge). Timesheet days should match **Timetable** (plus dated covers / day offs), not ghost projections.

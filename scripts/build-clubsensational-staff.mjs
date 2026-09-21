@@ -31,7 +31,10 @@ const ADMIN_ORIGIN = String(
   process.env.PORTAL_ADMIN_ORIGIN || "https://portalvic.vercel.app",
 ).replace(/\/$/, "");
 const FAMILY_ORIGIN = String(
-  process.env.PORTAL_FAMILY_ORIGIN || process.env.CLUBSENSATIONAL_FAMILY_ORIGIN || "https://family.clubsensational.org",
+  process.env.PORTAL_FAMILY_ORIGIN || process.env.CLUBSENSATIONAL_FAMILY_ORIGIN || "https://www.clubsensational.org",
+).replace(/\/$/, "");
+const BOOKING_PORTAL_URL = String(
+  process.env.PORTAL_BOOKING_PORTAL_URL || `${FAMILY_ORIGIN}/bookingportal`,
 ).replace(/\/$/, "");
 
 const EXCLUDE_FILES = new Set([
@@ -108,6 +111,7 @@ function writeStaffAppConfig(destDir) {
   global.PORTAL_PRODUCT_NAME = "clubSENsational Staff";
   global.PORTAL_CANONICAL_ORIGIN = global.PORTAL_CANONICAL_ORIGIN || "${STAFF_ORIGIN}";
   global.PORTAL_FAMILY_ORIGIN = global.PORTAL_FAMILY_ORIGIN || "${FAMILY_ORIGIN}";
+  global.PORTAL_BOOKING_PORTAL_URL = global.PORTAL_BOOKING_PORTAL_URL || "${BOOKING_PORTAL_URL}";
   global.portalFamilyPortalUrl = function (path) {
     path = String(path || "").replace(/^\\//, "");
     var base = String(global.PORTAL_FAMILY_ORIGIN || "${FAMILY_ORIGIN}").replace(/\\/$/, "");
@@ -142,22 +146,30 @@ function writeStaffAppConfig(destDir) {
 
 function injectStaffConfigScript(htmlPath) {
   const tag =
-    '<script src="/staff-app-config.js?v=20260713-ceo-chooser"></script>\n  ';
+    '<script src="/staff-app-config.js?v=20260910-staff-boot-order"></script>\n  ';
   const bootTag =
-    '<script src="/portal/staff-app-boot.js?v=20260624-staff-boot8"></script>\n  ';
+    '<script src="/portal/staff-app-boot.js?v=20260910-staff-boot-order"></script>\n  ';
   const hintTag =
     '<script src="/portal/staff-app-install-hint.js?v=20260624-staff-install"></script>\n  ';
   let src = readFileSync(htmlPath, "utf8");
   if (/src=["']\/staff-app-config\.js/i.test(src)) return;
   const isLogin = /login\.html$/i.test(htmlPath);
-  const inject = isLogin ? tag + bootTag + hintTag : tag;
-  if (src.includes('portal_auth_page_gate.js')) {
+  /* Config must run before staff-app-boot.js. Dashboard HTML already has boot in
+     <head>; injecting before portal_auth_page_gate left boot first and the PWA
+     booted as portalvic-staff (heavy sync path → iOS crash after first paint). */
+  if (src.includes("/portal/staff-app-boot.js")) {
+    src = src.replace(
+      '<script src="/portal/staff-app-boot.js',
+      tag + '<script src="/portal/staff-app-boot.js',
+    );
+  } else if (src.includes("portal_auth_page_gate.js")) {
+    const inject = isLogin ? tag + bootTag + hintTag : tag;
     src = src.replace(
       '<script src="/portal/portal_auth_page_gate.js',
       inject + '<script src="/portal/portal_auth_page_gate.js',
     );
   } else {
-    src = src.replace("<head>", "<head>\n  " + inject.trim());
+    src = src.replace("<head>", "<head>\n  " + tag.trim());
   }
   writeFileSync(htmlPath, src, "utf8");
 }
@@ -242,7 +254,7 @@ patchHtml(join(OUT, "login.html"), [
   ['<h1 class="login-portal-text" id="loginBrandTitle">Portal</h1>', '<h1 class="login-portal-text" id="loginBrandTitle">Staff</h1>'],
   [
     '<p id="login-updated-msg" class="login-updated-msg"',
-    '<p id="login-staff-admin-hint" class="login-updated-msg" style="margin-bottom:12px">Operations admin? Open <a href="https://portalvic.vercel.app/login.html">portalvic.vercel.app</a>. Parents &amp; carers: <a href="' +
+    '<p id="login-staff-admin-hint" class="login-updated-msg" hidden>Operations admin? Open <a href="https://portalvic.vercel.app/login.html">portalvic.vercel.app</a>. Parents &amp; carers: <a href="' +
       FAMILY_ORIGIN +
       '/parent">Family portal</a>.</p>\n      <p id="login-updated-msg" class="login-updated-msg"',
   ],

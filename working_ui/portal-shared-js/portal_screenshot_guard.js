@@ -73,6 +73,25 @@
     return false;
   }
 
+  function parkGuardEl(el) {
+    if (!el) return;
+    el.classList.remove("is-active");
+    el.hidden = true;
+    el.setAttribute("aria-hidden", "true");
+    el.style.display = "none";
+    el.style.visibility = "hidden";
+    el.style.pointerEvents = "none";
+    el.style.touchAction = "auto";
+  }
+
+  function showGuardEl(el) {
+    if (!el) return;
+    el.hidden = false;
+    el.style.display = "";
+    el.style.visibility = "visible";
+    el.classList.add("is-active");
+  }
+
   function ensureEl() {
     var el = document.getElementById(GUARD_ID);
     if (el) return el;
@@ -92,6 +111,7 @@
       this.src = LOGO_FALLBACK;
     };
     el.appendChild(img);
+    parkGuardEl(el);
     var root = document.body || document.documentElement;
     root.appendChild(el);
     return el;
@@ -119,7 +139,13 @@
     global.clearTimeout(lingerTimer);
     setForegroundMask(false);
     var el = document.getElementById(GUARD_ID);
-    if (el) el.classList.remove("is-active");
+    if (el && el.parentNode) {
+      try {
+        el.parentNode.removeChild(el);
+      } catch (_rm) {
+        parkGuardEl(el);
+      }
+    }
     if (isPageVisible() && !isPhotoCaptureUiActive()) {
       setScreenshotWatermark(false);
     }
@@ -131,7 +157,7 @@
     opts = opts || {};
     global.clearTimeout(lingerTimer);
     var el = ensureEl();
-    el.classList.add("is-active");
+    showGuardEl(el);
     setScreenshotWatermark(true);
     setForegroundMask(true);
     var linger =
@@ -233,9 +259,17 @@
     if (options.mobileOnly !== false && !isMobilePortalDevice()) return false;
     armed = true;
     try {
-      document.documentElement.classList.add("portal-screenshot-guard-armed");
+      var skipHtmlArm = false;
+      try {
+        skipHtmlArm = !!(global.PORTAL_STAFF_APP) ||
+          !!(global.navigator && global.navigator.standalone) ||
+          (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches);
+      } catch (_skip) {}
+      /* iOS PWA: user-select:none on html/body drops taps. Keep image tagging only. */
+      if (!skipHtmlArm) {
+        document.documentElement.classList.add("portal-screenshot-guard-armed");
+      }
     } catch (_e7) {}
-    ensureEl();
     bindEvents();
     hideMaskForce();
     return true;
@@ -372,6 +406,12 @@
     queueSensitiveImagesFromNode(root);
   }
 
+  function releaseCaptureUiBlockers() {
+    hideMaskForce();
+    setWorkerSensitiveHidden(false);
+    setScreenshotWatermark(false);
+  }
+
   function bindWorkerSafeguardEvents() {
     if (workerSafeguardBound) return;
     workerSafeguardBound = true;
@@ -380,8 +420,11 @@
       "visibilitychange",
       function () {
         if (!isWorkerSafeguardActive()) return;
-        if (document.hidden) setWorkerSensitiveHidden(true);
-        else if (!isPhotoCaptureUiActive()) setWorkerSensitiveHidden(false);
+        if (document.hidden) {
+          if (!isPhotoCaptureUiActive()) setWorkerSensitiveHidden(true);
+          return;
+        }
+        if (isPhotoCaptureUiActive() || isPageVisible()) setWorkerSensitiveHidden(false);
       },
       true
     );
@@ -390,6 +433,7 @@
       "pagehide",
       function () {
         if (!isWorkerSafeguardActive()) return;
+        if (isPhotoCaptureUiActive()) return;
         setWorkerSensitiveHidden(true);
       },
       true
@@ -399,6 +443,7 @@
       "blur",
       function () {
         if (!isWorkerSafeguardActive()) return;
+        if (isPhotoCaptureUiActive() || isMediaCaptureActive()) return;
         setWorkerSensitiveHidden(true);
       },
       true
@@ -408,7 +453,11 @@
       "focus",
       function () {
         if (!isWorkerSafeguardActive()) return;
-        if (isPageVisible() && !isPhotoCaptureUiActive()) setWorkerSensitiveHidden(false);
+        if (isPhotoCaptureUiActive() || isMediaCaptureActive()) {
+          setWorkerSensitiveHidden(false);
+          return;
+        }
+        if (isPageVisible()) setWorkerSensitiveHidden(false);
       },
       true
     );
@@ -501,6 +550,7 @@
     hideBlack: hideMaskForce,
     hideBlackForce: hideMaskForce,
     triggerScreenshotMask: triggerScreenshotMask,
+    releaseCaptureUiBlockers: releaseCaptureUiBlockers,
     isMobilePortalDevice: isMobilePortalDevice,
     syncRolePolicy: syncRolePolicy,
     portalScreenshotGuardCaptureAllowed: portalScreenshotGuardCaptureAllowed,

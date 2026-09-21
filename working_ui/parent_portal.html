@@ -23,7 +23,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="manifest" href="/clubsensational-family.webmanifest?v=20260703-family-pwa" />
-  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260723-date-svc-stack" />
+  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260902-kpi-2x2" />
   <style>
     :root {
       --blue: #2d84b3;
@@ -326,6 +326,17 @@
       line-height: 1;
       flex-shrink: 0;
     }
+    #ppFamilyPushToast {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 16px;
+      z-index: 80;
+      max-width: 420px;
+      margin: 0 auto;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
     .pp-pax-info-icon-wrap {
       position: relative;
       display: inline-flex;
@@ -381,6 +392,22 @@
     }
     .pp-child-card {
       padding: 14px;
+    }
+    .pp-add-sibling-wrap {
+      margin: 12px 0 0;
+      min-width: 0;
+    }
+    .pp-add-sibling-wrap .pp-btn {
+      width: 100%;
+      text-align: center;
+      overflow-wrap: break-word;
+      text-decoration: none;
+    }
+    .pp-add-sibling-note {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      overflow-wrap: break-word;
     }
     .pp-child-layout {
       display: grid;
@@ -559,8 +586,7 @@
       gap: 12px;
       min-width: 0;
     }
-    #ppStepHome > .pp-card,
-    #ppStepHome > #ppContactBlock {
+    #ppStepHome > .pp-card {
       flex: 0 0 auto;
       min-height: 0;
       min-width: 0;
@@ -590,6 +616,7 @@
     }
     .pp-hub-menu-btn,
     .pp-hub-chrome-btn {
+      position: relative;
       display: inline-flex;
       flex-direction: column;
       align-items: center;
@@ -597,9 +624,13 @@
       gap: 2px;
       flex-shrink: 0;
       margin: 0;
-      padding: 6px 8px;
-      min-width: 48px;
-      min-height: 48px;
+      padding: 4px 3px;
+      width: 56px;
+      height: 52px;
+      min-width: 56px;
+      max-width: 56px;
+      min-height: 52px;
+      max-height: 52px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--white);
@@ -607,6 +638,7 @@
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       box-sizing: border-box;
+      overflow: hidden;
     }
     .pp-hub-menu-btn[hidden],
     .pp-hub-chrome-btn[hidden] { display: none !important; }
@@ -619,6 +651,23 @@
     .pp-hub-chrome-btn:active {
       border-color: var(--blue);
       background: var(--blueSoft);
+    }
+    .pp-hub-chrome-btn--messages {
+      color: #1f6a94;
+    }
+    .pp-hub-chrome-btn__badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .pp-hub-chrome-btn__badge[hidden] { display: none !important; }
+    .pp-hub-chrome-btn__badge .pp-unread-badge {
+      min-width: 18px;
+      height: 18px;
+      font-size: 10px;
+      padding: 0 5px;
     }
     .pp-hub-menu-btn__ico,
     .pp-hub-chrome-btn__ico {
@@ -635,6 +684,14 @@
       line-height: 1;
       color: var(--ink);
       white-space: nowrap;
+    }
+    /* Same fixed box as Menu / Messages / Refresh (two-line label fits inside). */
+    .pp-hub-chrome-btn--all-children .pp-hub-chrome-btn__label {
+      white-space: normal;
+      text-align: center;
+      line-height: 1.05;
+      font-size: 9px;
+      max-width: 100%;
     }
     .pp-hub-menu-sheet {
       position: fixed;
@@ -699,6 +756,10 @@
       flex: 1;
       min-width: 0;
     }
+    .pp-hub-menu-sheet__actions:empty,
+    .pp-hub-menu-sheet__actions[hidden] {
+      display: none !important;
+    }
     .pp-hub-menu-sheet__action {
       display: inline-flex;
       flex-direction: column;
@@ -739,23 +800,43 @@
     }
     .pp-hub-menu-sheet__close {
       display: inline-flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
-      margin: 0;
-      padding: 0;
+      gap: 2px;
+      width: auto;
+      min-width: 52px;
+      height: auto;
+      min-height: 44px;
+      margin: 0 0 0 auto;
+      padding: 6px 12px;
       border: 0;
-      border-radius: 10px;
-      background: transparent;
-      color: var(--muted);
+      border-radius: 12px;
+      background: #dc2626;
+      color: #fff;
       cursor: pointer;
       flex-shrink: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pp-hub-menu-sheet__close:hover,
+    .pp-hub-menu-sheet__close:focus-visible {
+      background: #b91c1c;
+      color: #fff;
+      outline: none;
     }
     .pp-hub-menu-sheet__close svg {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       display: block;
+    }
+    .pp-hub-menu-sheet__close-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      color: inherit;
+      white-space: nowrap;
     }
     .pp-hub-menu-sheet__body {
       flex: 1;
@@ -974,6 +1055,31 @@
       line-height: 1.35;
       overflow-wrap: break-word;
     }
+    .pp-child-contact {
+      grid-column: 1 / -1;
+      min-width: 0;
+      margin: 2px 0 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(23, 50, 71, 0.04);
+      border: 1px solid rgba(23, 50, 71, 0.08);
+      overflow-wrap: break-word;
+    }
+    .pp-child-contact > .pp-muted {
+      margin: 0 0 6px;
+    }
+    .pp-child-contact .pp-contact-line {
+      margin: 2px 0;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .pp-child-contact .pp-contact-note {
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
     .pp-child-photo {
       width: 80px;
       height: 80px;
@@ -1189,7 +1295,7 @@
     .pp-legal a { color: var(--blue); }
 
     /* Participant detail card */
-    .pp-participant-body { padding: 0; overflow: hidden; }
+    .pp-participant-body { padding: 0; overflow-x: visible; overflow-y: visible; min-width: 0; }
     .pp-participant-body .pp-pax-shell { padding: 14px 14px 16px; min-width: 0; }
     .pp-pax-hero {
       display: grid;
@@ -1512,9 +1618,21 @@
       background: rgba(37, 99, 235, 0.35);
       border: 1px solid rgba(37, 99, 235, 0.55);
     }
+    .pp-hub-ops__chip-legend__swatch--purple {
+      background: rgba(167, 139, 250, 0.45);
+      border: 1px solid rgba(124, 58, 237, 0.55);
+    }
     .pp-hub-ops__chip-legend__swatch--green {
       background: rgba(22, 163, 74, 0.35);
       border: 1px solid rgba(21, 128, 61, 0.45);
+    }
+    .pp-hub-ops__chip-legend__swatch--orange {
+      background: rgba(234, 88, 12, 0.4);
+      border: 1px solid rgba(194, 65, 12, 0.5);
+    }
+    .pp-hub-ops__chip-legend__swatch--burgundy {
+      background: rgba(159, 18, 57, 0.4);
+      border: 1px solid rgba(136, 19, 55, 0.55);
     }
     .pp-hub-ops__chip-legend__swatch--red {
       background: rgba(220, 38, 38, 0.3);
@@ -1639,16 +1757,29 @@
       color: var(--blue);
       border: 1px solid rgba(37, 99, 235, 0.35);
     }
-    /* Absent or club cancel — red */
-    .pp-hub-ops__date-chip--absent,
-    .pp-hub-ops__date-chip--cancelled {
-      background: rgba(220, 38, 38, 0.14);
-      color: #b91c1c;
-      border: 1px solid rgba(185, 28, 28, 0.32);
+    /* Trial — purple */
+    .pp-hub-ops__date-chip--trial {
+      background: rgba(167, 139, 250, 0.28);
+      color: #5b21b6;
+      border: 1px solid rgba(124, 58, 237, 0.45);
+    }
+    /* Absent — orange */
+    .pp-hub-ops__date-chip--absent {
+      background: rgba(234, 88, 12, 0.14);
+      color: #c2410c;
+      border: 1px solid rgba(234, 88, 12, 0.35);
       text-decoration: line-through;
       text-decoration-thickness: 1.5px;
     }
-    /* Not re-enrolled for 2026/27 — red, no strikethrough (place at risk) */
+    /* Club cancel (admin / instructor) — burgundy, distinct from not-booked red */
+    .pp-hub-ops__date-chip--cancelled {
+      background: rgba(136, 19, 55, 0.14);
+      color: #9f1239;
+      border: 1px solid rgba(159, 18, 57, 0.38);
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
+    }
+    /* Not booked — red, no strikethrough */
     .pp-hub-ops__date-chip--unconfirmed {
       background: rgba(220, 38, 38, 0.14);
       color: #b91c1c;
@@ -1749,9 +1880,13 @@
     }
     .pp-hub-ops__slot {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      align-items: center;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas:
+        "ico body"
+        "ico meta";
+      align-items: start;
       column-gap: 12px;
+      row-gap: 8px;
       min-width: 0;
       padding: 12px 14px;
       border-radius: 16px;
@@ -1761,6 +1896,7 @@
       overflow: hidden;
     }
     .pp-hub-ops__slot-ico {
+      grid-area: ico;
       flex: none;
       width: 40px;
       height: 40px;
@@ -1776,6 +1912,7 @@
       display: block;
     }
     .pp-hub-ops__slot-body {
+      grid-area: body;
       flex: 1 1 auto;
       min-width: 0;
       display: flex;
@@ -1786,13 +1923,15 @@
       font-size: 15px;
       font-weight: 800;
       color: var(--ink);
-      overflow-wrap: break-word;
+      overflow-wrap: anywhere;
+      word-break: normal;
       min-width: 0;
+      max-width: 100%;
     }
     .pp-hub-ops__slot-time {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 6px;
       font-size: 15px;
       line-height: 1.2;
@@ -1800,20 +1939,35 @@
       color: var(--ink);
       white-space: nowrap;
       min-width: 0;
-      text-align: center;
+      text-align: left;
     }
     .pp-hub-ops__slot-end {
-      grid-column: 3;
-      grid-row: 1;
-      align-self: center;
-      justify-self: end;
-      display: inline-flex;
+      grid-area: meta;
+      justify-self: stretch;
+      display: flex;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: flex-start;
       gap: 6px 8px;
       min-width: 0;
       max-width: 100%;
+    }
+    @media (min-width: 420px) {
+      .pp-hub-ops__slot {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "ico body end";
+        align-items: center;
+        row-gap: 0;
+      }
+      .pp-hub-ops__slot-end {
+        grid-area: end;
+        justify-content: flex-end;
+        max-width: 12rem;
+      }
+      .pp-hub-ops__slot-time {
+        justify-content: center;
+        text-align: center;
+      }
     }
     .pp-hub-ops__session-done-chip {
       flex: 0 1 auto;
@@ -1850,6 +2004,16 @@
       font-weight: 800;
       line-height: 1;
     }
+    .pp-hub-ops__session-done-chip--absent {
+      background: rgba(185, 28, 28, 0.12);
+      border-color: rgba(185, 28, 28, 0.3);
+      color: #7f1d1d;
+    }
+    .pp-hub-ops__session-done-chip--awaiting {
+      background: rgba(180, 83, 9, 0.12);
+      border-color: rgba(180, 83, 9, 0.3);
+      color: #9a3412;
+    }
     /* Completed: keep normal black text; green chip carries the status. */
     .pp-hub-ops__slot--completed {
       box-shadow: none;
@@ -1873,6 +2037,39 @@
     .pp-hub-ops__slot-place span {
       min-width: 0;
       overflow-wrap: break-word;
+    }
+    .pp-hub-ops__slot-instructor {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      min-width: 0;
+      max-width: 100%;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      line-height: 1.35;
+    }
+    .pp-hub-ops__slot-instructor-link {
+      appearance: none;
+      -webkit-appearance: none;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #0f4c81;
+      font: inherit;
+      font-weight: 700;
+      text-align: left;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .pp-hub-ops__slot-instructor-link:hover,
+    .pp-hub-ops__slot-instructor-link:focus-visible {
+      color: #0b3a63;
     }
     .pp-hub-ops__meta-ico {
       width: 13px;
@@ -2248,6 +2445,57 @@
       gap: 6px;
       padding: 10px 12px;
       font-size: 14px;
+    }
+    /* Unpaid invoice pay CTA — glow until office marks paid / processed */
+    .pp-btn--needs-pay,
+    .pp-invoice-pay-pair__btn--needs-pay,
+    .pp-invoice-card__btn-full.pp-btn--needs-pay {
+      animation: pp-invoice-needs-pay-pulse 1.2s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(45, 132, 179, 0.55);
+      position: relative;
+      z-index: 1;
+    }
+    .pp-btn--needs-pay.pp-btn--sec,
+    .pp-invoice-pay-pair__btn--needs-pay {
+      background: linear-gradient(135deg, #2d84b3, #1d6a94);
+      color: #fff;
+      border-color: transparent;
+      font-weight: 800;
+    }
+    .pp-btn--needs-pay.pp-btn--gc-setup-needed {
+      box-shadow: 0 0 0 0 rgba(180, 83, 9, 0.5);
+      animation-name: pp-invoice-needs-pay-pulse-amber;
+    }
+    @keyframes pp-invoice-needs-pay-pulse {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(45, 132, 179, 0.55);
+        filter: brightness(1);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(45, 132, 179, 0);
+        filter: brightness(1.08);
+      }
+    }
+    @keyframes pp-invoice-needs-pay-pulse-amber {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(180, 83, 9, 0.55);
+        filter: brightness(1);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(180, 83, 9, 0);
+        filter: brightness(1.06);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .pp-btn--needs-pay,
+      .pp-invoice-pay-pair__btn--needs-pay,
+      .pp-invoice-card__btn-full.pp-btn--needs-pay {
+        animation: none;
+        outline: 2px solid #2d84b3;
+        outline-offset: 2px;
+      }
     }
     /* Green "I've paid / validate" — pulse like unpaid Invoices hub shortcut */
     .pp-btn--paid-report {
@@ -3563,9 +3811,17 @@
       background: linear-gradient(90deg, rgba(37, 99, 235, 0.12), rgba(37, 99, 235, 0.02));
       border-left-color: #2563eb;
     }
+    .pp-pax-info-section-label--details {
+      background: linear-gradient(90deg, rgba(31, 106, 148, 0.12), rgba(31, 106, 148, 0.02));
+      border-left-color: #1f6a94;
+    }
     .pp-pax-info-section-label--club {
       background: linear-gradient(90deg, rgba(124, 58, 237, 0.12), rgba(124, 58, 237, 0.02));
       border-left-color: #7c3aed;
+    }
+    .pp-pax-info-section-label--account {
+      background: linear-gradient(90deg, rgba(71, 85, 105, 0.12), rgba(71, 85, 105, 0.02));
+      border-left-color: #475569;
     }
     .pp-hub-shortcuts {
       margin: 10px 0 4px;
@@ -3668,7 +3924,54 @@
     .pp-hub-shortcut--notes .pp-hub-shortcut__ico { background: #fff6e5; color: #b7791f; }
     .pp-hub-shortcut--photos .pp-hub-shortcut__ico { background: #ecfdf5; color: #047857; }
     .pp-hub-shortcut--crash .pp-hub-shortcut__ico { background: #fff1e8; color: #c2410c; }
-    .pp-hub-shortcut--book-portal .pp-hub-shortcut__ico { background: #ecfdf5; color: #047857; }
+    .pp-hub-shortcut--book-portal .pp-hub-shortcut__ico { background: #fff; color: #047857; border: 1px solid rgba(4, 120, 87, 0.12); }
+    .pp-hub-shortcut--book-help {
+      border-color: #ea580c;
+      background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+      box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.55);
+      animation: pp-hub-book-help-pulse 1.05s ease-in-out infinite;
+    }
+    .pp-hub-shortcut--book-help .pp-hub-shortcut__ico {
+      background: #ea580c;
+      color: #fff;
+    }
+    .pp-hub-shortcut--book-help .pp-hub-shortcut__label {
+      color: #9a3412;
+      font-weight: 800;
+    }
+    @keyframes pp-hub-book-help-pulse {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.55);
+        border-color: #ea580c;
+        filter: brightness(1);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(234, 88, 12, 0);
+        border-color: #c2410c;
+        filter: brightness(1.08);
+        transform: scale(1.03);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .pp-hub-shortcut--book-help {
+        animation: none;
+        outline: 2px solid #ea580c;
+        outline-offset: 2px;
+        transform: none;
+      }
+    }
+    .pp-hub-shortcut__ico--club-logo {
+      padding: 4px;
+      overflow: hidden;
+    }
+    .pp-hub-shortcut__logo {
+      width: 22px;
+      height: 22px;
+      display: block;
+      object-fit: contain;
+    }
     .pp-hub-shortcut--reenr .pp-hub-shortcut__ico { background: #fff8e6; color: #a16207; }
     .pp-hub-shortcut--summer-story .pp-hub-shortcut__ico { background: #e0f2fe; color: #0369a1; }
     .pp-hub-shortcut--messages .pp-hub-shortcut__label { color: #1f6a94; }
@@ -3683,6 +3986,7 @@
     .pp-hub-shortcut--photos .pp-hub-shortcut__label { color: #047857; }
     .pp-hub-shortcut--crash .pp-hub-shortcut__label { color: #c2410c; }
     .pp-hub-shortcut--book-portal .pp-hub-shortcut__label { color: #047857; }
+    .pp-hub-shortcut--book-help .pp-hub-shortcut__label { color: #9a3412; }
     .pp-hub-shortcut--reenr .pp-hub-shortcut__label { color: #a16207; }
     .pp-hub-shortcut--summer-story .pp-hub-shortcut__label { color: #0369a1; }
     a.pp-hub-shortcut { text-decoration: none; color: inherit; }
@@ -3709,6 +4013,21 @@
     }
     .pp-sessions-term-dates .pp-hub-ops__badge-row {
       margin: 0;
+    }
+    .pp-sessions-fb-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+      margin: 0 0 8px;
+    }
+    .pp-sessions-fb-acc__body {
+      padding-top: 8px;
+      min-width: 0;
+    }
+    .pp-sessions-fb-acc__body .pcso-kpi-grid,
+    .pp-sessions-fb-acc__body .pcso-feed-section {
+      min-width: 0;
     }
     .pp-hub-ops__next-block {
       margin: 0 0 4px;
@@ -3812,6 +4131,47 @@
     }
     .pp-week-note[open] .pp-week-note__teaser {
       display: none;
+    }
+    .pp-former-dl-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 12px;
+      min-width: 0;
+    }
+    .pp-former-dl-row {
+      margin-top: 10px;
+      min-width: 0;
+    }
+    .pp-former-session-dl-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+      min-width: 0;
+    }
+    .pp-former-session-dl-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      min-width: 0;
+    }
+    .pp-former-session-dl-row .pp-muted {
+      flex: 1 1 140px;
+      min-width: 0;
+      overflow-wrap: break-word;
+      font-size: 13px;
+    }
+    .pp-btn--sm {
+      padding: 8px 12px;
+      font-size: 12px;
+      min-height: 36px;
     }
     .pp-help-sheet {
       margin: 12px 0 0;
@@ -4023,6 +4383,34 @@
     .pp-booking-item__choice-ico .pp-booking-item__meta-ico {
       color: #16a34a;
     }
+    .pp-booking-item--keep {
+      background: linear-gradient(180deg, #f3faf6 0%, #fff 100%);
+      border-color: #c9e8d3;
+    }
+    .pp-booking-item--keep .pp-booking-item__badge {
+      background: #e7f6ec;
+      color: #15803d;
+    }
+    .pp-booking-item--keep .pp-booking-item__choice {
+      color: #15803d;
+    }
+    .pp-booking-item--keep .pp-booking-item__choice-ico .pp-booking-item__meta-ico {
+      color: #16a34a;
+    }
+    .pp-booking-item--withdraw {
+      background: linear-gradient(180deg, #fdf4f4 0%, #fff 100%);
+      border-color: #f0c9c9;
+    }
+    .pp-booking-item--withdraw .pp-booking-item__badge {
+      background: #fdecec;
+      color: #b42318;
+    }
+    .pp-booking-item--withdraw .pp-booking-item__choice {
+      color: #b42318;
+    }
+    .pp-booking-item--withdraw .pp-booking-item__choice-ico .pp-booking-item__meta-ico {
+      color: #c45c5c;
+    }
     .pp-booking-card .pp-btn { margin-top: 4px; }
     .pp-booking-year-dates {
       display: flex;
@@ -4047,6 +4435,8 @@
     /* Icon plate tones */
     .pp-pax-info-btn--announcements .pp-pax-info-icon-plate { background: #fff4df; color: #b7791f; }
     .pp-pax-info-btn--messages .pp-pax-info-icon-plate { background: #eaf5fb; color: #1f6a94; }
+    .pp-pax-info-btn--general .pp-pax-info-icon-plate { background: #eaf5fb; color: #1f6a94; }
+    .pp-pax-info-btn--details .pp-pax-info-icon-plate { background: #eef2ff; color: #4338ca; }
     .pp-pax-info-btn--absence .pp-pax-info-icon-plate { background: #fff1e8; color: #c2410c; }
     .pp-pax-info-btn--calendar .pp-pax-info-icon-plate { background: #e8f0fe; color: #1d4ed8; }
     .pp-pax-info-btn--team .pp-pax-info-icon-plate { background: #fff6e5; color: #b7791f; }
@@ -4058,6 +4448,7 @@
     .pp-pax-info-btn--sessions .pp-pax-info-icon-plate { background: #eaf5fb; color: #1f6a94; }
     .pp-pax-info-btn--achievements .pp-pax-info-icon-plate { background: #ecfdf5; color: #047857; }
     .pp-pax-info-btn--swim .pp-pax-info-icon-plate { background: #e0f7fa; color: #0e7490; }
+    .pp-pax-info-btn--logout .pp-pax-info-icon-plate { background: #fef2f2; color: #b91c1c; }
     .pp-pax-info-btn--accent .pp-pax-info-icon-plate { background: #fff6e5; color: #b7791f; }
     .pp-pax-info-btn--messages .pp-pax-info-caption,
     .pp-pax-info-btn--absence .pp-pax-info-caption,
@@ -4766,13 +5157,6 @@
       line-height: 1.2;
       color: var(--blue);
     }
-    .pp-back-home {
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      margin: 0 0 8px;
-    }
     .pp-back-home .pp-nav-ico,
     .pp-pax-back .pp-nav-ico {
       width: 18px;
@@ -5008,8 +5392,7 @@
         margin-right: 0;
         width: 100%;
       }
-      #ppStepHome > .pp-card,
-      #ppStepHome > #ppContactBlock {
+      #ppStepHome > .pp-card {
         margin-top: 0;
         height: auto;
       }
@@ -5064,18 +5447,22 @@
         grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
         gap: 14px;
       }
+      /* Desktop home: participants then PIN. Contact lives inside each child card. */
       #ppStepHome {
         display: grid;
-        grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.65fr);
+        grid-template-columns: minmax(0, 1fr);
         grid-template-areas:
-          "head head"
-          "kids contact";
+          "head"
+          "help"
+          "kids"
+          "pin";
         align-items: start;
         gap: 16px;
       }
       #ppStepHome > .pp-home-head { grid-area: head; }
-      #ppStepHome > .pp-card:not(#ppContactBlock) { grid-area: kids; }
-      #ppStepHome > #ppContactBlock { grid-area: contact; }
+      #ppStepHome > .pp-help-sheet { grid-area: help; }
+      #ppStepHome > #ppParticipantsCard { grid-area: kids; min-width: 0; }
+      #ppStepHome > #ppPinCard { grid-area: pin; min-width: 0; align-self: start; }
     }
   </style>
 </head>
@@ -5188,7 +5575,7 @@
         <p class="pp-muted">A short guide for new families is coming soon — how to find weekly notes, report absence, and read messages. For anything urgent, message the club from your child’s hub or email info@clubsensational.org.</p>
       </div>
 
-      <div class="pp-card">
+      <div class="pp-card" id="ppParticipantsCard">
         <h3 class="pp-section-title">
           <span class="pp-title-inner">
             <span class="pp-title-ico" aria-hidden="true">
@@ -5198,9 +5585,11 @@
           </span>
         </h3>
         <div id="ppChildList"></div>
+        <div class="pp-add-sibling-wrap">
+          <a id="ppAddParticipant" class="pp-btn pp-btn--sec" href="/parent/registration?from=portal&add_participant=1&return=/parent">Register another participant</a>
+          <p class="pp-add-sibling-note">Twins and triplets can share a date of birth. They stay on this family PIN. Each child can keep their own phone and email.</p>
+        </div>
       </div>
-
-      <div class="pp-card" id="ppContactBlock"></div>
 
       <div class="pp-card" id="ppPinCard">
         <h3 class="pp-section-title">
@@ -5237,8 +5626,11 @@
             <svg class="pp-hub-menu-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
             <span class="pp-hub-menu-btn__label">Menu</span>
           </button>
+          <button id="ppBackToHome" class="pp-hub-chrome-btn pp-hub-chrome-btn--all-children" type="button" hidden aria-label="All children">
+            <svg class="pp-hub-chrome-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            <span class="pp-hub-chrome-btn__label">All children</span>
+          </button>
           <div class="pp-participant-head-titles" style="min-width:0">
-            <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" aria-label="All children"><svg class="pp-nav-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>All children</span></button>
             <h2 id="ppParticipantTitle" class="pp-participant-title">
               <span class="pp-title-inner">
                 <span class="pp-title-ico" aria-hidden="true">
@@ -5250,13 +5642,18 @@
           </div>
         </div>
         <div class="pp-participant-head-actions">
-          <button id="ppParticipantSignOut" class="pp-hub-chrome-btn" type="button" hidden aria-label="Sign out">
-            <svg class="pp-hub-chrome-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span class="pp-hub-chrome-btn__label">Sign out</span>
+          <button id="ppParticipantMessages" class="pp-hub-chrome-btn pp-hub-chrome-btn--messages" type="button" data-pp-open="messages" aria-label="Admin Messages">
+            <svg class="pp-hub-chrome-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="pp-hub-chrome-btn__label">Messages</span>
+            <span class="pp-hub-chrome-btn__badge" hidden></span>
           </button>
           <button id="ppParticipantRefresh" class="pp-hub-chrome-btn" type="button" data-contact-id="" aria-label="Refresh">
             <svg class="pp-hub-chrome-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
             <span class="pp-hub-chrome-btn__label">Refresh</span>
+          </button>
+          <button id="ppParticipantSignOut" class="pp-hub-chrome-btn" type="button" hidden aria-label="Sign out">
+            <svg class="pp-hub-chrome-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span class="pp-hub-chrome-btn__label">Sign out</span>
           </button>
         </div>
       </div>
@@ -5271,6 +5668,7 @@
             <div id="ppHubMenuSheetHeadActions" class="pp-hub-menu-sheet__actions"></div>
             <button type="button" class="pp-hub-menu-sheet__close" data-pp-hub-menu-close aria-label="Close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+              <span class="pp-hub-menu-sheet__close-label">Close</span>
             </button>
           </div>
           <div id="ppHubMenuSheetBody" class="pp-hub-menu-sheet__body"></div>
@@ -5288,15 +5686,20 @@
   </main>
 
   <script src="/portal/portal-vapid-public.js?v=20260610-v4"></script>
-  <script src="/portal/portal_family_web_push.js?v=20260718-ios-whatsapp-alerts"></script>
-  <script src="/portal/portal_participant_identity.js?v=20260705-adam-ab"></script>
-  <script src="/portal/portal_participant_photos.js?v=20260720-zakariya-photo"></script>
+  <script src="/portal/portal_family_web_push.js?v=20260914-audio-gesture-only"></script>
+  <script src="/portal/portal_participant_identity.js?v=20260914-adam-p-pi"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260910-reg-photo-slug"></script>
+  <script src="/portal/portal_participant_avatars_hydrate.js?v=20260910-reg-photo-slug"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
-  <script src="/portal/portal_client_sessions_overview.js?v=20260723-date-svc-stack"></script>
-  <script src="/portal/parent_portal_team.js?v=20260828-team-one-instructor"></script>
-  <script src="/portal/portal_calendar_2026_27.js?v=20260828-trial-iso-cal"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260901-message-paid-no-btn"></script>
-  <script src="/portal/parent_portal_app.js?v=20260831-partial-pdf-view"></script>
+  <script src="/portal/portal_client_sessions_overview.js?v=20260912-no-demo-kpi"></script>
+  <script src="/portal/portal_parent_history_pdf.js?v=20260902-history-pdf-noblack"></script>
+  <script src="/portal/portal_term_calendar.js?v=20260911-dc-ht"></script>
+  <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
+  <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
+  <script src="/portal/parent_portal_team.js?v=20260916-b3-board"></script>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260911-dc-ht"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260918-credit-available"></script>
+  <script src="/portal/parent_portal_app.js?v=20260917-session-family-guard"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

@@ -21,8 +21,9 @@
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "");
     if (!k) return "";
-    if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "lulia" || k === "luliya" || k === "aida" || k === "stf021") return "luliya";
     if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k === "emanuel") return "emmanuel";
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
     return k;
@@ -47,7 +48,9 @@
     simongriffiths: "simon",
     andresborrego: "andres",
     youssefmoustafa: "youssef",
-    aidalulia: "lulia",
+    aidalulia: "luliya",
+    emmanuelamoakohene: "emmanuel",
+    emanuelamoakohene: "emmanuel",
   };
 
   function photoLookupKeys(nameOrKey, opts) {
@@ -93,6 +96,35 @@
     var u = normalizePhotoUrl(raw);
     if (u && urls.indexOf(u) < 0) urls.push(u);
   }
+
+  /** Files that actually exist under portal/staff_photos/ — skip img for anyone else (no 404 spam). */
+  var STAFF_PHOTO_FILES = {
+    alex: true,
+    andres: true,
+    angel: true,
+    aurora: true,
+    berta: true,
+    bismark: true,
+    carlos: true,
+    dan: true,
+    giuseppe: true,
+    godsway: true,
+    javi: true,
+    javier: true,
+    john: true,
+    lulia: true,
+    luliya: true,
+    michelle: true,
+    raul: true,
+    roberto: true,
+    sandra: true,
+    sevitha: true,
+    simon: true,
+    teflon: true,
+    victor: true,
+    youssef: true,
+    emmanuel: true,
+  };
 
   /** Role/category labels — not roster photo stems (avoids /staff_photos/leads.jpg 404 spam). */
   var NO_STATIC_PHOTO = {
@@ -154,19 +186,31 @@
         if (key && src && src.staffProfiles && src.staffProfiles[key]) {
           var af = String(src.staffProfiles[key].avatarFile || "").trim();
           if (af) {
-            hadProfileFile = true;
-            pushCandidate(urls, swapPhotoExt(af, "png"));
-            pushCandidate(urls, af);
+            var afKey = canonicalStaffKey(key);
+            if (STAFF_PHOTO_FILES[afKey] || !/staff_photos\//i.test(af)) {
+              hadProfileFile = true;
+              pushCandidate(urls, swapPhotoExt(af, "png"));
+              pushCandidate(urls, af);
+            }
           }
         }
       } catch (_) {}
       if (hadProfileFile) return;
       if (!key) return;
-      if (key === "lulia") {
+      if (key === "lulia" || key === "luliya") {
         pushCandidate(urls, base + "luliya.png");
+        return;
+      }
+      if (!STAFF_PHOTO_FILES[key]) return;
+      if (key === "emmanuel" || key === "emanuel") {
+        pushCandidate(urls, base + "emmanuel.png?v=20260911-emmanuel-photo");
+        pushCandidate(urls, base + "emanuel.png?v=20260911-emmanuel-photo");
+        pushCandidate(urls, base + "emmanuel.jpg?v=20260911-emmanuel-photo");
+        pushCandidate(urls, base + "emanuel.jpg?v=20260911-emmanuel-photo");
+        return;
       }
       pushCandidate(urls, base + key + ".png");
-      pushCandidate(urls, base + key + ".jpg");
+      if (key === "michelle") pushCandidate(urls, base + key + ".jpg");
     });
     return urls;
   }
@@ -263,8 +307,19 @@
     }
   }
 
+  function portalRealtimeDebugEnabled() {
+    try {
+      if (global.PORTAL_DEBUG_REALTIME === true) return true;
+      var q = String((global.location && global.location.search) || "");
+      return /(?:^|[?&])portalDebug(?:Rt)?=1(?:&|$)/i.test(q);
+    } catch (_) {
+      return false;
+    }
+  }
+
   function portalWarnUnlessOffline(label, status, err) {
     if (portalNetworkIsOffline()) return;
+    if (!portalRealtimeDebugEnabled()) return;
     try {
       if (!global.__PORTAL_WARN_LOG__) global.__PORTAL_WARN_LOG__ = Object.create(null);
       var key = String(label || "warn").trim();
@@ -279,9 +334,10 @@
     console.warn(label, status, err || "");
   }
 
-  /** Avoid F12 spam when Realtime reconnects in a loop (warn once per label / minute). */
+  /** Realtime CHANNEL_ERROR / reconnect noise stays silent unless ?portalDebug=1. */
   function portalRealtimeLogChannelIssue(label, status, err) {
     if (portalNetworkIsOffline()) return;
+    if (!portalRealtimeDebugEnabled()) return;
     try {
       if (!global.__PORTAL_RT_ERR_LOG__) global.__PORTAL_RT_ERR_LOG__ = Object.create(null);
       const key = String(label || "realtime").trim();
@@ -302,6 +358,7 @@
     try {
       const key = String(label || "").trim();
       if (key && global.__PORTAL_RT_ERR_LOG__) delete global.__PORTAL_RT_ERR_LOG__[key];
+      if (key && global.__PORTAL_RT_RETRY__) delete global.__PORTAL_RT_RETRY__[key];
     } catch (_) {}
   }
 
@@ -335,10 +392,11 @@
       if (!global.__PORTAL_RT_RETRY__) global.__PORTAL_RT_RETRY__ = Object.create(null);
       var rk = String(label || chKey || "rt").trim();
       var n = Number(global.__PORTAL_RT_RETRY__[rk]) || 0;
-      if (n >= 2) return;
+      /* One quiet retry — looping re-subscribe + unique channel names flooded the main thread. */
+      if (n >= 1) return;
       global.__PORTAL_RT_RETRY__[rk] = n + 1;
     } catch (_) {}
-    setTimeout(initFn, 2500);
+    setTimeout(initFn, 8000);
   }
 
   function bindPortalRealtimeOnlineReconnect() {

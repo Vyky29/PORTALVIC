@@ -181,8 +181,8 @@ def portal_staff_profile_key(staff_name: str) -> str:
     v = re.sub(r"[^a-z0-9]+", "", ascii_first.lower())
     if v in ("yousef", "youssef", "yusef"):
         return "youssef"
-    if v in ("luliya", "lulia", "aida"):
-        return "lulia"
+    if v in ("luliya", "lulia", "lulya", "aida"):
+        return "luliya"
     return v
 
 

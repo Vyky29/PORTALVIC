@@ -64,6 +64,19 @@
     }
     .notice--error { background: var(--dangerSoft); color: var(--danger); border: 1px solid #f0c2c2; }
     .notice--ok { background: var(--successSoft); color: var(--success); border: 1px solid #b7e0c6; }
+    .fb-alert {
+      background: var(--dangerSoft);
+      color: var(--danger);
+      border: 1px solid #f0c2c2;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin: 0 0 12px;
+      font-size: .86rem;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .fb-alert strong { display: block; margin: 0 0 4px; font-weight: 800; }
     .choice {
       display: block;
       border: 1px solid var(--line);
@@ -107,7 +120,7 @@
     <div class="brand">
       <img src="/portal/F-02-1.png" alt="clubSENsational" width="72" height="72" />
       <h1>Finish your booking</h1>
-      <p>Choose funding, booking length, payment, and pay the first instalment</p>
+      <p>Choose funding, booking length, and (if paying yourself) the first instalment</p>
     </div>
 
     <div id="fbNotice" class="notice" hidden></div>
@@ -128,13 +141,36 @@
           <strong>Using LA money (Participant EHCP funds)</strong>
           <span class="hint">You use Local Authority / EHCP Direct Payments for approved activities. You still receive an invoice and pay the first instalment here.</span>
         </label>
+        <label class="choice">
+          <input type="radio" name="funding" value="sw_nhs_referral" />
+          <strong>Local Authority / NHS referral</strong>
+          <span class="hint">Funding is arranged through Local Authority / NHS. Our team will contact the social worker / NHS manager to finalise the booking.</span>
+        </label>
+        <button type="submit" class="btn btn--pri">Continue</button>
+      </form>
+    </div>
+
+    <div id="fbStepSwConfirm" class="card" hidden>
+      <h2>Local Authority / NHS referral</h2>
+      <div class="fb-alert" role="alert">
+        <strong>Only if LA / NHS referred you to book with us</strong>
+        Choose this path only when your social worker or NHS manager has referred you to book sessions here and we will finish the booking with them.
+      </div>
+      <p class="muted" style="margin:0 0 8px;overflow-wrap:break-word">
+        Confirm the social worker / NHS manager from the registration form (or edit if needed):
+      </p>
+      <form id="fbSwConfirmForm">
+        <label class="field-label" for="fbSwName" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px">Name</label>
+        <input id="fbSwName" type="text" autocomplete="name" style="width:100%;max-width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 12px;border:1px solid #c9d7e3;border-radius:8px" />
+        <label class="field-label" for="fbSwEmail" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px">Email</label>
+        <input id="fbSwEmail" type="email" autocomplete="email" inputmode="email" style="width:100%;max-width:100%;box-sizing:border-box;margin:0 0 12px;padding:10px 12px;border:1px solid #c9d7e3;border-radius:8px" />
         <button type="submit" class="btn btn--pri">Continue</button>
       </form>
     </div>
 
     <div id="fbStepScope" class="card" hidden>
       <h2>2. Booking length</h2>
-      <p class="muted">Book the standing term place, or try one session first (pay now).</p>
+      <p class="muted">Book the standing term place (you choose how to pay), or try one session first (card / Apple Pay only - Stripe fees apply).</p>
       <form id="fbScopeForm">
         <label class="choice">
           <input type="radio" name="booking_scope" value="auto_reenroll_year" checked />
@@ -149,7 +185,7 @@
         <label class="choice">
           <input type="radio" name="booking_scope" value="trial_session" />
           <strong>Trial session (pay now)</strong>
-          <span class="hint">One session only. Pay immediately with card or Apple Pay — the slot is not booked until payment succeeds.</span>
+          <span class="hint">One session only. Pay by card or Apple Pay only (Stripe) - a card fee is added so we receive the session price in full. Bank transfer and other methods are only for term places. The slot is not booked until payment succeeds.</span>
         </label>
         <button type="submit" class="btn btn--pri">Continue</button>
       </form>
@@ -197,20 +233,27 @@
       <h2>Waiting for office confirmation</h2>
       <p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">
         After your bank transfer, message or email the office that you have paid
-        (photo optional). They check Tide, mark you paid, then send your Parent Portal PIN.
-        You do not need to tap any "I've paid" button.
+        (photo optional). They confirm payment and then send your Parent Portal PIN.
       </p>
     </div>
 
-    <div id="fbStepDone" class="card" hidden>
-      <h2>You’re in</h2>
-      <p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">
-        Payment confirmed by the office. Check your email or WhatsApp for your Parent Portal PIN
-        (sign in with your child’s first name + PIN).
+    <div id="fbStepSwReferral" class="card" hidden>
+      <h2>Our team will be in touch</h2>
+      <p id="fbSwReferralLead" class="muted" style="margin:0 0 10px;overflow-wrap:break-word">
+        Thank you. Our team will contact the social worker / NHS manager to finalise the booking.
       </p>
-      <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
+      <div id="fbSwReferralSummary" style="overflow-wrap:break-word;min-width:0"></div>
+    </div>
+
+    <div id="fbStepDone" class="card" hidden>
+      <h2 id="fbDoneTitle">You're in</h2>
+      <p class="muted" id="fbDoneCopy" style="margin:0 0 10px;overflow-wrap:break-word">
+        Payment confirmed by the office. Check your email or WhatsApp for your Parent Portal PIN
+        (sign in with your child's first name + PIN).
+      </p>
+      <a class="btn btn--pri" id="fbDonePortal" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260901-message-paid-no-btn"></script>
+  <script src="/portal/portal_finish_booking.js?v=20260915-post-trial-term-only"></script>
 </body>
 </html>

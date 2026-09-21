@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#edf4fb" />
+  <title>Communications - clubSENsational</title>
+  <link rel="icon" href="/portal/F-02-1.png" type="image/png" />
+  <script src="/portal-static-bootstrap.js"></script>
+  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260916-receipts" />
+</head>
+<body class="comms-app">
+  <div id="commsBoot" class="comms-boot is-connecting">
+    <div class="comms-boot-stack">
+      <div class="portal-comms-call-logo-aura">
+        <img class="portal-comms-call-logo" src="/portal/F-02-1.png" alt="" width="96" height="96" />
+      </div>
+      <p id="commsBootMsg">Opening Communications...</p>
+    </div>
+  </div>
+
+  <div id="commsShell" class="comms-shell" hidden>
+    <aside class="comms-sidebar" id="commsSidebar">
+      <header class="comms-side-head">
+        <a class="comms-back-portal" id="commsBackPortal" href="staff_dashboard.html">Portal</a>
+        <div class="comms-brand">
+          <img src="/portal/F-02-1.png" alt="" width="36" height="36" />
+          <div class="comms-brand-text">
+            <strong>Communications</strong>
+            <span id="commsMeName">-</span>
+          </div>
+        </div>
+        <div class="comms-context" id="commsContextSwitch" hidden>
+          <button type="button" class="comms-ctx-btn is-on" data-comms-mode="personal">My account</button>
+          <button type="button" class="comms-ctx-btn" data-comms-mode="administration">ADMIN</button>
+        </div>
+        <div id="commsLivePing" class="comms-live-ping" hidden>
+          <div class="comms-live-ping-copy">
+            <strong id="commsLivePingTitle">Communications</strong>
+            <span id="commsLivePingBody">New message</span>
+          </div>
+          <button type="button" id="commsLivePingOpen">Open</button>
+        </div>
+        <label class="comms-search-wrap" id="commsSearchWrap" hidden>
+          <span class="comms-sr">Search</span>
+          <input type="search" id="commsSearch" placeholder="Search worker, group or message..." autocomplete="off" />
+        </label>
+      </header>
+      <div class="comms-side-body">
+        <p class="comms-kicker" id="commsKickerDirect">My messages</p>
+        <div id="commsListDirect" class="comms-list"></div>
+        <p class="comms-kicker">Groups</p>
+        <div id="commsListGroups" class="comms-list"></div>
+      </div>
+      <footer class="comms-side-foot">
+        <button type="button" class="comms-foot-btn" id="commsNewGroupBtn" hidden>+ New group</button>
+        <button type="button" class="comms-foot-btn" id="commsAuditBtn" hidden>Audit</button>
+      </footer>
+    </aside>
+
+    <section class="comms-main" id="commsMain">
+      <header class="comms-chat-head" id="commsChatHead">
+        <button type="button" class="comms-mob-back" id="commsMobBack" aria-label="Back">←</button>
+        <div class="comms-chat-who">
+          <div class="comms-avatar" id="commsPeerAvatar" aria-hidden="true"></div>
+          <div class="comms-chat-who-text">
+            <h1 id="commsPeerName">Select a conversation</h1>
+            <p id="commsPeerMeta" class="comms-peer-meta"></p>
+            <p id="commsTyping" class="comms-typing" hidden></p>
+          </div>
+        </div>
+        <div class="comms-chat-actions" id="commsChatActions" hidden>
+          <button type="button" class="comms-icon-btn" id="commsCallAudio" title="Call" aria-label="Audio call">📞</button>
+          <button type="button" class="comms-icon-btn" id="commsCallVideo" title="Video call" aria-label="Video call">🎥</button>
+          <button type="button" class="comms-icon-btn" id="commsGroupManage" hidden title="Members">👥</button>
+        </div>
+      </header>
+      <div class="comms-thread" id="commsThread" role="log" aria-live="polite"></div>
+      <p class="comms-closed-banner" id="commsClosedBanner" hidden>This group is closed. You can still read the history.</p>
+      <form class="comms-composer" id="commsComposer" hidden>
+        <input type="file" id="commsFile" hidden accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
+        <button type="button" class="comms-attach" id="commsAttachBtn" aria-label="Attach">📎</button>
+        <button type="button" class="comms-attach comms-record" id="commsRecordBtn" aria-label="Record voice note">🎤</button>
+        <textarea id="commsDraft" rows="1" maxlength="4000" placeholder="Write a message..." enterkeyhint="send"></textarea>
+        <button type="submit" class="comms-send" id="commsSendBtn">Send</button>
+        <p class="comms-record-status" id="commsRecordStatus" hidden></p>
+      </form>
+    </section>
+  </div>
+
+  <div id="commsModal" class="comms-modal" hidden>
+    <div class="comms-modal-backdrop" data-comms-modal-close="1"></div>
+    <div class="comms-modal-card" role="dialog" aria-modal="true" id="commsModalCard"></div>
+  </div>
+
+  <div id="commsCallOverlay" class="comms-call" hidden>
+    <div class="comms-call-stage">
+      <div id="commsJitsiHost" class="comms-jitsi-host"></div>
+      <div class="comms-call-incoming-hero" id="commsCallIncomingHero">
+        <div id="commsCallIncomingBrand"></div>
+      </div>
+      <video id="commsLocalVideo" autoplay playsinline webkit-playsinline muted hidden></video>
+      <p class="comms-call-status" id="commsCallStatus">Calling...</p>
+      <p class="comms-call-peer" id="commsCallPeer"></p>
+      <div class="comms-call-bar">
+        <button type="button" id="commsMuteMic">Mic</button>
+        <button type="button" id="commsMuteCam">Cam</button>
+        <button type="button" class="comms-hang" id="commsHang">Hang up</button>
+        <button type="button" class="comms-answer" id="commsAnswer">Answer</button>
+        <button type="button" class="comms-reject" id="commsReject">Decline</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/portal/portal-vapid-public.js?v=20260904-comms-9"></script>
+  <script src="/portal/portal_web_push_support.js?v=20260914-audio-gesture-only"></script>
+  <script src="/portal/portal_ensure_web_push.js?v=20260904-comms-9"></script>
+  <script src="/portal/comunicaciones/portal_comms_calls.js?v=20260911-call-lock-mic"></script>
+  <script src="/portal/portal_comunicaciones_entry.js?v=20260920-sidebar-fit"></script>
+  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260920-register-comms"></script>
+  <script>
+    window.setTimeout(function () {
+      var boot = document.getElementById("commsBoot");
+      var shell = document.getElementById("commsShell");
+      if (!boot || boot.hidden || (shell && !shell.hidden)) return;
+      boot.innerHTML =
+        '<div class="comms-boot-stack">' +
+        '<div class="portal-comms-call-logo-aura"><img class="portal-comms-call-logo" src="/portal/F-02-1.png" alt="" width="96" height="96" /></div>' +
+        "<p id=\"commsBootMsg\">Communications did not open. Check the connection and try again.</p>" +
+        '<p><a class="comms-boot-back" href="staff_dashboard.html">Back to portal</a></p>' +
+        "</div>";
+    }, 16000);
+  </script>
+</body>
+</html>

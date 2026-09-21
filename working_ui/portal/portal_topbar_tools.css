@@ -223,7 +223,7 @@
 .topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label{
   flex:0 1 auto;
   min-width:0;
-  max-width:100%;
+  max-width:none;
   height:auto !important;
   min-height:0 !important;
   max-height:none !important;
@@ -232,10 +232,29 @@
   line-height:1;
   letter-spacing:0;
   color:#173247 !important;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  overflow:visible;
+  text-overflow:clip;
   white-space:nowrap;
   text-align:center;
+}
+.topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread{
+  background:#dc2626 !important;
+  border-color:#991b1b !important;
+  color:#fff !important;
+  overflow:visible !important;
+  max-width:none !important;
+  box-shadow:0 0 0 2px rgba(220,38,38,.35),0 2px 8px rgba(220,38,38,.35) !important;
+}
+.topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread .topbar-tool-label,
+.topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label{
+  color:#fff !important;
+  max-width:none !important;
+  overflow:visible !important;
+  flex:0 0 auto !important;
+}
+.topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico,
+.topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{
+  color:#fff !important;
 }
 
 /* Right stack (4+admin / 5+admin): single column matching left 4-icon height */
@@ -466,6 +485,12 @@
   min-height:var(--topbar-row-h);
   align-items:stretch;
 }
+/* Staff halo flanks: height follows photo/tools, not a taller --topbar-row-h
+   (tools-6 formula was leaving empty band under the instructor name). */
+.topbar-lead.topbar-lead--halo-flanks{
+  min-height:0;
+  align-items:start;
+}
 .topbar-lead.topbar-lead--tools-6,
 .topbar-lead:has(.topbar-tools-grid--lead),
 .topbar-lead:has(.topbar-tools-grid--ceo-full){
@@ -484,6 +509,11 @@ header.topbar .topbar{
   padding-top:4px;
   padding-bottom:4px;
 }
+header.topbar:has(.topbar-lead--halo-flanks) .topbar,
+.topbar:has(.topbar-lead--halo-flanks){
+  padding-top:2px;
+  padding-bottom:0;
+}
 .topbar-lead .topbar-center{
   align-self:stretch;
   display:flex;
@@ -492,6 +522,13 @@ header.topbar .topbar{
   padding:0 !important;
   margin:0 !important;
   min-height:var(--topbar-row-h);
+}
+/* Halo flanks: hug photo+name so Today can sit just under the instructor name
+   (do not force --topbar-row-h empty space under the given name). */
+.topbar-lead.topbar-lead--halo-flanks .topbar-center--halo{
+  align-self:start;
+  justify-content:flex-start;
+  min-height:0;
 }
 .topbar-lead .topbar-left.topbar-left--name{
   align-self:stretch;
@@ -1026,6 +1063,10 @@ body.dock-context-menu .topbar-tool-cell--participants .topbar-tool-label{
   overflow:hidden;
   box-sizing:border-box;
 }
+#topbarStaffWaBtn.topbar-tool-btn,
+#topbarStaffWaBtn{
+  overflow:visible !important;
+}
 .topbar-tools-grid--lead .topbar-tool-btn,
 .topbar-tools-grid--eight .topbar-tool-btn,
 .topbar-tools-grid--ceo-full .topbar-tool-btn{
@@ -1496,6 +1537,21 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   box-sizing:border-box !important;
   overflow:visible !important;
 }
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread,
+#topbarToolsGridRight > .topbar-tool-cell--staff-wa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread{
+  background:#dc2626 !important;
+  border-color:#991b1b !important;
+  color:#fff !important;
+  box-shadow:0 0 0 2px rgba(220,38,38,.35),0 2px 8px rgba(220,38,38,.35) !important;
+}
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label{
+  color:#fff !important;
+}
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{
+  color:#fff !important;
+}
 .topbar-lead--flank-4 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 > .topbar-tool-btn,
 .topbar-lead--flank-4 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 > button{
   flex-direction:column !important;
@@ -1530,7 +1586,7 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
 #topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-label{
   flex:0 1 auto !important;
   width:auto !important;
-  max-width:100% !important;
+  max-width:none !important;
   height:auto !important;
   min-height:0 !important;
   max-height:none !important;
@@ -1538,7 +1594,28 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   font-weight:800 !important;
   line-height:1 !important;
   color:#173247 !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
   white-space:nowrap !important;
+}
+#topbarStaffWaBtn .comms-badge,
+#topbarStaffWaBtn .topbar-staff-wa-btn__badge:not(.is-empty),
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn .comms-badge{
+  position:static !important;
+  display:inline-flex !important;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto !important;
+  top:auto !important;
+  right:auto !important;
+  min-width:20px !important;
+  height:20px !important;
+  margin:0 0 0 4px !important;
+  padding:0 6px !important;
+  border-radius:999px !important;
+  background:#dc2626 !important;
+  color:#fff !important;
+  font-size:11px !important;
+  font-weight:800 !important;
+  line-height:20px !important;
 }

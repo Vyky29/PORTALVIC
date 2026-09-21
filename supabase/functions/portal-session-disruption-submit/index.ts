@@ -166,11 +166,37 @@ Deno.serve(async (req) => {
   const { data: inserted, error: insertErr } = await admin
     .from("session_disruption_reports")
     .insert(row)
-    .select("id")
+    .select(
+      "id,created_at,session_date,submitted_by_name,disruption_type,venue,reason_category,validated_at",
+    )
     .single();
   if (insertErr || !inserted?.id) {
     console.error("[portal-session-disruption-submit] insert", insertErr);
     return json(500, { ok: false, error: "save_failed" });
+  }
+
+  // Fire-and-forget admin Web Push (bell + Session disruptions validate queue).
+  try {
+    const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+    const secret = (Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") || "").trim();
+    if (baseUrl && secret) {
+      void fetch(`${baseUrl}/functions/v1/portal-push-dispatch-admin-alert`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-portal-webhook-secret": secret,
+        },
+        body: JSON.stringify({
+          type: "INSERT",
+          table: "session_disruption_reports",
+          record: inserted,
+        }),
+      }).catch((e) => {
+        console.warn("[portal-session-disruption-submit] admin push", e);
+      });
+    }
+  } catch (e) {
+    console.warn("[portal-session-disruption-submit] admin push setup", e);
   }
 
   // Day off is GATED on admin validation: we do NOT upsert staff_unavailability

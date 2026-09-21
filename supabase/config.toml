@@ -435,6 +435,9 @@ verify_jwt = false
 [functions.portal-push-dispatch-staff-dm]
 verify_jwt = false
 
+[functions.portal-push-dispatch-communications]
+verify_jwt = false
+
 [functions.portal-push-dispatch-schedule-override]
 verify_jwt = false
 
@@ -442,6 +445,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.portal-push-feedback-9pm-digest]
+verify_jwt = false
+
+[functions.portal-feedback-2030-whatsapp]
 verify_jwt = false
 
 [functions.portal-push-dispatch-outstanding-feedback]
@@ -489,6 +495,24 @@ verify_jwt = false
 [functions.portal-admin-onboarding-draft-export]
 verify_jwt = false
 
+[functions.portal-staff-onboarding-doc-upload]
+verify_jwt = false
+
+[functions.portal-staff-onboarding-invite]
+verify_jwt = false
+
+[functions.portal-staff-onboarding-draft-load]
+verify_jwt = false
+
+[functions.portal-staff-onboarding-draft-save]
+verify_jwt = false
+
+[functions.portal-staff-onboarding-session-touch]
+verify_jwt = false
+
+[functions.portal-staff-onboarding-status]
+verify_jwt = false
+
 [functions.portal-admin-parent-feedback-generate]
 verify_jwt = false
 
@@ -534,6 +558,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.portal-admin-makeup-offer]
+verify_jwt = false
+
+# Schedule & Covers: auto parent WhatsApp on instructor / cancel / move save.
+[functions.portal-admin-schedule-override-notify]
 verify_jwt = false
 
 # After Assign (Edit term slot): ensure unpaid INV-P for parent pay button.
@@ -671,6 +699,12 @@ verify_jwt = false
 [functions.portal-cron-booking-pay-hold]
 verify_jwt = false
 
+[functions.portal-cron-post-trial-offers]
+verify_jwt = false
+
+[functions.portal-cron-gocardless-fail-grace]
+verify_jwt = false
+
 # Staff / leader WhatsApp (JWT checked inside function).
 [functions.portal-staff-notify-send]
 verify_jwt = false
@@ -715,4 +749,8 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.commissioning-terms-admin]
+verify_jwt = false
+
+# Office Operator phase 1 (admin JWT checked inside; read + confirm PIN).
+[functions.portal-admin-office-operator]
 verify_jwt = false

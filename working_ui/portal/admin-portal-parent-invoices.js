@@ -288,13 +288,32 @@
     if (pay === 'partial') return 'partially paid';
     if (pay === 'pending_confirmation') return 'pending confirmation';
     if (pay === 'awaiting_office_payment') return 'awaiting office confirmation';
+    if (pay === 'void') return 'void';
+    if (pay === 'unpaid') return 'outstanding';
     return pay.replace(/_/g, ' ');
+  }
+
+  function isLostSlotInvoice(inv) {
+    if (!inv) return false;
+    if (inv.lost_slot === true) return true;
+    var pay = String(inv.payment_status || '').toLowerCase();
+    if (pay !== 'void') return false;
+    var notes = String(inv.notes || '');
+    return /place released|never paid|aug\s*15|unpaid_autumn_first|auto-released/i.test(notes);
   }
 
   function statusChip(payment, share, inv) {
     var pay = String(payment || 'unpaid');
     var sh = String(share || 'hidden');
-    /* Green = paid; soft green = partial (flexi half paid); orange = unpaid only. */
+    if (isLostSlotInvoice(inv)) {
+      return (
+        '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--lost" title="Re-enrolled but did not pay — place released to booking portal">lost slot</span> ' +
+        '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--hidden">' +
+        esc(sh) +
+        '</span>'
+      );
+    }
+    /* Green = paid; soft green = partial (flexi half paid); orange = outstanding. */
     var payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other';
     if (pay === 'paid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--paid';
     else if (pay === 'unpaid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--unpaid';
@@ -471,17 +490,18 @@
     var items = rows
       .map(function (r, i) {
         var rowPaid = String(r.status || 'pending').toLowerCase() === 'paid';
-        /* Fully paid invoice → every instalment shows Paid (even if schedule row was left pending). */
-        var st = invoicePaid || rowPaid ? 'paid' : 'pending';
+        /* Only trust the schedule row — do not paint future GC months Paid just because invoice header is paid. */
+        var st = rowPaid ? 'paid' : 'pending';
         var label =
           String(r.label || '').trim() ||
           'Instalment ' + String(r.seq || i + 1);
         var due = formatDate(r.due_date);
         var dueIso = instalmentDueIso(r.due_date);
         /* Flexi: next unpaid is "Due" in the collect window (due ≤ +7 days).
-           Far-future next half (e.g. Oct while collecting Aug) stays Scheduled. */
+           Far-future next half (e.g. Oct while collecting Aug) stays Scheduled.
+           One-off Autumn ACAT (Kate / Kamy / Jack W sibling): outstanding once ready. */
         var isNextUnpaid = st !== 'paid' && i === firstUnpaidIdx;
-        var isCurrentDue = isNextUnpaid && instalmentIsCollectingNow(dueIso);
+        var isCurrentDue = isNextUnpaid && invoiceCollectingNow(inv);
         var isScheduledNext = isNextUnpaid && !isCurrentDue;
         var isLaterHidden = st !== 'paid' && firstUnpaidIdx >= 0 && i > firstUnpaidIdx;
         var tone =
@@ -495,18 +515,19 @@
         var stLab = st === 'paid'
           ? 'Paid'
           : isCurrentDue
-            ? 'Due'
+            ? 'Outstanding'
             : isScheduledNext
               ? 'Scheduled'
               : 'Hidden';
-        var paidAtShow = r.paid_at || (invoicePaid ? invoicePaidAt : null);
-        var paidViaShow = r.paid_via || (invoicePaid ? invoicePaidVia : null);
+        var paidAtShow = r.paid_at || null;
+        var paidViaShow = r.paid_via || null;
         var meta = [];
         if (due) meta.push(due);
         meta.push(formatMoney(r.amount_gbp));
         if (st === 'paid' && paidAtShow) meta.push(formatDate(paidAtShow));
         if (st === 'paid' && paidViaShow) meta.push(String(paidViaShow));
         if (isScheduledNext || isLaterHidden) meta.push('not due yet');
+        if (isCurrentDue && invoiceIsOneOffTermBill(inv)) meta.push('outstanding');
         return (
           '<li class="pp-inv-acc__inst-row" style="min-width:0;margin:0 0 4px;padding:6px 8px;border:1px solid;border-radius:8px;' +
           tone +
@@ -542,41 +563,28 @@
     var reenrolPay = String(inv.reenrol_payment_method_code || '').toLowerCase();
     var hint = String(inv.payment_method_hint || '').toLowerCase();
     var via = String(inv.paid_via || '').toLowerCase();
-    if (reenrolPay === 'own_way_flexible') return 'Own way';
-    if (hint === 'la_funded') return 'LA funded';
-    if (
-      reenrolPay === 'gocardless' ||
-      via === 'gocardless' ||
-      hint === 'gocardless' ||
-      inv.gocardless_url
-    ) {
-      return 'GoCardless';
-    }
+    /* Settled payment channel wins over re-enrol preference / stale hint. */
     if (
       via === 'apple_pay' ||
       via === 'apple' ||
+      via === 'stripe' ||
+      via === 'card' ||
       hint === 'apple_pay' ||
+      hint === 'stripe' ||
       /apple\s*pay/.test(via) ||
       /apple\s*pay/.test(hint)
     ) {
       return 'Apple Pay';
     }
-    if (hint === 'payment_link' || inv.payment_link_url) {
-      return 'Payment link';
+    if (via === 'gocardless' || hint === 'gocardless' || inv.gocardless_url || reenrolPay === 'gocardless') {
+      return 'GoCardless';
     }
-    if (via === 'stripe' || via === 'card') {
-      return 'Payment link';
-    }
-    if (
-      reenrolPay === 'bank_transfer' ||
-      reenrolPay === 'own_way_flexible' ||
-      via === 'tide' ||
-      via === 'bank' ||
-      hint === 'bank_transfer'
-    ) {
-      return 'Bank Transfer';
-    }
+    if (via === 'tide' || via === 'bank') return 'Bank Transfer';
     if (via === 'admin') return 'Admin / Office';
+    if (hint === 'la_funded') return 'LA funded';
+    if (reenrolPay === 'own_way_flexible') return 'Own way';
+    if (hint === 'payment_link' || inv.payment_link_url) return 'Payment link';
+    if (reenrolPay === 'bank_transfer' || hint === 'bank_transfer') return 'Bank Transfer';
     return 'Bank Transfer';
   }
 
@@ -618,6 +626,8 @@
     if (/one-off payment \(year\)/.test(short)) return 'yearly_1off';
     if (/monthly/.test(short)) return 'monthly_term';
     if (/one-off payment \(term\)|one per term/.test(short)) return 'term_3';
+    var cadence = String((inv && inv.reenrol_enrolment_cadence) || '').toLowerCase();
+    if (cadence === 'term_by_term' || cadence === 'termly') return 'term_3';
     return 'term_flexi';
   }
 
@@ -717,11 +727,42 @@
    * each instalment, while the real term invoice already holds the full schedule.
    * Hide from office counts/cards so TERMLY shows 1 invoice, AUTO year shows 1 per term.
    */
+  function isGcInstalmentTrackerInvoice(inv) {
+    if (!inv) return false;
+    var notes = String(inv.notes || '');
+    var line = String(inv.line_description || '');
+    var ref = String(inv.reference_text || inv.reference || '');
+    var title = String(
+      inv.document_title || inv.title || inv.related_client || '',
+    );
+    var trackerId = '';
+    var m = notes.match(/Consolidated payment tracker:\s*([0-9a-f-]{20,})/i);
+    if (m) trackerId = String(m[1] || '').toLowerCase();
+    var ownId = String(inv.id || '').toLowerCase();
+    /* Keeper rows were stamped with their own UUID. That is the real term INV-P
+       (Gemma INV-P-0067 term_3 / one schedule row), not a GC slice to hide. */
+    if (trackerId && ownId && trackerId === ownId) return false;
+    if (trackerId) return true;
+    if (/\bGC\s*tracker\b/i.test(line + ' ' + notes + ' ' + ref + ' ' + title)) {
+      return true;
+    }
+    if (/^Tracker\s*[—–-]/i.test(title) || /^Tracker\s*[—–-]/i.test(ref)) {
+      return true;
+    }
+    return false;
+  }
+
   function isScheduleShadowInvoice(inv, siblings) {
     if (!inv || inv.created_via === 'la_office_auto') return false;
     var pay = String(inv.payment_status || '').toLowerCase();
-    if (pay === 'void' || pay === 'paid') return false;
-    if (scheduleRows(inv).length > 0) return false;
+    if (pay === 'void') return false;
+    /* Real term keepers have 2+ schedule rows — never hide, even if consolidate
+       stamped "Consolidated payment tracker: <own id>" on the keeper notes
+       (Linda / Rodin / Max / Richard / Arthur showed 0 invoices / Summer-only). */
+    if (scheduleRows(inv).length >= 2) return false;
+    /* Explicit GC tracker / single-slice rows (Maiyar/Linda office scripts). */
+    if (isGcInstalmentTrackerInvoice(inv)) return true;
+    /* Paid slices are kept for audit but not shown once marked paid either if matched. */
     var due = String(inv.due_date || inv.next_instalment_due || '').slice(0, 10);
     var amt = Number(inv.amount_gbp) || 0;
     if (!due || !(amt > 0.009)) return false;
@@ -731,6 +772,7 @@
     for (var i = 0; i < list.length; i++) {
       var sib = list[i];
       if (String(sib.id || '') === id) continue;
+      if (isGcInstalmentTrackerInvoice(sib)) continue;
       var sched = scheduleRows(sib);
       if (sched.length < 2) continue;
       for (var j = 0; j < sched.length; j++) {
@@ -757,10 +799,29 @@
   var OWN_WAY_TITLE =
     'Own way — pay on your own dates; always keep 2 sessions prepaid; remind when buffer drops; £50 admin fee per term';
 
+  function hybridBankGcPlanLabel(rows) {
+    var bank = 0;
+    var gc = 0;
+    for (var i = 0; i < (rows || []).length; i++) {
+      var r = rows[i] || {};
+      var via = String(r.collect_via || '').toLowerCase();
+      var lab = String(r.label || '').toLowerCase();
+      if (via === 'bank_transfer' || via === 'bank' || /bank transfer/.test(lab)) bank += 1;
+      else if (via === 'gocardless' || via === 'gc' || /gocardless/.test(lab)) gc += 1;
+    }
+    if (bank > 0 && gc > 0) {
+      var bankBit = bank === 1 ? '1 bank transfer' : bank + ' bank transfers';
+      var gcBit = gc === 1 ? '1 GoCardless' : gc + ' GoCardless';
+      return bankBit + ' + ' + gcBit + ' · £1.50 / GC instalment';
+    }
+    return '';
+  }
+
   /**
    * Arrangement:
    * One-off payment (year|term) · Flexi: 2 per term · Flexi: 6 per year ·
    * GoCardless (one per term / monthly ×N · term) · £1.50 / instalment · Own way
+   * Hybrid mid-month: 1 bank transfer + N GoCardless
    */
   function schedulePlanShort(inv) {
     var code = String(inv.reenrol_payment_schedule_code || '').toLowerCase();
@@ -769,6 +830,9 @@
     var channel = methodChannelLabel(inv);
     var isGc = channel === 'GoCardless';
     var yearCadence = cadence === 'whole_year' || cadence === 'auto';
+    var rows = scheduleRows(inv);
+    var hybrid = hybridBankGcPlanLabel(rows);
+    if (hybrid) return hybrid;
 
     if (code === 'own_term' || payCode === 'own_way_flexible') return 'Own way';
     if (code === 'yearly_1off') return 'One-off payment (year)';
@@ -784,7 +848,6 @@
         : 'One-off payment (term)';
     }
 
-    var rows = scheduleRows(inv);
     var blob = rows
       .map(function (r) {
         return String(r.label || '');
@@ -1206,14 +1269,11 @@
     return '';
   }
 
-  /** YYYY-MM-DD of when the family completed re-enrolment (local calendar day). */
-  function reenrolDateKey(inv) {
-    var raw = String(
-      (inv && (inv.reenrolment_submitted_at || inv.created_at || inv.document_created_at)) || '',
-    ).trim();
+  /** YYYY-MM-DD from a timestamp (local calendar day when time is present). */
+  function isoDayKeyFromRaw(rawIn) {
+    var raw = String(rawIn || '').trim();
     if (!raw) return '';
     if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
-      /* Prefer local calendar day from the timestamp when time is present. */
       try {
         var d0 = new Date(raw);
         if (!isNaN(d0.getTime()) && /T|\d{2}:\d{2}/.test(raw)) {
@@ -1237,8 +1297,36 @@
     }
   }
 
+  /**
+   * Day accordion key: latest of re-enrol / invoice create / ready / paid.
+   * New INV-Ps (trial Apple Pay, office ACAT Jacks) must surface on the day they
+   * were minted or paid — not stay buried under a July re-enrol date.
+   */
+  function invoiceActivityDateKey(inv) {
+    if (!inv) return '';
+    var best = '';
+    var candidates = [
+      inv.paid_at,
+      inv.ready_at,
+      inv.created_at,
+      inv.document_created_at,
+      inv.reenrolment_submitted_at,
+      inv.updated_at,
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+      var k = isoDayKeyFromRaw(candidates[i]);
+      if (k && (!best || String(k) > String(best))) best = k;
+    }
+    return best;
+  }
+
+  /** @deprecated use invoiceActivityDateKey — kept for any older call sites. */
+  function reenrolDateKey(inv) {
+    return invoiceActivityDateKey(inv);
+  }
+
   function formatReenrolDayLabel(isoDate) {
-    if (!isoDate) return 'No re-enrolment date';
+    if (!isoDate) return 'No activity date';
     var p = String(isoDate).split('-');
     if (p.length < 3) return String(isoDate);
     try {
@@ -1321,7 +1409,7 @@
   }
 
   /**
-   * Nested: re-enrolment / invoice day → participants.
+   * Nested: latest invoice activity day → participants.
    * Newest days first; undated at the end.
    * Same contact keeps ALL their invoices together under their latest day
    * (so Summer crash + Autumn term both show under Patrick, not split across days).
@@ -1333,7 +1421,7 @@
     byContact.forEach(function (g) {
       var best = '';
       (g.invoices || []).forEach(function (inv) {
-        var k = reenrolDateKey(inv);
+        var k = invoiceActivityDateKey(inv);
         if (!k) return;
         if (!best || String(k) > String(best)) best = k;
       });
@@ -1362,7 +1450,7 @@
         });
       });
       return {
-        day: key === '_none' ? 'No re-enrolment date' : formatReenrolDayLabel(key),
+        day: key === '_none' ? 'No activity date' : formatReenrolDayLabel(key),
         day_key: key,
         participants: participants,
         invoice_count: invN,
@@ -1427,6 +1515,7 @@
     else if (payTone === 'partial') cls += ' pp-inv-acc__pay-chip--partial';
     else if (payTone === 'unpaid') cls += ' pp-inv-acc__pay-chip--unpaid';
     else if (payTone === 'pending') cls += ' pp-inv-acc__pay-chip--pending';
+    else if (payTone === 'lost') cls += ' pp-inv-acc__pay-chip--lost';
     else if (payTone === 'hidden') cls += ' pp-inv-acc__pay-chip--hidden';
     else cls += ' pp-inv-acc__pay-chip--other';
     return (
@@ -1442,25 +1531,90 @@
     );
   }
 
+  /** True when office should chase payment now (due window), not future AUTO terms. */
+  function invoiceIsOneOffTermBill(inv) {
+    var rows = scheduleRows(inv);
+    if (rows.length >= 2) return false;
+    var bt = String((inv && inv.billing_term) || '')
+      .trim()
+      .toLowerCase();
+    if (bt === 'spring' || bt === 'summer') return false;
+    var blob = [
+      inv && inv.reference_text,
+      inv && inv.title,
+      inv && inv.subtitle,
+      inv && inv.line_description,
+      inv && inv.notes,
+      inv && inv.ready_by,
+    ]
+      .map(function (x) {
+        return String(x || '').toLowerCase();
+      })
+      .join(' ');
+    /* Future spring/summer AUTO drafts — keep Hidden until their collect window. */
+    if (/\bspring\s*27\b|\bspring term\b/.test(blob) && !/\bautumn\b/.test(blob)) return false;
+    if (/\bsummer\s*27\b|\bsummer term\b/.test(blob) && !/\bautumn\b/.test(blob) && !/\bcrash\b/.test(blob)) {
+      return false;
+    }
+    return true;
+  }
+
+  function invoiceCollectingNow(inv) {
+    var pay = String((inv && inv.payment_status) || 'unpaid').toLowerCase();
+    if (pay === 'paid' || pay === 'void') return false;
+    if (pay === 'pending_confirmation') return true;
+    /*
+     * One-off Autumn place bills (ACAT £700 Kate / Kamy / Jack Walker sibling):
+     * outstanding as soon as the share is ready — do not park as Hidden until ≤7 days.
+     */
+    if (
+      invoiceIsOneOffTermBill(inv) &&
+      String((inv && inv.share_status) || '').toLowerCase() === 'ready'
+    ) {
+      return true;
+    }
+    var next = nextUnpaidInstalment(inv);
+    if (next) {
+      return instalmentIsCollectingNow(instalmentDueIso(next.due_date));
+    }
+    return instalmentIsCollectingNow(
+      instalmentDueIso((inv && (inv.next_instalment_due || inv.due_date)) || ''),
+    );
+  }
+
   function groupStatusSummary(invoices) {
     var unpaid = 0;
     var partial = 0;
     var paid = 0;
     var pending = 0;
     var hidden = 0;
+    var lost = 0;
     var xeroFail = 0;
     var xeroMissing = 0;
     (canonicalInvoices(invoices) || []).forEach(function (inv) {
       /* Office autos have no family payment status chip. */
       if (inv.created_via === 'la_office_auto') return;
       var pay = String(inv.payment_status || 'unpaid');
-      if (pay === 'void') return; /* void chips not shown */
+      if (isLostSlotInvoice(inv)) {
+        lost += 1;
+        return;
+      }
+      if (pay === 'void') return; /* other voids not shown */
       var isHidden = String(inv.share_status || '') === 'hidden';
+      var notDueYet = !invoiceCollectingNow(inv);
       if (isHidden) {
         /* Only count Hidden for re-enrolled clients still in class (future instalments). */
         var inClass = inv.in_class !== false;
         var hasReenrol = Boolean(inv.reenrolment_submitted_at);
         if (inClass && hasReenrol) hidden += 1;
+      } else if (
+        pay !== 'paid' &&
+        pay !== 'partial' &&
+        pay !== 'pending_confirmation' &&
+        notDueYet
+      ) {
+        /* AUTO year: spring/summer INV-Ps exist but are not due yet → Hidden, not Unpaid. */
+        hidden += 1;
       }
       if (pay === 'paid') paid += 1;
       else if (pay === 'partial') {
@@ -1469,8 +1623,8 @@
       } else if (pay === 'pending_confirmation') {
         /* Pending confirmation is always actionable (even if somehow hidden). */
         pending += 1;
-      } else if (!isHidden) {
-        /* Unpaid chip = ready/shared only — future monthly/flexi halves stay in Hidden. */
+      } else if (!isHidden && !notDueYet) {
+        /* Unpaid chip = ready + collecting now only. */
         unpaid += 1;
       }
       /* Xero chips: full or first-instalment paid, not yet in Xero */
@@ -1479,9 +1633,23 @@
       if (inv.xero_push_status === 'failed') xeroFail += 1;
       else if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') xeroMissing += 1;
     });
+    /*
+     * Contact place: Multi paid + open ACAT sibling (Jack Walker £1560 + £700) →
+     * partially paid, not "1 paid" alone / unpaid chip noise.
+     */
+    if (paid > 0 && unpaid > 0) {
+      partial = Math.max(partial, 1);
+      unpaid = 0;
+    }
     var chips = [];
     if (unpaid) {
-      chips.push(summaryFilterChip('unpaid', unpaid + ' unpaid', 'unpaid'));
+      chips.push(
+        summaryFilterChip(
+          'unpaid',
+          unpaid === 1 ? '1 outstanding' : unpaid + ' outstanding',
+          'unpaid',
+        ),
+      );
     }
     if (partial) {
       chips.push(
@@ -1497,6 +1665,15 @@
     }
     if (paid) {
       chips.push(summaryFilterChip('paid', paid + ' paid', 'paid'));
+    }
+    if (lost) {
+      chips.push(
+        summaryFilterChip(
+          'lost_slot',
+          lost === 1 ? '1 lost slot' : lost + ' lost slots',
+          'lost',
+        ),
+      );
     }
     if (hidden) {
       chips.push(summaryFilterChip('hidden', hidden + ' hidden', 'hidden'));
@@ -1661,15 +1838,43 @@
       if (hold && (hold.status === 'soft_hold' || hold.status === 'session_held' || hold.status === 'hard_cut')) {
         var holdLabel =
           hold.status === 'session_held'
-            ? 'Session held'
+            ? hold.reason === 'gocardless_failed'
+              ? 'Seat blocked · HOLD WAITLIST'
+              : 'Session held'
             : hold.status === 'hard_cut'
               ? 'Hard cut'
-              : 'Soft hold';
+              : hold.reason === 'gocardless_failed'
+                ? 'GC failed · bank due'
+                : 'Soft hold';
+        var graceBit = '';
+        if (hold.reason === 'gocardless_failed' && hold.grace_deadline_at && hold.status === 'soft_hold') {
+          try {
+            var gd = new Date(hold.grace_deadline_at);
+            graceBit =
+              ' · by ' +
+              gd.toLocaleString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+          } catch (_g) {}
+        }
+        if (hold.reason === 'gocardless_failed' && hold.amount_gbp != null) {
+          graceBit += ' · £' + Number(hold.amount_gbp).toFixed(2);
+        }
         holdChip =
-          '<div class="chip chip--pend" style="margin-top:4px;font-size:11px">' +
+          '<div class="chip chip--pend" style="margin-top:4px;font-size:11px' +
+          (hold.reason === 'gocardless_failed' ? ';background:#fee2e2;color:#991b1b' : '') +
+          '">' +
           esc(holdLabel) +
-          (hold.reminder_count ? ' · ' + esc(String(hold.reminder_count)) + ' reminders' : '') +
-          (hold.held_session_label ? ' · ' + esc(String(hold.held_session_label).slice(0, 48)) : '') +
+          esc(graceBit) +
+          (hold.reminder_count && hold.reason !== 'gocardless_failed'
+            ? ' · ' + esc(String(hold.reminder_count)) + ' reminders'
+            : '') +
+          (hold.held_session_label && hold.reason !== 'gocardless_failed'
+            ? ' · ' + esc(String(hold.held_session_label).slice(0, 48))
+            : '') +
           '</div>';
         if (hold.status !== 'hard_cut') {
           holdBtns =
@@ -1725,11 +1930,13 @@
 
     return (
       '<article class="pp-inv-acc__card' +
-      (inv.payment_status === 'paid'
-        ? ' pp-inv-acc__card--paid'
-        : inv.payment_status === 'partial'
-          ? ' pp-inv-acc__card--partial'
-          : '') +
+      (isLostSlotInvoice(inv)
+        ? ' pp-inv-acc__card--lost'
+        : inv.payment_status === 'paid'
+          ? ' pp-inv-acc__card--paid'
+          : inv.payment_status === 'partial'
+            ? ' pp-inv-acc__card--partial'
+            : '') +
       '" data-invoice-id="' +
       id +
       '">' +
@@ -1934,6 +2141,7 @@
       return inv.created_via !== 'la_office_auto';
     });
     var n = realInvoices.length;
+    var metaInv = invoices[0] || (group.invoices && group.invoices[0]) || {};
     var contactId = esc(group.contact_id || '');
     var name = group.name || 'Participant';
     var cards = invoices
@@ -1974,17 +2182,26 @@
     var countLabel = group.is_la_office_auto && !n
       ? 'Auto re-enrolled · no INV-P'
       : String(n) + ' invoice' + (n === 1 ? '' : 's');
-    var fundNow = fundingCategoryLabel(invoices[0] || {});
+    var fundNow = fundingCategoryLabel(metaInv);
     var fundVal =
       fundNow === 'Funds from the LA'
         ? 'direct_payments'
         : fundNow === 'LA managed' || fundNow === 'NHS managed'
           ? 'la_managed'
           : 'private';
-    var payVal = paymentMethodSelectValue(invoices[0] || {});
-    var schedVal = paymentScheduleSelectValue(invoices[0] || {});
+    var payVal = paymentMethodSelectValue(metaInv);
+    var schedVal = paymentScheduleSelectValue(metaInv);
+    var lostAll =
+      (invoices || []).length > 0 && (invoices || []).every(function (inv) {
+        return isLostSlotInvoice(inv) || inv.created_via === 'la_office_auto';
+      }) &&
+      (invoices || []).some(function (inv) {
+        return isLostSlotInvoice(inv);
+      });
     return (
-      '<details class="pp-inv-acc__item pp-inv-acc__item--pax" data-contact-id="' +
+      '<details class="pp-inv-acc__item pp-inv-acc__item--pax' +
+      (lostAll ? ' pp-inv-acc__item--lost' : '') +
+      '" data-contact-id="' +
       contactId +
       '">' +
       '<summary class="pp-inv-acc__sum">' +
@@ -1995,6 +2212,7 @@
       '</strong>' +
       '<span class="pp-inv-acc__num">' +
       esc(countLabel) +
+      (lostAll ? ' · LOST SLOT' : '') +
       (contactId ? ' · ' + contactId : '') +
       '</span>' +
       '</span>' +
@@ -2085,7 +2303,7 @@
   }
 
   function dayAccordionHtml(dayGroup) {
-    var day = dayGroup.day || 'No re-enrolment date';
+    var day = dayGroup.day || 'No activity date';
     var dayKey = dayGroup.day_key || '';
     var participants = dayGroup.participants || [];
     var paxN = dayGroup.participant_count != null ? dayGroup.participant_count : participants.length;
@@ -2102,7 +2320,6 @@
             return inv.created_via !== 'la_office_auto';
           }).length;
     var sub =
-      'Re-enrolled · ' +
       String(paxN) +
       ' participant' +
       (paxN === 1 ? '' : 's') +
@@ -2194,7 +2411,10 @@
       '.pp-inv-acc__pay-chip--partial{color:#15803d;background:#ecfdf5;border-color:#86efac}' +
       '.pp-inv-acc__pay-chip--shared{color:#047857;background:#bbf7d0;border-color:#34d399}' +
       '.pp-inv-acc__pay-chip--hidden{color:#475569;background:#e2e8f0;border-color:#94a3b8}' +
+      '.pp-inv-acc__pay-chip--lost{color:#fff;background:#b91c1c;border-color:#991b1b}' +
       '.pp-inv-acc__pay-chip--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
+      '.pp-inv-acc__item--lost>summary{background:#fef2f2;border-color:#fecaca}' +
+      '.pp-inv-acc__item--lost .pp-inv-acc__name{color:#991b1b}' +
       '.pp-inv-acc__status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
       '.pp-inv-acc__xero{font-size:11px;color:#64748b}' +
       '.pp-inv-acc__xero--ok{color:#1e40af}' +
@@ -2202,8 +2422,11 @@
       '.pp-inv-acc__body{border-top:1px solid #e8eef3;padding:12px;background:#fafcfd;min-width:0}' +
       '.pp-inv-acc__cards{display:flex;flex-direction:column;gap:10px;min-width:0}' +
       '.pp-inv-acc__card{border:1px solid #e2eaf0;border-radius:8px;padding:10px;background:#fff;min-width:0}' +
+      /* Soft green (paid / partial) and soft red (lost slot) — modifiers after base card. */
       '.pp-inv-acc__card--paid{border-color:#86efac;background:#f0fdf4}' +
       '.pp-inv-acc__card--partial{border-color:#a7f3d0;background:#f7fef9}' +
+      '.pp-inv-acc__card--lost{border-color:#f87171;background:#fef2f2}' +
+      '.pp-inv-acc__card--lost .pp-inv-acc__grid{min-width:0}' +
       '.pp-inv-acc__filter-chip{-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;font:inherit;line-height:inherit}' +
       '.pp-inv-acc__filter-chip:hover{filter:brightness(.97)}' +
       'button.pp-inv-acc__pay-chip--paid,.pp-inv-acc__pay-chip--paid{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
@@ -2212,6 +2435,7 @@
       'button.pp-inv-acc__pay-chip--pending,.pp-inv-acc__pay-chip--pending{color:#9a3412;background-color:#fed7aa;background:#fed7aa;border:1px solid #fb923c}' +
       'button.pp-inv-acc__pay-chip--partial,.pp-inv-acc__pay-chip--partial{color:#15803d;background-color:#ecfdf5;background:#ecfdf5;border:1px solid #86efac}' +
       'button.pp-inv-acc__pay-chip--hidden,.pp-inv-acc__pay-chip--hidden{color:#475569;background-color:#e2e8f0;background:#e2e8f0;border:1px solid #94a3b8}' +
+      'button.pp-inv-acc__pay-chip--lost,.pp-inv-acc__pay-chip--lost{color:#fff;background-color:#b91c1c;background:#b91c1c;border:1px solid #991b1b}' +
       'button.pp-inv-acc__pay-chip--other,.pp-inv-acc__pay-chip--other{color:#4a6578;background-color:#eef2f5;background:#eef2f5;border:1px solid #d5dee6}' +
       '.pp-inv-method-filters{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;margin:0 0 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;box-sizing:border-box}' +
       '.pp-inv-method-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
@@ -2349,7 +2573,7 @@
     if (!host) return;
     host.innerHTML = '<p class="muted">Loading…</p>';
     try {
-      var body = { limit: 300 };
+      var body = { limit: 800 };
       if (state.filter === 'ready' || state.filter === 'hidden') body.share_status = state.filter;
       if (state.filter === 'unpaid') {
         body.share_status = 'ready';
@@ -2369,7 +2593,7 @@
         body.share_status = 'ready';
         body.payment_status = 'pending_confirmation';
       }
-      if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced' || state.filter === 'la_auto') {
+      if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced' || state.filter === 'la_auto' || state.filter === 'lost_slot') {
         body.filter = state.filter;
       }
       body.billing_amount = state.amountPeriod || 'autumn';
@@ -2401,6 +2625,9 @@
         }
         if (state.meta.la_office_auto) {
           parts.push(String(state.meta.la_office_auto) + ' auto re-enrolled');
+        }
+        if (state.meta.lost_slot) {
+          parts.push(String(state.meta.lost_slot) + ' lost slot');
         }
         metaEl.textContent = parts.join(' · ');
       }
@@ -3183,7 +3410,7 @@
       '</form>' +
       '<details style="margin:0 0 18px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
       '<summary style="cursor:pointer;font-weight:700">New Booking Portal client · mid-term pro-rata</summary>' +
-      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">For <strong>new</strong> places confirmed from Booking Portal after the term has started (or starting mid-term). Builds <strong>1 invoice</strong> for remaining sessions. GoCardless / one-off: first instalment due <strong>on booking day</strong>. <strong>Flexi</strong>: first half on the fixed term due (Autumn <strong>15 August</strong>), second on the mid-term date. GoCardless continues on the <strong>1st of each remaining month</strong>.</p>' +
+      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">For <strong>new</strong> places confirmed from Booking Portal after the term has started (or starting mid-term). Builds <strong>1 invoice</strong> for remaining sessions. <strong>GoCardless</strong>: collections only on the <strong>1st of each month</strong> (same day for all clients — avoids separate GC payment fees). If they finish <strong>after</strong> this month\'s 1st, first instalment = <strong>bank transfer now</strong>; later months on the 1st via GoCardless. <strong>Flexi</strong>: first half on the fixed term due (e.g. Autumn 15 August), or <strong>booking day</strong> if that date has passed; second on the mid-term date.</p>' +
       '<form id="portalParentInvoiceMidtermForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px">' +
       '<p class="muted" style="margin:0;font-size:12px">Uses the participant selected above.</p>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
@@ -3243,10 +3470,10 @@
   function reenrolmentsEmbedHtml() {
     return (
       '<div class="card" style="margin-bottom:14px">' +
-      '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
+      '<div class="card-h"><h3>Re-enrolments &amp; Bookings</h3>' +
       '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;width:100%;max-width:none;text-align:left;overflow-wrap:break-word">Track instalments after re-enrolment. <strong>Year 25/26</strong> = summer crash / intensive (day centre). <strong>Year 26/27 · Autumn / Spring / Summer</strong> = re-enrol terms. Merged crash lines (e.g. Patrick) stay on Autumn for the family bill, but crash £ counts in Year 25/26 for Raul/Victor; Sunday climbing stays afterschools/weekends. Use filters to switch booked totals. <strong>Push to Xero</strong> creates the full ACCREC (<em>awaiting payment</em>) for <em>paid</em> or <em>partial</em> Portal INV-Ps. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
+      '<p class="muted" style="margin:0 0 10px;width:100%;max-width:none;text-align:left;overflow-wrap:break-word">Track instalments after re-enrolment and Booking Portal finish-booking. <strong>Year 25/26</strong> = summer crash / intensive (day centre). <strong>Year 26/27 · Autumn / Spring / Summer</strong> = re-enrol and new booking terms. Merged crash lines (e.g. Patrick) stay on Autumn for the family bill, but crash £ counts in Year 25/26 for Raul/Victor; Sunday climbing stays afterschools/weekends. Use filters to switch booked totals. <strong>Push to Xero</strong> creates the full ACCREC (<em>awaiting payment</em>) for <em>paid</em> or <em>partial</em> Portal INV-Ps. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
       '<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;align-items:center">' +
       '<span class="muted" style="font-size:12px;font-weight:700">Amount</span>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year_2526">Year 25/26</button>' +
@@ -3259,10 +3486,11 @@
       '<button type="button" class="btn btn--sm" data-inv-filter="all">All</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="la_auto">Auto re-enrolled</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Ready unpaid</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Outstanding</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="partial">Partially paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="lost_slot" title="Re-enrolled but never paid — place released">Lost slot</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="buffer_low">Buffer low</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Not in Xero yet</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="hidden">Hidden</button>' +
@@ -3284,7 +3512,7 @@
       methodFilterChip('gc', 'GoCardless', 'gc') +
       methodFilterChip('own_way', 'Own way', 'own') +
       methodFilterChip('la', 'LA funded', 'la') +
-      methodFilterChip('link', 'Payment link', 'link') +
+      methodFilterChip('link', 'Apple Pay / link', 'link') +
       '</div></div>' +
       '<details style="margin:0 0 14px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
       '<summary style="cursor:pointer;font-weight:700">Match Tide bank CSV</summary>' +

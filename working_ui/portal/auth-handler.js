@@ -25,24 +25,25 @@ import {
   portalReadPersistedSupabaseAccessToken,
   portalReadPersistedSupabaseSession,
   bindPortalRemoteLogoutOnStaleAuthGeneration,
-} from "./supabase-client.js?v=20260707-login-cache";
+} from "./supabase-client.js?v=20260914-dc-peer-clear";
 import {
   portalStaffIsDocumentsOnly,
   portalStaffDocumentsOnlyHomeUrl,
   portalStaffDocumentsOnlyRedirect,
-} from "./portal_staff_access.js?v=20260827-docs-only";
+} from "./portal_staff_access.js?v=20260909-bismark-full";
 import {
   resolveDemoEmail,
   resolveCorporateAuthEmail,
   resolveStaffKeyFromAuthEmail,
   portalCanonicalStaffRosterKey,
   portalStaffDisplayName,
+  portalStaffAuthorFirstName,
   PORTAL_LOGIN_UNKNOWN_NAME_HELP,
   portalIsRegisteredPortalLoginEmail,
   mergeStaffLoginEmailMap,
   PORTAL_EXECUTIVE_AUTH_EMAILS,
   PORTAL_STAFF_CODE_TO_ROSTER_KEY,
-} from "./auth-map.js?v=20260708-aida-login-alias";
+} from "./auth-map.js?v=20260911-emmanuel-staff";
 
 function portalLoginPromiseTimeout(promise, ms, message) {
   const waitMs = Math.max(1000, Number(ms) || 15000);
@@ -109,7 +110,7 @@ export {
   portalClearCachedAuthSessionGeneration,
   portalFetchSubmittedReviewSessionKeys,
   portalMergeReviewKeysIntoMemoryMap,
-} from "./supabase-client.js?v=20260707-login-cache";
+} from "./supabase-client.js?v=20260914-dc-peer-clear";
 
 /** Bump to force a one-time sign-out + fresh login after a published portal build. */
 export const APP_VERSION = "2026-07-05-live-madre-logout-all";
@@ -212,6 +213,14 @@ function portalPublishedLoginUrl() {
 function portalPublishedChooseUrl() {
   return portalPublishedPageUrl("portal_choose.html", "PORTAL_CHOOSE_URL");
 }
+function portalPublishedOnboardingUrl() {
+  return portalPublishedPageUrl("onboarding_portal.html", "PORTAL_ONBOARDING_HUB_URL");
+}
+function portalProfileIsOnboardingApplicant(profile) {
+  if (!profile) return false;
+  const v = profile.onboarding_applicant;
+  return v === true || v === "true" || v === 1;
+}
 function portalPublishedOfficeUrl() {
   return portalPublishedPageUrl("office_portal.html", "PORTAL_OFFICE_DASHBOARD_URL");
 }
@@ -312,7 +321,7 @@ export function portalInferStaffKey(profile, authEmail) {
   return "";
 }
 
-export { portalCanonicalStaffRosterKey, portalStaffDisplayName };
+export { portalCanonicalStaffRosterKey, portalStaffDisplayName, portalStaffAuthorFirstName };
 
 export function portalInferEffectiveRole(profile, authEmail) {
   const appRole = String(profile?.app_role || "").toLowerCase();
@@ -803,7 +812,14 @@ function portalShowLoginUpdatedBannerIfNeeded() {
     const u = new URL(window.location.href);
     if (u.searchParams.get("updated") !== "1") return;
     const info = document.getElementById("login-updated-msg");
-    if (info) info.classList.add("visible");
+    if (info) {
+      if (!String(info.textContent || "").trim()) {
+        info.textContent =
+          "Your portal has been updated. Please log in again to continue.";
+      }
+      info.hidden = false;
+      info.classList.add("visible");
+    }
     u.searchParams.delete("updated");
     const qs = u.searchParams.toString();
     window.history.replaceState({}, "", u.pathname + (qs ? "?" + qs : "") + u.hash);
@@ -840,10 +856,13 @@ function inferDashboardRoute(profile, authEmail) {
   if (portalStaffIsDocumentsOnly(profile)) {
     return portalStaffDocumentsOnlyHomeUrl();
   }
-  const effectiveRole = portalInferEffectiveRole(profile, authEmail);
   const fromWorkingUi =
     typeof window !== "undefined" &&
     window.location.pathname.toLowerCase().includes("/working_ui/");
+  if (portalProfileIsOnboardingApplicant(profile)) {
+    return fromWorkingUi ? "onboarding_portal.html" : portalPublishedOnboardingUrl();
+  }
+  const effectiveRole = portalInferEffectiveRole(profile, authEmail);
   if (portalIsProgrammeLeadUser(profile, authEmail)) {
     return fromWorkingUi ? "staff_dashboard.html" : portalPublishedStaffUrl();
   }
@@ -951,7 +970,7 @@ function bindLogin() {
     const rosterKey = resolveStaffKeyFromAuthEmail(email);
     if (rosterKey) {
       names.add(rosterKey);
-      if (rosterKey === "lulia") {
+      if (rosterKey === "luliya" || rosterKey === "lulia") {
         ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
       } else if (rosterKey === "javier") {
         ["javier", "Javier", "javi", "Javi"].forEach((n) => names.add(n));
@@ -968,7 +987,7 @@ function bindLogin() {
     if (local && PORTAL_STAFF_CODE_TO_ROSTER_KEY[local]) {
       const codeKey = PORTAL_STAFF_CODE_TO_ROSTER_KEY[local];
       names.add(codeKey);
-      if (codeKey === "lulia") {
+      if (codeKey === "luliya" || codeKey === "lulia") {
         ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
       }
     }
@@ -977,7 +996,7 @@ function bindLogin() {
 
   async function fetchStaffProfileByUsernameAliases(supabase, authEmail) {
     const selectCols =
-      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
+      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality, portal_staff_access, onboarding_applicant";
     const candidates = portalStaffProfileUsernameCandidates(authEmail);
     if (!candidates.length) return null;
     const { data, error } = await supabase
@@ -994,7 +1013,7 @@ function bindLogin() {
 
   async function fetchStaffProfile(supabase, userId) {
     const selectCols =
-      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
+      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality, portal_staff_access, onboarding_applicant";
     async function loadViaRpc() {
       const rpc = await supabase.rpc("portal_get_session_staff_profile");
       if (rpc.error) {
@@ -1293,6 +1312,14 @@ function bindLogin() {
     e.preventDefault();
     e.stopImmediatePropagation();
 
+    /* Same tap as Login: OS prompt is intrinsic to entering the app. Do this
+       before any await so the browser still treats it as a user gesture. */
+    try {
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
+    } catch (_perm) {}
+
     if (window.__PORTAL_LOGIN_SUBMIT_INFLIGHT__) return;
 
     await tryMergeStaffLoginMapFromSiblingJson();
@@ -1346,12 +1373,14 @@ function bindLogin() {
         /* signInWithPassword already stores the session; awaiting setSession can deadlock on GoTrue lock. */
         void portalEnsureSupabaseSession(supabase, data.session);
       }
-      void portalBumpAuthSessionGeneration(supabase).catch(function (bumpErr) {
+      try {
+        await portalBumpAuthSessionGeneration(supabase, data.user.id);
+      } catch (bumpErr) {
         console.warn(
           "[portal] portal_bump_auth_session_generation failed — apply migration 20260420_portal_auth_generation_and_review_select.sql?",
           bumpErr
         );
-      });
+      }
       portalPersistLoginRedirectIntent();
       let url = portalEmergencyRedirectUrl(email);
       if (!url) {
@@ -1441,7 +1470,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
       throw new Error("skip_presence_on_lead_overview");
     }
     const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-      "./portal_live_presence.js?v=20260707-admin-online-fix"
+      "./portal_live_presence.js?v=20260911-qm-rt-quiet"
     );
     await startPortalLivePresence({ page, profile, session });
     if (document.getElementById("portalLivePresenceBar")) {
@@ -1478,7 +1507,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
     if (isLeadOverview || isGhostDashboard) {
       throw new Error("skip_location_on_lead_overview");
     }
-    const perm = await import("./portal_location_permission.js?v=20260610-console-clean2");
+    const perm = await import("./portal_location_permission.js?v=20260920-no-live-map");
     window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
     window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
     window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;
@@ -1514,14 +1543,10 @@ async function runPortalDashboardAuthSideEffects(ctx) {
     perm.portalRefreshCameraUi();
     perm.portalRefreshEnableAllUi();
     perm.portalSyncAlertsSettingsChrome();
-    const loc = await import("./portal_location_tracker.js?v=20260610-all-services-window");
-    window.portalRestartLocationTracker = function () {
-      return loc.restartPortalLocationTracker({ page, profile, session });
+    window.portalRestartLocationTracker = async function () {};
+    window.portalUploadLocationFromPosition = async function () {
+      return false;
     };
-    window.portalUploadLocationFromPosition = function (pos) {
-      return loc.uploadLocationFromPosition(pos);
-    };
-    await loc.startPortalLocationTracker({ page, profile, session });
     await perm.portalEnsureMandatoryAlertsSettings({ page });
   } catch (locErr) {
     console.debug("[portal] location tracker skipped:", locErr);
@@ -1538,7 +1563,7 @@ function portalBootstrapStaffProfileUsernameCandidates(authEmail) {
   const rosterKey = resolveStaffKeyFromAuthEmail(email);
   if (rosterKey) {
     names.add(rosterKey);
-    if (rosterKey === "lulia") ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
+    if (rosterKey === "luliya" || rosterKey === "lulia") ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
     else if (rosterKey === "javier") ["javier", "Javier", "javiermarquez", "Javier Marquez"].forEach((n) => names.add(n));
     else if (rosterKey === "javi") ["javi", "Javi", "palankas", "Palankas", "Palankas Arranz"].forEach((n) => names.add(n));
     else if (rosterKey === "youssef") ["youssef", "Youssef", "yousef", "yusef"].forEach((n) => names.add(n));
@@ -1548,14 +1573,14 @@ function portalBootstrapStaffProfileUsernameCandidates(authEmail) {
   if (local && PORTAL_STAFF_CODE_TO_ROSTER_KEY[local]) {
     const codeKey = PORTAL_STAFF_CODE_TO_ROSTER_KEY[local];
     names.add(codeKey);
-    if (codeKey === "lulia") ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
+    if (codeKey === "luliya" || codeKey === "lulia") ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
   }
   return [...names].filter(Boolean);
 }
 
 async function portalBootstrapLoadStaffProfile(supabase, session, authEmailGate) {
   const selectCols =
-    "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
+    "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality, portal_staff_access, onboarding_applicant";
   const execStub = portalExecutiveBootstrapProfileStub(session, authEmailGate);
   const load = async function loadProfile() {
     const rpc = await supabase.rpc("portal_get_session_staff_profile");
@@ -1596,7 +1621,7 @@ async function portalBootstrapLoadStaffProfile(supabase, session, authEmailGate)
 
 export async function bootstrapDashboardSupabase(_opts) {
   if (typeof window !== "undefined") {
-    if (window.__PORTAL_SUPABASE__?.client) return;
+    if (window.__PORTAL_SUPABASE__?.client && window.__PORTAL_SUPABASE__?.session?.user?.id) return;
     if (window.__PORTAL_SUPABASE_BOOT_INFLIGHT__) {
       return window.__PORTAL_SUPABASE_BOOT_INFLIGHT__;
     }
@@ -1616,6 +1641,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     return (
       p === "onboarding" ||
       p === "cs_cliq" ||
+      p === "comunicaciones" ||
       p === "admin" ||
       p === "office" ||
       p === "ceo" ||
@@ -1632,12 +1658,14 @@ export async function bootstrapDashboardSupabase(_opts) {
   const sessionWaitMs =
     isLeadOverview ||
     page === "cs_cliq" ||
+    page === "comunicaciones" ||
     page === "onboarding" ||
     page === "admin" ||
     page === "office" ||
     page === "ceo" ||
     page === "lead" ||
-    page === "choose"
+    page === "choose" ||
+    page === "staff"
       ? 4500
       : 2800;
 
@@ -1650,6 +1678,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       page === "lead_overview" ||
       page === "ceo" ||
       page === "cs_cliq" ||
+      page === "comunicaciones" ||
       page === "choose"
     );
   }
@@ -1739,6 +1768,57 @@ export async function bootstrapDashboardSupabase(_opts) {
         } catch {
           /* ignore */
         }
+        if (typeof document !== "undefined" && document.documentElement) {
+          document.documentElement.classList.add("portal-auth-ready");
+        }
+        window.dispatchEvent(
+          new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
+        );
+        void (async function recoverStaffSession() {
+          for (let i = 0; i < 10; i++) {
+            await new Promise((r) => setTimeout(r, 800));
+            if (window.__PORTAL_SUPABASE__?.session?.user?.id) return;
+            try {
+              let {
+                data: { session: recovered },
+              } = await supabase.auth.getSession();
+              if (!recovered?.user?.id) {
+                const persisted = portalReadPersistedSupabaseSession();
+                if (persisted?.access_token) {
+                  await supabase.auth.setSession({
+                    access_token: persisted.access_token,
+                    refresh_token: persisted.refresh_token || "",
+                  });
+                  ({
+                    data: { session: recovered },
+                  } = await supabase.auth.getSession());
+                }
+              }
+              if (!recovered?.user?.id) continue;
+              let recoveredProfile = null;
+              try {
+                recoveredProfile = await portalBootstrapLoadStaffProfile(
+                  supabase,
+                  recovered,
+                  String(recovered.user?.email || "").trim()
+                );
+              } catch {
+                recoveredProfile = null;
+              }
+              window.__PORTAL_SUPABASE__ = {
+                client: supabase,
+                session: recovered,
+                staff_profile: recoveredProfile || null,
+              };
+              window.dispatchEvent(
+                new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
+              );
+              return;
+            } catch {
+              /* keep trying */
+            }
+          }
+        })();
       }
       return;
     }
@@ -1915,12 +1995,13 @@ export async function bootstrapDashboardSupabase(_opts) {
 
     if (profile) {
       const gen = Number(profile.auth_session_generation) || 0;
+      const uid = String((session && session.user && session.user.id) || "").trim();
       if (isGhostDashboard || isGodModeAdmin || singleSessionExempt) {
         // Fresh tab can hold a stale generation cache; sync to server before single-session kick.
-        portalClearCachedAuthSessionGeneration();
-        portalSetCachedAuthSessionGeneration(gen);
+        portalClearCachedAuthSessionGeneration(uid);
+        portalSetCachedAuthSessionGeneration(gen, uid);
       } else {
-        const cached = portalGetCachedAuthSessionGeneration();
+        const cached = portalGetCachedAuthSessionGeneration(uid);
         if (cached != null && gen > cached) {
           try {
             await portalLogout();
@@ -1934,7 +2015,7 @@ export async function bootstrapDashboardSupabase(_opts) {
           window.location.href = kickUrl;
           return;
         }
-        portalSetCachedAuthSessionGeneration(gen);
+        portalSetCachedAuthSessionGeneration(gen, uid);
       }
     }
 

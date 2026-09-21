@@ -1,0 +1,24 @@
+---
+description: OLD clients (Aug15 unpaid / no Sep 2026 slots) must not appear in Sessions
+alwaysApply: true
+---
+
+# OLD clients — not in Sessions
+
+Bucket **OLD** (see `participant-buckets-office.mdc`): had services before, **no slots from September 2026**.
+
+Known **OLD** from unpaid Aug 15 2026 release (live from **2026-08-16**): **Karo, Shire**.
+
+**Kareena** returned **Tue 15 Sep 2026** (Javier Acton Aquatic 5.30–6, Private one-off) — treat as **CLIENT** again, not OLD.
+
+## Do not
+
+- Put them back on Autumn standing boards (`portal_roster_canonical.js`, LOCAL DC staff week).
+- Show them as booked / awaiting feedback in admin Sessions for dates on/after 2026-08-16.
+- Call them “former/formal” in office chat — say **OLD**.
+
+## Do
+
+- Empty seats = **No participant** (open), matching LOCAL (e.g. Javier Tue Acton 6–6.30).
+- Keep `clientRosterGoneFromDates` (Karo / Shire only) + `scrubAug15ReleasedFormerClientRows` / `clientAllowedOnDate`. Kareena is CLIENT again from 2026-09-15 — do not list her in gone-from or Services reenrol-blank.
+---

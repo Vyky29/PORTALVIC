@@ -198,7 +198,7 @@
       "</span></div>" +
       '<div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl portal-pin-tbl" style="min-width:620px"><thead><tr>' +
-      "<th>#</th><th>Name</th><th>Role(s)</th><th>" +
+      "<th title=\"Row number, not the PIN\">No.</th><th>Name</th><th>Role(s)</th><th>" +
       esc(meta.credLabel) +
       "</th><th></th><th>Sent</th>" +
       "</tr></thead><tbody>" +
@@ -294,7 +294,7 @@
       "</div></div>" +
       '<div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl portal-pin-tbl" style="min-width:760px"><thead><tr>' +
-      "<th>#</th><th>Parent</th><th>Children</th><th>Login name(s)</th><th>PIN</th><th></th><th>Source</th><th>Updated</th>" +
+      "<th title=\"Row number, not the PIN\">No.</th><th>Parent</th><th>Children</th><th>Login name(s)</th><th>PIN</th><th></th><th>Source</th><th>Updated</th>" +
       "</tr></thead><tbody>" +
       familyRowsHtml() +
       "</tbody></table></div></div>"
@@ -331,6 +331,8 @@
       "#portalPinsRoot .portal-pin-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;letter-spacing:.12em}" +
       "#portalPinsRoot .portal-pin-tbl td{vertical-align:middle}" +
       "#portalPinsRoot .portal-pin-tbl code{font-size:12px}" +
+      "#portalPinsRoot .portal-pin-tbl th:first-child,#portalPinsRoot .portal-pin-tbl td:first-child{width:52px;padding-right:14px;border-right:1px solid rgba(23,50,71,.14);font-size:11px;color:#8a9bab}" +
+      "#portalPinsRoot .portal-pin-tbl th:nth-child(4),#portalPinsRoot .portal-pin-tbl td:nth-child(4){padding-left:14px}" +
       "</style>" +
       '<h1 class="page-title">Portal PINs</h1>' +
       '<p class="page-intro">Login codes for staff portals and Family portal parents. Hidden by default — reveal only when needed.</p>' +

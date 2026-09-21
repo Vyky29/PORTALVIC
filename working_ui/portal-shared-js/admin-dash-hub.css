@@ -1486,13 +1486,12 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
 .dash-hub--nav-group{
   max-width:100%;
 }
-/* Unified page head: back + title (left) · intro (right) */
+/* Unified page head: back + title, then intro underneath (same pattern as Sessions Overview). */
 .admin-page-head{
   display:flex;
-  flex-wrap:wrap;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px 20px;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
   margin:0 0 18px;
   min-width:0;
   width:100%;
@@ -1503,7 +1502,7 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
   align-items:center;
   gap:10px 14px;
   min-width:0;
-  flex:1 1 auto;
+  width:100%;
 }
 .admin-page-head__back{
   flex-shrink:0;
@@ -1523,8 +1522,9 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
 }
 .admin-page-head__intro{
   margin:0;
-  flex:0 1 min(100%,22rem);
-  text-align:right;
+  max-width:52rem;
+  width:100%;
+  text-align:left;
   font-size:14px;
   line-height:1.45;
   min-width:0;
@@ -1571,12 +1571,10 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
 }
 @media (max-width:720px){
   .admin-page-head{
-    flex-direction:column;
     align-items:stretch;
   }
   .admin-page-head__intro{
-    text-align:left;
-    flex:1 1 100%;
+    max-width:100%;
   }
 }
 .dash-hub--nav-group .dash-hub__grid--hub-menu{

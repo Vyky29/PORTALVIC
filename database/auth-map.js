@@ -92,6 +92,11 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Sevitha: "sevitha@clubsensational.org",
   Teflon: "stf020@staff.import.pending",
   teflon: "stf020@staff.import.pending",
+  /* New hire Support Worker (not roster Emanuel). */
+  Emmanuel: "nanaamoakohene745@gmail.com",
+  "Emmanuel Amoakohene": "nanaamoakohene745@gmail.com",
+  Amoakohene: "nanaamoakohene745@gmail.com",
+  "nanaamoakohene745@gmail.com": "nanaamoakohene745@gmail.com",
   "victor@clubsensational.org": "victor@clubsensational.org",
   "raul@clubsensational.org": "raul@clubsensational.org",
   "javier@clubsensational.org": "javier@clubsensational.org",
@@ -230,7 +235,10 @@ export function resolveDemoEmail(rawUsername) {
     if (portalIsRegisteredPortalLoginEmail(resolved)) {
       return resolved;
     }
-    return null;
+    // Onboarding invites mint Auth users with personal emails that are not on
+    // the standing roster map. Let those emails through; Auth + staff_profiles
+    // decide whether the account is valid.
+    return resolved;
   }
 
   if (/^stf\d{3}@staff\.import\.pending$/.test(lower)) {
@@ -292,12 +300,12 @@ export const PORTAL_STAFF_CODE_TO_ROSTER_KEY = {
   stf018: "raul",
   stf019: "sevitha",
   stf020: "teflon",
-  stf021: "lulia",
+  stf021: "luliya",
   stf022: "andres",
 };
 
 /**
- * Normalize username / email local / display name → canonical roster key (lulia, roberto, …).
+ * Normalize username / email local / display name → canonical roster key (luliya, roberto, …).
  * @param {string | null | undefined} value
  * @returns {string}
  */
@@ -309,10 +317,19 @@ export function portalCanonicalStaffRosterKey(value) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "");
   if (!k) return "";
-  if (k === "luliya") return "lulia";
-  if (k === "lulya") return "lulia";
-  if (k === "aida") return "lulia";
+  if (
+    k === "lulia" ||
+    k === "lulya" ||
+    k === "aida" ||
+    k === "aidalulia" ||
+    k === "aidaluliya" ||
+    k === "aidaluliyajemal"
+  ) {
+    return "luliya";
+  }
   if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+  if (k === "emmanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") return "emmanuel";
+  if (k === "emanuel") return "emmanuel";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
 }
 

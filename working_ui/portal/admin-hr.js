@@ -1353,7 +1353,7 @@
     }
     client
       .from("employment_contracts")
-      .select("id, contract_reference, status, role, completed_at, employee_signed_at, document_id, documents(file_url, title)")
+      .select("id, contract_reference, status, role, completed_at, employee_signed_at, document_id")
       .eq("user_id", uid)
       .order("created_at", { ascending: false })
       .then(function (res) {
@@ -1362,34 +1362,56 @@
           return;
         }
         var rows = res.data || [];
-        if (msgEl) msgEl.hidden = true;
-        if (!rows.length) {
-          listEl.hidden = true;
-          if (msgEl) {
-            msgEl.hidden = false;
-            msgEl.textContent = "No employment contracts sent via the Portal yet.";
+        var docIds = rows.map(function (c) { return c.document_id ? String(c.document_id) : ""; }).filter(Boolean);
+        var attachAndRender = function (byId) {
+          if (msgEl) msgEl.hidden = true;
+          if (!rows.length) {
+            listEl.hidden = true;
+            if (msgEl) {
+              msgEl.hidden = false;
+              msgEl.textContent = "No employment contracts sent via the Portal yet.";
+            }
+            return;
           }
+          listEl.hidden = false;
+          listEl.innerHTML = rows.map(function (c) {
+            var ref = esc(c.contract_reference || "Contract");
+            var role = c.role ? esc(c.role) : "";
+            var when = fmtDate(c.employee_signed_at || c.completed_at);
+            var status = contractStatusLabel(c.status);
+            var doc = c.document_id && byId ? byId[String(c.document_id)] : null;
+            var filePath = doc && doc.file_url ? String(doc.file_url) : "";
+            var pdfBtn = filePath
+              ? '<button type="button" class="hr-contract-pdf" data-hr-contract-pdf="' + esc(filePath) + '">View PDF</button>'
+              : (c.status === "completed" ? '<span class="hr-contract-meta">PDF pending</span>' : "");
+            return '<div class="hr-contract-row" data-hr-contract-id="' + esc(c.id) + '">'
+              + '<b>' + ref + '</b>'
+              + (role ? '<span class="hr-contract-meta">' + role + '</span>' : "")
+              + '<span class="hr-contract-meta">' + esc(status) + (when ? " · " + esc(when) : "") + '</span>'
+              + pdfBtn
+              + '</div>';
+          }).join("");
+          bindEmploymentContractPdfButtons(screen);
+        };
+        if (!docIds.length) {
+          attachAndRender({});
           return;
         }
-        listEl.hidden = false;
-        listEl.innerHTML = rows.map(function (c) {
-          var ref = esc(c.contract_reference || "Contract");
-          var role = c.role ? esc(c.role) : "";
-          var when = fmtDate(c.employee_signed_at || c.completed_at);
-          var status = contractStatusLabel(c.status);
-          var doc = c.documents && !Array.isArray(c.documents) ? c.documents : (Array.isArray(c.documents) ? c.documents[0] : null);
-          var filePath = doc && doc.file_url ? String(doc.file_url) : "";
-          var pdfBtn = filePath
-            ? '<button type="button" class="hr-contract-pdf" data-hr-contract-pdf="' + esc(filePath) + '">View PDF</button>'
-            : (c.status === "completed" ? '<span class="hr-contract-meta">PDF pending</span>' : "");
-          return '<div class="hr-contract-row" data-hr-contract-id="' + esc(c.id) + '">'
-            + '<b>' + ref + '</b>'
-            + (role ? '<span class="hr-contract-meta">' + role + '</span>' : "")
-            + '<span class="hr-contract-meta">' + esc(status) + (when ? " · " + esc(when) : "") + '</span>'
-            + pdfBtn
-            + '</div>';
-        }).join("");
-        bindEmploymentContractPdfButtons(screen);
+        client
+          .from("documents")
+          .select("id, file_url, title")
+          .in("id", docIds)
+          .then(function (docRes) {
+            var byId = {};
+            if (!docRes.error) {
+              (docRes.data || []).forEach(function (d) {
+                if (d && d.id) byId[String(d.id)] = d;
+              });
+            } else {
+              try { console.warn("[hr] contract documents:", docRes.error.message); } catch (_) {}
+            }
+            attachAndRender(byId);
+          });
       });
   }
 
@@ -1609,12 +1631,162 @@
           details: { off_date: dateStr, reason: reason || null }, source: "staffhr",
         });
       }
-      deps.toast("Day off added.");
-      render();
-      openPerson(nameKey);
+      return writeCoverNeededForDayOff(client, nameKey, displayName, dateStr).then(function (coverCount) {
+        deps.toast(
+          coverCount > 0
+            ? "Day off added · " + coverCount + " COVER NEEDED"
+            : "Day off added."
+        );
+        try {
+          if (typeof global.portalSyncOverviewDayTruth === "function") {
+            return global.portalSyncOverviewDayTruth(client, {
+              refreshScheduling: true,
+              forceOverviewRender: true,
+            });
+          }
+        } catch (_sync) {}
+      }).then(function () {
+        render();
+        openPerson(nameKey);
+      });
     }).catch(function (err) {
       setPersonMsg(screen, "Could not save day off: " + ((err && err.message) || err));
     });
+  }
+
+  /** Same COVER NEEDED rows Validate day writes when booked slots exist for the worker. */
+  function writeCoverNeededForDayOff(client, nameKey, displayName, dateStr) {
+    var slots = [];
+    try {
+      if (typeof global.portalCollectCoverSlotsForStaffDayOff === "function") {
+        slots = global.portalCollectCoverSlotsForStaffDayOff(dateStr, nameKey, displayName) || [];
+      }
+    } catch (_col) {
+      slots = [];
+    }
+    if (!slots.length) return Promise.resolve(0);
+
+    function toPgTime(t) {
+      var s = String(t == null ? "" : t).trim();
+      if (!s) return "";
+      var m = s.match(/^(\d{1,2}):(\d{2})/);
+      if (!m) return "";
+      return String(Number(m[1])).padStart(2, "0") + ":" + m[2] + ":00";
+    }
+
+    var anchorKey = String(nameKey || "").trim().toLowerCase() || "staff";
+    var writes = slots.map(function (raw) {
+      var clientId = String(raw.anchor_client_id || "").trim().toLowerCase();
+      if (!clientId) return Promise.resolve(false);
+      var start = toPgTime(raw.anchor_start || "");
+      var end = toPgTime(raw.anchor_end || "") || start;
+      if (!start) return Promise.resolve(false);
+      var payload = {
+        cover_needed: true,
+        covering_staff_id: "cover_needed",
+        covering_staff_name: "COVER NEEDED",
+        absent_staff_id: anchorKey,
+        absent_staff_name: displayName || anchorKey,
+        source: "hr_day_off",
+        notify_parents: false,
+        service: raw.programme || null,
+        area: raw.area || null,
+      };
+      return client
+        .from("schedule_overrides")
+        .select("id, payload")
+        .eq("session_date", dateStr)
+        .eq("anchor_staff_id", anchorKey)
+        .eq("anchor_start", start)
+        .eq("override_type", "instructor_cover_needed")
+        .eq("status", "active")
+        .then(function (priorRes) {
+          var cancelIds = [];
+          (priorRes.data || []).forEach(function (p) {
+            var pl = p && p.payload && typeof p.payload === "object" ? p.payload : {};
+            if (pl.source === "hr_day_off" || !pl.disruption_report_id) {
+              cancelIds.push(p.id);
+            }
+          });
+          var cancelP = cancelIds.length
+            ? client.from("schedule_overrides").update({ status: "cancelled" }).in("id", cancelIds)
+            : Promise.resolve({ error: null });
+          return cancelP.then(function () {
+            return client.from("schedule_overrides").insert({
+              session_date: dateStr,
+              anchor_staff_id: anchorKey,
+              anchor_start: start,
+              anchor_end: end,
+              anchor_venue: raw.anchor_venue || null,
+              anchor_client_id: clientId,
+              anchor_time_slot_label: raw.anchor_time_slot_label || null,
+              override_type: "instructor_cover_needed",
+              payload: payload,
+              reason:
+                "HR day off — " +
+                (displayName || anchorKey) +
+                " · COVER NEEDED",
+              status: "active",
+              superseded_by: null,
+              spreadsheet_revision: "hr-day-off",
+            });
+          });
+        })
+        .then(function (ins) {
+          if (ins && ins.error) {
+            try {
+              console.warn("[hr] cover_needed insert", ins.error.message || ins.error);
+            } catch (_) {}
+            return false;
+          }
+          return true;
+        })
+        .catch(function (err) {
+          try {
+            console.warn("[hr] cover_needed", err);
+          } catch (_) {}
+          return false;
+        });
+    });
+
+    return Promise.all(writes).then(function (flags) {
+      return flags.filter(Boolean).length;
+    });
+  }
+
+  function cancelHrCoverNeededForDayOff(client, nameKey, dateStr) {
+    var anchorKey = String(nameKey || "").trim().toLowerCase();
+    if (!anchorKey || !dateStr) return Promise.resolve(0);
+    return client
+      .from("schedule_overrides")
+      .select("id, payload")
+      .eq("session_date", dateStr)
+      .eq("anchor_staff_id", anchorKey)
+      .eq("override_type", "instructor_cover_needed")
+      .eq("status", "active")
+      .then(function (res) {
+        if (res.error) throw res.error;
+        var ids = [];
+        (res.data || []).forEach(function (p) {
+          var pl = p && p.payload && typeof p.payload === "object" ? p.payload : {};
+          if (pl.source === "hr_day_off" || !pl.disruption_report_id) ids.push(p.id);
+        });
+        if (!ids.length) return 0;
+        return client
+          .from("schedule_overrides")
+          .update({ status: "cancelled" })
+          .in("id", ids)
+          .then(function (u) {
+            if (u.error) throw u.error;
+            return ids.length;
+          });
+      })
+      .catch(function (err) {
+        try {
+          console.warn("[hr] cancel cover_needed", err);
+        } catch (_) {}
+        return 0;
+      });
   }
 
   function removeOff(nameKey, displayName, id, screen) {
@@ -1636,9 +1808,21 @@
           details: { off_date: rec.off_date }, source: "staffhr",
         });
       }
-      deps.toast("Day off removed.");
-      render();
-      openPerson(nameKey);
+      var offIso = rec && rec.off_date ? String(rec.off_date).slice(0, 10) : "";
+      return cancelHrCoverNeededForDayOff(client, nameKey, offIso).then(function () {
+        deps.toast("Day off removed.");
+        try {
+          if (typeof global.portalSyncOverviewDayTruth === "function") {
+            return global.portalSyncOverviewDayTruth(client, {
+              refreshScheduling: true,
+              forceOverviewRender: true,
+            });
+          }
+        } catch (_sync) {}
+      }).then(function () {
+        render();
+        openPerson(nameKey);
+      });
     }).catch(function (err) {
       setPersonMsg(screen, "Could not remove day off: " + ((err && err.message) || err));
     });

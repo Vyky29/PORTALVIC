@@ -17,11 +17,75 @@
   color: var(--navy, #16325c);
   font-weight: 700;
 }
+.portal-day-ops-embed .portal-venue-review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 12px;
+  align-items: flex-end;
+  min-width: 0;
+}
+.portal-day-ops-embed .portal-venue-review-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 148px;
+  max-width: 220px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted, #64748b);
+}
+.portal-day-ops-embed .portal-venue-review-filter select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--text, #243447);
+  background: #fff;
+}
+.portal-day-ops-embed .portal-venue-review-filter-count {
+  margin: 0;
+  min-width: 0;
+  flex: 1 1 120px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  overflow-wrap: break-word;
+  align-self: center;
+}
+.portal-day-ops-embed .portal-venue-review-upload-hint {
+  margin: -4px 0 10px;
+  font-size: 12.5px;
+  color: var(--muted, #64748b);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+.portal-day-ops-embed .portal-venue-video-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  align-items: center;
+}
+.portal-day-ops-embed .portal-venue-video-actions .portal-forms-view-btn {
+  min-width: 0;
+}
+.portal-day-ops-embed .portal-forms-table .col-submitted-by,
+.portal-day-ops-embed .portal-forms-table td.col-submitted-by {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
 .portal-day-ops-embed .files-table-wrap,
 .portal-day-ops-embed .portal-forms-table-wrap {
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 14px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   background: #fff;
   margin-bottom: 0;
 }
@@ -132,6 +196,10 @@
   cursor: pointer;
 }
 .portal-day-ops-embed .portal-forms-view-btn:hover { background: #f1f5fb; }
+.portal-day-ops-embed .portal-forms-view-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
 .portal-day-ops-embed .portal-forms-pill {
   display: inline-block;
   padding: 2px 9px;

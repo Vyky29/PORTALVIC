@@ -3,6 +3,7 @@
  * participant onto a MADRE open seat so Services + Booking Portal capacity match.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { resolveSessionDateIso } from "./portal_booking_context.ts";
 import {
   applyFoldToMadre,
   type MadreDoc,
@@ -14,7 +15,46 @@ function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
-/** Prefer instructor= from notes; climbing Westway → Carlos; Northolt Mon 4.30–5 → Dan. */
+/** Sheet-style half-hour labels for aquatic hour+ reservations (Schedule keeps halves). */
+function aquaticHalfTimeSlots(timeLabel: string, serviceName: string): string[] {
+  const svc = clean(serviceName, 80).toLowerCase();
+  if (/climb|physical|multi|bespoke|counsel/.test(svc)) return [clean(timeLabel, 80)];
+  const raw = clean(timeLabel, 80);
+  if (!raw) return [];
+  const range = raw.match(
+    /(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?\s*(?:[-–—]|to)\s*(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?/i,
+  );
+  if (!range) return [raw];
+  function toMin(h: number, m: number, ap?: string): number {
+    let hh = h;
+    const a = String(ap || "").toLowerCase();
+    if (a === "pm" && hh < 12) hh += 12;
+    if (a === "am" && hh === 12) hh = 0;
+    if (!a && hh >= 1 && hh <= 8) hh += 12;
+    return hh * 60 + m;
+  }
+  function tok(mins: number): string {
+    let h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h >= 13 && h <= 23) h -= 12;
+    if (m === 0) return String(h);
+    if (m === 30) return `${h}.30`;
+    return `${h}.${String(m).padStart(2, "0")}`;
+  }
+  const a = toMin(Number(range[1]), Number(range[2] || 0), range[3]);
+  let b = toMin(Number(range[4]), Number(range[5] || 0), range[6] || range[3]);
+  if (b <= a) b += 12 * 60;
+  if (b - a <= 30) return [raw];
+  const out: string[] = [];
+  for (let t = a; t < b; t += 30) {
+    const te = Math.min(t + 30, b);
+    if (te <= t) break;
+    out.push(`${tok(t)} to ${tok(te)}`);
+  }
+  return out.length ? out : [raw];
+}
+
+/** Prefer instructor= from notes; then band heuristics (ops fallback only). */
 export function preferredInstructorForReservation(row: {
   notes?: unknown;
   venue?: unknown;
@@ -23,8 +63,9 @@ export function preferredInstructorForReservation(row: {
   service_name?: unknown;
   activity?: unknown;
 }): string {
-  const notes = clean(row.notes, 400);
-  const fromNotes = notes.match(/\binstructor\s*=\s*([A-Za-z][A-Za-z\s.'-]{0,40})/i);
+  const fromNotes = String(row.notes || "").match(
+    /\binstructor\s*=\s*([A-Za-z][A-Za-z\s.'-]{0,40})/i,
+  );
   if (fromNotes && fromNotes[1]) return clean(fromNotes[1], 40);
 
   const venue = clean(row.venue, 80).toLowerCase();
@@ -46,6 +87,36 @@ export function preferredInstructorForReservation(row: {
     /4\.?30\s*[-–to]+\s*5(\.00)?/.test(time)
   ) {
     return "Dan";
+  }
+  /* Tue Acton 4-4.30 standing opens are Luliya + Roberto (Aurora Closed skipped). */
+  if (
+    /acton/.test(venue) &&
+    /^tue/.test(day) &&
+    /4(\.00)?\s*[-–to]+\s*4\.?30/.test(time) &&
+    !/climb/.test(service)
+  ) {
+    return "Luliya";
+  }
+  /*
+   * Tue Acton 4.30-5: Aurora already has Adam Ma. Open / post-trial term seat is Luliya
+   * (Reggie Conlon). Do NOT hardcode Aurora — that double-books Adam + new client.
+   */
+  if (
+    /acton/.test(venue) &&
+    /^tue/.test(day) &&
+    /4\.?30\s*[-–to]+\s*5(\.00)?/.test(time) &&
+    !/climb/.test(service)
+  ) {
+    return "Luliya";
+  }
+  /* SwimFarm Sunday aquatic 9-9.30 open seat is Javier (Aurora has Simon that band). */
+  if (
+    /swimfarm/.test(venue) &&
+    /^sun/.test(day) &&
+    /aquatic/.test(service) &&
+    /9(\.00)?\s*[-–to]+\s*9\.?30/.test(time)
+  ) {
+    return "Javier";
   }
   return "";
 }
@@ -76,7 +147,7 @@ export async function foldValidatedReservationOntoMadre(
   const { data: row, error } = await admin
     .from("portal_booking_slot_reservations")
     .select(
-      "id, status, participant_name, date_iso, day_label, time_label, venue, service_name, notes",
+      "id, status, participant_name, date_iso, day_label, time_label, venue, service_name, notes, validated_at",
     )
     .eq("id", rid)
     .maybeSingle();
@@ -88,13 +159,36 @@ export async function foldValidatedReservationOntoMadre(
   }
 
   const client = clean(row.participant_name, 80);
-  const iso = clean(row.date_iso, 12).slice(0, 10);
   const timeSlot = madreTimeSlotLabel(String(row.time_label || ""));
+  let iso = clean(row.date_iso, 12).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const asOf = clean(row.validated_at, 32).slice(0, 10) || new Date().toISOString().slice(0, 10);
+    iso = resolveSessionDateIso({
+      dateIso: null,
+      day: clean(row.day_label, 20),
+      time: clean(row.time_label, 80),
+      asOfIso: asOf,
+      bookingKind: /booking_kind\s*=\s*trial/i.test(String(row.notes || ""))
+        ? "trial"
+        : "term",
+    }) || "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && !clean(row.date_iso, 12)) {
+      await admin
+        .from("portal_booking_slot_reservations")
+        .update({ date_iso: iso, updated_at: new Date().toISOString() })
+        .eq("id", rid);
+    }
+  }
   if (!client || !/^\d{4}-\d{2}-\d{2}$/.test(iso) || !timeSlot) {
     return { ok: false, note: "incomplete_reservation" };
   }
 
-  const instructors = preferredInstructorForReservation(row);
+  const preferred = preferredInstructorForReservation(row);
+  /* portal_roster_rows.instructors is NOT NULL — require a real staff name. */
+  if (!preferred) {
+    return { ok: false, note: "missing_instructor" };
+  }
+  const instructors = preferred;
   const { data: madreRow, error: loadErr } = await admin
     .from("portal_madre_document")
     .select("document, revision")
@@ -113,7 +207,7 @@ export async function foldValidatedReservationOntoMadre(
       client_name: client,
       day: clean(row.day_label, 20),
       time_slot: timeSlot,
-      instructors: instructors || undefined,
+      instructors,
       service: clean(row.service_name, 80) || "Aquatic Activity",
       venue: clean(row.venue, 80),
       replace_open: true,
@@ -142,6 +236,7 @@ export async function foldValidatedReservationOntoMadre(
     const dayLabel = clean(row.day_label, 20) || "Monday";
     const venue = clean(row.venue, 80);
     const service = clean(row.service_name, 80) || "Aquatic Activity";
+    const halfSlots = aquaticHalfTimeSlots(timeSlot, service);
     let actorId: string | null = null;
     try {
       const { data: sample } = await admin
@@ -153,48 +248,69 @@ export async function foldValidatedReservationOntoMadre(
     } catch (_a) {
       actorId = null;
     }
-    const { data: existing } = await admin
-      .from("portal_roster_rows")
-      .select("id")
-      .eq("session_date", iso)
-      .ilike("client_name", client)
-      .eq("status", "active")
-      .limit(1);
-    if (existing && existing.length) {
-      const { error: upErr } = await admin
+    const area = /climb|westway/i.test(`${service} ${venue}`)
+      ? "Wall"
+      : /acton/i.test(venue)
+      ? "Lane (DE)"
+      : "Teaching Pool";
+    let anyOk = false;
+    for (const half of halfSlots) {
+      const { data: existing } = await admin
         .from("portal_roster_rows")
-        .update({
+        .select("id")
+        .eq("session_date", iso)
+        .ilike("client_name", client)
+        .ilike("time_slot", half)
+        .eq("status", "active")
+        .limit(1);
+      if (existing && existing.length) {
+        const { error: upErr } = await admin
+          .from("portal_roster_rows")
+          .update({
+            day: dayLabel,
+            time_slot: half,
+            instructors: instructors,
+            service,
+            venue,
+            area,
+            updated_by: actorId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing[0].id);
+        if (!upErr) anyOk = true;
+      } else {
+        const insertPayload: Record<string, unknown> = {
+          client_name: client,
           day: dayLabel,
-          time_slot: timeSlot,
-          instructors: instructors || null,
+          time_slot: half,
+          instructors: instructors,
           service,
+          area,
           venue,
-          updated_by: actorId,
+          session_date: iso,
+          status: "active",
           updated_at: new Date().toISOString(),
-        })
-        .eq("id", existing[0].id);
-      rosterOk = !upErr;
-    } else {
-      const insertPayload: Record<string, unknown> = {
-        client_name: client,
-        day: dayLabel,
-        time_slot: timeSlot,
-        instructors: instructors || null,
-        service,
-        area: /climb|westway/i.test(`${service} ${venue}`) ? "Wall" : "Teaching Pool",
-        venue,
-        session_date: iso,
-        status: "active",
-        updated_at: new Date().toISOString(),
-      };
-      if (actorId) {
-        insertPayload.created_by = actorId;
-        insertPayload.updated_by = actorId;
+        };
+        if (actorId) {
+          insertPayload.created_by = actorId;
+          insertPayload.updated_by = actorId;
+        }
+        const { error: insErr } = await admin.from("portal_roster_rows").insert(insertPayload);
+        if (!insErr) anyOk = true;
+        else console.warn("[foldValidatedReservationOntoMadre] roster", insErr.message);
       }
-      const { error: insErr } = await admin.from("portal_roster_rows").insert(insertPayload);
-      rosterOk = !insErr;
-      if (insErr) console.warn("[foldValidatedReservationOntoMadre] roster", insErr.message);
     }
+    /* Drop legacy hour-band dated row when we now store halves (e.g. 5 to 6 → 5–5.30 + 5.30–6). */
+    if (halfSlots.length > 1) {
+      await admin
+        .from("portal_roster_rows")
+        .delete()
+        .eq("session_date", iso)
+        .ilike("client_name", client)
+        .ilike("time_slot", timeSlot)
+        .eq("status", "active");
+    }
+    rosterOk = anyOk;
   } catch (_rosterErr) {
     rosterOk = false;
   }

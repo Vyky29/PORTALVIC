@@ -218,7 +218,7 @@
   function isAquaticService(service) {
     var s = clean(service).toLowerCase();
     if (!s) return false;
-    // Multi / Splash & Connect: exclusive No swimming vs Swimming choice (not always aquatic).
+    // Multi / Splash & Connect are not pure aquatic (no main-form swim axes by default).
     if (isMultiActivityService(s)) return false;
     if (isDayCentreService(s)) return false;
     return (
@@ -557,36 +557,20 @@
     opts = opts || {};
     var block = ensureOptionalSwimBlock(root);
     if (!block) return false;
-    var pureAquatic = !!opts.aquaticFullMode || isAquaticService(service);
-    var dual = isDayCentreSwimEligible(clientName, service);
-    var exclusive = !pureAquatic && !dual && isMultiActivityService(service);
-    var showChoice = dual || exclusive;
-
-    block.hidden = !showChoice;
-    block.setAttribute("data-swim-choice-mode", dual ? "dual" : exclusive ? "exclusive" : "");
-    block.querySelectorAll(".fb-dc-swim__note--dual").forEach(function (el) {
-      el.hidden = !dual;
+    /*
+     * Day Centre uses the same feedback form as other sessions — no
+     * "Swimming / No swimming" choice. That toggle called applyFeedbackFormMode
+     * and wiped the first-part E/R/I selections when staff tapped Swimming.
+     */
+    block.hidden = true;
+    block.setAttribute("data-swim-choice-mode", "");
+    setAddonAxesVisible(false);
+    block.querySelectorAll('input[name="dayCentreSwimDone"]').forEach(function (inp) {
+      inp.checked = inp.value === "no";
     });
-    block.querySelectorAll(".fb-dc-swim__note--exclusive").forEach(function (el) {
-      el.hidden = !exclusive;
-    });
-
-    if (!showChoice) {
-      setAddonAxesVisible(false);
-      block.querySelectorAll('input[name="dayCentreSwimDone"]').forEach(function (inp) {
-        inp.checked = inp.value === "no";
-      });
-      clearAddonSwimInputs();
-      if (root) applyFeedbackFormMode(root, false);
-      return false;
-    }
-
-    // Dual Day Centre (Fadi / Ikram / Emanuel / Timi): always keep classic main axes.
-    // Exclusive Multi: also keep classic main axes (one feedback form for everyone).
-    if (dual || exclusive) applyFeedbackFormMode(root, false);
-    wireOptionalSwimToggle(block, root, dual ? "dual" : "exclusive");
-    refreshSwimChoice(block, root, dual ? "dual" : "exclusive");
-    return true;
+    clearAddonSwimInputs();
+    if (root) applyFeedbackFormMode(root, false);
+    return false;
   }
 
   function clearAddonSwimInputs() {

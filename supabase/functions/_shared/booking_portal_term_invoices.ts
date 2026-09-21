@@ -2,7 +2,9 @@
  * New Booking Portal clients (mid-term / term already started):
  * one INV-P per term, amount = remaining sessions.
  *
- * GoCardless: first due on booking day, then 1st of each remaining month in the term.
+ * GoCardless: all Direct Debit collections on the term month 1sts (same day for every
+ * client — avoids separate GC payment fees). If they finish after this month's 1st,
+ * current-month share is bank transfer due on booking day; later months stay on the 1sts.
  * Flexi (bank): two halves — first on the fixed term due (e.g. Autumn 15 Aug), or booking
  * day if that date has already passed; second on the fixed mid-term date if still future.
  * One-off (bank): single instalment due today.
@@ -113,7 +115,9 @@ export function formatTrialSessionReference(input: {
   const sessionDate = resolveSessionDateIso({
     dateIso: input.sessionDateIso,
     day,
+    time: time,
     asOfIso: input.asOfIso,
+    bookingKind: "trial",
   });
   const datePart = sessionDate
     ? formatUkDateWithWeekday(sessionDate)
@@ -203,7 +207,12 @@ export function parseBookingScope(raw: unknown): BookingScope | null {
     s === "this_term_only" ||
     s === "one_term" ||
     s === "term_only" ||
-    s === "single_term"
+    s === "single_term" ||
+    s === "term_place" ||
+    s === "term" ||
+    s === "rest_of_term" ||
+    s === "full_term" ||
+    s === "continuing_place"
   ) {
     return "this_term_only";
   }
@@ -218,46 +227,118 @@ export function parseBookingScope(raw: unknown): BookingScope | null {
   return null;
 }
 
-function withGcFee(amount: number, plan: NewClientPayPlan): number {
+type CollectVia = "bank_transfer" | "gocardless";
+
+function withGcFee(
+  amount: number,
+  plan: NewClientPayPlan,
+  collectVia?: CollectVia | null,
+): number {
   const base = round2(amount);
   if (plan !== "gocardless_monthly" || base <= 0) return base;
+  // Bank remainder (after monthly collection day) has no £1.50 GC fee.
+  if (collectVia === "bank_transfer") return base;
   return round2(base + GC_FEE);
 }
 
 function splitEqual(
   total: number,
-  slots: Array<{ label: string; dueIso: string }>,
+  slots: Array<{ label: string; dueIso: string; collectVia?: CollectVia }>,
   plan: NewClientPayPlan,
-): Array<{ label: string; dueIso: string; amountGbp: number }> {
+): Array<{
+  label: string;
+  dueIso: string;
+  amountGbp: number;
+  collectVia?: CollectVia;
+}> {
   const n = slots.length;
   if (n <= 0 || total <= 0) return [];
   const programme = round2(total);
   const raw = programme / n;
-  const out: Array<{ label: string; dueIso: string; amountGbp: number }> = [];
+  const out: Array<{
+    label: string;
+    dueIso: string;
+    amountGbp: number;
+    collectVia?: CollectVia;
+  }> = [];
   let allocated = 0;
   for (let i = 0; i < n; i++) {
     const slice = i === n - 1 ? round2(programme - allocated) : round2(raw);
     allocated = round2(allocated + slice);
+    const collectVia = slots[i]!.collectVia;
     out.push({
       label: slots[i]!.label,
       dueIso: slots[i]!.dueIso,
-      amountGbp: withGcFee(slice, plan),
+      amountGbp: withGcFee(slice, plan, collectVia),
+      collectVia,
     });
   }
   return out;
 }
 
-/** GoCardless: first due = booking day; then each month 1st still ahead in the term. */
-export function buildNewClientGcMonthDueSlots(
+/** True when asOf is after this calendar month's term collection day (1st). */
+export function gcNeedsBankRemainderForCurrentMonth(
   term: BookingTermKey,
   asOfIso: string,
-): Array<{ label: string; dueIso: string }> {
+): boolean {
   const asOf = isoToday(asOfIso);
-  const rest = (MONTHLY_TERM_1STS[term] || []).filter((m) => m.dueIso > asOf);
-  return [
-    { label: "First payment · due on booking day", dueIso: asOf },
-    ...rest.map((m) => ({ label: `Payment · ${m.label}`, dueIso: m.dueIso })),
-  ];
+  const ym = asOf.slice(0, 7);
+  const thisMonth = (MONTHLY_TERM_1STS[term] || []).find((m) =>
+    m.dueIso.startsWith(ym)
+  );
+  return Boolean(thisMonth && asOf > thisMonth.dueIso);
+}
+
+/**
+ * GoCardless only on month 1sts (same collection day for all clients / one GC fee batch).
+ * After the start month's 1st: bank transfer for that month's share due on finish-booking day;
+ * later months on the 1sts via GC. Never charge GoCardless on a random booking day.
+ *
+ * @param sessionFromIso — first session / pro-rata floor (which months still apply)
+ * @param payAsOfIso — finish-booking day (bank "pay now" due date); defaults to sessionFromIso
+ */
+export function buildNewClientGcMonthDueSlots(
+  term: BookingTermKey,
+  sessionFromIso: string,
+  payAsOfIso?: string | null,
+): Array<{ label: string; dueIso: string; collectVia: CollectVia }> {
+  const sessionFrom = isoToday(sessionFromIso);
+  const payAsOf = isoToday(payAsOfIso || sessionFromIso);
+  const bankFirst = gcNeedsBankRemainderForCurrentMonth(term, sessionFrom);
+  const monthName =
+    (MONTHLY_TERM_1STS[term] || []).find((m) =>
+      m.dueIso.startsWith(sessionFrom.slice(0, 7))
+    )?.label || "Current month";
+  // On/before the 1st of the start month: include that 1st. After: only later months (bank covers start month).
+  const gcMonths = (MONTHLY_TERM_1STS[term] || []).filter((m) =>
+    bankFirst ? m.dueIso > sessionFrom : m.dueIso >= sessionFrom
+  );
+
+  const slots: Array<{ label: string; dueIso: string; collectVia: CollectVia }> = [];
+  if (bankFirst) {
+    slots.push({
+      label: `${monthName} remainder · bank transfer (due on booking day)`,
+      dueIso: payAsOf,
+      collectVia: "bank_transfer",
+    });
+  }
+  for (const m of gcMonths) {
+    slots.push({
+      label: `Payment · ${m.label} · GoCardless (1st)`,
+      dueIso: m.dueIso,
+      collectVia: "gocardless",
+    });
+  }
+  if (!slots.length) {
+    return [
+      {
+        label: `${bookingTermDisplayLabel(term)} term · balance · bank transfer (due on booking day)`,
+        dueIso: payAsOf,
+        collectVia: "bank_transfer",
+      },
+    ];
+  }
+  return slots;
 }
 
 /**
@@ -286,29 +367,33 @@ export function buildNewClientPaymentSchedule(args: {
   plan: NewClientPayPlan;
   term: BookingTermKey;
   programmeTotalGbp: number;
+  /** Floor for session pro-rata / which months still apply. */
   asOfIso?: string | null;
+  /** Calendar day for bank "pay now" dues (finish-booking day). Defaults to asOfIso. */
+  payAsOfIso?: string | null;
 }): InvoicePaymentScheduleRow[] {
   const asOf = isoToday(args.asOfIso);
+  const payAsOf = isoToday(args.payAsOfIso || args.asOfIso);
   const total = round2(args.programmeTotalGbp);
   if (total <= 0) return [];
 
-  let slots: Array<{ label: string; dueIso: string }> = [];
+  let slots: Array<{ label: string; dueIso: string; collectVia?: CollectVia }> = [];
   if (args.plan === "gocardless_monthly") {
-    slots = buildNewClientGcMonthDueSlots(args.term, asOf);
+    slots = buildNewClientGcMonthDueSlots(args.term, asOf, payAsOf);
   } else if (args.plan === "flexi_bank") {
-    slots = buildNewClientFlexiDueSlots(args.term, asOf);
+    slots = buildNewClientFlexiDueSlots(args.term, payAsOf);
   } else if (args.plan === "own_way") {
     slots = [
       {
         label: `${bookingTermDisplayLabel(args.term)} term · Own way minimum (due on booking)`,
-        dueIso: asOf,
+        dueIso: payAsOf,
       },
     ];
   } else {
     slots = [
       {
         label: `${bookingTermDisplayLabel(args.term)} term · full payment (due on booking)`,
-        dueIso: asOf,
+        dueIso: payAsOf,
       },
     ];
   }
@@ -319,6 +404,14 @@ export function buildNewClientPaymentSchedule(args: {
     due_date: r.dueIso,
     amount_gbp: r.amountGbp,
     status: "pending" as const,
+    collect_via:
+      args.plan === "gocardless_monthly"
+        ? r.collectVia || ("gocardless" as const)
+        : args.plan === "flexi_bank" ||
+            args.plan === "one_off_bank" ||
+            args.plan === "own_way"
+          ? ("bank_transfer" as const)
+          : null,
   }));
 }
 
@@ -345,7 +438,10 @@ export function quoteNewClientMidTermInvoice(args: {
   day: string;
   unitPriceGbp: number;
   plan: NewClientPayPlan;
+  /** First session / pro-rata floor (missed sessions before this are not billed). */
   asOfIso?: string | null;
+  /** Finish-booking day for bank "pay now" dues. Defaults to asOfIso. */
+  payAsOfIso?: string | null;
   serviceKey?: string | null;
   serviceLabel?: string | null;
   detail?: string | null;
@@ -355,6 +451,7 @@ export function quoteNewClientMidTermInvoice(args: {
   const term = args.term;
   const day = clean(args.day, 40);
   const asOf = isoToday(args.asOfIso);
+  const payAsOf = isoToday(args.payAsOfIso || args.asOfIso);
   const unit = round2(Number(args.unitPriceGbp) || 0);
   if (!day) return { error: "day_required" };
   if (!(unit > 0)) return { error: "unit_price_required" };
@@ -373,6 +470,7 @@ export function quoteNewClientMidTermInvoice(args: {
     term,
     programmeTotalGbp: programmeTotal,
     asOfIso: asOf,
+    payAsOfIso: payAsOf,
   });
   if (!schedule.length) return { error: "schedule_empty" };
 
@@ -420,14 +518,15 @@ export function quoteNewClientMidTermInvoice(args: {
     });
   }
   if (args.plan === "gocardless_monthly") {
+    const gcRows = schedule.filter((r) => r.collect_via !== "bank_transfer");
     const feeTotal = round2(invoiceTotal - programmeTotal);
-    if (feeTotal > 0) {
+    if (feeTotal > 0 && gcRows.length > 0) {
       lineItems.push({
         service_key: "GC_FEE",
         description: "GoCardless fee",
-        detail: `£${GC_FEE.toFixed(2)} × ${schedule.length} instalment(s)`,
+        detail: `£${GC_FEE.toFixed(2)} × ${gcRows.length} instalment(s)`,
         dates: null,
-        quantity: schedule.length,
+        quantity: gcRows.length,
         unit_price_gbp: GC_FEE,
         amount_gbp: feeTotal,
         xero_item_code: null,
@@ -435,14 +534,22 @@ export function quoteNewClientMidTermInvoice(args: {
     }
   }
 
+  const flexiFirstDue = schedule[0]?.due_date || payAsOf;
+  const flexiBankFirst =
+    args.plan === "flexi_bank" && flexiFirstDue === payAsOf
+      ? `first half due on booking day (fixed term due date already passed)`
+      : `first half due ${flexiFirstDue}`;
+  const gcBankFirst = schedule[0]?.collect_via === "bank_transfer";
   const planPhrase =
     args.plan === "gocardless_monthly"
-      ? `GoCardless monthly · first instalment due on booking day, then 1st of each remaining month`
+      ? gcBankFirst
+        ? `GoCardless monthly · pro-rata remaining sessions only. Collections on the 1st (same day for all clients). This month's share by bank transfer now; later months on the 1st via GoCardless — both bank transfer and GoCardless setup required`
+        : `GoCardless monthly · pro-rata remaining sessions only. Collections only on the 1st of each month (same day for all clients — one batch)`
       : args.plan === "flexi_bank"
-        ? `Bank transfer · Flexi (2 instalments this term; first on fixed due date e.g. Autumn 15 Aug)`
+        ? `Bank transfer · Flexi (2 instalments this term; ${flexiBankFirst}; pro-rata remaining sessions)`
         : args.plan === "own_way"
           ? `Own way · pay ${ownWaySessions} sessions prepaid + £${OWN_WAY_ADMIN_FEE} admin now; top up as you go to keep 2 sessions prepaid`
-          : `Bank transfer · one-off full term (due on booking day)`;
+          : `Bank transfer · one-off full term (due on booking day; pro-rata remaining sessions)`;
 
   return {
     term,
@@ -493,7 +600,7 @@ export function quoteNewClientTrialInvoice(args: {
   const mapRow = args.productMap?.get(serviceKey) || null;
   const plan: NewClientPayPlan =
     args.payPlan === "one_off_bank" ? "one_off_bank" : "stripe_instant";
-  const paymentMethodHint = plan === "one_off_bank" ? "bank_transfer" : "stripe";
+  const paymentMethodHint = plan === "one_off_bank" ? "bank_transfer" : "payment_link";
   const payLabel =
     plan === "one_off_bank"
       ? "Trial session · bank transfer (30 min hold)"

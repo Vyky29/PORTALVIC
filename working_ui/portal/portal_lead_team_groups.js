@@ -16,16 +16,9 @@
   };
 
   var JOHN_BESPOKE_SCOPE = {
-    weekdays: ["Monday", "Friday"],
+    weekdays: ["Monday", "Wednesday"],
     serviceKeys: ["bespoke"],
     venues: ["swimfarm"],
-  };
-
-  var JOHN_WED_ACTON_SCOPE = {
-    weekdays: ["Wednesday"],
-    serviceKeys: ["multi", "aquatic"],
-    venues: ["acton"],
-    programmeWideRoster: true,
   };
 
   var JOHN_SUNDAY_MA_SCOPE = {
@@ -37,7 +30,12 @@
 
   var BERTA_MA_SCOPES = [
     { weekdays: ["Wednesday"], serviceKeys: ["multi"], venues: ["acton"], programmeWide: true },
-    { weekdays: ["Sunday"], serviceKeys: ["multi"], venues: ["swimfarm"], programmeWide: true },
+    {
+      weekdays: ["Sunday"],
+      serviceKeys: ["multi", "aquatic"],
+      venues: ["swimfarm"],
+      programmeWide: true,
+    },
   ];
 
   var MICHELLE_DC_SCOPES = [
@@ -57,13 +55,7 @@
         label: "Bespoke programme",
         scopes: [JOHN_BESPOKE_SCOPE],
         leadRosterKeys: ["john"],
-      },
-      {
-        slug: "lead_team_john_wed_acton",
-        label: "Wednesday Multi-Activity (Acton)",
-        scopes: [JOHN_WED_ACTON_SCOPE],
-        leadRosterKeys: ["john"],
-        staticRosterKeys: ["lulia", "javier", "youssef"],
+        staticRosterKeys: ["godsway", "emmanuel", "raul"],
       },
       {
         slug: "lead_team_john_sunday_ma",
@@ -87,7 +79,7 @@
         scopes: MICHELLE_DC_SCOPES,
         leadRosterKeys: ["michelle"],
         /** Support + CEO cover on Day Centre sessions only. */
-        staticRosterKeys: ["roberto", "lulia", "luliya", "youssef", "victor", "raul"],
+        staticRosterKeys: ["roberto", "luliya", "youssef", "victor", "raul"],
         allowExecCover: true,
       },
     ],
@@ -163,7 +155,7 @@
     var out = [];
     var add = function (n) {
       var k = normKey(n);
-      if (k === "luliya") k = "lulia";
+      if (k === "lulia") k = "luliya";
       if (k && out.indexOf(k) < 0) out.push(k);
     };
     if (Array.isArray(raw)) {
@@ -198,7 +190,7 @@
 
   function shouldIncludeRosterKey(k, teamDef) {
     k = normKey(k);
-    if (k === "luliya") k = "lulia";
+    if (k === "lulia") k = "luliya";
     if (!k) return false;
     if (EXEC_COVER_ROSTER_KEYS[k] && !(teamDef && teamDef.allowExecCover)) return false;
     return true;
@@ -210,7 +202,7 @@
     var keys = [];
     var add = function (k) {
       k = normKey(k);
-      if (k === "luliya") k = "lulia";
+      if (k === "lulia") k = "luliya";
       if (!shouldIncludeRosterKey(k, teamDef)) return;
       if (!k || keys.indexOf(k) >= 0) return;
       keys.push(k);
@@ -259,7 +251,7 @@
 
   function chipToneForMember(rosterKey, ctx, profileRow) {
     rosterKey = normKey(rosterKey);
-    if (rosterKey === "luliya") rosterKey = "lulia";
+    if (rosterKey === "lulia") rosterKey = "luliya";
     ctx = ctx || {};
     if (ctx.sessionLeadsRing) return "lead";
     if (SESSION_LEAD_KEYS[rosterKey]) {
@@ -289,7 +281,7 @@
     var seen = Object.create(null);
     rosterKeys.forEach(function (rk) {
       var want = normKey(rk);
-      if (want === "luliya") want = "lulia";
+      if (want === "lulia") want = "luliya";
       var row = null;
       if (res && !res.error && Array.isArray(res.data)) {
         for (var i = 0; i < res.data.length; i++) {

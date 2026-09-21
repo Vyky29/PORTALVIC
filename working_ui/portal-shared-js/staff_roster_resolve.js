@@ -10,7 +10,7 @@
     stf005: "youssef",
     stf006: "john",
     stf007: "bismark",
-    stf008: "giuseppe",
+    stf008: "emmanuel",
     stf009: "godsway",
     stf010: "javier",
     stf011: "aurora",
@@ -23,7 +23,7 @@
     stf018: "raul",
     stf019: "sevitha",
     stf020: "teflon",
-    stf021: "lulia",
+    stf021: "luliya",
     stf022: "andres",
   };
 
@@ -48,10 +48,17 @@
       .replace(/[^a-z0-9]+/g, "")
       .trim();
     if (!k) return "";
-    if (k === "luliya") return "lulia";
-    if (k === "aida") return "lulia";
+    if (k === "lulia") return "luliya";
+    if (k === "lulya") return "luliya";
+    if (k === "aida" || k === "aidalulia" || k === "aidaluliya" || k === "aidaluliyajemal") {
+      return "luliya";
+    }
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
+    if (k === "emmanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") {
+      return "emmanuel";
+    }
+    if (k === "emanuel") return "emmanuel";
     var alias = PORTAL_STAFF_CODE_TO_ROSTER_KEY[k];
     if (alias) return alias;
     return k;
@@ -64,6 +71,7 @@
     "stf006@staff.import.pending": "john",
     "stf021@staff.import.pending": "lulia",
     "stf016@staff.import.pending": "simon",
+    "nanaamoakohene745@gmail.com": "emmanuel",
   };
 
   /** Auth email → roster key (berta, john); stf00x local part via staff code map. */

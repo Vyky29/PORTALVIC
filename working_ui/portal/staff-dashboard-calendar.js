@@ -79,26 +79,57 @@
       try{ window.__PORTAL_TODAY_SYNC_RETRY__ = false; }catch(_){}
       try{ window.__PORTAL_TODAY_SYNC_RETRY_GAVE_UP__ = false; }catch(_){}
       DEMO_VIEW_DAY = day;
+      try{ window.DEMO_VIEW_DAY = day; }catch(_){}
       if(typeof getDemoDateLabel === 'function') dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
       if(typeof getDemoDateTopbar === 'function') dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
-      hydrateSessionReviewMapFromStorage();
-      portalSyncTodaySectionDisplay();
-      if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-      renderHeader();
-      renderToday();
-      renderMiniCounts();
-      renderLists();
-      document.getElementById('portalTodaySection')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      /* Shell first: never rebuild the full Today board inside the click / rAF chain.
+         Javier Sunday (~10 cards + overrides) was attributing 4–32s to the Term cell click. */
+      try{
+        dashboardData.portalTodayEmptyPanelMode = 'sync';
+        dashboardData.today = [];
+        dashboardData.portalTodayNextSessionPreview = null;
+      }catch(_){}
+      try{ if(typeof renderHeader === 'function') renderHeader(); }catch(_){}
+      try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
+      var buildGen = (window.__PORTAL_DAY_REVIEW_BUILD_GEN__ = (window.__PORTAL_DAY_REVIEW_BUILD_GEN__ || 0) + 1);
+      var runHeavy = function(){
+        if(buildGen !== window.__PORTAL_DAY_REVIEW_BUILD_GEN__) return;
+        try{
+          if(typeof hydrateSessionReviewMapFromStorage === 'function') hydrateSessionReviewMapFromStorage();
+        }catch(_){}
+        try{
+          if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+        }catch(_){}
+        /* Next-session rows only matter on live Today — skip on historical review. */
+        try{
+          var live = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+          if(live && typeof window.__portalSyncNextSessionFromModel === 'function'){
+            window.__portalSyncNextSessionFromModel();
+          }
+        }catch(_){}
+        if(buildGen !== window.__PORTAL_DAY_REVIEW_BUILD_GEN__) return;
+        try{ if(typeof renderHeader === 'function') renderHeader(); }catch(_){}
+        try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
+        try{ if(typeof renderMiniCounts === 'function') renderMiniCounts(); }catch(_){}
+        try{ if(typeof renderLists === 'function') renderLists(); }catch(_){}
+        try{
+          document.getElementById('portalTodaySection')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }catch(_){}
+      };
+      var defer = typeof portalDeferHeavyDashboardRefresh === 'function'
+        ? portalDeferHeavyDashboardRefresh
+        : function(fn){ setTimeout(fn, 0); };
+      defer(runHeavy, 0);
     }
     function portalOpenWeekDayReviewFlow(dayName, opts){
       const day = String(dayName || '').trim();
       if(!PORTAL_WEEK_REVIEW_VALID_DAYS.has(day)) return;
       opts = opts || {};
-      const isoOpt = opts.portalReviewDate ? String(opts.portalReviewDate).trim() : '';
+      const isoOpt = opts.portalReviewDate ? String(opts.portalReviewDate).trim().slice(0, 10) : '';
       /* Close term sheet first so the UI is never stuck behind it during date navigation. */
       if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
-      closeClientGeneralSheet();
-      document.body.style.overflow = '';
+      if(typeof closeClientGeneralSheet === 'function') closeClientGeneralSheet();
+      try{ document.body.style.overflow = ''; }catch(_){}
       const hasJudgementOpt = Object.prototype.hasOwnProperty.call(opts, 'portalTermJudgementAllowed');
       let termJudgementAllowed = hasJudgementOpt ? !!opts.portalTermJudgementAllowed : true;
       const todayKey = typeof portalTermLocalYmdFromMs === 'function' ? portalTermLocalYmdFromMs(Date.now()) : '';
@@ -126,6 +157,7 @@
       }
       portalSyncReviewNavigationQueryToHistory();
       const finish = function(){
+        /* Roster pending only — never rebuild the full Today board just to flip judgement. */
         if(!termJudgementAllowed && /^\d{4}-\d{2}-\d{2}$/.test(isoOpt)
           && typeof portalTermCalendarDayStillHasPendingFeedback === 'function'){
           const dayWordCheck = new Date(isoOpt + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
@@ -133,12 +165,8 @@
         }
         portalFinishWeekDayReviewFlow(day, isoOpt, usedDateLock, termJudgementAllowed);
       };
-      /* Open the day immediately — do not wait on schedule_overrides (wide hydrate used to stall Term taps). */
-      if(typeof requestAnimationFrame === 'function'){
-        requestAnimationFrame(function(){ setTimeout(finish, 0); });
-      } else {
-        setTimeout(finish, 0);
-      }
+      /* Shell + deferred heavy build (even for Admin Changes) so clicks stay under budget. */
+      finish();
       if(/^\d{4}-\d{2}-\d{2}$/.test(isoOpt) && typeof window.portalEnsureScheduleOverridesForIso === 'function'){
         Promise.resolve(window.portalEnsureScheduleOverridesForIso(isoOpt))
           .then(function(res){
@@ -147,31 +175,45 @@
               const lock = String(window.__PORTAL_REVIEW_DATE_URL_LOCK || '').trim().slice(0, 10);
               if(lock !== isoOpt) return;
             }catch(_){ return; }
-            try{
-              if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
-              if(typeof renderToday === 'function'){
-                const grid = document.getElementById('todayGrid');
-                if(grid) grid.removeAttribute('data-today-cards-sig');
-                renderToday();
-              }
-              if(typeof renderMiniCounts === 'function') renderMiniCounts();
-            }catch(_soft){}
+            var softGen = window.__PORTAL_DAY_REVIEW_BUILD_GEN__ || 0;
+            var soft = function(){
+              if(softGen !== window.__PORTAL_DAY_REVIEW_BUILD_GEN__) return;
+              try{
+                if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+                if(typeof renderToday === 'function'){
+                  const grid = document.getElementById('todayGrid');
+                  if(grid) grid.removeAttribute('data-today-cards-sig');
+                  renderToday();
+                }
+                if(typeof renderMiniCounts === 'function') renderMiniCounts();
+              }catch(_soft){}
+            };
+            if(typeof portalDeferHeavyDashboardRefresh === 'function'){
+              portalDeferHeavyDashboardRefresh(soft, 0);
+            }else{
+              setTimeout(soft, 0);
+            }
           })
           .catch(function(){});
       }
     }
     try{ window.portalOpenWeekDayReviewFlow = portalOpenWeekDayReviewFlow; }catch(_){}
-    /** System notification (roster override): open the affected calendar day in Today / week anchor. */
+    /** Admin Changes / roster override: open that calendar day on the dashboard Today board. */
     window.portalNavigateDashboardToOverrideDate = function portalNavigateDashboardToOverrideDate(isoYmd){
       try{
-        const iso = String(isoYmd || '').trim();
+        const iso = String(isoYmd || '').trim().slice(0, 10);
         if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
         const dt = typeof portalParseIsoDateLocal === 'function' ? portalParseIsoDateLocal(iso) : null;
         if(!dt) return false;
         const dayName = dt.toLocaleDateString('en-GB', { weekday: 'long' });
         if(typeof PORTAL_WEEK_REVIEW_VALID_DAYS !== 'undefined' && !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dayName)) return false;
+        if(typeof portalSetReviewFlowOrigin === 'function') portalSetReviewFlowOrigin('dashboard');
         if(typeof portalOpenWeekDayReviewFlow === 'function'){
-          portalOpenWeekDayReviewFlow(dayName, { portalReviewDate: iso });
+          portalOpenWeekDayReviewFlow(dayName, {
+            portalReviewDate: iso,
+            portalTermJudgementAllowed: true,
+            sync: true
+          });
           return true;
         }
       }catch(_){}
@@ -398,7 +440,16 @@
       return portalTodaySectionTitleText();
     }
     function portalExitHistoricalReviewToLiveTodayMode(forceExit){
-      if(!forceExit && !portalStaffIsHistoricalReviewDayMode()) return false;
+      const historical = typeof portalStaffIsHistoricalReviewDayMode === 'function'
+        && portalStaffIsHistoricalReviewDayMode();
+      let sticky = false;
+      try{ sticky = !!(typeof window !== 'undefined' && window.__PORTAL_STICKY_REVIEW_DAY_LOAD__); }catch(_){ sticky = false; }
+      if(!forceExit && !historical && !sticky) return false;
+
+      const todayWord = typeof portalWeekdayLongEnGB === 'function' ? portalWeekdayLongEnGB(new Date()) : 'Monday';
+      const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+      const alreadyLiveBoard = !historical && viewDay === todayWord;
+
       if(typeof closeSheet === 'function') closeSheet();
       if(typeof closeClientGeneralSheet === 'function') closeClientGeneralSheet();
       portalClearReviewDateUrlLock();
@@ -407,25 +458,65 @@
       try{ window.__PORTAL_STICKY_REVIEW_DAY_LOAD__ = false; }catch(_){}
       portalSetReviewFlowOrigin('dashboard');
       try{ portalSyncReviewNavigationQueryToHistory(); }catch(_){}
-      const todayWord = typeof portalWeekdayLongEnGB === 'function' ? portalWeekdayLongEnGB(new Date()) : 'Monday';
       DEMO_VIEW_DAY = todayWord;
       try{ window.DEMO_VIEW_DAY = DEMO_VIEW_DAY; }catch(_){}
-      if(typeof hydrateSessionReviewMapFromStorage === 'function') hydrateSessionReviewMapFromStorage();
-      const liveHdrExit = typeof portalLiveHeaderWeekday === 'function' ? portalLiveHeaderWeekday() : DEMO_VIEW_DAY;
-      if(typeof window.dashboardData !== 'undefined' && window.dashboardData){
-        const dd = window.dashboardData;
-        dd.dateLabel = typeof getDemoDateLabel === 'function' ? getDemoDateLabel(liveHdrExit) : dd.dateLabel;
-        dd.dateTopbar = typeof portalFormatTopbarDateFromDate === 'function' ? portalFormatTopbarDateFromDate(new Date()) : dd.dateTopbar;
-        if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
-        else dd.today = typeof buildSelectedDayViewFromLauraModel === 'function' ? buildSelectedDayViewFromLauraModel() : dd.today;
-        if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-        const staffIdEx = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-        if(staffIdEx && typeof buildWeekRows === 'function') dd.week = buildWeekRows(staffIdEx);
+
+      /* Already on live Today — dock/Quick Menu used to force a full rebuild every tap
+         because the heading is "TODAY dd/mm/…" (not the literal "Today"). Skip heavy work. */
+      if(alreadyLiveBoard){
+        try{
+          if(typeof window.dashboardData !== 'undefined' && window.dashboardData){
+            const liveHdr = typeof portalLiveHeaderWeekday === 'function' ? portalLiveHeaderWeekday() : todayWord;
+            if(typeof getDemoDateLabel === 'function') window.dashboardData.dateLabel = getDemoDateLabel(liveHdr);
+            if(typeof portalFormatTopbarDateFromDate === 'function'){
+              window.dashboardData.dateTopbar = portalFormatTopbarDateFromDate(new Date());
+            }
+          }
+        }catch(_){}
+        try{ if(typeof renderHeader === 'function') renderHeader(); }catch(_){}
+        return true;
       }
-      if(typeof renderHeader === 'function') renderHeader();
-      if(typeof renderToday === 'function') renderToday();
-      if(typeof renderMiniCounts === 'function') renderMiniCounts();
-      if(typeof renderLists === 'function') renderLists();
+
+      try{
+        if(typeof window.dashboardData !== 'undefined' && window.dashboardData){
+          window.dashboardData.portalTodayEmptyPanelMode = 'sync';
+          window.dashboardData.today = [];
+        }
+      }catch(_){}
+      try{ if(typeof renderHeader === 'function') renderHeader(); }catch(_){}
+      try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
+
+      var exitGen = (window.__PORTAL_DAY_REVIEW_BUILD_GEN__ = (window.__PORTAL_DAY_REVIEW_BUILD_GEN__ || 0) + 1);
+      var runHeavy = function(){
+        if(exitGen !== window.__PORTAL_DAY_REVIEW_BUILD_GEN__) return;
+        try{
+          if(typeof hydrateSessionReviewMapFromStorage === 'function') hydrateSessionReviewMapFromStorage();
+        }catch(_){}
+        const liveHdrExit = typeof portalLiveHeaderWeekday === 'function' ? portalLiveHeaderWeekday() : DEMO_VIEW_DAY;
+        if(typeof window.dashboardData !== 'undefined' && window.dashboardData){
+          const dd = window.dashboardData;
+          dd.dateLabel = typeof getDemoDateLabel === 'function' ? getDemoDateLabel(liveHdrExit) : dd.dateLabel;
+          dd.dateTopbar = typeof portalFormatTopbarDateFromDate === 'function' ? portalFormatTopbarDateFromDate(new Date()) : dd.dateTopbar;
+          if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+          else dd.today = typeof buildSelectedDayViewFromLauraModel === 'function' ? buildSelectedDayViewFromLauraModel() : dd.today;
+          if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
+          /* Week rows only when Week sheet is open — sync buildWeekRows froze dock Home. */
+          try{
+            const weekOpen = !!(document.getElementById('weekSheet') && document.getElementById('weekSheet').classList.contains('open'));
+            const staffIdEx = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+            if(weekOpen && staffIdEx && typeof buildWeekRows === 'function') dd.week = buildWeekRows(staffIdEx);
+          }catch(_){}
+        }
+        if(exitGen !== window.__PORTAL_DAY_REVIEW_BUILD_GEN__) return;
+        try{ if(typeof renderHeader === 'function') renderHeader(); }catch(_){}
+        try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
+        try{ if(typeof renderMiniCounts === 'function') renderMiniCounts(); }catch(_){}
+        try{ if(typeof renderLists === 'function') renderLists(); }catch(_){}
+      };
+      var defer = typeof portalDeferHeavyDashboardRefresh === 'function'
+        ? portalDeferHeavyDashboardRefresh
+        : function(fn){ setTimeout(fn, 0); };
+      defer(runHeavy, 0);
       return true;
     }
     function portalTodaySectionTitleText(){
@@ -582,7 +673,9 @@
         return { feedbackDone: true, incident: false, absent: false, cancelled: false };
       }
       const baseEarly = portalReviewSessionForItem(item);
-      if(baseEarly && iso && !portalTodayCardUsesReplaceOverride(item)
+      const usesMakeupReplace = typeof portalTodayCardUsesReplaceOverride === 'function'
+        && portalTodayCardUsesReplaceOverride(item);
+      if(baseEarly && iso && !usesMakeupReplace
         && typeof portalRosterSessionSupersededByMakeupReplace === 'function'
         && portalRosterSessionSupersededByMakeupReplace(baseEarly, iso)){
         return { feedbackDone: false, incident: false, absent: true, cancelled: false };
@@ -593,7 +686,7 @@
           return { feedbackDone: false, incident: false, absent: true, cancelled: false };
         }
         if(exEarly && exEarly.cancelled){
-          return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+          return { feedbackDone: false, incident: false, absent: false, cancelled: true, cancelNeedsFeedback: false };
         }
         if(exEarly && exEarly.feedbackDone){
           const memEarly = getSessionReviewRecord(item) || {};
@@ -612,7 +705,7 @@
           return { feedbackDone: false, incident: !!(getSessionReviewRecord(item) || {}).incident, absent: true, cancelled: false };
         }
         if(pillEarly === 'CANCELLED'){
-          return { feedbackDone: false, incident: !!(getSessionReviewRecord(item) || {}).incident, absent: false, cancelled: true };
+          return { feedbackDone: false, incident: !!(getSessionReviewRecord(item) || {}).incident, absent: false, cancelled: true, cancelNeedsFeedback: false };
         }
       }
       if(iso && portalReviewAbsentResolvedForItem(item, iso)){
@@ -635,7 +728,29 @@
       }
       if(iso && portalIsServerTruthFeedbackDay(iso)){
         const serverRec = portalServerTruthReviewRecordForItem(item, iso);
-        if(serverRec.absent || serverRec.cancelled) return serverRec;
+        if(serverRec.absent) return serverRec;
+        if(serverRec.cancelled){
+          const pillSrv = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
+          const ovCan = item && item.__portalScheduleOverride;
+          const ovCanT = ovCan ? String(ovCan.override_type || '').trim() : '';
+          const ovCanP = ovCan && ovCan.payload ? ovCan.payload : null;
+          const adminCancelCard = pillSrv === 'CANCELLED'
+            || ovCanT === 'slot_close'
+            || ovCanT === 'client_cancelled'
+            || (ovCanT === 'slot_clear_client' && ovCanP && ovCanP.cancelled_by_admin
+              && ovCanP.day_reassign !== true && ovCanP.not_makeup !== true)
+            || (ovCanP && String(ovCanP.feedback_resolution || '').trim().toLowerCase() === 'cancelled');
+          if(adminCancelCard || !serverRec.cancelNeedsFeedback){
+            return {
+              feedbackDone: true,
+              incident: !!serverRec.incident,
+              absent: false,
+              cancelled: true,
+              cancelNeedsFeedback: false
+            };
+          }
+          return serverRec;
+        }
         const dayWordSrv = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
         const baseSrv = portalReviewSessionForItem(item);
         if(baseSrv && typeof portalGetMergedSessionReviewRecordForRoster === 'function'){
@@ -955,10 +1070,13 @@
         if(!item || !item.sessionKey) continue;
         if(item.kind === 'closed' || item.kind === 'available') continue;
         if(item.noSessionFeedbackRequired) continue;
+        if(typeof portalTodayItemIsCancelledCard === 'function' && portalTodayItemIsCancelledCard(item)) continue;
+        const pill = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
+        if(pill === 'CANCELLED' || pill === 'ABSENT') continue;
         if(!isSessionEndedForFeedback(item)) continue;
         eligible++;
         const r = getEffectiveSessionReviewRecord(item) || {};
-        if(r.feedbackDone || r.absent || r.cancelled) continue;
+        if(r.feedbackDone || r.absent || (r.cancelled && !r.cancelNeedsFeedback)) continue;
         pending.push(item);
       }
       return {

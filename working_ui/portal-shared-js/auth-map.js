@@ -104,6 +104,11 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Sevitha: "sevitha@clubsensational.org",
   Teflon: "stf020@staff.import.pending",
   teflon: "stf020@staff.import.pending",
+  /* New hire Support Worker (not roster Emanuel). */
+  Emmanuel: "nanaamoakohene745@gmail.com",
+  "Emmanuel Amoakohene": "nanaamoakohene745@gmail.com",
+  Amoakohene: "nanaamoakohene745@gmail.com",
+  "nanaamoakohene745@gmail.com": "nanaamoakohene745@gmail.com",
   "victor@clubsensational.org": "victor@clubsensational.org",
   "raul@clubsensational.org": "raul@clubsensational.org",
   "javi@clubsensational.org": "javi@clubsensational.org",
@@ -243,7 +248,10 @@ export function resolveDemoEmail(rawUsername) {
     if (portalIsRegisteredPortalLoginEmail(resolved)) {
       return resolved;
     }
-    return null;
+    // Onboarding invites mint Auth users with personal emails that are not on
+    // the standing roster map. Let those emails through; Auth + staff_profiles
+    // decide whether the account is valid.
+    return resolved;
   }
 
   if (/^stf\d{3}@staff\.import\.pending$/.test(lower)) {
@@ -306,12 +314,12 @@ export const PORTAL_STAFF_CODE_TO_ROSTER_KEY = {
   stf018: "raul",
   stf019: "sevitha",
   stf020: "teflon",
-  stf021: "lulia",
+  stf021: "luliya",
   stf022: "andres",
 };
 
 /**
- * Normalize username / email local / display name → canonical roster key (lulia, roberto, …).
+ * Normalize username / email local / display name → canonical roster key (luliya, roberto, …).
  * @param {string | null | undefined} value
  * @returns {string}
  */
@@ -323,13 +331,22 @@ export function portalCanonicalStaffRosterKey(value) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "");
   if (!k) return "";
-  if (k === "luliya") return "lulia";
-  if (k === "lulya") return "lulia";
-  if (k === "aida") return "lulia";
+  if (
+    k === "lulia" ||
+    k === "lulya" ||
+    k === "aida" ||
+    k === "aidalulia" ||
+    k === "aidaluliya" ||
+    k === "aidaluliyajemal"
+  ) {
+    return "luliya";
+  }
   if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
   if (k === "javiermarquez") return "javier";
   if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
   if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
+  if (k === "emmanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") return "emmanuel";
+  if (k === "emanuel") return "emmanuel";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
 }
 
@@ -351,7 +368,18 @@ export function portalStaffDisplayName(value) {
       .replace(/[^a-z0-9]+/g, "");
   const fromKey = (k) => {
     if (!k) return "";
-    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "Luliya";
+    if (
+      k === "luliya" ||
+      k === "lulia" ||
+      k === "lulya" ||
+      k === "aida" ||
+      k === "aidaluliya" ||
+      k === "aidalulia" ||
+      k === "aidaluliyajemal" ||
+      k === "stf021"
+    ) {
+      return "Luliya";
+    }
     if (k === "javier" || k === "javiermarquez" || k === "stf010") return "Javier";
     if (
       k === "javi" ||
@@ -368,7 +396,9 @@ export function portalStaffDisplayName(value) {
   };
   let hit = fromKey(norm(raw));
   if (hit) return hit;
-  const firstTok = raw.split(/[,/&]|\band\b/i)[0].trim();
+  const firstTok = String(raw.split(/[,/&]|\band\b/i)[0] || "")
+    .trim()
+    .split(/\s+/)[0];
   hit = fromKey(norm(firstTok));
   if (hit) return hit;
   const canon = portalCanonicalStaffRosterKey(raw);
@@ -380,15 +410,32 @@ export function portalStaffDisplayName(value) {
       const prof = src && src.staffProfiles ? src.staffProfiles[canon] : null;
       const sn = prof && String(prof.staffName || "").trim();
       if (sn) {
-        hit = fromKey(norm(sn));
+        hit = fromKey(norm(sn)) || fromKey(norm(sn.split(/\s+/)[0]));
         if (hit) return hit;
-        if (sn.includes(" ")) return sn;
       }
     }
   } catch (_) {}
-  const label = firstTok || raw;
+  const label = firstTok || raw.split(/\s+/)[0] || raw;
+  hit = fromKey(norm(label));
+  if (hit) return hit;
   if (/^[A-Z]{2,}$/.test(label)) return label.charAt(0) + label.slice(1).toLowerCase();
   return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+}
+
+/** First name only for session_feedback.completed_by_name. */
+export function portalStaffAuthorFirstName(value) {
+  const mapped = portalStaffDisplayName(value);
+  if (!mapped) return "";
+  if (/^javi palankas$/i.test(mapped)) return "Javi";
+  const first = String(mapped).trim().split(/\s+/)[0] || mapped;
+  if (
+    first.toLowerCase() === "aida" ||
+    first.toLowerCase() === "lulia" ||
+    first.toLowerCase() === "lulya"
+  ) {
+    return "Luliya";
+  }
+  return first;
 }
 
 /**

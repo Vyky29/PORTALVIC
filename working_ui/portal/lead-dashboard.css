@@ -3463,9 +3463,9 @@
       border-color:rgba(185,28,28,.52);
       box-shadow:0 1px 4px rgba(220,38,38,.22);
     }
-    /* Changed by Admin — same yellow card as No Participant (until session starts) */
-    .section-card--today .session-card.session-card--admin-adjusted,
-    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue{
+    /* Changed by Admin — yellow card (until session starts). Never paint ov-blue here;
+       Move in / New Client keep their blue block below. */
+    .section-card--today .session-card.session-card--admin-adjusted{
       background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
       border-color:rgba(200,165,45,.5);
       box-shadow:0 1px 6px rgba(200,165,45,.12);
@@ -3493,6 +3493,32 @@
     .section-card--today .session-card.session-card--admin-adjusted.session-card--review-needed:hover,
     .section-card--today .session-card.session-card--admin-adjusted.session-card--review-incident:hover{
       border-color:rgba(200,110,45,.52);
+    }
+    /* Move in / New Client: keep blue card (never Make Up pink or admin yellow). */
+    .section-card--today .session-card.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
+    .section-card--today .session-card.session-card--ov-blue.override--replace:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
+      background:linear-gradient(180deg,#dbeafe 0%,#eff6ff 55%,#f8fbff 100%);
+      border-color:rgba(37,99,235,.58);
+      box-shadow:0 1px 6px rgba(37,99,235,.14);
+    }
+    .section-card--today .session-card.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
+      border-color:rgba(29,78,216,.72);
+      box-shadow:0 4px 14px rgba(37,99,235,.2);
+    }
+    /* Teaching Pool / area note must stay readable on blue Move in cards. */
+    .section-card--today .session-card.session-card--ov-blue .session-area-note-label{
+      color:#0f172a;
+      font-weight:750;
+      text-shadow:0 1px 0 rgba(255,255,255,.65);
+    }
+    .section-card--today .session-card.session-card--ov-blue .session-area-note-icon,
+    .section-card--today .session-card.session-card--ov-blue .session-venue-visual{
+      filter:saturate(1.15) contrast(1.12);
+    }
+    .section-card--today .session-card.session-card--ov-blue .session-area-note-stack{
+      --area-note-accent:#0f172a;
     }
     .session-card--ov-green{
       background:var(--reviewGreenBg);
@@ -3598,9 +3624,9 @@
     .section-card--today .session-card.session-card--available.session-card--ov-yellow,
     .section-card--today .session-card.session-card--available.session-card--ov-green,
     .section-card--today .session-card.session-card--available.session-card--ov-red{
-      border-color:rgba(45,132,179,.34);
-      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
-      box-shadow:0 1px 4px rgba(23,50,71,.07);
+      border-color:rgba(244, 63, 94, 0.35);
+      background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
+      box-shadow:0 1px 6px rgba(190, 18, 60, 0.1);
     }
     .session-ov-symbol-text{
       display:block;min-width:0;max-width:100%;
@@ -4464,19 +4490,19 @@
       background:linear-gradient(180deg,#fff1f1 0%,#ffcaca 100%);
       box-shadow:0 1px 6px rgba(150,28,28,.2);
     }
-    /* No Participant = open slot awaiting a booking → yellow card (matches the
-       "changed by admin" yellow), no chip. Distinct from Closed (red). */
+    /* No Participant = open slot awaiting a booking → light red card, no chip.
+       Distinct from Closed (stronger red). */
     .section-card--today .session-card.session-card--available{
-      border-color:rgba(200,165,45,.5);
-      background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
-      box-shadow:0 1px 6px rgba(200,165,45,.12);
+      border-color:rgba(244, 63, 94, 0.35);
+      background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
+      box-shadow:0 1px 6px rgba(190, 18, 60, 0.1);
     }
     .section-card--today .session-card.session-card--available:hover{
-      border-color:rgba(150,110,20,.62);
-      box-shadow:0 4px 14px rgba(180,140,30,.2);
+      border-color:rgba(190, 18, 60, 0.5);
+      box-shadow:0 4px 14px rgba(190, 18, 60, 0.16);
     }
     .section-card--today .session-card.session-card--available .session-meta-name{
-      color:#b91c1c;
+      color:#9f1239;
     }
     .section-card--today .session-card .session-card-body{
       flex:1 1 auto;
@@ -4604,9 +4630,11 @@
       margin-top:4px;
     }
     .section-card--today .session-chips-below-name--wrap{
+      flex-direction:column;
       flex-wrap:nowrap;
+      align-items:center;
       justify-content:center;
-      gap:3px;
+      gap:4px;
     }
     .section-card--today .session-chips-below-name .portal-session-slot-chip,
     .section-card--today .session-chips-below-name .portal-sched-ov-badge{
@@ -4616,14 +4644,15 @@
     }
     .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip,
     .section-card--today .session-chips-below-name--wrap .portal-sched-ov-badge{
-      max-width:calc(50% - 2px);
-      padding:4px 7px;
+      max-width:100%;
+      width:auto;
+      padding:4px 10px;
       font-size:10px;
     }
     /* "Updated by admin" must stay readable — never 50%-width ellipsis. */
     .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip--updated{
       max-width:100%;
-      flex:1 1 100%;
+      flex:0 1 auto;
       padding:4px 10px;
       font-size:10px;
     }
@@ -6306,11 +6335,11 @@
       border-color:rgba(200,110,45,.52);
     }
     .term-cal-day.term-feedback-cancelled{
-      background:var(--reviewLilacBg);
-      border-color:var(--reviewLilacBorder);
-      box-shadow:0 0 0 1px var(--reviewLilacGlow),0 6px 18px var(--reviewLilacGlow);
-      color:#4a3d5e;
-      cursor:default;
+      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
+      border-color:#b71c1c;
+      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
+      color:#7b1212;
+      cursor:pointer;
     }
     .term-cal-day.term-feedback-future-ov-admin{
       background:linear-gradient(180deg,#eef4ff 0%,#e5eeff 100%);
@@ -7608,9 +7637,9 @@
     }
 
     .sheet-backdrop{
-      position:fixed;inset:0;background:rgba(11,18,32,.34);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:78
+      position:fixed;inset:0;background:rgba(11,18,32,.34);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:78;display:none
     }
-    .sheet-backdrop.open{opacity:1;pointer-events:auto}
+    .sheet-backdrop.open{display:block;opacity:1;pointer-events:auto}
 
     /* Setup (Reminder): modal centrado bajo avisos; fondo borroso; cerrar solo pulsando fuera */
     .sheet-backdrop.sheet-backdrop--focus.open{

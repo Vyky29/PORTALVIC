@@ -11,6 +11,11 @@
     "topbarToolCellTermReview",
     "topbarToolTermReview",
   ];
+  var INTERVIEWS_TOOL_IDS = [
+    "quickMenuStaffInterviews",
+    "topbarToolCellInterviews",
+    "topbarToolInterviews",
+  ];
   var LEAD_TERM_REVIEW_IDS = [
     "quickMenuStaffLeadTermReview",
     "topbarToolCellLeadTermReview",
@@ -75,7 +80,7 @@
     },
     angel: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -84,7 +89,7 @@
     },
     aurora: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -122,7 +127,7 @@
     },
     dan: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -149,7 +154,7 @@
     },
     javier: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -169,7 +174,7 @@
     },
     lulia: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -186,6 +191,7 @@
       sixIcon: false,
       leadExtras: true,
       stats: true,
+      interviews: true,
     },
     sandra: {
       photo: true,
@@ -198,7 +204,7 @@
     },
     sevitha: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: true,
       venue: true,
       pickup: true,
@@ -209,7 +215,7 @@
     },
     simon: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -218,7 +224,7 @@
     },
     youssef: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -227,7 +233,7 @@
     },
     roberto: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -237,7 +243,7 @@
     },
     victor: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: true,
       venue: true,
       pickup: true,
@@ -248,7 +254,7 @@
     },
     raul: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: true,
       venue: true,
       pickup: true,
@@ -259,7 +265,7 @@
     },
     javi: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: true,
       venue: true,
       pickup: true,
@@ -270,7 +276,7 @@
     },
     palankas: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: true,
       venue: true,
       pickup: true,
@@ -334,7 +340,7 @@
         if (fromRoster) return fromRoster;
       }
     } catch (_) {}
-    if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "lulia" || k === "luliya" || k === "aida" || k === "stf021") return "luliya";
     if (k === "yousef" || k === "yousseff" || k === "yusef" || k === "stf005") return "youssef";
     if (k.indexOf("youssef") === 0 || k.indexOf("yousef") === 0) return "youssef";
     if (k === "javiermarquez" || k === "stf010") return "javier";
@@ -584,8 +590,11 @@
       visible: true,
     });
     /* Swim Rev is for swimming instructors only — never for Berta/John/Michelle (or lead shell). */
-    var showSwReview = !!profile.swReview && !isProgrammeLead && !isLeadShell;
+    /* Swimming term review is off staff UI (Admin / dedicated office tools only). */
+    var showSwReview = false;
     setTopbarToolGroup(SWIMMING_TERM_REVIEW_IDS, showSwReview, { visible: showSwReview });
+    var showInterviews = !!profile.interviews || staffKey === "michelle";
+    setTopbarToolGroup(INTERVIEWS_TOOL_IDS, showInterviews, { visible: showInterviews });
     setTopbarToolGroup(SWIMMING_VENUE_IDS, venueOn, { visible: true });
     setTopbarToolGroup(SWIMMING_PICKUP_IDS, !!profile.pickup, { visible: true });
     setTopbarToolGroup(SWIMMING_PLANNER_IDS, !!profile.planner, {
@@ -605,8 +614,10 @@
       isLeadShell || (showProgrammeOnly && !!profile.leadReview),
     );
     setTopbarToolGroup(STATS_IDS, isLeadShell || profile.stats !== false, {
-      visible: showProgrammeOnly,
+      /* Topbar slot yields to Interviews for Michelle; Sessions Overview stays in Service Leads menu. */
+      visible: showProgrammeOnly && !showInterviews,
     });
+    setElementVisible("quickMenuStaffSessionsOverview", showProgrammeOnly);
 
     if (profile.planner && typeof global.portalEnableRoutinesPlannerUi === "function") {
       try {
@@ -617,6 +628,7 @@
     SWIMMING_MENU_IDS.forEach(function (id) {
       setElementVisible(id, showSwReview);
     });
+    setElementVisible("quickMenuStaffInterviews", showInterviews);
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
     global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = !!profile.leadExtras || isProgrammeLead || isLeadShell;
@@ -782,7 +794,7 @@
       if (portalTopbarPhotoVisibleForProfile(profile, opts.referenceDate)) out.push("photo");
       if (venueOn) out.push("venue");
       if (profile.pickup) out.push("pickup");
-      if (profile.swReview) out.push("swReview");
+      if (false && profile.swReview) out.push("swReview");
       if (plannerOn) out.push("plan");
       if (showLeadExtras) {
         out.push("lead");
@@ -793,7 +805,7 @@
     if (portalTopbarPhotoVisibleForProfile(profile, opts.referenceDate)) out.push("photo");
     if (venueOn) out.push("venue");
     if (profile.pickup) out.push("pickup");
-    if (profile.swReview) out.push("swReview");
+    if (false && profile.swReview) out.push("swReview");
     /* Team Rev is Quick Menu only — not a halo icon. */
     if (plannerOn) out.push("plan");
     if (showLeadExtras) {
@@ -864,17 +876,27 @@
       try {
         portalResyncPlannerToolsAfterIdentity();
       } catch (_) {}
-      try {
-        if (typeof global.portalSyncTodaySectionDisplay === "function") {
-          global.portalSyncTodaySectionDisplay();
-        } else if (typeof portalSyncTodaySectionDisplay === "function") {
-          portalSyncTodaySectionDisplay();
-        }
-      } catch (_) {}
-      try {
-        if (typeof global.renderToday === "function") global.renderToday();
-        else if (typeof renderToday === "function") renderToday();
-      } catch (_) {}
+      /* Defer Today rebuild off the load/deferred-ready turn — sync paint here
+         was freezing Javier (~3s) on day-off Mondays. */
+      var deferPaint =
+        typeof global.portalDeferHeavyDashboardRefresh === "function"
+          ? global.portalDeferHeavyDashboardRefresh
+          : function (fn) {
+              setTimeout(fn, 0);
+            };
+      deferPaint(function () {
+        try {
+          if (typeof global.portalSyncTodaySectionDisplay === "function") {
+            global.portalSyncTodaySectionDisplay();
+          } else if (typeof portalSyncTodaySectionDisplay === "function") {
+            portalSyncTodaySectionDisplay();
+          }
+        } catch (_) {}
+        try {
+          if (typeof global.renderToday === "function") global.renderToday();
+          else if (typeof renderToday === "function") renderToday();
+        } catch (_) {}
+      }, 0);
     });
   }
 })(typeof window !== "undefined" ? window : globalThis);

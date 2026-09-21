@@ -16,7 +16,7 @@
     if (!client || typeof client.from !== "function") return Promise.resolve([]);
     return client
       .from("portal_staff_timetable_cells")
-      .select("session_date,day,column_key,raw_assignment,status,updated_at")
+      .select("session_date,day,column_key,raw_assignment,paid_hours,status,updated_at")
       .eq("status", "active")
       .then(function (res) {
         if (res.error) {
@@ -39,12 +39,26 @@
         var iso = normIso(r.session_date);
         var key = String(r.column_key || "").trim();
         if (!iso || !key) return;
-        map[iso + "|" + key] = String(r.raw_assignment || "").trim();
+        map[iso + "|" + key] = {
+          text: String(r.raw_assignment || "").trim(),
+          paid_hours: String(r.paid_hours || "").trim(),
+        };
       });
       cache = map;
       cacheAt = Date.now();
       return map;
     });
+  }
+
+  function overrideText(ov) {
+    if (ov == null) return "";
+    if (typeof ov === "string") return String(ov).trim();
+    return String((ov && ov.text) || "").trim();
+  }
+
+  function overridePaid(ov) {
+    if (ov == null || typeof ov === "string") return "";
+    return String((ov && ov.paid_hours) || "").trim();
   }
 
   function applyToStaffHours(staffHours, overrideMap) {
@@ -59,7 +73,9 @@
         var colKey = parts.slice(2).join("|");
         var k = iso + "|" + colKey;
         if (Object.prototype.hasOwnProperty.call(overrideMap, k)) {
-          cell.text = overrideMap[k];
+          var ov = overrideMap[k];
+          cell.text = overrideText(ov);
+          cell.paidHours = overridePaid(ov);
           cell.overridden = true;
           cell.tone = "updated";
         }

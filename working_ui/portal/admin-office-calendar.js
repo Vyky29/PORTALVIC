@@ -26,6 +26,9 @@
     event: { label: "Event", color: "#15803d", bg: "#dcfce7" },
   };
 
+  /** Quick title picks for office notes (who the note is about / for). */
+  var TITLE_SUGGESTIONS = ["Victor", "Javi", "Raul", "Sevitha"];
+
   var state = {
     year: 0,
     month: 0, // 0-11
@@ -203,13 +206,17 @@
         .slice(0, 3)
         .map(function (e) {
           var meta = TYPE_META[e.entry_type] || TYPE_META.note;
+          var isDone = String(e.status || "open").toLowerCase() === "done";
           return (
-            '<span class="poc-chip" style="background:' +
+            '<span class="poc-chip' +
+            (isDone ? " poc-chip--done" : "") +
+            '" style="background:' +
             meta.bg +
             ";color:" +
             meta.color +
             '" title="' +
             esc(e.title) +
+            (isDone ? " (done)" : "") +
             '">' +
             esc(String(e.title || "").slice(0, 18)) +
             "</span>"
@@ -219,11 +226,15 @@
       if (list.length > 3) {
         chips += '<span class="poc-chip poc-chip--more">+' + (list.length - 3) + "</span>";
       }
+      var openCount = list.filter(function (e) {
+        return String(e.status || "open").toLowerCase() !== "done";
+      }).length;
       cells.push(
         '<button type="button" class="poc-cell' +
           (isSel ? " is-selected" : "") +
           (isToday ? " is-today" : "") +
           (list.length ? " has-items" : "") +
+          (openCount ? " has-open" : "") +
           '" data-poc-day="' +
           esc(iso) +
           '" aria-pressed="' +
@@ -268,12 +279,25 @@
 
   function entryCardHtml(e) {
     var meta = TYPE_META[e.entry_type] || TYPE_META.note;
+    var isDone = String(e.status || "open").toLowerCase() === "done";
     var when = e.all_day
       ? "All day"
       : [formatTime(e.start_time), formatTime(e.end_time)].filter(Boolean).join(" – ") || "Timed";
     var by = e.created_by_name ? " · " + esc(e.created_by_name) : "";
+    var statusChip = isDone
+      ? '<span class="poc-type poc-type--done">Done</span>'
+      : "";
+    var doneBtn = isDone
+      ? '<button type="button" class="btn btn--ghost btn--sm" data-poc-status="' +
+        esc(e.id) +
+        '" data-poc-next-status="open">Reopen</button>'
+      : '<button type="button" class="btn btn--sm poc-done-chip" data-poc-status="' +
+        esc(e.id) +
+        '" data-poc-next-status="done">Done</button>';
     return (
-      '<article class="poc-entry" data-entry-id="' +
+      '<article class="poc-entry' +
+      (isDone ? " poc-entry--done" : "") +
+      '" data-entry-id="' +
       esc(e.id) +
       '">' +
       '<div class="poc-entry__head">' +
@@ -284,6 +308,7 @@
       '">' +
       esc(meta.label) +
       "</span>" +
+      statusChip +
       '<span class="poc-entry__when muted">' +
       esc(when) +
       by +
@@ -299,6 +324,7 @@
       '<button type="button" class="btn btn--ghost btn--sm" data-poc-edit="' +
       esc(e.id) +
       '">Edit</button>' +
+      doneBtn +
       '<button type="button" class="btn btn--ghost btn--sm poc-del" data-poc-del="' +
       esc(e.id) +
       '">Delete</button>' +
@@ -309,7 +335,7 @@
 
   function formHtml(prefill) {
     var p = prefill || {};
-    var type = String(p.entry_type || "meeting");
+    var type = String(p.entry_type || "note");
     var allDay = p.all_day !== false && !p.start_time;
     var typeOpts = ["meeting", "note", "event"]
       .map(function (k) {
@@ -335,9 +361,14 @@
       '<label>Type<select class="inp" id="pocType" required>' +
       typeOpts +
       "</select></label>" +
-      '<label>Title<input class="inp" id="pocTitle" type="text" maxlength="200" required value="' +
+      '<label>Title<input class="inp" id="pocTitle" type="text" maxlength="200" required list="pocTitleSuggest" autocomplete="off" value="' +
       esc(p.title || "") +
       '" placeholder="e.g. Call with Ealing LA" /></label>' +
+      '<datalist id="pocTitleSuggest">' +
+      TITLE_SUGGESTIONS.map(function (n) {
+        return '<option value="' + esc(n) + '"></option>';
+      }).join("") +
+      "</datalist>" +
       '<label class="poc-form-span"><span>Details</span><textarea class="inp" id="pocBody" rows="3" maxlength="8000" placeholder="Optional notes…">' +
       esc(p.body || "") +
       "</textarea></label>" +
@@ -391,7 +422,7 @@
         ? list.map(entryCardHtml).join("")
         : '<p class="muted" style="margin:0;padding:8px 0">Nothing on this day yet.</p>') +
       "</div>" +
-      formHtml(editing || { entry_date: state.selectedIso, entry_type: "meeting", all_day: true }) +
+      formHtml(editing || { entry_date: state.selectedIso, entry_type: "note", all_day: true }) +
       "</aside>"
     );
   }
@@ -429,7 +460,14 @@
       "#portalOfficeCalRoot .poc-type{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:3px 7px;border-radius:999px}" +
       "#portalOfficeCalRoot .poc-entry__title{margin:0 0 4px;font-size:14px;overflow-wrap:break-word}" +
       "#portalOfficeCalRoot .poc-entry__body{margin:0;font-size:13px;color:#334155;overflow-wrap:break-word;white-space:pre-wrap}" +
-      "#portalOfficeCalRoot .poc-entry__actions{display:flex;gap:8px;margin-top:8px}" +
+      "#portalOfficeCalRoot .poc-cell.has-open{background:#fff7ed;border-color:#fdba74}" +
+      "#portalOfficeCalRoot .poc-chip--done{opacity:.55;text-decoration:line-through}" +
+      "#portalOfficeCalRoot .poc-entry--done{opacity:.72;background:#f8fafc}" +
+      "#portalOfficeCalRoot .poc-entry--done .poc-entry__title{text-decoration:line-through;color:#64748b}" +
+      "#portalOfficeCalRoot .poc-type--done{background:#dcfce7;color:#15803d}" +
+      "#portalOfficeCalRoot .poc-done-chip{background:#dcfce7;color:#15803d;border:1px solid #86efac;font-weight:700}" +
+      "#portalOfficeCalRoot .poc-done-chip:hover{background:#bbf7d0}" +
+      "#portalOfficeCalRoot .poc-entry__actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}" +
       "#portalOfficeCalRoot .poc-del{color:#b91c1c}" +
       "#portalOfficeCalRoot .poc-form{border-top:1px solid var(--line,#e5e7eb);padding-top:14px;min-width:0}" +
       "#portalOfficeCalRoot .poc-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;min-width:0}" +
@@ -535,6 +573,24 @@
       });
     });
 
+    document.querySelectorAll("[data-poc-status]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-poc-status");
+        var next = btn.getAttribute("data-poc-next-status") || "done";
+        if (!id) return;
+        void (async function () {
+          setStatus(next === "done" ? "<strong>Marking done…</strong>" : "<strong>Reopening…</strong>");
+          var res = await edgePost({ action: "set_status", id: id, status: next });
+          if (res.error) {
+            setStatus("<strong>Update failed</strong> " + esc(res.error), true);
+            return;
+          }
+          cfg.toast(next === "done" ? "Marked done" : "Reopened");
+          await loadMonth();
+        })();
+      });
+    });
+
     var cancel = document.getElementById("pocCancelEdit");
     if (cancel) {
       cancel.onclick = function () {
@@ -600,12 +656,132 @@
     }
   }
 
+  async function listRange(from, to) {
+    var res = await edgePost({ action: "list", from: from, to: to });
+    if (res.error) return { error: res.error, entries: [] };
+    return { entries: (res.data && res.data.entries) || [] };
+  }
+
+  /** Compact Mon–Sun strip for Ops Hub glance (same note tint as calendar cells). */
+  function glanceWeekStripHtml(entries) {
+    ensureMonth();
+    var today = todayIso();
+    var now = new Date();
+    var dow = (now.getDay() + 6) % 7; // Mon=0
+    var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow);
+    var byIso = {};
+    (entries || []).forEach(function (e) {
+      var iso = String(e.entry_date || "").slice(0, 10);
+      if (!iso) return;
+      if (!byIso[iso]) byIso[iso] = [];
+      byIso[iso].push(e);
+    });
+    var days = [];
+    var openWeek = 0;
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+      var iso = isoFromYmd(d.getFullYear(), d.getMonth(), d.getDate());
+      var list = byIso[iso] || [];
+      var openN = list.filter(function (e) {
+        return String(e.status || "open").toLowerCase() !== "done";
+      }).length;
+      openWeek += openN;
+      var labels = ["M", "T", "W", "T", "F", "S", "S"];
+      days.push(
+        '<span class="ops-hub-cal-day' +
+          (iso === today ? " is-today" : "") +
+          (openN ? " has-notes" : list.length ? " has-done" : "") +
+          '" title="' +
+          esc(iso) +
+          (openN ? " · " + openN + " open" : list.length ? " · done" : "") +
+          '">' +
+          '<span class="ops-hub-cal-day__d">' +
+          labels[i] +
+          "</span>" +
+          '<span class="ops-hub-cal-day__n">' +
+          d.getDate() +
+          "</span>" +
+          "</span>"
+      );
+    }
+    return {
+      html: '<div class="ops-hub-cal-week" aria-hidden="true">' + days.join("") + "</div>",
+      openCount: openWeek,
+    };
+  }
+
+  /** Full month grid for Ops Hub glance — title sits beside; grid fills the box. */
+  function glanceMonthGridHtml(entries, year, monthIndex) {
+    ensureMonth();
+    var today = todayIso();
+    var y = year != null ? Number(year) : new Date().getFullYear();
+    var m = monthIndex != null ? Number(monthIndex) : new Date().getMonth();
+    var byIso = {};
+    (entries || []).forEach(function (e) {
+      var iso = String(e.entry_date || "").slice(0, 10);
+      if (!iso) return;
+      if (!byIso[iso]) byIso[iso] = [];
+      byIso[iso].push(e);
+    });
+    var first = new Date(y, m, 1);
+    var startDow = (first.getDay() + 6) % 7; // Mon=0
+    var gridStart = new Date(y, m, 1 - startDow);
+    var monthLabel = first.toLocaleString("en-GB", { month: "long", year: "numeric" });
+    var labels = ["M", "T", "W", "T", "F", "S", "S"];
+    var head = labels
+      .map(function (l) {
+        return '<span class="ops-hub-cal-month__wd">' + l + "</span>";
+      })
+      .join("");
+    var cells = [];
+    var openMonth = 0;
+    for (var i = 0; i < 42; i++) {
+      var d = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+      var iso = isoFromYmd(d.getFullYear(), d.getMonth(), d.getDate());
+      var inMonth = d.getMonth() === m;
+      var list = byIso[iso] || [];
+      var openN = list.filter(function (e) {
+        return String(e.status || "open").toLowerCase() !== "done";
+      }).length;
+      if (inMonth) openMonth += openN;
+      cells.push(
+        '<span class="ops-hub-cal-day' +
+          (inMonth ? "" : " is-outside") +
+          (iso === today ? " is-today" : "") +
+          (openN ? " has-notes" : list.length ? " has-done" : "") +
+          '" title="' +
+          esc(iso) +
+          (openN ? " · " + openN + " open" : list.length ? " · done" : "") +
+          '">' +
+          '<span class="ops-hub-cal-day__n">' +
+          d.getDate() +
+          "</span>" +
+          "</span>"
+      );
+    }
+    return {
+      html:
+        '<div class="ops-hub-cal-month" aria-hidden="true">' +
+        '<div class="ops-hub-cal-month__label">' +
+        esc(monthLabel) +
+        "</div>" +
+        '<div class="ops-hub-cal-month__head">' +
+        head +
+        "</div>" +
+        '<div class="ops-hub-cal-month__grid">' +
+        cells.join("") +
+        "</div></div>",
+      openCount: openMonth,
+      monthLabel: monthLabel,
+    };
+  }
+
   function viewHtml() {
     return (
       '<div id="portalOfficeCalRoot" class="portal-office-cal-embed" data-bound="0">' +
       styleHtml() +
       '<h1 class="page-title">Office calendar</h1>' +
-      '<p class="page-intro">Shared calendar for the office — meetings, notes and events. What Sevitha (or any portal admin) adds here is visible to you, and vice versa.</p>' +
+      '<p class="page-intro">Shared calendar for the office — meetings, notes and events. What Sevitha (or any portal admin) adds here is visible to you, and vice versa. Mark items <strong>Done</strong> when finished.</p>' +
       '<div id="portalOfficeCalStatus" class="portal-forms-status" role="status"></div>' +
       '<div id="portalOfficeCalHost"></div>' +
       "</div>"
@@ -626,5 +802,10 @@
     viewHtml: viewHtml,
     bindModule: bindModule,
     refresh: loadMonth,
+    listRange: listRange,
+    glanceWeekStripHtml: glanceWeekStripHtml,
+    glanceMonthGridHtml: glanceMonthGridHtml,
+    todayIso: todayIso,
+    isoFromYmd: isoFromYmd,
   };
 })(typeof window !== "undefined" ? window : globalThis);

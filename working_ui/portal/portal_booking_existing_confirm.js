@@ -97,6 +97,16 @@
 
   function bookingRequestFromQuery() {
     var q = qs();
+    var supportRaw = String(q.get("support_regulated") || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "");
+    var support =
+      supportRaw === "2to1" || supportRaw === "2:1"
+        ? "2to1"
+        : supportRaw === "1to1" || supportRaw === "1:1"
+          ? "1to1"
+          : "1to1";
     return {
       from: "bookingportal",
       slot_id: q.get("slot_id") || "",
@@ -112,6 +122,7 @@
       date_iso: q.get("date") || "",
       pack: q.get("pack") || "",
       booking_kind: String(q.get("booking_kind") || "term").toLowerCase() === "trial" ? "trial" : "term",
+      support_regulated: support,
     };
   }
 
@@ -144,11 +155,20 @@
   function friendlyError(code) {
     var c = String(code || "").toLowerCase();
     if (c === "photo_required") return "Please add a participant photo, then confirm.";
-    if (c === "photo_too_large") return "That photo is too large (max 8 MB). Choose a smaller JPEG/PNG.";
+    if (c === "photo_too_large") return "That photo is too large. Take a new photo and try again.";
+    if (c === "photo_decode_failed") {
+      return "Could not read that photo. On iPhone, choose a JPEG, or take a new photo and try again.";
+    }
     if (c === "invalid_photo_type") return "Please use a JPEG or PNG photo.";
+    if (c === "confirm_timeout" || c.indexOf("abort") >= 0 || c.indexOf("timed out") >= 0) {
+      return "That took too long (often a large phone photo). Stay on Wi-Fi, take a new photo if needed, and tap Confirm place again.";
+    }
     if (c === "unauthorized") return "Your booking session expired. Go back to Booking Portal and unlock again.";
     if (c === "not_existing_client") return "This shortcut is for existing families. Use the full registration form.";
     if (c === "no_children_on_file") return "We could not find your child on file. Contact the office or use full registration.";
+    if (c === "slot_unavailable") {
+      return "That session place is no longer available. Go back to Booking Portal and choose another time, or contact the office.";
+    }
     if (c === "failed to fetch" || c.indexOf("network") >= 0) {
       return "Network error — stay on Wi‑Fi/4G and try again.";
     }
@@ -172,8 +192,111 @@
     });
   }
 
+  var SUBMIT_MS = 45000;
+  var PHOTO_MAX_IN = 20 * 1024 * 1024;
+  var PHOTO_MAX_EDGE = 1200;
+  var PHOTO_TARGET = 900 * 1024;
+
+  function isAbortErr(e) {
+    var n = String((e && e.name) || "");
+    var m = String((e && e.message) || "").toLowerCase();
+    return n === "AbortError" || m.indexOf("abort") >= 0 || m.indexOf("timed out") >= 0 || m === "confirm_timeout";
+  }
+
+  function canvasToJpegBlob(canvas, quality) {
+    return new Promise(function (resolve, reject) {
+      canvas.toBlob(function (blob) {
+        if (!blob) reject(new Error("photo_decode_failed"));
+        else resolve(blob);
+      }, "image/jpeg", quality);
+    });
+  }
+
+  function loadPhotoSource(file) {
+    function viaImg() {
+      return new Promise(function (resolve, reject) {
+        var img = new Image();
+        var url = URL.createObjectURL(file);
+        img.onload = function () {
+          URL.revokeObjectURL(url);
+          resolve(img);
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(url);
+          reject(new Error("photo_decode_failed"));
+        };
+        img.src = url;
+      });
+    }
+    if (typeof createImageBitmap === "function") {
+      return createImageBitmap(file, { imageOrientation: "from-image" })
+        .catch(function () {
+          return createImageBitmap(file);
+        })
+        .catch(function () {
+          return viaImg();
+        });
+    }
+    return viaImg();
+  }
+
+  function compressPhoto(file) {
+    if (!file) return Promise.resolve(null);
+    if (file.size > PHOTO_MAX_IN) return Promise.reject(new Error("photo_too_large"));
+    return loadPhotoSource(file).then(function (source) {
+      var w = Number(source.width || source.naturalWidth) || 0;
+      var h = Number(source.height || source.naturalHeight) || 0;
+      if (!(w > 0 && h > 0)) {
+        try { if (source && typeof source.close === "function") source.close(); } catch (_c) {}
+        return Promise.reject(new Error("photo_decode_failed"));
+      }
+      var scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * scale));
+      var ch = Math.max(1, Math.round(h * scale));
+      var canvas = document.createElement("canvas");
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext("2d");
+      if (!ctx) {
+        try { if (source && typeof source.close === "function") source.close(); } catch (_c2) {}
+        return Promise.reject(new Error("photo_decode_failed"));
+      }
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.drawImage(source, 0, 0, cw, ch);
+      try { if (source && typeof source.close === "function") source.close(); } catch (_c3) {}
+      var qualities = [0.72, 0.62, 0.52, 0.42];
+      function tryQ(i) {
+        var q = qualities[Math.min(i, qualities.length - 1)];
+        return canvasToJpegBlob(canvas, q).then(function (blob) {
+          if (blob.size > PHOTO_TARGET && i < qualities.length - 1) return tryQ(i + 1);
+          if (blob.size > 7.5 * 1024 * 1024) throw new Error("photo_too_large");
+          return blob;
+        });
+      }
+      return tryQ(0);
+    });
+  }
+
+  function fetchWithTimeout(url, opts, ms) {
+    var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timer = null;
+    var next = {};
+    var k;
+    for (k in opts) next[k] = opts[k];
+    if (ctrl) next.signal = ctrl.signal;
+    if (ctrl) {
+      timer = setTimeout(function () {
+        try { ctrl.abort(); } catch (_a) {}
+      }, ms);
+    }
+    return fetch(url, next).finally(function () {
+      if (timer) clearTimeout(timer);
+    });
+  }
+
   function apiSubmit(token, fd) {
-    return fetch(supabaseBase() + "/functions/v1/portal-booking-existing-confirm", {
+    return fetchWithTimeout(supabaseBase() + "/functions/v1/portal-booking-existing-confirm", {
       method: "POST",
       headers: {
         apikey: anonKey(),
@@ -181,8 +304,10 @@
         "x-booking-lead-session": token,
       },
       body: fd,
-    }).then(function (res) {
-      return res.json().then(function (j) {
+    }, SUBMIT_MS).then(function (res) {
+      return res.text().then(function (t) {
+        var j = {};
+        try { j = JSON.parse(t); } catch (_p) {}
         return { res: res, data: j };
       });
     });
@@ -204,6 +329,7 @@
     var doneEl = document.getElementById("bcDone");
     var formEl = document.getElementById("bcForm");
     var fullRegLink = document.getElementById("bcFullReg");
+    var addSiblingLink = document.getElementById("bcAddSibling");
 
     if (slotEl) slotEl.textContent = slotSummary(br) || "Selected session";
 
@@ -211,6 +337,9 @@
       var q = qs();
       q.set("from", "bookingportal");
       fullRegLink.href = "/parent/registration?" + q.toString();
+      if (addSiblingLink) {
+        addSiblingLink.href = "/parent/registration?" + q.toString();
+      }
     }
 
     if (!br.slot_id) {
@@ -231,7 +360,7 @@
     setStatus(statusEl, "Loading your family details…", "info");
     if (submitBtn) submitBtn.disabled = true;
 
-    var state = { children: [], selectedId: "", needPhoto: true };
+    var state = { children: [], selectedId: "", needPhoto: true, busy: false };
 
     apiLoad(token)
       .then(function (out) {
@@ -284,7 +413,7 @@
           if (photoInput) photoInput.required = !!state.needPhoto;
           if (photoHint) {
             photoHint.textContent = state.needPhoto
-              ? "Add a clear face photo (required — none on file yet)."
+              ? "Add a clear face photo (required — none on file yet). We shrink it before sending."
               : "Optional — photo already on file. Upload only to replace it.";
           }
         }
@@ -307,6 +436,7 @@
     if (formEl) {
       formEl.addEventListener("submit", function (ev) {
         ev.preventDefault();
+        if (state.busy) return;
         if (!state.selectedId) {
           setStatus(statusEl, "Select which participant this place is for.", "err");
           return;
@@ -315,21 +445,30 @@
           setStatus(statusEl, "Please add a participant photo, then confirm.", "err");
           return;
         }
+        state.busy = true;
         if (submitBtn) {
           submitBtn.disabled = true;
           submitBtn.textContent = "Sending…";
         }
-        setStatus(statusEl, "Confirming place…", "info");
 
-        var fd = new FormData();
-        fd.set("action", "submit");
-        fd.set("contact_id", state.selectedId);
-        fd.set("booking_request", JSON.stringify(br));
+        var photoP = Promise.resolve(null);
         if (photoInput && photoInput.files && photoInput.files[0]) {
-          fd.set("photo", photoInput.files[0], "participant-photo.jpg");
+          setStatus(statusEl, "Preparing photo…", "info");
+          photoP = compressPhoto(photoInput.files[0]);
+        } else {
+          setStatus(statusEl, "Confirming place…", "info");
         }
 
-        apiSubmit(token, fd)
+        photoP
+          .then(function (blob) {
+            setStatus(statusEl, "Confirming place…", "info");
+            var fd = new FormData();
+            fd.set("action", "submit");
+            fd.set("contact_id", state.selectedId);
+            fd.set("booking_request", JSON.stringify(br));
+            if (blob) fd.set("photo", blob, "participant-photo.jpg");
+            return apiSubmit(token, fd);
+          })
           .then(function (out) {
             if (!out.res.ok || !out.data || !out.data.ok) {
               throw new Error((out.data && out.data.error) || "submit_failed");
@@ -356,9 +495,12 @@
               }
             }
             setStatus(statusEl, "", "");
+            state.busy = false;
           })
           .catch(function (e) {
-            setStatus(statusEl, friendlyError(e && e.message), "err");
+            var code = isAbortErr(e) ? "confirm_timeout" : (e && e.message);
+            setStatus(statusEl, friendlyError(code), "err");
+            state.busy = false;
             if (submitBtn) {
               submitBtn.disabled = false;
               submitBtn.textContent = "Confirm place";

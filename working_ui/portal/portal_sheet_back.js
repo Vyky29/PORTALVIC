@@ -548,9 +548,12 @@
     global.document.addEventListener("pointerdown", onHandlePointerDown, true);
     global.document.addEventListener("pointermove", onHandlePointerMove, true);
     global.document.addEventListener("pointerup", onHandlePointerUp, true);
-    global.document.addEventListener("pointercancel", function () {
+    global.document.addEventListener("pointercancel", function (ev) {
       swipe = null;
-    });
+      try {
+        if (ev.target && ev.target.releasePointerCapture) ev.target.releasePointerCapture(ev.pointerId);
+      } catch (_rel) {}
+    }, true);
 
     global.document.addEventListener("keydown", function (ev) {
       if (ev.key !== "Enter" && ev.key !== " ") return;

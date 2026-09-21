@@ -6,6 +6,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   gocardlessGetBillingRequest,
+  gocardlessGetPayment,
   gocardlessVerifyAndParseWebhook,
 } from "../_shared/gocardless.ts";
 import {
@@ -16,10 +17,12 @@ import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
+import { normalizePaymentSchedule } from "../_shared/portal_invoice_payment_schedule.ts";
 import {
   tryCompleteBookingAfterGocardlessMandateSetup,
   tryCompleteBookingAfterInvoicePayment,
 } from "../_shared/portal_booking_finish.ts";
+import { handleGcPaymentsFailedBatch } from "../_shared/portal_gocardless_fail_grace.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -161,6 +164,74 @@ async function markInvoicePaid(
       ok: true as const,
       invoice_id: target.id,
       tracker_invoice_id: before.id,
+      payment_status: rolled.payment_status,
+      xero,
+      hold,
+    };
+  }
+
+  // No consolidated tracker: apply ONE instalment (or legacy full amount), never paint whole schedule paid blindly.
+  const schedule = normalizePaymentSchedule(before.payment_schedule);
+  const paymentRef = clean(opts.paymentId || before.gocardless_payment_id, 80);
+  const paidViaRef = clean(`gocardless:${paymentRef || before.id}`, 40);
+
+  if (schedule.length) {
+    if (
+      schedule.some((row) => String(row?.paid_via || "") === paidViaRef)
+    ) {
+      return { ok: true as const, invoice_id: before.id, already_applied: true };
+    }
+    let amountGbp = 0;
+    if (paymentRef) {
+      const pay = await gocardlessGetPayment(paymentRef);
+      if (pay.ok && pay.data.amount_pence > 0) {
+        amountGbp = Math.round(pay.data.amount_pence) / 100;
+      }
+    }
+    if (!(amountGbp > 0)) {
+      const nextPending = schedule.find((row) => row.status !== "paid");
+      amountGbp = Number(nextPending?.amount_gbp || 0);
+    }
+    if (!(amountGbp > 0)) {
+      return { ok: false as const, reason: "instalment_amount_missing" };
+    }
+    const rolled = await recordInvoiceInstalmentPayment(supabase, String(before.id), {
+      amountGbp,
+      paidVia: paidViaRef,
+    });
+    if (!rolled.ok) return { ok: false as const, reason: rolled.error };
+
+    let xero = { synced: false, skipped: "term_not_fully_paid" };
+    if (rolled.payment_status === "paid") {
+      const { data: paidTarget } = await supabase
+        .from("portal_parent_invoice_share")
+        .select(
+          "id, contact_id, payment_status, amount_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
+        )
+        .eq("id", before.id)
+        .maybeSingle();
+      if (paidTarget) xero = await xeroEnsurePaidShareInBooks(supabase, paidTarget);
+    }
+    let hold = null;
+    try {
+      const cid = clean(before.contact_id, 120);
+      if (cid && rolled.payment_status === "paid") {
+        hold = await clearPaymentHoldForContact(supabase, cid, "gocardless");
+      }
+    } catch (e) {
+      console.error("[gc-webhook] hold", e instanceof Error ? e.message : String(e));
+    }
+    try {
+      await tryCompleteBookingAfterInvoicePayment(supabase, String(before.id));
+    } catch (e) {
+      console.error(
+        "[gc-webhook] finish booking",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
+    return {
+      ok: true as const,
+      invoice_id: before.id,
       payment_status: rolled.payment_status,
       xero,
       hold,
@@ -346,7 +417,7 @@ async function handlePaymentEvent(
     return await markInvoicePaid(supabase, { paymentId, invoiceShareId });
   }
 
-  if (action === "failed" || action === "cancelled" || action === "charged_back") {
+  if (action === "cancelled") {
     const details = (event.details || {}) as Record<string, unknown>;
     const cause = clean(details.cause || details.description || action, 200);
     if (paymentId || invoiceShareId) {
@@ -361,6 +432,18 @@ async function handlePaymentEvent(
       await q;
     }
     return { ok: true, noted: action, payment_id: paymentId || null };
+  }
+
+  if (action === "failed" || action === "charged_back") {
+    const details = (event.details || {}) as Record<string, unknown>;
+    const cause = clean(details.cause || details.description || action, 200);
+    return {
+      ok: true,
+      deferred_fail: true,
+      payment_id: paymentId || null,
+      invoice_share_id: invoiceShareId || null,
+      cause,
+    };
   }
 
   return { ok: true, ignored_action: action };
@@ -396,6 +479,11 @@ Deno.serve(async (req) => {
 
   const events = Array.isArray(payload.events) ? payload.events : [];
   const results: unknown[] = [];
+  const failBatch: Array<{
+    paymentId?: string | null;
+    invoiceShareId?: string | null;
+    cause?: string | null;
+  }> = [];
 
   for (const ev of events) {
     const event = (ev && typeof ev === "object" ? ev : {}) as Record<string, unknown>;
@@ -406,7 +494,20 @@ Deno.serve(async (req) => {
       if (resourceType === "billing_requests" && action === "fulfilled") {
         results.push(await handleBillingRequestFulfilled(supabase, event));
       } else if (resourceType === "payments") {
-        results.push(await handlePaymentEvent(supabase, event, action));
+        const out = await handlePaymentEvent(supabase, event, action);
+        results.push(out);
+        if (out && typeof out === "object" && (out as { deferred_fail?: boolean }).deferred_fail) {
+          const d = out as {
+            payment_id?: string | null;
+            invoice_share_id?: string | null;
+            cause?: string | null;
+          };
+          failBatch.push({
+            paymentId: d.payment_id,
+            invoiceShareId: d.invoice_share_id,
+            cause: d.cause,
+          });
+        }
       } else if (resourceType === "mandates" && (action === "cancelled" || action === "failed")) {
         const links = (event.links || {}) as Record<string, string>;
         const mandateId = clean(links.mandate, 80);
@@ -427,6 +528,20 @@ Deno.serve(async (req) => {
     } catch (e) {
       console.error("[gc-webhook] event", resourceType, action, e);
       results.push({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
+  if (failBatch.length) {
+    try {
+      const failOut = await handleGcPaymentsFailedBatch(supabase, failBatch);
+      results.push({ ok: true, gc_fail_grace: failOut });
+    } catch (e) {
+      console.error("[gc-webhook] gc fail grace", e);
+      results.push({
+        ok: false,
+        error: e instanceof Error ? e.message : String(e),
+        stage: "gc_fail_grace",
+      });
     }
   }
 

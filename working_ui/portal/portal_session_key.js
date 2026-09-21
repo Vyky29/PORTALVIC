@@ -35,6 +35,9 @@ const CLIENT_SLUG_CANON = {
   rayyan_f: "rayyan_f",
   chaitanya_trial_28_06: "chaitanya",
   chaitanya: "chaitanya",
+  /* Finish-booking legal name vs short roster id. */
+  ayman_el_bakry: "ayman",
+  ayman: "ayman",
 };
 
 const NON_CLIENT_TOKENS = {

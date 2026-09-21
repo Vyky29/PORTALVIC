@@ -9,12 +9,8 @@ const PORTAL_AUTH_MODULE_V = "20260419-99";
 
 /** Resolve auth-handler from same folder as this module (portal/ or portal-shared-js/). */
 function portalAuthModuleUrl() {
-  try {
-    if (typeof import.meta !== "undefined" && import.meta.url) {
-      return new URL("./auth-handler.js?v=" + PORTAL_AUTH_MODULE_V, import.meta.url).href;
-    }
-  } catch (_) {}
-  return "/portal/auth-handler.js?v=" + PORTAL_AUTH_MODULE_V;
+  /* Always use canonical portal auth (shared-js copy is older / can stall on iOS PWA). */
+  return "/portal/auth-handler.js?v=20260913-venue-embed3";
 }
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search || "" : "");
@@ -35,15 +31,66 @@ function contextFromQuery() {
   else if (kindRaw === "Opening" || kindRaw === "Closing") openingClosing = kindRaw;
   let origin = clean(qs.get("origin") || "dashboard");
   if (origin !== "this_week" && origin !== "term" && origin !== "dashboard") origin = "dashboard";
+  const date = clean(qs.get("date") || "");
+  const completedBy = clean(qs.get("completedBy") || qs.get("name") || qs.get("ghostDisplayName") || "");
+  const requireVideoExplicit =
+    qs.get("video") === "1" ||
+    qs.get("requireVideo") === "1" ||
+    clean(qs.get("video") || "").toLowerCase() === "true";
   return {
-    date: clean(qs.get("date") || ""),
+    date,
     venue: clean(qs.get("venue") || qs.get("location") || ""),
     service: clean(qs.get("service") || qs.get("programme") || ""),
     openingClosing,
     portalSessionKey: clean(qs.get("sessionKey") || ""),
     origin,
-    completedBy: clean(qs.get("completedBy") || qs.get("name") || "")
+    completedBy,
+    requireVideo: requireVideoExplicit || venueWalkthroughLikelyRequired(date, completedBy)
   };
+}
+
+/** Roberto Sunday open/close walkthrough — also infer if dashboard forgot ?video=1. */
+function venueWalkthroughLikelyRequired(dateIso, completedBy) {
+  const name = clean(completedBy).toLowerCase();
+  const looksRoberto = /\broberto\b/.test(name);
+  if (!looksRoberto) return false;
+  const iso = clean(dateIso);
+  let d = null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const parts = iso.split("-").map(Number);
+    d = new Date(parts[0], parts[1] - 1, parts[2]);
+  } else {
+    d = new Date();
+  }
+  if (!d || isNaN(d.getTime())) return false;
+  return d.getDay() === 0;
+}
+
+function venueIsoIsSunday(dateIso) {
+  const iso = clean(dateIso);
+  let d = null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const parts = iso.split("-").map(Number);
+    d = new Date(parts[0], parts[1] - 1, parts[2]);
+  } else {
+    d = new Date();
+  }
+  return !!(d && !isNaN(d.getTime()) && d.getDay() === 0);
+}
+
+function applyRobertoSundayVenueDefaults(ctx) {
+  if (!ctx) return ctx;
+  const looksRoberto = /\broberto\b/i.test(clean(ctx.completedBy));
+  if (!looksRoberto || !venueIsoIsSunday(ctx.date || localIsoDateToday())) return ctx;
+  if (!clean(ctx.venue) || /^venue not detected$/i.test(clean(ctx.venue))) {
+    ctx.venue = "SwimFarm";
+  }
+  if (!clean(ctx.openingClosing)) {
+    const nowM = new Date().getHours() * 60 + new Date().getMinutes();
+    ctx.openingClosing = nowM < 12 * 60 ? "Opening" : "Closing";
+  }
+  ctx.requireVideo = true;
+  return ctx;
 }
 
 function localIsoDateToday() {
@@ -183,7 +230,7 @@ async function resolveSubmissionContext(ctx) {
 
 /**
  * @param {ReturnType<typeof contextFromQuery>} ctx
- * @param {{ time: string, issueMode: "yes" | "no", issuesReported: string }} formState
+ * @param {{ time: string, issueMode: "yes" | "no", issuesReported: string, videoStoragePath?: string, videoMimeType?: string, videoDurationSec?: number|null }} formState
  */
 function buildVenueReviewRow(ctx, formState, submission) {
   const opening = clean(ctx.openingClosing) || null;
@@ -191,7 +238,7 @@ function buildVenueReviewRow(ctx, formState, submission) {
   const psk = clean(ctx.portalSessionKey) || null;
   const hasYes = formState.issueMode === "yes";
   const notes = clean(formState.issuesReported);
-  return {
+  const row = {
     submitted_by_user_id: submission.submittedByUserId,
     submitted_by_name: submission.submittedByName,
     review_date: parseReviewDate(ctx.date),
@@ -202,6 +249,333 @@ function buildVenueReviewRow(ctx, formState, submission) {
     issues_reported: notes || null,
     portal_session_key: psk,
     origin: ctx.origin || "dashboard"
+  };
+  const vPath = clean(formState.videoStoragePath || "");
+  if (vPath) {
+    row.video_storage_path = vPath;
+    row.video_mime_type = clean(formState.videoMimeType || "") || null;
+    const dur = formState.videoDurationSec;
+    row.video_duration_sec =
+      dur != null && Number.isFinite(Number(dur)) ? Number(dur) : null;
+  }
+  return row;
+}
+
+const VENUE_REVIEW_VIDEO_BUCKET = "venue-review-videos";
+const VENUE_WALKTHROUGH_MAX_MS = 3 * 60 * 1000;
+
+function pickVenueVideoMimeType() {
+  try {
+    if (typeof MediaRecorder === "undefined") return "";
+    const types = [
+      "video/mp4",
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm"
+    ];
+    for (let i = 0; i < types.length; i++) {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(types[i])) {
+        return types[i];
+      }
+    }
+  } catch (_) {}
+  return "";
+}
+
+function venueVideoExtForMime(mime) {
+  const m = String(mime || "").toLowerCase();
+  if (m.indexOf("mp4") >= 0 || m.indexOf("quicktime") >= 0) return "mp4";
+  if (m.indexOf("ogg") >= 0) return "ogv";
+  return "webm";
+}
+
+function stopVenueMediaStream(stream) {
+  try {
+    if (!stream) return;
+    const tracks = stream.getTracks ? stream.getTracks() : [];
+    for (let i = 0; i < tracks.length; i++) {
+      try {
+        tracks[i].stop();
+      } catch (_) {}
+    }
+  } catch (_) {}
+}
+
+/**
+ * Camera + MediaRecorder for Roberto Sunday open/close walkthrough.
+ * @returns {{ required: boolean, hasBlob: function(): boolean, getBlob: function(): Blob|null, getMime: function(): string, getDurationSec: function(): number|null, stopAll: function(): void }}
+ */
+function initVenueWalkthroughRecorder(ctx) {
+  const panel = document.getElementById("venueWalkthroughPanel");
+  const liveEl = document.getElementById("venueWalkthroughLive");
+  const playEl = document.getElementById("venueWalkthroughPlayback");
+  const statusEl = document.getElementById("venueWalkthroughStatus");
+  const hintEl = document.getElementById("venueWalkthroughHint");
+  const btnCam = document.getElementById("venueWalkthroughStartCam");
+  const btnRec = document.getElementById("venueWalkthroughRecord");
+  const btnStop = document.getElementById("venueWalkthroughStop");
+  const btnRetake = document.getElementById("venueWalkthroughRetake");
+  const required = !!(ctx && ctx.requireVideo);
+  const state = {
+    stream: null,
+    recorder: null,
+    chunks: [],
+    blob: null,
+    mime: "",
+    objectUrl: "",
+    startedAt: 0,
+    durationSec: null,
+    maxTimer: null
+  };
+  const api = {
+    required: required,
+    hasBlob: function () {
+      return !!(state.blob && state.blob.size > 0);
+    },
+    getBlob: function () {
+      return state.blob || null;
+    },
+    getMime: function () {
+      return state.mime || "";
+    },
+    getDurationSec: function () {
+      return state.durationSec;
+    },
+    stopAll: function () {
+      try {
+        if (state.recorder && state.recorder.state !== "inactive") state.recorder.stop();
+      } catch (_) {}
+      stopVenueMediaStream(state.stream);
+      state.stream = null;
+      state.recorder = null;
+    }
+  };
+  if (!panel || !required) {
+    if (panel) panel.hidden = true;
+    return api;
+  }
+  panel.hidden = false;
+  const kindLabel = clean(ctx.openingClosing) || "venue";
+  if (hintEl) {
+    hintEl.textContent =
+      "Record a short walkthrough of SwimFarm for this " +
+      kindLabel.toLowerCase() +
+      " check (up to 3 minutes). The video stays internal with venue reviews.";
+  }
+
+  function setStatus(msg) {
+    if (statusEl) statusEl.textContent = String(msg || "");
+  }
+  function setButtons(mode) {
+    // idle | preview | recording | ready
+    if (btnCam) btnCam.disabled = mode === "recording" || mode === "preview";
+    if (btnRec) btnRec.disabled = mode !== "preview";
+    if (btnStop) btnStop.disabled = mode !== "recording";
+    if (btnRetake) btnRetake.disabled = mode !== "ready" && mode !== "preview";
+  }
+  function clearPlayback() {
+    if (state.objectUrl) {
+      try {
+        URL.revokeObjectURL(state.objectUrl);
+      } catch (_) {}
+      state.objectUrl = "";
+    }
+    if (playEl) {
+      try {
+        playEl.removeAttribute("src");
+        playEl.load();
+      } catch (_) {}
+      playEl.hidden = true;
+    }
+    if (liveEl) liveEl.hidden = false;
+  }
+  function showPlayback(blob) {
+    if (!playEl || !blob) return;
+    clearPlayback();
+    state.objectUrl = URL.createObjectURL(blob);
+    playEl.src = state.objectUrl;
+    playEl.hidden = false;
+    if (liveEl) liveEl.hidden = true;
+  }
+
+  async function startCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStatus("Camera not supported on this device/browser. Use Safari or Chrome on the phone (HTTPS).");
+      return;
+    }
+    if (typeof MediaRecorder === "undefined") {
+      setStatus("This browser cannot record video. Update iOS/Safari or try Chrome, then tap Start camera again.");
+      return;
+    }
+    const attempts = [
+      {
+        audio: true,
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      },
+      { audio: true, video: { facingMode: "environment" } },
+      { audio: true, video: true },
+      { audio: false, video: true }
+    ];
+    let lastErr = null;
+    try {
+      stopVenueMediaStream(state.stream);
+      state.stream = null;
+      for (let i = 0; i < attempts.length; i++) {
+        try {
+          state.stream = await navigator.mediaDevices.getUserMedia(attempts[i]);
+          lastErr = null;
+          break;
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      if (!state.stream) throw lastErr || new Error("getUserMedia_failed");
+      if (liveEl) {
+        liveEl.srcObject = state.stream;
+        liveEl.hidden = false;
+        try {
+          await liveEl.play();
+        } catch (_) {}
+      }
+      if (playEl) playEl.hidden = true;
+      state.blob = null;
+      state.mime = "";
+      state.durationSec = null;
+      setButtons("preview");
+      setStatus("Camera on. Tap Record when ready.");
+    } catch (err) {
+      console.error(err);
+      const name = String((err && err.name) || "");
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        setStatus("Camera/mic blocked. Allow access for this site in the browser settings, then tap Start camera.");
+      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        setStatus("No camera found on this device.");
+      } else if (name === "NotReadableError" || name === "TrackStartError") {
+        setStatus("Camera is in use by another app. Close it and try again.");
+      } else {
+        setStatus("Could not open the camera. Check permissions and try again.");
+      }
+      setButtons("idle");
+    }
+  }
+
+  function startRecording() {
+    if (!state.stream) {
+      setStatus("Start the camera first.");
+      return;
+    }
+    if (typeof MediaRecorder === "undefined") {
+      setStatus("Recording is not supported in this browser.");
+      return;
+    }
+    state.chunks = [];
+    state.blob = null;
+    state.mime = pickVenueVideoMimeType();
+    try {
+      state.recorder = state.mime
+        ? new MediaRecorder(state.stream, { mimeType: state.mime })
+        : new MediaRecorder(state.stream);
+      if (!state.mime) state.mime = state.recorder.mimeType || "video/webm";
+    } catch (err) {
+      console.error(err);
+      setStatus("Could not start recording.");
+      return;
+    }
+    state.recorder.ondataavailable = function (ev) {
+      if (ev && ev.data && ev.data.size > 0) state.chunks.push(ev.data);
+    };
+    state.recorder.onstop = function () {
+      try {
+        if (state.maxTimer) {
+          clearTimeout(state.maxTimer);
+          state.maxTimer = null;
+        }
+      } catch (_) {}
+      const blob = new Blob(state.chunks, { type: state.mime || "video/webm" });
+      state.blob = blob;
+      if (state.startedAt) {
+        state.durationSec = Math.max(
+          0.1,
+          Math.round(((Date.now() - state.startedAt) / 1000) * 10) / 10
+        );
+      }
+      showPlayback(blob);
+      setButtons("ready");
+      setStatus("Video ready. You can Retake or Submit the venue report.");
+    };
+    try {
+      state.startedAt = Date.now();
+      state.recorder.start(1000);
+      setButtons("recording");
+      setStatus("Recording… tap Stop when finished.");
+      state.maxTimer = setTimeout(function () {
+        try {
+          if (state.recorder && state.recorder.state === "recording") state.recorder.stop();
+        } catch (_) {}
+      }, VENUE_WALKTHROUGH_MAX_MS);
+    } catch (err) {
+      console.error(err);
+      setStatus("Recording failed to start.");
+      setButtons("preview");
+    }
+  }
+
+  function stopRecording() {
+    try {
+      if (state.recorder && state.recorder.state === "recording") state.recorder.stop();
+    } catch (_) {}
+  }
+
+  function retake() {
+    state.blob = null;
+    state.chunks = [];
+    state.durationSec = null;
+    clearPlayback();
+    if (state.stream && liveEl) {
+      liveEl.srcObject = state.stream;
+      liveEl.hidden = false;
+      setButtons("preview");
+      setStatus("Camera on. Tap Record when ready.");
+    } else {
+      setButtons("idle");
+      setStatus("Camera ready when you tap Start camera.");
+    }
+  }
+
+  if (btnCam) btnCam.addEventListener("click", function () { void startCamera(); });
+  if (btnRec) btnRec.addEventListener("click", startRecording);
+  if (btnStop) btnStop.addEventListener("click", stopRecording);
+  if (btnRetake) btnRetake.addEventListener("click", retake);
+  setButtons("idle");
+  setStatus("Camera ready when you tap Start camera.");
+  return api;
+}
+
+async function uploadVenueWalkthroughVideo(supabase, submission, ctx, recorderApi) {
+  const blob = recorderApi && recorderApi.getBlob ? recorderApi.getBlob() : null;
+  if (!blob || !blob.size) throw new Error("Walkthrough video is required.");
+  const uid = clean(submission && submission.submittedByUserId);
+  if (!uid) throw new Error("Sign in required to upload the venue video.");
+  const mime = clean((recorderApi.getMime && recorderApi.getMime()) || blob.type || "video/webm");
+  const ext = venueVideoExtForMime(mime);
+  const kind =
+    clean(ctx.openingClosing).toLowerCase().indexOf("clos") >= 0 ? "close" : "open";
+  const day = parseReviewDate(ctx.date);
+  const stamp = String(Date.now());
+  const path = uid + "/" + day + "/" + kind + "_" + stamp + "." + ext;
+  const { error } = await supabase.storage.from(VENUE_REVIEW_VIDEO_BUCKET).upload(path, blob, {
+    contentType: mime || "video/webm",
+    upsert: false
+  });
+  if (error) throw error;
+  return {
+    path: path,
+    mime: mime,
+    durationSec: recorderApi.getDurationSec ? recorderApi.getDurationSec() : null
   };
 }
 
@@ -263,6 +637,14 @@ function showVenueReviewSuccessLocked() {
 
 function venueReviewDashboardReturnUrl() {
   try {
+    if (window.parent && window.parent !== window) {
+      try {
+        window.parent.postMessage({ type: "portal-venue-embed-close" }, window.location.origin);
+        return "about:blank";
+      } catch (_) {}
+    }
+  } catch (_) {}
+  try {
     var ret = new URLSearchParams(location.search).get("return");
     if (ret) {
       var ru = new URL(ret, location.href);
@@ -278,6 +660,10 @@ function venueReviewDashboardReturnUrl() {
     var rp = new URLSearchParams(location.search).get("rp");
     if (rp && /\.html(\?|$)/i.test(rp)) return new URL(rp, location.href).href;
   } catch (_) {}
+  try {
+    var pr = new URLSearchParams(location.search).get("portalReturn");
+    if (pr && /^https?:/i.test(pr)) return pr;
+  } catch (_) {}
   return new URL("staff_dashboard.html", location.href).href;
 }
 
@@ -285,6 +671,12 @@ function showCompletionPopupAndReturnDashboard() {
   showVenueReviewSuccessLocked();
   var dest = venueReviewDashboardReturnUrl();
   window.setTimeout(function () {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "portal-venue-embed-done" }, window.location.origin);
+        return;
+      }
+    } catch (_) {}
     try {
       window.location.assign(dest);
     } catch (_) {
@@ -376,9 +768,20 @@ function initVenueReviewPage() {
     window.setInterval(setAutomaticTime, 15000);
   } catch (_) {}
   updateNoButtonText(btnNo);
-  const ctx = contextFromQuery();
-  renderVenueContextHeader(ctx);
+  let ctx = applyRobertoSundayVenueDefaults(contextFromQuery());
+  try {
+    const boot = window.__PORTAL_VENUE_BOOT__;
+    if (boot) {
+      if (!clean(ctx.venue) && boot.venue) ctx.venue = String(boot.venue);
+      if (!clean(ctx.openingClosing) && boot.kind) ctx.openingClosing = String(boot.kind);
+      if (boot.video) ctx.requireVideo = true;
+      if (!clean(ctx.completedBy) && boot.completedBy) ctx.completedBy = String(boot.completedBy);
+      if (!clean(ctx.date) && boot.date) ctx.date = String(boot.date);
+    }
+  } catch (_) {}
+  void renderVenueContextHeader(ctx);
   void portalBindVenueReviewVoice(ctx);
+  const walkthrough = initVenueWalkthroughRecorder(ctx);
 
   function getIssueMode() {
     const m = clean(form.dataset.issueMode || "").toLowerCase();
@@ -443,7 +846,7 @@ function initVenueReviewPage() {
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     const issueMode = getIssueMode();
-    const ctx = contextFromQuery();
+    const ctxNow = contextFromQuery();
     const submitBtn = form.querySelector(".submit-btn");
 
     if (!issueMode) {
@@ -467,10 +870,21 @@ function initVenueReviewPage() {
       }
     }
 
+    if (walkthrough.required && !walkthrough.hasBlob()) {
+      try {
+        document.getElementById("venueWalkthroughPanel")?.scrollIntoView({
+          block: "center",
+          behavior: "smooth"
+        });
+      } catch (_) {}
+      alert("Please record the venue walkthrough video before submitting.");
+      return;
+    }
+
     let submission = null;
     let submissionErr = null;
     try {
-      submission = await resolveSubmissionContext(ctx);
+      submission = await resolveSubmissionContext(ctxNow);
     } catch (err) {
       submissionErr = err;
       submission = null;
@@ -482,6 +896,10 @@ function initVenueReviewPage() {
       );
       return;
     }
+    if (walkthrough.required && !clean(submission.submittedByUserId)) {
+      alert("Sign in is required to submit the walkthrough video with this venue report.");
+      return;
+    }
 
     const formState = {
       time: form.time.value,
@@ -489,14 +907,27 @@ function initVenueReviewPage() {
       issuesReported: issuesInput.value
     };
 
-    const row = buildVenueReviewRow(ctx, formState, submission);
-
     if (submitBtn) submitBtn.disabled = true;
     var successSubmitted = false;
     try {
+      if (walkthrough.required) {
+        const up = await uploadVenueWalkthroughVideo(
+          submission.supabase,
+          submission,
+          ctxNow,
+          walkthrough
+        );
+        formState.videoStoragePath = up.path;
+        formState.videoMimeType = up.mime;
+        formState.videoDurationSec = up.durationSec;
+      }
+      const row = buildVenueReviewRow(ctxNow, formState, submission);
       await submitVenueReviewToSupabase(submission.supabase, row);
       successSubmitted = true;
-      markVenueReportDoneLocal(row, ctx);
+      try {
+        walkthrough.stopAll();
+      } catch (_) {}
+      markVenueReportDoneLocal(row, ctxNow);
       showVenueReviewSuccessLocked();
       lockVenueReviewForm(form, submitBtn);
       showCompletionPopupAndReturnDashboard();

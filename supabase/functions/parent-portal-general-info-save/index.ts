@@ -14,6 +14,7 @@ import {
   parseGeneralInfoSheet,
   rebuildGeneralInfoSheet,
 } from "../_shared/participant_general_info.ts";
+import { notifyParticipantGeneralInfoChanged } from "../_shared/participant_general_info_notify.ts";
 
 function clean(v: unknown, max = 12000): string {
   return String(v ?? "").trim().slice(0, max);
@@ -52,7 +53,7 @@ Deno.serve(async (req) => {
 
   const { data: participant } = await supabase
     .from("portal_participants")
-    .select("contact_id")
+    .select("contact_id, display_name")
     .eq("parent_person_id", session.parent_person_id)
     .eq("contact_id", contactId)
     .maybeSingle();
@@ -88,6 +89,14 @@ Deno.serve(async (req) => {
   const normalizedSheet = rebuildGeneralInfoSheet(fields);
   const now = new Date().toISOString();
 
+  const { data: existing } = await supabase
+    .from("portal_participant_general_info")
+    .select("general_info_sheet")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  const prevSheet = clean(existing?.general_info_sheet, 12000);
+  const changed = prevSheet !== normalizedSheet;
+
   const { error: upsertErr } = await supabase.from("portal_participant_general_info").upsert(
     {
       contact_id: contactId,
@@ -103,11 +112,31 @@ Deno.serve(async (req) => {
     return parentPortalJsonInvalid(500);
   }
 
-  await supabase.from("portal_participant_general_info_log").insert({
-    contact_id: contactId,
-    parent_person_id: session.parent_person_id,
-    general_info_sheet: normalizedSheet,
-  });
+  let logId = "";
+  const { data: logRow } = await supabase
+    .from("portal_participant_general_info_log")
+    .insert({
+      contact_id: contactId,
+      parent_person_id: session.parent_person_id,
+      general_info_sheet: normalizedSheet,
+      source: "parent",
+    })
+    .select("id")
+    .maybeSingle();
+  if (logRow?.id) logId = String(logRow.id);
+
+  if (changed) {
+    void notifyParticipantGeneralInfoChanged(supabase, {
+      contactId,
+      source: "parent",
+      displayName: String(participant.display_name || ""),
+      logId,
+    }).then((r) => {
+      console.log("[parent-portal-general-info-save] notify", r);
+    }).catch((e) => {
+      console.warn("[parent-portal-general-info-save] notify failed", e);
+    });
+  }
 
   return new Response(
     JSON.stringify({

@@ -74,6 +74,8 @@ type NotifyBody = {
   instructorPhotoUrl?: unknown;
   instructorPhotoName?: unknown;
   contextWaId?: unknown;
+  /** True when office tapped Reply (quote this wamid). Do not infer from 24h session. */
+  quotedReply?: unknown;
   mediaBase64?: unknown;
   mediaMime?: unknown;
   mediaFilename?: unknown;
@@ -192,13 +194,20 @@ Deno.serve(async (req) => {
 
   let openSession = false;
   let contextWaId = str(payload.contextWaId, 200);
+  // Parent-app chat ids are not Meta wamids — never treat as an open WhatsApp session context.
+  if (contextWaId.startsWith("app:")) contextWaId = "";
+  const quotedReply =
+    !!contextWaId &&
+    (payload.quotedReply === true || str(payload.quotedReply, 8).toLowerCase() === "true");
+  if (!quotedReply) contextWaId = "";
+  if (channel === "whatsapp" || channel === "both") {
+    const session = await latestOpenParentWhatsappSession(admin, parentPhone || "");
+    openSession = session.open;
+  }
   if (hasMedia) {
     if (channel === "email") {
       return portalAdminJson(400, { ok: false, error: "media_requires_whatsapp" });
     }
-    const session = await latestOpenParentWhatsappSession(admin, parentPhone || "");
-    openSession = session.open;
-    if (!contextWaId && session.contextWaId) contextWaId = session.contextWaId;
     if (!openSession) {
       return portalAdminJson(409, {
         ok: false,
@@ -307,6 +316,7 @@ Deno.serve(async (req) => {
       let effectiveKind = notifyKind;
       if (
         (notifyKind === "custom" || notifyKind === "reply" || notifyKind === "whatsapp_reply") &&
+        !openSession &&
         !contextWaId
       ) {
         effectiveKind = "contact_update";
@@ -324,11 +334,13 @@ Deno.serve(async (req) => {
           contextWaId: contextWaId || undefined,
         };
       let sent = await sendParentMobileMessage(parentPhone!, whatsappBodyText, waOpts);
-      // If free-text was rejected for re-engagement, retry once with the template.
+      // Free-text rejected outside Meta 24h window → retry once with approved template.
       if (
         !sent.ok &&
         (notifyKind === "custom" || notifyKind === "reply" || notifyKind === "whatsapp_reply") &&
-        /131047|re-engagement/i.test(String(sent.error || ""))
+        /131047|re-engagement|outside.*(24|twenty)|24.?hour|session.?expir|not.?in.?allowed/i.test(
+          String(sent.error || ""),
+        )
       ) {
         sent = await sendParentMobileMessage(parentPhone!, whatsappBodyText, {
           kind: coldRetryKind,
@@ -400,6 +412,7 @@ Deno.serve(async (req) => {
       media_filename: mediaFilename || null,
       open_session: hasMedia ? openSession : null,
       context_wa_id: contextWaId || null,
+      quoted_reply: quotedReply,
       ...(waTemplateKind
         ? {
           wa_template_kind: waTemplateKind,
@@ -458,8 +471,8 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Family Web Push is additive (WhatsApp/email unchanged). Fire for hub alert kinds
-  // even when email/WhatsApp partially failed, as long as a notify log row exists.
+  // Family Web Push is additive (WhatsApp/email unchanged). Fire for parent-facing
+  // kinds even when email/WhatsApp partially failed, as long as a notify log row exists.
   if (inserted?.id && isFamilyPushNotifyKind(logRow.kind)) {
     void notifyFamilyWebPushForParentNotify({
       notifyLogId: String(inserted.id),

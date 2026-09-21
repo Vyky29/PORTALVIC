@@ -22,9 +22,20 @@
     /* weekly_notes (etc.) still return empty default reenrolment / place_kind — do not wipe general. */
     var patchHasGeneral =
       !patchSections || patchSections.indexOf("general") >= 0;
-    if (Array.isArray(patch.sessions)) base.sessions = patch.sessions;
+    var patchHasSessions =
+      !patchSections || patchSections.indexOf("sessions") >= 0;
+    var patchHasTeam =
+      !patchSections ||
+      patchSections.indexOf("general") >= 0 ||
+      patchSections.indexOf("sessions") >= 0 ||
+      patchSections.indexOf("team") >= 0;
+    if (Array.isArray(patch.sessions) && (patchHasSessions || patch.sessions.length)) {
+      base.sessions = patch.sessions;
+    }
     if (Array.isArray(patch.achievements)) base.achievements = patch.achievements;
-    if (Array.isArray(patch.team)) base.team = patch.team;
+    if (Array.isArray(patch.team) && (patchHasTeam || patch.team.length)) {
+      base.team = patch.team;
+    }
     if (Array.isArray(patch.swim_term_reviews)) {
       base.swim_term_reviews = patch.swim_term_reviews;
       if (patch.swim_term_reviews.length) base.swim_term_review_available = true;
@@ -57,7 +68,26 @@
       }
     }
     if (patch.pending_review_count != null) base.pending_review_count = patch.pending_review_count;
-    if (patch.attendance_summary) base.attendance_summary = patch.attendance_summary;
+    if (patch.attendance_summary) {
+      var nextAtt = patch.attendance_summary;
+      var prevAtt = base.attendance_summary;
+      var nextHas =
+        nextAtt &&
+        (Number(nextAtt.total) > 0 ||
+          Number(nextAtt.absent) > 0 ||
+          Number(nextAtt.attended) > 0 ||
+          (Array.isArray(nextAtt.absent_dates) && nextAtt.absent_dates.length) ||
+          (Array.isArray(nextAtt.cancelled_dates) && nextAtt.cancelled_dates.length));
+      var prevHas =
+        prevAtt &&
+        (Number(prevAtt.total) > 0 ||
+          Number(prevAtt.absent) > 0 ||
+          Number(prevAtt.attended) > 0 ||
+          (Array.isArray(prevAtt.absent_dates) && prevAtt.absent_dates.length) ||
+          (Array.isArray(prevAtt.cancelled_dates) && prevAtt.cancelled_dates.length));
+      /* Notes-only patches used to wipe Absent dates with an empty summary. */
+      if (nextHas || !prevHas) base.attendance_summary = nextAtt;
+    }
     if (Array.isArray(patch.weekly_notes)) base.weekly_notes = patch.weekly_notes;
     if (patch.weekly_note_latest !== undefined) base.weekly_note_latest = patch.weekly_note_latest;
     if (patch.feedback_year != null) base.feedback_year = patch.feedback_year;
@@ -91,7 +121,23 @@
       }
     }
     if (patch.participant && base.participant) {
+      /* Partial section loads return participant without booked_from — do not wipe. */
+      var prevBookedFrom = base.participant.booked_from;
+      var prevRegDate = base.participant.registration_date;
       Object.assign(base.participant, patch.participant);
+      if (
+        (patch.participant.booked_from == null || patch.participant.booked_from === "") &&
+        prevBookedFrom
+      ) {
+        base.participant.booked_from = prevBookedFrom;
+      }
+      if (
+        (patch.participant.registration_date == null ||
+          patch.participant.registration_date === "") &&
+        prevRegDate
+      ) {
+        base.participant.registration_date = prevRegDate;
+      }
     }
     return base;
   }
@@ -128,11 +174,19 @@
     var byContact = (payload && payload.unread_by_contact_id) || {};
     state.messaging.unreadTotal = total;
     state.messaging.unreadByContact = Object.assign({}, byContact);
+    paintFamilyHomeBadge();
   }
 
   function clearMessagingCounts() {
     state.messaging.unreadTotal = 0;
     state.messaging.unreadByContact = {};
+    paintFamilyHomeBadge();
+  }
+
+  function paintFamilyHomeBadge() {
+    if (typeof global.portalFamilySetHomeBadge === "function") {
+      global.portalFamilySetHomeBadge(state.messaging.unreadTotal || 0);
+    }
   }
 
   function unreadCountForContact(contactId) {
@@ -183,14 +237,22 @@
       },
       openContactDetails: function () {
         void loadHome({ skipAutoHub: true }).then(function () {
-          var contactCard = $("ppContactBlock");
-          if (!contactCard) return;
+          var cid = String(contactId || "").replace(/"/g, "");
+          var card = document.querySelector('#ppChildList [data-contact-id="' + cid + '"]');
+          var el = (card && card.querySelector(".pp-child-contact")) || card;
+          if (!el) return;
           try {
-            contactCard.scrollIntoView({ behavior: "smooth", block: "start" });
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
           } catch (_e) {
-            contactCard.scrollIntoView();
+            el.scrollIntoView();
           }
         });
+      },
+      signOut: function () {
+        clearSession();
+        setStep("identify");
+        hideNotice($("ppNotice"));
+        hideNotice($("ppParticipantNotice"));
       },
       saveGeneralInfo: function (fields) {
         return fetch(fn("parent-portal-general-info-save"), {
@@ -276,6 +338,17 @@
         }).then(function (res) {
           return res.json().then(function (j) {
             if (!res.ok || !j.ok) throw new Error("messages_load_failed");
+            if (!messagesBelongToSignedInFamily(j)) {
+              console.warn("[parent-portal] messages session mismatch — clearing session");
+              clearSession();
+              setStep("identify");
+              showNotice(
+                $("ppNotice"),
+                "error",
+                "That login does not match this child’s family (another parent account may still be open on this computer). Sign in again with the correct parent.",
+              );
+              throw new Error("messages_session_mismatch");
+            }
             if (opts.markRead || j.unread_messages_count === 0) {
               clearMessagingCounts();
             } else {
@@ -765,9 +838,10 @@
   }
 
   var _pingLast = { surface: "", at: 0 };
+  var _pingDisabled = false;
   function pingActivity(surface, contactId, detail) {
     var s = String(surface || "").trim().toLowerCase();
-    if (!s || !state.session.token) return Promise.resolve();
+    if (!s || !state.session.token || _pingDisabled) return Promise.resolve();
     var now = Date.now();
     if (_pingLast.surface === s && now - _pingLast.at < 20000) return Promise.resolve();
     _pingLast = { surface: s, at: now };
@@ -784,9 +858,14 @@
         contact_id: contactId || state.participant.contactId || null,
         detail: detail || null,
       }),
-    }).catch(function () {
-      /* presence ping is best-effort */
-    });
+    })
+      .then(function (res) {
+        /* Office presence only — stop hammering if session header is rejected. */
+        if (res && res.status === 401) _pingDisabled = true;
+      })
+      .catch(function () {
+        /* presence ping is best-effort */
+      });
   }
 
   function saveSession() {
@@ -823,13 +902,101 @@
     state.session.token = "";
     state.session.expiresAt = 0;
     state.home = null;
+    state.participant = { contactId: "", data: null, loaded: {} };
     clearMessagingCounts();
     try {
       localStorage.removeItem(SESSION_KEY);
+      /* Avoid opening child A from family 1 after signing in as family 2 on the same browser. */
+      localStorage.removeItem("pp_last_contact_id");
     } catch (_e) {}
     if (typeof global.portalFamilyWebPushClear === "function") {
       global.portalFamilyWebPushClear();
     }
+  }
+
+  function parentEmailsFromHome() {
+    var out = Object.create(null);
+    var kids = (state.home && state.home.children) || [];
+    kids.forEach(function (c) {
+      var e = String((c && c.email) || "")
+        .trim()
+        .toLowerCase();
+      if (e) out[e] = true;
+    });
+    var pe = String((state.home && state.home.parent && state.home.parent.email) || "")
+      .trim()
+      .toLowerCase();
+    if (pe) out[pe] = true;
+    return out;
+  }
+
+  /** Messages follow the signed-in parent session — not the child photo on screen. */
+  function messagesBelongToSignedInFamily(payload) {
+    var got = String((payload && payload.parent && payload.parent.email) || "")
+      .trim()
+      .toLowerCase();
+    if (!got) return true;
+    var allowed = parentEmailsFromHome();
+    var keys = Object.keys(allowed);
+    if (!keys.length) return true;
+    return !!allowed[got];
+  }
+
+  function familyViewFromPortalOpen(portalOpen) {
+    var o = String(portalOpen || "").trim().toLowerCase();
+    if (o === "weekly_notes") return "weekly_notes";
+    if (o === "invoices") return "invoices";
+    return "messages";
+  }
+
+  function handleFamilyPushReceived() {
+    state.messaging.unreadTotal = (Number(state.messaging.unreadTotal) || 0) + 1;
+    paintFamilyHomeBadge();
+    void refreshMessagingCountsQuiet();
+  }
+
+  async function refreshMessagingCountsQuiet() {
+    if (!state.session.token) return;
+    try {
+      var res = await fetch(fn("parent-portal-home-load"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+          "x-parent-portal-session": state.session.token,
+        },
+        body: "{}",
+      });
+      var body = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !body.ok) return;
+      if (state.step === "home") {
+        renderHome(body);
+        return;
+      }
+      applyMessagingCounts(body);
+      if (state.home && body.children) {
+        state.home.children = body.children;
+        if (body.parent) state.home.parent = body.parent;
+      }
+    } catch (_e) {}
+  }
+
+  function handleFamilyPushClick(msg) {
+    var view = familyViewFromPortalOpen(msg && msg.portalOpen);
+    var kids = (state.home && state.home.children) || [];
+    var contactId = (state.participant && state.participant.contactId) || preferredContactId(kids);
+    if (contactId) {
+      void loadParticipantDetail(contactId, view);
+      return;
+    }
+    void loadHome({ skipAutoHub: true }).then(function (ok) {
+      if (!ok) return;
+      var id = preferredContactId((state.home && state.home.children) || []);
+      if (id) void loadParticipantDetail(id, view);
+    });
   }
 
   function syncFamilyWebPush() {
@@ -1203,6 +1370,29 @@
     );
   }
 
+  function childContactOnFileHtml(c) {
+    var email = String((c && c.email) || "").trim();
+    var mobile = String((c && c.mobile) || "").trim();
+    if (mobile === "—") mobile = "";
+    var addr = (c && c.address) || {};
+    var addrParts = [addr.line1, addr.line2, addr.city, addr.postcode].filter(function (p) {
+      p = String(p || "").trim();
+      return p && p !== "—";
+    });
+    if (!email && !mobile && !addrParts.length) return "";
+    return (
+      '<div class="pp-child-contact">' +
+      '<p class="pp-muted">Contact on file</p>' +
+      (email ? '<p class="pp-contact-line">' + esc(email) + "</p>" : "") +
+      (mobile ? '<p class="pp-contact-line">' + esc(mobile) + "</p>" : "") +
+      (addrParts.length
+        ? '<p class="pp-contact-line">' + esc(addrParts.join(", ")) + "</p>"
+        : "") +
+      '<p class="pp-muted pp-contact-note">To update your details, reply to a club message or email info@clubsensational.org.</p>' +
+      "</div>"
+    );
+  }
+
   function renderHome(data) {
     state.home = data;
     applyMessagingCounts(data);
@@ -1265,7 +1455,9 @@
               "</div>" +
               '<div class="pp-child-actions">' +
               childSessionsBtnHtml(c) +
-              "</div></div>" +
+              "</div>" +
+              childContactOnFileHtml(c) +
+              "</div>" +
               (photoMissing ? childPhotoMissingNoticeHtml() : "") +
               "</article>"
             );
@@ -1273,22 +1465,6 @@
           .join("");
       }
     }
-
-    var addr = parent.address || {};
-    var addrParts = [addr.line1, addr.line2, addr.city, addr.postcode].filter(function (p) {
-      p = String(p || "").trim();
-      return p && p !== "—";
-    });
-    $("ppContactBlock").innerHTML =
-      '<p class="pp-muted">Contact on file</p>' +
-      (parent.email ? '<p class="pp-contact-line">' + esc(parent.email) + "</p>" : "") +
-      (parent.mobile && parent.mobile !== "—"
-        ? '<p class="pp-contact-line">' + esc(parent.mobile) + "</p>"
-        : "") +
-      (addrParts.length
-        ? '<p class="pp-contact-line">' + esc(addrParts.join(", ")) + "</p>"
-        : "") +
-      '<p class="pp-muted pp-contact-note">To update your details, reply to a club message or email info@clubsensational.org.</p>';
   }
 
   async function loadParticipantDetail(contactId, openView) {
@@ -1683,7 +1859,7 @@
       if (multi) {
         back.hidden = false;
         back.setAttribute("aria-label", "All children");
-        var label = back.querySelector("span");
+        var label = back.querySelector(".pp-hub-chrome-btn__label") || back.querySelector("span");
         if (label) label.textContent = "All children";
       } else {
         /* Single child: no family landing — Sign out lives on the hub chrome. */
@@ -1982,7 +2158,7 @@
         sessionStorage.setItem("pp_gocardless_flash", String(gcParam));
       } catch (_eGc) {}
     }
-    if (!contactId && (view === "messages" || view === "alerts")) {
+    if (!contactId && (view === "messages" || view === "alerts" || view === "weekly_notes" || view === "invoices")) {
       var kids = (state.home && state.home.children) || [];
       contactId = preferredContactId(kids) || "";
       if (!view) view = "messages";
@@ -2032,6 +2208,8 @@
 
   global.ParentPortalApp = {
     bootstrap: bootstrap,
+    handleFamilyPushReceived: handleFamilyPushReceived,
+    handleFamilyPushClick: handleFamilyPushClick,
     photo: {
       missingNoticeHtml: childPhotoMissingNoticeHtml,
       blockHtml: childPhotoBlockHtml,

@@ -5,8 +5,9 @@
 (function (global) {
   "use strict";
 
-  var JOB_PATH = "onboarding_job_application.html";
-  var HEALTH_PATH = "onboarding_health_questionnaire.html";
+  var JOB_PATH = "onboarding_portal.html#job";
+  var HEALTH_PATH = "onboarding_portal.html#health";
+  var HUB_PATH = "onboarding_portal.html";
 
   function trimSlash(value) {
     return String(value || "").trim().replace(/\/+$/, "");
@@ -25,10 +26,16 @@
       }
     }
     if (!origin) return u;
-    if (u.charAt(0) !== "/") u = "/" + u;
-    return origin + u;
+    var hashIdx = u.indexOf("#");
+    var pathPart = hashIdx >= 0 ? u.slice(0, hashIdx) : u;
+    var hashPart = hashIdx >= 0 ? u.slice(hashIdx) : "";
+    if (pathPart.charAt(0) !== "/") pathPart = "/" + pathPart;
+    return origin + pathPart + hashPart;
   }
 
+  if (typeof global.PORTAL_ONBOARDING_HUB_URL !== "string") {
+    global.PORTAL_ONBOARDING_HUB_URL = HUB_PATH;
+  }
   if (typeof global.PORTAL_ONBOARDING_JOB_URL !== "string") {
     global.PORTAL_ONBOARDING_JOB_URL = JOB_PATH;
   }

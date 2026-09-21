@@ -116,6 +116,7 @@
   };
 
   var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
+  var remoteSeen = {};
   /**
    * Meta cold template shells (Utility · en). Only {{1}} is editable.
    * hello → portal_parent_update_v2 · urgent → portal_parent_urgent_v1
@@ -234,13 +235,38 @@
       });
   }
 
-  function readSeenMap() {
+  function readLocalSeenMap() {
     try {
       var raw = global.localStorage && global.localStorage.getItem(SEEN_STORE_KEY);
       var obj = raw ? JSON.parse(raw) : null;
       return obj && typeof obj === "object" ? obj : {};
     } catch (_e) {
       return {};
+    }
+  }
+
+  function writeLocalSeenMap(map) {
+    try {
+      if (global.localStorage) {
+        global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map || {}));
+      }
+    } catch (_e) {}
+  }
+
+  function readSeenMap() {
+    if (typeof global.portalOfficeInboxSeenMerge === "function") {
+      return global.portalOfficeInboxSeenMerge(readLocalSeenMap(), remoteSeen);
+    }
+    return readLocalSeenMap();
+  }
+
+  async function hydrateOfficeSeen() {
+    if (typeof global.portalOfficeInboxSeenLoad !== "function") return;
+    try {
+      remoteSeen = await global.portalOfficeInboxSeenLoad("family_wa");
+      writeLocalSeenMap(readSeenMap());
+    } catch (_e) {
+      remoteSeen = remoteSeen || {};
     }
   }
 
@@ -252,12 +278,14 @@
       var next = String(iso || "");
       if (!next || next > prev) {
         map[key] = next || prev || new Date().toISOString();
-        if (global.localStorage) {
-          global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map));
-        }
+        remoteSeen[key] = map[key];
+        writeLocalSeenMap(map);
         try {
           global.dispatchEvent(new CustomEvent("portal:family-msg-seen"));
         } catch (_ev) {}
+        if (typeof global.portalOfficeInboxSeenUpsert === "function") {
+          void global.portalOfficeInboxSeenUpsert("family_wa", key, map[key]);
+        }
       }
     } catch (_e) {}
   }
@@ -279,6 +307,8 @@
     payment_due: "Payment reminder",
     instructor_change: "Instructor change",
     instructor_reassign: "Instructor change",
+    time_change: "Time change",
+    session_time_change: "Time change",
     absence_announced: "Absence",
     makeup_scheduled: "Make up session",
     trial_scheduled: "Trial session",
@@ -429,6 +459,34 @@
     return hit ? String(hit) : "";
   }
 
+  function truthyFlag(v) {
+    if (v === true) return true;
+    var s = String(v == null ? "" : v).trim().toLowerCase();
+    return s === "true" || s === "yes" || s === "y" || s === "1";
+  }
+
+  function falsyInClass(v) {
+    if (v === false) return true;
+    var s = String(v == null ? "" : v).trim().toLowerCase();
+    return s === "false" || s === "no" || s === "n" || s === "0";
+  }
+
+  /**
+   * lead = waiting list / web-email interested (not enrolled).
+   * former = not in class and not waiting (released / old).
+   * client = in class.
+   */
+  function contactKindFromFlags(inClass, onWaitingList) {
+    var waiting = truthyFlag(onWaitingList);
+    var enrolled = truthyFlag(inClass);
+    var notEnrolled = falsyInClass(inClass);
+    if (waiting && !enrolled) return "lead";
+    if (waiting && enrolled) return "client";
+    if (enrolled) return "client";
+    if (notEnrolled) return "former";
+    return "";
+  }
+
   function normalizeDirContact(row) {
     if (!row) return null;
     var child = String(row.child_display || row.child || row.client || "").trim();
@@ -437,6 +495,20 @@
     var contactId = String(row.contact_id || row.contactId || "").trim();
     var parentPersonId = String(row.parent_person_id || row.parentPersonId || "").trim();
     if (!child && !mobile && !contactId) return null;
+    var inClassRaw =
+      row.in_class != null
+        ? row.in_class
+        : row.inClass != null
+          ? row.inClass
+          : null;
+    var waitingRaw =
+      row.on_waiting_list != null
+        ? row.on_waiting_list
+        : row.onWaitingList != null
+          ? row.onWaitingList
+          : null;
+    var fundingLabel = String(row.funding_label || row.fundingLabel || "").trim();
+    var contactKind = contactKindFromFlags(inClassRaw, waitingRaw);
     return {
       contactId: contactId,
       parentPersonId: parentPersonId,
@@ -449,6 +521,10 @@
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, " ")
         .trim(),
+      inClass: truthyFlag(inClassRaw),
+      onWaitingList: truthyFlag(waitingRaw),
+      fundingLabel: fundingLabel,
+      contactKind: contactKind,
     };
   }
 
@@ -498,6 +574,47 @@
     }
   }
 
+  /** Prefer CLIENT over OLD/Former when several children share one parent WhatsApp. */
+  function isReleasedOldChildName(name) {
+    var n = String(name || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+    if (!n) return false;
+    var first = n.split(/\s+/)[0] || "";
+    /* Aug 15 unpaid release — Karo / Shire stay OLD; never label the family thread as them. */
+    return first === "karo" || first === "shire";
+  }
+
+  function contactPreferenceScore(c) {
+    if (!c) return 0;
+    var score = 0;
+    if (c.inClass) score += 100;
+    var kind = String(c.contactKind || "").toLowerCase();
+    if (kind === "client") score += 50;
+    else if (kind === "lead") score += 20;
+    else if (kind === "former") score += 5;
+    if (isReleasedOldChildName(c.child)) score -= 80;
+    return score;
+  }
+
+  function applyPreferredChildOnto(existing, c) {
+    if (!existing || !c || !c.child) return;
+    if (
+      existing.child &&
+      contactPreferenceScore(c) < contactPreferenceScore(existing)
+    ) {
+      return;
+    }
+    existing.child = c.child;
+    existing.childNorm = c.childNorm || existing.childNorm;
+    if (c.contactKind) existing.contactKind = c.contactKind;
+    if (c.fundingLabel) existing.fundingLabel = c.fundingLabel;
+    existing.inClass = !!c.inClass;
+    existing.onWaitingList = !!c.onWaitingList;
+    if (c.contactId) existing.contactId = c.contactId;
+  }
+
   function mergeContactDirectories(preferred, fallback) {
     var byPhone = Object.create(null);
     var byParentKey = Object.create(null);
@@ -522,10 +639,7 @@
             existing.sendDigits = c.sendDigits || existing.sendDigits;
           }
           if (c.parent) existing.parent = c.parent;
-          if (c.child) {
-            existing.child = c.child;
-            existing.childNorm = c.childNorm || existing.childNorm;
-          }
+          applyPreferredChildOnto(existing, c);
           if (c.contactId && !existing.contactId) existing.contactId = c.contactId;
           if (c.parentPersonId && !existing.parentPersonId) {
             existing.parentPersonId = c.parentPersonId;
@@ -537,10 +651,7 @@
             existing.sendDigits = c.sendDigits || existing.sendDigits;
           }
           if (!existing.parent && c.parent) existing.parent = c.parent;
-          if (!existing.child && c.child) {
-            existing.child = c.child;
-            existing.childNorm = c.childNorm || existing.childNorm;
-          }
+          applyPreferredChildOnto(existing, c);
           if (!existing.parentPersonId && c.parentPersonId) {
             existing.parentPersonId = c.parentPersonId;
           }
@@ -567,20 +678,27 @@
     var list = directory || state.contactDirectory || [];
     if (!t || !list.length) return null;
     var i;
+    var hits = [];
     /* Match by WhatsApp thread phone only — never by child (co-parents share a child). */
     var threadKey = phoneMatchKey(t.phone);
     if (threadKey) {
       for (i = 0; i < list.length; i++) {
-        if (list[i].matchKey && list[i].matchKey === threadKey) return list[i];
+        if (list[i].matchKey && list[i].matchKey === threadKey) hits.push(list[i]);
       }
     }
-    var threadDigits = canonicalPhoneDigits(t.phone) || phoneDigits(t.phone);
-    if (threadDigits) {
-      for (i = 0; i < list.length; i++) {
-        if (list[i].sendDigits && list[i].sendDigits === threadDigits) return list[i];
+    if (!hits.length) {
+      var threadDigits = canonicalPhoneDigits(t.phone) || phoneDigits(t.phone);
+      if (threadDigits) {
+        for (i = 0; i < list.length; i++) {
+          if (list[i].sendDigits && list[i].sendDigits === threadDigits) hits.push(list[i]);
+        }
       }
     }
-    return null;
+    if (!hits.length) return null;
+    hits.sort(function (a, b) {
+      return contactPreferenceScore(b) - contactPreferenceScore(a);
+    });
+    return hits[0];
   }
 
   function enrichThreadsWithProfilePhones(threads) {
@@ -597,6 +715,12 @@
       t.phoneFromProfile = !!(remapped && remapped !== threadDigits);
       if (contact && contact.parent) t.parentName = contact.parent;
       if (contact && contact.child) t.client = contact.child;
+      if (contact) {
+        t.contactKind = contact.contactKind || "";
+        t.inClass = !!contact.inClass;
+        t.onWaitingList = !!contact.onWaitingList;
+        t.fundingLabel = contact.fundingLabel || "";
+      }
       /* Coordinator phones win over any mis-stamped outbound (Kate/Maire → Jordan). */
       var ov = knownWaThreadOverride(t.phone || t.sendPhone);
       if (ov) {
@@ -626,6 +750,9 @@
     if (!d) return "";
     if (/131047|re-engagement/i.test(d)) {
       return "Outside WhatsApp 24h window — cold message needs the approved template (portal will use it automatically on resend).";
+    }
+    if (/131049|healthy ecosystem/i.test(d)) {
+      return "Meta blocked this template (131049). This test number has had too many office templates without a reply from the WhatsApp app. Ask them to message the club number on Phone first, then free-text works. Real parents who already wrote back still receive.";
     }
     if (/131026|undeliverable|not on whatsapp/i.test(d)) {
       return "Number may not be on WhatsApp or cannot receive messages.";
@@ -752,7 +879,13 @@
       .trim();
     if (!na || !nb) return false;
     if (na === nb) return true;
-    if (na.indexOf(nb) === 0 || nb.indexOf(na) === 0) return true;
+    /*
+     * First-token match only when one side is a single token (e.g. "Kareena" vs
+     * "Kareena Al hassani"). Do NOT prefix-match "Karo" → "Kareena".
+     */
+    var pa = na.split(/\s+/);
+    var pb = nb.split(/\s+/);
+    if (pa[0] && pa[0] === pb[0] && (pa.length === 1 || pb.length === 1)) return true;
     return false;
   }
 
@@ -1258,6 +1391,7 @@
   /** Identity fields only — never staff sender email (would match every thread Victor sent). */
   function threadIdentityHay(t) {
     var phoneKey = phoneMatchKey(t.phone || t.sendPhone || "");
+    var kind = String(t.contactKind || "").toLowerCase();
     return foldSearchText(
       [
         t.name,
@@ -1270,6 +1404,9 @@
         phoneKey,
         t.fromDirectory ? "directory" : "",
         t.coordinatorThread ? "jordan acat h&f" : "",
+        kind === "lead" ? "lead interested waiting list web email" : "",
+        kind === "former" ? "former old client released" : "",
+        t.fundingLabel || "",
       ].join(" ")
     );
   }
@@ -1337,6 +1474,8 @@
     if (outcome === "failed" && !t.hasFailed) return false;
     if (outcome === "sent" && !t.hasSent) return false;
     if (outcome === "unread" && !isThreadUnread(t)) return false;
+    if (outcome === "leads" && String(t.contactKind || "") !== "lead") return false;
+    if (outcome === "clients" && String(t.contactKind || "") === "lead") return false;
     if (!q) return true;
     if (threadPhoneMatchesQuery(t, qRaw)) return true;
     if (hayMatchesQuery(threadIdentityHay(t), q)) return true;
@@ -1350,7 +1489,7 @@
     var q = foldSearchText(qRaw);
     if (q.length < 2) return [];
     var outcome = String(state.outcome || "all").toLowerCase();
-    if (outcome && outcome !== "all") return [];
+    if (outcome && outcome !== "all" && outcome !== "leads") return [];
     var existing = Object.create(null);
     (state.threads || []).forEach(function (t) {
       var d = phoneDigits(t.phone || t.sendPhone || "");
@@ -1361,10 +1500,11 @@
     var out = [];
     (state.contactDirectory || []).forEach(function (c) {
       if (!c || !c.mobile) return;
+      if (outcome === "leads" && c.contactKind !== "lead") return;
       var digits = c.sendDigits || canonicalPhoneDigits(c.mobile) || phoneDigits(c.mobile);
       if (!digits || existing[digits] || existing[c.matchKey]) return;
       var hay = foldSearchText(
-        [c.parent, c.child, c.mobile, digits, c.contactId].join(" ")
+        [c.parent, c.child, c.mobile, digits, c.contactId, c.contactKind === "lead" ? "lead interested" : ""].join(" ")
       );
       if (!phoneQueryMatches(c.mobile, qRaw) && !phoneQueryMatches(digits, qRaw) && !hayMatchesQuery(hay, q)) {
         return;
@@ -1380,6 +1520,10 @@
         sendPhone: digits,
         profilePhone: digits,
         phoneFromProfile: true,
+        contactKind: c.contactKind || "",
+        inClass: !!c.inClass,
+        onWaitingList: !!c.onWaitingList,
+        fundingLabel: c.fundingLabel || "",
         events: [],
         lastAt: "",
         hasInbound: false,
@@ -1450,6 +1594,47 @@
     return String(ev.row.whatsapp_message_id || "").trim();
   }
 
+  function eventContextWaId(ev) {
+    if (!ev || !ev.row) return "";
+    var meta = ev.row.meta && typeof ev.row.meta === "object" ? ev.row.meta : {};
+    if (ev.dir === "out") {
+      if (!meta.quoted_reply) return "";
+      return String(meta.context_wa_id || "").trim();
+    }
+    return "";
+  }
+
+  function threadEventByWaIdMap(thread) {
+    var map = Object.create(null);
+    ((thread && thread.events) || []).forEach(function (ev) {
+      var id = eventWaMessageId(ev);
+      if (id) map[id] = ev;
+    });
+    return map;
+  }
+
+  function renderQuoteHtml(ev, byWaId) {
+    var ctxId = eventContextWaId(ev);
+    if (!ctxId || ctxId.indexOf("app:") === 0) return "";
+    if (ctxId === eventWaMessageId(ev)) return "";
+    var quoted = byWaId && byWaId[ctxId] ? byWaId[ctxId] : null;
+    var who = quoted ? (quoted.dir === "in" ? "parent" : "us") : "a previous message";
+    var preview = quoted ? replyPreviewForEvent(quoted) : "Tap to find original";
+    if (!quoted && ev.dir === "in") preview = "Previous message";
+    return (
+      '<button type="button" class="portal-pnlog-quote" data-quote-wa-id="' +
+      esc(ctxId) +
+      '" title="Show the message this replies to">' +
+      '<span class="portal-pnlog-quote__who">Replying to ' +
+      esc(who) +
+      "</span>" +
+      '<span class="portal-pnlog-quote__text">' +
+      esc(preview) +
+      "</span>" +
+      "</button>"
+    );
+  }
+
   function canReplyToEvent(ev) {
     var id = eventWaMessageId(ev);
     if (!id || id.indexOf("app:") === 0) return false;
@@ -1474,7 +1659,7 @@
     return "Message";
   }
 
-  function renderBubble(ev) {
+  function renderBubble(ev, byWaId) {
     var side = ev.dir === "in" ? "in" : "out";
     var metaBits = [];
     var errTip = "";
@@ -1500,6 +1685,7 @@
     var type = String(ev.messageType || "").toLowerCase();
     var isMediaPlaceholder =
       /^\[(sticker|image|video|audio|document)\]$/i.test(rawBody.trim());
+    var quoteHtml = isReaction ? "" : renderQuoteHtml(ev, byWaId);
     var contentHtml = "";
     if (isReaction) {
       contentHtml = '<div class="portal-pnlog-bubble__reaction">' + esc(rawBody) + "</div>";
@@ -1541,24 +1727,6 @@
         esc(waMid) +
         '" title="Reply to this message (quote in WhatsApp)">Reply</button>';
     }
-    if (
-      ev.dir === "out" &&
-      rawBody &&
-      !isMediaPlaceholder &&
-      !isReaction &&
-      !mediaHtml &&
-      ev.status !== "failed" &&
-      ev.id &&
-      waMid &&
-      !String(waMid).startsWith("app:")
-    ) {
-      actionHtml +=
-        '<button type="button" class="portal-pnlog-bubble__edit" data-edit-log-id="' +
-        esc(String(ev.id)) +
-        '" data-edit-wa-id="' +
-        esc(waMid) +
-        '" title="Send a quoted correction (WhatsApp cannot rewrite the old bubble)">Correct</button>';
-    }
     return (
       '<div class="portal-pnlog-bubble portal-pnlog-bubble--' +
       side +
@@ -1566,6 +1734,7 @@
       '"' +
       (waMid ? ' data-wa-id="' + esc(waMid) + '"' : "") +
       ">" +
+      quoteHtml +
       mediaHtml +
       contentHtml +
       errHtml +
@@ -1690,6 +1859,21 @@
     syncComposerSendingState();
   }
 
+  function contactKindChipHtml(t) {
+    var kind = String((t && t.contactKind) || "").toLowerCase();
+    if (kind === "lead") {
+      return (
+        '<span class="portal-pnlog-chip portal-pnlog-chip--lead" title="Web / email lead — interested, not an enrolled client">Lead</span>'
+      );
+    }
+    if (kind === "former") {
+      return (
+        '<span class="portal-pnlog-chip portal-pnlog-chip--former" title="Not in class — former / released place">Former</span>'
+      );
+    }
+    return "";
+  }
+
   function renderPaneHeadHtml(t) {
     if (!t) return "";
     var title = t.name;
@@ -1698,12 +1882,14 @@
     }
     var participant = t.client || "";
     var enrolledHtml = participant ? enrolledChipsForClient(participant) : "";
+    var kindHtml = contactKindChipHtml(t);
     var subline = threadPhoneForUi(t) + (participant ? " · " + participant : "");
     return (
       '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" id="portalPnlogBack">← Back</button>' +
       '<div class="portal-pnlog-pane-head__text">' +
       '<div class="portal-pnlog-pane-head__who">' +
       esc(title) +
+      kindHtml +
       "</div>" +
       '<div class="portal-pnlog-pane-head__sub-row">' +
       '<div class="portal-pnlog-pane-head__sub muted">' +
@@ -1719,7 +1905,12 @@
     if (!t.events.length) {
       return '<p class="muted portal-pnlog-empty">No messages in this thread yet.</p>';
     }
-    return t.events.map(renderBubble).join("");
+    var byWaId = threadEventByWaIdMap(t);
+    return t.events
+      .map(function (ev) {
+        return renderBubble(ev, byWaId);
+      })
+      .join("");
   }
 
   function threadEventsSig(t) {
@@ -1851,6 +2042,9 @@
   function renderConvListItem(t) {
     var unread = isThreadUnread(t);
     var sel = t.key === state.selectedKey ? " is-selected" : "";
+    var kind = String(t.contactKind || "").toLowerCase();
+    var kindCls =
+      kind === "lead" ? " portal-pnlog-conv--lead" : kind === "former" ? " portal-pnlog-conv--former" : "";
     var sub = t.events.length
       ? bodyPreview(clientFacingOutboundBody(t.events[t.events.length - 1]))
       : t.fromDirectory
@@ -1862,9 +2056,13 @@
     if (t.client && namesRoughlySame(headName, t.client) && t.waContact && !namesRoughlySame(t.waContact, t.client)) {
       headName = t.waContact;
     }
+    var chips = "";
+    chips += contactKindChipHtml(t);
+    if (unread) chips += '<span class="portal-pnlog-chip portal-pnlog-chip--unread">Unread</span>';
     return (
       '<button type="button" class="portal-pnlog-conv' +
       sel +
+      kindCls +
       (unread ? " portal-pnlog-conv--unread" : "") +
       '" data-thread-key="' +
       esc(t.key) +
@@ -1882,7 +2080,7 @@
       '<span class="portal-pnlog-conv__preview muted">' +
       esc(sub) +
       "</span>" +
-      (unread ? '<span class="portal-pnlog-chip portal-pnlog-chip--unread">Unread</span>' : "") +
+      (chips ? '<span class="portal-pnlog-conv__chips">' + chips + "</span>" : "") +
       "</button>"
     );
   }
@@ -1927,11 +2125,6 @@
     var textareaMax = "4000";
     var coldTpl = activeColdTemplate();
     if (needsTemplate) {
-      sessionNote =
-        '<div class="portal-pnlog-composer__tpl-banner" role="status">' +
-        "<strong>Needs Meta template</strong> — no open 24h window. " +
-        "Choose a shell, then edit only <code>{{1}}</code>. <strong>Chat history stays above — scroll it to read.</strong>" +
-        "</div>";
       var tplPick =
         '<div class="portal-pnlog-composer__tpl-pick" role="radiogroup" aria-label="WhatsApp template">' +
         WA_COLD_TEMPLATES.map(function (tpl) {
@@ -1952,26 +2145,35 @@
           );
         }).join("") +
         "</div>";
-      templateShell =
+      sessionNote =
+        '<div class="portal-pnlog-composer__tpl-banner" role="status">' +
+        '<span class="portal-pnlog-composer__tpl-banner-txt">' +
+        "<strong>Needs Meta template</strong> — no open WhatsApp Phone window " +
+        "(Parent app messages do not open Meta's 24h session). " +
+        "Choose a shell, then edit only <code>{{1}}</code>. " +
+        "<strong>Chat history stays above — scroll it to read.</strong>" +
+        "</span>" +
         tplPick +
+        "</div>";
+      templateShell =
         '<div class="portal-pnlog-composer__tpl-shell">' +
         '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplPrefix" aria-hidden="true">' +
         esc(String(coldTpl.prefix || "").trim()) +
-        "</div>" +
-        '<label class="portal-pnlog-composer__tpl-mid-lab muted" for="portalPnlogComposerInput">Editable {{1}}</label>';
+        "</div>";
       textareaPlaceholder =
-        "Write {{1}} here — use a blank line between paragraphs (Meta cannot keep real line breaks; preview shows them as separate lines)…";
+        "Write {{1}} here — use a blank line between paragraphs (Meta flattens real line breaks)…";
       textareaMax = String(WA_TEMPLATE_BODY_MAX);
     } else if (openSession && !state.editing) {
       sessionNote =
-        '<p class="portal-pnlog-composer__session-open muted" role="status">24h window open — free-text reply (no Meta template).</p>';
+        '<p class="portal-pnlog-composer__session-open muted" role="status">WhatsApp 24h window open (parent messaged on Phone) — free-text reply.</p>';
     }
     var afterTextarea = needsTemplate
       ? '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplSuffix" aria-hidden="true">' +
         esc(String(coldTpl.suffix || "").trim()) +
-        "</div></div>" +
-        '<p id="portalPnlogTplLen" class="portal-pnlog-composer__tpl-len muted"></p>' +
-        coldTemplatePreviewHtml(draft)
+        "</div></div>"
+      : "";
+    var tplLenHtml = needsTemplate
+      ? '<p id="portalPnlogTplLen" class="portal-pnlog-composer__tpl-len muted"></p>'
       : "";
     return (
       '<div class="portal-pnlog-composer' +
@@ -2024,7 +2226,10 @@
       esc(draft) +
       "</textarea>" +
       afterTextarea +
-      '<div class="portal-pnlog-composer__bar">' +
+      '<div class="portal-pnlog-composer__bar' +
+      (needsTemplate ? " portal-pnlog-composer__bar--tpl" : "") +
+      '">' +
+      tplLenHtml +
       '<p id="portalPnlogComposerStatus" class="portal-pnlog-composer__status muted" role="status"></p>' +
       '<button type="button" class="btn btn--pri portal-pnlog-composer__send" id="portalPnlogComposerSend"' +
       disabled +
@@ -2195,12 +2400,24 @@
     });
   }
 
+  /** Meta 24h window opens only on real WhatsApp Phone inbound — not Parent app chat. */
+  function inboundOpensWhatsappSession(ev) {
+    if (!ev || ev.dir !== "in") return false;
+    if (ev.fromApp) return false;
+    var waId = "";
+    if (ev.row) {
+      waId = String(ev.row.wa_message_id || ev.row.context_wa_id || "").trim();
+    }
+    if (!waId || waId.indexOf("app:") === 0) return false;
+    return true;
+  }
+
   function threadHasOpenWhatsappSession(t) {
     if (!t || !Array.isArray(t.events)) return false;
     var cutoff = Date.now() - 24 * 60 * 60 * 1000;
     for (var i = t.events.length - 1; i >= 0; i--) {
       var ev = t.events[i];
-      if (!ev || ev.dir !== "in") continue;
+      if (!inboundOpensWhatsappSession(ev)) continue;
       var when = Date.parse(ev.when || "");
       return Number.isFinite(when) && when >= cutoff;
     }
@@ -2210,7 +2427,6 @@
   /**
    * Meta rejects newlines/tabs in template {{1}}.
    * Blank line (paragraph) → " — " · single line break → " · "
-   * Preview re-expands those markers to real line breaks for the admin.
    */
   function flattenForWhatsappTemplate(text) {
     return String(text || "")
@@ -2227,63 +2443,24 @@
       .slice(0, WA_TEMPLATE_BODY_MAX);
   }
 
-  /** Admin preview only: show Meta-safe markers as paragraphs/lines. */
-  function coldTemplateVarHtml(flat) {
-    return esc(flat || "…")
-      .replace(/ — /g, "<br><br>")
-      .replace(/ · /g, "<br>");
-  }
-
-  function coldTemplatePreviewHtml(body) {
-    var tpl = activeColdTemplate();
-    var mid = flattenForWhatsappTemplate(body);
-    return (
-      '<div class="portal-pnlog-composer__tpl-preview" id="portalPnlogTplPreview" aria-live="polite">' +
-      '<div class="portal-pnlog-composer__tpl-preview-lab">WhatsApp will send · ' +
-      esc(tpl.label) +
-      "</div>" +
-      '<div class="portal-pnlog-composer__tpl-preview-body">' +
-      esc(tpl.prefix) +
-      '<span class="portal-pnlog-composer__tpl-var">' +
-      coldTemplateVarHtml(mid) +
-      "</span>" +
-      esc(tpl.suffix) +
-      "</div></div>"
-    );
-  }
-
   function syncColdTemplatePreview() {
     var ta = document.getElementById("portalPnlogComposerInput");
-    var prev = document.getElementById("portalPnlogTplPreview");
     var lenEl = document.getElementById("portalPnlogTplLen");
     var tpl = activeColdTemplate();
     var prefixEl = document.getElementById("portalPnlogTplPrefix");
     var suffixEl = document.getElementById("portalPnlogTplSuffix");
     if (prefixEl) prefixEl.textContent = String(tpl.prefix || "").trim();
     if (suffixEl) suffixEl.textContent = String(tpl.suffix || "").trim();
-    if (!ta || !prev) return;
+    if (!ta || !lenEl) return;
     var flat = flattenForWhatsappTemplate(ta.value);
-    var lab = prev.querySelector(".portal-pnlog-composer__tpl-preview-lab");
-    if (lab) lab.textContent = "WhatsApp will send · " + tpl.label;
-    var bodyEl = prev.querySelector(".portal-pnlog-composer__tpl-preview-body");
-    if (bodyEl) {
-      bodyEl.innerHTML =
-        esc(tpl.prefix) +
-        '<span class="portal-pnlog-composer__tpl-var">' +
-        coldTemplateVarHtml(flat) +
-        "</span>" +
-        esc(tpl.suffix);
-    }
-    if (lenEl) {
-      var n = flat.length;
-      lenEl.textContent =
-        n +
-        " / " +
-        WA_TEMPLATE_BODY_MAX +
-        " characters in {{1}}" +
-        (n >= WA_TEMPLATE_BODY_MAX ? " — at limit" : "");
-      lenEl.classList.toggle("is-over", n >= WA_TEMPLATE_BODY_MAX);
-    }
+    var n = flat.length;
+    lenEl.textContent =
+      n +
+      " / " +
+      WA_TEMPLATE_BODY_MAX +
+      " characters in {{1}}" +
+      (n >= WA_TEMPLATE_BODY_MAX ? " — at limit" : "");
+    lenEl.classList.toggle("is-over", n >= WA_TEMPLATE_BODY_MAX);
   }
 
   function syncAudioButton() {
@@ -2406,24 +2583,19 @@
       return;
     }
     var contextWaId = "";
-    if (editing && editing.waMessageId) {
-      contextWaId = String(editing.waMessageId).trim();
-    } else if (
+    var quotedReply = false;
+    if (
       openSession &&
       state.replyTo &&
       state.replyTo.threadKey === t.key &&
       state.replyTo.waMessageId
     ) {
       contextWaId = String(state.replyTo.waMessageId).trim();
-    } else if (openSession && t.lastInboundId) {
-      for (var i = t.events.length - 1; i >= 0; i--) {
-        if (t.events[i].dir === "in" && t.events[i].row) {
-          contextWaId = String(
-            t.events[i].row.wa_message_id || t.events[i].row.context_wa_id || ""
-          ).trim();
-          break;
-        }
-      }
+      quotedReply = true;
+    }
+    if (contextWaId.indexOf("app:") === 0) {
+      contextWaId = "";
+      quotedReply = false;
     }
     /* Cold outbound uses a Meta template; {{1}} must stay short (Meta #132005).
        Quote-corrections always use free-text with context (need open 24h window). */
@@ -2487,7 +2659,8 @@
       clientDisplay: ctx.clientDisplay || t.client || null,
       sessionDate: ctx.sessionDate || null,
       venue: ctx.venue || null,
-      contextWaId: contextWaId || null,
+      contextWaId: quotedReply ? contextWaId : null,
+      quotedReply: quotedReply,
     };
     if (editing && editing.waMessageId) {
       sendPayload.editWhatsappMessageId = editing.waMessageId;
@@ -2546,6 +2719,32 @@
     host.setAttribute("data-chat-bound", "1");
 
     host.addEventListener("click", function (e) {
+      var quoteBtn = e.target.closest(".portal-pnlog-quote[data-quote-wa-id]");
+      if (quoteBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var quoteId = quoteBtn.getAttribute("data-quote-wa-id") || "";
+        var threadEl = document.getElementById("portalPnlogThread");
+        var hit = null;
+        if (threadEl && quoteId) {
+          var bubbles = threadEl.querySelectorAll(".portal-pnlog-bubble[data-wa-id]");
+          for (var qi = 0; qi < bubbles.length; qi++) {
+            if (bubbles[qi].getAttribute("data-wa-id") === quoteId) {
+              hit = bubbles[qi];
+              break;
+            }
+          }
+        }
+        if (!hit) {
+          cfg.toast("Original message is not in this thread view.", "err");
+          return;
+        }
+        hit.scrollIntoView({ block: "center", behavior: "smooth" });
+        hit.classList.remove("portal-pnlog-bubble--flash");
+        void hit.offsetWidth;
+        hit.classList.add("portal-pnlog-bubble--flash");
+        return;
+      }
       var back = e.target.closest("#portalPnlogBack");
       if (back) {
         e.preventDefault();
@@ -2641,29 +2840,6 @@
             : "Message";
         }
         startReplyToMessage(replyWaId, preview || "Message", replySide);
-        return;
-      }
-      var editBtn = e.target.closest(".portal-pnlog-bubble__edit[data-edit-log-id]");
-      if (editBtn) {
-        e.preventDefault();
-        var editLogId = editBtn.getAttribute("data-edit-log-id") || "";
-        var editWaId = editBtn.getAttribute("data-edit-wa-id") || "";
-        var bubble = editBtn.closest(".portal-pnlog-bubble");
-        var textEl = bubble && bubble.querySelector(".portal-pnlog-bubble__text");
-        var bodyFromDom = textEl
-          ? String(textEl.innerText || textEl.textContent || "").trim()
-          : "";
-        var editThread = findThread(state.selectedKey);
-        var bodyFromEvent = "";
-        if (editThread && editThread.events) {
-          for (var ei = 0; ei < editThread.events.length; ei++) {
-            if (String(editThread.events[ei].id || "") === editLogId) {
-              bodyFromEvent = String(editThread.events[ei].body || "");
-              break;
-            }
-          }
-        }
-        startEditOutbound(editLogId, editWaId, bodyFromEvent || bodyFromDom);
         return;
       }
       var sendBtn = e.target.closest("#portalPnlogComposerSend");
@@ -2783,6 +2959,7 @@
 
   async function loadRows(force) {
     if (state.loading && !force) return;
+    await hydrateOfficeSeen();
     var client = cfg.getClient();
     var statusEl = document.getElementById("portalParentNotifyLogStatus");
     var listEl = document.getElementById("portalParentNotifyLogList");
@@ -2839,14 +3016,14 @@
       state.contactDirectory = mergeContactDirectories(liveDir, localDir);
       state.threads = enrichThreadsWithProfilePhones(buildWhatsAppThreads(state.timeline));
       if (statusEl) {
-        var note = state.timeline.length >= FETCH_LIMIT ? "Showing latest " + FETCH_LIMIT + " messages." : "";
         if (!state.inboundAvailable) {
-          note =
-            (note ? note + " " : "") +
+          statusEl.textContent =
             "Inbound replies not available yet — apply DB migration and connect Meta webhook.";
+          statusEl.className = "portal-forms-status";
+        } else {
+          statusEl.textContent = "";
+          statusEl.className = "portal-forms-status";
         }
-        statusEl.textContent = note;
-        statusEl.className = "portal-forms-status";
       }
       renderChat(true);
     } catch (e) {
@@ -2867,20 +3044,14 @@
   }
 
   function viewHtml() {
-    // No page-intro in the admin head (that column stays narrow/right). Full-width info lives in-body.
     return (
       '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
-      '<p class="portal-pnlog-info" role="note">' +
-      "WhatsApp conversations via the Business API — pick a family on the left, read the thread, and reply in the box below (no email on this screen). " +
-      "Use <strong>Reply</strong> on a bubble to quote that message (like swipe-to-reply). " +
-      "Search also finds families from Contacts even if there is no WhatsApp history yet. " +
-      "Delivery ticks: Sent → Delivered → Read. Refreshes every 15s. " +
-      "When you see <em>Needs Meta template</em>, scroll the chat above the purple box to read earlier messages." +
-      "</p>" +
       '<div class="portal-pnlog-toolbar">' +
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search parent, participant, phone…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogOutcome" class="sel portal-pnlog-toolbar__sel" aria-label="Filter">' +
       '<option value="all">All</option>' +
+      '<option value="leads">Leads / interested</option>' +
+      '<option value="clients">Clients (not leads)</option>' +
       '<option value="unread">Unread</option>' +
       '<option value="replies">Has replies</option>' +
       '<option value="sent">Sent OK</option>' +
@@ -2965,6 +3136,7 @@
     client = client || (cfg.getClient && cfg.getClient());
     if (!client || typeof client.from !== "function") return 0;
     try {
+      await hydrateOfficeSeen();
       /* Prefer the same thread model as the inbox once it has loaded. */
       if (state.threads && state.threads.length) {
         var fromThreads = 0;
@@ -3017,10 +3189,215 @@
     }
   }
 
+  var familyToastTimer = 0;
+  var familyToastCount = 0;
+  var lastFamilyAlertKey = "";
+  var lastFamilyAlertAt = 0;
+
+  function ensureFamilyToast() {
+    var existing = document.getElementById("portalFamilyMsgToast");
+    if (existing) return existing;
+    if (!document.getElementById("portalFamilyMsgToastCss")) {
+      var st = document.createElement("style");
+      st.id = "portalFamilyMsgToastCss";
+      st.textContent =
+        "#portalFamilyMsgToast{position:fixed;left:12px;right:12px;top:max(12px,env(safe-area-inset-top));z-index:2147482500;display:flex;gap:10px;align-items:center;max-width:28rem;margin:0 auto;padding:12px 12px 12px 14px;border-radius:16px;background:#173247;color:#fff;box-shadow:0 12px 32px rgba(15,23,42,.35);border:1px solid rgba(255,255,255,.14);min-width:0}" +
+        "#portalFamilyMsgToast[hidden]{display:none!important}" +
+        "#portalFamilyMsgToast .portal-family-toast-copy{min-width:0;flex:1}" +
+        "#portalFamilyMsgToast strong{display:block;font-size:13px;line-height:1.25;overflow-wrap:anywhere}" +
+        "#portalFamilyMsgToast span{display:block;margin-top:2px;font-size:12px;color:rgba(255,255,255,.78);overflow-wrap:anywhere;max-height:2.6em;overflow:hidden}" +
+        "#portalFamilyMsgToastOpen{flex:0 0 auto;padding:8px 12px;border:0;border-radius:999px;background:#16a34a;color:#fff;font:inherit;font-size:12px;font-weight:800;cursor:pointer}";
+      (document.head || document.documentElement).appendChild(st);
+    }
+    var el = document.createElement("div");
+    el.id = "portalFamilyMsgToast";
+    el.hidden = true;
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    el.innerHTML =
+      '<div class="portal-family-toast-copy"><strong id="portalFamilyMsgToastTitle">Family messages</strong><span id="portalFamilyMsgToastBody">New message</span></div>' +
+      '<button type="button" id="portalFamilyMsgToastOpen">Open</button>';
+    (document.body || document.documentElement).appendChild(el);
+    el.addEventListener("click", function (ev) {
+      if (ev.target && ev.target.id === "portalFamilyMsgToastOpen") return;
+      hideFamilyToast();
+      openFamilyMessages();
+    });
+    var openBtn = document.getElementById("portalFamilyMsgToastOpen");
+    if (openBtn) {
+      openBtn.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        hideFamilyToast();
+        openFamilyMessages();
+      });
+    }
+    return el;
+  }
+
+  function hideFamilyToast() {
+    if (familyToastTimer) {
+      global.clearTimeout(familyToastTimer);
+      familyToastTimer = 0;
+    }
+    familyToastCount = 0;
+    var el = document.getElementById("portalFamilyMsgToast");
+    if (el) el.hidden = true;
+  }
+
+  function openFamilyMessages() {
+    var btn = document.getElementById("btnFamilyMsgs");
+    if (btn && typeof btn.click === "function") {
+      btn.click();
+      return;
+    }
+    try {
+      global.location.href = "admin_dashboard.html?portal_open=portal_parent_notify_log";
+    } catch (_e) {}
+  }
+
+  function familyPreview(row) {
+    var t = String((row && row.message_type) || "text").toLowerCase();
+    if (t === "audio") return "Voice note";
+    if (t === "image" || t === "sticker") return "Photo";
+    if (t === "video") return "Video";
+    if (t === "document" || t === "file") return "File";
+    var body = String((row && (row.body_text || row.body)) || "").replace(/\s+/g, " ").trim();
+    return body || "New message";
+  }
+
+  function familyWho(row) {
+    var meta = (row && row.meta) || {};
+    if (typeof meta === "string") {
+      try {
+        meta = JSON.parse(meta);
+      } catch (_j) {
+        meta = {};
+      }
+    }
+    var office = String((meta && meta.office_parent_name) || "").trim();
+    if (office) return office;
+    var phone = String((row && row.from_phone) || "").trim();
+    if (phone) {
+      var dirHit = findContactForThread({ phone: phone }, state.contactDirectory);
+      if (dirHit) {
+        var dp = String(dirHit.parent || "").trim().split(/\s+/)[0] || "";
+        var dc = String(dirHit.child || "").trim().split(/\s+/)[0] || "";
+        if (dp && dc && dp.toLowerCase() !== dc.toLowerCase()) {
+          return dp.charAt(0).toUpperCase() + dp.slice(1) + " (" + (dc.charAt(0).toUpperCase() + dc.slice(1)) + ")";
+        }
+        if (dp) return dp.charAt(0).toUpperCase() + dp.slice(1);
+      }
+    }
+    var raw = String((row && row.contact_name) || "Parent").trim() || "Parent";
+    if (raw.indexOf("(") >= 0) return raw;
+    var first = raw.split(/\s+/)[0] || raw;
+    return first.charAt(0).toUpperCase() + first.slice(1);
+  }
+
+  function showFamilyInboundAlert(row, opts) {
+    opts = opts || {};
+    var meta = (row && row.meta) || {};
+    if (typeof meta === "string") {
+      try {
+        meta = JSON.parse(meta);
+      } catch (_j) {
+        meta = {};
+      }
+    }
+    if (String((meta && meta.direction_hint) || "").toLowerCase() === "club_to_parent") return;
+    var preview = opts.body || familyPreview(row);
+    var who = opts.title || familyWho(row);
+    var key = String((row && row.id) || who + ":" + preview);
+    var now = Date.now();
+    if (key && key === lastFamilyAlertKey && now - lastFamilyAlertAt < 2500) return;
+    lastFamilyAlertKey = key;
+    lastFamilyAlertAt = now;
+    try {
+      if (typeof global.portalAdminRefreshFamilyMsgBadge === "function") {
+        global.portalAdminRefreshFamilyMsgBadge();
+      }
+    } catch (_b) {}
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    familyToastCount += 1;
+    var el = ensureFamilyToast();
+    var titleEl = document.getElementById("portalFamilyMsgToastTitle");
+    var bodyEl = document.getElementById("portalFamilyMsgToastBody");
+    if (titleEl) {
+      titleEl.textContent =
+        familyToastCount > 1 ? "Family messages (" + familyToastCount + " new)" : "Family messages";
+    }
+    if (bodyEl) {
+      bodyEl.textContent = opts.body ? preview : who + ": " + preview;
+    }
+    el.hidden = false;
+    try {
+      el.removeAttribute("hidden");
+    } catch (_sh) {}
+    try {
+      if (typeof global.portalPlayAlertCue === "function") {
+        global.portalPlayAlertCue({ vibrate: [180, 80, 180] });
+      } else if (global.navigator && global.navigator.vibrate) {
+        global.navigator.vibrate([180, 80, 180]);
+      }
+    } catch (_cue) {}
+    if (familyToastTimer) global.clearTimeout(familyToastTimer);
+    familyToastTimer = global.setTimeout(hideFamilyToast, 8000);
+  }
+
+  function bindLiveAlerts() {
+    if (global.__PORTAL_FAMILY_INBOUND_ALERTS__) return;
+    global.__PORTAL_FAMILY_INBOUND_ALERTS__ = true;
+    try {
+      if (global.navigator && global.navigator.serviceWorker) {
+        global.navigator.serviceWorker.addEventListener("message", function (ev) {
+          var d = ev && ev.data;
+          if (!d || d.type !== "portal-push-received") return;
+          if (String(d.portalOpen || "") !== "family_messages") return;
+          if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(d)) {
+            return;
+          }
+          showFamilyInboundAlert(
+            { body_text: d.body || "New message" },
+            { body: String(d.body || "New message") }
+          );
+        });
+      }
+    } catch (_sw) {}
+    function startRt() {
+      var client =
+        (cfg.getClient && cfg.getClient()) ||
+        (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client) ||
+        null;
+      if (!client || typeof client.channel !== "function") return false;
+      try {
+        client
+          .channel("portal_parent_whatsapp_inbound_alerts")
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "portal_parent_whatsapp_inbound" },
+            function (payload) {
+              showFamilyInboundAlert((payload && payload.new) || {});
+            }
+          )
+          .subscribe();
+        return true;
+      } catch (_sub) {
+        return false;
+      }
+    }
+    if (!startRt()) {
+      global.addEventListener("portal:supabase-ready", function () {
+        startRt();
+      });
+    }
+  }
+
   global.PortalParentNotifyLog = {
     configure: configure,
     viewHtml: viewHtml,
     bindModule: bindModule,
+    bindLiveAlerts: bindLiveAlerts,
     unreadCount: fetchUnreadCount,
     refresh: function () {
       return loadRows(true);

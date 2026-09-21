@@ -17,15 +17,28 @@ function portalContractParseBody(body) {
 }
 
 function portalContractNamesMatch(typed, expected) {
-  const norm = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+  const norm = (s) =>
+    String(s || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
   const t = norm(typed);
   const e = norm(expected);
   if (!t || !e) return false;
   if (t === e) return true;
-  const tParts = t.split(" ");
-  const eParts = e.split(" ");
-  if (tParts.length <= eParts.length) {
-    return tParts.every((part, i) => eParts[i] === part);
+  const tParts = t.split(" ").filter(Boolean);
+  const eParts = e.split(" ").filter(Boolean);
+  if (!tParts.length || !eParts.length) return false;
+  /* Prefix of full name (e.g. "Dan" or "Dan Clarke"). */
+  if (tParts.length <= eParts.length && tParts.every((part, i) => eParts[i] === part)) return true;
+  /* All typed tokens appear somewhere in the expected name. */
+  if (tParts.every((part) => eParts.indexOf(part) >= 0)) return true;
+  /* Single token: first or last name alone (UI hint says first name is OK). */
+  if (tParts.length === 1 && (tParts[0] === eParts[0] || tParts[0] === eParts[eParts.length - 1])) {
+    return true;
   }
   return false;
 }

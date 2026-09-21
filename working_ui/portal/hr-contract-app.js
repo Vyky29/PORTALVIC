@@ -924,7 +924,7 @@
     templateData.CONTRACT_REFERENCE = contractReference;
 
     try {
-      const mod = await import("./hr-contract-publish.js?v=20260625-recent-actions");
+      const mod = await import("./hr-contract-publish.js?v=20260908-list-docs");
       const result = await mod.portalPublishEmploymentContract(auth.supabase, auth.user.id, {
         contractReference,
         templateData,
@@ -1058,7 +1058,7 @@
       const ref = btn.getAttribute("data-contract-ref") || "this contract";
       const auth = portalClient();
       if (!auth) return;
-      const mod = await import("./hr-contract-publish.js?v=20260625-recent-actions");
+      const mod = await import("./hr-contract-publish.js?v=20260908-list-docs");
       if (action === "download") {
         btn.disabled = true;
         try {
@@ -1094,18 +1094,28 @@
 
   async function loadRecentFromSupabase() {
     const auth = portalClient();
-    if (!auth) return;
+    const tbody = $("recentBody");
+    const noRecent = $("noRecent");
+    if (!tbody) return;
+    if (!auth) {
+      if (noRecent) {
+        noRecent.style.display = "block";
+        noRecent.textContent = "Sign in to load recent contracts.";
+      }
+      return;
+    }
     try {
-      const mod = await import("./hr-contract-publish.js?v=20260625-recent-actions");
+      const mod = await import("./hr-contract-publish.js?v=20260908-list-docs");
       const rows = await mod.portalListEmploymentContracts(auth.supabase);
-      const tbody = $("recentBody");
-      const noRecent = $("noRecent");
       tbody.innerHTML = "";
       if (!rows.length) {
-        noRecent.style.display = "block";
+        if (noRecent) {
+          noRecent.style.display = "block";
+          noRecent.textContent = "No contracts generated yet.";
+        }
         return;
       }
-      noRecent.style.display = "none";
+      if (noRecent) noRecent.style.display = "none";
       rows.forEach((row) => {
         const tr = document.createElement("tr");
         const date = row.completed_at || row.sent_at || row.created_at;
@@ -1128,7 +1138,14 @@
           "</td>";
         tbody.appendChild(tr);
       });
-    } catch (_) {}
+    } catch (err) {
+      console.warn("[hr-contract] recent list", err);
+      if (noRecent) {
+        noRecent.style.display = "block";
+        noRecent.textContent =
+          "Could not load contracts: " + ((err && err.message) || "unknown error");
+      }
+    }
   }
 
   function renderRecent() {

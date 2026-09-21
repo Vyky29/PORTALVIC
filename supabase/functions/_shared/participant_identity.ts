@@ -50,8 +50,8 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   fadi_ab: "fadi",
   cyrus_mahdavi: "cyrus",
   cyrus_ma: "cyrus",
-  // Canonical roster slug is "emanuel" (legal spelling). Legacy double-m maps here.
-  emmanuel: "emanuel",
+  // DC client roster id is "emanuel" (one m). ONLY map known Dodson / gap ids —
+  // never bare "emmanuel" (would steal Day Centre "Emanuel" onto new Emmanuel *Abate*).
   emmanuel_dodson: "emanuel",
   emmanuel_do: "emanuel",
   emanuel_dodson: "emanuel",
@@ -87,7 +87,25 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   kacem_eiji: "eiji",
   hazem_kei_belhadj: "hazem",
   hazem_kei_be: "hazem",
+  // Portal "Zaid Alfadhl" vs roster / team map "zaid"
+  // Roster short "Adam P" / "Adam Pi" = Adam Pilcher (Mon + Fri aquatic)
+  adam_pilcher: "adam_p",
+  adam_pilch: "adam_p",
+  zaid_alfadhl: "zaid",
+  zaid_al: "zaid",
+  // Portal / override "Yossi Sium" / "Yosiyas" vs roster "Yossi"
+  yossi_sium: "yossi",
+  yossi_si: "yossi",
+  yosiyas: "yossi",
+  yosiyas_sium: "yossi",
   hazem_kei: "hazem",
+  // Board short labels vs fuller feedback / portal names
+  mia_mesi: "mia",
+  christian_abate: "christian",
+  emmanuel_abate: "emmanuel",
+  adam_mahmmoud: "adam_ma",
+  adam_mahmoud: "adam_ma",
+  yunis_hussein: "yunis",
 };
 
 /** Collective roster / feedback client for Monday 11–12 ACAT aquatic. */
@@ -133,7 +151,11 @@ const CLIENT_INFO_SHEET_ALIASES: Record<string, string> = {
 };
 
 export function rosterParticipantSlugAlias(slug: string): string {
-  const s = slugifyParticipantKey(slug);
+  let s = slugifyParticipantKey(slug);
+  s = s
+    .replace(/^(trial|makeup|make_up|cover)_+/g, "")
+    .replace(/_+(trial|makeup|make_up)$/g, "")
+    .replace(/^(trial|makeup)_+/g, "");
   if (!s) return s;
   return ROSTER_SPELLING_ALIASES[s] || CLIENT_INFO_SLUG_ALIASES[s] ||
     CLIENT_INFO_SHEET_ALIASES[s] || PORTAL_PARTICIPANT_SLUG_ALIASES[s] || s;
@@ -259,7 +281,37 @@ export function resolveParticipantClientSlugs(input: ParticipantIdentityInput): 
     }
   }
 
-  return [...out].filter(Boolean);
+  let list = [...out].filter(Boolean);
+  /*
+   * Emmanuel Abate (new aquatic twin) must never resolve to DC roster "emanuel"
+   * (Emanuel / Emanuel Dodson). Surname Abate scopes the identity.
+   */
+  const lastSlug = slugifyParticipantKey(lastName || "");
+  const displaySlug = slugifyParticipantKey(
+    stripParentheticalNicknames(input.displayName || ""),
+  );
+  if (
+    lastSlug === "abate" ||
+    /(^|_)abate$/.test(displaySlug) ||
+    displaySlug.includes("abate_")
+  ) {
+    list = list.filter((s) => {
+      const c = rosterParticipantSlugAlias(s);
+      return c !== "emanuel" && s !== "emanuel" && s !== "emmanuel";
+    });
+    const full = slugifyParticipantKey(
+      `${firstClean || firstRaw} ${lastName}`.trim() || input.displayName || "",
+    );
+    if (full) list.push(full);
+    if (!list.includes("emmanuel_abate") && /emmanuel/.test(displaySlug + lastSlug)) {
+      list.push("emmanuel_abate");
+    }
+    if (!list.includes("christian_abate") && /christian/.test(displaySlug)) {
+      list.push("christian_abate");
+    }
+  }
+
+  return [...new Set(list)].filter(Boolean);
 }
 
 export function isAcatMemberIdentity(input: ParticipantIdentityInput): boolean {
@@ -357,9 +409,20 @@ export function participantIdentityMatches(
   if (wantSlug && gotSlug && wantSlug === gotSlug) return true;
 
   const first = normalizeParticipantLookupName(input.firstName || "");
+  const last = normalizeParticipantLookupName(
+    input.lastName ||
+      String(input.displayName || "")
+        .trim()
+        .split(/\s+/)
+        .slice(1)
+        .join(" "),
+  );
   if (first) {
     const gotParts = normalizeParticipantLookupName(rowName).split(" ").filter(Boolean);
+    // Single-token roster names (e.g. "Emanuel") must not match a different surname
+    // (e.g. portal "Emmanuel Abate").
     if (gotParts.length === 1 && gotParts[0] === first) {
+      if (last) return false;
       const rowSlug = slugifyParticipantKey(rowClientId || rowName);
       const firstSlug = slugifyParticipantKey(input.firstName || "");
       if (rowSlug === firstSlug || slugs.some((s) => s === rowSlug || s === rosterParticipantSlugAlias(rowSlug))) {

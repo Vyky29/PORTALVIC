@@ -15,7 +15,7 @@
     "/portal/portal_guide_ack.js?v=20260614-no-menu-guide",
     "/portal/portal_guide_menu.js?v=20260630-guide-only",
     "/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls",
-    "/portal/portal_onboarding_quick_menu.js?v=20260614-onboarding-session",
+    "/portal/portal_onboarding_quick_menu.js?v=20260908-onboarding-hub",
   ];
 
   var LEAD_LAZY_SCRIPTS = STAFF_LAZY_SCRIPTS;

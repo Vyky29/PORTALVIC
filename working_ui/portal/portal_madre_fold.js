@@ -121,9 +121,26 @@
     weeks.forEach(function (w) {
       madreStaffList(w).forEach(function (st) {
         if (!st) return;
+        // Always emit LULIYA for this person — never LULIA from roster key `lulia`.
+        var staffKeyNorm = String(st.staffKey || st.name || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "");
         var staffName = String(st.staffName || st.staffKey || st.name || "")
           .trim()
           .toUpperCase();
+        if (
+          staffKeyNorm === "lulia" ||
+          staffKeyNorm === "luliya" ||
+          staffKeyNorm === "lulya" ||
+          staffKeyNorm === "aida" ||
+          staffKeyNorm === "stf021" ||
+          staffName === "LULIA" ||
+          staffName === "LULYA" ||
+          staffName === "AIDA"
+        ) {
+          staffName = "LULIYA";
+        }
         (st.days || []).forEach(function (d) {
           var iso = String(d.sessionDate || d.session_date || "").trim().slice(0, 10);
           if (iso && !sessionDateBelongsToWeek(iso, w)) return;
@@ -404,6 +421,42 @@
     var payload = row.payload || {};
     var ovType = String(row.override_type || "").toLowerCase();
     var iso = normIso(row.session_date || opts.session_date);
+
+    if (ovType === "instructor_cover_needed") {
+      return applyFoldToLiveMadre(client, {
+        fold_type: "instructor_cover_needed",
+        session_date: iso || null,
+        payload: {
+          client_name: row.anchor_client_id || "",
+          time_slot: row.anchor_time_slot_label || "",
+          venue: row.anchor_venue || payload.venue || "",
+          service: payload.service || "",
+          area: payload.area || "",
+          from_instructors: payload.absent_staff_id || row.anchor_staff_id || "",
+          to_instructors: "COVER NEEDED",
+        },
+      });
+    }
+
+    if (
+      ovType === "instructor_reassign" &&
+      (payload.covering_staff_id || payload.covering_staff_name)
+    ) {
+      return applyFoldToLiveMadre(client, {
+        fold_type: "instructor_column_move",
+        session_date: iso || null,
+        payload: {
+          client_name: row.anchor_client_id || "",
+          time_slot: row.anchor_time_slot_label || "",
+          venue: row.anchor_venue || payload.venue || "",
+          service: payload.service || "",
+          area: payload.area || "",
+          from_instructors: payload.absent_staff_id || row.anchor_staff_id || "",
+          to_instructors: payload.covering_staff_name || payload.covering_staff_id || "",
+        },
+      });
+    }
+
     var isStaffCover =
       ovType.indexOf("staff") >= 0 ||
       ovType === "instructor_cover" ||

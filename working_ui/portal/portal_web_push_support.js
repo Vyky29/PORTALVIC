@@ -137,13 +137,37 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260712-cs-portal-wa", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260910-sw-no-fetch", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;
         try {
+          if (!global.__PORTAL_SW_CTRL_BOUND__) {
+            global.__PORTAL_SW_CTRL_BOUND__ = true;
+            global.navigator.serviceWorker.addEventListener("controllerchange", function () {
+              try {
+                if (global.PORTAL_STAFF_APP) return;
+                if (sessionStorage.getItem("portal_sw_reloaded_49") === "1") return;
+                sessionStorage.setItem("portal_sw_reloaded_49", "1");
+              } catch (_s) {}
+              if (global.PORTAL_STAFF_APP) return;
+              global.location.reload();
+            });
+          }
+        } catch (_c) {}
+        try {
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
+        } catch (_w) {}
+        try {
           await reg.update();
         } catch (_u) {}
+        try {
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
+        } catch (_w2) {}
         return reg;
       } catch (e) {
         console.warn("[portal] service worker register", e);
@@ -189,42 +213,138 @@
   global.portalPersistSet = global.portalPersistSet || persistSet;
   global.portalIsStandalonePwa = portalIsStandalonePwa;
 
-  /** Short beep + vibrate so the user gets feedback even when the OS silences banners. */
-  function portalPlayAlertCue(opts) {
-    opts = opts || {};
-    var pattern = opts.vibrate || [200, 80, 200, 80, 280];
+  /** Unlock / resume alert audio only after a real user gesture (not pageshow). */
+  var lastAlertCueAt = 0;
+  function portalUserActivationActive() {
     try {
-      if (global.navigator && global.navigator.vibrate) {
-        global.navigator.vibrate(pattern);
-      }
-    } catch (_v) {}
+      var ua = global.navigator && global.navigator.userActivation;
+      if (ua && typeof ua.isActive === "boolean") return !!ua.isActive;
+    } catch (_ua) {}
+    return false;
+  }
+  function portalUnlockAlertAudio(ev) {
     try {
+      /* Creating / resuming AudioContext outside a user gesture logs Chrome warnings
+         and never actually starts audio — skip unless activation is live. */
+      var fromGesture =
+        !!(ev && ev.isTrusted && ev.type && /^(pointerdown|touchstart|click|keydown)$/i.test(ev.type));
+      if (!fromGesture && !portalUserActivationActive()) return;
       var AC = global.AudioContext || global.webkitAudioContext;
       if (!AC) return;
-      var ctx = global.__PORTAL_ALERT_AUDIO_CTX__ || new AC();
-      global.__PORTAL_ALERT_AUDIO_CTX__ = ctx;
-      if (ctx.state === "suspended") {
-        void ctx.resume();
+      var ctx = global.__PORTAL_ALERT_AUDIO_CTX__;
+      if (!ctx) {
+        ctx = new AC();
+        global.__PORTAL_ALERT_AUDIO_CTX__ = ctx;
       }
+      if (ctx.state === "suspended") {
+        var p = ctx.resume();
+        if (p && typeof p.catch === "function") p.catch(function () {});
+      }
+    } catch (_u) {}
+  }
+  function portalResumeAlertAudioIfReady() {
+    try {
+      var ctx = global.__PORTAL_ALERT_AUDIO_CTX__;
+      if (!ctx || ctx.state !== "suspended") return;
+      /* pageshow is not a user gesture — resume only if activation is still open. */
+      if (!portalUserActivationActive()) return;
+      var p = ctx.resume();
+      if (p && typeof p.catch === "function") p.catch(function () {});
+    } catch (_r) {}
+  }
+  function portalPlayAlertCue(opts) {
+    opts = opts || {};
+    var nowMs = Date.now();
+    if (nowMs - lastAlertCueAt < 800) return;
+    lastAlertCueAt = nowMs;
+    if (opts.vibrate !== false) {
+      var pattern = opts.vibrate || [200, 80, 200, 80, 280];
+      try {
+        if (global.navigator && global.navigator.vibrate && pattern && pattern.length) {
+          global.navigator.vibrate(pattern);
+        }
+      } catch (_v) {}
+    }
+    try {
+      /* Never create AudioContext here — push/realtime cues often fire without a gesture. */
+      var ctx = global.__PORTAL_ALERT_AUDIO_CTX__;
+      if (!ctx || ctx.state !== "running") return;
       var now = ctx.currentTime;
-      function beep(at, freq, dur) {
+      function beep(at, freq, dur, vol) {
         var o = ctx.createOscillator();
         var g = ctx.createGain();
         o.type = "sine";
         o.frequency.value = freq;
         g.gain.setValueAtTime(0.0001, at);
-        g.gain.exponentialRampToValueAtTime(0.18, at + 0.02);
+        g.gain.exponentialRampToValueAtTime(vol, at + 0.018);
         g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
         o.connect(g);
         g.connect(ctx.destination);
         o.start(at);
         o.stop(at + dur + 0.02);
       }
-      beep(now, 880, 0.12);
-      beep(now + 0.16, 1175, 0.14);
+      beep(now, 880, 0.13, 0.2);
+      beep(now + 0.15, 1175, 0.16, 0.18);
     } catch (_a) {}
   }
   global.portalPlayAlertCue = portalPlayAlertCue;
+  global.portalUnlockAlertAudio = portalUnlockAlertAudio;
+  if (!global.__PORTAL_ALERT_AUDIO_UNLOCK__) {
+    global.__PORTAL_ALERT_AUDIO_UNLOCK__ = true;
+    try {
+      document.addEventListener("pointerdown", portalUnlockAlertAudio, true);
+      document.addEventListener("touchstart", portalUnlockAlertAudio, { capture: true, passive: true });
+      global.addEventListener("pageshow", portalResumeAlertAudioIfReady);
+    } catch (_b) {}
+  }
+
+  var portalHomeBadgeParts = { comms: 0, family: 0, staffWa: 0 };
+
+  function portalHomeBadgeTotal() {
+    return Math.max(
+      0,
+      (Number(portalHomeBadgeParts.comms) || 0) +
+        (Number(portalHomeBadgeParts.family) || 0) +
+        (Number(portalHomeBadgeParts.staffWa) || 0)
+    );
+  }
+
+  /** Red numeric badge on the home-screen PWA icon (iOS 16.4+ Add to Home Screen). */
+  function portalSyncHomeScreenBadge(count) {
+    count = Math.max(0, Number(count) || 0);
+    try {
+      if (global.navigator && typeof global.navigator.setAppBadge === "function") {
+        if (count > 0) void global.navigator.setAppBadge(count);
+        else if (typeof global.navigator.clearAppBadge === "function") void global.navigator.clearAppBadge();
+      }
+    } catch (_e) {}
+    try {
+      var payload = { type: "portal-set-app-badge", count: count };
+      if (global.navigator && global.navigator.serviceWorker) {
+        if (global.navigator.serviceWorker.controller) {
+          global.navigator.serviceWorker.controller.postMessage(payload);
+        }
+        void global.navigator.serviceWorker.ready.then(function (reg) {
+          if (reg && reg.active) reg.active.postMessage(payload);
+        });
+      }
+    } catch (_p) {}
+  }
+
+  function portalSetHomeBadgePart(part, n) {
+    var key = String(part || "").trim();
+    if (!portalHomeBadgeParts.hasOwnProperty(key)) return;
+    portalHomeBadgeParts[key] = Math.max(0, Number(n) || 0);
+    portalSyncHomeScreenBadge(portalHomeBadgeTotal());
+  }
+  global.portalSetHomeBadgePart = portalSetHomeBadgePart;
+  global.portalSyncHomeScreenBadge = portalSyncHomeScreenBadge;
+  try {
+    global.addEventListener("portal:comms-unread", function (ev) {
+      var n = ev && ev.detail ? ev.detail.count : 0;
+      portalSetHomeBadgePart("comms", n);
+    });
+  } catch (_c) {}
 
   function portalCurrentPushAuthUserId() {
     try {
@@ -272,6 +392,101 @@
   global.portalPushSyncAuthUserToServiceWorker = portalPushSyncAuthUserToServiceWorker;
   global.portalPushIsForCurrentUser = portalPushIsForCurrentUser;
   global.portalCurrentPushAuthUserId = portalCurrentPushAuthUserId;
+
+  function portalPostToServiceWorker(msg) {
+    try {
+      if (!global.navigator || !global.navigator.serviceWorker) return;
+      if (global.navigator.serviceWorker.controller) {
+        global.navigator.serviceWorker.controller.postMessage(msg);
+      }
+      void global.navigator.serviceWorker.ready.then(function (reg) {
+        if (reg && reg.active) reg.active.postMessage(msg);
+      });
+    } catch (_e) {}
+  }
+
+  var portalPageForeground = false;
+  var portalVisibleSince = 0;
+  var PORTAL_FG_CACHE = "portal-fg-v1";
+  var PORTAL_FG_TTL_MS = 3500;
+
+  function portalDocumentIsOnScreen() {
+    try {
+      if (document.hidden) return false;
+      return document.visibilityState === "visible";
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function portalWriteForegroundCache(visible) {
+    var now = Date.now();
+    if (visible) {
+      if (!portalVisibleSince) portalVisibleSince = now;
+    } else {
+      portalVisibleSince = 0;
+    }
+    var until = visible ? String(now + PORTAL_FG_TTL_MS) : "0";
+    var since = visible ? String(portalVisibleSince) : "0";
+    try {
+      if (!global.caches || typeof global.caches.open !== "function") return;
+      void global.caches.open(PORTAL_FG_CACHE).then(function (c) {
+        return Promise.all([
+          c.put("until", new Response(until, { headers: { "Content-Type": "text/plain" } })),
+          c.put("since", new Response(since, { headers: { "Content-Type": "text/plain" } })),
+        ]);
+      });
+    } catch (_e) {}
+  }
+
+  function portalSetPageForeground(on) {
+    var next = !!on && portalDocumentIsOnScreen();
+    portalPageForeground = next;
+    portalWriteForegroundCache(next);
+    portalPostToServiceWorker({
+      type: "portal-client-visibility",
+      visible: next,
+      since: portalVisibleSince,
+    });
+  }
+
+  function portalPageIsForeground() {
+    return portalPageForeground && portalDocumentIsOnScreen();
+  }
+  global.portalPageIsForeground = portalPageIsForeground;
+
+  function portalSyncClientVisibilityToSw() {
+    portalSetPageForeground(portalDocumentIsOnScreen());
+  }
+
+  if (!global.__PORTAL_SW_VIS_HEARTBEAT__) {
+    global.__PORTAL_SW_VIS_HEARTBEAT__ = true;
+    portalSyncClientVisibilityToSw();
+    global.setInterval(portalSyncClientVisibilityToSw, 2000);
+    try {
+      document.addEventListener("visibilitychange", function () {
+        portalSyncClientVisibilityToSw();
+      });
+      global.addEventListener("pageshow", function () {
+        portalSyncClientVisibilityToSw();
+      });
+      global.addEventListener("pagehide", function () {
+        portalVisibleSince = 0;
+        portalPageForeground = false;
+        portalWriteForegroundCache(false);
+        portalPostToServiceWorker({ type: "portal-client-visibility", visible: false, since: 0 });
+      });
+      global.addEventListener("freeze", function () {
+        portalVisibleSince = 0;
+        portalPageForeground = false;
+        portalWriteForegroundCache(false);
+        portalPostToServiceWorker({ type: "portal-client-visibility", visible: false, since: 0 });
+      });
+      global.addEventListener("focus", function () {
+        portalSyncClientVisibilityToSw();
+      });
+    } catch (_b) {}
+  }
 
   async function portalSendLocalTestNotification(opts) {
     opts = opts || {};
@@ -471,7 +686,7 @@
     var standalone =
       typeof portalIsStandalonePwa === "function" ? portalIsStandalonePwa() : false;
     var buildKey = "portal_web_push_build";
-    var buildVal = "20260619-portal-only-v1";
+    var buildVal = "20260906-comms-inapp-49";
     var prevBuild = persistGet(buildKey);
     if (
       env.isIOS &&

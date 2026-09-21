@@ -191,8 +191,19 @@
       "staffRoleTrack": "admin",
       "canViewAll": true
     },
+    "luliya": {
+      "staffId": "luliya",
+      "staffName": "Luliya",
+      "avatarFile": "portal/staff_photos/luliya.png?v=20260609-luliya",
+      "staffRoleTrack": "support",
+      "staffRoleTracks": [
+        "support",
+        "swimming"
+      ],
+      "canViewAll": false
+    },
     "lulia": {
-      "staffId": "lulia",
+      "staffId": "luliya",
       "staffName": "Luliya",
       "avatarFile": "portal/staff_photos/luliya.png?v=20260609-luliya",
       "staffRoleTrack": "support",
@@ -229,6 +240,13 @@
       "avatarFile": "portal/staff_photos/teflon.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
+    },
+    "emmanuel": {
+      "staffId": "emmanuel",
+      "staffName": "Emmanuel",
+      "avatarFile": "portal/staff_photos/emmanuel.png?v=20260911-emmanuel-photo",
+      "staffRoleTrack": "swimming",
+      "canViewAll": false
     }
   },
   "expectedSessionsByWeekday": {
@@ -248,9 +266,23 @@
       "total": 17
     }
   },
-  "clientRosterStartDates": {
+    "clientRosterStartDates": {
     "Emanuel": "2026-06-12",
-    "Logan": "2026-05-11"
+    "Logan": "2026-05-11",
+    "Fadi": "2026-09-20",
+    "Emmanuel": "2026-09-15",
+    "Christian": "2026-09-15"
+  },
+  "clientRosterGoneFromDates": {
+    "Karo": "2026-08-16",
+    "Shire": "2026-08-16",
+    "Joel": "2026-09-01",
+    "Joel Hibbert-Nixon": "2026-09-01",
+    "Abodi Pa": "2026-09-08",
+    "Abodi P": "2026-09-08",
+    "Aboodi Patel": "2026-09-08",
+    "Abodi": "2026-09-08",
+    "Yassir": "2026-09-11"
   },
   "clientWeekdaysOnly": {
     "Emanuel": [
@@ -271,8 +303,8 @@
           "service": "Aquatic Activity"
         },
         {
-          "time_slot": "4.30 to 5.15",
-          "service": "Multi-Activity"
+          "time_slot": "4.30 to 5",
+          "service": "Aquatic Activity"
         }
       ]
     },
@@ -281,6 +313,25 @@
       "client_name": "Yusuf Ah",
       "instructors": "ROBERTO",
       "mergeKey": "yusuf_ah_roberto_sun_swim",
+      "exceptSessionDates": [
+        "2026-09-06"
+      ],
+      "slots": [
+        {
+          "time_slot": "9 to 9.30",
+          "service": "Aquatic Activity"
+        },
+        {
+          "time_slot": "9.30 to 10.15",
+          "service": "Multi-Activity"
+        }
+      ]
+    },
+    {
+      "day": "Sunday",
+      "client_name": "Zaid",
+      "instructors": "JAVIER",
+      "mergeKey": "zaid_javier_sun_swim",
       "slots": [
         {
           "time_slot": "9 to 9.30",
@@ -295,14 +346,17 @@
   ],
   "overviewOmitRosterSlots": [
     {
-      "weekday": "Wednesday",
-      "client_slug": "cyrus",
-      "time_slot": "4 to 4.30",
-      "service": "Aquatic Activity"
+      "weekday": "Sunday",
+      "client_slug": "yusuf_ah",
+      "time_slot": "9 to 9.30",
+      "service": "Aquatic Activity",
+      "exceptSessionDates": [
+        "2026-09-06"
+      ]
     },
     {
       "weekday": "Sunday",
-      "client_slug": "yusuf_ah",
+      "client_slug": "zaid",
       "time_slot": "9 to 9.30",
       "service": "Aquatic Activity"
     }
@@ -1336,16 +1390,6 @@
       "area": "Gym",
       "time_slot": "4 to 5",
       "venue": "Westway",
-      "session_date": "2026-05-18"
-    },
-    {
-      "client_name": "Eddie Mc",
-      "day": "Monday",
-      "instructors": "YOUSSEF",
-      "service": "Aquatic Activity",
-      "area": "Teaching Pool",
-      "time_slot": "4.30 to 5",
-      "venue": "Acton",
       "session_date": "2026-05-18"
     },
     {

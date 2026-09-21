@@ -6,7 +6,12 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 
-type DocType = "checklist" | "passport" | "certificate" | "firstaid";
+type DocType =
+  | "checklist"
+  | "passport"
+  | "certificate"
+  | "firstaid"
+  | "safeguarding";
 
 type OnboardingDocRow = {
   type: DocType;
@@ -24,24 +29,40 @@ const UUID_RE =
 
 const DEFAULT_BUCKETS = ["club-files", "club-onboarding"];
 
-const FOLDER_SPECS: Array<{ folder: string; type: DocType; classify?: boolean }> = [
+const FOLDER_SPECS: Array<{ folder: string; type: DocType }> = [
   { folder: "checklist", type: "checklist" },
   { folder: "passport", type: "passport" },
-  { folder: "certificate", type: "certificate", classify: true },
+  { folder: "certificate", type: "certificate" },
   { folder: "first_aid", type: "firstaid" },
 ];
 
-function classifyCertificateFileName(name: string): DocType {
-  const base = String(name || "").toLowerCase();
-  if (base.startsWith("firstaid-") || base.includes("/firstaid-")) return "firstaid";
-  if (base.includes("safeguarding")) return "certificate";
-  return "certificate";
+/** Prefer filename signals over storage folder — applicants often pick the wrong type. */
+function classifyDocType(folderType: DocType, nameOrPath: string): DocType {
+  const base = String(nameOrPath || "").toLowerCase();
+  if (base.includes("safeguarding") || base.includes("nspcc")) return "safeguarding";
+  if (
+    base.startsWith("firstaid-") ||
+    base.includes("/firstaid-") ||
+    /first[_-]?aid/.test(base)
+  ) {
+    return "firstaid";
+  }
+  if (base.includes("checklist") || base.includes("starter")) return "checklist";
+  if (
+    base.includes("passport") ||
+    /\bdbs\b/.test(base) ||
+    base.includes("right_to_work") ||
+    base.includes("rtw")
+  ) {
+    return "passport";
+  }
+  return folderType;
 }
 
 function mapFileRow(
   folder: string,
   bucket: string,
-  spec: { type: DocType; classify?: boolean },
+  spec: { type: DocType },
   fileName: string,
   fullPath: string,
   entry: {
@@ -57,7 +78,7 @@ function mapFileRow(
     entry.updated_at ||
     entry.metadata?.lastModified ||
     null;
-  const type = spec.classify ? classifyCertificateFileName(fullPath) : spec.type;
+  const type = classifyDocType(spec.type, `${fullPath} ${fileName}`);
   return {
     type,
     name: fileName,
@@ -73,7 +94,7 @@ function mapFileRow(
 async function listFolder(
   obAdmin: SupabaseClient,
   bucket: string,
-  spec: { folder: string; type: DocType; classify?: boolean },
+  spec: { folder: string; type: DocType },
 ): Promise<{ items: OnboardingDocRow[]; error?: string }> {
   const { data, error } = await obAdmin.storage.from(bucket).list(spec.folder, {
     limit: 1000,
@@ -131,7 +152,7 @@ async function listFolder(
 async function listLegacyApplicantFolder(
   obAdmin: SupabaseClient,
   bucket: string,
-  spec: { folder: string; type: DocType; classify?: boolean },
+  spec: { folder: string; type: DocType },
 ): Promise<OnboardingDocRow[]> {
   const { data, error } = await obAdmin.storage.from(bucket).list("", {
     limit: 1000,
@@ -226,6 +247,14 @@ type UploadCounts = {
   safeguarding: number;
 };
 
+type UploadPaths = {
+  passport: string[];
+  checklist: string[];
+  certificate: string[];
+  firstaid: string[];
+  safeguarding: string[];
+};
+
 type ApplicantProgress = {
   applicant_session_id: string;
   display_name: string;
@@ -233,6 +262,7 @@ type ApplicantProgress = {
   job: boolean;
   health: boolean;
   uploads: UploadCounts;
+  upload_paths: UploadPaths;
   updated_at: string | null;
   last_online_at: string | null;
   last_upload_at: string | null;
@@ -263,6 +293,16 @@ function emptyUploadCounts(): UploadCounts {
   return { passport: 0, checklist: 0, certificate: 0, firstaid: 0, safeguarding: 0 };
 }
 
+function emptyUploadPaths(): UploadPaths {
+  return {
+    passport: [],
+    checklist: [],
+    certificate: [],
+    firstaid: [],
+    safeguarding: [],
+  };
+}
+
 function displayNameFromPayload(payload: unknown): string {
   if (!payload || typeof payload !== "object") return "";
   const p = payload as Record<string, unknown>;
@@ -290,14 +330,17 @@ function displayNameFromPayload(payload: unknown): string {
 }
 
 function countDocForApplicant(doc: OnboardingDocRow, counts: UploadCounts) {
-  const name = String(doc.name || "").toLowerCase();
   if (doc.type === "passport") counts.passport++;
   else if (doc.type === "checklist") counts.checklist++;
   else if (doc.type === "firstaid") counts.firstaid++;
-  else if (doc.type === "certificate") {
-    if (name.includes("safeguarding")) counts.safeguarding++;
-    else counts.certificate++;
-  }
+  else if (doc.type === "safeguarding") counts.safeguarding++;
+  else if (doc.type === "certificate") counts.certificate++;
+}
+
+function pushDocPath(paths: UploadPaths, doc: OnboardingDocRow) {
+  const list = paths[doc.type];
+  if (!list) return;
+  if (doc.path && !list.includes(doc.path)) list.push(doc.path);
 }
 
 function uploadCountsFromDocuments(documents: OnboardingDocRow[]) {
@@ -315,6 +358,22 @@ function perApplicantUploads(
     if (doc.applicant_session_id === applicantId) countDocForApplicant(doc, counts);
   }
   return counts;
+}
+
+function perApplicantUploadPaths(
+  documents: OnboardingDocRow[],
+  applicantId: string,
+): UploadPaths {
+  const paths = emptyUploadPaths();
+  const matched = documents
+    .filter((doc) => doc.applicant_session_id === applicantId)
+    .sort((a, b) => {
+      const ta = a.created ? Date.parse(a.created) : 0;
+      const tb = b.created ? Date.parse(b.created) : 0;
+      return tb - ta;
+    });
+  for (const doc of matched) pushDocPath(paths, doc);
+  return paths;
 }
 
 async function loadRegisteredSessions(
@@ -343,12 +402,13 @@ async function loadRegisteredSessions(
 }
 
 async function loadApplicantProgress(
-  obAdmin: SupabaseClient,
+  draftsDb: SupabaseClient,
   documents: OnboardingDocRow[],
   portalAdmin?: SupabaseClient,
 ): Promise<ApplicantProgress[]> {
-  const sessions = await loadRegisteredSessions(obAdmin);
-  const { data, error } = await obAdmin
+  // Job/health drafts + session touch live on Portal; document files may still be on OB storage.
+  const sessions = await loadRegisteredSessions(draftsDb);
+  const { data, error } = await draftsDb
     .from("onboarding_applicant_drafts")
     .select("applicant_session_id, form_type, payload, updated_at")
     .order("updated_at", { ascending: false })
@@ -367,6 +427,7 @@ async function loadApplicantProgress(
       job: false,
       health: false,
       uploads: emptyUploadCounts(),
+      upload_paths: emptyUploadPaths(),
       updated_at: null,
       last_online_at: sess.updated_at,
       last_upload_at: null,
@@ -385,6 +446,7 @@ async function loadApplicantProgress(
         job: false,
         health: false,
         uploads: emptyUploadCounts(),
+        upload_paths: emptyUploadPaths(),
         updated_at: null,
         last_online_at: sessions.get(id)?.updated_at ?? null,
         last_upload_at: null,
@@ -412,6 +474,7 @@ async function loadApplicantProgress(
         job: false,
         health: false,
         uploads: emptyUploadCounts(),
+        upload_paths: emptyUploadPaths(),
         updated_at: null,
         last_online_at: sessions.get(id)?.updated_at ?? null,
         last_upload_at: null,
@@ -429,6 +492,10 @@ async function loadApplicantProgress(
         ("Session " + entry.applicant_session_id.slice(0, 8));
     }
     entry.uploads = perApplicantUploads(documents, entry.applicant_session_id);
+    entry.upload_paths = perApplicantUploadPaths(
+      documents,
+      entry.applicant_session_id,
+    );
     entry.last_upload_at = lastUploadAtForApplicant(
       documents,
       entry.applicant_session_id,
@@ -457,6 +524,7 @@ async function loadApplicantProgress(
             job: false,
             health: false,
             uploads: emptyUploadCounts(),
+            upload_paths: emptyUploadPaths(),
             updated_at: null,
             last_online_at: sessions.get(id)?.updated_at ?? null,
             last_upload_at: null,
@@ -522,7 +590,7 @@ Deno.serve(async (req) => {
 
   const { bucket, errors: bucketErrors } = await resolveOnboardingBucket(obAdmin);
   const { documents, errors: listErrors } = await listAllDocuments(obAdmin, bucket);
-  const applicants = await loadApplicantProgress(obAdmin, documents, portalAdmin);
+  const applicants = await loadApplicantProgress(portalAdmin, documents, portalAdmin);
   const upload_counts = uploadCountsFromDocuments(documents);
   const unlinked_documents = documents.filter((d) => !d.applicant_session_id).length;
 
@@ -532,6 +600,7 @@ Deno.serve(async (req) => {
     passport: 0,
     certificate: 0,
     firstaid: 0,
+    safeguarding: 0,
   };
   for (const doc of documents) {
     if (counts[doc.type] !== undefined) counts[doc.type]++;
@@ -548,7 +617,7 @@ Deno.serve(async (req) => {
       bucket,
       onboarding_project: obUrl,
       onboarding_configured: true,
-      drafts_source: "onboarding_project",
+      drafts_source: "portal_project",
       unlinked_documents,
       errors: [...bucketErrors, ...listErrors].filter(Boolean),
     },

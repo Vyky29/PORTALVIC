@@ -41,7 +41,7 @@
   function canonicalStaffRosterKey(value) {
     const k = String(value || "").trim().toLowerCase();
     if (!k) return "";
-    if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "lulia" || k === "luliya" || k === "aida" || k === "stf021") return "luliya";
     if (k === "yousef" || k === "youssef" || k === "yousseff" || k === "yusef") return "youssef";
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
@@ -81,6 +81,8 @@
     const s = String(slugKey || "").trim().toLowerCase();
     if (!s) return "";
     if (s === "amar_rai") return "amar_ra";
+    if (s === "zaid_alfadhl" || s === "zaid_al" || s === "zaid_trial" || s === "trial_zaid") return "zaid";
+    if (s === "ayman_el_bakry") return "ayman";
     return s;
   }
 
@@ -304,18 +306,18 @@
     return isDayCentreServiceLabel(st.service);
   }
 
-  /** Climbing / MA / per-slot Aquatic: each instructor+area unit is separate — not Day Centre / Bespoke / merge groups. */
+  /** Climbing / MA / 1:1 Aquatic: each instructor+area unit is separate — not Day Centre / Bespoke / 2:1 aquatic. */
   function statusRowNeedsPerStaffUnitFeedback(st) {
     if (!st) return false;
+    if (statusRowIsAquaticTwoToOneShared(st)) return false;
     if (statusRowServiceNeedsPerStaffUnitFeedback(st)) return true;
     if (isDayCentreStatusRow(st) || isBespokeStatusRow(st)) return false;
-    if (String(st.feedbackMergeGroup || "").trim()) return false;
+    /* Merge group (Yusuf/Cyrus AA+MA) still belongs to one instructor — never
+       let a support-worker submit clear the swim instructor's unit. */
     const svc = String(st.service || "").toLowerCase();
     if (/multi[-\s]?activity/.test(svc)) return true;
     if (svc.indexOf("climbing") >= 0 || svc.indexOf("climb") >= 0) return true;
-    /* Aquatic / teaching-pool feedback is owned per worker (whether the unit key is per-slot or
-       day-level): an instructor's slot must not be validated by a support worker's submission on
-       the same client. Day Centre and Bespoke shared are the only shared units (handled above). */
+    /* Aquatic 1:1 is owned per worker. 2:1 (same client + clock) is shared — handled above. */
     if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swimming") >= 0) return true;
     const uk = String(st.feedbackUnitKey || "");
     if (/multi[-\s]?activity|climbing|climb/.test(uk)) return true;
@@ -354,6 +356,53 @@
     return cid === "tinashe";
   }
 
+  function submittedRowIsAquatic(r) {
+    const svc = String((r && r.service) || "").toLowerCase();
+    if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swimming") >= 0) return true;
+    const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").toLowerCase();
+    return /\|aquatic(?:\||$)/.test(pk);
+  }
+
+  function statusRowIsAquaticTwoToOneShared(st, iso) {
+    if (!st) return false;
+    if (
+      typeof window === "undefined" ||
+      typeof window.portalAquaticSessionIsTwoToOneShared !== "function"
+    ) {
+      return false;
+    }
+    const uk = String(st.feedbackUnitKey || "").trim();
+    const date = (uk.split("|")[0] || iso || "").slice(0, 10);
+    const start = portalRowTimeTokenFromKey(uk);
+    return window.portalAquaticSessionIsTwoToOneShared(
+      {
+        activity: st.service,
+        rosterService: st.service,
+        service: st.service,
+        clientId: st.client || st.clientName,
+        start: start,
+        staffId: st.instructor,
+        venue: st.venue,
+      },
+      date
+    );
+  }
+
+  function aquaticStatusTimesAlign(st, r) {
+    const stHm =
+      portalRowTimeTokenFromKey(st && st.feedbackUnitKey) ||
+      normalizeHmToken((st && (st.start || st.timeSlot || st.time)) || "");
+    const rHm = portalRowTimeTokenFromKey(
+      (r && (r.portalSessionKey || r.portal_session_key)) || ""
+    );
+    if (!stHm || !rHm) return true;
+    if (stHm === rHm) return true;
+    const a = hmTokenToMinutes(stHm);
+    const b = hmTokenToMinutes(rHm);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+    return Math.abs(a - b) === 12 * 60;
+  }
+
   function isBespokeSharedStatusRow(st) {
     if (!st) return false;
     const u = String(st.feedbackUnitKey || "");
@@ -380,16 +429,19 @@
   }
 
   /** Yusuf / Cyrus: Aquatic + Multi-Activity same instructor → one feedback covers the merge group. */
-  function submittedCoversMergeGroup(iso, st) {
+  function submittedCoversMergeGroup(iso, st, staffId) {
     const mg = String(st && st.feedbackMergeGroup ? st.feedbackMergeGroup : "").trim();
     if (!mg) return false;
     const groupRows = statusRowsForDateAll(iso).filter(function (row) {
       return String(row.feedbackMergeGroup || "").trim() === mg;
     });
     if (!groupRows.length) return false;
+    const sid = String(staffId || "").trim().toLowerCase();
     return submittedRowsForDateAll(iso).some(function (r) {
       if (submittedRowMarksAbsent(r)) return false;
       if (!submittedRowMatchesStatusClient(r, st)) return false;
+      /* Viewer must be the submitter — Dan/Emmanuel submit must not clear Javier. */
+      if (sid && !staffOwnsInstructor(sid, r.instructor)) return false;
       for (let i = 0; i < groupRows.length; i++) {
         if (staffOwnsInstructor(groupRows[i].instructor, r.instructor)) return true;
       }
@@ -431,6 +483,8 @@
         return String(p || "").trim().toLowerCase();
       })
       .filter(Boolean);
+    const lastEarly = String(parts[parts.length - 1] || "").trim().toLowerCase();
+    if (lastEarly === "day_centre" || lastEarly === "bespoke_shared") return lastEarly;
     if (parts.length < 4) return "";
     /* date|client|HH:mm|service|area|instructor — last segment is instructor, not area */
     if (
@@ -455,6 +509,14 @@
     if (!aa && !bb) return true;
     if (aa && bb) {
       if (aa === bb) return true;
+      if (aa === "day_centre" || bb === "day_centre") return true;
+      if (aa === "bespoke_shared" || bb === "bespoke_shared") return true;
+      if (
+        (aa.indexOf("hub") >= 0 || aa === "bespoke_shared") &&
+        (bb.indexOf("hub") >= 0 || bb === "bespoke_shared")
+      ) {
+        return true;
+      }
       if (
         (aa.indexOf("climb") >= 0 || aa === "climbing" || aa === "climbing_wall") &&
         (bb.indexOf("climb") >= 0 || bb === "climbing" || bb === "climbing_wall")
@@ -570,8 +632,25 @@
     return true;
   }
 
+  function portalClientIsDayCentreSharedParticipant(clientIdOrName) {
+    const raw = String(clientIdOrName || "")
+      .trim()
+      .toLowerCase();
+    if (!raw) return false;
+    const s = raw.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    /* Exact only — do not prefix-match emmanuel_* (Emmanuel Abate aquatic). */
+    if (s === "emanuel" || s === "emmanuel") return true;
+    const DC = ["ikram", "fadi", "timi", "acat"];
+    for (let i = 0; i < DC.length; i++) {
+      const d = DC[i];
+      if (s === d || s.indexOf(d + "_") === 0 || raw.indexOf(d) === 0) return true;
+    }
+    return false;
+  }
+
   function isDayCentreRosterSession(s) {
     if (!s) return false;
+    if (portalClientIsDayCentreSharedParticipant(s.clientId || s.clientName)) return true;
     const blob = String(
       (s.rosterService || s.activity || s.service || "") + " " + (s.clientId || "")
     );
@@ -630,16 +709,24 @@
     return stKey.indexOf(rKey) >= 0 || rKey.indexOf(stKey) >= 0;
   }
 
-  /** Each worker owns their MA / aquatic (teaching pool) / climbing slots — a co-worker's
-      submission only validates Day Centre and Bespoke shared sessions. */
+  /** Each worker owns their MA / climbing / 1:1 aquatic slots — a co-worker's
+      submission only validates Day Centre, Bespoke shared, and 2:1 aquatic. */
   function rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso) {
     if (!s) return false;
     if (s.__portalSundayInstructorCover) return true;
+    if (portalClientIsDayCentreSharedParticipant(s.clientId || s.clientName)) return false;
     const act = String((s.activity || s.rosterService || s.service) || "")
       .trim()
       .toLowerCase();
     if (/day\s*centre/.test(act)) return false;
     if (isBespokeSharedRosterSession(s)) return false;
+    if (
+      typeof window !== "undefined" &&
+      typeof window.portalAquaticSessionIsTwoToOneShared === "function" &&
+      window.portalAquaticSessionIsTwoToOneShared(s, iso)
+    ) {
+      return false;
+    }
     if (/multi[-\s]?activity/.test(act)) return true;
     if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
     if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;
@@ -665,6 +752,16 @@
         );
       });
     }
+    if (statusRowIsAquaticTwoToOneShared(st, iso)) {
+      return submittedRowsForDateAll(iso).some(function (r) {
+        return (
+          submittedRowMatchesStatusClient(r, st) &&
+          !submittedRowMarksAbsent(r) &&
+          submittedRowIsAquatic(r) &&
+          aquaticStatusTimesAlign(st, r)
+        );
+      });
+    }
     if (isBespokeStatusRow(st)) {
       return submittedRowsForDateAll(iso).some(function (r) {
         return (
@@ -674,7 +771,7 @@
         );
       });
     }
-    if (submittedCoversMergeGroup(iso, st)) return true;
+    if (submittedCoversMergeGroup(iso, st, staffId)) return true;
     const sid = String(staffId || "").trim().toLowerCase();
     return submittedRowsForDateAll(iso).some(function (r) {
       if (!submittedRowMatchesStatusClient(r, st)) return false;
@@ -791,7 +888,7 @@
     if (statusRowTermCancelledOnPortal(iso, st)) return true;
     if (statusOverviewIsAbsent(st)) return true;
     if (String(st.feedbackMergeGroup || "").trim()) {
-      if (submittedCoversMergeGroup(iso, st)) return true;
+      if (submittedCoversMergeGroup(iso, st, staffId)) return true;
       return submittedCoversStatusRow(iso, st, staffId);
     }
     if (statusRowNeedsPerStaffUnitFeedback(st)) {
@@ -804,9 +901,21 @@
   function rosterFeedbackMergeRules() {
     const src =
       typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
-    return src && Array.isArray(src.sundayFeedbackMerges)
-      ? src.sundayFeedbackMerges
-      : [];
+    const fromSrc =
+      src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
+    if (fromSrc.length) return fromSrc;
+    const pinned =
+      typeof window !== "undefined" && window.__PORTAL_STAFF_BUNDLE_META__
+        ? window.__PORTAL_STAFF_BUNDLE_META__.sundayFeedbackMerges
+        : null;
+    if (Array.isArray(pinned) && pinned.length) return pinned;
+    if (
+      typeof window !== "undefined" &&
+      typeof window.portalStaffLeadSundayFeedbackMergeRules === "function"
+    ) {
+      return window.portalStaffLeadSundayFeedbackMergeRules() || [];
+    }
+    return [];
   }
 
   function mergeRuleSlotStartHm(timeSlot) {
@@ -991,17 +1100,52 @@
     return null;
   }
 
+  /** Sunday SwimFarm / named merge (Zaid+Javier, Yusuf+Roberto, Cyrus Wed): one submit covers AA+MA. */
+  function submittedKeyLooksLikeLeadAquaticUnit(pk) {
+    const parts = String(pk || "")
+      .trim()
+      .split("|")
+      .map(function (p) {
+        return String(p || "").trim();
+      })
+      .filter(Boolean);
+    if (parts.length < 3 || !/^\d{4}-\d{2}-\d{2}$/.test(parts[0])) return false;
+    const last = slug(parts[parts.length - 1]);
+    if (last === "aquatic") {
+      if (parts.length === 3) {
+        return !normalizeHmToken(parts[1]) && !!slug(parts[1]);
+      }
+      if (parts.length === 4 && normalizeHmToken(parts[2])) {
+        return !normalizeHmToken(parts[1]) && !!slug(parts[1]);
+      }
+      return false;
+    }
+    /* Timed AA submit without |aquatic suffix (Roberto Yusuf 2026-09-13|09:00|yusuf_ah). */
+    if (parts.length === 3 && normalizeHmToken(parts[1]) && !!slug(parts[2])) return true;
+    return false;
+  }
+
   function submittedSundaySwimfarmSiblingCovers(iso, staffId, s, clientNotesById) {
-    if (!isSundaySwimfarmAquaticOrMultiSession(s, iso)) return false;
-    const wantStart = normalizeHmToken(s.start);
+    const wantStart = normalizeHmToken(s && s.start);
     if (!wantStart) return false;
     const mergeStarts = sundayMergeAllowedStartsForSession(iso, s, clientNotesById);
+    const inNamedMerge = !!(mergeStarts && mergeStarts.has(wantStart));
+    if (!inNamedMerge && !isSundaySwimfarmAquaticOrMultiSession(s, iso)) return false;
     const rosterKey = rosterKeyForSession(s, clientNotesById);
     return submittedRowsForStaffDate(iso, staffId).some(function (r) {
       if (submittedRowMarksAbsent(r)) return false;
       const rKey = slug(r && r.clientName);
       if (!rosterKey || !rKey || !clientSlugTokensEquivalent(rosterKey, rKey)) return false;
       const pk = String((r.portalSessionKey || r.portal_session_key) || "").trim();
+      /* DATE|client|aquatic (Javier Zaid 9-9.30) covers Multi 9.30 in the same merge. */
+      if (inNamedMerge && submittedKeyLooksLikeLeadAquaticUnit(pk)) return true;
+      if (
+        inNamedMerge &&
+        /^\d{4}-\d{2}-\d{2}\|merge\|/i.test(pk) &&
+        submittedMergeKeyCoversRosterSession(pk, iso, s, clientNotesById)
+      ) {
+        return true;
+      }
       const rStart = portalRowTimeTokenFromKey(pk);
       if (!rStart) return false;
       if (rStart === wantStart) return true;
@@ -1023,6 +1167,21 @@
     if (submittedSundaySwimfarmSiblingCovers(iso, staffId, s, clientNotesById)) {
       return true;
     }
+    /* Aquatic 2:1 (Joelle Thu Acton): either instructor's submit clears both cards. */
+    if (
+      typeof window !== "undefined" &&
+      typeof window.portalAquaticSessionIsTwoToOneShared === "function" &&
+      window.portalAquaticSessionIsTwoToOneShared(s, iso)
+    ) {
+      return submittedRowsForDateAll(iso).some(function (r) {
+        return (
+          !submittedRowMarksAbsent(r) &&
+          submittedRowIsAquatic(r) &&
+          submittedRowCoversRosterSession(r, s, clientNotesById) &&
+          submittedRowMatchesRosterServiceUnit(r, s)
+        );
+      });
+    }
     return submittedRowsForStaffDate(iso, staffId).some(function (r) {
       return (
         !submittedRowMarksAbsent(r) &&
@@ -1033,7 +1192,13 @@
   }
 
   function anySubmittedCoversRosterSession(iso, s, clientNotesById) {
-    return staffSubmittedCoversRosterSession(iso, "", s, clientNotesById);
+    return submittedRowsForDateAll(iso).some(function (r) {
+      return (
+        !submittedRowMarksAbsent(r) &&
+        submittedRowCoversRosterSession(r, s, clientNotesById) &&
+        submittedRowMatchesRosterServiceUnit(r, s)
+      );
+    });
   }
 
   function anyAbsentSubmittedCoversRosterSession(iso, s, clientNotesById) {
@@ -1129,11 +1294,29 @@
     if (!key) return false;
     const day = String(iso || "").trim().substring(0, 10);
     const unitKey = day + "|" + key + "|day_centre";
+    const dateClientKey = day + "||" + key;
     try {
       const dd = typeof window !== "undefined" && window.dashboardData;
       const srv = dd && dd.portalServerResolvedRosterKeys;
-      if (srv && srv.feedback && typeof srv.feedback.has === "function" && srv.feedback.has(unitKey)) {
-        return true;
+      if (srv && srv.feedback && typeof srv.feedback.has === "function") {
+        if (srv.feedback.has(unitKey) || srv.feedback.has(dateClientKey)) return true;
+      }
+      const submitted =
+        (dd && dd.portalServerSubmittedFeedbackPortalKeys) ||
+        (dd && dd.portalServerSubmittedFeedbackKeys);
+      if (submitted && typeof submitted.has === "function") {
+        if (submitted.has(unitKey) || submitted.has(dateClientKey)) return true;
+        const matcher =
+          typeof window !== "undefined" && typeof window.__PORTAL_REVIEW_KEY_MATCHER__ === "function"
+            ? window.__PORTAL_REVIEW_KEY_MATCHER__
+            : null;
+        if (matcher && submitted.size) {
+          for (const fk of submitted) {
+            try {
+              if (matcher(fk, unitKey) || matcher(fk, dateClientKey)) return true;
+            } catch (_) {}
+          }
+        }
       }
     } catch (_) {}
     return submittedRowsForDateAll(iso).some(function (r) {
@@ -1183,24 +1366,10 @@
     rosterSessions,
     clientNotesById
   ) {
-    const roster = Array.isArray(rosterSessions) ? rosterSessions : [];
-    const status = statusRowsForStaffDate(iso, staffId);
-    if (status.length) {
-      return roster.filter(function (s) {
-        return status.some(function (st) {
-          return clientMatch(st, s, clientNotesById);
-        });
-      });
-    }
-    const sub = submittedRowsForStaffDate(iso, staffId);
-    if (sub.length) {
-      return roster.filter(function (s) {
-        return sub.some(function (r) {
-          return clientMatch({ clientName: r.clientName }, s, clientNotesById);
-        });
-      });
-    }
-    return roster;
+    /* Live roster is the list. Portal exports enrich completion — they must not
+       whitelist-drop a taught client (Joelle 5.30-6) just because the 6-6.30
+       cancel never landed in the status bundle. */
+    return Array.isArray(rosterSessions) ? rosterSessions : [];
   }
 
   /**
@@ -1470,6 +1639,7 @@
     anySubmittedCoversRosterSession: anySubmittedCoversRosterSession,
     dayCentreClientResolved: dayCentreClientResolved,
     dayCentrePeerSubmissionCoversClient: dayCentrePeerSubmissionCoversClient,
+    portalClientIsDayCentreSharedParticipant: portalClientIsDayCentreSharedParticipant,
     mergeGroupResolved: mergeGroupResolved,
     feedbackUnitKeyResolved: feedbackUnitKeyResolved,
     exportMarksDayComplete: exportMarksDayComplete,

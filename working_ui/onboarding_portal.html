@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Onboarding — clubSENsational Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <script src="/portal-static-bootstrap.js"></script>
+  <script type="module">
+    window.__portalOnboardingFormReady = (async function () {
+      const { bootstrapDashboardSupabase } = await import("/portal/auth-handler.js?v=20260908-onboarding-hub");
+      await bootstrapDashboardSupabase({ page: "onboarding" });
+    })();
+  </script>
+  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260919-icons" />
+</head>
+<body>
+  <main class="ob-form-page">
+    <header class="ob-form-head">
+      <a class="ob-form-back" id="obFormBack" href="staff_dashboard.html">← Back</a>
+      <div class="ob-brand" aria-hidden="false">
+        <div class="ob-brand-mark" aria-hidden="true">
+          <svg class="ob-brand-orbits" viewBox="0 0 240 240">
+            <g class="ob-brand-orbit-a">
+              <circle cx="212" cy="120" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="148.43" cy="207.50" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="45.57" cy="174.04" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="45.57" cy="65.96" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="148.43" cy="32.50" r="3" fill="#16325c" opacity="0.92"></circle>
+            </g>
+            <g class="ob-brand-orbit-b">
+              <circle cx="213.53" cy="174" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="120" cy="228" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="26.47" cy="174" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="26.47" cy="66" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="120" cy="12" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="213.53" cy="66" r="5" fill="#f5b500" opacity="0.95"></circle>
+            </g>
+          </svg>
+          <img class="ob-brand-logo" src="/portal/F-02-1.png" alt="clubSENsational" width="132" height="132" decoding="async" />
+        </div>
+        <p class="ob-brand-kicker">New staff</p>
+        <p class="ob-brand-name">clubSENsational</p>
+      </div>
+      <h1>Onboarding</h1>
+      <p>Job application, health, HMRC starter checklist, then documents (photo and passport).</p>
+      <p id="obFormSession" class="ob-form-session" hidden aria-live="polite"></p>
+      <nav class="ob-hub-nav" aria-label="Onboarding sections">
+        <a href="#job"><svg class="ob-hub-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 2h4a2 2 0 0 1 2 2v2h3a2 2 0 0 1 2 2v3h-8v-1H9v1H1V8a2 2 0 0 1 2-2h3V4a2 2 0 0 1 2-2zm0 4h4V4h-4v2zM1 12h8v1a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1h8v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-6z"/></svg>Job</a>
+        <a href="#health"><svg class="ob-hub-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>Health</a>
+        <a href="#starter"><svg class="ob-hub-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>Starter</a>
+        <a href="#docs"><svg class="ob-hub-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>Documents</a>
+      </nav>
+    </header>
+
+    <div class="ob-hub-acc" id="obHubAccordions">
+      <section class="ob-hub-acc__item" id="job">
+        <button type="button" class="ob-hub-acc__btn" data-ob-hub-toggle="obHubPanelJob" aria-expanded="true">
+          <span class="ob-hub-acc__title"><span class="ob-hub-acc__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M10 2h4a2 2 0 0 1 2 2v2h3a2 2 0 0 1 2 2v3h-8v-1H9v1H1V8a2 2 0 0 1 2-2h3V4a2 2 0 0 1 2-2zm0 4h4V4h-4v2zM1 12h8v1a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1h8v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-6z"/></svg></span> Job application</span>
+          <span class="ob-hub-acc__chev" aria-hidden="true"></span>
+        </button>
+        <div class="ob-hub-acc__panel" id="obHubPanelJob">
+          <form id="jobForm" class="ob-form-stack">
+      <section class="ob-form-block" aria-labelledby="jobSecPersonal">
+        <h2 class="ob-form-block-title" id="jobSecPersonal">1. Personal details</h2>
+        <p class="ob-form-block-desc">Name, contact and nationality.</p>
+        <div class="ob-form-card">
+          <label>Name<input name="name" required autocomplete="given-name" /></label>
+          <label>Surname<input name="surname" required autocomplete="family-name" /></label>
+          <label>Address<textarea name="address" rows="3" autocomplete="street-address"></textarea></label>
+          <label>Date of birth<input name="dob" type="date" autocomplete="bday" /></label>
+          <label>Phone<input name="phone" type="tel" autocomplete="tel" /></label>
+          <label>Nationality
+            <input name="nationality" required list="jobNationalityList" autocomplete="country-name" placeholder="Start typing… e.g. British" />
+          </label>
+          <datalist id="jobNationalityList"></datalist>
+          <p class="ob-form-hint">British / UK nationals skip right to work in the next section.</p>
+        </div>
+      </section>
+
+      <section class="ob-form-block" id="jobRtwSection" hidden aria-hidden="true" aria-labelledby="jobSecRtw">
+        <h2 class="ob-form-block-title" id="jobSecRtw">2. Right to work in the UK</h2>
+        <p class="ob-form-block-desc">Only if you are not a British or UK national.</p>
+        <div class="ob-form-card">
+          <label>RTWork<textarea name="rtwork" rows="3" placeholder="Visa type, passport, expiry, etc."></textarea></label>
+          <label>RTWork code<input name="rtwork_code" autocomplete="off" placeholder="Home Office share code" /></label>
+        </div>
+      </section>
+
+      <section class="ob-form-block" aria-labelledby="jobSecRole">
+        <h2 class="ob-form-block-title" id="jobSecRole">3. Role &amp; availability</h2>
+        <p class="ob-form-block-desc">Select role, status and main location.</p>
+        <div class="ob-form-card">
+          <label>Role<select name="role" required></select></label>
+          <label>Status<select name="status"></select></label>
+          <label>Location<select name="location"></select></label>
+          <label>Availability
+            <input name="availability" list="jobAvailabilityList" placeholder="Start typing or pick a pattern" />
+          </label>
+          <datalist id="jobAvailabilityList"></datalist>
+        </div>
+      </section>
+
+      <section class="ob-form-block" aria-labelledby="jobSecEdu">
+        <h2 class="ob-form-block-title" id="jobSecEdu">4. Education &amp; qualifications</h2>
+        <div class="ob-form-card">
+          <label>Education
+            <input name="education" list="jobEducationList" placeholder="Start typing… e.g. Bachelor's degree" />
+          </label>
+          <datalist id="jobEducationList"></datalist>
+          <label>Qualifications<textarea name="qualifications" rows="2"></textarea></label>
+          <label>Date<input name="date" type="date" title="Qualifications or certification date" /></label>
+          <label>Additional certifications
+            <input name="additional_certifications" list="jobCertificationsList" placeholder="Start typing… e.g. First aid at work" />
+          </label>
+          <datalist id="jobCertificationsList"></datalist>
+        </div>
+      </section>
+
+      <section class="ob-form-block" aria-labelledby="jobSecExp">
+        <h2 class="ob-form-block-title" id="jobSecExp">5. Experience</h2>
+        <div class="ob-form-card">
+          <label>Employment history<textarea name="employment_history" rows="4"></textarea></label>
+          <label>Gaps in employment<textarea name="gaps" rows="2"></textarea></label>
+          <label>Additional skills<textarea name="additional_skills" rows="2"></textarea></label>
+        </div>
+      </section>
+
+      <section class="ob-form-block" aria-labelledby="jobSecCrim">
+        <h2 class="ob-form-block-title" id="jobSecCrim">6. Criminal record</h2>
+        <div class="ob-form-card">
+          <label>Criminal record
+            <select name="criminal_record">
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="jobCriminalInfoWrap" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Criminal record info<textarea name="criminal_record_info" rows="3"></textarea></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="ob-form-block" aria-labelledby="jobSecRef">
+        <h2 class="ob-form-block-title" id="jobSecRef">7. References</h2>
+        <div class="ob-form-card">
+          <label>Reference 1<textarea name="reference_1" rows="3" placeholder="Name, relationship, contact details"></textarea></label>
+          <label>Reference 2<textarea name="reference_2" rows="3" placeholder="Name, relationship, contact details"></textarea></label>
+        </div>
+      </section>
+
+      <section class="ob-form-block" aria-labelledby="jobSecBank">
+        <h2 class="ob-form-block-title" id="jobSecBank">8. Bank details (payroll)</h2>
+        <p class="ob-form-block-desc">For salary payments only — complete last.</p>
+        <div class="ob-form-card">
+          <label>Bank account<input name="bank_account" autocomplete="off" /></label>
+          <label>Sort code<input name="sort_code" inputmode="numeric" autocomplete="off" placeholder="00-00-00" /></label>
+          <label>Account number<input name="account_number" inputmode="numeric" autocomplete="off" /></label>
+        </div>
+      </section>
+
+      <section class="ob-form-block ob-form-block--submit">
+        <div class="ob-form-card">
+          <label class="ob-form-check"><input type="checkbox" name="confirm" required /> I confirm the information above is accurate.</label>
+          <p id="jobStatus" class="ob-form-status" hidden></p>
+          <div class="ob-form-actions">
+            <button type="button" class="ob-btn ob-btn--ghost" id="jobSaveDraft">Save draft</button>
+            <button type="submit" class="ob-btn ob-btn--primary">Submit application</button>
+          </div>
+        </div>
+      </section>
+    </form>
+        </div>
+      </section>
+
+      <section class="ob-hub-acc__item" id="health">
+        <button type="button" class="ob-hub-acc__btn" data-ob-hub-toggle="obHubPanelHealth" aria-expanded="false">
+          <span class="ob-hub-acc__title"><span class="ob-hub-acc__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span> Health questionnaire</span>
+          <span class="ob-hub-acc__chev" aria-hidden="true"></span>
+        </button>
+        <div class="ob-hub-acc__panel" id="obHubPanelHealth" hidden>
+          <form id="healthForm" class="ob-form-stack">
+      <section class="ob-form-block" aria-labelledby="healthSecPersonal">
+        <h2 class="ob-form-block-title" id="healthSecPersonal">1. Your details</h2>
+        <div class="ob-form-card">
+          <label>Name<input name="name" required autocomplete="given-name" /></label>
+          <label>Surname<input name="surname" required autocomplete="family-name" /></label>
+          <label>Date of birth<input name="dob" type="date" required autocomplete="bday" /></label>
+          <label>Role<select name="role"></select></label>
+        </div>
+      </section>
+
+      <section class="ob-form-block" aria-labelledby="healthSecQuestions">
+        <h2 class="ob-form-block-title" id="healthSecQuestions">2. Health questions</h2>
+        <p class="ob-form-block-desc">Select Yes or No for each item.</p>
+        <div class="ob-form-card">
+          <label>Medical conditions
+            <select name="medical_conditions" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_medical_condition_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Medical condition info<textarea name="medical_condition_info" rows="3"></textarea></label>
+          </div>
+
+          <label>Medication
+            <select name="medication" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_medication_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Medication info<textarea name="medication_info" rows="3"></textarea></label>
+          </div>
+
+          <label>Allergies
+            <select name="allergies" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_allergies_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Allergies info<textarea name="allergies_info" rows="3"></textarea></label>
+          </div>
+
+          <label>Mental health
+            <select name="mental_health" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_mental_health_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Mental health info<textarea name="mental_health_info" rows="3"></textarea></label>
+          </div>
+
+          <label>Musculoskeletal
+            <select name="musculoskeletal" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_musculoskeletal_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Musculoskeletal conditions info<textarea name="musculoskeletal_info" rows="3"></textarea></label>
+          </div>
+
+          <label>Respiratory
+            <select name="respiratory" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_respiratory_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Respiratory conditions info<textarea name="respiratory_info" rows="3"></textarea></label>
+          </div>
+
+          <label>Hearing impairments
+            <select name="hearing_impairments" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_hearing_impairments_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Hearing impairments info<textarea name="hearing_impairments_info" rows="3"></textarea></label>
+          </div>
+
+          <label>Communicable diseases
+            <select name="communicable_diseases" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_communicable_diseases_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Communicable diseases info<textarea name="communicable_diseases_info" rows="3"></textarea></label>
+          </div>
+
+          <label>Surgeries or hospital admissions
+            <select name="surgeries_or_hospital_admissions" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_hospital_admissions_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Hospital admissions info<textarea name="hospital_admissions_info" rows="3"></textarea></label>
+          </div>
+
+          <label>Require workplace adjustments?
+            <select name="require_workplace_adjustments" required>
+              <option value="">Select…</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </label>
+          <div id="healthInfo_adjustments_info" class="ob-form-detail" hidden aria-hidden="true">
+            <label>Adjustments info<textarea name="adjustments_info" rows="3"></textarea></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="ob-form-block ob-form-block--submit" aria-labelledby="healthSecConfirm">
+        <h2 class="ob-form-block-title" id="healthSecConfirm">3. Confirmations</h2>
+        <div class="ob-form-card">
+          <label class="ob-form-check"><input type="checkbox" name="confirmation_1" required /> I confirm the health information I have provided is complete and accurate to the best of my knowledge.</label>
+          <label class="ob-form-check"><input type="checkbox" name="confirmation_2" required /> I understand I must inform my employer if my health circumstances change.</label>
+          <label class="ob-form-check"><input type="checkbox" name="confirmation_3" required /> I consent to this information being used for pre-employment health assessment purposes only.</label>
+          <p id="healthStatus" class="ob-form-status" hidden></p>
+          <div class="ob-form-actions">
+            <button type="button" class="ob-btn ob-btn--ghost" id="healthSaveDraft">Save draft</button>
+            <button type="submit" class="ob-btn ob-btn--primary">Submit questionnaire</button>
+          </div>
+        </div>
+      </section>
+    </form>
+        </div>
+      </section>
+
+      <section class="ob-hub-acc__item" id="starter">
+        <button type="button" class="ob-hub-acc__btn" data-ob-hub-toggle="obHubPanelStarter" aria-expanded="false">
+          <span class="ob-hub-acc__title"><span class="ob-hub-acc__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></span> Starter checklist</span>
+          <span class="ob-hub-acc__chev" aria-hidden="true"></span>
+        </button>
+        <div class="ob-hub-acc__panel" id="obHubPanelStarter" hidden>
+          <p class="ob-form-block-desc">Official HMRC tax starter form for payroll. Fill it step by step; we paint the PDF and send a copy to Admin Onboarding.</p>
+          <article class="ob-form-card ob-hub-action-card">
+            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> HMRC starter checklist</p>
+            <p class="ob-form-block-desc">Statement A/B/C, National Insurance and student loan. Not the annual profile update.</p>
+            <div class="ob-form-actions">
+              <a class="ob-btn ob-btn--primary" id="obHubStarterLink" href="starter_checklist.html?v=20260919-paint">Open starter checklist</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="ob-hub-acc__item" id="docs">
+        <button type="button" class="ob-hub-acc__btn" data-ob-hub-toggle="obHubPanelDocs" aria-expanded="false">
+          <span class="ob-hub-acc__title"><span class="ob-hub-acc__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg></span> Documents</span>
+          <span class="ob-hub-acc__chev" aria-hidden="true"></span>
+        </button>
+        <div class="ob-hub-acc__panel" id="obHubPanelDocs" hidden>
+          <p class="ob-form-block-desc">Portal photo and passport are required. Certificates and first aid are optional. Safeguarding training is in the staff portal.</p>
+          <div class="ob-hub-chip-block">
+            <p class="ob-hub-chip-legend">Upload status</p>
+            <div id="obHubDocChips" class="ob-hub-chips" aria-live="polite"></div>
+          </div>
+
+          <article class="ob-form-card ob-hub-action-card ob-hub-photo-card" id="photo">
+            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> Photo for the portal</p>
+            <p class="ob-form-block-desc">Clear face photo for your staff profile. Parents see it when you start.</p>
+            <div class="ob-hub-photo-row">
+              <div class="ob-hub-photo-frame" id="obHubPhotoFrame">
+                <img id="obHubPhotoPreview" class="ob-hub-photo-preview" alt="" hidden />
+                <span class="ob-hub-photo-placeholder" id="obHubPhotoPlaceholder" aria-hidden="true">Add photo</span>
+              </div>
+              <div class="ob-hub-photo-meta">
+                <p class="ob-hub-photo-tip">JPG or PNG · face clear · good light</p>
+                <label class="ob-file-pick">
+                  <span class="ob-file-pick__btn">Choose photo</span>
+                  <span class="ob-file-pick__name" id="obHubPhotoFileName">No file chosen</span>
+                  <input id="obHubPhotoInput" type="file" accept="image/*" />
+                </label>
+              </div>
+            </div>
+            <p id="obHubPhotoStatus" class="ob-form-status" hidden></p>
+            <div class="ob-form-actions">
+              <button type="button" class="ob-btn ob-btn--primary" id="obHubPhotoUpload">Upload photo</button>
+            </div>
+          </article>
+
+          <article class="ob-form-card ob-hub-action-card">
+            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> Passport / ID</p>
+            <p class="ob-form-block-desc">Photo or PDF of your passport or photo ID. Admin uses this for right to work.</p>
+            <form id="obHubDocForm" class="ob-hub-doc-card">
+              <input type="hidden" name="doc_type" value="passport" />
+              <label class="ob-file-pick ob-file-pick--block">
+                <span class="ob-file-pick__btn">Choose passport / ID</span>
+                <span class="ob-file-pick__name" id="obHubDocFileName">PDF, photo or Word / no file chosen</span>
+                <input name="doc_file" type="file" accept="image/*,.pdf,.doc,.docx" required />
+              </label>
+              <p id="obHubDocStatus" class="ob-form-status" hidden></p>
+              <div class="ob-form-actions">
+                <button type="submit" class="ob-btn ob-btn--primary">Upload passport</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="ob-form-card ob-hub-action-card">
+            <p class="ob-hub-action-kicker">Optional certificates</p>
+            <p class="ob-form-block-desc">Only if you already have them.</p>
+            <form id="obHubExtraDocForm" class="ob-hub-doc-card">
+              <label class="ob-field">Document type
+                <select name="doc_type" required>
+                  <option value="">Select…</option>
+                  <option value="certificate">Certificate</option>
+                  <option value="firstaid">First aid</option>
+                </select>
+              </label>
+              <label class="ob-file-pick ob-file-pick--block">
+                <span class="ob-file-pick__btn">Choose file</span>
+                <span class="ob-file-pick__name" id="obHubExtraDocFileName">PDF, photo or Word / no file chosen</span>
+                <input name="doc_file" type="file" accept="image/*,.pdf,.doc,.docx" required />
+              </label>
+              <p id="obHubExtraDocStatus" class="ob-form-status" hidden></p>
+              <div class="ob-form-actions">
+                <button type="submit" class="ob-btn ob-btn--ghost">Upload extra document</button>
+              </div>
+            </form>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="/portal/onboarding_make_webhooks.js?v=20260601-make"></script>
+  <script src="/portal/onboarding_form_options.js?v=20260909-staff-role"></script>
+  <script src="/portal/onboarding_job_form.js?v=20260614-sections"></script>
+  <script src="/portal/onboarding_health_form.js?v=20260614-sections"></script>
+  <script src="/portal/onboarding_applicant_form.js?v=20260614-sections"></script>
+  <script src="/portal/onboarding_hub.js?v=20260919-health-fix"></script>
+  <script>
+    (function () {
+      async function boot() {
+        try {
+          if (window.__portalOnboardingFormReady) await window.__portalOnboardingFormReady;
+        } catch (_) {}
+        if (typeof portalOnboardingHubBoot === "function") portalOnboardingHubBoot();
+      }
+      boot();
+    })();
+  </script>
+</body>
+</html>

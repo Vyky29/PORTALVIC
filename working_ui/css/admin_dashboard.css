@@ -2248,6 +2248,8 @@
     .card--premium{box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 40px rgba(15,23,42,.08);border-color:#e8ecf1}
     .chip--pink{background:rgba(252,228,236,.95);color:#a81f63;border:1px solid rgba(194,24,91,.22)}
     .chip--makeup{background:rgba(252,228,236,.95);color:#a81f63;border:1px solid rgba(194,24,91,.28)}
+    .chip--refund{background:var(--successSoft);color:var(--success);border:1px solid rgba(21,128,61,.28)}
+    .chip--credit{background:var(--blueSoft);color:var(--blue);border:1px solid rgba(37,99,235,.28)}
     .chip--pri{background:#fef3c7;color:#b45309}
     .chip--blk{background:#e0f2fe;color:#0369a1}
     .pr-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
@@ -2266,6 +2268,10 @@
     .exec-triple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
     @media (max-width:1000px){.exec-triple{grid-template-columns:1fr}}
     .tbl--dense th,.tbl--dense td{padding:7px 8px;font-size:12px;vertical-align:top}
+    .tbl.tbl--dense.pp-queue-tbl th,.tbl.tbl--dense.pp-queue-tbl td{vertical-align:middle}
+    .tbl.tbl--dense.pp-queue-tbl .pp-queue-chips{
+      display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;min-width:0
+    }
     .decision-block{font-size:13px;line-height:1.5}
     .decision-block dt{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-top:12px}
     .decision-block dt:first-of-type{margin-top:0}

@@ -20,9 +20,9 @@
     return u;
   }
 
-  function photoCandidates(name, photoOverride) {
+  function photoCandidates(name, photoOverride, contactId) {
     if (typeof global.portalParticipantPhotoPathCandidates === "function") {
-      return global.portalParticipantPhotoPathCandidates(name, photoOverride);
+      return global.portalParticipantPhotoPathCandidates(name, photoOverride, contactId);
     }
     var one = photoOverride ? normalizePhotoUrl(photoOverride) : "";
     return one ? [one] : [];
@@ -91,6 +91,19 @@
     return name === "HOME" || name === "CASA";
   }
 
+  /** cancelled|absent → soft red photo; trial|makeup|new → pulse ring (no photo filter). */
+  function chipOverrideClass(p) {
+    var st = String((p && (p.chipStatus || p.overrideStatus || p.status)) || "")
+      .trim()
+      .toLowerCase();
+    if (st === "cancelled" || st === "cancel") return "today-participant-chip--cancelled";
+    if (st === "absent") return "today-participant-chip--absent";
+    if (st === "trial") return "today-participant-chip--trial";
+    if (st === "makeup" || st === "make_up" || st === "make-up") return "today-participant-chip--makeup";
+    if (st === "new" || st === "new_client") return "today-participant-chip--new";
+    return "";
+  }
+
   var TODAY_HOME_CHIP_SVG =
     '<svg class="today-participant-chip__home-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none">' +
     '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>' +
@@ -128,18 +141,61 @@
 
   function portalRefreshTodayNextParticipantPhotos(root) {
     root = root || document;
-    root.querySelectorAll(".today-participant-chip__avatar img.portal-screenshot-protected").forEach(function (img) {
+    root.querySelectorAll(".today-participant-chip__avatar[data-participant-name]").forEach(function (el) {
+      if (el.classList.contains("today-participant-chip__avatar--home")) return;
+      var name = String(el.getAttribute("data-participant-name") || "").trim();
+      if (!name) return;
+      var chip = el.closest("[data-next-session-participant]");
+      var clientId = chip ? String(chip.getAttribute("data-next-session-client") || "").trim() : "";
+      var candidates = photoCandidates(name, "", clientId);
+      if (!candidates.length && typeof global.resolveParticipantPhotoUrl === "function") {
+        var resolved = normalizePhotoUrl(global.resolveParticipantPhotoUrl(name, clientId) || "");
+        if (resolved) candidates = [resolved];
+      }
+      if (!candidates.length && typeof global.portalParticipantPhotoUrl === "function") {
+        var mapped = normalizePhotoUrl(global.portalParticipantPhotoUrl(name, "", clientId) || "");
+        if (mapped) candidates = [mapped];
+      }
+      var src = candidates.length ? candidates[0] : "";
+      if (!src) return;
+      var photoFallbacks = candidates.slice(1).join("|");
+      var loadAttr =
+        typeof global.portalParticipantPhotoLoadingAttr === "function"
+          ? global.portalParticipantPhotoLoadingAttr()
+          : ' loading="eager" fetchpriority="low"';
+      var img = el.querySelector("img.portal-screenshot-protected");
+      if (!img) {
+        el.classList.add("today-participant-chip__avatar--has-photo");
+        el.classList.add("today-participant-chip__avatar--initials");
+        el.innerHTML =
+          escapeHtml(chipAvatarInitials(name)) +
+          '<img class="portal-screenshot-protected" src="' +
+          escapeHtml(src) +
+          '" alt=""' +
+          loadAttr +
+          ' decoding="async" draggable="false"' +
+          (photoFallbacks ? ' data-photo-fallbacks="' + escapeHtml(photoFallbacks) + '"' : "") +
+          ' onerror="if(window.portalTodayNextChipPhotoTryFallback){window.portalTodayNextChipPhotoTryFallback(this);}" />';
+        return;
+      }
+      var norm = normalizePhotoUrl(img.getAttribute("src") || img.src || "");
+      if (norm !== src) {
+        img.setAttribute("data-photo-fallbacks", photoFallbacks);
+        img.src = src;
+        el.classList.add("today-participant-chip__avatar--has-photo");
+        return;
+      }
       if (img.complete && img.naturalWidth > 0) return;
-      if (!img.complete && img.src) return;
-      if (img.getAttribute("data-photo-fallbacks")) {
+      /* Incomplete or zero-size: often after sheet open/close aborts decode on iOS.
+         Force a reload instead of leaving initials forever. */
+      if (img.getAttribute("data-photo-fallbacks") && img.complete && !(img.naturalWidth > 0)) {
         portalTodayNextChipPhotoTryFallback(img);
         return;
       }
-      if (img.src) {
-        var retry = img.src;
-        img.src = "";
-        img.src = retry;
-      }
+      el.classList.add("today-participant-chip__avatar--has-photo");
+      var retry = img.src || src;
+      img.src = "";
+      img.src = retry;
     });
   }
 
@@ -181,7 +237,7 @@
       var rawName = String((p && p.name) || "—").trim();
       var name = esc(rawName);
       var rawId = String((p && p.clientId) || "").trim();
-      var candidates = photoCandidates(rawName, p && p.photoUrl ? String(p.photoUrl).trim() : "");
+      var candidates = photoCandidates(rawName, p && p.photoUrl ? String(p.photoUrl).trim() : "", rawId);
       var src = candidates.length ? candidates[0] : "";
       var photoFallbacks = candidates.slice(1).join("|");
       var loadAttr =
@@ -202,13 +258,19 @@
           ' onerror="if(window.portalTodayNextChipPhotoTryFallback){window.portalTodayNextChipPhotoTryFallback(this);}" />';
       }
       html +=
-        '<button type="button" class="today-participant-chip"' +
+        '<button type="button" class="today-participant-chip' +
+        (chipOverrideClass(p) ? " " + chipOverrideClass(p) : "") +
+        '"' +
         (chipCol ? ' style="' + chipCol + '"' : "") +
         ' data-next-session-participant="1" data-next-session-client="' +
         esc(rawId) +
         '" data-next-session-name="' +
         esc(rawName) +
-        '" aria-label="Open profile for ' +
+        '"' +
+        (chipOverrideClass(p)
+          ? ' data-chip-status="' + esc(String(p.chipStatus || p.overrideStatus || "").trim().toLowerCase()) + '"'
+          : "") +
+        ' aria-label="Open profile for ' +
         name +
         '" role="listitem">';
       html += '<span class="today-participant-chip__avatar-wrap">';

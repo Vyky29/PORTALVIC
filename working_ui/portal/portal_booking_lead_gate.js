@@ -183,6 +183,8 @@
         { "x-parent-portal-session": parentTok }
       );
       if (out.res.ok && out.data && out.data.ok && out.data.session_token) {
+        /* Always replace any leftover Booking lead (another family on this device). */
+        clearStored();
         saveStored(out.data.session_token, out.data.expires_at, out.data.lead);
         return true;
       }
@@ -480,6 +482,7 @@
         return;
       }
 
+      clearStored();
       saveStored(leadOut.data.session_token, leadOut.data.expires_at, leadOut.data.lead);
       unlock();
       return;
@@ -815,13 +818,24 @@
       return false;
     }
 
-    var ok = await validateSession();
-    if (ok) {
-      unlock();
-      return true;
+    /*
+     * Privacy: Family Portal session always wins over a leftover Booking lead
+     * unlock. Otherwise another family's contact (name/email/mobile) can stay
+     * painted on waitlist / book sheets after you signed in as someone else.
+     */
+    var parentTok = readParentPortalToken();
+    if (parentTok) {
+      var parentOk = await tryParentPortalHandoff();
+      if (parentOk) {
+        unlock();
+        return true;
+      }
+      clearStored();
+      openGate();
+      return false;
     }
 
-    ok = await tryParentPortalHandoff();
+    var ok = await validateSession();
     if (ok) {
       unlock();
       return true;

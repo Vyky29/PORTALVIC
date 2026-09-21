@@ -199,6 +199,29 @@
     return parsePayload(row && row.payload);
   }
 
+  function payloadFlagTrue(v) {
+    if (v === true || v === 1) return true;
+    const s = String(v == null ? "" : v).trim().toLowerCase();
+    return s === "true" || s === "1" || s === "yes";
+  }
+
+  function overridePayloadIsTrial(pl) {
+    if (!pl) return false;
+    if (pl.is_trial === true) return true;
+    const k = String(pl.booking_kind || pl.session_kind || "").trim().toLowerCase();
+    return k === "trial";
+  }
+
+  /** Finish-booking / office term place seated onto an open slot — not a MakeUp. */
+  function overrideIsFinishBookingNewClient(row) {
+    const t = String((row && row.override_type) || "").trim();
+    if (!REPLACE_TYPES.has(t)) return false;
+    const pl = overridePayload(row);
+    if (!pl || overridePayloadIsTrial(pl)) return false;
+    if (payloadFlagTrue(pl.new_client) || payloadFlagTrue(pl.finish_booking)) return true;
+    return false;
+  }
+
   function overrideScopeIsTerm(pl) {
     const s = String((pl && pl.scope) || "").trim();
     return s === "rest_of_term" || s === "weekday_term";
@@ -277,6 +300,7 @@
     const t = String(row && row.override_type || "").trim();
     const pl = overridePayload(row);
     if (!pl) return false;
+    if (overrideIsFinishBookingNewClient(row)) return true;
     if (pl.term_new_participant === true) {
       const scope = overridePayloadScope(pl);
       if (scope === "single_day" || scope === "pick_sessions") return false;
@@ -463,9 +487,13 @@
 
   function isMakeUpDashboardRow(item) {
     if (!item || String(item.kind || "") !== "client") return false;
-    if (item.portalOverrideMakeUpTag) return true;
     const ov = item.__portalScheduleOverride;
+    if (ov && (overrideIsFinishBookingNewClient(ov) || overrideIsTermNewParticipant(ov))) {
+      return false;
+    }
+    if (item.portalOverrideMakeUpTag) return true;
     if (!ov) return false;
+    if (overridePayloadIsTrial(overridePayload(ov))) return false;
     return REPLACE_TYPES.has(String(ov.override_type || "").trim());
   }
 
@@ -742,6 +770,7 @@
     buildPortalRosterFirstSessionMap: buildPortalRosterFirstSessionMap,
     clientFirstSessionDateIso: clientFirstSessionDateIso,
     overrideIsTermNewParticipant: overrideIsTermNewParticipant,
+    overrideIsFinishBookingNewClient: overrideIsFinishBookingNewClient,
     overrideIsRosterDayGroupRow: overrideIsRosterDayGroupRow,
     overrideRosterDayGroupIsNewShift: overrideRosterDayGroupIsNewShift,
     overrideIsNewShiftDayUpdate: overrideIsNewShiftDayUpdate,

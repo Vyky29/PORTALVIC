@@ -59,10 +59,10 @@ Deno.serve(async (req) => {
     return portalAdminJson(verified.status, { ok: false, error: verified.error });
   }
 
-  const obUrl = (Deno.env.get("ONBOARDING_SUPABASE_URL") ?? "").trim();
-  const obService = (Deno.env.get("ONBOARDING_SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
-  if (!obUrl || !obService) {
-    return portalAdminJson(503, { ok: false, error: "onboarding_not_configured" });
+  const portalUrl = (Deno.env.get("SUPABASE_URL") ?? "").trim();
+  const portalService = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
+  if (!portalUrl || !portalService) {
+    return portalAdminJson(503, { ok: false, error: "server_misconfigured" });
   }
 
   let body: { applicant_session_id?: string; form_type?: string };
@@ -81,11 +81,11 @@ Deno.serve(async (req) => {
     return portalAdminJson(400, { ok: false, error: "invalid_form_type" });
   }
 
-  const obAdmin = createClient(obUrl, obService, {
+  const portalDb = createClient(portalUrl, portalService, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data, error } = await obAdmin
+  const { data, error } = await portalDb
     .from("onboarding_applicant_drafts")
     .select("payload, updated_at")
     .eq("applicant_session_id", sid)

@@ -51,7 +51,7 @@ const SEED: Record<string, { clientId: string; po?: string }> = {
   tinashe: { clientId: "514985" },
   "amar-rai": { clientId: "626186" },
   "yousef-al": { clientId: "790419" },
-  /* NHS */
+  /* NHS — PDF shows Client's ID with NWL prefix (e.g. NWL474280). */
   fadi: { clientId: "613434", po: "XXPRASHERV1" },
   "ikram-omar": { clientId: "572135", po: "XXPRASHERV1" },
   emanuel: { clientId: "474280", po: "XXPRASHERV1" },

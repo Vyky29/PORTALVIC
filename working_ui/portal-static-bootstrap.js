@@ -19,12 +19,17 @@
     window.PORTAL_SHARED_JS_BASE = "/portal-shared-js";
   }
 
-  /** Canonical Portal host — induction/My documents 404 on www.clubsensational.org. */
+  /** Admin / CEO / office host. */
   window.PORTAL_CANONICAL_ORIGIN =
     window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app";
+  /** Staff app (login, dashboard, onboarding). */
+  window.CLUBSENSATIONAL_STAFF_ORIGIN =
+    window.CLUBSENSATIONAL_STAFF_ORIGIN || "https://clubsensational-staff.vercel.app";
   /** Family portal (parents) — public club site (not the staff app host). */
   window.PORTAL_FAMILY_ORIGIN =
     window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org";
+  window.PORTAL_BOOKING_PORTAL_URL =
+    window.PORTAL_BOOKING_PORTAL_URL || "https://www.clubsensational.org/bookingportal";
   window.portalFamilyPortalUrl = function portalFamilyPortalUrl(path) {
     path = String(path || "").replace(/^\//, "");
     if (path === "parents") path = "parent";
@@ -139,13 +144,13 @@
       if (!document.querySelector('link[data-portal-screenshot-guard-css="1"]')) {
         var link = document.createElement("link");
         link.rel = "stylesheet";
-        link.href = base + "/portal_screenshot_guard.css?v=20260606-watermark-shot";
+        link.href = base + "/portal_screenshot_guard.css?v=20260910-ios-taps";
         link.setAttribute("data-portal-screenshot-guard-css", "1");
         head.appendChild(link);
       }
       if (!document.querySelector('script[data-portal-screenshot-guard-js="1"]')) {
         var s = document.createElement("script");
-        s.src = base + "/portal_screenshot_guard.js?v=20260606-watermark-shot";
+        s.src = base + "/portal_screenshot_guard.js?v=20260910-ios-taps";
         s.setAttribute("data-portal-screenshot-guard-js", "1");
         head.appendChild(s);
       }

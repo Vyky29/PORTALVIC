@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260825-may3-bh-only";
+    "/portal/day-centre-calendar-2026-27-section.html?from=staff&v=20260909-bp";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -14,7 +14,7 @@
   var DOC_SESSION_KEY = "calendar-2026-27";
   var ON_ACK_ACTION = "calendar_2026_27";
   /** Bump when calendar content changes — staff must re-ack to see updates. */
-  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 7;
+  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 8;
   var CALENDAR_ANNOUNCEMENT_ID = "a0270001-0001-4000-8000-0000000a2701";
   var JSPDF_URL =
     "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260702-html-cal";
@@ -58,6 +58,8 @@
       { from: "2027-05-29", to: "2027-05-30" },
       { from: "2027-06-05", to: "2027-06-06" },
     ],
+    /** After-school + weekend: half-term week + flanking weekends. */
+    afterSchoolClosedRanges: [{ from: "2026-10-24", to: "2026-11-01" }],
     /** First open day through last open day of the academic year. */
     openFrom: "2026-09-01",
     openTo: "2027-07-30",
@@ -286,6 +288,53 @@
     });
   };
 
+  /**
+   * Sessions (after-school) HTML paints Oct half-term weekdays red.
+   * Day Centre stays open those weekdays — flip AS-only closures back to green
+   * before painting the child's session colours.
+   */
+  global.portalReopenDayCentreOpenDaysOnSessionsCalendar =
+    function portalReopenDayCentreOpenDaysOnSessionsCalendar(root) {
+      if (!root || !root.querySelectorAll) return;
+      var PTC = global.PortalTermCalendar;
+      if (!PTC || typeof PTC.isClosedIso !== "function") return;
+      var grids = root.querySelectorAll(".dc-cal-grid");
+      Array.prototype.forEach.call(grids, function (grid) {
+        var label = String(grid.getAttribute("aria-label") || "").trim();
+        var m = label.match(/^([A-Za-z]+)\s+(\d{4})$/);
+        if (!m) return;
+        var monthNum = CAL_MONTH_NAME_TO_NUM[String(m[1] || "").toLowerCase()];
+        var year = Number(m[2]);
+        if (!monthNum || !Number.isFinite(year)) return;
+        var cells = grid.children;
+        for (var i = 0; i < cells.length; i++) {
+          var cell = cells[i];
+          if (!cell || !cell.classList) continue;
+          if (!cell.classList.contains("dc-cal-cell--red")) continue;
+          if (cell.classList.contains("dc-cal-cell--bank-hol")) continue;
+          var dayEl = cell.querySelector(".dc-cal-day");
+          var day = Number(dayEl && String(dayEl.textContent || "").trim());
+          if (!Number.isFinite(day) || day < 1) continue;
+          var iso =
+            String(year) +
+            "-" +
+            (monthNum < 10 ? "0" : "") +
+            monthNum +
+            "-" +
+            (day < 10 ? "0" : "") +
+            day;
+          /* HTML Sessions panel marks AS week-1 (1-4 Sep) + half-term red;
+             PortalTermCalendar may only list half-term for AS — use DC truth. */
+          var dcClosed = !!PTC.isClosedIso(iso, { serviceKind: "day_centre" });
+          if (!dcClosed) {
+            cell.classList.remove("dc-cal-cell--red");
+            cell.classList.add("dc-cal-cell--green");
+            cell.title = "Day Centre open";
+          }
+        }
+      });
+    };
+
   /** Parent My Calendar: Sessions panel only (full year), no Day Centre / crash tabs. */
   global.portalLoadSessionsCalendar202627Into = async function portalLoadSessionsCalendar202627Into(
     host,
@@ -332,6 +381,12 @@
         try {
           global.portalMarkCalendar202627Highlights(node);
         } catch (_mark) {}
+      }
+      /* Day Centre kids: reopen AS-only half-term / week-1 reds before painting mine days. */
+      if (opts.dayCentreOpenThroughHalfTerm) {
+        try {
+          global.portalReopenDayCentreOpenDaysOnSessionsCalendar(node);
+        } catch (_dcOpen) {}
       }
       host.appendChild(node);
       if (opts.mineIsoColors && typeof opts.mineIsoColors === "object") {
@@ -811,8 +866,34 @@
       global.portalMarkCalendar202627Highlights(section);
     } catch (_mark) {}
     try {
+      global.portalHideEndedCrashBlocks(section);
+    } catch (_ended) {}
+    try {
       global.portalApplyCrashWeek2Gate(section);
     } catch (_gate) {}
+  };
+
+  /** Hide crash course blocks after their last day (data-crash-ends=YYYY-MM-DD). */
+  global.portalHideEndedCrashBlocks = function portalHideEndedCrashBlocks(root) {
+    var section = null;
+    if (root && root.querySelector) {
+      section = root.classList && root.classList.contains("dc-cal") ? root : root.querySelector(".dc-cal");
+    }
+    if (!section && global.document) section = global.document.querySelector(".dc-cal");
+    if (!section) return;
+    var today = new Date();
+    var y = today.getFullYear();
+    var m = String(today.getMonth() + 1).padStart(2, "0");
+    var d = String(today.getDate()).padStart(2, "0");
+    var todayIso = y + "-" + m + "-" + d;
+    section.querySelectorAll("[data-crash-ends]").forEach(function (el) {
+      var ends = String(el.getAttribute("data-crash-ends") || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ends)) return;
+      if (ends < todayIso) {
+        el.hidden = true;
+        el.setAttribute("hidden", "");
+      }
+    });
   };
 
   /** Show Week 2 crash pills / July highlights only when API says Week 2 is open. */

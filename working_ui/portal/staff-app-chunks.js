@@ -6,51 +6,64 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260901-roberto-wed-fadi-only";
+    var VER = "20260920-team-day-truth";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260831-autumn-northolt",
-    "/portal/term_calendar_dashboard_shared.js?v=20260702-feedback-jun25",
-    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
-    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only",
-    "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
+    "/portal/term_from_timetable.js?v=20260914-raul-fri18-off",
+    "/portal/term_calendar_dashboard_shared.js?v=20260914-raul-fri18-off",
+    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260914-no-eddie-may",
+    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260914-office-duty-nofb",
+    "/portal/portal_staff_feedback_data_loader.js?v=20260915-2to1-shared",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
-    "/portal/portal-roster-rows-merge.js?v=20260831-dated-slot-instructor",
-    "/portal/portal_roster_canonical.js?v=20260901-weekend-as-victor-off",
+      "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
+      "/portal/portal_roster_canonical.js?v=20260920-team-day-truth",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
-    "/portal/portal_madre_fold.js?v=20260713-authoritative-week",
+      "/portal/portal_madre_fold.js?v=20260903-cover-needed",
+    "/portal/portal_client_day_visibility.js?v=20260916-short-names",
+    "/portal/portal_resolve_day_board.js?v=20260920-victor-week1-snap",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
-    "/portal/clients_info_embed.js?v=20260608-anas-ismail",
+    "/portal/clients_info_embed.js?v=20260910-joelle-406",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
-    "/portal/portal_participants_sheet.js?v=20260614-roster-day-group",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260805-cover-half-merge",
+    "/portal/portal_participants_sheet.js?v=20260909-mohamed-new-client",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260919-aquatic-hour-2to1",
     "/portal/portal_participant_identity.js?v=20260712-rayyan-f",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
-    "/portal/staff_roster_resolve.js?v=20260630-staff-display-names",
-    "/portal/portal_staff_display_names.js?v=20260630-staff-display-names",
+    "/portal/staff_roster_resolve.js?v=20260911-emmanuel-no-tue",
+    "/portal/portal_staff_display_names.js?v=20260911-emmanuel-no-tue",
   ];
 
   var TIER_UI = [
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_dashboard_ui_coalesce.js?v=20260630-term-idle-rAF",
-    "/portal/portal_participant_photos.js?v=20260720-zakariya-photo",
-    "/portal/portal_topbar_header.js?v=20260721-flank6-swap",
+    "/portal/portal_dashboard_ui_coalesce.js?v=20260914-javier-week",
+    "/portal/portal_participant_photos.js?v=20260903-chip-photos",
+    "/portal/portal_topbar_header.js?v=20260904-michelle-interviews",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
-    "/portal/portal_swimming_instructor_menus.js?v=20260721-aurora-no-plan",
-    "/portal/portal_area_note_icons.js?v=20260702-home-icon",
-    "/portal/portal_today_next_chips.js?v=20260609-photo-fallback",
-    "/portal/portal_staff_photos.js?v=20260624-rt-debug",
+    "/portal/portal_swimming_instructor_menus.js?v=20260916-isp-admin-only",
+    "/portal/portal_area_note_icons.js?v=20260916-ayman-area-nc",
+    "/portal/portal_today_next_chips.js?v=20260903-photo-repair",
+    "/portal/portal_staff_photos.js?v=20260911-emmanuel-photo",
     "/portal/portal_sheet_back.js?v=20260720-aria-sheet-focus",
+  ];
+
+  var TIER_DASH = [
+    "/portal/staff-dashboard-topbar.js?v=" + VER,
+    "/portal/staff-dashboard-feedback.js?v=" + VER,
+    "/portal/staff-dashboard-calendar.js?v=" + VER,
+    "/portal/staff-dashboard-term.js?v=" + VER,
+    "/portal/staff-dashboard-participants.js?v=" + VER,
+    "/portal/staff-dashboard-today.js?v=" + VER,
+    "/portal/staff-dashboard-ui.js?v=" + VER,
+    "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
+    "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260713-team-avatars",
+    "/portal/portal_lead_team_shift.js?v=20260920-team-day-truth",
   ];
 
   var TIER_IDLE = [
     "/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off",
-    "/portal/portal-ghost-view.js?v=20260712-ghost-inapp",
   ];
 
   var EXTRACTED_BEFORE_AUTH = [
@@ -120,7 +133,7 @@
   function scheduleIdle() {
     var run = function () {
       loadParallel(TIER_IDLE, false);
-      loadCss("/portal/portal_ghost_view.css?v=20260712-ghost-inapp");
+      loadCss("/portal/portal_ghost_view.css?v=20260911-teleport-iso");
       loadCss("/portal/portal_achievements.css?v=20260713-ios-video-save");
       if (typeof global.portalStaffDeferWebPush === "function") {
         global.portalStaffDeferWebPush();
@@ -139,10 +152,16 @@
         return loadScript("/portal/portal-logout-bind.js", false);
       })
       .then(function () {
+        return loadCss("/portal/portal_ghost_view.css?v=20260911-teleport-iso");
+      })
+      .then(function () {
+        return loadScript("/portal/portal-ghost-view.js?v=20260911-teleport-iso", false);
+      })
+      .then(function () {
         return loadSequential(EXTRACTED_BEFORE_AUTH, false);
       })
       .then(function () {
-        return loadScript("/portal/staff-dashboard-auth-supabase.js?v=" + VER, true);
+        return loadScript("/portal/staff-dashboard-auth-supabase.js?v=20260920-no-live-map", true);
       })
       .then(function () {
         return loadSequential(EXTRACTED_AFTER_AUTH, false);

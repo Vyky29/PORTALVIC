@@ -129,6 +129,160 @@ export function nextWeekdayOnOrAfter(
   return null;
 }
 
+/**
+ * Booking lead rules (Europe/London):
+ * - Weekday trial: same day OK if session starts ≥ 2 hours from now (staff notice).
+ * - Sat/Sun (trial or term): must be booked by the Friday before 18:00.
+ *   After that cutoff, next bookable Sat/Sun is the following weekend.
+ */
+export const TRIAL_WEEKDAY_MIN_LEAD_HOURS = 2;
+export const WEEKEND_ADMIN_FRIDAY_CUTOFF_HOUR = 18;
+/** @deprecated Use weekday 2h + Friday 18:00 weekend rules. */
+export const TRIAL_MIN_LEAD_DAYS = 0;
+
+export function calendarDateIsoInLondon(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+export function addDaysIso(iso: string, days: number): string | null {
+  const base = String(iso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(base)) return null;
+  const [y, m, d] = base.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
+export function weekdayIndexFromIso(iso: string): number {
+  const base = String(iso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(base)) return -1;
+  const [y, m, d] = base.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
+export function londonClockParts(now: Date = new Date()): {
+  iso: string;
+  hour: number;
+  minute: number;
+} {
+  const iso = calendarDateIsoInLondon(now);
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  let hour = 0;
+  let minute = 0;
+  for (const p of parts) {
+    if (p.type === "hour") hour = Number(p.value) || 0;
+    if (p.type === "minute") minute = Number(p.value) || 0;
+  }
+  return { iso, hour, minute };
+}
+
+/** Start minutes from labels like "9:00–9:30", "2 to 3", "14:00". */
+export function parseSessionStartMinutes(
+  timeLabel: string | null | undefined,
+): number | null {
+  const s = clean(timeLabel, 80).toLowerCase();
+  if (!s) return null;
+  const range = s.match(
+    /(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\s*(?:[-–—]|to)\s*(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i,
+  );
+  const one = range ? null : s.match(/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i);
+  const hRaw = range ? Number(range[1]) : one ? Number(one[1]) : NaN;
+  const mRaw = range ? Number(range[2] || 0) : one ? Number(one[2] || 0) : 0;
+  const ap = String((range ? range[3] : one ? one[3] : "") || "").toLowerCase();
+  if (!Number.isFinite(hRaw)) return null;
+  let hh = hRaw;
+  if (ap === "pm" && hh < 12) hh += 12;
+  if (ap === "am" && hh === 12) hh = 0;
+  if (!ap && hh >= 1 && hh <= 8) hh += 12;
+  if (hh < 0 || hh > 23 || mRaw < 0 || mRaw > 59) return null;
+  return hh * 60 + mRaw;
+}
+
+export function isWeekendDayName(dayName: string | null | undefined): boolean {
+  const d = String(dayName || "").trim().toLowerCase();
+  return d === "saturday" || d === "sunday";
+}
+
+/** Friday before a Sat/Sun session (admin last working day for that weekend). */
+export function fridayBeforeWeekendSessionIso(sessionIso: string): string | null {
+  const wd = weekdayIndexFromIso(sessionIso);
+  if (wd === 6) return addDaysIso(sessionIso, -1);
+  if (wd === 0) return addDaysIso(sessionIso, -2);
+  return null;
+}
+
+/** True once Friday 18:00 London has passed for that weekend session. */
+export function weekendSessionPastAdminCutoff(
+  sessionIso: string,
+  now: Date = new Date(),
+): boolean {
+  const friday = fridayBeforeWeekendSessionIso(sessionIso);
+  if (!friday) return false;
+  const clock = londonClockParts(now);
+  if (clock.iso > friday) return true;
+  if (clock.iso < friday) return false;
+  return clock.hour >= WEEKEND_ADMIN_FRIDAY_CUTOFF_HOUR;
+}
+
+export function bumpToNextWeekSameWeekday(iso: string): string | null {
+  return addDaysIso(iso, 7);
+}
+
+/**
+ * After Friday 18:00, this weekend's Sat/Sun are closed for new bookings;
+ * advance week by week until the Friday cutoff is still ahead.
+ */
+export function applyWeekendAdminCutoff(
+  sessionIso: string,
+  now: Date = new Date(),
+): string {
+  let iso = String(sessionIso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  for (let i = 0; i < 12; i++) {
+    if (!weekendSessionPastAdminCutoff(iso, now)) return iso;
+    const next = bumpToNextWeekSameWeekday(iso);
+    if (!next) return iso;
+    iso = next;
+  }
+  return iso;
+}
+
+/** Same-day weekday trial needs ≥ 2 hours before session start. */
+export function trialSameDayNeedsLeadBump(
+  sessionIso: string,
+  timeLabel: string | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  const clock = londonClockParts(now);
+  if (String(sessionIso || "").slice(0, 10) !== clock.iso) return false;
+  const start = parseSessionStartMinutes(timeLabel);
+  if (start == null) return true;
+  const nowMins = clock.hour * 60 + clock.minute;
+  return start < nowMins + TRIAL_WEEKDAY_MIN_LEAD_HOURS * 60;
+}
+
+export function isTrialBookingKind(kind: string | null | undefined): boolean {
+  const k = String(kind || "").trim().toLowerCase();
+  return k === "trial" || k === "trial_session" || k === "taster";
+}
+
+/** @deprecated Prefer resolveSessionDateIso with bookingKind + time. */
+export function earliestTrialSessionFloorIso(asOfIso?: string | null): string {
+  return clean(asOfIso, 10) && /^\d{4}-\d{2}-\d{2}$/.test(clean(asOfIso, 10))
+    ? clean(asOfIso, 10)
+    : calendarDateIsoInLondon();
+}
+
 /** Autumn 26/27 first bookable session by weekday (matches term_from_timetable + roster). */
 export function firstBookableSessionFloorIso(
   dayName: string | null | undefined,
@@ -144,17 +298,276 @@ export function firstBookableSessionFloorIso(
 export function resolveSessionDateIso(input: {
   dateIso?: string | null;
   day?: string | null;
+  time?: string | null;
   asOfIso?: string | null;
+  bookingKind?: string | null;
+  now?: Date;
 }): string | null {
-  const floor = firstBookableSessionFloorIso(input.day);
+  const now = input.now instanceof Date && !Number.isNaN(input.now.getTime())
+    ? input.now
+    : new Date();
+  const termFloor = firstBookableSessionFloorIso(input.day);
+  const asOf = clean(input.asOfIso, 10) || calendarDateIsoInLondon(now);
+  const trial = isTrialBookingKind(input.bookingKind);
+
+  let candidate: string | null = null;
   const direct = clean(input.dateIso, 10);
   if (/^\d{4}-\d{2}-\d{2}$/.test(direct)) {
-    if (floor && direct < floor) return nextWeekdayOnOrAfter(input.day, floor);
-    return direct;
+    candidate = direct;
+    if (termFloor && candidate < termFloor) {
+      candidate = nextWeekdayOnOrAfter(input.day, termFloor);
+    }
+  } else {
+    const base = termFloor && asOf < termFloor ? termFloor : asOf;
+    candidate = nextWeekdayOnOrAfter(input.day, base);
   }
-  const asOf = clean(input.asOfIso, 10) || new Date().toISOString().slice(0, 10);
-  const base = floor && asOf < floor ? floor : asOf;
-  return nextWeekdayOnOrAfter(input.day, base);
+  if (!candidate) return null;
+
+  const weekend =
+    isWeekendDayName(input.day) ||
+    weekdayIndexFromIso(candidate) === 0 ||
+    weekdayIndexFromIso(candidate) === 6;
+
+  if (weekend) {
+    candidate = applyWeekendAdminCutoff(candidate, now);
+  } else if (trial && trialSameDayNeedsLeadBump(candidate, input.time, now)) {
+    candidate = bumpToNextWeekSameWeekday(candidate) || candidate;
+  }
+
+  if (termFloor && candidate < termFloor) {
+    candidate = nextWeekdayOnOrAfter(input.day, termFloor) || candidate;
+    if (
+      isWeekendDayName(input.day) ||
+      weekdayIndexFromIso(candidate) === 0 ||
+      weekdayIndexFromIso(candidate) === 6
+    ) {
+      candidate = applyWeekendAdminCutoff(candidate, now);
+    }
+  }
+
+  return candidate;
+}
+
+/** Minimal override shape for same-day admin bump checks. */
+export type AdminDayOverrideProbe = {
+  session_date?: string | null;
+  override_type?: string | null;
+  status?: string | null;
+  anchor_venue?: string | null;
+  anchor_start?: string | null;
+  anchor_end?: string | null;
+  anchor_time_slot_label?: string | null;
+  anchor_client_id?: string | null;
+};
+
+/**
+ * Overrides that consume a bookable open seat for that calendar day.
+ * Staff covers / reassigns do not — parents can still start if another open
+ * remains on the same venue + time band (e.g. Aurora Closed cover while
+ * Luliya/Roberto stay No participant).
+ */
+const ADMIN_DAY_OVERRIDE_CONSUMES_OPEN = new Set([
+  "client_replace_in_slot",
+  "slot_close",
+]);
+
+function normalizeVenueToken(raw: string | null | undefined): string {
+  return String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function hmTokenFromDbOrLabel(raw: string | null | undefined): string {
+  const s = String(raw || "").trim().toLowerCase();
+  if (!s) return "";
+  const db = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?/);
+  if (db) {
+    return `${String(Number(db[1])).padStart(2, "0")}:${db[2]}`;
+  }
+  const mins = parseSessionStartMinutes(s);
+  if (mins == null) return "";
+  const hh = Math.floor(mins / 60);
+  const mm = mins % 60;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
+function normalizeClientToken(raw: string | null | undefined): string {
+  return String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+/** Closed / non-bookable MADRE labels — never defer a new booking start. */
+function isClosedOrOfficeHoldClient(raw: string | null | undefined): boolean {
+  const cid = normalizeClientToken(raw);
+  return (
+    cid === "closed" ||
+    cid === "no_client" ||
+    cid === "casa" ||
+    cid === "home" ||
+    cid === "manager" ||
+    cid === "off"
+  );
+}
+
+function overrideMatchesVenueTimeBand(
+  ov: AdminDayOverrideProbe,
+  opts: { venue?: string | null; timeLabel?: string | null },
+): { matched: boolean; hasBandHints: boolean } {
+  const slotVenue = normalizeVenueToken(opts.venue);
+  const ovVenue = normalizeVenueToken(ov.anchor_venue);
+  const slotStart = hmTokenFromDbOrLabel(opts.timeLabel);
+  const ovStart =
+    hmTokenFromDbOrLabel(ov.anchor_start) ||
+    hmTokenFromDbOrLabel(ov.anchor_time_slot_label);
+  const hasBandHints = !!(slotVenue || slotStart);
+  if (slotVenue && ovVenue && slotVenue !== ovVenue) {
+    return { matched: false, hasBandHints };
+  }
+  if (slotStart && ovStart && slotStart !== ovStart) {
+    return { matched: false, hasBandHints };
+  }
+  return { matched: true, hasBandHints };
+}
+
+/**
+ * True when an active day override consumes a bookable open on this venue +
+ * start band (not staff cover / Closed-only rows).
+ */
+export function adminDayOverrideConsumesBookableOpen(
+  ov: AdminDayOverrideProbe,
+  opts: {
+    sessionIso: string;
+    venue?: string | null;
+    timeLabel?: string | null;
+  },
+): boolean {
+  if (String(ov.status || "active") !== "active") return false;
+  const ovIso = String(ov.session_date || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ovIso) || ovIso !== opts.sessionIso) {
+    return false;
+  }
+  const t = String(ov.override_type || "").trim();
+  if (!ADMIN_DAY_OVERRIDE_CONSUMES_OPEN.has(t)) return false;
+  if (isClosedOrOfficeHoldClient(ov.anchor_client_id)) return false;
+
+  const { matched, hasBandHints } = overrideMatchesVenueTimeBand(ov, opts);
+  if (!matched) return false;
+
+  // Without time/venue we only count a clear day-fill of an open seat.
+  if (!hasBandHints) {
+    const cid = normalizeClientToken(ov.anchor_client_id);
+    return (
+      t === "client_replace_in_slot" &&
+      (cid === "available" || cid === "open" || cid === "no_participant")
+    );
+  }
+  return true;
+}
+
+/** @deprecated Prefer adminDayOverrideConsumesBookableOpen + standing open budget. */
+export function adminDayOverrideBlocksNewBookingStart(
+  ov: AdminDayOverrideProbe,
+  opts: {
+    sessionIso: string;
+    venue?: string | null;
+    timeLabel?: string | null;
+  },
+): boolean {
+  return adminDayOverrideConsumesBookableOpen(ov, opts);
+}
+
+export function applyAdminDayOverrideStartBump(
+  sessionIso: string,
+  overrides: AdminDayOverrideProbe[],
+  opts?: {
+    venue?: string | null;
+    timeLabel?: string | null;
+    /** Standing open seats on this venue+time band (MADRE No participant). */
+    standingOpenSeats?: number | null;
+  },
+): { iso: string; bumped: boolean; reason: string | null } {
+  let iso = String(sessionIso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    return { iso, bumped: false, reason: null };
+  }
+  const list = Array.isArray(overrides) ? overrides : [];
+  const openBudget = opts?.standingOpenSeats;
+  const hasOpenBudget =
+    typeof openBudget === "number" && Number.isFinite(openBudget);
+  let bumped = false;
+  for (let i = 0; i < 12; i++) {
+    const fills = list.filter((ov) =>
+      adminDayOverrideConsumesBookableOpen(ov, {
+        sessionIso: iso,
+        venue: opts?.venue,
+        timeLabel: opts?.timeLabel,
+      })
+    );
+    // Staff covers / Closed rows never fill. Only bump when open seats for
+    // that band are exhausted that day (or any fill when open count unknown).
+    const shouldBump = hasOpenBudget
+      ? fills.length >= Math.max(0, openBudget as number)
+      : fills.length > 0;
+    if (!shouldBump) break;
+    const next = bumpToNextWeekSameWeekday(iso);
+    if (!next || next === iso) break;
+    iso = next;
+    bumped = true;
+  }
+  return {
+    iso,
+    bumped,
+    reason: bumped ? "admin_day_override" : null,
+  };
+}
+
+export function adminDayOverrideStartParentMessage(bumpedIso: string): string {
+  const when = String(bumpedIso || "").slice(0, 10);
+  const whenBit = /^\d{4}-\d{2}-\d{2}$/.test(when)
+    ? ` Your first session will be from ${when} (next week for that weekday).`
+    : " Your first session will be the following week for that weekday.";
+  return (
+    "This place is still available for the term." +
+    " Because of a schedule change on that day, you cannot start on the overridden day." +
+    whenBit
+  );
+}
+
+/**
+ * resolveSessionDateIso + bump only when that day exhausts bookable opens
+ * on the venue/time band (not staff covers / Closed rows).
+ */
+export function resolveSessionDateIsoWithAdminDayOverrides(
+  input: Parameters<typeof resolveSessionDateIso>[0] & {
+    venue?: string | null;
+    standingOpenSeats?: number | null;
+  },
+  overrides: AdminDayOverrideProbe[],
+): {
+  iso: string | null;
+  bumpedForAdminDayOverride: boolean;
+  parentMessage: string | null;
+} {
+  const base = resolveSessionDateIso(input);
+  if (!base) {
+    return { iso: null, bumpedForAdminDayOverride: false, parentMessage: null };
+  }
+  const bumped = applyAdminDayOverrideStartBump(base, overrides, {
+    venue: input.venue,
+    timeLabel: input.time,
+    standingOpenSeats: input.standingOpenSeats,
+  });
+  return {
+    iso: bumped.iso,
+    bumpedForAdminDayOverride: bumped.bumped,
+    parentMessage: bumped.bumped
+      ? adminDayOverrideStartParentMessage(bumped.iso)
+      : null,
+  };
 }
 
 async function sha256Hex(value: string): Promise<string> {

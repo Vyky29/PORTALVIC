@@ -18,6 +18,7 @@
 //   INSERT → session_feedback (late_session_feedback or past session_date)
 //   INSERT → cancellation_reports
 //   INSERT → incident_reports
+//   INSERT → session_disruption_reports
 //   INSERT → portal_staff_dm_messages
 //   INSERT → portal_ceo_group_message
 //   URL: https://<ref>.supabase.co/functions/v1/portal-push-dispatch-admin-alert
@@ -26,6 +27,7 @@
 // so push works without manual Dashboard webhook setup.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { resolveOfficeParentAlertName } from "../_shared/parent_portal_messages.ts";
 import {
   adminPushOpenBase,
   clampPushBody,
@@ -53,9 +55,11 @@ const ALLOWED_TABLES = new Set([
   "session_feedback",
   "cancellation_reports",
   "incident_reports",
+  "session_disruption_reports",
   "portal_staff_dm_messages",
   "portal_ceo_group_message",
   "portal_staff_whatsapp_inbound",
+  "portal_parent_whatsapp_inbound",
   "portal_booking_leads",
 ]);
 
@@ -139,6 +143,16 @@ function buildLeaderWhatsappUrl(base: string, staffUsername: string): string {
   return `${root}?portal_open=portal_staff_whatsapp${u ? `&staff=${u}` : ""}`;
 }
 
+function buildFamilyMessagesUrl(base: string, fromPhone: string): string {
+  const root = String(base || "").replace(/\/$/, "");
+  const digits = String(fromPhone || "").replace(/\D/g, "");
+  const q = digits ? `&wa=${encodeURIComponent(digits)}` : "";
+  if (/admin_dashboard\.html/i.test(root)) {
+    return `${root}?portal_open=portal_parent_notify_log${q}`;
+  }
+  return `${root}?portal_open=portal_parent_notify_log${q}`;
+}
+
 function buildAdminAlertsUrl(base: string): string {
   const root = String(base || "").replace(/\/$/, "");
   return `${root}?portalOpen=alerts`;
@@ -150,6 +164,14 @@ function buildBookingLeadsUrl(base: string): string {
     return `${root}?portal_open=leads`;
   }
   return `${root}?portal_open=leads`;
+}
+
+function buildSessionDisruptionsUrl(base: string): string {
+  const root = String(base || "").replace(/\/$/, "");
+  if (/admin_dashboard\.html/i.test(root)) {
+    return `${root}?portal_open=session_disruptions`;
+  }
+  return `${root}?portal_open=session_disruptions`;
 }
 
 function lateTypeLabel(t: string): string {
@@ -234,6 +256,22 @@ function buildAlert(
     };
   }
 
+  if (table === "session_disruption_reports") {
+    if (record.validated_at) return null;
+    const who = String(record.submitted_by_name ?? "Staff").trim() || "Staff";
+    const typ = String(record.disruption_type ?? "Disruption").trim() ||
+      "Disruption";
+    const d = String(record.session_date ?? "").slice(0, 10);
+    const venue = String(record.venue ?? "").trim();
+    return {
+      sourceId: id,
+      title: `Session disruption · ${who}`,
+      body: clampPushBody(
+        `${typ}${d ? " · " + d : ""}${venue ? " · " + venue : ""} — validate in admin`,
+      ),
+    };
+  }
+
   if (table === "portal_staff_dm_messages") {
     const rawBody = String(record.body ?? "");
     if (
@@ -290,6 +328,22 @@ function buildAlert(
       // iOS lock banner: app name (CS Portal) + this title; body shows on expand/tap.
       title: "Notification",
       body: `Leader WhatsApp - ${who}`,
+    };
+  }
+
+  if (table === "portal_parent_whatsapp_inbound") {
+    const who = String(record.contact_name ?? "Parent").trim() || "Parent";
+    const msgType = String(record.message_type ?? "text").toLowerCase();
+    let preview = clampPushBody(String(record.body_text ?? ""), 120);
+    if (msgType === "audio") preview = "Voice note";
+    else if (msgType === "image" || msgType === "sticker") preview = "Photo";
+    else if (msgType === "video") preview = "Video";
+    else if (msgType === "document" || msgType === "file") preview = "File";
+    if (!preview) preview = "New message";
+    return {
+      sourceId: id,
+      title: "Family messages",
+      body: clampPushBody(`${who}: ${preview}`),
     };
   }
 
@@ -389,7 +443,7 @@ Deno.serve(async (req) => {
     return jsonPushResponse({ skipped: true, reason: "event" });
   }
 
-  const record = payload.record;
+  let record = payload.record;
   if (!record || typeof record !== "object") {
     return jsonPushResponse({ skipped: true, reason: "no record" });
   }
@@ -447,6 +501,17 @@ Deno.serve(async (req) => {
       groupTitle = String(grp?.title ?? grp?.slug ?? "CEO chat").trim();
     }
     }
+  }
+
+  if (table === "portal_parent_whatsapp_inbound") {
+    try {
+      const officeName = await resolveOfficeParentAlertName(
+        admin,
+        String(record.from_phone || ""),
+        String(record.contact_name || ""),
+      );
+      record = { ...record, contact_name: officeName };
+    } catch (_n) {}
   }
 
   const alert = buildAlert(table, record, { authorName, groupTitle });
@@ -564,9 +629,18 @@ Deno.serve(async (req) => {
   } else if (table === "portal_staff_whatsapp_inbound") {
     portalOpen = "portal_staff_whatsapp";
     notifyUrl = buildLeaderWhatsappUrl(openBase, staffUsername);
+  } else if (table === "portal_parent_whatsapp_inbound") {
+    portalOpen = "family_messages";
+    notifyUrl = buildFamilyMessagesUrl(
+      openBase,
+      String(record.from_phone ?? ""),
+    );
   } else if (table === "portal_booking_leads") {
     portalOpen = "leads";
     notifyUrl = buildBookingLeadsUrl(openBase);
+  } else if (table === "session_disruption_reports") {
+    portalOpen = "session_disruptions";
+    notifyUrl = buildSessionDisruptionsUrl(openBase);
   }
 
   const { data: profRows } = await admin
@@ -607,6 +681,8 @@ Deno.serve(async (req) => {
         ? buildChatNotifyUrl(userBase, threadId, groupId)
         : table === "portal_staff_whatsapp_inbound"
         ? buildLeaderWhatsappUrl(userBase, staffUsername)
+        : table === "portal_parent_whatsapp_inbound"
+        ? buildFamilyMessagesUrl(userBase, String(record.from_phone ?? ""))
         : table === "portal_booking_leads"
         ? buildBookingLeadsUrl(userBase)
         : buildAdminAlertsUrl(userBase);
