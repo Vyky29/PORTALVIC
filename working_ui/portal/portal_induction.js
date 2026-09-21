@@ -11,9 +11,18 @@
   var OWNER_KEY = "provisional-induction-owner-id";
   var REFRESH_KEY = "provisional-induction-annual-refresh";
 
-  /** Must complete the full pathway in-app (Zoho alumni already trained). */
-  var REQUIRED_ROSTER_KEYS = { alex: true, michelle: true, carlos: true };
-  var REQUIRED_FIRST_NAMES = { alex: true, michelle: true, carlos: true };
+  /**
+   * Must complete the full six modules in-app (after onboarding).
+   * Zoho alumni (including Alex, Michelle, Carlos) are grandfathered and do the annual recap only.
+   */
+  var REQUIRED_ROSTER_KEYS = { emmanuel: true, patience: true, ann: true, gina: true };
+  var REQUIRED_FIRST_NAMES = {
+    emmanuel: true,
+    emanuel: true,
+    patience: true,
+    ann: true,
+    gina: true,
+  };
 
   function normKey(value) {
     return String(value || "")
@@ -388,14 +397,31 @@
     if (!portalInductionMustComplete(profile, authEmail)) {
       url.searchParams.set("portalGrandfathered", "1");
     }
-    if (portalInductionRefreshDue(profile, authEmail)) {
-      try {
-        url = new URL(portalInductionRefreshUrl(), global.location.href);
-        if (name) url.searchParams.set("learnerName", name);
-      } catch (_e3) {
-        global.location.href = "/general-induction/annual-refresh/";
-        return;
-      }
+    try {
+      global.localStorage.setItem("portalLastDashboardUrl", String(global.location.href || ""));
+    } catch (_e2) {}
+    global.location.href = url.href;
+  }
+
+  function portalInductionOpenRefresh(profile, authEmail) {
+    try {
+      var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
+      var uid = sess && sess.user && sess.user.id;
+      if (uid) portalInductionBindStorageOwner(uid);
+    } catch (_eOwn) {}
+    portalInductionPrepareLearnerName(profile, authEmail);
+    portalInductionApplyGrandfather(profile, authEmail);
+    var url;
+    try {
+      url = new URL(portalInductionRefreshUrl(), global.location.href);
+    } catch (_e) {
+      global.location.href = "/general-induction/annual-refresh/";
+      return;
+    }
+    var name = displayNameFromProfile(profile, authEmail);
+    if (name) url.searchParams.set("learnerName", name);
+    if (!portalInductionMustComplete(profile, authEmail)) {
+      url.searchParams.set("portalGrandfathered", "1");
     }
     try {
       global.localStorage.setItem("portalLastDashboardUrl", String(global.location.href || ""));
@@ -461,13 +487,11 @@
     btn.removeAttribute("disabled");
     btn.classList.remove("menu-btn--portal-pending");
     btn.setAttribute("aria-disabled", "false");
-    btn.classList.toggle("menu-btn--induction-cert-pending", needsCert && !refreshDue);
-    btn.classList.toggle("menu-btn--portal-pulse", !!(needsCert || refreshDue || (must && !done)));
+    btn.classList.toggle("menu-btn--induction-cert-pending", needsCert);
+    btn.classList.toggle("menu-btn--portal-pulse", !!(needsCert || (must && !done)));
     var sub = btn.querySelector(".menu-btn-sub");
     if (sub) {
-      if (refreshDue) {
-        sub.textContent = "Annual refresh " + year + " - recap, day-to-day, quiz";
-      } else if (needsCert) {
+      if (needsCert) {
         sub.textContent = "Open and download your certificate (PDF)";
       } else if (must && !done) {
         sub.textContent = "Core company training — start here";
@@ -477,17 +501,36 @@
         sub.textContent = "Completed " + year + " — certificate in My documents";
       }
     }
-    if (done && !needsCert && !refreshDue) btn.classList.add("menu-btn--induction-done");
+    if (done && !needsCert) btn.classList.add("menu-btn--induction-done");
     else btn.classList.remove("menu-btn--induction-done");
     btn.setAttribute(
       "aria-label",
-      refreshDue
-        ? "Induction — annual refresh " + year
-        : needsCert
-          ? "Induction — download your certificate PDF"
-          : done
-            ? "Induction — completed"
-            : "Induction — core company training"
+      needsCert
+        ? "Induction — download your certificate PDF"
+        : done
+          ? "Induction — completed"
+          : "Induction — core company training"
+    );
+  }
+
+  function portalInductionSyncRecapQuickMenu(btn, profile, authEmail) {
+    if (!btn) return;
+    var full = portalInductionHasFullPathwayComplete(profile, authEmail);
+    var year = portalInductionTrainingYear();
+    var refreshDue = portalInductionRefreshDue(profile, authEmail);
+    btn.hidden = !full;
+    btn.setAttribute("aria-hidden", full ? "false" : "true");
+    btn.disabled = !full;
+    btn.classList.toggle("menu-btn--portal-pulse", !!(full && refreshDue));
+    var sub = btn.querySelector(".menu-btn-sub");
+    if (sub) {
+      if (!full) sub.textContent = "After you finish Induction";
+      else if (refreshDue) sub.textContent = "Due " + year + " - recap, day-to-day, quiz";
+      else sub.textContent = "Completed " + year + " - open again anytime";
+    }
+    btn.setAttribute(
+      "aria-label",
+      refreshDue ? "Recap General Induction — due " + year : "Recap General Induction"
     );
   }
 
@@ -502,6 +545,7 @@
     portalInductionClearGrandfatherStateForRequired(profile, email);
     portalInductionApplyGrandfather(profile, email);
     portalInductionSyncQuickMenu(global.document.getElementById("quickMenuInduction"), profile, email);
+    portalInductionSyncRecapQuickMenu(global.document.getElementById("quickMenuInductionRecap"), profile, email);
     /* Only refresh the Quick-menu button after the documents probe — never call the
        full dashboard sync helper (portal_induction_bind overwrites that name and
        would re-enter BindDashboard forever → thousands of GETs). */
@@ -510,6 +554,7 @@
       .catch(function () {})
       .then(function () {
         portalInductionSyncQuickMenu(global.document.getElementById("quickMenuInduction"), profile, email);
+        portalInductionSyncRecapQuickMenu(global.document.getElementById("quickMenuInductionRecap"), profile, email);
       })
       .finally(function () {
         _inductionPdfProbeInflight = null;
@@ -557,6 +602,7 @@
   global.portalInductionMarkAnnualRefreshPassed = portalInductionMarkAnnualRefreshPassed;
   global.portalInductionRefreshUrl = portalInductionRefreshUrl;
   global.portalInductionOpen = portalInductionOpen;
+  global.portalInductionOpenRefresh = portalInductionOpenRefresh;
   global.portalInductionBindDashboard = portalInductionBindDashboard;
   global.portalInductionGetCertificateMeta = portalInductionGetCertificateMeta;
   global.portalInductionDisplayName = displayNameFromProfile;
@@ -567,4 +613,5 @@
   global.portalInductionTryMarkPdfFromDocuments = portalInductionTryMarkPdfFromDocuments;
   global.portalInductionSyncQuickMenu = portalInductionSyncQuickMenu;
   global.portalInductionSyncQuickMenuBtn = portalInductionSyncQuickMenu;
+  global.portalInductionSyncRecapQuickMenu = portalInductionSyncRecapQuickMenu;
 })(typeof window !== "undefined" ? window : globalThis);

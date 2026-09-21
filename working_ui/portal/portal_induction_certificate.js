@@ -92,11 +92,16 @@
       });
   }
 
-  function portalBuildInductionCertificateSvg(learnerName, issuedIso, logoDataUri) {
+  function portalBuildInductionCertificateSvg(learnerName, issuedIso, logoDataUri, extra) {
     var date = parseDate(issuedIso);
+    extra = extra && typeof extra === "object" ? extra : {};
     return buildCertificateSvg({
       learnerName: learnerName,
-      trainingLabel: TRAINING_LABEL,
+      trainingLabel: extra.trainingLabel || TRAINING_LABEL,
+      headerSub: extra.headerSub || "",
+      detailLine: extra.detailLine || "",
+      footerLine: extra.footerLine || "",
+      ariaLabel: extra.ariaLabel || "",
       logoDataUri: logoDataUri || "",
       date: date,
     });
@@ -108,8 +113,15 @@
     var trainingLabel = escapeXml(meta.trainingLabel || TRAINING_LABEL);
     var logoHref = escapeXml(meta.logoDataUri || "");
 
+    var headerSub = escapeXml(meta.headerSub || "General Induction training completed successfully");
+    var detailLine = escapeXml(meta.detailLine || "Six modules · Video learning · Module quizzes passed");
+    var footerLine = escapeXml(meta.footerLine || "Staff Learning · General Induction");
+    var ariaLabel = escapeXml(meta.ariaLabel || "clubSENsational General Induction certificate");
+
     return [
-      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="1131" viewBox="0 0 1600 1131" role="img" aria-label="clubSENsational General Induction certificate">',
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="1131" viewBox="0 0 1600 1131" role="img" aria-label="' +
+        ariaLabel +
+        '">',
       "<defs>",
       '<linearGradient id="certBorder" x1="0%" y1="0%" x2="100%" y2="100%">',
       '<stop offset="0%" stop-color="#f0b323"/>',
@@ -134,7 +146,9 @@
         : "",
       '<text x="132" y="158" font-family="Montserrat, Arial, sans-serif" font-size="28" font-weight="800" fill="#f5cc6a" letter-spacing="3">CLUBSENSATIONAL</text>',
       '<text x="132" y="212" font-family="Montserrat, Arial, sans-serif" font-size="62" font-weight="800" fill="#ffffff">Certificate of Completion</text>',
-      '<text x="132" y="258" font-family="Montserrat, Arial, sans-serif" font-size="22" font-weight="600" fill="rgba(255,255,255,0.9)">General Induction training completed successfully</text>',
+      '<text x="132" y="258" font-family="Montserrat, Arial, sans-serif" font-size="22" font-weight="600" fill="rgba(255,255,255,0.9)">' +
+        headerSub +
+        "</text>",
       '<text x="800" y="400" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="30" fill="#5d7688">This certifies that</text>',
       '<text x="800" y="498" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="76" font-weight="700" fill="#0f2840">',
       learnerName,
@@ -144,7 +158,9 @@
       '<text x="800" y="676" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="50" font-weight="800" fill="#9a6b00">',
       trainingLabel,
       "</text>",
-      '<text x="800" y="728" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="22" font-weight="600" fill="#5d7688">Six modules · Video learning · Module quizzes passed</text>',
+      '<text x="800" y="728" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="22" font-weight="600" fill="#5d7688">' +
+        detailLine +
+        "</text>",
       '<rect x="182" y="810" width="1236" height="168" rx="28" fill="#fffaf0" stroke="#f3e4c6" stroke-width="2"/>',
       '<text x="250" y="868" font-family="Montserrat, Arial, sans-serif" font-size="20" font-weight="700" fill="#7a5200">Issued on</text>',
       '<text x="250" y="918" font-family="Montserrat, Arial, sans-serif" font-size="36" font-weight="800" fill="#0f2840">',
@@ -153,7 +169,9 @@
       '<text x="1068" y="868" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="20" font-weight="700" fill="#7a5200">Authorised by</text>',
       '<line x1="934" y1="900" x2="1202" y2="900" stroke="#f0b323" stroke-width="3"/>',
       '<text x="1068" y="942" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="24" font-weight="800" fill="#0f2840">clubSENsational</text>',
-      '<text x="1068" y="972" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="18" font-weight="600" fill="#5d7688">Staff Learning · General Induction</text>',
+      '<text x="1068" y="972" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="18" font-weight="600" fill="#5d7688">' +
+        footerLine +
+        "</text>",
       "</svg>",
     ].join("");
   }
@@ -267,14 +285,14 @@
    * @param {string} [issuedIso]
    * @returns {Promise<{ ok: boolean, previewUrl?: string, revoke?: function, learnerName?: string, issuedIso?: string, error?: string }>}
    */
-  async function portalGetInductionCertificatePreview(learnerName, issuedIso) {
+  async function portalGetInductionCertificatePreview(learnerName, issuedIso, extra) {
     var name = resolveLearnerName(learnerName);
     if (!name) return { ok: false, error: "no_name" };
     var logoDataUri = "";
     try {
       logoDataUri = await loadLogoDataUri();
     } catch (_e) {}
-    var svg = portalBuildInductionCertificateSvg(name, issuedIso, logoDataUri);
+    var svg = portalBuildInductionCertificateSvg(name, issuedIso, logoDataUri, extra);
     var previewUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
     return {
       ok: true,
@@ -294,16 +312,17 @@
    * @param {string} [issuedIso]
    * @returns {Promise<{ blob: Blob, filename: string, learnerName: string }>}
    */
-  async function portalBuildInductionCertificatePdfBlob(learnerName, issuedIso) {
+  async function portalBuildInductionCertificatePdfBlob(learnerName, issuedIso, extra) {
     var name = resolveLearnerName(learnerName);
     if (!name) throw new Error("INDUCTION_CERT_NO_NAME");
+    extra = extra && typeof extra === "object" ? extra : {};
     var logoDataUri = "";
     try {
       logoDataUri = await loadLogoDataUri();
     } catch (_e) {}
-    var svg = portalBuildInductionCertificateSvg(name, issuedIso, logoDataUri);
+    var svg = portalBuildInductionCertificateSvg(name, issuedIso, logoDataUri, extra);
     var pdfBlob = await svgToPdfBlob(svg);
-    var filename = slugify("general-induction-" + name) + "-certificate.pdf";
+    var filename = slugify(extra.filenameStem || ("general-induction-" + name)) + ".pdf";
     return { blob: pdfBlob, filename: filename, learnerName: name };
   }
 
@@ -334,7 +353,7 @@
     await yieldToMain();
     var built;
     try {
-      built = await portalBuildInductionCertificatePdfBlob(learnerName, issuedIso);
+      built = await portalBuildInductionCertificatePdfBlob(learnerName, issuedIso, options.cert);
     } catch (err) {
       if (err && err.message === "INDUCTION_CERT_NO_NAME") {
         alert(

@@ -134,6 +134,87 @@
     }
   }
 
+  function learnerName() {
+    if (typeof window.portalResolveInductionLearnerName === "function") {
+      var n = window.portalResolveInductionLearnerName("");
+      if (n) return n;
+    }
+    try {
+      var q = new URLSearchParams(window.location.search);
+      var fromUrl = q.get("learnerName") || q.get("name") || q.get("staffName");
+      if (fromUrl && String(fromUrl).trim()) return String(fromUrl).trim();
+    } catch (_e) {}
+    return "";
+  }
+
+  function recapCertMeta() {
+    var year = yearLabel() || "this year";
+    var name = learnerName() || "Staff";
+    return {
+      trainingLabel: "General Induction recap " + year,
+      headerSub: "Annual refresh completed successfully",
+      detailLine: "Recap cards · Day-to-day · Quiz passed",
+      footerLine: "Staff Learning · Annual refresh " + year,
+      ariaLabel: "clubSENsational General Induction recap diploma",
+      filenameStem: "general-induction-recap-" + String(year).replace("/", "-") + "-" + name,
+    };
+  }
+
+  function loadJsPdf() {
+    if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf);
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260921-induction-recap2";
+      s.onload = function () {
+        if (window.jspdf && window.jspdf.jsPDF) resolve(window.jspdf);
+        else reject(new Error("jsPDF failed"));
+      };
+      s.onerror = function () {
+        reject(new Error("jsPDF failed"));
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  function showDiploma() {
+    var wrap = document.getElementById("refreshDiplomaWrap");
+    var img = document.getElementById("refreshDiplomaPreview");
+    var btn = document.getElementById("refreshDiplomaDownload");
+    if (!wrap) return;
+    wrap.hidden = false;
+    var name = learnerName();
+    var extra = recapCertMeta();
+    if (typeof window.portalGetInductionCertificatePreview === "function") {
+      window.portalGetInductionCertificatePreview(name, new Date().toISOString(), extra).then(function (prev) {
+        if (prev && prev.ok && prev.previewUrl && img) {
+          img.src = prev.previewUrl;
+        }
+      });
+    }
+    if (btn && !btn.dataset.bound) {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", function () {
+        btn.disabled = true;
+        loadJsPdf()
+          .then(function () {
+            if (typeof window.portalDownloadInductionCertificatePdf !== "function") {
+              throw new Error("PDF helper missing");
+            }
+            return window.portalDownloadInductionCertificatePdf(name, new Date().toISOString(), {
+              saveToDocuments: false,
+              cert: extra,
+            });
+          })
+          .catch(function () {
+            alert("Could not build the diploma PDF. Try again from this page.");
+          })
+          .then(function () {
+            btn.disabled = false;
+          });
+      });
+    }
+  }
+
   if (form) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -159,11 +240,14 @@
       }
       if (scoreMsg) {
         scoreMsg.textContent = passed
-          ? "Refresh complete for " + (yearLabel() || "this year") + ". Your record is updated."
+          ? "Refresh complete for " + (yearLabel() || "this year") + ". Your diploma is below."
           : "You scored " + score + "/" + QCOUNT + ". Every answer must be correct to finish this year's refresh.";
       }
       if (doneLink) doneLink.style.display = passed ? "inline-flex" : "none";
-      if (passed) markPassed();
+      if (passed) {
+        markPassed();
+        showDiploma();
+      }
       if (submitBtn) submitBtn.disabled = passed;
       if (scoreCard) scoreCard.scrollIntoView({ behavior: "smooth", block: "start" });
     });

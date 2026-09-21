@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<script src="/portal-static-bootstrap.js?v=20260921-induction-refresh"></script>
+<script src="/portal-static-bootstrap.js?v=20260921-induction-recap2"></script>
 <title>Annual induction refresh | clubSENsational</title>
 <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
 <link rel="stylesheet" href="/induction-assets/training-content-containment.css" />
 <link rel="stylesheet" href="/induction-assets/pathway-hub.css?v=20260611-induction-complete" />
 <link rel="stylesheet" href="/induction-assets/induction-quiz-theme.css" />
 <link rel="stylesheet" href="/induction-assets/provisional-certificate.css?v=20260921-induction-refresh" />
-<link rel="stylesheet" href="/induction-assets/annual-refresh.css?v=20260921-induction-ops" />
+<link rel="stylesheet" href="/induction-assets/annual-refresh.css?v=20260921-induction-recap2" />
 </head>
 <body>
 <main class="annual-refresh">
@@ -273,14 +273,19 @@
       </form>
       <div class="score-card" id="refreshScoreCard">
         <p id="refreshScoreMsg"></p>
+        <div class="annual-refresh__diploma" id="refreshDiplomaWrap" hidden>
+          <img class="annual-refresh__diploma-img" id="refreshDiplomaPreview" alt="General Induction recap diploma" />
+          <button type="button" class="btn-submit" id="refreshDiplomaDownload">Download diploma (PDF)</button>
+        </div>
         <p><a class="annual-refresh__back" id="refreshDoneLink" href="/general-induction/" style="display:none">Return to General Induction</a></p>
       </div>
     </div>
   </section>
 </main>
-<script src="/portal-static-bootstrap.js?v=20260921-induction-refresh"></script>
-<script type="module" src="/portal/portal_induction_progress_runtime.js?v=20260921-induction-refresh"></script>
-<script src="/portal/portal_induction.js?v=20260921-induction-refresh"></script>
-<script src="/induction-shared/annual-refresh-flow.js?v=20260921-induction-ops3"></script>
+<script src="/portal-static-bootstrap.js?v=20260921-induction-recap2"></script>
+<script type="module" src="/portal/portal_induction_progress_runtime.js?v=20260921-induction-recap2"></script>
+<script src="/portal/portal_induction.js?v=20260921-induction-recap2"></script>
+<script src="/portal/portal_induction_certificate.js?v=20260921-induction-recap2"></script>
+<script src="/induction-shared/annual-refresh-flow.js?v=20260921-induction-recap2"></script>
 </body>
 </html>

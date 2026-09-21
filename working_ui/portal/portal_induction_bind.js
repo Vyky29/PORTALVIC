@@ -12,6 +12,15 @@
   }
 
   function onInductionClick(e) {
+    var recap = e.target && e.target.closest ? e.target.closest("[data-portal-induction-refresh]") : null;
+    if (recap) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof global.portalInductionOpenRefresh === "function") {
+        global.portalInductionOpenRefresh(profile(), authEmail());
+      }
+      return;
+    }
     var btn = e.target && e.target.closest ? e.target.closest("[data-portal-induction]") : null;
     if (!btn) return;
     e.preventDefault();

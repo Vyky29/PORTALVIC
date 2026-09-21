@@ -5,7 +5,7 @@
   "use strict";
 
   var INDUCTION_MODULES = 6;
-  var INDUCTION_REQUIRED_KEYS = { alex: true, michelle: true, carlos: true };
+  var INDUCTION_REQUIRED_KEYS = { emmanuel: true, patience: true, ann: true, gina: true };
   var SWIMMING_TRAINING_KEY = "portalvic_swimming_training_progress_v1";
   var SWIMMING_TERM_KEY = "portalvic_swimming_term_review_progress_v1";
 
@@ -91,7 +91,10 @@
 
   function readInductionProgress(profile, authEmail) {
     var key = rosterKeyFromProfile(profile, authEmail);
-    var mustComplete = !!(key && INDUCTION_REQUIRED_KEYS[key]);
+    var mustComplete =
+      typeof global.portalInductionMustComplete === "function"
+        ? !!global.portalInductionMustComplete(profile, authEmail)
+        : !!(key && INDUCTION_REQUIRED_KEYS[key]);
     var completeFlag = false;
     try {
       completeFlag = global.localStorage.getItem("provisional-induction-training-complete") === "1";

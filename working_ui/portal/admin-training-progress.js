@@ -22,7 +22,7 @@
   };
 
   var INDUCTION_MODULES = 6;
-  var INDUCTION_REQUIRED_KEYS = { alex: true, michelle: true, carlos: true };
+  var INDUCTION_REQUIRED_KEYS = { emmanuel: true, patience: true, ann: true, gina: true };
 
   function normStaffKey(value) {
     return String(value || "")
@@ -44,6 +44,9 @@
   }
 
   function inductionRequiredForProfile(profile) {
+    if (typeof global.portalInductionMustComplete === "function") {
+      return !!global.portalInductionMustComplete(profile, "");
+    }
     var key = profileRosterKey(profile);
     return !!(key && INDUCTION_REQUIRED_KEYS[key]);
   }

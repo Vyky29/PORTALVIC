@@ -229,3 +229,23 @@
   display: block;
   color: #b91c1c;
 }
+
+.annual-refresh__diploma {
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.annual-refresh__diploma-img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 16px;
+  border: 1px solid #f3e4c6;
+  background: #fffaf0;
+  margin-bottom: 12px;
+}
+
+.annual-refresh__diploma .btn-submit {
+  width: min(100%, 360px);
+}

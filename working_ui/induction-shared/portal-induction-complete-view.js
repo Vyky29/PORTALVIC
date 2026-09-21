@@ -233,6 +233,27 @@
     return true;
   }
 
+  function wireRecapFromCertificate() {
+    var recap = global.document.getElementById("inductionRecapFromCert");
+    if (!recap) return;
+    recap.hidden = false;
+    var href = "/general-induction/annual-refresh/";
+    if (typeof global.portalInductionRefreshUrl === "function") {
+      href = global.portalInductionRefreshUrl();
+    }
+    try {
+      var u = new URL(href, global.location.href);
+      var here = new URL(global.location.href);
+      ["learnerName", "name", "staffName", "portalGrandfathered"].forEach(function (k) {
+        var v = here.searchParams.get(k);
+        if (v) u.searchParams.set(k, v);
+      });
+      recap.href = u.pathname + u.search;
+    } catch (_href) {
+      recap.href = href;
+    }
+  }
+
   function applyCertificateOnlyLayout() {
     if (applyRefreshDueLayout()) return;
     if (!isTrainingComplete()) return;
@@ -254,6 +275,7 @@
     }
     var btn = global.document.getElementById("downloadInductionCertificate");
     if (btn) btn.textContent = "Download certificate (PDF)";
+    wireRecapFromCertificate();
   }
 
   function setSavedHint(msg) {
