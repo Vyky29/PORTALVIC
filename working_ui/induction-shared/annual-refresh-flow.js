@@ -20,6 +20,9 @@
     q7: "B",
     q8: "B",
     q9: "C",
+    q10: "B",
+    q11: "C",
+    q12: "B",
   };
   var QCOUNT = Object.keys(CORRECT).length;
 

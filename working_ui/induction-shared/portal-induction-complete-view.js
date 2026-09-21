@@ -207,7 +207,7 @@
         lead.textContent =
           "You already completed General Induction. For " +
           year +
-          " review the recap (who we are plus day-to-day: feedback, cancellations, and if you cannot work) and pass the quiz. Staff who have not finished the six modules still do the full pathway.";
+          " review the recap (who we are plus day-to-day: feedback, cancellations, incidents, photos, and Comms) and pass the quiz. Staff who have not finished the six modules still do the full pathway.";
       }
       var start = global.document.getElementById("inductionRefreshStart");
       if (start) {

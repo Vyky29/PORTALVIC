@@ -21,7 +21,7 @@
     <p>You already completed the full pathway. Open every recap (induction plus day-to-day), then pass the quiz. Staff who have not finished the six modules still do the full induction.</p>
   </section>
 
-  <p class="annual-refresh__hint">Tap each card so it highlights. When all nine are open, tick the box and the quiz unlocks.</p>
+  <p class="annual-refresh__hint">Tap each card so it highlights. When all twelve are open, tick the box and the quiz unlocks.</p>
 
   <div class="annual-refresh__section">
     <h2>Induction recap</h2>
@@ -85,7 +85,7 @@
 
   <div class="annual-refresh__section">
     <h2>Day-to-day on the Staff app</h2>
-    <p>These are not in the six videos. They are how you report work, cancellations and feedback every session.</p>
+    <p>These are not in the six videos. They are how you report work, talk to the office, and keep session records.</p>
   </div>
 
   <button type="button" class="annual-refresh__card" data-refresh-item="7" aria-pressed="false">
@@ -115,6 +115,33 @@
       <li>Do not only message a group chat. Do not use Cancellation on a client card for your own absence.</li>
     </ul>
   </button>
+  <button type="button" class="annual-refresh__card" data-refresh-item="10" aria-pressed="false">
+    <span class="annual-refresh__mod">Incidents</span>
+    <h2>Log it on the portal the same day</h2>
+    <ul>
+      <li>If something happens to a client, open Incident on that client's card (Staff Today).</li>
+      <li>If you are hurt or involved, open Staff incident in Quick menu.</li>
+      <li>Do not only tell a colleague. The office needs the written report.</li>
+    </ul>
+  </button>
+  <button type="button" class="annual-refresh__card" data-refresh-item="11" aria-pressed="false">
+    <span class="annual-refresh__mod">Photos</span>
+    <h2>Session photos stay in the Staff app</h2>
+    <ul>
+      <li>Upload session photos in Participant achievements - in-app only.</li>
+      <li>Do not send client photos on WhatsApp (families or staff groups) or keep them to share later from your camera roll.</li>
+      <li>If a photo should reach the office or family, it goes through the portal, not a personal chat.</li>
+    </ul>
+  </button>
+  <button type="button" class="annual-refresh__card" data-refresh-item="12" aria-pressed="false">
+    <span class="annual-refresh__mod">Comms</span>
+    <h2>People talk in Comms, not WhatsApp</h2>
+    <ul>
+      <li>Office people message you in Comms (COMMS at the top of the Staff app).</li>
+      <li>WhatsApp from the club is a machine ping (reminders). It is not a person waiting for your reply.</li>
+      <li>Questions about rota, cover, pay or a client: write in Comms. Same-day absence still starts with a phone call to the office.</li>
+    </ul>
+  </button>
 
   <label class="annual-refresh__check">
     <input type="checkbox" id="refreshRecapCheck" disabled />
@@ -122,7 +149,7 @@
   </label>
 
   <section class="section gated-locked" id="quiz">
-    <div class="section-lock-banner">Open all nine recap cards and tick the confirmation box to unlock the quiz.</div>
+    <div class="section-lock-banner">Open all twelve recap cards and tick the confirmation box to unlock the quiz.</div>
     <div class="quiz-inline">
       <form id="refreshQuizForm">
         <div class="q-card">
@@ -211,7 +238,37 @@
           </ul>
           <div class="feedback" id="fb-q9"></div>
         </div>
-        <p class="quiz-submit-hint" id="refreshSubmitHint">Answer all 9 questions to submit.</p>
+        <div class="q-card">
+          <p class="q-text">10. A client is hurt or something unsafe happens in the session. What do you do?</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">A. Only tell a colleague at the venue</span><input type="radio" name="q10" value="A" /></label></li>
+            <li><label><span class="opt-txt">B. Open Incident on that client's card the same day</span><input type="radio" name="q10" value="B" /></label></li>
+            <li><label><span class="opt-txt">C. Post it in a WhatsApp group</span><input type="radio" name="q10" value="C" /></label></li>
+            <li><label><span class="opt-txt">D. Wait until the next shift</span><input type="radio" name="q10" value="D" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q10"></div>
+        </div>
+        <div class="q-card">
+          <p class="q-text">11. Where should session photos of clients go?</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">A. The family WhatsApp</span><input type="radio" name="q11" value="A" /></label></li>
+            <li><label><span class="opt-txt">B. A staff group chat</span><input type="radio" name="q11" value="B" /></label></li>
+            <li><label><span class="opt-txt">C. Only in the Staff app (Participant achievements)</span><input type="radio" name="q11" value="C" /></label></li>
+            <li><label><span class="opt-txt">D. Your camera roll, to share later</span><input type="radio" name="q11" value="D" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q11"></div>
+        </div>
+        <div class="q-card">
+          <p class="q-text">12. You need to talk to a person in the office (rota, cover, a client). What do you use?</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">A. WhatsApp the admin number - that is how people talk</span><input type="radio" name="q12" value="A" /></label></li>
+            <li><label><span class="opt-txt">B. Comms in the Staff app. WhatsApp pings from the club are machine notifications, not a person</span><input type="radio" name="q12" value="B" /></label></li>
+            <li><label><span class="opt-txt">C. Any colleague's personal phone</span><input type="radio" name="q12" value="C" /></label></li>
+            <li><label><span class="opt-txt">D. Only email if it is payday</span><input type="radio" name="q12" value="D" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q12"></div>
+        </div>
+        <p class="quiz-submit-hint" id="refreshSubmitHint">Answer all 12 questions to submit.</p>
         <button type="submit" class="btn-submit" id="refreshSubmit" disabled>Submit recap quiz</button>
       </form>
       <div class="score-card" id="refreshScoreCard">
@@ -224,6 +281,6 @@
 <script src="/portal-static-bootstrap.js?v=20260921-induction-refresh"></script>
 <script type="module" src="/portal/portal_induction_progress_runtime.js?v=20260921-induction-refresh"></script>
 <script src="/portal/portal_induction.js?v=20260921-induction-refresh"></script>
-<script src="/induction-shared/annual-refresh-flow.js?v=20260921-induction-ops"></script>
+<script src="/induction-shared/annual-refresh-flow.js?v=20260921-induction-ops2"></script>
 </body>
 </html>
