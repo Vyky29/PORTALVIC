@@ -356,10 +356,10 @@ Deno.serve(async (req) => {
     `1) Sign in: ${loginUrl}\n` +
     `   Email: ${email}\n` +
     `   Temporary password: ${tempPassword}\n\n` +
-    `2) Complete your onboarding hub (photo, documents, job application, health form):\n` +
-    `${hubUrl}\n\n` +
-    `Please change your password after first login if prompted.\n\n` +
-    `Office | clubSENsational\n`;
+      `2) Complete your onboarding hub (photo, documents, job application, health form):\n` +
+      `${hubUrl}\n\n` +
+      `When that is done, the office checks your hub. If it is complete they will give you a 4-digit PIN for the staff app.\n\n` +
+      `Office | clubSENsational\n`;
 
   const smtp = readParentNotifySmtpConfig();
   let emailOk = false;

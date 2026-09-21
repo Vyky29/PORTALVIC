@@ -88,7 +88,7 @@
       ".ob-wrap .ob-meta{margin:0 0 14px;font-size:13px;color:#64748b;line-height:1.45}" +
       ".ob-wrap .ob-table-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:12px;background:#fff}" +
       ".ob-wrap table.ob-table{width:100%;border-collapse:collapse;font-size:13px}" +
-      ".ob-wrap table.ob-table th,.ob-wrap table.ob-table td{padding:10px 12px;text-align:left;border-bottom:1px solid #e2e8f0;vertical-align:middle}" +
+      ".ob-wrap table.ob-table th,.ob-wrap table.ob-table td{padding:10px 12px;text-align:left;border-bottom:1px solid #e2e8f0;vertical-align:middle;min-width:0}" +
       ".ob-wrap table.ob-table th{background:#f8fafc;font-weight:700;color:#0f2747;white-space:nowrap}" +
       ".ob-wrap table.ob-table tr:last-child td{border-bottom:0}" +
       ".ob-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}" +
@@ -103,6 +103,20 @@
       ".ob-export .ob-link{font-size:11px;font-weight:700;color:#0f2747;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 10px;cursor:pointer}" +
       ".ob-export .ob-link:hover{background:#e0e7ff}" +
       ".ob-export .ob-link:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}" +
+      ".ob-pin{min-width:0;max-width:220px}" +
+      ".ob-pin-missing{margin:0 0 6px;font-size:11px;color:#9a3412;line-height:1.35;overflow-wrap:break-word}" +
+      ".ob-pin-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;letter-spacing:.06em}" +
+      ".ob-pin-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}" +
+      ".ob-pin-issue{font-size:11px;font-weight:700;color:#fff;background:#0f2747;border:1px solid #0f2747;border-radius:8px;padding:5px 10px;cursor:pointer}" +
+      ".ob-pin-issue:hover{background:#16345c}" +
+      ".ob-pin-issue:disabled{opacity:.45;cursor:not-allowed}" +
+      ".ob-pin-copy{font-size:11px;font-weight:700;color:#0f2747;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 10px;cursor:pointer}" +
+      ".ob-pill--draft{background:#fef3c7;color:#92400e}" +
+      ".ob-modal{position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px}" +
+      ".ob-modal-card{background:#fff;border-radius:14px;max-width:420px;width:100%;padding:18px 18px 16px;box-shadow:0 18px 50px rgba(15,23,42,.25);min-width:0}" +
+      ".ob-modal-card h3{margin:0 0 8px;font-size:16px;color:#0f2747}" +
+      ".ob-modal-card p{margin:0 0 10px;font-size:13px;color:#334155;line-height:1.45;overflow-wrap:break-word}" +
+      ".ob-modal-card pre{margin:0 0 12px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}" +
       ".ob-notice{padding:16px;font-size:13px;color:#475569;line-height:1.5}";
     var st = document.createElement("style");
     st.id = "adminOnboardingStyle";
@@ -110,8 +124,10 @@
     document.head.appendChild(st);
   }
 
-  function pill(done) {
-    return '<span class="ob-pill ob-pill--' + (done ? "yes" : "no") + '">' + (done ? "Done" : "—") + "</span>";
+  function pill(done, draft) {
+    if (done) return '<span class="ob-pill ob-pill--yes">Done</span>';
+    if (draft) return '<span class="ob-pill ob-pill--draft">Draft</span>';
+    return '<span class="ob-pill ob-pill--no">—</span>';
   }
 
   function docChips(uploads, sessionId, name, uploadPaths) {
@@ -147,6 +163,39 @@
     return '<div class="ob-chips">' + chips.join("") + "</div>";
   }
 
+  function pinCell(a) {
+    var sid = esc(a.applicant_session_id || "");
+    if (a.pin_issued && a.pin) {
+      return (
+        '<div class="ob-pin"><div class="ob-pin-code">' +
+        esc(a.pin) +
+        '</div><div class="ob-pin-actions"><button type="button" class="ob-pin-copy" data-ob-copy-pin="' +
+        esc(a.pin) +
+        '">Copy PIN</button></div></div>'
+      );
+    }
+    var missing = Array.isArray(a.missing) ? a.missing : [];
+    var missingHtml = missing.length
+      ? '<p class="ob-pin-missing">' + esc(missing.join(". ")) + ".</p>"
+      : "";
+    if (a.ready_for_pin) {
+      return (
+        '<div class="ob-pin">' +
+        missingHtml +
+        '<div class="ob-pin-actions"><button type="button" class="ob-pin-issue" data-ob-issue-pin="' +
+        sid +
+        '">Validate and issue PIN</button></div></div>'
+      );
+    }
+    return (
+      '<div class="ob-pin">' +
+      missingHtml +
+      '<div class="ob-pin-actions"><button type="button" class="ob-pin-issue" disabled title="' +
+      esc(missing.join(". ") || "Hub not complete") +
+      '">Issue PIN</button></div></div>'
+    );
+  }
+
   function exportActions(a) {
     var sid = esc(a.applicant_session_id || "");
     var jobBtn = a.job
@@ -172,17 +221,17 @@
     if (state.unlinked) {
       txt += " " + state.unlinked + " file(s) uploaded before session linking — re-upload from staff portal after PIN login.";
     } else {
-      txt += " New uploads use each applicant session folder.";
+      txt += " Validate Job, Health, photo, passport and starter checklist, then issue a PIN.";
     }
     return txt;
   }
 
   function rowsHtml() {
     if (state.error) {
-      return '<tr><td colspan="7"><div class="ob-notice"><strong>Onboarding storage not linked.</strong> ' + esc(state.error) + "</div></td></tr>";
+      return '<tr><td colspan="9"><div class="ob-notice"><strong>Onboarding storage not linked.</strong> ' + esc(state.error) + "</div></td></tr>";
     }
     if (!state.applicants.length) {
-      return '<tr><td colspan="7"><div class="ob-notice"><strong>No applicants yet.</strong> Once an applicant logs in at the staff portal (PIN) and uploads from the onboarding pages, they appear here. Old uploads without a session folder will not attach automatically.</div></td></tr>';
+      return '<tr><td colspan="9"><div class="ob-notice"><strong>No applicants yet.</strong> After an invite they appear here as they use the onboarding hub. Admin validates Job, Health, photo and documents, then issues a PIN.</div></td></tr>';
     }
     return state.applicants
       .map(function (a) {
@@ -193,9 +242,11 @@
           "<tr><td>" +
           esc(name) +
           '<div class="ob-counts">' + esc(sid ? sid.slice(0, 8) + "…" : "") + "</div></td><td>" +
-          pill(!!a.job) +
+          pill(!!a.job_submitted, !!a.job) +
           "</td><td>" +
-          pill(!!a.health) +
+          pill(!!a.health_submitted, !!a.health) +
+          "</td><td>" +
+          pill(!!a.photo, false) +
           '</td><td class="ob-counts">' +
           docChips(a.uploads, sid, name, a.upload_paths) +
           '</td><td class="ob-counts">' +
@@ -204,6 +255,8 @@
           esc(fmtDate(a.last_upload_at)) +
           "</td><td>" +
           exportActions(a) +
+          "</td><td>" +
+          pinCell(a) +
           "</td></tr>"
         );
       })
@@ -221,10 +274,10 @@
       (state.loading ? "Loading applicant progress…" : esc(metaText())) +
       "</p>" +
       '<div class="ob-table-wrap"><table class="ob-table"><thead><tr>' +
-      "<th>Applicant</th><th>Job application</th><th>Health</th><th>Documents uploaded</th>" +
-      "<th>Last online</th><th>Last upload</th><th>Export</th>" +
+      "<th>Applicant</th><th>Job application</th><th>Health</th><th>Photo</th><th>Documents uploaded</th>" +
+      "<th>Last online</th><th>Last upload</th><th>Export</th><th>PIN</th>" +
       "</tr></thead><tbody>" +
-      (state.loading ? '<tr><td colspan="7"><div class="ob-notice">Loading…</div></td></tr>' : rowsHtml()) +
+      (state.loading ? '<tr><td colspan="9"><div class="ob-notice">Loading…</div></td></tr>' : rowsHtml()) +
       "</tbody></table></div></div>";
     bindRoot();
   }
@@ -251,6 +304,135 @@
         });
       });
     });
+    root.querySelectorAll("[data-ob-issue-pin]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        issuePin(btn.getAttribute("data-ob-issue-pin") || "", btn);
+      });
+    });
+    root.querySelectorAll("[data-ob-copy-pin]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        copyText(btn.getAttribute("data-ob-copy-pin") || "", "PIN copied.");
+      });
+    });
+  }
+
+  function copyText(text, okMsg) {
+    var value = String(text || "");
+    if (!value) return;
+    function done() {
+      if (deps.toast) deps.toast(okMsg || "Copied.");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(done).catch(function () {
+        window.prompt("Copy", value);
+      });
+      return;
+    }
+    window.prompt("Copy", value);
+  }
+
+  function showPinIssued(body) {
+    var existing = document.getElementById("obPinIssuedModal");
+    if (existing) existing.remove();
+    var details =
+      "Staff app: " + (body.login_url || "https://clubsensational-staff.vercel.app/login.html") + "\n" +
+      "Name: " + (body.name || "") + "\n" +
+      "Email: " + (body.email || "") + "\n" +
+      "PIN: " + (body.pin || "");
+    var mailNote = body.email_ok
+      ? "We also emailed them this PIN."
+      : "Email did not send. Give them the PIN from here.";
+    var modal = document.createElement("div");
+    modal.id = "obPinIssuedModal";
+    modal.className = "ob-modal";
+    modal.innerHTML =
+      '<div class="ob-modal-card" role="dialog" aria-labelledby="obPinIssuedTitle">' +
+      '<h3 id="obPinIssuedTitle">PIN issued</h3>' +
+      "<p>" +
+      esc(body.full_name || body.name || "This hire") +
+      " can now sign in on the staff app with their first name (or email) and this PIN.</p>" +
+      "<pre>" +
+      esc(details) +
+      "</pre>" +
+      "<p>" +
+      esc(mailNote) +
+      "</p>" +
+      '<div class="ob-pin-actions">' +
+      '<button type="button" class="ob-pin-copy" data-ob-modal-copy>Copy details</button>' +
+      '<button type="button" class="ob-refresh" data-ob-modal-close>Close</button>' +
+      "</div></div>";
+    document.body.appendChild(modal);
+    modal.querySelector("[data-ob-modal-copy]").addEventListener("click", function () {
+      copyText(details, "PIN details copied.");
+    });
+    function close() {
+      modal.remove();
+    }
+    modal.querySelector("[data-ob-modal-close]").addEventListener("click", close);
+    modal.addEventListener("click", function (ev) {
+      if (ev.target === modal) close();
+    });
+  }
+
+  async function issuePin(sessionId, btn) {
+    var sid = String(sessionId || "").trim();
+    if (!sid) return;
+    var row = (state.applicants || []).filter(function (a) {
+      return String(a.applicant_session_id || "") === sid;
+    })[0];
+    var name = row ? (row.display_name || row.portal_staff_name || "this hire") : "this hire";
+    var ok = window.confirm(
+      "Validate onboarding for " +
+        name +
+        " and issue a staff PIN?\n\n" +
+        "Check Job, Health, photo and documents first. This replaces their temporary invite password."
+    );
+    if (!ok) return;
+    var token = await authToken();
+    if (!token) {
+      if (deps.toast) deps.toast("Sign in to admin again to issue a PIN.");
+      else alert("Sign in to admin again to issue a PIN.");
+      return;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Issuing…";
+    }
+    try {
+      var res = await fetch(supabaseUrl() + "/functions/v1/portal-admin-onboarding-issue-pin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+          apikey: anonKey()
+        },
+        body: JSON.stringify({ applicant_session_id: sid })
+      });
+      var body = await res.json().catch(function () { return {}; });
+      if (!res.ok || !body.ok) {
+        var missing = Array.isArray(body.missing) ? body.missing.join(". ") : "";
+        var msg = missing
+          ? "Not complete yet: " + missing + "."
+          : (body.error || "Could not issue PIN.");
+        if (deps.toast) deps.toast(msg);
+        else alert(msg);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Validate and issue PIN";
+        }
+        return;
+      }
+      showPinIssued(body);
+      await load();
+    } catch (err) {
+      var fail = (err && err.message) || "Could not issue PIN.";
+      if (deps.toast) deps.toast(fail);
+      else alert(fail);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Validate and issue PIN";
+      }
+    }
   }
 
   async function authToken() {

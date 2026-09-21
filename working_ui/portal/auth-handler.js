@@ -43,7 +43,7 @@ import {
   mergeStaffLoginEmailMap,
   PORTAL_EXECUTIVE_AUTH_EMAILS,
   PORTAL_STAFF_CODE_TO_ROSTER_KEY,
-} from "./auth-map.js?v=20260911-emmanuel-staff";
+} from "./auth-map.js?v=20260921-onboarding-pin";
 
 function portalLoginPromiseTimeout(promise, ms, message) {
   const waitMs = Math.max(1000, Number(ms) || 15000);
@@ -182,6 +182,38 @@ async function tryMergeStaffLoginMapFromSiblingJson() {
     if (map) mergeStaffLoginEmailMap(map);
   } catch {
     /* optional file */
+  }
+}
+
+async function resolveOnboardingPinLoginEmail(rawName) {
+  const name = String(rawName || "").trim();
+  if (name.length < 2 || name.includes("@")) return null;
+  let url = "";
+  let key = "";
+  try {
+    url = String(getSupabaseUrl() || "").trim().replace(/\/$/, "");
+    key = String(getSupabaseAnonKey() || "").trim();
+  } catch {
+    return null;
+  }
+  if (!url || !key) return null;
+  try {
+    const res = await fetch(url + "/functions/v1/portal-staff-login-resolve", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: key,
+        Authorization: "Bearer " + key,
+      },
+      body: JSON.stringify({ name: name }),
+    });
+    const body = await res.json().catch(function () {
+      return {};
+    });
+    const email = String(body && body.email ? body.email : "").trim();
+    return email.includes("@") ? email : null;
+  } catch {
+    return null;
   }
 }
 
@@ -1337,7 +1369,10 @@ function bindLogin() {
       }
     }
 
-    const email = resolveDemoEmail(username);
+    let email = resolveDemoEmail(username);
+    if (!email) {
+      email = await resolveOnboardingPinLoginEmail(username);
+    }
     if (!email) {
       showError(PORTAL_LOGIN_UNKNOWN_NAME_HELP);
       return;

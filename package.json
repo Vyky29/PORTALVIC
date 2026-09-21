@@ -41,7 +41,8 @@
     "test:parent-hub": "node tests/parent_hub_invoices.test.mjs",
     "build:staff-app": "node scripts/build-clubsensational-staff.mjs",
     "build:vercel": "node scripts/vercel-build.mjs",
-    "deploy:sevitha-document-hub": "supabase functions deploy portal-admin-hr-files-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-expenses-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-onboarding-documents-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-hr-file-signed-url --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb"
+    "deploy:onboarding-pin": "supabase functions deploy portal-admin-onboarding-documents-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-onboarding-issue-pin --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-staff-login-resolve --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
+    "deploy:sevitha-document-hub": "supabase functions deploy portal-admin-hr-files-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-expenses-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-onboarding-documents-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-hr-file-signed-url --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-onboarding-issue-pin --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb"
   },
   "devDependencies": {
     "jsdom": "^29.1.1",

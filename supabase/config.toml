@@ -492,6 +492,12 @@ verify_jwt = false
 [functions.portal-admin-onboarding-documents-list]
 verify_jwt = false
 
+[functions.portal-admin-onboarding-issue-pin]
+verify_jwt = false
+
+[functions.portal-staff-login-resolve]
+verify_jwt = false
+
 [functions.portal-admin-onboarding-draft-export]
 verify_jwt = false
 

@@ -5,6 +5,11 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import {
+  matchStaffPinRow,
+  missingOnboardingPinChecks,
+  onboardingPayloadSubmitted,
+} from "../_shared/portal_onboarding_pin.ts";
 
 type DocType =
   | "checklist"
@@ -261,12 +266,45 @@ type ApplicantProgress = {
   portal_staff_name: string;
   job: boolean;
   health: boolean;
+  job_submitted: boolean;
+  health_submitted: boolean;
+  photo: boolean;
+  pin_issued: boolean;
+  pin: string | null;
+  pin_name: string | null;
+  login_username: string | null;
+  missing: string[];
+  ready_for_pin: boolean;
   uploads: UploadCounts;
   upload_paths: UploadPaths;
   updated_at: string | null;
   last_online_at: string | null;
   last_upload_at: string | null;
 };
+
+function emptyApplicant(id: string, name = ""): ApplicantProgress {
+  return {
+    applicant_session_id: id,
+    display_name: name,
+    portal_staff_name: name,
+    job: false,
+    health: false,
+    job_submitted: false,
+    health_submitted: false,
+    photo: false,
+    pin_issued: false,
+    pin: null,
+    pin_name: null,
+    login_username: null,
+    missing: [],
+    ready_for_pin: false,
+    uploads: emptyUploadCounts(),
+    upload_paths: emptyUploadPaths(),
+    updated_at: null,
+    last_online_at: null,
+    last_upload_at: null,
+  };
+}
 
 type SessionRow = { name: string; updated_at: string | null };
 
@@ -420,18 +458,9 @@ async function loadApplicantProgress(
   const byId = new Map<string, ApplicantProgress>();
 
   for (const [id, sess] of sessions) {
-    byId.set(id, {
-      applicant_session_id: id,
-      display_name: sess.name,
-      portal_staff_name: sess.name,
-      job: false,
-      health: false,
-      uploads: emptyUploadCounts(),
-      upload_paths: emptyUploadPaths(),
-      updated_at: null,
-      last_online_at: sess.updated_at,
-      last_upload_at: null,
-    });
+    const entry = emptyApplicant(id, sess.name);
+    entry.last_online_at = sess.updated_at;
+    byId.set(id, entry);
   }
 
   for (const row of data ?? []) {
@@ -439,25 +468,22 @@ async function loadApplicantProgress(
     if (!id) continue;
     let entry = byId.get(id);
     if (!entry) {
-      entry = {
-        applicant_session_id: id,
-        display_name: "",
-        portal_staff_name: "",
-        job: false,
-        health: false,
-        uploads: emptyUploadCounts(),
-        upload_paths: emptyUploadPaths(),
-        updated_at: null,
-        last_online_at: sessions.get(id)?.updated_at ?? null,
-        last_upload_at: null,
-      };
+      entry = emptyApplicant(id);
+      entry.last_online_at = sessions.get(id)?.updated_at ?? null;
       byId.set(id, entry);
     }
     const dn = displayNameFromPayload(row.payload);
     if (dn && !entry.display_name) entry.display_name = dn;
     const ft = String(row.form_type ?? "").toLowerCase();
-    if (ft === "job") entry.job = true;
-    if (ft === "health") entry.health = true;
+    const submitted = onboardingPayloadSubmitted(row.payload);
+    if (ft === "job") {
+      entry.job = true;
+      if (submitted) entry.job_submitted = true;
+    }
+    if (ft === "health") {
+      entry.health = true;
+      if (submitted) entry.health_submitted = true;
+    }
     const ts = row.updated_at ? String(row.updated_at) : null;
     if (ts && (!entry.updated_at || ts > entry.updated_at)) entry.updated_at = ts;
     entry.last_online_at = maxIso(entry.last_online_at, ts);
@@ -467,18 +493,9 @@ async function loadApplicantProgress(
     const id = String(doc.applicant_session_id ?? "").trim();
     if (!id || !UUID_RE.test(id)) continue;
     if (!byId.has(id)) {
-      byId.set(id, {
-        applicant_session_id: id,
-        display_name: sessions.get(id)?.name || "",
-        portal_staff_name: sessions.get(id)?.name || "",
-        job: false,
-        health: false,
-        uploads: emptyUploadCounts(),
-        upload_paths: emptyUploadPaths(),
-        updated_at: null,
-        last_online_at: sessions.get(id)?.updated_at ?? null,
-        last_upload_at: null,
-      });
+      const created = emptyApplicant(id, sessions.get(id)?.name || "");
+      created.last_online_at = sessions.get(id)?.updated_at ?? null;
+      byId.set(id, created);
     }
   }
 
@@ -517,28 +534,59 @@ async function loadApplicantProgress(
         if (!id) continue;
         let entry = byId.get(id);
         if (!entry) {
-          entry = {
-            applicant_session_id: id,
-            display_name: String(row.staff_name ?? "").trim(),
-            portal_staff_name: String(row.staff_name ?? "").trim(),
-            job: false,
-            health: false,
-            uploads: emptyUploadCounts(),
-            upload_paths: emptyUploadPaths(),
-            updated_at: null,
-            last_online_at: sessions.get(id)?.updated_at ?? null,
-            last_upload_at: null,
-          };
+          const name = String(row.staff_name ?? "").trim();
+          entry = emptyApplicant(id, name);
+          entry.last_online_at = sessions.get(id)?.updated_at ?? null;
           byId.set(id, entry);
         }
-        if (row.submitted_at) entry.health = true;
+        if (row.submitted_at) {
+          entry.health = true;
+          entry.health_submitted = true;
+        }
         const ts = row.updated_at ? String(row.updated_at) : null;
         if (ts) entry.last_online_at = maxIso(entry.last_online_at, ts);
         const name = String(row.staff_name ?? "").trim();
         if (name && !entry.display_name) entry.display_name = name;
         if (name && !entry.portal_staff_name) entry.portal_staff_name = name;
       }
+
+      const { data: profiles } = await portalAdmin
+        .from("staff_profiles")
+        .select("id, username, full_name, avatar_url")
+        .in("id", ids);
+      const { data: pinRows } = await portalAdmin
+        .from("portal_login_pins")
+        .select("name, pin, portal")
+        .eq("portal", "staff");
+      for (const profile of profiles ?? []) {
+        const id = String(profile.id || "").trim();
+        const entry = byId.get(id);
+        if (!entry) continue;
+        const username = String(profile.username || "").trim();
+        const fullName = String(profile.full_name || "").trim();
+        if (username) entry.login_username = username;
+        if (fullName && !entry.display_name) entry.display_name = fullName;
+        if (fullName && !entry.portal_staff_name) entry.portal_staff_name = fullName;
+        entry.photo = !!String(profile.avatar_url || "").trim();
+        const pinHit = matchStaffPinRow(pinRows || [], username, fullName);
+        if (pinHit) {
+          entry.pin_issued = true;
+          entry.pin = pinHit.pin;
+          entry.pin_name = pinHit.name;
+        }
+      }
     }
+  }
+
+  for (const entry of byId.values()) {
+    entry.missing = missingOnboardingPinChecks({
+      job_submitted: !!entry.job_submitted,
+      health_submitted: !!entry.health_submitted,
+      photo: !!entry.photo,
+      passport: (entry.uploads?.passport || 0) > 0,
+      checklist: (entry.uploads?.checklist || 0) > 0,
+    });
+    entry.ready_for_pin = !entry.pin_issued && entry.missing.length === 0;
   }
 
   return Array.from(byId.values()).sort((a, b) => {
