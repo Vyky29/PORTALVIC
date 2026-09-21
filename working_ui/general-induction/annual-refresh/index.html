@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="/portal-static-bootstrap.js?v=20260921-induction-refresh"></script>
+<title>Annual induction refresh | clubSENsational</title>
+<link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
+<link rel="stylesheet" href="/induction-assets/training-content-containment.css" />
+<link rel="stylesheet" href="/induction-assets/pathway-hub.css?v=20260611-induction-complete" />
+<link rel="stylesheet" href="/induction-assets/induction-quiz-theme.css" />
+<link rel="stylesheet" href="/induction-assets/provisional-certificate.css?v=20260921-induction-refresh" />
+<link rel="stylesheet" href="/induction-assets/annual-refresh.css?v=20260921-induction-refresh" />
+</head>
+<body>
+<main class="annual-refresh">
+  <a class="annual-refresh__back" href="/general-induction/">&larr; Back to General Induction</a>
+  <section class="annual-refresh__hero">
+    <p class="annual-refresh__kicker">General Induction</p>
+    <h1>Annual refresh <span id="refreshYearLabel"></span></h1>
+    <p>You already completed the full pathway. Open every recap card, then pass the 6-question quiz. Staff who have not finished the six modules still do the full induction.</p>
+  </section>
+
+  <p class="annual-refresh__hint">Tap each module summary so it highlights. When all six are open, tick the box and the quiz unlocks.</p>
+
+  <button type="button" class="annual-refresh__card" data-refresh-item="1" aria-pressed="false">
+    <span class="annual-refresh__mod">Module 1</span>
+    <h2>Welcome to clubSENsational</h2>
+    <ul>
+      <li>Founded in 2021 to support neurodivergent people and their families.</li>
+      <li>Mission: empowering neurodivergent individuals through inclusive, tailored support.</li>
+      <li>Three pillars: social communication, physical and emotional wellbeing, and independence.</li>
+    </ul>
+  </button>
+  <button type="button" class="annual-refresh__card" data-refresh-item="2" aria-pressed="false">
+    <span class="annual-refresh__mod">Module 2</span>
+    <h2>Team and departments</h2>
+    <ul>
+      <li>Know who leads programmes and who supports operations, HR and finance.</li>
+      <li>Instructors, support workers and office teams share the same standards.</li>
+      <li>Ask early if a client, venue or cover is unclear - do not guess.</li>
+    </ul>
+  </button>
+  <button type="button" class="annual-refresh__card" data-refresh-item="3" aria-pressed="false">
+    <span class="annual-refresh__mod">Module 3</span>
+    <h2>Services and venues</h2>
+    <ul>
+      <li>We deliver Day Centre, after-school, weekends and aquatic sessions across venues.</li>
+      <li>Each environment needs the same safety, consistency and adapted support.</li>
+      <li>Swimming, climbing and movement sessions all stay person-centred.</li>
+    </ul>
+  </button>
+  <button type="button" class="annual-refresh__card" data-refresh-item="4" aria-pressed="false">
+    <span class="annual-refresh__mod">Module 4</span>
+    <h2>Our clients and approach</h2>
+    <ul>
+      <li>Not every client uses spoken language - follow their communication style.</li>
+      <li>Visual tools, AAC and sensory regulation help participation.</li>
+      <li>Follow the client's lead. Do not force a one-size approach.</li>
+    </ul>
+  </button>
+  <button type="button" class="annual-refresh__card" data-refresh-item="5" aria-pressed="false">
+    <span class="annual-refresh__mod">Module 5</span>
+    <h2>Your role</h2>
+    <ul>
+      <li>Arrive prepared, wear uniform, and keep language respectful.</li>
+      <li>Check the environment, follow the session structure, and adapt when needed.</li>
+      <li>You represent clubSENsational with families, venues and colleagues.</li>
+    </ul>
+  </button>
+  <button type="button" class="annual-refresh__card" data-refresh-item="6" aria-pressed="false">
+    <span class="annual-refresh__mod">Module 6</span>
+    <h2>Policies and protection</h2>
+    <ul>
+      <li>Safeguarding comes first: report concerns through the club process.</li>
+      <li>Keep personal information private (GDPR). Do not share photos off the portal.</li>
+      <li>Hold professional boundaries. If you are unsure, ask a lead or the office.</li>
+    </ul>
+  </button>
+
+  <label class="annual-refresh__check">
+    <input type="checkbox" id="refreshRecapCheck" disabled />
+    <span>I have opened every recap and I am ready for this year's quiz.</span>
+  </label>
+
+  <section class="section gated-locked" id="quiz">
+    <div class="section-lock-banner">Open all six recap cards and tick the confirmation box to unlock the quiz.</div>
+    <div class="quiz-inline">
+      <form id="refreshQuizForm">
+        <div class="q-card">
+          <p class="q-text">1. What year was clubSENsational originally founded?</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">A. 2010</span><input type="radio" name="q1" value="A" /></label></li>
+            <li><label><span class="opt-txt">B. 2015</span><input type="radio" name="q1" value="B" /></label></li>
+            <li><label><span class="opt-txt">C. 2021</span><input type="radio" name="q1" value="C" /></label></li>
+            <li><label><span class="opt-txt">D. 2025</span><input type="radio" name="q1" value="D" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q1"></div>
+        </div>
+        <div class="q-card">
+          <p class="q-text">2. What is the main focus of our mission?</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">A. Academic improvement for children</span><input type="radio" name="q2" value="A" /></label></li>
+            <li><label><span class="opt-txt">B. Job placement services</span><input type="radio" name="q2" value="B" /></label></li>
+            <li><label><span class="opt-txt">C. Empowering neurodivergent individuals through inclusive, tailored support</span><input type="radio" name="q2" value="C" /></label></li>
+            <li><label><span class="opt-txt">D. Financial literacy for adults</span><input type="radio" name="q2" value="D" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q2"></div>
+        </div>
+        <div class="q-card">
+          <p class="q-text">3. Which of these is NOT one of the three mission pillars?</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">A. Social communication</span><input type="radio" name="q3" value="A" /></label></li>
+            <li><label><span class="opt-txt">B. Physical and emotional wellbeing</span><input type="radio" name="q3" value="B" /></label></li>
+            <li><label><span class="opt-txt">C. Behavioural control</span><input type="radio" name="q3" value="C" /></label></li>
+            <li><label><span class="opt-txt">D. Independence</span><input type="radio" name="q3" value="D" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q3"></div>
+        </div>
+        <div class="q-card">
+          <p class="q-text">4. Every client at clubSENsational uses spoken language to communicate.</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">True</span><input type="radio" name="q4" value="T" /></label></li>
+            <li><label><span class="opt-txt">False</span><input type="radio" name="q4" value="F" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q4"></div>
+        </div>
+        <div class="q-card">
+          <p class="q-text">5. If you have a safeguarding concern, you should:</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">A. Wait and see if it happens again</span><input type="radio" name="q5" value="A" /></label></li>
+            <li><label><span class="opt-txt">B. Follow club policy and report it</span><input type="radio" name="q5" value="B" /></label></li>
+            <li><label><span class="opt-txt">C. Post about it in a staff group chat</span><input type="radio" name="q5" value="C" /></label></li>
+            <li><label><span class="opt-txt">D. Ask the family to sort it themselves</span><input type="radio" name="q5" value="D" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q5"></div>
+        </div>
+        <div class="q-card">
+          <p class="q-text">6. Visual tools like First-Then boards and social stories help reduce anxiety and support understanding.</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">True</span><input type="radio" name="q6" value="T" /></label></li>
+            <li><label><span class="opt-txt">False</span><input type="radio" name="q6" value="F" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q6"></div>
+        </div>
+        <p class="quiz-submit-hint" id="refreshSubmitHint">Answer all 6 questions to submit.</p>
+        <button type="submit" class="btn-submit" id="refreshSubmit" disabled>Submit recap quiz</button>
+      </form>
+      <div class="score-card" id="refreshScoreCard">
+        <p id="refreshScoreMsg"></p>
+        <p><a class="annual-refresh__back" id="refreshDoneLink" href="/general-induction/" style="display:none">Return to General Induction</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="/portal-static-bootstrap.js?v=20260921-induction-refresh"></script>
+<script type="module" src="/portal/portal_induction_progress_runtime.js?v=20260921-induction-refresh"></script>
+<script src="/portal/portal_induction.js?v=20260921-induction-refresh"></script>
+<script src="/induction-shared/annual-refresh-flow.js?v=20260921-induction-refresh"></script>
+</body>
+</html>

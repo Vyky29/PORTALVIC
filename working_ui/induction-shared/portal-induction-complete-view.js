@@ -168,9 +168,76 @@
     wrap.insertBefore(a, wrap.firstChild);
   }
 
+  function refreshDueNow() {
+    if (typeof global.portalInductionRefreshDue !== "function") return false;
+    var p = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+    var email = "";
+    try {
+      var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
+      email = sess && sess.user && sess.user.email ? String(sess.user.email) : "";
+    } catch (_e) {}
+    if (
+      !p &&
+      typeof global.portalInductionLearnerHintFromUrl === "function"
+    ) {
+      p = global.portalInductionLearnerHintFromUrl();
+    }
+    return !!global.portalInductionRefreshDue(p, email);
+  }
+
+  function trainingYearLabel() {
+    if (typeof global.portalInductionTrainingYear === "function") {
+      return global.portalInductionTrainingYear();
+    }
+    return "";
+  }
+
+  function applyRefreshDueLayout() {
+    if (!refreshDueNow()) return false;
+    global.document.body.classList.remove("induction--certificate-only");
+    global.document.body.classList.add("induction--refresh-due");
+    var cert = global.document.getElementById("inductionCertificatePanel");
+    if (cert) cert.hidden = true;
+    var panel = global.document.getElementById("inductionAnnualRefreshPanel");
+    if (panel) {
+      panel.hidden = false;
+      var year = trainingYearLabel();
+      var lead = global.document.getElementById("inductionRefreshLead");
+      if (lead && year) {
+        lead.textContent =
+          "You already completed General Induction. For " +
+          year +
+          " review the short summary and pass the recap quiz. Staff who have not finished the six modules still do the full pathway.";
+      }
+      var start = global.document.getElementById("inductionRefreshStart");
+      if (start) {
+        var href = "/general-induction/annual-refresh/";
+        if (typeof global.portalInductionRefreshUrl === "function") {
+          href = global.portalInductionRefreshUrl();
+        }
+        try {
+          var u = new URL(href, global.location.href);
+          var here = new URL(global.location.href);
+          ["learnerName", "name", "staffName", "portalGrandfathered"].forEach(function (k) {
+            var v = here.searchParams.get(k);
+            if (v) u.searchParams.set(k, v);
+          });
+          start.href = u.pathname + u.search;
+        } catch (_href) {
+          start.href = href;
+        }
+        start.textContent = year ? "Start " + year + " refresh" : "Start annual refresh";
+      }
+    }
+    ensureBackLink();
+    return true;
+  }
+
   function applyCertificateOnlyLayout() {
+    if (applyRefreshDueLayout()) return;
     if (!isTrainingComplete()) return;
     if (!learnerName()) return;
+    global.document.body.classList.remove("induction--refresh-due");
     global.document.body.classList.add("induction--certificate-only");
     var panel = global.document.getElementById("inductionCertificatePanel");
     if (panel) {
@@ -209,7 +276,7 @@
     return new Promise(function (resolve, reject) {
       var s = global.document.createElement("script");
       s.src =
-        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260921-induction-origin";
+        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260921-induction-refresh";
       s.onload = function () {
         if (global.jspdf && global.jspdf.jsPDF) resolve(global.jspdf);
         else reject(new Error("jsPDF failed to load"));
@@ -222,7 +289,7 @@
   }
 
   async function importDocumentsModule() {
-    var v = "20260921-induction-origin";
+    var v = "20260921-induction-refresh";
     var bases = ["/portal/portal_documents.js", "portal/portal_documents.js"];
     for (var i = 0; i < bases.length; i++) {
       try {
@@ -235,7 +302,7 @@
   }
 
   async function importAuthBootstrap() {
-    var v = "20260921-induction-origin";
+    var v = "20260921-induction-refresh";
     var bases = ["/portal/auth-handler.js", "portal/auth-handler.js"];
     for (var i = 0; i < bases.length; i++) {
       try {
@@ -384,6 +451,12 @@
     if (typeof global.portalInductionResetAnonymousGrandfather === "function") {
       global.portalInductionResetAnonymousGrandfather();
     }
+    if (
+      !p &&
+      typeof global.portalInductionLearnerHintFromUrl === "function"
+    ) {
+      p = global.portalInductionLearnerHintFromUrl();
+    }
     if (typeof global.portalInductionApplyGrandfather === "function") {
       global.portalInductionApplyGrandfather(p, email);
     }
@@ -395,6 +468,7 @@
   function init() {
     void bootstrapAuth().then(function () {
       applyCertificateOnlyLayout();
+      if (refreshDueNow()) return;
       if (isTrainingComplete()) {
         bindDownload();
         void syncSavedCertificateUi();

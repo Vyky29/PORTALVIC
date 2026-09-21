@@ -190,8 +190,104 @@
   overflow-wrap: break-word;
 }
 
-body.induction--certificate-only {
+body.induction--certificate-only #inductionAnnualRefreshPanel,
+body.induction--refresh-due #inductionCertificatePanel {
+  display: none !important;
+}
+
+.induction-refresh-hub {
+  margin: 28px auto 0;
+  max-width: 920px;
+  padding: clamp(24px, 5vw, 32px) clamp(20px, 4vw, 28px);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fff8e8 0%, #f7ecd2 100%);
+  color: #0f2840;
+  border: 1px solid rgba(240, 179, 35, 0.45);
+  box-shadow: 0 16px 36px rgba(145, 96, 9, 0.12);
+}
+
+.induction-refresh-hub[hidden] {
+  display: none !important;
+}
+
+.induction-refresh-hub__kicker {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9a6b08;
+}
+
+.induction-refresh-hub h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #0f2840;
+}
+
+.induction-refresh-hub__lead {
+  margin: 0 0 18px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #5d7688;
+  max-width: 42em;
+  overflow-wrap: break-word;
+}
+
+.induction-refresh-hub .btn-certificate-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 0;
+  background: linear-gradient(135deg, #f0b323 0%, #f5cc6a 100%);
+  color: #0f2840;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(145, 96, 9, 0.28);
+}
+
+body.induction--refresh-due {
   background: linear-gradient(180deg, #f4f8fc 0%, #eaf1f8 100%);
+}
+
+body.induction--refresh-due .training-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(28px, env(safe-area-inset-bottom, 0px));
+}
+
+body.induction--refresh-due .training-wrap {
+  width: 100%;
+  max-width: min(560px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+body.induction--refresh-due #inductionPathwayWrap {
+  display: none !important;
+}
+
+body.induction--refresh-due #inductionAnnualRefreshPanel {
+  display: block !important;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+body.induction--refresh-due .induction-refresh-hub .btn-certificate-download {
+  width: min(100%, 320px);
 }
 
 body.induction--certificate-only .training-page {

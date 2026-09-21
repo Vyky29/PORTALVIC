@@ -54,13 +54,20 @@
     for (i = 1; i <= INDUCTION_MODULES; i++) {
       mods[String(i)] = { journey: true, video: true, quizPass: true, label: "Done" };
     }
+    var year = "";
+    try {
+      var now = new Date();
+      var y = now.getFullYear();
+      var m = now.getMonth() + 1;
+      year = m >= 9 ? y + "/" + String(y + 1).slice(-2) : y - 1 + "/" + String(y).slice(-2);
+    } catch (_e) {}
     return {
       track: "induction",
       current_module: INDUCTION_MODULES,
       modules_total: INDUCTION_MODULES,
-      progress_pct: 100,
+      progress_pct: 90,
       module_states: mods,
-      phase_label: "Grandfathered complete",
+      phase_label: "Annual refresh due " + year,
       completed_at: "2026-05-01T12:00:00.000Z",
     };
   }
@@ -123,8 +130,13 @@
 
   function trackIsComplete(track) {
     if (!track) return false;
+    var phase = String(track.phase_label || "");
+    if (/refresh due/i.test(phase)) return false;
+    var refresh = track.module_states && track.module_states.refresh;
+    if (refresh && refresh.quizPass) return true;
+    if (/grandfathered/i.test(phase)) return false;
     if (trackProgressPct(track) >= 100) return true;
-    return /complete|grandfathered|done/i.test(String(track.phase_label || ""));
+    return /complete|done/i.test(phase) && !/refresh/i.test(phase);
   }
 
   function trackIsInProgress(track) {

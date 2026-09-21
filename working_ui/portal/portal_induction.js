@@ -9,6 +9,7 @@
   var LEARNER_NAME_KEY = "portalvic_staff_display_name";
   var CERT_PDF_DOWNLOADED_KEY = "portalvic_induction_certificate_pdf_downloaded";
   var OWNER_KEY = "provisional-induction-owner-id";
+  var REFRESH_KEY = "provisional-induction-annual-refresh";
 
   /** Must complete the full pathway in-app (Zoho alumni already trained). */
   var REQUIRED_ROSTER_KEYS = { alex: true, michelle: true, carlos: true };
@@ -50,6 +51,18 @@
     return !!(fn && REQUIRED_FIRST_NAMES[fn]);
   }
 
+  function portalInductionLearnerHintFromUrl() {
+    try {
+      var q = new URLSearchParams(global.location.search);
+      if (q.get("portalGrandfathered") !== "1") return null;
+      var name = String(q.get("learnerName") || q.get("name") || q.get("staffName") || "").trim();
+      if (!name) return null;
+      return { full_name: name, username: name };
+    } catch (_e) {
+      return null;
+    }
+  }
+
   function portalInductionHasIdentifiableLearner(profile, authEmail) {
     if (String(authEmail || "").trim()) return true;
     if (profile && (profile.full_name || profile.username || profile.id || profile.email)) return true;
@@ -67,6 +80,7 @@
       global.localStorage.removeItem(GRANDFATHER_ISSUED_KEY);
       global.localStorage.removeItem(LEARNER_NAME_KEY);
       global.sessionStorage.removeItem(LEARNER_NAME_KEY);
+      global.localStorage.removeItem(REFRESH_KEY);
     } catch (_e) {}
   }
 
@@ -82,8 +96,10 @@
   }
 
   function portalInductionResetAnonymousGrandfather() {
+    var profile = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+    if (!profile) profile = portalInductionLearnerHintFromUrl();
     if (portalInductionHasIdentifiableLearner(
-      global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile,
+      profile,
       (function () {
         try {
           var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
@@ -184,6 +200,99 @@
     return false;
   }
 
+  function portalInductionLondonParts(date) {
+    var d = date instanceof Date ? date : date ? new Date(date) : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+    var parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+    }).formatToParts(d);
+    var y = 0;
+    var m = 0;
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i].type === "year") y = Number(parts[i].value);
+      if (parts[i].type === "month") m = Number(parts[i].value);
+    }
+    return { year: y, month: m };
+  }
+
+  function portalInductionTrainingYear(date) {
+    var p = portalInductionLondonParts(date);
+    if (p.month >= 9) return p.year + "/" + String(p.year + 1).slice(-2);
+    return p.year - 1 + "/" + String(p.year).slice(-2);
+  }
+
+  function portalInductionLoadRefresh() {
+    try {
+      var raw = global.localStorage.getItem(REFRESH_KEY);
+      var data = raw ? JSON.parse(raw) : {};
+      if (!data || typeof data !== "object") data = {};
+      return {
+        year: String(data.year || ""),
+        recap: !!data.recap,
+        quizPass: !!data.quizPass,
+        at: data.at || "",
+      };
+    } catch (_e) {
+      return { year: "", recap: false, quizPass: false, at: "" };
+    }
+  }
+
+  function portalInductionSaveRefresh(next) {
+    try {
+      global.localStorage.setItem(REFRESH_KEY, JSON.stringify(next || {}));
+    } catch (_e) {}
+    try {
+      global.dispatchEvent(new CustomEvent("portal:induction-progress", { detail: { refresh: true } }));
+    } catch (_e2) {}
+  }
+
+  function portalInductionRefreshPassedForYear(year) {
+    var y = String(year || portalInductionTrainingYear());
+    var r = portalInductionLoadRefresh();
+    return !!(r.quizPass && r.year === y);
+  }
+
+  function portalInductionHasFullPathwayComplete(profile, authEmail) {
+    if (portalInductionMustComplete(profile, authEmail)) {
+      return portalInductionModulesAllPassed();
+    }
+    if (!portalInductionHasIdentifiableLearner(profile, authEmail)) return false;
+    try {
+      if (global.localStorage.getItem(COMPLETE_KEY) === "1") return true;
+    } catch (_e) {}
+    return portalInductionModulesAllPassed();
+  }
+
+  function portalInductionRefreshDue(profile, authEmail) {
+    if (!portalInductionHasFullPathwayComplete(profile, authEmail)) return false;
+    var year = portalInductionTrainingYear();
+    if (portalInductionRefreshPassedForYear(year)) return false;
+    if (portalInductionModulesAllPassed() && !portalInductionLooksGrandfatheredComplete()) {
+      try {
+        var at = String(global.localStorage.getItem(COMPLETED_AT_KEY) || "").trim();
+        if (at && portalInductionTrainingYear(at) === year) return false;
+      } catch (_e2) {}
+    }
+    return true;
+  }
+
+  function portalInductionMarkAnnualRefreshPassed() {
+    var year = portalInductionTrainingYear();
+    portalInductionSaveRefresh({
+      year: year,
+      recap: true,
+      quizPass: true,
+      at: new Date().toISOString(),
+    });
+    return year;
+  }
+
+  function portalInductionRefreshUrl() {
+    return portalInductionBaseUrl().replace(/\/?$/, "/") + "annual-refresh/";
+  }
+
   function portalInductionClearGrandfatherStateForRequired(profile, authEmail) {
     if (!portalInductionMustComplete(profile, authEmail)) return;
     if (!portalInductionLooksGrandfatheredComplete() && portalInductionModulesAllPassed()) return;
@@ -201,21 +310,20 @@
   }
 
   function portalInductionIsComplete(profile, authEmail) {
-    if (!portalInductionMustComplete(profile, authEmail)) {
+    if (portalInductionMustComplete(profile, authEmail)) {
+      if (!portalInductionModulesAllPassed()) {
+        try {
+          if (global.localStorage.getItem(COMPLETE_KEY) === "1") global.localStorage.removeItem(COMPLETE_KEY);
+        } catch (_e2) {}
+        return false;
+      }
       try {
-        if (global.localStorage.getItem(COMPLETE_KEY) === "1") return true;
-      } catch (_e) {}
-      return true;
-    }
-    if (!portalInductionModulesAllPassed()) {
-      try {
-        if (global.localStorage.getItem(COMPLETE_KEY) === "1") global.localStorage.removeItem(COMPLETE_KEY);
-      } catch (_e2) {}
+        global.localStorage.setItem(COMPLETE_KEY, "1");
+      } catch (_e3) {}
+    } else if (!portalInductionHasFullPathwayComplete(profile, authEmail)) {
       return false;
     }
-    try {
-      global.localStorage.setItem(COMPLETE_KEY, "1");
-    } catch (_e3) {}
+    if (portalInductionRefreshDue(profile, authEmail)) return false;
     return true;
   }
 
@@ -280,6 +388,15 @@
     if (!portalInductionMustComplete(profile, authEmail)) {
       url.searchParams.set("portalGrandfathered", "1");
     }
+    if (portalInductionRefreshDue(profile, authEmail)) {
+      try {
+        url = new URL(portalInductionRefreshUrl(), global.location.href);
+        if (name) url.searchParams.set("learnerName", name);
+      } catch (_e3) {
+        global.location.href = "/general-induction/annual-refresh/";
+        return;
+      }
+    }
     try {
       global.localStorage.setItem("portalLastDashboardUrl", String(global.location.href || ""));
     } catch (_e2) {}
@@ -334,34 +451,43 @@
     portalInductionApplyGrandfather(profile, authEmail);
     var must = portalInductionMustComplete(profile, authEmail);
     var done = portalInductionIsComplete(profile, authEmail);
+    var refreshDue =
+      typeof portalInductionRefreshDue === "function"
+        ? portalInductionRefreshDue(profile, authEmail)
+        : false;
+    var year = portalInductionTrainingYear();
     var needsCert = portalInductionNeedsCertificateDownload(profile, authEmail);
     btn.disabled = false;
     btn.removeAttribute("disabled");
     btn.classList.remove("menu-btn--portal-pending");
     btn.setAttribute("aria-disabled", "false");
-    btn.classList.toggle("menu-btn--induction-cert-pending", needsCert);
-    btn.classList.toggle("menu-btn--portal-pulse", needsCert);
+    btn.classList.toggle("menu-btn--induction-cert-pending", needsCert && !refreshDue);
+    btn.classList.toggle("menu-btn--portal-pulse", !!(needsCert || refreshDue || (must && !done)));
     var sub = btn.querySelector(".menu-btn-sub");
     if (sub) {
-      if (needsCert) {
+      if (refreshDue) {
+        sub.textContent = "Annual refresh " + year + " - recap and short quiz";
+      } else if (needsCert) {
         sub.textContent = "Open and download your certificate (PDF)";
       } else if (must && !done) {
         sub.textContent = "Core company training — start here";
       } else if (must && done) {
         sub.textContent = "Completed — certificate in My documents";
       } else {
-        sub.textContent = "Completed — certificate in My documents";
+        sub.textContent = "Completed " + year + " — certificate in My documents";
       }
     }
-    if (done && !needsCert) btn.classList.add("menu-btn--induction-done");
+    if (done && !needsCert && !refreshDue) btn.classList.add("menu-btn--induction-done");
     else btn.classList.remove("menu-btn--induction-done");
     btn.setAttribute(
       "aria-label",
-      needsCert
-        ? "Induction — download your certificate PDF"
-        : done
-          ? "Induction — completed"
-          : "Induction — core company training"
+      refreshDue
+        ? "Induction — annual refresh " + year
+        : needsCert
+          ? "Induction — download your certificate PDF"
+          : done
+            ? "Induction — completed"
+            : "Induction — core company training"
     );
   }
 
@@ -415,12 +541,21 @@
   }
 
   global.portalInductionMustComplete = portalInductionMustComplete;
+  global.portalInductionLearnerHintFromUrl = portalInductionLearnerHintFromUrl;
   global.portalInductionHasIdentifiableLearner = portalInductionHasIdentifiableLearner;
   global.portalInductionClearLocalProgress = portalInductionClearLocalProgress;
   global.portalInductionBindStorageOwner = portalInductionBindStorageOwner;
   global.portalInductionResetAnonymousGrandfather = portalInductionResetAnonymousGrandfather;
   global.portalInductionIsComplete = portalInductionIsComplete;
   global.portalInductionApplyGrandfather = portalInductionApplyGrandfather;
+  global.portalInductionTrainingYear = portalInductionTrainingYear;
+  global.portalInductionLoadRefresh = portalInductionLoadRefresh;
+  global.portalInductionSaveRefresh = portalInductionSaveRefresh;
+  global.portalInductionRefreshDue = portalInductionRefreshDue;
+  global.portalInductionRefreshPassedForYear = portalInductionRefreshPassedForYear;
+  global.portalInductionHasFullPathwayComplete = portalInductionHasFullPathwayComplete;
+  global.portalInductionMarkAnnualRefreshPassed = portalInductionMarkAnnualRefreshPassed;
+  global.portalInductionRefreshUrl = portalInductionRefreshUrl;
   global.portalInductionOpen = portalInductionOpen;
   global.portalInductionBindDashboard = portalInductionBindDashboard;
   global.portalInductionGetCertificateMeta = portalInductionGetCertificateMeta;

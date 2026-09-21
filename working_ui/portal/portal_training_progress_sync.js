@@ -122,9 +122,38 @@
       currentModule = INDUCTION_MODULES;
     }
 
+    var year =
+      typeof global.portalInductionTrainingYear === "function"
+        ? global.portalInductionTrainingYear()
+        : "";
+    var refresh =
+      typeof global.portalInductionLoadRefresh === "function"
+        ? global.portalInductionLoadRefresh()
+        : { year: "", recap: false, quizPass: false, at: "" };
+    var refreshDue =
+      typeof global.portalInductionRefreshDue === "function"
+        ? global.portalInductionRefreshDue(profile, authEmail)
+        : false;
+    if (refresh && (refresh.year || refresh.quizPass || refresh.recap)) {
+      moduleStates.refresh = {
+        year: refresh.year || year,
+        recap: !!refresh.recap,
+        quizPass: !!refresh.quizPass,
+        at: refresh.at || "",
+        label: refresh.quizPass && refresh.year === year ? "Done" : "Due",
+      };
+    }
+
     var pct = Math.round((doneCount / INDUCTION_MODULES) * 100);
     var phase = "";
-    if (!mustComplete && (completeFlag || doneCount >= INDUCTION_MODULES)) {
+    var fullDone = doneCount >= INDUCTION_MODULES || (!mustComplete && completeFlag);
+    if (fullDone && refreshDue) {
+      phase = "Annual refresh due " + (year || "");
+      pct = 90;
+    } else if (fullDone && refresh.quizPass && refresh.year === year) {
+      phase = "Complete " + year;
+      pct = 100;
+    } else if (!mustComplete && (completeFlag || doneCount >= INDUCTION_MODULES)) {
       phase = "Grandfathered complete";
     } else if (doneCount >= INDUCTION_MODULES) {
       phase = "All modules complete";
@@ -134,11 +163,18 @@
       phase = "Not started";
     }
 
+    var progressPct = pct;
+    if (fullDone && refreshDue) {
+      progressPct = 90;
+    } else if (!mustComplete) {
+      progressPct = Math.max(pct, completeFlag ? 100 : 0);
+    }
+
     return {
       track: "induction",
       current_module: currentModule,
       modules_total: INDUCTION_MODULES,
-      progress_pct: mustComplete ? pct : Math.max(pct, completeFlag ? 100 : 0),
+      progress_pct: progressPct,
       module_states: moduleStates,
       phase_label: phase,
       completed_at:
@@ -418,6 +454,22 @@
       if (!remoteStates) return { ok: true, changed: false };
 
       var changed = applyInductionModuleStatesToLocalStorage(remoteStates);
+      if (remoteStates.refresh && typeof global.portalInductionSaveRefresh === "function") {
+        var remote = remoteStates.refresh;
+        var local =
+          typeof global.portalInductionLoadRefresh === "function"
+            ? global.portalInductionLoadRefresh()
+            : {};
+        if (remote.quizPass && remote.year && !(local.quizPass && local.year === remote.year)) {
+          global.portalInductionSaveRefresh({
+            year: String(remote.year || ""),
+            recap: !!(remote.recap || remote.quizPass),
+            quizPass: !!remote.quizPass,
+            at: remote.at || "",
+          });
+          changed = true;
+        }
+      }
       if (changed) {
         try {
           if (typeof global.provisionalRefreshPathway === "function") {
