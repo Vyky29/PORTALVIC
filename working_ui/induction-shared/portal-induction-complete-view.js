@@ -170,6 +170,7 @@
 
   function applyCertificateOnlyLayout() {
     if (!isTrainingComplete()) return;
+    if (!learnerName()) return;
     global.document.body.classList.add("induction--certificate-only");
     var panel = global.document.getElementById("inductionCertificatePanel");
     if (panel) {
@@ -208,7 +209,7 @@
     return new Promise(function (resolve, reject) {
       var s = global.document.createElement("script");
       s.src =
-        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260611-induction";
+        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260921-induction-origin";
       s.onload = function () {
         if (global.jspdf && global.jspdf.jsPDF) resolve(global.jspdf);
         else reject(new Error("jsPDF failed to load"));
@@ -221,7 +222,7 @@
   }
 
   async function importDocumentsModule() {
-    var v = "20260611-induction";
+    var v = "20260921-induction-origin";
     var bases = ["/portal/portal_documents.js", "portal/portal_documents.js"];
     for (var i = 0; i < bases.length; i++) {
       try {
@@ -234,7 +235,7 @@
   }
 
   async function importAuthBootstrap() {
-    var v = "20260611-induction";
+    var v = "20260921-induction-origin";
     var bases = ["/portal/auth-handler.js", "portal/auth-handler.js"];
     for (var i = 0; i < bases.length; i++) {
       try {
@@ -364,19 +365,30 @@
     try {
       var auth = await importAuthBootstrap();
       if (auth && typeof auth.bootstrapDashboardSupabase === "function") {
-        await auth.bootstrapDashboardSupabase({ page: "staff" });
+        await auth.bootstrapDashboardSupabase({ page: "general_induction" });
       }
     } catch (e) {
       console.warn("[induction] auth bootstrap", e);
     }
+    var p = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+    var email = "";
+    var uid = "";
+    try {
+      var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
+      email = sess && sess.user && sess.user.email ? String(sess.user.email) : "";
+      uid = sess && sess.user && sess.user.id ? String(sess.user.id) : "";
+    } catch (_e) {}
+    if (uid && typeof global.portalInductionBindStorageOwner === "function") {
+      global.portalInductionBindStorageOwner(uid);
+    }
+    if (typeof global.portalInductionResetAnonymousGrandfather === "function") {
+      global.portalInductionResetAnonymousGrandfather();
+    }
     if (typeof global.portalInductionApplyGrandfather === "function") {
-      var p = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
-      var email = "";
-      try {
-        var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
-        email = sess && sess.user && sess.user.email ? String(sess.user.email) : "";
-      } catch (_e) {}
       global.portalInductionApplyGrandfather(p, email);
+    }
+    if (typeof global.provisionalRefreshPathway === "function") {
+      global.provisionalRefreshPathway();
     }
   }
 

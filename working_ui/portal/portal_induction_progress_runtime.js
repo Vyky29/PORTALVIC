@@ -1,7 +1,7 @@
 /**
  * General Induction pages: restore progress from Supabase and sync back to staff readiness.
  */
-import { bootstrapDashboardSupabase } from "/portal/auth-handler.js?v=20260624-push-icon-ghost-handoff";
+import { bootstrapDashboardSupabase } from "/portal/auth-handler.js?v=20260921-induction-origin";
 
 function queueSync() {
   if (typeof window.portalSyncTrainingProgressToSupabase === "function") {
@@ -12,7 +12,7 @@ function queueSync() {
 async function bootInductionProgressRuntime() {
   try {
     await bootstrapDashboardSupabase({ page: "general_induction" });
-    await import("./portal_training_progress_sync.js?v=20260610-rpc-fallback");
+    await import("./portal_training_progress_sync.js?v=20260921-induction-origin");
     if (typeof window.portalHydrateInductionProgressFromSupabase === "function") {
       await window.portalHydrateInductionProgressFromSupabase();
     }

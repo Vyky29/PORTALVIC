@@ -8,6 +8,7 @@
   var GRANDFATHER_ISSUED_KEY = "portalvic_induction_grandfather_issued_iso";
   var LEARNER_NAME_KEY = "portalvic_staff_display_name";
   var CERT_PDF_DOWNLOADED_KEY = "portalvic_induction_certificate_pdf_downloaded";
+  var OWNER_KEY = "provisional-induction-owner-id";
 
   /** Must complete the full pathway in-app (Zoho alumni already trained). */
   var REQUIRED_ROSTER_KEYS = { alex: true, michelle: true, carlos: true };
@@ -49,6 +50,59 @@
     return !!(fn && REQUIRED_FIRST_NAMES[fn]);
   }
 
+  function portalInductionHasIdentifiableLearner(profile, authEmail) {
+    if (String(authEmail || "").trim()) return true;
+    if (profile && (profile.full_name || profile.username || profile.id || profile.email)) return true;
+    return false;
+  }
+
+  function portalInductionClearLocalProgress() {
+    try {
+      for (var i = 1; i <= MODULES; i++) {
+        global.localStorage.removeItem("provisional-induction-module-" + i);
+      }
+      global.localStorage.removeItem(COMPLETE_KEY);
+      global.localStorage.removeItem(COMPLETED_AT_KEY);
+      global.localStorage.removeItem(CERT_PDF_DOWNLOADED_KEY);
+      global.localStorage.removeItem(GRANDFATHER_ISSUED_KEY);
+      global.localStorage.removeItem(LEARNER_NAME_KEY);
+      global.sessionStorage.removeItem(LEARNER_NAME_KEY);
+    } catch (_e) {}
+  }
+
+  function portalInductionBindStorageOwner(userId) {
+    var id = String(userId || "").trim();
+    if (!id) return false;
+    try {
+      var prev = String(global.localStorage.getItem(OWNER_KEY) || "").trim();
+      if (prev && prev !== id) portalInductionClearLocalProgress();
+      global.localStorage.setItem(OWNER_KEY, id);
+    } catch (_e2) {}
+    return true;
+  }
+
+  function portalInductionResetAnonymousGrandfather() {
+    if (portalInductionHasIdentifiableLearner(
+      global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile,
+      (function () {
+        try {
+          var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
+          return sess && sess.user && sess.user.email ? String(sess.user.email) : "";
+        } catch (_e) {
+          return "";
+        }
+      })()
+    )) {
+      return false;
+    }
+    if (!portalInductionLooksGrandfatheredComplete()) return false;
+    portalInductionClearLocalProgress();
+    try {
+      global.localStorage.removeItem(OWNER_KEY);
+    } catch (_e3) {}
+    return true;
+  }
+
   function displayNameFromProfile(profile, authEmail) {
     if (typeof global.portalTopbarDisplayNameFromAuth === "function") {
       var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
@@ -85,6 +139,7 @@
   }
 
   function portalInductionApplyGrandfather(profile, authEmail) {
+    if (!portalInductionHasIdentifiableLearner(profile, authEmail)) return false;
     if (portalInductionMustComplete(profile, authEmail)) return false;
     try {
       global.localStorage.setItem(COMPLETE_KEY, "1");
@@ -165,6 +220,15 @@
   }
 
   function portalInductionBaseUrl() {
+    try {
+      var here = String(global.location.origin || "").replace(/\/$/, "");
+      if (here && /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(here)) {
+        return here + "/general-induction/";
+      }
+      if (here && (/portalvic\.vercel\.app$/i.test(here) || /clubsensational-staff\.vercel\.app$/i.test(here))) {
+        return here + "/general-induction/";
+      }
+    } catch (_e0) {}
     var custom = String(global.PORTAL_INDUCTION_BASE_URL || "").trim();
     if (custom) return custom.replace(/\/?$/, "/");
     if (typeof global.portalCanonicalPortalPageUrl === "function") {
@@ -184,6 +248,11 @@
   }
 
   function portalInductionOpen(profile, authEmail) {
+    try {
+      var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
+      var uid = sess && sess.user && sess.user.id;
+      if (uid) portalInductionBindStorageOwner(uid);
+    } catch (_eOwn) {}
     portalInductionPrepareLearnerName(profile, authEmail);
     portalInductionClearGrandfatherStateForRequired(profile, authEmail);
     portalInductionApplyGrandfather(profile, authEmail);
@@ -346,6 +415,10 @@
   }
 
   global.portalInductionMustComplete = portalInductionMustComplete;
+  global.portalInductionHasIdentifiableLearner = portalInductionHasIdentifiableLearner;
+  global.portalInductionClearLocalProgress = portalInductionClearLocalProgress;
+  global.portalInductionBindStorageOwner = portalInductionBindStorageOwner;
+  global.portalInductionResetAnonymousGrandfather = portalInductionResetAnonymousGrandfather;
   global.portalInductionIsComplete = portalInductionIsComplete;
   global.portalInductionApplyGrandfather = portalInductionApplyGrandfather;
   global.portalInductionOpen = portalInductionOpen;

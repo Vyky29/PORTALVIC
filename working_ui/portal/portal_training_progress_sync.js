@@ -410,6 +410,10 @@
       var userId = resolveAuthUserId(opts, box);
       if (!client || !userId) return { ok: false };
 
+      if (typeof global.portalInductionBindStorageOwner === "function") {
+        global.portalInductionBindStorageOwner(userId);
+      }
+
       var remoteStates = await fetchRemoteInductionModuleStates(client, userId);
       if (!remoteStates) return { ok: true, changed: false };
 

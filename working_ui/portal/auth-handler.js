@@ -1665,7 +1665,8 @@ export async function bootstrapDashboardSupabase(_opts) {
     page === "ceo" ||
     page === "lead" ||
     page === "choose" ||
-    page === "staff"
+    page === "staff" ||
+    page === "general_induction"
       ? 4500
       : 2800;
 
@@ -1758,8 +1759,8 @@ export async function bootstrapDashboardSupabase(_opts) {
         } catch {
           window.location.href = authFailureRedirect;
         }
-      } else if (page === "staff") {
-        /** Help guide / staff surfaces: expose client so voice can refresh session on Play. */
+      } else if (page === "staff" || page === "general_induction") {
+        /** Help guide / staff surfaces / induction: expose client so session can recover. */
         window.__PORTAL_SUPABASE_SINGLETON__ = supabase;
         window.__PORTAL_SUPABASE__ = { client: supabase, session: null, staff_profile: null };
         try {

@@ -53,7 +53,19 @@
     "https://visual-vic.vercel.app/planner/login?return=/dashboard";
   window.PORTAL_INDUCTION_BASE_URL =
     window.PORTAL_INDUCTION_BASE_URL ||
-    String(window.PORTAL_CANONICAL_ORIGIN).replace(/\/$/, "") + "/general-induction/";
+    (function portalInductionDefaultBaseUrl() {
+      try {
+        var here = String(window.location.origin || "").replace(/\/$/, "");
+        if (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(here)) {
+          return here + "/general-induction/";
+        }
+        if (/portalvic\.vercel\.app$/i.test(here) || /clubsensational-staff\.vercel\.app$/i.test(here)) {
+          return here + "/general-induction/";
+        }
+      } catch (_) {}
+      return String(window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app").replace(/\/$/, "") +
+        "/general-induction/";
+    })();
 
   window.portalCanonicalPortalPageUrl = function portalCanonicalPortalPageUrl(path) {
     path = String(path || "").replace(/^\//, "");
@@ -64,6 +76,15 @@
       }
       if (/portalvic\.vercel\.app$/i.test(here)) {
         return here + "/" + path;
+      }
+      if (/clubsensational-staff\.vercel\.app$/i.test(here)) {
+        if (
+          /^(general-induction|my_documents|staff_dashboard|lead_dashboard|login|onboarding_portal|onboarding)(\/|\.html|$|\?)/i.test(
+            path
+          )
+        ) {
+          return here + "/" + path;
+        }
       }
     } catch (_) {}
     var origin = String(window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app").replace(

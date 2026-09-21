@@ -1,4 +1,4 @@
-/* General Induction ù pathway completion & certificate download */
+/* General Induction - pathway completion & certificate download */
 .induction-certificate-panel {
   margin: 28px auto 0;
   max-width: 920px;
@@ -131,7 +131,7 @@
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-/* PORTALVIC ù completed induction (same green as feedback-done session cards) */
+/* PORTALVIC - completed induction (same green as feedback-done session cards) */
 .induction-certificate-panel.induction-certificate-panel--portal-complete {
   margin-top: 0;
   background: linear-gradient(180deg, #eef8f1 0%, #dff6e8 100%);

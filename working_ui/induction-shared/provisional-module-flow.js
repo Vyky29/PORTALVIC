@@ -63,6 +63,7 @@
     if (id === 'journey') return !!state.journey;
     if (id === 'outcomes') return !!state.outcomes;
     if (id === 'video') return !!state.video;
+    if (id === 'complete') return !!(state.video || state.quizStarted || state.quizPass);
     if (id === 'quiz') return !!state.quizPass;
     var check = document.querySelector('[data-stage-check="' + id + '"]');
     return check && check.checked;
@@ -103,6 +104,10 @@
     if (state.outcomes) {
       document.querySelectorAll('[data-stage-check="outcomes"]').forEach(function (input) {
         input.checked = true;
+      });
+      document.querySelectorAll('[data-outcome-item]').forEach(function (item) {
+        item.classList.add('clicked');
+        item.setAttribute('aria-pressed', 'true');
       });
     }
   }
@@ -243,6 +248,7 @@
   var video = document.getElementById('moduleVideo');
   var statusEl = document.getElementById('moduleVideoStatus');
   var SEEK_TOLERANCE = 0.35;
+  var END_SLOP = 2;
   var maxWatchedTime = 0;
   var suppressSeekGuard = false;
 
@@ -295,7 +301,15 @@
     refreshProgress();
   }
 
+  function watchedEnoughToComplete() {
+    if (!video || !video.duration || !isFinite(video.duration) || video.duration <= 0) return false;
+    if (maxWatchedTime >= video.duration - Math.max(SEEK_TOLERANCE, END_SLOP)) return true;
+    return maxWatchedTime / video.duration >= 0.97;
+  }
+
   if (video) {
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', 'true');
     var initialState = loadState();
     maxWatchedTime = Number(initialState.maxWatchedTime) || 0;
     if (initialState.video) {
@@ -328,6 +342,10 @@
         maxWatchedTime = t;
         persistMaxWatched(state);
       }
+      if (watchedEnoughToComplete()) {
+        markVideoComplete();
+        return;
+      }
       if (statusEl && !state.video) statusEl.textContent = formatWatchProgress();
     });
 
@@ -337,14 +355,11 @@
     video.addEventListener('ended', function () {
       var state = loadState();
       if (state.video) return;
-      if (video.duration && maxWatchedTime < video.duration - SEEK_TOLERANCE) {
-        clampForwardSeek();
-        if (statusEl) {
-          statusEl.textContent = formatWatchProgress();
-        }
+      if (watchedEnoughToComplete()) {
+        markVideoComplete();
         return;
       }
-      markVideoComplete();
+      if (statusEl) statusEl.textContent = formatWatchProgress();
     });
   }
 
@@ -368,9 +383,7 @@
     var st = loadState();
     if (st.video) {
       unlockStage('complete');
-      if (st.quizStarted || st.quizPass) {
-        showQuizSection();
-      }
+      startQuizFlow();
     }
   }
 
