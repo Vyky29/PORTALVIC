@@ -179,14 +179,22 @@
       countLabel = noteN === 1 ? "note" : "notes";
       if (noteN > 0) innerPct = 100;
     } else if (hub.tab === "feedback" || hub.mode === "feedback") {
-      /* Light counts only — dayStats expandSlots x 7 freezes Register after the 1000-row payload. */
-      var submittedN = hub.feedbackCountForDateLight
-        ? hub.feedbackCountForDateLight(iso)
-        : hub.feedbackCountForDate(iso);
-      countStrong = String(submittedN);
-      countLabel = submittedN === 1 ? "session" : "sessions";
-      if (submittedN > 0) innerPct = 100;
-      if (submittedN > 0) stateCls = " ash-day-card--complete";
+      var prog = hub.registerDayProgress(iso);
+      var expectedN = prog.expected;
+      var arrivedN = prog.arrived;
+      countStrong = expectedN ? arrivedN + "/" + expectedN : String(arrivedN);
+      countLabel = "feedbacks";
+      if (expectedN) {
+        innerPct = Math.round((100 * arrivedN) / expectedN);
+        if (arrivedN > 0 && innerPct < 12) innerPct = 12;
+      } else if (arrivedN > 0) {
+        innerPct = 100;
+      }
+      if (expectedN && arrivedN === 0) stateCls = " ash-day-card--none";
+      else if (expectedN && arrivedN < expectedN) stateCls = " ash-day-card--partial";
+      else if (expectedN && arrivedN >= expectedN && expectedN > 0) {
+        stateCls = " ash-day-card--complete";
+      }
     } else if (hub.tab === "tracking") {
       /* Overview: each board seat = 1 session = 1 feedback. Swim AA+MA pairs count as 2;
        * slotFeedbackComplete still paints both when either half is submitted. */
@@ -4714,8 +4722,11 @@
   function clientNeedsPerSlotAquaticFeedback(slot) {
     if (!slot || !isAquaticService(slot.service)) return false;
     if (aquaticSlotCountForClientOnDate(slot.session_date, slot.client_name) <= 1) return false;
-    // Make-ups handed out on a specific half-hour must never collapse into one 60' block.
-    if (aquaticClientHasAnchoredMakeupOnDate(slot.session_date, slot.client_name)) return true;
+    var makeupN = aquaticMakeupSlotsForClientOnDate(slot.session_date, slot.client_name).length;
+    var aquaticN = aquaticSlotCountForClientOnDate(slot.session_date, slot.client_name);
+    /* Standing half + a makeup half: keep two feedbacks. A 60' makeup (both halves makeup,
+     * same instructor) is one feedback — same as Staff Today aquatic merge. */
+    if (makeupN > 0 && makeupN < aquaticN) return true;
     return !aquaticSameInstructorAllSlotsOnDate(slot.session_date, slot.client_name);
   }
 
@@ -5203,9 +5214,12 @@
     }
     if (hubSlotIsMakeup(slot)) {
       var mkInst = primaryInstructorKey(slot);
-      // One makeup = one feedback unit (client + time + instructor). Do not branch
-      // on aquatic vs empty service — that listed Karo twice in "awaiting feedback"
-      // when the same MakeUp was folded onto the original row and also injected.
+      // One makeup = one feedback unit (client + instructor). Consecutive aquatic
+      // makeup halves (60') share this key; mixed standing+makeup still splits via
+      // clientNeedsPerSlotAquaticFeedback.
+      if (isAquaticService(slot.service) && !clientNeedsPerSlotAquaticFeedback(slot)) {
+        return slot.session_date + "|" + cid + "|makeup_aquatic|" + mkInst;
+      }
       return slot.session_date + "|" + cid + "|" + t + "|makeup|" + mkInst;
     }
     if (isAquaticService(slot.service)) {
@@ -7116,6 +7130,27 @@
       n++;
     }
     return n;
+  };
+
+  /**
+   * Register week strip: arrived / expected feedbacks for that calendar day.
+   * Expected = roster + makeup/session-add units. Arrived includes submitted rows
+   * even when a makeup is not yet on the board, so a 60' extra still shows 3/3.
+   */
+  AdminSessionsHub.prototype.registerDayProgress = function (iso) {
+    var submitted = this.feedbackCountForDateLight
+      ? this.feedbackCountForDateLight(iso)
+      : this.feedbackCountForDate(iso);
+    var expected = 0;
+    var arrived = 0;
+    try {
+      var ds = this.dayStats(iso);
+      expected = ds && typeof ds.total === "number" ? ds.total : 0;
+      arrived = ds && typeof ds.done === "number" ? ds.done : 0;
+    } catch (_e) {}
+    if (submitted > arrived) arrived = submitted;
+    if (submitted > expected) expected = submitted;
+    return { expected: expected, arrived: arrived, submitted: submitted };
   };
 
   AdminSessionsHub.prototype.weekFeedbackReport = function () {
@@ -13738,10 +13773,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (opts.overviewPicker && !opts.computeOverviewDayStats) {
           ds = { total: 0, done: 0 };
         } else if (hub.mode === "feedback" && !opts.overviewPicker) {
-          var submittedN = hub.feedbackCountForDateLight
-            ? hub.feedbackCountForDateLight(iso)
-            : hub.feedbackCountForDate(iso);
-          ds = { total: submittedN, done: submittedN };
+          var prog = hub.registerDayProgress
+            ? hub.registerDayProgress(iso)
+            : { expected: 0, arrived: 0 };
+          ds = { total: prog.expected, done: prog.arrived };
         } else {
           ds = hub.dayStats(iso);
         }
