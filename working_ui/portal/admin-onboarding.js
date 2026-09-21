@@ -431,7 +431,7 @@
       else alert(fail);
       if (btn) {
         btn.disabled = false;
-        btn.textContent = "Validate and issue PIN";
+        btn.textContent = "Issue PIN";
       }
     }
   }
