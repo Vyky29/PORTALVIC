@@ -11,6 +11,7 @@ import {
   gocardlessConfigured,
   gocardlessCreateBillingRequest,
   gocardlessCreateBillingRequestFlow,
+  gocardlessGetBillingRequest,
 } from "../_shared/gocardless.ts";
 import {
   mandateIsActive,
@@ -135,17 +136,27 @@ Deno.serve(async (req) => {
   const { data: mandateRow } = await supabase
     .from("portal_parent_gocardless_mandates")
     .select(
-      "contact_id, gocardless_mandate_id, mandate_status, authorisation_url, billing_request_id",
+      "contact_id, gocardless_mandate_id, mandate_status, authorisation_url, billing_request_id, updated_at, created_at",
     )
     .eq("contact_id", contactId)
     .maybeSingle();
 
   const pendingUrl = clean(mandateRow?.authorisation_url, 500);
-  if (
-    mandateRow &&
-    String(mandateRow.mandate_status || "").toLowerCase() === "pending" &&
-    pendingUrl
-  ) {
+  const pendingStatus = String(mandateRow?.mandate_status || "").toLowerCase();
+  const pendingAgeMs = (function () {
+    const t = Date.parse(String(mandateRow?.updated_at || mandateRow?.created_at || ""));
+    return Number.isFinite(t) ? Date.now() - t : Number.POSITIVE_INFINITY;
+  })();
+  /* GoCardless Billing Request Flows expire (~7 days). Reusing a stale
+   * authorisation_url shows "Sorry, we couldn't find the page you requested." */
+  const PENDING_URL_MAX_AGE_MS = 5 * 24 * 60 * 60 * 1000;
+  let resumePending = pendingStatus === "pending" && !!pendingUrl && pendingAgeMs < PENDING_URL_MAX_AGE_MS;
+  if (resumePending && clean(mandateRow?.billing_request_id, 80)) {
+    const live = await gocardlessGetBillingRequest(String(mandateRow.billing_request_id));
+    const st = live.ok ? String(live.data.status || "").toLowerCase() : "";
+    if (!live.ok || (st !== "pending" && st !== "ready_to_fulfil")) resumePending = false;
+  }
+  if (resumePending) {
     return json(200, {
       ok: true,
       authorisation_url: pendingUrl,
@@ -181,14 +192,17 @@ Deno.serve(async (req) => {
   let firstInv: {
     id: string;
     amount_gbp: number | null;
+    amount_paid_gbp?: number | null;
     invoice_number: string | null;
     due_date: string | null;
+    payment_status?: string | null;
+    payment_schedule?: unknown;
   } | null = null;
 
   {
     let iq = supabase
       .from("portal_parent_invoice_share")
-      .select("id, amount_gbp, invoice_number, due_date, payment_status, payment_method_hint")
+      .select("id, amount_gbp, amount_paid_gbp, invoice_number, due_date, payment_status, payment_method_hint, payment_schedule")
       .eq("contact_id", contactId)
       .eq("share_status", "ready")
       .in("payment_status", ["unpaid", "partial"])
@@ -205,8 +219,24 @@ Deno.serve(async (req) => {
   }
 
   const amount = firstInv?.amount_gbp != null ? Number(firstInv.amount_gbp) : 0;
+  const paidSoFar = firstInv?.amount_paid_gbp != null ? Number(firstInv.amount_paid_gbp) : 0;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const schedule = Array.isArray(firstInv?.payment_schedule) ? firstInv.payment_schedule : [];
+  const hasFutureGcInstalment = schedule.some(function (row) {
+    if (!row || typeof row !== "object") return false;
+    const r = row as { status?: string; collect_via?: string; due_date?: string };
+    if (String(r.status || "pending").toLowerCase() === "paid") return false;
+    if (String(r.collect_via || "").toLowerCase() !== "gocardless") return false;
+    return String(r.due_date || "") > todayIso;
+  });
+  const bankFirstPartial =
+    String(firstInv?.payment_status || "").toLowerCase() === "partial" ||
+    paidSoFar > 0 ||
+    hasFutureGcInstalment;
+  /* Mandate-only when later months collect on the 1st — do not take the remaining
+   * term total as one GoCardless payment at authorisation. */
   const amountPence =
-    Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null;
+    !bankFirstPartial && Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null;
   const invNo = clean(firstInv?.invoice_number, 40);
 
   const br = await gocardlessCreateBillingRequest({

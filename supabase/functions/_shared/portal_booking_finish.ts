@@ -1155,14 +1155,11 @@ export async function notifyParentCompleteGocardlessStep3(opts: {
 }): Promise<{ emailOk: boolean; waOk: boolean }> {
   const name = clean(opts.parentName, 120) || "Parent / carer";
   const participant = clean(opts.participantName, 120) || "your child";
-  const gcUrl = clean(opts.gocardlessUrl, 500);
   const portalUrl = `${portalPublicOrigin()}/parent`;
-  const bodyText = gcUrl
-    ? `clubSENsational confirmed the first bank payment for ${participant}. ` +
-      `Please complete Step 3 and set up GoCardless so monthly collections run on the 1st: ${gcUrl} ` +
-      `Or sign in at ${portalUrl} and open Invoices.`
-    : `clubSENsational confirmed the first bank payment for ${participant}. ` +
-      `Please sign in at ${portalUrl}, open Invoices, and set up GoCardless (Direct Debit) for monthly payments on the 1st.`;
+  const bodyText =
+    `clubSENsational confirmed the first bank payment for ${participant}. ` +
+    `Please sign in at ${portalUrl}, open Invoices, and tap Set up Direct Payment. ` +
+    `That opens a fresh bank-authorisation page (old WhatsApp GoCardless links expire).`;
 
   let emailOk = false;
   let waOk = false;
@@ -1180,11 +1177,8 @@ export async function notifyParentCompleteGocardlessStep3(opts: {
       bodyText:
         `Hi ${name},\n\n` +
         `Thank you — we have confirmed your first bank payment for ${participant}.\n\n` +
-        `One more step: please set up GoCardless (Direct Debit) so we can collect the remaining monthly payments on the 1st of each month, same as other families.\n\n` +
-        (gcUrl
-          ? `Complete Step 3 here:\n${gcUrl}\n\n`
-          : "") +
-        `Or sign in to the Parent Portal (${portalUrl}) → Invoices → Set up Direct Payment.\n\n` +
+        `One more step: please sign in to the Parent Portal (${portalUrl}) → Invoices → tap Set up Direct Payment.\n\n` +
+        `That opens a fresh bank-authorisation page. Do not reuse an old GoCardless link from WhatsApp (those expire).\n\n` +
         `We cannot schedule future collections until GoCardless is completed.\n\n— clubSENsational`,
     });
     emailOk = mail.ok;
