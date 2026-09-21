@@ -528,7 +528,7 @@
     try {
       var remId = String((pending && pending.portalAdminReminderId) || "").trim();
       if (!remId) return { ok: false };
-      if (/^sched-ov-/.test(remId)) return { ok: true, skipped: true };
+      if (/^sched-ov-/.test(remId) || /^fb-owed-/.test(remId)) return { ok: true, skipped: true };
       var wrapped = { portalAnnouncementId: remId };
       return await global.portalPersistAnnouncementAckToSupabase(wrapped);
     } catch (e) {

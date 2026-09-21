@@ -872,6 +872,12 @@
           try{
             if(typeof syncPortalOutstandingFeedbackSlot === 'function') syncPortalOutstandingFeedbackSlot();
           }catch(_){}
+          try{
+            if(typeof portalInvalidateSignableItemsMemo === 'function') portalInvalidateSignableItemsMemo();
+            if(typeof portalMaybeGateUnsignedAnnouncements === 'function'){
+              portalMaybeGateUnsignedAnnouncements({ force: true });
+            }
+          }catch(_){}
         })();
       };
       if(typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 2500 });
@@ -6133,37 +6139,42 @@
           void portalActivatePermissionsFromSignableItem(pending);
         }
         const isReminder = portalSignableItemIsReminder(pending);
+        const isFbOwed = !!(pending && pending.outstandingFeedback);
         if(isReminder){
-          const remAck = portalReminderAckMapLoad();
-          remAck[key] = {
-            title: pending.title || 'Reminder',
-            text: pending.text || '',
-            signedAt: Date.now(),
-            portalAdminReminderId: pending.portalAdminReminderId || ''
-          };
-          portalReminderAckMapSave(remAck);
-          if(Array.isArray(pending.scheduleOverrideDismissIds) && pending.scheduleOverrideDismissIds.length
-            && typeof window.portalQuickMenuDismissOverrideById === 'function'){
-            pending.scheduleOverrideDismissIds.forEach(function(did){
-              if(did) window.portalQuickMenuDismissOverrideById(did);
-            });
-            try{ window.__PORTAL_NEXT_SESSION_CAL_CACHE__ = null; }catch(_){}
-            try{ if(typeof window.portalInvalidateSignableItemsMemo === 'function') window.portalInvalidateSignableItemsMemo(); }catch(_){}
-            try{ if(typeof window.portalInvalidateReminderStateCache === 'function') window.portalInvalidateReminderStateCache(); }catch(_){}
-            try{ window.__PORTAL_PENDING_OVERRIDE_DAYS__ = null; }catch(_){}
-          }
-          if(isProfileCampaign && typeof portalAckAllAnnualProfileCampaignReminders === 'function'){
-            portalAckAllAnnualProfileCampaignReminders(
-              portalReminderAckMapLoad,
-              portalReminderAckMapSave,
-              dashboardData && dashboardData.portalRemindersFromAdmin,
-              typeof portalPersistReminderAckToSupabase === 'function'
-                ? portalPersistReminderAckToSupabase
-                : null
-            );
-          }
-          if(typeof portalPersistReminderAckToSupabase === 'function'){
-            void portalPersistReminderAckToSupabase(pending);
+          if(isFbOwed){
+            try{ window.__PORTAL_FB_OWED_GATE_DISMISSED__ = 1; }catch(_){}
+          }else{
+            const remAck = portalReminderAckMapLoad();
+            remAck[key] = {
+              title: pending.title || 'Reminder',
+              text: pending.text || '',
+              signedAt: Date.now(),
+              portalAdminReminderId: pending.portalAdminReminderId || ''
+            };
+            portalReminderAckMapSave(remAck);
+            if(Array.isArray(pending.scheduleOverrideDismissIds) && pending.scheduleOverrideDismissIds.length
+              && typeof window.portalQuickMenuDismissOverrideById === 'function'){
+              pending.scheduleOverrideDismissIds.forEach(function(did){
+                if(did) window.portalQuickMenuDismissOverrideById(did);
+              });
+              try{ window.__PORTAL_NEXT_SESSION_CAL_CACHE__ = null; }catch(_){}
+              try{ if(typeof window.portalInvalidateSignableItemsMemo === 'function') window.portalInvalidateSignableItemsMemo(); }catch(_){}
+              try{ if(typeof window.portalInvalidateReminderStateCache === 'function') window.portalInvalidateReminderStateCache(); }catch(_){}
+              try{ window.__PORTAL_PENDING_OVERRIDE_DAYS__ = null; }catch(_){}
+            }
+            if(isProfileCampaign && typeof portalAckAllAnnualProfileCampaignReminders === 'function'){
+              portalAckAllAnnualProfileCampaignReminders(
+                portalReminderAckMapLoad,
+                portalReminderAckMapSave,
+                dashboardData && dashboardData.portalRemindersFromAdmin,
+                typeof portalPersistReminderAckToSupabase === 'function'
+                  ? portalPersistReminderAckToSupabase
+                  : null
+              );
+            }
+            if(typeof portalPersistReminderAckToSupabase === 'function'){
+              void portalPersistReminderAckToSupabase(pending);
+            }
           }
         }else{
         const ack = portalAnnouncementAckMapLoad();
@@ -6199,6 +6210,19 @@
           }else{
             window.location.href = 'staff_profile_update.html';
           }
+          return;
+        }
+        if(isFbOwed){
+          try{
+            if(typeof closeSheet === 'function'){
+              closeSheet({ bypassAnnouncementLock: true, forceCloseAnnouncementGate: true });
+            }
+          }catch(_){}
+          try{
+            if(typeof portalOpenTermSheetAndFocusOldestFeedbackDay === 'function'){
+              portalOpenTermSheetAndFocusOldestFeedbackDay();
+            }
+          }catch(_){}
           return;
         }
         /* All signed → leave the lock and land on the dashboard. */

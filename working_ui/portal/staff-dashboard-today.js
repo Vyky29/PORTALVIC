@@ -7626,6 +7626,14 @@
           items.push(sn);
         }
       }catch(_schedRem){}
+      try{
+        const fbOwed = typeof portalOutstandingFeedbackRemindersAsSignableNotices === 'function'
+          ? portalOutstandingFeedbackRemindersAsSignableNotices()
+          : [];
+        for(let fi = 0; fi < fbOwed.length; fi++){
+          if(fbOwed[fi]) items.push(fbOwed[fi]);
+        }
+      }catch(_fbOwed){}
       items.sort(function(a, b){
         const ta = Date.parse(a.created_at || '');
         const tb = Date.parse(b.created_at || '');
@@ -7747,6 +7755,44 @@
       return out;
     }
     try{ window.portalScheduleChangeRemindersAsSignableNotices = portalScheduleChangeRemindersAsSignableNotices; }catch(_){}
+    /**
+     * Past-day outstanding feedback must lock the app like announcements.
+     * Signing only hides this session so they can open the form; next launch
+     * shows it again until the feedback (or absent/cancel) is actually in.
+     */
+    function portalOutstandingFeedbackRemindersAsSignableNotices(){
+      const out = [];
+      try{
+        if(window.__PORTAL_FB_OWED_GATE_DISMISSED__) return out;
+        if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return out;
+        const n = typeof portalOutstandingSessionFeedbackCountAcrossTerm === 'function'
+          ? Number(portalOutstandingSessionFeedbackCountAcrossTerm() || 0)
+          : 0;
+        if(!(n > 0)) return out;
+        const iso = typeof portalOldestIsoDateNeedingTermFeedback === 'function'
+          ? String(portalOldestIsoDateNeedingTermFeedback() || '').trim().slice(0, 10)
+          : '';
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return out;
+        const todayStr = typeof getLocalDateKey === 'function' ? String(getLocalDateKey() || '').slice(0, 10) : '';
+        if(todayStr && iso >= todayStr) return out;
+        const dateLab = (typeof portalOverrideSessionDateDisplayLabel === 'function'
+          ? portalOverrideSessionDateDisplayLabel(iso)
+          : iso) || iso;
+        const unit = n === 1 ? '1 session feedback' : (String(n) + ' session feedbacks');
+        out.push({
+          type: 'reminder',
+          title: 'Outstanding feedback',
+          text: 'You still owe ' + unit + ' from ' + dateLab + '.\n\nAbsent and cancelled already count as done. This one was not sent.\n\nSign to open that day and complete it now. This reminder comes back until it is submitted.',
+          href: '#portal-open-pending-feedback',
+          portalAdminReminderId: 'fb-owed-' + iso,
+          created_at: iso + 'T21:00:00.000Z',
+          outstandingFeedback: true,
+          outstandingFeedbackIso: iso
+        });
+      }catch(_){}
+      return out;
+    }
+    try{ window.portalOutstandingFeedbackRemindersAsSignableNotices = portalOutstandingFeedbackRemindersAsSignableNotices; }catch(_){}
     function portalAnnouncementPendingItem(){
       const list = portalActiveAnnouncementItems();
       if(!list.length) return null;
