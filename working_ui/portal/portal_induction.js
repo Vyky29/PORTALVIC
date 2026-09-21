@@ -466,7 +466,7 @@
     var sub = btn.querySelector(".menu-btn-sub");
     if (sub) {
       if (refreshDue) {
-        sub.textContent = "Annual refresh " + year + " - recap and short quiz";
+        sub.textContent = "Annual refresh " + year + " - recap, day-to-day, quiz";
       } else if (needsCert) {
         sub.textContent = "Open and download your certificate (PDF)";
       } else if (must && !done) {

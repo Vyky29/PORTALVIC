@@ -17,7 +17,11 @@
     q4: "F",
     q5: "B",
     q6: "T",
+    q7: "B",
+    q8: "B",
+    q9: "C",
   };
+  var QCOUNT = Object.keys(CORRECT).length;
 
   function yearLabel() {
     if (typeof window.portalInductionTrainingYear === "function") {
@@ -97,11 +101,11 @@
       unlockQuiz();
     }
     var n = answeredCount();
-    if (submitBtn) submitBtn.disabled = n < 6;
+    if (submitBtn) submitBtn.disabled = n < QCOUNT;
     if (hint) {
       hint.textContent =
-        n < 6
-          ? "Answer all 6 questions to submit (" + n + " of 6 done)."
+        n < QCOUNT
+          ? "Answer all " + QCOUNT + " questions to submit (" + n + " of " + QCOUNT + " done)."
           : "All questions answered. You can submit.";
     }
   }
@@ -130,8 +134,8 @@
   if (form) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      if (answeredCount() < 6) {
-        alert("Please answer all 6 questions before submitting.");
+      if (answeredCount() < QCOUNT) {
+        alert("Please answer all " + QCOUNT + " questions before submitting.");
         return;
       }
       var score = 0;
@@ -145,7 +149,7 @@
           fb.textContent = ok ? "Correct." : "Not quite. Review the recap cards and try again.";
         }
       });
-      var passed = score === 6;
+      var passed = score === QCOUNT;
       if (scoreCard) {
         scoreCard.classList.add("show");
         scoreCard.classList.toggle("is-fail", !passed);
@@ -153,7 +157,7 @@
       if (scoreMsg) {
         scoreMsg.textContent = passed
           ? "Refresh complete for " + (yearLabel() || "this year") + ". Your record is updated."
-          : "You scored " + score + "/6. Every answer must be correct to finish this year's refresh.";
+          : "You scored " + score + "/" + QCOUNT + ". Every answer must be correct to finish this year's refresh.";
       }
       if (doneLink) doneLink.style.display = passed ? "inline-flex" : "none";
       if (passed) markPassed();

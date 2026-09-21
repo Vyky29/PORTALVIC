@@ -116,6 +116,26 @@
   line-height: 1.5;
 }
 
+.annual-refresh__section {
+  margin: 22px 0 12px;
+  min-width: 0;
+}
+
+.annual-refresh__section h2 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f2840;
+  overflow-wrap: break-word;
+}
+
+.annual-refresh__section p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #5d7688;
+}
+
 .annual-refresh__check {
   display: flex;
   align-items: flex-start;

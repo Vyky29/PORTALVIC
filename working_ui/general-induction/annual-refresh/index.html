@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="/induction-assets/pathway-hub.css?v=20260611-induction-complete" />
 <link rel="stylesheet" href="/induction-assets/induction-quiz-theme.css" />
 <link rel="stylesheet" href="/induction-assets/provisional-certificate.css?v=20260921-induction-refresh" />
-<link rel="stylesheet" href="/induction-assets/annual-refresh.css?v=20260921-induction-refresh" />
+<link rel="stylesheet" href="/induction-assets/annual-refresh.css?v=20260921-induction-ops" />
 </head>
 <body>
 <main class="annual-refresh">
@@ -18,10 +18,15 @@
   <section class="annual-refresh__hero">
     <p class="annual-refresh__kicker">General Induction</p>
     <h1>Annual refresh <span id="refreshYearLabel"></span></h1>
-    <p>You already completed the full pathway. Open every recap card, then pass the 6-question quiz. Staff who have not finished the six modules still do the full induction.</p>
+    <p>You already completed the full pathway. Open every recap (induction plus day-to-day), then pass the quiz. Staff who have not finished the six modules still do the full induction.</p>
   </section>
 
-  <p class="annual-refresh__hint">Tap each module summary so it highlights. When all six are open, tick the box and the quiz unlocks.</p>
+  <p class="annual-refresh__hint">Tap each card so it highlights. When all nine are open, tick the box and the quiz unlocks.</p>
+
+  <div class="annual-refresh__section">
+    <h2>Induction recap</h2>
+    <p>Who we are, how we work with clients, and what protects them.</p>
+  </div>
 
   <button type="button" class="annual-refresh__card" data-refresh-item="1" aria-pressed="false">
     <span class="annual-refresh__mod">Module 1</span>
@@ -78,13 +83,46 @@
     </ul>
   </button>
 
+  <div class="annual-refresh__section">
+    <h2>Day-to-day on the Staff app</h2>
+    <p>These are not in the six videos. They are how you report work, cancellations and feedback every session.</p>
+  </div>
+
+  <button type="button" class="annual-refresh__card" data-refresh-item="7" aria-pressed="false">
+    <span class="annual-refresh__mod">Session feedback</span>
+    <h2>Complete it as soon as the session ends</h2>
+    <ul>
+      <li>Open Feedback from that client on Staff Today. Do it before you leave the venue if you can.</li>
+      <li>Same day after 21:00, or any later day, counts as late - still submit; do not skip it.</li>
+      <li>The office and families rely on this record. Do not wait for a parent to ask.</li>
+    </ul>
+  </button>
+  <button type="button" class="annual-refresh__card" data-refresh-item="8" aria-pressed="false">
+    <span class="annual-refresh__mod">Client cancellation</span>
+    <h2>If a participant's session did not go ahead</h2>
+    <ul>
+      <li>Open Cancellation on that client's card (Staff Today), not the disruption form.</li>
+      <li>Submit the same day after your shift when you can.</li>
+      <li>This is only when the child's session was cancelled. It is not for when you cannot work.</li>
+    </ul>
+  </button>
+  <button type="button" class="annual-refresh__card" data-refresh-item="9" aria-pressed="false">
+    <span class="annual-refresh__mod">If you cannot work</span>
+    <h2>Call the office, then file the disruption report</h2>
+    <ul>
+      <li>Call Administration on 07592 558671 so they can arrange cover. Follow up until they confirm.</li>
+      <li>Then open Session disruption report in Quick menu (same-day absence, late, or planned day off).</li>
+      <li>Do not only message a group chat. Do not use Cancellation on a client card for your own absence.</li>
+    </ul>
+  </button>
+
   <label class="annual-refresh__check">
     <input type="checkbox" id="refreshRecapCheck" disabled />
     <span>I have opened every recap and I am ready for this year's quiz.</span>
   </label>
 
   <section class="section gated-locked" id="quiz">
-    <div class="section-lock-banner">Open all six recap cards and tick the confirmation box to unlock the quiz.</div>
+    <div class="section-lock-banner">Open all nine recap cards and tick the confirmation box to unlock the quiz.</div>
     <div class="quiz-inline">
       <form id="refreshQuizForm">
         <div class="q-card">
@@ -143,7 +181,37 @@
           </ul>
           <div class="feedback" id="fb-q6"></div>
         </div>
-        <p class="quiz-submit-hint" id="refreshSubmitHint">Answer all 6 questions to submit.</p>
+        <div class="q-card">
+          <p class="q-text">7. When should you complete session feedback?</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">A. Next week, when you have time</span><input type="radio" name="q7" value="A" /></label></li>
+            <li><label><span class="opt-txt">B. Immediately after the session, before you leave the venue if you can</span><input type="radio" name="q7" value="B" /></label></li>
+            <li><label><span class="opt-txt">C. Only if the parent asks</span><input type="radio" name="q7" value="C" /></label></li>
+            <li><label><span class="opt-txt">D. Only if there was an incident</span><input type="radio" name="q7" value="D" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q7"></div>
+        </div>
+        <div class="q-card">
+          <p class="q-text">8. A participant's session did not go ahead. What do you do?</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">A. Open Session disruption report in Quick menu</span><input type="radio" name="q8" value="A" /></label></li>
+            <li><label><span class="opt-txt">B. Open Cancellation on that client's card and submit the same day</span><input type="radio" name="q8" value="B" /></label></li>
+            <li><label><span class="opt-txt">C. Only tell a colleague at the venue</span><input type="radio" name="q8" value="C" /></label></li>
+            <li><label><span class="opt-txt">D. Wait for the office to notice</span><input type="radio" name="q8" value="D" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q8"></div>
+        </div>
+        <div class="q-card">
+          <p class="q-text">9. You cannot go to your shift. What do you do?</p>
+          <ul class="opt-list">
+            <li><label><span class="opt-txt">A. Use Cancellation on a client card</span><input type="radio" name="q9" value="A" /></label></li>
+            <li><label><span class="opt-txt">B. Only message a staff WhatsApp group</span><input type="radio" name="q9" value="B" /></label></li>
+            <li><label><span class="opt-txt">C. Call the office on 07592 558671 and submit Session disruption report from Quick menu</span><input type="radio" name="q9" value="C" /></label></li>
+            <li><label><span class="opt-txt">D. Do not turn up if someone else might cover</span><input type="radio" name="q9" value="D" /></label></li>
+          </ul>
+          <div class="feedback" id="fb-q9"></div>
+        </div>
+        <p class="quiz-submit-hint" id="refreshSubmitHint">Answer all 9 questions to submit.</p>
         <button type="submit" class="btn-submit" id="refreshSubmit" disabled>Submit recap quiz</button>
       </form>
       <div class="score-card" id="refreshScoreCard">
@@ -156,6 +224,6 @@
 <script src="/portal-static-bootstrap.js?v=20260921-induction-refresh"></script>
 <script type="module" src="/portal/portal_induction_progress_runtime.js?v=20260921-induction-refresh"></script>
 <script src="/portal/portal_induction.js?v=20260921-induction-refresh"></script>
-<script src="/induction-shared/annual-refresh-flow.js?v=20260921-induction-refresh"></script>
+<script src="/induction-shared/annual-refresh-flow.js?v=20260921-induction-ops"></script>
 </body>
 </html>
