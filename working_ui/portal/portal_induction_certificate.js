@@ -230,7 +230,7 @@
   }
 
   async function importDocumentsModule() {
-    var v = "20260611-induction-cert";
+    var v = "20260921-induction-recap-docs";
     var bases = ["/portal/portal_documents.js", "portal/portal_documents.js"];
     for (var i = 0; i < bases.length; i++) {
       try {
@@ -242,31 +242,41 @@
     throw new Error("portal_documents.js not available");
   }
 
-  async function savePdfToMyDocuments(pdfBlob, relatedDateIso) {
+  async function savePdfToMyDocuments(pdfBlob, relatedDateIso, meta) {
     var docs = await importDocumentsModule();
     if (typeof docs.portalRequireUser !== "function" || typeof docs.portalUploadPdfAndCreateDocument !== "function") {
       throw new Error("Document upload API missing");
     }
+    meta = meta && typeof meta === "object" ? meta : {};
+    var documentType = String(meta.document_type || DOC_TYPE).trim() || DOC_TYPE;
+    var title = String(meta.title || DOC_TITLE).trim() || DOC_TITLE;
+    var category = String(meta.category || DOC_CATEGORY).trim() || DOC_CATEGORY;
+    var sourcePage = String(meta.source_page || DOC_SOURCE).trim() || DOC_SOURCE;
+    var sessionKey = String(meta.related_session_key || DOC_SESSION_KEY).trim() || DOC_SESSION_KEY;
     var auth = await docs.portalRequireUser();
-    var existing = await auth.supabase
+    var query = auth.supabase
       .from("documents")
       .select("id")
       .eq("user_id", auth.user.id)
-      .eq("document_type", DOC_TYPE)
-      .is("hidden_by_user_at", null)
-      .limit(1);
+      .eq("document_type", documentType)
+      .is("hidden_by_user_at", null);
+    /* Full induction: one row per worker. Recap: one row per training year (session key). */
+    if (sessionKey && documentType !== DOC_TYPE) {
+      query = query.eq("related_session_key", sessionKey);
+    }
+    var existing = await query.limit(1);
     if (existing.error) throw existing.error;
     if (existing.data && existing.data.length) {
       return { savedToDocuments: true, alreadyHad: true };
     }
     await docs.portalUploadPdfAndCreateDocument({
       blob: pdfBlob,
-      document_type: DOC_TYPE,
-      category: DOC_CATEGORY,
-      title: DOC_TITLE,
-      source_page: DOC_SOURCE,
+      document_type: documentType,
+      category: category,
+      title: title,
+      source_page: sourcePage,
       related_date: relatedDateIso ? String(relatedDateIso).slice(0, 10) : null,
-      related_session_key: DOC_SESSION_KEY,
+      related_session_key: sessionKey,
       reuseAuth: auth,
     });
     return { savedToDocuments: true, alreadyHad: false };
@@ -374,7 +384,13 @@
       notifyProgress(options, "saving");
       await yieldToMain();
       try {
-        var saved = await savePdfToMyDocuments(built.blob, date.toISOString());
+        var saved = await savePdfToMyDocuments(built.blob, date.toISOString(), {
+          document_type: options.documentType || DOC_TYPE,
+          title: options.documentTitle || DOC_TITLE,
+          category: options.category || DOC_CATEGORY,
+          source_page: options.sourcePage || DOC_SOURCE,
+          related_session_key: options.relatedSessionKey || DOC_SESSION_KEY,
+        });
         out.savedToDocuments = !!(saved && saved.savedToDocuments);
         out.alreadyHad = !!(saved && saved.alreadyHad);
       } catch (err) {
@@ -382,7 +398,7 @@
         out.saveError = String(err && err.message ? err.message : err);
       }
     }
-    if (!shouldSkipBrowserCertificateDownload()) {
+    if (!options.skipDownload && !shouldSkipBrowserCertificateDownload()) {
       notifyProgress(options, "downloading");
       await yieldToMain();
       triggerBrowserDownload(built.blob, built.filename);
@@ -390,7 +406,8 @@
     }
     if (out.downloaded || out.savedToDocuments) {
       notifyProgress(options, "done");
-      if (typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
+      var savedType = String(options.documentType || DOC_TYPE).trim() || DOC_TYPE;
+      if (savedType === DOC_TYPE && typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
         global.portalInductionMarkCertificatePdfDownloaded();
       }
     }

@@ -449,6 +449,10 @@
       if (type === "induction_certificate") {
         return "clubSENsational General Induction Certificate";
       }
+      if (type === "induction_recap_certificate") {
+        const t = String((doc && doc.title) || "").trim();
+        return t || "clubSENsational General Induction recap";
+      }
       if (type === "training_attendance_record") {
         const t = String((doc && doc.title) || "").trim();
         return t || "Training attendance record";
@@ -475,7 +479,8 @@
         type === "swim_term_review" ||
         type === "staff_policy_ack" ||
         type === "payslip" ||
-        type === "induction_certificate"
+        type === "induction_certificate" ||
+        type === "induction_recap_certificate"
       ) {
         return prettyDateTime(doc.created_at);
       }
@@ -965,6 +970,7 @@
         categoryKey === "training" &&
         (t === "staff_policy_ack" ||
           t === "induction_certificate" ||
+          t === "induction_recap_certificate" ||
           t === "ld_funding_letter" ||
           t === "training_attendance_record" ||
           t === "training_external_certificate" ||
@@ -1051,6 +1057,8 @@
           const isInductionCert =
             String((doc && doc.document_type) || "").toLowerCase() === "induction_certificate" ||
             docId === "portal-induction-certificate";
+          const isRecapCert =
+            String((doc && doc.document_type) || "").toLowerCase() === "induction_recap_certificate";
           const isEmploymentContract =
             String((doc && doc.document_type) || "").toLowerCase() === "employment_contract";
           html += `
@@ -1072,7 +1080,7 @@
                 }>
                   <span class="btn-label-desk">${isInductionCert ? "View certificate" : "View / Download"}</span><span class="btn-label-mob"><span class="btn-mob-row1">${isInductionCert ? "View" : "Download"}</span><span class="btn-mob-row2" aria-live="polite"></span></span>
                 </button>
-                ${isPayslip || isInductionCert || isEmploymentContract || ghostReadOnly ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
+                ${isPayslip || isInductionCert || isRecapCert || isEmploymentContract || ghostReadOnly ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
               </div>
             </div>
           `;

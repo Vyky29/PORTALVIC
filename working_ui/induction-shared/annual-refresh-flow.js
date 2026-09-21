@@ -160,6 +160,103 @@
     };
   }
 
+  function recapDocumentMeta() {
+    var year = yearLabel() || "this year";
+    var yearSlug = String(year).replace("/", "-");
+    return {
+      documentType: "induction_recap_certificate",
+      documentTitle: "clubSENsational General Induction recap " + year,
+      category: "training",
+      sourcePage: "general-induction-recap",
+      relatedSessionKey: "general-induction-recap-" + yearSlug,
+    };
+  }
+
+  function recapPdfOptions(extra, flags) {
+    var doc = recapDocumentMeta();
+    extra = extra || recapCertMeta();
+    flags = flags || {};
+    return {
+      saveToDocuments: flags.saveToDocuments !== false,
+      skipDownload: !!flags.skipDownload,
+      cert: extra,
+      documentType: doc.documentType,
+      documentTitle: doc.documentTitle,
+      category: doc.category,
+      sourcePage: doc.sourcePage,
+      relatedSessionKey: doc.relatedSessionKey,
+    };
+  }
+
+  function myDocsTrainingUrl() {
+    if (typeof window.portalInductionMyDocumentsTrainingUrl === "function") {
+      return window.portalInductionMyDocumentsTrainingUrl();
+    }
+    try {
+      return new URL("/my_documents.html?category=training", window.location.href).href;
+    } catch (_e) {
+      return "/my_documents.html?category=training";
+    }
+  }
+
+  function setSavedHint(msg) {
+    var el = document.getElementById("refreshDiplomaSaved");
+    if (!el) return;
+    el.hidden = !msg;
+    el.textContent = msg || "";
+  }
+
+  function ensureMyDocsLink() {
+    var wrap = document.getElementById("refreshDiplomaWrap");
+    if (!wrap || wrap.querySelector(".annual-refresh__my-docs")) return;
+    var a = document.createElement("a");
+    a.className = "annual-refresh__back annual-refresh__my-docs";
+    a.href = myDocsTrainingUrl();
+    a.textContent = "Open My documents - Training";
+    wrap.appendChild(a);
+  }
+
+  function applySaveResult(result) {
+    if (result && result.savedToDocuments) {
+      setSavedHint(
+        result.alreadyHad
+          ? "Your diploma is already in My documents - Training."
+          : "Diploma saved to My documents - Training."
+      );
+      ensureMyDocsLink();
+      return;
+    }
+    setSavedHint(
+      result && result.saveError
+        ? "Could not save yet. Sign in on the staff app and try Download diploma again."
+        : "Could not save yet. Sign in on the staff app so we can put this in My documents."
+    );
+  }
+
+  function saveDiplomaToDocuments(extra) {
+    var name = learnerName();
+    extra = extra || recapCertMeta();
+    setSavedHint("Saving diploma to My documents...");
+    return loadJsPdf()
+      .then(function () {
+        if (typeof window.portalDownloadInductionCertificatePdf !== "function") {
+          throw new Error("PDF helper missing");
+        }
+        return window.portalDownloadInductionCertificatePdf(
+          name,
+          new Date().toISOString(),
+          recapPdfOptions(extra, { saveToDocuments: true, skipDownload: true })
+        );
+      })
+      .then(function (result) {
+        applySaveResult(result);
+        return result;
+      })
+      .catch(function () {
+        setSavedHint("Could not save yet. Sign in on the staff app so we can put this in My documents.");
+      });
+  }
+
   function loadJsPdf() {
     if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf);
     return new Promise(function (resolve, reject) {
@@ -200,10 +297,14 @@
             if (typeof window.portalDownloadInductionCertificatePdf !== "function") {
               throw new Error("PDF helper missing");
             }
-            return window.portalDownloadInductionCertificatePdf(name, new Date().toISOString(), {
-              saveToDocuments: false,
-              cert: extra,
-            });
+            return window.portalDownloadInductionCertificatePdf(
+              name,
+              new Date().toISOString(),
+              recapPdfOptions(extra, { saveToDocuments: true, skipDownload: false })
+            );
+          })
+          .then(function (result) {
+            applySaveResult(result);
           })
           .catch(function () {
             alert("Could not build the diploma PDF. Try again from this page.");
@@ -212,6 +313,10 @@
             btn.disabled = false;
           });
       });
+    }
+    if (!wrap.dataset.saveStarted) {
+      wrap.dataset.saveStarted = "1";
+      saveDiplomaToDocuments(extra);
     }
   }
 
@@ -281,6 +386,9 @@
         recapCheck.checked = true;
       }
       unlockQuiz();
+    }
+    if (prev.quizPass && prev.year === year) {
+      showDiploma();
     }
     refreshUi();
   }
