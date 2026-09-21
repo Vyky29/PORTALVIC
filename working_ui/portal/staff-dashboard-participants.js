@@ -4293,6 +4293,23 @@
      * portal_session_key or a sibling client_replace (Anas makeup covered by Javi Palankas).
      */
     function portalCoverOverrideEffectiveClientId(ov){
+      const isoEarly = normaliseIsoDate(ov && ov.session_date);
+      const staffEarly = portalNormKeyStr(ov && ov.anchor_staff_id);
+      const startEarly = portalCanonicalHmToken(ov && ov.anchor_start);
+      if(isoEarly && staffEarly && startEarly){
+        const sibs = portalScheduleOverrideRowsForSessionIso(isoEarly);
+        for(let si = 0; si < sibs.length; si++){
+          const r = sibs[si];
+          if(String(r.status || 'active') !== 'active') continue;
+          if(String(r.override_type || '').trim() !== 'client_replace_in_slot') continue;
+          if(typeof portalStaffKeysMatch === 'function'){
+            if(!portalStaffKeysMatch(r.anchor_staff_id, staffEarly)) continue;
+          }else if(portalNormKeyStr(r.anchor_staff_id) !== staffEarly) continue;
+          if(portalCanonicalHmToken(r.anchor_start) !== startEarly) continue;
+          const movedId = portalOverrideReplacementClientId(r.payload);
+          if(movedId) return movedId;
+        }
+      }
       const raw = String(ov && ov.anchor_client_id || '').trim().toLowerCase();
       if(raw && !portalScheduleOverrideAnchorIsOpenSlot(raw)) return raw;
       let pl = ov && ov.payload;

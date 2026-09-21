@@ -15526,6 +15526,67 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(slot2) openSchedSlotDrawer(slot2);
       else closeSchedDrawer();
     }
+    /**
+     * Same-day client move used to leave instructor_reassign on the old clock.
+     * Cover staff (Javi on Luliya/Yamik) then still saw 6.00 cancelled and not 5.30.
+     */
+    async function schedFollowInstructorCoverWithClientMove(client, srcCoverOv, sourceSlot, targetSlot, participantSlug){
+      if(!client || !srcCoverOv || !srcCoverOv.id || !targetSlot) return;
+      if(String(srcCoverOv.override_type || '').trim() !== 'instructor_reassign') return;
+      var pl = srcCoverOv.payload && typeof srcCoverOv.payload === 'object' ? srcCoverOv.payload : {};
+      var coverId = normalizeSchedAnchorStaffId(pl.covering_staff_id || '');
+      if(!coverId || coverId === 'cover_needed') return;
+      var destStaffId = normalizeSchedAnchorStaffId(targetSlot.staffRosterId);
+      var destCover = findOverrideForSlotOfTypes(targetSlot, ['instructor_reassign']);
+      var destCoverId = destCover
+        ? normalizeSchedAnchorStaffId((destCover.payload && destCover.payload.covering_staff_id) || '')
+        : '';
+      if(destCover && destCover.id && destCoverId && destCoverId === coverId){
+        try{ await client.from('schedule_overrides').update({ status: 'cancelled' }).eq('id', srcCoverOv.id); }catch(_c1){}
+        return;
+      }
+      if(destStaffId && destStaffId === coverId){
+        try{ await client.from('schedule_overrides').update({ status: 'cancelled' }).eq('id', srcCoverOv.id); }catch(_c2){}
+        return;
+      }
+      var destKey = '';
+      try{
+        destKey = portalAdminSessionReviewKeyFromSlot(
+          Object.assign({}, targetSlot, { clientSlug: participantSlug }),
+          targetSlot.sessionDate
+        ) || '';
+      }catch(_k){}
+      if(!destKey){
+        destKey = String(targetSlot.sessionDate || '').slice(0, 10) + '|' +
+          (normTimeShort(targetSlot.anchorStart) || '') + '|' + String(participantSlug || '');
+      }
+      var nextPayload = Object.assign({}, pl, {
+        covering_staff_id: coverId,
+        covering_staff_name: pl.covering_staff_name || '',
+        portal_session_key: destKey,
+        moved_with_client: true,
+        moved_from_time: sourceSlot.anchorTimeLabel || normTimeShort(sourceSlot.anchorStart),
+        moved_from_override_id: srcCoverOv.id
+      });
+      var up = await client.from('schedule_overrides').update({
+        session_date: targetSlot.sessionDate,
+        anchor_staff_id: destStaffId,
+        anchor_start: targetSlot.anchorStart,
+        anchor_end: targetSlot.anchorEnd,
+        anchor_venue: targetSlot.venue,
+        anchor_client_id: participantSlug,
+        anchor_time_slot_label: targetSlot.whenLabel || targetSlot.anchorTimeLabel || '',
+        payload: nextPayload,
+        spreadsheet_revision: 'admin-dashboard:client_move_cover_follow'
+      }).eq('id', srcCoverOv.id);
+      if(up.error){
+        console.warn('[sched] cover follow after client move failed', up.error);
+        return;
+      }
+      if(destCover && destCover.id && destCoverId && destCoverId !== coverId){
+        try{ await client.from('schedule_overrides').update({ status: 'cancelled' }).eq('id', destCover.id); }catch(_c3){}
+      }
+    }
     async function saveSchedClientMoveFromDrawer(){
       var msgEl = $('schedFormErr');
       var saveBtn = $('schedSaveBtn');
@@ -15567,6 +15628,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving…';
       }
+      var srcCoverOv = findOverrideForSlotOfTypes(sourceSlot, ['instructor_reassign']);
       try{
       var movePayloadCommon = {
         client_move: true,
@@ -15661,6 +15723,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if(evRows.length) await client.from('schedule_override_events').insert(evRows);
       }catch(_ev){}
+      try{
+        await schedFollowInstructorCoverWithClientMove(client, srcCoverOv, sourceSlot, targetSlot, participantSlug);
+      }catch(_cf){
+        console.warn('[sched] cover follow after client move', _cf);
+      }
       closeSchedDrawer();
       sched.lastMsg = participantName + ' moved to ' + (targetSlot.anchorTimeLabel || normTimeShort(targetSlot.anchorStart)) + ' · ' + String(targetSlot.venue || '') + '.';
       try{
@@ -24435,7 +24502,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260920-register-fast';
+    var PORTAL_ADMIN_HUB_BUILD = '20260921-yamik-cover-follow';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

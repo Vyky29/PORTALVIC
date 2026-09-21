@@ -2059,6 +2059,61 @@
   }
 
   /**
+   * Same-day move onto a named dest seat (Yamik into Zayana 5.30): rewrite that card
+   * so Overview / cover paint see Yamik, not the standing name plus an orphan inject.
+   */
+  function applyClientMoveReplacesInPlace(hub, out) {
+    var ovs = (hub && hub.payload && hub.payload.schedule_overrides) || [];
+    if (!out || !out.length || !ovs.length) return out;
+    var painted = hub._openSeatReplacePaintedIds || Object.create(null);
+    hub._openSeatReplacePaintedIds = painted;
+    var moves = [];
+    for (var i = 0; i < ovs.length; i++) {
+      if (overrideIsDayReassignReplace(ovs[i])) moves.push(ovs[i]);
+    }
+    if (!moves.length) return out;
+    return out.map(function (slot) {
+      if (!slot || isOpenRosterSlot(slot.client_name)) return slot;
+      var wd = slot.day || weekdayLongFromIso(slot.session_date);
+      var sCid = canonicalClientSlug(slot.client_name);
+      var sStart = normTimeShort(slot.time_start || normTimeKey(slot.time_slot, wd));
+      var sVenue = clean(slot.venue).toLowerCase();
+      for (var m = 0; m < moves.length; m++) {
+        var ov = moves[m];
+        if (clean(ov.session_date) !== clean(slot.session_date)) continue;
+        if (
+          !staffIdMatchesInstructor(ov.anchor_staff_id, slot.instructors) &&
+          !staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)
+        ) {
+          continue;
+        }
+        var oStart =
+          normTimeShort(ov.anchor_start) ||
+          normTimeShort(normTimeKey(ov.anchor_time_slot_label, wd));
+        if (oStart && sStart && oStart !== sStart) continue;
+        var oVenue = clean(ov.anchor_venue).toLowerCase();
+        if (oVenue && sVenue && oVenue !== sVenue) continue;
+        var oCid = canonicalClientSlug(ov.anchor_client_id);
+        if (oCid && sCid && oCid !== sCid) continue;
+        var p = overridePayloadObj(ov);
+        var repId = overrideReplacementClientId(p);
+        var repName = overrideReplacementClientName(p) || resolveRosterClientName(repId);
+        if (!repName && repId) repName = String(repId).replace(/_/g, " ");
+        if (!repName) continue;
+        var rosterName = resolveRosterClientName(canonicalClientSlug(repName || repId));
+        if (rosterName) repName = rosterName;
+        if (ov.id) painted[String(ov.id)] = true;
+        return Object.assign({}, slot, {
+          client_name: repName,
+          portalOverrideDayMoveTag: true,
+          __portalScheduleOverride: slot.__portalScheduleOverride || ov,
+        });
+      }
+      return slot;
+    });
+  }
+
+  /**
    * Staff Today paints replace onto the open card in place. Hub used to inject a synthetic
    * row + suppress the open — fragile when staff aliases / venue differ. Prefer mutate open.
    */
@@ -7731,6 +7786,7 @@
         return ca.localeCompare(cb, "en", { sensitivity: "base" });
       });
       out = applyOpenSeatReplaceInPlace(this, out, isoDate, wd);
+      out = applyClientMoveReplacesInPlace(this, out);
       out = injectOrphanMakeupOverrideSlots(this, out, isoDate, wd);
       out = suppressOpenSlotsConsumedByMakeupOverrides(
         out,
