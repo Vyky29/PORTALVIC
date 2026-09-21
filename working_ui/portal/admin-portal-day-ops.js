@@ -1103,7 +1103,7 @@
       mode: mode,
       externalTabs: true,
       payload: payload,
-      feedbackMixAwaitingSlots: false,
+      feedbackMixAwaitingSlots: true,
       getFeedbackDayStats: cfg.getFeedbackDayStats,
       isClubClosedDay: cfg.isClubClosedDay,
       showFullWeekDayStrip: cfg.showFullWeekDayStrip,

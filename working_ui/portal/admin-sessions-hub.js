@@ -9516,9 +9516,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var day = clean(this.selectedDay);
     if (!day) return [];
     var rows = this.feedbackLogRowsForDay(day);
-    if (hub.opts && hub.opts.feedbackMixAwaitingSlots && !hub._registerLitePaint) {
+    if (hub.opts && hub.opts.feedbackMixAwaitingSlots) {
       var mixed = this.feedbackMixRowsForDay(day);
       var seen = {};
+      var awaitingHead = [];
       for (var i = 0; i < rows.length; i++) {
         var k = hub.fbRowKey(rows[i]);
         if (k) seen[k] = true;
@@ -9526,7 +9527,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       for (var j = 0; j < mixed.length; j++) {
         var m = mixed[j];
         if (m && m._ashAwaitingSlot) {
-          rows.push(m);
+          awaitingHead.push(m);
           continue;
         }
         var mk = hub.fbRowKey(m);
@@ -9535,6 +9536,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           rows.push(m);
         }
       }
+      if (awaitingHead.length) rows = awaitingHead.concat(rows);
     }
     var q = clean(this.clientSearch);
     var inst = clean(this.instructorFilter);
