@@ -15,7 +15,7 @@ import {
   parentInvoiceDueForParentView,
 } from "../_shared/portal_invoice_payment_schedule.ts";
 import { gocardlessConfigured } from "../_shared/gocardless.ts";
-import { mandateIsActive } from "../_shared/gocardless_portal.ts";
+import { mandateIsActive, findActiveHouseholdMandate } from "../_shared/gocardless_portal.ts";
 import {
   suggestedTransferReference,
   tideBankDetailsFromEnv,
@@ -194,11 +194,17 @@ Deno.serve(async (req) => {
     .select("mandate_status, gocardless_mandate_id, authorisation_url")
     .eq("contact_id", contactId)
     .maybeSingle();
-  const gcMandateActive =
+  let gcMandateActive =
     !!mandateRow &&
     mandateIsActive(mandateRow.mandate_status) &&
     !!clean(mandateRow.gocardless_mandate_id, 80);
-  const gcMandateStatus = clean(mandateRow?.mandate_status, 40) || null;
+  if (!gcMandateActive) {
+    const house = await findActiveHouseholdMandate(supabase, contactId);
+    if (house) gcMandateActive = true;
+  }
+  const gcMandateStatus = gcMandateActive
+    ? clean(mandateRow?.mandate_status, 40) || "active"
+    : clean(mandateRow?.mandate_status, 40) || null;
 
   const { data: openCredits } = await supabase
     .from("portal_parent_family_credits")

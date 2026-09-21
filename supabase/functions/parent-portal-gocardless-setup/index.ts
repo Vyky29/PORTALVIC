@@ -15,6 +15,7 @@ import {
 } from "../_shared/gocardless.ts";
 import {
   mandateIsActive,
+  findActiveHouseholdMandate,
   scheduleGocardlessPaymentsForContact,
   upsertMandateRow,
 } from "../_shared/gocardless_portal.ts";
@@ -185,6 +186,37 @@ Deno.serve(async (req) => {
         sched.scheduled > 0
           ? "Direct Payment is set up. Collection(s) scheduled with GoCardless."
           : "Direct Payment mandate is already active. No new collections needed right now.",
+    });
+  }
+
+  const household = await findActiveHouseholdMandate(supabase, contactId);
+  if (household && household.gocardless_mandate_id) {
+    await upsertMandateRow(supabase, {
+      contact_id: contactId,
+      parent_person_id: session.parent_person_id,
+      gocardless_mandate_id: household.gocardless_mandate_id,
+      gocardless_customer_id: household.gocardless_customer_id,
+      mandate_status: household.mandate_status,
+      authorisation_url: null,
+      billing_request_id: null,
+      billing_request_flow_id: null,
+    });
+    const schedHouse = await scheduleGocardlessPaymentsForContact(supabase, {
+      contactId,
+      mandateId: household.gocardless_mandate_id,
+      invoiceId: invoiceId || null,
+    });
+    return json(200, {
+      ok: true,
+      already_mandated: true,
+      reused_household_mandate: true,
+      mandate_status: household.mandate_status,
+      scheduled: schedHouse.scheduled,
+      schedule_errors: schedHouse.errors.slice(0, 5),
+      message:
+        schedHouse.scheduled > 0
+          ? "Direct Payment is already set up for this family. Collection(s) scheduled with GoCardless."
+          : "Direct Payment is already set up for this family. No new collections needed right now.",
     });
   }
 

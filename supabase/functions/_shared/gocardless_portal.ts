@@ -19,6 +19,57 @@ export function mandateIsActive(status: string | null | undefined): boolean {
   return s === "active" || s === "pending_submission" || s === "submitted";
 }
 
+export type HouseholdMandateRow = {
+  contact_id: string;
+  gocardless_mandate_id: string;
+  gocardless_customer_id: string | null;
+  mandate_status: string;
+};
+
+/**
+ * Same household (phone last-10 or email) may already have an active mandate
+ * on a sibling contact — e.g. Maysoun/Adam Memy vs Adam Mahmmoud.
+ */
+export async function findActiveHouseholdMandate(
+  supabase: SupabaseClient,
+  contactId: string,
+): Promise<HouseholdMandateRow | null> {
+  const cid = clean(contactId, 120);
+  if (!cid) return null;
+  const { data: me } = await supabase
+    .from("portal_parent_contacts")
+    .select("contact_id, phone_lookup, email_norm")
+    .eq("contact_id", cid)
+    .maybeSingle();
+  const phone = clean(me?.phone_lookup, 12);
+  const email = clean(me?.email_norm, 120).toLowerCase();
+  const orParts: string[] = [];
+  if (phone.length >= 7) orParts.push(`phone_lookup.eq.${phone}`);
+  if (email) orParts.push(`email_norm.eq.${email}`);
+  if (!orParts.length) return null;
+  const { data: sibs } = await supabase
+    .from("portal_parent_contacts")
+    .select("contact_id")
+    .or(orParts.join(","));
+  const ids = [...new Set((sibs || []).map((r) => clean(r.contact_id, 120)).filter(Boolean))];
+  if (!ids.length) return null;
+  const { data: mans } = await supabase
+    .from("portal_parent_gocardless_mandates")
+    .select("contact_id, gocardless_mandate_id, gocardless_customer_id, mandate_status")
+    .in("contact_id", ids);
+  for (const m of mans || []) {
+    const mid = clean(m.gocardless_mandate_id, 80);
+    if (!mandateIsActive(m.mandate_status) || !mid) continue;
+    return {
+      contact_id: clean(m.contact_id, 120),
+      gocardless_mandate_id: mid,
+      gocardless_customer_id: clean(m.gocardless_customer_id, 80) || null,
+      mandate_status: String(m.mandate_status || "active"),
+    };
+  }
+  return null;
+}
+
 function instalmentIsGcCollect(row: InvoicePaymentScheduleRow): boolean {
   const via = String(row.collect_via || "").toLowerCase();
   if (via === "bank_transfer" || via === "bank") return false;
