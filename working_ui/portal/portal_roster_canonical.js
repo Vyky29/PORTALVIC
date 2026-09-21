@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 136;
+  var SOURCE_VERSION = 137;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -763,7 +763,25 @@
       session_date: row.session_date || row.sessionDate || "",
       venue: row.venue || "",
       area: row.rosterArea || row.area || "",
+      portal_trial_only: row.portal_trial_only === true || row.one_off === true || row.trial_only === true,
     };
+  }
+
+  /**
+   * Dated trial / one-off seats share the weekday standing stamp (Sun 13 = weekend snap).
+   * Never project them onto later same-weekdays — standing twin stays No participant / bookable.
+   */
+  function shouldProjectDatedOneOffTrialFromSnap(row, snapIso, targetIso) {
+    if (!row) return true;
+    var target = normIso(targetIso);
+    var snap = normIso(snapIso);
+    if (!target || !snap || target === snap) return true;
+    if (row.portal_trial_only === true || row.one_off === true || row.trial_only === true) {
+      var rowIso = normIso(row.session_date);
+      if (rowIso && target !== rowIso) return false;
+    }
+    if (isMuhammadAlexSundayClimbNoonRow(row) && target !== "2026-09-13") return false;
+    return true;
   }
 
   /** Hub Tinashe: Mon 7 Victor cover is dated only — do not project onto later Mondays. */
@@ -780,6 +798,7 @@
     var r = coerceSnapProjectRow(row);
     if (!shouldProjectDayCentreRowFromSnap(r, snapIso, targetIso)) return false;
     if (!shouldProjectBespokeHubRowFromSnap(r, snapIso, targetIso)) return false;
+    if (!shouldProjectDatedOneOffTrialFromSnap(r, snapIso, targetIso)) return false;
     return true;
   }
 
@@ -2705,6 +2724,8 @@
    * Autumn Sunday Westway climbing (60' books).
    * Scott de Wolff not renewing — 12–1 open. Alex 2–3 + 3–4 open. Patrick 3–4 Carlos.
    * Stamp = first standing Autumn Sunday (13 Sep), never a summer week.
+   * Muhammad Alex 12-1 is a dated trial that same Sunday — do not project that name
+   * onto later Sundays (open seat / bookable). See shouldProjectDatedOneOffTrialFromSnap.
    */
   var WEEKEND_STANDING_ISO = {
     saturday: "2026-09-12",
@@ -2831,7 +2852,42 @@
     });
   }
 
-  /** Dated one-off: Muhammad Climbing trial · Alex · Sun 13 Sep · 12–1. */
+  function climbNoonSlotKey(raw) {
+    return String(raw || "")
+      .toLowerCase()
+      .replace(/[–—]/g, "-")
+      .replace(/:/g, ".")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function isAlexSundayClimbNoonTime(raw) {
+    var t = climbNoonSlotKey(raw);
+    return /^(12(\.00)?)\s*(to|-)\s*(1(\.00)?|13(\.00)?)$/.test(t);
+  }
+
+  /** Muhammad Climbing trial · Alex · Westway Wall · Sun 13 Sep · 12-1 only. */
+  function isMuhammadAlexSundayClimbNoonRow(row) {
+    if (!row) return false;
+    var svc = String(row.service || row.rosterService || row.activity || "");
+    if (svc && !isClimbingService(svc)) return false;
+    var venue = String(row.venue || "");
+    if (venue && !isWestwayVenue(venue)) return false;
+    var inst = String(row.instructors || row.staffId || row.instructor || "");
+    if (!/\balex\b/i.test(inst)) return false;
+    var dk = normalizeDowKey(row.day);
+    var d = normIso(row.session_date || row.sessionDate);
+    if (dk && dk !== "sunday") return false;
+    if (!dk && d) {
+      var dt = new Date(d + "T12:00:00Z");
+      if (dt.getUTCDay() !== 0) return false;
+    }
+    if (!isAlexSundayClimbNoonTime(row.time_slot || row.timeSlot || row.time || "")) return false;
+    var cn = String(row.client_name || row.clientName || row.clientId || "").trim();
+    return /^muhammad\b/i.test(cn);
+  }
+
+  /** Dated one-off: Muhammad Climbing trial · Alex · Sun 13 Sep · 12-1. */
   function autumnSundayMuhammadClimbTrialRows() {
     return [
       {
@@ -2843,13 +2899,15 @@
         time_slot: "12 to 1",
         venue: "Westway",
         session_date: "2026-09-13",
+        portal_trial_only: true,
       },
     ];
   }
 
   /**
-   * Keep Muhammad trial on Alex 12–1 for Sun 13 (DB rows were scrubbed with standing climb rebuild).
-   * Drop standing open twin + any leftover Carlos 2–3 / Alex 3–4 Muhammad.
+   * Keep Muhammad trial on Alex 12-1 for Sun 13 (DB rows were scrubbed with standing climb rebuild).
+   * Drop standing open twin + any leftover Carlos 2-3 / Alex 3-4 Muhammad.
+   * Did not renew: drop Muhammad on later Sundays so 20 / 27 stay open / bookable.
    */
   function scrubAndEnsureMuhammadClimbTrial(rows) {
     var out = [];
@@ -2859,17 +2917,16 @@
         var d = normIso(r.session_date);
         var dk = normalizeDowKey(r.day);
         var inst = String(r.instructors || "");
-        var t = String(r.time_slot || "")
-          .toLowerCase()
-          .replace(/:/g, ".")
-          .replace(/\s+/g, " ")
-          .trim();
+        var t = climbNoonSlotKey(r.time_slot);
         var cn = String(r.client_name || "").trim();
+        if (isMuhammadAlexSundayClimbNoonRow(r) && d !== "2026-09-13") {
+          return;
+        }
         if (
           dk === "sunday" &&
           d === "2026-09-13" &&
           /\balex\b/i.test(inst) &&
-          /^12(\.00)?\s*to\s*1(\.00)?$/.test(t) &&
+          isAlexSundayClimbNoonTime(r.time_slot) &&
           (/^no participant$/i.test(cn) || /^muhammad\b/i.test(cn))
         ) {
           return;
@@ -2878,7 +2935,7 @@
           dk === "sunday" &&
           d === "2026-09-13" &&
           /\bcarlos\b/i.test(inst) &&
-          /^2(\.00)?\s*to\s*3(\.00)?$/.test(t) &&
+          /^(2(\.00)?)\s*(to|-)\s*(3(\.00)?)$/.test(t) &&
           /^muhammad\b/i.test(cn)
         ) {
           return;
@@ -2886,7 +2943,7 @@
         if (
           dk === "sunday" &&
           /\balex\b/i.test(inst) &&
-          /^3(\.00)?\s*to\s*4(\.00)?$/.test(t) &&
+          /^(3(\.00)?)\s*(to|-)\s*(4(\.00)?)$/.test(t) &&
           /^muhammad\b/i.test(cn)
         ) {
           return;
