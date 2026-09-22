@@ -8,8 +8,14 @@ import {
 import {
   matchStaffPinRow,
   missingOnboardingPinChecks,
+  missingOnboardingItemsForStaff,
   onboardingPayloadSubmitted,
   ensureStaffProfilePhoto,
+  ensureStaffPhoneFromJob,
+  recentlySentStaffOnboardingWhatsapp,
+  sendStaffOnboardingWhatsapp,
+  staffOnboardingChaseWhatsappBody,
+  onboardingHubUrl,
 } from "../_shared/portal_onboarding_pin.ts";
 
 type DocType =
@@ -270,6 +276,8 @@ type ApplicantProgress = {
   job_submitted: boolean;
   health_submitted: boolean;
   photo: boolean;
+  photo_url: string | null;
+  has_phone: boolean;
   pin_issued: boolean;
   pin: string | null;
   pin_name: string | null;
@@ -293,6 +301,8 @@ function emptyApplicant(id: string, name = ""): ApplicantProgress {
     job_submitted: false,
     health_submitted: false,
     photo: false,
+    photo_url: null,
+    has_phone: false,
     pin_issued: false,
     pin: null,
     pin_name: null,
@@ -457,6 +467,7 @@ async function loadApplicantProgress(
   }
 
   const byId = new Map<string, ApplicantProgress>();
+  const jobPayloadById = new Map<string, unknown>();
 
   for (const [id, sess] of sessions) {
     const entry = emptyApplicant(id, sess.name);
@@ -479,6 +490,7 @@ async function loadApplicantProgress(
     const submitted = onboardingPayloadSubmitted(row.payload);
     if (ft === "job") {
       entry.job = true;
+      jobPayloadById.set(id, row.payload);
       if (submitted) entry.job_submitted = true;
     }
     if (ft === "health") {
@@ -553,7 +565,7 @@ async function loadApplicantProgress(
 
       const { data: profiles } = await portalAdmin
         .from("staff_profiles")
-        .select("id, username, full_name, avatar_url")
+        .select("id, username, full_name, avatar_url, phone_e164")
         .in("id", ids);
       const { data: pinRows } = await portalAdmin
         .from("portal_login_pins")
@@ -568,11 +580,18 @@ async function loadApplicantProgress(
         if (username) entry.login_username = username;
         if (fullName && !entry.display_name) entry.display_name = fullName;
         if (fullName && !entry.portal_staff_name) entry.portal_staff_name = fullName;
-        entry.photo = await ensureStaffProfilePhoto(
+        const photoUrl = await ensureStaffProfilePhoto(
           portalAdmin,
           id,
           profile.avatar_url,
         );
+        entry.photo = !!photoUrl;
+        entry.photo_url = photoUrl || null;
+        const phone = await ensureStaffPhoneFromJob(portalAdmin, id, {
+          payload: jobPayloadById.get(id),
+          currentPhone: profile.phone_e164 != null ? String(profile.phone_e164) : "",
+        });
+        entry.has_phone = !!phone;
         const pinHit = matchStaffPinRow(pinRows || [], username, fullName);
         if (pinHit) {
           entry.pin_issued = true;
@@ -603,6 +622,66 @@ async function loadApplicantProgress(
       : (b.updated_at ? Date.parse(b.updated_at) : 0);
     return tb - ta;
   });
+}
+
+async function chaseIncompleteOnboardingApplicants(
+  portalAdmin: SupabaseClient,
+  applicants: ApplicantProgress[],
+  verified: { userId: string; email: string },
+) {
+  const targets = applicants.filter(
+    (a) =>
+      !a.pin_issued &&
+      a.job_submitted &&
+      a.has_phone &&
+      Array.isArray(a.missing) &&
+      a.missing.length > 0,
+  );
+  if (!targets.length) return;
+  const ids = targets.map((a) => a.applicant_session_id);
+  const { data: profiles } = await portalAdmin
+    .from("staff_profiles")
+    .select("id, username, full_name, phone_e164")
+    .in("id", ids);
+  const byId = new Map(
+    (profiles || []).map((p) => [String(p.id || ""), p] as const),
+  );
+  const hubUrl = onboardingHubUrl();
+  for (const a of targets) {
+    const profile = byId.get(a.applicant_session_id);
+    if (!profile) continue;
+    const already = await recentlySentStaffOnboardingWhatsapp(
+      portalAdmin,
+      a.applicant_session_id,
+      "onboarding_chase",
+      48,
+    );
+    if (already) continue;
+    const items = missingOnboardingItemsForStaff({
+      job_submitted: !!a.job_submitted,
+      health_submitted: !!a.health_submitted,
+      photo: !!a.photo,
+      passport: (a.uploads?.passport || 0) > 0,
+      checklist: (a.uploads?.checklist || 0) > 0,
+    });
+    if (!items.length) continue;
+    const fullName = String(profile.full_name || a.display_name || "").trim();
+    const first = fullName.split(/\s+/)[0] || "there";
+    try {
+      await sendStaffOnboardingWhatsapp(portalAdmin, {
+        staffProfileId: a.applicant_session_id,
+        username: String(profile.username || a.login_username || ""),
+        fullName,
+        phone: String(profile.phone_e164 || ""),
+        body: staffOnboardingChaseWhatsappBody({ firstName: first, missing: items, hubUrl }),
+        reason: "onboarding_chase",
+        sentByUserId: verified.userId,
+        sentByEmail: verified.email,
+      });
+    } catch (e) {
+      console.error("[onboarding-documents-list] chase", a.applicant_session_id, e);
+    }
+  }
 }
 
 Deno.serve(async (req) => {
@@ -644,6 +723,7 @@ Deno.serve(async (req) => {
   const { bucket, errors: bucketErrors } = await resolveOnboardingBucket(obAdmin);
   const { documents, errors: listErrors } = await listAllDocuments(obAdmin, bucket);
   const applicants = await loadApplicantProgress(portalAdmin, documents, portalAdmin);
+  await chaseIncompleteOnboardingApplicants(portalAdmin, applicants, verified);
   const upload_counts = uploadCountsFromDocuments(documents);
   const unlinked_documents = documents.filter((d) => !d.applicant_session_id).length;
 

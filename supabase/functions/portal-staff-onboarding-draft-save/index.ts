@@ -5,6 +5,7 @@ import {
   onboardingSubmittedAt,
   postMakeOnboardingWebhook,
 } from "../_shared/onboarding_make_webhook.ts";
+import { ensureStaffPhoneFromJob } from "../_shared/portal_onboarding_pin.ts";
 
 const cors: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -111,6 +112,12 @@ Deno.serve(async (req) => {
       error: "save_failed",
       detail: error.message || null,
     });
+  }
+
+  try {
+    await ensureStaffPhoneFromJob(portalAdmin, userId, { payload });
+  } catch (e) {
+    console.warn("[portal-staff-onboarding-draft-save] phone", e);
   }
 
   if (staffName) {

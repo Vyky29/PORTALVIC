@@ -15,6 +15,9 @@ import {
   staffAppOrigin,
   staffRolePinLabel,
   ensureStaffProfilePhoto,
+  ensureStaffPhoneFromJob,
+  sendStaffOnboardingWhatsapp,
+  staffOnboardingPinWhatsappBody,
 } from "../_shared/portal_onboarding_pin.ts";
 import {
   readParentNotifySmtpConfig,
@@ -90,7 +93,7 @@ Deno.serve(async (req) => {
 
   const { data: profile, error: profileErr } = await portalAdmin
     .from("staff_profiles")
-    .select("id, username, full_name, avatar_url, email_personal, staff_role")
+    .select("id, username, full_name, avatar_url, email_personal, staff_role, phone_e164")
     .eq("id", applicantId)
     .maybeSingle();
   if (profileErr) {
@@ -121,13 +124,21 @@ Deno.serve(async (req) => {
 
   let jobSubmitted = false;
   let healthSubmitted = false;
+  let jobPayload: unknown = null;
   for (const row of drafts ?? []) {
     const ft = String(row.form_type ?? "").toLowerCase();
-    if (ft === "job" && onboardingPayloadSubmitted(row.payload)) jobSubmitted = true;
+    if (ft === "job") {
+      jobPayload = row.payload;
+      if (onboardingPayloadSubmitted(row.payload)) jobSubmitted = true;
+    }
     if (ft === "health" && onboardingPayloadSubmitted(row.payload)) {
       healthSubmitted = true;
     }
   }
+  const phone = await ensureStaffPhoneFromJob(portalAdmin, applicantId, {
+    payload: jobPayload,
+    currentPhone: profile.phone_e164 != null ? String(profile.phone_e164) : "",
+  });
 
   const { data: healthRow } = await portalAdmin
     .from("staff_health_questionnaire_drafts")
@@ -138,7 +149,7 @@ Deno.serve(async (req) => {
 
   const { bucket } = await resolveOnboardingBucket(obAdmin);
   const docs = await countApplicantRequiredDocs(obAdmin, bucket, applicantId);
-  const photo = await ensureStaffProfilePhoto(
+  const photoUrl = await ensureStaffProfilePhoto(
     portalAdmin,
     applicantId,
     profile.avatar_url,
@@ -146,7 +157,7 @@ Deno.serve(async (req) => {
   const missing = missingOnboardingPinChecks({
     job_submitted: jobSubmitted,
     health_submitted: healthSubmitted,
-    photo,
+    photo: !!photoUrl,
     passport: docs.passport > 0,
     checklist: docs.checklist > 0,
   });
@@ -216,12 +227,13 @@ Deno.serve(async (req) => {
   const subject = "clubSENsational — your staff app PIN";
   const text =
     `Hi ${first},\n\n` +
-    `The office has checked your onboarding and it is complete.\n\n` +
+    `The office has checked your onboarding and your staff account is now open.\n\n` +
     `Staff app: ${loginUrl}\n` +
     `Name: ${pinName}\n` +
     `Email: ${email}\n` +
     `PIN: ${pin}\n\n` +
     `Sign in with your first name (or email) and this PIN.\n` +
+    `The communication channel is Comms in the staff app — use that for office messages.\n` +
     `Then complete General Induction and Safeguarding in the staff app.\n\n` +
     `Office | clubSENsational\n`;
 
@@ -246,6 +258,33 @@ Deno.serve(async (req) => {
     emailError = "smtp_not_configured";
   }
 
+  const waPhone = phone;
+  let whatsappOk = false;
+  let whatsappError: string | null = null;
+  if (waPhone) {
+    const waBody = staffOnboardingPinWhatsappBody({
+      firstName: first,
+      loginUrl,
+      pinName,
+      email,
+      pin,
+    });
+    const wa = await sendStaffOnboardingWhatsapp(portalAdmin, {
+      staffProfileId: applicantId,
+      username,
+      fullName,
+      phone: waPhone,
+      body: waBody,
+      reason: "onboarding_pin_issued",
+      sentByUserId: verified.userId || null,
+      sentByEmail: verified.email || null,
+    });
+    whatsappOk = !!wa.ok;
+    whatsappError = wa.ok ? null : String(wa.error || "send_failed");
+  } else {
+    whatsappError = "missing_staff_phone";
+  }
+
   return portalAdminJson(200, {
     ok: true,
     created,
@@ -259,5 +298,9 @@ Deno.serve(async (req) => {
     login_url: loginUrl,
     email_ok: emailOk,
     email_error: emailError,
+    whatsapp_ok: whatsappOk,
+    whatsapp_error: whatsappError,
+    has_phone: !!waPhone,
+    photo_url: photoUrl || null,
   });
 });

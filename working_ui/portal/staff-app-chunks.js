@@ -41,7 +41,7 @@
     "/portal/portal_swimming_instructor_menus.js?v=20260916-isp-admin-only",
     "/portal/portal_area_note_icons.js?v=20260916-ayman-area-nc",
     "/portal/portal_today_next_chips.js?v=20260903-photo-repair",
-    "/portal/portal_staff_photos.js?v=20260911-emmanuel-photo",
+    "/portal/portal_staff_photos.js?v=20260922-live-avatar",
     "/portal/portal_sheet_back.js?v=20260720-aria-sheet-focus",
   ];
 

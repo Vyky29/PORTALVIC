@@ -368,10 +368,26 @@
   }
 
   function photoUrlForStaff(l) {
+    var remote = String((l && (l.avatarUrl || l.avatar_url)) || "").trim();
+    if (remote && /^https?:\/\//i.test(remote)) {
+      if (typeof global.portalRememberStaffLiveAvatar === "function") {
+        global.portalRememberStaffLiveAvatar(l.username, remote);
+        global.portalRememberStaffLiveAvatar(l.displayName, remote);
+      }
+      return remote;
+    }
+    if (typeof global.portalStaffPhotoUrl === "function") {
+      var live = global.portalStaffPhotoUrl(l && (l.displayName || l.username), {
+        username: l && l.username,
+        avatarUrl: remote,
+      });
+      if (live) return live;
+    }
     var info = staffProfileForUsername(l && l.username);
     var file = info.profile && info.profile.avatarFile;
     if (file) {
       var path = String(file).replace(/^\//, "");
+      if (/^https?:\/\//i.test(file)) return file;
       return "/" + path;
     }
     var key = info.key || "staff";
@@ -493,6 +509,8 @@
         return [
           staffUsernameKey(l.username),
           isLeaderUnread(l) ? "1" : "0",
+          l.hasPhone ? "1" : "0",
+          String(l.avatarUrl || l.avatar_url || ""),
           staffWaListWhen(l) || "",
           String(l.lastInboundPreview || ""),
           staffUsernameKey(state.selected) === staffUsernameKey(l.username) ? "1" : "0",
@@ -785,7 +803,7 @@
           '<button type="button" class="btn btn--ghost btn--sm portal-staff-wa-admin__back" id="portalStaffWaBack" aria-label="Back to staff list">← Back</button>' +
           '<span class="portal-staff-wa-admin__head-title">' +
           esc(displayNameForStaff(lead)) +
-          (lead.hasPhone ? "" : " — add phone_e164 first") +
+          (lead.hasPhone ? "" : " — add phone first") +
           "</span>";
       } else {
         head.innerHTML =

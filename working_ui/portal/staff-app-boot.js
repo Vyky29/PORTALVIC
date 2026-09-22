@@ -187,7 +187,7 @@
       "/portal/portal_staff_lead_aquatic_slots.js?v=20260919-aquatic-hour-2to1",
     "/portal/portal_participant_general_hydrate.js?v=20260910-no-other-notes",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_staff_photos.js?v=20260911-emmanuel-photo",
+    "/portal/portal_staff_photos.js?v=20260922-live-avatar",
   ];
 
   function portalStaffStartDeferredDashboardScripts() {

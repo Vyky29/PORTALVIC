@@ -129,12 +129,12 @@ Deno.serve(async (req) => {
       .select("avatar_url")
       .eq("id", userId)
       .maybeSingle();
-    const photo = await ensureStaffProfilePhoto(
+    const photoUrl = await ensureStaffProfilePhoto(
       portalAdmin,
       userId,
       profile?.avatar_url || null,
     );
-    return json(200, { ok: true, photo });
+    return json(200, { ok: true, photo: !!photoUrl, photo_url: photoUrl || null });
   }
 
   if (!obUrl || !obService) {

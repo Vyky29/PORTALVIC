@@ -21,6 +21,11 @@ import {
   normalizeStaffUsernameKey,
 } from "../_shared/portal_staff_whatsapp.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
+import {
+  ensureStaffPhoneFromJob,
+  ensureStaffProfilePhoto,
+  syncStaffPhonesFromJobDrafts,
+} from "../_shared/portal_onboarding_pin.ts";
 
 function str(v: unknown, max = 8000): string {
   return String(v ?? "").trim().slice(0, max);
@@ -220,6 +225,21 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   // fall through to the own-thread branch instead of returning an empty directory.
   if (isAdmin && directoryOnly) {
     const leaders = await fetchStaffWhatsappLeaders(admin);
+    const needPhone = leaders
+      .filter((l) => !normalizeParentPhoneE164(String(l.phone_e164 || "")))
+      .map((l) => l.id);
+    if (needPhone.length) {
+      const synced = await syncStaffPhonesFromJobDrafts(admin, needPhone);
+      for (const l of leaders) {
+        const next = synced.get(l.id);
+        if (next) l.phone_e164 = next;
+      }
+    }
+    for (const l of leaders) {
+      if (l.avatar_url) continue;
+      const photoUrl = await ensureStaffProfilePhoto(admin, l.id, l.avatar_url);
+      if (photoUrl) l.avatar_url = photoUrl;
+    }
     const ids = leaders.map((l) => l.id).filter(Boolean);
     const lastInboundByStaff: Record<
       string,
@@ -270,6 +290,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
         phoneMasked: l.phone_e164
           ? String(l.phone_e164).replace(/\d(?=\d{4})/g, "•")
           : null,
+        avatarUrl: l.avatar_url || null,
         lastInboundAt: inbound ? inbound.at : null,
         lastInboundPreview: inbound ? inbound.preview : null,
         lastOutboundAt,
@@ -287,7 +308,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   } else {
     const { data: me } = await admin
       .from("staff_profiles")
-      .select("id, username, full_name, phone_e164, phone_lookup")
+      .select("id, username, full_name, phone_e164, phone_lookup, avatar_url")
       .eq("id", userId)
       .maybeSingle();
     if (!me || !isPortalStaffWhatsappLeaderKey(String(me.username || ""))) {
@@ -299,11 +320,25 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
       full_name: me.full_name != null ? String(me.full_name) : null,
       phone_e164: me.phone_e164 != null ? String(me.phone_e164) : null,
       phone_lookup: me.phone_lookup != null ? String(me.phone_lookup) : null,
+      staff_role: null,
+      app_role: null,
+      avatar_url: me.avatar_url != null ? String(me.avatar_url) : null,
     };
   }
 
   if (!leader) {
     return portalAdminJson(404, { ok: false, error: "staff_not_found" });
+  }
+
+  if (!normalizeParentPhoneE164(String(leader.phone_e164 || ""))) {
+    const phone = await ensureStaffPhoneFromJob(admin, leader.id, {
+      currentPhone: leader.phone_e164,
+    });
+    if (phone) leader.phone_e164 = phone;
+  }
+  if (!leader.avatar_url) {
+    const photoUrl = await ensureStaffProfilePhoto(admin, leader.id, leader.avatar_url);
+    if (photoUrl) leader.avatar_url = photoUrl;
   }
 
   const phone10 = phoneLast10(leader.phone_e164 || "");
@@ -467,6 +502,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
         username: normalizeStaffUsernameKey(leader.username),
         displayName: leader.full_name || leader.username,
         hasPhone: !!normalizeParentPhoneE164(String(leader.phone_e164 || "")),
+        avatarUrl: leader.avatar_url || null,
       },
       unread_messages_count,
       messages_read_at: readAt,
@@ -481,6 +517,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
       username: normalizeStaffUsernameKey(leader.username),
       displayName: leader.full_name || leader.username,
       hasPhone: !!normalizeParentPhoneE164(String(leader.phone_e164 || "")),
+      avatarUrl: leader.avatar_url || null,
     },
     messages: messagesWithFlags,
     unread_messages_count,

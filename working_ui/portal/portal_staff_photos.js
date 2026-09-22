@@ -126,6 +126,31 @@
     emmanuel: true,
   };
 
+  var LIVE_AVATARS = {};
+
+  function liveAvatarForKey(key) {
+    var k = canonicalStaffKey(key);
+    return k && LIVE_AVATARS[k] ? LIVE_AVATARS[k] : "";
+  }
+
+  function rememberStaffLiveAvatar(nameOrKey, url) {
+    var u = portalSanitizeRemoteAvatarUrl(url);
+    if (!u) return;
+    photoLookupKeys(nameOrKey, { username: nameOrKey }).forEach(function (k) {
+      if (k) LIVE_AVATARS[k] = u;
+    });
+    try {
+      var src = global.STAFF_DASHBOARD_SOURCE;
+      if (!src) return;
+      src.staffProfiles = src.staffProfiles || {};
+      photoLookupKeys(nameOrKey, { username: nameOrKey }).forEach(function (k) {
+        if (!k) return;
+        if (!src.staffProfiles[k]) src.staffProfiles[k] = {};
+        src.staffProfiles[k].avatarFile = u;
+      });
+    } catch (_) {}
+  }
+
   /** Role/category labels — not roster photo stems (avoids /staff_photos/leads.jpg 404 spam). */
   var NO_STATIC_PHOTO = {
     leads: true,
@@ -173,6 +198,7 @@
 
   function resolveStaffPhotoCandidates(nameOrKey, opts) {
     opts = opts || {};
+    hydrateLiveAvatarsFromDb();
     var urls = [];
     var keys = photoLookupKeys(nameOrKey, opts);
     var base = staffPhotosBase();
@@ -181,6 +207,12 @@
     keys.forEach(function (key) {
       if (NO_STATIC_PHOTO[key] || looksLikeOpaquePhotoKey(key)) return;
       var hadProfileFile = false;
+      var live = liveAvatarForKey(key);
+      if (opts.avatarUrl) live = portalSanitizeRemoteAvatarUrl(opts.avatarUrl) || live;
+      if (live) {
+        pushCandidate(urls, live);
+        hadProfileFile = true;
+      }
       try {
         var src = global.STAFF_DASHBOARD_SOURCE;
         if (key && src && src.staffProfiles && src.staffProfiles[key]) {
@@ -274,6 +306,7 @@
     var displayName = String(opts.displayName || nameOrKey || "").trim();
     var candidates = resolveStaffPhotoCandidates(nameOrKey, {
       username: opts.username,
+      avatarUrl: opts.avatarUrl,
     });
     var url = candidates.length ? candidates[0] : "";
     var initials = esc(portalStaffInitials(displayName || nameOrKey));
@@ -420,7 +453,37 @@
   }
   bindPortalRealtimeOnlineReconnect();
 
+  function hydrateLiveAvatarsFromDb() {
+    if (hydrateLiveAvatarsFromDb._done) return;
+    var box = global.__PORTAL_SUPABASE__;
+    var client = box && box.client;
+    if (!client || typeof client.from !== "function") return;
+    hydrateLiveAvatarsFromDb._done = true;
+    try {
+      client
+        .from("staff_profiles")
+        .select("username, full_name, avatar_url")
+        .eq("is_active", true)
+        .then(function (res) {
+          (res && res.data ? res.data : []).forEach(function (row) {
+            rememberStaffLiveAvatar(row && row.username, row && row.avatar_url);
+            rememberStaffLiveAvatar(row && row.full_name, row && row.avatar_url);
+          });
+        })
+        .catch(function () {
+          hydrateLiveAvatarsFromDb._done = false;
+        });
+    } catch (_) {
+      hydrateLiveAvatarsFromDb._done = false;
+    }
+  }
+  try {
+    hydrateLiveAvatarsFromDb();
+    global.addEventListener("portal:auth-ready", hydrateLiveAvatarsFromDb);
+  } catch (_) {}
+
   global.portalSanitizeRemoteAvatarUrl = portalSanitizeRemoteAvatarUrl;
+  global.portalRememberStaffLiveAvatar = rememberStaffLiveAvatar;
   global.portalStaffPhotoUrl = portalStaffPhotoUrl;
   global.portalStaffInitials = portalStaffInitials;
   global.portalStaffAvatarInnerHtml = portalStaffAvatarInnerHtml;
