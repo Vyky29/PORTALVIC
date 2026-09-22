@@ -1591,16 +1591,15 @@
         canon &&
         typeof canon.isFadiAbsentDcBoardIso === "function" &&
         canon.isFadiAbsentDcBoardIso(dateKey);
+      /* Week-1 / Fadi-off days have their own dated DC board. Never union later
+         standing DC (Tue 8 ACAT) onto those ISOs — template-ISO helper is empty now. */
       if ((week1Dc || fadiAbsentDc) && standing.length) {
         standing = standing.filter((s) => {
-          if (canon && typeof canon.isAutumnDcStandingTemplateRow === "function") {
-            return !canon.isAutumnDcStandingTemplateRow({
-              service: s.rosterService || s.service || s.activity,
-              session_date: s.session_date,
-            });
-          }
           return !/day\s*centre/i.test(String(s.rosterService || s.service || s.activity || ""));
         });
+      }
+      if (standing.length && snapIso && snapIso !== dateKey && canon && typeof canon.shouldProjectSnapRosterRow === "function") {
+        standing = standing.filter((s) => canon.shouldProjectSnapRosterRow(s, snapIso, dateKey));
       }
       standing = standing.filter((s) =>
         timesheetSessionActiveOnCalendarDate(s, dateKey, rosterKey)
@@ -1623,9 +1622,11 @@
         return st !== "closed";
       });
       const exactForMerge = exactOpen.length ? exactActive : [];
-      if (exactForMerge.length && standing.length) {
-        return timesheetMergeExactAndStandingSessions(exactForMerge, standing, dateObj);
-      }
+      /*
+       * Same as PortalResolveDayBoard timesheet: exact open seats own the day.
+       * Do not union another snap ISO (Tue 8 Acton redistribute must not paint
+       * onto Tue 15; week-1 Ikram must not pick up standing Acton / ACAT).
+       */
       if (exactForMerge.length) return exactForMerge;
       if (standing.length) return standing;
       /* Legacy undated-only rosters (no session_date anywhere). */
@@ -1810,6 +1811,20 @@
         }
         fallback = rec;
       });
+      if (!fallback && sk) {
+        const matcher =
+          typeof window !== "undefined" ? window.__PORTAL_REVIEW_KEY_MATCHER__ : null;
+        if (typeof matcher === "function") {
+          Object.keys(reviewMap).forEach((k) => {
+            if (fallback) return;
+            const rec = reviewMap[k];
+            if (!rec || !(rec.feedbackDone || rec.absent || rec.cancelled)) return;
+            try {
+              if (matcher(k, sk) || matcher(sk, k)) fallback = rec;
+            } catch (_) {}
+          });
+        }
+      }
       return fallback || exact || null;
     }
 
