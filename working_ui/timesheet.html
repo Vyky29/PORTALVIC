@@ -3497,9 +3497,15 @@
       if (error || !data) return [];
       return data
         .filter((r) => timesheetNormStaffKey(r.anchor_staff_id) === key)
+        .filter((r) => {
+          /* Schedule "+ Add session" is kind=session (a client seat). Only Training /
+             Shadowing / Meeting cards belong on this extra pay line. */
+          const kind = String((r.payload && r.payload.kind) || "").toLowerCase();
+          return kind === "training" || kind === "shadowing" || kind === "meeting";
+        })
         .map((r) => {
           const kind = String((r.payload && r.payload.kind) || "").toLowerCase();
-          const label = kind === "shadowing" ? "Shadowing" : "Training";
+          const label = kind === "shadowing" ? "Shadowing" : kind === "meeting" ? "Meeting" : "Training";
           const hours = overrideSessionHours(r.anchor_start, r.anchor_end, r.payload);
           const dObj = parseIsoDate(r.session_date);
           return {
