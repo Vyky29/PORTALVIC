@@ -914,6 +914,11 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   color: #6d28d9;
 }
 
+.portal-pnlog-chip--schedule {
+  background: rgba(14, 116, 144, 0.14);
+  color: #0e7490;
+}
+
 .portal-pnlog-chip--phone {
   background: rgba(245, 197, 24, 0.28);
   color: #8a6a00;

@@ -301,6 +301,32 @@
     return c === "whatsapp" || c === "both" || c === "whatsapp_email";
   }
 
+  function notifyRowHasWhatsapp(row) {
+    if (!row) return false;
+    if (channelIncludesWhatsapp(row.channel)) return true;
+    if (String(row.whatsapp_message_id || "").trim()) return true;
+    var st = String(row.whatsapp_status || "").toLowerCase();
+    return st === "sent" || st === "delivered" || st === "read";
+  }
+
+  function isScheduleOverrideMachineNotify(row) {
+    if (!row) return false;
+    var meta = row.meta && typeof row.meta === "object" ? row.meta : {};
+    if (meta.automated === true) return true;
+    var src = String(meta.source || "").toLowerCase();
+    if (src === "schedule_covers" || src.indexOf("schedule_override") >= 0) return true;
+    var by = String(row.sent_by_email || "").toLowerCase();
+    if (by === "schedule-override-notify") return true;
+    return false;
+  }
+
+  function overrideCoverPhotoUrl(row) {
+    var meta = row && row.meta && typeof row.meta === "object" ? row.meta : {};
+    var photo = String(meta.covering_photo || "").trim();
+    if (/^https?:\/\//i.test(photo)) return photo;
+    return "";
+  }
+
   function isThreadUnread(t) {
     if (!t || t.channel !== "whatsapp" || !t.hasInbound || !t.lastInboundAt) return false;
     // Only a successful club WhatsApp reply clears unread — failed API sends must not.
@@ -312,6 +338,7 @@
   var KIND_LABELS = {
     payment_due: "Payment reminder",
     instructor_change: "Instructor change",
+    instructor_change_update: "Instructor update",
     instructor_reassign: "Instructor change",
     time_change: "Time change",
     session_time_change: "Time change",
@@ -1292,8 +1319,7 @@
         if (contact && !t.waContact) t.waContact = contact;
         return;
       }
-      var ch = String(row.channel || "").toLowerCase();
-      if (!channelIncludesWhatsapp(ch)) return;
+      if (!notifyRowHasWhatsapp(row)) return;
       var wkey = phoneMatchKey(row.parent_phone) || phoneDigits(row.parent_phone);
       if (!wkey) return;
       var wt = waThread(wkey);
@@ -1301,6 +1327,7 @@
         wt.sendPhone = formatPhoneDisplay(row.parent_phone) || String(row.parent_phone || "");
         wt.phone = wt.sendPhone;
       }
+      var coverPhoto = overrideCoverPhotoUrl(row);
       wt.events.push({
         dir: "out",
         id: row.id,
@@ -1313,9 +1340,9 @@
         errorDetail: row.error_detail || "",
         channel: "whatsapp",
         row: row,
-        messageType: String(row.message_type || "").toLowerCase(),
-        mediaUrl: row.media_url || "",
-        mediaMime: String(row.media_mime || ""),
+        messageType: String(row.message_type || (coverPhoto ? "image" : "")).toLowerCase(),
+        mediaUrl: row.media_url || coverPhoto || "",
+        mediaMime: String(row.media_mime || (coverPhoto ? "image/png" : "")),
       });
       var outAt = String(row.created_at || "");
       if (outAt > wt.lastOutboundAt) wt.lastOutboundAt = outAt;
@@ -1673,6 +1700,11 @@
       if (ev.kind) metaBits.push(esc(kindLabel(ev.kind)));
       errTip = ev.status === "failed" ? friendlyWaError(ev.errorDetail || (ev.row && ev.row.error_detail)) : "";
       metaBits.push(statusChip(ev.status, ev.channel, errTip || (ev.row && ev.row.error_detail)));
+      if (isScheduleOverrideMachineNotify(ev.row)) {
+        metaBits.push(
+          '<span class="portal-pnlog-chip portal-pnlog-chip--schedule" title="Sent automatically when the Schedule override was saved">Schedule</span>'
+        );
+      }
       if (ev.sentBy) metaBits.push(esc(ev.sentBy));
       if (ev.row && ev.row.meta && ev.row.meta.edited_at) {
         metaBits.push('<span class="portal-pnlog-chip portal-pnlog-chip--edited">Edited</span>');
@@ -2988,7 +3020,7 @@
         .select(
           "id, created_at, sent_by_email, kind, channel, client_display, parent_name, parent_email, parent_phone, session_date, venue, subject, body_text, message_type, media_path, media_mime, email_status, whatsapp_status, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, error_detail, meta"
         )
-        .in("channel", ["whatsapp", "both", "whatsapp_email"])
+        .or("channel.in.(whatsapp,both,whatsapp_email),whatsapp_message_id.not.is.null")
         .order("created_at", { ascending: false })
         .limit(FETCH_LIMIT);
       if (outboundRes.error) throw outboundRes.error;
@@ -3167,13 +3199,12 @@
       var lastOutboundByPhone = {};
       var outRes = await client
         .from("portal_parent_notify_log")
-        .select("parent_phone, created_at, channel, whatsapp_status")
+        .select("parent_phone, created_at, channel, whatsapp_status, whatsapp_message_id")
         .order("created_at", { ascending: false })
         .limit(FETCH_LIMIT);
       if (!outRes.error) {
         (outRes.data || []).forEach(function (r) {
-          var ch = String((r && r.channel) || "").toLowerCase();
-          if (!channelIncludesWhatsapp(ch)) return;
+          if (!notifyRowHasWhatsapp(r)) return;
           if (!waOutboundCountsAsReply(r && r.whatsapp_status)) return;
           var pk = phoneMatchKey(r && r.parent_phone) || phoneDigits(r && r.parent_phone);
           if (!pk) return;
