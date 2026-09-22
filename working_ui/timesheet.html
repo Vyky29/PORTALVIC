@@ -3008,29 +3008,43 @@
       }
       return null;
     }
-    /** Day Centre SwimFarm only Mon/Wed (→3) and Fri (→4); never Tue/Thu mornings. */
-    const YOUSSEF_DAY_CENTRE_DAYS = new Set(["Monday", "Wednesday", "Friday"]);
+    /** Day Centre SwimFarm: Mon/Wed/Fri + Thursday after Fadi is back (20 Sep). */
+    const YOUSSEF_DAY_CENTRE_DAYS = new Set(["Monday", "Wednesday", "Thursday", "Friday"]);
+    const YOUSSEF_FADI_DC_FROM_ISO = "2026-09-20";
+    const YOUSSEF_DC_ELEVEN_TO_THREE_ISOS = { "2026-09-21": true };
     /**
-     * Youssef SwimFarm Day Centre (Hub): Autumn Monday 12.30–3 (2.5h @ SW £20);
-     * Fri 11 Sep 11–3 (4h, includes midday pool); later Fridays no DC pay for now.
-     * Mon/Wed summer (and Autumn Wed if seated) 11–12 + 1–3 (3h).
+     * Youssef SwimFarm Day Centre: Autumn Monday 12.30–3 (2.5h) except Mon 21 (11–3);
+     * Thu from 20 Sep 12.30–3 with Fadi; Fri 11 Sep 11–3; later Fridays no DC for now.
      */
     function youssefSwimfarmDayCentrePaySpec(dayName, dateKey) {
-      if (!YOUSSEF_DAY_CENTRE_DAYS.has(String(dayName || ""))) return null;
-      if (dayName === "Monday" && isYoussefAutumnTermIso(dateKey)) {
+      const iso = String(dateKey || "").slice(0, 10);
+      const day = String(dayName || "");
+      if (day === "Monday" && YOUSSEF_DC_ELEVEN_TO_THREE_ISOS[iso]) {
+        return {
+          hours: 4,
+          segments: [{ startMin: 11 * 60, endMin: 15 * 60 }]
+        };
+      }
+      if (day === "Monday" && isYoussefAutumnTermIso(iso)) {
         return {
           hours: 2.5,
           segments: [{ startMin: 12 * 60 + 30, endMin: 15 * 60 }]
         };
       }
-      if (dayName === "Friday") {
-        const iso = String(dateKey || "").slice(0, 10);
+      if (day === "Friday") {
         if (iso !== YOUSSEF_FRIDAY_ACTON_FIRST_ISO) return null;
         return {
           hours: 4,
           segments: [{ startMin: 11 * 60, endMin: 15 * 60 }]
         };
       }
+      if (day === "Thursday" && isYoussefAutumnTermIso(iso) && iso >= YOUSSEF_FADI_DC_FROM_ISO) {
+        return {
+          hours: 2.5,
+          segments: [{ startMin: 12 * 60 + 30, endMin: 15 * 60 }]
+        };
+      }
+      if (!YOUSSEF_DAY_CENTRE_DAYS.has(day)) return null;
       return {
         hours: 3,
         segments: [
@@ -3095,7 +3109,7 @@
       const dateKey = isoDate(dateObj);
       /* Autumn Monday DC is 12.30–3; Fri 11 is 11–3 — no extra paid 12–1 pool hour. */
       if (
-        (dayName === "Monday" || dayName === "Friday") &&
+        (dayName === "Monday" || dayName === "Friday" || dayName === "Thursday") &&
         isYoussefAutumnTermIso(dateKey)
       ) {
         return (entries || []).filter((e) => !entryLooksYoussefMiddayAquatic(e));
@@ -3208,13 +3222,13 @@
           dayName !== "Sunday";
         if (isSwimfarmDc || isSwimfarmMidSwim) {
           if (entryLooksYoussefMiddayAquatic(e) && isYoussefAutumnTermIso(dateKey) &&
-              (dayName === "Monday" || dayName === "Friday")) {
+              (dayName === "Monday" || dayName === "Friday" || dayName === "Thursday")) {
             return false;
           }
           if (dayName === "Monday" && isYoussefAutumnTermIso(dateKey) && isSwimfarmMidSwim) {
             return false;
           }
-          if (dayName === "Friday") {
+          if (dayName === "Friday" || dayName === "Thursday") {
             return !!youssefSwimfarmDayCentrePaySpec(dayName, dateKey);
           }
           return YOUSSEF_DAY_CENTRE_DAYS.has(dayName);
