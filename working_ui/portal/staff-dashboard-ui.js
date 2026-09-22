@@ -874,7 +874,20 @@
           }catch(_){}
           try{
             if(typeof portalInvalidateSignableItemsMemo === 'function') portalInvalidateSignableItemsMemo();
-            if(typeof portalMaybeGateUnsignedAnnouncements === 'function'){
+            var fbOwedDismissed = !!(window.__PORTAL_FB_OWED_GATE_DISMISSED__);
+            try{
+              if(!fbOwedDismissed && sessionStorage.getItem('portalFbOwedGateDismissed') === '1') fbOwedDismissed = true;
+            }catch(_){}
+            if(
+              !fbOwedDismissed
+              && !window.__PORTAL_FB_OWED_GATED_ONCE__
+              && dashboardData
+              && dashboardData.portalFeedbackServerSynced
+              && typeof portalOutstandingFeedbackRemindersAsSignableNotices === 'function'
+              && portalOutstandingFeedbackRemindersAsSignableNotices().length
+              && typeof portalMaybeGateUnsignedAnnouncements === 'function'
+            ){
+              window.__PORTAL_FB_OWED_GATED_ONCE__ = 1;
               portalMaybeGateUnsignedAnnouncements({ force: true });
             }
           }catch(_){}
@@ -6143,6 +6156,7 @@
         if(isReminder){
           if(isFbOwed){
             try{ window.__PORTAL_FB_OWED_GATE_DISMISSED__ = 1; }catch(_){}
+            try{ sessionStorage.setItem('portalFbOwedGateDismissed', '1'); }catch(_){}
           }else{
             const remAck = portalReminderAckMapLoad();
             remAck[key] = {

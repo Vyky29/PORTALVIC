@@ -7755,16 +7755,34 @@
       return out;
     }
     try{ window.portalScheduleChangeRemindersAsSignableNotices = portalScheduleChangeRemindersAsSignableNotices; }catch(_){}
+    function portalOutstandingFeedbackGateDismissed(){
+      try{
+        if(window.__PORTAL_FB_OWED_GATE_DISMISSED__) return true;
+      }catch(_){}
+      try{
+        if(sessionStorage.getItem('portalFbOwedGateDismissed') === '1'){
+          window.__PORTAL_FB_OWED_GATE_DISMISSED__ = 1;
+          return true;
+        }
+      }catch(_){}
+      return false;
+    }
     /**
      * Past-day outstanding feedback must lock the app like announcements.
-     * Signing only hides this session so they can open the form; next launch
-     * shows it again until the feedback (or absent/cancel) is actually in.
+     * Wait for live Supabase feedback: a term rebuild before keys land counts every
+     * ended seat as pending (Roberto saw "6 outstanding" with Term already green).
+     * Signing hides the lock for this app session so it cannot loop.
      */
     function portalOutstandingFeedbackRemindersAsSignableNotices(){
       const out = [];
       try{
-        if(window.__PORTAL_FB_OWED_GATE_DISMISSED__) return out;
+        if(portalOutstandingFeedbackGateDismissed()) return out;
         if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return out;
+        var dd = typeof dashboardData !== 'undefined' ? dashboardData : null;
+        if(!dd || !dd.portalFeedbackServerSynced) return out;
+        if(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ === false) return out;
+        var submitted = dd.portalServerSubmittedFeedbackPortalKeys || dd.portalServerSubmittedFeedbackKeys;
+        if(!submitted || typeof submitted.size !== 'number' || submitted.size < 1) return out;
         const n = typeof portalOutstandingSessionFeedbackCountAcrossTerm === 'function'
           ? Number(portalOutstandingSessionFeedbackCountAcrossTerm() || 0)
           : 0;
@@ -7775,6 +7793,9 @@
         if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return out;
         const todayStr = typeof getLocalDateKey === 'function' ? String(getLocalDateKey() || '').slice(0, 10) : '';
         if(todayStr && iso >= todayStr) return out;
+        var fbMap = dd.termFeedbackByDate || {};
+        var st = fbMap[iso];
+        if(st && st !== 'pending' && st !== 'late') return out;
         const dateLab = (typeof portalOverrideSessionDateDisplayLabel === 'function'
           ? portalOverrideSessionDateDisplayLabel(iso)
           : iso) || iso;
@@ -7782,7 +7803,7 @@
         out.push({
           type: 'reminder',
           title: 'Outstanding feedback',
-          text: 'You still owe ' + unit + ' from ' + dateLab + '.\n\nAbsent and cancelled already count as done. This one was not sent.\n\nSign to open that day and complete it now. This reminder comes back until it is submitted.',
+          text: 'You still owe ' + unit + ' from ' + dateLab + '.\n\nAbsent and cancelled already count as done. This one was not sent.\n\nSign to open that day and complete it now.',
           href: '#portal-open-pending-feedback',
           portalAdminReminderId: 'fb-owed-' + iso,
           created_at: iso + 'T21:00:00.000Z',
