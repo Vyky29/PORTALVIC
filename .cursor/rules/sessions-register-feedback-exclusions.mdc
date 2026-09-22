@@ -11,7 +11,19 @@ Victor should not have to re-explain these. Apply in **Sessions Overview / Regis
 | **HOME** / **MANAGER** / **Admin** | Staff duty |
 | **Shadowing** / Training / Meeting | Staff development |
 | **HOLD WAITLIST** / waitlist placeholders | Booking hold, not a seated CLIENT |
+| **Elia** (Tue Andres / Thu Angel Westway 4–6) | Office hold — fully booked on Places, not a real CLIENT session |
 | Clients before `first_session` / `clientRosterStartDates` | Not started yet — MADRE may already show the seat |
+
+## Never WhatsApp / halo-nag these staff on these days
+
+| Staff | Days | Why |
+|---|---|---|
+| **Andres** | Tuesday and Thursday | Office-hold Elia climb only — no session feedback until office opens the seat |
+| **Angel** | Tuesday and Thursday | Same office hold (Angel standing is Thursday; skip both weekdays so extras cannot nag) |
+
+Sunday covers (e.g. Angel covering Carlos) still owe feedback.
+
+Apply in `portal_feedback_2030_match.ts` (`isRealFeedbackClient`, `staffSkipTueThuOfficeHoldFeedback`) and Staff Today extras (`portalClientIsHoldWaitlistNoFeedback`).
 
 ## Cover display on Register
 

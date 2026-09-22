@@ -2062,6 +2062,16 @@
       const iso = String(sessionDateIso || '').trim().slice(0, 10);
       const sid = String(staffId != null ? staffId : (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')).trim().toLowerCase();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+      if(typeof portalClientIsHoldWaitlistNoFeedback === 'function'
+        && (portalClientIsHoldWaitlistNoFeedback(s.clientId)
+          || portalClientIsHoldWaitlistNoFeedback(s.clientName)
+          || portalClientIsHoldWaitlistNoFeedback(s.name))){
+        return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+      }
+      if(typeof portalStaffSkipTueThuOfficeHoldFeedback === 'function'
+        && portalStaffSkipTueThuOfficeHoldFeedback(sid || (s && s.staffId), iso)){
+        return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+      }
       /*
        * Fadi DC Cancelled (Joelle pattern) must resolve as cancelled even without a
        * schedule_overrides row — otherwise week-1 dates (e.g. Fri 4 Sep) paint Term
@@ -2359,6 +2369,53 @@
       const suffix = portalSessionFeedbackUnitSuffix(s, activity, portalStaffIsSupportWorkerForAreaNotes());
       return portalNormalizeSessionReviewKey(String(sessionDateIso) + '|' + String(s.start || '') + '|' + cid + suffix);
     }
+    /** HOLD WAITLIST / Elia office-hold seats never owe session feedback. */
+    function portalClientIsHoldWaitlistNoFeedback(name){
+      const low = String(name || '').trim().toLowerCase().replace(/[_-]+/g, ' ');
+      if(!low) return false;
+      if(low === 'hold waitlist' || low === 'waitlist' || low === 'waiting list' || low === 'waiting') return true;
+      if(/^hold\b/.test(low) && /wait/.test(low)) return true;
+      if(low === 'elia' || /^elia\b/.test(low)) return true;
+      return false;
+    }
+    /** Andres + Angel on Tuesday/Thursday: office-hold climb — no feedback nags. */
+    function portalStaffSkipTueThuOfficeHoldFeedback(staffId, iso){
+      const isoN = String(iso || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(isoN)) return false;
+      const wd = new Date(isoN + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' }).toLowerCase();
+      if(wd !== 'tuesday' && wd !== 'thursday') return false;
+      let k = String(staffId || '').trim().toLowerCase();
+      try{
+        if(typeof portalCanonicalStaffKeyForMatch === 'function'){
+          k = portalCanonicalStaffKeyForMatch(k) || k;
+        }
+      }catch(_){}
+      k = String(k || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      return k === 'andres' || k === 'angel';
+    }
+    function portalSessionAddClientReviewKey(sessionDateIso, staffId, ov, paxId, paxName, activityAdd, stAdd, enAdd, dayWord){
+      const cid = String(paxId || paxName || '').trim().toLowerCase();
+      const synth = {
+        start: stAdd,
+        end: enAdd,
+        clientId: cid,
+        clientName: paxName,
+        activity: activityAdd,
+        rosterService: activityAdd,
+        service: activityAdd,
+        staffId: staffId,
+        venue: ov && ov.anchor_venue
+      };
+      if(typeof portalBuildSessionReviewKey === 'function'){
+        const k = portalBuildSessionReviewKey(sessionDateIso, synth, dayWord, cid);
+        if(k) return k;
+      }
+      return String(sessionDateIso) + '|' + String(stAdd || '') + '|' + cid + '|session_add';
+    }
+    try{
+      window.portalClientIsHoldWaitlistNoFeedback = portalClientIsHoldWaitlistNoFeedback;
+      window.portalStaffSkipTueThuOfficeHoldFeedback = portalStaffSkipTueThuOfficeHoldFeedback;
+    }catch(_){}
     function portalSessionReviewKeyForModelRow(s, viewDayWord, sessionDateIso){
       if(!portalSessionContributesToReviewKeys(s, viewDayWord, sessionDateIso)) return '';
       const cid = portalEffectiveClientIdForReview(s, sessionDateIso);
@@ -4705,10 +4762,14 @@
             general: String(pAdd.note || ov.reason || '').trim(),
             specialty: '',
             openSheet: true,
-            sessionKey: sessionDateKey + '|' + stAdd + '|' + String(paxId || paxName).toLowerCase() + '|session_add',
+            sessionKey: portalSessionAddClientReviewKey(
+              sessionDateKey, staffId, ov, paxId, paxName, activityAdd, stAdd, enAdd, anchor
+            ),
             sessionStartTs: ttsAdd.sessionStartTs,
             sessionEndTs: ttsAdd.sessionEndTs,
-            noSessionFeedbackRequired: false,
+            noSessionFeedbackRequired: portalClientIsHoldWaitlistNoFeedback(paxName)
+              || portalClientIsHoldWaitlistNoFeedback(paxId)
+              || portalStaffSkipTueThuOfficeHoldFeedback(staffId, sessionDateKey),
             actionsDisabled: false,
             detailsOpenAllowed: true,
             scheduleAdminAdjusted: true,

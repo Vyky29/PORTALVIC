@@ -22,11 +22,11 @@ export type Feedback2030StaffDebt = {
   sample: string[];
 };
 
-const SKIP_CLIENT = /^(home|manager|closed|available|no[_ ]participant|no[_ ]client|open|cover[_ ]needed|off|day[_ ]off|casa|na|office|interview|interviews|admin|ops|operations|shadowing|training|meeting|team[_ ]meeting)$/i;
+const SKIP_CLIENT = /^(home|manager|closed|available|no[_ ]participant|no[_ ]client|open|cover[_ ]needed|off|day[_ ]off|casa|na|office|interview|interviews|admin|ops|operations|shadowing|training|meeting|team[_ ]meeting|hold[_ ]?waitlist|waitlist|waiting[_ ]?list|waiting|elia)$/i;
 
 /** Duty / board labels that never owe parent session feedback (exact or "Office · 11 – 3"). */
 const SKIP_CLIENT_PREFIX =
-  /^(home|manager|closed|available|no[_ ]participant|no[_ ]client|open|cover[_ ]needed|off|day[_ ]off|casa|na|office|interview|interviews|admin|ops|operations|shadowing|training|meeting|team[_ ]meeting)(_|$)/i;
+  /^(home|manager|closed|available|no[_ ]participant|no[_ ]client|open|cover[_ ]needed|off|day[_ ]off|casa|na|office|interview|interviews|admin|ops|operations|shadowing|training|meeting|team[_ ]meeting|holdwaitlist|hold_waitlist|waitlist|waitinglist|waiting|elia)(_|$)/i;
 
 /** Sun 6 Sep 2026 dated books (Overview / LOCAL). Used when DB roster is still thin. */
 const SUNDAY_2026_09_06: Feedback2030Slot[] = [
@@ -171,6 +171,18 @@ export function firstNameOf(raw: string): string {
   return t.split(/\s+/)[0];
 }
 
+/** Occupants encode bands as "Ikram · 11 – 3" — stem is the client for share/dedupe. */
+function clientDisplayStem(raw: string): string {
+  const n = String(raw || "").trim();
+  if (!n) return "";
+  const parts = n.split(/\s*[·•|]\s*/).map(function (p) {
+    return String(p || "").trim();
+  }).filter(Boolean);
+  let first = parts[0] || n;
+  first = first.replace(/\s+\d{1,2}(?:[.:]\d{2})?\s*(?:to|-|–).*$/i, "").trim();
+  return first || n;
+}
+
 function slotDedupeKey(s: Feedback2030Slot): string {
   /* Staff + client + service only. Occupants store Sunday Multi as 90' dual-kid
    * bands (9.30-11) while roster is 45' cards (9.30-10.15 / 10.15-11). Counting
@@ -178,7 +190,7 @@ function slotDedupeKey(s: Feedback2030Slot): string {
    * programme with the same instructor is one feedback unit. */
   return [
     normalizeStaffKey(s.staff),
-    slugClient(s.client),
+    slugClient(clientDisplayStem(s.client)),
     slugClient(s.service),
   ].join("|");
 }
@@ -196,14 +208,26 @@ export function isRealFeedbackClient(name: string): boolean {
       return false;
     }
   }
-  const slug = slugClient(n);
+  const stem = clientDisplayStem(n);
+  const slug = slugClient(stem || n);
   if (SKIP_CLIENT_PREFIX.test(slug)) return false;
   /* Hub · Office / area-style duty labels. */
-  if (/(^|_)(office|manager|interview|interviews|home|closed|available)(_|$)/i.test(slug)) {
+  if (/(^|_)(office|manager|interview|interviews|home|closed|available|elia|holdwaitlist)(_|$)/i.test(slug)) {
     return false;
   }
-  if (SKIP_CLIENT.test(slug.replace(/_/g, " ")) || SKIP_CLIENT.test(n)) return false;
+  if (SKIP_CLIENT.test(slug.replace(/_/g, " ")) || SKIP_CLIENT.test(n) || SKIP_CLIENT.test(stem)) {
+    return false;
+  }
   return true;
+}
+
+/** Andres (Tue Westway) / Angel (Thu Westway): office-hold Elia 4–6 — never nag those days. */
+export function staffSkipTueThuOfficeHoldFeedback(staff: string, iso: string): boolean {
+  if (!iso) return false;
+  const wd = weekdayLongUtcNoon(iso).toLowerCase();
+  if (wd !== "tuesday" && wd !== "thursday") return false;
+  const k = canonStaffKey(staff);
+  return k === "andres" || k === "angel";
 }
 
 function weekdayLongUtcNoon(iso: string): string {
@@ -287,7 +311,7 @@ export function applyFeedback2030BoardPolicy(
   const day = weekdayLongUtcNoon(iso).toLowerCase();
   return slots
     .map((s) => {
-      let client = s.client;
+      let client = clientDisplayStem(s.client) || s.client;
       /* Mon Dan Northolt 6–6.30: Adaam through Mon 7; Amaar from Mon 14 (Leila swap). */
       if (
         iso < "2026-09-14" &&
@@ -303,6 +327,7 @@ export function applyFeedback2030BoardPolicy(
       return { ...s, client };
     })
     .filter((s) => {
+      if (staffSkipTueThuOfficeHoldFeedback(s.staff, iso)) return false;
       /* Thu 10 Sep: Joelle 6–6.30 cancelled (Aurora Cancelled + Anas makeup; Simon open).
        * Clock parser can read "6 to 6.30" as 6.30 (390), not 6:00 — match the label too. */
       if (iso === "2026-09-10") {
@@ -472,6 +497,22 @@ function occupantsArea(venue: unknown): string | undefined {
   return undefined;
 }
 
+function occupantsPhaseSlotApplies(slotId: string, iso: string, datedIsoSet: Set<string>): boolean {
+  const id = String(slotId || "").toLowerCase();
+  const dated = id.match(/dated[_-](\d{4}-\d{2}-\d{2})/);
+  if (dated) return dated[1] === iso;
+  const isDcPhase = /day_centre/.test(id) && /(week1|fadi_off|standing)/.test(id);
+  if (!isDcPhase) return true;
+  /* A dated_YYYY-MM-DD twin replaces week1/fadi_off/standing that calendar day. */
+  if (datedIsoSet.has(iso)) return false;
+  const week1 = iso >= "2026-09-01" && iso <= "2026-09-04";
+  const fadiOff = iso >= FADI_OFF_DC_FROM && iso <= FADI_OFF_DC_THROUGH;
+  if (id.includes("week1")) return week1;
+  if (id.includes("fadi_off")) return fadiOff && !week1;
+  if (id.includes("standing")) return !week1 && !fadiOff;
+  return true;
+}
+
 /**
  * B1c: standing seats from capacity-chain occupants (same board as Overview).
  * Merged after portal_roster_rows so roster still wins on dedupe; fills gaps when
@@ -483,9 +524,15 @@ export function slotsFromCapacityChainOccupants(
 ): Feedback2030Slot[] {
   if (!bySlotId || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return [];
   const wd = weekdayLongUtcNoon(iso);
+  const datedIsoSet = new Set<string>();
+  for (const slotId of Object.keys(bySlotId)) {
+    const m = String(slotId || "").match(/dated[_-](\d{4}-\d{2}-\d{2})/i);
+    if (m) datedIsoSet.add(m[1]);
+  }
   const out: Feedback2030Slot[] = [];
-  for (const slot of Object.values(bySlotId)) {
+  for (const [slotId, slot] of Object.entries(bySlotId)) {
     if (!slot) continue;
+    if (!occupantsPhaseSlotApplies(slotId, iso, datedIsoSet)) continue;
     if (String(slot.day || "").trim().toLowerCase() !== wd.toLowerCase()) continue;
     const service = occupantsServiceLabel(slot.serviceId);
     if (/crash|intensiv/i.test(service)) continue;
@@ -500,11 +547,11 @@ export function slotsFromCapacityChainOccupants(
       if (kind === "trial") {
         const trialDate = String(line.trialDate || "").slice(0, 10);
         if (trialDate && trialDate !== iso) continue;
-        client = String(line.trialClient || line.client || "").trim();
+        client = clientDisplayStem(String(line.trialClient || line.client || "").trim());
       } else if (kind === "booked") {
         const from = String(line.bookedFrom || "").slice(0, 10);
         if (from && iso < from) continue;
-        client = String(line.client || "").trim();
+        client = clientDisplayStem(String(line.client || "").trim());
       } else {
         continue;
       }
@@ -539,9 +586,11 @@ export function mergeFeedback2030Slots(lists: Feedback2030Slot[][]): Feedback203
 }
 
 function clientsClose(a: string, b: string): boolean {
-  if (rosterClientsMatch(a, b)) return true;
-  const sa = slugClient(a).replace(/_ah$/, "");
-  const sb = slugClient(b).replace(/_ah$/, "");
+  const aa = clientDisplayStem(a) || a;
+  const bb = clientDisplayStem(b) || b;
+  if (rosterClientsMatch(aa, bb) || rosterClientsMatch(a, b)) return true;
+  const sa = slugClient(aa).replace(/_ah$/, "");
+  const sb = slugClient(bb).replace(/_ah$/, "");
   if (sa && sb && sa === sb) return true;
   if ((sa === "yusef" && sb === "yusuf") || (sa === "yusuf" && sb === "yusef")) return true;
   if ((sa === "zaid" && sb === "zaid_trial") || (sa === "zaid_trial" && sb === "zaid")) {
@@ -638,7 +687,8 @@ function isUsableCoverStaff(raw: string): boolean {
 /**
  * Apply live day ops so feedback debt follows the cover, not the original book.
  * - instructor_reassign: drop anchor/absent staff slot; add covering staff
- * - slot_clear_client: drop cleared seat on anchor
+ * - slot_clear_client: drop cleared seat on anchor (Day Centre: whole named client that day)
+ * - session_add kind=session/client: extra named card (DC extras share the same unit)
  * - client_absence_announced / admin cancel (slot_close, client_cancelled,
  *   feedback_resolution cancelled/absent): drop seat — no instructor feedback
  * - client_replace_in_slot: ensure replacement client sits with anchor (cover) staff
@@ -770,8 +820,39 @@ export function applyScheduleOverridesToFeedback2030Slots(
       dropMatching((s) => {
         if (anchorStaff && !staffKeysMatch(s.staff, anchorStaff)) return false;
         if (!clientMatchesOverride(s.client, anchorClient, pl)) return false;
+        /* Named Day Centre client is one unit that day — clearing 12-3 also drops 11-3. */
+        if (isDayCentreService(s.service) || isDayCentreService(String(pl.service || ""))) {
+          return true;
+        }
         return feedbackTimesCompatible(s.time, timeLab);
       });
+      continue;
+    }
+
+    if (ot === "session_add") {
+      const addKind = String(pl.kind || "").trim().toLowerCase();
+      if (
+        addKind === "training" ||
+        addKind === "shadowing" ||
+        addKind === "meeting" ||
+        addKind === "office"
+      ) {
+        continue;
+      }
+      if (addKind && addKind !== "session" && addKind !== "client") continue;
+      const clientName = String(
+        pl.client_name || pl.client_id || anchorClient || "",
+      ).trim();
+      if (!isRealFeedbackClient(clientName)) continue;
+      const addSvc = String(pl.service || pl.activity || "Day Centre").trim() ||
+        "Day Centre";
+      upsertCover(
+        anchorStaff,
+        clientName,
+        timeLab,
+        addSvc,
+        String(pl.area || "").trim() || undefined,
+      );
       continue;
     }
 
@@ -826,6 +907,12 @@ export function applyScheduleOverridesToFeedback2030Slots(
     }
     dropMatching((s) => {
       if (!clientMatchesOverride(s.client, anchorClient, pl)) return false;
+      /* Day Centre named client: cancel/clear one band drops that staff's leftover
+         occupant windows (Ikram 11-3 + 12-3), not other instructors' shared cards. */
+      if (isDayCentreService(s.service)) {
+        if (anchorStaff && !staffKeysMatch(s.staff, anchorStaff)) return false;
+        return true;
+      }
       return feedbackTimesCompatible(s.time, timeLab);
     });
     /* Also drop by anchor staff+time when client slug forms differ slightly. */
@@ -1024,6 +1111,7 @@ export function outstandingByStaff(
   const map = new Map<string, Feedback2030StaffDebt>();
   for (const slot of slots) {
     if (!isRealFeedbackClient(slot.client)) continue;
+    if (staffSkipTueThuOfficeHoldFeedback(slot.staff, iso)) continue;
     if (slotIsResolved(slot, iso, ctx)) continue;
     if (!isUsableCoverStaff(slot.staff)) continue;
     const key = canonStaffKey(slot.staff);

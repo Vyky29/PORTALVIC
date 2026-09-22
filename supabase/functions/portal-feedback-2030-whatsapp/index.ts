@@ -37,6 +37,7 @@ import {
   slotsFromCapacityChainOccupants,
   slotsFromMadre,
   slotsFromRosterRows,
+  staffSkipTueThuOfficeHoldFeedback,
   type Feedback2030KeyRow,
   type Feedback2030OccupantSlot,
   type Feedback2030OverrideRow,
@@ -55,6 +56,15 @@ const PORTAL_URL =
   "https://clubsensational-staff.vercel.app/staff_dashboard.html";
 /** Victor = office; Michelle = do not nag on 20:00 feedback WA (office rule). */
 const SKIP_USERNAMES = new Set(["victor", "michelle"]);
+
+function skipStaffFeedbackNag(username: string, iso: string): boolean {
+  const u = String(username || "").trim().toLowerCase();
+  if (!u) return true;
+  if (SKIP_USERNAMES.has(u)) return true;
+  /* Andres / Angel Tue+Thu: office-hold Elia climb — never WhatsApp those days. */
+  if (staffSkipTueThuOfficeHoldFeedback(u, iso)) return true;
+  return false;
+}
 
 function previousSundayIso(iso: string): string {
   const d = new Date(`${iso}T12:00:00Z`);
@@ -374,7 +384,7 @@ Deno.serve(async (req) => {
   for (const debt of debts) {
     const profile = resolveProfileForStaffKey(profiles || [], debt.staffKey);
     const username = String(profile?.username || debt.staffKey).toLowerCase();
-    if (SKIP_USERNAMES.has(username)) continue;
+    if (skipStaffFeedbackNag(username, iso)) continue;
     const phone = profile?.phone_e164
       ? normalizeParentPhoneE164(String(profile.phone_e164))
       : null;

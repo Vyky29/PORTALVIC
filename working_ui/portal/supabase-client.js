@@ -1005,6 +1005,15 @@ function portalRosterKeyIsSharedFeedbackUnit(rosterKey) {
     .trim()
     .toLowerCase();
   if (last === "day_centre" || last === "bespoke_shared") return true;
+  /* Extra "+ Add session card" for a Day Centre client is the same unit. */
+  if (last === "session_add") {
+    const blob = parts.join("|").toLowerCase();
+    if (blob.indexOf("day_centre") >= 0) return true;
+    for (let i = 0; i < parts.length; i++) {
+      const p = String(parts[i] || "").trim().toLowerCase();
+      if (/^(ikram|fadi|timi|acat|emanuel|emmanuel)$/.test(p)) return true;
+    }
+  }
   /* 2:1 aquatic (Joelle): iso|client|HH:mm|aquatic is the same key on both instructors. */
   if (last === "aquatic") return true;
   if (parts.length >= 3 && parts[1] === "") return true;

@@ -539,6 +539,14 @@
       .trim()
       .toLowerCase();
     if (last === "day_centre" || last === "bespoke_shared") return true;
+    if (last === "session_add") {
+      const blob = parts.join("|").toLowerCase();
+      if (blob.indexOf("day_centre") >= 0) return true;
+      for (let i = 0; i < parts.length; i++) {
+        const p = String(parts[i] || "").trim().toLowerCase();
+        if (portalClientIsDayCentreSharedParticipant(p)) return true;
+      }
+    }
     if (parts.length >= 3 && parts[1] === "") return true;
     return false;
   }
