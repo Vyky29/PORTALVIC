@@ -9,11 +9,12 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
-import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 import {
+  applyAcceptedMakeupToRoster,
   normalizeStaffRosterKey,
   parseMakeupSessionTime,
 } from "../_shared/parent_portal_makeup_roster.ts";
+import { notifyMakeupConfirmed } from "../_shared/portal_makeup_confirmed_notify.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -196,49 +197,70 @@ Deno.serve(async (req) => {
     .update({ status: "offered", updated_at: now })
     .eq("id", grantId);
 
-  // Soft notify parent inbox.
-  try {
-    const { data: parentMeta } = await admin
-      .from("portal_parent_contacts")
-      .select("parent_display, mobile")
-      .eq("parent_person_id", grant.parent_person_id)
-      .limit(1)
-      .maybeSingle();
-    const phone = normalizeParentPhoneE164(String(parentMeta?.mobile || "").trim());
-    if (phone) {
-      const parentName = clean(parentMeta?.parent_display, 120) || "Parent";
-      const bodyText =
-        `Makeup offer for ${grant.participant_display || "participant"}` +
-        `\nVenue: ${venue}` +
-        `\nDate: ${sessionDate}` +
-        (sessionTime ? ` · ${sessionTime}` : "") +
-        (serviceLabel || grant.service_label
-          ? ` · ${serviceLabel || grant.service_label}`
-          : "") +
-        (instructorName ? `\nInstructor: ${instructorName}` : "") +
-        `\n\nPlease Accept or Decline in the parent portal. If you decline, this makeup grant is forfeited and the slot may be offered to another family.` +
-        (offerNotes ? `\n\nNote: ${offerNotes}` : "");
-      await admin.from("portal_parent_whatsapp_inbound").insert({
-        wa_message_id: `app:makeup-offer:${offer?.id || crypto.randomUUID()}`,
-        from_phone: phone,
-        contact_name: parentName,
-        message_type: "text",
-        body_text: bodyText,
-        context_wa_id: null,
-        created_at: now,
-        meta: {
-          source: "parent_portal_makeup_offer",
-          parent_person_id: grant.parent_person_id,
-          contact_id: grant.contact_id,
-          grant_id: grantId,
-          offer_id: offer?.id || null,
-          direction_hint: "club_to_parent",
-        },
-      });
-    }
-  } catch (e) {
-    console.error("[portal-admin-makeup-offer] notify", e);
+  const roster = await applyAcceptedMakeupToRoster(
+    admin,
+    offer,
+    grant,
+    verified.userId || null,
+  );
+
+  if (!roster.override_id) {
+    console.error("[portal-admin-makeup-offer] roster", roster.error);
+    return portalAdminJson(200, {
+      ok: true,
+      offer,
+      grant_id: grantId,
+      roster_override_id: null,
+      pending_parent_accept: true,
+      message:
+        "Offer saved but the seat could not be placed on the roster yet. Parent can still Accept, or pick the seat again.",
+    });
   }
 
-  return portalAdminJson(200, { ok: true, offer, grant_id: grantId });
+  await admin
+    .from("portal_parent_makeup_offers")
+    .update({
+      status: "accepted",
+      responded_at: now,
+      updated_at: now,
+      roster_override_id: roster.override_id,
+      roster_applied_at: now,
+    })
+    .eq("id", offer.id);
+  await admin
+    .from("portal_parent_makeup_grants")
+    .update({ status: "consumed", closed_at: now, updated_at: now })
+    .eq("id", grantId);
+
+  let makeup_notify = null;
+  try {
+    makeup_notify = await notifyMakeupConfirmed(admin, {
+      parentPersonId: grant.parent_person_id,
+      contactId: grant.contact_id || offer.contact_id || null,
+      participantDisplay: grant.participant_display || null,
+      venue: offer.venue || grant.preferred_venue || null,
+      sessionDate: offer.session_date || null,
+      sessionTime: offer.session_time || null,
+      serviceLabel: offer.service_label || grant.service_label || null,
+      instructorName: offer.instructor_name || null,
+      instructorStaffKey: offer.anchor_staff_id || offer.instructor_name || null,
+      source: "office_makeup_place",
+      overrideId: roster.override_id,
+      offerId: offer.id,
+      grantId: grantId,
+      actorEmail: "portal-admin-makeup-offer",
+    });
+  } catch (e) {
+    console.error("[portal-admin-makeup-offer] makeup_notify", e);
+    makeup_notify = { ok: false, error: "notify_failed" };
+  }
+
+  return portalAdminJson(200, {
+    ok: true,
+    offer: { ...offer, status: "accepted", roster_override_id: roster.override_id },
+    grant_id: grantId,
+    roster_override_id: roster.override_id,
+    makeup_notify,
+    placed_on_roster: true,
+  });
 });

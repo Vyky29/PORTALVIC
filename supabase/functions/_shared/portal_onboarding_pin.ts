@@ -72,6 +72,47 @@ export function missingOnboardingPinChecks(c: OnboardingPinChecks): string[] {
   return missing;
 }
 
+/** Photo for PIN/admin: profile row, else auth metadata / staff-avatars (late hub upload). */
+export async function ensureStaffProfilePhoto(
+  portalAdmin: SupabaseClient,
+  userId: string,
+  currentUrl?: string | null,
+): Promise<boolean> {
+  const id = String(userId || "").trim();
+  if (!id) return false;
+  if (String(currentUrl || "").trim()) return true;
+  let url = "";
+  try {
+    const { data } = await portalAdmin.auth.admin.getUserById(id);
+    url = String(data?.user?.user_metadata?.avatar_url || "").trim();
+  } catch {
+    url = "";
+  }
+  if (!url) {
+    try {
+      const { data: files } = await portalAdmin.storage.from("staff-avatars").list(id, {
+        limit: 12,
+      });
+      const file = (files || []).find((f) => f && f.name && !String(f.name).startsWith("."));
+      if (file && file.name) {
+        const { data: pub } = portalAdmin.storage
+          .from("staff-avatars")
+          .getPublicUrl(`${id}/${file.name}`);
+        url = String(pub?.publicUrl || "").trim();
+      }
+    } catch {
+      url = "";
+    }
+  }
+  if (!url) return false;
+  try {
+    await portalAdmin.from("staff_profiles").update({ avatar_url: url }).eq("id", id);
+  } catch {
+    /* PIN/admin can still treat photo as present */
+  }
+  return true;
+}
+
 export function onboardingPayloadSubmitted(payload: unknown): boolean {
   if (!payload || typeof payload !== "object") return false;
   const portal = (payload as { _portal?: unknown })._portal;

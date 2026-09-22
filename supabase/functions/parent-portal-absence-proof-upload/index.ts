@@ -6,6 +6,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 
 const BUCKET = "parent-absence-proofs";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -91,7 +92,7 @@ Deno.serve(async (req) => {
   const { data: report, error: loadErr } = await supabase
     .from("portal_parent_absence_reports")
     .select(
-      "id, parent_person_id, contact_id, status, proof_deadline, proof_storage_path",
+      "id, parent_person_id, contact_id, status, proof_deadline, proof_storage_path, participant_display, session_date, service_label, session_time",
     )
     .eq("id", reportId)
     .eq("parent_person_id", session.parent_person_id)
@@ -118,7 +119,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (report.status === "excused" || report.status === "expired" || report.status === "noted") {
+  if (report.status === "excused" || report.status === "expired") {
     return json(403, { ok: false, error: "upload_not_allowed" });
   }
 
@@ -170,12 +171,54 @@ Deno.serve(async (req) => {
     return json(500, { ok: false, error: "save_failed" });
   }
 
+  try {
+    const { data: parentMeta } = await supabase
+      .from("portal_parent_contacts")
+      .select("parent_display, mobile")
+      .eq("parent_person_id", session.parent_person_id)
+      .limit(1)
+      .maybeSingle();
+    const phone = normalizeParentPhoneE164(String(parentMeta?.mobile || "").trim());
+    if (phone) {
+      const parentName = clean(parentMeta?.parent_display, 120) || "Parent";
+      const who = clean(report.participant_display, 160) || "participant";
+      const when = clean(report.session_date, 12);
+      const svc = clean(report.service_label, 160);
+      const tm = clean(report.session_time, 40);
+      const bodyText =
+        `Absence proof uploaded: ${who} — ${when}` +
+        (svc ? ` · ${svc}` : "") +
+        (tm ? ` · ${tm}` : "") +
+        `\nFile: ${clean(file.name || `proof.${ext}`, 180)}` +
+        "\nThis updates proof on an existing absence (not a new absent).";
+      await supabase.from("portal_parent_whatsapp_inbound").insert({
+        wa_message_id: `app:absence-proof:${reportId}:${Date.now()}`,
+        from_phone: phone,
+        contact_name: parentName,
+        message_type: "text",
+        body_text: bodyText,
+        context_wa_id: null,
+        created_at: now,
+        meta: {
+          source: "parent_portal_absence_proof",
+          parent_person_id: session.parent_person_id,
+          contact_id: report.contact_id,
+          participant_display: who,
+          absence_report_id: reportId,
+          proof_only: true,
+        },
+      });
+    }
+  } catch (e) {
+    console.error("[parent-portal-absence-proof-upload] inbox notify", e);
+  }
+
   return json(200, {
     ok: true,
     report: {
       ...updated,
       can_upload_proof: true,
     },
-    message: "Proof uploaded. The office will review it — validation is always required.",
+    message: "Proof uploaded. The office will review it in Absents & Credits — this does not create another absence.",
   });
 });

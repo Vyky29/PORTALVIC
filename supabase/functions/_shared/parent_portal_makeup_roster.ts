@@ -206,6 +206,7 @@ export async function applyAcceptedMakeupToRoster(
     superseded_by: null,
     spreadsheet_revision: "parent-portal:makeup-accept",
     created_by: createdBy,
+    updated_by: createdBy,
   };
 
   const { data: inserted, error } = await admin

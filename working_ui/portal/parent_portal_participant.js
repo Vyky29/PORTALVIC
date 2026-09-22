@@ -3836,7 +3836,8 @@
         }
       } catch (_e2) {}
     }
-    for (var offset = 0; offset < horizon && out.length < max; offset++) {
+    var lookback = Math.max(0, Math.min(21, Number(opts.lookbackDays) || 0));
+    for (var offset = -lookback; offset < horizon && out.length < max; offset++) {
       var d = addDaysLocal(today, offset);
       var iso = isoDateLocal(d);
       // Stop scanning past current-year end for this participant.
@@ -3911,7 +3912,12 @@
       if (!raw || !raw.iso) return;
       var iso = String(raw.iso).slice(0, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
-      if (iso < todayIso) return;
+      if (iso < todayIso) {
+        var lookback = Math.max(0, Number(opts.lookbackDays) || 0);
+        if (!lookback) return;
+        var minIso = isoDateLocal(addDaysLocal(today, -lookback));
+        if (iso < minIso) return;
+      }
       var endM = parseServiceEndMinutes(raw.time);
       var st = resolveHubSessionStatus(data, iso, endM);
       var completed = st.status === "completed";
@@ -3988,6 +3994,48 @@
       deduped.push(row);
     });
     return deduped.slice(0, max);
+  }
+
+  /** Past 14 days + upcoming 21 days for Absent reports (proof on a day already marked). */
+  function findAbsenceSessionChoices(data) {
+    var today = new Date();
+    var todayIso = isoDateLocal(today);
+    var minIso = isoDateLocal(addDaysLocal(today, -14));
+    var maxIso = isoDateLocal(addDaysLocal(today, 21));
+    var opts = { includeCompletedToday: true, lookbackDays: 14 };
+    var crash = findCrashUpcomingSessionRows(data, opts);
+    var booked = findBookedReservationSessionRows(data, opts);
+    var roster = findRosterPatternNextSessions(data, 40, opts);
+    var combined = crash.concat(booked).concat(roster);
+    var sourceRank = { crash: 0, booking: 1, roster: 2 };
+    combined.sort(function (a, b) {
+      if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
+      var as = a._start != null ? a._start : 0;
+      var bs = b._start != null ? b._start : 0;
+      if (as !== bs) return as - bs;
+      var ar = sourceRank[a.source] != null ? sourceRank[a.source] : 9;
+      var br = sourceRank[b.source] != null ? sourceRank[b.source] : 9;
+      return ar - br;
+    });
+    var seen = Object.create(null);
+    var deduped = [];
+    combined.forEach(function (row) {
+      var iso = String(row.iso || "").slice(0, 10);
+      if (iso < minIso || iso > maxIso) return;
+      var start = row._start != null ? row._start : parseServiceStartMinutes(row.time);
+      var key =
+        iso +
+        "|" +
+        String(start || 0) +
+        "|" +
+        String(row.venue || "")
+          .toLowerCase()
+          .trim();
+      if (seen[key]) return;
+      seen[key] = true;
+      deduped.push(row);
+    });
+    return deduped;
   }
 
   /** All sessions on a calendar day (incl. finished today) for the hub Today cards. */
@@ -8079,10 +8127,7 @@
       ? '<p class="pp-absence-card__meta muted">Proof on file: ' + esc(r.proof_file_name) + "</p>"
       : "";
     var actions = "";
-    if (status === "noted") {
-      actions =
-        '<p class="pp-muted pp-absence-card__hint">Logged for the office — not a Missed session (no credit / refund / makeup path).</p>';
-    } else if (canUpload) {
+    if (canUpload) {
       var uploadLabel = status === "pending_review" || r.proof_file_name ? "Replace proof" : "Upload proof";
       var hint =
         status === "pending_review"
@@ -8092,6 +8137,12 @@
           : "Medical note, prescription (participant name), school note, etc. Admin must validate. Deadline: " +
             formatProofDeadline(r.proof_deadline) +
             ".";
+      if (status === "noted") {
+        hint =
+          "This day is already marked absent. Uploading proof updates Absents & Credits — it does not create another absence. Deadline: " +
+          formatProofDeadline(r.proof_deadline) +
+          ".";
+      }
       actions =
         '<div class="pp-absence-card__upload">' +
         '<label class="pp-btn pp-btn--primary pp-absence-upload-btn">' +
@@ -8104,6 +8155,9 @@
         esc(hint) +
         "</p>" +
         "</div>";
+    } else if (status === "noted") {
+      actions =
+        '<p class="pp-muted pp-absence-card__hint">Logged for the office — not a Missed session (no credit / refund / makeup path).</p>';
     } else if (
       status === "expired" ||
       (status === "missed" && r.proof_window_closed) ||
@@ -8126,6 +8180,15 @@
     } else if (status === "missed") {
       actions =
         '<p class="pp-muted pp-absence-card__hint">Missed session — no proof on file yet. If you can still upload within 2 weeks of the session date, use Upload proof above when available.</p>';
+    }
+    if (r.can_withdraw) {
+      actions +=
+        '<div class="pp-absence-card__withdraw">' +
+        '<button type="button" class="pp-btn pp-btn--ghost" data-pp-absence-withdraw="' +
+        esc(r.id) +
+        '">Remove this absence</button>' +
+        '<p class="pp-muted pp-absence-card__hint">Use this if you picked the wrong day.</p>' +
+        "</div>";
     }
     return (
       '<article class="pp-absence-card" data-status="' +
@@ -8152,32 +8215,38 @@
   }
 
   function renderAbsence(host, data, opts) {
-    var sessions = findNextSessions(data, 8);
-    var optionsHtml = sessions
-      .map(function (s, i) {
-        var val = s.iso + "|" + (s.rawLabel || s.label || "") + "|" + (s.time || "");
-        return (
-          '<option value="' +
-          esc(val) +
-          '"' +
-          (i === 0 ? " selected" : "") +
-          ">" +
-          esc(s.dayLabel + (s.label ? " · " + s.label : "") + (s.time ? " · " + s.time : "")) +
-          "</option>"
-        );
-      })
-      .join("");
+    var sessions = findAbsenceSessionChoices(data);
+    var optionsHtml =
+      '<option value="" selected disabled>Choose a session</option>' +
+      sessions
+        .map(function (s) {
+          var val = s.iso + "|" + (s.rawLabel || s.label || "") + "|" + (s.time || "");
+          var pastMark = s.iso < isoDateLocal(new Date()) ? " (past)" : "";
+          return (
+            '<option value="' +
+            esc(val) +
+            '">' +
+            esc(
+              s.dayLabel +
+                (s.label ? " · " + s.label : "") +
+                (s.time ? " · " + s.time : "") +
+                pastMark,
+            ) +
+            "</option>"
+          );
+        })
+        .join("");
     host.innerHTML = subviewShell(
       data,
       "absence",
       '<h3 class="pp-pax-subview-title">Report absent</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Choose a reason first. Only <strong>Unwell</strong> can become a Missed session (with optional proof for admin). Other reasons are noted for the office — they do not open credit / refund / makeup.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">Choose the session date carefully (past 2 weeks are included so you can add sickness proof). If the office already marked that day absent, submitting here will not create another absence — it only lets you add proof.</p>' +
         '<div class="pp-card pp-absence-form-card">' +
         '<form id="ppAbsenceForm" class="pp-absence-form">' +
         '<label class="pp-field"><span>Session</span>' +
         (sessions.length
           ? '<select id="ppAbsenceSession" name="session" required>' + optionsHtml + "</select>"
-          : '<p class="pp-muted">No upcoming sessions found.</p>') +
+          : '<p class="pp-muted">No sessions in the past 2 weeks or next 3 weeks.</p>') +
         "</label>" +
         '<div class="pp-field"><span>Reason</span>' +
         absenceReasonChipsHtml() +
@@ -10453,7 +10522,7 @@
                 .then(function () {
                   showNotice(
                     "info",
-                    "Proof uploaded. Admin must validate it — you will hear from the office.",
+                    "Proof uploaded to Absents & Credits. Admin will review it — this does not create another absence.",
                   );
                   refreshList();
                 })
@@ -10468,6 +10537,32 @@
                     showNotice("error", "Could not upload proof — try again or contact the office.");
                   }
                   refreshList();
+                });
+            });
+          });
+          listHost.querySelectorAll("[data-pp-absence-withdraw]").forEach(function (btnW) {
+            btnW.addEventListener("click", function () {
+              var reportId = btnW.getAttribute("data-pp-absence-withdraw");
+              if (!reportId || typeof opts.submitAbsence !== "function") return;
+              if (!global.confirm("Remove this absence? Use this if you picked the wrong day.")) {
+                return;
+              }
+              btnW.disabled = true;
+              showNotice("info", "Removing…");
+              void opts
+                .submitAbsence({ action: "withdraw", report_id: reportId })
+                .then(function (payload) {
+                  showNotice(
+                    "info",
+                    (payload && payload.message) ||
+                      "Absence removed. If you meant another day, report that session instead.",
+                  );
+                  refreshList();
+                })
+                .catch(function (err) {
+                  var msg = (err && err.messageText) || "Could not remove this absence.";
+                  showNotice("error", msg);
+                  btnW.disabled = false;
                 });
             });
           });
@@ -10517,6 +10612,26 @@
           })
           .then(function (payload) {
             var report = payload && payload.report;
+            if (payload && payload.already_reported) {
+              if (
+                wantsProof &&
+                file &&
+                report &&
+                report.id &&
+                typeof opts.uploadAbsenceProof === "function"
+              ) {
+                showNotice("info", "This day is already marked absent. Uploading proof only…");
+                return opts.uploadAbsenceProof(report.id, file).then(function () {
+                  return { kind: "proof_only" };
+                });
+              }
+              return {
+                kind: "already",
+                message:
+                  (payload && payload.message) ||
+                  "This session is already marked absent. You can still upload proof on the card below.",
+              };
+            }
             if (wantsProof && file && report && report.id && typeof opts.uploadAbsenceProof === "function") {
               showNotice("info", "Uploading proof…");
               return opts.uploadAbsenceProof(report.id, file).then(function () {
@@ -10526,7 +10641,14 @@
             return { kind: report && report.status === "noted" ? "noted" : "missed" };
           })
           .then(function (result) {
-            if (result && result.kind === "proof") {
+            if (result && result.kind === "proof_only") {
+              showNotice(
+                "info",
+                "Proof added to the existing absence. Admin will see it in Absents & Credits.",
+              );
+            } else if (result && result.kind === "already") {
+              showNotice("info", result.message || "Already marked absent.");
+            } else if (result && result.kind === "proof") {
               showNotice(
                 "info",
                 "Submitted with proof. Admin must validate before any credit, refund, or makeup.",
@@ -10551,13 +10673,16 @@
           })
           .catch(function (err) {
             var code = err && err.code ? String(err.code) : "";
+            var extra = err && err.messageText ? String(err.messageText) : "";
             if (code === "proof_window_closed") {
               showNotice(
                 "error",
                 "The 2-week window has passed. Please contact the office/admin.",
               );
+            } else if (code === "cannot_withdraw") {
+              showNotice("error", extra || "This absence cannot be removed here.");
             } else {
-              showNotice("error", "Could not save — please try again.");
+              showNotice("error", extra || "Could not save — please try again.");
             }
           })
           .finally(function () {

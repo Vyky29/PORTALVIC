@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     const { data: rows, error } = await supabase
       .from("portal_parent_absence_reports")
       .select(
-        "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_code, reason_text, proof_file_name, proof_uploaded_at, proof_deadline, reviewed_at, review_notes, outcome, outcome_notes, created_at",
+        "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_code, reason_text, proof_file_name, proof_uploaded_at, proof_deadline, reviewed_at, review_notes, outcome, outcome_notes, created_at, schedule_override_id, payload",
       )
       .eq("parent_person_id", session.parent_person_id)
       .eq("contact_id", contactId)
@@ -96,17 +96,50 @@ Deno.serve(async (req) => {
       return parentPortalJsonInvalid(500);
     }
 
-    const reports = (rows || []).map((r) => {
+    const reports = (rows || [])
+      .filter((r) => !(r.status === "rejected" && r.payload && r.payload.withdrawn_by_parent))
+      .map((r) => {
       const deadline = String(r.proof_deadline || "");
       const isUnwellTrack =
-        r.status === "missed" || r.status === "pending_review" || r.status === "rejected";
+        r.status === "missed" ||
+        r.status === "pending_review" ||
+        r.status === "rejected" ||
+        r.status === "noted";
       const canUpload =
         isUnwellTrack &&
-        (r.status === "missed" || r.status === "pending_review" || r.status === "rejected") &&
+        r.status !== "excused" &&
+        r.status !== "expired" &&
         deadline >= today;
+      const payload = r.payload && typeof r.payload === "object" ? r.payload : {};
+      const officeSet = !!(
+        r.schedule_override_id ||
+        payload.source === "schedule_covers_absent" ||
+        payload.source === "schedule_covers_absent_backfill" ||
+        payload.created_by_admin
+      );
+      const canWithdraw =
+        !officeSet &&
+        (r.status === "noted" || r.status === "missed" || r.status === "pending_review");
       return {
-        ...r,
+        id: r.id,
+        contact_id: r.contact_id,
+        participant_display: r.participant_display,
+        session_date: r.session_date,
+        service_label: r.service_label,
+        session_time: r.session_time,
+        status: r.status,
+        reason_code: r.reason_code,
+        reason_text: r.reason_text,
+        proof_file_name: r.proof_file_name,
+        proof_uploaded_at: r.proof_uploaded_at,
+        proof_deadline: r.proof_deadline,
+        reviewed_at: r.reviewed_at,
+        review_notes: r.review_notes,
+        outcome: r.outcome,
+        outcome_notes: r.outcome_notes,
+        created_at: r.created_at,
         can_upload_proof: canUpload,
+        can_withdraw: canWithdraw,
         proof_window_closed:
           !canUpload &&
           (r.status === "missed" || r.status === "expired" || r.status === "rejected"),

@@ -14,6 +14,7 @@ import {
   onboardingPayloadSubmitted,
   staffAppOrigin,
   staffRolePinLabel,
+  ensureStaffProfilePhoto,
 } from "../_shared/portal_onboarding_pin.ts";
 import {
   readParentNotifySmtpConfig,
@@ -137,10 +138,15 @@ Deno.serve(async (req) => {
 
   const { bucket } = await resolveOnboardingBucket(obAdmin);
   const docs = await countApplicantRequiredDocs(obAdmin, bucket, applicantId);
+  const photo = await ensureStaffProfilePhoto(
+    portalAdmin,
+    applicantId,
+    profile.avatar_url,
+  );
   const missing = missingOnboardingPinChecks({
     job_submitted: jobSubmitted,
     health_submitted: healthSubmitted,
-    photo: !!String(profile.avatar_url || "").trim(),
+    photo,
     passport: docs.passport > 0,
     checklist: docs.checklist > 0,
   });

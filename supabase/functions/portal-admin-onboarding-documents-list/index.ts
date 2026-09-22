@@ -9,6 +9,7 @@ import {
   matchStaffPinRow,
   missingOnboardingPinChecks,
   onboardingPayloadSubmitted,
+  ensureStaffProfilePhoto,
 } from "../_shared/portal_onboarding_pin.ts";
 
 type DocType =
@@ -567,7 +568,11 @@ async function loadApplicantProgress(
         if (username) entry.login_username = username;
         if (fullName && !entry.display_name) entry.display_name = fullName;
         if (fullName && !entry.portal_staff_name) entry.portal_staff_name = fullName;
-        entry.photo = !!String(profile.avatar_url || "").trim();
+        entry.photo = await ensureStaffProfilePhoto(
+          portalAdmin,
+          id,
+          profile.avatar_url,
+        );
         const pinHit = matchStaffPinRow(pinRows || [], username, fullName);
         if (pinHit) {
           entry.pin_issued = true;

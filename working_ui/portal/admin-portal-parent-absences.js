@@ -755,7 +755,7 @@
         '</div>' +
         '<div class="modal-f">' +
         '<button type="button" class="btn btn--ghost" id="ppMakeupSlotCancel">Cancel</button>' +
-        '<button type="button" class="btn btn--pri" id="ppMakeupSlotSave" disabled>Approve makeup + offer</button>' +
+        '<button type="button" class="btn btn--pri" id="ppMakeupSlotSave" disabled>Place makeup on roster</button>' +
         '</div>'
     );
 
@@ -949,7 +949,7 @@
                 else if (r.parent_notify.skipped) extra += ' · notify skipped';
                 else extra += ' · notify failed';
               }
-              if (slot) extra += ' · makeup offer sent';
+              if (slot) extra += ' · makeup placed on roster';
               cfg.toast(
                 outcome === 'none'
                   ? 'Decided: none (no parent message)' + extra
@@ -1041,7 +1041,7 @@
               if (o.error) {
                 cfg.toast('Grant ok; offer failed: ' + (o.message || o.error), 'error');
               } else {
-                cfg.toast('Makeup grant + offer (parent can Accept / Decline)', 'ok');
+    cfg.toast('Makeup placed on the roster (Overview / Schedule)', 'ok');
               }
               void renderHost(global.document.getElementById('portalParentAbsenceHost'));
             });

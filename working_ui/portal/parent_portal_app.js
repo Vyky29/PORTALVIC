@@ -410,6 +410,8 @@
             "x-parent-portal-session": state.session.token,
           },
           body: JSON.stringify({
+            action: payload.action || "",
+            report_id: payload.report_id || "",
             contact_id: contactId,
             session_date: payload.session_date,
             service_label: payload.service_label,
@@ -423,6 +425,7 @@
             if (!res.ok || !j.ok) {
               var err = new Error("absence_submit_failed");
               err.code = (j && j.error) || "save_failed";
+              err.messageText = (j && j.message) || "";
               throw err;
             }
             return j;

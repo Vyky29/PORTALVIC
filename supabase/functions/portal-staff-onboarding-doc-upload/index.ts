@@ -94,9 +94,6 @@ Deno.serve(async (req) => {
   if (!portalUrl || !portalService) {
     return json(500, { ok: false, error: "misconfigured" });
   }
-  if (!obUrl || !obService) {
-    return json(503, { ok: false, error: "onboarding_not_configured" });
-  }
 
   const portalAdmin = createClient(portalUrl, portalService, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -125,6 +122,24 @@ Deno.serve(async (req) => {
   }
 
   const action = String(body.action || "upload").trim().toLowerCase();
+  if (action === "sync_photo") {
+    const { ensureStaffProfilePhoto } = await import("../_shared/portal_onboarding_pin.ts");
+    const { data: profile } = await portalAdmin
+      .from("staff_profiles")
+      .select("avatar_url")
+      .eq("id", userId)
+      .maybeSingle();
+    const photo = await ensureStaffProfilePhoto(
+      portalAdmin,
+      userId,
+      profile?.avatar_url || null,
+    );
+    return json(200, { ok: true, photo });
+  }
+
+  if (!obUrl || !obService) {
+    return json(503, { ok: false, error: "onboarding_not_configured" });
+  }
   const obAdmin = createClient(obUrl, obService, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

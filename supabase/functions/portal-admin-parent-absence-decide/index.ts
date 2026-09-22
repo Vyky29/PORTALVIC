@@ -185,6 +185,33 @@ Deno.serve(async (req) => {
       .eq("absence_report_id", reportId)
       .maybeSingle();
     if (existing) {
+      if (existing.status === "cancelled") {
+        const { data: reopenedGrant, error: reopenGrantErr } = await admin
+          .from("portal_parent_makeup_grants")
+          .update({
+            status: "open",
+            closed_at: null,
+            preferred_venue: preferredVenue,
+            notes: notes || existing.status,
+            updated_at: now,
+          })
+          .eq("id", existing.id)
+          .select("*")
+          .maybeSingle();
+        if (reopenGrantErr || !reopenedGrant) {
+          console.error("[portal-admin-parent-absence-decide] reopen grant", reopenGrantErr?.message);
+          return portalAdminJson(500, { ok: false, error: "grant_failed" });
+        }
+        await admin
+          .from("portal_parent_absence_reports")
+          .update({
+            outcome: "makeup",
+            outcome_notes: notes || "Makeup grant reopened",
+            updated_at: now,
+          })
+          .eq("id", reportId);
+        return portalAdminJson(200, { ok: true, grant: reopenedGrant, report_id: reportId, reopened: true });
+      }
       return portalAdminJson(200, { ok: true, grant: existing, already: true });
     }
     const { data: grant, error: gErr } = await admin
@@ -276,24 +303,49 @@ Deno.serve(async (req) => {
   // If excused with makeup outcome + venue, also open a grant so ops can offer a slot.
   let grant = null;
   if (action === "approve" && outcome === "makeup" && preferredVenue) {
-    const { data: g } = await admin
+    const { data: existingGrant } = await admin
       .from("portal_parent_makeup_grants")
-      .insert({
-        parent_person_id: updated.parent_person_id,
-        contact_id: updated.contact_id,
-        participant_display: updated.participant_display || "",
-        absence_report_id: reportId,
-        preferred_venue: preferredVenue,
-        service_label: updated.service_label || "",
-        status: "open",
-        source: "excused_makeup",
-        notes: notes || null,
-        created_by: verified.userId || null,
-        updated_at: now,
-      })
       .select("*")
+      .eq("absence_report_id", reportId)
       .maybeSingle();
-    grant = g;
+    if (existingGrant) {
+      if (existingGrant.status === "cancelled" || existingGrant.status === "open") {
+        const { data: g } = await admin
+          .from("portal_parent_makeup_grants")
+          .update({
+            status: "open",
+            closed_at: null,
+            preferred_venue: preferredVenue,
+            notes: notes || existingGrant.notes || null,
+            updated_at: now,
+          })
+          .eq("id", existingGrant.id)
+          .select("*")
+          .maybeSingle();
+        grant = g || existingGrant;
+      } else {
+        grant = existingGrant;
+      }
+    } else {
+      const { data: g } = await admin
+        .from("portal_parent_makeup_grants")
+        .insert({
+          parent_person_id: updated.parent_person_id,
+          contact_id: updated.contact_id,
+          participant_display: updated.participant_display || "",
+          absence_report_id: reportId,
+          preferred_venue: preferredVenue,
+          service_label: updated.service_label || "",
+          status: "open",
+          source: "excused_makeup",
+          notes: notes || null,
+          created_by: verified.userId || null,
+          updated_at: now,
+        })
+        .select("*")
+        .maybeSingle();
+      grant = g;
+    }
   }
 
   // Credit / refund → family-visible ledger row (phase 1: internal, no Stripe).

@@ -223,7 +223,10 @@
             );
           }
         } catch (_) {}
-        setStatus(status, "Photo saved. Parents and staff can use this avatar once you start.");
+        try {
+          await edgePost("portal-staff-onboarding-doc-upload", { action: "sync_photo" });
+        } catch (_) {}
+        setStatus(status, "Photo saved. Admin can now see it for your PIN.");
       } catch (e) {
         console.warn("[onboarding hub] photo", e);
         setStatus(status, "Photo upload failed. Try a smaller JPG/PNG.", true);
