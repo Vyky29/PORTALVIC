@@ -1,0 +1,19 @@
+{
+  "localOnly": true,
+  "note": "LOCAL snapshot of session_feedback submitted after the London day or after 21:00. Cleared days (portal_late_feedback_pay_clearances) are omitted. Live timesheet still reads Supabase.",
+  "period_from": "2026-08-25",
+  "period_to": "2026-09-24",
+  "generated_at": "2026-09-22T15:55:00.000Z",
+  "late_after_london": "21:00",
+  "byStaff": {
+    "aurora": ["2026-09-10", "2026-09-17"],
+    "berta": ["2026-09-06"],
+    "carlos": ["2026-09-06"],
+    "javi": ["2026-09-08", "2026-09-10"],
+    "javier": ["2026-09-09", "2026-09-13"],
+    "luliya": ["2026-09-07", "2026-09-08", "2026-09-13", "2026-09-14", "2026-09-15"],
+    "michelle": ["2026-09-18", "2026-09-21"],
+    "victor": ["2026-09-15", "2026-09-18", "2026-09-21"],
+    "youssef": ["2026-09-05", "2026-09-14"]
+  }
+}

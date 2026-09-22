@@ -127,8 +127,10 @@
     .th-mob{display:none}
     tbody tr.day-row--paid td{background:#eef9f1 !important}
     tbody tr.day-row--pending td{background:#fff5e8 !important}
-    tbody tr.day-row--late td{background:#eef9f1 !important;color:#173247}
-    tbody tr.day-row--late td .muted{color:#60758a}
+    tbody tr.day-row--late td{background:#ecf8f0 !important;color:#14532d}
+    tbody tr.day-row--late td:first-child{box-shadow:inset 5px 0 0 #ca8a04}
+    tbody tr.day-row--late td .muted{color:#3f6212}
+    tbody tr.day-row--late td.td-daily{font-weight:800}
     tbody tr.day-row--off td{background:#fde8e8 !important;color:#7f1d1d}
     tbody tr.day-row--upcoming td{background:#f7fafc !important;color:#60758a}
     .actions{padding:0 16px 16px}
@@ -175,7 +177,7 @@
     .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid rgba(11,42,91,.12);flex-shrink:0}
     .legend .swatch-paid{background:#eef9f1}
     .legend .swatch-pending{background:#fff5e8}
-    .legend .swatch-late{background:#eef9f1;border-color:#86efac}
+    .legend .swatch-late{background:#ecf8f0;border-color:#ca8a04;box-shadow:inset 3px 0 0 #ca8a04}
     .legend .swatch-off{background:#fde8e8;border-color:#f3c2c2}
     /* Manual (part-time / extra hours) entry */
     .manual-entry{padding:4px 16px 14px}
@@ -2643,6 +2645,34 @@
       return out;
     }
 
+    async function fetchLocalLateFeedbackDates(rosterKey, startIso, endIso) {
+      const me = timesheetNormStaffKey(rosterKey);
+      if (!me) return [];
+      const seen = Object.create(null);
+      const out = [];
+      function push(iso) {
+        const d = String(iso || "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || seen[d]) return;
+        if (startIso && d < startIso) return;
+        if (endIso && d > endIso) return;
+        seen[d] = true;
+        out.push(d);
+      }
+      try {
+        const res = await fetch("/portal/_local_late_feedback.json?v=" + Date.now(), {
+          cache: "no-store"
+        });
+        if (res.ok) {
+          const doc = await res.json();
+          const byStaff = (doc && doc.byStaff) || {};
+          (byStaff[me] || []).forEach(push);
+        }
+      } catch (e) {
+        console.warn("[timesheet] local late feedback skipped", e);
+      }
+      return out;
+    }
+
     function sessionIsCompleted(rec) {
       const r = rec || {};
       return !!(r.feedbackDone || r.absent || r.cancelled);
@@ -4941,6 +4971,11 @@
     function timesheetApplyLocalRosterPreviewCompletion() {
       if (!(state.ghostHandoff && state.ghostHandoff.localPreview)) return;
       const todayIso = isoDate(londonPayrollAnchor(new Date()));
+      const lateDateSet = new Set(
+        (Array.isArray(state.lateFeedbackDates) ? state.lateFeedbackDates : [])
+          .map((d) => String(d || "").slice(0, 10))
+          .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+      );
       state.entries.forEach((e) => {
         if (!e || e.dayOff) return;
         const iso = String(e.date || "").slice(0, 10);
@@ -4951,7 +4986,7 @@
           return;
         }
         e.completed = true;
-        e.lateHold = false;
+        e.lateHold = lateDateSet.has(iso);
       });
       state.payableEntries = state.entries.filter((e) => e.completed && !e.dayOff && !e.lateHold && !e.upcoming);
       state.pendingEntries = state.entries.filter((e) => !e.completed && !e.dayOff && !e.upcoming);
@@ -4964,7 +4999,9 @@
       state.potentialCost = Number(
         state.entries.filter((e) => !e.dayOff && !e.upcoming).reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2)
       );
-      state.lateHoldCost = 0;
+      state.lateHoldCost = Number(
+        state.lateHoldEntries.reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2)
+      );
       state.pendingCost = Number((state.potentialCost - state.totalCost - state.lateHoldCost).toFixed(2));
       const fixedMonthly = fixedMonthlySalaryForRosterKey(state.staffRosterKey);
       if (fixedMonthly > 0 && !robertoHybridPayActive()) {
@@ -5069,6 +5106,11 @@
             state.periodStart,
             state.periodEnd
           );
+          state.lateFeedbackDates = await fetchLocalLateFeedbackDates(
+            state.staffRosterKey,
+            state.periodStart,
+            state.periodEnd
+          );
         } else {
           const pair = await Promise.all([
             fetchScheduleOverridesForPeriod(supabase, state.periodStart, state.periodEnd),
@@ -5161,7 +5203,8 @@
       }
       const note = document.getElementById("statusNote");
       if (note && state.ghostHandoff && state.ghostHandoff.localPreview) {
-        note.textContent = "LOCAL roster preview - no live feedback / day-off DB. Past days shown green to display hours.";
+        note.textContent =
+          "LOCAL roster preview. Past days are green when feedback is in. Late feedback days stay at 0.00 until admin validates.";
         return;
       }
       if (note && !String(note.textContent || "").includes("ghost view")) {
