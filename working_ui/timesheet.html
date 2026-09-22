@@ -3012,8 +3012,8 @@
     const YOUSSEF_DAY_CENTRE_DAYS = new Set(["Monday", "Wednesday", "Friday"]);
     /**
      * Youssef SwimFarm Day Centre (Hub): Autumn Monday 12.30–3 (2.5h @ SW £20);
-     * Mon/Wed summer (and Autumn Wed if seated) 11–12 + 1–3 (3h); Friday 11–12 + 1–4 (4h).
-     * Midday Big Pool 12–1 stays SW £20 on Fri (not Autumn Monday — DC starts 12.30).
+     * Fri 11 Sep 11–3 (4h, includes midday pool); later Fridays no DC pay for now.
+     * Mon/Wed summer (and Autumn Wed if seated) 11–12 + 1–3 (3h).
      */
     function youssefSwimfarmDayCentrePaySpec(dayName, dateKey) {
       if (!YOUSSEF_DAY_CENTRE_DAYS.has(String(dayName || ""))) return null;
@@ -3024,12 +3024,11 @@
         };
       }
       if (dayName === "Friday") {
+        const iso = String(dateKey || "").slice(0, 10);
+        if (iso !== YOUSSEF_FRIDAY_ACTON_FIRST_ISO) return null;
         return {
           hours: 4,
-          segments: [
-            { startMin: 11 * 60, endMin: 12 * 60 },
-            { startMin: 13 * 60, endMin: 16 * 60 }
-          ]
+          segments: [{ startMin: 11 * 60, endMin: 15 * 60 }]
         };
       }
       return {
@@ -3094,8 +3093,11 @@
     function ensureYoussefMiddayAquaticEntries(entries, dateObj, rosterKey) {
       const dayName = WEEKDAY[dateObj.getDay()];
       const dateKey = isoDate(dateObj);
-      /* Autumn Monday DC is 12.30–3 — no paid 12–1 SwimFarm pool hour. */
-      if (dayName === "Monday" && isYoussefAutumnTermIso(dateKey)) {
+      /* Autumn Monday DC is 12.30–3; Fri 11 is 11–3 — no extra paid 12–1 pool hour. */
+      if (
+        (dayName === "Monday" || dayName === "Friday") &&
+        isYoussefAutumnTermIso(dateKey)
+      ) {
         return (entries || []).filter((e) => !entryLooksYoussefMiddayAquatic(e));
       }
       if (!youssefSwimfarmDayCentrePaySpec(dayName, dateKey)) return entries || [];
@@ -3205,8 +3207,15 @@
           role === "Swimming Instructor" &&
           dayName !== "Sunday";
         if (isSwimfarmDc || isSwimfarmMidSwim) {
+          if (entryLooksYoussefMiddayAquatic(e) && isYoussefAutumnTermIso(dateKey) &&
+              (dayName === "Monday" || dayName === "Friday")) {
+            return false;
+          }
           if (dayName === "Monday" && isYoussefAutumnTermIso(dateKey) && isSwimfarmMidSwim) {
             return false;
+          }
+          if (dayName === "Friday") {
+            return !!youssefSwimfarmDayCentrePaySpec(dayName, dateKey);
           }
           return YOUSSEF_DAY_CENTRE_DAYS.has(dayName);
         }
