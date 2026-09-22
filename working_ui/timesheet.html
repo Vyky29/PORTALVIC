@@ -2804,11 +2804,8 @@
         return { startMin: YOUSSEF_ACTON_SATURDAY_START_MIN, endMin: YOUSSEF_ACTON_SATURDAY_END_MIN };
       }
       if (isYoussefActonAfternoonBand(dayName, key, rows, youssefDateKey)) {
-        const fri = youssefFridayActonPaySpec(dayName, youssefDateKey);
-        if (fri) return { startMin: fri.startMin, endMin: fri.endMin };
-        if (isYoussefAutumnTermIso(youssefDateKey)) {
-          return { startMin: 16 * 60, endMin: 18 * 60 + 30 };
-        }
+        const acton = youssefAutumnActonPaySpec(dayName, youssefDateKey);
+        if (acton) return { startMin: acton.startMin, endMin: acton.endMin };
         return { startMin: 16 * 60 + 30, endMin: 18 * 60 + 30 };
       }
       if (dayName === "Sunday" && key === "roberto") {
@@ -2991,21 +2988,41 @@
     }
     function youssefFridayActonPaySpec(dayName, dateKey) {
       if (String(dayName || "") !== "Friday") return null;
+      return youssefAutumnActonPaySpec(dayName, dateKey);
+    }
+    /** Autumn Acton after-school: Mon/Wed 1.5h (4–5.30) even if the book is 1h; Fri 11 is 4–6, later Fridays 4–5.30. */
+    function youssefAutumnActonPaySpec(dayName, dateKey) {
       const iso = String(dateKey || "").slice(0, 10);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || iso < YOUSSEF_FRIDAY_ACTON_FIRST_ISO) return null;
-      if (iso === YOUSSEF_FRIDAY_ACTON_FIRST_ISO) {
-        return { hours: 2, startMin: 16 * 60, endMin: 18 * 60 };
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !isYoussefAutumnTermIso(iso)) return null;
+      const day = String(dayName || "");
+      if (day === "Friday") {
+        if (iso < YOUSSEF_FRIDAY_ACTON_FIRST_ISO) return null;
+        if (iso === YOUSSEF_FRIDAY_ACTON_FIRST_ISO) {
+          return { hours: 2, startMin: 16 * 60, endMin: 18 * 60 };
+        }
+        return { hours: 1.5, startMin: 16 * 60, endMin: 17 * 60 + 30 };
       }
-      return { hours: 1.5, startMin: 16 * 60, endMin: 17 * 60 + 30 };
+      if (day === "Monday" || day === "Wednesday") {
+        if (iso < "2026-09-07") return null;
+        return { hours: 1.5, startMin: 16 * 60, endMin: 17 * 60 + 30 };
+      }
+      return null;
     }
     /** Day Centre SwimFarm only Mon/Wed (→3) and Fri (→4); never Tue/Thu mornings. */
     const YOUSSEF_DAY_CENTRE_DAYS = new Set(["Monday", "Wednesday", "Friday"]);
     /**
-     * Youssef SwimFarm Day Centre (Hub): Mon/Wed 11–12 + 1–3 (3h @ SW £20);
-     * Friday 11–12 + 1–4 (4h). Midday Big Pool 12–1 stays SW £20 in Autumn (was SI £24 in summer).
+     * Youssef SwimFarm Day Centre (Hub): Autumn Monday 12.30–3 (2.5h @ SW £20);
+     * Mon/Wed summer (and Autumn Wed if seated) 11–12 + 1–3 (3h); Friday 11–12 + 1–4 (4h).
+     * Midday Big Pool 12–1 stays SW £20 on Fri (not Autumn Monday — DC starts 12.30).
      */
-    function youssefSwimfarmDayCentrePaySpec(dayName) {
+    function youssefSwimfarmDayCentrePaySpec(dayName, dateKey) {
       if (!YOUSSEF_DAY_CENTRE_DAYS.has(String(dayName || ""))) return null;
+      if (dayName === "Monday" && isYoussefAutumnTermIso(dateKey)) {
+        return {
+          hours: 2.5,
+          segments: [{ startMin: 12 * 60 + 30, endMin: 15 * 60 }]
+        };
+      }
       if (dayName === "Friday") {
         return {
           hours: 4,
@@ -3029,8 +3046,9 @@
         .toLowerCase();
       return k === "youssef" || k === "yousef" || k === "yusef";
     }
-    function rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, dayRows) {
-      if (!youssefSwimfarmDayCentrePaySpec(dayName)) return false;
+    function rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, dayRows, dateKey) {
+      const iso = dateKey || isoDateFromDayRows(dayRows);
+      if (!youssefSwimfarmDayCentrePaySpec(dayName, iso)) return false;
       if (!isYoussefRosterKey(rosterKey)) return false;
       if (String(role || "").trim() !== "Support Worker") return false;
       const rows = dayRows || [];
@@ -3066,15 +3084,21 @@
       if (!m) return /aquatic|swim/i.test(String(entry.service || entry.serviceName || ""));
       let sh = Number(m[1]);
       const sm = Number(m[2]);
-      if (sh === 12 && sm <= 30) return true;
-      if (sh === 0 && sm === 0) return false;
-      /* club clock: 12.xx midday */
-      return sh === 12;
+      let eh = Number(m[3]);
+      const em = Number(m[4]);
+      /* Midday pool is 12.00–1.00. 12.30–3 is Day Centre — do not strip it. */
+      if (sh === 12 && sm === 0 && (eh === 1 || eh === 13) && em === 0) return true;
+      return false;
     }
     /** Mon/Wed/Fri SwimFarm Day Centre days: paid 12–1 pool hour at Support £20 (Autumn; was SI £24 in summer). */
     function ensureYoussefMiddayAquaticEntries(entries, dateObj, rosterKey) {
       const dayName = WEEKDAY[dateObj.getDay()];
-      if (!youssefSwimfarmDayCentrePaySpec(dayName)) return entries || [];
+      const dateKey = isoDate(dateObj);
+      /* Autumn Monday DC is 12.30–3 — no paid 12–1 SwimFarm pool hour. */
+      if (dayName === "Monday" && isYoussefAutumnTermIso(dateKey)) {
+        return (entries || []).filter((e) => !entryLooksYoussefMiddayAquatic(e));
+      }
+      if (!youssefSwimfarmDayCentrePaySpec(dayName, dateKey)) return entries || [];
       if (!isYoussefRosterKey(rosterKey)) return entries || [];
       const list = Array.isArray(entries) ? entries.slice() : [];
       if (!list.length || list.some((e) => e && e.dayOff)) return list;
@@ -3085,7 +3109,6 @@
         return role === "Support Worker" && /day\s*centre/.test(svc) && venue.indexOf("swimfarm") >= 0;
       });
       if (!hasDc) return list;
-      const dateKey = isoDate(dateObj);
       const completed =
         list.every((e) => e && e.completed) || timesheetDayMarkedComplete(dateKey, rosterKey);
       const timeRange = clubTimeRangeFromMinutes(12 * 60, 13 * 60);
@@ -3146,11 +3169,9 @@
       if (!isYoussefRosterKey(rosterKey)) return false;
       const iso = dateKey != null ? dateKey : isoDateFromDayRows(dayRows);
       const day = String(dayName || "");
-      const autumnFri = !!youssefFridayActonPaySpec(day, iso);
-      const autumnMonWed =
-        (day === "Monday" || day === "Wednesday") && isYoussefAutumnTermIso(iso);
+      const autumnPm = !!youssefAutumnActonPaySpec(day, iso);
       const summerPm = YOUSSEF_ACTON_AFTERNOON_DAYS.has(day) && youssefActonDateAllowed(iso);
-      if (!autumnFri && !autumnMonWed && !summerPm) return false;
+      if (!autumnPm && !summerPm) return false;
       const rows = dayRows || [];
       if (!rows.length) return false;
       return rows.every(function (s) {
@@ -3171,7 +3192,6 @@
       if (!isYoussefRosterKey(rosterKey)) return entries || [];
       const dayName = WEEKDAY[dateObj.getDay()];
       const dateKey = isoDate(dateObj);
-      const autumn = isYoussefAutumnTermIso(dateKey);
       return (entries || []).filter((e) => {
         if (!e || e.dayOff) return true;
         const venue = String(e.venue || "").toLowerCase();
@@ -3185,12 +3205,14 @@
           role === "Swimming Instructor" &&
           dayName !== "Sunday";
         if (isSwimfarmDc || isSwimfarmMidSwim) {
+          if (dayName === "Monday" && isYoussefAutumnTermIso(dateKey) && isSwimfarmMidSwim) {
+            return false;
+          }
           return YOUSSEF_DAY_CENTRE_DAYS.has(dayName);
         }
         if (venue.indexOf("acton") >= 0 && (role === "Swimming Instructor" || role === "Support Worker")) {
           if (dayName === "Saturday") return true;
-          if (dayName === "Friday" && youssefFridayActonPaySpec(dayName, dateKey)) return true;
-          if (autumn && (dayName === "Monday" || dayName === "Wednesday")) return true;
+          if (youssefAutumnActonPaySpec(dayName, dateKey)) return true;
           if (!youssefActonDateAllowed(dateKey)) return false;
           return YOUSSEF_ACTON_AFTERNOON_DAYS.has(dayName);
         }
@@ -3228,9 +3250,8 @@
     }
     function youssefActonAfternoonPayableHours(dayName, rosterKey, role, computedHours, dayRows, dateKey) {
       if (!isYoussefActonAfternoonBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
-      const fri = youssefFridayActonPaySpec(dayName, dateKey);
-      if (fri) return fri.hours;
-      if (isYoussefAutumnTermIso(dateKey)) return computedHours;
+      const acton = youssefAutumnActonPaySpec(dayName, dateKey);
+      if (acton) return acton.hours;
       return YOUSSEF_ACTON_AFTERNOON_PAY_HOURS;
     }
     /** True when every Day Centre client that day was admin-cancelled (24h+ notice → not paid). */
@@ -3951,8 +3972,8 @@
       const venue = timesheetPrimaryVenueFromRows(rows);
       let timeRange = "";
       const dcSpec =
-        rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, rows) &&
-        youssefSwimfarmDayCentrePaySpec(dayName);
+        rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, rows, dateKey) &&
+        youssefSwimfarmDayCentrePaySpec(dayName, dateKey);
       if (ttPay && ttPay.hours > 0) {
         if (ttPay.startMin != null && ttPay.endMin != null) {
           timeRange = clubTimeRangeFromMinutes(ttPay.startMin, ttPay.endMin);
@@ -4138,8 +4159,8 @@
           const venue = timesheetPrimaryVenueFromRows(groupRows);
           let timeRange = "";
           const dcSpec =
-            rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, groupRows) &&
-            youssefSwimfarmDayCentrePaySpec(dayName);
+            rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, groupRows, dateKey) &&
+            youssefSwimfarmDayCentrePaySpec(dayName, dateKey);
           if (dcSpec) {
             hours = dcSpec.hours;
             timeRange = clubTimeRangeFromSegments(dcSpec.segments);
