@@ -4108,6 +4108,34 @@
     }
 
     /** One paid shift per calendar day (single role): span earliest→latest with support buffer. */
+    /** Alex, Carlos, and Andres on a Carlos climbing cover: 1 submitted feedback = 1 paid hour. */
+    function timesheetClimbingFeedbackPayStaff(rosterKey) {
+      const k = String(rosterKey || "").trim().toLowerCase();
+      return k === "alex" || k === "carlos" || k === "andres";
+    }
+
+    function timesheetRowIsClimbing(s) {
+      const act = String((s && (s.rosterService || s.service || s.activity)) || "").toLowerCase();
+      return act.indexOf("climb") >= 0;
+    }
+
+    function timesheetClimbingFeedbackPayApplies(rosterKey, rows) {
+      if (!timesheetClimbingFeedbackPayStaff(rosterKey)) return false;
+      return (rows || []).some((s) => timesheetRowIsClimbing(s));
+    }
+
+    /** Named climbing seats with a real submitted feedback. Empty hours and unsubmitted seats are 0. */
+    function timesheetClimbingSubmittedFeedbackHours(rows, dateObj, reviewMap, rosterKey) {
+      let n = 0;
+      (rows || []).forEach((s) => {
+        if (!timesheetRowIsClimbing(s)) return;
+        if (!timesheetSessionIsWorkedFeedbackSeat(s)) return;
+        const rec = sessionReviewRecord(reviewMap, s, dateObj);
+        if (rec && rec.feedbackDone) n += 1;
+      });
+      return n;
+    }
+
     function dailyHoursSingleRoleFromSessions(rows, dateObj, reviewMap, staffKey, dominantRole, dominantService) {
       const dayName = WEEKDAY[dateObj.getDay()];
       const dateKey = isoDate(dateObj);
@@ -4173,12 +4201,18 @@
       hours = robertoActonZhPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
       /* Admin cancel with notice (e.g. Fadi DC): day not payable — not a day-off request. */
       if (dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, rows)) hours = 0;
+      const climbingPay = timesheetClimbingFeedbackPayApplies(rosterKey, rows);
+      if (climbingPay) {
+        hours = timesheetClimbingSubmittedFeedbackHours(rows, dateObj, reviewMap, rosterKey);
+        completedAll = hours > 0;
+      }
       /*
        * Instructor Timetable green paid_hours is a minimum (late arrival / gap pay).
        * Empty paid = same as shift. Do not shrink extra named seats after the band.
+       * Climbing (Alex / Carlos / Andres cover) is feedback count only — never the shift band.
        */
       let ttPay = null;
-      if (hours > 0) {
+      if (hours > 0 && !climbingPay) {
         ttPay = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
         if (ttPay && ttPay.hours > 0) hours = Math.max(hours, ttPay.hours);
       }
@@ -4221,7 +4255,8 @@
           timeRange,
           role,
           rate,
-          blendedRate: null
+          blendedRate: null,
+          climbingFeedbackPay: climbingPay
         },
         rows
       );
@@ -4236,6 +4271,7 @@
     function applyTimetablePaidBandToDayEntries(entries, rosterKey, dateKey) {
       const list = Array.isArray(entries) ? entries : [];
       if (!list.length) return list;
+      if (list.some((e) => e && e.climbingFeedbackPay)) return list;
       const tt = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
       if (!tt || !(tt.hours > 0)) return list;
       const live = list.filter((e) => e && !e.dayOff && Number(e.hours) > 0);
@@ -4358,6 +4394,11 @@
           hours = youssefActonSaturdayPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           hours = robertoActonZhPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           if (dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, groupRows)) hours = 0;
+          const climbingPay = timesheetClimbingFeedbackPayApplies(rosterKey, groupRows);
+          if (climbingPay) {
+            hours = timesheetClimbingSubmittedFeedbackHours(groupRows, dateObj, reviewMap, rosterKey);
+            completedAll = hours > 0;
+          }
           /*
            * Day-level Timetable paid_hours applied after all groups (see
            * applyTimetablePaidBandToDayEntries). Keep session/hardcode hours here.
@@ -4409,7 +4450,8 @@
                 timeRange,
                 role,
                 rate: rateForRole(role),
-                blendedRate: null
+                blendedRate: null,
+                climbingFeedbackPay: climbingPay
               },
               groupRows
             )
