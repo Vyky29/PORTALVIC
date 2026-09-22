@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 137;
+  var SOURCE_VERSION = 138;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -1209,6 +1209,52 @@
         session_date: "2026-09-07",
       },
     ];
+  }
+
+  /**
+   * Autumn Monday Westway Physical standing (Timetable Sandra 4-6).
+   * Stamp 14 Sep = first Monday she works (Mon 7 is day off / Javi cover).
+   * Expanded across term Mondays; scrubAndEnsureSep7 drops 7 Sep Sandra seats.
+   */
+  function autumnWestwayPhysicalStandingRows() {
+    return [
+      {
+        client_name: "Ayaan",
+        day: "Monday",
+        instructors: "SANDRA",
+        service: "Physical Activity",
+        area: "Gym",
+        time_slot: "4 to 5",
+        venue: "Westway",
+        session_date: "2026-09-14",
+      },
+      {
+        client_name: "Serine",
+        day: "Monday",
+        instructors: "SANDRA",
+        service: "Physical Activity",
+        area: "Gym",
+        time_slot: "5 to 6",
+        venue: "Westway",
+        session_date: "2026-09-14",
+      },
+    ];
+  }
+
+  function isMondayWestwayPhysicalStandingRow(row) {
+    if (!row) return false;
+    if (!isPhysicalActivityService(row.service)) return false;
+    if (!/westway/i.test(String(row.venue || ""))) return false;
+    var day = normalizeDowKey(row.day);
+    if (day === "monday") return true;
+    if (day) return false;
+    var d = normIso(row.session_date);
+    if (!d) return false;
+    try {
+      return new Date(d + "T12:00:00").getDay() === 1;
+    } catch (_) {
+      return false;
+    }
   }
 
   /** Thu 10 Sep: Yassir last Acton Aquatic session (seat open from Thu 17). */
@@ -3517,6 +3563,8 @@
       if (isWeekdayWestwayClimbingStandingRow(r)) return;
       /* Drop summer/live Sat Acton aquatic — rebuild from AUTUMN_SATURDAY_ACTON_BOARD. */
       if (isSaturdayActonAquaticStandingRow(r)) return;
+      /* Drop summer Monday Westway Physical — rebuild from Sandra 4-6 standing. */
+      if (isMondayWestwayPhysicalStandingRow(r)) return;
       if (isDayCentreService(r.service)) {
         var dkDc = normalizeDowKey(r.day);
         if (
@@ -3739,6 +3787,9 @@
       pushExpandedStanding(out, [row]);
     });
     autumnSundayYusufRobertoAquaticStandingRows().forEach(function (row) {
+      pushExpandedStanding(out, [row]);
+    });
+    autumnWestwayPhysicalStandingRows().forEach(function (row) {
       pushExpandedStanding(out, [row]);
     });
     /* Sep 6 Hub cover is applied once in resolveCanonicalRosterRows (after DB rows). */
@@ -4388,6 +4439,7 @@
     AUTUMN_ACTON_WEDNESDAY_BOARD: AUTUMN_ACTON_WEDNESDAY_BOARD,
     AUTUMN_ACTON_THURSDAY_BOARD: AUTUMN_ACTON_THURSDAY_BOARD,
     AUTUMN_SATURDAY_ACTON_BOARD: AUTUMN_SATURDAY_ACTON_BOARD,
+    autumnWestwayPhysicalStandingRows: autumnWestwayPhysicalStandingRows,
     ROBERTO_MONDAY_ACTON_FROM_ANGEL: ROBERTO_MONDAY_ACTON_FROM_ANGEL,
     YOUSSEF_ACTON_OPEN_430_ROWS: YOUSSEF_ACTON_OPEN_430_ROWS,
     YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO: YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO,
