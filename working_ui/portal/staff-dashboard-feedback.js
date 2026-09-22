@@ -955,8 +955,12 @@
           && portalStaffLeadClientNeedsPerSlotAquaticFeedback(iso, cid, dayWord);
         if(!perSlotAquatic){
           add(iso + '|' + cid + '|aquatic');
+          if(cid === 'christian') add(iso + '|christian_abate|aquatic');
+          if(cid === 'christian_abate') add(iso + '|christian|aquatic');
         }
         if(tCanon) add(iso + '|' + cid + '|' + tCanon + '|aquatic');
+        if(tCanon && cid === 'christian') add(iso + '|16:00|christian_abate');
+        if(tCanon && cid === 'christian_abate') add(iso + '|' + tCanon + '|christian|aquatic');
       }
       if(cid && !(typeof portalSessionNeedsPerStaffOwnFeedbackOnly === 'function'
         && portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso))
@@ -1241,9 +1245,12 @@
       const needsOwn = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
         && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
       const serverSynced = !!(dashboardData && dashboardData.portalFeedbackServerSynced);
-      const pastOwnSlot = needsOwn && !portalIsServerTruthFeedbackDay(iso) && serverSynced;
-      if(!pastOwnSlot && portalReviewFeedbackInMemoryForAliases(aliases, needsOwn)) return true;
+      const todayOwnSlot = needsOwn && typeof portalIsServerTruthFeedbackDay === 'function'
+        && portalIsServerTruthFeedbackDay(iso) && serverSynced;
       if(portalReviewFeedbackFromServerForAliases(aliases, needsOwn)) return true;
+      /* Past aquatic: DB keys are often timed (date|18:00|richard) while Term cards
+         use date|client|aquatic. Count memory aliases. Today own stays server-first. */
+      if(!todayOwnSlot && portalReviewFeedbackInMemoryForAliases(aliases, needsOwn)) return true;
       if(!needsOwn){
         const baseS = portalReviewSessionForItem(item) || (item && item.__portalBaseSession);
         const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
@@ -1253,7 +1260,7 @@
         }
       }
       const direct = getSessionReviewRecord(item);
-      if(pastOwnSlot) return false;
+      if(todayOwnSlot) return false;
       return !!(direct && direct.feedbackDone && !direct.absent && !direct.cancelled);
     }
     function portalReviewAbsentResolvedForItem(item, iso){
@@ -1312,6 +1319,10 @@
             cancelled = true;
             cancelNeedsFeedback = true;
           }
+        }
+        if(needsOwnFeedback && !feedbackDone && typeof portalReviewFeedbackFromServerForAliases === 'function'
+          && portalReviewFeedbackFromServerForAliases(aliases, true)){
+          feedbackDone = true;
         }
       }
       if(!absent && dashboardData && dashboardData.portalServerAbsentQuickMarkKeys){

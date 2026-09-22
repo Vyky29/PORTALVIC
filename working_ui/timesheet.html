@@ -1723,28 +1723,94 @@
       return `${dateKey}|${String(s.start || "").trim()}|${cid}${suffix}`;
     }
 
-    function sessionReviewRecord(reviewMap, s, dateObj) {
-      const sk = timesheetSessionReviewKey(s, dateObj);
-      if (sk && reviewMap[sk]) return reviewMap[sk];
-      /* Same date + client may be stored under pool vs SwimFarm venue suffixes. */
-      const dateKey = isoDate(dateObj);
-      const cid = String(s.clientId || "")
+    function timesheetClientSlugCanon(raw) {
+      const slug = String(raw || "")
         .trim()
         .toLowerCase()
-        .replace(/\s+/g, "_");
-      if (!dateKey || !cid || !reviewMap) return null;
-      const start = String(s.start || "").trim().slice(0, 5);
+        .replace(/\s+/g, "_")
+        .replace(/[^a-z0-9_]+/g, "")
+        .replace(/^_+|_+$/g, "");
+      if (!slug) return "";
+      if (slug === "christian_abate") return "christian";
+      if (slug === "emmanuel_abate") return "emmanuel";
+      if (slug === "yunis_hussein") return "yunis";
+      return slug;
+    }
+    function timesheetClientSlugsMatch(a, b) {
+      const sa = timesheetClientSlugCanon(a);
+      const sb = timesheetClientSlugCanon(b);
+      if (!sa || !sb) return false;
+      if (sa === sb) return true;
+      if (typeof window.portalClientSlugTokensEquivalent === "function") {
+        try {
+          if (window.portalClientSlugTokensEquivalent(sa, sb)) return true;
+        } catch (_e) {}
+      }
+      if (sa.startsWith(sb + "_") || sb.startsWith(sa + "_")) return true;
+      return false;
+    }
+    function timesheetReviewKeyParticipantSlug(key) {
+      const parts = String(key || "")
+        .split("|")
+        .map((p) => String(p || "").trim().toLowerCase())
+        .filter(Boolean);
+      const skip = {
+        aquatic: 1,
+        day_centre: 1,
+        bespoke_shared: 1,
+        hub_room: 1,
+        teaching_pool: 1,
+        big_pool: 1,
+        climbing: 1,
+        merge: 1
+      };
+      for (let i = 1; i < parts.length; i++) {
+        const p = parts[i];
+        if (!p || /^\d{4}-\d{2}-\d{2}$/.test(p) || /^\d{1,2}:\d{2}$/.test(p) || skip[p]) continue;
+        return p.replace(/[^a-z0-9]+/g, "_");
+      }
+      return "";
+    }
+    function timesheetHmTokensEquivalent(a, b) {
+      const pa = String(a || "").trim().match(/^(\d{1,2}):(\d{2})$/);
+      const pb = String(b || "").trim().match(/^(\d{1,2}):(\d{2})$/);
+      if (!pa || !pb) return false;
+      let ha = Number(pa[1]);
+      let hb = Number(pb[1]);
+      const ma = pa[2];
+      const mb = pb[2];
+      if (ha === hb && ma === mb) return true;
+      /* After-school 4-7pm stored as 16:00 in some keys and 4:00 in others. */
+      if (ha >= 1 && ha <= 7) ha += 12;
+      if (hb >= 1 && hb <= 7) hb += 12;
+      return ha === hb && ma === mb;
+    }
+    function sessionReviewRecord(reviewMap, s, dateObj) {
+      const sk = timesheetSessionReviewKey(s, dateObj);
+      const exact = sk && reviewMap ? reviewMap[sk] : null;
+      if (exact && (exact.feedbackDone || exact.absent || exact.cancelled)) return exact;
+      const dateKey = isoDate(dateObj);
+      const cid = timesheetClientSlugCanon(s && (s.clientId || s.client_id || s.client_name));
+      if (!dateKey || !cid || !reviewMap) return exact || null;
+      const start = String((s && s.start) || "").trim().slice(0, 5);
       let fallback = null;
       Object.keys(reviewMap).forEach((k) => {
         if (fallback) return;
         const key = String(k || "");
         if (!key.startsWith(dateKey + "|")) return;
-        if (key.indexOf(cid) < 0) return;
-        if (start && key.indexOf(start) < 0 && !/\|aquatic(?:\||$)/.test(key)) return;
+        const keySlug = timesheetReviewKeyParticipantSlug(key);
+        if (!timesheetClientSlugsMatch(cid, keySlug) && key.indexOf(cid) < 0) return;
         const rec = reviewMap[k];
-        if (rec && (rec.feedbackDone || rec.absent || rec.cancelled)) fallback = rec;
+        if (!rec || !(rec.feedbackDone || rec.absent || rec.cancelled)) return;
+        const keyHasTime = /\|\d{1,2}:\d{2}(?:\||$)/.test(key);
+        const keyIsDayUnit = /\|(aquatic|day_centre|bespoke_shared)(?:\||$)/.test(key);
+        if (start && keyHasTime && !keyIsDayUnit) {
+          const km = key.match(/(\d{1,2}:\d{2})/);
+          if (km && !timesheetHmTokensEquivalent(start, km[1])) return;
+        }
+        fallback = rec;
       });
-      return fallback;
+      return fallback || exact || null;
     }
 
     function collectRosterSessionKeysForPeriod(sessionsModel, dates) {
@@ -2219,7 +2285,7 @@
       const memory = parseReviewMap();
       try {
         const mod = await withTimeout(
-          import("/portal/supabase-client.js?v=20260727-fb-keys-perf"),
+          import("/portal/supabase-client.js?v=20260922-ts-fb-keys"),
           8000,
           "supabase_client_import"
         );
@@ -2235,6 +2301,12 @@
         const rosterKeys = collectRosterSessionKeysForPeriod(sessionsModel, dates);
         const staffKey = String(state.staffRosterKey || "").trim().toLowerCase();
         const perStaffOwnKeys = timesheetCollectPerStaffOwnFeedbackOnlyKeys(sessionsModel, dates, staffKey);
+        if (mod.portalFeedbackSubmittedKeyMatchesRosterKey) {
+          window.__PORTAL_REVIEW_KEY_MATCHER__ = mod.portalFeedbackSubmittedKeyMatchesRosterKey;
+        }
+        if (mod.portalClientSlugTokensEquivalent) {
+          window.portalClientSlugTokensEquivalent = mod.portalClientSlugTokensEquivalent;
+        }
         const keys = await withTimeout(
           mod.portalFetchSubmittedReviewSessionKeys(supabase, userId, {
             rosterSessionKeys: rosterKeys,
