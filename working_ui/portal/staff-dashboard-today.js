@@ -28,12 +28,31 @@
         return (Array.isArray(segs) && segs.length) ? segs : undefined;
       }catch(_){ return undefined; }
     }
-    /** Fadi is off the worker rotas until 20 Sep 2026 — do not paint Cancelled seats. */
+    /**
+     * Weekday Day Centre cancellations drop off Today (no red card).
+     * After-school and weekend cancelled sessions still paint red.
+     */
+    function portalTodayHideCancelledDayCentreCard(s, sessionDateKey){
+      if(!s) return false;
+      var svc = String(s.rosterService || s.service || s.activity || '').toLowerCase();
+      if(!/day\s*centre/.test(svc)) return false;
+      var iso = String(sessionDateKey || '').slice(0, 10);
+      if(/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+        var d = new Date(iso + 'T12:00:00');
+        if(!isNaN(d.getTime())){
+          var dow = d.getDay();
+          if(dow === 0 || dow === 6) return false;
+        }
+      }
+      return true;
+    }
+    /** Fadi cancelled DC seats — retired; weekday DC cancels use portalTodayHideCancelledDayCentreCard. */
     function portalTodayIsFadiDcCancelledSeat(s, sessionDateKey){
       return false;
     }
     try{
       if(typeof window !== 'undefined'){
+        window.portalTodayHideCancelledDayCentreCard = portalTodayHideCancelledDayCentreCard;
         window.portalTodayIsFadiDcCancelledSeat = portalTodayIsFadiDcCancelledSeat;
       }
     }catch(_){}
@@ -3834,6 +3853,7 @@
             && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
               && sessionDateKey
               && portalStaffHasRequestedTimeOffOnDate(sessionDateKey, STAFF_DASHBOARD_ID))){
+            if(portalTodayHideCancelledDayCentreCard(s, sessionDateKey)) return null;
             const cCan = portalTodayClientNotesForSession(s);
             const showSpecCan = !isBespokeActivity(activity);
             let poolLocationCan = resolvePoolLocationLabelFromSession(s, activity, cCan, viewDay);
@@ -3877,6 +3897,7 @@
               && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
                 && sessionDateKey
                 && portalStaffHasRequestedTimeOffOnDate(sessionDateKey, STAFF_DASHBOARD_ID))){
+              if(portalTodayHideCancelledDayCentreCard(s, sessionDateKey)) return null;
               const cCan = portalTodayClientNotesForSession(s);
               const showSpecCan = !isBespokeActivity(activity);
               let poolLocationCan = resolvePoolLocationLabelFromSession(s, activity, cCan, viewDay);
@@ -4318,6 +4339,7 @@
             const cMoved = (typeof portalClientNotesLookup === 'function' ? portalClientNotesLookup(movedCid) : null)
               || (movedCid ? { name: String((moveOutClear.payload && moveOutClear.payload.moved_client_name) || movedCid) } : null);
             if(cMoved && movedCid && movedCid !== 'available'){
+              if(portalTodayHideCancelledDayCentreCard(s, sessionDateKey)) return;
               const activityCan = (s.activity || 'Swimming').trim();
               const timeCan = rosterSlotTimeLabel(s);
               let poolLocationCan = resolvePoolLocationLabelFromSession(s, activityCan, cMoved, viewDay);
@@ -4413,6 +4435,7 @@
             && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
               && sessionDateKey
               && portalStaffHasRequestedTimeOffOnDate(sessionDateKey, STAFF_DASHBOARD_ID))){
+            if(portalTodayHideCancelledDayCentreCard(s, sessionDateKey)) return;
             const cCan = portalTodayClientNotesForSession(s);
             const activityCan = (s.activity || 'Swimming').trim();
             const timeCan = rosterSlotTimeLabel(s);
@@ -4946,7 +4969,13 @@
       var sortedToday = portalInjectOrphanMakeupOverrideCards(
         portalDedupeTodayDayCentreWidestClientWindow(
           portalDedupeTodayScheduleViewCards(
-            portalSuppressAvailableWhenSlotFilled(primary.concat(portalDedupeInstructorCoverExtras(primary, extra)))
+            portalSuppressAvailableWhenSlotFilled(
+              primary.concat(portalDedupeInstructorCoverExtras(primary, extra)).filter(function(it){
+                if(!it) return false;
+                if(String(it.portalOverrideAlertPill || '').toUpperCase() !== 'CANCELLED') return true;
+                return !portalTodayHideCancelledDayCentreCard(it.__portalBaseSession || it, sessionDateKey);
+              })
+            )
           )
         ),
         sessionDateKey,
