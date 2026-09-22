@@ -5154,22 +5154,32 @@
         window.__PORTAL_STAFF_INITIAL_TODAY_SETTLE_TIMER__ = setTimeout(function(){
           window.__PORTAL_STAFF_INITIAL_TODAY_SETTLE_TIMER__ = null;
           if(window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return;
-          /* Never leave TODAY on “syncing” forever if overrides lag — force the gate open. */
+          /* Never leave TODAY on "syncing" forever if overrides lag — force the gate open. */
           if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
             && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
             try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
           }
-          if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__){
-            try{
-              if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function'){
-                window.portalRebootstrapSessionsForPinnedStaff();
-              }
-            }catch(_){}
-            try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
+          var needReboot = !window.__PORTAL_STAFF_ROSTER_HYDRATED__;
+          var settleToday = function(){
+            if(needReboot){
+              try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
+              try{
+                if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function'){
+                  window.portalRebootstrapSessionsForPinnedStaff();
+                }
+              }catch(_){}
+            }
+            portalStaffMarkInitialTodayScheduleSettled();
+            try{ if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay(); }catch(_){}
+            if(!needReboot){
+              try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
+            }
+          };
+          if(typeof window.portalScheduleIdleWork === 'function'){
+            window.portalScheduleIdleWork(settleToday);
+          }else{
+            settleToday();
           }
-          portalStaffMarkInitialTodayScheduleSettled();
-          try{ if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay(); }catch(_){}
-          try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
         }, wait);
       }catch(_){}
     }

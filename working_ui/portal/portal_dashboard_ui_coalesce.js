@@ -7,6 +7,48 @@
   var finishTimer = null;
   var finishGen = 0;
 
+  /**
+   * Run fn after the current timer/click returns, so Chrome does not log
+   * "[Violation] setTimeout handler took 200ms" for roster rebuilds.
+   */
+  function portalScheduleIdleWork(fn) {
+    if (typeof fn !== "function") return;
+    try {
+      if (global.scheduler && typeof global.scheduler.postTask === "function") {
+        global.scheduler.postTask(fn, { priority: "background" });
+        return;
+      }
+    } catch (_) {}
+    if (typeof global.requestIdleCallback === "function") {
+      global.requestIdleCallback(function () {
+        fn();
+      }, { timeout: 800 });
+      return;
+    }
+    if (typeof global.requestAnimationFrame === "function") {
+      global.requestAnimationFrame(function () {
+        global.setTimeout(fn, 0);
+      });
+      return;
+    }
+    global.setTimeout(fn, 0);
+  }
+  global.portalScheduleIdleWork = portalScheduleIdleWork;
+
+  global.portalYieldToMain = function portalYieldToMain() {
+    return new Promise(function (resolve) {
+      try {
+        if (global.scheduler && typeof global.scheduler.yield === "function") {
+          global.scheduler.yield().then(resolve, function () {
+            portalScheduleIdleWork(resolve);
+          });
+          return;
+        }
+      } catch (_) {}
+      portalScheduleIdleWork(resolve);
+    });
+  };
+
   function normalizePhotoUrl(url) {
     if (typeof global.portalNormalizeParticipantPhotoUrl === "function") {
       return global.portalNormalizeParticipantPhotoUrl(url);
@@ -103,7 +145,7 @@
       if (gen !== heavyRefreshGen) return;
       var batch = heavyRefreshQueue.splice(0, heavyRefreshQueue.length);
       if (!batch.length) return;
-  var kick = function () {
+      var kick = function () {
         var i = 0;
         var step = function () {
           if (i >= batch.length) return;
@@ -115,22 +157,12 @@
             } catch (_) {}
           }
           if (i < batch.length) {
-            if (typeof global.portalYieldToMain === "function") {
-              void global.portalYieldToMain().then(step);
-            } else {
-              global.setTimeout(step, 0);
-            }
+            portalScheduleIdleWork(step);
           }
         };
         step();
       };
-      if (typeof global.requestAnimationFrame === "function") {
-        global.requestAnimationFrame(function () {
-          global.setTimeout(kick, 0);
-        });
-      } else {
-        kick();
-      }
+      portalScheduleIdleWork(kick);
     }, wait);
   };
 
@@ -149,9 +181,11 @@
     if (leadTeamSyncTimer) return;
     leadTeamSyncTimer = global.setTimeout(function () {
       leadTeamSyncTimer = null;
-      try {
-        global.portalSyncLeadTeamShiftUi();
-      } catch (_) {}
+      portalScheduleIdleWork(function () {
+        try {
+          global.portalSyncLeadTeamShiftUi();
+        } catch (_) {}
+      });
     }, wait);
   };
 

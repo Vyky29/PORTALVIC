@@ -905,8 +905,23 @@
 
     /** Yield to the browser so Home / Close stay responsive during long work. */
     function portalYieldToMain(){
+      if(typeof window.portalScheduleIdleWork === 'function'){
+        return new Promise(function(resolve){
+          try{
+            if(window.scheduler && typeof window.scheduler.yield === 'function'){
+              window.scheduler.yield().then(resolve, function(){
+                window.portalScheduleIdleWork(resolve);
+              });
+              return;
+            }
+          }catch(_){}
+          window.portalScheduleIdleWork(resolve);
+        });
+      }
       return new Promise(function(resolve){
-        if(typeof requestAnimationFrame === 'function'){
+        if(typeof requestIdleCallback === 'function'){
+          requestIdleCallback(function(){ resolve(); }, { timeout: 400 });
+        }else if(typeof requestAnimationFrame === 'function'){
           requestAnimationFrame(function(){ setTimeout(resolve, 0); });
         }else{
           setTimeout(resolve, 0);

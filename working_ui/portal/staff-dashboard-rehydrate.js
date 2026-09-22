@@ -1262,7 +1262,14 @@
         if(_portalSourceUpdatedT) clearTimeout(_portalSourceUpdatedT);
         _portalSourceUpdatedT = setTimeout(function(){
           _portalSourceUpdatedT = 0;
-          try{ portalRebootstrapSessionsForPinnedStaff(); }catch(_){}
+          var run = function(){
+            try{ portalRebootstrapSessionsForPinnedStaff(); }catch(_){}
+          };
+          if(typeof window.portalScheduleIdleWork === "function"){
+            window.portalScheduleIdleWork(run);
+          }else{
+            run();
+          }
         }, 280);
       });
       var _portalFeedbackReadyMergeT = 0;
@@ -1271,20 +1278,27 @@
           if(_portalFeedbackReadyMergeT) clearTimeout(_portalFeedbackReadyMergeT);
           _portalFeedbackReadyMergeT = setTimeout(function(){
             _portalFeedbackReadyMergeT = 0;
-            if(typeof portalStaffFeedbackPipelineReady === 'function'
-              && portalStaffFeedbackPipelineReady()
-              && window.__PORTAL_EXPORT_REVIEW_SEEDED__){
-              return;
-            }
-            if(typeof portalMarkFeedbackReconciledFromExports === "function"){
-              portalMarkFeedbackReconciledFromExports(true);
-            }
-            if(typeof portalMergeServerReviewStateForDashboard === "function"){
-              void portalMergeServerReviewStateForDashboard().then(function(){
-                if(typeof portalStaffRefreshFeedbackDependentUi === "function") portalStaffRefreshFeedbackDependentUi();
-              });
-            }else if(typeof portalStaffRefreshFeedbackDependentUi === "function"){
-              portalStaffRefreshFeedbackDependentUi();
+            var mergeFb = function(){
+              if(typeof portalStaffFeedbackPipelineReady === 'function'
+                && portalStaffFeedbackPipelineReady()
+                && window.__PORTAL_EXPORT_REVIEW_SEEDED__){
+                return;
+              }
+              if(typeof portalMarkFeedbackReconciledFromExports === "function"){
+                portalMarkFeedbackReconciledFromExports(true);
+              }
+              if(typeof portalMergeServerReviewStateForDashboard === "function"){
+                void portalMergeServerReviewStateForDashboard().then(function(){
+                  if(typeof portalStaffRefreshFeedbackDependentUi === "function") portalStaffRefreshFeedbackDependentUi();
+                });
+              }else if(typeof portalStaffRefreshFeedbackDependentUi === "function"){
+                portalStaffRefreshFeedbackDependentUi();
+              }
+            };
+            if(typeof window.portalScheduleIdleWork === "function"){
+              window.portalScheduleIdleWork(mergeFb);
+            }else{
+              mergeFb();
             }
           }, 64);
         }catch(_fbReady){}
