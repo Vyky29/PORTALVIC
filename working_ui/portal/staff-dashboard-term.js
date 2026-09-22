@@ -311,6 +311,34 @@
       }
     }
     /**
+     * Worker cancelled the seat themselves (Cancellation form / Staff cancel).
+     * That is feedback done on their Term — not an office wipe of the day.
+     */
+    function portalTermCancelIsStaffFeedbackResolution(s, isoKey, staffId){
+      const iso = String(isoKey || '').trim().slice(0, 10);
+      if(!s || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      let ov = null;
+      try{
+        if(typeof portalScheduleOverrideForSessionByType === 'function'){
+          ov = portalScheduleOverrideForSessionByType(s, iso, 'slot_clear_client')
+            || portalScheduleOverrideForSessionByType(s, iso, 'slot_close')
+            || portalScheduleOverrideForSessionByType(s, iso, 'client_cancelled');
+        }
+        if(!ov && typeof portalTodayScheduleOverrideForSession === 'function'){
+          ov = portalTodayScheduleOverrideForSession(s, iso);
+        }
+      }catch(_){}
+      if(!ov) return false;
+      const reason = String(ov.reason || '');
+      if(/^staff cancel/i.test(reason) || /staff cancel\s*[—-]/i.test(reason)) return true;
+      const p = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+      if(p.staff_cancel === true || p.cancelled_by_staff === true) return true;
+      const sid = String(staffId || '').trim().toLowerCase();
+      const by = String(p.cancelled_by_staff_id || p.submitted_by_staff_id || '').trim().toLowerCase();
+      if(sid && by && sid === by) return true;
+      return false;
+    }
+    /**
      * Term calendar cell colour for one day — derived only from the Today list (never from export aggregates alone).
      */
     function portalTermFeedbackStateFromTodayList(isoKey, dayWord, opts){
@@ -330,13 +358,15 @@
       if(typeof portalTermDateForcedComplete === 'function' && portalTermDateForcedComplete(key, staffId)) return 'complete';
 
       /* All-cancelled (Fadi / Joelle-style) before assume-complete or pipeline-pending.
-         Day is cancelled red only when every real client seat is cancelled — a worked
-         replacement / submitted client (Emanuel beside Fadi Cancelled) keeps the day green.
-         Do not treat feedbackDone as "skip" here: that falsely painted mixed days red. */
+         Day is cancelled red only when every real client seat is office/club cancelled.
+         If the worker cancelled the seats themselves (Staff cancel / vomit incident),
+         that is their feedback resolution — Term must be green, not red. */
       const cancelList = relFb.length ? relFb : relAll;
       if(cancelList.length){
         let sawCancelled = false;
         let sawNonCancelledClient = false;
+        let staffResolvedCancel = false;
+        let officeWipeCancel = false;
         for(let i = 0; i < cancelList.length; i++){
           const s = cancelList[i];
           const flags = typeof portalRosterSessionFeedbackResolvedFlags === 'function'
@@ -350,6 +380,12 @@
           if(!cid || cid === 'available' || cid === 'closed' || cid === 'home') continue;
           if(flags && flags.cancelled){
             sawCancelled = true;
+            if(portalTermCancelIsStaffFeedbackResolution(s, key, staffId)
+              || flags.cancelNeedsFeedback === false){
+              staffResolvedCancel = true;
+            }else{
+              officeWipeCancel = true;
+            }
             continue;
           }
           /* Real client not cancelled: pending, submitted, absent, or open unit. */
@@ -357,8 +393,6 @@
           break;
         }
         if(sawCancelled && !sawNonCancelledClient){
-          /* Replacement / trial on the same day (Emanuel beside Fadi Cancelled) may live
-             only on the Today board path — treat as not all-cancelled. */
           let hasReplacementWork = false;
           try{
             if(typeof portalDayOverrideBadgeFlags === 'function'){
@@ -368,7 +402,10 @@
               }
             }
           }catch(_){}
-          if(!hasReplacementWork) return 'cancelled';
+          if(!hasReplacementWork){
+            if(staffResolvedCancel && !officeWipeCancel) return 'complete';
+            return 'cancelled';
+          }
         }
       }
 
