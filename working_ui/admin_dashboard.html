@@ -16128,6 +16128,64 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       ].filter(Boolean);
       return bits.join(' · ').slice(0, 160) || 'Session';
     }
+    /**
+     * Day Centre: one instructor cancel is not a client cancel while another
+     * instructor still has that client the same day (standing seat or session_add).
+     */
+    function schedDayCentreCancelLeavesAnotherInstructor(slot){
+      if(!slot || !schedSlotIsDayCentre(slot)) return false;
+      var iso = String(slot.sessionDate || '').slice(0, 10);
+      var slug = '';
+      try{
+        slug = adminCanonicalClientSlug(String(slot.clientSlug || slot.clientDisplay || '').trim());
+      }catch(_slug){
+        slug = String(slot.clientSlug || '').trim().toLowerCase();
+      }
+      var staff = normalizeSchedAnchorStaffId(slot.staffRosterId || '');
+      if(!iso || !slug) return false;
+      function sameClient(otherSlug, otherName){
+        var a = '';
+        try{ a = adminCanonicalClientSlug(String(otherSlug || otherName || '').trim()); }
+        catch(_a){ a = String(otherSlug || '').trim().toLowerCase(); }
+        return !!(a && a === slug);
+      }
+      function staffDiff(otherStaff){
+        var b = normalizeSchedAnchorStaffId(otherStaff || '');
+        return !!(b && staff && b !== staff);
+      }
+      var seenOther = false;
+      var bag = sched && sched.slotsById ? sched.slotsById : {};
+      var ids = Object.keys(bag);
+      var i;
+      for(i = 0; i < ids.length; i++){
+        var other = bag[ids[i]];
+        if(!other || other === slot) continue;
+        if(String(other.sessionDate || '').slice(0, 10) !== iso) continue;
+        if(!schedSlotIsDayCentre(other)) continue;
+        if(!sameClient(other.clientSlug, other.clientDisplay)) continue;
+        if(!staffDiff(other.staffRosterId)) continue;
+        var ov = null;
+        try{ ov = findOverrideForSlot(other); }catch(_ov){ ov = null; }
+        if(ov && (ov.override_type === 'slot_clear_client' || ov.override_type === 'slot_close' || ov.override_type === 'client_cancelled')){
+          var opl = ov.payload || {};
+          if(opl.cancelled_by_admin || ov.override_type !== 'slot_clear_client') continue;
+        }
+        seenOther = true;
+        break;
+      }
+      if(seenOther) return true;
+      var ovs = (sched && sched.overrides) || [];
+      for(i = 0; i < ovs.length; i++){
+        var row = ovs[i];
+        if(!row || String(row.status || 'active') !== 'active') continue;
+        if(String(row.override_type || '') !== 'session_add') continue;
+        if(String(row.session_date || '').slice(0, 10) !== iso) continue;
+        if(!sameClient(row.anchor_client_id, '')) continue;
+        if(!staffDiff(row.anchor_staff_id)) continue;
+        return true;
+      }
+      return false;
+    }
     /** Day Centre covers stay in Team — instructors rotate; do not WhatsApp the parent. */
     function schedSlotIsDayCentre(slot){
       var prog = String((slot && (slot.programme || slot.rosterService || slot.activity || slot.service)) || '');
@@ -16516,14 +16574,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       var payload = {};
+      /* Day Centre: cancelling one instructor leaves the client booked while anyone else still has them. */
+      var dcInstructorOnlyCancel = false;
+      if(ovTypeRaw === 'client_cancelled' || ovType === 'slot_clear_client' || ovType === 'slot_close'){
+        dcInstructorOnlyCancel = schedDayCentreCancelLeavesAnotherInstructor(slot);
+      }
       if(ovTypeRaw === 'client_cancelled'){
         payload.cancelled_by_admin = true;
-        payload.feedback_resolution = 'cancelled';
+        if(dcInstructorOnlyCancel) payload.dc_instructor_only = true;
+        else payload.feedback_resolution = 'cancelled';
       }
       if(ovType === 'client_absence_announced'){
         payload.feedback_resolution = 'absent';
       } else if(ovType === 'slot_close'){
-        payload.feedback_resolution = 'cancelled';
+        if(dcInstructorOnlyCancel) payload.dc_instructor_only = true;
+        else payload.feedback_resolution = 'cancelled';
       }
       var schedReviewKey = portalAdminSessionReviewKeyFromSlot(slot, slot.sessionDate);
       if(schedReviewKey) payload.portal_session_key = schedReviewKey;
@@ -16672,11 +16737,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           String(clearPl.replace_kind || '').toLowerCase() === 'day_reassign'
         );
         if(!(ovType === 'slot_clear_client' && isMoveClear)){
-          autoNotifyKind = 'session_cancelled';
-          try{
-            await schedEnqueueCancelDecisionQueue(client, slot, ins0.id, ovType, reason);
-          }catch(_enq){
-            console.warn('[portal] cancel decision queue enqueue failed', _enq);
+          if(dcInstructorOnlyCancel || payload.dc_instructor_only){
+            var dcWho = String(slot.clientDisplay || slot.clientSlug || 'This client').trim();
+            sched.lastMsg = 'Override saved. ' + dcWho + ' stays booked: only this Day Centre instructor was cancelled.';
+          }else{
+            autoNotifyKind = 'session_cancelled';
+            try{
+              await schedEnqueueCancelDecisionQueue(client, slot, ins0.id, ovType, reason);
+            }catch(_enq){
+              console.warn('[portal] cancel decision queue enqueue failed', _enq);
+            }
           }
         }
       }
@@ -24502,7 +24572,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260922-register-13-of-18';
+    var PORTAL_ADMIN_HUB_BUILD = '20260922-dc-instructor-cancel';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

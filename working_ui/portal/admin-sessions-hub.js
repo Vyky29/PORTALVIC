@@ -6670,6 +6670,7 @@
     for (var oi = 0; oi < ovs.length; oi++) {
       var ovRow = overrideToCancellationRow(ovs[oi]);
       if (!ovRow || clean(ovRow.session_date) !== iso) continue;
+      if (this.dayCentreSessionStillStanding(ovRow.session_date, ovRow.client_name)) continue;
       var k1 = cancelDedupeKey(ovRow);
       if (k1 && seen[k1]) continue;
       if (k1) seen[k1] = true;
@@ -7404,6 +7405,8 @@
       if (!ovCan) continue;
       var csdOv = rowDateIso(ovCan.session_date);
       if (!csdOv) continue;
+      /* One Day Centre instructor cleared: client stays until every instructor is cleared. */
+      if (this.dayCentreSessionStillStanding(csdOv, ovCan.client_name)) continue;
       var ckOv = csdOv + "|" + canonicalClientSlug(ovCan.client_name);
       if (ckOv.length > 11) can[ckOv] = { countsAsSubmitted: true, during: false, row: ovCan };
     }
@@ -7421,8 +7424,98 @@
     return false;
   }
 
+  /**
+   * Day Centre cancel in Schedule & Covers drops that instructor only.
+   * The client stays booked while any other instructor still has them that day.
+   */
+  AdminSessionsHub.prototype.dayCentreSessionStillStanding = function (iso, clientSlug) {
+    if (this._dcStandingScan) return false;
+    var day = clean(iso).substring(0, 10);
+    var slug = canonicalClientSlug(clientSlug);
+    if (!day || !slug) return false;
+    this._dcStandingScan = true;
+    try {
+      var slots = this.expandSlotsForDate(day) || [];
+      var names = Object.create(null);
+      var dcSlots = [];
+      var i;
+      for (i = 0; i < slots.length; i++) {
+        var s = slots[i];
+        if (!s || isOpenRosterSlot(s.client_name)) continue;
+        if (canonicalClientSlug(s.client_name) !== slug) continue;
+        if (!isDayCentreService(s.service)) continue;
+        dcSlots.push(s);
+        var inst = slotInstructors(s);
+        var n;
+        for (n = 0; n < inst.length; n++) {
+          var key = clean(inst[n]).toLowerCase();
+          if (key) names[key] = inst[n];
+        }
+      }
+      /* session_add at SwimFarm is inferred as Aquatic; still another instructor on this DC client. */
+      if (dcSlots.length) {
+        var adds = (this.payload && this.payload.schedule_overrides) || [];
+        var ai;
+        for (ai = 0; ai < adds.length; ai++) {
+          var add = adds[ai];
+          if (String(add && add.override_type || "").trim() !== "session_add") continue;
+          if (String(add && add.status || "active").trim() !== "active") continue;
+          if (clean(add.session_date).substring(0, 10) !== day) continue;
+          if (canonicalClientSlug(add.anchor_client_id) !== slug) continue;
+          var addName = resolveStaffDisplayName(add.anchor_staff_id) || clean(add.anchor_staff_id);
+          var addKey = clean(addName).toLowerCase();
+          if (!addKey) continue;
+          names[addKey] = addName;
+          dcSlots.push({
+            session_date: day,
+            client_name: slug,
+            service: "Day Centre",
+            instructors: addName,
+            instructor_label: addName,
+            time_start: normTimeShort(add.anchor_start),
+            time_end: normTimeShort(add.anchor_end),
+            time_slot: clean(add.anchor_time_slot_label),
+            venue: clean(add.anchor_venue),
+          });
+        }
+      }
+      var keys = Object.keys(names);
+      if (keys.length < 2) return false;
+      var uncovered = 0;
+      var k;
+      for (k = 0; k < keys.length; k++) {
+        var covered = false;
+        var d;
+        for (d = 0; d < dcSlots.length; d++) {
+          if (!staffIdMatchesInstructorWithSwimAliases(keys[k], dcSlots[d].instructors)) continue;
+          var one = Object.assign({}, dcSlots[d], {
+            instructors: names[keys[k]],
+            instructor_label: names[keys[k]],
+          });
+          if (this.overrideForSlotByType(one, overrideIsCancelledType)) {
+            covered = true;
+            break;
+          }
+        }
+        if (!covered) uncovered++;
+      }
+      return uncovered > 0;
+    } catch (_dcStand) {
+      return false;
+    } finally {
+      this._dcStandingScan = false;
+    }
+  };
+
   AdminSessionsHub.prototype.slotHasCancellation = function (slot) {
     if (hubSlotIsTrial(slot)) return false;
+    if (
+      slot &&
+      isDayCentreService(slot.service) &&
+      this.dayCentreSessionStillStanding(slot.session_date, slot.client_name)
+    ) {
+      return false;
+    }
     if (hubSlotIsFadiDcCancelled(slot)) return true;
     if (this.slotHasFeedbackResolution(slot, "cancelled")) return true;
     var ovCan = this.overrideForSlotByType(slot, overrideIsCancelledType);
@@ -7434,6 +7527,13 @@
   /** Cancelled (before-start or during) counts as Feedback Submitted; Absent already does via slotIsAbsent. */
   AdminSessionsHub.prototype.slotCancellationCountsAsSubmitted = function (slot) {
     if (hubSlotIsTrial(slot)) return false;
+    if (
+      slot &&
+      isDayCentreService(slot.service) &&
+      this.dayCentreSessionStillStanding(slot.session_date, slot.client_name)
+    ) {
+      return false;
+    }
     if (hubSlotIsFadiDcCancelled(slot)) return true;
     if (this.slotHasFeedbackResolution(slot, "cancelled")) return true;
     var ovCan = this.overrideForSlotByType(slot, overrideIsCancelledType);
