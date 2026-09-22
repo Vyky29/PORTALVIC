@@ -6712,7 +6712,12 @@
       }catch(_){}
     })();
 
-    const PORTAL_ANNOUNCEMENT_ACK_STORAGE = 'portalAnnouncementAckMap_v1';
+    function portalAnnouncementAckStorageKey(){
+      if(typeof portalStaffAckMapStorageKey === 'function'){
+        return portalStaffAckMapStorageKey('portalAnnouncementAckMap_v1');
+      }
+      return 'portalAnnouncementAckMap_v1';
+    }
     let portalAnnouncementLockRequired = false;
     /** 'signedLog' | 'newNotice' (signable pending or informational calendar). */
     let portalAnnouncementsSheetEntry = '';
@@ -6780,7 +6785,11 @@
       try{
         var now = Date.now();
         if(_portalAckMapCache && now - _portalAckMapCacheAt < 800) return _portalAckMapCache;
-        const raw = localStorage.getItem(PORTAL_ANNOUNCEMENT_ACK_STORAGE);
+        const key = portalAnnouncementAckStorageKey();
+        var raw = localStorage.getItem(key);
+        if(!raw && key !== 'portalAnnouncementAckMap_v1'){
+          raw = localStorage.getItem('portalAnnouncementAckMap_v1');
+        }
         if(!raw){
           _portalAckMapCache = {};
           _portalAckMapCacheAt = now;
@@ -6797,7 +6806,7 @@
       _portalAckMapCacheAt = Date.now();
       _portalAnnItemsMemo = null;
       _portalSignedRowsMemo = null;
-      try{ localStorage.setItem(PORTAL_ANNOUNCEMENT_ACK_STORAGE, JSON.stringify(map || {})); }catch(_){}
+      try{ localStorage.setItem(portalAnnouncementAckStorageKey(), JSON.stringify(map || {})); }catch(_){}
     }
     function portalAnnouncementSignatureKey(item){
       if(!item || typeof item !== 'object') return '';
@@ -6971,18 +6980,25 @@
         dashboardData.portalLiveReminderIdSet = {};
         const completedContractIds = {};
         const completedContractAnnIds = {};
+        const awaitingContractIds = {};
         try{
           const uid = workerInboxCtx.authUserId;
           if(uid){
             const cr = await client
               .from('employment_contracts')
               .select('id,announcement_id,status')
-              .eq('user_id', uid)
-              .eq('status', 'completed');
+              .eq('user_id', uid);
             if(!cr.error && Array.isArray(cr.data)){
               cr.data.forEach(function(c){
-                if(c && c.id) completedContractIds[String(c.id)] = true;
-                if(c && c.announcement_id) completedContractAnnIds[String(c.announcement_id)] = true;
+                if(!c || !c.id) return;
+                var cid = String(c.id);
+                var st = String(c.status || '').trim().toLowerCase();
+                if(st === 'completed' || st === 'active'){
+                  completedContractIds[cid] = true;
+                  if(c.announcement_id) completedContractAnnIds[String(c.announcement_id)] = true;
+                }else if(st === 'awaiting_employee' || st === 'sent' || st === 'pending'){
+                  awaitingContractIds[cid] = true;
+                }
               });
             }
           }
@@ -7115,7 +7131,8 @@
               var parsed = JSON.parse(String(row.body || '{}'));
               contractId = String(parsed.contract_id || parsed.contractId || '').trim();
             }catch(_c){}
-            if((contractId && completedContractIds[contractId]) || completedContractAnnIds[id]){
+            var contractGone = !contractId || !!(contractId && !awaitingContractIds[contractId] && !completedContractIds[contractId]);
+            if((contractId && completedContractIds[contractId]) || completedContractAnnIds[id] || contractGone){
               try{
                 var ackDone = portalAnnouncementAckMapLoad();
                 var canonKey = 'portal-ann:' + id;

@@ -47,6 +47,25 @@
     return String(fallbackUid || "").trim();
   };
 
+  /** Per-worker localStorage key so a second device / login does not reuse someone else's unsigned map. */
+  global.portalStaffAckMapStorageKey = function portalStaffAckMapStorageKey(base) {
+    var b = String(base || "portalAnnouncementAckMap_v1").trim() || "portalAnnouncementAckMap_v1";
+    var uid = "";
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var sessionUid =
+        (box.session && box.session.user && box.session.user.id) ||
+        (box.staff_profile && box.staff_profile.id) ||
+        "";
+      uid =
+        typeof global.portalEffectiveStaffViewerId === "function"
+          ? global.portalEffectiveStaffViewerId(sessionUid)
+          : sessionUid;
+    } catch (_sk) {}
+    uid = String(uid || "").trim();
+    return uid ? b + ":" + uid : b;
+  };
+
   /** CEO / admin / Sevitha — always see staff announcements for team awareness (even role- or user-targeted).
    *  Skipped in ghost view so Teleport matches the worker’s real pending list. */
   global.portalStaffAnnouncementLeadershipMirrorUser = function portalStaffAnnouncementLeadershipMirrorUser(
@@ -598,7 +617,6 @@
           return String(id || "").trim();
         })
         .filter(Boolean);
-      if (!ids.length) return;
       metaById = metaById && typeof metaById === "object" ? metaById : {};
       var box = readBox();
       var client = box && box.client;
@@ -609,11 +627,12 @@
           ? global.portalEffectiveStaffViewerId(sessionUid)
           : sessionUid;
       if (!client || !uid || !client.from) return;
-      var res = await client
+      var q = client
         .from("portal_staff_announcement_acks")
         .select("announcement_id,signed_at,staff_full_name")
         .eq("staff_id", uid)
-        .in("announcement_id", ids);
+        .limit(500);
+      var res = await q;
       if (res.error || !Array.isArray(res.data) || !res.data.length) return;
       var ack = typeof loadMap === "function" ? loadMap() : {};
       var changed = false;
@@ -662,7 +681,6 @@
           return String(id || "").trim();
         })
         .filter(Boolean);
-      if (!ids.length) return;
       var box = readBox();
       var client = box && box.client;
       var session = box && box.session;
@@ -672,11 +690,12 @@
           ? global.portalEffectiveStaffViewerId(sessionUid)
           : sessionUid;
       if (!client || !uid || !client.from) return;
-      var res = await client
+      var q = client
         .from("portal_staff_announcement_acks")
         .select("announcement_id,signed_at,staff_full_name")
         .eq("staff_id", uid)
-        .in("announcement_id", ids);
+        .limit(500);
+      var res = await q;
       if (res.error || !Array.isArray(res.data) || !res.data.length) return;
       var ack = typeof loadMap === "function" ? loadMap() : {};
       var changed = false;

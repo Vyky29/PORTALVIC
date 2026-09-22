@@ -2008,19 +2008,32 @@
       }
       return rows.join('');
     }
-    const PORTAL_REMINDER_ACK_STORAGE = typeof window !== 'undefined' && window.PORTAL_REMINDER_ACK_STORAGE
-      ? window.PORTAL_REMINDER_ACK_STORAGE
-      : 'portalReminderAckMap_v1';
+    function portalReminderAckStorageKey(){
+      if(typeof portalStaffAckMapStorageKey === 'function'){
+        return portalStaffAckMapStorageKey(
+          (typeof window !== 'undefined' && window.PORTAL_REMINDER_ACK_STORAGE)
+            ? window.PORTAL_REMINDER_ACK_STORAGE
+            : 'portalReminderAckMap_v1'
+        );
+      }
+      return (typeof window !== 'undefined' && window.PORTAL_REMINDER_ACK_STORAGE)
+        ? window.PORTAL_REMINDER_ACK_STORAGE
+        : 'portalReminderAckMap_v1';
+    }
     function portalReminderAckMapLoad(){
       try{
-        const raw = localStorage.getItem(PORTAL_REMINDER_ACK_STORAGE);
+        const key = portalReminderAckStorageKey();
+        var raw = localStorage.getItem(key);
+        if(!raw && key !== 'portalReminderAckMap_v1'){
+          raw = localStorage.getItem('portalReminderAckMap_v1');
+        }
         if(!raw) return {};
         const o = JSON.parse(raw);
         return o && typeof o === 'object' ? o : {};
       }catch(_){ return {}; }
     }
     function portalReminderAckMapSave(map){
-      try{ localStorage.setItem(PORTAL_REMINDER_ACK_STORAGE, JSON.stringify(map || {})); }catch(_){}
+      try{ localStorage.setItem(portalReminderAckStorageKey(), JSON.stringify(map || {})); }catch(_){}
     }
     function portalReminderIsAcked(item){
       const key = typeof portalReminderSignatureKey === 'function' ? portalReminderSignatureKey(item) : '';

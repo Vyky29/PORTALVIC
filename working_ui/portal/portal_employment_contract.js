@@ -245,15 +245,24 @@ export async function portalPersistContractAnnouncementAck(contractRow, contract
     href: "my_documents.html?category=documents&from=staff"
   };
   try {
+    const storageKey =
+      typeof globalThis.portalStaffAckMapStorageKey === "function"
+        ? globalThis.portalStaffAckMapStorageKey("portalAnnouncementAckMap_v1")
+        : "portalAnnouncementAckMap_v1";
     const ack = JSON.parse(
-      (typeof localStorage !== "undefined" && localStorage.getItem("portalAnnouncementAckMap_v1")) || "{}"
+      (typeof localStorage !== "undefined" &&
+        (localStorage.getItem(storageKey) || localStorage.getItem("portalAnnouncementAckMap_v1"))) ||
+        "{}"
     );
     if (annId) {
       ack["portal-ann:" + annId] = Object.assign({}, payload, { portalAnnouncementId: annId });
     }
     ack["portal-ann:contract:" + id] = Object.assign({}, payload, { portalContractId: id });
     if (typeof localStorage !== "undefined") {
-      localStorage.setItem("portalAnnouncementAckMap_v1", JSON.stringify(ack));
+      localStorage.setItem(storageKey, JSON.stringify(ack));
+      if (storageKey !== "portalAnnouncementAckMap_v1") {
+        localStorage.setItem("portalAnnouncementAckMap_v1", JSON.stringify(ack));
+      }
     }
   } catch (_) {}
   const persistFn =
