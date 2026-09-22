@@ -9,13 +9,21 @@ Victor reactivated alerts on **8 Sep 2026** after Autumn rota / Overview sign-of
 
 On **11 Sep 2026** Victor confirmed again: keep outstanding-feedback alerts on (Aurora + Simon Joelle Thu 10 chase sent).
 
+On **22 Sep 2026** Victor asked to **stop Sign-and-submit announcement cards** for schedule overrides and outstanding feedback. Those were locking the staff app with a false/stale "you still owe…" sheet (Roberto, Victor) even when Term was already green. **Halo + Quick menu alerts stay.** Real announcements (office posts, annual profile, contracts) still use the announcement sheet.
+
 ## Live lanes (do not mute without explicit ask)
 
 - Admin activity bell + realtime (late / cancel / incident / wellbeing)
-- Staff / lead Web Push + in-tab reminders (schedule override, announcements, outstanding feedback)
+- Staff / lead Web Push (schedule override, outstanding feedback)
+- Staff **logo halo** + Quick menu tiles for schedule changes and outstanding feedback
 - Parent family Web Push / notify paths
 - Outstanding-feedback nag + late feedback digests (cron)
 
-## If Victor asks to pause again
+## Not a blocking announcement
+
+- Do **not** inject schedule-override changes into Announcements & reminders (no Sign and submit for NEW SHIFT / cover).
+- Do **not** inject outstanding-feedback as a full-screen announcement gate. Halo + **Outstanding feedbacks** tile only.
+
+## If Victor asks to pause push/halo/cron again
 
 Document the pause in a new rule and only then add a real kill switch if needed — do not silently leave policy-only pauses.

@@ -6758,8 +6758,8 @@
       openSheet('announcementsSheet');
     }
     /**
-     * Mandatory gate: unsigned announcements/reminders open as a full-screen
-     * lock before the dashboard (photo / day). Not a halo alert tile.
+     * Mandatory gate: unsigned office announcements (not schedule/feedback alerts).
+     * Schedule overrides and outstanding feedback stay on the logo halo.
      */
     function portalMaybeGateUnsignedAnnouncements(opts){
       opts = opts && typeof opts === 'object' ? opts : {};
@@ -7660,26 +7660,6 @@
         const k = portalReminderSignatureKey(n);
         if(!!k && !remAck[k]) items.push(n);
       });
-      try{
-        const schedRems = typeof portalScheduleChangeRemindersAsSignableNotices === 'function'
-          ? portalScheduleChangeRemindersAsSignableNotices()
-          : [];
-        for(let si = 0; si < schedRems.length; si++){
-          const sn = schedRems[si];
-          if(!sn) continue;
-          const sk = typeof portalReminderSignatureKey === 'function' ? portalReminderSignatureKey(sn) : '';
-          if(sk && remAck[sk]) continue;
-          items.push(sn);
-        }
-      }catch(_schedRem){}
-      try{
-        const fbOwed = typeof portalOutstandingFeedbackRemindersAsSignableNotices === 'function'
-          ? portalOutstandingFeedbackRemindersAsSignableNotices()
-          : [];
-        for(let fi = 0; fi < fbOwed.length; fi++){
-          if(fbOwed[fi]) items.push(fbOwed[fi]);
-        }
-      }catch(_fbOwed){}
       items.sort(function(a, b){
         const ta = Date.parse(a.created_at || '');
         const tb = Date.parse(b.created_at || '');
@@ -7708,156 +7688,13 @@
       };
     }catch(_){}
     function portalScheduleChangeRemindersAsSignableNotices(){
-      const out = [];
-      try{
-        const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim();
-        if(!sid) return out;
-        const remAck = typeof portalReminderAckMapLoad === 'function' ? portalReminderAckMapLoad() : {};
-        const dismissed = {};
-        try{
-          const dk = typeof portalQuickMenuLoadDismissedOverrideKeys === 'function'
-            ? portalQuickMenuLoadDismissedOverrideKeys()
-            : [];
-          for(let d = 0; d < dk.length; d++) dismissed[dk[d]] = true;
-        }catch(_){}
-        let todayStr = '';
-        try{
-          const now = new Date();
-          todayStr = typeof portalIsoYmdFromDate === 'function'
-            ? portalIsoYmdFromDate(now)
-            : now.toISOString().slice(0, 10);
-        }catch(_){}
-        const byIso = Object.create(null);
-        const list = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
-        for(let i = 0; i < list.length; i++){
-          const ov = list[i];
-          if(!ov || String(ov.status || 'active') !== 'active') continue;
-          const iso = String(ov.session_date || '').slice(0, 10);
-          if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
-          if(todayStr && iso < todayStr) continue;
-          const t = String(ov.override_type || '').trim();
-          const pAdd = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
-          let mine = false;
-          let line = '';
-          if(t === 'session_add'){
-            if(typeof portalStaffKeysMatch === 'function' && !portalStaffKeysMatch(ov.anchor_staff_id, sid)) continue;
-            const addKind = String(pAdd.kind || '').trim().toLowerCase();
-            if(addKind === 'training' || addKind === 'shadowing' || addKind === 'meeting' || addKind === 'office') continue;
-            if(addKind && addKind !== 'session' && addKind !== 'client') continue;
-            mine = true;
-            const who = String(pAdd.client_name || ov.anchor_client_id || pAdd.client_id || '').trim().replace(/_/g, ' ');
-            const st = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_start) : '';
-            const en = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_end) : '';
-            const slot = (st && en) ? (st + ' to ' + en) : (st || '');
-            const svc = String(pAdd.service || 'Day Centre').trim();
-            const whoLab = who ? (who.charAt(0).toUpperCase() + who.slice(1)) : 'Participant';
-            line = whoLab + (slot ? (' · ' + slot) : '') + (svc ? (' · ' + svc) : '');
-          }else if(t === 'instructor_reassign'){
-            if(typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
-              && portalOverrideIsInstructorCoverForLoggedInStaff(ov)){
-              mine = true;
-              line = 'Cover shift added';
-            }
-          }else if(t === 'slot_update'){
-            const P = window.PortalParticipantsSheet;
-            if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(ov)
-              && typeof portalStaffKeysMatch === 'function' && portalStaffKeysMatch(ov.anchor_staff_id, sid)){
-              mine = true;
-              line = 'New shift hours';
-            }
-          }
-          if(!mine) continue;
-          const did = typeof portalScheduleOverrideRowDismissKey === 'function'
-            ? portalScheduleOverrideRowDismissKey(ov)
-            : String(ov.id || '');
-          if(did && dismissed[did]) continue;
-          if(!byIso[iso]) byIso[iso] = { lines: [], dismissIds: [] };
-          if(line) byIso[iso].lines.push(line);
-          if(did && byIso[iso].dismissIds.indexOf(did) < 0) byIso[iso].dismissIds.push(did);
-        }
-        const isos = Object.keys(byIso).sort();
-        for(let gi = 0; gi < isos.length; gi++){
-          const iso = isos[gi];
-          const pack = byIso[iso];
-          if(!pack || !pack.lines.length) continue;
-          const remId = 'sched-ov-' + iso;
-          const key = 'portal-rem:' + remId;
-          if(remAck[key]) continue;
-          const dateLab = (typeof portalOverrideSessionDateDisplayLabel === 'function'
-            ? portalOverrideSessionDateDisplayLabel(iso)
-            : iso) || iso;
-          out.push({
-            type: 'reminder',
-            title: 'Schedule reminder',
-            text: 'Admin updated your sessions for ' + dateLab + '.\n\n' + pack.lines.join('\n') + '\n\nSign to confirm you have read this change. The cards are on that day in Today.',
-            href: '#portal-sched-ov-' + iso,
-            portalAdminReminderId: remId,
-            created_at: iso + 'T08:00:00.000Z',
-            scheduleOverrideDismissIds: pack.dismissIds,
-            scheduleOverrideIso: iso
-          });
-        }
-      }catch(_){}
-      return out;
+      /* 22 Sep 2026: schedule overrides are halo + Quick menu only — not Sign and submit cards. */
+      return [];
     }
     try{ window.portalScheduleChangeRemindersAsSignableNotices = portalScheduleChangeRemindersAsSignableNotices; }catch(_){}
-    function portalOutstandingFeedbackGateDismissed(){
-      try{
-        if(window.__PORTAL_FB_OWED_GATE_DISMISSED__) return true;
-      }catch(_){}
-      try{
-        if(sessionStorage.getItem('portalFbOwedGateDismissed') === '1'){
-          window.__PORTAL_FB_OWED_GATE_DISMISSED__ = 1;
-          return true;
-        }
-      }catch(_){}
-      return false;
-    }
-    /**
-     * Past-day outstanding feedback must lock the app like announcements.
-     * Wait for live Supabase feedback: a term rebuild before keys land counts every
-     * ended seat as pending (Roberto saw "6 outstanding" with Term already green).
-     * Signing hides the lock for this app session so it cannot loop.
-     */
     function portalOutstandingFeedbackRemindersAsSignableNotices(){
-      const out = [];
-      try{
-        if(portalOutstandingFeedbackGateDismissed()) return out;
-        if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return out;
-        var dd = typeof dashboardData !== 'undefined' ? dashboardData : null;
-        if(!dd || !dd.portalFeedbackServerSynced) return out;
-        if(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ === false) return out;
-        var submitted = dd.portalServerSubmittedFeedbackPortalKeys || dd.portalServerSubmittedFeedbackKeys;
-        if(!submitted || typeof submitted.size !== 'number' || submitted.size < 1) return out;
-        const n = typeof portalOutstandingSessionFeedbackCountAcrossTerm === 'function'
-          ? Number(portalOutstandingSessionFeedbackCountAcrossTerm() || 0)
-          : 0;
-        if(!(n > 0)) return out;
-        const iso = typeof portalOldestIsoDateNeedingTermFeedback === 'function'
-          ? String(portalOldestIsoDateNeedingTermFeedback() || '').trim().slice(0, 10)
-          : '';
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return out;
-        const todayStr = typeof getLocalDateKey === 'function' ? String(getLocalDateKey() || '').slice(0, 10) : '';
-        if(todayStr && iso >= todayStr) return out;
-        var fbMap = dd.termFeedbackByDate || {};
-        var st = fbMap[iso];
-        if(st && st !== 'pending' && st !== 'late') return out;
-        const dateLab = (typeof portalOverrideSessionDateDisplayLabel === 'function'
-          ? portalOverrideSessionDateDisplayLabel(iso)
-          : iso) || iso;
-        const unit = n === 1 ? '1 session feedback' : (String(n) + ' session feedbacks');
-        out.push({
-          type: 'reminder',
-          title: 'Outstanding feedback',
-          text: 'You still owe ' + unit + ' from ' + dateLab + '.\n\nAbsent and cancelled already count as done. This one was not sent.\n\nSign to open that day and complete it now.',
-          href: '#portal-open-pending-feedback',
-          portalAdminReminderId: 'fb-owed-' + iso,
-          created_at: iso + 'T21:00:00.000Z',
-          outstandingFeedback: true,
-          outstandingFeedbackIso: iso
-        });
-      }catch(_){}
-      return out;
+      /* 22 Sep 2026: outstanding feedback is halo + Feedbacks tile only — not a blocking announcement. */
+      return [];
     }
     try{ window.portalOutstandingFeedbackRemindersAsSignableNotices = portalOutstandingFeedbackRemindersAsSignableNotices; }catch(_){}
     function portalAnnouncementPendingItem(){
