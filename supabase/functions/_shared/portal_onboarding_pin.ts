@@ -422,6 +422,15 @@ export function matchStaffPinRow(
   return null;
 }
 
+/** GoTrue rejects new passwords shorter than 6 characters. Staff still type the 4-digit PIN. */
+export const STAFF_PIN_AUTH_SUFFIX = "Cs";
+
+export function staffPinAuthPassword(pin: string): string {
+  const p = String(pin || "").trim();
+  if (/^\d{4}$/.test(p)) return p + STAFF_PIN_AUTH_SUFFIX;
+  return p;
+}
+
 function randomFourDigitPin(): string {
   const n = crypto.getRandomValues(new Uint32Array(1))[0] % 9000;
   return String(1000 + n);

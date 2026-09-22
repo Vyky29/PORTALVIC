@@ -441,7 +441,9 @@
         var missing = Array.isArray(body.missing) ? body.missing.join(". ") : "";
         var msg = missing
           ? "Not complete yet: " + missing + "."
-          : (body.error || "Could not issue PIN.");
+          : body.error === "password_failed"
+            ? "The PIN was not activated as the login. Refresh and issue it again."
+            : (body.error || "Could not issue PIN.");
         if (deps.toast) deps.toast(msg);
         else alert(msg);
         if (btn) {

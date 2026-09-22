@@ -10,6 +10,7 @@ import {
   matchStaffPinRow,
   mintUniqueStaffPin,
   missingOnboardingPinChecks,
+  staffPinAuthPassword,
   ONBOARDING_PIN_UUID_RE,
   onboardingPayloadSubmitted,
   staffAppOrigin,
@@ -215,12 +216,33 @@ Deno.serve(async (req) => {
   }
 
   const { error: pwErr } = await portalAdmin.auth.admin.updateUserById(applicantId, {
-    password: pin,
+    password: staffPinAuthPassword(pin),
     email_confirm: true,
+    user_metadata: { onboarding_applicant: false },
   });
   if (pwErr) {
     console.error("[portal-admin-onboarding-issue-pin] password", pwErr);
-    return portalAdminJson(500, { ok: false, error: "password_failed" });
+    if (created) {
+      await portalAdmin
+        .from("portal_login_pins")
+        .delete()
+        .eq("portal", "staff")
+        .eq("name", pinName)
+        .eq("pin", pin);
+    }
+    return portalAdminJson(500, {
+      ok: false,
+      error: "password_failed",
+      detail: pwErr.message,
+    });
+  }
+
+  const { error: promoteErr } = await portalAdmin
+    .from("staff_profiles")
+    .update({ onboarding_applicant: false })
+    .eq("id", applicantId);
+  if (promoteErr) {
+    console.error("[portal-admin-onboarding-issue-pin] promote", promoteErr);
   }
 
   const first = fullName.split(/\s+/)[0] || fullName;

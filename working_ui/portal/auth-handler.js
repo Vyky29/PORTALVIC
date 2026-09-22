@@ -185,6 +185,13 @@ async function tryMergeStaffLoginMapFromSiblingJson() {
   }
 }
 
+/** Keep in sync with STAFF_PIN_AUTH_SUFFIX in portal_onboarding_pin.ts. GoTrue rejects new passwords under 6 characters; existing staff still sign in with the raw 4-digit PIN. */
+function portalStaffPinAuthPassword(pin) {
+  const p = String(pin || "").trim();
+  if (/^\d{4}$/.test(p)) return p + "Cs";
+  return p;
+}
+
 async function resolveOnboardingPinLoginEmail(rawName) {
   const name = String(rawName || "").trim();
   if (name.length < 2 || name.includes("@")) return null;
@@ -1393,11 +1400,25 @@ function bindLogin() {
 
     var navigated = false;
     try {
-      const signInWrap = await portalLoginPromiseTimeout(
+      let signInWrap = await portalLoginPromiseTimeout(
         supabase.auth.signInWithPassword({ email, password }),
         25000,
         "Sign-in timed out. Check your connection and tap Login again."
       );
+      if (
+        signInWrap &&
+        signInWrap.error &&
+        portalStaffPinAuthPassword(password) !== String(password || "")
+      ) {
+        signInWrap = await portalLoginPromiseTimeout(
+          supabase.auth.signInWithPassword({
+            email,
+            password: portalStaffPinAuthPassword(password),
+          }),
+          25000,
+          "Sign-in timed out. Check your connection and tap Login again."
+        );
+      }
       const data = signInWrap && signInWrap.data;
       const error = signInWrap && signInWrap.error;
       if (error || !data?.user?.id) {
