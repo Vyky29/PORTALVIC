@@ -118,6 +118,8 @@
     tbody tr.day-row--off td{background:#fde8e8 !important;color:#7f1d1d}
     tbody tr.day-row--upcoming td{background:#f7fafc !important;color:#60758a}
     .actions{padding:0 16px 16px}
+    body.portal-timesheet-local-ghost .actions{display:none}
+    body.portal-timesheet-local-ghost .deadline-banner{display:none}
     .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;background:#0b2a5b;color:#fff}
     .btn-back{background:#e4edf8;color:#0b2a5b;border:1px solid #b0c7e2}
     /* Tema/Elementor a veces fuerza <button>:hover en rosa; ID + !important igual que #submitBtn */
@@ -763,7 +765,38 @@
       ghostHandoff: null
     };
 
+    function isTimesheetLocalHost() {
+      try {
+        const h = String(location.hostname || "");
+        return h === "127.0.0.1" || h === "localhost" || h === "[::1]";
+      } catch (_) {
+        return false;
+      }
+    }
+
+    /** 127.0.0.1 timesheet.html?localGhost=1&ghostView=1&ghostRosterKey=aurora */
+    function parseLocalGhostPreview() {
+      if (!isTimesheetLocalHost()) return null;
+      try {
+        const q = new URLSearchParams(String(location.search || ""));
+        if (q.get("localGhost") !== "1") return null;
+        const rosterKey = String(q.get("ghostRosterKey") || "").trim().toLowerCase();
+        if (!rosterKey) return null;
+        return {
+          rosterKey,
+          staffUserId: "",
+          displayName: String(q.get("ghostDisplayName") || "").trim(),
+          readOnly: true,
+          localPreview: true
+        };
+      } catch (_) {
+        return null;
+      }
+    }
+
     function parseGhostHandoff() {
+      const local = parseLocalGhostPreview();
+      if (local) return local;
       if (typeof window.portalParseGhostHandoffFromUrl === "function") {
         return window.portalParseGhostHandoffFromUrl();
       }
@@ -2495,29 +2528,87 @@
             const iso = String(r.off_date || "").slice(0, 10);
             if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || seen[iso]) return null;
             seen[iso] = true;
-            const dObj = parseIsoDate(iso);
             const reason = String(r.reason || "").trim();
-            const label = /time\s*off/i.test(reason) || !reason
-              ? "Time off requested"
-              : reason;
-            return {
-              date: iso,
-              day: dObj ? WEEKDAY[dObj.getDay()] : "",
-              hours: 0,
-              completed: true,
-              dayOff: true,
-              service: "Day off",
-              serviceLabel: label,
-              role: "Day off",
-              rate: 0,
-              rosterKey: rk,
-            };
+            return timesheetDayOffEntry(iso, rk, reason);
           })
           .filter(Boolean);
       } catch (e) {
         console.warn("[timesheet] staff_unavailability skipped", e);
         return [];
       }
+    }
+
+    function timesheetDayOffEntry(iso, rosterKey, reason) {
+      const dObj = parseIsoDate(iso);
+      const why = String(reason || "").trim();
+      const label = /time\s*off/i.test(why) || !why ? "Time off requested" : why;
+      return {
+        date: iso,
+        day: dObj ? WEEKDAY[dObj.getDay()] : "",
+        hours: 0,
+        completed: true,
+        dayOff: true,
+        service: "Day off",
+        serviceLabel: label,
+        role: "Day off",
+        rate: 0,
+        rosterKey: String(rosterKey || "").trim().toLowerCase(),
+      };
+    }
+
+    /** LOCAL ghost: staff_unavailability JSON + known extras (no supabase). */
+    const LOCAL_TIMESHEET_DAY_OFF_EXTRAS = {
+      youssef: ["2026-09-18"],
+      luliya: ["2026-09-22"]
+    };
+
+    function timesheetUnavailabilityRowKey(row) {
+      const raw = String((row && (row.key || row.label || row.name)) || "");
+      const joined = raw.toLowerCase().replace(/[^a-z0-9]+/g, "");
+      const k = timesheetNormStaffKey(raw);
+      if (k === "youssef" || joined.indexOf("youssef") === 0 || joined === "josep") return "youssef";
+      if (k === "aurora" || joined.indexOf("aurora") === 0) return "aurora";
+      if (k === "sandra" || joined.indexOf("sandra") === 0) return "sandra";
+      if (k === "javier" || joined.indexOf("javier") === 0) return "javier";
+      if (k === "javi" || /palankas|arranz/.test(joined)) return "javi";
+      if (k === "john" || joined.indexOf("john") === 0) return "john";
+      if (k === "berta" || joined.indexOf("berta") === 0) return "berta";
+      if (k === "carlos" || joined.indexOf("carlos") === 0) return "carlos";
+      if (k === "luliya" || joined.indexOf("luliya") === 0 || joined.indexOf("lulia") === 0) return "luliya";
+      return k;
+    }
+
+    async function fetchLocalStaffDaysOffEntries(rosterKey, startIso, endIso) {
+      const me = timesheetNormStaffKey(rosterKey);
+      if (!me) return [];
+      const seen = Object.create(null);
+      const out = [];
+      function pushIso(iso, reason) {
+        const d = String(iso || "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || seen[d]) return;
+        if (d < startIso || d > endIso) return;
+        seen[d] = true;
+        out.push(timesheetDayOffEntry(d, me, reason || "Time off requested"));
+      }
+      try {
+        const res = await fetch("/portal/_local_staff_unavailability.json?v=" + Date.now(), {
+          cache: "no-store"
+        });
+        if (res.ok) {
+          const doc = await res.json();
+          const byDate = (doc && doc.byDate) || {};
+          Object.keys(byDate).forEach((iso) => {
+            (byDate[iso] || []).forEach((row) => {
+              if (timesheetUnavailabilityRowKey(row) !== me) return;
+              pushIso(iso, row && row.reason);
+            });
+          });
+        }
+      } catch (e) {
+        console.warn("[timesheet] local unavailability skipped", e);
+      }
+      (LOCAL_TIMESHEET_DAY_OFF_EXTRAS[me] || []).forEach((iso) => pushIso(iso, "Time off requested"));
+      return out;
     }
 
     function sessionIsCompleted(rec) {
@@ -2713,6 +2804,11 @@
         return { startMin: YOUSSEF_ACTON_SATURDAY_START_MIN, endMin: YOUSSEF_ACTON_SATURDAY_END_MIN };
       }
       if (isYoussefActonAfternoonBand(dayName, key, rows, youssefDateKey)) {
+        const fri = youssefFridayActonPaySpec(dayName, youssefDateKey);
+        if (fri) return { startMin: fri.startMin, endMin: fri.endMin };
+        if (isYoussefAutumnTermIso(youssefDateKey)) {
+          return { startMin: 16 * 60, endMin: 18 * 60 + 30 };
+        }
         return { startMin: 16 * 60 + 30, endMin: 18 * 60 + 30 };
       }
       if (dayName === "Sunday" && key === "roberto") {
@@ -2874,10 +2970,13 @@
       return WEEKDAY_MA_BESPOKE_PAY_HOURS;
     }
 
-    /** Youssef contract: Acton PM Mon/Tue/Wed 4:30–6:30 (2h @ SI £24). Term ended 15 Jul 2026. */
+    /** Youssef summer contract: Acton PM Mon/Tue/Wed 4:30–6:30 (2h @ SI £24). Ended 15 Jul 2026. */
     const YOUSSEF_ACTON_AFTERNOON_PAY_HOURS = 2;
     const YOUSSEF_ACTON_AFTERNOON_DAYS = new Set(["Monday", "Tuesday", "Wednesday"]);
     const YOUSSEF_ACTON_LAST_DATE = "2026-07-15";
+    const YOUSSEF_AUTUMN_FROM_ISO = "2026-09-01";
+    /** First Autumn Friday Acton session: Amaar until 6, so paid 4:00–6:00 (2h). Later Fridays until 5:30. */
+    const YOUSSEF_FRIDAY_ACTON_FIRST_ISO = "2026-09-11";
     /** Youssef Saturday Acton mornings: fixed 10:30–12:30 (2h), even if 10.30 client is absent. */
     const YOUSSEF_ACTON_SATURDAY_PAY_HOURS = 2;
     const YOUSSEF_ACTON_SATURDAY_START_MIN = 10 * 60 + 30;
@@ -2885,6 +2984,19 @@
     function youssefActonDateAllowed(dateKey) {
       const iso = String(dateKey || "").slice(0, 10);
       return /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso <= YOUSSEF_ACTON_LAST_DATE;
+    }
+    function isYoussefAutumnTermIso(dateKey) {
+      const iso = String(dateKey || "").slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso >= YOUSSEF_AUTUMN_FROM_ISO;
+    }
+    function youssefFridayActonPaySpec(dayName, dateKey) {
+      if (String(dayName || "") !== "Friday") return null;
+      const iso = String(dateKey || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || iso < YOUSSEF_FRIDAY_ACTON_FIRST_ISO) return null;
+      if (iso === YOUSSEF_FRIDAY_ACTON_FIRST_ISO) {
+        return { hours: 2, startMin: 16 * 60, endMin: 18 * 60 };
+      }
+      return { hours: 1.5, startMin: 16 * 60, endMin: 17 * 60 + 30 };
     }
     /** Day Centre SwimFarm only Mon/Wed (→3) and Fri (→4); never Tue/Thu mornings. */
     const YOUSSEF_DAY_CENTRE_DAYS = new Set(["Monday", "Wednesday", "Friday"]);
@@ -3031,9 +3143,14 @@
       return Number.isFinite(a) && a < 16 * 60;
     }
     function isYoussefActonAfternoonBand(dayName, rosterKey, dayRows, dateKey) {
-      if (!YOUSSEF_ACTON_AFTERNOON_DAYS.has(String(dayName || ""))) return false;
       if (!isYoussefRosterKey(rosterKey)) return false;
-      if (!youssefActonDateAllowed(dateKey != null ? dateKey : isoDateFromDayRows(dayRows))) return false;
+      const iso = dateKey != null ? dateKey : isoDateFromDayRows(dayRows);
+      const day = String(dayName || "");
+      const autumnFri = !!youssefFridayActonPaySpec(day, iso);
+      const autumnMonWed =
+        (day === "Monday" || day === "Wednesday") && isYoussefAutumnTermIso(iso);
+      const summerPm = YOUSSEF_ACTON_AFTERNOON_DAYS.has(day) && youssefActonDateAllowed(iso);
+      if (!autumnFri && !autumnMonWed && !summerPm) return false;
       const rows = dayRows || [];
       if (!rows.length) return false;
       return rows.every(function (s) {
@@ -3046,13 +3163,15 @@
       return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : "";
     }
     /**
-     * Drop ghost Day Centre on Tue/Thu (etc.) and Acton after term end (15 Jul 2026).
-     * Keeps: DC Mon/Wed/Fri (+ midday swim), Acton PM Mon/Tue/Wed ≤15 Jul, Acton Sat AM ≤15 Jul, Sunday SwimFarm.
+     * Drop ghost Day Centre on Tue/Thu (etc.) and summer Acton after 15 Jul 2026.
+     * Keeps: DC Mon/Wed/Fri (+ midday swim), summer Acton PM Mon/Tue/Wed ≤15 Jul,
+     * Autumn Acton Mon/Wed/Fri PM + Saturday AM, Sunday SwimFarm.
      */
     function filterYoussefContractEntries(entries, dateObj, rosterKey) {
       if (!isYoussefRosterKey(rosterKey)) return entries || [];
       const dayName = WEEKDAY[dateObj.getDay()];
       const dateKey = isoDate(dateObj);
+      const autumn = isYoussefAutumnTermIso(dateKey);
       return (entries || []).filter((e) => {
         if (!e || e.dayOff) return true;
         const venue = String(e.venue || "").toLowerCase();
@@ -3068,9 +3187,11 @@
         if (isSwimfarmDc || isSwimfarmMidSwim) {
           return YOUSSEF_DAY_CENTRE_DAYS.has(dayName);
         }
-        if (venue.indexOf("acton") >= 0 && role === "Swimming Instructor") {
-          if (!youssefActonDateAllowed(dateKey)) return false;
+        if (venue.indexOf("acton") >= 0 && (role === "Swimming Instructor" || role === "Support Worker")) {
           if (dayName === "Saturday") return true;
+          if (dayName === "Friday" && youssefFridayActonPaySpec(dayName, dateKey)) return true;
+          if (autumn && (dayName === "Monday" || dayName === "Wednesday")) return true;
+          if (!youssefActonDateAllowed(dateKey)) return false;
           return YOUSSEF_ACTON_AFTERNOON_DAYS.has(dayName);
         }
         return true;
@@ -3079,7 +3200,6 @@
     function isYoussefActonSaturdayMorningBand(dayName, rosterKey, dayRows, dateKey) {
       if (dayName !== "Saturday") return false;
       if (!isYoussefRosterKey(rosterKey)) return false;
-      if (!youssefActonDateAllowed(dateKey != null ? dateKey : isoDateFromDayRows(dayRows))) return false;
       const rows = dayRows || [];
       if (!rows.length) return false;
       return rows.every(function (s) {
@@ -3108,6 +3228,9 @@
     }
     function youssefActonAfternoonPayableHours(dayName, rosterKey, role, computedHours, dayRows, dateKey) {
       if (!isYoussefActonAfternoonBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
+      const fri = youssefFridayActonPaySpec(dayName, dateKey);
+      if (fri) return fri.hours;
+      if (isYoussefAutumnTermIso(dateKey)) return computedHours;
       return YOUSSEF_ACTON_AFTERNOON_PAY_HOURS;
     }
     /** True when every Day Centre client that day was admin-cancelled (24h+ notice → not paid). */
@@ -3300,6 +3423,8 @@
       const key = String(rosterKey || "").trim().toLowerCase();
       const fb = PAY_RATE_BY_ROSTER_KEY[key];
       if (!fb) return;
+      if (!state.roleRates || typeof state.roleRates !== "object") state.roleRates = {};
+      if (!state.roleScales || typeof state.roleScales !== "object") state.roleScales = {};
       if (fb.roleRates && typeof fb.roleRates === "object") {
         Object.keys(fb.roleRates).forEach((role) => {
           if (state.roleRates[role] == null) state.roleRates[role] = Number(fb.roleRates[role]);
@@ -3354,6 +3479,9 @@
         }
       } else if (forceKeys[key] && fb.hourly_rate != null) {
         state.primaryRate = Number(fb.hourly_rate);
+      }
+      if (state.primaryRole && state.primaryRate != null && state.roleRates[state.primaryRole] == null) {
+        state.roleRates[state.primaryRole] = state.primaryRate;
       }
       if (fb.roleScales && typeof fb.roleScales === "object") {
         Object.keys(fb.roleScales).forEach((role) => {
@@ -4292,9 +4420,9 @@
             typeof window.PortalRosterCanonical.resolveCanonicalStaffDashboardSource === "function"
           ) {
             window.STAFF_DASHBOARD_SOURCE =
-              window.PortalRosterCanonical.resolveCanonicalStaffDashboardSource(
-                window.STAFF_DASHBOARD_SOURCE
-              );
+              window.PortalRosterCanonical.resolveCanonicalStaffDashboardSource({
+                skipDb: !!(state.ghostHandoff && state.ghostHandoff.localPreview),
+              });
             return;
           }
           if (typeof window.portalRefreshStaffDashboardSourceFromPortal === "function") {
@@ -4312,6 +4440,7 @@
          * so DC from 1 Sep + AS/weekend from 6 Sep appear (Roberto hybrid pay).
          */
         timesheetApplyAutumnCanonicalRoster();
+        if ((state.ghostHandoff && state.ghostHandoff.localPreview) || !supabase) return;
         if (typeof window.portalRefreshPortalRosterRowsFromSupabase === "function") {
           await withTimeout(
             window.portalRefreshPortalRosterRowsFromSupabase(supabase),
@@ -4619,11 +4748,58 @@
       renderManualTable();
     }
 
+    function timesheetApplyLocalRosterPreviewCompletion() {
+      if (!(state.ghostHandoff && state.ghostHandoff.localPreview)) return;
+      const todayIso = isoDate(londonPayrollAnchor(new Date()));
+      state.entries.forEach((e) => {
+        if (!e || e.dayOff) return;
+        const iso = String(e.date || "").slice(0, 10);
+        e.upcoming = !!(iso && todayIso && iso > todayIso);
+        if (e.upcoming) {
+          e.completed = false;
+          e.lateHold = false;
+          return;
+        }
+        e.completed = true;
+        e.lateHold = false;
+      });
+      state.payableEntries = state.entries.filter((e) => e.completed && !e.dayOff && !e.lateHold && !e.upcoming);
+      state.pendingEntries = state.entries.filter((e) => !e.completed && !e.dayOff && !e.upcoming);
+      state.lateHoldEntries = state.entries.filter((e) => e.lateHold && !e.dayOff);
+      state.totalHours = Number(state.payableEntries.reduce((acc, e) => acc + e.hours, 0).toFixed(2));
+      state.potentialHours = Number(
+        state.entries.filter((e) => !e.dayOff && !e.upcoming).reduce((acc, e) => acc + e.hours, 0).toFixed(2)
+      );
+      state.totalCost = Number(state.payableEntries.reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2));
+      state.potentialCost = Number(
+        state.entries.filter((e) => !e.dayOff && !e.upcoming).reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2)
+      );
+      state.lateHoldCost = 0;
+      state.pendingCost = Number((state.potentialCost - state.totalCost - state.lateHoldCost).toFixed(2));
+      const fixedMonthly = fixedMonthlySalaryForRosterKey(state.staffRosterKey);
+      if (fixedMonthly > 0 && !robertoHybridPayActive()) {
+        state.totalCost = fixedMonthly;
+        state.potentialCost = fixedMonthly;
+        state.pendingCost = 0;
+      }
+    }
+
     async function loadData() {
-      const { user, supabase } = await portalRequireUser();
       const ghostHandoff = parseGhostHandoff();
       state.ghostHandoff = ghostHandoff;
       state.ghostReadOnly = !!(ghostHandoff && ghostHandoff.readOnly);
+      const localPreview = !!(ghostHandoff && ghostHandoff.localPreview);
+      let user = { id: "", email: "", user_metadata: {} };
+      let supabase = null;
+      if (!localPreview) {
+        const auth = await portalRequireUser();
+        user = auth.user;
+        supabase = auth.supabase;
+      } else {
+        try {
+          document.body.classList.add("portal-timesheet-local-ghost");
+        } catch (_) {}
+      }
       state.userId = String((ghostHandoff && ghostHandoff.staffUserId) || user.id || "").trim();
       const ghostRosterKey = ghostHandoff && ghostHandoff.rosterKey ? ghostHandoff.rosterKey : "";
       applyPayrollPeriodForStaff(ghostRosterKey);
@@ -4631,6 +4807,7 @@
       let profile = {};
       let rateRow = {};
       try {
+        if (!supabase) throw new Error("local_preview_no_supabase");
         const [profileRes, rateRes, roleRatesRes] = await withTimeout(
           Promise.all([
             supabase.from("staff_profiles").select("full_name, username, app_role, staff_role").eq("id", state.userId).maybeSingle(),
@@ -4671,7 +4848,7 @@
       }
 
       await timesheetEnsureLiveRoster(supabase);
-      await timesheetEnsureTimetablePaidMerge(supabase);
+      if (supabase) await timesheetEnsureTimetablePaidMerge(supabase);
 
       let sessionsModel = [];
       try {
@@ -4695,18 +4872,26 @@
       let scheduleOverrides = [];
       let dayOffRowsEarly = [];
       try {
-        const pair = await Promise.all([
-          fetchScheduleOverridesForPeriod(supabase, state.periodStart, state.periodEnd),
-          fetchStaffDaysOffEntries(
-            supabase,
-            state.userId,
+        if (localPreview) {
+          dayOffRowsEarly = await fetchLocalStaffDaysOffEntries(
             state.staffRosterKey,
             state.periodStart,
             state.periodEnd
-          ),
-        ]);
-        scheduleOverrides = pair[0];
-        dayOffRowsEarly = pair[1];
+          );
+        } else {
+          const pair = await Promise.all([
+            fetchScheduleOverridesForPeriod(supabase, state.periodStart, state.periodEnd),
+            fetchStaffDaysOffEntries(
+              supabase,
+              state.userId,
+              state.staffRosterKey,
+              state.periodStart,
+              state.periodEnd
+            ),
+          ]);
+          scheduleOverrides = pair[0];
+          dayOffRowsEarly = pair[1];
+        }
       } catch (ovErr) {
         console.warn("[timesheet] overrides/day-off fetch failed", ovErr);
       }
@@ -4736,6 +4921,7 @@
       const dates = eachDateInclusive(parseIsoDate(state.periodStart), parseIsoDate(state.periodEnd));
       try {
         rebuildEntriesFromSessions(sessionsWithCover, dates, parseReviewMap(), [], state.dayOffEntries);
+        timesheetApplyLocalRosterPreviewCompletion();
       } catch (rebuildErr) {
         console.error("[timesheet] rebuildEntriesFromSessions failed", rebuildErr);
         state.entries = [];
@@ -4744,6 +4930,8 @@
       timesheetPaintIdentity();
       renderTable();
       if (state.ghostReadOnly) applyGhostReadOnlyUi();
+
+      if (localPreview || !supabase) return;
 
       // Completion status + training/shadowing — must not block first paint of Jun25–Jul24 shifts.
       try {
@@ -4781,8 +4969,12 @@
         btn.title = "Read-only ghost view";
       }
       const note = document.getElementById("statusNote");
+      if (note && state.ghostHandoff && state.ghostHandoff.localPreview) {
+        note.textContent = "LOCAL roster preview - no live feedback / day-off DB. Past days shown green to display hours.";
+        return;
+      }
       if (note && !String(note.textContent || "").includes("ghost view")) {
-        note.textContent = String(note.textContent || "") + " Ghost view — read-only.";
+        note.textContent = String(note.textContent || "") + " Ghost view - read-only.";
       }
     }
 
