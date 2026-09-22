@@ -100,6 +100,20 @@
       color:#102238;
       overflow-wrap:break-word;
     }
+    .timesheet-summary__row--sub{
+      background:#eef3f8;
+      padding:8px 12px 8px 20px;
+    }
+    .timesheet-summary__row--sub .timesheet-summary__label{
+      font-weight:600;
+      font-size:12px;
+      color:#3d5270;
+    }
+    .timesheet-summary__row--sub .timesheet-summary__value{
+      font-size:13px;
+      font-weight:700;
+      color:#3d5270;
+    }
     .timesheet-summary__value{
       flex:0 0 auto;
       font-weight:800;
@@ -243,6 +257,7 @@
       html.portal-timesheet-vertical .th-mob{display:inline;white-space:nowrap}
       html.portal-timesheet-vertical .timesheet-summary{margin:0 8px 10px}
       html.portal-timesheet-vertical .timesheet-summary__row{padding:9px 10px;gap:10px}
+      html.portal-timesheet-vertical .timesheet-summary__row--sub{padding:8px 10px 8px 16px}
       html.portal-timesheet-vertical .timesheet-summary__label{font-size:12px}
       html.portal-timesheet-vertical .timesheet-summary__value{font-size:13px}
       html.portal-timesheet-vertical .actions{padding:0 10px max(14px, env(safe-area-inset-bottom, 0px));flex-direction:column}
@@ -415,12 +430,28 @@
       </div>
       <div class="timesheet-summary" id="timesheetSummary" aria-label="Pay summary">
         <div class="timesheet-summary__row">
-          <div class="timesheet-summary__label">Hours ready to pay now (green)</div>
+          <div class="timesheet-summary__label">Hours ready to pay now (feedbacks + granted)</div>
           <div class="timesheet-summary__value" id="totalHours">0.00</div>
+        </div>
+        <div class="timesheet-summary__row timesheet-summary__row--sub">
+          <div class="timesheet-summary__label">Hours from feedbacks done</div>
+          <div class="timesheet-summary__value" id="feedbackHours">0.00</div>
+        </div>
+        <div class="timesheet-summary__row timesheet-summary__row--sub">
+          <div class="timesheet-summary__label">Granted hours (pay band extra)</div>
+          <div class="timesheet-summary__value" id="grantedHours">0.00</div>
         </div>
         <div class="timesheet-summary__row">
           <div class="timesheet-summary__label">Ready to pay now (GBP)</div>
           <div class="timesheet-summary__value" id="totalCost">0.00</div>
+        </div>
+        <div class="timesheet-summary__row timesheet-summary__row--sub">
+          <div class="timesheet-summary__label">From feedbacks done (GBP)</div>
+          <div class="timesheet-summary__value" id="feedbackCost">0.00</div>
+        </div>
+        <div class="timesheet-summary__row timesheet-summary__row--sub">
+          <div class="timesheet-summary__label">Granted hours (GBP)</div>
+          <div class="timesheet-summary__value" id="grantedCost">0.00</div>
         </div>
         <div class="timesheet-summary__row">
           <div class="timesheet-summary__label">Pending until feedback is completed (GBP)</div>
@@ -2504,6 +2535,7 @@
         state.lateHoldCost = 0;
         state.effectiveRate = null;
       }
+      timesheetFillGrantedPayTotals();
     }
 
     async function fetchStaffDaysOffEntries(supabase, userId, rosterKey, startIso, endIso) {
@@ -3913,6 +3945,107 @@
       return keys;
     }
 
+    function timesheetSessionIsWorkedFeedbackSeat(s) {
+      const id = String((s && (s.clientId || s.client_id)) || "")
+        .trim()
+        .toLowerCase();
+      if (
+        id === "closed" ||
+        id === "available" ||
+        id === "no_participant" ||
+        id === "no-participant" ||
+        id === "cover_needed" ||
+        id === "cover-needed"
+      ) {
+        return false;
+      }
+      const name = String((s && (s.clientName || s.client_name || s.client)) || "").trim();
+      if (!name) return false;
+      if (
+        /^(no participant|closed|available|empty|cover needed|cover tbc|office)$/i.test(name)
+      ) {
+        return false;
+      }
+      return true;
+    }
+
+    /** Minutes of named client seats only (empty / Closed do not count as feedback hours). */
+    function timesheetWorkedHoursFromRows(rows) {
+      let mins = 0;
+      (Array.isArray(rows) ? rows : []).forEach((s) => {
+        if (!timesheetSessionIsWorkedFeedbackSeat(s)) return;
+        const a = hmToMinutes(String(s.start || "").trim());
+        let b = hmToMinutes(String(s.end || "").trim());
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+        if (b < a) b += 24 * 60;
+        mins += Math.max(0, b - a);
+      });
+      return Number((mins / 60).toFixed(2));
+    }
+
+    function timesheetSyncGrantedHours(entry) {
+      if (!entry || entry.dayOff) {
+        if (entry) {
+          entry.workedHours = 0;
+          entry.grantedHours = 0;
+        }
+        return entry;
+      }
+      const payable = Number(entry.hours || 0);
+      let worked = Number(entry.workedHours);
+      if (!Number.isFinite(worked)) worked = payable;
+      if (worked > payable) worked = payable;
+      if (worked < 0) worked = 0;
+      entry.workedHours = Number(worked.toFixed(2));
+      entry.grantedHours = Number(Math.max(0, payable - worked).toFixed(2));
+      return entry;
+    }
+
+    function timesheetAttachGrantedHours(entry, rows) {
+      if (!entry || entry.dayOff) return timesheetSyncGrantedHours(entry);
+      entry.workedHours = timesheetWorkedHoursFromRows(rows);
+      return timesheetSyncGrantedHours(entry);
+    }
+
+    function timesheetEntryWorkedHours(e) {
+      if (!e || e.dayOff) return 0;
+      if (e.workedHours != null && Number.isFinite(Number(e.workedHours))) {
+        return Number(e.workedHours);
+      }
+      return Number(e.hours || 0);
+    }
+
+    function timesheetFillGrantedPayTotals() {
+      const pay = Array.isArray(state.payableEntries) ? state.payableEntries : [];
+      state.feedbackHours = Number(
+        pay.reduce((acc, e) => acc + timesheetEntryWorkedHours(e), 0).toFixed(2)
+      );
+      state.grantedHoursTotal = Number(
+        pay.reduce((acc, e) => acc + Number(e.grantedHours || 0), 0).toFixed(2)
+      );
+      state.feedbackCost = Number(
+        pay
+          .reduce((acc, e) => acc + timesheetEntryWorkedHours(e) * Number(e.rate || 0), 0)
+          .toFixed(2)
+      );
+      state.grantedCost = Number(
+        pay
+          .reduce((acc, e) => acc + Number(e.grantedHours || 0) * Number(e.rate || 0), 0)
+          .toFixed(2)
+      );
+    }
+
+    function timesheetPaintGrantedSummary() {
+      const setTxt = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = money(val || 0);
+      };
+      setTxt("feedbackHours", state.feedbackHours);
+      setTxt("grantedHours", state.grantedHoursTotal);
+      setTxt("feedbackCost", state.feedbackCost);
+      setTxt("grantedCost", state.grantedCost);
+    }
+
     /** One paid shift per calendar day (single role): span earliest→latest with support buffer. */
     function dailyHoursSingleRoleFromSessions(rows, dateObj, reviewMap, staffKey, dominantRole, dominantService) {
       const dayName = WEEKDAY[dateObj.getDay()];
@@ -4013,21 +4146,24 @@
         const window = timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours, dateKey);
         timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
       }
-      return {
-        date: dateKey,
-        day: dayName,
-        hours,
-        /* Feedback complete → green / payable; pending → orange, hours still show Timetable minimum. */
-        completed: completedAll,
-        service: serviceName || dominantService,
-        serviceName: serviceName || dominantService,
-        serviceLabel: timeRange ? `${timeRange} ${serviceName || dominantService}` : (serviceName || dominantService),
-        venue,
-        timeRange,
-        role,
-        rate,
-        blendedRate: null
-      };
+      return timesheetAttachGrantedHours(
+        {
+          date: dateKey,
+          day: dayName,
+          hours,
+          /* Feedback complete → green / payable; pending → orange, hours still show Timetable minimum. */
+          completed: completedAll,
+          service: serviceName || dominantService,
+          serviceName: serviceName || dominantService,
+          serviceLabel: timeRange ? `${timeRange} ${serviceName || dominantService}` : (serviceName || dominantService),
+          venue,
+          timeRange,
+          role,
+          rate,
+          blendedRate: null
+        },
+        rows
+      );
     }
 
     /**
@@ -4050,6 +4186,7 @@
           const named = timesheetStripVenueSuffix(live[0].serviceName || live[0].service || "") || "";
           live[0].serviceLabel = tr ? `${tr} ${named}`.trim() : named;
         }
+        timesheetSyncGrantedHours(live[0]);
         return list;
       }
       const sum = live.reduce((acc, e) => acc + Number(e.hours || 0), 0);
@@ -4057,6 +4194,7 @@
       const factor = tt.hours / sum;
       live.forEach((e) => {
         e.hours = Number((Number(e.hours || 0) * factor).toFixed(2));
+        timesheetSyncGrantedHours(e);
       });
       return list;
     }
@@ -4191,20 +4329,25 @@
             const window = timesheetPaidWindowForRows(groupRows, dayName, rosterKey, role, hours, dateKey);
             timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
           }
-          entries.push({
-            date: dateKey,
-            day: dayName,
-            hours,
-            completed: completedAll,
-            service: named,
-            serviceName: named,
-            serviceLabel: timeRange ? `${timeRange} ${named}` : named,
-            venue,
-            timeRange,
-            role,
-            rate: rateForRole(role),
-            blendedRate: null
-          });
+          entries.push(
+            timesheetAttachGrantedHours(
+              {
+                date: dateKey,
+                day: dayName,
+                hours,
+                completed: completedAll,
+                service: named,
+                serviceName: named,
+                serviceLabel: timeRange ? `${timeRange} ${named}` : named,
+                venue,
+                timeRange,
+                role,
+                rate: rateForRole(role),
+                blendedRate: null
+              },
+              groupRows
+            )
+          );
         });
       });
       entries.sort((a, b) => {
@@ -4293,6 +4436,7 @@
           single.timeRange = clubTimeRangeFromMinutes(swimWin.startMin, swimWin.endMin);
           single.serviceLabel = `${single.timeRange} Aquatic Activity`;
           single.rate = rateForRole("Swimming Instructor");
+          timesheetAttachGrantedHours(single, rows);
           built = [single];
         }
       } else if (roleCount <= 1) {
@@ -4328,6 +4472,7 @@
         rosterKey
       );
       out = applyTimetablePaidBandToDayEntries(out, rosterKey, isoDate(dateObj));
+      (out || []).forEach((e) => timesheetSyncGrantedHours(e));
       /* Fully cancelled Saturday Acton morning → Day Off row (Time off requested), not a blank day. */
       if (
         isYoussefRosterKey(rosterKey) &&
@@ -4623,6 +4768,7 @@
       const lateHoldEl = document.getElementById("lateHoldCost");
       if (lateHoldEl) lateHoldEl.textContent = money(state.lateHoldCost || 0);
       document.getElementById("potentialCost").textContent = money(state.potentialCost);
+      timesheetPaintGrantedSummary();
     }
 
     function manualClampDateToPeriod(iso) {
@@ -4826,6 +4972,7 @@
         state.potentialCost = fixedMonthly;
         state.pendingCost = 0;
       }
+      timesheetFillGrantedPayTotals();
     }
 
     async function loadData() {
