@@ -361,6 +361,13 @@
   function boot() {
     var p = pageProfile();
     var email = pageEmail();
+    if (typeof window.portalInductionMustComplete === "function" && window.portalInductionMustComplete(p, email)) {
+      if (typeof window.portalInductionClearFakeCompleteForRequired === "function") {
+        window.portalInductionClearFakeCompleteForRequired(p, email);
+      }
+      window.location.replace("/general-induction/");
+      return;
+    }
     if (typeof window.portalInductionApplyGrandfather === "function") {
       window.portalInductionApplyGrandfather(p, email);
     }

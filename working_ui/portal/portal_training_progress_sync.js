@@ -100,6 +100,13 @@
       completeFlag = global.localStorage.getItem("provisional-induction-training-complete") === "1";
     } catch (_) {}
 
+    if (
+      mustComplete &&
+      typeof global.portalInductionClearFakeCompleteForRequired === "function"
+    ) {
+      global.portalInductionClearFakeCompleteForRequired(profile, authEmail);
+    }
+
     var moduleStates = {};
     var doneCount = 0;
     var currentModule = 0;
@@ -455,6 +462,19 @@
 
       var remoteStates = await fetchRemoteInductionModuleStates(client, userId);
       if (!remoteStates) return { ok: true, changed: false };
+      var hydrateProfile = box.staff_profile || null;
+      var hydrateEmail = "";
+      try {
+        hydrateEmail = box.session && box.session.user && box.session.user.email
+          ? String(box.session.user.email)
+          : "";
+      } catch (_em) {}
+      if (
+        typeof global.portalInductionMustComplete === "function" &&
+        global.portalInductionMustComplete(hydrateProfile, hydrateEmail)
+      ) {
+        return { ok: true, changed: false, skipped: "new_hire" };
+      }
 
       var changed = applyInductionModuleStatesToLocalStorage(remoteStates);
       if (remoteStates.refresh && typeof global.portalInductionSaveRefresh === "function") {

@@ -185,6 +185,57 @@
     return true;
   }
 
+  /** Grandfather stamp: quiz marked passed with no watch time and no quiz start. */
+  function portalInductionModuleIsStamp(st) {
+    if (!st || !st.quizPass) return false;
+    if (st.outcomes || st.quizStarted) return false;
+    if (Number(st.maxWatchedTime) > 0) return false;
+    return true;
+  }
+
+  function portalInductionPassedModulesAreStampsOnly() {
+    var anyPass = false;
+    for (var i = 1; i <= MODULES; i++) {
+      var st = {};
+      try {
+        st = JSON.parse(global.localStorage.getItem("provisional-induction-module-" + i) || "{}");
+      } catch (_e) {
+        st = {};
+      }
+      var started = !!(st.journey || st.video || st.outcomes || st.quizStarted || Number(st.maxWatchedTime) > 0 || st.quizPass);
+      if (!started) continue;
+      if (!portalInductionModuleIsStamp(st)) return false;
+      anyPass = true;
+    }
+    return anyPass;
+  }
+
+  /**
+   * New hires do the six induction modules. The annual recap is a later admin ask.
+   * A shared browser can still hold another worker's stamp or recap pass — drop that
+   * so it is not written onto this hire.
+   */
+  function portalInductionClearFakeCompleteForRequired(profile, authEmail) {
+    if (!portalInductionMustComplete(profile, authEmail)) return false;
+    var cleared = false;
+    try {
+      if (portalInductionPassedModulesAreStampsOnly()) {
+        for (var i = 1; i <= MODULES; i++) {
+          global.localStorage.removeItem("provisional-induction-module-" + i);
+        }
+        global.localStorage.removeItem(COMPLETE_KEY);
+        global.localStorage.removeItem(COMPLETED_AT_KEY);
+        global.localStorage.removeItem(CERT_PDF_DOWNLOADED_KEY);
+        cleared = true;
+      }
+      if (global.localStorage.getItem(REFRESH_KEY)) {
+        global.localStorage.removeItem(REFRESH_KEY);
+        cleared = true;
+      }
+    } catch (_e2) {}
+    return cleared;
+  }
+
   function portalInductionModulesAllPassed() {
     for (var i = 1; i <= MODULES; i++) {
       try {
@@ -371,6 +422,7 @@
       if (uid) portalInductionBindStorageOwner(uid);
     } catch (_eOwn) {}
     portalInductionPrepareLearnerName(profile, authEmail);
+    portalInductionClearFakeCompleteForRequired(profile, authEmail);
     portalInductionClearGrandfatherStateForRequired(profile, authEmail);
     portalInductionApplyGrandfather(profile, authEmail);
     if (
@@ -515,6 +567,15 @@
 
   function portalInductionSyncRecapQuickMenu(btn, profile, authEmail) {
     if (!btn) return;
+    /* Recap is for people who already finished induction and were asked to refresh.
+       New hires (full six modules) do not see it. */
+    if (portalInductionMustComplete(profile, authEmail)) {
+      btn.hidden = true;
+      btn.setAttribute("aria-hidden", "true");
+      btn.disabled = true;
+      btn.classList.remove("menu-btn--portal-pulse");
+      return;
+    }
     var full = portalInductionHasFullPathwayComplete(profile, authEmail);
     var year = portalInductionTrainingYear();
     var refreshDue = portalInductionRefreshDue(profile, authEmail);
@@ -542,6 +603,7 @@
       var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
       email = sess && sess.user && sess.user.email ? String(sess.user.email) : "";
     }
+    portalInductionClearFakeCompleteForRequired(profile, email);
     portalInductionClearGrandfatherStateForRequired(profile, email);
     portalInductionApplyGrandfather(profile, email);
     portalInductionSyncQuickMenu(global.document.getElementById("quickMenuInduction"), profile, email);
@@ -585,6 +647,7 @@
     };
   }
 
+  global.portalInductionClearFakeCompleteForRequired = portalInductionClearFakeCompleteForRequired;
   global.portalInductionMustComplete = portalInductionMustComplete;
   global.portalInductionLearnerHintFromUrl = portalInductionLearnerHintFromUrl;
   global.portalInductionHasIdentifiableLearner = portalInductionHasIdentifiableLearner;
