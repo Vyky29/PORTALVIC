@@ -7133,11 +7133,116 @@
   };
 
   /**
+   * Same rows as the register table: submitted log plus roster seats still awaiting.
+   * Week-strip 13/13 was only the submitted rows, so awaiting seats disappeared from the total.
+   */
+  AdminSessionsHub.prototype.feedbackRegisterRowsForDay = function (iso) {
+    var hub = this;
+    var day = clean(iso || hub.selectedDay);
+    if (!day) return [];
+    var rows = hub.feedbackLogRowsForDay(day);
+    if (!(hub.opts && hub.opts.feedbackMixAwaitingSlots)) return rows;
+    var mixed = hub.feedbackMixRowsForDay(day);
+    var seen = {};
+    var awaitingHead = [];
+    for (var i = 0; i < rows.length; i++) {
+      var k = hub.fbRowKey(rows[i]);
+      if (k) seen[k] = true;
+    }
+    for (var j = 0; j < mixed.length; j++) {
+      var m = mixed[j];
+      if (m && m._ashAwaitingSlot) {
+        awaitingHead.push(m);
+        continue;
+      }
+      var mk = hub.fbRowKey(m);
+      if (mk && !seen[mk]) {
+        seen[mk] = true;
+        rows.push(m);
+      }
+    }
+    if (awaitingHead.length) return awaitingHead.concat(rows);
+    return rows;
+  };
+
+  /** feedback | absent | cancelled | awaiting | skip */
+  AdminSessionsHub.prototype.registerRowResolution = function (fb) {
+    var hub = this;
+    if (!fb || isTeflonDemoFeedbackRow(hub, fb)) return "skip";
+    if (fb._ashAwaitingSlot && fb.slot) {
+      var slot = fb.slot;
+      if (
+        isOpenRosterSlot(slot.client_name) ||
+        rosterSlotKind(slot.client_name) === "closed" ||
+        slotIsStaffDutyNoFeedback(slot) ||
+        slotIsHoldWaitlistNoFeedback(slot.client_name)
+      ) {
+        return "skip";
+      }
+      if (hub.slotCancellationCountsAsSubmitted(slot)) return "cancelled";
+      if (hub.slotIsAbsent(slot)) return "absent";
+      return "awaiting";
+    }
+    if (isCancellationFeedbackRow(fb)) return "cancelled";
+    if (isAbsentFeedbackRow(fb)) return "absent";
+    return "feedback";
+  };
+
+  AdminSessionsHub.prototype.registerDayBreakdown = function (iso) {
+    var hub = this;
+    var rows = hub.feedbackRegisterRowsForDay(iso);
+    var feedback = 0;
+    var absent = 0;
+    var cancelled = 0;
+    var awaiting = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var kind = hub.registerRowResolution(rows[i]);
+      if (kind === "feedback") feedback++;
+      else if (kind === "absent") absent++;
+      else if (kind === "cancelled") cancelled++;
+      else if (kind === "awaiting") awaiting++;
+    }
+    var done = feedback + absent + cancelled;
+    return {
+      feedback: feedback,
+      absent: absent,
+      cancelled: cancelled,
+      awaiting: awaiting,
+      done: done,
+      total: done + awaiting,
+    };
+  };
+
+  AdminSessionsHub.prototype.htmlRegisterDayBreakdown = function () {
+    var b = this.registerDayBreakdown(this.selectedDay);
+    var esc = this.escapeHtml;
+    if (!b.total && !b.done) return "";
+    return (
+      '<p class="ash-feedback-filter-hint" data-ash-register-breakdown>' +
+      "<strong>" +
+      esc(String(b.done) + "/" + String(b.total)) +
+      "</strong> done. " +
+      esc(String(b.feedback)) +
+      " feedback, " +
+      esc(String(b.absent)) +
+      " absent, " +
+      esc(String(b.cancelled)) +
+      " cancelled, " +
+      esc(String(b.awaiting)) +
+      " awaiting." +
+      "</p>"
+    );
+  };
+
+  /**
    * Register week strip: arrived / expected feedbacks for that calendar day.
-   * Expected = roster + makeup/session-add units. Arrived includes submitted rows
-   * even when a makeup is not yet on the board, so a 60' extra still shows 3/3.
+   * Done = feedback, absent, or cancellation. Expected includes seats still awaiting.
    */
   AdminSessionsHub.prototype.registerDayProgress = function (iso) {
+    if (this.opts && this.opts.feedbackMixAwaitingSlots) {
+      var b = this.registerDayBreakdown(iso);
+      return { expected: b.total, arrived: b.done, submitted: b.feedback };
+    }
     var submitted = this.feedbackCountForDateLight
       ? this.feedbackCountForDateLight(iso)
       : this.feedbackCountForDate(iso);
@@ -9515,29 +9620,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hub = this;
     var day = clean(this.selectedDay);
     if (!day) return [];
-    var rows = this.feedbackLogRowsForDay(day);
-    if (hub.opts && hub.opts.feedbackMixAwaitingSlots) {
-      var mixed = this.feedbackMixRowsForDay(day);
-      var seen = {};
-      var awaitingHead = [];
-      for (var i = 0; i < rows.length; i++) {
-        var k = hub.fbRowKey(rows[i]);
-        if (k) seen[k] = true;
-      }
-      for (var j = 0; j < mixed.length; j++) {
-        var m = mixed[j];
-        if (m && m._ashAwaitingSlot) {
-          awaitingHead.push(m);
-          continue;
-        }
-        var mk = hub.fbRowKey(m);
-        if (mk && !seen[mk]) {
-          seen[mk] = true;
-          rows.push(m);
-        }
-      }
-      if (awaitingHead.length) rows = awaitingHead.concat(rows);
-    }
+    var rows = this.feedbackRegisterRowsForDay(day);
     var q = clean(this.clientSearch);
     var inst = clean(this.instructorFilter);
     if (!q && !inst && !this.feedbackNoteFilter) return rows;
@@ -13089,6 +13172,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     this.syncFeedbackChromeSelection();
     var root = this.root;
+    var breakdownHost = root.querySelector("[data-ash-register-breakdown]");
+    if (breakdownHost) {
+      var wrapBd = document.createElement("div");
+      wrapBd.innerHTML = this.htmlRegisterDayBreakdown();
+      var nextBd = wrapBd.firstElementChild;
+      if (nextBd && breakdownHost.parentNode) breakdownHost.parentNode.replaceChild(nextBd, breakdownHost);
+    }
     var metrics = root.querySelector(".ash-metrics-dashboard");
     if (metrics) {
       try {
@@ -14095,6 +14185,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       weekBlock +
       truncateHtml +
       noteFilterHtml +
+      this.htmlRegisterDayBreakdown() +
       '<p class="ash-feedback-filter-hint">Click <strong>Session feedback</strong> to filter for parents when needed. Click <strong>Notes</strong> to escalate internally or ask the instructor who wrote it. Notes stay internal.</p>' +
       this.feedbackFilterRowHtml() +
       '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback ash-table--register"><thead><tr>' +
