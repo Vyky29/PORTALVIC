@@ -2687,8 +2687,8 @@
     /* Yassir last session Thu 10 Sep — standing open from Thu 17 (dated row keeps today). */
     { staff: "ROBERTO", name: "No participant", time: "4.30 to 5", area: "Lane (SE)" },
     { staff: "ROBERTO", name: "Yossi", time: "5 to 5.30", area: "Lane (DE)" },
-    { staff: "ROBERTO", name: "Yunis", time: "5.30 to 6", area: "Lane (SE)" },
-    { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "Yunis", time: "5.30 to 6", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30", area: "Lane (SE)" },
     { staff: "SIMON", name: "Elijah", time: "4 to 4.30", area: "Lane (SE)" },
     { staff: "SIMON", name: "No participant", time: "4.30 to 5", area: "Lane (SE)" },
     { staff: "SIMON", name: "Yuri", time: "5 to 5.30", area: "Lane (SE)" },
@@ -2697,7 +2697,7 @@
     { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (SE)" },
     { staff: "JAVIER", name: "Khalid Ab", time: "5 to 5.30", area: "Lane (SE)" },
     /* Mohamed Yusuf / Anab — seated CLIENT (INV-P-0478); Thu Acton 5.30–6.30 Javier. */
-    { staff: "JAVIER", name: "Mohamed", time: "5.30 to 6.30", area: "Lane (SE)" },
+    { staff: "JAVIER", name: "Mohamed", time: "5.30 to 6.30", area: "Lane (DE)" },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
     { staff: "AURORA", name: "Aqsa", time: "4.30 to 5.30", area: "Lane (DE)" },
     { staff: "AURORA", name: "Joelle", time: "5.30 to 6", area: "Teaching Pool" },
