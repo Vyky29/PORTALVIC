@@ -2867,7 +2867,13 @@
       }
       if (isYoussefActonAfternoonBand(dayName, key, rows, youssefDateKey)) {
         const acton = youssefAutumnActonPaySpec(dayName, youssefDateKey);
-        if (acton) return { startMin: acton.startMin, endMin: acton.endMin };
+        if (acton) {
+          const extra = youssefActonNamedWorkAfterBand(rows, acton.endMin);
+          return {
+            startMin: acton.startMin,
+            endMin: extra.lastEndMin > acton.endMin ? extra.lastEndMin : acton.endMin
+          };
+        }
         return { startMin: 16 * 60 + 30, endMin: 18 * 60 + 30 };
       }
       if (dayName === "Sunday" && key === "roberto") {
@@ -3052,7 +3058,8 @@
       if (String(dayName || "") !== "Friday") return null;
       return youssefAutumnActonPaySpec(dayName, dateKey);
     }
-    /** Autumn Acton after-school: Mon/Wed 1.5h (4–5.30) even if the book is 1h; Fri 11 is 4–6, later Fridays 4–5.30. */
+    /** Autumn Acton after-school: Mon/Wed 1.5h (4–5.30) even if the book is 1h; Fri 11 is 4–6, later Fridays 4–5.30.
+     * Named seats after the band (makeup / trial) add on top — they are not capped by 1.5h. */
     function youssefAutumnActonPaySpec(dayName, dateKey) {
       const iso = String(dateKey || "").slice(0, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !isYoussefAutumnTermIso(iso)) return null;
@@ -3069,6 +3076,27 @@
         return { hours: 1.5, startMin: 16 * 60, endMin: 17 * 60 + 30 };
       }
       return null;
+    }
+    /** Extra payable minutes from named clients that finish after the granted Acton band. */
+    function youssefActonNamedWorkAfterBand(dayRows, bandEndMin) {
+      const after = Number(bandEndMin);
+      let extraMin = 0;
+      let lastEnd = after;
+      if (!Number.isFinite(after)) return { extraHours: 0, lastEndMin: after };
+      (dayRows || []).forEach((s) => {
+        if (!timesheetSessionIsWorkedFeedbackSeat(s)) return;
+        const a = hmToMinutes(String((s && s.start) || "").trim());
+        let b = hmToMinutes(String((s && s.end) || "").trim());
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+        if (b < a) b += 24 * 60;
+        if (b <= after) return;
+        extraMin += Math.max(0, b - Math.max(a, after));
+        if (b > lastEnd) lastEnd = b;
+      });
+      return {
+        extraHours: Number((extraMin / 60).toFixed(2)),
+        lastEndMin: lastEnd
+      };
     }
     /** Day Centre SwimFarm: Mon/Wed/Fri + Thursday after Fadi is back (20 Sep). */
     const YOUSSEF_DAY_CENTRE_DAYS = new Set(["Monday", "Wednesday", "Thursday", "Friday"]);
@@ -3336,7 +3364,10 @@
     function youssefActonAfternoonPayableHours(dayName, rosterKey, role, computedHours, dayRows, dateKey) {
       if (!isYoussefActonAfternoonBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
       const acton = youssefAutumnActonPaySpec(dayName, dateKey);
-      if (acton) return acton.hours;
+      if (acton) {
+        const extra = youssefActonNamedWorkAfterBand(dayRows, acton.endMin);
+        return Number((acton.hours + extra.extraHours).toFixed(2));
+      }
       return YOUSSEF_ACTON_AFTERNOON_PAY_HOURS;
     }
     /** True when every Day Centre client that day was admin-cancelled (24h+ notice → not paid). */
@@ -4143,13 +4174,13 @@
       /* Admin cancel with notice (e.g. Fadi DC): day not payable — not a day-off request. */
       if (dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, rows)) hours = 0;
       /*
-       * Instructor Timetable green paid_hours wins when set (late arrival / gap pay).
-       * Empty paid = same as shift → keep session / hardcode logic above.
+       * Instructor Timetable green paid_hours is a minimum (late arrival / gap pay).
+       * Empty paid = same as shift. Do not shrink extra named seats after the band.
        */
       let ttPay = null;
       if (hours > 0) {
         ttPay = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
-        if (ttPay && ttPay.hours > 0) hours = ttPay.hours;
+        if (ttPay && ttPay.hours > 0) hours = Math.max(hours, ttPay.hours);
       }
       if (!(hours > 0)) return null;
       const role = dominantRole || "";
@@ -4198,6 +4229,7 @@
 
     /**
      * Timetable green paid_hours = payable band (minimum / agreed pay).
+     * Extra named seats after that band (makeup / trial) keep their extra hours.
      * Feedback completion only flips completed (orange vs green) — never shrinks hours to
      * "only the 1h session that has feedback".
      */
@@ -4209,8 +4241,8 @@
       const live = list.filter((e) => e && !e.dayOff && Number(e.hours) > 0);
       if (!live.length) return list;
       if (live.length === 1) {
-        live[0].hours = tt.hours;
-        if (tt.startMin != null && tt.endMin != null) {
+        live[0].hours = Math.max(Number(live[0].hours || 0), tt.hours);
+        if (tt.startMin != null && tt.endMin != null && !(Number(live[0].hours) > tt.hours)) {
           const tr = clubTimeRangeFromMinutes(tt.startMin, tt.endMin);
           live[0].timeRange = tr;
           const named = timesheetStripVenueSuffix(live[0].serviceName || live[0].service || "") || "";
@@ -4221,6 +4253,10 @@
       }
       const sum = live.reduce((acc, e) => acc + Number(e.hours || 0), 0);
       if (!(sum > 0)) return list;
+      if (sum >= tt.hours) {
+        live.forEach((e) => timesheetSyncGrantedHours(e));
+        return list;
+      }
       const factor = tt.hours / sum;
       live.forEach((e) => {
         e.hours = Number((Number(e.hours || 0) * factor).toFixed(2));
