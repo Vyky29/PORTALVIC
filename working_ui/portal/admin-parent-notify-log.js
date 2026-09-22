@@ -295,6 +295,12 @@
     return st === "sent" || st === "delivered" || st === "read";
   }
 
+  /** Instructor-change / makeup notifies log as whatsapp_email when both channels fire. */
+  function channelIncludesWhatsapp(ch) {
+    var c = String(ch || "").toLowerCase();
+    return c === "whatsapp" || c === "both" || c === "whatsapp_email";
+  }
+
   function isThreadUnread(t) {
     if (!t || t.channel !== "whatsapp" || !t.hasInbound || !t.lastInboundAt) return false;
     // Only a successful club WhatsApp reply clears unread — failed API sends must not.
@@ -1287,7 +1293,7 @@
         return;
       }
       var ch = String(row.channel || "").toLowerCase();
-      if (ch !== "whatsapp" && ch !== "both") return;
+      if (!channelIncludesWhatsapp(ch)) return;
       var wkey = phoneMatchKey(row.parent_phone) || phoneDigits(row.parent_phone);
       if (!wkey) return;
       var wt = waThread(wkey);
@@ -2982,7 +2988,7 @@
         .select(
           "id, created_at, sent_by_email, kind, channel, client_display, parent_name, parent_email, parent_phone, session_date, venue, subject, body_text, message_type, media_path, media_mime, email_status, whatsapp_status, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, error_detail, meta"
         )
-        .or("channel.eq.whatsapp,channel.eq.both")
+        .in("channel", ["whatsapp", "both", "whatsapp_email"])
         .order("created_at", { ascending: false })
         .limit(FETCH_LIMIT);
       if (outboundRes.error) throw outboundRes.error;
@@ -3167,7 +3173,7 @@
       if (!outRes.error) {
         (outRes.data || []).forEach(function (r) {
           var ch = String((r && r.channel) || "").toLowerCase();
-          if (ch !== "whatsapp" && ch !== "both") return;
+          if (!channelIncludesWhatsapp(ch)) return;
           if (!waOutboundCountsAsReply(r && r.whatsapp_status)) return;
           var pk = phoneMatchKey(r && r.parent_phone) || phoneDigits(r && r.parent_phone);
           if (!pk) return;
