@@ -339,6 +339,19 @@
     }
   };
 
+  /**
+   * Mid-year check only. Staff who joined on/after 3 Jul 2026 already gave
+   * these details on the job application; they are not in this cycle.
+   */
+  window.portalAnnualProfileCampaignAppliesToStaff = function portalAnnualProfileCampaignAppliesToStaff(profile) {
+    if (!profile) return true;
+    var created = profile.created_at;
+    if (!created) return true;
+    var t = Date.parse(String(created));
+    if (isNaN(t)) return true;
+    return t < portalAnnualProfileCampaignStartMs();
+  };
+
   window.portalAnnualProfileIsCompleteAt = function portalAnnualProfileIsCompleteAt(confirmedAtIso) {
     if (!confirmedAtIso) return false;
     try {
@@ -418,6 +431,17 @@
         confirmed = box && box.staff_profile && box.staff_profile.profile_last_confirmed_at;
       } catch (_) {}
     }
+    if (!profile) {
+      try {
+        profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+      } catch (_) {}
+    }
+    if (
+      typeof portalAnnualProfileCampaignAppliesToStaff === "function" &&
+      !portalAnnualProfileCampaignAppliesToStaff(profile)
+    ) {
+      return false;
+    }
     if (portalAnnualProfileIsCompleteAt(confirmed)) return false;
     try {
       portalClearStaleAnnualProfileLocalDone(confirmed);
@@ -456,7 +480,7 @@
       if (client && userId) {
         var res = await client
           .from("staff_profiles")
-          .select("profile_last_confirmed_at")
+          .select("profile_last_confirmed_at, created_at")
           .eq("id", userId)
           .maybeSingle();
         if (!res.error && res.data) {
@@ -464,9 +488,19 @@
           try {
             if (box && box.staff_profile) {
               box.staff_profile.profile_last_confirmed_at = confirmed;
+              box.staff_profile.created_at = res.data.created_at;
             }
+            if (profile) profile.created_at = res.data.created_at;
           } catch (_) {}
         }
+      }
+
+      if (
+        typeof portalAnnualProfileCampaignAppliesToStaff === "function" &&
+        !portalAnnualProfileCampaignAppliesToStaff(profile || (box && box.staff_profile))
+      ) {
+        portalHideAnnualProfileQuickMenu();
+        return;
       }
 
       if (portalAnnualProfileIsCompleteAt(confirmed)) {

@@ -7005,7 +7005,7 @@
           try{
             const gp = await client
               .from('staff_profiles')
-              .select('id,username,full_name,app_role,staff_role,profile_last_confirmed_at')
+              .select('id,username,full_name,app_role,staff_role,profile_last_confirmed_at,created_at')
               .eq('id', ghostUid)
               .maybeSingle();
             if(!gp.error && gp.data){
@@ -7013,15 +7013,20 @@
             }
           }catch(_gp){}
         }
-        if(viewerProf && viewerProf.id && client && viewerProf.profile_last_confirmed_at === undefined){
+        if(viewerProf && viewerProf.id && client && (viewerProf.created_at == null || viewerProf.profile_last_confirmed_at === undefined)){
           try{
             const pr = await client
               .from('staff_profiles')
-              .select('profile_last_confirmed_at')
+              .select('profile_last_confirmed_at, created_at')
               .eq('id', viewerProf.id)
               .maybeSingle();
             if(!pr.error && pr.data){
               viewerProf.profile_last_confirmed_at = pr.data.profile_last_confirmed_at;
+              viewerProf.created_at = pr.data.created_at;
+              if(box && box.staff_profile && String(box.staff_profile.id || '') === String(viewerProf.id)){
+                box.staff_profile.profile_last_confirmed_at = pr.data.profile_last_confirmed_at;
+                box.staff_profile.created_at = pr.data.created_at;
+              }
             }
           }catch(_pr){}
         }
@@ -7321,6 +7326,12 @@
           if(!mustSign) return;
           if(String(row.on_ack_action || '').trim() === 'annual_profile'){
             if(
+              typeof portalAnnualProfileCampaignAppliesToStaff === 'function' &&
+              !portalAnnualProfileCampaignAppliesToStaff(viewerProf)
+            ){
+              return;
+            }
+            if(
               typeof portalAnnualProfileCampaignComplete === 'function' &&
               portalAnnualProfileCampaignComplete(viewerProf && viewerProf.profile_last_confirmed_at)
             ){
@@ -7343,7 +7354,11 @@
             'announcement'
           );
           const isAnnualProfileRow = String(row.on_ack_action || '').trim() === 'annual_profile';
-          const campaignStillOpen = isAnnualProfileRow && !(
+          const annualProfileApplies = !isAnnualProfileRow || !(
+            typeof portalAnnualProfileCampaignAppliesToStaff === 'function' &&
+            !portalAnnualProfileCampaignAppliesToStaff(viewerProf)
+          );
+          const campaignStillOpen = isAnnualProfileRow && annualProfileApplies && !(
             typeof portalAnnualProfileCampaignComplete === 'function' &&
             portalAnnualProfileCampaignComplete(viewerProf && viewerProf.profile_last_confirmed_at)
           );
@@ -7680,6 +7695,11 @@
           portalSignableItemIsAnnualProfile(n);
         const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
         const p = box && box.staff_profile;
+        const annualProfileApplies = !isAnnualProfile || !(
+          typeof portalAnnualProfileCampaignAppliesToStaff === 'function' &&
+          !portalAnnualProfileCampaignAppliesToStaff(p)
+        );
+        if(isAnnualProfile && !annualProfileApplies) return;
         const annualCampaignDone =
           isAnnualProfile &&
           typeof portalAnnualProfileCampaignComplete === 'function' &&
@@ -7721,6 +7741,12 @@
         ){
           const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
           const p = box && box.staff_profile;
+          if(
+            typeof portalAnnualProfileCampaignAppliesToStaff === 'function' &&
+            !portalAnnualProfileCampaignAppliesToStaff(p)
+          ){
+            return;
+          }
           if(
             typeof portalAnnualProfileCampaignComplete === 'function' &&
             portalAnnualProfileCampaignComplete(p && p.profile_last_confirmed_at)

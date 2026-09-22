@@ -694,6 +694,12 @@
     return n;
   }
 
+  function annualProfileJoinedAfterCampaign(row) {
+    if (!row || !row.created_at) return false;
+    var t = Date.parse(String(row.created_at));
+    return !isNaN(t) && t >= ANNUAL_PROFILE_CAMPAIGN_START_MS;
+  }
+
   function annualProfileComplete(iso) {
     if (!iso) return false;
     try {
@@ -845,7 +851,9 @@
     if (!r) return;
     var name = String(r.full_name || r.username || "Staff").trim() || "Staff";
     var sub = availabilityStatusPill(r.availability_status);
-    if (annualProfileComplete(r.profile_last_confirmed_at)) {
+    if (annualProfileJoinedAfterCampaign(r)) {
+      sub += ' <span class="muted">This term</span>';
+    } else if (annualProfileComplete(r.profile_last_confirmed_at)) {
       sub += ' <span class="hr-pill hr-pill--on">Done</span>';
     } else {
       sub += ' <span class="hr-pill hr-pill--off">Pending</span>';
@@ -881,10 +889,13 @@
         var name = String(r.full_name || r.username || "—").trim() || "—";
         var notes = availabilitySummaryText(r);
         if (notes.length > 90) notes = notes.slice(0, 87) + "…";
-        var complete = annualProfileComplete(r.profile_last_confirmed_at);
-        var pill = complete
+        var joinedLater = annualProfileJoinedAfterCampaign(r);
+        var complete = !joinedLater && annualProfileComplete(r.profile_last_confirmed_at);
+        var pill = joinedLater
+          ? '<span class="muted">This term</span>'
+          : (complete
           ? '<span class="hr-pill hr-pill--on">Done</span>'
-          : '<span class="hr-pill hr-pill--off">Pending</span>';
+          : '<span class="hr-pill hr-pill--off">Pending</span>');
         var availCell = profileHasAvailabilityResponse(r)
           ? availabilityStatusPill(r.availability_status)
           : '<span class="muted">Not submitted</span>';
@@ -916,6 +927,7 @@
     var done = 0;
     var pending = 0;
     rows.forEach(function (r) {
+      if (annualProfileJoinedAfterCampaign(r)) return;
       if (annualProfileComplete(r.profile_last_confirmed_at)) done++;
       else pending++;
     });
@@ -936,11 +948,14 @@
       shown.forEach(function (r) {
         var name = String(r.full_name || r.username || "—").trim() || "—";
         var login = String(r.username || "—").trim() || "—";
-        var complete = annualProfileComplete(r.profile_last_confirmed_at);
-        var when = complete ? fmtDateTime(r.profile_last_confirmed_at) : "—";
-        var pill = complete
+        var joinedLater = annualProfileJoinedAfterCampaign(r);
+        var complete = !joinedLater && annualProfileComplete(r.profile_last_confirmed_at);
+        var when = joinedLater ? "Job application" : (complete ? fmtDateTime(r.profile_last_confirmed_at) : "—");
+        var pill = joinedLater
+          ? '<span class="muted">This term</span>'
+          : (complete
           ? '<span class="hr-pill hr-pill--on">Done</span>'
-          : '<span class="hr-pill hr-pill--off">Pending</span>';
+          : '<span class="hr-pill hr-pill--off">Pending</span>');
         var availCell = profileHasAvailabilityResponse(r)
           ? availabilityStatusPill(r.availability_status)
           : '<span class="muted">—</span>';
@@ -1961,7 +1976,7 @@
     return client
       .from("staff_profiles")
       .select(
-        "id, full_name, username, profile_last_confirmed_at, profile_last_updated_at, is_active, " +
+        "id, full_name, username, created_at, profile_last_confirmed_at, profile_last_updated_at, is_active, " +
           "availability_status, availability_summary, availability_changes, " +
           "other_work_status, other_work_organisation, other_work_schedule, other_work_affects_availability, " +
           "wellbeing_notes",
