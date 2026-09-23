@@ -403,7 +403,7 @@
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260918-session-disruption"></script>
   <script type="module">
-    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260909-parent-booking-live";
+    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260923-office-help";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
       try{
         mountPortalLivePresenceBar("portalLivePresenceBar");
@@ -34220,7 +34220,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var host = document.getElementById('portalLivePresenceBar');
       if(!host) return;
       window.__portalAdminPresenceBarMounted = true;
-      import('/portal/portal_live_presence.js?v=20260909-parent-booking-live')
+      import('/portal/portal_live_presence.js?v=20260923-office-help')
         .then(function(mod){
           if(!mod || typeof mod.mountPortalLivePresenceBar !== 'function') return;
           mod.mountPortalLivePresenceBar('portalLivePresenceBar');

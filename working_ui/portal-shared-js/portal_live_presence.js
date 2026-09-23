@@ -652,7 +652,7 @@ export function mountPortalLivePresenceBar(hostId = "portalLivePresenceBar") {
         null,
         "Visitors on Booking Portal in the last 5 minutes",
       ) +
-      '<a class="sf-status-bar__guide" href="/OTROS/admin_architecture_guide.html" target="_blank" rel="noopener noreferrer">Guide</a>' +
+      '<a class="sf-status-bar__guide" href="/admin_office_help.html">Guide</a>' +
       "</div>";
   }
 
