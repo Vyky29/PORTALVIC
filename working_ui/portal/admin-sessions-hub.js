@@ -4052,7 +4052,9 @@
     for (var oi = 0; oi < omitRules.length; oi++) {
       if (slotMatchesOverviewOmitRule(slot, omitRules[oi])) return true;
     }
-    if (shouldOmitAutoMergedSwimDuplicate(slot)) return true;
+    var omitIso = clean(slot.session_date).slice(0, 10);
+    var omitDay = hub._slotsByIso && omitIso ? hub._slotsByIso[omitIso] : null;
+    if (shouldOmitAutoMergedSwimDuplicate(slot, omitDay)) return true;
     /*
      * Angel / Giuseppe / Andres have no Autumn standing — scrub summer leftovers.
      * Do NOT omit when they are a real dated cover (e.g. Angel → Carlos Westway Sun 20):
@@ -4267,19 +4269,11 @@
     var iso = slot.session_date;
     var cid = canonicalClientSlug(slot.client_name);
     if (!iso || !cid) return "";
-    /* Prefer the day board already in hand — never re-walk the full roster while
-     * Overview is expanding that ISO (nested O(n²) freezes Chrome: RESULT_CODE_HUNG). */
+    /* Only the day board already in hand. Walking STAFF_DASHBOARD_SOURCE from
+     * Register / Overview paint is nested O(n²) and freezes Chrome (RESULT_CODE_HUNG).
+     * Expand stamps feedback_merge_group with daySlots before paint. */
     var pool = Array.isArray(daySlots) ? daySlots : null;
-    if (!pool) {
-      try {
-        var expanding =
-          typeof global.__PORTAL_ASH_EXPANDING_ISO__ === "string"
-            ? global.__PORTAL_ASH_EXPANDING_ISO__
-            : "";
-        if (expanding && expanding === String(iso).slice(0, 10)) return "";
-      } catch (_e) {}
-      pool = rosterSlotsForDate(iso);
-    }
+    if (!pool) return "";
     var slotStart = clean(slot.time_start || normTimeKey(slot.time_slot, slot.day));
     var teamKey = isAquaticService(slot.service) ? aquaticClockTeamKey(pool, cid, slotStart) : "";
     var candidates = pool.filter(function (s) {
@@ -4336,11 +4330,12 @@
 
   function shouldOmitAutoMergedSwimDuplicate(slot, daySlots) {
     if (!slot || !isAquaticService(slot.service)) return false;
-    var mg = slot.feedback_merge_group || feedbackMergeGroupForSlot(slot, { daySlots: daySlots });
+    var slots = Array.isArray(daySlots) ? daySlots : null;
+    if (!slots) return false;
+    var mg = clean(slot.feedback_merge_group) || feedbackMergeGroupForSlot(slot, { daySlots: slots });
     if (!mg) return false;
     var iso = slot.session_date;
     if (!iso) return false;
-    var slots = Array.isArray(daySlots) ? daySlots : rosterSlotsForDate(iso);
     for (var i = 0; i < slots.length; i++) {
       var s = slots[i];
       if (isAquaticService(s.service)) continue;
