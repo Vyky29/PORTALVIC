@@ -99,11 +99,20 @@ Deno.serve(async (req) => {
         status: st,
       });
     }
-    const reopenNote = notes || "Reopened by office to decide again";
     const { data: linkedGrants } = await admin
       .from("portal_parent_makeup_grants")
       .select("id, status")
       .eq("absence_report_id", reportId);
+    const onRoster = (linkedGrants || []).some((g: { status?: string }) => String(g.status || "") === "consumed");
+    if (onRoster) {
+      return portalAdminJson(409, {
+        ok: false,
+        error: "makeup_on_roster",
+        message:
+          "This makeup is already on the roster. Undo that day on Schedule and Covers, then add a new grant. It does not go back to the decide queue.",
+      });
+    }
+    const reopenNote = notes || "Reopened by office to decide again";
     const grantIds = (linkedGrants || []).map((g: { id: string }) => g.id).filter(Boolean);
     if (grantIds.length) {
       await admin

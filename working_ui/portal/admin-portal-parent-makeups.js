@@ -142,13 +142,14 @@
     var makeupTime = String(g.makeup_time || '').trim();
     var absentDay = String(g.absence_session_date || '').slice(0, 10);
     var actions = '';
-    var reopenBtn = g.absence_report_id
-      ? ' <button type="button" class="btn btn--sm btn--ghost" data-makeup-reopen-decide="' +
-        esc(g.absence_report_id) +
-        '" data-grant-id="' +
-        esc(g.id) +
-        '">Back to decide</button>'
-      : '';
+    var reopenBtn =
+      g.absence_report_id && (g.status === 'open' || g.status === 'offered')
+        ? ' <button type="button" class="btn btn--sm btn--ghost" data-makeup-reopen-decide="' +
+          esc(g.absence_report_id) +
+          '" data-grant-id="' +
+          esc(g.id) +
+          '">Back to decide</button>'
+        : '';
     if (g.status === 'open') {
       actions =
         '<button type="button" class="btn btn--sm btn--primary" data-makeup-offer="' +
