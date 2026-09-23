@@ -60,6 +60,7 @@
     .timesheet-stack-cell__hint{font-size:0.88em;color:#7f1d1d;overflow-wrap:anywhere;max-width:100%}
     .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;min-width:0;padding:2px 0;width:100%}
     .timesheet-service-cell__time{font-size:13px;font-weight:700;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
+    .timesheet-late-start{color:#b91c1c}
     .timesheet-service-cell__service{font-size:12px;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
     .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
     .timesheet-service-cell__role{font-size:12px;line-height:1.15;max-width:100%;overflow-wrap:break-word;word-break:break-word;text-align:center}
@@ -2264,6 +2265,25 @@
       };
     }
 
+    /** Luliya Day Centre: arrived 30 minutes late. Start shows in red; that half hour is not paid. */
+    const LULIYA_MORNING_LATE_MINUTES = {
+      "2026-09-08": 30,
+      "2026-09-14": 30
+    };
+
+    function timesheetRowsAreDayCentre(rows) {
+      const list = rows || [];
+      if (!list.length) return false;
+      return list.every((s) => /day\s*centre/.test(sessionServiceLower(s)));
+    }
+
+    function timesheetLuliyaMorningLateMinutes(rosterKey, dateKey, rows) {
+      if (timesheetNormStaffKey(rosterKey) !== "luliya") return 0;
+      if (!timesheetRowsAreDayCentre(rows)) return 0;
+      const late = LULIYA_MORNING_LATE_MINUTES[String(dateKey || "").slice(0, 10)];
+      return late > 0 ? late : 0;
+    }
+
     function timesheetDayRowsForPay(sessions, dateObj, rosterKey) {
       const dateKey = isoDate(dateObj);
       if (isEmmanuelHireRosterKey(rosterKey) && !emmanuelHireTimesheetIncludeIso(dateKey)) {
@@ -3934,6 +3954,21 @@
       return String((entry && (entry.timeRange || entry.time_range)) || "").trim();
     }
 
+    function timesheetTimeRangeHtml(entry) {
+      const timeRange = timesheetEntryTimeRangeLabel(entry);
+      if (!timeRange) return "";
+      if (entry && entry.lateArrival) {
+        const dash = timeRange.indexOf("-");
+        if (dash > 0) {
+          return (
+            `<span class="timesheet-late-start">${esc(timeRange.slice(0, dash))}</span>` +
+            esc(timeRange.slice(dash))
+          );
+        }
+      }
+      return esc(timeRange);
+    }
+
     function timesheetEntryServiceTitle(entry) {
       const explicit = String((entry && (entry.serviceName || entry.service_name)) || "").trim();
       if (explicit && /__youssef_acton_afternoon__/i.test(explicit)) return "Aquatic Activity";
@@ -3988,7 +4023,7 @@
       const fallback = !timeRange && !title ? timesheetEntryServiceLabel(entry) || "-" : "";
       return (
         '<div class="timesheet-service-cell">' +
-        (timeRange ? `<div class="timesheet-service-cell__time">${esc(timeRange)}</div>` : "") +
+        (timeRange ? `<div class="timesheet-service-cell__time">${timesheetTimeRangeHtml(entry)}</div>` : "") +
         (title ? `<div class="timesheet-service-cell__service">${esc(title)}</div>` : "") +
         (fallback ? `<div class="timesheet-service-cell__service">${esc(fallback)}</div>` : "") +
         (venue ? `<div class="timesheet-service-cell__venue">${esc(venue)}</div>` : "") +
@@ -4060,6 +4095,22 @@
         } else if (isTime) {
           doc.setFont("helvetica", "bold");
           doc.setFontSize(7.6 * S);
+          if (entry && entry.lateArrival) {
+            const dash = text.indexOf("-");
+            const startTxt = dash > 0 ? text.slice(0, dash) : text;
+            const restTxt = dash > 0 ? text.slice(dash) : "";
+            const w1 = doc.getTextWidth(startTxt);
+            const w2 = restTxt ? doc.getTextWidth(restTxt) : 0;
+            let x = cx - (w1 + w2) / 2;
+            doc.setTextColor(185, 28, 28);
+            doc.text(startTxt, x, ly);
+            if (restTxt) {
+              doc.setTextColor(16, 34, 56);
+              doc.text(restTxt, x + w1, ly);
+            }
+            ly += step;
+            continue;
+          }
           doc.setTextColor(16, 34, 56);
         } else if (venue && text === venue) {
           doc.setFont("helvetica", "normal");
@@ -4298,6 +4349,9 @@
       }
       const luliyaPm = timesheetLuliyaAfternoonNamedSpan(rows, dateKey);
       if (luliyaPm) hours = luliyaPm.hours;
+      const lateMin = timesheetLuliyaMorningLateMinutes(rosterKey, dateKey, rows);
+      const lateArrival = !!(lateMin && hours > 0 && !luliyaPm);
+      if (lateArrival) hours = Number(Math.max(0, hours - lateMin / 60).toFixed(2));
       /*
        * Instructor Timetable green paid_hours is a minimum (late arrival / gap pay).
        * Empty paid = same as shift. Do not shrink extra named seats after the band.
@@ -4305,7 +4359,7 @@
        * Luliya weekday pool is the named-client span, not the offered 4.30-6.30 window.
        */
       let ttPay = null;
-      if (hours > 0 && !climbingPay && !luliyaPm) {
+      if (hours > 0 && !climbingPay && !luliyaPm && !lateArrival) {
         ttPay = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
         if (ttPay && ttPay.hours > 0) hours = Math.max(hours, ttPay.hours);
       }
@@ -4327,14 +4381,18 @@
           timeRange = clubTimeRangeFromSegments(dcSpec.segments);
         } else {
           const window = timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours, dateKey);
-          timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
+          timeRange = window
+            ? clubTimeRangeFromMinutes(window.startMin + (lateArrival ? lateMin : 0), window.endMin)
+            : "";
         }
       } else if (dcSpec) {
         hours = dcSpec.hours;
         timeRange = clubTimeRangeFromSegments(dcSpec.segments);
       } else {
         const window = timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours, dateKey);
-        timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
+        timeRange = window
+          ? clubTimeRangeFromMinutes(window.startMin + (lateArrival ? lateMin : 0), window.endMin)
+          : "";
       }
       return timesheetAttachGrantedHours(
         {
@@ -4352,7 +4410,8 @@
           rate,
           blendedRate: null,
           climbingFeedbackPay: climbingPay,
-          luliyaAfternoonNamedSpan: !!luliyaPm
+          luliyaAfternoonNamedSpan: !!luliyaPm,
+          lateArrival
         },
         rows
       );
@@ -4367,7 +4426,7 @@
     function applyTimetablePaidBandToDayEntries(entries, rosterKey, dateKey) {
       const list = Array.isArray(entries) ? entries : [];
       if (!list.length) return list;
-      if (list.some((e) => e && (e.climbingFeedbackPay || e.luliyaAfternoonNamedSpan))) return list;
+      if (list.some((e) => e && (e.climbingFeedbackPay || e.luliyaAfternoonNamedSpan || e.lateArrival))) return list;
       const tt = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
       if (!tt || !(tt.hours > 0)) return list;
       const live = list.filter((e) => e && !e.dayOff && Number(e.hours) > 0);
@@ -4497,6 +4556,9 @@
           }
           const luliyaPm = timesheetLuliyaAfternoonNamedSpan(groupRows, dateKey);
           if (luliyaPm) hours = luliyaPm.hours;
+          const lateMin = timesheetLuliyaMorningLateMinutes(rosterKey, dateKey, groupRows);
+          const lateArrival = !!(lateMin && hours > 0 && !luliyaPm);
+          if (lateArrival) hours = Number(Math.max(0, hours - lateMin / 60).toFixed(2));
           /*
            * Day-level Timetable paid_hours applied after all groups (see
            * applyTimetablePaidBandToDayEntries). Keep session/hardcode hours here.
@@ -4535,7 +4597,9 @@
             timeRange = clubTimeRangeFromSegments(dcSpec.segments);
           } else {
             const window = timesheetPaidWindowForRows(groupRows, dayName, rosterKey, role, hours, dateKey);
-            timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
+            timeRange = window
+              ? clubTimeRangeFromMinutes(window.startMin + (lateArrival ? lateMin : 0), window.endMin)
+              : "";
           }
           entries.push(
             timesheetAttachGrantedHours(
@@ -4553,7 +4617,8 @@
                 rate: rateForRole(role),
                 blendedRate: null,
                 climbingFeedbackPay: climbingPay,
-                luliyaAfternoonNamedSpan: !!luliyaPm
+                luliyaAfternoonNamedSpan: !!luliyaPm,
+                lateArrival
               },
               groupRows
             )
