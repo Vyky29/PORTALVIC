@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23-v9",
+  "version": "2026-09-23-v10",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -130,6 +130,109 @@
             "Staff Today shows a Shadowing or Training card. No session feedback is required.",
             "Timesheet pays these hours at £13.50/h.",
             "Type Session is a client seat, not the shadowing rate. Use Shadowing when they are learning the shift."
+          ]
+        },
+        {
+          "id": "add_session_card_hours",
+          "title": "Add extra hours on one day (session card)",
+          "summary": "Put another worker on a client for part of the day without replacing the person already on that seat.",
+          "where": "Operator → Schedule & Covers → + Add session card",
+          "keywords": [
+            "add session card",
+            "add card",
+            "extra hours",
+            "split hours",
+            "change instructor",
+            "new card",
+            "carta nueva",
+            "horas sueltas"
+          ],
+          "steps": [
+            "Open Schedule & Covers. Set the board date, and set the same date inside the form. The form can default to today.",
+            "Open the line + Add session card. It sits above the table and starts closed.",
+            "Type: Session. Pick Staff, Participant, Service, Start, End and Venue.",
+            "Press Add card. One card per slice of hours. Repeat for each extra person or time band.",
+            "Check Sessions Overview for that date. The new cards should show next to the seats you did not touch."
+          ],
+          "tips": [
+            "Change Instructor replaces the person on that row. Use Add session card when someone already on the board picks up extra hours, or when one seat must split between two people.",
+            "Do not Change Instructor over a worker who is off. That overwrites their seat.",
+            "On the row, Add a new card (keep this seat) copies time, client and venue into the form. You still choose the staff."
+          ]
+        },
+        {
+          "id": "undo_schedule_change",
+          "title": "Undo a one-day change",
+          "summary": "Undo change removes a saved override on that row. A pink COVER NEEDED from a day off is not an override.",
+          "where": "Operator → Schedule & Covers → Change on a row",
+          "keywords": [
+            "undo",
+            "undo change",
+            "current override",
+            "cover needed",
+            "deshacer"
+          ],
+          "steps": [
+            "Open the date and click Change on the row.",
+            "If the drawer says Current override and shows Undo change, that button removes only that saved one-day change.",
+            "If it says Current override: None, there is nothing to undo. Close the drawer.",
+            "A pink COVER NEEDED from Validate day / HR day off is the day off. Do not save Absent, Cancelled or Change Instructor on that seat just to clear the pink.",
+            "To drop a card you added with Add session card, use Remove on Added cards for that date."
+          ],
+          "tips": [
+            "To drop one standing row for a single day (for example Office that should not run that Monday), Change → Cancelled → Save override. That is one day, not the rest of term.",
+            "Office is not a child. Ignore an absents / parent-notify toast if you cancel an Office row."
+          ]
+        },
+        {
+          "id": "day_centre_one_instructor",
+          "title": "Day Centre: one instructor cancelled, client still on",
+          "summary": "Cancelling one Day Centre instructor does not cancel the client while another instructor still has them that day.",
+          "where": "Operator → Schedule & Covers (Day Centre rows)",
+          "keywords": [
+            "day centre",
+            "ikram",
+            "cancel one instructor",
+            "feedback",
+            "absent",
+            "2:1",
+            "team"
+          ],
+          "steps": [
+            "Cancel only the instructor cell that is not happening: Change on that row → Cancelled → Save override.",
+            "Leave the other instructors' rows. The client stays while at least one instructor still has them that day.",
+            "The client is cancelled for that day only when every instructor cell for that client that day is cancelled.",
+            "One feedback for that client that day covers the whole Day Centre team, including people on a new session card.",
+            "An Absent mark on Schedule & Covers means that feedback is already done. Do not chase it as missing."
+          ],
+          "tips": [
+            "Day Centre instructors can move between participants. Those one-day changes update Team. They do not WhatsApp the parents.",
+            "After-school and weekend seats are fixed to an instructor, so a real cover there is what parents can see on Team."
+          ]
+        },
+        {
+          "id": "venue_review_video",
+          "title": "Attach an opening or closing video",
+          "summary": "Staff file the venue review. Admin can attach the walkthrough video after that day has finished.",
+          "where": "Operations Hub → Venue review",
+          "keywords": [
+            "venue review",
+            "opening",
+            "closing",
+            "video",
+            "swimfarm",
+            "walkthrough",
+            "subir video"
+          ],
+          "steps": [
+            "Staff open Venue on their app, choose the venue and the time, then photos and video. Venue and time are not filled in for them.",
+            "In admin, open Venue review and filter to the date.",
+            "Opening and closing of the same day stay as two rows. Attach the video on the matching row.",
+            "Use Upload video on that row. Max 50 MB. The day must have finished. A day that is still open should not have a closing video yet.",
+            "If there was no walkthrough, the note belongs on the row it describes (opening or closing), not on the other one."
+          ],
+          "tips": [
+            "SwimFarm uses the same opening and closing rows as the other venues."
           ]
         },
         {
@@ -272,7 +375,8 @@
           "tips": [
             "Every [weekday] until end of term also removes days already delivered. Use that only when the whole weekday pattern should go, including the past.",
             "One session only: Schedule & Covers, not Edit term slot.",
-            "Private pay-in-advance refund rule is in Absents, refunds and credits."
+            "Private pay-in-advance refund rule is in Absents, refunds and credits.",
+            "Parents do not cancel the standing service from the parent hub. A one-day absence is Absents / Refunds and credits. The whole service is admin, Edit term slot, Cancel service."
           ]
         }
       ]
@@ -620,6 +724,32 @@
           "tips": [
             "Completed modules stay saved. Refreshing the page does not wipe a real pass.",
             "New hires who must finish induction do not get the recap diploma path."
+          ]
+        },
+        {
+          "id": "timesheet_what_counts",
+          "title": "What the timesheet counts",
+          "summary": "Hours on the timesheet follow the shift and the feedbacks. You do not type granted hours by hand.",
+          "where": "Staff app → Timesheet (admin reads the same rules)",
+          "keywords": [
+            "timesheet",
+            "granted",
+            "climbing hours",
+            "upcoming",
+            "bespoke",
+            "horas",
+            "late"
+          ],
+          "steps": [
+            "Today and later dates show as Upcoming. They are not completed and they are not ready to pay.",
+            "A weekday support / bespoke shift that is the 4.15-6.15 band is 2 hours. A Sunday support shift that is 5 hours shows 9.15-2.15. The time the child is actually there inside that band is not extra granted hours on top.",
+            "Shadowing and Training added in Schedule & Covers pay £13.50/h. On the timesheet the service stays the session name and Shadowing or Training is the role line.",
+            "Climbing (Carlos, Alex, and Andres when he covers Carlos) pays the feedbacks given that day. An hour with no participant is not paid.",
+            "Absent on Schedule & Covers means that session's feedback is done."
+          ],
+          "tips": [
+            "Bespoke Programme shows as Bespoke.",
+            "If a timesheet was already downloaded with the wrong hours, ask them to submit again after a refresh. The new submit replaces the downloaded one."
           ]
         }
       ]
