@@ -26354,31 +26354,50 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return false;
     }
-    /** Booked spreadsheet slots for this staff on the disruption date (for COVER NEEDED overrides). */
-    function portalSdCollectCoverSlots(report){
-      var iso = String(report && report.session_date || '').slice(0, 10);
-      if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return [];
-      var wantKeys = portalSdStaffKeysForReport(report);
-      if(!wantKeys.length) return [];
+    /**
+     * Session disruptions is not the Sessions board, so the live source can be
+     * only the logged-in admin. Cover needs the whole club day.
+     */
+    function portalSdSlotsForCoverDay(iso){
+      var prev = window.STAFF_DASHBOARD_SOURCE;
+      var swapped = false;
+      try{
+        var chain = window.PortalOverviewCapacityChain;
+        if(chain && typeof chain.resolve === 'function'){
+          var full = chain.resolve({ forSessionsOverview: true });
+          if(full && Array.isArray(full.rows) && full.rows.length){
+            window.STAFF_DASHBOARD_SOURCE = full;
+            swapped = true;
+          }
+        }
+      }catch(_chain){}
       try{
         if(typeof portalInvalidateAdminSlotsCache === 'function') portalInvalidateAdminSlotsCache();
       }catch(_inv){}
       var slots = [];
       try{
-        if(typeof slotsForSelectedDate === 'function'){
-          slots = slotsForSelectedDate(iso) || [];
-        }
+        if(typeof slotsForSelectedDate === 'function') slots = slotsForSelectedDate(iso) || [];
       }catch(_e){ slots = []; }
-      var venueWant = String(report && (report.venue || report.session_venue) || '').trim().toLowerCase();
+      if(swapped){
+        window.STAFF_DASHBOARD_SOURCE = prev;
+        try{
+          if(typeof portalInvalidateAdminSlotsCache === 'function') portalInvalidateAdminSlotsCache();
+        }catch(_inv2){}
+      }
+      return slots;
+    }
+    /** Booked slots for this staff on the disruption date (whole day, every venue). */
+    function portalSdCollectCoverSlots(report){
+      var iso = String(report && report.session_date || '').slice(0, 10);
+      if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return [];
+      var wantKeys = portalSdStaffKeysForReport(report);
+      if(!wantKeys.length) return [];
+      var slots = portalSdSlotsForCoverDay(iso);
       var out = [];
       for(var i = 0; i < slots.length; i++){
         var sl = slots[i];
         if(!sl) continue;
         if(!portalSdStaffKeysOverlap(wantKeys, portalSdSlotStaffKeys(sl))) continue;
-        if(venueWant){
-          var sv = String(sl.venue || '').trim().toLowerCase();
-          if(sv && sv.indexOf(venueWant) < 0 && venueWant.indexOf(sv) < 0) continue;
-        }
         var cid = String(sl.clientSlug || '').trim().toLowerCase();
         if(!cid || cid === 'available' || cid === 'closed' || cid === 'noparticipant' || cid === 'no_participant') continue;
         if(cid === 'manager' || cid === 'home') continue;
@@ -26433,8 +26452,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           try{
             window.alert(
               n > 0
-                ? ('Validated. '+n+' service'+(n===1?'':'s')+' marked COVER NEEDED (red). Worker day off recorded. Admins alerted. Parents were not notified — assign cover in Schedule & Covers.')
-                : 'Validated day off for the worker. No booked participant slots were found on the roster for that date (COVER NEEDED not written). Check Schedule & Covers / Services if they still appear on shift.'
+                ? ('Day off validated. COVER NEEDED is on Schedule & Covers and Sessions Overview ('+n+' service'+(n===1?'':'s')+'). Parents stay as they are until you assign the new instructor.')
+                : 'Day off validated for the worker. No booked participant was on that day, so COVER NEEDED was not written. Parents stay as they are.'
             );
           }catch(_a){}
           try{
