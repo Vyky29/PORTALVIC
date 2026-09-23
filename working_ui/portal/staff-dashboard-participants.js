@@ -1863,6 +1863,8 @@
         push(portalPlainSessionSlotChipsHtml(item.portalSessionAddChips, item.portalOverrideCardTone));
       } else if(!!item.portalOverrideTrialTag || isTrialSym){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial/New Participant"><span>Trial/New Participant</span></span>');
+      } else if(!!item.portalOverrideMoveInstructorTag || symNorm === 'move in and change instructor'){
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--move-in" aria-label="Move in and change instructor"><span>Move in and change instructor</span></span>');
       } else if(!!item.portalOverrideMoveInTag || symNorm === 'move in' || symNorm === 'moved in'){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--move-in" aria-label="Move in"><span>Move in</span></span>');
       } else if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
@@ -4505,6 +4507,17 @@
       return pl.client_move === true || pl.client_move === 'true';
     }
     try{ window.portalOverrideIsClientMoveOutClear = portalOverrideIsClientMoveOutClear; }catch(_){}
+    /** Same-day move onto a different instructor (not only a later time with the same person). */
+    function portalClientMoveClearChangesInstructor(ov){
+      if(!portalOverrideIsClientMoveOutClear(ov)) return false;
+      const pl = ov.payload || {};
+      const toId = String(pl.moved_to_staff_id || '').trim();
+      const fromId = String(ov.anchor_staff_id || '').trim();
+      if(!toId || !fromId) return false;
+      if(typeof portalStaffKeysMatch === 'function') return !portalStaffKeysMatch(toId, fromId);
+      return toId.toLowerCase() !== fromId.toLowerCase();
+    }
+    try{ window.portalClientMoveClearChangesInstructor = portalClientMoveClearChangesInstructor; }catch(_){}
     /**
      * instructor_reassign anchored on the absent instructor, but this viewer is the cover
      * and already has the client on their dated/canonical roster — attach that override so
@@ -4610,6 +4623,67 @@
         __portalScheduleOverride: absentOv
       };
     }
+    /**
+     * Original instructor keeps their child after a same-day move to someone else.
+     * Chip: Move in and change instructor. No feedback — the child is with the other instructor.
+     */
+    function portalBuildMoveInstructorChangeSessionItem(s, sessionDateKey, viewDay, anchor, moveOv, supportHidePoolNote){
+      if(!s || !moveOv || !portalClientMoveClearChangesInstructor(moveOv)) return null;
+      const pl = moveOv.payload || {};
+      const activity = (s.activity || 'Swimming').trim();
+      const time = rosterSlotTimeLabel(s);
+      let baseId = String(s.clientId || '').trim().toLowerCase();
+      if(!baseId || portalScheduleOverrideAnchorIsOpenSlot(baseId)){
+        baseId = String(pl.moved_client_id || moveOv.anchor_client_id || '').trim().toLowerCase();
+      }
+      if(!baseId || portalScheduleOverrideAnchorIsOpenSlot(baseId)) return null;
+      const cMove = portalClientNotesLookup(baseId) || clientNotesById[baseId] || {
+        name: String(pl.moved_client_name || s.clientName || s.name || baseId).trim() || 'Participant'
+      };
+      const showSpec = !isBespokeActivity(activity);
+      let poolLocationMove = resolvePoolLocationLabelFromSession(s, activity, cMove, viewDay);
+      if(supportHidePoolNote) poolLocationMove = null;
+      const areaMove = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
+      const _rowTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
+      const toName = String(pl.moved_to_staff_name || pl.moved_to_staff_id || '').trim();
+      const toTime = String(pl.moved_to_time || '').trim();
+      const toVenue = String(pl.moved_to_venue || '').trim();
+      const whereBits = [toName, toTime, toVenue].filter(Boolean).join(', ');
+      const sessionVenue = String(s.venue || moveOv.anchor_venue || '').trim() || '—';
+      return {
+        time,
+        kind: 'client',
+        clientId: baseId,
+        name: cMove.name || 'Participant',
+        activity,
+        areaLabel: areaMove,
+        poolLocationLabel: poolLocationMove,
+        poolTier: poolTierForAreaNoteRow(s, activity, cMove, viewDay, supportHidePoolNote),
+        showPoolSymbol: !!(poolLocationMove || areaMove),
+        showSpecialty: showSpec,
+        specialtyLabel: specialtyInfoTitle(activity),
+        general: (`Moved to another instructor today${whereBits ? ' (' + whereBits + ')' : ''}. ${clientGeneralBodyFromNotes(cMove, s)}`).trim(),
+        specialty: showSpec ? pickSpecialtyBody(cMove, activity) : '',
+        openSheet: true,
+        sessionKey: `${sessionDateKey}|${s.start}|${baseId}`,
+        sessionStartTs: _rowTs.sessionStartTs,
+        sessionEndTs: _rowTs.sessionEndTs,
+        noSessionFeedbackRequired: true,
+        actionsDisabled: true,
+        detailsOpenAllowed: true,
+        portalOverrideSuppressReviewOrange: true,
+        portalOverrideCardTone: 'blue',
+        portalOverrideAlertPill: '',
+        portalOverrideSymbolText: 'Move in and change instructor',
+        portalOverrideMoveInstructorTag: true,
+        portalOverrideHideAdminBadge: true,
+        scheduleAdminAdjusted: true,
+        __portalBaseSession: Object.assign({}, s, { clientId: baseId }),
+        sessionVenue,
+        __portalScheduleOverride: moveOv
+      };
+    }
+    try{ window.portalBuildMoveInstructorChangeSessionItem = portalBuildMoveInstructorChangeSessionItem; }catch(_){}
     /** When admin marks MakeUp (or absent + make-up) on a slot, show the original as Absent and the replacement as MakeUp. */
     function portalInjectAbsentCardsAlongsideMakeup(items, sessionDateKey, viewDay, anchor, supportHidePoolNote){
       if(!Array.isArray(items) || !items.length) return items || [];
@@ -4621,10 +4695,14 @@
       });
       const out = [];
       items.forEach(function(it){
-        if(it && it.portalOverrideMakeUpTag){
-          const replaceOv = it.__portalScheduleOverride;
-          /* Day reassign / seat move: participant still attends — never invent Absent. */
-          if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(replaceOv)){
+        const replaceOv = it && it.__portalScheduleOverride;
+        const isMoveIn = !!(it && (
+          it.portalOverrideMoveInTag
+          || (typeof portalOverrideIsClientMoveInReplace === 'function' && portalOverrideIsClientMoveInReplace(replaceOv))
+        ));
+        if(it && (it.portalOverrideMakeUpTag || isMoveIn)){
+          /* Day reassign that is not a move into a real absence: participant still attends. */
+          if(!isMoveIn && typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(replaceOv)){
             out.push(it);
             return;
           }
@@ -4632,8 +4710,8 @@
           const origId = base ? String(base.clientId || '').trim().toLowerCase() : '';
           if(base && origId && !seen[origId] && !portalScheduleOverrideAnchorIsOpenSlot(origId)){
             let absentOv = portalScheduleOverrideForSessionByType(base, sessionDateKey, 'client_absence_announced');
-            /* MakeUp alone means the original did not attend — synthesise Absent from the replace override. */
-            if(!absentOv){
+            /* Move-in keeps a real admin absence above it. Do not invent Absent when the seat was only moved. */
+            if(!absentOv && !isMoveIn){
               absentOv = replaceOv
                 || (typeof portalReplaceMakeupOverrideForSession === 'function'
                   ? portalReplaceMakeupOverrideForSession(base, sessionDateKey)
@@ -4954,6 +5032,8 @@
       return items.filter(function(it){
         if(!it || it.kind !== 'client') return true;
         if(it.portalOverrideMakeUpTag) return true;
+        if(it.portalOverrideMoveInTag) return true;
+        if(it.portalOverrideMoveInstructorTag) return true;
         if(String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT') return true;
         const base = it.__portalBaseSession;
         if(!base) return true;

@@ -3956,6 +3956,14 @@
           }
           if(ov && ov.override_type === 'slot_clear_client' && !replaceOvSameSlot){
             const plClear = ov.payload || {};
+            const movedInstructorItem = typeof portalBuildMoveInstructorChangeSessionItem === 'function'
+              ? portalBuildMoveInstructorChangeSessionItem(s, sessionDateKey, viewDay, anchor, ov, supportHidePoolNote)
+              : null;
+            if(movedInstructorItem){
+              return Object.assign({}, meta, movedInstructorItem, {
+                __portalScheduleOverride: ov
+              });
+            }
             const isClientMoveClear = !!(plClear.client_move === true || plClear.client_move === 'true')
               || (typeof portalOverrideIsClientMoveOutClear === 'function' && portalOverrideIsClientMoveOutClear(ov));
             const isDayReassignClear = !!(plClear.day_reassign === true || plClear.not_makeup === true) && !isClientMoveClear;
@@ -4110,6 +4118,13 @@
               portalOverrideSymbolText: 'No Participant'
             }, meta);
           }
+          /* Absence wins the picker, so a same-day move into that seat never became the card.
+             Paint the incoming child here; the real absence is stacked above afterwards. */
+          if(replaceOvSameSlot
+            && typeof portalOverrideIsClientMoveInReplace === 'function'
+            && portalOverrideIsClientMoveInReplace(replaceOvSameSlot)){
+            ov = replaceOvSameSlot;
+          }
           let effClientId = String(s.clientId || '').trim().toLowerCase();
           let nameFromReplace = '';
           if(ov && ov.override_type === 'client_replace_in_slot' && ov.payload
@@ -4222,7 +4237,7 @@
             portalOverrideSuppressReviewOrange: !!fadiDcCancel,
             portalRosterTimeUpdated: !!slotWasUpdated,
             scheduleAdminAdjusted: !!(isClientMoveIn || isDayReassignReplace || slotWasUpdated)
-          }, meta);
+          }, meta, isClientMoveIn && replaceOvSameSlot ? { __portalScheduleOverride: replaceOvSameSlot } : null);
         })
         .filter(Boolean),
         sessionDateKey
@@ -4399,6 +4414,24 @@
                 })[0] || null)
               : null);
           if(moveOutClear){
+            const movedInstructorCover = typeof portalBuildMoveInstructorChangeSessionItem === 'function'
+              ? portalBuildMoveInstructorChangeSessionItem(
+                  Object.assign({}, s, {
+                    clientId: String(
+                      (moveOutClear.payload && moveOutClear.payload.moved_client_id) || moveOutClear.anchor_client_id || s.clientId || ''
+                    ).trim().toLowerCase()
+                  }),
+                  sessionDateKey,
+                  viewDay,
+                  anchor,
+                  moveOutClear,
+                  supportHidePoolNote
+                )
+              : null;
+            if(movedInstructorCover){
+              extra.push(Object.assign({}, movedInstructorCover, { __portalScheduleOverride: moveOutClear }));
+              return;
+            }
             const movedCid = String(
               (moveOutClear.payload && (moveOutClear.payload.moved_client_id || moveOutClear.payload.client_id))
               || moveOutClear.anchor_client_id || ''
@@ -4494,6 +4527,13 @@
         }
         if(slotOv && slotOv.override_type === 'slot_clear_client'){
           const plClear = slotOv.payload || {};
+          const movedInstructorCover = typeof portalBuildMoveInstructorChangeSessionItem === 'function'
+            ? portalBuildMoveInstructorChangeSessionItem(s, sessionDateKey, viewDay, anchor, slotOv, supportHidePoolNote)
+            : null;
+          if(movedInstructorCover){
+            extra.push(Object.assign({}, movedInstructorCover, { __portalScheduleOverride: slotOv }));
+            return;
+          }
           const isClientMoveClear = !!(plClear.client_move === true || plClear.client_move === 'true')
             || (typeof portalOverrideIsClientMoveOutClear === 'function' && portalOverrideIsClientMoveOutClear(slotOv));
           const isDayReassignClear = !!(plClear.day_reassign === true || plClear.not_makeup === true) && !isClientMoveClear;
@@ -4842,6 +4882,7 @@
 
       function portalTodayItemIsCancelledCard(it){
         if(!it) return false;
+        if(it.portalOverrideMoveInstructorTag) return false;
         const pill = String(it.portalOverrideAlertPill || '').trim().toUpperCase();
         if(pill === 'CANCELLED') return true;
         const ov = it.__portalScheduleOverride || null;
@@ -5101,6 +5142,9 @@
         const ta = Number(normalizeTimeForSort(portalTodayItemSortKey(a)));
         const tb = Number(normalizeTimeForSort(portalTodayItemSortKey(b)));
         if(ta !== tb) return ta - tb;
+        const aAbs = String(a && a.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT' ? 0 : 1;
+        const bAbs = String(b && b.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT' ? 0 : 1;
+        if(aAbs !== bAbs) return aAbs - bAbs;
         const aCan = portalTodayItemIsCancelledCard(a) ? 0 : 1;
         const bCan = portalTodayItemIsCancelledCard(b) ? 0 : 1;
         if(aCan !== bCan) return aCan - bCan;
