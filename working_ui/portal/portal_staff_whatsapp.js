@@ -805,19 +805,42 @@
     var cell = ensureWaGridCell();
     if (!cell) return;
     styleWaButtonForMode(btn, true);
-    cell.classList.add("topbar-tool-cell--staff-wa", "topbar-tool-cell--span2");
+    cell.classList.add("topbar-tool-cell--staff-wa");
     cell.hidden = false;
     cell.setAttribute("aria-hidden", "false");
-    cell.style.gridColumn = "1 / -1";
-    cell.style.width = "100%";
-    cell.style.maxWidth = "none";
-    cell.style.minWidth = "100%";
-    cell.style.justifySelf = "stretch";
-    cell.style.alignSelf = "stretch";
-    btn.style.width = "100%";
-    btn.style.maxWidth = "none";
-    btn.style.height = "100%";
-    btn.style.alignSelf = "stretch";
+    var pairTile =
+      typeof global.portalTopbarIsPhotoCommsPair === "function" && global.portalTopbarIsPhotoCommsPair();
+    if (pairTile) {
+      cell.classList.remove("topbar-tool-cell--span2");
+      cell.style.gridColumn = "auto";
+      cell.style.gridRow = "auto";
+      cell.style.width = "";
+      cell.style.maxWidth = "";
+      cell.style.minWidth = "";
+      cell.style.height = "";
+      cell.style.minHeight = "";
+      cell.style.justifySelf = "";
+      cell.style.alignSelf = "";
+      btn.style.width = "";
+      btn.style.maxWidth = "";
+      btn.style.height = "";
+      btn.style.alignSelf = "";
+      if (typeof global.portalApplyPhotoCommsPairChrome === "function") {
+        global.portalApplyPhotoCommsPairChrome();
+      }
+    } else {
+      cell.classList.add("topbar-tool-cell--span2");
+      cell.style.gridColumn = "1 / -1";
+      cell.style.width = "100%";
+      cell.style.maxWidth = "none";
+      cell.style.minWidth = "100%";
+      cell.style.justifySelf = "stretch";
+      cell.style.alignSelf = "stretch";
+      btn.style.width = "100%";
+      btn.style.maxWidth = "none";
+      btn.style.height = "100%";
+      btn.style.alignSelf = "stretch";
+    }
     if (btn.parentNode !== cell) cell.appendChild(btn);
     var right = document.getElementById("topbarToolsGridRight");
     if (right && cell.parentNode !== right) {

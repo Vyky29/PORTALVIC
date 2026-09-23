@@ -692,8 +692,79 @@
 
   global.portalStaffHasLeadFieldToolsOnStaffShell = portalStaffHasLeadFieldToolsOnStaffShell;
 
+  /** New support workers: Photo on the left, COMMS on the right. No Venue / PickUp / Plan. */
+  function portalTopbarIsPhotoCommsPair() {
+    function cell(id) {
+      return document.getElementById(id);
+    }
+    function visible(el) {
+      return !!(el && !el.hidden);
+    }
+    if (!visible(cell("topbarToolCellAchievements"))) return false;
+    var others = [
+      "topbarToolCellPickup",
+      "topbarToolCellSessionPlanner",
+      "topbarToolCellSessionsOverview",
+      "topbarToolCellVenue",
+      "topbarToolCellTermReview",
+      "topbarToolCellInterviews",
+      "topbarToolCellLeadReport",
+      "topbarToolCellLeadTermReview",
+    ];
+    for (var i = 0; i < others.length; i += 1) {
+      if (visible(cell(others[i]))) return false;
+    }
+    return true;
+  }
+
+  function portalApplyPhotoCommsPairChrome() {
+    var lead = document.querySelector(".topbar-lead--halo-flanks");
+    var pair = portalTopbarIsPhotoCommsPair();
+    if (lead) lead.classList.toggle("topbar-lead--flank-pair", pair);
+    if (!pair) return false;
+    var left = document.getElementById("topbarToolsGridLeft");
+    var right = document.getElementById("topbarToolsGridRight");
+    [left, right].forEach(function (grid) {
+      if (!grid) return;
+      grid.classList.remove("topbar-tools-grid--flank-2col");
+      grid.classList.add("topbar-tools-grid--flank-1col");
+    });
+    var wa = document.getElementById("topbarToolCellStaffWa");
+    if (wa) {
+      wa.classList.remove(
+        "topbar-tool-cell--span2",
+        "topbar-tool-cell--flank-admin-4",
+        "topbar-tool-cell--flank-admin-2",
+      );
+      wa.style.gridColumn = "auto";
+      wa.style.gridRow = "auto";
+      wa.style.width = "";
+      wa.style.maxWidth = "";
+      wa.style.minWidth = "";
+      wa.style.height = "";
+      wa.style.minHeight = "";
+      wa.style.justifySelf = "";
+      wa.style.alignSelf = "";
+    }
+    var btn = document.getElementById("topbarStaffWaBtn");
+    if (btn) {
+      btn.style.width = "";
+      btn.style.maxWidth = "";
+      btn.style.height = "";
+      btn.style.minHeight = "";
+      btn.style.maxHeight = "";
+      btn.style.alignSelf = "";
+      btn.style.flexDirection = "";
+    }
+    return true;
+  }
+
+  global.portalTopbarIsPhotoCommsPair = portalTopbarIsPhotoCommsPair;
+  global.portalApplyPhotoCommsPairChrome = portalApplyPhotoCommsPairChrome;
+
   /**
    * Halo flanks layout:
+   *  - pair: Photo left, COMMS right (new support workers)
    *  - 4 session icons: left 2×2; ADMIN right fills matching 2×2
    *  - 5 icons (plan+swim): left 2×2; right Plan (top 2) + ADMIN (bottom 2)
    *  - 6 lead: left Lead|PickUp / Stats|Venue; right Photo|Plan + ADMIN (bottom 2)
@@ -727,26 +798,33 @@
     var hasPlan = visible(plan);
     var hasSwim = visible(swim);
     var hasInterviews = visible(interviews);
-    var mode = "4";
-    if (hasLead || hasStats || hasInterviews) mode = "6";
-    else if (hasPlan && hasSwim) mode = "5";
+    var pair = portalTopbarIsPhotoCommsPair();
+    var mode = pair ? "pair" : "4";
+    if (!pair && (hasLead || hasStats || hasInterviews)) mode = "6";
+    else if (!pair && hasPlan && hasSwim) mode = "5";
 
     leadRow.classList.remove(
       "topbar-lead--flank-4",
       "topbar-lead--flank-5",
       "topbar-lead--flank-6",
+      "topbar-lead--flank-pair",
     );
     leadRow.classList.add("topbar-lead--flank-" + mode);
 
-    /* Both flanks are always a 2-column tile grid matching the left 2×2. */
-    left.classList.add("topbar-tools-grid--flank-2col");
-    right.classList.add("topbar-tools-grid--flank-2col");
+    /* Pair is one tile each side. Everyone else stays a 2-column tile grid. */
+    left.classList.toggle("topbar-tools-grid--flank-2col", !pair);
+    right.classList.toggle("topbar-tools-grid--flank-2col", !pair);
+    left.classList.toggle("topbar-tools-grid--flank-1col", pair);
+    right.classList.toggle("topbar-tools-grid--flank-1col", pair);
     right.classList.remove("topbar-tools-grid--flank-stack");
     left.classList.remove("topbar-tools-grid--flank-stack");
 
     var leftOrder;
     var rightOrder;
-    if (mode === "6") {
+    if (pair) {
+      leftOrder = [photo];
+      rightOrder = [wa];
+    } else if (mode === "6") {
       /* Michelle Interviews replaces Swim Rev; Stats stays in Service Leads menu when Interviews is on. */
       if (hasInterviews) {
         leftOrder = [lead, pickup, interviews, venue];
@@ -805,15 +883,20 @@
     if (wa) {
       wa.hidden = false;
       wa.setAttribute("aria-hidden", "false");
-      wa.classList.add("topbar-tool-cell--staff-wa", "topbar-tool-cell--span2");
-      wa.classList.toggle("topbar-tool-cell--flank-admin-4", mode === "4");
-      wa.classList.toggle("topbar-tool-cell--flank-admin-2", mode === "5" || mode === "6");
-      if (mode === "4") {
-        wa.style.gridColumn = "1 / -1";
-        wa.style.gridRow = "1 / span 2";
+      wa.classList.add("topbar-tool-cell--staff-wa");
+      if (pair) {
+        portalApplyPhotoCommsPairChrome();
       } else {
-        wa.style.gridColumn = "1 / -1";
-        wa.style.gridRow = "2";
+        wa.classList.add("topbar-tool-cell--span2");
+        wa.classList.toggle("topbar-tool-cell--flank-admin-4", mode === "4");
+        wa.classList.toggle("topbar-tool-cell--flank-admin-2", mode === "5" || mode === "6");
+        if (mode === "4") {
+          wa.style.gridColumn = "1 / -1";
+          wa.style.gridRow = "1 / span 2";
+        } else {
+          wa.style.gridColumn = "1 / -1";
+          wa.style.gridRow = "2";
+        }
       }
     }
   }

@@ -2091,8 +2091,25 @@
     styleWaButtonForMode(btn, true);
     cell.hidden = false;
     cell.setAttribute("aria-hidden", "false");
-    cell.style.gridColumn = "1 / -1";
-    cell.style.width = "100%";
+    var pairTile =
+      typeof global.portalTopbarIsPhotoCommsPair === "function" && global.portalTopbarIsPhotoCommsPair();
+    if (pairTile) {
+      cell.classList.remove("topbar-tool-cell--span2");
+      cell.style.gridColumn = "auto";
+      cell.style.gridRow = "auto";
+      cell.style.width = "";
+      cell.style.maxWidth = "";
+      cell.style.minWidth = "";
+      cell.style.height = "";
+      cell.style.minHeight = "";
+      if (typeof global.portalApplyPhotoCommsPairChrome === "function") {
+        global.portalApplyPhotoCommsPairChrome();
+      }
+    } else {
+      cell.classList.add("topbar-tool-cell--span2");
+      cell.style.gridColumn = "1 / -1";
+      cell.style.width = "100%";
+    }
     if (btn.parentNode !== cell) cell.appendChild(btn);
     var right = document.getElementById("topbarToolsGridRight");
     if (right && cell.parentNode !== right) right.appendChild(cell);

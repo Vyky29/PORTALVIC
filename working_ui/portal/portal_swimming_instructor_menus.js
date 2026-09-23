@@ -111,9 +111,9 @@
       photo: true,
       swReview: false,
       leadReview: false,
-      venue: true,
-      pickup: true,
-      planner: true,
+      venue: false,
+      pickup: false,
+      planner: false,
       sixIcon: false,
     },
     carlos: {
@@ -147,9 +147,36 @@
       photo: true,
       swReview: false,
       leadReview: false,
-      venue: true,
-      pickup: true,
-      planner: true,
+      venue: false,
+      pickup: false,
+      planner: false,
+      sixIcon: false,
+    },
+    emmanuel: {
+      photo: true,
+      swReview: false,
+      leadReview: false,
+      venue: false,
+      pickup: false,
+      planner: false,
+      sixIcon: false,
+    },
+    patience: {
+      photo: true,
+      swReview: false,
+      leadReview: false,
+      venue: false,
+      pickup: false,
+      planner: false,
+      sixIcon: false,
+    },
+    ann: {
+      photo: true,
+      swReview: false,
+      leadReview: false,
+      venue: false,
+      pickup: false,
+      planner: false,
       sixIcon: false,
     },
     javier: {
@@ -330,14 +357,32 @@
     try {
       if (typeof global.portalCanonicalStaffRosterKey === "function") {
         var canon = global.portalCanonicalStaffRosterKey(k);
-        if (canon) return canon;
+        if (canon) k = canon;
       }
     } catch (_) {}
     // staff_roster_resolve.js loads before auth module — same stf/alias map.
     try {
       if (typeof global.portalProfileRosterKey === "function") {
         var fromRoster = global.portalProfileRosterKey(k);
-        if (fromRoster) return fromRoster;
+        if (fromRoster) {
+          if (
+            fromRoster === "patience" ||
+            fromRoster === "patiencebennett" ||
+            fromRoster === "pairaoje" ||
+            fromRoster === "pairaojeyahoocom"
+          ) {
+            return "patience";
+          }
+          if (
+            fromRoster === "ann" ||
+            fromRoster === "annallotey" ||
+            fromRoster === "aallotey09" ||
+            fromRoster === "aallotey09gmailcom"
+          ) {
+            return "ann";
+          }
+          return fromRoster;
+        }
       }
     } catch (_) {}
     if (k === "lulia" || k === "luliya" || k === "aida" || k === "stf021") return "luliya";
@@ -368,6 +413,17 @@
     if (k === "stf020") return "teflon";
     if (k === "stf022") return "andres";
     if (k === "michelleemmacaleb" || k.indexOf("michelle") === 0) return "michelle";
+    if (
+      k === "patience" ||
+      k === "patiencebennett" ||
+      k === "pairaoje" ||
+      k === "pairaojeyahoocom"
+    ) {
+      return "patience";
+    }
+    if (k === "ann" || k === "annallotey" || k === "aallotey09" || k === "aallotey09gmailcom") {
+      return "ann";
+    }
     return k;
   }
 
@@ -595,8 +651,8 @@
     setTopbarToolGroup(SWIMMING_TERM_REVIEW_IDS, showSwReview, { visible: showSwReview });
     var showInterviews = !!profile.interviews || staffKey === "michelle";
     setTopbarToolGroup(INTERVIEWS_TOOL_IDS, showInterviews, { visible: showInterviews });
-    setTopbarToolGroup(SWIMMING_VENUE_IDS, venueOn, { visible: true });
-    setTopbarToolGroup(SWIMMING_PICKUP_IDS, !!profile.pickup, { visible: true });
+    setTopbarToolGroup(SWIMMING_VENUE_IDS, venueOn, { visible: venueOn });
+    setTopbarToolGroup(SWIMMING_PICKUP_IDS, !!profile.pickup, { visible: !!profile.pickup });
     setTopbarToolGroup(SWIMMING_PLANNER_IDS, !!profile.planner, {
       visible: !!profile.planner,
     });
