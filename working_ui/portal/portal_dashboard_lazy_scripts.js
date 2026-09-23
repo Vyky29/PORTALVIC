@@ -10,7 +10,7 @@
     "/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster",
     "/portal/portal_participant_achievements.js?v=20260713-ios-video-save",
     "/portal/portal_client_sessions_overview.js?v=20260720-no-incidents-show-narrative",
-    "/portal/portal_induction.js?v=20260923-induction-keep",
+    "/portal/portal_induction.js?v=20260923-induction-real",
     "/portal/portal_induction_bind.js?v=20260922-no-newhire-recap",
     "/portal/portal_guide_ack.js?v=20260614-no-menu-guide",
     "/portal/portal_guide_menu.js?v=20260630-guide-only",

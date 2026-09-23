@@ -131,6 +131,17 @@
     return pct;
   }
 
+  function moduleIsAutoStamp(mod) {
+    if (!mod || !mod.quizPass) return false;
+    if (mod.outcomes || mod.quizStarted) return false;
+    if (Number(mod.maxWatchedTime) > 0) return false;
+    return true;
+  }
+
+  function moduleQuizIsReal(mod) {
+    return !!(mod && mod.quizPass && !moduleIsAutoStamp(mod));
+  }
+
   function trackIsComplete(track) {
     if (!track) return false;
     var phase = String(track.phase_label || "");
@@ -139,7 +150,7 @@
     var mods = track.module_states || {};
     var passedModules = 0;
     for (var mi = 1; mi <= 6; mi++) {
-      if (mods[String(mi)] && mods[String(mi)].quizPass) passedModules += 1;
+      if (moduleQuizIsReal(mods[String(mi)])) passedModules += 1;
     }
     if (passedModules >= 6) return true;
     return false;
@@ -154,7 +165,8 @@
     return Object.keys(mods).some(function (k) {
       if (k === "refresh") return false;
       var m = mods[k];
-      return m && (m.video || m.journey || m.quizPass);
+      if (!m || moduleIsAutoStamp(m)) return false;
+      return !!(m.video || m.journey || m.quizPass || m.quizStarted || Number(m.maxWatchedTime) > 0);
     });
   }
 
@@ -689,8 +701,8 @@
   }
 
   function moduleChip(n, mod) {
-    var done = mod && mod.quizPass;
-    var partial = mod && (mod.video || mod.journey) && !done;
+    var done = moduleQuizIsReal(mod);
+    var partial = mod && !moduleIsAutoStamp(mod) && (mod.video || mod.journey || mod.quizStarted || Number(mod.maxWatchedTime) > 0) && !done;
     var cls = done ? "chip--ok" : partial ? "chip--info" : "chip--pend";
     var title = (mod && mod.label) || (done ? "Done" : partial ? "In progress" : "Not started");
     var inner = done ? "✓" : String(n);
@@ -715,7 +727,7 @@
     var doneCount = 0;
     var i;
     for (i = 1; i <= INDUCTION_MODULES; i++) {
-      if (mods[String(i)] && mods[String(i)].quizPass) doneCount += 1;
+      if (moduleQuizIsReal(mods[String(i)])) doneCount += 1;
       chips += moduleChip(i, mods[String(i)]);
     }
     return (

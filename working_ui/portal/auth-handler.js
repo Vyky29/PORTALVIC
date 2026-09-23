@@ -1547,7 +1547,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
   }
   try {
     if (!isLeadOverview && !isGhostDashboard) {
-      await import("./portal_training_progress_sync.js?v=20260923-induction-keep");
+      await import("./portal_training_progress_sync.js?v=20260923-induction-real");
       if (typeof window.portalSyncTrainingProgressToSupabase === "function") {
         await window.portalSyncTrainingProgressToSupabase({
           client: supabase,

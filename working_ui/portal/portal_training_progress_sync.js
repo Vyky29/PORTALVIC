@@ -82,8 +82,15 @@
     return res.data.module_states;
   }
 
+  function inductionStateIsAutoStamp(st) {
+    if (!st || !st.quizPass) return false;
+    if (st.outcomes || st.quizStarted) return false;
+    if (Number(st.maxWatchedTime) > 0) return false;
+    return true;
+  }
+
   function inductionModuleLabel(n, st) {
-    if (st.quizPass) return "Done";
+    if (st.quizPass && !inductionStateIsAutoStamp(st)) return "Done";
     if (st.video) return "Quiz pending";
     if (st.journey || st.outcomes || st.quizStarted || Number(st.maxWatchedTime) > 0) return "In progress";
     return "Not started";
@@ -112,6 +119,12 @@
     var currentModule = 0;
     for (var i = 1; i <= INDUCTION_MODULES; i++) {
       var st = inductionModuleState(i);
+      if (mustComplete && inductionStateIsAutoStamp(st)) {
+        try {
+          global.localStorage.removeItem(inductionModuleStorageKey(i));
+        } catch (_) {}
+        st = {};
+      }
       moduleStates[String(i)] = {
         journey: !!st.journey,
         outcomes: !!st.outcomes,
