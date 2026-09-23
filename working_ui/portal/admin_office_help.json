@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23-v13",
+  "version": "2026-09-23-v14",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -579,7 +579,8 @@
           "tips": [
             "Back to decide reopens the absence. It cancels grants that are still Open or Offered. It does not remove a seat that is already On roster.",
             "Move to another slot today only moves inside that same date. Another week is Undo on the old day, then a new grant and Offer slot.",
-            "Add makeup creates an open grant. Offer a concrete slot afterwards. Do not expect the grant itself to appear on Schedule and Covers before it is accepted."
+            "Add makeup creates an open grant. Offer a concrete slot afterwards. Do not expect the grant itself to appear on Schedule and Covers before it is accepted.",
+            "If a makeup was placed on a seat that is not on that day's roster, Schedule and Covers still shows that name so you can open Change and Undo change."
           ]
         }
       ]

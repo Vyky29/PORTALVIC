@@ -14148,6 +14148,64 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return out;
     }
+    /* A makeup written onto a seat that is not on this day's roster (open plaza
+       from another board) never matched a row, so the name was missing from the
+       participant filter and Undo had nothing to open. */
+    function schedSlotFromOrphanMakeupOverride(ov, iso){
+      if(!ov || String(ov.status || 'active') !== 'active') return null;
+      if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return null;
+      if(adminNormIsoDate(ov.session_date) !== adminNormIsoDate(iso)) return null;
+      var p = ov.payload || {};
+      var name = String(p.to_client_name || p.replacement_client_name || '').trim();
+      var slug = adminCanonicalClientSlug(p.to_client_id || p.replacement_client_id || name);
+      if(!bookingIsBookedClientSlug(slug)) return null;
+      var start = String(ov.anchor_start || '').slice(0, 8);
+      var end = String(ov.anchor_end || '').slice(0, 8) || start;
+      var staff = normalizeSchedAnchorStaffId(ov.anchor_staff_id);
+      var wd = portalWeekdayLongFromIsoDate(iso);
+      var service = String(p.service_label || p.service || 'Session').trim() || 'Session';
+      return {
+        sessionDate: String(iso || '').slice(0, 10),
+        sheetDay: wd,
+        clientDisplay: name || schedParticipantDisplayName(slug) || slug,
+        clientSlug: slug,
+        staffRosterId: staff,
+        staffName: schedStaffDisplayName(staff, staff),
+        venue: String(ov.anchor_venue || '').trim(),
+        programme: service,
+        rosterService: service,
+        rosterArea: String(p.area || '').trim(),
+        anchorStart: start,
+        anchorEnd: end,
+        anchorTimeLabel: ov.anchor_time_slot_label || rosterBandLabelFromPg(start, end, wd),
+        rosterSheetLabel: 'MakeUp',
+        demoId: 'makeup|' + String(ov.id || ''),
+        portalOrphanMakeup: true
+      };
+    }
+    function schedInjectOrphanMakeupSlots(slots, iso, overrides){
+      var out = Array.isArray(slots) ? slots.slice() : [];
+      var rows = Array.isArray(overrides) ? overrides : [];
+      for(var i = 0; i < rows.length; i++){
+        var ov = rows[i];
+        var syn = schedSlotFromOrphanMakeupOverride(ov, iso);
+        if(!syn) continue;
+        var matched = false;
+        for(var j = 0; j < out.length; j++){
+          if(schedOverrideMatchesSlot(out[j], ov)){
+            matched = true;
+            break;
+          }
+        }
+        if(!matched) out.push(syn);
+      }
+      out.sort(function(a, b){
+        return (a.anchorStart || '').localeCompare(b.anchorStart || '')
+          || (a.venue || '').localeCompare(b.venue || '')
+          || (a.staffRosterId || '').localeCompare(b.staffRosterId || '');
+      });
+      return out;
+    }
     function schedIsClosedParticipantSlot(slot){
       if(!slot) return false;
       var slug = String(slot.clientSlug || '').trim().toLowerCase();
@@ -19148,6 +19206,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       slots = schedDedupeMakeupTwinSlots(slots);
       slots = schedDedupeInstructorCoverTwinSlots(slots);
       slots = schedInjectCreatedSessionSlots(slots, iso, sched.overrides);
+      slots = schedInjectOrphanMakeupSlots(slots, iso, sched.overrides);
       slots = slots.filter(function(slot){
         if(!schedStaffAwayOnIso(iso, slot.staffRosterId)) return true;
         var ov = findOverrideForSlot(slot);
