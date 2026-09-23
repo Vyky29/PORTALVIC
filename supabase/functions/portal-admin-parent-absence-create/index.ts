@@ -71,6 +71,21 @@ function resolveStatus(reasonCode: string): string {
   return "missed";
 }
 
+const KNOWN_VENUES = ["SwimFarm", "Northolt", "Acton", "Westway", "Hub"];
+
+function venueFromServiceLabel(label: string): string {
+  const raw = String(label || "");
+  for (let i = 0; i < KNOWN_VENUES.length; i++) {
+    const v = KNOWN_VENUES[i];
+    if (new RegExp("\\b" + v + "\\b", "i").test(raw)) return v;
+  }
+  const parts = raw.split(/\s*[·|/]\s*/);
+  const last = clean(parts[parts.length - 1] || "", 40);
+  if (!last || last.length > 24) return "";
+  if (/activity|programme|program|centre|center|session|day/i.test(last)) return "";
+  return last;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: portalAdminCorsHeaders() });
@@ -313,7 +328,8 @@ Deno.serve(async (req) => {
       console.error("[portal-admin-parent-absence-create] update", updErr.message);
       return portalAdminJson(500, { ok: false, error: "save_failed" });
     }
-    return portalAdminJson(200, { ok: true, report: updated, updated: true });
+    const grant = await openNotedMakeupGrant(admin, updated, verified.userId || null, now);
+    return portalAdminJson(200, { ok: true, report: updated, updated: true, grant });
   }
 
   const { data: created, error } = await admin
@@ -335,5 +351,70 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "save_failed" });
   }
 
-  return portalAdminJson(200, { ok: true, report: created });
+  const grant = await openNotedMakeupGrant(admin, created, verified.userId || null, now);
+  return portalAdminJson(200, { ok: true, report: created, grant });
 });
+
+/**
+ * Office-phone noted absence (party, holidays, travel, other commitments):
+ * open the makeup grant immediately. Unwell still waits for proof.
+ * Club cancellations stay in the decide queue.
+ */
+async function openNotedMakeupGrant(
+  admin: ReturnType<typeof createClient>,
+  report: {
+    id?: string;
+    status?: string;
+    case_kind?: string;
+    parent_person_id?: string;
+    contact_id?: string;
+    participant_display?: string;
+    service_label?: string;
+    schedule_override_id?: string | null;
+  } | null,
+  userId: string | null,
+  now: string,
+) {
+  if (!report || !report.id) return null;
+  if (String(report.status || "") !== "noted") return null;
+  if (String(report.case_kind || "") === "cancellation") return null;
+  if (report.schedule_override_id) return null;
+  const venue = venueFromServiceLabel(String(report.service_label || ""));
+  if (!venue || !report.parent_person_id || !report.contact_id) return null;
+  const { data: existing } = await admin
+    .from("portal_parent_makeup_grants")
+    .select("id, status, preferred_venue")
+    .eq("absence_report_id", report.id)
+    .maybeSingle();
+  if (existing) return existing;
+  const { data: grant, error } = await admin
+    .from("portal_parent_makeup_grants")
+    .insert({
+      parent_person_id: report.parent_person_id,
+      contact_id: report.contact_id,
+      participant_display: report.participant_display || "",
+      absence_report_id: report.id,
+      preferred_venue: venue,
+      service_label: report.service_label || "",
+      status: "open",
+      source: "no_proof",
+      notes: "Office phone · makeup opened automatically",
+      created_by: userId,
+      updated_at: now,
+    })
+    .select("id, status, preferred_venue, service_label")
+    .maybeSingle();
+  if (error) {
+    console.error("[portal-admin-parent-absence-create] makeup grant", error.message);
+    return null;
+  }
+  await admin
+    .from("portal_parent_absence_reports")
+    .update({
+      outcome: "makeup",
+      outcome_notes: "Makeup grant opened automatically",
+      updated_at: now,
+    })
+    .eq("id", report.id);
+  return grant;
+}

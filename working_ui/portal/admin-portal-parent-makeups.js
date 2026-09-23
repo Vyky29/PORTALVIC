@@ -496,7 +496,7 @@
     cfg.openModal(
       '<div class="modal-h"><h2 id="modalTitle">Add makeup grant (office phone)</h2></div>' +
         '<div class="modal-b" style="min-width:0">' +
-        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Adds an open makeup grant on the venue waiting list. You can offer a concrete slot afterwards from the Actions column.</p>' +
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">A noted office-phone absent already opens this grant. Use this form only when there is no absence row. Offer a concrete slot afterwards from the Actions column.</p>' +
         '<label class="muted">Search participant</label>' +
         '<input class="inp" id="ppMakeupCreateSearch" type="search" placeholder="Name or contact id" autocomplete="off" style="max-width:100%;box-sizing:border-box" />' +
         '<div id="ppMakeupCreateHits" hidden style="margin:6px 0"></div>' +

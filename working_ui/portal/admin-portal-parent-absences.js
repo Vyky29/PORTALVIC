@@ -256,7 +256,7 @@
     var title = isCancel ? 'Add cancelled session (office)' : 'Add absent (office phone)';
     var intro = isCancel
       ? 'Club / admin cancelled a booked session. Lands in the same decision queue as absents — choose credit, refund, makeup or none after you validate. No medical proof required.'
-      : 'Record a missed / noted session when a parent calls. Unwell → Missed (proof then approve). Other reasons → Noted. Credit only after proof + approve.';
+      : 'Record a missed / noted session when a parent calls. Unwell stays Missed until proof. Any other reason opens a makeup grant automatically when the service names the centre (Acton, Northolt, SwimFarm, Westway, Hub).';
     var reasonOpts = isCancel
       ? '<option value="club_cancelled">Club cancelled session</option>' +
         '<option value="pool_closed">Pool / venue closed</option>' +
@@ -374,7 +374,9 @@
               ? 'Already on file for that session'
               : isCancel
                 ? 'Cancelled session queued for credit / refund / makeup decision'
-                : 'Absent recorded from office phone',
+                : r.grant && r.grant.preferred_venue
+                  ? 'Absent recorded. Makeup grant opened for ' + r.grant.preferred_venue + '.'
+                  : 'Absent recorded from office phone',
             'ok'
           );
           void renderHost(global.document.getElementById('portalParentAbsenceHost'));
