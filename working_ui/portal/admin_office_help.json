@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23-v12",
+  "version": "2026-09-23-v13",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -370,12 +370,12 @@
             "Set the anchor to a date that is the same weekday as the service. A Sunday place needs a Sunday anchor. A Wednesday anchor cancels Wednesdays.",
             "Set the time slot, then save. Clicking the Now card only picks the seat. It does not change the anchor.",
             "That anchor date and later matching weekdays drop. Dates before the anchor stay.",
-            "Parents see a cancelled chip for those dates. The refund is a separate step under Refunds and credits. Saving here does not send a WhatsApp or calculate the refund."
+            "Parents see a cancelled chip for those dates. Rest of term and Every weekday open a sheet with the refund (paid, sessions already done, 10% administration, amount back, and what will not be collected). Confirm sends one message to the parent. The bank transfer is still paid back the same way. LA / NHS do not get the administration charge."
           ],
           "tips": [
             "Every [weekday] until end of term also removes days already delivered. Use that only when the whole weekday pattern should go, including the past.",
             "One session only: Schedule & Covers, not Edit term slot.",
-            "Private pay-in-advance refund rule is in Absents, refunds and credits.",
+            "Private pay-in-advance: 10% of the unused amount, minimum £25, maximum £100. Delivered sessions and a summer crash course stay paid. LA / NHS do not use this fee.",
             "Parents do not cancel the standing service from the parent hub. A one-day absence is Absents / Refunds and credits. The whole service is admin, Edit term slot, Cancel service."
           ]
         }

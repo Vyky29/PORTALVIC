@@ -574,6 +574,10 @@ verify_jwt = false
 [functions.portal-admin-term-slot-assign-complete]
 verify_jwt = false
 
+# Cancel service (rest of term): quote the refund and message the parent.
+[functions.portal-admin-term-cancel-refund]
+verify_jwt = false
+
 [functions.parent-portal-makeup-list]
 verify_jwt = false
 

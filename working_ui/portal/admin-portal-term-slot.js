@@ -63,6 +63,9 @@
     sourceSeat: null,
     /** After cross-service Save — soft finance checklist (no auto-reprice). */
     invoiceReviewBanner: null,
+    /** Set when the cancel sheet is confirmed; cleared after the parent message. */
+    pendingTermRefund: null,
+    refundArmed: false,
   };
 
   function esc(s) { return deps.esc(s); }
@@ -1764,6 +1767,125 @@
     });
   }
 
+  function termCancelRefundRequest(client, payload) {
+    var base = String(
+      (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.url) ||
+        global.SUPABASE_URL ||
+        "",
+    ).replace(/\/$/, "");
+    var anon =
+      (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.anonKey) ||
+      global.SUPABASE_ANON_KEY ||
+      "";
+    if (!base || !anon) return Promise.resolve({ ok: false, error: "supabase_not_configured" });
+    var headers = { apikey: anon, "Content-Type": "application/json" };
+    var sessionPromise =
+      client && client.auth && typeof client.auth.getSession === "function"
+        ? client.auth.getSession()
+        : Promise.resolve({ data: { session: null } });
+    return sessionPromise.then(function (sessRes) {
+      var tok =
+        sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token;
+      if (tok) headers.Authorization = "Bearer " + tok;
+      return fetch(base + "/functions/v1/portal-admin-term-cancel-refund", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(payload),
+      }).then(function (res) {
+        return res.json().catch(function () {
+          return { ok: false, error: "bad_json" };
+        });
+      });
+    });
+  }
+
+  function moneyLabel(n) {
+    var v = Math.round(Number(n) * 100) / 100;
+    if (!isFinite(v)) return "£0";
+    if (Math.abs(v - Math.round(v)) < 0.001) return "£" + String(Math.round(v));
+    return "£" + v.toFixed(2);
+  }
+
+  function closeTermCancelSheet() {
+    var el = document.getElementById("trsCancelRefundSheet");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
+
+  function showTermCancelRefundSheet(root, quote) {
+    closeTermCancelSheet();
+    var wrap = document.createElement("div");
+    wrap.id = "trsCancelRefundSheet";
+    wrap.setAttribute("role", "dialog");
+    wrap.style.cssText =
+      "position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px;";
+    var confident = !!(quote && quote.confident);
+    var lines = "";
+    if (confident) {
+      lines =
+        "<p style=\"margin:0 0 8px\">Paid towards this service: <strong>" + esc(moneyLabel(quote.paid_gbp)) + "</strong></p>" +
+        "<p style=\"margin:0 0 8px\">Sessions already done: <strong>" + esc(String(quote.delivered_count || 0)) + "</strong> (" + esc(moneyLabel(quote.delivered_gbp)) + ")</p>" +
+        "<p style=\"margin:0 0 8px\">Unused: <strong>" + esc(moneyLabel(quote.unused_gbp)) + "</strong></p>" +
+        "<p style=\"margin:0 0 8px\">Administration (10%, min £25, max £100): <strong>" + esc(moneyLabel(quote.fee_gbp)) + "</strong></p>" +
+        "<p style=\"margin:0 0 8px\">Refund: <strong>" + esc(moneyLabel(quote.refund_gbp)) + "</strong></p>" +
+        "<p style=\"margin:0 0 8px\">Not collected: <strong>" + esc(moneyLabel(quote.uncollected_gbp)) + "</strong></p>";
+    } else {
+      lines = "<p style=\"margin:0 0 8px\">No matching invoice line, so this message confirms the cancel and does not invent a figure.</p>";
+    }
+    wrap.innerHTML =
+      "<div style=\"background:#fff;color:#0f172a;border-radius:16px;max-width:560px;width:100%;max-height:min(92vh,760px);overflow:auto;padding:16px;box-sizing:border-box\">" +
+      "<h2 style=\"margin:0 0 8px;font-size:18px\">Cancel service</h2>" +
+      "<p style=\"margin:0 0 10px;font-size:13px;line-height:1.4\">One message to the parent. The bank refund is paid back the same way they paid. This does not move the money by itself." +
+      (quote && quote.invoice_number ? " Invoice " + esc(quote.invoice_number) + "." : "") +
+      "</p>" +
+      lines +
+      "<pre style=\"margin:10px 0;white-space:pre-wrap;overflow-wrap:break-word;background:#f8fafc;border-radius:10px;padding:10px;font:13px/1.4 ui-sans-serif,system-ui,sans-serif\">" +
+      esc(quote && quote.message ? quote.message : "") +
+      "</pre>" +
+      "<div style=\"display:flex;gap:8px;flex-wrap:wrap\">" +
+      "<button type=\"button\" class=\"btn btn--pri\" id=\"trsCancelRefundGo\">Cancel and message parent</button>" +
+      "<button type=\"button\" class=\"btn btn--ghost\" id=\"trsCancelRefundBack\">Back</button>" +
+      "</div></div>";
+    document.body.appendChild(wrap);
+    var back = document.getElementById("trsCancelRefundBack");
+    if (back) back.onclick = function () { closeTermCancelSheet(); };
+    wrap.addEventListener("click", function (ev) {
+      if (ev.target === wrap) closeTermCancelSheet();
+    });
+    var go = document.getElementById("trsCancelRefundGo");
+    if (go) {
+      go.onclick = function () {
+        go.disabled = true;
+        state.pendingTermRefund = quote;
+        state.refundArmed = true;
+        closeTermCancelSheet();
+        cancelParticipantTermSlot(root);
+      };
+    }
+  }
+
+  function previewTermCancelRefund(root, p) {
+    var client = deps.getClient();
+    deps.toast("Working out the refund…");
+    termCancelRefundRequest(client, {
+      action: "quote",
+      client_name: p.client_name,
+      service: p.service,
+      weekday: p.day,
+      time_slot: p.time_slot,
+      venue: p.venue,
+      instructors: p.instructors,
+      anchor_date: p.anchorDate,
+    }).then(function (quote) {
+      if (!quote || quote.ok === false) {
+        deps.toast("Could not work out the refund. The place was not cancelled.");
+        return;
+      }
+      showTermCancelRefundSheet(root, quote);
+    }).catch(function () {
+      deps.toast("Could not work out the refund. The place was not cancelled.");
+    });
+  }
+
   function cancelParticipantTermSlot(root) {
     if (state.saving) return;
     var client = deps.getClient();
@@ -1794,6 +1916,11 @@
       var canonC = global.portalResolveParticipantCanonicalName(p.client_name);
       if (canonC) p.client_name = canonC;
     }
+    if ((p.scope === "rest_of_term" || p.scope === "weekday_term") && !state.refundArmed) {
+      previewTermCancelRefund(root, p);
+      return;
+    }
+    state.refundArmed = false;
     var bounds = activeTermBounds(p.anchorDate);
     var before = findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
     var cancelRow = bundleCancelRow(p, p.anchorDate);
@@ -2022,7 +2149,17 @@
         }
         state.invoiceReviewBanner = null;
         if (!shouldBill) {
-          deps.toast(toastMsg || "Term slot saved.");
+          var pendingRefund = state.pendingTermRefund;
+          state.pendingTermRefund = null;
+          if (pendingRefund && eventAction === "cancel") {
+            sendTermCancelRefund(client, pendingRefund).then(function (sent) {
+              if (sent && sent.sent) deps.toast((toastMsg || "Service cancelled.") + " Parent message sent.");
+              else if (sent && sent.already_sent) deps.toast((toastMsg || "Service cancelled.") + " Parent message was already sent.");
+              else deps.toast((toastMsg || "Service cancelled.") + " Parent message was not sent.");
+            });
+          } else {
+            deps.toast(toastMsg || "Term slot saved.");
+          }
           return rowRef;
         }
         return ensureAssignUnpaidInvoice(client, p).then(function (invRes) {
@@ -2100,6 +2237,19 @@
         state.sourceSeat = null;
         render(root);
       });
+  }
+
+  function sendTermCancelRefund(client, quote) {
+    return termCancelRefundRequest(client, {
+      action: "notify",
+      client_name: quote.client_name,
+      service: quote.service,
+      weekday: quote.weekday,
+      time_slot: quote.time_slot,
+      venue: quote.venue,
+      instructors: quote.instructors,
+      anchor_date: quote.anchor_date,
+    });
   }
 
   function ensureAssignUnpaidInvoice(client, p) {
