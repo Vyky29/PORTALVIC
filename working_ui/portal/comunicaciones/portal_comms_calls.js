@@ -69,7 +69,7 @@
         mode: row.ring_mode === "administration" ? "administration" : "personal",
         title: row.ring_title || title,
         subtitle: row.ring_subtitle || "Communications",
-        peerLabel: row.ring_mode === "administration" ? "Worker" : "Incoming call",
+        peerLabel: callerNameFromRingSubtitle(row.ring_subtitle) || (row.ring_mode === "administration" ? "Worker" : "Incoming call"),
       };
     }
     if (!conv) return { forMe: false, pending: true };
@@ -116,8 +116,25 @@
     return { forMe: false };
   }
 
+  function callerNameFromRingSubtitle(sub) {
+    var t = String(sub || "").replace(/\s+/g, " ").trim();
+    var m = t.match(/^(.*)\s+is calling$/i);
+    if (!m) return "";
+    var name = String(m[1] || "").trim();
+    if (!name || /^(worker|admin|communications|group)$/i.test(name)) return "";
+    return name;
+  }
+
   async function describeIncomingAsync(client, row, meId) {
-    if (row && row.ring_mode) return describeIncoming(row, meId, null);
+    if (row && row.ring_mode) {
+      var preset = describeIncoming(row, meId, null);
+      var named = callerNameFromRingSubtitle(row.ring_subtitle);
+      if (named) {
+        preset.peerLabel = named;
+        preset.subtitle = named + " is calling";
+      }
+      return preset;
+    }
     var conv = await loadConversation(client, row && row.conversation_id);
     var info = describeIncoming(row, meId, conv);
     if (!info.forMe || !client) return info;
@@ -586,6 +603,7 @@
     loadConversation: loadConversation,
     describeIncoming: describeIncoming,
     describeIncomingAsync: describeIncomingAsync,
+    callerNameFromRingSubtitle: callerNameFromRingSubtitle,
     preload: preload,
     isVideoType: isVideoType,
     incomingBrandHtml: incomingBrandHtml,

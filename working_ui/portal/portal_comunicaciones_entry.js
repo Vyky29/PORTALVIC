@@ -1496,6 +1496,7 @@
         ".portal-comms-call-kind svg{width:28px;height:28px;display:block}" +
         ".portal-comms-incoming-card h2{margin:0 0 6px;font-size:18px}" +
         ".portal-comms-incoming-card p{margin:0 0 16px;font-size:14px;color:rgba(255,255,255,.78)}" +
+        "#portalCommsIncomingSub{font-size:16px;font-weight:800;color:#fff;overflow-wrap:anywhere}" +
         ".portal-comms-incoming-actions{display:flex;gap:10px}" +
         ".portal-comms-incoming-actions button{flex:1;min-width:0;padding:12px 10px;border-radius:999px;border:0;font:inherit;font-size:14px;font-weight:800;cursor:pointer}" +
         "#portalCommsIncomingDecline{background:rgba(255,255,255,.12);color:#fff}" +
@@ -1569,7 +1570,7 @@
     if (global.PortalCommsCalls) return Promise.resolve(global.PortalCommsCalls);
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260911-call-lock-mic";
+      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260923-caller-name";
       s.onload = function () {
         if (global.PortalCommsCalls) resolve(global.PortalCommsCalls);
         else reject(new Error("Call service failed to load."));
@@ -1649,8 +1650,11 @@
         : await incomingCallTarget(row);
     }
     if (!info.forMe) return;
+    info.subtitle = await namedRingSubtitle(row, info.subtitle);
     if (incomingCallState && String(incomingCallState.id) === String(row.id)) {
       var existing = document.getElementById("portalCommsIncoming");
+      var subNow = document.getElementById("portalCommsIncomingSub");
+      if (subNow && info.subtitle) subNow.textContent = info.subtitle;
       if (existing && existing.hidden) {
         existing.hidden = false;
         try {
@@ -1852,6 +1856,20 @@
     } catch (_rt) {
       incomingCallChannel = null;
     }
+  }
+
+  function ringSubtitleIsGeneric(text) {
+    var t = String(text || "").replace(/\s+/g, " ").trim();
+    if (!t) return true;
+    return /^(communications|tap to answer|worker calling admin|admin is calling you|group call|worker is calling|admin is calling|communications is calling|group is calling)$/i.test(t);
+  }
+
+  async function namedRingSubtitle(row, subtitle) {
+    var current = String(subtitle || "").replace(/\s+/g, " ").trim();
+    if (!ringSubtitleIsGeneric(current)) return current || "Communications";
+    var who = await staffFirstNameForUserId(row && row.initiated_by);
+    if (who && who !== "ADMIN") return who + " is calling";
+    return current || "Communications";
   }
 
   function ringingCallIsFresh(row) {

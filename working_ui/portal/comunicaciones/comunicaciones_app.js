@@ -1877,7 +1877,10 @@ async function incomingCall(row) {
         mode: row.ring_mode === "administration" ? "administration" : "personal",
         title: row.ring_title,
         subtitle: row.ring_subtitle,
-        peerLabel: row.ring_mode === "administration" ? "Worker" : "ADMIN",
+        peerLabel:
+          (window.PortalCommsCalls && typeof window.PortalCommsCalls.callerNameFromRingSubtitle === "function"
+            ? window.PortalCommsCalls.callerNameFromRingSubtitle(row.ring_subtitle)
+            : "") || (row.ring_mode === "administration" ? "Worker" : "ADMIN"),
       };
     } else if (window.PortalCommsCalls && typeof window.PortalCommsCalls.describeIncomingAsync === "function") {
       info = await window.PortalCommsCalls.describeIncomingAsync(client(), row, state.me.id);
@@ -1890,6 +1893,13 @@ async function incomingCall(row) {
     }
   }
   if (!info.forMe) return;
+  if (/^(worker|incoming call|admin)$/i.test(String(info.peerLabel || "").trim()) && row.initiated_by) {
+    try {
+      const lab = await rpc("communication_staff_label", { p_user_id: row.initiated_by });
+      const nm = String(lab || "").replace(/\s+/g, " ").trim().split(" ")[0];
+      if (nm && !/^admin$/i.test(nm)) info.peerLabel = nm;
+    } catch (_nm) {}
+  }
   state.call = {
     id: row.id,
     type: row.type,
