@@ -2222,6 +2222,43 @@
       });
     }
 
+    /** Weekday pool after 15:00. Sunday SwimFarm cover stays on its own band. */
+    function timesheetRowIsLuliyaWeekdayAfternoonAquatic(s) {
+      if (!timesheetIsLuliaSession(s)) return false;
+      const svc = sessionServiceLower(s);
+      if (!/aquatic/.test(svc) || /day\s*centre/.test(svc)) return false;
+      const start = hmToMinutes(String((s && s.start) || "").trim());
+      return Number.isFinite(start) && start >= 15 * 60;
+    }
+
+    /**
+     * Luliya weekday pool: pay from the first named client to the last.
+     * Empty seats before the first or after the last are not paid.
+     * A hole between them stays in the shift (Tue 15 Acton 4.00-6.30 = 2.5h;
+     * Mon/Wed Northolt and Tue 8 = 1.5h).
+     */
+    function timesheetLuliyaAfternoonNamedSpan(rows) {
+      const list = rows || [];
+      if (!list.length || !list.every(timesheetRowIsLuliyaWeekdayAfternoonAquatic)) return null;
+      let minStart = Infinity;
+      let maxEnd = -Infinity;
+      list.forEach((s) => {
+        if (!timesheetSessionIsWorkedFeedbackSeat(s)) return;
+        const a = hmToMinutes(String((s && s.start) || "").trim());
+        let b = hmToMinutes(String((s && s.end) || "").trim());
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+        if (b < a) b += 24 * 60;
+        if (a < minStart) minStart = a;
+        if (b > maxEnd) maxEnd = b;
+      });
+      if (!(maxEnd > minStart)) return { hours: 0, startMin: null, endMin: null };
+      return {
+        hours: Number(((maxEnd - minStart) / 60).toFixed(2)),
+        startMin: minStart,
+        endMin: maxEnd
+      };
+    }
+
     function timesheetDayRowsForPay(sessions, dateObj, rosterKey) {
       const dateKey = isoDate(dateObj);
       if (isEmmanuelHireRosterKey(rosterKey) && !emmanuelHireTimesheetIncludeIso(dateKey)) {
@@ -2541,35 +2578,38 @@
     }
 
     async function fetchStaffDaysOffEntries(supabase, userId, rosterKey, startIso, endIso) {
-      if (!supabase || !userId) return [];
-      try {
-        const { data, error } = await withTimeout(
-          supabase
-            .from("staff_unavailability")
-            .select("off_date, reason, name_key, staff_id")
-            .eq("staff_id", userId)
-            .gte("off_date", startIso)
-            .lte("off_date", endIso)
-            .order("off_date", { ascending: true }),
-          10000,
-          "staff_unavailability"
-        );
-        if (error || !data) return [];
-        const rk = String(rosterKey || "").trim().toLowerCase();
-        const seen = Object.create(null);
-        return data
-          .map((r) => {
-            const iso = String(r.off_date || "").slice(0, 10);
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || seen[iso]) return null;
-            seen[iso] = true;
-            const reason = String(r.reason || "").trim();
-            return timesheetDayOffEntry(iso, rk, reason);
-          })
-          .filter(Boolean);
-      } catch (e) {
-        console.warn("[timesheet] staff_unavailability skipped", e);
-        return [];
+      let rows = [];
+      if (supabase && userId) {
+        try {
+          const { data, error } = await withTimeout(
+            supabase
+              .from("staff_unavailability")
+              .select("off_date, reason, name_key, staff_id")
+              .eq("staff_id", userId)
+              .gte("off_date", startIso)
+              .lte("off_date", endIso)
+              .order("off_date", { ascending: true }),
+            10000,
+            "staff_unavailability"
+          );
+          if (!error && data) {
+            const rk = String(rosterKey || "").trim().toLowerCase();
+            const seen = Object.create(null);
+            rows = data
+              .map((r) => {
+                const iso = String(r.off_date || "").slice(0, 10);
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || seen[iso]) return null;
+                seen[iso] = true;
+                const reason = String(r.reason || "").trim();
+                return timesheetDayOffEntry(iso, rk, reason);
+              })
+              .filter(Boolean);
+          }
+        } catch (e) {
+          console.warn("[timesheet] staff_unavailability skipped", e);
+        }
       }
+      return timesheetMergeKnownAbsenceEntries(rows, rosterKey, startIso, endIso);
     }
 
     function timesheetDayOffEntry(iso, rosterKey, reason) {
@@ -2595,6 +2635,39 @@
       youssef: ["2026-09-18", "2026-09-24"],
       luliya: ["2026-09-22"]
     };
+    /** Office-confirmed absences that must zero the day even if unavailability is not in yet. */
+    const TIMESHEET_KNOWN_ABSENCE_BY_ROSTER = {
+      luliya: { "2026-09-21": "Did not attend" }
+    };
+
+    function timesheetKnownAbsenceEntries(rosterKey, startIso, endIso) {
+      const me = timesheetNormStaffKey(rosterKey);
+      const map = TIMESHEET_KNOWN_ABSENCE_BY_ROSTER[me];
+      if (!map) return [];
+      const out = [];
+      Object.keys(map).forEach((iso) => {
+        if (startIso && iso < startIso) return;
+        if (endIso && iso > endIso) return;
+        out.push(timesheetDayOffEntry(iso, me, map[iso]));
+      });
+      return out;
+    }
+
+    function timesheetMergeKnownAbsenceEntries(rows, rosterKey, startIso, endIso) {
+      const out = Array.isArray(rows) ? rows.slice() : [];
+      const seen = Object.create(null);
+      out.forEach((r) => {
+        const iso = String((r && r.date) || "").slice(0, 10);
+        if (iso) seen[iso] = true;
+      });
+      timesheetKnownAbsenceEntries(rosterKey, startIso, endIso).forEach((r) => {
+        const iso = String(r.date || "").slice(0, 10);
+        if (!iso || seen[iso]) return;
+        seen[iso] = true;
+        out.push(r);
+      });
+      return out;
+    }
 
     function timesheetUnavailabilityRowKey(row) {
       const raw = String((row && (row.key || row.label || row.name)) || "");
@@ -2642,7 +2715,7 @@
         console.warn("[timesheet] local unavailability skipped", e);
       }
       (LOCAL_TIMESHEET_DAY_OFF_EXTRAS[me] || []).forEach((iso) => pushIso(iso, "Time off requested"));
-      return out;
+      return timesheetMergeKnownAbsenceEntries(out, rosterKey, startIso, endIso);
     }
 
     async function fetchLocalLateFeedbackDates(rosterKey, startIso, endIso) {
@@ -4052,6 +4125,13 @@
         }
         return entry;
       }
+      /* Named-span pool pay is the payable figure, including holes inside the shift. */
+      if (entry.luliyaAfternoonNamedSpan) {
+        const payable = Number(entry.hours || 0);
+        entry.workedHours = Number((payable > 0 ? payable : 0).toFixed(2));
+        entry.grantedHours = 0;
+        return entry;
+      }
       const payable = Number(entry.hours || 0);
       let worked = Number(entry.workedHours);
       if (!Number.isFinite(worked)) worked = payable;
@@ -4206,13 +4286,16 @@
         hours = timesheetClimbingSubmittedFeedbackHours(rows, dateObj, reviewMap, rosterKey);
         completedAll = hours > 0;
       }
+      const luliyaPm = timesheetLuliyaAfternoonNamedSpan(rows);
+      if (luliyaPm) hours = luliyaPm.hours;
       /*
        * Instructor Timetable green paid_hours is a minimum (late arrival / gap pay).
        * Empty paid = same as shift. Do not shrink extra named seats after the band.
        * Climbing (Alex / Carlos / Andres cover) is feedback count only — never the shift band.
+       * Luliya weekday pool is the named-client span, not the offered 4.30-6.30 window.
        */
       let ttPay = null;
-      if (hours > 0 && !climbingPay) {
+      if (hours > 0 && !climbingPay && !luliyaPm) {
         ttPay = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
         if (ttPay && ttPay.hours > 0) hours = Math.max(hours, ttPay.hours);
       }
@@ -4225,7 +4308,9 @@
       const dcSpec =
         rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, rows, dateKey) &&
         youssefSwimfarmDayCentrePaySpec(dayName, dateKey);
-      if (ttPay && ttPay.hours > 0) {
+      if (luliyaPm && luliyaPm.startMin != null && luliyaPm.endMin != null) {
+        timeRange = clubTimeRangeFromMinutes(luliyaPm.startMin, luliyaPm.endMin);
+      } else if (ttPay && ttPay.hours > 0) {
         if (ttPay.startMin != null && ttPay.endMin != null) {
           timeRange = clubTimeRangeFromMinutes(ttPay.startMin, ttPay.endMin);
         } else if (dcSpec) {
@@ -4256,7 +4341,8 @@
           role,
           rate,
           blendedRate: null,
-          climbingFeedbackPay: climbingPay
+          climbingFeedbackPay: climbingPay,
+          luliyaAfternoonNamedSpan: !!luliyaPm
         },
         rows
       );
@@ -4271,7 +4357,7 @@
     function applyTimetablePaidBandToDayEntries(entries, rosterKey, dateKey) {
       const list = Array.isArray(entries) ? entries : [];
       if (!list.length) return list;
-      if (list.some((e) => e && e.climbingFeedbackPay)) return list;
+      if (list.some((e) => e && (e.climbingFeedbackPay || e.luliyaAfternoonNamedSpan))) return list;
       const tt = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
       if (!tt || !(tt.hours > 0)) return list;
       const live = list.filter((e) => e && !e.dayOff && Number(e.hours) > 0);
@@ -4399,9 +4485,12 @@
             hours = timesheetClimbingSubmittedFeedbackHours(groupRows, dateObj, reviewMap, rosterKey);
             completedAll = hours > 0;
           }
+          const luliyaPm = timesheetLuliyaAfternoonNamedSpan(groupRows);
+          if (luliyaPm) hours = luliyaPm.hours;
           /*
            * Day-level Timetable paid_hours applied after all groups (see
            * applyTimetablePaidBandToDayEntries). Keep session/hardcode hours here.
+           * Luliya weekday pool is the named-client span and is locked there.
            */
           if (!(hours > 0)) return;
           const serviceName =
@@ -4429,7 +4518,9 @@
           const dcSpec =
             rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, groupRows, dateKey) &&
             youssefSwimfarmDayCentrePaySpec(dayName, dateKey);
-          if (dcSpec) {
+          if (luliyaPm && luliyaPm.startMin != null && luliyaPm.endMin != null) {
+            timeRange = clubTimeRangeFromMinutes(luliyaPm.startMin, luliyaPm.endMin);
+          } else if (dcSpec) {
             hours = dcSpec.hours;
             timeRange = clubTimeRangeFromSegments(dcSpec.segments);
           } else {
@@ -4451,7 +4542,8 @@
                 role,
                 rate: rateForRole(role),
                 blendedRate: null,
-                climbingFeedbackPay: climbingPay
+                climbingFeedbackPay: climbingPay,
+                luliyaAfternoonNamedSpan: !!luliyaPm
               },
               groupRows
             )
