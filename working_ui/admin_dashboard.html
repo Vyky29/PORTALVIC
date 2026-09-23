@@ -14206,6 +14206,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return out;
     }
+    /** Open-seat makeup must be the child's row, including when that instructor is off. */
+    function schedStampMakeupClientOnOpenSlots(slots){
+      (slots || []).forEach(function(slot){
+        if(!slot || (!schedIsOpenParticipantSlot(slot) && !slot.portalOrphanMakeup)) return;
+        var ov = findOverrideForSlotOfTypes(slot, ['client_replace_in_slot']);
+        if(!ov || String(ov.status || 'active') !== 'active') return;
+        var p = ov.payload || {};
+        var slug = adminCanonicalClientSlug(p.to_client_id || p.replacement_client_id || p.to_client_name || '');
+        if(!bookingIsBookedClientSlug(slug)) return;
+        var name = String(p.to_client_name || p.replacement_client_name || '').trim();
+        slot.clientSlug = slug;
+        slot.clientDisplay = name || schedParticipantDisplayName(slug) || slug;
+        slot.rosterSheetLabel = 'MakeUp';
+      });
+    }
     function schedIsClosedParticipantSlot(slot){
       if(!slot) return false;
       var slug = String(slot.clientSlug || '').trim().toLowerCase();
@@ -18493,13 +18508,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return schedParticipantPillHtml('Trial · ' + replLab, replSlug || slot.demoId, 'trial', replSlug ? 'slug' : 'demo');
         }
         if(openSlotMakeup && !movedIn){
-          return (
-            '<div class="sched-pax-pill-row">' +
-            schedParticipantPillHtml('No participant', '', 'open', 'demo') +
-            '<span class="sched-pax-pill-sep">→</span>' +
-            schedParticipantPillHtml(replLab, replSlug || slot.demoId, 'in', replSlug ? 'slug' : 'demo') +
-            '</div>'
-          );
+          /* Accepted makeup owns the open seat. The roster name is the child. */
+          return schedParticipantPillHtml(replLab, replSlug || slot.demoId, 'in', replSlug ? 'slug' : 'demo');
         }
         if(movedIn){
           var fromTime = String(ov.payload.moved_from_time || '').trim();
@@ -19207,10 +19217,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       slots = schedDedupeInstructorCoverTwinSlots(slots);
       slots = schedInjectCreatedSessionSlots(slots, iso, sched.overrides);
       slots = schedInjectOrphanMakeupSlots(slots, iso, sched.overrides);
+      schedStampMakeupClientOnOpenSlots(slots);
       slots = slots.filter(function(slot){
         if(!schedStaffAwayOnIso(iso, slot.staffRosterId)) return true;
         var ov = findOverrideForSlot(slot);
-        if(ov && (String(ov.override_type || '').trim() === 'slot_clear_client' || String(ov.override_type || '').trim() === 'slot_close')) return true;
+        var ovType = ov ? String(ov.override_type || '').trim() : '';
+        if(ovType === 'slot_clear_client' || ovType === 'slot_close' || ovType === 'client_replace_in_slot') return true;
         if(schedIsOpenParticipantSlot(slot) || schedIsClosedParticipantSlot(slot)) return false;
         return true;
       });
