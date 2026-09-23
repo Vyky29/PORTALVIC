@@ -7,7 +7,10 @@
   <script src="/portal/portal_orientation_lock.js?v=20260721-free-orient"></script>
   <script>
     (function () {
-      try { document.documentElement.classList.add("portal-app-shell"); } catch (_) {}
+      try {
+        document.documentElement.classList.add("portal-app-shell");
+        document.documentElement.classList.add("portal-timesheet-vertical");
+      } catch (_) {}
       /* Allow portrait and landscape — unlock any previous force-lock. */
       function allowAnyOrientation() {
         try {
@@ -55,7 +58,7 @@
     .td-hours,.td-daily{min-width:0;text-align:center;vertical-align:middle;white-space:nowrap;padding-left:2px;padding-right:2px}
     .timesheet-stack-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;min-width:0;padding:2px 0;width:100%;line-height:1.2}
     .timesheet-stack-cell__top{font-weight:700;overflow-wrap:break-word;max-width:100%}
-    .timesheet-stack-cell__sub{font-size:0.92em;color:#334155;overflow-wrap:anywhere;max-width:100%}
+    .timesheet-stack-cell__sub{font-size:0.92em;color:#334155;overflow-wrap:break-word;max-width:100%}
     .timesheet-stack-cell__alert{font-size:0.92em;font-weight:800;color:#b91c1c;overflow-wrap:anywhere;max-width:100%}
     .timesheet-stack-cell__hint{font-size:0.88em;color:#7f1d1d;overflow-wrap:anywhere;max-width:100%}
     .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;min-width:0;padding:2px 0;width:100%}
@@ -69,13 +72,13 @@
     /* Auto timesheet: Date+Day merged; Service flexes */
     #autoWrap table{table-layout:fixed;width:100%;max-width:100%}
     #autoWrap col.col-date{width:22%}
-    #autoWrap col.col-service{width:50%}
-    #autoWrap col.col-hours{width:13%}
-    #autoWrap col.col-daily{width:15%}
+    #autoWrap col.col-service{width:40%}
+    #autoWrap col.col-hours{width:14%}
+    #autoWrap col.col-daily{width:24%}
     #autoWrap th.th-hours,
     #autoWrap th.th-daily,
     #autoWrap td.td-hours,
-    #autoWrap td.td-daily{padding-left:2px;padding-right:2px}
+    #autoWrap td.td-daily{padding-left:4px;padding-right:4px}
     .timesheet-summary{
       margin:0 16px 12px;
       border:1px solid #dbe6f1;
@@ -231,10 +234,10 @@
       html.portal-timesheet-vertical .timesheet-service-cell__service{font-size:10px}
       html.portal-timesheet-vertical .timesheet-service-cell__venue,
       html.portal-timesheet-vertical .timesheet-service-cell__role{font-size:10px}
-      html.portal-timesheet-vertical #autoWrap col.col-date{width:24%}
-      html.portal-timesheet-vertical #autoWrap col.col-service{width:44%}
+      html.portal-timesheet-vertical #autoWrap col.col-date{width:22%}
+      html.portal-timesheet-vertical #autoWrap col.col-service{width:32%}
       html.portal-timesheet-vertical #autoWrap col.col-hours{width:14%}
-      html.portal-timesheet-vertical #autoWrap col.col-daily{width:18%}
+      html.portal-timesheet-vertical #autoWrap col.col-daily{width:32%}
       html.portal-timesheet-vertical #autoWrap th.th-hours,
       html.portal-timesheet-vertical #autoWrap th.th-daily,
       html.portal-timesheet-vertical #autoWrap td.td-hours,
@@ -3976,10 +3979,14 @@
       return esc(timeRange);
     }
 
+    function timesheetDisplayServiceTitle(title) {
+      return String(title || "").replace(/\bBespoke Programme\b/gi, "Bespoke").trim();
+    }
+
     function timesheetEntryServiceTitle(entry) {
       const explicit = String((entry && (entry.serviceName || entry.service_name)) || "").trim();
       if (explicit && /__youssef_acton_afternoon__/i.test(explicit)) return "Aquatic Activity";
-      if (explicit) return explicit;
+      if (explicit) return timesheetDisplayServiceTitle(explicit);
       const raw = timesheetEntryServiceLabel(entry);
       if (!raw) return "";
       if (/__youssef_acton_afternoon__/i.test(raw)) return "Aquatic Activity";
@@ -3989,9 +3996,9 @@
       if (m) {
         const title = String(m[1] || "").trim();
         if (/__youssef_acton_afternoon__/i.test(title)) return "Aquatic Activity";
-        return title;
+        return timesheetDisplayServiceTitle(title);
       }
-      return noVenue;
+      return timesheetDisplayServiceTitle(noVenue);
     }
 
     function timesheetEntryServiceLine(entry) {
