@@ -234,7 +234,28 @@
   }
 
   function saveDiplomaToDocuments(extra) {
+    var p = pageProfile();
+    var email = pageEmail();
+    if (
+      typeof window.portalInductionMustComplete === "function" &&
+      window.portalInductionMustComplete(p, email)
+    ) {
+      return Promise.resolve({ savedToDocuments: false });
+    }
     var name = learnerName();
+    var first = String(name || "")
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0];
+    if (
+      first === "patience" ||
+      first === "ann" ||
+      first === "gina" ||
+      first === "emmanuel" ||
+      first === "emanuel"
+    ) {
+      return Promise.resolve({ savedToDocuments: false });
+    }
     extra = extra || recapCertMeta();
     setSavedHint("Saving diploma to My documents...");
     return loadJsPdf()

@@ -135,11 +135,14 @@
     if (!track) return false;
     var phase = String(track.phase_label || "");
     if (/refresh due/i.test(phase)) return false;
-    var refresh = track.module_states && track.module_states.refresh;
-    if (refresh && refresh.quizPass) return true;
     if (/grandfathered/i.test(phase)) return false;
-    if (trackProgressPct(track) >= 100) return true;
-    return /complete|done/i.test(phase) && !/refresh/i.test(phase);
+    var mods = track.module_states || {};
+    var passedModules = 0;
+    for (var mi = 1; mi <= 6; mi++) {
+      if (mods[String(mi)] && mods[String(mi)].quizPass) passedModules += 1;
+    }
+    if (passedModules >= 6) return true;
+    return false;
   }
 
   function trackIsInProgress(track) {
@@ -149,6 +152,7 @@
     if (pct > 0) return true;
     var mods = track.module_states || {};
     return Object.keys(mods).some(function (k) {
+      if (k === "refresh") return false;
       var m = mods[k];
       return m && (m.video || m.journey || m.quizPass);
     });
@@ -708,15 +712,20 @@
     if (!p) return "";
     var mods = p.module_states || {};
     var chips = "";
+    var doneCount = 0;
     var i;
     for (i = 1; i <= INDUCTION_MODULES; i++) {
+      if (mods[String(i)] && mods[String(i)].quizPass) doneCount += 1;
       chips += moduleChip(i, mods[String(i)]);
     }
     return (
       '<div class="portal-sready-ind-detail" title="Module detail">' +
       '<div class="portal-tprog-mod-row">' +
       chips +
-      "</div></div>"
+      "</div>" +
+      '<span class="muted portal-sready-subdate">' +
+      doneCount +
+      " of 6 modules</span></div>"
     );
   }
 

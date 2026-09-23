@@ -216,7 +216,7 @@
   <script src="/portal/portal-ghost-view.js?v=20260911-teleport-iso"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260612-induction-view"></script>
-  <script src="/portal/portal_induction.js?v=20260612-induction-view"></script>
+  <script src="/portal/portal_induction.js?v=20260923-induction-keep"></script>
   <script src="/portal/portal_induction_certificate.js?v=20260612-induction-view"></script>
   <script type="module">
     async function portalImportAuthModule() {
@@ -1178,6 +1178,16 @@
         const ctx = window.__PORTAL_SUPABASE__ || {};
         let docs = await portalListMyDocuments();
         docs = enrichWorkerFacingTitles(docs, ctx.staff_profile || null);
+        const profile = ctx.staff_profile || null;
+        const email = String((ctx.session && ctx.session.user && ctx.session.user.email) || "");
+        if (
+          typeof window.portalInductionMustComplete === "function" &&
+          window.portalInductionMustComplete(profile, email)
+        ) {
+          docs = docs.filter(
+            (d) => String((d && d.document_type) || "").toLowerCase() !== "induction_recap_certificate"
+          );
+        }
         docs = await mergeInductionCertificateRow(docs);
         docs = enrichInductionCertificateRows(docs);
         renderGroups(docs);

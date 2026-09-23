@@ -7113,7 +7113,8 @@
           var nTyp = String(n.type || '').trim();
           if(nTyp === 'contract'){
             var cid = String(n.portalContractId || '').trim();
-            if(cid && completedContractIds[cid]) return false;
+            if(!cid || !awaitingContractIds[cid]) return false;
+            if(completedContractIds[cid]) return false;
             var annId = String(n.portalAnnouncementId || '').trim();
             if(annId && completedContractAnnIds[annId]) return false;
             return true;

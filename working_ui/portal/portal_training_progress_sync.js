@@ -85,7 +85,7 @@
   function inductionModuleLabel(n, st) {
     if (st.quizPass) return "Done";
     if (st.video) return "Quiz pending";
-    if (st.journey || Object.keys(st).length) return "In progress";
+    if (st.journey || st.outcomes || st.quizStarted || Number(st.maxWatchedTime) > 0) return "In progress";
     return "Not started";
   }
 
@@ -144,7 +144,7 @@
       typeof global.portalInductionRefreshDue === "function"
         ? global.portalInductionRefreshDue(profile, authEmail)
         : false;
-    if (refresh && (refresh.year || refresh.quizPass || refresh.recap)) {
+    if (!mustComplete && refresh && (refresh.year || refresh.quizPass || refresh.recap)) {
       moduleStates.refresh = {
         year: refresh.year || year,
         recap: !!refresh.recap,
@@ -469,15 +469,17 @@
           ? String(box.session.user.email)
           : "";
       } catch (_em) {}
-      if (
+      var mustHire =
         typeof global.portalInductionMustComplete === "function" &&
-        global.portalInductionMustComplete(hydrateProfile, hydrateEmail)
-      ) {
-        return { ok: true, changed: false, skipped: "new_hire" };
+        global.portalInductionMustComplete(hydrateProfile, hydrateEmail);
+      if (mustHire && remoteStates.refresh) {
+        try {
+          delete remoteStates.refresh;
+        } catch (_drop) {}
       }
 
       var changed = applyInductionModuleStatesToLocalStorage(remoteStates);
-      if (remoteStates.refresh && typeof global.portalInductionSaveRefresh === "function") {
+      if (!mustHire && remoteStates.refresh && typeof global.portalInductionSaveRefresh === "function") {
         var remote = remoteStates.refresh;
         var local =
           typeof global.portalInductionLoadRefresh === "function"
