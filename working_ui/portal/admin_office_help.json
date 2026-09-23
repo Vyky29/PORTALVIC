@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23-v21",
+  "version": "2026-09-23-v22",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -544,15 +544,17 @@
           "title": "Absents, refunds and credits",
           "summary": "Decide missed sessions: no action, credit, refund path, or close.",
           "where": "Finance → Refunds & credits (or Pending → absents)",
-          "keywords": ["refund", "credit", "absent", "absents", "cancel credit", "decide absent"],
+          "keywords": ["refund", "credit", "absent", "absents", "cancel credit", "decide absent", "no instructor", "sin instructor", "cancelar", "club cancel", "instructor cancelled"],
           "steps": [
-            "Open Absents / Refunds & credits (or Pending on Ops Hub).",
-            "Pick the absent / cancellation row.",
-            "Choose the decision (credit, none, close — follow office policy).",
-            "Notify parent when the flow says to; check credit balance if relevant."
+            "One day with no instructor: Schedule and Covers, that date, Change on the child's card, then Cancelled. Do not use Absent. Absent is the family missing the session.",
+            "In Reason write that there is no instructor and ask the parent to reply refund or credit. Save. That day only is cancelled. The standing service stays.",
+            "The parent gets a WhatsApp that the session is cancelled, including that note. The row lands in Absents, refunds and credits.",
+            "When the parent replies, open that row. Choose Credit or Refund, then Approve. For a refund enter the session amount. For a credit enter the same amount, or leave the amount blank for a session credit with no cash figure.",
+            "Approve writes the family ledger and sends the outcome message. Makeup is only if they ask for another day."
           ],
           "tips": [
             "Sep+ absents and cancellations share one decide queue.",
+            "The automatic cancel WhatsApp does not choose refund or credit. Put the question in Reason so the parent can reply.",
             "Private pay-in-advance cancellation: unused prepaid can be refunded with a fee of 10% of the unused amount (minimum £25, maximum £100). Sessions already delivered, including a summer crash course, stay paid. LA / NHS do not use this fee.",
             "Cancelling the standing place is Edit term slot. Set the anchor to a date on that weekday, then Rest of term from the anchor."
           ]
