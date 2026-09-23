@@ -3682,6 +3682,24 @@
                       </div>`;
     }
 
+    function questionHasAudio(section, questionId, candidateId) {
+      if (!questionId) return false;
+      const audio = section && section[questionId + "Audio"] ? section[questionId + "Audio"] : "";
+      const path = section && section[questionId + "AudioPath"] ? section[questionId + "AudioPath"] : "";
+      const localUrl = localAudioObjectUrls[localAudioKey(candidateId, questionId)] || "";
+      return !!(audio || path || localUrl);
+    }
+
+    function renderPhaseRecordings(call, phase) {
+      const recHas = questionHasAudio(call, phase.recordId, currentCandidateId);
+      const fileHas = questionHasAudio(call, phase.fileId, currentCandidateId);
+      if (!recHas && !fileHas) {
+        return `<div class="question-audio" id="wrap-${escapeHtml(phase.recordId)}"><span class="audio-placeholder">No recording</span></div>`;
+      }
+      return (recHas ? renderQuestionAudio(call, phase.recordId, currentCandidateId) : "") +
+        (fileHas ? renderQuestionAudio(call, phase.fileId, currentCandidateId) : "");
+    }
+
     function renderCallPhase(call, phase) {
       const questions = (phase.questions || []).map(function (q, i) {
         return renderCallNoteQuestion(call, q, i + 1);
@@ -3710,8 +3728,7 @@
           </label>
         </div>
         <p class="phase-rec-status" id="status-${escapeHtml(phase.recordId)}"></p>
-        ${renderQuestionAudio(call, phase.recordId, currentCandidateId)}
-        ${renderQuestionAudio(call, phase.fileId, currentCandidateId)}
+        ${renderPhaseRecordings(call, phase)}
         <div class="check-grid">${questions}</div>
         ${explainHtml}
       </div>`;
@@ -4747,25 +4764,56 @@
       const audio = section[questionId + "Audio"] || "";
       const path = section[questionId + "AudioPath"] || "";
       const mime = getAudioMime(section, questionId);
-      if (!wrap) return;
       const localUrl = localAudioObjectUrls[localAudioKey(candidateId, questionId)] || "";
+      let box = wrap;
+      if (!box && currentCandidateId === candidateId && isCallScreeningAudioQuestion(questionId)) {
+        const status = document.getElementById("status-" + phaseStatusIdForAudio(questionId));
+        if (status && status.parentNode) {
+          box = document.createElement("div");
+          box.className = "question-audio";
+          box.id = wrapId;
+          let anchor = status;
+          let next = status.nextElementSibling;
+          while (next && next.classList && next.classList.contains("question-audio")) {
+            anchor = next;
+            next = next.nextElementSibling;
+          }
+          anchor.insertAdjacentElement("afterend", box);
+        }
+      }
+      if (!box) return;
       if (!audio && !path && !localUrl) {
-        wrap.innerHTML = '<span class="audio-placeholder">No recording</span>';
+        const otherId = siblingPhaseAudioId(questionId);
+        const otherHas = otherId && questionHasAudio(section, otherId, candidateId);
+        if (otherHas) {
+          box.remove();
+          return;
+        }
+        box.innerHTML = '<span class="audio-placeholder">No recording</span>';
         return;
       }
-      const src = localUrl
-        ? localUrl
-        : audio
-          ? `data:${escapeHtml(mime)};base64,${audio}`
-          : "";
-      wrap.innerHTML = audioPlayerInnerHtml(
+      box.innerHTML = audioPlayerInnerHtml(
         questionId,
-        src,
+        localUrl ? localUrl : (audio ? `data:${escapeHtml(mime)};base64,${audio}` : ""),
         path,
         knownAudioDurationSec(section, questionId)
       );
-      initAudioSpeedInWrap(wrap);
-      if (!src && path) void hydrateAudioElements(wrap, candidateId);
+      initAudioSpeedInWrap(box);
+      if (!localUrl && !audio && path) void hydrateAudioElements(box, candidateId);
+      const otherId = siblingPhaseAudioId(questionId);
+      if (otherId && !questionHasAudio(section, otherId, candidateId)) {
+        const other = document.getElementById("wrap-" + otherId);
+        if (other && other.querySelector(".audio-placeholder")) other.remove();
+      }
+    }
+
+    function siblingPhaseAudioId(questionId) {
+      const id = String(questionId || "");
+      for (let i = 0; i < CALL_PHASES.length; i++) {
+        if (CALL_PHASES[i].recordId === id) return CALL_PHASES[i].fileId || "";
+        if (CALL_PHASES[i].fileId === id) return CALL_PHASES[i].recordId || "";
+      }
+      return "";
     }
 
     async function hydrateAudioElements(root, candidateId) {

@@ -217,7 +217,7 @@
     closeInterviewOverlay();
 
     var sep = target.indexOf("?") >= 0 ? "&" : "?";
-    var src = target + sep + "embedded=1&v=20260923-sevitha-interviewer";
+    var src = target + sep + "embedded=1&v=20260923-one-recording";
 
     var ov = document.createElement("div");
     ov.id = "aiInterviewOverlay";
