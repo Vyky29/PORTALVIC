@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23-v11",
+  "version": "2026-09-23-v12",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -573,10 +573,12 @@
             "While the status is Open: Offer slot to name a day, or Cancel grant to drop it. Then Add makeup to issue a new open grant, and Offer slot again.",
             "While the status is Offered (the family has not accepted yet): Withdraw offer to take the day back, or Cancel grant. The grant returns to Open so you can offer another day.",
             "When the family Accepts, the makeup is written onto that day's roster. The grant then says On roster. Sessions Overview and Staff show that card on the makeup date.",
-            "On roster has no Cancel grant. To move or drop that one day, open Schedule and Covers on the makeup date and change that card."
+            "On roster has no Cancel grant. To drop that one day, open Schedule and Covers on the makeup date, Change on that card, then Undo change. Do not use Cancelled: that sends a cancellation and opens a new Absents row.",
+            "The old On roster grant cannot be offered again. Add makeup for a new open grant, then Offer slot. Date is YYYY-MM-DD, time like 6 to 6.30, instructor name required. The new day paints on Schedule and Covers when the family Accepts."
           ],
           "tips": [
             "Back to decide reopens the absence. It cancels grants that are still Open or Offered. It does not remove a seat that is already On roster.",
+            "Move to another slot today only moves inside that same date. Another week is Undo on the old day, then a new grant and Offer slot.",
             "Add makeup creates an open grant. Offer a concrete slot afterwards. Do not expect the grant itself to appear on Schedule and Covers before it is accepted."
           ]
         }
