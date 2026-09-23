@@ -641,9 +641,14 @@
       const iso = String(e.date || "").slice(0, 10);
       if (!EMMANUEL_HIRE_SHADOW_ISOS.has(iso)) return e;
       const timeRange = String(e.timeRange || "").trim();
-      e.service = "Shadowing";
-      e.serviceName = "Shadowing";
-      e.serviceLabel = timeRange ? timeRange + " Shadowing" : "Shadowing";
+      /* The shift was Bespoke. Shadowing is the pay line under the service, not the service title. */
+      const current = timesheetDisplayServiceTitle(e.serviceName || e.service || "");
+      if (!current || /^shadow|^training/i.test(current)) {
+        e.service = "Bespoke";
+        e.serviceName = "Bespoke";
+      }
+      const title = e.serviceName || e.service || "Bespoke";
+      e.serviceLabel = timeRange ? timeRange + " " + title : title;
       e.role = "Shadowing";
       e.roleLabel = "Shadowing";
       e.rate = 13.5;
@@ -3012,10 +3017,12 @@
       ) {
         return { startMin: 9 * 60, endMin: 14 * 60 + 30 };
       }
+      /* Sunday hub support: the shift is 9.15-2.15, even when the children run 9.30-2.00. */
       if (
         dayName === "Sunday" &&
-        SUNDAY_JOHN_SUPPORT_KEYS.has(key) &&
-        (Number(hours) === SUNDAY_SUPPORT_MA_PAY_HOURS || Number(hours) >= 5)
+        !SUNDAY_MA_LEAD_KEYS.has(key) &&
+        Number(hours) === SUNDAY_SUPPORT_MA_PAY_HOURS &&
+        (isSundayHubSupportRosterKey(key) || r === "Support Worker" || SUNDAY_JOHN_SUPPORT_KEYS.has(key))
       ) {
         return { startMin: 9 * 60 + 15, endMin: 14 * 60 + 15 };
       }
@@ -4196,6 +4203,20 @@
       return Number((mins / 60).toFixed(2));
     }
 
+    /**
+     * Weekday hub 4.15-6.15 (2h) and Sunday support 9.15-2.15 (5h) are the shift.
+     * The shorter client span is not a granted extra on top.
+     */
+    function timesheetPayBandIsTheShift(entry) {
+      if (!entry) return false;
+      const hours = Number(entry.hours || 0);
+      const day = String(entry.day || "");
+      const tr = String(entry.timeRange || "").replace(/\s+/g, "");
+      if (day === "Sunday" && hours === SUNDAY_SUPPORT_MA_PAY_HOURS) return true;
+      if (hours === WEEKDAY_MA_BESPOKE_PAY_HOURS && /^4\.15-6\.15/.test(tr)) return true;
+      return false;
+    }
+
     function timesheetSyncGrantedHours(entry) {
       if (!entry || entry.dayOff) {
         if (entry) {
@@ -4205,7 +4226,7 @@
         return entry;
       }
       /* Named-span pool pay is the payable figure, including holes inside the shift. */
-      if (entry.luliyaAfternoonNamedSpan) {
+      if (entry.luliyaAfternoonNamedSpan || timesheetPayBandIsTheShift(entry)) {
         const payable = Number(entry.hours || 0);
         entry.workedHours = Number((payable > 0 ? payable : 0).toFixed(2));
         entry.grantedHours = 0;
