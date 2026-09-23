@@ -854,6 +854,12 @@
     function money(n) { return (Math.round((Number(n) + Number.EPSILON) * 100) / 100).toFixed(2); }
     function esc(v) { return String(v || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
     function isoDate(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+    /** Today is still ahead: the shift has not happened, so it stays Upcoming until tomorrow. */
+    function timesheetIsoIsUpcoming(iso, todayIso) {
+      const d = String(iso || "").slice(0, 10);
+      const t = String(todayIso || "").slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(d) && /^\d{4}-\d{2}-\d{2}$/.test(t) && d >= t;
+    }
     function parseIsoDate(s) { const d = new Date(String(s || "") + "T00:00:00"); return Number.isNaN(d.getTime()) ? null : d; }
     function dayOrdinal(n) {
       const v = Number(n || 0);
@@ -2530,7 +2536,7 @@
         if (isEmmanuelHireRosterKey()) applyEmmanuelHireShadowingEntry(e);
         const iso = String(e.date || "").slice(0, 10);
         const todayIso = isoDate(londonPayrollAnchor(new Date()));
-        e.upcoming = !!(/^\d{4}-\d{2}-\d{2}$/.test(iso) && /^\d{4}-\d{2}-\d{2}$/.test(todayIso) && iso > todayIso);
+        e.upcoming = timesheetIsoIsUpcoming(iso, todayIso);
         if (e.upcoming) {
           e.completed = false;
           e.lateHold = false;
@@ -5224,7 +5230,7 @@
       state.entries.forEach((e) => {
         if (!e || e.dayOff) return;
         const iso = String(e.date || "").slice(0, 10);
-        e.upcoming = !!(iso && todayIso && iso > todayIso);
+        e.upcoming = timesheetIsoIsUpcoming(iso, todayIso);
         if (e.upcoming) {
           e.completed = false;
           e.lateHold = false;
