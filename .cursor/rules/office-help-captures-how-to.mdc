@@ -1,0 +1,27 @@
+---
+description: Save Victor's operational how-to answers into the Office help guide
+alwaysApply: true
+---
+
+# Office help keeps how-to answers
+
+When Victor asks how something works or how to operate the portal, and you explain the steps, write that into Office help in the same turn.
+
+## Where
+
+- Lessons: `working_ui/portal/admin_office_help.json`
+- Cache query on `DATA_URL` in `working_ui/admin_office_help.html` (bump when the JSON changes)
+- Bump the JSON `version` field to match
+
+## What to save
+
+- Repeatable office steps: where to click, which type/field marks the action, what the worker and parents then see.
+- Add keywords in English and the Spanish words Victor uses (`shadowing`, `entrevista`, `como anado`).
+- Update an existing lesson when the topic is already there. Add a new lesson when it is a new flow.
+- ASCII punctuation only.
+
+## What to leave out
+
+- One-off people, money figures, private messages, and bug investigations.
+- Do not paste the chat. Write short steps and tips in the same voice as the other lessons.
+---

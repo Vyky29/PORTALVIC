@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-17-v7",
+  "version": "2026-09-23-v8",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -94,7 +94,42 @@
           ],
           "tips": [
             "Do not use Schedule & Covers to swap a client for every Monday of the term — that is Edit term slot.",
-            "Orange / red banners warn when a one-day action fights the standing roster."
+            "Orange / red banners warn when a one-day action fights the standing roster.",
+            "A new shadowing or training shift is + Add session card, Type Shadowing or Training — see that lesson."
+          ]
+        },
+        {
+          "id": "add_shadowing_shift",
+          "title": "Add a shadowing or training shift",
+          "summary": "Give someone shadowing or training hours for one day without taking over the instructor already on the client.",
+          "where": "Operator → Schedule & Covers → + Add session card",
+          "keywords": [
+            "shadowing",
+            "shadow",
+            "sombra",
+            "training shift",
+            "add session card",
+            "add card",
+            "new card",
+            "13.50",
+            "who gives it",
+            "quien da",
+            "como anado shadowing",
+            "how to add shadowing"
+          ],
+          "steps": [
+            "Open Schedule & Covers and expand + Add session card (new hours / instructor / participant).",
+            "Staff: the person who is shadowing or training (for example Patience).",
+            "Type: Shadowing or Training. That type is what marks the shift.",
+            "Set Date, Start, End and Venue for that one shift.",
+            "Who gives it: the person leading them (optional). Where: Room, Pool or Both.",
+            "Press Add session. One card per shift. Repeat the form for each extra day."
+          ],
+          "tips": [
+            "This adds a new row. It does not replace the instructor already on the client.",
+            "Staff Today shows a Shadowing or Training card. No session feedback is required.",
+            "Timesheet pays these hours at £13.50/h.",
+            "Type Session is a client seat, not the shadowing rate. Use Shadowing when they are learning the shift."
           ]
         },
         {
@@ -104,12 +139,14 @@
           "where": "Day operations / H&R Add day off / Validate day",
           "steps": [
             "Choose the staff member and the date they are off.",
-            "Confirm — the system writes staff_unavailability and COVER NEEDED overrides where seats are booked.",
+            "Confirm — the system writes staff_unavailability and COVER NEEDED for every booked service that day, at every venue.",
+            "The message says COVER NEEDED is on Schedule & Covers and Sessions Overview. Parents stay as they are until you assign the new instructor.",
             "Check Sessions Overview for that date: day-off chrome and cover gaps should show.",
-            "Assign a real cover later in Schedule & Covers when you have someone."
+            "Assign a real cover later in Schedule & Covers when you have someone. Parents see the new instructor only after that assign."
           ],
           "tips": [
-            "Parents never see instructor day offs.",
+            "A planned absence is the whole day, not only the venue written on the disruption report.",
+            "Parents never see instructor day offs or COVER NEEDED.",
             "Prefer DB day offs over hardcoding in LOCAL / canonical."
           ]
         },
@@ -195,10 +232,14 @@
             "Open Edit term slot for the venue, weekday and time band.",
             "Change the participant, open seat, or pool / area as needed.",
             "Choose scope: rest of term / matching weekdays — not a one-day-only exception.",
+            "The anchor date sets the weekday. To cancel Sundays, the anchor must be a Sunday. A Wednesday anchor cancels Wednesdays.",
+            "Rest of term from the anchor drops that date and later matching weekdays. Dates before the anchor stay.",
+            "Set the time slot before save. Clicking the Now card picks the seat; it does not change the anchor date.",
             "Save — Services, Overview and parent term chips update from the live roster."
           ],
           "tips": [
             "One day only → Schedule & Covers.",
+            "Every [weekday] until end of term also drops days already delivered. Use Rest of term from the anchor when those past days should stay.",
             "Staff who-works hours → Timetable (H&R), not Edit term slot.",
             "Example: Joel → Anas every Monday for the rest of Autumn = Edit term slot."
           ]
@@ -371,7 +412,9 @@
             "Notify parent when the flow says to; check credit balance if relevant."
           ],
           "tips": [
-            "Sep+ absents and cancellations share one decide queue."
+            "Sep+ absents and cancellations share one decide queue.",
+            "Private pay-in-advance cancellation: unused prepaid can be refunded with a fee of 10% of the unused amount (minimum £25, maximum £100). Sessions already delivered, including a summer crash course, stay paid. LA / NHS do not use this fee.",
+            "Cancelling the standing place is Edit term slot. Set the anchor to a date on that weekday, then Rest of term from the anchor."
           ]
         },
         {
@@ -424,7 +467,31 @@
             "Use reminders for time-bound nags."
           ],
           "tips": [
-            "Audience is admin/staff — not parents."
+            "Audience is admin/staff — not parents.",
+            "Schedule changes and outstanding feedback use the logo halo and Quick menu. They are not a blocking Sign and submit sheet."
+          ]
+        },
+        {
+          "id": "incoming_call_name",
+          "title": "Incoming staff call shows who is calling",
+          "summary": "The ring card names the caller. It does not say only Worker calling ADMIN.",
+          "where": "Admin, CEO, office or staff dashboard — incoming call card",
+          "keywords": [
+            "incoming call",
+            "llamada",
+            "quien llama",
+            "who is calling",
+            "worker calling admin",
+            "answer call"
+          ],
+          "steps": [
+            "When a call rings, the title stays Incoming call.",
+            "The line under it is the caller's first name, for example Emmanuel is calling.",
+            "The same name shows inside Communications when you answer there.",
+            "Refresh the dashboard if an old card is still on screen from before this change."
+          ],
+          "tips": [
+            "Office calling a worker also shows that person's name, not a blank Worker label."
           ]
         }
       ]
@@ -463,6 +530,65 @@
           ],
           "tips": [
             "Staff login host is clubsensational-staff — not the family site."
+          ]
+        },
+        {
+          "id": "call_interview_phases",
+          "title": "Stage 1 call interview (three phases)",
+          "summary": "The phone interview is three phases. Record each phase here, or attach a file if the call happened somewhere else. No stars on this stage.",
+          "where": "Interviews → open the candidate → Stage 1 call",
+          "keywords": [
+            "interview",
+            "entrevista",
+            "stage 1",
+            "call interview",
+            "fases",
+            "phases",
+            "grabar",
+            "recording",
+            "attach recording",
+            "working interview"
+          ],
+          "steps": [
+            "Phase 1 — Getting to know the candidate: five questions, then explain who clubSENsational is, who we support, activities, venues, how we work, and what is different.",
+            "Phase 2 — Practical suitability: availability, travel, start date and notice, anything that would block the role or a face-to-face interview. Then explain the role, pay, shadowing, DBS, and Stage 2 including a wet session when the role needs it.",
+            "Phase 3 — Confirming understanding: happy with the role and pay, happy with shadowing and the shadowing rate, comfortable with Stage 2 (wet session when relevant), and any questions they have.",
+            "Use Record this phase on each phase. If the call was made on another phone, use Attach recording for that phase.",
+            "Notes stay under each question. Stage 1 has no star ratings.",
+            "Stage 2 face-to-face still uses its own questions and stars."
+          ],
+          "tips": [
+            "If the microphone is blocked, attach the recording file. Do not expect a size-limit alert.",
+            "Save after notes or a recording so it stays on the candidate."
+          ]
+        },
+        {
+          "id": "induction_progress_admin",
+          "title": "See what a new hire has done of induction",
+          "summary": "Induction is complete only when all 6 modules have a real quiz pass. A recap diploma or an automatic stamp is not completion.",
+          "where": "H&R → Training progress / Staff Readiness",
+          "keywords": [
+            "induction",
+            "modulos",
+            "modules",
+            "training progress",
+            "staff readiness",
+            "recap",
+            "diploma",
+            "contract",
+            "contrato",
+            "new hire"
+          ],
+          "steps": [
+            "Open Training progress (Staff Readiness) and find the worker.",
+            "Read the module chips and the count, for example 2 of 6 modules.",
+            "Treat it as complete only when 6 modules show a real quiz pass.",
+            "A recap button or a diploma does not mean the 6 modules are done.",
+            "No contract card appears for the worker until admin generates the contract."
+          ],
+          "tips": [
+            "Completed modules stay saved. Refreshing the page does not wipe a real pass.",
+            "New hires who must finish induction do not get the recap diploma path."
           ]
         }
       ]
