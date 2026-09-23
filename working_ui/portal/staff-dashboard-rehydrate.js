@@ -999,6 +999,11 @@
               }
             }catch(_skip){}
             try{
+              if(typeof document !== 'undefined' && document.visibilityState !== 'visible'){
+                sessionStorage.setItem('portalStaffScheduleDirty', '1');
+              }
+            }catch(_dirty){}
+            try{
               if(payload && typeof window.portalHandleScheduleOverrideUndoFromRealtimePayload === "function"){
                 window.portalHandleScheduleOverrideUndoFromRealtimePayload(payload);
               }

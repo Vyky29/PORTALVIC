@@ -6742,6 +6742,20 @@
         window.__PORTAL_STAFF_HIDDEN_AT__ = Date.now();
       }catch(_){}
     }
+    function portalStaffScheduleChangeNeedsReload(){
+      try{
+        if(sessionStorage.getItem('portalStaffScheduleDirty') !== '1') return false;
+      }catch(_){ return false; }
+      if(document.querySelector('.sheet.open')) return false;
+      var ae = document.activeElement;
+      if(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(String(ae.tagName || ''))) return false;
+      if(ae && ae.isContentEditable) return false;
+      return true;
+    }
+    function portalStaffReloadForScheduleChange(){
+      try{ sessionStorage.removeItem('portalStaffScheduleDirty'); }catch(_){}
+      window.location.reload();
+    }
     /* Installed PWAs (esp. iOS) resume the last in-memory page instead of doing a
        fresh network load like a browser tab, so schedule edits/new deploys never
        reach the worker. When the app is brought back after a long background,
@@ -6779,6 +6793,12 @@
     document.addEventListener('visibilitychange', function(){
       if(document.visibilityState === 'visible'){
         try{
+          if(portalStaffScheduleChangeNeedsReload()){
+            portalStaffReloadForScheduleChange();
+            return;
+          }
+        }catch(_){}
+        try{
           if(portalStaffShouldReloadOnResume()){
             window.location.reload();
             return;
@@ -6812,6 +6832,12 @@
     /* iOS/Safari back-forward cache: restored pages can keep stale JS — reload matches fresh open. */
     window.addEventListener('pageshow', function(ev){
       try{
+        if(portalStaffScheduleChangeNeedsReload()){
+          portalStaffReloadForScheduleChange();
+          return;
+        }
+      }catch(_){}
+      try{
         if(ev && ev.persisted){
           if(typeof window.__PORTAL_STAFF_REHYDRATE__ === 'function'){
             void window.__PORTAL_STAFF_REHYDRATE__();
@@ -6844,8 +6870,10 @@
           try{
             const d = ev.data;
             if(!d || d.type !== 'portal-notification-click') return;
-            if(d.portalOpen === 'alerts' && typeof portalOpenLogoLiteQuickMenuFromIosAlertPreview === 'function'){
-              portalOpenLogoLiteQuickMenuFromIosAlertPreview();
+            if(d.portalOpen === 'alerts'){
+              try{ sessionStorage.setItem('portalStaffScheduleDirty', '1'); }catch(_){}
+              window.location.reload();
+              return;
             }
           }catch(_){}
         });

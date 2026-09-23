@@ -1226,9 +1226,10 @@
       });
     }
     window.portalRefreshScheduleOverridesCache = function portalRefreshScheduleOverridesCache(opts){
-      /* Coalesce concurrent refresh calls (identity resolve + kick + settle) into one fetch.
-         Two parallel loads were re-painting Today twice → “first one thing, then it changes”. */
+      /* A refresh already running must not swallow a newer override. Chain one more
+         fetch when this one finishes, so a move/absent that lands mid-load is not lost. */
       if(window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__){
+        window.__PORTAL_SCHEDULE_OVERRIDES_REFRESH_AGAIN__ = true;
         return window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__;
       }
       window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__ = (async function(){
@@ -1486,6 +1487,10 @@
       }catch(_syncOv){}
       }finally{
         try{ window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__ = null; }catch(_){}
+        if(window.__PORTAL_SCHEDULE_OVERRIDES_REFRESH_AGAIN__){
+          window.__PORTAL_SCHEDULE_OVERRIDES_REFRESH_AGAIN__ = false;
+          try{ window.portalRefreshScheduleOverridesCache(opts); }catch(_){}
+        }
       }
       })();
       return window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__;
@@ -1670,10 +1675,9 @@
           badge: icon
         });
         n.addEventListener('click', function(){
+          try{ sessionStorage.setItem('portalStaffScheduleDirty', '1'); }catch(_){}
           try{ window.focus(); }catch(_e){}
-          if(typeof portalOpenLogoLiteQuickMenuFromIosAlertPreview === 'function'){
-            portalOpenLogoLiteQuickMenuFromIosAlertPreview();
-          }
+          window.location.reload();
         });
         return true;
       }catch(_e){
@@ -1683,7 +1687,7 @@
     /** Push/vibrate only for these roster override types (not other override_type values). */
     function portalOverrideTypeEligibleForStaffPush(overrideType){
       const t = String(overrideType || '').trim();
-      return t === 'client_replace_in_slot' || t === 'client_absence_announced' || t === 'slot_open';
+      return t === 'client_replace_in_slot' || t === 'client_absence_announced' || t === 'slot_open' || t === 'instructor_reassign';
     }
     function portalOverridePushCopyForRow(row){
       const t = String(row && row.override_type || '').trim();
@@ -1714,6 +1718,9 @@
         return { title: 'Make-up session', body: 'A make-up session was scheduled on your roster.' };
       }
       if(t === 'client_absence_announced') return { title: 'Absent participant', body: 'An absence was recorded on your roster.' };
+      if(t === 'instructor_reassign'){
+        return { title: 'Instructor change', body: 'Your schedule changed. Open the app to see the new card.' };
+      }
       if(t === 'slot_open'){
         return {
           title: 'Slot reopened',
@@ -1742,6 +1749,9 @@
         const body = copy.body + (iso ? (' Date: ' + iso + '.') : '') + ' Tap the centre logo → Quick menu for details.';
         const tag = 'clubsensational-portal-roster-ov' + (id ? '-' + id : '');
         const appVisible = typeof document !== 'undefined' && String(document.visibilityState || '') === 'visible';
+        if(!appVisible){
+          try{ sessionStorage.setItem('portalStaffScheduleDirty', '1'); }catch(_){}
+        }
         if(appVisible){
           try{ if(navigator.vibrate) navigator.vibrate([120, 55, 120, 55, 160]); }catch(_){}
           if(typeof syncPortalHeaderAlertChrome === 'function'){
