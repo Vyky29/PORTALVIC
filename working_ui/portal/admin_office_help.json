@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23-v10",
+  "version": "2026-09-23-v11",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -554,17 +554,31 @@
         },
         {
           "id": "makeup",
-          "title": "Confirm a make-up",
-          "summary": "When a makeup is confirmed, parent and instructor get notified.",
-          "where": "Absents / makeup tools linked from refunds & credits",
-          "keywords": ["makeup", "make-up", "make up", "reschedule session"],
-          "steps": [
-            "Agree the makeup date / slot with the family.",
-            "Confirm makeup in the portal tool for that case.",
-            "Check parent and instructor notifications went out.",
-            "Verify Overview / Staff show the makeup seat on the new date."
+          "title": "Cancel a makeup and give a new one",
+          "summary": "Makeup grants live on Absents, refunds and credits. Schedule and Covers shows the seat only after the family accepts and it is on the roster.",
+          "where": "Absents, refunds and credits → Makeup grants",
+          "keywords": [
+            "makeup",
+            "make-up",
+            "make up",
+            "makeup grant",
+            "cancel makeup",
+            "cancelar makeup",
+            "offer slot",
+            "on roster",
+            "reschedule session"
           ],
-          "tips": []
+          "steps": [
+            "Open Absents, refunds and credits, then Makeup grants. The grant is not a row on Schedule and Covers until the family accepts it.",
+            "While the status is Open: Offer slot to name a day, or Cancel grant to drop it. Then Add makeup to issue a new open grant, and Offer slot again.",
+            "While the status is Offered (the family has not accepted yet): Withdraw offer to take the day back, or Cancel grant. The grant returns to Open so you can offer another day.",
+            "When the family Accepts, the makeup is written onto that day's roster. The grant then says On roster. Sessions Overview and Staff show that card on the makeup date.",
+            "On roster has no Cancel grant. To move or drop that one day, open Schedule and Covers on the makeup date and change that card."
+          ],
+          "tips": [
+            "Back to decide reopens the absence. It cancels grants that are still Open or Offered. It does not remove a seat that is already On roster.",
+            "Add makeup creates an open grant. Offer a concrete slot afterwards. Do not expect the grant itself to appear on Schedule and Covers before it is accepted."
+          ]
         }
       ]
     },
