@@ -2236,8 +2236,9 @@
      * Empty seats before the first or after the last are not paid.
      * A hole between them stays in the shift (Tue 15 Acton 4.00-6.30 = 2.5h;
      * Mon/Wed Northolt and Tue 8 = 1.5h).
+     * Wed 23 Sep afternoon is the full 4.00-6.30 (2.5h).
      */
-    function timesheetLuliyaAfternoonNamedSpan(rows) {
+    function timesheetLuliyaAfternoonNamedSpan(rows, dateKey) {
       const list = rows || [];
       if (!list.length || !list.every(timesheetRowIsLuliyaWeekdayAfternoonAquatic)) return null;
       let minStart = Infinity;
@@ -2251,6 +2252,10 @@
         if (a < minStart) minStart = a;
         if (b > maxEnd) maxEnd = b;
       });
+      const iso = String(dateKey || "").slice(0, 10);
+      if (iso === "2026-09-23") {
+        return { hours: 2.5, startMin: 16 * 60, endMin: 18 * 60 + 30 };
+      }
       if (!(maxEnd > minStart)) return { hours: 0, startMin: null, endMin: null };
       return {
         hours: Number(((maxEnd - minStart) / 60).toFixed(2)),
@@ -2633,11 +2638,14 @@
     /** LOCAL ghost: staff_unavailability JSON + known extras (no supabase). */
     const LOCAL_TIMESHEET_DAY_OFF_EXTRAS = {
       youssef: ["2026-09-18", "2026-09-24"],
-      luliya: ["2026-09-22"]
+      luliya: ["2026-09-21", "2026-09-22"]
     };
     /** Office-confirmed absences that must zero the day even if unavailability is not in yet. */
     const TIMESHEET_KNOWN_ABSENCE_BY_ROSTER = {
-      luliya: { "2026-09-21": "Did not attend" }
+      luliya: {
+        "2026-09-21": "Day off requested",
+        "2026-09-22": "Day off requested"
+      }
     };
 
     function timesheetKnownAbsenceEntries(rosterKey, startIso, endIso) {
@@ -2714,7 +2722,9 @@
       } catch (e) {
         console.warn("[timesheet] local unavailability skipped", e);
       }
-      (LOCAL_TIMESHEET_DAY_OFF_EXTRAS[me] || []).forEach((iso) => pushIso(iso, "Time off requested"));
+      (LOCAL_TIMESHEET_DAY_OFF_EXTRAS[me] || []).forEach((iso) => {
+        pushIso(iso, me === "luliya" ? "Day off requested" : "Time off requested");
+      });
       return timesheetMergeKnownAbsenceEntries(out, rosterKey, startIso, endIso);
     }
 
@@ -4286,7 +4296,7 @@
         hours = timesheetClimbingSubmittedFeedbackHours(rows, dateObj, reviewMap, rosterKey);
         completedAll = hours > 0;
       }
-      const luliyaPm = timesheetLuliyaAfternoonNamedSpan(rows);
+      const luliyaPm = timesheetLuliyaAfternoonNamedSpan(rows, dateKey);
       if (luliyaPm) hours = luliyaPm.hours;
       /*
        * Instructor Timetable green paid_hours is a minimum (late arrival / gap pay).
@@ -4485,7 +4495,7 @@
             hours = timesheetClimbingSubmittedFeedbackHours(groupRows, dateObj, reviewMap, rosterKey);
             completedAll = hours > 0;
           }
-          const luliyaPm = timesheetLuliyaAfternoonNamedSpan(groupRows);
+          const luliyaPm = timesheetLuliyaAfternoonNamedSpan(groupRows, dateKey);
           if (luliyaPm) hours = luliyaPm.hours;
           /*
            * Day-level Timetable paid_hours applied after all groups (see
