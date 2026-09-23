@@ -1714,10 +1714,13 @@
       { value: "Javi", label: "Javi" },
       { value: "Michelle", label: "Michelle" },
     ];
+    const CALL_INTERVIEWER_OPTIONS = INTERVIEWER_OPTIONS.concat([
+      { value: "Sevitha", label: "Sevitha" },
+    ]);
 
     function renderInterviewerSelect(selectId, selectedRaw) {
       const selected = String(selectedRaw || "").trim();
-      const opts = INTERVIEWER_OPTIONS.slice();
+      const opts = (selectId === "callInterviewerName" ? CALL_INTERVIEWER_OPTIONS : INTERVIEWER_OPTIONS).slice();
       if (selected && !opts.some(function (o) { return o.value.toLowerCase() === selected.toLowerCase(); })) {
         opts.unshift({ value: selected, label: selected });
       }
