@@ -5464,6 +5464,21 @@
       }
       var rep = pickOverviewRepresentativeSlot(hub, unit);
       if (!rep) continue;
+      /*
+       * Day Centre: keep each instructor's own hours. Do not glue a 3-4 handoff
+       * onto the 11-3 morning pair (Victor must not replace Luliya on Ikram).
+       */
+      if (isDayCentreService(rep.service) && unit.slots && unit.slots.length > 1) {
+        var dcKept = [];
+        for (var dsi = 0; dsi < unit.slots.length; dsi++) {
+          if (shouldOmitOverviewSlot(hub, unit.slots[dsi])) continue;
+          dcKept.push(unit.slots[dsi]);
+        }
+        if (dcKept.length) {
+          for (var dsk = 0; dsk < dcKept.length; dsk++) out.push(dcKept[dsk]);
+          continue;
+        }
+      }
       out.push(rep);
     }
     return dedupeOverviewDisplaySlots(out);
@@ -11876,6 +11891,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (!names.length) {
       var fromUnavail = hubAwayCoverNameFromUnavailability(hub, iso, awayStaff);
       if (fromUnavail) return fromUnavail;
+    }
+    if (!names.length && isDayCentreService(slot && slot.service)) {
+      /* Another instructor on the same child is not the cover.
+         Victor's Ikram 3-4 must not replace Luliya's morning seat when she is off. */
+      return "";
     }
     if (!names.length) {
       var live = dayBoardInstructorsForSlot(slot);

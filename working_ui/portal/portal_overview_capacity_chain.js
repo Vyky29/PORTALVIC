@@ -837,8 +837,16 @@
         band.start < 0 ? win.start : Math.max(band.start, win.start);
       var end = band.end < 0 ? win.end : Math.min(band.end, win.end);
       if (end <= start) {
-        start = win.start;
-        end = win.end;
+        /* Seat sits outside this instructor's timetable window.
+           Keep the seat band. Do not stretch it to the whole shift
+           (Victor Ikram 3-4 must not become his 11-4 Day Centre hours). */
+        if (band.start >= 0 && band.end > band.start) {
+          start = band.start;
+          end = band.end;
+        } else {
+          start = win.start;
+          end = win.end;
+        }
       }
       out.push(
         Object.assign({}, r, {

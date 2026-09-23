@@ -2036,7 +2036,18 @@
           ? portalStaffKeysMatch(r.anchor_staff_id, sid || s.staffId)
           : String(r.anchor_staff_id || '').trim().toLowerCase() === sid;
         const pk = String(p.portal_session_key || '').trim().toLowerCase();
-        if(skL && pk && portalFeedbackResolutionKeyMatchesReview(pk, skL)) return res;
+        if(skL && pk && portalFeedbackResolutionKeyMatchesReview(pk, skL)) {
+          /*
+           * A timed cancel (2026-09-22|12:00|ikram) matches every Day Centre review key
+           * for that child. That must close only the instructor who was cancelled.
+           * Roberto's Ikram clear was marking Michelle's shared card Cancelled, so the
+           * app still asked her for feedback and then would not let her submit it.
+           */
+          const sharedReview = skL.indexOf('|day_centre') >= 0 || skL.indexOf('|bespoke_shared') >= 0;
+          const pkHasTime = /\|\d{1,2}:\d{2}/.test(pk);
+          const pkIsShared = pk.indexOf('day_centre') >= 0 || pk.indexOf('bespoke_shared') >= 0;
+          if(!(sharedReview && pkHasTime && !pkIsShared && !sameStaff)) return res;
+        }
         /*
          * Paid admin cancel (Ikram Tue 7 Jul for Michelle/Luliya): honour same staff+client
          * even when timed payload key ≠ Day Centre review key, or review key is empty.
