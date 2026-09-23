@@ -2053,9 +2053,10 @@
       for (var c = 0; c < clears.length; c++) {
         var ov = clears[c];
         if (!hub.overrideMatchesSlot(slot, ov)) continue;
+        /* Keep the child on the source card. No participant hid who moved. */
         return Object.assign({}, slot, {
-          client_name: "No participant",
           portalClientMovedOut: true,
+          portalOverrideMoveInstructorTag: true,
           __portalScheduleOverride: ov,
           portalOverrideMakeUpTag: false,
           portalOverrideTrialTag: false,
@@ -2103,6 +2104,10 @@
         if (oVenue && sVenue && oVenue !== sVenue) continue;
         var oCid = canonicalClientSlug(ov.anchor_client_id);
         if (oCid && sCid && oCid !== sCid) continue;
+        /* Absent child stays on the card. The move-in is a second card (orphan inject). */
+        try {
+          if (hub.overrideForSlotByType(slot, overrideIsAbsentType)) return slot;
+        } catch (_absKeep) {}
         var p = overridePayloadObj(ov);
         var repId = overrideReplacementClientId(p);
         var repName = overrideReplacementClientName(p) || resolveRosterClientName(repId);
@@ -2516,6 +2521,7 @@
       portalOverrideMakeUpTag: overrideIsMakeupReplaceType(ov),
       portalOverrideTrialTag: overrideIsTrialType(ov),
       portalOverrideNewClientTag: overrideIsNewClientReplace(ov),
+      portalOverrideDayMoveTag: overrideIsDayReassignReplace(ov),
       __portalScheduleOverride: ov,
     };
     slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
@@ -2536,6 +2542,15 @@
       }
     } catch (_c) {}
     if (aCan !== bCan) return aCan - bCan;
+    var aAbs = 1;
+    var bAbs = 1;
+    try {
+      if (hub && typeof hub.overrideForSlotByType === "function") {
+        aAbs = hub.overrideForSlotByType(a, overrideIsAbsentType) ? 0 : 1;
+        bAbs = hub.overrideForSlotByType(b, overrideIsAbsentType) ? 0 : 1;
+      }
+    } catch (_absSort) {}
+    if (aAbs !== bAbs) return aAbs - bAbs;
     var aMk = a && a.portalOverrideMakeUpTag ? 1 : 0;
     var bMk = b && b.portalOverrideMakeUpTag ? 1 : 0;
     if (aMk !== bMk) return aMk - bMk;
@@ -7355,6 +7370,7 @@
     if (shouldOmitOverviewSlot(this, slot) || isTeflonDemoRosterSlot(slot)) return false;
     if (slotIsStaffDutyNoFeedback(slot)) return false;
     if (slotIsHoldWaitlistNoFeedback(slot.client_name)) return false;
+    if (slot.portalClientMovedOut) return false;
     if (isOpenRosterSlot(slot.client_name) || rosterSlotKind(slot.client_name) === "closed") {
       return false;
     }
@@ -11078,6 +11094,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var fbDone = ctx.unitComplete[ukey] || hub.slotFeedbackComplete(slot);
       var isAbsent = ctx.unitAbsent[ukey] || hub.slotIsAbsent(slot);
       var isCancelled = hub.slotHasCancellation(slot);
+      if (slot.portalClientMovedOut) continue;
       if (isOpenRosterSlot(slot.client_name)) {
         counts.open++;
         continue;
@@ -12099,6 +12116,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   function overviewSlotBoardIsAbsent(hub, slot, slotOv) {
+    /* A same-day move clears the source seat. That is not an absence. */
+    if (slot && slot.portalClientMovedOut) return false;
+    if (overrideIsClientMoveClear(slotOv)) return false;
+    if (slot && overrideIsClientMoveClear(slot.__portalScheduleOverride)) return false;
     /* Staffing board: override / resolution only — avoid full feedback scans. */
     if (overrideIsAbsentType(slotOv) || overrideFeedbackResolution(slotOv) === "absent") {
       return true;
@@ -12254,6 +12275,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   function htmlDayBoardOverrideChipList(hub, slot, st, esc) {
     var chips = [];
+    if (slot && slot.portalClientMovedOut) {
+      chips.push(
+        '<span class="override-chip override--instructor">Move in and change instructor</span>'
+      );
+    } else if (slot && slot.portalOverrideDayMoveTag && !st.isAbsent) {
+      chips.push('<span class="override-chip override--instructor">Moved in</span>');
+    }
     if (st.isCancelled) {
       chips.push('<span class="override-chip override--cancelled">Cancelled</span>');
     } else if (st.isAbsent) {
