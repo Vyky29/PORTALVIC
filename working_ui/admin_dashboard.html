@@ -18514,6 +18514,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(movedIn){
           var fromTime = String(ov.payload.moved_from_time || '').trim();
           var fromHint = fromTime ? (' from ' + fromTime) : '';
+          var namedAnchor = origLab
+            && !schedIsOpenSlotSlug(slot.clientSlug)
+            && !schedIsOpenSlotSlug(ov.anchor_client_id);
+          /* Absence freed this seat. Show the child, then Free, then who moved in.
+             No participant is only a standing empty seat. */
+          if(namedAnchor){
+            return (
+              '<div class="sched-pax-pill-row">' +
+              schedParticipantPillHtml(origLab, slot.demoId, 'out', 'demo') +
+              '<span class="sched-pax-pill-sep">→</span>' +
+              schedParticipantPillHtml('Free', '', 'open', 'demo') +
+              '<span class="sched-pax-pill-sep">→</span>' +
+              schedParticipantPillHtml(replLab + fromHint, replSlug || slot.demoId, 'in', replSlug ? 'slug' : 'demo') +
+              '</div>'
+            );
+          }
           return (
             '<div class="sched-pax-pill-row">' +
             schedParticipantPillHtml('No participant', '', 'open', 'demo') +
@@ -18575,6 +18591,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var chipOvs = [];
         if(ov) chipOvs.push(ov);
         if(ovStaff && (!ov || String(ovStaff.id || '') !== String(ov.id || ''))) chipOvs.push(ovStaff);
+        var absentChipOv = findOverrideForSlotOfTypes(slot, ['client_absence_announced']);
+        if(absentChipOv && !chipOvs.some(function(one){ return one && absentChipOv && String(one.id || '') === String(absentChipOv.id || ''); })){
+          chipOvs.unshift(absentChipOv);
+        }
         if(chipOvs.length){
           ovChip = chipOvs.map(function(one){
             return '<span class="override-chip ' + esc(schedOverrideTypeClass(one.override_type, one)) + '">' + esc(schedOverrideLabelForRow(one)) + '</span>';

@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23-v17",
+  "version": "2026-09-23-v18",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -97,7 +97,8 @@
             "Orange / red banners warn when a one-day action fights the standing roster.",
             "A new shadowing or training shift is + Add session card, Type Shadowing or Training — see that lesson.",
             "Move to another slot today is the one-day move, including into a seat that already has an admin absence. The original instructor still sees that child, with the chip Move in and change instructor, and does not give feedback. The other instructor sees the absent child and, in that same slot, the Move in. Edit term slot changes the standing weekday for the rest of term.",
-            "A makeup on an open seat still shows that child when the instructor is off that day. The row name is the child, not No participant."
+            "A makeup on an open seat still shows that child when the instructor is off that day. The row name is the child, not No participant.",
+            "If a child is absent and someone moves into that seat the same day, the row shows the absent child, then Free, then the move-in. No participant is a standing empty seat."
           ]
         },
         {
