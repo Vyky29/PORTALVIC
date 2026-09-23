@@ -907,6 +907,39 @@
       border-color:var(--blue);
       color:var(--blue);
     }
+    .btn-record--phase{
+      width:auto;
+      height:auto;
+      min-height:40px;
+      border-radius:999px;
+      padding:8px 14px;
+      font-size:13px;
+      font-weight:700;
+    }
+    .phase-audio-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      min-width:0;
+    }
+    .phase-audio-row .phase-attach{
+      min-width:0;
+      max-width:100%;
+    }
+    .phase-rec-status{
+      margin:6px 0 0;
+      font-size:13px;
+      overflow-wrap:anywhere;
+    }
+    .phase-script{
+      margin:8px 0 0;
+      padding-left:18px;
+    }
+    .phase-script li{
+      margin:4px 0;
+      overflow-wrap:anywhere;
+    }
     .btn-record.recording{
       border-color:#c00;
       background:rgba(200,0,0,.12);
@@ -2155,9 +2188,7 @@
       const hint =
         /jwt|auth|row-level|rls|permission|not authenticated/i.test(raw)
           ? " Open Interviews again from Staff or Admin while signed in."
-          : /payload|too large|413|statement timeout|bytes|Load failed|Failed to fetch|NetworkError/i.test(raw)
-            ? " A recording may be too large or the connection dropped. Answers stay on this device until Save succeeds."
-            : " Your answers stay on this device. Check the connection and try Save again.";
+          : " Your notes stay on this device. Check the connection and press Save again.";
       const key = raw.slice(0, 120);
       const now = Date.now();
       if (key === saveToastLastKey && now < saveToastCooldownUntil) return;
@@ -2854,69 +2885,82 @@
       ]
     };
 
-    var CALL_FILTER_QUESTIONS = [
+    var CALL_PHASES = [
       {
-        id: "filterQ1",
-        title: "How did you find us?",
-        tip: "Note the channel (Indeed, referral, Instagram, friend at the club, etc.). Helps you see where good candidates come from and if someone recommended them."
+        id: "phase1",
+        title: "Phase 1: Getting to Know the Candidate",
+        recordId: "phase1Rec",
+        fileId: "phase1File",
+        explainNotesId: "p1ExplainNotes",
+        explainTitle: "Then explain clubSENsational",
+        explainPoints: [
+          "Who we are, who we support / demographics",
+          "Our activities and services",
+          "Our venues",
+          "How we work",
+          "What makes our approach different"
+        ],
+        questions: [
+          { id: "p1q1", title: "Tell me about yourself." },
+          { id: "p1q2", title: "What do you know about clubSENsational, and how did you hear about us?" },
+          { id: "p1q3", title: "Why are you interested in working with clubSENsational?" },
+          { id: "p1q4", title: "What experience do you have working with autistic people or people with learning disabilities?" },
+          { id: "p1q5", title: "What are you looking for in your next role?" }
+        ]
       },
       {
-        id: "filterQ2",
-        title: "What do you know about clubSENsational?",
-        tip: "Listen for autism / learning disabilities, sessions, community work - not a perfect speech. Vague \"I just need a job\" is a weak signal."
+        id: "phase2",
+        title: "Phase 2: Practical Suitability",
+        recordId: "phase2Rec",
+        fileId: "phase2File",
+        explainNotesId: "p2ExplainNotes",
+        explainTitle: "Then explain the particular role",
+        explainPoints: [
+          "Role responsibilities",
+          "Pay / role scales",
+          "Shadowing process and rate",
+          "DBS",
+          "Stage 2 face-to-face interview, including wet session where relevant"
+        ],
+        questions: [
+          { id: "p2q1", title: "What does your current availability look like?" },
+          { id: "p2q2", title: "How would you travel to our venues?" },
+          { id: "p2q3", title: "When would you be able to start, and do you have a notice period?" },
+          { id: "p2q4", title: "Is there anything that would prevent you from doing the role as we have described it, or from attending a face-to-face interview?" }
+        ]
       },
       {
-        id: "filterQ3",
-        title: "Why do you want this role / why work with us?",
-        tip: "Look for genuine interest in the people we support and the role, not only hours or location."
-      },
-      {
-        id: "filterQ4",
-        title: "What experience do you have with autism or learning disabilities?",
-        tip: "Ask briefly: 1:1, group, or both; what kind of support. Even \"none yet, but...\" is fine if attitude is strong - capture it in writing."
-      },
-      {
-        id: "filterQ5",
-        title: "What is your availability, and how would you travel to our venues?",
-        tip: "Days, mornings/afternoons/weekends, hours wanted. Car / public transport / which venues they can reach. Filters people who cannot actually do the shifts."
-      },
-      {
-        id: "filterQ6",
-        title: "When could you start, and do you have a notice period?",
-        tip: "Earliest start date and any notice with a current employer. Avoid booking face-to-face if they cannot start in a useful window."
-      },
-      {
-        id: "filterQ7",
-        title: "For this role we need to complete a DBS check. Is there anything we should know that could affect or delay that check?",
-        tip: "The company arranges the DBS. Soft yes/no + short note; if they won't proceed with DBS, don't take them to Stage 2."
-      },
-      {
-        id: "filterQ8",
-        title: "Is there anything that would stop you doing a face-to-face interview or the role as we described it?",
-        tip: "Open catch-all: can't attend wet/dry sessions, can't travel, long notice, won't do shadowing, etc. If there's a hard blocker, don't progress them."
-      }
-    ];
-
-    var CALL_PROCESS_QUESTIONS = [
-      {
-        id: "processQ1",
-        title: "Explain role scales / pay for this position - then note their reaction.",
-        tip: "Interviewer covers this. Confirm they understand the pay band. Stars = how clear/comfortable their response felt (fine, surprised, or pushed back on money)."
-      },
-      {
-        id: "processQ2",
-        title: "Explain the shadowing process and the shadowing rate - then note their reaction.",
-        tip: "Interviewer covers this. Cover how shadowing works and the rate (paid/unpaid as applicable). Stars = how clear/comfortable their response felt."
-      },
-      {
-        id: "processQ3",
-        title: "Explain that Stage 2 is a face-to-face interview (dry and wet where relevant) - then note their reaction.",
-        tip: "Interviewer covers this. Make sure they know it is in person and may include a wet session for swimming roles. Stars = how clear/comfortable their response felt."
+        id: "phase3",
+        title: "Phase 3: Confirming Understanding and Next Steps",
+        recordId: "phase3Rec",
+        fileId: "phase3File",
+        explainNotesId: "",
+        explainTitle: "",
+        explainPoints: [],
+        questions: [
+          { id: "p3q1", title: "Are you happy with the role, responsibilities and pay structure we have explained?" },
+          { id: "p3q2", title: "Are you happy with the shadowing process and shadowing rate we have explained?" },
+          { id: "p3q3", title: "Are you comfortable proceeding to a face-to-face Stage 2 interview, including a wet session where relevant to the role?" },
+          { id: "p3q4", title: "Do you have any questions for us?" }
+        ]
       }
     ];
 
     function allCallScreeningQuestions() {
-      return CALL_FILTER_QUESTIONS.concat(CALL_PROCESS_QUESTIONS);
+      var out = [];
+      CALL_PHASES.forEach(function (phase) {
+        (phase.questions || []).forEach(function (q) { out.push(q); });
+      });
+      return out;
+    }
+
+    function callPhaseAudioIds() {
+      var ids = [];
+      CALL_PHASES.forEach(function (phase) {
+        if (phase.recordId) ids.push(phase.recordId);
+        if (phase.fileId) ids.push(phase.fileId);
+      });
+      return ids;
     }
 
     function isDayCentreSupportRole(role) {
@@ -3106,6 +3150,7 @@
 
     function isCallScreeningAudioQuestion(questionId) {
       const id = String(questionId || "");
+      if (callPhaseAudioIds().indexOf(id) >= 0) return true;
       return allCallScreeningQuestions().some(function (q) {
         return q.id === id;
       });
@@ -3147,6 +3192,16 @@
         base[q.id + "Audio"] = "";
         base[q.id + "AudioMime"] = "";
         base[q.id + "AudioPath"] = "";
+      });
+      CALL_PHASES.forEach(function (phase) {
+        if (phase.explainNotesId) base[phase.explainNotesId] = "";
+        [phase.recordId, phase.fileId].forEach(function (aid) {
+          if (!aid) return;
+          base[aid + "Audio"] = "";
+          base[aid + "AudioMime"] = "";
+          base[aid + "AudioPath"] = "";
+          base[aid + "AudioDurationSec"] = 0;
+        });
       });
       return base;
     }
@@ -3612,38 +3667,69 @@
                       </div>`;
     }
 
-    function renderCallFilterQuestion(call, question, index) {
+    function renderCallNoteQuestion(call, question, index) {
       const id = question.id;
       const notesId = id + "Notes";
-      const score = call && call[id] ? Number(call[id]) : 0;
       const notes = call && call[notesId] ? String(call[notesId]) : "";
       return `<div class="check-card">
-<div class="question-label"><label for="${escapeHtml(notesId)}">${index}. ${escapeHtml(question.title)}</label><p class="question-helper">${escapeHtml(question.tip)}</p></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="${escapeHtml(id)}" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="${escapeHtml(id)}" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(call, id, currentCandidateId)}
-                        <input type="hidden" id="${escapeHtml(id)}" value="${score || 0}" />
+<div class="question-label"><label for="${escapeHtml(notesId)}">${index}. ${escapeHtml(question.title)}</label></div>
                         <div class="question-notes">
                           <textarea id="${escapeHtml(notesId)}" class="textarea" rows="3" placeholder="Write the answer / notes...">${escapeHtml(notes)}</textarea>
                         </div>
                       </div>`;
     }
 
+    function renderCallPhase(call, phase) {
+      const questions = (phase.questions || []).map(function (q, i) {
+        return renderCallNoteQuestion(call, q, i + 1);
+      }).join("");
+      const points = (phase.explainPoints || []).map(function (line) {
+        return "<li>" + escapeHtml(line) + "</li>";
+      }).join("");
+      const explainNotes = phase.explainNotesId
+        ? String((call && call[phase.explainNotesId]) || "")
+        : "";
+      const explainHtml = phase.explainTitle
+        ? `<div class="check-card">
+            <div class="question-label"><label>${escapeHtml(phase.explainTitle)}</label></div>
+            <ul class="phase-script">${points}</ul>
+            <div class="question-notes">
+              <textarea id="${escapeHtml(phase.explainNotesId)}" class="textarea" rows="3" placeholder="Notes, if you need them...">${escapeHtml(explainNotes)}</textarea>
+            </div>
+          </div>`
+        : "";
+      return `<div class="field full phase-block phase-block--call-filter">
+        <label>${escapeHtml(phase.title)}</label>
+        <div class="phase-audio-row">
+          <button type="button" class="btn-record btn-record--phase" data-question="${escapeHtml(phase.recordId)}" aria-label="Record ${escapeHtml(phase.title)}">Record this phase</button>
+          <label class="phase-attach">Attach recording
+            <input type="file" accept="audio/*,.m4a,.mp3,.wav,.webm,.ogg,.aac" data-phase-upload="${escapeHtml(phase.fileId)}" />
+          </label>
+        </div>
+        <p class="phase-rec-status" id="status-${escapeHtml(phase.recordId)}"></p>
+        ${renderQuestionAudio(call, phase.recordId, currentCandidateId)}
+        ${renderQuestionAudio(call, phase.fileId, currentCandidateId)}
+        <div class="check-grid">${questions}</div>
+        ${explainHtml}
+      </div>`;
+    }
+
     function callHasFilterAnswers(call) {
       if (!call) return false;
-      return allCallScreeningQuestions().some(function (q) {
+      const questionHit = allCallScreeningQuestions().some(function (q) {
         const notes = String(call[q.id + "Notes"] || "").trim();
-        const score = Number(call[q.id] || 0);
         const audio = String(call[q.id + "Audio"] || "");
         const path = String(call[q.id + "AudioPath"] || "");
-        return !!notes || score > 0 || audio.length > 0 || path.length > 0;
+        return !!notes || audio.length > 0 || path.length > 0;
+      });
+      if (questionHit) return true;
+      return CALL_PHASES.some(function (phase) {
+        const explain = phase.explainNotesId ? String(call[phase.explainNotesId] || "").trim() : "";
+        if (explain) return true;
+        return [phase.recordId, phase.fileId].some(function (aid) {
+          if (!aid) return false;
+          return String(call[aid + "Audio"] || "").length > 0 || String(call[aid + "AudioPath"] || "").length > 0;
+        });
       });
     }
 
@@ -4003,21 +4089,17 @@
       candidate.callInterview.motivation = getCheckboxValue("callMotivation");
       candidate.callInterview.locationTravel = getCheckboxValue("callLocationTravel");
       allCallScreeningQuestions().forEach(function (q) {
-        var scoreEl = document.getElementById(q.id);
         var notesEl = document.getElementById(q.id + "Notes");
-        candidate.callInterview[q.id] = scoreEl ? Number(scoreEl.value || 0) : 0;
-        candidate.callInterview[q.id + "Notes"] = notesEl ? notesEl.value.trim() : "";
+        if (notesEl) candidate.callInterview[q.id + "Notes"] = notesEl.value.trim();
       });
-      // Keep legacy booleans in sync for older records / admin views.
-      candidate.callInterview.roleScales =
-        Number(candidate.callInterview.processQ1 || 0) > 0 ||
-        !!String(candidate.callInterview.processQ1Notes || "").trim();
-      candidate.callInterview.shadowingProcessRate =
-        Number(candidate.callInterview.processQ2 || 0) > 0 ||
-        !!String(candidate.callInterview.processQ2Notes || "").trim();
-      candidate.callInterview.faceToFaceSessionWet =
-        Number(candidate.callInterview.processQ3 || 0) > 0 ||
-        !!String(candidate.callInterview.processQ3Notes || "").trim();
+      CALL_PHASES.forEach(function (phase) {
+        if (!phase.explainNotesId) return;
+        var explainEl = document.getElementById(phase.explainNotesId);
+        if (explainEl) candidate.callInterview[phase.explainNotesId] = explainEl.value.trim();
+      });
+      candidate.callInterview.roleScales = !!String(candidate.callInterview.p3q1Notes || "").trim();
+      candidate.callInterview.shadowingProcessRate = !!String(candidate.callInterview.p3q2Notes || "").trim();
+      candidate.callInterview.faceToFaceSessionWet = !!String(candidate.callInterview.p3q3Notes || "").trim();
 
       candidate.faceToFaceInterview.interviewerName = callStatus.value === "successful" && faceInterviewerName ? faceInterviewerName.value.trim() : "";
       candidate.faceToFaceInterview.date = callStatus.value === "successful" ? faceDate.value : "";
@@ -4600,7 +4682,10 @@
       if (recordState.stream) {
         recordState.stream.getTracks().forEach(t => t.stop());
       }
-      if (recordState.btn) recordState.btn.classList.remove("recording");
+      if (recordState.btn) {
+        recordState.btn.classList.remove("recording");
+        setPhaseRecordButtonLabel(recordState.btn, false);
+      }
       recordState.stream = null;
       recordState.recorder = null;
       recordState.btn = null;
@@ -4851,21 +4936,12 @@
         if (localAudioObjectUrls[key]) URL.revokeObjectURL(localAudioObjectUrls[key]);
       } catch (_e) {}
       localAudioObjectUrls[key] = URL.createObjectURL(blob);
-      const up = await uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType);
-      let inlineBase64 = "";
-      if (!up.ok && blob.size < 90000) {
-        inlineBase64 = await new Promise(function (resolve) {
-          const reader = new FileReader();
-          reader.onload = function () {
-            const dataUrl = typeof reader.result === "string" ? reader.result : "";
-            resolve(
-              dataUrl.indexOf("base64,") >= 0 ? dataUrl.split("base64,")[1] : ""
-            );
-          };
-          reader.onerror = function () { resolve(""); };
-          reader.readAsDataURL(blob);
-        });
+      let up = await uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType);
+      if (!up.ok) {
+        await new Promise(function (resolve) { setTimeout(resolve, 800); });
+        up = await uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType);
       }
+      const inlineBase64 = "";
       if (questionId === "callNotes") {
         candidate.callInterview = candidate.callInterview || {};
         if (up.ok) {
@@ -4898,13 +4974,13 @@
         storeAudioDurationSec(candidate.faceToFaceInterview, questionId, durationSec);
       }
       if (!up.ok) {
-        setSyncUi(
-          "pending",
-          inlineBase64
-            ? "Storage upload failed - saved short clip inline"
-            : "Storage upload failed - clip kept on this device only",
-          up.error || ""
+        setPhaseAudioStatus(
+          questionId,
+          "Recording is on this device. Press Save again when the connection is back."
         );
+        setSyncUi("pending", "Recording kept on this device", "");
+      } else {
+        setPhaseAudioStatus(questionId, "Recording saved.");
       }
       updateAudioWrap(questionId, inlineBase64, mimeType || "audio/webm", candidateId, durationSec);
       persistCandidateAfterRecording(candidateId);
@@ -4966,6 +5042,35 @@
       });
     }
 
+    function phaseStatusIdForAudio(questionId) {
+      const id = String(questionId || "");
+      for (let i = 0; i < CALL_PHASES.length; i++) {
+        if (CALL_PHASES[i].recordId === id || CALL_PHASES[i].fileId === id) return CALL_PHASES[i].recordId;
+      }
+      return id;
+    }
+
+    function setPhaseAudioStatus(questionId, text) {
+      const el = document.getElementById("status-" + phaseStatusIdForAudio(questionId));
+      if (el) el.textContent = text || "";
+    }
+
+    function setPhaseRecordButtonLabel(btn, recording) {
+      if (!btn || !btn.classList.contains("btn-record--phase")) return;
+      btn.textContent = recording ? "Stop" : "Record this phase";
+    }
+
+    function pickRecorderMime() {
+      const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus", "audio/ogg"];
+      if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) return "";
+      for (let i = 0; i < mimeTypes.length; i++) {
+        try {
+          if (MediaRecorder.isTypeSupported(mimeTypes[i])) return mimeTypes[i];
+        } catch (_e) {}
+      }
+      return "";
+    }
+
     function initRecordButtons() {
       document.querySelectorAll(".btn-record").forEach(btn => {
         btn.addEventListener("click", async () => {
@@ -4976,26 +5081,24 @@
               try { recordState.recorder.stop(); } catch (e) {}
             } else {
               stopCurrentRecording();
+              setPhaseRecordButtonLabel(btn, false);
             }
             return;
           }
           if (recordState.btn && recordState.btn !== btn) stopCurrentRecording();
-          if (typeof MediaRecorder === "undefined") {
-            alert("Recording is not supported in this browser. Try Chrome or Edge on desktop.");
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined") {
+            setPhaseAudioStatus(questionId, "Use Attach recording for this phase.");
             return;
           }
           try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4", "audio/ogg"];
-            let chosenMime = "";
-            for (const m of mimeTypes) {
-              if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) {
-                chosenMime = m;
-                break;
-              }
+            const chosenMime = pickRecorderMime();
+            let recorder;
+            try {
+              recorder = chosenMime ? new MediaRecorder(stream, { mimeType: chosenMime }) : new MediaRecorder(stream);
+            } catch (_mime) {
+              recorder = new MediaRecorder(stream);
             }
-            const opts = chosenMime ? { mimeType: chosenMime } : {};
-            const recorder = new MediaRecorder(stream, opts);
             const chunks = [];
             recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
             recorder.onstop = () => {
@@ -5004,7 +5107,9 @@
                 ? Math.max(0.1, (Date.now() - recordState.startedAt) / 1000)
                 : 0;
               stream.getTracks().forEach(t => t.stop());
-              if (recordState.btn) recordState.btn.classList.remove("recording");
+              const stoppedBtn = recordState.btn;
+              if (stoppedBtn) stoppedBtn.classList.remove("recording");
+              setPhaseRecordButtonLabel(stoppedBtn, false);
               recordState.stream = null;
               recordState.recorder = null;
               recordState.btn = null;
@@ -5025,23 +5130,47 @@
                     elapsedSec
                   );
                 } else {
+                  setPhaseAudioStatus(qid, "Nothing was captured. Record again, or attach a file.");
                   updateAudioWrap(qid, "", usedMime, recordingCandidateId, elapsedSec);
-                  persistCandidateAfterRecording(recordingCandidateId);
                 }
               }
             };
-            recorder.start(200);
+            try {
+              recorder.start();
+            } catch (_start) {
+              recorder.start(1000);
+            }
             recordState.stream = stream;
             recordState.recorder = recorder;
             recordState.btn = btn;
             recordState.questionId = questionId;
             recordState.candidateId = currentCandidateId;
             btn.classList.add("recording");
+            setPhaseRecordButtonLabel(btn, true);
+            setPhaseAudioStatus(questionId, "");
             startRecordingTick();
             updateRecordingIndicator(true);
-          } catch (err) {
-            alert("Se necesita acceso al micrófono para grabar.");
+          } catch (_err) {
+            setPhaseAudioStatus(questionId, "Microphone is blocked. Attach the recording file instead.");
           }
+        });
+      });
+    }
+
+    function bindPhaseFileInputs() {
+      document.querySelectorAll("[data-phase-upload]").forEach(function (input) {
+        input.addEventListener("change", function () {
+          const file = input.files && input.files[0] ? input.files[0] : null;
+          const qid = input.getAttribute("data-phase-upload");
+          if (!file || !qid || !currentCandidateId) return;
+          setPhaseAudioStatus(qid, "Attaching recording...");
+          void persistRecordingWithUpload(
+            currentCandidateId,
+            qid,
+            file,
+            file.type || "audio/mp4",
+            0
+          );
         });
       });
     }
@@ -5190,7 +5319,7 @@
             <div class="section-head">
               <div>
                 <h3>Stage 1 · Call Interview</h3>
-                <p>First screening call. Questions 1-8 are asked to the candidate. Questions 9-11 are for the interviewer: explain pay, shadowing and Stage 2, then note their reaction.</p>
+                <p>Three phases. Record each phase here, or attach a recording if the call was made somewhere else. Notes stay under each question.</p>
               </div>
             </div>
             <div class="section-body">
@@ -5215,23 +5344,9 @@
                   <textarea id="callComments" class="textarea" placeholder="Add your summary from the call interview...">${escapeHtml(candidate.callInterview.comments)}</textarea>
                 </div>
 
-                <div class="field full phase-block phase-block--call-filter">
-                  <label>Screening filter questions</label>
-                  <div class="check-grid">
-                    ${CALL_FILTER_QUESTIONS.map(function (q, i) {
-                      return renderCallFilterQuestion(candidate.callInterview, q, i + 1);
-                    }).join("")}
-                  </div>
-                </div>
-
-                <div class="field full phase-block phase-block--call-filter">
-                  <label>Process we must explain</label>
-                  <div class="check-grid">
-                    ${CALL_PROCESS_QUESTIONS.map(function (q, i) {
-                      return renderCallFilterQuestion(candidate.callInterview, q, CALL_FILTER_QUESTIONS.length + i + 1);
-                    }).join("")}
-                  </div>
-                </div>
+                ${CALL_PHASES.map(function (phase) {
+                  return renderCallPhase(candidate.callInterview, phase);
+                }).join("")}
 
                 <div class="field full">
                   <label for="callGeneralNotes">Call interview notes (written)</label>
@@ -5538,6 +5653,7 @@
       syncReadyStageVisual();
       initRatingStars();
       initRecordButtons();
+      bindPhaseFileInputs();
       bindCallUploadHandlers();
       initAudioSpeedButtons();
       applyMobileDateTimeInputs();

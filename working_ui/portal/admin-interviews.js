@@ -217,7 +217,7 @@
     closeInterviewOverlay();
 
     var sep = target.indexOf("?") >= 0 ? "&" : "?";
-    var src = target + sep + "embedded=1&v=20260801-auth-fix";
+    var src = target + sep + "embedded=1&v=20260923-call-phases";
 
     var ov = document.createElement("div");
     ov.id = "aiInterviewOverlay";
@@ -228,7 +228,7 @@
       '<button type="button" class="btn btn--ghost btn--sm" id="aiInterviewOverlayClose">← Back to Interviews</button>' +
       '<span class="ai-interview-overlay__title">Interview (same Admin login)</span>' +
       "</div>" +
-      '<iframe class="ai-interview-overlay__frame" id="aiInterviewOverlayFrame" title="Interview and onboarding"></iframe>';
+      '<iframe class="ai-interview-overlay__frame" id="aiInterviewOverlayFrame" title="Interview and onboarding" allow="microphone"></iframe>';
 
     if (!document.getElementById("aiInterviewOverlayStyle")) {
       var st = document.createElement("style");

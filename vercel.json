@@ -187,6 +187,13 @@
       ]
     },
     {
+      "source": "/Working_interview.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Permissions-Policy", "value": "microphone=(self)" }
+      ]
+    },
+    {
       "source": "/admin_dashboard.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
