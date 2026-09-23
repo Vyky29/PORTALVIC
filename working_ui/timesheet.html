@@ -62,6 +62,7 @@
     .timesheet-service-cell__time{font-size:13px;font-weight:700;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
     .timesheet-late-start{color:#b91c1c}
     .timesheet-service-cell__service{font-size:12px;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
+    .timesheet-service-cell__service--shadow{font-weight:700;color:#7c3aed}
     .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
     .timesheet-service-cell__role{font-size:12px;line-height:1.15;max-width:100%;overflow-wrap:break-word;word-break:break-word;text-align:center}
     .num{text-align:center}
@@ -4030,7 +4031,7 @@
       return (
         '<div class="timesheet-service-cell">' +
         (timeRange ? `<div class="timesheet-service-cell__time">${timesheetTimeRangeHtml(entry)}</div>` : "") +
-        (title ? `<div class="timesheet-service-cell__service">${esc(title)}</div>` : "") +
+        (title ? `<div class="timesheet-service-cell__service${/shadow/i.test(title) ? " timesheet-service-cell__service--shadow" : ""}">${esc(title)}</div>` : "") +
         (fallback ? `<div class="timesheet-service-cell__service">${esc(fallback)}</div>` : "") +
         (venue ? `<div class="timesheet-service-cell__venue">${esc(venue)}</div>` : "") +
         (roleHtml ? `<div class="timesheet-service-cell__role">${roleHtml}</div>` : "") +
@@ -4122,6 +4123,10 @@
           doc.setFont("helvetica", "normal");
           doc.setFontSize(7 * S);
           doc.setTextColor(51, 65, 85);
+        } else if (/shadow/i.test(text)) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7.2 * S);
+          doc.setTextColor(124, 58, 237);
         } else {
           doc.setFont("helvetica", "normal");
           doc.setFontSize(7.2 * S);
@@ -4979,6 +4984,7 @@
     /** Colour + bold the pay role label in the timesheet rows. */
     function timesheetRoleColor(role) {
       const r = String(role || "").toLowerCase();
+      if (/shadow/.test(r)) return "#7c3aed";
       if (/swim|aquatic/.test(r)) return "#1565c0";
       if (/climb/.test(r)) return "#ca8a04";
       if (/\blead\b|service lead/.test(r)) return "#7c3aed";
