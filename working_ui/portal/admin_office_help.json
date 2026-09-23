@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23-v8",
+  "version": "2026-09-23-v9",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -241,7 +241,38 @@
             "One day only → Schedule & Covers.",
             "Every [weekday] until end of term also drops days already delivered. Use Rest of term from the anchor when those past days should stay.",
             "Staff who-works hours → Timetable (H&R), not Edit term slot.",
-            "Example: Joel → Anas every Monday for the rest of Autumn = Edit term slot."
+            "Example: Joel → Anas every Monday for the rest of Autumn = Edit term slot.",
+            "To remove the service for the rest of term, use the Cancel a service lesson."
+          ]
+        },
+        {
+          "id": "cancel_service",
+          "title": "Cancel a service (rest of term)",
+          "summary": "Remove a standing place from an anchor date forward. The anchor date decides which weekday is cancelled.",
+          "where": "Services & places → Edit term slot",
+          "keywords": [
+            "cancel service",
+            "cancelacion",
+            "cancelación",
+            "cancelar servicio",
+            "rest of term",
+            "anchor",
+            "every sunday",
+            "weekday until end of term"
+          ],
+          "steps": [
+            "Open Edit term slot on that client's seat.",
+            "Action: Cancel service.",
+            "Scope: Rest of term (from anchor) when days already delivered should stay.",
+            "Set the anchor to a date that is the same weekday as the service. A Sunday place needs a Sunday anchor. A Wednesday anchor cancels Wednesdays.",
+            "Set the time slot, then save. Clicking the Now card only picks the seat. It does not change the anchor.",
+            "That anchor date and later matching weekdays drop. Dates before the anchor stay.",
+            "Parents see a cancelled chip for those dates. The refund is a separate step under Refunds and credits. Saving here does not send a WhatsApp or calculate the refund."
+          ],
+          "tips": [
+            "Every [weekday] until end of term also removes days already delivered. Use that only when the whole weekday pattern should go, including the past.",
+            "One session only: Schedule & Covers, not Edit term slot.",
+            "Private pay-in-advance refund rule is in Absents, refunds and credits."
           ]
         }
       ]
