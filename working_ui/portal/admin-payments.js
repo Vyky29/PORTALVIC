@@ -1168,7 +1168,11 @@
     var key = slug;
     if (slug.indexOf("samer") === 0 || name.indexOf("samer") >= 0) key = "samer";
     else if (slug.indexOf("steven") === 0 || name.indexOf("steven") >= 0) key = "steven";
-    else if (slug.indexOf("tinashe") === 0 || name.indexOf("tinashe") >= 0) key = "tinashe";
+    else if (slug.indexOf("tinashe") === 0 || name.indexOf("tinashe") >= 0) {
+      var tSvc = rowServiceBlob(r);
+      if (/\bfri/.test(tSvc) && !/\bmon|\bwed/.test(tSvc)) return;
+      key = "tinashe";
+    }
     else if (slug.indexOf("adaam") === 0 || slug.indexOf("aadam") === 0 || name.indexOf("adaam") >= 0 || name.indexOf("aadam") >= 0) key = "adaam";
     else if (slug.indexOf("amaar") === 0 || name.indexOf("amaar") >= 0) key = "amaar";
     else if (slug.indexOf("aydaan") === 0 || name.indexOf("aydaan") >= 0) key = "aydaan";
@@ -2530,10 +2534,59 @@
     ];
   }
 
+  /** Tinashe Friday bespoke is NHS / ILA. Mon/Wed stay on the Ealing row. */
+  function splitTinasheFridayNhsRow(r) {
+    if (!r || r._tinashePart || r._crash) return null;
+    if (paymentParticipantSlug(r) !== "tinashe") return null;
+    if (!isSummerTermRow(r)) return null;
+    var lines = [];
+    try { lines = serviceOneLinersFor(r); } catch (_e) { lines = []; }
+    if (!lines.length) {
+      lines = String(((r.data || {}).Services) || "")
+        .split(/\n|·/)
+        .map(function (s) { return String(s || "").trim(); })
+        .filter(Boolean);
+    }
+    var fri = lines.filter(function (s) { return /\bfri/i.test(s); });
+    var rest = lines.filter(function (s) { return !/\bfri/i.test(s); });
+    if (!fri.length) return null;
+    function clone(part, suffix, svcLines, nhs) {
+      var out = {};
+      Object.keys(r).forEach(function (k) { out[k] = r[k]; });
+      out.id = String(r.id || "tinashe") + suffix;
+      out._tinashePart = part;
+      out._serviceParts = Object.create(null);
+      svcLines.forEach(function (s) { out._serviceParts[s] = 1; });
+      out.data = Object.assign({}, r.data || {}, { Services: svcLines.join("\n") });
+      if (nhs) {
+        out.data.Funder = "NHS / ILA";
+        out.data.Paid = "Funded by NHS";
+        out.data["Invoice type"] = "NHS (Exempt invoice)";
+        out._ealingIn = 0;
+        out.amount = 0;
+        out.amount_billed = 0;
+        out.amount_out = 0;
+        out._amountPaid = 0;
+        out.payment_status = "Outstanding";
+      }
+      return out;
+    }
+    if (!rest.length) {
+      r._tinashePart = "nhs_fri";
+      r.data = r.data || {};
+      r.data.Funder = "NHS / ILA";
+      r.data.Paid = "Funded by NHS";
+      r.data["Invoice type"] = "NHS (Exempt invoice)";
+      r._ealingIn = 0;
+      return null;
+    }
+    return [clone("ealing", "::ealing", rest, false), clone("nhs_fri", "::nhs-fri", fri, true)];
+  }
+
   function expandSplitServiceRows(rows) {
     var out = [];
     (rows || []).forEach(function (r) {
-      var parts = splitCyrusServiceRows(r) || splitAcatDualStreamRows(r);
+      var parts = splitCyrusServiceRows(r) || splitAcatDualStreamRows(r) || splitTinasheFridayNhsRow(r);
       if (parts && parts.length) out.push.apply(out, parts);
       else out.push(r);
     });
