@@ -1709,6 +1709,7 @@
       ".pay-chip--inv-parent-ex{background:#f0fdf4;color:#166534;border-color:#bbf7d0}",
       ".pay-chip--inv-parent-20{background:#fff7ed;color:#c2410c;border-color:#fed7aa}",
       ".pay-chip--inv-la{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff}",
+      ".pay-chip--inv-ealing{background:#fdf2f8;color:#be185d;border-color:#f9a8d4}",
       ".pay-chip--inv-nhs{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}",
       ".pay-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}",
       ".pay-tbl td .pay-chip{white-space:normal;max-width:100%;margin:0 auto;box-sizing:border-box}",
@@ -1904,7 +1905,8 @@
     if (label === INVOICE_TYPE.NHS_EXEMPT || /^NHS\s*\(/i.test(s)) {
       return "pay-chip--inv-nhs";
     }
-    /* Generic LA or named council: "Ealing (Exempt invoice)", "H&F (Exempt invoice)". */
+    if (/^ealing\b/i.test(s)) return "pay-chip--inv-ealing";
+    /* Generic LA or named council: "H&F (Exempt invoice)". */
     if (label === INVOICE_TYPE.LA_EXEMPT || /\(Exempt invoice\)\s*$/i.test(s)) {
       return "pay-chip--inv-la";
     }
