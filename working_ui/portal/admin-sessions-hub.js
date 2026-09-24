@@ -2714,6 +2714,128 @@
   }
 
   /**
+   * Shadowing: the worker gets their own column, named after the child they sit with.
+   * Training / meeting: each person shows on the host column as a participant card.
+   */
+  function injectDutyPersonCards(hub, out, isoDate, wd) {
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    if (!ovs.length) return out;
+    var added = [];
+    var seen = Object.create(null);
+    function hostClientName(trainerRaw, ov) {
+      var best = "";
+      var bestScore = -1;
+      var oStart = normTimeShort(ov.anchor_start);
+      var oEnd = normTimeShort(ov.anchor_end || ov.anchor_start);
+      var oVen = clean(ov.anchor_venue).toLowerCase();
+      for (var i = 0; i < (out || []).length; i++) {
+        var s = out[i];
+        if (!s || !isRosterClient(s.client_name)) continue;
+        if (s.portalDutyPersonCard) continue;
+        if (!trainerMatchesSlotInstructors(trainerRaw, slotInstructors(s))) continue;
+        var sVen = clean(s.venue).toLowerCase();
+        if (oVen && sVen && oVen !== sVen) continue;
+        var sStart = normTimeShort(s.time_start || s.time_slot);
+        var sEnd = normTimeShort(s.time_end || s.time_start);
+        if (!hmRangesOverlap(oStart, oEnd, sStart, sEnd)) continue;
+        var score = 1;
+        if (sStart === oStart) score += 2;
+        if (score > bestScore) {
+          bestScore = score;
+          best = clean(s.client_name);
+        }
+      }
+      return best;
+    }
+    for (var j = 0; j < ovs.length; j++) {
+      var ov = ovs[j];
+      if (String(ov.override_type || "").trim() !== "session_add") continue;
+      if (String(ov.status || "active").trim() !== "active") continue;
+      if (clean(ov.session_date) !== isoDate) continue;
+      var p = overridePayloadObj(ov);
+      var kind = String((p && p.kind) || ov.anchor_client_id || "").trim().toLowerCase();
+      if (kind !== "shadowing" && kind !== "training" && kind !== "meeting") continue;
+      var timeLabel = clean(ov.anchor_time_slot_label);
+      var slotTimes = parseTimeSlot(
+        timeLabel ||
+          (normTimeShort(ov.anchor_start) + " to " + normTimeShort(ov.anchor_end || ov.anchor_start)),
+        wd
+      );
+      var startHm = normTimeShort(ov.anchor_start) || slotTimes.start;
+      var endHm = normTimeShort(ov.anchor_end) || slotTimes.end;
+      var rosterTimeLabel =
+        rosterTimeSlotLabelFromBounds(startHm, endHm, wd) || timeLabel || slotTimes.label;
+      var loc = String((p && p.location) || "").trim().toLowerCase();
+      var area = loc === "room" ? "Hub Room" : loc === "pool" ? "Teaching Pool" : loc === "both" ? "Room and pool" : "";
+      var venue = clean(ov.anchor_venue) || "SwimFarm";
+      var columnName = "";
+      var cardName = "";
+      var service = kind === "shadowing" ? "Day Centre" : "Training";
+      if (kind === "shadowing") {
+        columnName = resolveStaffDisplayName(ov.anchor_staff_id) || clean(ov.anchor_staff_id);
+        cardName = hostClientName(p && p.trainer, ov) || "Shadowing";
+      } else {
+        var trainerRaw = clean(p && p.trainer) || "Training";
+        columnName = staffPillFirstName(trainerRaw) || trainerRaw;
+        cardName = resolveStaffDisplayName(ov.anchor_staff_id) || clean(ov.anchor_staff_id);
+        if (
+          cardName &&
+          columnName &&
+          canonicalStaffMatchKey(cardName) === canonicalStaffMatchKey(columnName)
+        ) {
+          continue;
+        }
+      }
+      if (!columnName || !cardName) continue;
+      var key =
+        canonicalStaffMatchKey(columnName) +
+        "|" +
+        canonicalClientSlug(cardName) +
+        "|" +
+        startHm +
+        "|" +
+        kind;
+      if (seen[key]) continue;
+      seen[key] = true;
+      var slotRow = {
+        session_date: isoDate,
+        day: wd,
+        client_name: cardName,
+        service: service,
+        time_slot: rosterTimeLabel,
+        time_start: startHm,
+        time_end: endHm,
+        venue: venue,
+        area: area,
+        instructors: [columnName],
+        instructor_label: columnName,
+        anchor_staff_id: canonicalStaffMatchKey(columnName),
+        session_key: buildSessionKey(isoDate, {
+          client_name: cardName,
+          service: service,
+          time_slot: rosterTimeLabel,
+          venue: venue,
+          area: area,
+          instructors: columnName,
+        }),
+        portalDutyPersonCard: true,
+        portalShadowingObserver: kind === "shadowing",
+        portalShadowingHost: false,
+        __portalScheduleOverride: ov,
+      };
+      slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
+      slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow, { skipAutoSwim: true });
+      added.push(slotRow);
+    }
+    if (!added.length) return out;
+    out = (out || []).concat(added);
+    out.sort(function (a, b) {
+      return compareOverviewSlotsTimeThenCancelled(hub, a, b);
+    });
+    return out;
+  }
+
+  /**
    * Active client_replace makeup whose ANCHOR is this booked participant — i.e. the original
    * participant told us they were not coming and admin handed their slot to someone else as a
    * makeup. The original roster row stays "Booked" in the data, so without this it shows
@@ -8106,6 +8228,7 @@
       out = injectCreatedSessionAddSlots(this, out, isoDate, wd);
       out = annotateBespokeSharedUnitKeys(out);
       out = applyShadowingHostDisplay(this, out);
+      out = injectDutyPersonCards(this, out, isoDate, wd);
       /* One pass: auto consecutive swim merge using this day's slots only. */
       for (var mi = 0; mi < out.length; mi++) {
         out[mi].feedback_merge_group = feedbackMergeGroupForSlot(out[mi], { daySlots: out });
