@@ -1153,7 +1153,7 @@
   var EALING_SUMMER_IN = {
     samer: 2361.42,
     steven: 983.88,
-    tinashe: 13577.76,
+    tinashe: 11566.24,
     amar_rai: 3935.52,
     /* £2,470 is Spring + Summer together. The £655.92, the £145.76 lines and the −£1,093.20 do not count. */
     adaam: 2470,
@@ -2670,14 +2670,21 @@
         e.data["Invoice type"] = "Ealing (Exempt invoice)";
         e.client_name = "Tinashe Nekati";
         if (bucket === "summer_2526") {
-          e.amount = 13577.76;
-          e.amount_billed = 13577.76;
-          e._amountPaid = 13577.76;
+          e.amount = 11566.24;
+          e.amount_billed = 11566.24;
+          e._amountPaid = 11566.24;
           e.amount_out = 0;
-          e._ealingIn = 13577.76;
+          e._ealingIn = 11566.24;
           e.payment_status = "Paid";
-          e._officeMonthLines = null;
-          e._officeTotalOnly = true;
+          e._officeTotalOnly = false;
+          e._officeMonthLines = [
+            { t: "1 Apr-19 Apr £1,508.64", paid: true },
+            { t: "20 Apr-17 May £2,011.52", paid: true },
+            { t: "18 May-14 Jun £2,011.52", paid: true },
+            { t: "15 Jun-12 Jul £2,011.52", paid: true },
+            { t: "13 Jul-9 Aug £2,011.52", paid: true },
+            { t: "10 Aug-6 Sep £2,011.52", paid: true },
+          ];
         }
         rest.push(e);
       }
