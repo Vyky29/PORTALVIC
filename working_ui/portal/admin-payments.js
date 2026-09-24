@@ -2137,6 +2137,12 @@
       } else {
         out.payment_status = "Outstanding";
       }
+      /* Summer Day Centre bespoke (Tue/Thu 90') is already collected. */
+      if (!isAutumn && part === "thu_bespoke") {
+        out.payment_status = "Paid";
+        out.amount_out = 0;
+        out._amountPaid = amount;
+      }
       if (seasons) {
         out._amountAutumn = seasons.autumn;
         out._amountSpring = seasons.spring;
@@ -2613,7 +2619,11 @@
       if (st === "paid") return c === "paid" || c === "partial";
       /* Legacy "partial" chip → any part-paid (Flexi or GC). */
       if (st === "partial") return c === "partial";
-      if (st === "outstanding") return c === "outstanding";
+      /* Part still owes (Fadi NHS). Outstanding must show that balance. */
+      if (st === "outstanding") {
+        if (c === "outstanding") return true;
+        return c === "partial" && Number(r.amount_out) > 0.009;
+      }
       return c === st;
     });
   }
@@ -2759,20 +2769,22 @@
         if (splitMeta && splitMeta.autumn > 0) amt = splitMeta.autumn;
       }
       var c = category(r);
-      var isOut = c === "outstanding";
+      var partDue = c === "partial" ? Number(r.amount_out) || 0 : 0;
+      var isOut = c === "outstanding" || partDue > 0.009;
+      var dueAmt = c === "outstanding" ? amt : partDue;
       var countsTowardBilled = c !== "notreenrolled";
       if (isDayCentreRow(r)) {
         dcN++;
         if (countsTowardBilled) dcBilled += amt;
         if (isOut) {
-          out += amt;
+          out += dueAmt;
           outN++;
         }
       } else {
         asN++;
         if (countsTowardBilled) asBilled += amt;
         if (isOut) {
-          out += amt;
+          out += dueAmt;
           outN++;
         }
       }
