@@ -2775,16 +2775,8 @@
         columnName = resolveStaffDisplayName(ov.anchor_staff_id) || clean(ov.anchor_staff_id);
         cardName = hostClientName(p && p.trainer, ov) || "Shadowing";
       } else {
-        var trainerRaw = clean(p && p.trainer) || "Training";
-        columnName = staffPillFirstName(trainerRaw) || trainerRaw;
-        cardName = resolveStaffDisplayName(ov.anchor_staff_id) || clean(ov.anchor_staff_id);
-        if (
-          cardName &&
-          columnName &&
-          canonicalStaffMatchKey(cardName) === canonicalStaffMatchKey(columnName)
-        ) {
-          continue;
-        }
+        columnName = resolveStaffDisplayName(ov.anchor_staff_id) || clean(ov.anchor_staff_id);
+        cardName = "Training";
       }
       if (!columnName || !cardName) continue;
       var key =
