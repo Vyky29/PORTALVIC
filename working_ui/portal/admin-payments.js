@@ -942,6 +942,8 @@
     var io = Number(d["INV-0390 (Ikram Omar)"]);
     var fa = Number(d["INV-0389 (Fadi)"]);
     var ed = Number(d["INV-0391 (Emanuel Dodson)"]);
+    /* Removed from the shared row on 2 Sep 2026. It was paid. Keep it on the total. */
+    if (!(ed > 0)) ed = 223.3;
     var td = Number(d["INV-0392 (Timi Dairo)"]);
     if (!(io > 0) && !(fa > 0) && !(ed > 0) && !(td > 0)) return null;
     return {
@@ -1128,6 +1130,8 @@
       if (!uplift) return;
       var paidUp = (uplift.io || 0) + (uplift.fa || 0) + (uplift.ed || 0);
       var still = uplift.td || 0;
+      var faceUp = Math.round(((uplift.total || 0)) * 100) / 100;
+      if (faceUp > 0) r.amount = faceUp;
       r._amountPaid = Math.round(paidUp * 100) / 100;
       r.amount_out = Math.round(still * 100) / 100;
       r.payment_status = still > 0.009 ? "Partial" : "Paid";
@@ -1404,9 +1408,9 @@
             + money(uplift.fa)
             + " paid</span>"
             + '<span class="pay-amt-season" title="'
-            + (uplift.ed > 0 ? "INV-0391 Emanuel · INV-0392 Timi" : "INV-0392 Timi")
+            + (uplift.ed > 0 ? "INV-0391 Emanuel paid · INV-0392 Timi still due" : "INV-0392 Timi")
             + '">'
-            + (uplift.ed > 0 ? ("ED " + money(uplift.ed) + " · ") : "")
+            + (uplift.ed > 0 ? ("ED " + money(uplift.ed) + " paid · ") : "")
             + "TD "
             + money(uplift.td)
             + "</span>"
