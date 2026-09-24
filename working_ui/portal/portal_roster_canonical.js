@@ -2943,6 +2943,17 @@
     });
   }
 
+  /** Patrick's Sunday 3-4 Westway seat is released from 27 Sep 2026. Earlier Sundays stay booked. */
+  function patrickSundayClimbReleased(row, iso) {
+    if (!row || !iso || iso < "2026-09-27") return false;
+    if (!isClimbingService(row.service) || !isWestwayVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "sunday") return false;
+    if (!/\bcarlos\b/i.test(String(row.instructors || ""))) return false;
+    if (!/^patrick\b/i.test(String(row.client_name || "").trim())) return false;
+    var t = climbNoonSlotKey(row.time_slot);
+    return /^(3(\.00)?|15(\.00)?)\s*(to|-)\s*(4(\.00)?|16(\.00)?)$/.test(t);
+  }
+
   function climbNoonSlotKey(raw) {
     return String(raw || "")
       .toLowerCase()
@@ -3509,12 +3520,13 @@
         );
         continue;
       }
-      out.push(
-        Object.assign({}, row, {
-          session_date: iso,
-          day: DOW_TITLE[dk] || row.day,
-        })
-      );
+      var copy = {
+        session_date: iso,
+        day: DOW_TITLE[dk] || row.day,
+      };
+      /* Patrick Sunday climb cancelled from 27 Sep 2026. 6, 13 and 20 stay. */
+      if (patrickSundayClimbReleased(row, iso)) copy.client_name = "No participant";
+      out.push(Object.assign({}, row, copy));
     }
     return out;
   }

@@ -16,7 +16,7 @@
     "/portal/portal_staff_feedback_data_loader.js?v=20260915-2to1-shared",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
-      "/portal/portal_roster_canonical.js?v=20260924-sun-cyrus-pool-first",
+      "/portal/portal_roster_canonical.js?v=20260924-patrick-climb-off",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/portal_client_day_visibility.js?v=20260916-short-names",
