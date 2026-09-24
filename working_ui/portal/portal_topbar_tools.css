@@ -150,6 +150,56 @@
   min-height:0 !important;
   max-height:none !important;
 }
+.session-plan-kicker{
+  margin:0 0 10px;
+  font-weight:800;
+  overflow-wrap:break-word;
+}
+.session-plan-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+}
+.session-plan-item{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  min-width:0;
+  padding:10px 12px;
+  border-radius:12px;
+  background:var(--surface, #fff);
+  border:1px solid var(--line, rgba(0,0,0,.08));
+}
+.session-plan-item__time{
+  flex:0 0 auto;
+  font-weight:800;
+  font-size:13px;
+}
+.session-plan-item__body{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.session-plan-item__body strong,
+.session-plan-item__note{
+  overflow-wrap:break-word;
+}
+.session-plan-item__note{
+  font-size:13px;
+  color:var(--muted, #5c6b7a);
+}
+.topbar-tool-label--session-plan{
+  white-space:normal !important;
+  font-size:9px !important;
+  line-height:1.05 !important;
+  text-align:center;
+  overflow-wrap:break-word;
+}
 .topbar-tools-grid--flank{
   display:grid;
   grid-template-columns:var(--topbar-tools-cell);

@@ -1104,6 +1104,14 @@
         e.stopPropagation();
 
         if (toolBtn.id === "topbarToolSessionPlanner") {
+          if (toolBtn.getAttribute("data-portal-session-plan") === "sheet") {
+            if (typeof global.portalOpenSessionPlanSheet === "function") {
+              global.portalOpenSessionPlanSheet();
+            } else if (typeof global.openSheet === "function") {
+              global.openSheet("staffSessionPlanSheet");
+            }
+            return;
+          }
           if (typeof global.portalOpenRoutinesPlanner === "function") {
             void Promise.resolve(global.portalOpenRoutinesPlanner()).then(function (ok) {
               if (ok) return;

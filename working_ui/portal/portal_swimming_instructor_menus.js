@@ -50,6 +50,7 @@
     venue: true,
     pickup: true,
     planner: false,
+    sessionPlan: false,
     sixIcon: false,
     leadExtras: false,
   };
@@ -114,6 +115,7 @@
       venue: false,
       pickup: false,
       planner: false,
+      sessionPlan: true,
       sixIcon: false,
     },
     carlos: {
@@ -150,6 +152,7 @@
       venue: false,
       pickup: false,
       planner: false,
+      sessionPlan: true,
       sixIcon: false,
     },
     emmanuel: {
@@ -159,6 +162,7 @@
       venue: false,
       pickup: false,
       planner: false,
+      sessionPlan: true,
       sixIcon: false,
     },
     patience: {
@@ -168,6 +172,7 @@
       venue: false,
       pickup: false,
       planner: false,
+      sessionPlan: true,
       sixIcon: false,
     },
     ann: {
@@ -177,6 +182,7 @@
       venue: false,
       pickup: false,
       planner: false,
+      sessionPlan: true,
       sixIcon: false,
     },
     javier: {
@@ -653,9 +659,35 @@
     setTopbarToolGroup(INTERVIEWS_TOOL_IDS, showInterviews, { visible: showInterviews });
     setTopbarToolGroup(SWIMMING_VENUE_IDS, venueOn, { visible: venueOn });
     setTopbarToolGroup(SWIMMING_PICKUP_IDS, !!profile.pickup, { visible: !!profile.pickup });
-    setTopbarToolGroup(SWIMMING_PLANNER_IDS, !!profile.planner, {
-      visible: !!profile.planner,
-    });
+    var sessionPlanOnly = !!profile.sessionPlan && !profile.planner;
+    setTopbarToolGroup(
+      sessionPlanOnly
+        ? ["topbarToolCellSessionPlanner", "topbarToolSessionPlanner"]
+        : SWIMMING_PLANNER_IDS,
+      sessionPlanOnly || !!profile.planner,
+      { visible: sessionPlanOnly || !!profile.planner },
+    );
+    global.__PORTAL_SESSION_PLAN_SHEET__ = sessionPlanOnly;
+    var planBtn = document.getElementById("topbarToolSessionPlanner");
+    if (planBtn) {
+      if (sessionPlanOnly) {
+        planBtn.setAttribute("data-portal-session-plan", "sheet");
+        planBtn.setAttribute("aria-label", "Session plan");
+        var planLab = planBtn.querySelector(".topbar-tool-label");
+        if (planLab) {
+          planLab.textContent = "Session plan";
+          planLab.classList.add("topbar-tool-label--session-plan");
+        }
+      } else {
+        planBtn.removeAttribute("data-portal-session-plan");
+        planBtn.setAttribute("aria-label", "Session planner");
+        var planLabBack = planBtn.querySelector(".topbar-tool-label");
+        if (planLabBack) {
+          planLabBack.textContent = "Plan";
+          planLabBack.classList.remove("topbar-tool-label--session-plan");
+        }
+      }
+    }
     setTopbarToolGroup(LEAD_REPORT_IDS, true, {
       visible: isLeadShell || isProgrammeLead || !!profile.leadExtras,
     });
@@ -675,7 +707,7 @@
     });
     setElementVisible("quickMenuStaffSessionsOverview", showProgrammeOnly);
 
-    if (profile.planner && typeof global.portalEnableRoutinesPlannerUi === "function") {
+    if (profile.planner && !sessionPlanOnly && typeof global.portalEnableRoutinesPlannerUi === "function") {
       try {
         global.portalEnableRoutinesPlannerUi();
       } catch (_) {}
