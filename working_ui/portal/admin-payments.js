@@ -2187,8 +2187,8 @@
       } else {
         out.payment_status = "Outstanding";
       }
-      /* Summer Day Centre bespoke (Tue/Thu 90') is already collected. */
-      if (!isAutumn && part === "thu_bespoke") {
+      /* Summer bespoke and afterschool for Cyrus are both collected. */
+      if (!isAutumn && (part === "thu_bespoke" || part === "afterschool")) {
         out.payment_status = "Paid";
         out.amount_out = 0;
         out._amountPaid = amount;
