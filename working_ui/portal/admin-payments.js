@@ -7303,12 +7303,19 @@
     if (crashSlug === "zakariya") {
       row.data.Services = zakariyaCrashServiceLines().join("\n");
     } else if (crashSlug === "tinashe") {
+      /* Pat's crash invoice was paid by NHS/ILA on 25 Aug 2026. Two days, £125. */
       row.data.Services = tinasheCrashServiceLines().join("\n");
-      row.data.Paid = PAID_BY.FUNDS_FROM_LA;
-      row.data["Invoice type"] = INVOICE_TYPE.PARENT_EXEMPT;
-      row.sheet = "DIRECT_PAYMENTS";
-      delete row.data.Funder;
+      row.data.Paid = PAID_BY.FUNDED_BY_NHS;
+      row.data["Invoice type"] = INVOICE_TYPE.NHS_EXEMPT;
+      row.data.Funder = "NHS / ILA";
       delete row.data.Funding;
+      row.sheet = "LA";
+      row.payment_status = "Paid";
+      row.amount = 125;
+      row.amount_billed = 125;
+      row.amount_out = 0;
+      row._amountPaid = 125;
+      row._officeMonthLines = [{ t: "25 Aug £125", paid: true }];
     } else if (crashSlug === "adam_p") {
       row.data.Services = "90' Aquatic Activity (July crash) · Tue/Wed 5–6.30pm Acton";
     } else if (crashSlug === "saaib") {
@@ -7333,7 +7340,7 @@
 
   var KNOWN_SUMMER_CRASH = [
     { slug: "yaqoub", name: "Yaqoub Ismail", amt: 375, invoice: "INV-P-0118", paid: true, services: "60' Aquatic — July crash course · SwimFarm · ×3" },
-    { slug: "tinashe", name: "Tinashe", amt: 125, invoice: "INV-P-0119", paid: false, services: "30' Aquatic Activity - 1 pm to 1.30 pm - Mon 27 and Wed 29 July", fundsFromLa: true },
+    { slug: "tinashe", name: "Tinashe", amt: 125, invoice: "INV-P-0119", paid: true, services: "30' Aquatic Activity - 1 pm to 1.30 pm - Mon 27 and Wed 29 July", nhs: true },
     { slug: "zakariya", name: "Zakariya", amt: 700, invoice: "INV-P-CRASH-MRMCPDUG", paid: true, services: "Climb + Swim — July crash course" },
     { slug: "adam_p", name: "Adam Pilcher", amt: 300, invoice: "INV-P-0001", paid: true, services: "90' Aquatic Activity (July crash) · Tue/Wed 5–6.30pm Acton" },
     { slug: "saaib", name: "Saaib", amt: 100, invoice: "INV-P-0127", paid: true, services: "30' Aquatic Activity (July crash) · Tue/Wed 4.30–5pm Acton" },
@@ -7360,10 +7367,17 @@
         Services: spec.services,
         Stream: "Day Centre",
         Invoice: spec.invoice,
-        Paid: spec.fundsFromLa
-          ? "Using Funds from LA"
-          : (spec.slug === "saaib" || spec.slug === "adam_p" ? "Funded by LA" : "Using Private Funds"),
-        "Invoice type": spec.fundsFromLa ? "Parent (Exempt invoice)" : undefined,
+        Paid: spec.nhs
+          ? "Funded by NHS"
+          : spec.fundsFromLa
+            ? "Using Funds from LA"
+            : (spec.slug === "saaib" || spec.slug === "adam_p" ? "Funded by LA" : "Using Private Funds"),
+        "Invoice type": spec.nhs
+          ? "NHS (Exempt invoice)"
+          : spec.fundsFromLa
+            ? "Parent (Exempt invoice)"
+            : undefined,
+        Funder: spec.nhs ? "NHS / ILA" : undefined,
       },
       _serviceParts: Object.create(null),
     };
