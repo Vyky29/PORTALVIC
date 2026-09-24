@@ -998,32 +998,32 @@
         /* Near window only — staff does not pull the whole term.
            Past days: late feedback / Term review. Forward: Today + next weeks. */
         const now = new Date();
-        var back = -21;
+        var back = -14;
         var fwd = 21;
-        try{
-          const sidW = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-          if(sidW && typeof portalStaffNeedsFullDayOverrides === 'function' && portalStaffNeedsFullDayOverrides(sidW)){
-            back = -28;
-            fwd = 35;
-          }
-        }catch(_w){}
+        /* Full-club viewers (Roberto, leads) used to pull every override through
+           term end before Today could paint. That stalled the phone. First paint
+           stays on this near window; the rest of term loads after Today is up. */
+        if(opts.termTail){
+          back = fwd + 1;
+          fwd = 120;
+        }
         for(let i = back; i <= fwd; i++){
           const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
           add(portalIsoYmdFromDate(d));
         }
-        /* Term grid paints absence rims before the day is opened. The near window
-           stops at +21/+35, so later term absences stayed blank until that day was tapped. */
-        try{
-          const termTo = typeof portalTermCalendarToIso === 'function' ? String(portalTermCalendarToIso() || '').slice(0, 10) : '';
-          if(/^\d{4}-\d{2}-\d{2}$/.test(termTo)){
-            const cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate() + fwd + 1);
-            const end = new Date(termTo + 'T12:00:00');
-            while(cursor <= end){
-              add(portalIsoYmdFromDate(cursor));
-              cursor.setDate(cursor.getDate() + 1);
+        if(opts.termTail){
+          try{
+            const termTo = typeof portalTermCalendarToIso === 'function' ? String(portalTermCalendarToIso() || '').slice(0, 10) : '';
+            if(/^\d{4}-\d{2}-\d{2}$/.test(termTo)){
+              const cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate() + fwd + 1);
+              const end = new Date(termTo + 'T12:00:00');
+              while(cursor <= end){
+                add(portalIsoYmdFromDate(cursor));
+                cursor.setDate(cursor.getDate() + 1);
+              }
             }
-          }
-        }catch(_termFwd){}
+          }catch(_termFwd){}
+        }
       }catch(_){}
       try{
         const extra = opts.extraIsos;
@@ -1038,7 +1038,7 @@
       }catch(_){}
       try{
         const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-        if(sid && typeof portalStaffInstructorCoverCalendarIsoKeys === 'function'){
+        if(opts.termTail && sid && typeof portalStaffInstructorCoverCalendarIsoKeys === 'function'){
           const now = new Date();
           const t = window.PORTAL_TERM_FROM_TIMETABLE;
           const termFrom = String(
@@ -1496,6 +1496,14 @@
         try{ if(typeof window.portalInvalidateSignableItemsMemo === 'function') window.portalInvalidateSignableItemsMemo(); }catch(_ann){}
         if(typeof portalMaybeGateUnsignedAnnouncements === 'function'){
           portalMaybeGateUnsignedAnnouncements({ force: true });
+        }
+        if(!opts.termTail && !window.__PORTAL_OV_TERM_TAIL_SCHEDULED__){
+          window.__PORTAL_OV_TERM_TAIL_SCHEDULED__ = true;
+          var tail = function(){
+            try{ window.portalRefreshScheduleOverridesCache({ termTail: true }); }catch(_){}
+          };
+          if(typeof window.portalScheduleIdleWork === 'function') window.portalScheduleIdleWork(tail);
+          else setTimeout(tail, 2500);
         }
       }catch(_syncOv){}
       }finally{
