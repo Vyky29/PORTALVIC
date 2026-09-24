@@ -1958,6 +1958,32 @@
     if (/camden/.test(low)) return "Camden";
     if (/newham/.test(low)) return "Newham";
     if (/tower\s*hamlets/.test(low)) return "Tower Hamlets";
+    return officeLaCouncil(r);
+  }
+
+  /** When the row has no council name, Summer office books still name Ealing or H&F. */
+  function officeLaCouncil(r) {
+    if (!r) return "";
+    if (r._crash && paymentParticipantSlug(r) === "tinashe") return "";
+    if (r._tinashePart === "nhs_fri") return "";
+    var slug = paymentParticipantSlug(r);
+    var name = String(r.client_name || "").toLowerCase();
+    if (slug === "adam_p" || name.indexOf("pilcher") >= 0) return "H&F";
+    if (slug === "saaib" || name.indexOf("saaib") >= 0 || name.indexOf("saiib") >= 0) return "H&F";
+    if (name.indexOf("yassir") >= 0 || name.indexOf("faris") >= 0 || name.indexOf("matthias") >= 0 || name.indexOf("melake") >= 0) {
+      return "H&F";
+    }
+    if (/^simon\b/.test(name)) return "H&F";
+    if (slug === "tinashe" || name.indexOf("tinashe") >= 0) return "Ealing";
+    if (
+      slug === "adaam" || slug === "amaar" || slug === "aydaan" || slug === "amar_rai"
+      || name.indexOf("adaam") >= 0 || name.indexOf("aadam") >= 0
+      || name.indexOf("amaar") >= 0 || name.indexOf("aydaan") >= 0
+      || name.indexOf("samer") >= 0 || name.indexOf("steven") >= 0
+      || name.indexOf("amar") >= 0
+    ) {
+      return "Ealing";
+    }
     return "";
   }
 

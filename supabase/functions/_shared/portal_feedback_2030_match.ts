@@ -346,6 +346,10 @@ export function applyFeedback2030BoardPolicy(
           }
         }
       }
+      /* Yassir last session Thu 10 Sep. Standing Thu 4.30–5 must not nag Roberto after that. */
+      if (iso > "2026-09-10" && /^yassir\b/i.test(String(s.client || "").trim())) {
+        return false;
+      }
       /* Adaam / Aydaan Tue Acton 6–6.30 NEW CLIENT from 15 Sep — no feedback debt before. */
       if (iso < "2026-09-15" && /^(adaam|aydaan)\b/i.test(String(s.client || "").trim())) {
         if (day === "tuesday") {

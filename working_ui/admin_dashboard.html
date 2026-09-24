@@ -14613,11 +14613,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return normalizeSchedAnchorStaffId((($('schedAddShadowHost')||{}).value) || '');
     }
     function schedShadowHostDisplay(){
+      var typed = String((($('schedAddShadowHostInput')||{}).value) || '').trim();
+      if(typed) return typed;
       var slug = schedShadowHostSlug();
       if(!slug) return '';
       var list = schedBuildInstructorPickList();
       for(var i = 0; i < list.length; i++){
-        if(normalizeSchedAnchorStaffId(list[i].slug) === slug) return String(list[i].display || '').trim();
+        if(schedStaffMatchKeysEqual(list[i].slug, slug)) return String(list[i].display || '').trim();
       }
       return slug;
     }
@@ -14664,7 +14666,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!slot) return;
         var ids = [slot.staffRosterId];
         if(slot.allInstructors) slot.allInstructors.forEach(function(inst){ ids.push(inst && inst.staffRosterId); });
-        var mine = ids.some(function(id){ return normalizeSchedAnchorStaffId(id) === host; });
+        var mine = ids.some(function(id){ return schedStaffMatchKeysEqual(id, host); });
+        if(!mine && slot.staffName && schedStaffMatchKeysEqual(slot.staffName, host)) mine = true;
+        if(!mine && slot.allInstructors){
+          mine = slot.allInstructors.some(function(inst){
+            return inst && schedStaffMatchKeysEqual(inst.staffName, host);
+          });
+        }
         if(!mine) return;
         if(!schedSlotOverlapsClock(slot, start, end)) return;
         var name = String(slot.clientDisplay || '').trim();
@@ -14693,6 +14701,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var end = String((($('schedAddEnd')||{}).value) || '').trim();
       var venue = String((($('schedAddVenue')||{}).value) || '').trim();
       var trainer = String((($('schedAddTrainer')||{}).value) || '').trim();
+      var shadowHost = kind === 'shadowing' ? schedShadowHostSlug() : '';
+      var shadowHostName = kind === 'shadowing' ? schedShadowHostDisplay() : '';
+      if(kind === 'shadowing'){
+        if(!shadowHost){ showMsg('Pick who they are shadowing.', 'err'); return; }
+        trainer = shadowHostName || shadowHost;
+      }
       var location = String((($('schedAddLocation')||{}).value) || '').trim().toLowerCase();
       var note = String((($('schedAddNote')||{}).value) || '').trim();
       var paxSlug = String((($('schedAddPax')||{}).value) || '').trim().toLowerCase();
@@ -14722,7 +14736,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var payload = kind === 'session'
           ? { kind: 'session', label: label, note: note, client_id: paxSlug, client_name: paxName, service: service, area: area }
-          : { kind: kind, label: label, note: note, trainer: trainer, location: location };
+          : { kind: kind, label: label, note: note, trainer: trainer, trainer_staff_id: shadowHost || '', location: location };
         var row = {
           session_date: dateIso,
           anchor_staff_id: staffSlug,
@@ -14786,6 +14800,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         kindSel.__schedAddBound = true;
         kindSel.onchange = function(){ schedToggleAddKindFields(); };
       }
+      ['schedAddDate', 'schedAddStart', 'schedAddEnd'].forEach(function(id){
+        var el = $(id);
+        if(el && !el.__schedShadowBound){
+          el.__schedShadowBound = true;
+          el.addEventListener('change', function(){ schedRefreshShadowHostPax(); });
+        }
+      });
+      if(window.PortalAdminSearchCombo && !window.__schedShadowHostBound){
+        window.__schedShadowHostBound = true;
+        document.addEventListener('change', function(ev){
+          var t = ev && ev.target;
+          if(!t) return;
+          if(t.id === 'schedAddShadowHost' || (t.name && String(t.name).indexOf('schedAddShadowHost') >= 0)){
+            schedRefreshShadowHostPax();
+          }
+        });
+      }
     }
     function schedTimeInputValue(t){ return String(t == null ? '' : t).slice(0, 5); }
     /** Prefill Add session card from a standing row without overriding that seat. */
@@ -14842,6 +14873,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedAddSessionFormReset(){
       sched.addEditingId = null;
       ['schedAddVenue','schedAddTrainer','schedAddNote','schedAddArea'].forEach(function(id){ var e=$(id); if(e) e.value=''; });
+      if(window.PortalAdminSearchCombo){
+        try{ PortalAdminSearchCombo.setValue('schedAddShadowHost', '', ''); }catch(_sh0){}
+      }
       var loc=$('schedAddLocation'); if(loc) loc.value='';
       var kind=$('schedAddKind'); if(kind) kind.value='session';
       var btn=$('schedAddSaveBtn'); if(btn) btn.textContent='Add card';
@@ -14872,6 +14906,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var eEl=$('schedAddEnd'); if(eEl) eEl.value=schedTimeInputValue(ov.anchor_end);
       var vEl=$('schedAddVenue'); if(vEl) vEl.value=String(ov.anchor_venue||'');
       var tEl=$('schedAddTrainer'); if(tEl) tEl.value=String((ov.payload&&ov.payload.trainer)||'');
+      if(kind === 'shadowing' && window.PortalAdminSearchCombo){
+        var hostId = String((ov.payload && ov.payload.trainer_staff_id) || '');
+        var hostLab = String((ov.payload && ov.payload.trainer) || '');
+        try{ PortalAdminSearchCombo.setValue('schedAddShadowHost', hostId || hostLab, hostLab); }catch(_sh){}
+        schedRefreshShadowHostPax();
+      }
       var lEl=$('schedAddLocation'); if(lEl) lEl.value=String((ov.payload&&ov.payload.location)||'').toLowerCase();
       var nEl=$('schedAddNote'); if(nEl) nEl.value=String((ov.payload&&ov.payload.note)||ov.reason||'');
       var aEl=$('schedAddArea'); if(aEl) aEl.value=String((ov.payload&&ov.payload.area)||'');
@@ -24875,7 +24915,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260924-added-card';
+    var PORTAL_ADMIN_HUB_BUILD = '20260924-shadow-host';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
