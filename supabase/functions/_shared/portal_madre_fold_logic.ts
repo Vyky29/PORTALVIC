@@ -339,15 +339,14 @@ function foldParticipantCancel(madre: MadreDoc, iso: string, payload: Record<str
     for (const st of staffList) {
       const day = findDay(st, iso);
       if (!day?.slots) continue;
-      const before = day.slots.length;
-      day.slots = day.slots.filter(
-        (s) =>
-          !(
-            norm(s.client_name).toLowerCase() === client &&
-            (!timeSlot || timeSlotsEquivalent(String(s.time_slot ?? ""), timeSlot))
-          ),
-      );
-      if (day.slots.length < before) return true;
+      let opened = false;
+      for (const s of day.slots) {
+        if (norm(s.client_name).toLowerCase() !== client) continue;
+        if (timeSlot && !timeSlotsEquivalent(String(s.time_slot ?? ""), timeSlot)) continue;
+        s.client_name = "No participant";
+        opened = true;
+      }
+      if (opened) return true;
     }
   }
   return false;

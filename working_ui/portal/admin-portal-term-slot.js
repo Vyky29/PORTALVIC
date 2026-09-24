@@ -1586,7 +1586,7 @@
     var isNoPax = String(afterSnap.action || "") === "no_participant";
     var dates = affectedDatesForPayload(p);
     if (!dates.length) return Promise.resolve();
-    var ovType = isNoPax ? "slot_clear_client" : "client_cancelled";
+    var ovType = isNoPax ? "slot_clear_client" : "slot_close";
     var paxName = isNoPax
       ? String((before && before.client_name) || p.client_name || "").trim()
       : String(p.client_name || "").trim();
@@ -1937,10 +1937,14 @@
         });
       }, Promise.resolve());
     } else if (p.scope === "single_day") {
-      chain = ensureCancelledDated(client, cancelRow, p.anchorDate, p.day);
+      chain = ensureCancelledDated(client, cancelRow, p.anchorDate, p.day).then(function () {
+        return upsertNoClientRow(client, cancelRow, p.anchorDate, p.day);
+      });
     } else if (p.scope === "weekday_term") {
       chain = ensureCancelledTemplate(client, cancelRow).then(function () {
         return cancelDatedRowsForWeekday(client, cancelRow.day, cancelRow.client_name, cancelRow.time_slot, bounds.firstDate, bounds.lastDate);
+      }).then(function () {
+        return upsertNoClientRow(client, cancelRow, null, cancelRow.day);
       });
     } else {
       var dates = weekdaysMatchingFromThrough(p.day, p.anchorDate, bounds.lastDate, bounds);
@@ -1948,7 +1952,9 @@
         .then(function () {
           return dates.reduce(function (acc, iso) {
             return acc.then(function () {
-              return ensureCancelledDated(client, bundleCancelRow(p, iso), iso, p.day);
+              return ensureCancelledDated(client, bundleCancelRow(p, iso), iso, p.day).then(function () {
+                return upsertNoClientRow(client, cancelRow, iso, p.day);
+              });
             });
           }, Promise.resolve());
         });
@@ -2118,6 +2124,20 @@
             typeof global.PortalMadreFold.queueParticipantAssignConsumeOpen === "function"
           ) {
             foldPromise = global.PortalMadreFold.queueParticipantAssignConsumeOpen(client, foldOpts);
+          } else if (
+            isCancelish &&
+            typeof global.PortalMadreFold.queueParticipantSlotChange === "function"
+          ) {
+            var cancelIsos = affectedDatesForPayload(p);
+            if (!cancelIsos.length && p.anchorDate) cancelIsos = [p.anchorDate];
+            foldPromise = cancelIsos.reduce(function (acc, iso) {
+              return acc.then(function () {
+                return global.PortalMadreFold.queueParticipantSlotChange(client, Object.assign({}, foldOpts, {
+                  session_date: iso,
+                  term_action: "cancel_service",
+                }));
+              });
+            }, Promise.resolve(null));
           } else if (typeof global.PortalMadreFold.queueParticipantSlotChange === "function") {
             foldPromise = global.PortalMadreFold.queueParticipantSlotChange(client, foldOpts);
           }

@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-24-v34",
+  "version": "2026-09-24-v35",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -382,7 +382,7 @@
             "Scope: Rest of term (from anchor) when days already delivered should stay.",
             "Set the anchor to a date that is the same weekday as the service. A Sunday place needs a Sunday anchor. A Wednesday anchor cancels Wednesdays.",
             "Set the time slot, then save. Clicking the Now card only picks the seat. It does not change the anchor.",
-            "That anchor date and later matching weekdays drop. Dates before the anchor stay.",
+            "That anchor date and later matching weekdays drop. Dates before the anchor stay. The seat stays on the board as No participant and opens on the public offer. The instructor gets one roster alert for the first cancelled day.",
             "Parents see a cancelled chip for those dates. Rest of term and Every weekday open a sheet with the refund (paid, sessions already done, 10% administration, amount back, and what will not be collected). Confirm sends one message to the parent. The bank transfer is still paid back the same way. LA / NHS do not get the administration charge."
           ],
           "tips": [
