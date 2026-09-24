@@ -1154,10 +1154,10 @@
     steven: 983.88,
     tinashe: 13577.76,
     amar_rai: 3935.52,
-    /* −£1,093.20 was a mistaken entry. £2,470 is Spring + Summer together. */
-    adaam: 3708.96,
-    amaar: 3708.96,
-    aydaan: 3708.96,
+    /* £2,470 is Spring + Summer together. The £655.92, the £145.76 lines and the −£1,093.20 do not count. */
+    adaam: 2470,
+    amaar: 2470,
+    aydaan: 2470,
   };
 
   function applyOfficeEalingSummerIn(r) {
