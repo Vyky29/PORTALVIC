@@ -2725,9 +2725,9 @@
     if (!ovs.length) return out;
     var added = [];
     var seen = Object.create(null);
-    function hostClientName(trainerRaw, ov) {
-      var best = "";
-      var bestScore = -1;
+    function hostClientSlots(trainerRaw, trainerId, ov) {
+      var hits = [];
+      var seenHit = Object.create(null);
       var oStart = normTimeShort(ov.anchor_start);
       var oEnd = normTimeShort(ov.anchor_end || ov.anchor_start);
       var oVen = clean(ov.anchor_venue).toLowerCase();
@@ -2735,20 +2735,21 @@
         var s = out[i];
         if (!s || !isRosterClient(s.client_name)) continue;
         if (s.portalDutyPersonCard) continue;
-        if (!trainerMatchesSlotInstructors(trainerRaw, slotInstructors(s))) continue;
+        var insts = slotInstructors(s);
+        var hostOk = trainerMatchesSlotInstructors(trainerRaw, insts);
+        if (!hostOk && trainerId) hostOk = trainerMatchesSlotInstructors(trainerId, insts);
+        if (!hostOk) continue;
         var sVen = clean(s.venue).toLowerCase();
         if (oVen && sVen && oVen !== sVen) continue;
         var sStart = normTimeShort(s.time_start || s.time_slot);
         var sEnd = normTimeShort(s.time_end || s.time_start);
         if (!hmRangesOverlap(oStart, oEnd, sStart, sEnd)) continue;
-        var score = 1;
-        if (sStart === oStart) score += 2;
-        if (score > bestScore) {
-          bestScore = score;
-          best = clean(s.client_name);
-        }
+        var hitKey = canonicalClientSlug(s.client_name) + "|" + sStart + "|" + sEnd;
+        if (seenHit[hitKey]) continue;
+        seenHit[hitKey] = true;
+        hits.push(s);
       }
-      return best;
+      return hits;
     }
     for (var j = 0; j < ovs.length; j++) {
       var ov = ovs[j];
@@ -2776,53 +2777,70 @@
       var service = kind === "shadowing" ? "Day Centre" : "Training";
       if (kind === "shadowing") {
         columnName = resolveStaffDisplayName(ov.anchor_staff_id) || clean(ov.anchor_staff_id);
-        cardName = hostClientName(p && p.trainer, ov) || "Shadowing";
+        cardName = "Shadowing";
       } else {
         columnName = resolveStaffDisplayName(ov.anchor_staff_id) || clean(ov.anchor_staff_id);
         cardName = "Training";
       }
       if (!columnName || !cardName) continue;
-      var key =
-        canonicalStaffMatchKey(columnName) +
-        "|" +
-        canonicalClientSlug(cardName) +
-        "|" +
-        startHm +
-        "|" +
-        kind;
-      if (seen[key]) continue;
-      seen[key] = true;
-      var slotRow = {
-        session_date: isoDate,
-        day: wd,
-        client_name: cardName,
-        service: service,
-        time_slot: rosterTimeLabel,
-        time_start: startHm,
-        time_end: endHm,
-        venue: venue,
-        area: area,
-        instructors: [columnName],
-        instructor_label: columnName,
-        anchor_staff_id: canonicalStaffMatchKey(columnName),
-        session_key: buildSessionKey(isoDate, {
-          client_name: cardName,
-          service: service,
-          time_slot: rosterTimeLabel,
-          venue: venue,
-          area: area,
-          instructors: columnName,
-        }),
-        portalDutyPersonCard: true,
-        portalShadowingObserver: kind === "shadowing",
-        portalShadowingHost: false,
-        portalShadowingObserverName: kind === "shadowing" ? columnName : "",
-        __portalShadowingOverride: kind === "shadowing" ? ov : null,
-        __portalScheduleOverride: ov,
-      };
-      slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
-      slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow, { skipAutoSwim: true });
-      added.push(slotRow);
+      var shadowSeats =
+        kind === "shadowing"
+          ? hostClientSlots(p && p.trainer, p && p.trainer_staff_id, ov)
+          : [];
+      var cardSources = shadowSeats.length ? shadowSeats : [null];
+      for (var cs = 0; cs < cardSources.length; cs++) {
+        var hostSeat = cardSources[cs];
+        var rowName = hostSeat ? clean(hostSeat.client_name) : cardName;
+        var rowStart = hostSeat ? normTimeShort(hostSeat.time_start || hostSeat.time_slot) || startHm : startHm;
+        var rowEnd = hostSeat ? normTimeShort(hostSeat.time_end || hostSeat.time_start) || endHm : endHm;
+        var rowLabel = hostSeat
+          ? rosterTimeSlotLabelFromBounds(rowStart, rowEnd, wd) || clean(hostSeat.time_slot) || rosterTimeLabel
+          : rosterTimeLabel;
+        var rowService = hostSeat ? clean(hostSeat.service) || service : service;
+        var rowVenue = hostSeat ? clean(hostSeat.venue) || venue : venue;
+        var rowArea = hostSeat ? clean(hostSeat.area) || area : area;
+        var key =
+          canonicalStaffMatchKey(columnName) +
+          "|" +
+          canonicalClientSlug(rowName) +
+          "|" +
+          rowStart +
+          "|" +
+          kind;
+        if (seen[key]) continue;
+        seen[key] = true;
+        var slotRow = {
+          session_date: isoDate,
+          day: wd,
+          client_name: rowName,
+          service: rowService,
+          time_slot: rowLabel,
+          time_start: rowStart,
+          time_end: rowEnd,
+          venue: rowVenue,
+          area: rowArea,
+          instructors: [columnName],
+          instructor_label: columnName,
+          anchor_staff_id: canonicalStaffMatchKey(columnName),
+          session_key: buildSessionKey(isoDate, {
+            client_name: rowName,
+            service: rowService,
+            time_slot: rowLabel,
+            venue: rowVenue,
+            area: rowArea,
+            instructors: columnName,
+          }),
+          portalDutyPersonCard: true,
+          portalShadowingObserver: kind === "shadowing",
+          portalShadowingHost: false,
+          portalShadowingObserverName: kind === "shadowing" ? columnName : "",
+          __portalShadowingOverride: kind === "shadowing" ? ov : null,
+          __portalScheduleOverride: ov,
+        };
+        slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
+        slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow, { skipAutoSwim: true });
+        added.push(slotRow);
+      }
     }
     if (!added.length) return out;
     out = (out || []).concat(added);
