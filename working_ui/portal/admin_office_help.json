@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-24-v32",
+  "version": "2026-09-24-v33",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -128,7 +128,7 @@
             "Staff: type the first letters of the name. The list is everyone active on staff profiles, including people not yet on the standing board.",
             "Type: Shadowing or Training. That type is what marks the shift.",
             "Set Date, Start, End and Venue for that one shift.",
-            "Who gives it: the person leading them (optional). Where: Room, Pool or Both.",
+            "Shadowing: pick Shadowing and choose the person they follow (for example Berta). Their booked participants for those hours appear under the field. Training still uses Who gives it as optional text. Where: Room, Pool or Both.",
             "Press Add session. One card per shift. Repeat the form for each extra day.",
             "To remove one: stay on that date, open + Add session card, and in Added cards (this date) press Remove on that row. Confirm. It leaves the staff app."
           ],

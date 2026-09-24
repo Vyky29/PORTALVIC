@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260924-added-card';
+  var PORTAL_DAY_OPS_BUILD = '20260924-shadow-host';
   var venueReviewFilters = {
     venue: '',
     staff: '',

@@ -1939,8 +1939,11 @@
     if (!shadowingOverrideSameSessionWindow(slot, ov)) return "";
     var p = overridePayloadObj(ov);
     var insts = slotInstructors(slot);
-    var trainerRaw = clean(p.trainer || p.trainer_staff_id);
+    var trainerRaw = clean(p.trainer_staff_id || p.trainer);
     var isHost = !!(trainerRaw && trainerMatchesSlotInstructors(trainerRaw, insts));
+    if (!isHost && clean(p.trainer) && clean(p.trainer) !== trainerRaw) {
+      isHost = trainerMatchesSlotInstructors(p.trainer, insts);
+    }
     var isObserver = staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, insts);
     if (isHost) return "host";
     if (isObserver) return "observer";
