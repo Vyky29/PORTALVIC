@@ -10113,9 +10113,52 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
       (canNoteAct ? '<div class="ash-cell-open">Open to act</div>' : "") +
       "</td>";
+    var reviewedWhoHtml = clean(fb.completed_by_name)
+      ? formatInstructorPill(fb.completed_by_name)
+      : "\u2014";
+    if (
+      variant === "register" &&
+      !terminal &&
+      (isDayCentreService(svcLabel) || (displaySlot && isDayCentreService(displaySlot.service)))
+    ) {
+      var dcSlot = displaySlot && isDayCentreService(displaySlot.service) ? displaySlot : null;
+      if (!dcSlot && typeof hub.expandSlotsForDate === "function") {
+        var dcIso = hub.feedbackRowDate(fb) || feedbackSessionDate(fb);
+        var dcCid = canonicalClientSlug(rawClient || fb.client_name);
+        var dcSlots = (hub.expandSlotsForDate(dcIso) || []).filter(function (s) {
+          return (
+            s &&
+            isDayCentreService(s.service) &&
+            canonicalClientSlug(s.client_name) === dcCid &&
+            !shouldOmitOverviewSlot(hub, s)
+          );
+        });
+        if (dcSlots.length) {
+          dcSlot =
+            pickRepresentativeSlotForUnit({
+              key: dcIso + "|" + dcCid + "|day_centre",
+              slots: dcSlots,
+            }) || dcSlots[0];
+        }
+      }
+      var dcTeam = dcSlot ? feedbackWhoOwesInstructors(hub, dcSlot) : [];
+      if (!dcTeam.length && dcSlot) dcTeam = slotInstructors(dcSlot);
+      var dcSubmitter = clean(fb.completed_by_name);
+      if (dcSubmitter) {
+        var dcHasSubmitter = false;
+        for (var dti = 0; dti < dcTeam.length; dti++) {
+          if (completedByMatchesInstructor(dcSubmitter, dcTeam[dti])) {
+            dcHasSubmitter = true;
+            break;
+          }
+        }
+        if (!dcHasSubmitter) dcTeam = [dcSubmitter].concat(dcTeam);
+      }
+      if (dcTeam.length) reviewedWhoHtml = dcTeam.map(formatInstructorPill).join(" ");
+    }
     var reviewedByCell =
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
-      (clean(fb.completed_by_name) ? formatInstructorPill(fb.completed_by_name) : "\u2014") +
+      reviewedWhoHtml +
       '</div><div class="ash-cell-sub">' +
       esc(reviewDate) +
       (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
