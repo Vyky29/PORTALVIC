@@ -3498,10 +3498,10 @@
     ];
   }
 
-  /** Day Centre summer crash for Tinashe (3× 30' SwimFarm, Jul 27/29/31). */
+  /** Day Centre summer crash for Tinashe. Fri 31 Jul missed; invoice is Mon 27 + Wed 29. */
   function tinasheCrashServiceLines() {
     return [
-      "30' AQUATIC ACTIVITY (JULY) - 1 pm to 1.30 pm",
+      "30' Aquatic Activity - 1 pm to 1.30 pm - Mon 27 and Wed 29 July",
     ];
   }
 
@@ -7333,7 +7333,7 @@
 
   var KNOWN_SUMMER_CRASH = [
     { slug: "yaqoub", name: "Yaqoub Ismail", amt: 375, invoice: "INV-P-0118", paid: true, services: "60' Aquatic — July crash course · SwimFarm · ×3" },
-    { slug: "tinashe", name: "Tinashe", amt: 187.5, invoice: "INV-P-0119", paid: false, services: "30' Aquatic — July crash course · SwimFarm · ×3", fundsFromLa: true },
+    { slug: "tinashe", name: "Tinashe", amt: 125, invoice: "INV-P-0119", paid: false, services: "30' Aquatic Activity - 1 pm to 1.30 pm - Mon 27 and Wed 29 July", fundsFromLa: true },
     { slug: "zakariya", name: "Zakariya", amt: 700, invoice: "INV-P-CRASH-MRMCPDUG", paid: true, services: "Climb + Swim — July crash course" },
     { slug: "adam_p", name: "Adam Pilcher", amt: 300, invoice: "INV-P-0001", paid: true, services: "90' Aquatic Activity (July crash) · Tue/Wed 5–6.30pm Acton" },
     { slug: "saaib", name: "Saaib", amt: 100, invoice: "INV-P-0127", paid: true, services: "30' Aquatic Activity (July crash) · Tue/Wed 4.30–5pm Acton" },
