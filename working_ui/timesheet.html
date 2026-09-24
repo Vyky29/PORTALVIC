@@ -2557,13 +2557,13 @@
           e.lateHold = false;
           return;
         }
-        e.upcoming = timesheetIsoIsUpcoming(iso, todayIso);
+        e.upcoming = timesheetIsoIsUpcoming(iso, todayIso) && !(e.completed && iso === todayIso);
         if (e.upcoming) {
           e.completed = false;
           e.lateHold = false;
           return;
         }
-        e.lateHold = !!(e.completed && lateDateSet.has(iso));
+        e.lateHold = !!(e.completed && lateDateSet.has(iso) && iso !== todayIso);
       });
       state.payableEntries = state.entries.filter((e) => e.completed && !e.dayOff && !e.lateHold && !e.upcoming);
       state.pendingEntries = state.entries.filter((e) => !e.completed && !e.dayOff && !e.upcoming);
@@ -5282,14 +5282,14 @@
           e.lateHold = false;
           return;
         }
-        e.upcoming = timesheetIsoIsUpcoming(iso, todayIso);
+        e.upcoming = timesheetIsoIsUpcoming(iso, todayIso) && !(e.completed && iso === todayIso);
         if (e.upcoming) {
           e.completed = false;
           e.lateHold = false;
           return;
         }
         e.completed = true;
-        e.lateHold = lateDateSet.has(iso);
+        e.lateHold = lateDateSet.has(iso) && iso !== todayIso;
       });
       state.payableEntries = state.entries.filter((e) => e.completed && !e.dayOff && !e.lateHold && !e.upcoming);
       state.pendingEntries = state.entries.filter((e) => !e.completed && !e.dayOff && !e.upcoming);
