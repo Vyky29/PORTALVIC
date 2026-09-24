@@ -1484,6 +1484,10 @@
         officeLines.forEach(function (line) {
           monthBits += monthLine(line.t, !!line.paid);
         });
+        /* Office months replace Sessions, old invoices and Ealing credit. */
+        return '<span class="pay-amt-stack">' + summerMain + monthBits + "</span>";
+      } else if (r && r._officeTotalOnly) {
+        return summerMain;
       } else {
         if (marInv > 0) monthBits += monthLine("Mar " + money(marInv), false);
         if (aprMay && aprMay.april > 0) monthBits += monthLine("Apr " + money(aprMay.april), !!aprMay.aprilPaid);
@@ -2605,11 +2609,12 @@
         delete out.data.Funding;
         out._ealingIn = 0;
         out._laCouncilShort = "";
-        out.amount = 0;
-        out.amount_billed = 0;
-        out.amount_out = 0;
-        out._amountPaid = 0;
-        out.payment_status = "Outstanding";
+      } else {
+        out._paymentMethodHint = "la_funded";
+        out.data.Funder = "Ealing";
+        out.data.Paid = "Funded by LA";
+        out.data["Invoice type"] = "Ealing (Exempt invoice)";
+        delete out.data.Funding;
       }
       return out;
     }
@@ -2627,6 +2632,85 @@
     return [clone("ealing", "::ealing", rest, false), clone("nhs_fri", "::nhs-fri", fri, true)];
   }
 
+  /**
+   * One Ealing row (Mon/Wed) and one NHS Friday row per term.
+   * Summer money is the office list only. April 2025 stays off this term.
+   */
+  function collapseTinasheStreams(rows) {
+    var rest = [];
+    var groups = Object.create(null);
+    (rows || []).forEach(function (r) {
+      if (!r || r._crash || paymentParticipantSlug(r) !== "tinashe") {
+        rest.push(r);
+        return;
+      }
+      var bucket = termBucketFor(r);
+      if (bucket !== "summer_2526" && bucket !== "autumn_2627") {
+        rest.push(r);
+        return;
+      }
+      var blob = [
+        String((r.data && r.data.Services) || ""),
+        Object.keys(r._serviceParts || {}).join(" "),
+      ].join(" ");
+      var friOnly = r._tinashePart === "nhs_fri" || (/\bfri/i.test(blob) && !/\bmon|\bwed/i.test(blob));
+      if (!groups[bucket]) groups[bucket] = { ealing: null, fri: null };
+      var slot = friOnly ? "fri" : "ealing";
+      if (!groups[bucket][slot]) groups[bucket][slot] = r;
+    });
+    Object.keys(groups).forEach(function (bucket) {
+      var g = groups[bucket];
+      if (g.ealing) {
+        var e = g.ealing;
+        e._tinashePart = "ealing";
+        e._paymentMethodHint = "la_funded";
+        e.data = e.data || {};
+        e.data.Funder = "Ealing";
+        e.data.Paid = "Funded by LA";
+        e.data["Invoice type"] = "Ealing (Exempt invoice)";
+        e.client_name = "Tinashe Nekati";
+        if (bucket === "summer_2526") {
+          e.amount = 13577.76;
+          e.amount_billed = 13577.76;
+          e._amountPaid = 13577.76;
+          e.amount_out = 0;
+          e._ealingIn = 13577.76;
+          e.payment_status = "Paid";
+          e._officeMonthLines = null;
+          e._officeTotalOnly = true;
+        }
+        rest.push(e);
+      }
+      if (g.fri) {
+        var f = g.fri;
+        f._tinashePart = "nhs_fri";
+        f._paymentMethodHint = "nhs";
+        f.data = f.data || {};
+        f.data.Funder = "NHS / ILA";
+        f.data.Paid = "Funded by NHS";
+        f.data["Invoice type"] = "NHS (Exempt invoice)";
+        f.client_name = "Tinashe Nekati";
+        f._ealingIn = 0;
+        if (bucket === "summer_2526") {
+          f.amount = 15369.06;
+          f.amount_billed = 15369.06;
+          f._amountPaid = 15369.06;
+          f.amount_out = 0;
+          f.payment_status = "Paid";
+          f._officeTotalOnly = false;
+          f._officeMonthLines = [
+            { t: "Apr 2026 £714.84", paid: true },
+            { t: "May 2026 £5,718.72", paid: true },
+            { t: "Jun 2026 £5,718.72", paid: true },
+            { t: "Jul 2026 £3,216.78", paid: true },
+          ];
+        }
+        rest.push(f);
+      }
+    });
+    return rest;
+  }
+
   function expandSplitServiceRows(rows) {
     var out = [];
     (rows || []).forEach(function (r) {
@@ -2634,7 +2718,7 @@
       if (parts && parts.length) out.push.apply(out, parts);
       else out.push(r);
     });
-    return out;
+    return collapseTinasheStreams(out);
   }
 
   function isSummerTermRow(r) {
