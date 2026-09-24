@@ -1317,6 +1317,15 @@
    */
   function autumnCatalogSeasonTotals(r) {
     /* ACAT — £50 × Day Centre Monday weeks (43/year; first week Tue 1 Sep makeup for Aug 31 BH). */
+    if (r && r._sessionsSeason && Number(r._amountAutumn) > 0 && Number(r._amountSpring) > 0 && Number(r._amountSummer) > 0) {
+      var sessYear = Math.round((Number(r._amountAutumn) + Number(r._amountSpring) + Number(r._amountSummer)) * 100) / 100;
+      return {
+        autumn: Number(r._amountAutumn),
+        spring: Number(r._amountSpring),
+        summer: Number(r._amountSummer),
+        year: sessYear,
+      };
+    }
     if (typeof isAcatTueDayCentreRow === "function" && isAcatTueDayCentreRow(r)) {
       /* Tue 11–12 ACAT is 14 × £50. The £750 / £600 / £800 line is Monday aquatic. */
       return { autumn: 700, spring: 0, summer: 0, year: 700 };
@@ -6444,6 +6453,28 @@
     return "autumn";
   }
 
+  /** Term lines on a year INV-P: quantity × session price. Do not split the year 14/11/13. */
+  function seasonAmountsFromLineItems(inv) {
+    var items = Array.isArray(inv && inv.line_items) ? inv.line_items : [];
+    var out = { autumn: 0, spring: 0, summer: 0 };
+    items.forEach(function (it) {
+      if (!it || typeof it !== "object") return;
+      var blob = [it.description, it.detail].join(" ").toLowerCase();
+      var amt = Number(it.amount_gbp) || 0;
+      if (!(amt > 0)) return;
+      if (/autumn/.test(blob)) out.autumn += amt;
+      else if (/spring/.test(blob)) out.spring += amt;
+      else if (/summer/.test(blob)) out.summer += amt;
+    });
+    if (out.autumn > 0 && out.spring > 0 && out.summer > 0) {
+      out.autumn = Math.round(out.autumn * 100) / 100;
+      out.spring = Math.round(out.spring * 100) / 100;
+      out.summer = Math.round(out.summer * 100) / 100;
+      return out;
+    }
+    return null;
+  }
+
   function absorbCatalogSeasonTotals(row, inv) {
     if (!row || !inv) return;
     var season = reenrolInvoiceSeason(inv);
@@ -6453,6 +6484,16 @@
     if (crash > 0.009 && face > crash) {
       face = Math.round((face - crash) * 100) / 100;
     }
+    var fromSessions = seasonAmountsFromLineItems(inv);
+    if (fromSessions) {
+      row._sessionsSeason = true;
+      row._amountAutumn = fromSessions.autumn;
+      row._amountSpring = fromSessions.spring;
+      row._amountSummer = fromSessions.summer;
+      row._amountAnnual = Math.round((fromSessions.autumn + fromSessions.spring + fromSessions.summer) * 100) / 100;
+      return;
+    }
+
     var autumn = Number(inv.booked_autumn_gbp) || 0;
     var spring = Number(inv.booked_spring_gbp) || 0;
     var summer = Number(inv.booked_summer_gbp) || 0;
