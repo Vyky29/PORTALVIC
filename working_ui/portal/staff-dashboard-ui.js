@@ -1752,6 +1752,7 @@
           if(String(ov.status || 'active') !== 'active') return;
           if(String(ov.anchor_staff_id || '').trim().toLowerCase() !== sid) return;
           const t = String(ov.override_type || '').trim();
+          if(t === 'client_absence_announced') out.hasAbsentAnnounced = true;
           if(t === 'slot_update' || t === 'slot_close') out.hasUpdated = true;
           if(t === 'instructor_reassign'){
             if(portalStaffIsProgrammeLead()){

@@ -3253,6 +3253,18 @@
       const endStr = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(end) : '';
       return !!endStr && rowIso <= endStr;
     }
+    /** Absence alerts stay on the halo through the end of the term, not only the next 14 days. */
+    function portalAbsenceAlertWithinTerm(iso){
+      const rowIso = normaliseIsoDate(iso);
+      if(!rowIso) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(today) : '';
+      if(!todayStr || rowIso < todayStr) return false;
+      const termTo = typeof portalTermCalendarToIso === 'function' ? String(portalTermCalendarToIso() || '').slice(0, 10) : '';
+      if(/^\d{4}-\d{2}-\d{2}$/.test(termTo)) return rowIso <= termTo;
+      return portalOverrideRowIsWithinReminderHorizonSessionDate(rowIso);
+    }
     const PORTAL_QM_OVERRIDE_DISMISSED_KEY = 'portalQmOverrideDismissed_v1';
     function portalScheduleOverrideRowDismissKey(row){
       const id = String(row && row.id || '').trim();
@@ -4106,7 +4118,7 @@
           if(!nr || String(nr.override_type || '') !== 'client_absence_announced') continue;
           if(!portalScheduleOverrideRowAppliesToLoggedInStaff(nr)) continue;
           const niso = normaliseIsoDate(nr.session_date);
-          if(!niso || typeof portalOverrideRowIsWithinReminderHorizonSessionDate !== 'function' || !portalOverrideRowIsWithinReminderHorizonSessionDate(niso)) continue;
+          if(!niso || !portalAbsenceAlertWithinTerm(niso)) continue;
           if(!String(nr.anchor_client_id || '').trim()) continue;
           const nslot = portalOverrideAbsentQuickMenuSlotKey(nr);
           if(nslot) namedAbsentSlots[nslot] = true;
@@ -4117,7 +4129,13 @@
           const r = list[i];
           if(!r || !portalScheduleOverrideRowAppliesToLoggedInStaff(r)) continue;
           const iso = normaliseIsoDate(r.session_date);
-          if(!iso || typeof portalOverrideRowIsWithinReminderHorizonSessionDate !== 'function' || !portalOverrideRowIsWithinReminderHorizonSessionDate(iso)) continue;
+          const isAbsenceRow = String(r.override_type || '') === 'client_absence_announced';
+          if(!iso) continue;
+          if(isAbsenceRow){
+            if(!portalAbsenceAlertWithinTerm(iso)) continue;
+          }else if(typeof portalOverrideRowIsWithinReminderHorizonSessionDate !== 'function' || !portalOverrideRowIsWithinReminderHorizonSessionDate(iso)){
+            continue;
+          }
           /* Off that day: do not surface Admin Changes for what happens while away. */
           try{
             const awaySid = typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '';
