@@ -2692,17 +2692,17 @@
         f.client_name = "Tinashe Nekati";
         f._ealingIn = 0;
         if (bucket === "summer_2526") {
-          f.amount = 15369.06;
-          f.amount_billed = 15369.06;
-          f._amountPaid = 15369.06;
+          f.amount = 4646.46;
+          f.amount_billed = 4646.46;
+          f._amountPaid = 4646.46;
           f.amount_out = 0;
           f.payment_status = "Paid";
           f._officeTotalOnly = false;
           f._officeMonthLines = [
             { t: "Apr 2026 £714.84", paid: true },
-            { t: "May 2026 £5,718.72", paid: true },
-            { t: "Jun 2026 £5,718.72", paid: true },
-            { t: "Jul 2026 £3,216.78", paid: true },
+            { t: "May 2026 £1,429.68", paid: true },
+            { t: "Jun 2026 £1,429.68", paid: true },
+            { t: "Jul 2026 £1,072.26", paid: true },
           ];
         }
         rest.push(f);
