@@ -1177,6 +1177,8 @@
     if (!(received > 0)) return;
     var face = Number(r.amount) || 0;
     r._ealingIn = received;
+    r.amount = received;
+    r.amount_billed = received;
     r._amountPaid = received;
     if (key === "adaam" || key === "amaar" || key === "aydaan") {
       r.payment_status = "Paid";
@@ -1381,6 +1383,11 @@
   function amountCellHtml(r) {
     var julyPay = ealingJulyPaymentGbp(r);
     var ealingCreditBal = ealingCreditBalanceGbp(r);
+    /* Office Ealing total replaces the old credit line. One figure only. */
+    if (r && Number(r._ealingIn) > 0) {
+      julyPay = 0;
+      ealingCreditBal = 0;
+    }
     var termAmt = Number(r.amount) || 0;
     var main = money(r.amount);
     var yearAmt = resolveYearProgrammeGbp(r);
@@ -3835,10 +3842,12 @@
       var days = collectDayTokensFromText(line);
       var time = normalizeSessionTimeRange(line) || extractTimeFromText(line) || "";
       time = normalizeSessionTimeRange(time) || time;
-      var key = kind && dur
-        ? (dur + "|" + kind + "|" + (time || "").toLowerCase().replace(/\s+/g, ""))
+      var dayKey = (days[0] || "").toLowerCase();
+      var timeKey = (time || "").toLowerCase().replace(/\s+/g, "");
+      var key = kind
+        ? (kind + "|" + timeKey + "|" + dayKey)
         : ("raw:" + line.toLowerCase().replace(/\s+/g, " "));
-      var score = (days.length ? 4 : 0) + (time ? 2 : 0) + Math.min(line.length, 80) * 0.01;
+      var score = (dur ? 8 : 0) + (days.length ? 4 : 0) + (time ? 2 : 0) + Math.min(line.length, 80) * 0.01;
       if (!groups[key]) {
         groups[key] = { line: line, dur: dur, kind: kind, days: days, time: time, score: score };
         order.push(key);
