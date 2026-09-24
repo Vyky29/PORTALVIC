@@ -35,7 +35,7 @@
     {
       id: "summer_2526",
       title: "Summer 25/26",
-      subtitle: "Term sessions · Jul crash courses · May–Jul billing",
+      subtitle: "Term Sessions - April to Jul bill",
     },
     {
       id: "autumn_2627",
