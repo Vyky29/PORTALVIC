@@ -1011,6 +1011,19 @@
           const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
           add(portalIsoYmdFromDate(d));
         }
+        /* Term grid paints absence rims before the day is opened. The near window
+           stops at +21/+35, so later term absences stayed blank until that day was tapped. */
+        try{
+          const termTo = typeof portalTermCalendarToIso === 'function' ? String(portalTermCalendarToIso() || '').slice(0, 10) : '';
+          if(/^\d{4}-\d{2}-\d{2}$/.test(termTo)){
+            const cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate() + fwd + 1);
+            const end = new Date(termTo + 'T12:00:00');
+            while(cursor <= end){
+              add(portalIsoYmdFromDate(cursor));
+              cursor.setDate(cursor.getDate() + 1);
+            }
+          }
+        }catch(_termFwd){}
       }catch(_){}
       try{
         const extra = opts.extraIsos;
@@ -6200,7 +6213,18 @@
       const todayOffEarly = awayOffEarly || !!(id && liveToday
         && typeof portalStaffTodayBlockIsOff === 'function'
         && portalStaffTodayBlockIsOff(id));
-      if(todayOffEarly && !portalStaffHasDutySessionAdd(id, selectedIso)){
+      if(todayOffEarly){
+        var dutyOverridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
+        var hasDutyToday = dutyOverridesReady && portalStaffHasDutySessionAdd(id, selectedIso);
+        if(!dutyOverridesReady){
+          dashboardData.portalTodayEmptyPanelMode = 'sync';
+          dashboardData.portalTodayNextSessionPreview = null;
+          dashboardData.today = [];
+          portalApplyTodayVenueMeta();
+          if(typeof portalStaffScheduleTodaySyncRetry === 'function') portalStaffScheduleTodaySyncRetry();
+          return [];
+        }
+        if(!hasDutyToday){
         let emptyPanelMode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
           ? portalStaffLiveTodayEmptyPanelMode(id, { loading: dashboardData.portalIdentityResolved === false })
           : 'off';
@@ -6226,6 +6250,7 @@
           dashboardData.portalTodayNextSessionPreview = null;
         }
         return [];
+        }
       }
       let rows = [];
       try{
@@ -6363,9 +6388,15 @@
           }
         }
       }
+      if(todayOff && rows.length){
+        dashboardData.portalTodayEmptyPanelMode = '';
+        dashboardData.portalTodaySectionMode = 'today';
+        dashboardData.portalTodayNextSessionPreview = null;
+      }
       let showLiveEmptyPanel = liveToday
         && dashboardData.portalIdentityResolved !== false
-        && (todayOff || (!rows.length && emptyPanelMode !== 'sync'));
+        && !rows.length
+        && (todayOff || emptyPanelMode !== 'sync');
       if(showLiveEmptyPanel && todayOff && !rows.length){
         if(!rosterReady){
           dashboardData.portalTodayNextSessionPreview = null;
