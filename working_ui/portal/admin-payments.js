@@ -2788,24 +2788,44 @@
    * ACAT Day Centre (Jack S / Jack W / Kate / Kamy) — Mon aquatic (summer) or
    * Tue Day Centre Hub (autumn board). Prefer Cohort/Stream over roster enrich.
    */
-  /** Tue 11–12 Day Centre ACAT (Jack S, Jack W, Kate, Kamy). Autumn invoice is £700. */
-  function isAcatTueDayCentreRow(r) {
-    if (!r) return false;
-    var slug = paymentParticipantSlug(r);
-    if (slug !== "jacks" && slug !== "jackw" && slug !== "kate" && slug !== "kamy") return false;
-    var blob = rowServiceBlob(r);
-    return /\btue/.test(blob) && /day\s*centre|11/.test(blob);
+  /** Who this Tue ACAT row is. Parent wins, because the child name was stamped as Kamy. */
+  function acatTuePerson(r) {
+    var parent = String((r && r.parent_name) || "").toLowerCase();
+    var name = String((r && r.client_name) || "").toLowerCase();
+    if (parent.indexOf("veronica") >= 0 || name.indexOf("stratton") >= 0) return "jacks";
+    if ((parent.indexOf("francesca") >= 0 && parent.indexOf("walker") >= 0) || name.indexOf("jack walker") >= 0) return "jackw";
+    if (parent.indexOf("maire") >= 0 || parent.indexOf("fordham") >= 0 || name.indexOf("kate") >= 0) return "kate";
+    if (parent.indexOf("faryaneh") >= 0 || name.indexOf("kamy") >= 0) return "kamy";
+    return "";
   }
 
-  /** Office invoices: Kate, Jack S and Jack W paid £700. Kamy paid £350 of £700. */
+  /** Tue 11–12 Day Centre ACAT. Autumn invoice is £700. Not the Monday £750 catalogue. */
+  function isAcatTueDayCentreRow(r) {
+    if (!r || termBucketFor(r) !== "autumn_2627") return false;
+    if (!acatTuePerson(r)) return false;
+    var blob = (rowServiceBlob(r) + " " + String((r.data && r.data.Services) || "")).toLowerCase();
+    return /\btue/.test(blob) && /day\s*centre/.test(blob);
+  }
+
+  /** Kate, Jack S and Jack W paid £700. Kamy paid £350 of £700. Autumn only. */
   function applyOfficeAcatTueAutumn(r) {
-    if (!isAcatTueDayCentreRow(r) || termBucketFor(r) !== "autumn_2627") return;
-    var slug = paymentParticipantSlug(r);
+    if (!isAcatTueDayCentreRow(r)) return;
+    var who = acatTuePerson(r);
+    var names = {
+      jacks: "Jack Stratton (ACAT)",
+      jackw: "Jack Walker (ACAT)",
+      kate: "Kate Fordham (ACAT)",
+      kamy: "Kamy Akhavan (ACAT)",
+    };
+    if (names[who]) r.client_name = names[who];
     r.amount = 700;
     r.amount_billed = 700;
     r._amountAutumn = 700;
+    r._amountSpring = 0;
+    r._amountSummer = 0;
+    r._amountAnnual = 700;
     r.amount_out = 0;
-    if (slug === "kamy") {
+    if (who === "kamy") {
       r._amountPaid = 350;
       r.amount_out = 350;
       r.payment_status = "Partial";
