@@ -1098,7 +1098,46 @@
       }
     }
     applyOfficeSummerNhsSettlement(r);
+    applyOfficeEalingSummerIn(r);
     return r;
+  }
+
+  /** Ealing receipts into Afterschool Summer 2026, summed per child. */
+  var EALING_SUMMER_IN = {
+    samer: 2361.42,
+    steven: 983.88,
+    tinashe: 13577.76,
+    amar_rai: 3935.52,
+    adaam: 2615.76,
+    amaar: 2615.76,
+    aydaan: 2615.76,
+  };
+
+  function applyOfficeEalingSummerIn(r) {
+    if (!r || r._crash || !isSummerTermRow(r)) return;
+    if (isDayCentreRow(r)) return;
+    var slug = paymentParticipantSlug(r);
+    var name = String((r && r.client_name) || "").toLowerCase();
+    var key = slug;
+    if (slug.indexOf("samer") === 0 || name.indexOf("samer") >= 0) key = "samer";
+    else if (slug.indexOf("steven") === 0 || name.indexOf("steven") >= 0) key = "steven";
+    else if (slug.indexOf("tinashe") === 0 || name.indexOf("tinashe") >= 0) key = "tinashe";
+    else if (slug.indexOf("adaam") === 0 || slug.indexOf("aadam") === 0 || name.indexOf("adaam") >= 0 || name.indexOf("aadam") >= 0) key = "adaam";
+    else if (slug.indexOf("amaar") === 0 || name.indexOf("amaar") >= 0) key = "amaar";
+    else if (slug.indexOf("aydaan") === 0 || name.indexOf("aydaan") >= 0) key = "aydaan";
+    else if (slug === "amar_rai" || name.indexOf("amar-rai") >= 0 || name.indexOf("amar rai") >= 0 || name.indexOf("sandhir") >= 0) key = "amar_rai";
+    var received = EALING_SUMMER_IN[key];
+    if (!(received > 0)) return;
+    var face = Number(r.amount) || 0;
+    r._ealingIn = received;
+    r._amountPaid = received;
+    if (face > 0 && received + 0.009 >= face) {
+      r.payment_status = "Paid";
+      r.amount_out = 0;
+    } else if (face > 0) {
+      r.payment_status = "Partial";
+      r.amount_out = Math.round((face - received) * 100) / 100;
+    }
   }
 
   /**
