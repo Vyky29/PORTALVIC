@@ -9812,12 +9812,76 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return out;
   };
 
+  /**
+   * Register, every date: one Day Centre line per participant. The line carries the
+   * full hours and every instructor on that child's blocks that day.
+   */
+  function registerDayCentreMergedSlot(hub, iso, clientName) {
+    var day = clean(iso).slice(0, 10);
+    var cid = canonicalClientSlug(clientName);
+    if (!day || !cid || !hub || typeof hub.expandSlotsForDate !== "function") return null;
+    var slots = (hub.expandSlotsForDate(day) || []).filter(function (s) {
+      return (
+        s &&
+        isDayCentreService(s.service) &&
+        canonicalClientSlug(s.client_name) === cid &&
+        !shouldOmitOverviewSlot(hub, s) &&
+        !isTeflonDemoRosterSlot(s)
+      );
+    });
+    if (!slots.length) return null;
+    return (
+      pickRepresentativeSlotForUnit({ key: day + "|" + cid + "|day_centre", slots: slots }) ||
+      slots[0]
+    );
+  }
+
+  AdminSessionsHub.prototype.collapseRegisterDayCentreFeedbackRows = function (rows, iso) {
+    var hub = this;
+    var day = clean(iso).slice(0, 10);
+    var seen = Object.create(null);
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      if (!row) continue;
+      var slot = row._ashAwaitingSlot ? row.slot : row._ashDisplaySlot;
+      var svc = (slot && slot.service) || row.service || "";
+      var name = (slot && slot.client_name) || row.client_name || "";
+      var rowDay =
+        (slot && clean(slot.session_date).slice(0, 10)) ||
+        hub.feedbackRowDate(row) ||
+        feedbackSessionDate(row) ||
+        day;
+      if (!isDayCentreService(svc)) {
+        out.push(row);
+        continue;
+      }
+      var key = rowDay + "|" + canonicalClientSlug(name);
+      var merged = registerDayCentreMergedSlot(hub, rowDay, name);
+      if (seen[key] != null) {
+        var prev = out[seen[key]];
+        if (prev && prev._ashAwaitingSlot && !row._ashAwaitingSlot && merged) {
+          out[seen[key]] = hub.feedbackRowWithDisplaySlot(row, merged);
+        }
+        continue;
+      }
+      seen[key] = out.length;
+      if (!merged) {
+        out.push(row);
+        continue;
+      }
+      if (row._ashAwaitingSlot) out.push({ _ashAwaitingSlot: true, slot: merged });
+      else out.push(hub.feedbackRowWithDisplaySlot(row, merged));
+    }
+    return out;
+  };
+
   /** Feedback tab: submitted rows for the selected day (+ optional awaiting slots). */
   AdminSessionsHub.prototype.feedbackRowsForSelectedDay = function () {
     var hub = this;
     var day = clean(this.selectedDay);
     if (!day) return [];
-    var rows = this.feedbackRegisterRowsForDay(day);
+    var rows = this.collapseRegisterDayCentreFeedbackRows(this.feedbackRegisterRowsForDay(day), day);
     var q = clean(this.clientSearch);
     var inst = clean(this.instructorFilter);
     if (!q && !inst && !this.feedbackNoteFilter) return rows;
@@ -10145,8 +10209,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             }) || dcSlots[0];
         }
       }
-      var dcTeam = dcSlot ? feedbackWhoOwesInstructors(hub, dcSlot) : [];
-      if (!dcTeam.length && dcSlot) dcTeam = slotInstructors(dcSlot);
+      var dcTeam = dcSlot ? slotInstructors(dcSlot) : [];
+      if (!dcTeam.length && dcSlot) dcTeam = feedbackWhoOwesInstructors(hub, dcSlot);
       var dcSubmitter = clean(fb.completed_by_name);
       if (dcSubmitter) {
         var dcHasSubmitter = false;
