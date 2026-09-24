@@ -26,17 +26,57 @@ function formatGbp(n: number | null | undefined): string {
   return "£" + money(Number(n)).toFixed(2);
 }
 
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function weekdayFromIso(iso: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+  const [y, m, d] = iso.split("-").map((x) => Number(x));
+  return WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] || "";
+}
+
+function dmy(iso: string): string {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
+}
+
+function isTimeBit(s: string): boolean {
+  return /\d{1,2}[.:]\d{2}/.test(s) || /\d{1,2}\s*(to|-)\s*\d{1,2}/i.test(s);
+}
+
+function isDateBit(s: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) || /^\d{2}-\d{2}-\d{4}$/.test(s);
+}
+
+function isWeekdayBit(s: string): boolean {
+  return /^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i.test(s);
+}
+
 function sessionLabel(report: {
   service_label?: unknown;
   session_date?: unknown;
   session_time?: unknown;
 }): string {
-  const bits = [
-    clean(report.service_label, 160),
-    clean(report.session_date, 12),
-    clean(report.session_time, 40),
-  ].filter(Boolean);
-  return bits.join(" · ") || "session";
+  const date = clean(report.session_date, 12);
+  const time = clean(report.session_time, 40);
+  const parts = clean(report.service_label, 160)
+    .split(/\s*·\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  while (parts.length) {
+    const last = parts[parts.length - 1];
+    if (isTimeBit(last) || isWeekdayBit(last) || isDateBit(last)) {
+      parts.pop();
+      continue;
+    }
+    break;
+  }
+  const when: string[] = [];
+  const wd = weekdayFromIso(date);
+  const pretty = dmy(date);
+  if (wd && pretty) when.push(`${wd} ${pretty}`);
+  else if (pretty) when.push(pretty);
+  if (time) when.push(time);
+  return [...parts, ...when].filter(Boolean).join(" · ") || "session";
 }
 
 export type AbsenceOutcomeNotifyResult = {
