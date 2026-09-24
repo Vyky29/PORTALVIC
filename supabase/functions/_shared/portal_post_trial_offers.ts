@@ -14,6 +14,7 @@ import {
   sendParentEmailViaSmtp,
   sendParentMessageViaWhatsapp,
 } from "./portal_parent_messaging.ts";
+import { finishBookingUrl, mintFinishBookingToken } from "./portal_booking_finish.ts";
 
 const BOOKING_PORTAL_FALLBACK = "https://www.clubsensational.org/bookingportal";
 
@@ -94,14 +95,13 @@ export function londonDateTimeToUtcIso(
 ): string {
   // Build a UTC guess then adjust using London parts (handles BST).
   const [y, mo, d] = isoDate.split("-").map(Number);
-  let utc = Date.UTC(y, mo - 1, d, hour, minute, 0);
-  for (let i = 0; i < 3; i++) {
+  const wantMs = Date.UTC(y, mo - 1, d, hour, minute, 0);
+  let utc = wantMs;
+  for (let i = 0; i < 4; i++) {
     const p = londonParts(new Date(utc));
-    const wantMin = hour * 60 + minute;
-    const gotMin = p.hour * 60 + p.minute;
-    const dayDrift =
-      p.isoDate < isoDate ? -1 : p.isoDate > isoDate ? 1 : 0;
-    utc += (wantMin - gotMin) * 60_000 + dayDrift * 24 * 60 * 60 * 1000;
+    if (p.isoDate === isoDate && p.hour === hour && p.minute === minute) break;
+    const gotMs = Date.UTC(p.y, p.m - 1, p.day, p.hour, p.minute, 0);
+    utc += wantMs - gotMs;
   }
   return new Date(utc).toISOString();
 }
@@ -191,10 +191,6 @@ async function mintPostTrialTermFinishLink(
       .ilike("notes", "%booking_kind=trial%");
   }
 
-  // Dynamic import avoids circular dependency with portal_booking_finish.ts
-  const { mintFinishBookingToken, finishBookingUrl } = await import(
-    "./portal_booking_finish.ts"
-  );
   let minted: { tokenId: string; rawToken: string };
   try {
     minted = await mintFinishBookingToken(admin, {
@@ -338,12 +334,14 @@ async function sendOfferWhatsapp(
     .filter(Boolean)
     .join(" · ");
   const sessionDate = clean(String(offer.trial_session_date || ""), 12);
+  const deadlineIso = clean(String(offer.deadline_at || ""), 40);
+  const deadlineLondon = deadlineIso ? londonParts(new Date(deadlineIso)).isoDate : sessionDate;
   const body = buildOfferBody({
     first: firstName(String(offer.parent_name || "")),
     child: child.split(/\s+/)[0] || child,
     trialLabel,
     slotLabel: slotLabel || trialLabel,
-    deadlineLabel: `tonight (${sessionDate}, end of day)`,
+    deadlineLabel: `end of ${deadlineLondon || sessionDate}`,
     finishUrl: minted.url,
     wave,
   });
@@ -668,6 +666,22 @@ export async function runPostTrialOffersMaintenance(
           london.hour * 60 + london.minute >= endMin + 5);
 
       if (!offer.wave1_sent_at && sessionEnded) {
+        if (london.isoDate > sessionDate) {
+          const extended = trialDeadlineUtcIso(london.isoDate);
+          offer.deadline_at = extended;
+          await admin
+            .from("portal_post_trial_offers")
+            .update({ deadline_at: extended, updated_at: now.toISOString() })
+            .eq("id", offer.id);
+          const holdId = clean(offer.soft_hold_reservation_id, 80);
+          if (holdId) {
+            await admin
+              .from("portal_booking_slot_reservations")
+              .update({ hold_expires_at: extended, updated_at: now.toISOString() })
+              .eq("id", holdId)
+              .neq("status", "released");
+          }
+        }
         const sent = await sendOfferWhatsapp(admin, offer, 1);
         if (sent.ok) {
           await admin
@@ -682,15 +696,8 @@ export async function runPostTrialOffersMaintenance(
         }
       }
 
-      const after20 =
-        london.isoDate > sessionDate ||
-        (london.isoDate === sessionDate && london.hour >= 20);
-      if (
-        offer.wave1_sent_at &&
-        !offer.wave2_sent_at &&
-        after20 &&
-        sessionDate <= london.isoDate
-      ) {
+      const after20 = london.isoDate === sessionDate && london.hour >= 20;
+      if (offer.wave1_sent_at && !offer.wave2_sent_at && after20) {
         const sent = await sendOfferWhatsapp(admin, offer, 2);
         if (sent.ok) {
           await admin
@@ -722,7 +729,7 @@ export async function runPostTrialOffersMaintenance(
       }
     } catch (e) {
       stats.errors += 1;
-      console.warn("[post-trial] offer", offer.id, e);
+      console.warn("[post-trial] offer", rawOffer && rawOffer.id, e);
     }
   }
   return stats;

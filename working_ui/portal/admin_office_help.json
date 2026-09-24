@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23-v22",
+  "version": "2026-09-24-v23",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -324,11 +324,13 @@
             "Family completes finish-booking payment (Stripe or bank confirm).",
             "Ops sync folds MADRE + trial schedule_overrides (+ dated roster row).",
             "Open Sessions Overview on the first session date — the child should appear.",
-            "If missing, check payment status and Schedule & Covers / overrides for that date."
+            "If missing, check payment status and Schedule & Covers / overrides for that date.",
+            "After the trial ends, the parent is sent a term finish link for the same place. They have until the end of that day. No reply releases the place."
           ],
           "tips": [
             "Do not put suitability wording on pay links.",
-            "Aquatic: one override per 30-minute half, not one 60-minute band."
+            "Aquatic: one override per 30-minute half, not one 60-minute band.",
+            "The term link is automatic. Reply FREE releases the place. A different slot is a reply to the office, not a new trial."
           ]
         },
         {
