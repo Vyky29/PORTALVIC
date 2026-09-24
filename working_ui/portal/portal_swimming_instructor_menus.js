@@ -664,7 +664,7 @@
       sessionPlanOnly
         ? ["topbarToolCellSessionPlanner", "topbarToolSessionPlanner"]
         : SWIMMING_PLANNER_IDS,
-      sessionPlanOnly || !!profile.planner,
+      sessionPlanOnly ? false : !!profile.planner,
       { visible: sessionPlanOnly || !!profile.planner },
     );
     global.__PORTAL_SESSION_PLAN_SHEET__ = sessionPlanOnly;
