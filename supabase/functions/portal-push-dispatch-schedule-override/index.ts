@@ -23,6 +23,7 @@ const ELIGIBLE = new Set([
   "slot_clear_client",
   "slot_close",
   "client_cancelled",
+  "session_add",
 ]);
 
 function rosterKeyFromProfile(username: string, fullName: string): string {
@@ -194,6 +195,29 @@ function pushCopy(
       body:
         "A closed block was reopened on your roster. Open that day in the portal to review your schedule.",
     };
+  }
+  if (t === "session_add") {
+    const pl = record ? payloadObj(record) : {};
+    const kind = String(pl.kind || record?.anchor_client_id || "").trim().toLowerCase();
+    const when = record ? String(record.anchor_time_slot_label || "").trim() : "";
+    const venue = record ? String(record.anchor_venue || "").trim() : "";
+    const who = String(pl.client_name || pl.to_client_name || "").trim();
+    let title = "New session";
+    let what = who ? `${who} was added to your day` : "A session was added to your day";
+    if (kind === "training") {
+      title = "Training";
+      what = "A training session was added to your day";
+    } else if (kind === "shadowing") {
+      title = "Shadowing";
+      what = "A shadowing session was added to your day";
+    } else if (kind === "meeting") {
+      title = "Meeting";
+      what = "A meeting was added to your day";
+    }
+    const bits = [what];
+    if (when) bits.push(when);
+    if (venue) bits.push(venue);
+    return { title: title, body: bits.join(" · ") + "." };
   }
   if (t === "instructor_reassign") {
     const when = record

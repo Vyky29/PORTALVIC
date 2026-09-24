@@ -6144,8 +6144,8 @@
         if(!ov || String(ov.status || 'active') !== 'active') return false;
         if(String(ov.override_type || '') !== 'session_add') return false;
         if(norm(ov.anchor_staff_id) !== want) return false;
-        const k = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
-        return k === 'training' || k === 'meeting' || k === 'shadowing';
+        const k = String(ov.payload && ov.payload.kind || ov.anchor_client_id || '').trim().toLowerCase();
+        return k === 'training' || k === 'meeting' || k === 'shadowing' || k === 'session' || k === 'client' || k === 'office';
       });
     }
     function portalBuildTodayNextSessionPreview(staffId){
@@ -6299,8 +6299,8 @@
           if(cid === 'training' || cid === 'meeting' || cid === 'shadowing') return true;
           const ov = row && row.__portalScheduleOverride;
           if(!ov || String(ov.override_type || '').trim() !== 'session_add') return false;
-          const k = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
-          return k === 'training' || k === 'meeting' || k === 'shadowing';
+          const k = String(ov.payload && ov.payload.kind || ov.anchor_client_id || '').trim().toLowerCase();
+          return k === 'training' || k === 'meeting' || k === 'shadowing' || k === 'session' || k === 'client' || k === 'office';
         });
       }
       const rosterReady = portalStaffRosterReadyForNextSessionPreview();

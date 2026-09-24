@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-24-v29",
+  "version": "2026-09-24-v30",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -160,7 +160,7 @@
             "Open the line + Add session card. It sits above the table and starts closed.",
             "Type: Session. Pick Staff, Participant, Service, Start, End and Venue.",
             "Press Add card. One card per slice of hours. Repeat for each extra person or time band.",
-            "Check Sessions Overview for that date. The new cards should show next to the seats you did not touch."
+            "Check Sessions Overview for that date. The card shows even when that person does not normally work the day. It also shows on their Staff Today, and they get a schedule alert."
           ],
           "tips": [
             "Change Instructor replaces the person on that row. Use Add session card when someone already on the board picks up extra hours, or when one seat must split between two people.",
