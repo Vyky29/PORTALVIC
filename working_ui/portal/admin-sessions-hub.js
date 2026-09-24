@@ -5485,6 +5485,39 @@
   }
 
   /**
+   * Register only. Overview and Schedule & Covers keep one row per instructor block
+   * (Day Centre kids move between workers). Register is one line per participant per day:
+   * full hours (11 to 4) and every instructor who worked with them. Any of them can submit.
+   */
+  function collapseRegisterDayCentreSlots(slots) {
+    var groups = Object.create(null);
+    var order = [];
+    var i;
+    for (i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      var uk = clean(feedbackUnitKey(s));
+      if (!s || !isDayCentreService(s.service) || uk.indexOf("|day_centre") < 0) {
+        order.push(s);
+        continue;
+      }
+      if (!groups[uk]) {
+        groups[uk] = { idx: order.length, slots: [] };
+        order.push(null);
+      }
+      groups[uk].slots.push(s);
+    }
+    Object.keys(groups).forEach(function (uk) {
+      var g = groups[uk];
+      order[g.idx] = pickRepresentativeSlotForUnit({ key: uk, slots: g.slots }) || g.slots[0];
+    });
+    var out = [];
+    for (i = 0; i < order.length; i++) {
+      if (order[i]) out.push(order[i]);
+    }
+    return out;
+  }
+
+  /**
    * Yusuf / Zaid / Cyrus swim merges: one overview row covering Aquatic + Multi
    * (e.g. Zaid trial 9–9.30 folds into Multi display 9–10.15). One feedback still
    * validates both bands via sundayFeedbackMerges.
@@ -9625,6 +9658,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     function isUsed(fb) {
       return fb && !fb._ashAwaitingSlot && used[hub.fbRowKey(fb)];
     }
+    function markDayCentreSiblingsUsed(slot) {
+      if (!slot || !isDayCentreService(slot.service)) return;
+      var cid = canonicalClientSlug(slot.client_name);
+      if (!cid) return;
+      for (var di = 0; di < submitted.length; di++) {
+        var sib = submitted[di];
+        if (!sib || canonicalClientSlug(sib.client_name) !== cid) continue;
+        if (!isDayCentreService(sib.service) && !feedbackFitsSlot(sib, slot)) continue;
+        markUsed(sib);
+      }
+    }
 
     var slots = hub.expandSlotsForDate(day);
     var units = hub.getFeedbackUnitsForDate(day);
@@ -9634,18 +9678,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
       unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
     }
-    var displaySlots = hub.sortOverviewSlotsForDisplay(
-      overviewDisplaySlotsFromUnits(
-        hub,
-        slots.filter(function (s) {
-          if (shouldOmitOverviewSlot(hub, s)) return false;
-          if (isTeflonDemoRosterSlot(s)) return false;
-          if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
-          return true;
-        })
-      ),
-      unitComplete,
-      unitAbsent
+    var displaySlots = collapseRegisterDayCentreSlots(
+      hub.sortOverviewSlotsForDisplay(
+        overviewDisplaySlotsFromUnits(
+          hub,
+          slots.filter(function (s) {
+            if (shouldOmitOverviewSlot(hub, s)) return false;
+            if (isTeflonDemoRosterSlot(s)) return false;
+            if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
+            return true;
+          })
+        ),
+        unitComplete,
+        unitAbsent
+      )
     );
 
     var out = [];
@@ -9689,8 +9735,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           }
         }
         if (afb && !isUsed(afb)) {
-          out.push(afb);
+          out.push(
+            isDayCentreService(slot.service) ? hub.feedbackRowWithDisplaySlot(afb, slot) : afb
+          );
           markUsed(afb);
+          if (isDayCentreService(slot.service)) markDayCentreSiblingsUsed(slot);
         } else if (isCancelledSubmitted) {
           var synthCan = hub.syntheticCancellationDisplayRow(slot);
           if (synthCan) {
@@ -9706,11 +9755,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         continue;
       }
-      if (hub.slotFeedbackComplete(slot)) {
+      if (hub.slotFeedbackComplete(slot) || (isDayCentreService(slot.service) && unitComplete[ukey])) {
         var fb = hub.findFeedbackForSlot(slot);
         if (fb && !isUsed(fb)) {
-          out.push(fb);
+          out.push(
+            isDayCentreService(slot.service) ? hub.feedbackRowWithDisplaySlot(fb, slot) : fb
+          );
           markUsed(fb);
+          if (isDayCentreService(slot.service)) markDayCentreSiblingsUsed(slot);
         }
         continue;
       }
@@ -9734,6 +9786,21 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           }
         }
         if (orphanDup) continue;
+      }
+      if (isDayCentreService(submitted[j].service)) {
+        var dcCid = canonicalClientSlug(submitted[j].client_name);
+        var dcAlready = false;
+        for (var dj = 0; dj < out.length; dj++) {
+          var shownDc = out[dj];
+          var shownSlot = shownDc && shownDc._ashAwaitingSlot ? shownDc.slot : shownDc && shownDc._ashDisplaySlot;
+          var shownName = (shownSlot && shownSlot.client_name) || (shownDc && shownDc.client_name);
+          var shownSvc = (shownSlot && shownSlot.service) || (shownDc && shownDc.service);
+          if (canonicalClientSlug(shownName) === dcCid && isDayCentreService(shownSvc)) {
+            dcAlready = true;
+            break;
+          }
+        }
+        if (dcAlready) continue;
       }
       out.push(submitted[j]);
       markUsed(submitted[j]);
