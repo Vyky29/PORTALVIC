@@ -1230,6 +1230,15 @@
       const mod = tone === 'training' ? 'training' : 'meeting';
       const cls = 'portal-session-slot-chip portal-session-slot-chip--' + mod;
       let out = '';
+      if(tone === 'training' && (group || directors.length)){
+        const who = directors.map(function(n){
+          return String(n || '').replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+        }).filter(Boolean).join(', ');
+        const line = who && group ? (who + ' (' + group + ')') : (who || group);
+        const esc = escapeHtml(line);
+        if(!esc) return '';
+        return '<div class="session-meeting-chip-row"><span class="' + cls + '" aria-label="' + esc + '"><span>' + esc + '</span></span></div>';
+      }
       if(group){
         const g = escapeHtml(group);
         out += '<div class="session-meeting-chip-row"><span class="' + cls + '" aria-label="' + g + '"><span>' + g + '</span></span></div>';

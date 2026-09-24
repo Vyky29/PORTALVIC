@@ -4850,7 +4850,8 @@
         // Corporate-yellow while scheduled; turns green with a "Completed" chip once the slot has ended.
         const trainingEnded = (typeof tts.sessionEndTs === 'number' && Date.now() > tts.sessionEndTs);
         const locRaw = String(ov.payload && ov.payload.location || '').trim().toLowerCase();
-        const areaNote = portalSessionAddAreaNoteLabel(locRaw);
+        let areaNote = portalSessionAddAreaNoteLabel(locRaw);
+        if(!areaNote && /online/i.test(String(ov.anchor_venue || ''))) areaNote = 'Online';
         const peopleChips = (kind === 'meeting' || kind === 'training') ? [] : portalSessionAddPeopleChips(kind, ov.payload, ov, sessionDateKey);
         const meetingDetail = kind === 'meeting'
           ? portalSessionAddMeetingDetail(ov.payload)
@@ -6121,6 +6122,19 @@
         participants: participants
       };
     }
+    function portalStaffHasDutySessionAdd(staffId, iso){
+      if(!iso || typeof portalScheduleOverrideRowsForSessionIso !== 'function') return false;
+      const norm = function(v){ return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, ''); };
+      const want = norm(staffId);
+      if(!want) return false;
+      return portalScheduleOverrideRowsForSessionIso(iso).some(function(ov){
+        if(!ov || String(ov.status || 'active') !== 'active') return false;
+        if(String(ov.override_type || '') !== 'session_add') return false;
+        if(norm(ov.anchor_staff_id) !== want) return false;
+        const k = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
+        return k === 'training' || k === 'meeting' || k === 'shadowing';
+      });
+    }
     function portalBuildTodayNextSessionPreview(staffId){
       const id = String(staffId || '').trim().toLowerCase();
       if(!id) return null;
@@ -6186,7 +6200,7 @@
       const todayOffEarly = awayOffEarly || !!(id && liveToday
         && typeof portalStaffTodayBlockIsOff === 'function'
         && portalStaffTodayBlockIsOff(id));
-      if(todayOffEarly){
+      if(todayOffEarly && !portalStaffHasDutySessionAdd(id, selectedIso)){
         let emptyPanelMode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
           ? portalStaffLiveTodayEmptyPanelMode(id, { loading: dashboardData.portalIdentityResolved === false })
           : 'off';
@@ -6254,7 +6268,16 @@
         && portalStaffDayOffIsTimeOffRequested(selectedIso, id)){
         dashboardData.portalTodayEmptyPanelMode = 'off_time_requested';
       }
-      if(todayOff) rows = [];
+      if(todayOff){
+        rows = rows.filter(function(row){
+          const cid = String(row && row.clientId || '').trim().toLowerCase();
+          if(cid === 'training' || cid === 'meeting' || cid === 'shadowing') return true;
+          const ov = row && row.__portalScheduleOverride;
+          if(!ov || String(ov.override_type || '').trim() !== 'session_add') return false;
+          const k = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
+          return k === 'training' || k === 'meeting' || k === 'shadowing';
+        });
+      }
       const rosterReady = portalStaffRosterReadyForNextSessionPreview();
       if(liveToday && id && dashboardData.portalIdentityResolved !== false && rosterReady){
         portalRefreshNextSessionPreview(id);
@@ -6343,7 +6366,7 @@
       let showLiveEmptyPanel = liveToday
         && dashboardData.portalIdentityResolved !== false
         && (todayOff || (!rows.length && emptyPanelMode !== 'sync'));
-      if(showLiveEmptyPanel && todayOff){
+      if(showLiveEmptyPanel && todayOff && !rows.length){
         if(!rosterReady){
           dashboardData.portalTodayNextSessionPreview = null;
           dashboardData.portalTodayEmptyPanelMode = 'sync';

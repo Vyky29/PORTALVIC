@@ -35,6 +35,14 @@
     "climbing-wall": { label: "Wall", cls: "session-area-note-icon--climbing-wall" },
     "day-center": { label: "Day Centre", cls: "session-area-note-icon--day-center" },
     bespoke: { label: "Bespoke", cls: "session-area-note-icon--bespoke" },
+    online: {
+      label: "Online",
+      cls: "session-area-note-icon--online",
+      svg:
+        SVG_HEAD +
+        '<rect x="3" y="4" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.75"/>' +
+        '<path d="M8 20h8M12 16v4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>',
+    },
     home: {
       label: "Home",
       cls: "session-area-note-icon--home",
@@ -90,6 +98,7 @@
     if (s.indexOf("day centre") >= 0 || s.indexOf("day center") >= 0) return "day-center";
     if (s === "bespoke") return "bespoke";
     if (s === "home" || s === "casa" || /client'?s?\s*home/.test(s)) return "home";
+    if (s === "online" || s === "zoom" || s === "teams") return "online";
     if (s === "swimming" || s === "swimming activity" || s === "aquatic activity") return "";
     return "";
   }
