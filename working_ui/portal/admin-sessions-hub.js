@@ -12390,6 +12390,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   function dayBoardResolveInstructorsForIso(insts, iso, slot) {
     var list = Array.isArray(insts) ? insts.slice() : [];
     if (!list.length) return list;
+    if (slot && slot.portalDutyPersonCard) return list;
     var joined = list.join("/");
     var svc = clean((slot && slot.service) || "");
     try {

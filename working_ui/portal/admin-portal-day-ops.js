@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260920-register-fast';
+  var PORTAL_DAY_OPS_BUILD = '20260924-patience-col';
   var venueReviewFilters = {
     venue: '',
     staff: '',
