@@ -483,6 +483,233 @@
         }
         hitsEl.innerHTML = '';
         hitsEl.hidden = true;
+        paintCreateSlots();
+      });
+    });
+  }
+
+  function normName(s) {
+    return String(s || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  function timeLabelToOffer(label) {
+    var s = String(label || '')
+      .replace(/\u2013|\u2014|–|—/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
+    var m = s.match(/(\d{1,2}(?:\.\d{1,2})?)\s*[-to]+\s*(\d{1,2}(?:\.\d{1,2})?)/i);
+    if (!m) return s;
+    return String(m[1]).replace(/^0+/, '') + ' to ' + String(m[2]).replace(/^0+/, '');
+  }
+
+  function nextIsoForWeekday(dayName) {
+    var map = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+    var want = map[String(dayName || '').toLowerCase()];
+    if (want == null) return '';
+    var d = new Date();
+    var add = (want - d.getDay() + 7) % 7;
+    if (add === 0) add = 7;
+    d.setDate(d.getDate() + add);
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  function upcomingWeekdayDates(dayName, count) {
+    var first = nextIsoForWeekday(dayName);
+    if (!first) return [];
+    var d = new Date(first + 'T12:00:00');
+    var out = [];
+    var i;
+    for (i = 0; i < count; i++) {
+      var y = d.getFullYear();
+      var m = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      out.push(y + '-' + m + '-' + day);
+      d.setDate(d.getDate() + 7);
+    }
+    return out;
+  }
+
+  function prettyMakeupDate(iso) {
+    var p = String(iso || '').split('-');
+    if (p.length !== 3) return iso;
+    var names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var dt = new Date(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2])));
+    return names[dt.getUTCDay()] + ' ' + p[2] + '-' + p[1] + '-' + p[0];
+  }
+
+  function standingSeatForParticipant(displayName) {
+    var occ = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+    var by = occ && occ.bySlotId;
+    if (!by) return null;
+    var target = normName(displayName);
+    if (!target) return null;
+    var hit = null;
+    Object.keys(by).forEach(function (id) {
+      if (hit) return;
+      var slot = by[id] || {};
+      (slot.seatLines || []).forEach(function (line) {
+        if (hit) return;
+        if (String(line.kind || '') !== 'booked') return;
+        var cn = normName(line.client);
+        if (!cn) return;
+        if (cn === target || cn.indexOf(target) === 0 || target.indexOf(cn) === 0) {
+          hit = {
+            instructor: String(line.instructor || '').trim(),
+            venue: String(slot.venue || '').trim(),
+            service: String(slot.service || slot.programme || slot.serviceId || '').trim()
+          };
+        }
+      });
+    });
+    return hit;
+  }
+
+  function listOpenMakeupSlots(opts) {
+    opts = opts || {};
+    var venueFilter = String(opts.venue || '').trim().toLowerCase();
+    var preferInstr = normName(opts.preferInstructor || '');
+    var occ = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+    var by = occ && occ.bySlotId;
+    if (!by) return [];
+    var rows = [];
+    Object.keys(by).forEach(function (id) {
+      var slot = by[id] || {};
+      if (String(slot.phase || '').indexOf('week1') === 0) return;
+      if (String(slot.phase || '').indexOf('dated_') === 0) return;
+      if (Number(slot.openSeats || 0) < 1 && !(slot.openInstructors || []).length) return;
+      var venue = String(slot.venue || '').trim();
+      if (venueFilter && venue.toLowerCase() !== venueFilter) return;
+      var serviceMap = {
+        aquatic: 'Aquatic Activity',
+        physical: 'Physical Activity',
+        climbing: 'Climbing',
+        multi: 'Multi-activity',
+        bespoke: 'Bespoke',
+        day_centre: 'Day Centre'
+      };
+      var rawService = String(slot.service || slot.programme || slot.serviceName || slot.serviceId || '').trim();
+      var service = serviceMap[rawService] || rawService.replace(/[-_]+/g, ' ');
+      (slot.seatLines || []).forEach(function (line) {
+        if (String(line.kind || '') !== 'open') return;
+        var instr = String(line.instructor || '').trim();
+        if (!instr) return;
+        rows.push({
+          venue: venue,
+          day: String(slot.day || '').trim(),
+          timeLabel: String(slot.timeLabel || '').trim(),
+          service: service,
+          instructor: instr,
+          sameStanding: !!(preferInstr && normName(instr) === preferInstr)
+        });
+      });
+    });
+    rows.sort(function (a, b) {
+      if (a.sameStanding !== b.sameStanding) return a.sameStanding ? -1 : 1;
+      if (a.day !== b.day) return a.day < b.day ? -1 : 1;
+      return String(a.timeLabel).localeCompare(String(b.timeLabel));
+    });
+    return rows;
+  }
+
+  function paintCreateSlots() {
+    var venueEl = global.document.getElementById('ppMakeupCreateVenue');
+    var listEl = global.document.getElementById('ppMakeupCreateSlots');
+    var datesEl = global.document.getElementById('ppMakeupCreateDates');
+    if (!listEl || !state.pick) return;
+    var standing = standingSeatForParticipant(state.pick.display_name);
+    state.standing = standing;
+    var all = listOpenMakeupSlots({ preferInstructor: standing && standing.instructor });
+    var venues = [];
+    all.forEach(function (s) {
+      if (s.venue && venues.indexOf(s.venue) < 0) venues.push(s.venue);
+    });
+    venues.sort();
+    var preferVenue = standing && standing.venue && venues.indexOf(standing.venue) >= 0 ? standing.venue : venues[0] || '';
+    if (venueEl) {
+      var current = venueEl.value && venues.indexOf(venueEl.value) >= 0 ? venueEl.value : preferVenue;
+      venueEl.innerHTML = venues
+        .map(function (v) {
+          return '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(v) + '</option>';
+        })
+        .join('');
+    }
+    var venue = venueEl ? venueEl.value : preferVenue;
+    var slots = all.filter(function (s) {
+      return !venue || s.venue === venue;
+    });
+    state.slotPick = null;
+    state.datePick = '';
+    if (datesEl) datesEl.innerHTML = '';
+    if (!slots.length) {
+      listEl.innerHTML = '<p class="muted" style="margin:0">No open seats at this centre.</p>';
+      return;
+    }
+    listEl.innerHTML = slots
+      .map(function (s, i) {
+        return (
+          '<button type="button" class="btn btn--ghost btn--sm" data-mk-create-slot="' +
+          i +
+          '" style="display:block;width:100%;text-align:left;margin:0 0 6px;min-width:0;overflow-wrap:break-word">' +
+          (s.sameStanding ? '<span class="chip chip--ok" style="font-size:10px">Their instructor</span> ' : '<span class="chip" style="font-size:10px">Other instructor</span> ') +
+          '<strong>' +
+          esc(s.instructor) +
+          '</strong> · ' +
+          esc(s.day) +
+          ' · ' +
+          esc(s.timeLabel) +
+          ' · ' +
+          esc(s.service || 'Session') +
+          '</button>'
+        );
+      })
+      .join('');
+    listEl.querySelectorAll('[data-mk-create-slot]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = Number(btn.getAttribute('data-mk-create-slot'));
+        state.slotPick = slots[idx];
+        listEl.querySelectorAll('[data-mk-create-slot]').forEach(function (b) {
+          b.classList.toggle('btn--pri', b === btn);
+          b.classList.toggle('btn--ghost', b !== btn);
+        });
+        paintCreateDates();
+      });
+    });
+  }
+
+  function paintCreateDates() {
+    var datesEl = global.document.getElementById('ppMakeupCreateDates');
+    if (!datesEl || !state.slotPick) return;
+    var dates = upcomingWeekdayDates(state.slotPick.day, 6);
+    state.datePick = dates[0] || '';
+    datesEl.innerHTML =
+      '<div class="muted" style="font-size:12px;margin:8px 0 6px">Day for the parent to accept</div>' +
+      dates
+        .map(function (iso) {
+          return (
+            '<button type="button" class="btn btn--sm ' +
+            (iso === state.datePick ? 'btn--pri' : 'btn--ghost') +
+            '" data-mk-create-date="' +
+            esc(iso) +
+            '" style="margin:0 6px 6px 0">' +
+            esc(prettyMakeupDate(iso)) +
+            '</button>'
+          );
+        })
+        .join('');
+    datesEl.querySelectorAll('[data-mk-create-date]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.datePick = btn.getAttribute('data-mk-create-date') || '';
+        datesEl.querySelectorAll('[data-mk-create-date]').forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('btn--pri', on);
+          b.classList.toggle('btn--ghost', !on);
+        });
       });
     });
   }
@@ -496,26 +723,32 @@
     cfg.openModal(
       '<div class="modal-h"><h2 id="modalTitle">Add makeup grant (office phone)</h2></div>' +
         '<div class="modal-b" style="min-width:0">' +
-        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">A noted office-phone absent already opens this grant. Use this form only when there is no absence row. Offer a concrete slot afterwards from the Actions column.</p>' +
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Type the first letters of the name. Then pick an open seat (their instructor, or another instructor at that centre) and the day. The parent Accepts or Declines in the parent portal.</p>' +
         '<label class="muted">Search participant</label>' +
-        '<input class="inp" id="ppMakeupCreateSearch" type="search" placeholder="Name or contact id" autocomplete="off" style="max-width:100%;box-sizing:border-box" />' +
+        '<input class="inp" id="ppMakeupCreateSearch" type="search" placeholder="First letters of the name" autocomplete="off" style="max-width:100%;box-sizing:border-box" />' +
         '<div id="ppMakeupCreateHits" hidden style="margin:6px 0"></div>' +
         '<div class="muted" style="font-size:12px;margin-top:4px">Selected</div>' +
         '<div id="ppMakeupCreateSelected" style="font-weight:700;overflow-wrap:break-word;min-width:0">No participant selected</div>' +
-        '<label class="muted" style="display:block;margin-top:10px">Preferred venue</label>' +
-        '<input class="inp" id="ppMakeupCreateVenue" placeholder="e.g. Acton" style="max-width:100%;box-sizing:border-box" />' +
-        '<label class="muted" style="display:block;margin-top:10px">Service (optional)</label>' +
-        '<input class="inp" id="ppMakeupCreateService" placeholder="e.g. Aquatic Activity" style="max-width:100%;box-sizing:border-box" />' +
-        '<label class="muted" style="display:block;margin-top:10px">Notes (optional)</label>' +
-        '<textarea class="inp" id="ppMakeupCreateNotes" rows="2" placeholder="Parent called…" style="max-width:100%;box-sizing:border-box;resize:vertical"></textarea>' +
+        '<label class="muted" style="display:block;margin-top:10px">Centre</label>' +
+        '<select class="inp" id="ppMakeupCreateVenue" style="max-width:100%;box-sizing:border-box"></select>' +
+        '<div id="ppMakeupCreateSlots" style="margin-top:10px;max-height:220px;overflow:auto;min-width:0"></div>' +
+        '<div id="ppMakeupCreateDates" style="min-width:0"></div>' +
         '<p id="ppMakeupCreateErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px;overflow-wrap:break-word"></p>' +
         '</div>' +
         '<div class="modal-f">' +
         '<button type="button" class="btn btn--ghost" id="ppMakeupCreateCancel">Cancel</button>' +
-        '<button type="button" class="btn btn--pri" id="ppMakeupCreateSave">Save makeup grant</button>' +
+        '<button type="button" class="btn btn--pri" id="ppMakeupCreateSave">Send to parent</button>' +
         '</div>'
     );
 
+    var venueSel = global.document.getElementById('ppMakeupCreateVenue');
+    if (venueSel) {
+      venueSel.addEventListener('change', function () {
+        state.slotPick = null;
+        state.datePick = '';
+        paintCreateSlots();
+      });
+    }
     var searchTimer = null;
     var search = global.document.getElementById('ppMakeupCreateSearch');
     if (search) {
@@ -549,35 +782,57 @@
           showErr('This participant has no parent link — fix the contact first.');
           return;
         }
-        var venueEl = global.document.getElementById('ppMakeupCreateVenue');
-        var svcEl = global.document.getElementById('ppMakeupCreateService');
-        var notesEl = global.document.getElementById('ppMakeupCreateNotes');
-        var venue = venueEl ? String(venueEl.value || '').trim() : '';
-        if (!venue) {
-          showErr('Preferred venue is required.');
+        if (!state.slotPick) {
+          showErr('Pick an open seat.');
           return;
         }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(state.datePick || '')) {
+          showErr('Pick the day.');
+          return;
+        }
+        var slot = state.slotPick;
+        var serviceLabel = [slot.service || 'Session', slot.venue].filter(Boolean).join(' · ');
         save.disabled = true;
         void api('portal-admin-makeup-grant', {
           action: 'create',
           contact_id: state.pick.contact_id,
           parent_person_id: state.pick.parent_person_id,
           participant_display: state.pick.display_name || '',
-          preferred_venue: venue,
-          service_label: svcEl ? String(svcEl.value || '').trim() : '',
+          preferred_venue: slot.venue,
+          service_label: serviceLabel,
           source: 'admin',
-          notes: notesEl
-            ? 'Office phone · ' + String(notesEl.value || '').trim()
-            : 'Office phone'
+          notes: 'Office phone · parent to accept'
         }).then(function (r) {
-          save.disabled = false;
-          if (r.error) {
-            showErr(r.message || r.error || 'Save failed');
+          if (r.error || !r.grant || !r.grant.id) {
+            save.disabled = false;
+            showErr((r && (r.message || r.error)) || 'Save failed');
             return;
           }
-          if (typeof cfg.closeModal === 'function') cfg.closeModal();
-          cfg.toast('Makeup grant added', 'ok');
-          void renderHost(global.document.getElementById('portalMakeupHost'));
+          return api('portal-admin-makeup-offer', {
+            action: 'create',
+            grant_id: r.grant.id,
+            venue: slot.venue,
+            session_date: state.datePick,
+            session_time: timeLabelToOffer(slot.timeLabel),
+            instructor_name: slot.instructor,
+            service_label: serviceLabel,
+            await_parent: true,
+            offer_notes: 'Parent to accept'
+          }).then(function (o) {
+            save.disabled = false;
+            if (o.error) {
+              showErr(o.message || o.error || 'Offer failed');
+              return;
+            }
+            if (typeof cfg.closeModal === 'function') cfg.closeModal();
+            cfg.toast(
+              o.parent_notify && o.parent_notify.ok
+                ? 'Sent. Parent Accepts or Declines in the portal.'
+                : 'Offer saved. Parent notify did not send — they can still Accept in the portal.',
+              'ok'
+            );
+            void renderHost(global.document.getElementById('portalMakeupHost'));
+          });
         });
       };
     }

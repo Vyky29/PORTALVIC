@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-24-v23",
+  "version": "2026-09-24-v24",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -588,7 +588,7 @@
           "tips": [
             "Back to decide is only while the grant is still Open or Offered. On roster does not go back to the decide queue. Undo that day on Schedule and Covers, then Add makeup.",
             "Move to another slot today only moves inside that same date. Another week is Undo on the old day, then a new grant and Offer slot.",
-            "Add absent for a noted reason (party, holidays, travel, other commitments, office note) opens the makeup grant itself when the service names the centre. Unwell still waits for proof. Club cancel still waits in the decide queue. Offer a concrete slot afterwards. The grant is not on Schedule and Covers until the family accepts.",
+            "Add makeup: type the first letters of the name, pick the centre, then an open seat (their instructor or another instructor) and the day. Send to parent. They Accept or Decline in the parent portal. The seat is not on the roster until they Accept.",
             "If a makeup was placed on a seat that is not on that day's roster, Schedule and Covers still shows that name so you can open Change and Undo change."
           ]
         }
