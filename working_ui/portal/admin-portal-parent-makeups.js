@@ -652,32 +652,47 @@
     }
     listEl.innerHTML = slots
       .map(function (s, i) {
+        var dates = upcomingWeekdayDates(s.day, 4);
+        var dateBtns = dates
+          .map(function (iso) {
+            return (
+              '<button type="button" class="btn btn--ghost btn--sm" data-mk-create-slot="' +
+              i +
+              '" data-mk-create-date="' +
+              esc(iso) +
+              '" style="margin:0 6px 6px 0">' +
+              esc(prettyMakeupDate(iso)) +
+              '</button>'
+            );
+          })
+          .join('');
         return (
-          '<button type="button" class="btn btn--ghost btn--sm" data-mk-create-slot="' +
-          i +
-          '" style="display:block;width:100%;text-align:left;margin:0 0 6px;min-width:0;overflow-wrap:break-word">' +
+          '<div style="margin:0 0 10px;min-width:0">' +
+          '<div style="font-size:13px;overflow-wrap:break-word;margin:0 0 4px">' +
           (s.sameStanding ? '<span class="chip chip--ok" style="font-size:10px">Their instructor</span> ' : '<span class="chip" style="font-size:10px">Other instructor</span> ') +
           '<strong>' +
           esc(s.instructor) +
           '</strong> · ' +
-          esc(s.day) +
-          ' · ' +
           esc(s.timeLabel) +
           ' · ' +
           esc(s.service || 'Session') +
-          '</button>'
+          '</div>' +
+          '<div style="min-width:0">' +
+          dateBtns +
+          '</div></div>'
         );
       })
       .join('');
-    listEl.querySelectorAll('[data-mk-create-slot]').forEach(function (btn) {
+    listEl.querySelectorAll('[data-mk-create-date]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var idx = Number(btn.getAttribute('data-mk-create-slot'));
         state.slotPick = slots[idx];
-        listEl.querySelectorAll('[data-mk-create-slot]').forEach(function (b) {
-          b.classList.toggle('btn--pri', b === btn);
-          b.classList.toggle('btn--ghost', b !== btn);
+        state.datePick = btn.getAttribute('data-mk-create-date') || '';
+        listEl.querySelectorAll('[data-mk-create-date]').forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('btn--pri', on);
+          b.classList.toggle('btn--ghost', !on);
         });
-        paintCreateDates();
       });
     });
   }
@@ -731,7 +746,7 @@
         '<div id="ppMakeupCreateSelected" style="font-weight:700;overflow-wrap:break-word;min-width:0">No participant selected</div>' +
         '<label class="muted" style="display:block;margin-top:10px">Centre</label>' +
         '<select class="inp" id="ppMakeupCreateVenue" style="max-width:100%;box-sizing:border-box"></select>' +
-        '<div id="ppMakeupCreateSlots" style="margin-top:10px;max-height:220px;overflow:auto;min-width:0"></div>' +
+        '<div id="ppMakeupCreateSlots" style="margin-top:10px;max-height:320px;overflow:auto;min-width:0"></div>' +
         '<div id="ppMakeupCreateDates" style="min-width:0"></div>' +
         '<p id="ppMakeupCreateErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px;overflow-wrap:break-word"></p>' +
         '</div>' +
