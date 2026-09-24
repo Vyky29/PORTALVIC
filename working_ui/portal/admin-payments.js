@@ -2563,11 +2563,16 @@
     ];
   }
 
-  /** Tinashe Friday bespoke is NHS / ILA. Mon/Wed stay on the Ealing row. */
+  function tinasheSessionIsFriday(sess) {
+    return /\bfri/i.test(String((sess && (sess.day || sess.timeSlot || sess.time)) || ""));
+  }
+
+  /** Tinashe Friday bespoke is NHS / ILA. Mon/Wed stay on the Ealing row. Summer and autumn. */
   function splitTinasheFridayNhsRow(r) {
     if (!r || r._tinashePart || r._crash) return null;
     if (paymentParticipantSlug(r) !== "tinashe") return null;
-    if (!isSummerTermRow(r)) return null;
+    var bucket = termBucketFor(r);
+    if (bucket !== "summer_2526" && bucket !== "autumn_2627") return null;
     var lines = [];
     try { lines = serviceOneLinersFor(r); } catch (_e) { lines = []; }
     if (!lines.length) {
@@ -2579,19 +2584,27 @@
     var fri = lines.filter(function (s) { return /\bfri/i.test(s); });
     var rest = lines.filter(function (s) { return !/\bfri/i.test(s); });
     if (!fri.length) return null;
+    var sessions = Array.isArray(r._participantSessions) ? r._participantSessions : [];
     function clone(part, suffix, svcLines, nhs) {
       var out = {};
       Object.keys(r).forEach(function (k) { out[k] = r[k]; });
       out.id = String(r.id || "tinashe") + suffix;
       out._tinashePart = part;
+      out._participantSessions = sessions.filter(function (sess) {
+        var isFri = tinasheSessionIsFriday(sess);
+        return nhs ? isFri : !isFri;
+      });
       out._serviceParts = Object.create(null);
       svcLines.forEach(function (s) { out._serviceParts[s] = 1; });
       out.data = Object.assign({}, r.data || {}, { Services: svcLines.join("\n") });
       if (nhs) {
+        out._paymentMethodHint = "nhs";
         out.data.Funder = "NHS / ILA";
         out.data.Paid = "Funded by NHS";
         out.data["Invoice type"] = "NHS (Exempt invoice)";
+        delete out.data.Funding;
         out._ealingIn = 0;
+        out._laCouncilShort = "";
         out.amount = 0;
         out.amount_billed = 0;
         out.amount_out = 0;
@@ -2602,6 +2615,8 @@
     }
     if (!rest.length) {
       r._tinashePart = "nhs_fri";
+      r._paymentMethodHint = "nhs";
+      r._participantSessions = sessions.filter(tinasheSessionIsFriday);
       r.data = r.data || {};
       r.data.Funder = "NHS / ILA";
       r.data.Paid = "Funded by NHS";
@@ -2782,7 +2797,6 @@
     var cur = paidFilterForTerm(termId);
     var statusCur = payStatusFilterForTerm(termId);
     var planCur = payPlanFilterForTerm(termId);
-    var stream = serviceKindForTerm(termId);
     var showPlan = fundingAllowsFamilyPlanFilter(cur);
     /*
      * Hierarchy:
@@ -2800,8 +2814,7 @@
       + '<span class="pay-chip-row__lab">Funding</span>'
       + filterChipBtn("paid", "", "All", !cur, "pay-chip--muted", termId);
     PAID_BY_OPTIONS.forEach(function (l) {
-      /* Afterschool: no NHS chip — NHS Day Centre is on the other stream. */
-      if (stream === "afterschool" && l === PAID_BY.FUNDED_BY_NHS) return;
+      /* Tinashe Friday bespoke is NHS on Afterschool, summer and autumn. */
       html += filterChipBtn("paid", l, l, cur === l, paidChipClass(l), termId);
     });
     html += "</div>";
@@ -3636,6 +3649,12 @@
         } else if (/afterschool/.test(streamHint)) {
           sessList = sessList.filter(isCyrusAfterschoolSession);
         }
+      }
+      if (r && r._tinashePart) {
+        sessList = sessList.filter(function (sess) {
+          var isFri = tinasheSessionIsFriday(sess);
+          return r._tinashePart === "nhs_fri" ? isFri : !isFri;
+        });
       }
       sessList.forEach(function (sess) {
         push(labelFromParticipantSession(sess));
