@@ -2678,12 +2678,12 @@
           e.payment_status = "Paid";
           e._officeTotalOnly = false;
           e._officeMonthLines = [
-            { t: "1 Apr-19 Apr £1,508.64", paid: true },
-            { t: "20 Apr-17 May £2,011.52", paid: true },
-            { t: "18 May-14 Jun £2,011.52", paid: true },
-            { t: "15 Jun-12 Jul £2,011.52", paid: true },
-            { t: "13 Jul-9 Aug £2,011.52", paid: true },
-            { t: "10 Aug-6 Sep £2,011.52", paid: true },
+            { t: "Apr £1,508.64", paid: true },
+            { t: "May £2,011.52", paid: true },
+            { t: "Jun £2,011.52", paid: true },
+            { t: "Jul £2,011.52", paid: true },
+            { t: "Aug £2,011.52", paid: true },
+            { t: "Sep £2,011.52", paid: true },
           ];
         }
         rest.push(e);
@@ -2706,10 +2706,10 @@
           f.payment_status = "Paid";
           f._officeTotalOnly = false;
           f._officeMonthLines = [
-            { t: "Apr 2026 £714.84", paid: true },
-            { t: "May 2026 £1,429.68", paid: true },
-            { t: "Jun 2026 £1,429.68", paid: true },
-            { t: "Jul 2026 £1,072.26", paid: true },
+            { t: "Apr £714.84", paid: true },
+            { t: "May £1,429.68", paid: true },
+            { t: "Jun £1,429.68", paid: true },
+            { t: "Jul £1,072.26", paid: true },
           ];
         }
         rest.push(f);
