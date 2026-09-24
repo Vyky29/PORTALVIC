@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-24-v37",
+  "version": "2026-09-24-v38",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -786,7 +786,8 @@
             "Bespoke Programme shows as Bespoke.",
             "If a timesheet was already downloaded with the wrong hours, ask them to submit again after a refresh. The new submit replaces the downloaded one.",
             "On the 24th at 11pm London, WhatsApp reminds whoever has not submitted that cycle. Victor, Javi Palankas and Raul are not reminded. Andres, Angel and Giuseppe are not on payroll.",
-            "An afternoon-only day off (Northolt or Acton, not SwimFarm) keeps the morning session. If that morning has no feedback it stays Pending in orange."
+            "An afternoon-only day off (Northolt or Acton, not SwimFarm) keeps the morning session. If that morning has no feedback it stays Pending in orange.",
+            "Office, Interview and Manager do not need feedback. They must not leave the day orange when the child feedback is already in."
           ]
         }
       ]
