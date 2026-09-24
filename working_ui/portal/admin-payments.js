@@ -1115,7 +1115,10 @@
       r.amount_out = 0;
       r._amountPaid = face > 0 ? face : 11000;
       if (!(face > 0)) r.amount = 11000;
-      r._officeMonthNote = "Jun £3,500 paid · Jul £7,500 paid";
+      r._officeMonthLines = [
+        { t: "Jun £3,500", paid: true },
+        { t: "Jul £7,500", paid: true },
+      ];
       return;
     }
     if (slug === "fadi" && !isNhsInflationUpliftRow(r)) {
@@ -1123,7 +1126,13 @@
       r._amountPaid = 25900;
       r.amount_out = 22662.5;
       if (!(face > 0)) r.amount = 48562.5;
-      r._officeMonthNote = "Apr £9,712.50 paid (0359) · May £9,712.50 paid (0359) · Jun £12,950 still due (0360) · Jul £9,712.50 still due (0361) · Jul 0384 £6,475 paid";
+      r._officeMonthLines = [
+        { t: "Apr £9,712.50", paid: true },
+        { t: "May £9,712.50", paid: true },
+        { t: "Jun £12,950", paid: false },
+        { t: "Jul £9,712.50", paid: false },
+        { t: "Jul 0384 £6,475", paid: true },
+      ];
       return;
     }
     if (slug === "ikram" && !isNhsInflationUpliftRow(r)) {
@@ -1131,14 +1140,26 @@
       r._amountPaid = 40128.6;
       r.amount_out = 12000;
       if (!(face > 0)) r.amount = 52128.6;
-      r._officeMonthNote = "Mar £4,610 paid · Apr £12,268.60 paid · May £8,250 paid · Jun £12,000 still due (0355) · Jul £15,000 paid";
+      r._officeMonthLines = [
+        { t: "Mar £4,610", paid: true },
+        { t: "Apr £12,268.60", paid: true },
+        { t: "May £8,250", paid: true },
+        { t: "Jun £12,000", paid: false },
+        { t: "Jul £15,000", paid: true },
+      ];
       return;
     }
     if (slug === "timi" && !isNhsInflationUpliftRow(r) && face > 7000) {
       r.payment_status = "Partial";
       r._amountPaid = 3900;
       r.amount_out = Math.round((face - 3900) * 100) / 100;
-      r._officeMonthNote = "Apr £250 paid · May £750 paid · Jun £3,150 still due · Jul £250 still due (0388)";
+      r._officeMonthLines = [
+        { t: "Apr £250", paid: true },
+        { t: "May £750", paid: true },
+        { t: "Jun £3,150", paid: false },
+        { t: "Jul £2,900", paid: true },
+        { t: "Jul £250", paid: false },
+      ];
       return;
     }
     if (isNhsInflationUpliftRow(r)) {
@@ -1351,54 +1372,25 @@
       var marInv = summerMarchInvoiceGbp(r);
       var julPaidExtra = summerJulPaidExtraGbp(r);
       var monthBits = "";
-      var officeNote = !!(r && r._officeMonthNote);
-      if (!officeNote && marInv > 0) {
-        monthBits +=
-          '<span class="pay-amt-season" title="NHS March invoice (DC + transport)">Mar '
-          + money(marInv)
-          + "</span>";
+      function monthLine(label, paid) {
+        return '<span class="pay-amt-season ' + (paid ? "pay-amt-season--paid" : "pay-amt-season--due") + '">'
+          + esc(label) + "</span>";
       }
-      if (!officeNote && aprMay && aprMay.april > 0) {
-        monthBits +=
-          '<span class="pay-amt-season" title="'
-          + (aprMay.aprilPaid ? "April invoice already paid" : "NHS April invoice")
-          + '">Apr '
-          + money(aprMay.april)
-          + (aprMay.aprilPaid ? " paid" : "")
-          + "</span>";
-      }
-      if (!officeNote && aprMay && aprMay.may > 0) {
-        monthBits +=
-          '<span class="pay-amt-season" title="'
-          + (aprMay.mayPaid ? "May invoice already paid (not in Outstanding)" : "NHS May invoice")
-          + '">May '
-          + money(aprMay.may)
-          + (aprMay.mayPaid ? " paid" : "")
-          + "</span>";
-      }
-      if (r && r._officeMonthNote) {
-        monthBits +=
-          '<span class="pay-amt-season" title="Office sheet">'
-          + esc(r._officeMonthNote)
-          + "</span>";
-      } else if (junJul) {
-        var junBlob = [((r && r.data) || {})["NHS due months"], ((r && r.data) || {})["Summer basis"]].join(" ");
-        var junPaid = junJul.june > 0 && nhsMonthMarkedPaid(junBlob, "jun");
-        var julPaid = junJul.july > 0 && nhsMonthMarkedPaid(junBlob, "jul");
-        monthBits +=
-          '<span class="pay-amt-season" title="NHS invoices June &amp; July">Jun '
-          + money(junJul.june)
-          + (junPaid ? " paid" : "")
-          + " · Jul "
-          + money(junJul.july)
-          + (julPaid ? " paid" : "")
-          + "</span>";
-      }
-      if (!officeNote && julPaidExtra > 0) {
-        monthBits +=
-          '<span class="pay-amt-season" title="July Inv 0384 paid (separate from unpaid Jul line)">Jul 0384 '
-          + money(julPaidExtra)
-          + " paid</span>";
+      var officeLines = r && r._officeMonthLines;
+      if (officeLines && officeLines.length) {
+        officeLines.forEach(function (line) {
+          monthBits += monthLine(line.t, !!line.paid);
+        });
+      } else {
+        if (marInv > 0) monthBits += monthLine("Mar " + money(marInv), false);
+        if (aprMay && aprMay.april > 0) monthBits += monthLine("Apr " + money(aprMay.april), !!aprMay.aprilPaid);
+        if (aprMay && aprMay.may > 0) monthBits += monthLine("May " + money(aprMay.may), !!aprMay.mayPaid);
+        if (junJul) {
+          var junBlob = [((r && r.data) || {})["NHS due months"], ((r && r.data) || {})["Summer basis"]].join(" ");
+          if (junJul.june > 0) monthBits += monthLine("Jun " + money(junJul.june), nhsMonthMarkedPaid(junBlob, "jun"));
+          if (junJul.july > 0) monthBits += monthLine("Jul " + money(junJul.july), nhsMonthMarkedPaid(junBlob, "jul"));
+        }
+        if (julPaidExtra > 0) monthBits += monthLine("Jul 0384 " + money(julPaidExtra), true);
       }
       if (!julyPay && !ealingCreditBal && !aprMay && !junJul && !uplift && !marInv && !julPaidExtra && payCat !== "partial") {
         return summerMain;
@@ -1418,18 +1410,10 @@
           : "")
         + monthBits
         + (uplift
-          ? '<span class="pay-amt-season" title="INV-0390 Ikram paid · INV-0389 Fadi paid">IO '
-            + money(uplift.io)
-            + " paid · FA "
-            + money(uplift.fa)
-            + " paid</span>"
-            + '<span class="pay-amt-season" title="'
-            + (uplift.ed > 0 ? "INV-0391 Emanuel paid · INV-0392 Timi still due" : "INV-0392 Timi")
-            + '">'
-            + (uplift.ed > 0 ? ("ED " + money(uplift.ed) + " paid · ") : "")
-            + "TD "
-            + money(uplift.td)
-            + "</span>"
+          ? monthLine("IO " + money(uplift.io), true)
+            + monthLine("FA " + money(uplift.fa), true)
+            + (uplift.ed > 0 ? monthLine("ED " + money(uplift.ed), true) : "")
+            + monthLine("TD " + money(uplift.td), false)
           : "")
         + (julyPay
           ? '<span class="pay-amt-july" title="Ealing LA payments applied against Summer">−'
@@ -1657,7 +1641,9 @@
       ".pay-amt-paid{color:#047857;font-weight:800}",
       ".pay-amt-face{color:#c2410c;font-weight:800}",
       ".pay-amt-slash{color:#94a3b8;font-weight:700;margin:0 1px}",
-      ".pay-amt-season{display:block;font-size:10px;font-weight:600;color:#64748b;line-height:1.2;overflow-wrap:break-word}",
+      ".pay-amt-season{display:block;font-size:10px;font-weight:600;color:#64748b;line-height:1.25;overflow-wrap:break-word}",
+      ".pay-amt-season--paid{color:#047857}",
+      ".pay-amt-season--due{color:#b91c1c}",
       ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:5.75rem;min-width:5.25rem;text-align:center;white-space:normal;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
       ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:3.6rem;max-width:3.6rem;padding-left:2px;padding-right:2px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
       ".pay-tbl th.pay-col-status{font-size:9px;line-height:1.05}",
