@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-24-v25",
+  "version": "2026-09-24-v26",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -118,7 +118,10 @@
             "who gives it",
             "quien da",
             "como anado shadowing",
-            "how to add shadowing"
+            "how to add shadowing",
+            "quitar shadowing",
+            "remove shadowing",
+            "eliminar card"
           ],
           "steps": [
             "Open Schedule & Covers and expand + Add session card (new hours / instructor / participant).",
@@ -126,7 +129,8 @@
             "Type: Shadowing or Training. That type is what marks the shift.",
             "Set Date, Start, End and Venue for that one shift.",
             "Who gives it: the person leading them (optional). Where: Room, Pool or Both.",
-            "Press Add session. One card per shift. Repeat the form for each extra day."
+            "Press Add session. One card per shift. Repeat the form for each extra day.",
+            "To remove one: stay on that date, open + Add session card, and in Added cards (this date) press Remove on that row. Confirm. It leaves the staff app."
           ],
           "tips": [
             "This adds a new row. It does not replace the instructor already on the client.",
