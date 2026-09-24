@@ -1118,6 +1118,14 @@
       r._officeMonthNote = "Jun £3,500 paid · Jul £7,500 paid";
       return;
     }
+    if (slug === "fadi" && !isNhsInflationUpliftRow(r)) {
+      r.payment_status = "Partial";
+      r._amountPaid = 25900;
+      r.amount_out = 22662.5;
+      if (!(face > 0)) r.amount = 48562.5;
+      r._officeMonthNote = "Apr £9,712.50 paid (0359) · May £9,712.50 paid (0359) · Jun £12,950 still due (0360) · Jul £9,712.50 still due (0361) · Jul 0384 £6,475 paid";
+      return;
+    }
     if (slug === "ikram" && !isNhsInflationUpliftRow(r)) {
       r.payment_status = "Partial";
       r._amountPaid = 40128.6;
