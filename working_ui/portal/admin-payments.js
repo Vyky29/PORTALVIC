@@ -1716,6 +1716,7 @@
       ".pay-chip--inv-la{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff}",
       ".pay-chip--inv-ealing{background:#fdf2f8;color:#be185d;border-color:#f9a8d4}",
       ".pay-chip--inv-nhs{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}",
+      ".pay-chip--inv-nhs-ila{background:#fffbeb;color:#b45309;border-color:#fcd34d}",
       ".pay-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}",
       ".pay-tbl td .pay-chip{white-space:normal;max-width:100%;margin:0 auto;box-sizing:border-box}",
       ".pay-tbl td .pay-chip--inv{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:5px 8px;border-radius:10px;line-height:1.15;text-align:center}",
@@ -1907,6 +1908,7 @@
     if (label === INVOICE_TYPE.PARENT_20 || /^Parent\s*\(20%/i.test(s)) {
       return "pay-chip--inv-parent-20";
     }
+    if (/^NHS\/ILA\b/i.test(s)) return "pay-chip--inv-nhs-ila";
     if (label === INVOICE_TYPE.NHS_EXEMPT || /^NHS\s*\(/i.test(s)) {
       return "pay-chip--inv-nhs";
     }
@@ -5085,7 +5087,10 @@
       }
       return INVOICE_TYPE.LA_EXEMPT;
     }
-    if (route === "NHS_INVOICE" || route === "NEN") return INVOICE_TYPE.NHS_EXEMPT;
+    if (route === "NHS_INVOICE" || route === "NEN") {
+      if (paymentParticipantSlug(r) === "tinashe") return "NHS/ILA (Exempt invoice)";
+      return INVOICE_TYPE.NHS_EXEMPT;
+    }
     return "";
   }
 
