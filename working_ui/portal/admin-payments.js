@@ -2441,6 +2441,26 @@
     var s = rowServiceBlob(r);
     var d = (r && r.data) || {};
 
+    /*
+     * Jack Stratton / Jack Walker Sunday multi is afterschool.
+     * Their Day Centre place is the separate ACAT 60' aquatic row.
+     * A concatenated "Day Centre" line must not pull the £1,320 into this tab.
+     */
+    var display = String((r && r.client_name) || "");
+    if (
+      /jack\s+(stratton|walker)\b/i.test(display)
+      && !/\(\s*acat\s*\)/i.test(display)
+    ) {
+      return false;
+    }
+    if (
+      (slug === "jacks" || slug === "jackw")
+      && /multi/i.test(s)
+      && !/\(\s*acat\s*\)/i.test(display)
+    ) {
+      return false;
+    }
+
     /* Aggregate NHS Day Centre uplift invoices (INV-0389–0392) — not per child. */
     if (isNhsInflationUpliftRow(r)) return true;
     if (/day\s*centre/i.test(String(d.Stream || ""))) return true;
@@ -4243,6 +4263,14 @@
     var hasFee = hint === "gocardless"
       || list.some(function (s) { return s === fee || isGoCardlessFeeLabel(s); });
     list = list.filter(function (s) { return s !== fee && !isGoCardlessFeeLabel(s); });
+    var who = String(row.client_name || "");
+    if (
+      /jack\s+(stratton|walker)/i.test(who)
+      && !/\(\s*acat\s*\)/i.test(who)
+      && list.some(function (s) { return /multi/i.test(s); })
+    ) {
+      list = list.filter(function (s) { return !/day\s*centre/i.test(s); });
+    }
     if (hasFee) list.push(fee);
     row._serviceParts = Object.create(null);
     list.forEach(function (s) { row._serviceParts[s] = 1; });
