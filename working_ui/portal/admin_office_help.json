@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-24-v24",
+  "version": "2026-09-24-v25",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -122,7 +122,7 @@
           ],
           "steps": [
             "Open Schedule & Covers and expand + Add session card (new hours / instructor / participant).",
-            "Staff: the person who is shadowing or training (for example Patience).",
+            "Staff: type the first letters of the name. The list is everyone active on staff profiles, including people not yet on the standing board.",
             "Type: Shadowing or Training. That type is what marks the shift.",
             "Set Date, Start, End and Venue for that one shift.",
             "Who gives it: the person leading them (optional). Where: Room, Pool or Both.",

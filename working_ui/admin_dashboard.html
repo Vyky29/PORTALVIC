@@ -14421,8 +14421,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div id="schedAddedList" style="margin-top:14px"></div>'+
         '</div></div></details>';
     }
-    function schedFillAddStaffSelect(){
-      var list = schedBuildInstructorPickList();
+    function schedApplyAddStaffOptions(list){
       var cur = ($('schedAddStaff') && $('schedAddStaff').value) || '';
       if(window.PortalAdminSearchCombo){
         PortalAdminSearchCombo.ensure({
@@ -14444,6 +14443,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<option value="'+esc(it.slug)+'">'+esc(it.display)+'</option>';
       }).join('');
       if(cur) sel.value = cur;
+    }
+    function schedMergeStaffProfileRows(list, rows){
+      var bySlug = {};
+      (list || []).forEach(function(it){
+        if(it && it.slug) bySlug[it.slug] = it;
+      });
+      (rows || []).forEach(function(p){
+        if(!p || p.is_active === false) return;
+        var name = String(p.full_name || p.username || '').trim();
+        if(!name) return;
+        var slug = normalizeSchedAnchorStaffId(p.username || name);
+        if(!slug) return;
+        if(!bySlug[slug]) bySlug[slug] = { slug: slug, display: name };
+      });
+      var merged = [];
+      Object.keys(bySlug).forEach(function(k){ merged.push(bySlug[k]); });
+      merged.sort(function(a, b){
+        return a.display.localeCompare(b.display, undefined, { sensitivity: 'base' });
+      });
+      return merged;
+    }
+    function schedFillAddStaffSelect(){
+      var list = schedBuildInstructorPickList();
+      schedApplyAddStaffOptions(list);
+      var client = null;
+      try{ client = getSchedSupabaseClient(); }catch(_c){ client = null; }
+      if(!client) return;
+      client.from('staff_profiles').select('username,full_name,is_active').limit(400).then(function(res){
+        var rows = res && res.data ? res.data : [];
+        if(!rows.length) return;
+        schedApplyAddStaffOptions(schedMergeStaffProfileRows(list, rows));
+      }).catch(function(){});
     }
     function schedFillAddPaxSelect(){
       var list = schedBuildReplacementPickList();
