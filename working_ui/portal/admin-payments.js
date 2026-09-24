@@ -578,6 +578,7 @@
     ) {
       return "NHS_INVOICE";
     }
+    if (r && r._crash) return "";
     if (/ealing|cwd|direct payment|funded by la|local authority \(exempt/.test(funder + " " + paid + " " + parent)) {
       return "LA_INVOICE";
     }
@@ -4839,13 +4840,17 @@
      * Summer crash INV-Ps for Adam/Saaib are la_funded + vat exempt — Invoice type
      * used to be Parent (Exempt) and wrongly became "Using Funds from LA".
      */
+    var tinasheCrashDp = !!(r && r._crash && paymentParticipantSlug(r) === "tinashe");
     if (
+      !tinasheCrashDp &&
+      (
       paidRaw === PAID_BY.FUNDED_BY_LA ||
       raw === INVOICE_TYPE.LA_EXEMPT ||
       raw === PAYER_ROUTE.LA_INVOICE ||
       raw === "Local Authority (invoice)" ||
       hint === "la_funded" ||
       (r && r._crash && hint === "la_funded")
+      )
     ) {
       return "LA_INVOICE";
     }
@@ -7163,6 +7168,11 @@
       row.data.Services = zakariyaCrashServiceLines().join("\n");
     } else if (crashSlug === "tinashe") {
       row.data.Services = tinasheCrashServiceLines().join("\n");
+      row.data.Paid = PAID_BY.FUNDS_FROM_LA;
+      row.data["Invoice type"] = INVOICE_TYPE.PARENT_EXEMPT;
+      row.sheet = "DIRECT_PAYMENTS";
+      delete row.data.Funder;
+      delete row.data.Funding;
     } else if (crashSlug === "adam_p") {
       row.data.Services = "90' Aquatic Activity (July crash) · Tue/Wed 5–6.30pm Acton";
     } else if (crashSlug === "saaib") {
@@ -7187,7 +7197,7 @@
 
   var KNOWN_SUMMER_CRASH = [
     { slug: "yaqoub", name: "Yaqoub Ismail", amt: 375, invoice: "INV-P-0118", paid: true, services: "60' Aquatic — July crash course · SwimFarm · ×3" },
-    { slug: "tinashe", name: "Tinashe", amt: 187.5, invoice: "INV-P-0119", paid: false, services: "30' Aquatic — July crash course · SwimFarm · ×3" },
+    { slug: "tinashe", name: "Tinashe", amt: 187.5, invoice: "INV-P-0119", paid: false, services: "30' Aquatic — July crash course · SwimFarm · ×3", fundsFromLa: true },
     { slug: "zakariya", name: "Zakariya", amt: 700, invoice: "INV-P-CRASH-MRMCPDUG", paid: true, services: "Climb + Swim — July crash course" },
     { slug: "adam_p", name: "Adam Pilcher", amt: 300, invoice: "INV-P-0001", paid: true, services: "90' Aquatic Activity (July crash) · Tue/Wed 5–6.30pm Acton" },
     { slug: "saaib", name: "Saaib", amt: 100, invoice: "INV-P-0127", paid: true, services: "30' Aquatic Activity (July crash) · Tue/Wed 4.30–5pm Acton" },
@@ -7214,7 +7224,10 @@
         Services: spec.services,
         Stream: "Day Centre",
         Invoice: spec.invoice,
-        Paid: spec.slug === "saaib" || spec.slug === "adam_p" ? "Funded by LA" : "Using Private Funds",
+        Paid: spec.fundsFromLa
+          ? "Using Funds from LA"
+          : (spec.slug === "saaib" || spec.slug === "adam_p" ? "Funded by LA" : "Using Private Funds"),
+        "Invoice type": spec.fundsFromLa ? "Parent (Exempt invoice)" : undefined,
       },
       _serviceParts: Object.create(null),
     };

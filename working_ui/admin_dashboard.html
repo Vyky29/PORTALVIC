@@ -125,7 +125,7 @@
   <script src="/portal/admin-hr.js?v=20260922-annual-newhire"></script>
   <script src="/portal/policy-signoff-scope.js?v=20260728-home-office"></script>
   <script src="/portal/admin-policy-signoffs.js?v=20260728-home-office"></script>
-  <script src="/portal/admin-payments.js?v=20260924-ealing-pink"></script>
+  <script src="/portal/admin-payments.js?v=20260924-tinashe-dp"></script>
   <script src="/portal/admin-commissioning-terms.js?v=20260720-la-terms"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
   <script src="/portal/portal-admin-settings-hub.js?v=20260703-settings-timeout-fix"></script>
@@ -14468,6 +14468,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<input type="text" id="schedAddArea" class="inp" style="max-width:160px" placeholder="e.g. Hub Room" /></label>'+
         '<label id="schedAddTrainerWrap" style="display:none;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Who gives it (optional)'+
           '<input type="text" id="schedAddTrainer" class="inp" style="max-width:170px" placeholder="e.g. Laura" /></label>'+
+        '<label id="schedAddShadowHostWrap" style="display:none;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Shadowing'+
+          (window.PortalAdminSearchCombo ? window.PortalAdminSearchCombo.comboHtml('schedAddShadowHost', 'Select who they shadow\u2026', '220px') :
+          '<select class="sel" id="schedAddShadowHost" style="max-width:220px"></select>')+'</label>'+
+        '<div id="schedAddShadowPax" style="display:none;flex:1 1 100%;min-width:0;font-size:12px;overflow-wrap:break-word"></div>'+
         '<label id="schedAddLocationWrap" style="display:none;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Where'+
           '<select class="sel" id="schedAddLocation" style="max-width:140px"><option value="">\u2014</option><option value="room">Room</option><option value="pool">Pool</option><option value="both">Both</option></select></label>'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);flex:1;min-width:160px">Note (optional)'+
@@ -14525,6 +14529,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedFillAddStaffSelect(){
       var list = schedBuildInstructorPickList();
       schedApplyAddStaffOptions(list);
+      schedApplyShadowHostOptions(list);
       var client = null;
       try{ client = getSchedSupabaseClient(); }catch(_c){ client = null; }
       if(!client) return;
@@ -14532,7 +14537,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var rows = res && res.data ? res.data : [];
         if(!rows.length) return;
         schedApplyAddStaffOptions(schedMergeStaffProfileRows(list, rows));
+        schedApplyShadowHostOptions(schedMergeStaffProfileRows(list, rows));
       }).catch(function(){});
+    }
+    function schedApplyShadowHostOptions(list){
+      var cur = ($('schedAddShadowHost') && $('schedAddShadowHost').value) || '';
+      if(window.PortalAdminSearchCombo){
+        PortalAdminSearchCombo.ensure({
+          id: 'schedAddShadowHost',
+          placeholder: 'Select who they shadow…',
+          allLabel: 'Select who they shadow…',
+          showAllOnEmptyFocus: true,
+          maxVisible: 24
+        });
+        PortalAdminSearchCombo.setOptions('schedAddShadowHost', (list || []).map(function(it){
+          return { value: it.slug, label: it.display };
+        }), { keepValue: true });
+        if(cur) PortalAdminSearchCombo.setValue('schedAddShadowHost', cur);
+        return;
+      }
+      var sel = $('schedAddShadowHost');
+      if(!sel) return;
+      sel.innerHTML = '<option value="">Select who they shadow...</option>' + (list || []).map(function(it){
+        return '<option value="'+esc(it.slug)+'">'+esc(it.display)+'</option>';
+      }).join('');
+      if(cur) sel.value = cur;
     }
     function schedFillAddPaxSelect(){
       var list = schedBuildReplacementPickList();
@@ -14563,6 +14592,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedToggleAddKindFields(){
       var kind = String((($('schedAddKind')||{}).value) || 'session').toLowerCase();
       var isSession = kind === 'session';
+      var isShadow = kind === 'shadowing';
       function show(id, on){
         var el = $(id);
         if(!el) return;
@@ -14571,10 +14601,86 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       show('schedAddPaxWrap', isSession);
       show('schedAddServiceWrap', isSession);
       show('schedAddAreaWrap', isSession);
-      show('schedAddTrainerWrap', !isSession);
+      show('schedAddTrainerWrap', kind === 'training');
+      show('schedAddShadowHostWrap', isShadow);
+      show('schedAddShadowPax', isShadow);
       show('schedAddLocationWrap', !isSession);
       var btn = $('schedAddSaveBtn');
       if(btn && !sched.addEditingId) btn.textContent = isSession ? 'Add card' : 'Add session';
+      if(isShadow) schedRefreshShadowHostPax();
+    }
+    function schedShadowHostSlug(){
+      return normalizeSchedAnchorStaffId((($('schedAddShadowHost')||{}).value) || '');
+    }
+    function schedShadowHostDisplay(){
+      var slug = schedShadowHostSlug();
+      if(!slug) return '';
+      var list = schedBuildInstructorPickList();
+      for(var i = 0; i < list.length; i++){
+        if(normalizeSchedAnchorStaffId(list[i].slug) === slug) return String(list[i].display || '').trim();
+      }
+      return slug;
+    }
+    function schedMinutesFromClock(raw){
+      var m = String(raw || '').trim().match(/^(\d{1,2}):(\d{2})/);
+      if(!m) return NaN;
+      return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+    }
+    function schedSlotOverlapsClock(slot, start, end){
+      var a = schedMinutesFromClock(slot && slot.anchorStart);
+      var b = schedMinutesFromClock(slot && slot.anchorEnd);
+      var s = schedMinutesFromClock(start);
+      var e = schedMinutesFromClock(end);
+      if(!Number.isFinite(a) || !Number.isFinite(b) || !Number.isFinite(s) || !Number.isFinite(e)) return true;
+      return a < e && b > s;
+    }
+    function schedSlotsForAddDate(iso){
+      var want = String(iso || '').slice(0, 10);
+      var cached = sched.cachedDaySlots || [];
+      if(want && cached.length && String(cached[0].sessionDate || '').slice(0, 10) === want) return cached;
+      if(want && typeof slotsForSelectedDate === 'function'){
+        try{ return slotsForSelectedDate(want) || []; }catch(_e){ return cached; }
+      }
+      return cached;
+    }
+    function schedRefreshShadowHostPax(){
+      var box = $('schedAddShadowPax');
+      if(!box) return;
+      var kind = String((($('schedAddKind')||{}).value) || '').toLowerCase();
+      if(kind !== 'shadowing'){ box.innerHTML = ''; return; }
+      var host = schedShadowHostSlug();
+      var hostName = schedShadowHostDisplay() || 'them';
+      if(!host){
+        box.innerHTML = '<span class="muted">Pick who they are shadowing. Their participants for this day show here.</span>';
+        return;
+      }
+      var iso = String((($('schedAddDate')||{}).value) || '').slice(0, 10);
+      var start = String((($('schedAddStart')||{}).value) || '');
+      var end = String((($('schedAddEnd')||{}).value) || '');
+      var slots = schedSlotsForAddDate(iso);
+      var seen = Object.create(null);
+      var names = [];
+      slots.forEach(function(slot){
+        if(!slot) return;
+        var ids = [slot.staffRosterId];
+        if(slot.allInstructors) slot.allInstructors.forEach(function(inst){ ids.push(inst && inst.staffRosterId); });
+        var mine = ids.some(function(id){ return normalizeSchedAnchorStaffId(id) === host; });
+        if(!mine) return;
+        if(!schedSlotOverlapsClock(slot, start, end)) return;
+        var name = String(slot.clientDisplay || '').trim();
+        var slug = String(slot.clientSlug || '').trim().toLowerCase();
+        if(!name || slug === 'no_participant' || slug === 'available' || slug === 'closed' || slug === 'office') return;
+        var key = slug || name.toLowerCase();
+        if(seen[key]) return;
+        seen[key] = 1;
+        var tm = String(slot.anchorTimeLabel || '').trim();
+        names.push(name + (tm ? ' (' + tm + ')' : ''));
+      });
+      if(!names.length){
+        box.innerHTML = '<span class="muted">No booked participants for ' + esc(hostName) + ' in these hours.</span>';
+        return;
+      }
+      box.innerHTML = '<strong>' + esc(hostName) + '</strong> <span class="muted">participants:</span> ' + esc(names.join(', '));
     }
     async function saveSchedAddSession(){
       var msg = $('schedAddMsg');
