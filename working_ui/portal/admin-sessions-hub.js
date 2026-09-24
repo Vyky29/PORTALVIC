@@ -2821,6 +2821,8 @@
         portalDutyPersonCard: true,
         portalShadowingObserver: kind === "shadowing",
         portalShadowingHost: false,
+        portalShadowingObserverName: kind === "shadowing" ? columnName : "",
+        __portalShadowingOverride: kind === "shadowing" ? ov : null,
         __portalScheduleOverride: ov,
       };
       slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
