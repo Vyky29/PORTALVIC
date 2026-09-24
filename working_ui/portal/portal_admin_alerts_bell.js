@@ -17,6 +17,7 @@
     staff_support: false,
     general_info: true,
     session_disruption: true,
+    makeup_accepted: true,
   };
 
   var bootstrapSilent = false;
@@ -209,6 +210,70 @@
       pushActivityAlert(a, {
         silent: opts.silent || bootstrapSilent,
       });
+    });
+    sortNewestFirst();
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    return rows.length;
+  }
+
+  async function syncMakeupAcceptsFromServer(client, opts) {
+    opts = opts || {};
+    if (!client || !client.from) return 0;
+    var since = new Date();
+    since.setDate(since.getDate() - 14);
+    var res = await client
+      .from("portal_parent_makeup_offers")
+      .select("id, grant_id, venue, session_date, session_time, instructor_name, status, responded_at")
+      .eq("status", "accepted")
+      .gte("responded_at", since.toISOString())
+      .order("responded_at", { ascending: false })
+      .limit(30);
+    if (res.error) {
+      console.warn("[admin-bell] makeup accepts", res.error);
+      return 0;
+    }
+    var rows = res.data || [];
+    var grantIds = [];
+    rows.forEach(function (r) {
+      var g = String((r && r.grant_id) || "").trim();
+      if (g && grantIds.indexOf(g) < 0) grantIds.push(g);
+    });
+    var nameByGrant = Object.create(null);
+    if (grantIds.length) {
+      try {
+        var grants = await client
+          .from("portal_parent_makeup_grants")
+          .select("id, participant_display")
+          .in("id", grantIds);
+        (grants.data || []).forEach(function (g) {
+          if (!g || !g.id) return;
+          nameByGrant[String(g.id)] = String(g.participant_display || "").trim();
+        });
+      } catch (_) {}
+    }
+    rows.forEach(function (r) {
+      if (!r || !r.id) return;
+      var who = nameByGrant[String(r.grant_id || "")] || "Participant";
+      var when = [r.session_date, r.session_time, r.venue, r.instructor_name]
+        .map(function (x) { return String(x || "").trim(); })
+        .filter(Boolean)
+        .join(" · ");
+      pushActivityAlert(
+        {
+          id: "makeup-accept-" + r.id,
+          title: "Makeup accepted · " + who,
+          sub: when || "Parent accepted in the parent portal",
+          created_at: r.responded_at || r.updated_at,
+          kind: "makeup_accepted",
+          view: "absents_refunds",
+          recordId: String(r.id),
+          clientName: who,
+          sessionDate: String(r.session_date || "").slice(0, 10),
+        },
+        { silent: opts.silent || bootstrapSilent },
+      );
     });
     sortNewestFirst();
     if (typeof global.__portalAdminRenderAlerts === "function") {
@@ -866,6 +931,7 @@
   global.portalAdminActivityFromWellbeingNotification = activityFromWellbeingNotification;
   global.portalAdminActivityFromGeneralInfoLog = activityFromGeneralInfoLog;
   global.portalAdminBellSyncGeneralInfoFromServer = syncGeneralInfoFromServer;
+  global.portalAdminBellSyncMakeupAcceptsFromServer = syncMakeupAcceptsFromServer;
   global.portalAdminSyncChatBellAlerts = syncChatBellAlerts;
   global.portalAdminBellResolveChatHints = resolveChatHints;
   global.portalAdminPushActivityAlert = pushActivityAlert;

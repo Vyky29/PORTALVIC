@@ -401,7 +401,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260914-sched-term-snappy"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260918-session-disruption"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260924-makeup-accept-bell"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260923-office-help";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -34926,6 +34926,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.portalAdminBellSyncGeneralInfoFromServer === 'function'){
           await window.portalAdminBellSyncGeneralInfoFromServer(client, { silent: true });
         }
+        if(typeof window.portalAdminBellSyncMakeupAcceptsFromServer === 'function'){
+          await window.portalAdminBellSyncMakeupAcceptsFromServer(client, { silent: true });
+        }
         if(typeof window.portalAdminBellPruneAndSort === 'function'){
           window.portalAdminBellPruneAndSort();
         }
@@ -35060,6 +35063,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
             if(typeof window.portalAdminBellSyncWellbeingFromServer === 'function'){
               void window.portalAdminBellSyncWellbeingFromServer(client, { silent: true });
+            }
+          })
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'portal_parent_makeup_offers' }, function(){
+            if(typeof window.portalAdminBellSyncMakeupAcceptsFromServer === 'function'){
+              void window.portalAdminBellSyncMakeupAcceptsFromServer(client, { silent: false });
             }
           })
           .subscribe();
