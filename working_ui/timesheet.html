@@ -3074,6 +3074,7 @@
       if (dayName === "Sunday" && key === "roberto") {
         return { startMin: 8 * 60 + 45, endMin: 15 * 60 + 15 };
       }
+      if (michelleDayCentreClock(key, dayName, rows)) return michelleDayCentreClock(key, dayName, rows);
       if (isRobertoActonZhBand(dayName, key, rows, dateKey || isoDateFromDayRows(rows))) {
         return { startMin: ROBERTO_ACTON_ZH_START_MIN, endMin: ROBERTO_ACTON_ZH_END_MIN };
       }
@@ -3607,6 +3608,17 @@
       const rows = dayRows || [];
       if (!rows.length) return false;
       return rows.some((s) => /day\s*centre/.test(sessionServiceLower(s)));
+    }
+
+    /** Her shift is 10:45–4:15, not the children's 11:00–4:00. */
+    function michelleDayCentreClock(rosterKey, dayName, rows) {
+      const key = String(rosterKey || "").trim().toLowerCase();
+      if (key !== "michelle") return null;
+      if (dayName !== "Monday" && dayName !== "Tuesday" && dayName !== "Wednesday" && dayName !== "Friday") {
+        return null;
+      }
+      if (!(rows || []).some((s) => /day\s*centre/.test(sessionServiceLower(s)))) return null;
+      return { startMin: 10 * 60 + 45, endMin: 16 * 60 + 15 };
     }
 
     function michelleDayCentrePayableHours(rosterKey, dateObj, role, computedHours, dayRows) {
@@ -4502,8 +4514,11 @@
       const dcSpec =
         rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, rows, dateKey) &&
         youssefSwimfarmDayCentrePaySpec(dayName, dateKey);
+      const michelleClock = michelleDayCentreClock(rosterKey, dayName, rows);
       if (luliyaPm && luliyaPm.startMin != null && luliyaPm.endMin != null) {
         timeRange = clubTimeRangeFromMinutes(luliyaPm.startMin, luliyaPm.endMin);
+      } else if (michelleClock) {
+        timeRange = clubTimeRangeFromMinutes(michelleClock.startMin, michelleClock.endMin);
       } else if (ttPay && ttPay.hours > 0) {
         if (ttPay.startMin != null && ttPay.endMin != null) {
           timeRange = clubTimeRangeFromMinutes(ttPay.startMin, ttPay.endMin);
