@@ -86,6 +86,7 @@
       overflow:hidden;
       background:#f4f7fb;
     }
+    .timesheet-summary__row[hidden]{display:none}
     .timesheet-summary__row{
       display:flex;
       align-items:baseline;
@@ -448,8 +449,16 @@
           <div class="timesheet-summary__label">Granted hours (pay band extra)</div>
           <div class="timesheet-summary__value" id="grantedHours">0.00</div>
         </div>
+        <div class="timesheet-summary__row" id="robertoPtRow" hidden>
+          <div class="timesheet-summary__label">Part-time (monthly)</div>
+          <div class="timesheet-summary__value" id="robertoPtCost">0.00</div>
+        </div>
+        <div class="timesheet-summary__row timesheet-summary__row--sub" id="robertoOtherRow" hidden>
+          <div class="timesheet-summary__label">Other hours (after-school, Sunday, training)</div>
+          <div class="timesheet-summary__value" id="robertoOtherCost">0.00</div>
+        </div>
         <div class="timesheet-summary__row">
-          <div class="timesheet-summary__label">Ready to pay now (GBP)</div>
+          <div class="timesheet-summary__label" id="totalCostLabel">Ready to pay now (GBP)</div>
           <div class="timesheet-summary__value" id="totalCost">0.00</div>
         </div>
         <div class="timesheet-summary__row timesheet-summary__row--sub">
@@ -5091,6 +5100,22 @@
       document.getElementById("rateTop").textContent = formatRateHeaderText();
       document.getElementById("roleLabel").textContent = state.roleLabel;
       document.getElementById("totalCost").textContent = money(state.totalCost);
+      const ptRow = document.getElementById("robertoPtRow");
+      const otherRow = document.getElementById("robertoOtherRow");
+      const totalLbl = document.getElementById("totalCostLabel");
+      if (ptRow && otherRow) {
+        const showPt = robertoHybridPayActive();
+        ptRow.hidden = !showPt;
+        otherRow.hidden = !showPt;
+        if (showPt) {
+          const other = Number((Number(state.totalCost || 0) - ROBERTO_PT_MONTHLY).toFixed(2));
+          document.getElementById("robertoPtCost").textContent = money(ROBERTO_PT_MONTHLY);
+          document.getElementById("robertoOtherCost").textContent = money(other);
+          if (totalLbl) totalLbl.textContent = "Total (part-time + other hours)";
+        } else if (totalLbl) {
+          totalLbl.textContent = "Ready to pay now (GBP)";
+        }
+      }
       document.getElementById("pendingCost").textContent = money(state.pendingCost);
       const lateHoldEl = document.getElementById("lateHoldCost");
       if (lateHoldEl) lateHoldEl.textContent = money(state.lateHoldCost || 0);
