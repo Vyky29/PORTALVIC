@@ -1095,7 +1095,45 @@
         r._amountPaid = Math.max(0, Math.round((face - outOnly) * 100) / 100);
       }
     }
+    applyOfficeSummerNhsSettlement(r);
     return r;
+  }
+
+  /**
+   * Office sheet (Sep 2026), not the stale portal paint.
+   * Emanuel summer face is paid in full. Timi has £3,900 in and £3,400 still due.
+   * Uplift: Ikram + Fadi paid; only Timi £148.21 remains.
+   */
+  function applyOfficeSummerNhsSettlement(r) {
+    if (!r || !isSummerTermRow(r)) return;
+    var slug = paymentParticipantSlug(r);
+    var face = Number(r.amount) || 0;
+    if (slug === "emanuel" && !isNhsInflationUpliftRow(r)) {
+      r.payment_status = "Paid";
+      r.amount_out = 0;
+      r._amountPaid = face > 0 ? face : 11000;
+      if (!(face > 0)) r.amount = 11000;
+      r._officeMonthNote = "Jun £3,500 paid · Jul £7,500 paid";
+      return;
+    }
+    if (slug === "timi" && !isNhsInflationUpliftRow(r) && face > 7000) {
+      r.payment_status = "Partial";
+      r._amountPaid = 3900;
+      r.amount_out = Math.round((face - 3900) * 100) / 100;
+      r._officeMonthNote = "Apr £250 paid · May £750 paid · Jun £3,150 still due · Jul £250 still due (0388)";
+      return;
+    }
+    if (isNhsInflationUpliftRow(r)) {
+      var uplift = summerNhsUpliftInvoicesGbp(r);
+      if (!uplift) return;
+      var paidUp = (uplift.io || 0) + (uplift.fa || 0) + (uplift.ed || 0);
+      var still = uplift.td || 0;
+      r._amountPaid = Math.round(paidUp * 100) / 100;
+      r.amount_out = Math.round(still * 100) / 100;
+      r.payment_status = still > 0.009 ? "Partial" : "Paid";
+      r._upliftIoPaid = true;
+      r._upliftFaPaid = true;
+    }
   }
 
   function resolveYearProgrammeGbp(r) {
@@ -1293,13 +1331,14 @@
       var marInv = summerMarchInvoiceGbp(r);
       var julPaidExtra = summerJulPaidExtraGbp(r);
       var monthBits = "";
-      if (marInv > 0) {
+      var officeNote = !!(r && r._officeMonthNote);
+      if (!officeNote && marInv > 0) {
         monthBits +=
           '<span class="pay-amt-season" title="NHS March invoice (DC + transport)">Mar '
           + money(marInv)
           + "</span>";
       }
-      if (aprMay && aprMay.april > 0) {
+      if (!officeNote && aprMay && aprMay.april > 0) {
         monthBits +=
           '<span class="pay-amt-season" title="'
           + (aprMay.aprilPaid ? "April invoice already paid" : "NHS April invoice")
@@ -1308,7 +1347,7 @@
           + (aprMay.aprilPaid ? " paid" : "")
           + "</span>";
       }
-      if (aprMay && aprMay.may > 0) {
+      if (!officeNote && aprMay && aprMay.may > 0) {
         monthBits +=
           '<span class="pay-amt-season" title="'
           + (aprMay.mayPaid ? "May invoice already paid (not in Outstanding)" : "NHS May invoice")
@@ -1317,7 +1356,12 @@
           + (aprMay.mayPaid ? " paid" : "")
           + "</span>";
       }
-      if (junJul) {
+      if (r && r._officeMonthNote) {
+        monthBits +=
+          '<span class="pay-amt-season" title="Office sheet">'
+          + esc(r._officeMonthNote)
+          + "</span>";
+      } else if (junJul) {
         var junBlob = [((r && r.data) || {})["NHS due months"], ((r && r.data) || {})["Summer basis"]].join(" ");
         var junPaid = junJul.june > 0 && nhsMonthMarkedPaid(junBlob, "jun");
         var julPaid = junJul.july > 0 && nhsMonthMarkedPaid(junBlob, "jul");
@@ -1330,7 +1374,7 @@
           + (julPaid ? " paid" : "")
           + "</span>";
       }
-      if (julPaidExtra > 0) {
+      if (!officeNote && julPaidExtra > 0) {
         monthBits +=
           '<span class="pay-amt-season" title="July Inv 0384 paid (separate from unpaid Jul line)">Jul 0384 '
           + money(julPaidExtra)
@@ -1354,11 +1398,11 @@
           : "")
         + monthBits
         + (uplift
-          ? '<span class="pay-amt-season" title="INV-0390 Ikram · INV-0389 Fadi">IO '
+          ? '<span class="pay-amt-season" title="INV-0390 Ikram paid · INV-0389 Fadi paid">IO '
             + money(uplift.io)
-            + " · FA "
+            + " paid · FA "
             + money(uplift.fa)
-            + "</span>"
+            + " paid</span>"
             + '<span class="pay-amt-season" title="'
             + (uplift.ed > 0 ? "INV-0391 Emanuel · INV-0392 Timi" : "INV-0392 Timi")
             + '">'
@@ -2616,7 +2660,7 @@
     return (rows || []).filter(function (r) {
       var c = category(r);
       if (c === "notreenrolled") return false;
-      if (st === "paid") return c === "paid" || c === "partial";
+      if (st === "paid") return c === "paid";
       /* Legacy "partial" chip → any part-paid (Flexi or GC). */
       if (st === "partial") return c === "partial";
       /* Part still owes (Fadi NHS). Outstanding must show that balance. */
@@ -6980,8 +7024,43 @@
     return row;
   }
 
+  var KNOWN_SUMMER_CRASH = [
+    { slug: "yaqoub", name: "Yaqoub Ismail", amt: 375, invoice: "INV-P-0118", paid: true, services: "60' Aquatic — July crash course · SwimFarm · ×3" },
+    { slug: "tinashe", name: "Tinashe", amt: 187.5, invoice: "INV-P-0119", paid: false, services: "30' Aquatic — July crash course · SwimFarm · ×3" },
+    { slug: "zakariya", name: "Zakariya", amt: 700, invoice: "INV-P-CRASH-MRMCPDUG", paid: true, services: "Climb + Swim — July crash course" },
+    { slug: "adam_p", name: "Adam Pilcher", amt: 300, invoice: "INV-P-0001", paid: true, services: "90' Aquatic Activity (July crash) · Tue/Wed 5–6.30pm Acton" },
+    { slug: "saaib", name: "Saaib", amt: 100, invoice: "INV-P-0127", paid: true, services: "30' Aquatic Activity (July crash) · Tue/Wed 4.30–5pm Acton" },
+  ];
+
+  function knownCrashRow(spec) {
+    return {
+      id: "crash-known-" + spec.slug,
+      client_key: spec.slug,
+      client_name: spec.name,
+      _synthetic: true,
+      _crash: true,
+      _termBucket: "summer_2526",
+      _invoiceNumber: spec.invoice,
+      sheet: "PARENTS",
+      payment_status: spec.paid ? "Paid" : "Outstanding",
+      amount: spec.amt,
+      amount_billed: spec.amt,
+      amount_out: spec.paid ? 0 : spec.amt,
+      _amountPaid: spec.paid ? spec.amt : 0,
+      parent_name: "",
+      data: {
+        Term: "Summer 25/26",
+        Services: spec.services,
+        Stream: "Day Centre",
+        Invoice: spec.invoice,
+        Paid: spec.slug === "saaib" || spec.slug === "adam_p" ? "Funded by LA" : "Using Private Funds",
+      },
+      _serviceParts: Object.create(null),
+    };
+  }
+
   function buildCrashRowsFromInvoices(allInvs) {
-    return (allInvs || [])
+    var rows = (allInvs || [])
       .filter(isSummerCrashInvoice)
       .map(buildCrashPaymentRow)
       .filter(function (r) {
@@ -7003,6 +7082,15 @@
         /* Keep other summer crash invoices visible under Afterschool by default. */
         return !isDayCentreRow(r);
       });
+    var have = Object.create(null);
+    rows.forEach(function (r) {
+      have[paymentParticipantSlug(r)] = true;
+    });
+    KNOWN_SUMMER_CRASH.forEach(function (spec) {
+      if (have[spec.slug]) return;
+      rows.push(knownCrashRow(spec));
+    });
+    return rows;
   }
 
   function loadPortalInvoiceDerivedRows() {
