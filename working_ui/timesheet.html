@@ -438,14 +438,14 @@
       </div>
       <div class="timesheet-summary" id="timesheetSummary" aria-label="Pay summary">
         <div class="timesheet-summary__row">
-          <div class="timesheet-summary__label">Hours ready to pay now (feedbacks + granted)</div>
+          <div class="timesheet-summary__label" id="hoursReadyLabel">Hours ready to pay now</div>
           <div class="timesheet-summary__value" id="totalHours">0.00</div>
         </div>
-        <div class="timesheet-summary__row timesheet-summary__row--sub">
+        <div class="timesheet-summary__row timesheet-summary__row--sub" id="feedbackHoursRow" hidden>
           <div class="timesheet-summary__label">Hours from feedbacks done</div>
           <div class="timesheet-summary__value" id="feedbackHours">0.00</div>
         </div>
-        <div class="timesheet-summary__row timesheet-summary__row--sub">
+        <div class="timesheet-summary__row timesheet-summary__row--sub" id="grantedHoursRow" hidden>
           <div class="timesheet-summary__label">Granted hours (pay band extra)</div>
           <div class="timesheet-summary__value" id="grantedHours">0.00</div>
         </div>
@@ -461,11 +461,11 @@
           <div class="timesheet-summary__label" id="totalCostLabel">Ready to pay now (GBP)</div>
           <div class="timesheet-summary__value" id="totalCost">0.00</div>
         </div>
-        <div class="timesheet-summary__row timesheet-summary__row--sub">
+        <div class="timesheet-summary__row timesheet-summary__row--sub" id="feedbackCostRow" hidden>
           <div class="timesheet-summary__label">From feedbacks done (GBP)</div>
           <div class="timesheet-summary__value" id="feedbackCost">0.00</div>
         </div>
-        <div class="timesheet-summary__row timesheet-summary__row--sub">
+        <div class="timesheet-summary__row timesheet-summary__row--sub" id="grantedCostRow" hidden>
           <div class="timesheet-summary__label">Granted hours (GBP)</div>
           <div class="timesheet-summary__value" id="grantedCost">0.00</div>
         </div>
@@ -4291,6 +4291,9 @@
       const tr = String(entry.timeRange || "").replace(/\s+/g, "");
       if (day === "Sunday" && hours === SUNDAY_SUPPORT_MA_PAY_HOURS) return true;
       if (hours === WEEKDAY_MA_BESPOKE_PAY_HOURS && /^4\.15-6\.15/.test(tr)) return true;
+      const me = timesheetNormStaffKey(entry.rosterKey || state.staffRosterKey);
+      const svc = String(entry.service || entry.serviceName || "").toLowerCase();
+      if (me === "michelle" && /day\s*centre/.test(svc) && hours === MICHELLE_DAY_CENTRE_PAY_HOURS) return true;
       return false;
     }
 
@@ -4362,6 +4365,17 @@
       setTxt("grantedHours", state.grantedHoursTotal);
       setTxt("feedbackCost", state.feedbackCost);
       setTxt("grantedCost", state.grantedCost);
+      const hasGrant = Number(state.grantedHoursTotal || 0) > 0;
+      ["feedbackHoursRow", "grantedHoursRow", "feedbackCostRow", "grantedCostRow"].forEach((id) => {
+        const row = document.getElementById(id);
+        if (row) row.hidden = !hasGrant;
+      });
+      const hoursLabel = document.getElementById("hoursReadyLabel");
+      if (hoursLabel) {
+        hoursLabel.textContent = hasGrant
+          ? "Hours ready to pay now (feedbacks + granted)"
+          : "Hours ready to pay now";
+      }
     }
 
     /** One paid shift per calendar day (single role): span earliest→latest with support buffer. */
