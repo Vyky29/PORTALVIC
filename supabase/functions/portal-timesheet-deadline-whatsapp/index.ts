@@ -83,12 +83,12 @@ function firstName(fullName: string, username: string): string {
 
 function buildBody(first: string, range: string): string {
   return (
-    `Hola ${first},\n\n` +
-    `Recordatorio: el timesheet del ${range} sigue sin enviarse.\n\n` +
-    `Abre el Staff Portal y pulsa Submit esta noche, antes de medianoche:\n` +
+    `Hi ${first},\n\n` +
+    `Reminder: your timesheet for ${range} has not been submitted.\n\n` +
+    `Open the Staff Portal and press Submit tonight, before midnight:\n` +
     `${TIMESHEET_URL}\n\n` +
-    `Si no lo envias a tiempo, hay una penalizacion de 5 libras y las horas pasan a la nomina del mes siguiente.\n\n` +
-    `Gracias,\nOficina clubSENsational`
+    `If it is late, a £5 penalty applies and the hours move to next month's pay.\n\n` +
+    `Thank you,\nclubSENsational office`
   );
 }
 
