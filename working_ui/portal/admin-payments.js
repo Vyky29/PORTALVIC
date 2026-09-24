@@ -1317,6 +1317,10 @@
    */
   function autumnCatalogSeasonTotals(r) {
     /* ACAT — £50 × Day Centre Monday weeks (43/year; first week Tue 1 Sep makeup for Aug 31 BH). */
+    if (typeof isAcatTueDayCentreRow === "function" && isAcatTueDayCentreRow(r)) {
+      /* Tue 11–12 ACAT is 14 × £50. The £750 / £600 / £800 line is Monday aquatic. */
+      return { autumn: 700, spring: 0, summer: 0, year: 700 };
+    }
     if (typeof isAcatMondayAquaticRow === "function" && isAcatMondayAquaticRow(r)) {
       return { autumn: 750, spring: 600, summer: 800, year: 2150 };
     }
@@ -1469,6 +1473,9 @@
             + "Autumn "
             + money(autumnFace)
             + "</span>";
+        }
+        if (!(split.spring > 0) && !(split.summer > 0)) {
+          return '<span class="pay-amt-stack" title="Autumn term">' + autumnMain + "</span>";
         }
         return '<span class="pay-amt-stack" title="Catalogue Autumn / Spring / Summer / Year">'
           + autumnMain
@@ -2781,6 +2788,33 @@
    * ACAT Day Centre (Jack S / Jack W / Kate / Kamy) — Mon aquatic (summer) or
    * Tue Day Centre Hub (autumn board). Prefer Cohort/Stream over roster enrich.
    */
+  /** Tue 11–12 Day Centre ACAT (Jack S, Jack W, Kate, Kamy). Autumn invoice is £700. */
+  function isAcatTueDayCentreRow(r) {
+    if (!r) return false;
+    var slug = paymentParticipantSlug(r);
+    if (slug !== "jacks" && slug !== "jackw" && slug !== "kate" && slug !== "kamy") return false;
+    var blob = rowServiceBlob(r);
+    return /\btue/.test(blob) && /day\s*centre|11/.test(blob);
+  }
+
+  /** Office invoices: Kate, Jack S and Jack W paid £700. Kamy paid £350 of £700. */
+  function applyOfficeAcatTueAutumn(r) {
+    if (!isAcatTueDayCentreRow(r) || termBucketFor(r) !== "autumn_2627") return;
+    var slug = paymentParticipantSlug(r);
+    r.amount = 700;
+    r.amount_billed = 700;
+    r._amountAutumn = 700;
+    r.amount_out = 0;
+    if (slug === "kamy") {
+      r._amountPaid = 350;
+      r.amount_out = 350;
+      r.payment_status = "Partial";
+      return;
+    }
+    r._amountPaid = 700;
+    r.payment_status = "Paid";
+  }
+
   function isAcatMondayAquaticRow(r) {
     if (r && r._acatPart === "aquatic_mon") return true;
     if (r && r._acatPart === "afterschool") return false;
@@ -6061,12 +6095,17 @@
       var summer = findSummerRow(r);
       /* Same display name in Summer + Autumn (prefer fuller portal form). */
       if (summer) {
-        var canonName = preferredParticipantName(summer.client_name, r.client_name);
-        var canonParent = preferredParentName(summer.parent_name, r.parent_name);
-        r.client_name = canonName;
-        r.parent_name = canonParent;
-        summer.client_name = canonName;
-        summer.parent_name = canonParent;
+        var summerLast = normClientNameKey(summer.client_name).split(" ").filter(function (t) { return t && t !== "acat"; }).pop() || "";
+        var autumnLast = normClientNameKey(r.client_name).split(" ").filter(function (t) { return t && t !== "acat"; }).pop() || "";
+        var samePerson = !summerLast || !autumnLast || summerLast === autumnLast || summerLast.charAt(0) === autumnLast.charAt(0);
+        if (samePerson) {
+          var canonName = preferredParticipantName(summer.client_name, r.client_name);
+          var canonParent = preferredParentName(summer.parent_name, r.parent_name);
+          r.client_name = canonName;
+          r.parent_name = canonParent;
+          summer.client_name = canonName;
+          summer.parent_name = canonParent;
+        }
       }
       /* Summer 25/26 sheet is source of truth for Private / DP / LA (except true LA office-auto).
        * Exception: Summer "LA" + Autumn family re-enrol (exempt, not la_funded) = Direct Payments
@@ -6807,6 +6846,7 @@
         }
       }
     });
+    Object.keys(agg).forEach(function (k) { applyOfficeAcatTueAutumn(agg[k]); });
 
     /*
      * LA sheet clients already re-enrolled for 2026/27 may only appear as
