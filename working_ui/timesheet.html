@@ -2531,10 +2531,24 @@
         if (iso) offDates[iso] = r;
       });
       if (Object.keys(offDates).length) {
-        // Drop roster/training rows on validated day-off dates; show a Day off line instead.
-        state.entries = state.entries.filter((e) => !offDates[String(e.date || "").slice(0, 10)]);
+        // A full day off replaces the shift. An afternoon-only off keeps the morning
+        // row, which stays Pending when that session has no feedback.
+        state.entries = state.entries.filter((e) => {
+          const iso = String((e && e.date) || "").slice(0, 10);
+          const off = offDates[iso];
+          if (!off) return true;
+          if (!timesheetDayOffIsAfternoonOnly(off)) return false;
+          return timesheetEntryIsMorningWork(e);
+        });
         Object.keys(offDates).forEach((iso) => {
-          state.entries.push(offDates[iso]);
+          const off = offDates[iso];
+          if (timesheetDayOffIsAfternoonOnly(off)) {
+            const morningLeft = state.entries.some(
+              (e) => String((e && e.date) || "").slice(0, 10) === iso && !e.dayOff
+            );
+            if (morningLeft) return;
+          }
+          state.entries.push(off);
         });
       }
       state.entries.sort((a, b) => String(a.date).localeCompare(String(b.date)));
@@ -2671,6 +2685,24 @@
         }
       }
       return timesheetMergeKnownAbsenceEntries(rows, rosterKey, startIso, endIso);
+    }
+
+    function timesheetDayOffIsAfternoonOnly(row) {
+      const blob = String((row && (row.serviceLabel || row.reason || row.service)) || "").toLowerCase();
+      return blob.indexOf("afternoon only") >= 0;
+    }
+
+    /** Morning work starts before 3pm. Afternoon pool / Northolt does not. */
+    function timesheetEntryIsMorningWork(entry) {
+      const tr = String((entry && (entry.timeRange || entry.time_range)) || "").trim();
+      const m = tr.match(/(\d{1,2})[.:](\d{2})/);
+      if (!m) {
+        return /day\s*centre/i.test(String((entry && (entry.service || entry.serviceName)) || ""));
+      }
+      let h = Number(m[1]);
+      const min = Number(m[2]);
+      if (h >= 1 && h <= 7) h += 12;
+      return h * 60 + min < 15 * 60;
     }
 
     function timesheetDayOffEntry(iso, rosterKey, reason) {

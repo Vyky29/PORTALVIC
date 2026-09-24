@@ -299,10 +299,15 @@ Deno.serve(async (req) => {
 
   let dayOffRecorded = false;
   if (nameKey && sessionDate) {
+    const venueBlob = clean(report.venue, 200).toLowerCase();
+    const afternoonOnly =
+      !/swimfarm|swim farm|hub|day centre/.test(venueBlob) &&
+      /northolt|acton/.test(venueBlob);
     const offReason = [
       "Time off requested",
       clean(report.disruption_type, 80),
       clean(report.reason_category, 80),
+      afternoonOnly ? "Afternoon only" : "",
     ]
       .filter(Boolean)
       .join(" — ");
