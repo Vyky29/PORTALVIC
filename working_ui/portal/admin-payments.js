@@ -1099,7 +1099,53 @@
     }
     applyOfficeSummerNhsSettlement(r);
     applyOfficeEalingSummerIn(r);
+    applyOfficeHfSummerPaid(r);
     return r;
+  }
+
+  /**
+   * H&F Summer 2026 is collected. Term rows only — crash stays on its own line.
+   * Adam P £3,750 + crash £300. Yassir £800. Saaib £550 + crash £100.
+   * Simon £650. Matthias £900. Faris £550.
+   */
+  function applyOfficeHfSummerPaid(r) {
+    if (!r || r._crash || !isSummerTermRow(r)) return;
+    var slug = paymentParticipantSlug(r);
+    var name = String((r && r.client_name) || "").toLowerCase();
+    var spec = null;
+    if (slug === "adam_p" || name.indexOf("pilcher") >= 0) {
+      spec = { amt: 3750, lines: [
+        { t: "Apr £600", paid: true },
+        { t: "May £1,050", paid: true },
+        { t: "Jun £1,350", paid: true },
+        { t: "Jul £750", paid: true },
+      ] };
+    } else if (slug.indexOf("yassir") === 0 || name.indexOf("yassir") >= 0) {
+      spec = { amt: 800, lines: [
+        { t: "Apr £300", paid: true },
+        { t: "May £150", paid: true },
+        { t: "Jun £200", paid: true },
+        { t: "Jul £150", paid: true },
+      ] };
+    } else if (slug === "saaib" || name.indexOf("saaib") >= 0 || name.indexOf("saiib") >= 0) {
+      spec = { amt: 550, lines: [{ t: "Summer £550", paid: true }] };
+    } else if (slug.indexOf("simon") === 0 || name.indexOf("simon") >= 0) {
+      spec = { amt: 650, lines: [{ t: "Summer £650", paid: true }] };
+    } else if (name.indexOf("matthias") >= 0 || name.indexOf("melake") >= 0) {
+      spec = { amt: 900, lines: [
+        { t: "Summer £1,100", paid: true },
+        { t: "Summer −£200", paid: true },
+      ] };
+    } else if (slug.indexOf("faris") === 0 || name.indexOf("faris") >= 0) {
+      spec = { amt: 550, lines: [{ t: "Summer £550", paid: true }] };
+    }
+    if (!spec) return;
+    r.amount = spec.amt;
+    r.amount_billed = spec.amt;
+    r._amountPaid = spec.amt;
+    r.amount_out = 0;
+    r.payment_status = "Paid";
+    r._officeMonthLines = spec.lines;
   }
 
   /** Ealing receipts into Afterschool Summer 2026, summed per child. */
