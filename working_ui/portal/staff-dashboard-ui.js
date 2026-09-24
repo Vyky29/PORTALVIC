@@ -2332,6 +2332,28 @@
       return keys;
     }
     try{ window.portalTermStaffProfileLookupKeys = portalTermStaffProfileLookupKeys; }catch(_){}
+    function portalTermStaffKeptClientSessionsOnDate(iso, dayWord, staffId){
+      const sid = String(staffId || '').trim().toLowerCase();
+      const key = String(iso || '').trim().slice(0, 10);
+      if(!sid || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+      const baseReal = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
+      const isReal = function(s){
+        if(baseReal) return baseReal(s, key);
+        const st = String(s && s.status || '').toLowerCase();
+        if(st === 'closed' || st === 'available') return false;
+        const cid = String(s && s.clientId || '').toLowerCase();
+        return Boolean(cid && cid !== 'closed' && cid !== 'available' && cid !== 'shadowing' && cid !== 'training' && cid !== 'meeting');
+      };
+      let list = [];
+      try{
+        list = typeof portalTermFeedbackSessionsForDate === 'function'
+          ? portalTermFeedbackSessionsForDate(dayWord, key, sid, isReal)
+          : (typeof portalBaseClientSessionsForCalendarDate === 'function'
+            ? portalBaseClientSessionsForCalendarDate(dayWord, key, sid, isReal)
+            : []);
+      }catch(_){ list = []; }
+      return Array.isArray(list) && list.length > 0;
+    }
     function portalTermStaffAwayDatesFor(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const map = t && t.termStaffAwayDatesByProfileKey;
@@ -3687,6 +3709,14 @@
             && typeof portalStaffTermAdminScheduleAdjustedOnDate === 'function'
             && portalStaffTermAdminScheduleAdjustedOnDate(isoKey, termStaffId);
           if(staffRequestedAway && worked.includes(w)){
+            const dayWordAway = dt.toLocaleDateString('en-GB', { weekday: 'long' });
+            const keptWork = portalTermStaffKeptClientSessionsOnDate(isoKey, dayWordAway, termStaffId);
+            if(keptWork){
+              cls += ' term-cal-day--split-worked-off';
+              label = `${day}, worked part of the day, rest of the day off`;
+              parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${isoKey}" data-term-review-weekday="${dayWordAway}" data-term-review-judgement="0" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
+              continue;
+            }
             /* Same pulse for every validated/requested day off on a work weekday —
                do not split baseline vs non-baseline (looked inconsistent, e.g. Berta 24 Jun vs 8 Jul). */
             cls += ' half-term term-cal-day--ov-pulse-shift-removed';

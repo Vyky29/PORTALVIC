@@ -7938,6 +7938,12 @@
       color:var(--danger);
       box-shadow:0 0 0 1px rgba(217,83,79,.12);
     }
+    .term-cal-day.term-cal-day--split-worked-off{
+      background:linear-gradient(to bottom, var(--successSoft) 50%, var(--dangerSoft) 50%);
+      border-color:rgba(21,115,71,.35);
+      color:#14532d;
+      cursor:pointer;
+    }
     .term-cal-day.term-feedback-complete{
       background:var(--successSoft);
       border-color:rgba(21,115,71,.35);
