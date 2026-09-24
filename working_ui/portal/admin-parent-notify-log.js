@@ -2044,6 +2044,66 @@
     el.scrollTop = el.scrollHeight;
   }
 
+  /**
+   * The main load keeps only the newest 800 messages across every family.
+   * That window is now September, so July and August replies never reach the thread.
+   * Opening a chat loads that phone's own history.
+   */
+  async function hydrateOpenThreadHistory() {
+    var key = state.selectedKey;
+    if (!key) return;
+    var t = findThread(key);
+    if (!t) return;
+    var tail = phoneMatchKey(t.sendPhone || t.phone || t.profilePhone || "");
+    if (!tail || tail.length < 8) return;
+    var client = cfg.getClient();
+    if (!client) return;
+    var like = "%" + tail + "%";
+    var inboundSel =
+      "id, created_at, from_phone, contact_name, message_type, body_text, context_wa_id, wa_message_id, media_url, media_path, media_mime, meta";
+    var outboundSel =
+      "id, created_at, sent_by_email, kind, channel, client_display, parent_name, parent_email, parent_phone, session_date, venue, subject, body_text, message_type, media_path, media_mime, email_status, whatsapp_status, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, error_detail, meta";
+    var inn = await client
+      .from("portal_parent_whatsapp_inbound")
+      .select(inboundSel)
+      .ilike("from_phone", like)
+      .order("created_at", { ascending: true })
+      .limit(500);
+    var out = await client
+      .from("portal_parent_notify_log")
+      .select(outboundSel)
+      .ilike("parent_phone", like)
+      .or("channel.in.(whatsapp,both,whatsapp_email),whatsapp_message_id.not.is.null")
+      .order("created_at", { ascending: true })
+      .limit(500);
+    if ((inn && inn.error) || (out && out.error)) return;
+    var items = [];
+    ((out && out.data) || []).forEach(function (row) {
+      items.push({ direction: "out", created_at: row.created_at, row: row });
+    });
+    ((inn && inn.data) || []).forEach(function (row) {
+      items.push({ direction: "in", created_at: row.created_at, row: row });
+    });
+    if (!items.length) return;
+    var built = buildWhatsAppThreads(items);
+    var full = null;
+    Object.keys(built).forEach(function (k) {
+      if (k === key || k === tail || phoneMatchKey(built[k].sendPhone || built[k].phone) === tail) {
+        full = built[k];
+      }
+    });
+    if (!full || !full.events.length) return;
+    if (state.selectedKey !== key) return;
+    var live = findThread(key);
+    if (!live) return;
+    live.events = full.events;
+    live.lastAt = full.lastAt || live.lastAt;
+    live.hasInbound = full.hasInbound || live.hasInbound;
+    live.lastInboundAt = full.lastInboundAt || live.lastInboundAt;
+    live.lastInboundId = full.lastInboundId || live.lastInboundId;
+    live.lastInboundWaId = full.lastInboundWaId || live.lastInboundWaId;
+  }
+
   function selectThread(key, opts) {
     opts = opts || {};
     captureComposerDraft();
@@ -2064,6 +2124,11 @@
       state.mobileShowThread = false;
     }
     renderChat(opts.fromRefresh);
+    if (next) {
+      void hydrateOpenThreadHistory().then(function () {
+        if (state.selectedKey === next) renderChat(true);
+      });
+    }
     if (next) {
       global.requestAnimationFrame(function () {
         scrollThreadToBottom(true);
@@ -3053,6 +3118,7 @@
       /* Live portal_parent_contacts wins over static export / stale labels. */
       state.contactDirectory = mergeContactDirectories(liveDir, localDir);
       state.threads = enrichThreadsWithProfilePhones(buildWhatsAppThreads(state.timeline));
+      if (state.selectedKey) await hydrateOpenThreadHistory();
       if (statusEl) {
         if (!state.inboundAvailable) {
           statusEl.textContent =
