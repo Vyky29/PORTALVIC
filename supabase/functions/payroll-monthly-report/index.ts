@@ -180,6 +180,13 @@ interface WorkerRow {
   isLate: boolean;
 }
 
+/** Not on payroll: test account, plus Andres, Angel and Giuseppe. */
+function payrollStaffLeftOut(username: string, fullName: string): boolean {
+  const blob = `${username} ${fullName}`.toLowerCase();
+  if (username === "demo" || fullName === "demo") return true;
+  return /\bandres\b/.test(blob) || /\bangel\b/.test(blob) || /\bgiuseppe\b/.test(blob);
+}
+
 /** Keep the latest timesheet per worker for the target month (handles re-submissions). */
 function dedupeLatest(rows: any[]): any[] {
   const byUser = new Map<string, any>();
@@ -254,7 +261,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     if (p.id && nm) nameById.set(String(p.id), nm);
     const uname = String(p.username || "").toLowerCase().trim();
     const fname = String(p.full_name || "").toLowerCase().trim();
-    if (p.id && (uname === "demo" || fname === "demo")) excludedIds.add(String(p.id));
+    if (p.id && payrollStaffLeftOut(uname, fname)) excludedIds.add(String(p.id));
     if (p.id) {
       const sal = fixedSalarySpecForNames(uname, fname);
       if (sal && sal.amount > 0) salaryById.set(String(p.id), sal);
@@ -379,6 +386,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
         !importedTimesheetIds.has(id) &&
         !contractIds.has(id) &&
         !contractUserIds.has(id) &&
+        !excludedIds.has(id) &&
         startedByTarget(id)
     )
     .map(([id, role]) => ({
