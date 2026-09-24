@@ -1919,7 +1919,8 @@
     if (clean(ov.session_date) !== slot.session_date) return false;
     var oCid = canonicalClientSlug(ov.anchor_client_id);
     var sCid = canonicalClientSlug(slot.client_name || slot.client_slug || slot.clientSlug);
-    if (oCid && sCid && oCid !== sCid) return false;
+    var genericDuty = !oCid || oCid === "shadowing" || oCid === "training" || oCid === "meeting";
+    if (!genericDuty && oCid && sCid && oCid !== sCid) return false;
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();
     if (oVen && sVen && oVen !== sVen) return false;
@@ -1943,7 +1944,10 @@
     var isObserver = staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, insts);
     if (isHost) return "host";
     if (isObserver) return "observer";
-    if (insts.length) return "peer";
+    var oCid = canonicalClientSlug(ov.anchor_client_id);
+    var genericDuty = !oCid || oCid === "shadowing" || oCid === "training" || oCid === "meeting";
+    /* A shadowing card with no named child only sticks to the trainer's seats. */
+    if (!genericDuty && insts.length) return "peer";
     return "";
   }
 
