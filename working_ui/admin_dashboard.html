@@ -5006,10 +5006,68 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       Object.keys(groups).forEach(function(key){
         var pack = groups[key];
         if(!pack || pack.slots.length <= 1) return;
+        var kept = schedMergeDayCentreCoInstructorLine(pack.slots);
+        if(kept){
+          order[pack.idx].slot = kept;
+          return;
+        }
         var preferred = schedPickPreferredInstructorTwinSlot(pack.slots);
         order[pack.idx].slot = preferred || pack.slots[0];
       });
       return order.map(function(o){ return o.slot; });
+    }
+    function schedSlotIsDayCentre(slot){
+      var prog = String((slot && (slot.programme || slot.rosterService || slot.service)) || '').toLowerCase();
+      return prog.indexOf('day centre') >= 0 || prog.indexOf('daycentre') >= 0;
+    }
+    /**
+     * Day Centre is two instructors on the same child and time. Keep both on one line.
+     * The one who is off stays as COVER NEEDED. Do not drop them, and do not turn it
+     * into an instructor change (parents of Day Centre do not see that).
+     */
+    function schedMergeDayCentreCoInstructorLine(twins){
+      var list = Array.isArray(twins) ? twins : [];
+      if(list.length < 2) return null;
+      if(!list.every(schedSlotIsDayCentre)) return null;
+      for(var i = 0; i < list.length; i++){
+        var ov = findOverrideForSlotOfTypes(list[i], ['instructor_reassign']);
+        if(ov) return null;
+      }
+      var seen = Object.create(null);
+      var all = [];
+      list.forEach(function(sl){
+        var members = (sl.allInstructors && sl.allInstructors.length)
+          ? sl.allInstructors
+          : [{ staffRosterId: sl.staffRosterId, staffName: sl.staffName }];
+        members.forEach(function(inst){
+          var rid = normalizeSchedAnchorStaffId(inst && inst.staffRosterId);
+          if(!rid || seen[rid]) return;
+          seen[rid] = 1;
+          all.push({
+            staffRosterId: rid,
+            staffName: String((inst && inst.staffName) || '').trim() || schedStaffDisplayName(rid, rid)
+          });
+        });
+      });
+      if(all.length < 2) return null;
+      var iso = String(list[0].sessionDate || '').slice(0, 10);
+      var stay = null;
+      for(var a = 0; a < all.length; a++){
+        if(!schedStaffAwayOnIso(iso, all[a].staffRosterId)){ stay = all[a]; break; }
+      }
+      if(!stay) stay = all[0];
+      var base = list[0];
+      for(var b = 0; b < list.length; b++){
+        if(normalizeSchedAnchorStaffId(list[b].staffRosterId) === stay.staffRosterId){
+          base = list[b];
+          break;
+        }
+      }
+      var merged = Object.assign({}, base);
+      merged.allInstructors = all;
+      merged.staffRosterId = stay.staffRosterId;
+      merged.staffName = stay.staffName;
+      return merged;
     }
     function schedPickPreferredInstructorTwinSlot(twins){
       var list = Array.isArray(twins) ? twins : [];
@@ -18495,11 +18553,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var lab = String(slot.staffName || '').trim() || schedStaffDisplayName(slot.staffRosterId, '—');
       var co = slot.allInstructors;
       if(co && co.length > 1){
+        var bits = [];
+        var anyAway = false;
+        co.forEach(function(inst){
+          var away = schedStaffAwayOnIso(schedIso, inst.staffRosterId);
+          if(bits.length) bits.push('<span class="sched-pax-pill-sep">/</span>');
+          if(away){
+            anyAway = true;
+            bits.push(schedStaffPillHtml(inst.staffName, inst.staffRosterId, schedIso, 'out'));
+            bits.push('<span class="sched-pax-pill-sep">/</span>');
+            bits.push('<span class="sched-pax-pill sched-pax-pill--cover-needed">COVER NEEDED</span>');
+          }else{
+            bits.push(schedStaffPillHtml(inst.staffName, inst.staffRosterId, schedIso, 'booked'));
+          }
+        });
         return (
-          '<div class="sched-pax-pill-row">' +
-          co.map(function(inst){
-            return schedStaffPillHtml(inst.staffName, inst.staffRosterId, schedIso, 'booked');
-          }).join('') +
+          '<div class="sched-pax-pill-row' + (anyAway ? ' sched-pax-pill-row--cover-needed' : '') + '">' +
+          bits.join('') +
           '</div>'
         );
       }
@@ -18654,6 +18724,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ? '<span class="sched-notes-cell">'+esc(notesRaw)+'</span>'
           : '<span class="muted">—</span>';
         var coverNeededRow = !!(ovStaff && String(ovStaff.override_type || '').trim() === 'instructor_cover_needed');
+        if(!coverNeededRow && slot.allInstructors && slot.allInstructors.length){
+          coverNeededRow = slot.allInstructors.some(function(inst){
+            return schedStaffAwayOnIso(schedIso, inst.staffRosterId);
+          });
+        }
         return '<tr class="sched-slot-row'+(coverNeededRow ? ' sched-slot-row--cover-needed' : '')+'" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'"'+staffAllAttr+' data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
           '<td data-label="Participant" style="min-width:0">'+clientCellHtml+'</td>'+
           '<td data-label="Service" style="min-width:0">'+serviceCell+'</td>'+

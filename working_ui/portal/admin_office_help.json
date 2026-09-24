@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-24-v30",
+  "version": "2026-09-24-v31",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -215,7 +215,8 @@
             "A Cancelled mark on one instructor's timed row does not block the others from sending that shared feedback. The app can still ask them."
           ],
           "tips": [
-            "When a Day Centre instructor is off, their row stays in their name with COVER NEEDED. A later handoff with the same child stays on that later time. It does not replace the morning instructor.",
+            "When one of two Day Centre instructors is off, both stay on the same line: the one who is in, then the one who is off, then COVER NEEDED. Do not remove either name from the roster.",
+            "To fill that gap without touching the day-off instructor, press Add card for the same child. Hours can be shorter and the worker can be someone else. Leave COVER NEEDED if nobody matches the full time. Parents of Day Centre do not get a change message.",
             "Day Centre instructors can move between participants. Those one-day changes update Team. They do not WhatsApp the parents.",
             "After-school and weekend seats are fixed to an instructor, so a real cover there is what parents can see on Team."
           ]
