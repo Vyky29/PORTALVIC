@@ -1912,6 +1912,51 @@
   }
 
   /**
+   * From Sun 27 Sep: Cyrus goes to the pool first (Gabriel's swimming instructor,
+   * Roberto) and stays Small Pool. Arthur Ma, who was Small at 11, moves to Big.
+   * Gabriel takes Cyrus's support worker (Berta) for that first half.
+   * At 11.45 they swap back: Gabriel swims with Aurora (Cyrus's instructor, Small);
+   * Cyrus is in the Hub with Godsway (Gabriel's support worker). Arthur Mo stays.
+   */
+  var SUNDAY_CYRUS_POOL_FIRST_FROM = "2026-09-27";
+  function applySundayCyrusGabrielOrder(row) {
+    if (!row) return row;
+    var iso = normIso(row.session_date);
+    if (!iso || iso < SUNDAY_CYRUS_POOL_FIRST_FROM) return row;
+    var time = String(row.time_slot || "").trim();
+    var client = String(row.client_name || "").trim();
+    var area = String(row.area || "");
+    var hub = /hub/i.test(area);
+    var next = Object.assign({}, row);
+    if (time === "11 to 11.45") {
+      if (client === "Gabriel" && !hub) {
+        next.client_name = "Cyrus";
+        next.area = "Small Pool";
+        return next;
+      }
+      if (client === "Arthur Ma" && !hub) {
+        next.area = "Big Pool";
+        return next;
+      }
+      if (client === "Cyrus" && hub) {
+        next.client_name = "Gabriel";
+        return next;
+      }
+    }
+    if (time === "11.45 to 12.30") {
+      if (client === "Cyrus" && !hub) {
+        next.client_name = "Gabriel";
+        return next;
+      }
+      if (client === "Gabriel" && hub) {
+        next.client_name = "Cyrus";
+        return next;
+      }
+    }
+    return row;
+  }
+
+  /**
    * LOCAL EXTRA Sunday standing pool (SwimFarm) — Autumn truth, stamped 13 Sep.
    * Sun 6 DATE_EXTRA overlay is applied separately (Yusuf↔Simon swap).
    */
@@ -1998,7 +2043,7 @@
     });
     autumnSundayStandingPoolRows().forEach(function (row) {
       expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
-        out.push(exp);
+        out.push(applySundayCyrusGabrielOrder(exp));
       });
     });
     return out;
@@ -3895,7 +3940,7 @@
     autumnSundayStandingHubRows().forEach(function (row) {
       expandStandingRowAcrossAutumnTerm(row).forEach(function (exp) {
         if (normIso(exp.session_date) === "2026-09-06") return;
-        out.push(exp);
+        out.push(applySundayCyrusGabrielOrder(exp));
       });
     });
     autumnSundaySep6HubCoverRows().forEach(function (row) {
