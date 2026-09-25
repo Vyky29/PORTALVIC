@@ -796,6 +796,52 @@
       const area = String((s && (s.rosterArea || s.area || '')) || '').trim().toLowerCase();
       return area.indexOf('hub') >= 0;
     }
+    /**
+     * Autumn Instructor Timetable owns who works that calendar day.
+     * Standing Sunday hub must not follow John onto 13 / 20 / 27 when the
+     * timetable only names him on Sun 6. Exact dated rows and covers stay.
+     * true = block standing projection. false = allow (named, or no timetable row).
+     */
+    function portalAutumnStandingBlockedForStaff(staffId, isoYmd){
+      const iso = normaliseIsoDate(isoYmd);
+      if(!iso || iso < '2026-09-01') return false;
+      let doc = null;
+      try{ doc = window.PORTAL_AUTUMN_STAFF_HOURS || null; }catch(_){ doc = null; }
+      const hours = doc && doc.staffHours;
+      if(!hours) return false;
+      const raw = String(staffId || '').trim().toLowerCase();
+      const canon = typeof portalCanonicalStaffKeyForMatch === 'function'
+        ? String(portalCanonicalStaffKeyForMatch(staffId) || '').trim().toLowerCase()
+        : raw;
+      const keys = [];
+      [raw, canon].forEach(function(k){
+        const t = String(k || '').replace(/[^a-z0-9]+/g, '');
+        if(t && keys.indexOf(t) < 0) keys.push(t);
+      });
+      if(!keys.length) return false;
+      const dows = Object.keys(hours);
+      for(let d = 0; d < dows.length; d++){
+        const dates = (hours[dows[d]] && hours[dows[d]].dates) || [];
+        for(let i = 0; i < dates.length; i++){
+          const row = dates[i];
+          if(String((row && row.date) || '').slice(0, 10) !== iso) continue;
+          const cells = (row && row.cells) || [];
+          for(let c = 0; c < cells.length; c++){
+            const text = String((cells[c] && cells[c].text) || '')
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '');
+            const tokens = text.split(/[^a-z0-9]+/).filter(Boolean);
+            for(let k = 0; k < keys.length; k++){
+              if(tokens.indexOf(keys[k]) >= 0 || tokens[0] === keys[k]) return false;
+            }
+          }
+          return true;
+        }
+      }
+      return false;
+    }
+    try{ window.portalAutumnStandingBlockedForStaff = portalAutumnStandingBlockedForStaff; }catch(_){}
     /** Roster row vs calendar day: dated rows match YYYY-MM-DD; undated rows match weekday (en-GB long). */
     function portalSessionSpreadsheetRowMatchesCalendarDate(s, isoYmd, weekdayLong){
       if(!s) return false;
@@ -939,6 +985,7 @@
                 return false;
               }
             }catch(_dcProj){}
+            if(portalAutumnStandingBlockedForStaff(sid, iso)) return false;
             return true;
           }
         }
@@ -954,6 +1001,7 @@
               return false;
             }
           }catch(_snapProj){}
+          if(portalAutumnStandingBlockedForStaff(sid, iso)) return false;
         }
         return true;
       }
@@ -975,6 +1023,7 @@
       if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
       const snap = portalStaffStandingWeekdaySnapArgs(iso);
       if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)) return false;
+      if(portalAutumnStandingBlockedForStaff(sid, iso)) return false;
       return w === String(s.day || '').trim();
     }
         try{
@@ -8807,6 +8856,24 @@
           if(viewFrom && iso && iso < viewFrom) continue;
           if(viewTo && iso && iso > viewTo) break;
           if(portalNextSessionCandidateRows(id, wname, iso).length){
+            /* Timetable says this worker is off (John Sun 20 / 27). Keep the day
+               only for a real cover, an extra shift, or an admin-added card. */
+            if(portalAutumnStandingBlockedForStaff(id, iso)){
+              var keepOffTimetable = false;
+              try{
+                if(typeof portalTermStaffExtraCalendarDates === 'function'
+                  && portalTermStaffExtraCalendarDates(id).indexOf(iso) >= 0) keepOffTimetable = true;
+              }catch(_){}
+              try{
+                if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+                  && portalStaffHasInstructorCoverOnCalendarDate(iso, id)) keepOffTimetable = true;
+              }catch(_){}
+              try{
+                if(typeof portalStaffHasAdminAddedShiftOnCalendarDate === 'function'
+                  && portalStaffHasAdminAddedShiftOnCalendarDate(iso, id)) keepOffTimetable = true;
+              }catch(_){}
+              if(!keepOffTimetable) continue;
+            }
             info = { date: d, weekdayName: wname };
             break;
           }
