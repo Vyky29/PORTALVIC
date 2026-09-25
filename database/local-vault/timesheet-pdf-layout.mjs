@@ -131,11 +131,40 @@ export function timesheetRolePdfRgb(role) {
 
 function pdfEntryRowHeightScale(entry) {
   if (entry && entry.dayOff) return 1.38;
+  const timeRange = entryTimeRangeLabel(entry);
   const venue = entryVenueLabel(entry);
   const role = entryRoleLabel(entry);
-  if (venue && role) return 1.62;
-  if (role || venue) return 1.38;
+  const lines = [timeRange, entryServiceTitle(entry), venue, role].filter(Boolean).length;
+  if (lines >= 4) return 1.9;
+  if (lines === 3) return 1.62;
+  if (lines === 2) return 1.38;
   return 1;
+}
+
+function drawPdfTimeLine(doc, timeRange, cx, y, S, late) {
+  const text = String(timeRange || "");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.6 * S);
+  if (!late) {
+    doc.setTextColor(16, 34, 56);
+    doc.text(text, cx, y, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    return;
+  }
+  const dash = text.indexOf("-");
+  const startTxt = dash > 0 ? text.slice(0, dash) : text;
+  const restTxt = dash > 0 ? text.slice(dash) : "";
+  const w1 = doc.getTextWidth(startTxt);
+  const w2 = restTxt ? doc.getTextWidth(restTxt) : 0;
+  let x = cx - (w1 + w2) / 2;
+  doc.setTextColor(185, 28, 28);
+  doc.text(startTxt, x, y);
+  if (restTxt) {
+    doc.setTextColor(16, 34, 56);
+    doc.text(restTxt, x + w1, y);
+  }
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(16, 34, 56);
 }
 
 function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, manual, thisRowH) {
@@ -160,21 +189,37 @@ function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, manual, thisRowH
     doc.setTextColor(16, 34, 56);
     return;
   }
+  const timeRange = entryTimeRangeLabel(entry).slice(0, 28);
+  const title = entryServiceTitle(entry).slice(0, 28);
   const serviceLine = entryServiceLine(entry).slice(0, 32);
   const venue = entryVenueLabel(entry).slice(0, 24);
   const role = entryRoleLabel(entry).slice(0, 24);
-  if (venue && role) {
-    doc.setFontSize(7.6 * S);
-    doc.setTextColor(16, 34, 56);
-    doc.text(serviceLine, cx, midY - 2.4 * S, { align: "center" });
+  const lateStart = !!(entry && entry.lateArrival && timeRange);
+  if (venue && role && (timeRange || title)) {
+    const lines = [timeRange, title, venue, role].filter(Boolean);
+    const step = 2.35 * S;
+    let ly = midY - ((lines.length - 1) * step) / 2;
+    if (timeRange) {
+      drawPdfTimeLine(doc, timeRange, cx, ly, S, lateStart);
+      ly += step;
+    }
+    if (title) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.6 * S);
+      doc.setTextColor(16, 34, 56);
+      doc.text(title, cx, ly, { align: "center" });
+      ly += step;
+    }
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(7 * S);
     doc.setTextColor(51, 65, 85);
-    doc.text(venue, cx, midY + 0.2 * S, { align: "center" });
-    doc.setFontSize(7.2 * S);
+    doc.text(venue, cx, ly, { align: "center" });
+    ly += step;
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.2 * S);
     const [rr, gg, bb] = timesheetRolePdfRgb(entryColorRole(entry));
     doc.setTextColor(rr, gg, bb);
-    doc.text(role, cx, midY + 2.8 * S, { align: "center" });
+    doc.text(role, cx, ly, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setTextColor(16, 34, 56);
     doc.setFontSize(8.5 * S);
@@ -256,6 +301,9 @@ export function buildFormattedTimesheetPdfBytes(opts) {
   const manual = !!opts.manual;
   const logoData = opts.logoDataUrl || null;
 
+  const grantedHours = Number(
+    entries.reduce((a, e) => a + (e && e.grantedUnpaid ? Number(e.grantedHours || 0) : 0), 0).toFixed(2)
+  );
   const summaryRows = manual
     ? [
         { label: "Total hours", value: money(totalHours), tone: "neutral" },
@@ -266,6 +314,9 @@ export function buildFormattedTimesheetPdfBytes(opts) {
         { label: "Hours ready to pay now (green)", value: money(totalHours), tone: "ok" },
         { label: "Rate (avg)", value: `£${money(effectiveRate)}/h`, tone: "neutral" },
         { label: "Ready to pay now", value: `£${money(totalCost)}`, tone: "okStrong" },
+        ...(grantedHours > 0
+          ? [{ label: "Granted hours (empty seat, not paid)", value: money(grantedHours), tone: "warn" }]
+          : []),
         { label: "Pending until feedback is completed", value: `£${money(pendingCost)}`, tone: "warn" },
         { label: "Total if all feedback is completed", value: `£${money(potentialCost)}`, tone: "neutral" },
       ];

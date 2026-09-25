@@ -446,7 +446,7 @@
           <div class="timesheet-summary__value" id="feedbackHours">0.00</div>
         </div>
         <div class="timesheet-summary__row timesheet-summary__row--sub" id="grantedHoursRow" hidden>
-          <div class="timesheet-summary__label">Granted hours (pay band extra)</div>
+          <div class="timesheet-summary__label" id="grantedHoursLabel">Granted hours (pay band extra)</div>
           <div class="timesheet-summary__value" id="grantedHours">0.00</div>
         </div>
         <div class="timesheet-summary__row" id="robertoPtRow" hidden>
@@ -2288,6 +2288,32 @@
         startMin: minStart,
         endMin: maxEnd
       };
+    }
+
+    /**
+     * Luliya weekday pool shift (what the line shows). Pay stays the named-client
+     * span: Mon/Wed 1.5h because one seat is empty, Tue 2.5h only from 15 Sep.
+     * The gap is granted and is not added to pay.
+     */
+    function timesheetLuliyaAfternoonShift(dayName, dateKey) {
+      const iso = String(dateKey || "").slice(0, 10);
+      if (dayName === "Tuesday") {
+        return { startMin: 16 * 60, endMin: 18 * 60 + 30, hours: 2.5, payFullFrom: "2026-09-15" };
+      }
+      if (dayName === "Monday" || dayName === "Wednesday") {
+        return { startMin: 16 * 60 + 30, endMin: 18 * 60 + 30, hours: 2, payFullFrom: "" };
+      }
+      return null;
+    }
+
+    function timesheetLuliyaAfternoonPayHours(named, dayName, dateKey) {
+      const shift = timesheetLuliyaAfternoonShift(dayName, dateKey);
+      const namedHours = named && Number(named.hours) > 0 ? Number(named.hours) : 0;
+      if (!shift) return namedHours;
+      if (shift.payFullFrom && String(dateKey || "").slice(0, 10) >= shift.payFullFrom) {
+        return Math.max(namedHours, shift.hours);
+      }
+      return namedHours;
     }
 
     /** Luliya Day Centre: arrived 30 minutes late. Start shows in red; that half hour is not paid. */
@@ -4313,8 +4339,21 @@
         }
         return entry;
       }
-      /* Named-span pool pay is the payable figure, including holes inside the shift. */
-      if (entry.luliyaAfternoonNamedSpan || timesheetPayBandIsTheShift(entry)) {
+      /* Named-span pool pay is the payable figure. The empty seat is granted and not paid. */
+      if (entry.luliyaAfternoonNamedSpan) {
+        const payable = Number(entry.hours || 0);
+        const shiftH = Number(entry.shiftHours);
+        entry.workedHours = Number((payable > 0 ? payable : 0).toFixed(2));
+        if (shiftH > payable) {
+          entry.grantedHours = Number((shiftH - payable).toFixed(2));
+          entry.grantedUnpaid = true;
+        } else {
+          entry.grantedHours = 0;
+          entry.grantedUnpaid = false;
+        }
+        return entry;
+      }
+      if (timesheetPayBandIsTheShift(entry)) {
         const payable = Number(entry.hours || 0);
         entry.workedHours = Number((payable > 0 ? payable : 0).toFixed(2));
         entry.grantedHours = 0;
@@ -4374,13 +4413,27 @@
       setTxt("feedbackCost", state.feedbackCost);
       setTxt("grantedCost", state.grantedCost);
       const hasGrant = Number(state.grantedHoursTotal || 0) > 0;
-      ["feedbackHoursRow", "grantedHoursRow", "feedbackCostRow", "grantedCostRow"].forEach((id) => {
+      const grantRows = (Array.isArray(state.payableEntries) ? state.payableEntries : []).filter(
+        (e) => Number(e && e.grantedHours) > 0
+      );
+      const unpaidOnly = grantRows.length > 0 && grantRows.every((e) => e.grantedUnpaid);
+      ["feedbackHoursRow", "grantedHoursRow"].forEach((id) => {
         const row = document.getElementById(id);
         if (row) row.hidden = !hasGrant;
       });
+      ["feedbackCostRow", "grantedCostRow"].forEach((id) => {
+        const row = document.getElementById(id);
+        if (row) row.hidden = !hasGrant || unpaidOnly;
+      });
+      const grantLabel = document.getElementById("grantedHoursLabel");
+      if (grantLabel) {
+        grantLabel.textContent = unpaidOnly
+          ? "Granted hours (empty seat, not paid)"
+          : "Granted hours (pay band extra)";
+      }
       const hoursLabel = document.getElementById("hoursReadyLabel");
       if (hoursLabel) {
-        hoursLabel.textContent = hasGrant
+        hoursLabel.textContent = hasGrant && !unpaidOnly
           ? "Hours ready to pay now (feedbacks + granted)"
           : "Hours ready to pay now";
       }
@@ -4486,7 +4539,8 @@
         completedAll = hours > 0;
       }
       const luliyaPm = timesheetLuliyaAfternoonNamedSpan(rows, dateKey);
-      if (luliyaPm) hours = luliyaPm.hours;
+      const luliyaShift = luliyaPm ? timesheetLuliyaAfternoonShift(dayName, dateKey) : null;
+      if (luliyaPm) hours = timesheetLuliyaAfternoonPayHours(luliyaPm, dayName, dateKey);
       const lateMin = timesheetLuliyaMorningLateMinutes(rosterKey, dateKey, rows);
       const lateArrival = !!(lateMin && hours > 0 && !luliyaPm);
       if (lateArrival) hours = Number(Math.max(0, hours - lateMin / 60).toFixed(2));
@@ -4511,8 +4565,8 @@
         rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, rows, dateKey) &&
         youssefSwimfarmDayCentrePaySpec(dayName, dateKey);
       const michelleClock = michelleDayCentreClock(rosterKey, dayName, rows);
-      if (luliyaPm && luliyaPm.startMin != null && luliyaPm.endMin != null) {
-        timeRange = clubTimeRangeFromMinutes(luliyaPm.startMin, luliyaPm.endMin);
+      if (luliyaShift) {
+        timeRange = clubTimeRangeFromMinutes(luliyaShift.startMin, luliyaShift.endMin);
       } else if (michelleClock) {
         timeRange = clubTimeRangeFromMinutes(michelleClock.startMin, michelleClock.endMin);
       } else if (ttPay && ttPay.hours > 0) {
@@ -4552,6 +4606,7 @@
           blendedRate: null,
           climbingFeedbackPay: climbingPay,
           luliyaAfternoonNamedSpan: !!luliyaPm,
+          shiftHours: luliyaShift ? luliyaShift.hours : null,
           lateArrival
         },
         rows
@@ -4696,7 +4751,8 @@
             completedAll = hours > 0;
           }
           const luliyaPm = timesheetLuliyaAfternoonNamedSpan(groupRows, dateKey);
-          if (luliyaPm) hours = luliyaPm.hours;
+          const luliyaShift = luliyaPm ? timesheetLuliyaAfternoonShift(dayName, dateKey) : null;
+          if (luliyaPm) hours = timesheetLuliyaAfternoonPayHours(luliyaPm, dayName, dateKey);
           const lateMin = timesheetLuliyaMorningLateMinutes(rosterKey, dateKey, groupRows);
           const lateArrival = !!(lateMin && hours > 0 && !luliyaPm);
           if (lateArrival) hours = Number(Math.max(0, hours - lateMin / 60).toFixed(2));
@@ -4731,8 +4787,8 @@
           const dcSpec =
             rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, groupRows, dateKey) &&
             youssefSwimfarmDayCentrePaySpec(dayName, dateKey);
-          if (luliyaPm && luliyaPm.startMin != null && luliyaPm.endMin != null) {
-            timeRange = clubTimeRangeFromMinutes(luliyaPm.startMin, luliyaPm.endMin);
+          if (luliyaShift) {
+            timeRange = clubTimeRangeFromMinutes(luliyaShift.startMin, luliyaShift.endMin);
           } else if (dcSpec) {
             hours = dcSpec.hours;
             timeRange = clubTimeRangeFromSegments(dcSpec.segments);
@@ -4759,6 +4815,7 @@
                 blendedRate: null,
                 climbingFeedbackPay: climbingPay,
                 luliyaAfternoonNamedSpan: !!luliyaPm,
+                shiftHours: luliyaShift ? luliyaShift.hours : null,
                 lateArrival
               },
               groupRows
