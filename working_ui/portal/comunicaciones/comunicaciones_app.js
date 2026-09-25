@@ -2119,6 +2119,12 @@ function bindUi() {
     state.pendingFile = f;
     $("commsAttachBtn").textContent = "✓";
   });
+  function armCallAudio() {
+    if (window.PortalCommsCalls && typeof window.PortalCommsCalls.unlockCallAudio === "function") {
+      window.PortalCommsCalls.unlockCallAudio();
+    }
+  }
+  $("commsCallAudio").addEventListener("pointerdown", armCallAudio);
   $("commsCallAudio").addEventListener("click", function () {
     startCall("AUDIO");
   });
@@ -2136,6 +2142,7 @@ function bindUi() {
       } catch (_o) {}
     });
   }
+  $("commsCallVideo").addEventListener("pointerdown", armCallAudio);
   $("commsCallVideo").addEventListener("click", function () {
     startCall("VIDEO");
   });
@@ -2179,6 +2186,7 @@ function bindUi() {
   $("commsAnswer").addEventListener("pointerdown", function () {
     prepareLiveCall();
   });
+  $("commsAnswer").addEventListener("pointerdown", armCallAudio);
   $("commsAnswer").addEventListener("click", acceptCall);
   $("commsReject").addEventListener("click", function () {
     tearDownCall(true);

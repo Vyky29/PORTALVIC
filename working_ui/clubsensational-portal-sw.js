@@ -10,7 +10,7 @@
  * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
  * v20260906-comms-inapp-49 (always OS banner for incoming calls)
  * v20260910-sw-no-fetch (do not intercept JS/CSS — Cache API hangs on some iPhone PWAs)
- * v20260925-call-ring-locked (repeat the call banner so a locked phone keeps ringing)
+ * v20260925-call-both (repeat the call banner so a locked phone keeps ringing)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
@@ -462,15 +462,26 @@ self.addEventListener('push', function (event) {
 });
 
 var portalCallRingToken = 0;
+var portalCallRingReplacing = false;
 function portalStopCallRing() {
   portalCallRingToken += 1;
+  portalCallRingReplacing = false;
+  return self.registration.getNotifications().then(function (list) {
+    (list || []).forEach(function (n) {
+      var open = String((n.data && n.data.portalOpen) || '');
+      var tag = String(n.tag || '');
+      if (open === 'communications_call' || open === 'incoming_call' || tag.indexOf('comms-call') === 0 || tag.indexOf('portal-call') === 0) {
+        try { n.close(); } catch (e) {}
+      }
+    });
+  });
 }
 function portalRingLockedCall(title, notifyOpts) {
   var token = ++portalCallRingToken;
   var baseTag = String((notifyOpts && notifyOpts.tag) || 'portal-call');
   var i = 0;
   function step() {
-    if (token !== portalCallRingToken || i >= 16) return Promise.resolve();
+    if (token !== portalCallRingToken || i >= 5) return portalStopCallRing();
     i += 1;
     var opts = {};
     var k;
@@ -481,7 +492,14 @@ function portalRingLockedCall(title, notifyOpts) {
     opts.renotify = true;
     opts.silent = false;
     opts.requireInteraction = true;
-    return self.registration.showNotification(title, opts).then(function () {
+    portalCallRingReplacing = true;
+    return self.registration.getNotifications({ tag: baseTag }).then(function (existing) {
+      (existing || []).forEach(function (n) {
+        try { n.close(); } catch (e) {}
+      });
+      return self.registration.showNotification(title, opts);
+    }).then(function () {
+      portalCallRingReplacing = false;
       return new Promise(function (resolve) {
         setTimeout(resolve, 2800);
       });
@@ -542,7 +560,14 @@ self.addEventListener('notificationclick', function (event) {
 });
 
 self.addEventListener('notificationclose', function (event) {
+  if (portalCallRingReplacing) return;
   var data = (event.notification && event.notification.data) || {};
   var open = String(data.portalOpen || '');
   if (open === 'communications_call' || open === 'incoming_call') portalStopCallRing();
+});
+
+self.addEventListener('message', function (event) {
+  var data = (event && event.data) || {};
+  if (data.type !== 'portal-stop-call-ring') return;
+  event.waitUntil(Promise.resolve(portalStopCallRing()));
 });

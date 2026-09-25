@@ -437,7 +437,41 @@
     void acquireCallWakeLock();
   }
 
+  function tellSwStopCallRing() {
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: "portal-stop-call-ring" });
+      }
+    } catch (_sw) {}
+  }
+
+  function unlockCallAudio() {
+    try {
+      var AC = global.AudioContext || global.webkitAudioContext;
+      if (AC) {
+        var ctx = global.__PORTAL_ALERT_AUDIO_CTX__ || new AC();
+        global.__PORTAL_ALERT_AUDIO_CTX__ = ctx;
+        if (ctx.state === "suspended" && ctx.resume) ctx.resume();
+        var o = ctx.createOscillator();
+        var g = ctx.createGain();
+        g.gain.value = 0.0001;
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start();
+        o.stop(ctx.currentTime + 0.05);
+      }
+    } catch (_au) {}
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
+          global.__PORTAL_COMMS_UNLOCK_STREAM__ = stream;
+        }).catch(function () {});
+      }
+    } catch (_mic) {}
+  }
+
   function dispose() {
+    tellSwStopCallRing();
     joinGen += 1;
     callHoldActive = false;
     userWantedMute = false;
@@ -461,6 +495,7 @@
 
   async function join(opts) {
     opts = opts || {};
+    tellSwStopCallRing();
     var parent = opts.parent;
     if (!parent) throw new Error("Call screen missing.");
     var gen = ++joinGen;
@@ -514,7 +549,9 @@
         startWithVideoMuted: audioOnly,
         startWithAudioMuted: false,
         startAudioMuted: 0,
-        startAudioOnly: false,
+        startAudioOnly: audioOnly,
+        p2p: { enabled: false },
+        enableOpusRed: false,
         disableDeepLinking: true,
         deeplinking: { disabled: true },
         disableInviteFunctions: true,
@@ -616,6 +653,8 @@
     mint: mint,
     join: join,
     dispose: dispose,
+    unlockCallAudio: unlockCallAudio,
+    tellSwStopCallRing: tellSwStopCallRing,
     stopTracksOn: stopTracksOn,
     isLive: isLive,
   };

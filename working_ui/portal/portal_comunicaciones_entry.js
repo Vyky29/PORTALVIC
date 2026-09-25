@@ -1605,7 +1605,7 @@
     if (global.PortalCommsCalls) return Promise.resolve(global.PortalCommsCalls);
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260925-call-hear";
+      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260925-call-both";
       s.onload = function () {
         if (global.PortalCommsCalls) resolve(global.PortalCommsCalls);
         else reject(new Error("Call service failed to load."));
@@ -1987,7 +1987,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260925-call-hear-locked", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260925-call-both", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function (reg) {
         try {
