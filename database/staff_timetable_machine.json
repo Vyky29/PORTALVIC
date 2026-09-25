@@ -4688,8 +4688,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-09-05",
@@ -5152,8 +5152,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-09-11",
@@ -5607,14 +5607,6 @@
     "date": "2026-09-18",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Raul",
-    "time_range": "11-4",
-    "raw_assignment": "Raul 11-4"
-  },
-  {
-    "date": "2026-09-18",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Roberto",
     "time_range": "11-4",
     "raw_assignment": "Roberto 11-4"
@@ -5640,8 +5632,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-09-18",
@@ -6128,8 +6120,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-09-25",
@@ -6238,26 +6230,18 @@
   {
     "date": "2026-09-28",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-09-28",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-09-28",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-09-28",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-09-28",
@@ -6446,14 +6430,6 @@
   {
     "date": "2026-09-30",
     "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-09-30",
-    "day": "Wednesday",
     "venue": "Northolt",
     "staff_name": "Luliya",
     "time_range": "4.30-6.30",
@@ -6567,14 +6543,6 @@
     "date": "2026-10-02",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-10-02",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "10.45-4.15",
     "raw_assignment": "Michelle 10.45-4.15"
@@ -6616,8 +6584,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-10-02",
@@ -6642,14 +6610,6 @@
     "staff_name": "Alex",
     "time_range": "10-2",
     "raw_assignment": "Alex 10-2"
-  },
-  {
-    "date": "2026-10-04",
-    "day": "Sunday",
-    "venue": "SwimFarm",
-    "staff_name": "Aurora",
-    "time_range": "9-3",
-    "raw_assignment": "Aurora 9-3"
   },
   {
     "date": "2026-10-04",
@@ -6695,6 +6655,14 @@
     "date": "2026-10-04",
     "day": "Sunday",
     "venue": "SwimFarm",
+    "staff_name": "Luliya",
+    "time_range": "9-3",
+    "raw_assignment": "Luliya 9-3"
+  },
+  {
+    "date": "2026-10-04",
+    "day": "Sunday",
+    "venue": "SwimFarm",
     "staff_name": "Roberto",
     "time_range": "8.45-3.15",
     "raw_assignment": "Roberto 8.45-3.15"
@@ -6726,26 +6694,18 @@
   {
     "date": "2026-10-05",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-10-05",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-10-05",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-10-05",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-10-05",
@@ -6934,14 +6894,6 @@
   {
     "date": "2026-10-07",
     "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-10-07",
-    "day": "Wednesday",
     "venue": "Northolt",
     "staff_name": "Luliya",
     "time_range": "4.30-6.30",
@@ -7055,14 +7007,6 @@
     "date": "2026-10-09",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-10-09",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "10.45-4.15",
     "raw_assignment": "Michelle 10.45-4.15"
@@ -7104,8 +7048,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-10-09",
@@ -7214,26 +7158,18 @@
   {
     "date": "2026-10-12",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-10-12",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-10-12",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-10-12",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-10-12",
@@ -7422,14 +7358,6 @@
   {
     "date": "2026-10-14",
     "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-10-14",
-    "day": "Wednesday",
     "venue": "Northolt",
     "staff_name": "Luliya",
     "time_range": "4.30-6.30",
@@ -7543,14 +7471,6 @@
     "date": "2026-10-16",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-10-16",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "10.45-4.15",
     "raw_assignment": "Michelle 10.45-4.15"
@@ -7592,8 +7512,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-10-16",
@@ -7702,26 +7622,18 @@
   {
     "date": "2026-10-19",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-10-19",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-10-19",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-10-19",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-10-19",
@@ -7910,14 +7822,6 @@
   {
     "date": "2026-10-21",
     "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-10-21",
-    "day": "Wednesday",
     "venue": "Northolt",
     "staff_name": "Luliya",
     "time_range": "4.30-6.30",
@@ -8031,14 +7935,6 @@
     "date": "2026-10-23",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-10-23",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "10.45-4.15",
     "raw_assignment": "Michelle 10.45-4.15"
@@ -8080,8 +7976,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-10-23",
@@ -8262,26 +8158,18 @@
   {
     "date": "2026-11-02",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-11-02",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-11-02",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-11-02",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-11-02",
@@ -8470,14 +8358,6 @@
   {
     "date": "2026-11-04",
     "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-11-04",
-    "day": "Wednesday",
     "venue": "Northolt",
     "staff_name": "Luliya",
     "time_range": "4.30-6.30",
@@ -8591,14 +8471,6 @@
     "date": "2026-11-06",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-11-06",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "10.45-4.15",
     "raw_assignment": "Michelle 10.45-4.15"
@@ -8640,8 +8512,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-11-06",
@@ -8750,26 +8622,18 @@
   {
     "date": "2026-11-09",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-11-09",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-11-09",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-11-09",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-11-09",
@@ -8958,14 +8822,6 @@
   {
     "date": "2026-11-11",
     "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-11-11",
-    "day": "Wednesday",
     "venue": "Northolt",
     "staff_name": "Luliya",
     "time_range": "4.30-6.30",
@@ -9079,14 +8935,6 @@
     "date": "2026-11-13",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-11-13",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "10.45-4.15",
     "raw_assignment": "Michelle 10.45-4.15"
@@ -9128,8 +8976,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-11-13",
@@ -9238,26 +9086,18 @@
   {
     "date": "2026-11-16",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-11-16",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-11-16",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-11-16",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-11-16",
@@ -9446,14 +9286,6 @@
   {
     "date": "2026-11-18",
     "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-11-18",
-    "day": "Wednesday",
     "venue": "Northolt",
     "staff_name": "Luliya",
     "time_range": "4.30-6.30",
@@ -9567,14 +9399,6 @@
     "date": "2026-11-20",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-11-20",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "10.45-4.15",
     "raw_assignment": "Michelle 10.45-4.15"
@@ -9616,8 +9440,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-11-20",
@@ -9726,26 +9550,18 @@
   {
     "date": "2026-11-23",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-11-23",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-11-23",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-11-23",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-11-23",
@@ -9934,14 +9750,6 @@
   {
     "date": "2026-11-25",
     "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-11-25",
-    "day": "Wednesday",
     "venue": "Northolt",
     "staff_name": "Luliya",
     "time_range": "4.30-6.30",
@@ -10055,14 +9863,6 @@
     "date": "2026-11-27",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-11-27",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "10.45-4.15",
     "raw_assignment": "Michelle 10.45-4.15"
@@ -10104,8 +9904,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-11-27",
@@ -10214,26 +10014,18 @@
   {
     "date": "2026-11-30",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-11-30",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-11-30",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-11-30",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-11-30",
@@ -10422,14 +10214,6 @@
   {
     "date": "2026-12-02",
     "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-12-02",
-    "day": "Wednesday",
     "venue": "Northolt",
     "staff_name": "Luliya",
     "time_range": "4.30-6.30",
@@ -10543,14 +10327,6 @@
     "date": "2026-12-04",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-12-04",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "10.45-4.15",
     "raw_assignment": "Michelle 10.45-4.15"
@@ -10592,8 +10368,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-12-04",
@@ -10702,26 +10478,18 @@
   {
     "date": "2026-12-07",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-12-07",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-12-07",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-12-07",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-12-07",
@@ -10906,14 +10674,6 @@
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-12-09",
-    "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
   },
   {
     "date": "2026-12-09",
@@ -11031,14 +10791,6 @@
     "date": "2026-12-11",
     "day": "Friday",
     "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-4",
-    "raw_assignment": "Luliya 11-4"
-  },
-  {
-    "date": "2026-12-11",
-    "day": "Friday",
-    "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "10.45-4.15",
     "raw_assignment": "Michelle 10.45-4.15"
@@ -11080,8 +10832,8 @@
     "day": "Friday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "11-3",
+    "raw_assignment": "Youssef 11-3"
   },
   {
     "date": "2026-12-11",
@@ -11190,26 +10942,18 @@
   {
     "date": "2026-12-14",
     "day": "Monday",
+    "venue": "Northolt",
+    "staff_name": "Javi Palankas",
+    "time_range": "4.30-6.30",
+    "raw_assignment": "Javi Palankas 4.30-6.30"
+  },
+  {
+    "date": "2026-12-14",
+    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-12-14",
-    "day": "Monday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
-  },
-  {
-    "date": "2026-12-14",
-    "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-12-14",
@@ -11394,14 +11138,6 @@
     "staff_name": "John",
     "time_range": "4.15-6.15",
     "raw_assignment": "John 4.15-6.15"
-  },
-  {
-    "date": "2026-12-16",
-    "day": "Wednesday",
-    "venue": "SwimFarm",
-    "staff_name": "Luliya",
-    "time_range": "11-3",
-    "raw_assignment": "Luliya 11-3"
   },
   {
     "date": "2026-12-16",

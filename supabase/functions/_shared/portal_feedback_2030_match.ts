@@ -517,6 +517,25 @@ function occupantsPhaseSlotApplies(slotId: string, iso: string, datedIsoSet: Set
   return true;
 }
 
+/** Luliya standing from Mon 28 Sep: Mon Northolt → Javi; Mon/Wed/Fri DC off. */
+function luliyaFeedbackStaffFrom28(
+  staff: string,
+  iso: string,
+  day: string,
+  venue: string,
+  service: string,
+): string {
+  if (!/\bluliya\b/i.test(staff)) return staff;
+  if (!iso || iso < "2026-09-28") return staff;
+  const d = day.toLowerCase();
+  const v = venue.toLowerCase();
+  const s = service.toLowerCase();
+  if (d === "monday" && v.includes("northolt")) return "Javi";
+  if (d === "monday" || d === "friday") return "";
+  if (d === "wednesday" && s.includes("day")) return "";
+  return staff;
+}
+
 /**
  * B1c: standing seats from capacity-chain occupants (same board as Overview).
  * Merged after portal_roster_rows so roster still wins on dedupe; fills gaps when
@@ -560,7 +579,13 @@ export function slotsFromCapacityChainOccupants(
         continue;
       }
       if (!isRealFeedbackClient(client)) continue;
-      const staff = String(line.instructor || "").trim();
+      const staff = luliyaFeedbackStaffFrom28(
+        String(line.instructor || "").trim(),
+        iso,
+        String(slot.day || ""),
+        String(slot.venue || ""),
+        service,
+      );
       if (!staff) continue;
       out.push({
         staff,

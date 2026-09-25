@@ -3868,7 +3868,7 @@
       pushExpandedStanding(out, [row]);
     });
     /* Sep 6 Hub cover is applied once in resolveCanonicalRosterRows (after DB rows). */
-    return out;
+    return applyLuliyaNewStandingFrom28(out);
   }
 
   /** LOCAL EXTRA Sunday Hub Multi — Berta Lead book (Aurora pool kids' Hub half). */
@@ -3975,6 +3975,60 @@
     });
     autumnSundaySep6HubCoverRows().forEach(function (row) {
       out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
+  /**
+   * From Mon 28 Sep 2026 Luliya standing is Tue DC 11-3, Tue Acton 4-6.30,
+   * Wed Northolt 4.30-6.30. Mon Northolt book → JAVI. Mon/Wed/Fri mornings off.
+   * Sun 4 Oct Aurora pool cover stays (resolveAutumnInstructorsForCalendarDate).
+   */
+  var LULIYA_NEW_STANDING_FROM = "2026-09-28";
+
+  function applyLuliyaNewStandingFrom28(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var iso = normIso(r.session_date);
+      if (!iso || iso < LULIYA_NEW_STANDING_FROM) {
+        out.push(r);
+        return;
+      }
+      var inst = String(r.instructors || "");
+      if (!/\bluliya\b/i.test(inst)) {
+        out.push(r);
+        return;
+      }
+      var day = normalizeDowKey(r.day);
+      if (!day) {
+        try {
+          day = [
+            "sunday",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+          ][new Date(iso + "T12:00:00").getDay()];
+        } catch (_) {
+          day = "";
+        }
+      }
+      var venue = String(r.venue || "");
+      var service = String(r.service || "");
+      if (day === "monday" && /northolt/i.test(venue)) {
+        out.push(
+          Object.assign({}, r, {
+            instructors: inst.replace(/\bluliya\b/gi, "JAVI"),
+          })
+        );
+        return;
+      }
+      if (day === "monday" || day === "friday") return;
+      if (day === "wednesday" && /day\s*centre/i.test(service)) return;
+      out.push(r);
     });
     return out;
   }
@@ -4178,6 +4232,7 @@
     merged = scrubAug15ReleasedFormerClientRows(merged);
     /* After all Autumn patches: no summer history weeks left to snap onto Sep+. */
     merged = purgeSummerHistoryOutsideAutumnTemplates(merged);
+    merged = applyLuliyaNewStandingFrom28(merged);
     return dedupeRosterAdapterRows(merged);
   }
 

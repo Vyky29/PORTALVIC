@@ -131,6 +131,15 @@
     return /^fadi\b/i.test(String(name || "").trim());
   }
 
+  /** From Mon 28 Sep Luliya leaves Mon / Wed / Fri Day Centre. Tue DC stays. */
+  function luliyaDcColumnsFrom28(iso, dk, columns) {
+    if (!iso || iso < "2026-09-28") return columns;
+    if (dk !== "monday" && dk !== "wednesday" && dk !== "friday") return columns;
+    return (columns || []).filter(function (col) {
+      return !/\bluliya\b/i.test(String((col && col.staff) || ""));
+    });
+  }
+
   function columnsFromOccupantSlot(slot) {
     var byStaff = {};
     var order = [];
@@ -169,7 +178,7 @@
       return {
         phase: String(slot.phase || "services"),
         phaseLabel: String(slot.phaseLabel || slot.phase || "Services"),
-        columns: columnsFromOccupantSlot(slot),
+        columns: luliyaDcColumnsFrom28(d, dk, columnsFromOccupantSlot(slot)),
         source: "services",
         slotId: slot.id || null,
         validFrom: slot.validFrom || null,

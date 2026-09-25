@@ -228,6 +228,31 @@ def build_autumn_rows() -> list[dict]:
                         continue
                     if day_name in ("Wednesday", "Friday") and iso < "2026-09-09":
                         continue
+                # From Mon 28 Sep: Luliya standing is Tue DC 11-3, Tue Acton 4-6.30,
+                # Wed Northolt 4.30-6.30. Mon Northolt book → Javi Palankas.
+                # Sun 4 Oct she covers Aurora's SwimFarm pool (dated, not every Sunday).
+                if staff.lower() == "luliya" and iso >= "2026-09-28":
+                    vslug = venue.lower().replace(" ", "")
+                    if day_name == "Monday" and vslug == "northolt":
+                        rows.append(
+                            slot(iso, day_name, "Javi Palankas", tr, venue)
+                        )
+                    if day_name == "Monday" or day_name == "Friday":
+                        continue
+                    if day_name == "Wednesday" and vslug in (
+                        "swimfarm",
+                        "swimfarmcentre",
+                    ):
+                        continue
+                if (
+                    day_name == "Sunday"
+                    and iso == "2026-10-04"
+                    and staff.lower() == "aurora"
+                    and venue.lower().replace(" ", "")
+                    in ("swimfarm", "swimfarmcentre")
+                ):
+                    rows.append(slot(iso, day_name, "Luliya", tr, venue))
+                    continue
                 # Tue Acton 8 Sep only: Javier seat empty (day off; Aurora covered by Javi).
                 if (
                     day_name == "Tuesday"
@@ -443,6 +468,21 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
         shift_dates["aurora"] = [d for d in shift_dates["aurora"] if d not in aurora_away]
         shift_dates["aurora"].sort()
 
+    # Luliya from Mon 28 Sep: drop Monday + Friday shifts. Keep Tue + Wed.
+    # Sun 4 Oct is the Aurora pool cover (not a standing Sunday).
+    luliya_sun_cover = "2026-10-04"
+    if "luliya" in shift_dates:
+        shift_dates["luliya"] = [
+            d
+            for d in shift_dates["luliya"]
+            if not (
+                d >= "2026-09-28" and parse_iso(d).weekday() in (0, 4)
+            )
+        ]
+        if luliya_sun_cover not in shift_dates["luliya"]:
+            shift_dates["luliya"].append(luliya_sun_cover)
+        shift_dates["luliya"].sort()
+
     view_month_keys = _month_range_keys(view_from, view_to)
     dashboard_months = [mm - 1 for _, mm in view_month_keys]
     dashboard_year = view_month_keys[0][0] if view_month_keys else 2026
@@ -524,6 +564,7 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
             "termStaffExtraCalendarDatesByProfileKey": {
                 "john": ["2026-09-06"],
                 "emmanuel": sorted(emmanuel_wed_covers),
+                "luliya": [luliya_sun_cover],
             },
             "termStaffCatchUpFeedbackDatesByProfileKey": {},
             "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {},

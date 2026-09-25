@@ -61,6 +61,28 @@ function normalizeTimeSlot(raw: unknown): string {
     .replace(/\s*-\s*/g, " to ");
 }
 
+/**
+ * Current standing (next sessions are on/after Mon 28 Sep 2026):
+ * Luliya leaves Monday and Friday, and Wednesday morning Day Centre.
+ * Monday Northolt 4.30-6.30 is Javi Palankas until another instructor is named.
+ * Tuesday DC + Acton and Wednesday Northolt stay Luliya.
+ */
+function luliyaStandingInstructorNow(
+  day: string,
+  venue: string,
+  service: string,
+  instructor: string,
+): string {
+  if (!/\bluliya\b/i.test(instructor)) return instructor;
+  const d = day.toLowerCase();
+  const v = venue.toLowerCase();
+  const s = service.toLowerCase();
+  if (d === "monday" && v.includes("northolt")) return "Javi";
+  if (d === "monday" || d === "friday") return "";
+  if (d === "wednesday" && s.includes("day")) return "";
+  return instructor;
+}
+
 function areaForVenue(venue: string): string {
   const v = venue.toLowerCase();
   if (/acton|northolt|westway|swimfarm|hub/.test(v)) return "West London";
@@ -107,7 +129,8 @@ export function standingSessionsForParticipantFromOccupants(
       if (!clientName || /no\s*participant|^closed$|^open$/i.test(clientName)) continue;
       if (!participantIdentityMatches(identity, clientName, clientName)) continue;
 
-      const instructor = clean(line.instructor, 80);
+      const instructor = luliyaStandingInstructorNow(day, venue, service, clean(line.instructor, 80));
+      if (!instructor) continue;
       const key = [day, service, timeSlot, venue, instructor, clientName].join("|").toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);

@@ -907,6 +907,19 @@ function buildServicesCatalog(venueSets: Map<PublicServiceId, Set<string>>): Off
   });
 }
 
+/** Monday Northolt offer shows Javi Palankas (Luliya's book from Mon 28 Sep). */
+function luliyaMondayNortholtOfferInstructor(
+  instructor: string,
+  day: string,
+  venue: string,
+): string {
+  if (!/\bluliya\b/i.test(instructor)) return instructor;
+  if (day.toLowerCase() === "monday" && venue.toLowerCase().includes("northolt")) {
+    return "Javi";
+  }
+  return instructor;
+}
+
 export type CapacityChainPlacesOccupantSlot = {
   serviceId?: string;
   day?: string;
@@ -974,7 +987,11 @@ export function buildWeeklyOfferFromOccupants(
 
     for (const line of lines) {
       const kind = String(line?.kind || "").trim().toLowerCase();
-      const inst = norm(line?.instructor);
+      const inst = luliyaMondayNortholtOfferInstructor(
+        norm(line?.instructor),
+        day,
+        venue,
+      );
       if (inst) instructors.add(inst.toUpperCase());
       if (kind === "open") {
         openSeats += 1;

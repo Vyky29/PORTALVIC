@@ -296,6 +296,17 @@
     return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
   }
 
+  /** Mon Northolt 4.30-6.30: Luliya until Sun 27 Sep, Javi Palankas from Mon 28. */
+  function luliyaNortholtInstructorFrom28(staff, iso, slot) {
+    var name = String(staff || "").trim();
+    if (!/\bluliya\b/i.test(name)) return name;
+    if (!iso || iso < "2026-09-28") return name;
+    var day = normDow(slot && slot.day);
+    var venue = String((slot && slot.venue) || "").toLowerCase();
+    if (day === "monday" && venue.indexOf("northolt") >= 0) return "Javi";
+    return name;
+  }
+
   function occupantsPhasesToRosterRows(bySlotId, win) {
     var out = [];
     Object.keys(bySlotId || {}).forEach(function (slotId) {
@@ -341,6 +352,7 @@
           /* Timetable owns who-works: collapse slash pools (Dan/Youssef/Directors) per ISO. */
           var staff =
             resolveSlashInstructorsForIso(staffRaw, iso, slot.serviceId || service) || staffRaw;
+          staff = luliyaNortholtInstructorFrom28(staff, iso, slot);
           if (!staff) return;
           var client = standingClient;
           if (trialSeat) {
