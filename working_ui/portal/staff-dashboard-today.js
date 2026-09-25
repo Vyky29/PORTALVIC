@@ -5423,7 +5423,12 @@
         }
         /* Cheap rota gates before dense cover / client-session walks (day-off staff
          * like Javier Mon were paying ~3s on every Today sync). */
-        if(iso && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)) return true;
+        if(iso && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)){
+          if(typeof portalTermStaffAwayIsAfternoonOnly === 'function' && portalTermStaffAwayIsAfternoonOnly(iso, sid)){
+            return false;
+          }
+          return true;
+        }
         if(iso && typeof portalStaffHasShiftOnCalendarDate === 'function'
           && portalStaffHasShiftOnCalendarDate(iso, sid) === true){
           return false;
@@ -6214,8 +6219,13 @@
       const selectedIso = selectedAnchor && typeof portalIsoYmdFromDate === 'function'
         ? portalIsoYmdFromDate(selectedAnchor)
         : '';
-      /* Day-off / away: never walk the full day model first (Javier Mon froze ~3s on load). */
+      /* Day-off / away: never walk the full day model first (Javier Mon froze ~3s on load).
+         Afternoon-only keeps the morning (Luliya Wed 23 Ikram 11-3). */
+      const afternoonOnlyAway = !!(id && selectedIso
+        && typeof portalTermStaffAwayIsAfternoonOnly === 'function'
+        && portalTermStaffAwayIsAfternoonOnly(selectedIso, id));
       const awayOffEarly = !!(id && selectedIso
+        && !afternoonOnlyAway
         && typeof portalTermStaffAwayOnDate === 'function'
         && portalTermStaffAwayOnDate(selectedIso, id));
       const todayOffEarly = awayOffEarly || !!(id && liveToday
@@ -6280,14 +6290,26 @@
         && typeof window !== 'undefined'
         && window.__PORTAL_STAFF_ROSTER_HYDRATED__
         && !window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
-        && !(typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(selectedIso, id))){
+        && !(typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(selectedIso, id) && !afternoonOnlyAway)){
         dashboardData.portalTodayEmptyPanelMode = 'sync';
         dashboardData.portalTodayNextSessionPreview = null;
         dashboardData.today = [];
         portalApplyTodayVenueMeta();
         return [];
       }
+      if(afternoonOnlyAway && rows.length){
+        rows = rows.filter(function(row){
+          const raw = String((row && (row.start || row.time || row.timeLabel)) || '').trim();
+          const m = raw.match(/(\d{1,2})(?:[:.](\d{2}))?/);
+          if(!m) return true;
+          let h = Number(m[1]);
+          const min = Number(m[2] || 0);
+          if(h >= 1 && h <= 7) h += 12;
+          return h * 60 + min < 15 * 60;
+        });
+      }
       const awayOff = !!(id && selectedIso
+        && !afternoonOnlyAway
         && typeof portalTermStaffAwayOnDate === 'function'
         && portalTermStaffAwayOnDate(selectedIso, id));
       const todayOff = awayOff || !!(id && liveToday
@@ -6427,7 +6449,7 @@
         portalApplyTodayVenueMeta();
         return [];
       }
-      if(!liveToday && id && selectedIso && !rows.length
+      if(!liveToday && id && selectedIso && !rows.length && !afternoonOnlyAway
         && typeof portalTermStaffAwayOnDate === 'function'
         && portalTermStaffAwayOnDate(selectedIso, id)){
         dashboardData.portalTodayEmptyPanelMode = (typeof portalStaffDayOffIsTimeOffRequested === 'function'
