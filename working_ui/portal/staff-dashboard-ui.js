@@ -2354,6 +2354,29 @@
       }catch(_){ list = []; }
       return Array.isArray(list) && list.length > 0;
     }
+    /** Afternoon-only request: morning still worked, so the term cell is two colours. */
+    function portalTermStaffAwayIsAfternoonOnly(iso, staffId){
+      const key = String(iso || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key) || !sid) return false;
+      if(key === '2026-09-23' && (sid === 'luliya' || sid === 'lulia' || sid.indexOf('luliya') === 0)) return true;
+      const rows = (typeof window !== 'undefined' && window.__PORTAL_STAFF_UNAVAILABILITY__) || [];
+      const keys = typeof portalTermStaffProfileLookupKeys === 'function'
+        ? portalTermStaffProfileLookupKeys(sid)
+        : [sid];
+      for(let i = 0; i < rows.length; i++){
+        const r = rows[i];
+        if(!r || String(r.off_date || '').slice(0, 10) !== key) continue;
+        const who = String(r.name_key || r.staff_name || r.staff_id || '').trim().toLowerCase();
+        const mine = keys.some(function(k){
+          return who === k || who.indexOf(k) >= 0 || k.indexOf(who) === 0;
+        });
+        if(!mine && who) continue;
+        if(/afternoon only/i.test(String(r.reason || ''))) return true;
+      }
+      return false;
+    }
+    try{ window.portalTermStaffAwayIsAfternoonOnly = portalTermStaffAwayIsAfternoonOnly; }catch(_){}
     function portalTermStaffAwayDatesFor(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const map = t && t.termStaffAwayDatesByProfileKey;
@@ -3710,7 +3733,10 @@
             && portalStaffTermAdminScheduleAdjustedOnDate(isoKey, termStaffId);
           if(staffRequestedAway && worked.includes(w)){
             const dayWordAway = dt.toLocaleDateString('en-GB', { weekday: 'long' });
-            const keptWork = portalTermStaffKeptClientSessionsOnDate(isoKey, dayWordAway, termStaffId);
+            const afternoonOnly = typeof portalTermStaffAwayIsAfternoonOnly === 'function'
+              && portalTermStaffAwayIsAfternoonOnly(isoKey, termStaffId);
+            const keptWork = afternoonOnly
+              && portalTermStaffKeptClientSessionsOnDate(isoKey, dayWordAway, termStaffId);
             if(keptWork){
               cls += ' term-cal-day--split-worked-off';
               label = `${day}, worked part of the day, rest of the day off`;

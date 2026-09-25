@@ -9,7 +9,7 @@
     var VER = "20260923-move-instructor";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260914-raul-fri18-off",
+    "/portal/term_from_timetable.js?v=20260925-luliya-off",
     "/portal/term_calendar_dashboard_shared.js?v=20260914-raul-fri18-off",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260914-no-eddie-may",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260914-office-duty-nofb",

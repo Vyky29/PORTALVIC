@@ -1324,12 +1324,12 @@
           const wantClubOff = !!(viewerSidOff && typeof portalStaffNeedsFullDayOverrides === 'function'
             && portalStaffNeedsFullDayOverrides(viewerSidOff));
           let offQ = box.client.from('staff_unavailability')
-            .select('off_date,staff_id,name_key,staff_name');
+            .select('off_date,reason,staff_id,name_key,staff_name');
           if(!wantClubOff) offQ = offQ.eq('staff_id', sess.user.id);
           let off = await offQ;
           if(off.error && wantClubOff){
             offQ = box.client.from('staff_unavailability')
-              .select('off_date,staff_id,name_key,staff_name')
+              .select('off_date,reason,staff_id,name_key,staff_name')
               .eq('staff_id', sess.user.id);
             off = await offQ;
           }
