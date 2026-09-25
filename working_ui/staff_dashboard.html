@@ -1024,6 +1024,14 @@
             </span>
           </button>
         </div>
+        <div class="client-info-row client-info-row--general" id="clientCarePlanRow" hidden aria-hidden="true" style="display:none">
+          <button type="button" class="client-info-btn--icon" id="clientBtnCarePlan" aria-expanded="false" aria-controls="clientCarePlanSheet" aria-label="Care Plans" title="Care Plans">
+            <span class="client-info-btn-stack">
+              <svg class="client-info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.2-4-6.2-8.2a3.4 3.4 0 0 1 6.2-1.9 3.4 3.4 0 0 1 6.2 1.9C18.2 17 12 21 12 21z"/></svg>
+              <span class="client-info-btn-caption">Care Plans</span>
+            </span>
+          </button>
+        </div>
         <div class="client-info-row client-info-row--general">
           <button type="button" class="client-info-btn--icon client-info-btn--sessions-overview" id="clientBtnSessionsOverview" aria-expanded="false" aria-controls="clientSessionsOverviewSheet" aria-label="Sessions Overview — on mobile, rotate to landscape for feedback table" title="Sessions Overview">
             <span class="client-info-btn-stack">
@@ -1062,7 +1070,16 @@
     </div>
   </section>
 
-  <section class="sheet sheet--fullscreen sheet--mobile-frame sheet--sessions-overview" id="clientSessionsOverviewSheet" aria-labelledby="clientSessionsOverviewSheetTitle" aria-hidden="true">
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="clientCarePlanSheet" aria-labelledby="clientCarePlanSheetTitle" aria-hidden="true">
+    <div class="sheet-head client-general-sheet-head">
+      <button type="button" class="client-general-back" id="clientCarePlanSheetBack">← Back to participant</button>
+      <div class="sheet-handle"></div>
+      <h3 id="clientCarePlanSheetTitle">Care Plans</h3>
+    </div>
+    <div class="sheet-body" style="padding:0">
+      <iframe id="clientCarePlanFrame" title="Care plan" style="display:block;width:100%;height:calc(100dvh - 88px);border:0;background:#f6f4ef"></iframe>
+    </div>
+  </section>
     <div class="sheet-head client-general-sheet-head">
       <button type="button" class="client-general-back" id="clientSessionsOverviewSheetBack">← Back to participant</button>
       <div class="sheet-handle"></div>
@@ -1326,7 +1343,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260919-aquatic-hour-2to1"></script>
   <script src="/portal/staff-dashboard-today.js?v=20260925-no-cover-sign"></script>
-  <script src="/portal/staff-dashboard-ui.js?v=20260924-luliya-split-23"></script>
+  <script src="/portal/staff-dashboard-ui.js?v=20260925-care-plan-person"></script>
   <script src="/portal/portal_today_time_fit.js?v=20260911-roberto-ui-unfreeze"></script>
   <script src="/portal/staff-dashboard-auth-bridge.js?v=20260625-lead-day-cards-nav"></script>
   <script src="/portal/staff-dashboard-rehydrate.js?v=20260923-schedule-reload"></script>

@@ -38,7 +38,8 @@
   }
   button, input { font: inherit; }
   button { cursor: pointer; }
-  .app { display: grid; grid-template-columns: var(--sidebar) 1fr; min-height: 100%; }
+  html.solo .side { display: none; }
+  html.solo .app { grid-template-columns: 1fr; }
   .side {
     background: linear-gradient(180deg, #1b2433 0%, #243044 40%, #2c3a52 100%);
     color: #f4f1ea;
@@ -706,7 +707,18 @@ const PEOPLE = [
 ];
 
 const STORE = "club-dc-plans-v1";
-let current = "ikram";
+const soloWho = (function(){
+  const params = new URLSearchParams(location.search);
+  if (params.get("solo") !== "1") return "";
+  const n = String(params.get("who") || "").toLowerCase();
+  if (n.indexOf("ikram") === 0) return "ikram";
+  if (n.indexOf("fadi") === 0) return "fadi";
+  if (n.indexOf("tim") === 0) return "timmy";
+  if (n.indexOf("eman") === 0) return "emanuel";
+  return "";
+})();
+let current = soloWho || "ikram";
+if (soloWho) document.documentElement.classList.add("solo");
 let plan = "care";
 let editing = false;
 const saved = JSON.parse(localStorage.getItem(STORE) || "{}");

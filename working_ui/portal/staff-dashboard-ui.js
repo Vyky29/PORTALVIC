@@ -5469,6 +5469,49 @@
       runAfterDemoQuickGate(function(){ executeClientQuickCancellation(itemSnapshot); });
     }
 
+    function carePlanIdForClient(item){
+      const blob = String((item && (item.name || '')) + ' ' + (item && (item.clientId || ''))).toLowerCase();
+      if(blob.indexOf('ikram') >= 0) return 'ikram';
+      if(blob.indexOf('fadi') >= 0) return 'fadi';
+      if(blob.indexOf('timi') >= 0 || blob.indexOf('timmy') >= 0) return 'timmy';
+      if(blob.indexOf('emanuel') >= 0 || blob.indexOf('emani') >= 0) return 'emanuel';
+      return '';
+    }
+    function syncClientCarePlanButton(item){
+      const row = document.getElementById('clientCarePlanRow');
+      const id = carePlanIdForClient(item);
+      if(!row) return;
+      const show = !!id;
+      row.hidden = !show;
+      row.setAttribute('aria-hidden', show ? 'false' : 'true');
+      row.style.display = show ? '' : 'none';
+      const btn = document.getElementById('clientBtnCarePlan');
+      if(btn) btn.dataset.carePlanId = id;
+    }
+    function openClientCarePlanSheet(){
+      const btn = document.getElementById('clientBtnCarePlan');
+      const id = btn && btn.dataset.carePlanId;
+      const sheet = document.getElementById('clientCarePlanSheet');
+      const frame = document.getElementById('clientCarePlanFrame');
+      if(!id || !sheet || !frame) return;
+      const title = document.getElementById('clientTitle');
+      const head = document.getElementById('clientCarePlanSheetTitle');
+      if(head) head.textContent = (title && title.textContent ? title.textContent.trim() : 'Care Plans');
+      frame.src = 'portal/day-centre/care-plans/index.html?v=20260925-care-plans-8&who=' + encodeURIComponent(id) + '&solo=1';
+      sheet.classList.add('open');
+      sheet.setAttribute('aria-hidden', 'false');
+      if(btn) btn.setAttribute('aria-expanded', 'true');
+    }
+    function closeClientCarePlanSheet(){
+      const sheet = document.getElementById('clientCarePlanSheet');
+      const btn = document.getElementById('clientBtnCarePlan');
+      if(sheet){
+        sheet.classList.remove('open');
+        sheet.setAttribute('aria-hidden', 'true');
+      }
+      if(btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
     function openClient(item){
       if(!item || item.kind !== 'client' || item.openSheet === false) return;
       currentOpenClientItem = item;
@@ -5488,6 +5531,7 @@
       const timeEl = document.getElementById('clientTime');
       if(titleEl) titleEl.textContent = item.name;
       if(timeEl) timeEl.textContent = item.time;
+      syncClientCarePlanButton(item);
       syncClientPhotoSlot(item.name, item.clientId);
       setClientInfoFormattedBody('clientGeneral', gen, 'No general information available.');
       setClientInfoFormattedBody('clientSpecialtyBody', '', 'No information for this programme.');
@@ -5697,6 +5741,18 @@
           return;
         }
         openClientSessionsOverviewFullscreen();
+      });
+    }
+    document.getElementById('clientCarePlanSheetBack')?.addEventListener('click', closeClientCarePlanSheet);
+    const clientBtnCarePlan = document.getElementById('clientBtnCarePlan');
+    if(clientBtnCarePlan){
+      clientBtnCarePlan.addEventListener('click', () => {
+        const sheet = document.getElementById('clientCarePlanSheet');
+        if(sheet && sheet.classList.contains('open')){
+          closeClientCarePlanSheet();
+          return;
+        }
+        openClientCarePlanSheet();
       });
     }
     document.getElementById('clientSupportPlanSheetBack')?.addEventListener('click', closeClientSupportPlanSheet);
