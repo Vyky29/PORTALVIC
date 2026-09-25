@@ -78,11 +78,10 @@
   .pill.live { background: #1f7a4d; color: white; }
   .side-note { margin: 18px 8px 0; color: #9aa6ba; font-size: 12px; line-height: 1.45; }
   .main { min-width: 0; padding: 22px 28px 80px; }
-  .topbar { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
   .eyebrow { margin: 0 0 4px; color: var(--gold-deep); font-size: 12px; font-weight: 750; letter-spacing: 0.14em; text-transform: uppercase; }
-  .topbar h2 { margin: 0; font-size: 34px; letter-spacing: -0.04em; line-height: 1; }
-  .topbar .sub { margin: 8px 0 0; color: var(--muted); max-width: 640px; line-height: 1.45; }
-  .tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+  .sheet-head { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+  .sheet-head h2 { margin: 2px 0 0; font-size: 32px; letter-spacing: -0.04em; line-height: 1; }
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
   .btn {
     border: 1px solid var(--line); background: white; color: var(--navy); border-radius: 999px;
     padding: 9px 14px; font-weight: 650; font-size: 13px;
@@ -92,9 +91,10 @@
   .btn.is-on { box-shadow: inset 0 0 0 2px var(--navy); }
   .hero {
     background: var(--card); border: 1px solid var(--line); border-radius: 24px;
-    box-shadow: var(--shadow); padding: 18px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px;
+    box-shadow: var(--shadow); padding: 18px 18px 16px; margin-bottom: 16px;
+    display: flex; flex-direction: column; gap: 14px;
   }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip { background: var(--gold-soft); color: #6d5208; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700; }
   .chip.navy { background: #eef1f6; color: var(--navy-2); }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -165,9 +165,11 @@
   @media (max-width: 980px) {
     .app { grid-template-columns: 1fr; }
     .side { position: relative; height: auto; }
-    .hero, .layout, .grid2, .stats, .row { grid-template-columns: 1fr; }
+    .layout, .grid2, .stats, .row, .sheet-head { grid-template-columns: 1fr; }
+    .sheet-head { flex-direction: column; align-items: stretch; }
+    .tools { justify-content: flex-start; }
     .toc { position: relative; flex-direction: row; overflow: auto; }
-    .topbar h2 { font-size: 28px; }
+    .sheet-head h2 { font-size: 28px; }
   }
   @media print {
     .side, .tools, .switch, .toc, .toast { display: none !important; }
@@ -592,25 +594,21 @@ function render() {
   document.body.classList.toggle("editing", editing);
   renderPeople();
   document.getElementById("main").innerHTML = `
-    <div class="topbar">
-      <div>
-        <p class="eyebrow">clubSENsational Day Centre</p>
-        <h2>${esc(p.name)}</h2>
-        <p class="sub">${esc(p.sub || p.statusLine)}</p>
-      </div>
-      <div class="tools">
-        <button class="btn ${editing ? "is-on" : ""}" id="edit">${editing ? "Editing on" : "Edit text"}</button>
-        <button class="btn" id="save">Save</button>
-        <button class="btn" id="export">Export JSON</button>
-        <button class="btn" id="reset">Reset edits</button>
-        <button class="btn gold" id="print">Print</button>
-      </div>
-    </div>
     <section class="hero">
-      <div>
-        <p class="eyebrow">${esc(p.aka)}</p>
-        <div class="chips">${p.chips.map(c => `<span class="chip">${esc(c)}</span>`).join("")}</div>
+      <div class="sheet-head">
+        <div>
+          <p class="eyebrow">${esc(p.aka)}</p>
+          <h2>${esc(p.name)}</h2>
+        </div>
+        <div class="tools">
+          <button class="btn ${editing ? "is-on" : ""}" id="edit">${editing ? "Editing on" : "Edit"}</button>
+          <button class="btn" id="save">Save</button>
+          <button class="btn" id="export">Export</button>
+          <button class="btn" id="reset">Reset</button>
+          <button class="btn gold" id="print">Print</button>
+        </div>
       </div>
+      <div class="chips">${p.chips.map(c => `<span class="chip">${esc(c)}</span>`).join("")}</div>
       <div class="stats">${p.stats.map(s => `<div class="stat"><b>${esc(s[1])}</b><span>${esc(s[0])}</span></div>`).join("")}</div>
     </section>
     <div class="switch">
