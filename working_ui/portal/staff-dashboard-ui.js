@@ -1176,7 +1176,7 @@
       grid.appendChild(rowsWrap);
       if(dashboardData && dashboardData.portalTodayAfternoonOff){
         const off = document.createElement('div');
-        off.className = 'today-day-panel today-day-panel--off-requested today-day-panel--solo';
+        off.className = 'today-day-panel today-day-panel--off-requested today-afternoon-off';
         off.setAttribute('role', 'status');
         off.innerHTML = '<div class="today-day-panel__off">'
           + '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>'

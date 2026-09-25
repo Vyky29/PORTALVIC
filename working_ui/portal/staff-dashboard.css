@@ -5141,6 +5141,12 @@
       box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
       overflow:hidden;
     }
+    .today-afternoon-off{
+      flex:0 0 auto;
+      height:auto;
+      min-height:72px;
+      margin-top:8px;
+    }
     .today-day-panel--off-requested{
       border:2px solid rgba(185,28,28,.55);
       background:linear-gradient(180deg,#fff5f5 0%,#ffe8e8 100%);
