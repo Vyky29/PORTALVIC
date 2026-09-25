@@ -6299,15 +6299,18 @@
       }
       if(afternoonOnlyAway && rows.length){
         rows = rows.filter(function(row){
-          const raw = String((row && (row.start || row.time || row.timeLabel)) || '').trim();
+          const who = String((row && (row.name || row.clientName || row.clientId)) || '').toLowerCase();
+          if(who.indexOf('ikram') >= 0) return true;
+          const raw = String((row && (row.time || row.start || row.timeLabel)) || '').trim();
           const m = raw.match(/(\d{1,2})(?:[:.](\d{2}))?/);
-          if(!m) return true;
+          if(!m) return false;
           let h = Number(m[1]);
           const min = Number(m[2] || 0);
           if(h >= 1 && h <= 7) h += 12;
           return h * 60 + min < 15 * 60;
         });
       }
+      if(dashboardData) dashboardData.portalTodayAfternoonOff = !!afternoonOnlyAway;
       const awayOff = !!(id && selectedIso
         && !afternoonOnlyAway
         && typeof portalTermStaffAwayOnDate === 'function'

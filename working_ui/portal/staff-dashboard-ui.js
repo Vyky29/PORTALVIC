@@ -1174,6 +1174,17 @@
         rowsWrap.appendChild(card);
       });
       grid.appendChild(rowsWrap);
+      if(dashboardData && dashboardData.portalTodayAfternoonOff){
+        const off = document.createElement('div');
+        off.className = 'today-day-panel today-day-panel--off-requested today-day-panel--solo';
+        off.setAttribute('role', 'status');
+        off.innerHTML = '<div class="today-day-panel__off">'
+          + '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>'
+          + '<div class="today-day-panel__off-copy">'
+          + '<p class="today-day-panel__off-title">Day off (Time Off Requested)</p>'
+          + '<p class="today-day-panel__off-sub">Afternoon</p></div></div>';
+        grid.appendChild(off);
+      }
       requestAnimationFrame(function(){
         applyTodayGridSizing(grid, count);
         requestAnimationFrame(function(){
@@ -2359,7 +2370,12 @@
       const key = String(iso || '').trim().slice(0, 10);
       const sid = String(staffId || '').trim().toLowerCase();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(key) || !sid) return false;
-      if(key === '2026-09-23' && (sid === 'luliya' || sid === 'lulia' || sid.indexOf('luliya') === 0)) return true;
+      const canon = typeof portalCanonicalStaffKeyForMatch === 'function'
+        ? String(portalCanonicalStaffKeyForMatch(sid) || '').trim().toLowerCase()
+        : sid;
+      const luliya = canon === 'luliya' || canon === 'lulia' || sid === 'luliya' || sid === 'lulia'
+        || sid.indexOf('luliya') >= 0 || sid.indexOf('lulia') >= 0 || sid.indexOf('aidaluli') >= 0;
+      if(key === '2026-09-23' && luliya) return true;
       const rows = (typeof window !== 'undefined' && window.__PORTAL_STAFF_UNAVAILABILITY__) || [];
       const keys = typeof portalTermStaffProfileLookupKeys === 'function'
         ? portalTermStaffProfileLookupKeys(sid)
