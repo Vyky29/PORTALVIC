@@ -121,13 +121,24 @@
   }
   .switch button.is-on .pico { background: rgba(228, 180, 35, 0.16); color: var(--gold); }
   .switch button.is-on span { color: #d5dbe6; }
-  .layout { display: grid; grid-template-columns: 230px 1fr; gap: 16px; align-items: start; }
-  .toc { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 4px; }
-  .toc button {
-    text-align: left; border: 0; background: transparent; color: var(--muted);
-    border-radius: 10px; padding: 8px 10px; font-size: 13px; font-weight: 650;
+  .layout { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: start; }
+  .toc {
+    position: sticky; top: 12px; z-index: 4;
+    display: flex; flex-direction: column; gap: 6px;
   }
-  .toc button.is-on, .toc button:hover { background: white; color: var(--ink); }
+  .toc button {
+    display: flex; align-items: center; gap: 8px;
+    text-align: left; border: 1px solid transparent; background: transparent; color: var(--muted);
+    border-radius: 14px; padding: 7px 10px 7px 7px; font-size: 13px; font-weight: 700;
+    white-space: nowrap;
+  }
+  .toc .tico {
+    width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; flex: none;
+    background: #efeae0; color: var(--navy-2);
+  }
+  .toc .tico svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .toc button.is-on, .toc button:hover { background: white; color: var(--ink); border-color: var(--line); }
+  .toc button.is-on .tico { background: var(--navy); color: var(--gold); }
   .sections { display: flex; flex-direction: column; gap: 10px; }
   details.sec {
     background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden;
@@ -176,14 +187,38 @@
     padding: 10px 14px; border-radius: 12px; display: none; z-index: 5;
   }
   body.editing [contenteditable="true"] { outline: 1px dashed rgba(184,134,11,.7); outline-offset: 2px; background: #fffdf6; border-radius: 8px; }
-  @media (max-width: 980px) {
+  @media (max-width: 1100px) {
     .app { grid-template-columns: 1fr; }
     .side { position: relative; height: auto; }
-    .layout, .grid2, .stats, .row, .sheet-head { grid-template-columns: 1fr; }
+    .main { padding: 14px 14px 64px; }
+    .layout, .grid2, .stats, .row, .sheet-head, .switch { grid-template-columns: 1fr; }
     .sheet-head { flex-direction: column; align-items: stretch; }
     .tools { justify-content: flex-start; }
-    .toc { position: relative; flex-direction: row; overflow: auto; }
     .sheet-head h2 { font-size: 28px; }
+    .hero { padding: 14px; border-radius: 18px; }
+    .toc {
+      position: sticky; top: 0;
+      flex-direction: row; align-items: center;
+      overflow-x: auto; overflow-y: hidden;
+      gap: 8px; margin: 0 -14px 12px; padding: 8px 14px 10px;
+      background: linear-gradient(180deg, var(--paper) 70%, rgba(246,244,239,0));
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .toc::-webkit-scrollbar { display: none; }
+    .toc button {
+      flex: 0 0 auto;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 12px 6px 6px;
+      box-shadow: 0 6px 16px rgba(28, 36, 51, 0.04);
+    }
+    .sec .grow small { display: none; }
+    .body { padding: 0 12px 14px; }
+    .field, .call, .bcard { font-size: 15px; }
+    table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .row b { padding-top: 0; }
   }
   @media print {
     .side, .tools, .switch, .toc, .toast { display: none !important; }
@@ -257,6 +292,29 @@ const EVIDENCE = [
 ];
 
 function sec(id, title, hint, icon, blocks) { return { id, title, hint, icon, blocks }; }
+const NAV_SHORT = {
+  personal: "Profile",
+  about: "About",
+  communication: "Talk",
+  sensory: "Sensory",
+  "personal-care": "Care",
+  eating: "Food",
+  health: "Health",
+  mobility: "Moving",
+  activities: "Activities",
+  community: "Outings",
+  skills: "Skills",
+  relationships: "People",
+  safeguarding: "Safety",
+  principles: "Guide",
+  regulated: "Signs",
+  pathways: "Responses",
+  never: "Rules",
+  evidence: "Evidence",
+  incidents: "Call",
+  zones: "Zones",
+  portal: "This year"
+};
 function prose(html) { return { type: "prose", html }; }
 function call(kind, label, html) { return { type: "call", kind, label, html }; }
 function fields(items) { return { type: "fields", items }; }
@@ -784,7 +842,7 @@ function render() {
       <button class="${plan === "behaviour" ? "is-on" : ""}" data-plan="behaviour"><span class="pico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 20 7v5.2c0 4.4-3 7.4-8 9.3-5-1.9-8-4.9-8-9.3V7z"/><path d="M9 12.2 11 14.2 15.2 10"/></svg></span><span><strong>Behaviour support plan</strong><span>What we see and what we do</span></span></button>
     </div>
     <div class="layout">
-      <nav class="toc">${sections.map((s, i) => `<button data-jump="${s.id}" class="${i === 0 ? "is-on" : ""}">${esc(s.title)}</button>`).join("")}</nav>
+      <nav class="toc">${sections.map((s, i) => `<button data-jump="${s.id}" class="${i === 0 ? "is-on" : ""}"><span class="tico">${ICONS[s.icon] || ICONS.star}</span>${esc(NAV_SHORT[s.id] || s.title)}</button>`).join("")}</nav>
       <div class="sections">${sections.map((s, i) => `
         <details class="sec" id="sec-${s.id}" ${i < 2 ? "open" : ""}>
           <summary>
