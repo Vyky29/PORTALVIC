@@ -719,7 +719,13 @@
     setElementVisible("quickMenuStaffInterviews", showInterviews);
     setElementVisible(
       "quickMenuCarePlans",
-      staffKey === "michelle" || staffKey === "victor" || staffKey === "raul" || staffKey === "javi"
+      staffKey === "michelle" ||
+        staffKey === "luliya" ||
+        staffKey === "victor" ||
+        staffKey === "raul" ||
+        staffKey === "roberto" ||
+        staffKey === "youssef" ||
+        staffKey === "javi"
     );
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
