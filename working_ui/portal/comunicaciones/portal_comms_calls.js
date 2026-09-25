@@ -514,7 +514,7 @@
         startWithVideoMuted: audioOnly,
         startWithAudioMuted: false,
         startAudioMuted: 0,
-        startAudioOnly: audioOnly,
+        startAudioOnly: false,
         disableDeepLinking: true,
         deeplinking: { disabled: true },
         disableInviteFunctions: true,

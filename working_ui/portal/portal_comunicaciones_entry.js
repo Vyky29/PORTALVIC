@@ -1564,6 +1564,21 @@
     document.getElementById("portalCommsIncomingAnswer").addEventListener("pointerdown", function () {
       var helper = global.PortalCommsCalls;
       var st = incomingCallState;
+      try {
+        var AC = global.AudioContext || global.webkitAudioContext;
+        if (AC) {
+          var ctx = global.__PORTAL_ALERT_AUDIO_CTX__ || new AC();
+          global.__PORTAL_ALERT_AUDIO_CTX__ = ctx;
+          if (ctx.state === "suspended" && ctx.resume) ctx.resume();
+        }
+      } catch (_au) {}
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
+            global.__PORTAL_COMMS_UNLOCK_STREAM__ = stream;
+          }).catch(function () {});
+        }
+      } catch (_mic) {}
       if (!helper || !st) return;
       if (typeof helper.prepare === "function") {
         void helper.prepare({
@@ -1590,7 +1605,7 @@
     if (global.PortalCommsCalls) return Promise.resolve(global.PortalCommsCalls);
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260925-call-ring";
+      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260925-call-hear";
       s.onload = function () {
         if (global.PortalCommsCalls) resolve(global.PortalCommsCalls);
         else reject(new Error("Call service failed to load."));
@@ -1972,7 +1987,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260910-sw-no-fetch", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260925-call-hear-locked", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function (reg) {
         try {

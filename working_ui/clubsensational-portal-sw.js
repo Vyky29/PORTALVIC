@@ -10,6 +10,7 @@
  * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
  * v20260906-comms-inapp-49 (always OS banner for incoming calls)
  * v20260910-sw-no-fetch (do not intercept JS/CSS — Cache API hangs on some iPhone PWAs)
+ * v20260925-call-ring-locked (repeat the call banner so a locked phone keeps ringing)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
@@ -442,7 +443,7 @@ self.addEventListener('push', function (event) {
       /* Calls always use the iOS logo toaster. A locked phone cannot show
          the in-app overlay; skipping showNotification drops the ring. */
       if (isCallPush) {
-        tasks.unshift(self.registration.showNotification(title, notifyOpts));
+        tasks.unshift(portalRingLockedCall(title, notifyOpts));
         tasks.push(portalWritePendingInapp(pending));
       } else if ((isCommsMessagePush || isFamilyPush) && hasVisibleClient) {
         tasks.push(portalCloseCommsOsBanners());
@@ -460,7 +461,46 @@ self.addEventListener('push', function (event) {
   );
 });
 
+var portalCallRingToken = 0;
+function portalStopCallRing() {
+  portalCallRingToken += 1;
+}
+function portalRingLockedCall(title, notifyOpts) {
+  var token = ++portalCallRingToken;
+  var baseTag = String((notifyOpts && notifyOpts.tag) || 'portal-call');
+  var i = 0;
+  function step() {
+    if (token !== portalCallRingToken || i >= 16) return Promise.resolve();
+    i += 1;
+    var opts = {};
+    var k;
+    for (k in notifyOpts) {
+      if (Object.prototype.hasOwnProperty.call(notifyOpts, k)) opts[k] = notifyOpts[k];
+    }
+    opts.tag = baseTag;
+    opts.renotify = true;
+    opts.silent = false;
+    opts.requireInteraction = true;
+    return self.registration.showNotification(title, opts).then(function () {
+      return new Promise(function (resolve) {
+        setTimeout(resolve, 2800);
+      });
+    }).then(function () {
+      if (token !== portalCallRingToken) return;
+      return self.registration.getNotifications({ tag: baseTag }).then(function (list) {
+        if (!list || !list.length) {
+          if (token === portalCallRingToken) portalCallRingToken += 1;
+          return;
+        }
+        return step();
+      });
+    });
+  }
+  return step();
+}
+
 self.addEventListener('notificationclick', function (event) {
+  portalStopCallRing();
   event.notification.close();
   var data = (event.notification && event.notification.data) || {};
   var portalOpen = String(data.portalOpen || '');
@@ -499,4 +539,10 @@ self.addEventListener('notificationclick', function (event) {
       }
     })
   );
+});
+
+self.addEventListener('notificationclose', function (event) {
+  var data = (event.notification && event.notification.data) || {};
+  var open = String(data.portalOpen || '');
+  if (open === 'communications_call' || open === 'incoming_call') portalStopCallRing();
 });
