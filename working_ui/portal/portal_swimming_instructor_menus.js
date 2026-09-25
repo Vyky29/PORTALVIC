@@ -725,7 +725,8 @@
         staffKey === "raul" ||
         staffKey === "roberto" ||
         staffKey === "youssef" ||
-        staffKey === "javi"
+        staffKey === "javi" ||
+        staffKey === "patience"
     );
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
