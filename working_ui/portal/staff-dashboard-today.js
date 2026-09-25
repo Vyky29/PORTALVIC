@@ -6299,15 +6299,33 @@
       }
       if(afternoonOnlyAway && rows.length){
         rows = rows.filter(function(row){
-          const who = String((row && (row.name || row.clientName || row.clientId)) || '').toLowerCase();
-          if(who.indexOf('ikram') >= 0) return true;
-          const raw = String((row && (row.time || row.start || row.timeLabel)) || '').trim();
-          const m = raw.match(/(\d{1,2})(?:[:.](\d{2}))?/);
-          if(!m) return false;
-          let h = Number(m[1]);
-          const min = Number(m[2] || 0);
-          if(h >= 1 && h <= 7) h += 12;
-          return h * 60 + min < 15 * 60;
+          const base = row && row.__portalBaseSession;
+          const blob = [
+            row && row.name, row && row.clientName, row && row.clientId, row && row.activity,
+            base && (base.client_name || base.clientName || base.clientDisplay || base.name),
+            base && (base.clientId || base.client_id),
+            base && (base.activity || base.service)
+          ].join(' ').toLowerCase();
+          if(blob.indexOf('ikram') >= 0 || /day\s*centre/.test(blob)) return true;
+          const bits = [row && row.time, row && row.start, row && row.timeLabel, base && base.start];
+          const segs = row && row.segments;
+          if(Array.isArray(segs)){
+            segs.forEach(function(seg){
+              if(seg) bits.push(seg.time, seg.label, seg.start);
+            });
+          }
+          let keep = false;
+          let sawTime = false;
+          bits.forEach(function(bit){
+            const m = String(bit || '').match(/(\d{1,2})(?:[:.](\d{2}))?/);
+            if(!m) return;
+            sawTime = true;
+            let h = Number(m[1]);
+            const min = Number(m[2] || 0);
+            if(h >= 1 && h <= 7) h += 12;
+            if(h * 60 + min < 15 * 60) keep = true;
+          });
+          return keep;
         });
       }
       if(dashboardData) dashboardData.portalTodayAfternoonOff = !!afternoonOnlyAway;
