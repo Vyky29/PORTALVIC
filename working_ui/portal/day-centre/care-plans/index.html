@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>clubSENsational · Day Centre plans</title>
+<link rel="icon" href="assets/logo-mark.png" />
+<style>
+  :root {
+    --navy: #243044;
+    --navy-2: #35415d;
+    --ink: #1c2433;
+    --muted: #5c6780;
+    --line: #e3e6ee;
+    --paper: #f6f4ef;
+    --card: #fffcf7;
+    --gold: #e4b423;
+    --gold-deep: #b8860b;
+    --gold-soft: #fff6dc;
+    --ok: #1f7a4d;
+    --ok-soft: #e7f6ee;
+    --warn: #9a6200;
+    --warn-soft: #fff4d8;
+    --risk: #a33b45;
+    --risk-soft: #fdecef;
+    --info: #2d5f9a;
+    --info-soft: #e8f0fa;
+    --shadow: 0 18px 50px rgba(28, 36, 51, 0.08);
+    --sidebar: 292px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Avenir Next", "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    letter-spacing: -0.011em;
+  }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+  .app { display: grid; grid-template-columns: var(--sidebar) 1fr; min-height: 100%; }
+  .side {
+    background: linear-gradient(180deg, #1b2433 0%, #243044 40%, #2c3a52 100%);
+    color: #f4f1ea;
+    padding: 22px 16px 28px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: auto;
+  }
+  .brand { display: flex; gap: 12px; align-items: center; padding: 0 8px 18px; }
+  .brand img { width: 54px; height: 54px; object-fit: contain; background: #1b2433; border-radius: 14px; }
+  .brand .kicker { margin: 0; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+  .brand h1 { margin: 2px 0 0; font-size: 16px; font-weight: 650; letter-spacing: -0.02em; }
+  .brand p { margin: 2px 0 0; color: #b7c0d0; font-size: 12px; }
+  .search {
+    width: 100%; border: 0; border-radius: 12px; padding: 11px 12px;
+    background: rgba(255,255,255,0.08); color: white; outline: none; margin-bottom: 14px;
+  }
+  .search::placeholder { color: #9aa6ba; }
+  .people { display: flex; flex-direction: column; gap: 8px; }
+  .person {
+    display: grid; grid-template-columns: 42px 1fr auto; gap: 10px; align-items: center;
+    text-align: left; color: inherit; background: transparent; border: 1px solid transparent;
+    border-radius: 16px; padding: 10px;
+  }
+  .person:hover { background: rgba(255,255,255,0.05); }
+  .person.is-on { background: rgba(228,180,35,0.14); border-color: rgba(228,180,35,0.45); }
+  .avatar {
+    width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center;
+    font-weight: 750; color: #1b2433; background: var(--gold);
+  }
+  .person small { display: block; color: #b7c0d0; font-size: 12px; margin-top: 2px; }
+  .pill {
+    font-size: 10px; font-weight: 750; letter-spacing: 0.06em; text-transform: uppercase;
+    border-radius: 999px; padding: 4px 7px; background: rgba(255,255,255,0.1);
+  }
+  .pill.live { background: #1f7a4d; color: white; }
+  .side-note { margin: 18px 8px 0; color: #9aa6ba; font-size: 12px; line-height: 1.45; }
+  .main { min-width: 0; padding: 22px 28px 80px; }
+  .topbar { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+  .eyebrow { margin: 0 0 4px; color: var(--gold-deep); font-size: 12px; font-weight: 750; letter-spacing: 0.14em; text-transform: uppercase; }
+  .topbar h2 { margin: 0; font-size: 34px; letter-spacing: -0.04em; line-height: 1; }
+  .topbar .sub { margin: 8px 0 0; color: var(--muted); max-width: 640px; line-height: 1.45; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+  .btn {
+    border: 1px solid var(--line); background: white; color: var(--navy); border-radius: 999px;
+    padding: 9px 14px; font-weight: 650; font-size: 13px;
+  }
+  .btn.primary { background: var(--navy); color: white; border-color: var(--navy); }
+  .btn.gold { background: var(--gold); border-color: var(--gold); color: #1b2433; }
+  .btn.is-on { box-shadow: inset 0 0 0 2px var(--navy); }
+  .hero {
+    background: var(--card); border: 1px solid var(--line); border-radius: 24px;
+    box-shadow: var(--shadow); padding: 18px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip { background: var(--gold-soft); color: #6d5208; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700; }
+  .chip.navy { background: #eef1f6; color: var(--navy-2); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { background: #f7f5f0; border-radius: 16px; padding: 12px; }
+  .stat b { display: block; font-size: 22px; letter-spacing: -0.04em; }
+  .stat span { color: var(--muted); font-size: 12px; }
+  .switch { display: flex; gap: 8px; margin: 16px 0; }
+  .switch button { flex: 1; text-align: left; border-radius: 18px; border: 1px solid var(--line); background: white; padding: 14px 16px; }
+  .switch button strong { display: block; font-size: 15px; }
+  .switch button span { color: var(--muted); font-size: 12px; }
+  .switch button.is-on { background: var(--navy); color: white; border-color: var(--navy); }
+  .switch button.is-on span { color: #d5dbe6; }
+  .layout { display: grid; grid-template-columns: 230px 1fr; gap: 16px; align-items: start; }
+  .toc { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 4px; }
+  .toc button {
+    text-align: left; border: 0; background: transparent; color: var(--muted);
+    border-radius: 10px; padding: 8px 10px; font-size: 13px; font-weight: 650;
+  }
+  .toc button.is-on, .toc button:hover { background: white; color: var(--ink); }
+  .sections { display: flex; flex-direction: column; gap: 10px; }
+  details.sec {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden;
+  }
+  details.sec > summary {
+    list-style: none; cursor: pointer; display: flex; gap: 12px; align-items: center;
+    padding: 14px 16px; font-weight: 750;
+  }
+  details.sec > summary::-webkit-details-marker { display: none; }
+  .mark {
+    width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--gold-soft); color: #6d5208; flex: none;
+  }
+  .mark svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .sec .grow { flex: 1; }
+  .sec .grow small { display: block; font-weight: 550; color: var(--muted); margin-top: 2px; }
+  .chev { color: var(--muted); transition: transform .18s ease; }
+  details[open] .chev { transform: rotate(90deg); }
+  .body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .prose, .field { line-height: 1.5; }
+  .prose p, .call p { margin: 0 0 8px; }
+  .prose p:last-child, .call p:last-child { margin: 0; }
+  .call { border-radius: 14px; padding: 12px 14px; background: var(--info-soft); }
+  .call.warn { background: var(--warn-soft); }
+  .call.risk { background: var(--risk-soft); }
+  .call.ok { background: var(--ok-soft); }
+  .call .label { display: block; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 800; margin-bottom: 4px; color: var(--navy-2); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .field {
+    background: #f7f5f0; border-radius: 14px; padding: 10px 12px;
+  }
+  .field .k { display: block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 750; margin-bottom: 4px; }
+  ul.clean { margin: 0; padding-left: 18px; }
+  ul.clean li { margin: 4px 0; }
+  .cards { display: grid; gap: 8px; }
+  .bcard { border: 1px solid var(--line); border-radius: 16px; padding: 12px; background: white; }
+  .bcard h3 { margin: 0 0 6px; font-size: 15px; }
+  .rows { display: grid; gap: 6px; }
+  .row { display: grid; grid-template-columns: 140px 1fr; gap: 8px; font-size: 14px; }
+  .row b { color: var(--muted); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; padding-top: 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; border-radius: 14px; overflow: hidden; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--navy); color: white; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .toast {
+    position: fixed; bottom: 16px; right: 16px; background: var(--navy); color: white;
+    padding: 10px 14px; border-radius: 12px; display: none; z-index: 5;
+  }
+  body.editing [contenteditable="true"] { outline: 1px dashed rgba(184,134,11,.7); outline-offset: 2px; background: #fffdf6; border-radius: 8px; }
+  @media (max-width: 980px) {
+    .app { grid-template-columns: 1fr; }
+    .side { position: relative; height: auto; }
+    .hero, .layout, .grid2, .stats, .row { grid-template-columns: 1fr; }
+    .toc { position: relative; flex-direction: row; overflow: auto; }
+    .topbar h2 { font-size: 28px; }
+  }
+  @media print {
+    .side, .tools, .switch, .toc, .toast { display: none !important; }
+    .app { display: block; }
+    details.sec { break-inside: avoid; }
+    details.sec:not([open]) { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <img src="assets/logo-white.png" alt="clubSENsational" />
+      <div>
+        <p class="kicker">Day Centre</p>
+        <h1>Care plans</h1>
+        <p>Staff only · ClubSENsational</p>
+      </div>
+    </div>
+    <input class="search" id="q" placeholder="Find a participant" />
+    <div class="people" id="people"></div>
+    <p class="side-note">Edits stay in this browser. Export a JSON copy before you rely on them. This file is local and is not part of the public app.</p>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<div class="toast" id="toast">Saved on this browser</div>
+<script>
+const ICONS = {
+  user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.2c1.4-3 3.8-4.4 7-4.4s5.6 1.4 7 4.4"/></svg>',
+  heart: '<svg viewBox="0 0 24 24"><path d="M12 19s-7-4.4-7-9a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 4.6-7 9-7 9z"/></svg>',
+  chat: '<svg viewBox="0 0 24 24"><path d="M5 16.5 4 20l3.6-1.4A8.5 8.5 0 1 0 5 16.5z"/></svg>',
+  spark: '<svg viewBox="0 0 24 24"><path d="M12 3.5 13.8 9 19.5 12 13.8 15 12 20.5 10.2 15 4.5 12 10.2 9z"/></svg>',
+  wave: '<svg viewBox="0 0 24 24"><path d="M3 14c2 0 2-4 4-4s2 4 4 4 2-4 4-4 2 4 4 4"/><path d="M3 18c2 0 2-3 4-3s2 3 4 3 2-3 4-3 2 3 4 3"/></svg>',
+  care: '<svg viewBox="0 0 24 24"><path d="M8 11h8M12 7v8"/><rect x="4" y="4" width="16" height="16" rx="4"/></svg>',
+  food: '<svg viewBox="0 0 24 24"><path d="M6 3.5v7M9 3.5v7M6 7h3M6 10.5V20M17 3.5c-2 2-2 4.2-2 7.2V20"/></svg>',
+  med: '<svg viewBox="0 0 24 24"><rect x="8" y="3.5" width="8" height="17" rx="4"/><path d="M8 12h8"/></svg>',
+  walk: '<svg viewBox="0 0 24 24"><circle cx="14" cy="5" r="2"/><path d="M8 21l2.2-6.2L8 12l3-2 2 3 3 1M13 11l1.5 4.2L18 21"/></svg>',
+  sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M18 6l-1.6 1.6M7.6 16.4 6 18"/></svg>',
+  map: '<svg viewBox="0 0 24 24"><path d="M9 5.5 4.5 7.2V19l4.5-1.7L15 19l4.5-1.7V5.5L15 7.2z"/><path d="M9 5.5v11.8M15 7.2V19"/></svg>',
+  star: '<svg viewBox="0 0 24 24"><path d="m12 4 1.8 4.2L18.5 9l-3.2 3 .9 4.6L12 14.6 7.8 16.6 8.7 12 5.5 9l4.7-.8z"/></svg>',
+  people: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="2.4"/><circle cx="16" cy="9" r="2"/><path d="M4.5 18.5c.8-2.4 2.4-3.6 4.6-3.6s3.8 1.2 4.6 3.6M14 15.2c1.6-.2 3 .7 4 2.8"/></svg>',
+  shield: '<svg viewBox="0 0 24 24"><path d="M12 3.5 19 6.2v5.4c0 4.2-2.8 7.2-7 8.9-4.2-1.7-7-4.7-7-8.9V6.2z"/></svg>',
+  alert: '<svg viewBox="0 0 24 24"><path d="M12 4.2 20 18.5H4z"/><path d="M12 10v4"/><path d="M12 16.8h.01"/></svg>'
+};
+
+const EVIDENCE = [
+  ["2026-05-15","5","Happy","Westfield for earrings, collars and rings.","Lulia"],
+  ["2026-05-18","3","Upset, then calmer","Arrived very upset, possibly a driver change. Cafe, then sat outside, then a classroom day because she could not stay regulated. Calmer after about an hour.","Lulia"],
+  ["2026-05-19","4","Happy and anxious","Cafe, bus, an hour on the park swing. Scared when the bus moved before she was seated. Upset at collection because she expected someone else.","Victor"],
+  ["2026-05-22","4","Happy","Swimming, Portobello, cafe chips. Upset when she saw Mariam. Staff waited about 20 minutes until she was ready.","Victor"],
+  ["2026-06-01","—","Anxious at home time","Coped with a new transport carer and a new support worker. Anxious getting into the car home.","Michelle"],
+  ["2026-06-02","—","Mostly listening","Ate lunch, put lunch away herself, accepted no, and managed floor-sitting. Still anxious in moments. Responded well to Lulia.","Michelle"],
+  ["2026-06-03","—","Mixed","Happy arrival and community contact, with several dysregulation spells, floor-sitting and shoes off.","Michelle"],
+  ["2026-06-05","—","Happy, one floor sit","Train to Westfield and McDonald’s for her birthday. Sat on the McDonald’s toilet floor and got up after Victor prompted.","Michelle"],
+  ["2026-06-08","—","Hard start, recovered","Sat on the floor for an hour on arrival. In the gym toilet she took clothes off and later dressed. Ate with prompts.","Michelle"],
+  ["2026-06-09","—","Used her words","Happy start, then began taking clothes off in the classroom. Recovered. Said she was tired at the end.","Michelle"],
+  ["2026-06-10","—","Floor sit, then up","Ate lunch and had nails done after first refusing. Sat on the cafe floor, then got up.","Aida and Luliya"],
+  ["2026-06-12","—","Swimming and sushi","Entered the pool after not wanting to. Westfield and sushi. Floor-sitting ended with steady prompting.","Aida and Luliya"],
+  ["2026-06-15","—","New behaviours","Cafe, film and park, lots of talking. Dysregulated in the park: floor-sitting, spitting and hair-pulling. Staff waited and walked off.","Michelle"],
+  ["2026-06-16","—","Good day, hard ending","Music, singing, cafe, community and bus. At the end she tried to make herself sick. No clear trigger recorded.","Michelle"],
+  ["2026-06-17","—","Active and regulated","Football and basketball. Did not sit on the floor.","Aida and Luliya"],
+  ["2026-06-19","—","Pool success","Did not want to swim, then stayed in and enjoyed it. Train afterwards.","Aida and Luliya"],
+  ["2026-06-22","—","Mostly calm","Cafe and a walk. A few dysregulation moments, including reaching to pull hair, the last around 15:00.","Michelle"],
+  ["2026-06-23","—","Transport crisis","Unknown carer. Hot day. Stripped and made herself sick in the cab. Staff gave a long rest and no demands.","Michelle"],
+  ["2026-06-24","—","Heat plan worked","Day kept in the cooler Westway reception. Karaoke. Calm.","Aida and Luliya"],
+  ["2026-06-26","—","Strong swim day","Much more confident in the water. Shop for sushi. Mostly no dysregulation.","Michelle"],
+  ["2026-06-29","—","Full activity day","Karaoke, cafe, park, basketball, relaxation. Sat on the way back. Staff disengaged, gave space, then used a 3-2-1 prompt after about 10 minutes.","Michelle"],
+  ["2026-06-30","—","One quick hair pull","Hot day started with her songs and karaoke. One unexpected hair pull. Otherwise calm.","Michelle"],
+  ["2026-07-01","—","No dysregulation","Scared of the water at first, then got in. Staff recorded no dysregulation.","Michelle"]
+];
+
+function sec(id, title, hint, icon, blocks) { return { id, title, hint, icon, blocks }; }
+function prose(html) { return { type: "prose", html }; }
+function call(kind, label, html) { return { type: "call", kind, label, html }; }
+function fields(items) { return { type: "fields", items }; }
+function list(items) { return { type: "list", items }; }
+function cards(items) { return { type: "cards", items }; }
+
+const ikramCare = [
+  sec("personal", "Personal information", "Identity, contacts, diagnoses", "user", [
+    call("warn", "Check before this plan is signed", "<p>Two dates of birth are on file. Club and the portal use <b>17 June 1994</b>. The Integrity Care & Support assessment of September 2026 uses <b>4 June 1994</b>. The mobile number in the Club draft looks short. GP, NHS number and email were left blank in the source. Do not guess them.</p>"),
+    fields([
+      ["Full name", "Ikram Omar"],
+      ["How we refer to her", "Ikram. Records also use IO and ICRM."],
+      ["Date of birth in use", "17 June 1994, pending a check against the ICS date of 4 June 1994."],
+      ["Age", "32"],
+      ["Gender", "Female"],
+      ["Ethnicity", "Somali / British. The ICS assessment describes her as a Black Muslim woman, originally from Nairobi."],
+      ["Religion", "Muslim. She does not eat pork, does not drink alcohol, and eats halal meat. She does not fast in Ramadan."],
+      ["Languages at home", "English and Somali. No interpreter required."],
+      ["Home address", "Flat 1, Cavendish House, 51 Mortimer Street, London W1W 8HR. Borough: City of Westminster."],
+      ["Parent / carer", "Farhia Mahamed, mother. Same address."],
+      ["Telephone", "0730407032 as written on the Club draft. Confirm the full number."],
+      ["Email", "Not recorded. Add it here."],
+      ["Social worker", "Sarah Kagaba, named in the portal profile and the July 2026 placement review."],
+      ["GP and NHS number", "Not recorded. Add surgery, address, ICB and NHS number."],
+      ["Funding reference", "Client ID 572135 · PO XXPRASHERV1, from the 23 July 2026 placement review."],
+      ["People around this plan", "Family. Club managers Victor Matilla and Raul Salvador. ICS transport plan signed by Jade Ferguson on 24 April 2026."],
+      ["Plan status", "Working Club plan, 25 September 2026. Not a signed clinical document until the gaps above are closed."]
+    ])
+  ]),
+  sec("about", "About Ikram", "Personality, joy, routine", "heart", [
+    prose("<p>Ikram is a warm, funny woman who likes people, familiar faces, and a day she can see coming. When she is settled she jokes, asks for a hug, holds hands, and joins music, the pool, a cafe, or a slow walk. She is close to her mother, her sister, her cousins, and her cat Muchie.</p><p>She does best with the same adults, a calm room, and one clear next step. New people take time. If a preferred person is late, off, or has left, that itself can unsettle her.</p>"),
+    { type: "grid", items: [
+      ["What she enjoys", "Music, especially Jennifer Lopez and Ed Sheeran, and Bollywood videos. Karaoke. Swimming, with confidence growing. Slow community walks, shopping, Westfield, Portobello, cafes and restaurants. Sushi, pasta, cake, and birthday celebrations. Hair, makeup, and painted nails, often blue. Head massage, a weighted blanket, Tracey Beaker, and her iPad for music."],
+      ["What is hard", "Busy noise, crowds, long waits, and an unexpected no. Leaving a place she likes. A change of driver or support worker. Unfamiliar dogs and cats, even though she loves Muchie. Long or fast walking, because of Perthes in the left hip. Heat."],
+      ["What matters", "Family, Muchie, and the staff she has bonded with. A visual day plan. Compliments. Being spoken to directly and included in the choice."],
+      ["A usual Club day", "Arrives about 11:00. Check-in for feelings, date, time and weather on the Club platform with Pix, then the day’s schedule. Often karaoke, snack, swimming, lunch, cooking, an outdoor choice, then the Hub to settle, a cab, and home. Swimming is planned Monday, Wednesday and Friday, 12:00 to 13:00, and is never forced."]
+    ]}
+  ]),
+  sec("communication", "Communication", "Words, gestures, time", "chat", [
+    prose("<p>Both things are true. When Ikram is regulated she uses short phrases and key words for feelings, likes and dislikes, in English and in Somali. When she is anxious, behaviour, face and body carry more of the message than speech. She does not follow complex ideas or long questions.</p>"),
+    fields([
+      ["Yes and no", "She can accept, refuse, and say what she wants in simple words when calm. A request for the toilet near home time may be a delay, not a toileting need. Check gently, do not argue."],
+      ["Pain or discomfort", "May show as withdrawal, stopping smiling, sitting down, or distress rather than a clear ‘it hurts’. Ask one simple question and watch her hip, heat, hunger and tiredness."],
+      ["Needing a break", "She sometimes says she has had enough. She may also go quiet, sit, or take shoes off."],
+      ["Processing time", "One instruction. Wait. Do not stack questions."],
+      ["What works", "Simple words. Show, then do. First, then. A visual schedule and a countdown. A soft voice. Compliments."],
+      ["What to avoid", "Long explanations, several choices at once, a raised voice, and lots of talk while she is distressed."]
+    ])
+  ]),
+  sec("sensory", "Sensory profile", "Sound, touch, heat, crowd", "spark", [
+    fields([
+      ["Sound and crowd", "Loud rooms, shopping centres and busy restaurants overwhelm her. Offer a quieter corner, headphones, or leave."],
+      ["Touch", "She enjoys chosen touch: hand-holding, a hug she asks for, hand massage, and massage on the top of her head. Uninvited closeness is a trigger. Always ask."],
+      ["Heat", "Hot days have driven distress, including in a cab. Start indoors, use the cooler reception, shorten the walk, and offer a cold cloth on her head or cheeks."],
+      ["Colour and clothes", "She likes blue nails, and she often calls other colours black. Do not correct her. Clothing can come off when she is dysregulated. That is a regulation and dignity issue, not a sensory preference to encourage."],
+      ["What helps", "Headphones, iPad music, weighted blanket, head or hand massage, a cold compress, a quiet Hub, familiar songs. Stop the screen if she is getting more wound up. She can say when she has had enough."],
+      ["Early overwhelm", "Stops smiling, avoids eye contact, hands begin to shake, goes quiet, looks hard at a hairline, or sits."]
+    ])
+  ]),
+  sec("personal-care", "Personal care", "Dignity, toilet, clothes, swim", "care", [
+    call("ok", "Live Club rule", "<p>Intimate care is discreet, explained first, and led by a female member of staff unless her mother has agreed otherwise. A second adult protects safety and dignity. They do not crowd the cubicle.</p>"),
+    fields([
+      ["Toileting", "She may need a prompt to wipe and to wash her hands. Support, do not take over if she can do the step."],
+      ["Dressing", "At home her mother helps with a bra, laces and buttons. At Club, prompt and help only the step she cannot do."],
+      ["Menstrual care", "Her mother supports this at home. At the centre, keep spare clothing, be discreet, and tell her mother the same day if support was needed."],
+      ["Swimming", "Explain each step: changing, pool, shower, clothes back on. If she refuses the water, the refusal stands. Celebrate getting in. Never pull her in."],
+      ["Nails, hair, makeup", "These are regulating and social for her. Offer them. She can refuse."],
+      ["Privacy", "Tell her what you are about to do. Close the door as far as safety allows. No photos during personal care."]
+    ])
+  ]),
+  sec("eating", "Eating and drinking", "Halal, preferences, support", "food", [
+    fields([
+      ["Independence", "Her mother prepares meals at home. Out, she needs support to choose. She can eat with prompts and has put lunch away herself."],
+      ["Faith diet", "Halal meat or fish. No pork. No alcohol. She does not fast in Ramadan, so do not withhold food then."],
+      ["Favourites", "Sushi, pasta, cake, chips, and a birthday McDonald’s have all gone well."],
+      ["Allergies", "None recorded. Confirm with her mother before relying on that."],
+      ["Drinking", "She brings water. Prompt sips through the day, more so in heat."],
+      ["Risk", "No choking or SALT plan is on file. Ordinary supervision at meals. Do not introduce a special texture plan that nobody has assessed."]
+    ])
+  ]),
+  sec("health", "Medication and health", "What Club does and does not give", "med", [
+    call("risk", "Nothing is administered at the Day Centre", "<p>Regular medicine is taken at home. Emergency diazepam is a home medicine. It is not brought in, and staff do not give it. There is no MAR entry for Club hours until a prescriber and her mother put one in writing.</p>"),
+    fields([
+      ["Epilepsy", "The Club plan records epilepsy, and no seizure since she started at Club. The ICS assessment says possible epilepsy. Until this is confirmed, treat a seizure as an emergency and do not debate the label on the day."],
+      ["If a seizure happens", "Note the time. Clear the space and protect her head. Do not restrain her and do not put anything in her mouth. When the jerking stops, recovery position if she is breathing. Call 999 if it lasts more than 5 minutes, if another starts, if she is injured, if breathing is difficult, or if this is the first seizure staff have seen. Call her mother. Record it the same day."],
+      ["Perthes, left hip", "Childhood avascular necrosis. She cannot walk long distances or do hard exercise. Offer seats, short walks, and a break before she is exhausted. Pain may look like behaviour."],
+      ["Asthma", "Named only in the ICS assessment. No inhaler is recorded at Club. Confirm whether it is current. If she is wheezing and struggling to breathe, call 999 and her mother. Do not invent a dose."],
+      ["Chromosome 5p duplication", "Background from ICS. It does not change the day plan unless her mother or GP says it does."],
+      ["2014 hospital admission", "ICS records an inpatient stay in 2014 after a psychotic episode. That is history. It is not a description of how she is now. Do not brief new staff with that as her identity."],
+      ["Unwell signs", "Quieter, pale, refusing food she likes, more sitting, or a change her familiar staff notice. Call her mother. If breathing, seizure, or injury is involved, call 999 as well."]
+    ])
+  ]),
+  sec("mobility", "Mobility", "Walking, stairs, falls", "walk", [
+    fields([
+      ["Walking", "Independent, with short distances and rests."],
+      ["Aids", "No wheelchair or walking aid recorded."],
+      ["Stairs and transfers", "No moving-and-handling plan is on file. Do not lift her. If she sits and will not move, use the behaviour plan, not a physical transfer."],
+      ["Falls", "Risk rises when she is tired, hurried, or on a wet poolside. One adult stays in reach."],
+      ["Exercise", "Light activity only, and only when she wants it. Basketball and football have gone well on calm days. Stop if she sits, limps, or loses the smile."]
+    ])
+  ]),
+  sec("activities", "Activities", "Choice without pressure", "sun", [
+    prose("<p>Offer two real options, with pictures. Join the one she picks. A no is a complete answer. Swimming, karaoke, cafe, park swings, sushi and nails are the strongest invitations. Cooking can be a shared step, not a task she has to finish.</p>"),
+    list(["Swimming: graded, her pace, Monday Wednesday Friday when the rota offers it.","Community: cafe, park, Westfield, Portobello, bus or train, planned in advance.","Music and karaoke, especially her singers.","Hair, makeup, nails.","Gym or ball games only on a regulated day, short, with a seat nearby.","Hub room to settle before the cab."])
+  ]),
+  sec("community", "Community and safety", "2:1, roads, cabs, money", "map", [
+    call("warn", "Ratio", "<p>2:1 at the centre and in the community. One adult keeps the plan. The other stays free for a sit-down, personal care, or the environment. She has no reliable awareness of roads, strangers, or water.</p>"),
+    fields([
+      ["Travel", "Pre-booked taxi between home and the centre. ICS timetable, signed 24 April 2026: support 10:20–11:50 and 15:50–17:20, Monday, Tuesday, Wednesday and Friday. The centre day itself is about 11:00–16:00. An orange seatbelt buckle used to be used and was later removed. Do not reintroduce it unless a current risk assessment says so."],
+      ["Venue names", "ICS names Swim Farm, 1 Crowthorne Road, London W10 6RP. The July review names Westway Sports Centre. Check the live rota. Do not send a cab to the wrong door."],
+      ["In the vehicle", "She should be seated before the driver moves. A new driver is a known trigger. If she is screaming on the way home, call her mother to meet you downstairs."],
+      ["Handover", "Leave as soon as she is with her mother. She does not want staff staying at the door."],
+      ["Absconding", "Not described as a runner. The risk is sitting and refusing, or distress, rather than bolting. Still keep 2:1 in public."],
+      ["Money", "She does not shop or handle money independently. Staff pay and keep the receipt. She chooses, with support."]
+    ])
+  ]),
+  sec("skills", "Independence", "Do with her, not for her", "star", [
+    fields([
+      ["By herself", "Walking short distances, eating once food is there, some requests, putting lunch away on a good day, joining a known activity."],
+      ["With a prompt", "Toilet sequence, handwashing, dressing steps, transitions, healthy food choice, getting up from the floor."],
+      ["Needs an adult", "Roads, taxis, money, cooking a meal, unfamiliar places, intimate care, and any moment of high distress."],
+      ["Current aims", "Predictable community trips. Swimming confidence without force. Using a word or a sign for tired, stop, or toilet. Shorter recovery after a sit-down."],
+      ["How we record it", "Session feedback the same day: attendance, engagement, emotion, what worked, and any incident."]
+    ])
+  ]),
+  sec("relationships", "Relationships and boundaries", "Touch, peers, online", "people", [
+    prose("<p>She is affectionate with people she trusts and can ask for a hug. Staff return warmth without starting intimate touch. Hand-holding is fine when she offers it. Massage of hands or the top of the head is a calming support, not a default greeting.</p><p>She can be scared of unfamiliar animals. Do not bring dogs into her space. Talk about Muchie if she raises the cat.</p><p>iPad use is for her music and videos, supervised, and switched down if she becomes more intense. There is no recorded plan for her own social media.</p>")
+  ]),
+  sec("safeguarding", "Safeguarding", "What to do if something is wrong", "shield", [
+    fields([
+      ["Vulnerability", "She may not recognise danger, a stranger’s intent, or a risky joke. 2:1 is the protection."],
+      ["How she might show something is wrong", "A change from her usual joke and smile, new fear of a person or place, distress on arrival, or behaviour that is not her known pattern."],
+      ["Staff action", "Keep her safe, tell the manager the same day, record facts not opinions, and tell her mother. If she is in immediate danger, call 999. Do not question her in a long interview."],
+      ["Photos", "Activity photos only, never during distress, personal care, or when clothing is off."]
+    ])
+  ])
+];
+
+const ikramBehaviour = [
+  sec("principles", "How to read this plan", "Function, not a label", "shield", [
+    prose("<p>This plan describes what Ikram does when the day is too much, what it may be saying, and what staff do. It is not a list of bad behaviour. The aim is a day she can manage, a fast step-down when anxiety starts, and dignity if it does not.</p>"),
+    call("warn", "Two protocols, one live rule", "<p>The ICS assessment tells staff to ignore a floor-sit, give no eye contact and no communication, and to keep hair covered at all times. Club practice in 2026 is different and is the one we use: quiet presence, space, a countdown, and a familiar voice. Hair tied back is a sensible precaution on a known hair-pull day, not a rule that she is dangerous to look at. Planned ignoring is not the Club strategy.</p>"),
+    call("ok", "Evidence window", "<p>The session log below is every Ikram narrative available in the local portal extracts: 15 May to 1 July 2026. Feedback after 1 July was not in those files. Read the live portal before you sign this plan off, and add any new incident here.</p>")
+  ]),
+  sec("regulated", "Regulated and early signs", "Catch it before it peaks", "wave", [
+    { type: "grid", items: [
+      ["Regulated looks like", "Smiling, joking, short phrases, asking for a hug, eating, joining karaoke or a walk, getting in the pool after a pause, putting her things away."],
+      ["Early signs", "Hands shaking. Smile drops. Less eye contact. Intense look at someone’s hairline. Blank stare. Asking for the toilet or taking shoes off when a transition has just been named. Sitting at the edge of an activity."],
+      ["Known triggers", "New driver or new support worker. Preferred person absent. Busy noise and crowds. Being told no, or being asked to wait. End of a liked activity. Heat. The bus moving before she is seated. The wrong person at collection. Unfamiliar animals. Too much screen."],
+      ["After", "She can recover in the same session when demand drops. Some days that takes about 10 minutes. Some arrivals have taken about an hour. Do not stack the next activity on top of a recovery."]
+    ]}
+  ]),
+  sec("pathways", "What we see and what we do", "One card for each pattern", "alert", [
+    cards([
+      ["Sits and will not move", "Often at a transition: arrival, cafe, toilet, park, or the walk back. Can last many minutes. Sometimes shoes come off.", "I am not ready. The next thing is too soon, too hard, or I am losing a preferred person or place.", "Show the next step early. First this, then that. A seat that is hers. Do not add a second demand.", "Stop talking. Give space. One adult stays near, the other watches the room. After she is still, a calm 3-2-1 or ‘first stand, then cab’.", "Do not pull her up, lecture, or punish the sit. Do not use the old ignore-and-no-eye-contact script as the default.", "Name the recovery in the feedback. Tell her mother if it delayed the cab or blocked care."],
+      ["Clothes come off", "Seen in the gym toilet, the classroom, and once in a cab with an unknown carer on a hot day.", "I am overloaded, hot, or refusing the next demand. It can also be distress, not a wish to be looked at.", "Prefer a cooler room. Explain changing before swimming. Female staff for clothes.", "Cover, clear onlookers, one female adult supports dressing, the second holds the door and the space. Few words.", "Do not film, shout, or have a group in the room. Do not leave her alone if she is also trying to hurt herself.", "Incident note the same day. Call her mother if she was outside a private room or in a vehicle."],
+      ["Hair pulling", "Looks hard at the hairline first. Seen in the park on 15 June and as quick grabs later in June. ICS also describes pinch, kick, shove and hit around home time.", "Anxiety is high. Hair and a close face are within reach. It can happen even after a good stretch of the day.", "Staff who are supporting her tie long hair back on days she is already unsettled. Keep a little distance when hands are shaking.", "Lean back, block softly, step out of reach, swap the adult if one of you is the focus. Restart a known song or a cold cloth once hands are down.", "Do not grab her hair, retaliate, or shame her.", "Record who, where, and whether anyone was hurt. Manager the same day if skin is broken or it keeps happening."],
+      ["Spitting, or trying to be sick", "Spitting in the park on 15 June. Trying to make herself sick at the end of 16 June, and in the cab on 23 June.", "High distress. On 23 June the setting was a new carer plus heat. Sometimes no clear trigger was written down.", "Protect the familiar cab plan. If a driver must change, tell her before she sees the car, with her preferred adult present.", "Step back from fluid, offer tissues, water, and a quiet seat. No demands until her body has settled. Call her mother if she is in the cab.", "Do not restrain her face. Do not keep driving her around while she is being sick.", "Health and incident note. If she may have inhaled fluid or will not stop, call 999."],
+      ["Distress with a new adult or the wrong collector", "Arrival upset after a driver change. Anxious with a new carer. Upset when Marian or Mariam arrived and she was expecting someone else. Staff waited about 20 minutes on 22 May.", "The person in front of me is not the person my day was built around.", "Publish the two adults on her schedule before she arrives. Avoid unknown cover.", "Let the familiar adult lead. The new adult stays present and quiet. At collection, wait until she is ready, then a short handover.", "Do not force her into the car to keep the clock. Do not have three people talking at the door.", "Tell the manager if cover could not be familiar, so the next rota changes."]
+    ])
+  ]),
+  sec("never", "Always and never", "The short card in a pocket", "shield", [
+    { type: "grid", items: [
+      ["Always", "2:1. One instruction. Show the day in pictures. Soft voice. Offer a real choice. Notice shaking hands early. Protect dignity. Write the day before you leave."],
+      ["Never", "Raise your voice. Give diazepam. Force the pool. Pull her off the floor. Use planned ignoring as the method. Film distress. Stay in the flat after handover. Send her with a driver she has not been prepared for if a known adult can do the journey."]
+    ]}
+  ]),
+  sec("evidence", "Session evidence", "Portal feedback, May to 1 July 2026", "chat", [
+    { type: "table", head: ["Date", "Engagement", "What staff recorded"], rows: EVIDENCE.map(r => [r[0], r[1] === "—" ? r[2] : r[1] + " / 5 · " + r[2], r[3] + " — " + r[4]]) },
+    call("ok", "What the log supports", "<p>Most recorded days she attends, eats, and joins something she likes. Dysregulation clusters at arrival, at leaving, with a new adult, in heat, and in busy public toilets or the park. Recovery is real when staff wait and shrink the demand. A May sample of rated days sat around 4 out of 5 engagement, with happy or excited the most common emotion tag, and support described as independent with prompts. That sample is small. It is not a promise that every new week will look the same.</p>")
+  ]),
+  sec("incidents", "When to record and who to call", "Same day, plain facts", "alert", [
+    fields([
+      ["Feedback, every attended day", "Engagement, emotion, what she did, and what helped. This is the record even when the day was good."],
+      ["Incident form", "Injury, hair pull that connects, spitting or vomiting used in distress, clothing off outside a private space, a seizure, a near miss in the road or pool, or anything her mother would expect to hear before the next morning."],
+      ["Call her mother now", "Seizure, breathing difficulty, injury, being sick in the cab, or a collection that cannot happen calmly."],
+      ["Call 999", "Seizure meeting the rules in the health section, breathing difficulty, a serious injury, or danger you cannot make safe."],
+      ["Manager", "Any incident form, any new behaviour, any cover that broke the familiar-staff plan."]
+    ])
+  ])
+];
+
+function draftPerson(id, name, aka, avatar, statusLine, profileFields, about) {
+  return {
+    id, name, aka, avatar, status: "draft", statusLine,
+    chips: ["Draft starter", "Complete from documents and portal"],
+    stats: [["Plan", "Starter"], ["Ratio", "See profile"], ["Evidence", "Not imported"]],
+    care: [
+      sec("personal", "Personal information", "Replace with the source documents", "user", [
+        call("warn", "Starter only", "<p>This card is the portal client profile, rearranged into the Club plan. It is not yet a care plan. Add the assessment, contacts, and a manager review before staff rely on it.</p>"),
+        fields(profileFields)
+      ]),
+      sec("about", "About me", "From the portal profile", "heart", [prose(`<p>${about}</p>`)]),
+      sec("communication", "Communication", "To complete", "chat", [fields([["What we know", profileFields.find(x => x[0]==="Communication")?.[1] || "Add from observation."]])]),
+      sec("sensory", "Sensory profile", "To complete", "spark", [fields([["Known", profileFields.find(x => x[0]==="Triggers")?.[1] || "Add triggers."]])]),
+      sec("personal-care", "Personal care", "To complete", "care", [fields([["Known", profileFields.find(x => x[0]==="Personal care")?.[1] || "Add the care steps."]])]),
+      sec("eating", "Eating and drinking", "To complete", "food", [fields([["Known", "Add diet, allergies and how meals work at the centre."]])]),
+      sec("health", "Medication and health", "To complete", "med", [fields([["Known", profileFields.find(x => x[0]==="Health")?.[1] || "Add diagnoses and whether any medicine is given at Club."]])]),
+      sec("mobility", "Mobility", "To complete", "walk", [fields([["Known", profileFields.find(x => x[0]==="Mobility")?.[1] || "Add walking, aids and falls."]])]),
+      sec("activities", "Activities", "To complete", "sun", [fields([["Known", profileFields.find(x => x[0]==="Likes")?.[1] || "Add activities."]])]),
+      sec("community", "Community and safety", "To complete", "map", [fields([["Known", profileFields.find(x => x[0]==="Safety")?.[1] || "Add ratio and community rules."]])]),
+      sec("skills", "Independence", "To complete", "star", [fields([["Known", "Add what they do alone, with a prompt, and with an adult."]])]),
+      sec("relationships", "Relationships and boundaries", "To complete", "people", [prose("<p>Add how they are with peers and staff, and what touch is acceptable.</p>")]),
+      sec("safeguarding", "Safeguarding", "To complete", "shield", [prose("<p>Add vulnerabilities and who is called. Use the same same-day rule as Ikram’s plan.</p>")])
+    ],
+    behaviour: [
+      sec("principles", "Behaviour support", "Not written yet", "shield", [
+        call("warn", "Do not use this as a live behaviour plan", "<p>Triggers below come from the portal profile only. There is no strategy agreed from session feedback yet. Import the portal notes before staff use this section.</p>")
+      ]),
+      sec("regulated", "What the profile already says", "Triggers and support level", "wave", [
+        fields(profileFields.filter(x => ["Triggers","Regulation","Support","Communication"].includes(x[0])))
+      ])
+    ]
+  };
+}
+
+const PEOPLE = [
+  {
+    id: "ikram",
+    name: "Ikram Omar",
+    aka: "IO · ICRM",
+    avatar: "IO",
+    status: "live",
+    statusLine: "Working plan · 2:1 · Mon Tue Wed Fri",
+    chips: ["2:1", "Epilepsy awareness", "Perthes, left hip", "Halal or fish", "Familiar staff"],
+    stats: [["Days", "Mon Tue Wed Fri"], ["Hours", "11:00–16:00"], ["Support", "2:1"]],
+    sub: "Care support plan and behaviour support plan. Built from the Club draft, the ICS assessment of September 2026, the ICS transport plan of April 2026, the July placement review, and portal feedback from 15 May to 1 July 2026.",
+    care: ikramCare,
+    behaviour: ikramBehaviour
+  },
+  draftPerson("timmy", "Timmy", "Portal name Timi", "TI", "Starter from the portal profile", [
+    ["Preferred name", "Timmy. The portal record says Timi. Confirm the name his family uses."],
+    ["Date of birth", "4 February 1999. Age 27 in the portal profile."],
+    ["Health", "Regular medication, details not provided. Cat and dust sensitivity, hay fever, asthma, constipation. Foot and orthopaedic concerns. No trampoline until orthopaedics have reviewed. Health and emergency plan exists."],
+    ["Likes", "Music, familiar routines."],
+    ["Avoids", "Loud noise, confined spaces, children crying, unfamiliar places."],
+    ["Triggers", "Noise, change, waiting, overload, being told no, hunger, tiredness, unwanted touch, crowds, and the sound of crying or screaming."],
+    ["Regulation", "Visual first-then and countdowns, a quiet break, a familiar adult, the known routine, fewer demands."],
+    ["Support", "2:1 when regulated. When distressed he may need two adults and continuous supervision."],
+    ["Communication", "Non-verbal. PECS and visuals. Family are exploring a digital PECS system. Staff who know him read his communication. Low language."],
+    ["Mobility", "Walks. Monitor the foot."],
+    ["Personal care", "Physical assistance or supervision."],
+    ["Safety", "No danger awareness. His parent asks that he is not taken off the premises. High risk where children are crying. Parent provides all food."]
+  ], "Timmy needs a predictable, quiet day with people who already know his signals. The portal profile is a start. His food stays as his parent sends it, and community trips are not assumed."),
+  draftPerson("fadi", "Fadi", "Portal profile", "FA", "Starter from the portal profile", [
+    ["Date of birth", "July 2004. Age 20 in the portal profile. Confirm the day."],
+    ["Health", "No chronic condition recorded. Aripiprazole 12.5 mg once daily and melatonin as needed before bed are in the profile. Confirm whether either is ever given at Club. No allergies recorded. No health plan on file."],
+    ["Likes", "Trampoline, swinging, rocking, Play-Doh, slime, kinetic sand, water, dancing, YouTube, music, lights, bubbles, shopping, walking."],
+    ["Avoids", "Climbing, sitting for a long time, iPad apps, deep pressure."],
+    ["Triggers", "Loud or sudden noise, transitions, waiting, hunger, tiredness, crowds."],
+    ["Regulation", "A preferred object, first-then, countdowns, an adult nearby."],
+    ["Support", "An adult nearby, and continuous 1:1 when distressed."],
+    ["Communication", "Gesture, pointing, leading an adult. Needs are mostly shown, not spoken. The profile names an ABA-style, concrete approach."],
+    ["Mobility", "Walks. Help with transitions between spaces."],
+    ["Personal care", "Physical assistance or close supervision."],
+    ["Safety", "No danger awareness. Constant 1:1. The profile says he may hurt himself in a meltdown. That needs a proper behaviour plan, not this starter."]
+  ], "Fadi’s starter is enough to brief a familiar adult for one session. It is not enough for meltdowns, medicine, or community. Build his behaviour plan from portal incidents before it is used."),
+  draftPerson("emanuel", "Emanuel", "Portal name Emani", "EM", "Starter from the portal profile", [
+    ["Preferred name", "Emanuel. The portal record says Emani. Confirm spelling with the family."],
+    ["Date of birth", "22 August 2020. Age 5 in the portal profile."],
+    ["Health", "No regular medication recorded. Allergy: egg. No health plan on file. Egg avoidance has to be confirmed in writing before any cooking session."],
+    ["Likes", "Water play. Hand flapping."],
+    ["Avoids", "Loud noise and crowds."],
+    ["Triggers", "Sudden noise, routine changes, denied access, hunger, tiredness, groups."],
+    ["Regulation", "A preferred toy, an adult close by, showing him the action rather than explaining it."],
+    ["Support", "The profile says he can self-regulate with light prompts, and also that most tasks need 1:1. Treat 1:1 as the floor until observed otherwise."],
+    ["Communication", "Mainly through behaviour. One concrete instruction at a time, with a demonstration."],
+    ["Mobility", "Needs an adult to move between spaces."],
+    ["Personal care", "Recorded as independent. Confirm."],
+    ["Safety", "No danger awareness. The profile describes him as a runner with a high risk of leaving. Constant 1:1, doors and gates checked."]
+  ], "Emanuel’s safety note is the elopement risk and the egg allergy. Everything else in this starter still has to be checked against his documents and his session feedback.")
+];
+
+const STORE = "club-dc-plans-v1";
+let current = "ikram";
+let plan = "care";
+let editing = false;
+const saved = JSON.parse(localStorage.getItem(STORE) || "{}");
+
+function esc(s) {
+  return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
+function keyOf(personId, planName, secId, path) {
+  return [personId, planName, secId, path].join("|");
+}
+function shown(personId, planName, secId, path, fallback, html) {
+  const k = keyOf(personId, planName, secId, path);
+  if (Object.prototype.hasOwnProperty.call(saved, k)) return saved[k];
+  return html ? fallback : esc(fallback);
+}
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { t.style.display = "none"; }, 1600);
+}
+function person() { return PEOPLE.find(p => p.id === current); }
+
+function renderPeople() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  document.getElementById("people").innerHTML = PEOPLE.filter(p => (p.name + p.aka).toLowerCase().includes(q)).map(p => `
+    <button class="person ${p.id === current ? "is-on" : ""}" data-id="${p.id}">
+      <span class="avatar">${esc(p.avatar)}</span>
+      <span><b>${esc(p.name)}</b><small>${esc(p.aka)}</small></span>
+      <span class="pill ${p.status === "live" ? "live" : ""}">${p.status === "live" ? "Live" : "Draft"}</span>
+    </button>`).join("");
+}
+
+function blockHtml(personId, planName, secId, block, index) {
+  const id = `${secId}-${index}`;
+  if (block.type === "prose") {
+    return `<div class="prose" contenteditable="${editing}" data-k="${esc(keyOf(personId, planName, secId, id))}">${shown(personId, planName, secId, id, block.html, true)}</div>`;
+  }
+  if (block.type === "call") {
+    return `<div class="call ${block.kind || ""}"><span class="label">${esc(block.label)}</span><div class="prose" contenteditable="${editing}" data-k="${esc(keyOf(personId, planName, secId, id))}">${shown(personId, planName, secId, id, block.html, true)}</div></div>`;
+  }
+  if (block.type === "fields" || block.type === "grid") {
+    const cells = block.items.map((item, i) => {
+      const k = keyOf(personId, planName, secId, `${id}-${i}`);
+      return `<div class="field"><span class="k">${esc(item[0])}</span><div contenteditable="${editing}" data-k="${esc(k)}">${shown(personId, planName, secId, `${id}-${i}`, item[1], false)}</div></div>`;
+    }).join("");
+    return `<div class="${block.type === "grid" ? "grid2" : "grid2"}">${cells}</div>`;
+  }
+  if (block.type === "list") {
+    const items = block.items.map((item, i) => `<li contenteditable="${editing}" data-k="${esc(keyOf(personId, planName, secId, `${id}-${i}`))}">${shown(personId, planName, secId, `${id}-${i}`, item, false)}</li>`).join("");
+    return `<ul class="clean">${items}</ul>`;
+  }
+  if (block.type === "cards") {
+    const labels = ["What we see", "What it may mean", "Before", "Early", "Do not", "Record"];
+    return `<div class="cards">${block.items.map((card, i) => {
+      const rows = card.slice(1).map((text, r) => {
+        const k = keyOf(personId, planName, secId, `${id}-${i}-${r}`);
+        return `<div class="row"><b>${labels[r]}</b><div contenteditable="${editing}" data-k="${esc(k)}">${shown(personId, planName, secId, `${id}-${i}-${r}`, text, false)}</div></div>`;
+      }).join("");
+      return `<article class="bcard"><h3>${esc(card[0])}</h3><div class="rows">${rows}</div></article>`;
+    }).join("")}</div>`;
+  }
+  if (block.type === "table") {
+    const body = block.rows.map((row, r) => `<tr>${row.map((cell, c) => `<td contenteditable="${editing}" data-k="${esc(keyOf(personId, planName, secId, `${id}-${r}-${c}`))}">${shown(personId, planName, secId, `${id}-${r}-${c}`, cell, false)}</td>`).join("")}</tr>`).join("");
+    return `<table><thead><tr>${block.head.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table>`;
+  }
+  return "";
+}
+
+function render() {
+  const p = person();
+  const sections = plan === "care" ? p.care : p.behaviour;
+  document.body.classList.toggle("editing", editing);
+  renderPeople();
+  document.getElementById("main").innerHTML = `
+    <div class="topbar">
+      <div>
+        <p class="eyebrow">clubSENsational Day Centre</p>
+        <h2>${esc(p.name)}</h2>
+        <p class="sub">${esc(p.sub || p.statusLine)}</p>
+      </div>
+      <div class="tools">
+        <button class="btn ${editing ? "is-on" : ""}" id="edit">${editing ? "Editing on" : "Edit text"}</button>
+        <button class="btn" id="save">Save</button>
+        <button class="btn" id="export">Export JSON</button>
+        <button class="btn" id="reset">Reset edits</button>
+        <button class="btn gold" id="print">Print</button>
+      </div>
+    </div>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">${esc(p.aka)}</p>
+        <div class="chips">${p.chips.map(c => `<span class="chip">${esc(c)}</span>`).join("")}</div>
+      </div>
+      <div class="stats">${p.stats.map(s => `<div class="stat"><b>${esc(s[1])}</b><span>${esc(s[0])}</span></div>`).join("")}</div>
+    </section>
+    <div class="switch">
+      <button class="${plan === "care" ? "is-on" : ""}" data-plan="care"><strong>Care support plan</strong><span>Profile, health, care, community</span></button>
+      <button class="${plan === "behaviour" ? "is-on" : ""}" data-plan="behaviour"><strong>Behaviour support plan</strong><span>What we see, what we do, the evidence</span></button>
+    </div>
+    <div class="layout">
+      <nav class="toc">${sections.map((s, i) => `<button data-jump="${s.id}" class="${i === 0 ? "is-on" : ""}">${esc(s.title)}</button>`).join("")}</nav>
+      <div class="sections">${sections.map((s, i) => `
+        <details class="sec" id="sec-${s.id}" ${i < 2 ? "open" : ""}>
+          <summary>
+            <span class="mark">${ICONS[s.icon] || ICONS.star}</span>
+            <span class="grow">${esc(s.title)}<small>${esc(s.hint)}</small></span>
+            <span class="chev">›</span>
+          </summary>
+          <div class="body">${s.blocks.map((b, bi) => blockHtml(p.id, plan, s.id, b, bi)).join("")}</div>
+        </details>`).join("")}</div>
+    </div>`;
+  bind();
+}
+
+function bind() {
+  document.querySelectorAll(".person").forEach(btn => btn.onclick = () => { current = btn.dataset.id; plan = "care"; render(); });
+  document.querySelectorAll("[data-plan]").forEach(btn => btn.onclick = () => { plan = btn.dataset.plan; render(); });
+  document.querySelectorAll("[data-jump]").forEach(btn => btn.onclick = () => {
+    document.querySelectorAll("[data-jump]").forEach(b => b.classList.remove("is-on"));
+    btn.classList.add("is-on");
+    const el = document.getElementById("sec-" + btn.dataset.jump);
+    el.open = true;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  document.getElementById("edit").onclick = () => { editing = !editing; render(); };
+  document.getElementById("save").onclick = save;
+  document.getElementById("export").onclick = () => {
+    save();
+    const blob = new Blob([JSON.stringify(saved, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "club-day-centre-plan-edits.json";
+    a.click();
+  };
+  document.getElementById("reset").onclick = () => {
+    if (!confirm("Clear edits saved in this browser and return to the original text?")) return;
+    localStorage.removeItem(STORE);
+    Object.keys(saved).forEach(k => delete saved[k]);
+    render();
+  };
+  document.getElementById("print").onclick = () => {
+    document.querySelectorAll("details.sec").forEach(d => d.open = true);
+    setTimeout(() => window.print(), 50);
+  };
+}
+
+function save() {
+  document.querySelectorAll("[data-k]").forEach(el => { saved[el.dataset.k] = el.innerHTML; });
+  localStorage.setItem(STORE, JSON.stringify(saved));
+  toast("Saved on this browser");
+}
+
+document.getElementById("q").addEventListener("input", renderPeople);
+render();
+</script>
+</body>
+</html>

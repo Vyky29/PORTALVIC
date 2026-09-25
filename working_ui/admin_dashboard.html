@@ -481,6 +481,7 @@
       { id:'interviews', label:'Interviews' },
       { id:'portal_documents', label:'Documents', hubLabel:'Documents' },
       { id:'day_centre_documents', label:'Day Centre documents', hubLabel:'Day Centre docs' },
+      { id:'care_plans', label:'Care Plans', hubLabel:'Care Plans' },
       { id:'portal_payslips', label:'Payslips', hubLabel:'Payslips' },
       { id:'portal_docs_timesheet', label:'Timesheets' },
       { id:'portal_docs_expense', label:'Expenses' },
@@ -518,7 +519,7 @@
       { id:'g_xero', label:'Money', children:['reenrol_payments','absents_refunds'] },
       { id:'g_messages', label:'Messages', children:['__h:FAMILY','portal_parent_notify_log','portal_parent_broadcast','__h:STAFF','portal_staff_comms','portal_staff_whatsapp'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews'] },
-      { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Forms','portal_climbing_registrations','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','__h:More files','day_centre_documents','portal_docs_portalpin','portal_docs_checklist','portal_docs_firstaid'] },
+      { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Forms','portal_climbing_registrations','__h:Care Plans','care_plans','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','__h:More files','day_centre_documents','portal_docs_portalpin','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_more', label:'More', children:['__h:Extra hubs','dashboard','operations_admin','operator','receptionist','c4k_reviews','c4k_reports','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_ghost_teleport'] },
       { id:'g_settings_portal', label:'Settings', children:['settings','admin_office_help','portal_device_notifications','logs','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
     ];
@@ -595,6 +596,7 @@
       g_supabase:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
       portal_documents:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',
       day_centre_documents:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h8M8 18h5"/>',
+      care_plans:'<path d="M12 21s-6.5-4.2-6.5-8.4a3.6 3.6 0 0 1 6.5-2 3.6 3.6 0 0 1 6.5 2C18.5 16.8 12 21 12 21z"/>',
       portal_payslips:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
       portal_docs_timesheet:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/>',
       portal_docs_expense:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
@@ -26935,6 +26937,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='staffhr') html = viewStaffHR();
       else if(id==='staffhr_contracts') html = viewStaffHRContracts();
       else if(id==='day_centre_documents') html = viewDayCentreDocuments();
+      else if(id==='care_plans') html = viewCarePlans();
       else if(id==='staffhr_training_records') html = viewStaffHRTrainingRecords();
       else if(id==='staffhr_uniform') html = viewStaffHRUniform();
       else if(id==='bookings' || id==='orders_all') html = viewBookings();
@@ -27681,6 +27684,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         staffhr_uniform:'Uniform stock — live matrix by size, stock in, issue/return linked to each staff Uniform record.',
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
         day_centre_documents:'Day Centre rota and career framework for 2026-27.',
+        care_plans:'Day Centre care support plans and behaviour support plans. Staff only.',
         portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
         portal_training_progress:'Staff readiness — training, compliance sign-offs, and app/device setup in one operational view.',
@@ -27819,7 +27823,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         preview:[],
         status:'',
         primary:['policies_portal','policies','portal_payslips'],
-        secondary:['portal_climbing_registrations','portal_docs_timesheet','portal_docs_expense','day_centre_documents']
+        secondary:['portal_climbing_registrations','care_plans','portal_docs_timesheet','portal_docs_expense','day_centre_documents']
       },
       {
         id:'more',
@@ -29250,6 +29254,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
 
+    function viewCarePlans(){
+      var bust = '20260925-care-plans';
+      var url = '/portal/day-centre/care-plans/index.html?v=' + bust;
+      return (
+        '<h1 class="page-title">Care Plans</h1>'+
+        '<p class="page-intro">Day Centre care support plans and behaviour support plans. Ikram is the working plan. Timmy, Fadi and Emanuel are starters. Staff only — do not share the link outside admin.</p>'+
+        '<div class="card" style="margin:0 0 12px">'+
+          '<div class="card-pad" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">'+
+            '<div style="display:flex;flex-wrap:wrap;gap:8px">'+
+              '<button type="button" class="btn btn--pri btn--sm" disabled>Day Centre plans</button>'+
+            '</div>'+
+            '<a class="btn btn--ghost btn--sm" href="'+esc(url)+'" target="_blank" rel="noopener">Open in new tab</a>'+
+          '</div>'+
+        '</div>'+
+        '<div style="border:1px solid var(--border,#d7e2e8);border-radius:14px;overflow:hidden;background:#fff;min-height:72vh">'+
+          '<iframe class="hr-contracts-issue-frame" title="Day Centre care plans" src="'+esc(url)+'" loading="lazy" style="display:block;width:100%;min-height:78vh;height:78vh;border:0;background:#f6f4ef"></iframe>'+
+        '</div>'
+      );
+    }
     function viewDayCentreDocuments(){
       var bust = '20260727-dc-docs';
       var url = '/portal/day-centre/rota-career-framework-2026-27.html?v=' + bust;
