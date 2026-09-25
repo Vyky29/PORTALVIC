@@ -458,7 +458,7 @@
     "javier"
   ],
   "logan": [
-    "youssef"
+    "aurora"
   ],
   "maiyar": [
     "aurora",

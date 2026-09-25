@@ -368,7 +368,13 @@
       area: "Lane (SE)",
       bookedFrom: "2026-09-22",
     },
-    { staff: "LULIYA", name: "Logan", time: "5 to 5.30", area: "Teaching Pool" },
+    {
+      staff: "LULIYA",
+      name: "Logan",
+      time: "5 to 5.30",
+      area: "Teaching Pool",
+      bookedUntil: "2026-09-29",
+    },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
     /* Adaam NEW CLIENT first session Tue 15 Sep — open seat before (never paint / feedback early). */
     {
@@ -394,7 +400,13 @@
     { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
     { staff: "AURORA", name: "Adam Ma", time: "4.30 to 5", area: "Teaching Pool" },
     { staff: "AURORA", name: "Junaid", time: "5 to 5.30", area: "Lane (SE)" },
-    { staff: "AURORA", name: "No participant", time: "5.30 to 6", area: "Lane (SE)" },
+    {
+      staff: "AURORA",
+      name: "Logan",
+      time: "5.30 to 6",
+      area: "Teaching Pool",
+      bookedFrom: "2026-09-29",
+    },
     { staff: "AURORA", name: "Anas", time: "6 to 6.30", area: "Lane (SE)" },
   ];
 
@@ -411,6 +423,7 @@
         venue: "Acton",
         session_date: iso,
         bookedFrom: slot.bookedFrom || "",
+        bookedUntil: slot.bookedUntil || "",
       };
     });
   }
@@ -2467,8 +2480,10 @@
 
     if (day === "tuesday") {
       /* Standing Tue Acton: Roberto / Aurora / Javier / Luliya (no Youssef).
-         Serine stays with Roberto (capacity chain) — do not remap to Luliya. */
-      if (/^logan\b/.test(client) || client === "richard") {
+         Serine stays with Roberto (capacity chain) — do not remap to Luliya.
+         Logan moved to Aurora 5.30–6 from Tue 29 Sep (Edit term slot). Do not force Roberto. */
+      if (/^logan\b/.test(client)) return null;
+      if (client === "richard") {
         if (/\broberto\b/i.test(raw)) return null;
         return { instructors: "ROBERTO" };
       }
@@ -3504,11 +3519,12 @@
     if (!dk) return [Object.assign({}, row)];
     var dates = enumerateAutumnTermIsosForDow(dk);
     var bookedFrom = normIso(row.bookedFrom || row.booked_from);
+    var bookedUntil = normIso(row.bookedUntil || row.booked_until);
     var out = [];
     for (var i = 0; i < dates.length; i++) {
       var iso = dates[i];
       if (!autumnStandingServiceAllowedOnIso(row.service, iso)) continue;
-      if (bookedFrom && iso < bookedFrom) {
+      if ((bookedFrom && iso < bookedFrom) || (bookedUntil && iso >= bookedUntil)) {
         out.push(
           Object.assign({}, row, {
             session_date: iso,
@@ -3516,6 +3532,8 @@
             client_name: "No participant",
             bookedFrom: "",
             booked_from: "",
+            bookedUntil: "",
+            booked_until: "",
           })
         );
         continue;
