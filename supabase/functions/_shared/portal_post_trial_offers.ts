@@ -182,13 +182,21 @@ async function mintPostTrialTermFinishLink(
   if (holdErr) return { error: holdErr.message };
 
   // Drop any leftover trial capacity hold for the same document/slot.
+  // Status must leave validated — a past clock alone still counts as taken.
   const trialResId = clean(offer.reservation_id, 80);
   if (trialResId) {
     await admin
       .from("portal_booking_slot_reservations")
-      .update({ hold_expires_at: now, updated_at: now })
+      .update({
+        status: "released",
+        released_at: now,
+        hold_expires_at: now,
+        notes: "trial_hold_cleared|superseded_by_post_trial_term_hold",
+        updated_at: now,
+      })
       .eq("id", trialResId)
-      .ilike("notes", "%booking_kind=trial%");
+      .ilike("notes", "%booking_kind=trial%")
+      .neq("status", "released");
   }
 
   let minted: { tokenId: string; rawToken: string };

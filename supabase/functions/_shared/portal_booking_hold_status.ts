@@ -38,6 +38,22 @@ export function filterActiveBookingHolds<
     ) {
       return false;
     }
+    /*
+     * A validated trial row whose clock has passed must not keep the public
+     * seat. The post-trial soft hold is a different row and is released at
+     * end of day; the original trial row used to stay validated and paint
+     * Fully booked (Elias / Youssef Wed Acton 4.00-4.30).
+     */
+    if (
+      st === "validated" &&
+      /booking_kind\s*=\s*trial/i.test(notes) &&
+      !bookingHoldStillActive(
+        h.hold_expires_at == null ? null : String(h.hold_expires_at),
+        nowMs,
+      )
+    ) {
+      return false;
+    }
     // Pay-window / validated rows keep the public seat until maintenance flips
     // status (expireUnpaidBookingPayHolds). Do not free the offer on clock alone
     // while status is still awaiting_payment — that double-sold Sunday Climbing.
