@@ -444,43 +444,6 @@ Deno.serve(async (req) => {
 
   const ids = [...targetUserIds];
 
-  /* Cover removed: the create-push already used override_id in the dedupe ledger.
-   * A staff notice (single user) is the second event and has its own push webhook. */
-  if (coverRemoved) {
-    const copy = pushCopy(overrideType, record as Record<string, unknown>);
-    const actor = String(record.updated_by || record.created_by || "").trim();
-    const sessionLabel = String(record.anchor_time_slot_label || "").trim();
-    const venue = String(record.anchor_venue || "").trim();
-    const bodyText =
-      `${copy.body} Date: ${sessionDate}` +
-      (sessionLabel ? ` · ${sessionLabel}` : "") +
-      (venue ? ` · ${venue}` : "") +
-      ".";
-    let notices = 0;
-    for (const uid of ids) {
-      const { error: annErr } = await admin.from("portal_staff_announcements").insert({
-        created_by: actor || uid,
-        title: copy.title.slice(0, 160),
-        body: bodyText.slice(0, 2000),
-        message_type: "schedule",
-        priority: "high",
-        audience_scope: "all_staff",
-        delivery_scope: "single_user",
-        target_user_id: uid,
-        ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-      });
-      if (annErr) {
-        console.warn("[portal-push-dispatch] cover removed notice", annErr.message);
-      } else {
-        notices++;
-      }
-    }
-    return new Response(
-      JSON.stringify({ ok: true, cover_removed: true, notices, targets: ids.length }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  }
-
   const { data: subs, error: subErr } = await admin.from("portal_push_subscriptions")
     .select("user_id, endpoint, subscription_json")
     .in("user_id", ids)
@@ -496,41 +459,12 @@ Deno.serve(async (req) => {
 
   if (!subs?.length) {
     if (isSessionCancelType(overrideType)) {
-      const copy = pushCopy(overrideType, record as Record<string, unknown>);
-      const actor = String(record.updated_by || record.created_by || "").trim();
-      const sessionLabel = String(record.anchor_time_slot_label || "").trim();
-      const venue = String(record.anchor_venue || "").trim();
-      const bodyText =
-        `${copy.body} Date: ${sessionDate}` +
-        (sessionLabel ? ` · ${sessionLabel}` : "") +
-        (venue ? ` · ${venue}` : "") +
-        ".";
-      let notices = 0;
-      for (const uid of ids) {
-        const { error: annErr } = await admin.from("portal_staff_announcements").insert({
-          created_by: actor || uid,
-          title: copy.title.slice(0, 160),
-          body: bodyText.slice(0, 2000),
-          message_type: "schedule",
-          priority: "high",
-          audience_scope: "all_staff",
-          delivery_scope: "single_user",
-          target_user_id: uid,
-          ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-        });
-        if (annErr) {
-          console.warn("[portal-push-dispatch] session cancel notice", annErr.message);
-        } else {
-          notices++;
-        }
-      }
       return new Response(
         JSON.stringify({
           ok: true,
           sent: 0,
-          notices,
           targets: ids.length,
-          note: "no push subscriptions; in-app notice saved",
+          note: "no push subscriptions",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );

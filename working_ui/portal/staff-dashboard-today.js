@@ -7324,6 +7324,8 @@
           const id = String(row.id || '');
           if(!id) return;
           const typ = String(row.message_type || '').toLowerCase().trim();
+          /* Schedule changes stay on the halo. Never a Sign and submit gate. */
+          if(typ === 'schedule') return;
           if(typ === 'reminder'){
             if(remSeen[id]) return;
             /* Same audience rules as archive — do not list other people's single_user copies
