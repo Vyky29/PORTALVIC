@@ -717,7 +717,10 @@
       setElementVisible(id, showSwReview);
     });
     setElementVisible("quickMenuStaffInterviews", showInterviews);
-    setElementVisible("quickMenuCarePlans", staffKey === "michelle");
+    setElementVisible(
+      "quickMenuCarePlans",
+      staffKey === "michelle" || staffKey === "victor" || staffKey === "raul" || staffKey === "javi"
+    );
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
     global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = !!profile.leadExtras || isProgrammeLead || isLeadShell;
