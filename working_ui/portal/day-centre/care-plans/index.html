@@ -322,28 +322,6 @@ function list(items) { return { type: "list", items }; }
 function cards(items) { return { type: "cards", items }; }
 
 const ikramCare = [
-  sec("personal", "Personal information", "Identity, contacts, diagnoses", "user", [
-    call("warn", "Check before this plan is signed", "<p>Two dates of birth are on file. Club and the portal use <b>17 June 1994</b>. The Integrity Care & Support assessment of September 2026 uses <b>4 June 1994</b>. The mobile number in the Club draft looks short. GP, NHS number and email were left blank in the source. Do not guess them.</p>"),
-    fields([
-      ["Full name", "Ikram Omar"],
-      ["How we refer to her", "Ikram. Records also use IO and ICRM."],
-      ["Date of birth in use", "17 June 1994, pending a check against the ICS date of 4 June 1994."],
-      ["Age", "32"],
-      ["Gender", "Female"],
-      ["Ethnicity", "Somali / British. The ICS assessment describes her as a Black Muslim woman, originally from Nairobi."],
-      ["Religion", "Muslim. She does not eat pork, does not drink alcohol, and eats halal meat. She does not fast in Ramadan."],
-      ["Languages at home", "English and Somali. No interpreter required."],
-      ["Home address", "Flat 1, Cavendish House, 51 Mortimer Street, London W1W 8HR. Borough: City of Westminster."],
-      ["Parent / carer", "Farhia Mahamed, mother. Same address."],
-      ["Telephone", "0730407032 as written on the Club draft. Confirm the full number."],
-      ["Email", "Not recorded. Add it here."],
-      ["Social worker", "Sarah Kagaba, named in the portal profile and the July 2026 placement review."],
-      ["GP and NHS number", "Not recorded. Add surgery, address, ICB and NHS number."],
-      ["Funding reference", "Client ID 572135 · PO XXPRASHERV1, from the 23 July 2026 placement review."],
-      ["People around this plan", "Family. Club managers Victor Matilla and Raul Salvador. ICS transport plan signed by Jade Ferguson on 24 April 2026."],
-      ["Plan status", "Working Club plan, 25 September 2026. Not a signed clinical document until the gaps above are closed."]
-    ])
-  ]),
   sec("about", "About Ikram", "Personality, joy, routine", "heart", [
     prose("<p>Ikram is a warm, funny woman who likes people, familiar faces, and a day she can see coming. When she is settled she jokes, asks for a hug, holds hands, and joins music, the pool, a cafe, or a slow walk. She is close to her mother, her sister, her cousins, and her cat Muchie.</p><p>She does best with the same adults, a calm room, and one clear next step. New people take time. If a preferred person is late, off, or has left, that itself can unsettle her.</p>"),
     { type: "grid", items: [
@@ -503,10 +481,6 @@ function draftPerson(id, name, aka, avatar, statusLine, profileFields, about) {
     chips: ["Draft starter", "Complete from documents and portal"],
     stats: [["Plan", "Starter"], ["Ratio", "See profile"], ["Evidence", "Not imported"]],
     care: [
-      sec("personal", "Personal information", "Replace with the source documents", "user", [
-        call("warn", "Starter only", "<p>This card is the portal client profile, rearranged into the Club plan. It is not yet a care plan. Add the assessment, contacts, and a manager review before staff rely on it.</p>"),
-        fields(profileFields)
-      ]),
       sec("about", "About me", "From the portal profile", "heart", [prose(`<p>${about}</p>`)]),
       sec("communication", "Communication", "To complete", "chat", [fields([["What we know", profileFields.find(x => x[0]==="Communication")?.[1] || "Add from observation."]])]),
       sec("sensory", "Sensory profile", "To complete", "spark", [fields([["Known", profileFields.find(x => x[0]==="Triggers")?.[1] || "Add triggers."]])]),
@@ -532,18 +506,6 @@ function draftPerson(id, name, aka, avatar, statusLine, profileFields, about) {
 }
 
 const fadiCare = [
-  sec("personal", "Personal information", "Identity, day, medicine", "user", [
-    call("warn", "Check before this plan is signed", "<p>The Emotional Regulation Support Plan names him <b>Fadi Abu</b> and was last reviewed in <b>June 2024</b>, written for Victor Casanova and Raul Salvador. The portal profile records July 2004 and does not give the day. Medicine in the portal is not in the ERSP. Confirm both with the family before anyone treats this as a signed plan.</p>"),
-    fields([
-      ["Full name", "Fadi Abu. The portal record uses Fadi."],
-      ["Date of birth", "July 2004. Age 20 in the portal profile. The day is not recorded."],
-      ["Day Centre pattern now", "Monday to Friday, 12:30 to 15:00, SwimFarm. Autumn 2026 rota pairs Roberto with a second adult: Victor, Youssef or Raul depending on the day."],
-      ["Support ratio", "2:1 with familiar staff. The ERSP is explicit. Do not drop to one adult because a day looks calm."],
-      ["Named in the 2024 plan", "Victor Casanova and Raul Salvador. In 2026 the session notes are almost all Roberto Reali, with Youssef on 1 July."],
-      ["Medicine on the portal profile", "Aripiprazole 12.5 mg once daily, and melatonin as needed before bed. Nothing in the notes says Club gives either. Do not administer them here unless a current MAR says so."],
-      ["Allergies and health plan", "None recorded. The ERSP treats pain, heat, cold and tiredness as regulation risks, not as a diagnosis list."]
-    ])
-  ]),
   sec("about", "About Fadi", "What a good session looks like", "heart", [
     prose("<p>When Fadi is regulated he points, follows a short familiar instruction, and can manage more language than his replies show. He smiles, makes happy sounds, and looks for playful contact. He will do a short structured job: a puzzle, a sensory circuit, sorting, a fitness step.</p><p>The 2026 notes add a shape to the week. He often arrives wound up and settles once a walk or a low-demand activity starts. Swimming is back in the session. A long walk still regulates him. The park itself mattered less by mid-June. He would rather walk the area.</p>"),
     { type: "grid", items: [
