@@ -159,7 +159,7 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260919-youssef-namekey"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260924-patrick-climb-off"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260925-tinashe-three"></script>
   <script src="/portal/autumn_staff_hours_reference.js?v=20260915-phases-admin"></script>
   <script src="/portal/portal_dc_services_local.js?v=20260915-phases-admin"></script>
   <script src="/portal/portal_capacity_chain_occupants.js?v=20260917-reggie-luliya"></script>
@@ -5022,6 +5022,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var prog = String((slot && (slot.programme || slot.rosterService || slot.service)) || '').toLowerCase();
       return prog.indexOf('day centre') >= 0 || prog.indexOf('daycentre') >= 0;
     }
+    /** Hub Tinashe is one child with three staff. Keep every instructor on the line. */
+    function schedSlotIsTinasheTeam(slot){
+      var prog = String((slot && (slot.programme || slot.rosterService || slot.service)) || '').toLowerCase();
+      if(prog.indexOf('bespoke') < 0) return false;
+      var pax = typeof schedEffectivePaxSlugForDedupe === 'function' ? schedEffectivePaxSlugForDedupe(slot) : '';
+      return String(pax || '').indexOf('tinashe') === 0;
+    }
     /**
      * Day Centre is two instructors on the same child and time. Keep both on one line.
      * The one who is off stays as COVER NEEDED. Do not drop them, and do not turn it
@@ -5030,7 +5037,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedMergeDayCentreCoInstructorLine(twins){
       var list = Array.isArray(twins) ? twins : [];
       if(list.length < 2) return null;
-      if(!list.every(schedSlotIsDayCentre)) return null;
+      var dayCentreLine = list.every(schedSlotIsDayCentre);
+      var tinasheLine = list.every(schedSlotIsTinasheTeam);
+      if(!dayCentreLine && !tinasheLine) return null;
       for(var i = 0; i < list.length; i++){
         var ov = findOverrideForSlotOfTypes(list[i], ['instructor_reassign']);
         if(ov) return null;
@@ -5065,10 +5074,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           break;
         }
       }
+      /* Tinashe absence is saved on one instructor key. Keep that row so Absent stays. */
+      if(tinasheLine){
+        for(var c = 0; c < list.length; c++){
+          if(findOverrideForSlotOfTypes(list[c], ['client_absence_announced'])){
+            base = list[c];
+            break;
+          }
+        }
+      }
       var merged = Object.assign({}, base);
       merged.allInstructors = all;
-      merged.staffRosterId = stay.staffRosterId;
-      merged.staffName = stay.staffName;
+      if(!(tinasheLine && findOverrideForSlotOfTypes(base, ['client_absence_announced']))){
+        merged.staffRosterId = stay.staffRosterId;
+        merged.staffName = stay.staffName;
+      }
       return merged;
     }
     function schedPickPreferredInstructorTwinSlot(twins){

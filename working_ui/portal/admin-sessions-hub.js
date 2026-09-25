@@ -12287,7 +12287,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var d = String(iso || "").slice(0, 10);
     if (!/^wednesday$/i.test(String(dayName || "").trim())) return false;
     if (!/^john\b/i.test(String(staffRaw || "").trim())) return false;
-    /* Timetable: Emmanuel SHADOWING on Wed 9 + 16; John resumes Wed 23. */
+    /* Timetable: Emmanuel on Tinashe Wed 9, 16 and 23. John is back from Wed 30. */
     return d >= "2026-09-09" && d < "2026-09-23";
   }
 

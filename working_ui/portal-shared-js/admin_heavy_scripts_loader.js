@@ -13,7 +13,7 @@
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
-      "/portal/portal_roster_canonical.js?v=20260924-patrick-climb-off",
+      "/portal/portal_roster_canonical.js?v=20260925-tinashe-three",
       "/portal/autumn_staff_hours_reference.js?v=20260914-youssef-fri-ikram",
       "/portal/portal_dc_services_local.js?v=20260914-overview-pin2",
       "/portal/portal_capacity_chain_occupants.js?v=20260916-emmanuel-abate-dc",

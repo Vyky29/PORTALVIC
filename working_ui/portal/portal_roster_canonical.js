@@ -2290,9 +2290,9 @@
           s = s.replace(/\bRAUL\b/gi, "");
         }
       }
-      /* Wed: Emmanuel only on dated John-off covers (9 + 16 Sep shadow). Standing = John. */
+      /* Wed: Emmanuel on dated covers (9, 16, 23 Sep). Other Wednesdays = John. */
       if (iso && day === "wednesday") {
-        var emmanuelWedCover = iso === "2026-09-09" || iso === "2026-09-16";
+        var emmanuelWedCover = iso === "2026-09-09" || iso === "2026-09-16" || iso === "2026-09-23";
         if (!emmanuelWedCover) {
           if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark)\b/i.test(s)) {
             s = "";
@@ -2326,9 +2326,9 @@
           }
         }
         /* Wed standing = Godsway + Bismark + John (drop Raul + Emmanuel).
-           Dated John-off Weds (9 + 16): remap John seat → Emmanuel. */
+           Dated covers (9, 16, 23 Sep): remap John seat → Emmanuel. */
         if (day === "wednesday" && iso >= "2026-09-09") {
-          var emmanuelWedCoverTin = iso === "2026-09-09" || iso === "2026-09-16";
+          var emmanuelWedCoverTin = iso === "2026-09-09" || iso === "2026-09-16" || iso === "2026-09-23";
           if (/\braul\b/i.test(s) && !/\b(godsway|bismark|john|emmanuel|emanuel)\b/i.test(s)) {
             s = "";
           } else {
@@ -4288,11 +4288,11 @@
     if (key === "raul" || key.indexOf("raul") === 0) {
       return dow === 2 || dow === 4;
     }
-    /* Hire Emmanuel: Tinashe Fri + Sunday Hub. Wed only dated covers (9 + 16). Not Tue/Thu. */
+    /* Hire Emmanuel: Tinashe Fri + Sunday Hub. Wed only dated covers (9, 16, 23). Not Tue/Thu. */
     if (key === "emmanuel" || key === "emanuel" || key.indexOf("emmanuel") === 0) {
       if (dow === 2 || dow === 4) return true;
       if (dow === 3) {
-        return d !== "2026-09-09" && d !== "2026-09-16";
+        return d !== "2026-09-09" && d !== "2026-09-16" && d !== "2026-09-23";
       }
       return false;
     }
