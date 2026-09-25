@@ -513,6 +513,7 @@
         prejoinConfig: { enabled: false, hideExtraJoinButtons: true },
         startWithVideoMuted: audioOnly,
         startWithAudioMuted: false,
+        startAudioMuted: 0,
         startAudioOnly: audioOnly,
         disableDeepLinking: true,
         deeplinking: { disabled: true },
@@ -561,6 +562,9 @@
       hangupArmed = true;
       decorateIframe(parent);
       holdLiveCall(false);
+      unmuteJitsiIfNeeded();
+      global.setTimeout(unmuteJitsiIfNeeded, 350);
+      global.setTimeout(unmuteJitsiIfNeeded, 1200);
       if (typeof opts.onJoined === "function") opts.onJoined();
     });
     jitsiApi.addListener("videoConferenceLeft", maybeHangup);

@@ -1438,18 +1438,38 @@
     } catch (_v) {}
   }
 
+  function playIncomingRingBurst() {
+    var ctx = global.__PORTAL_ALERT_AUDIO_CTX__;
+    if (!ctx || ctx.state !== "running") return;
+    var now = ctx.currentTime;
+    function tone(at, freq, dur) {
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(0.28, at + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(at);
+      o.stop(at + dur + 0.03);
+    }
+    [0, 0.62].forEach(function (base) {
+      tone(now + base, 440, 0.42);
+      tone(now + base, 480, 0.42);
+    });
+  }
+
   function playIncomingCue() {
     incomingCueCount += 1;
     try {
       if (global.navigator && global.navigator.vibrate) {
-        global.navigator.vibrate([400, 160, 400]);
+        global.navigator.vibrate([400, 160, 400, 160, 400]);
       }
     } catch (_v) {}
-    if (incomingCueCount > 1) return;
     try {
-      if (typeof global.portalPlayAlertCue === "function") {
-        global.portalPlayAlertCue({ vibrate: [400, 160, 400] });
-      }
+      playIncomingRingBurst();
     } catch (_c) {}
   }
 
@@ -1570,7 +1590,7 @@
     if (global.PortalCommsCalls) return Promise.resolve(global.PortalCommsCalls);
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260923-caller-name";
+      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260925-call-ring";
       s.onload = function () {
         if (global.PortalCommsCalls) resolve(global.PortalCommsCalls);
         else reject(new Error("Call service failed to load."));
@@ -1690,7 +1710,7 @@
     } catch (_sh) {}
     playIncomingCue();
     if (!incomingCueTimer) {
-      incomingCueTimer = global.setInterval(playIncomingCue, 4000);
+      incomingCueTimer = global.setInterval(playIncomingCue, 2200);
     }
     if (helper) {
       if (typeof helper.preload === "function") helper.preload();
