@@ -101,11 +101,25 @@
   .stat { background: #f7f5f0; border-radius: 16px; padding: 12px; }
   .stat b { display: block; font-size: 22px; letter-spacing: -0.04em; }
   .stat span { color: var(--muted); font-size: 12px; }
-  .switch { display: flex; gap: 8px; margin: 16px 0; }
-  .switch button { flex: 1; text-align: left; border-radius: 18px; border: 1px solid var(--line); background: white; padding: 14px 16px; }
-  .switch button strong { display: block; font-size: 15px; }
+  .switch { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 16px; }
+  .switch button {
+    display: flex; align-items: center; gap: 12px; text-align: left;
+    border-radius: 18px; border: 1px solid var(--line); background: white;
+    padding: 12px 14px; box-shadow: 0 10px 28px rgba(28, 36, 51, 0.05);
+  }
+  .switch .pico {
+    width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; flex: none;
+    background: var(--gold-soft); color: #6d5208;
+  }
+  .switch .pico svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .switch button strong { display: block; font-size: 15px; letter-spacing: -0.02em; }
   .switch button span { color: var(--muted); font-size: 12px; }
-  .switch button.is-on { background: var(--navy); color: white; border-color: var(--navy); }
+  .switch button.is-on {
+    background: linear-gradient(165deg, #31415c 0%, #1b2433 100%);
+    color: white; border-color: #1b2433;
+    box-shadow: 0 14px 30px rgba(27, 36, 51, 0.2);
+  }
+  .switch button.is-on .pico { background: rgba(228, 180, 35, 0.16); color: var(--gold); }
   .switch button.is-on span { color: #d5dbe6; }
   .layout { display: grid; grid-template-columns: 230px 1fr; gap: 16px; align-items: start; }
   .toc { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 4px; }
@@ -619,7 +633,7 @@ const PEOPLE = [
   {
     id: "ikram",
     name: "Ikram Omar",
-    aka: "IO · ICRM",
+    aka: "Ikram Omar",
     avatar: "IO",
     status: "live",
     statusLine: "Working plan · 2:1 · Mon Tue Wed Fri",
@@ -629,7 +643,7 @@ const PEOPLE = [
     care: ikramCare,
     behaviour: ikramBehaviour
   },
-  draftPerson("timmy", "Timmy", "Portal name Timi", "TI", "Starter from the portal profile", [
+  draftPerson("timmy", "Timi Dairo", "Timi Dairo", "TD", "Starter from the portal profile", [
     ["Preferred name", "Timmy. The portal record says Timi. Confirm the name his family uses."],
     ["Date of birth", "4 February 1999. Age 27 in the portal profile."],
     ["Health", "Regular medication, details not provided. Cat and dust sensitivity, hay fever, asthma, constipation. Foot and orthopaedic concerns. No trampoline until orthopaedics have reviewed. Health and emergency plan exists."],
@@ -655,7 +669,7 @@ const PEOPLE = [
     care: fadiCare,
     behaviour: fadiBehaviour
   },
-  draftPerson("emanuel", "Emanuel", "Portal name Emani", "EM", "Starter from the portal profile", [
+  draftPerson("emanuel", "Emanuel Dodson", "Emanuel Dodson", "ED", "Starter from the portal profile", [
     ["Preferred name", "Emanuel. The portal record says Emani. Confirm spelling with the family."],
     ["Date of birth", "22 August 2020. Age 5 in the portal profile."],
     ["Health", "No regular medication recorded. Allergy: egg. No health plan on file. Egg avoidance has to be confirmed in writing before any cooking session."],
@@ -702,7 +716,7 @@ function renderPeople() {
   document.getElementById("people").innerHTML = PEOPLE.filter(p => (p.name + p.aka).toLowerCase().includes(q)).map(p => `
     <button class="person ${p.id === current ? "is-on" : ""}" data-id="${p.id}">
       <span class="avatar">${esc(p.avatar)}</span>
-      <span><b>${esc(p.name)}</b><small>${esc(p.aka)}</small></span>
+      <span><b>${esc(p.name)}</b></span>
       <span class="pill ${p.status === "live" ? "live" : ""}">${p.status === "live" ? "Live" : "Draft"}</span>
     </button>`).join("");
 }
@@ -766,8 +780,8 @@ function render() {
       <div class="stats">${p.stats.map(s => `<div class="stat"><b>${esc(s[1])}</b><span>${esc(s[0])}</span></div>`).join("")}</div>
     </section>
     <div class="switch">
-      <button class="${plan === "care" ? "is-on" : ""}" data-plan="care"><strong>Care support plan</strong><span>Profile, health, care, community</span></button>
-      <button class="${plan === "behaviour" ? "is-on" : ""}" data-plan="behaviour"><strong>Behaviour support plan</strong><span>What we see, what we do, the evidence</span></button>
+      <button class="${plan === "care" ? "is-on" : ""}" data-plan="care"><span class="pico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3.5h6l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 7 20V5A1.5 1.5 0 0 1 8.5 3.5z"/><path d="M14 3.5V8h4"/><path d="M9.5 12h5M9.5 15.5h5"/></svg></span><span><strong>Care support plan</strong><span>Profile, health, daily support</span></span></button>
+      <button class="${plan === "behaviour" ? "is-on" : ""}" data-plan="behaviour"><span class="pico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 20 7v5.2c0 4.4-3 7.4-8 9.3-5-1.9-8-4.9-8-9.3V7z"/><path d="M9 12.2 11 14.2 15.2 10"/></svg></span><span><strong>Behaviour support plan</strong><span>What we see and what we do</span></span></button>
     </div>
     <div class="layout">
       <nav class="toc">${sections.map((s, i) => `<button data-jump="${s.id}" class="${i === 0 ? "is-on" : ""}">${esc(s.title)}</button>`).join("")}</nav>
