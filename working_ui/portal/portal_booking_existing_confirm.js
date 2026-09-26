@@ -85,12 +85,21 @@
       "Signed in as <strong>" +
       esc(name) +
       "</strong>. " +
-      '<button type="button" id="bcNotYou">Not you? Unlock a different family</button>';
+      '<button type="button" id="bcNotYou">Sign out</button>';
     var btn = document.getElementById("bcNotYou");
     if (btn) {
       btn.addEventListener("click", function () {
         clearBookingFamilySession();
-        global.location.href = "/bookingportal?gate=1";
+        var keep = qs();
+        var next = new URLSearchParams();
+        next.set("gate", "1");
+        ["slot_id", "slot", "service", "service_name", "activity", "venue", "day", "time", "booking_kind"].forEach(
+          function (k) {
+            var v = String(keep.get(k) || "").trim();
+            if (v) next.set(k, v);
+          }
+        );
+        global.location.replace("/bookingportal?" + next.toString());
       });
     }
   }

@@ -57,6 +57,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
       gap: 12px;
       padding: 12px var(--pad);
       background: rgba(247, 251, 255, 0.92);
@@ -88,6 +89,36 @@
       color: #7a5200;
       font-size: 12px;
       font-weight: 600;
+    }
+    .top__session {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .top__session[hidden] { display: none !important; }
+    .top__who {
+      min-width: 0;
+      max-width: 14rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .top__signout {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--blueDeep);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     .wrap {
@@ -1418,6 +1449,10 @@
       <img src="/portal/F-02-1.png" alt="" width="42" height="42" />
       <span>clubSENsational</span>
     </a>
+    <div class="top__session" id="bookingSessionChip" hidden>
+      <span class="top__who" id="bookingSessionWho"></span>
+      <button type="button" class="top__signout" id="bookingSessionSignOut">Sign out</button>
+    </div>
   </header>
 
   <main class="wrap">
@@ -1852,7 +1887,7 @@
   <script src="/portal/portal_booking_offer.js?v=20260913-aquatic-30"></script>
   <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260913-no-cross-family-pii"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260926-sign-out"></script>
   <script src="/portal/portal_booking_waitlist.js?v=20260913-no-cross-family-pii"></script>
   <script>
     (function () {
@@ -1867,6 +1902,53 @@
         counselling: "/portal/booking-photos/counselling.jpg?v=20260814-web",
         intensive: "/portal/booking-photos/intensive-swim.jpg?v=20260812-pool",
       };
+
+      function portalPaintBookingSession() {
+        var chip = document.getElementById("bookingSessionChip");
+        var who = document.getElementById("bookingSessionWho");
+        if (!chip || !who) return;
+        var gate = window.PortalBookingLeadGate;
+        var lead = null;
+        try {
+          if (gate && gate.isUnlocked && gate.isUnlocked() && gate.getLeadForPrefill) {
+            lead = gate.getLeadForPrefill();
+          }
+        } catch (_e) {
+          lead = null;
+        }
+        var name = lead && (lead.parent_name || lead.first_name);
+        if (!name) {
+          chip.hidden = true;
+          who.textContent = "";
+          return;
+        }
+        who.textContent = "Signed in as " + name;
+        chip.hidden = false;
+      }
+      window.portalPaintBookingSession = portalPaintBookingSession;
+
+      function bookingSignOut() {
+        try {
+          sessionStorage.removeItem("bp_mosaic_pending_book");
+        } catch (_e) {}
+        try {
+          if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.clearSession) {
+            window.PortalBookingLeadGate.clearSession({ clearParentPortal: true });
+          } else {
+            localStorage.removeItem("clubsens_booking_lead_session_v1");
+            localStorage.removeItem("clubsens_parent_portal_session_v1");
+          }
+        } catch (_e2) {}
+        var current = new URLSearchParams(window.location.search || "");
+        var next = new URLSearchParams();
+        next.set("gate", "1");
+        var slot = String(current.get("slot_id") || current.get("slot") || "").trim();
+        if (slot) next.set("slot_id", slot);
+        window.location.replace("/bookingportal?" + next.toString());
+      }
+
+      var bookingSignOutBtn = document.getElementById("bookingSessionSignOut");
+      if (bookingSignOutBtn) bookingSignOutBtn.addEventListener("click", bookingSignOut);
 
       function tileMediaHtml(svcId) {
         if (svcId === "multi") {
@@ -2651,6 +2733,7 @@
               void window.PortalBookingLeadGate.boot({
                 forceGate: new URLSearchParams(window.location.search || "").get("gate") === "1",
               }).then(function (unlocked) {
+                portalPaintBookingSession();
                 if (unlocked) resumePendingBook();
               });
               document.addEventListener("click", function () {

@@ -223,6 +223,11 @@
     document.documentElement.classList.toggle("booking-gated", !!locked);
     document.body.classList.toggle("booking-gated", !!locked);
     state.unlocked = !locked;
+    try {
+      if (typeof global.portalPaintBookingSession === "function") global.portalPaintBookingSession();
+    } catch (_paint) {
+      /* ignore */
+    }
   }
 
   function showModal(show) {
