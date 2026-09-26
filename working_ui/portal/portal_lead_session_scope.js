@@ -152,9 +152,10 @@ const ROBERTO_SCOPES = [
     id: "sunday-pool-swimfarm",
     label: "Sunday — Pool (SwimFarm)",
     weekdays: ["Sunday"],
+    /* Team strip lists swim instructors. Today cards stay his own book. */
     serviceKeys: ["aquatic"],
     venues: ["swimfarm"],
-    programmeWideRoster: true,
+    programmeWideRoster: false,
     leadTeamBanner: true,
   },
 ];
@@ -794,13 +795,49 @@ function portalRobertoDcClientIsCancelledOnIso(iso, clientName) {
   return false;
 }
 
+/** Roberto Sunday: any real SwimFarm client on his own rows (aquatic or multi). */
+function portalRobertoHasSundaySwimfarmSeat(iso) {
+  const day = String(iso || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  const wd = weekdayFromIso(day);
+  const src =
+    typeof globalThis !== "undefined" && globalThis.STAFF_DASHBOARD_SOURCE
+      ? globalThis.STAFF_DASHBOARD_SOURCE
+      : null;
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r) continue;
+    const sk = normService(r.service);
+    if (sk !== "aquatic" && sk !== "multi") continue;
+    if (normVenue(r.venue).indexOf("swimfarm") < 0 && normVenue(r.venue).indexOf("pool") < 0) continue;
+    if (!rosterRowAppliesOnIso(rows, r, day, wd)) continue;
+    if (!rosterInstructorKeysMatchLead(r.instructors, "roberto")) continue;
+    const nm = String(r.client_name || "").trim();
+    if (portalRobertoDcClientLooksDutyOnly(nm)) continue;
+    return true;
+  }
+  return false;
+}
+
 /** Roberto Thu DC lead seat: real Day Centre client that is not Cancelled. */
 function portalRobertoHasActiveDayCentreLeadSeat(iso, scopes) {
   const day = String(iso || "").trim().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
   const wd = weekdayFromIso(day);
+  if (wd === "Sunday") {
+    /* His Sunday book is Multi at the pool. Aquatic-only scope must not hide the team strip. */
+    try {
+      const g = typeof globalThis !== "undefined" ? globalThis : null;
+      if (g && typeof g.portalStaffHasShiftOnCalendarDate === "function") {
+        const on = g.portalStaffHasShiftOnCalendarDate(day, "roberto");
+        if (on === true) return true;
+        if (on === false) return false;
+      }
+    } catch (_) {}
+    return portalRobertoHasSundaySwimfarmSeat(day);
+  }
   if (wd !== "Thursday") {
-    /* Sunday pool team banner keeps existing working check via scopes weekdays. */
     return portalLeadProgrammeLeadOnRosterForIso("roberto", day, scopes);
   }
   const src =

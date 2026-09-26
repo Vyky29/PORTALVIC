@@ -6305,16 +6305,30 @@
         portalApplyTodayVenueMeta();
         const rosterReadyEarly = portalStaffRosterReadyForNextSessionPreview();
         if(liveToday && id && dashboardData.portalIdentityResolved !== false && rosterReadyEarly){
+          /* Hold "Day off" until next-session chips exist, so Saturday does not
+             flash a solo Day off and then add Sunday clients a moment later. */
+          dashboardData.portalTodayEmptyPanelMode = 'sync';
+          dashboardData.portalTodayNextSessionPreview = null;
           const deferPrev = typeof portalDeferHeavyDashboardRefresh === 'function'
             ? portalDeferHeavyDashboardRefresh
             : function(fn){ setTimeout(fn, 0); };
+          const offMode = (selectedIso && typeof portalStaffDayOffIsTimeOffRequested === 'function'
+            && portalStaffDayOffIsTimeOffRequested(selectedIso, id))
+            ? 'off_time_requested'
+            : 'off';
           deferPrev(function(){
             try{ portalRefreshNextSessionPreview(id); }catch(_){}
+            try{
+              if(dashboardData && dashboardData.portalTodayEmptyPanelMode === 'sync'){
+                dashboardData.portalTodayEmptyPanelMode = offMode;
+              }
+            }catch(_){}
             try{
               if(typeof renderToday === 'function') renderToday();
             }catch(_){}
           }, 0);
         }else{
+          dashboardData.portalTodayEmptyPanelMode = 'sync';
           dashboardData.portalTodayNextSessionPreview = null;
         }
         return [];

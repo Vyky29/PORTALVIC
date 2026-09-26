@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260911-roberto-ov-iso";
+} from "./portal_lead_session_scope.js?v=20260926-team-shift-sun";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -206,12 +206,48 @@ const CLUB_WIDE_TEAM_SCOPES = [
   },
 ];
 
-function teamBoardUsesClubWideDay(dayKind) {
-  return dayKind === "ops_club_all" || dayKind === "sunday_ma_swimfarm";
+/** Berta Sunday: pool, Hub Multi, and Westway climbing — not the whole weekday club. */
+const SUNDAY_BERTA_TEAM_SCOPES = [
+  {
+    id: "sunday-aquatic-ma-climbing",
+    label: "Sunday — Aquatic, Multi-Activity, Climbing",
+    weekdays: ["Sunday"],
+    serviceKeys: ["aquatic", "multi", "climbing"],
+    venues: [],
+    programmeWideRoster: true,
+    leadTeamBanner: true,
+  },
+];
+
+/** Roberto Sunday team strip: SwimFarm pool instructors and their participants. */
+const ROBERTO_SUNDAY_SWIM_TEAM_SCOPES = [
+  {
+    id: "sunday-swim-instructors",
+    label: "Sunday — Swimming instructors",
+    weekdays: ["Sunday"],
+    serviceKeys: ["aquatic", "multi"],
+    venues: ["swimfarm"],
+    programmeWideRoster: true,
+    leadTeamBanner: true,
+  },
+];
+
+const HUB_SUPPORT_KEYS = new Set(["berta", "john", "godsway", "emmanuel", "michelle"]);
+const CLIMB_INSTRUCTOR_KEYS = new Set(["alex", "carlos", "andres", "bismark"]);
+
+function teamBoardNeedsFullRoster(dayKind) {
+  return (
+    dayKind === "ops_club_all" ||
+    dayKind === "sunday_ma_swimfarm" ||
+    dayKind === "roberto_sun_pool" ||
+    dayKind === "roberto_thu_dc"
+  );
 }
 
 function scopesForTeamBoard(ctx, dayKind) {
-  if (teamBoardUsesClubWideDay(dayKind)) return CLUB_WIDE_TEAM_SCOPES;
+  if (dayKind === "ops_club_all") return CLUB_WIDE_TEAM_SCOPES;
+  if (dayKind === "sunday_ma_swimfarm") return SUNDAY_BERTA_TEAM_SCOPES;
+  if (dayKind === "roberto_sun_pool") return ROBERTO_SUNDAY_SWIM_TEAM_SCOPES;
   return (ctx && ctx.scopes) || [];
 }
 
@@ -552,25 +588,32 @@ function collectRosterMemberKeysForVenues(iso, venueNorms, scopes, source) {
   return memberKeys;
 }
 
-function filterRobertoThuDcTeam(keys) {
+function filterRobertoThuDcTeam() {
+  /* Thursday Day Centre partner is Youssef. His clients come from the full board. */
+  return ["youssef"];
+}
+
+function filterRobertoSundaySwimTeam(keys, roleOverrides) {
   return dedupeKeys(
     (keys || []).filter(function (k) {
       if (!k || k === "roberto") return false;
-      if (k === "michelle") return true;
-      return !PROGRAMME_LEAD_KEYS.has(k);
+      if (PROGRAMME_LEAD_KEYS.has(k)) return false;
+      if (HUB_SUPPORT_KEYS.has(k) || CLIMB_INSTRUCTOR_KEYS.has(k)) return false;
+      const role = (roleOverrides && roleOverrides[k]) || teamMemberChipRole(k);
+      return role === "swim-instructor";
     })
   );
 }
 
-function applyTeamDayFilter(keys, dayKind, leadKey, iso) {
+function applyTeamDayFilter(keys, dayKind, leadKey, iso, roleOverrides) {
   if (dayKind === "sunday_ma_swimfarm") return filterSundayMaTeam(keys, leadKey);
   if (dayKind === "john_bespoke_mw" || dayKind === "john_bespoke_mwf") {
     return filterJohnBespokeTeam(keys, iso);
   }
   if (dayKind === "john_wed_acton_ma") return filterJohnWedActonTeam(keys);
   if (dayKind === "michelle_day_centre") return filterProgrammeWideTeam(keys, leadKey);
-  if (dayKind === "roberto_thu_dc") return filterRobertoThuDcTeam(keys);
-  if (dayKind === "roberto_sun_pool") return filterProgrammeWideTeam(keys, leadKey);
+  if (dayKind === "roberto_thu_dc") return filterRobertoThuDcTeam();
+  if (dayKind === "roberto_sun_pool") return filterRobertoSundaySwimTeam(keys, roleOverrides);
   if (dayKind === "ops_club_all") return filterOpsClubTeam(keys);
   return keys.slice();
 }
@@ -1155,17 +1198,17 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   if (!dayKind) return null;
 
   const boardScopes = scopesForTeamBoard(ctx, dayKind);
-  const src = teamBoardUsesClubWideDay(dayKind)
+  const src = teamBoardNeedsFullRoster(dayKind)
     ? rosterSourceForLeadTeamBoard(iso)
     : rosterSource();
   if (!portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes)) return null;
 
   let memberKeys = [];
-  /* Ops + Sunday Lead (Berta): Team on shift is the full club day, not SwimFarm-only. */
+  /* Full-day roster so teammate columns are not limited to the logged-in worker. */
   memberKeys = collectInScopeMemberKeys(iso, boardScopes, src);
   memberKeys = applyScheduleOverrideMembers(memberKeys, iso, boardScopes, src);
   const roleOverrides = coverChipRoleOverridesForIso(iso, boardScopes, src);
-  memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey, iso);
+  memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey, iso, roleOverrides);
   memberKeys = memberKeys.filter(function (k) {
     if (!k || k === ctx.leadKey) return false;
     if (dayKind === "ops_club_all") {
@@ -1595,7 +1638,10 @@ function isDutyClientName(name) {
     n === "available" ||
     n === "noclient" ||
     n === "shadowing" ||
-    n === "noparticipant"
+    n === "noparticipant" ||
+    n === "holdwaitlist" ||
+    n === "hold" ||
+    n === "waitlist"
   );
 }
 
@@ -1852,6 +1898,7 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
   const rows = src && Array.isArray(src.rows) ? src.rows : [];
   const dayWord = weekdayFromIso(iso);
   const byStaff = Object.create(null);
+  const restrictToListedTeam = team.dayKind === "roberto_thu_dc" || team.dayKind === "roberto_sun_pool";
   /* Ops viewers are leadKey "ops" but roster rows use javi / victor / raul. */
   const viewerStaffKey =
     leadKey === "ops" ? opsViewerPersonKey(ctx) || leadKey : leadKey;
@@ -1886,6 +1933,7 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     instructorKeys.forEach(function (ik) {
       const k = normKey(ik);
       if (!k) return;
+      if (restrictToListedTeam && !Object.prototype.hasOwnProperty.call(byStaff, k)) return;
       if (!leadTeamStaffPaintOnIso(k, iso)) return;
       pushLeadTeamClientEntry(
         byStaff,
@@ -1918,6 +1966,7 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     if (!sessionAddIsClientSession(ov)) return;
     const k = canonicalStaffKey(ov.anchor_staff_id);
     if (!k || k === "coverneeded") return;
+    if (restrictToListedTeam && !Object.prototype.hasOwnProperty.call(byStaff, k)) return;
     const pl = parseOverridePayload(ov);
     const clientRaw = String(pl.client_name || pl.to_client_name || ov.anchor_client_id || "").trim();
     if (!clientRaw || isDutyClientName(clientRaw)) return;
@@ -1964,6 +2013,7 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
   });
 
   Object.keys(byStaff).forEach(function (k) {
+    if (restrictToListedTeam) return;
     if (!k || k === viewerStaffKey || k === "ops" || k === leadKey) return;
     if (!leadTeamStaffPaintOnIso(k, iso)) {
       byStaff[k] = [];
