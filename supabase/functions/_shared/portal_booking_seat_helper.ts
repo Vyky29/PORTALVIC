@@ -558,17 +558,18 @@ function ensureWeekdayClimbEliaOfficeHoldFullyBooked(slots: OfferSlot[]): OfferS
 }
 
 /**
- * Do not force-open Sunday 3–4. Alex’s late band stays office-gated until earlier
- * Alex hours (12–1 and 2–3) are filled — see gateAlexClimbSundayThreeFour.
+ * Do not force-open Sunday 3-4. That band stays office-gated until every other
+ * Sunday Westway climbing slot is full. See gateAlexClimbSundayThreeFour.
  */
 function ensureClimbingSundayOpenBand(slots: OfferSlot[]): OfferSlot[] {
   return slots;
 }
 
 /**
- * Alex Sunday Westway climb 3–4: keep Fully booked on the public offer until
- * his 12–1 and 2–3 open seats are gone (office opens 3–4 only after those fill).
- * Overview can still show No participant on Alex 3–4.
+ * Sunday Westway climb 3-4 (Alex + Carlos): keep Fully booked on the public
+ * offer while any earlier Sunday Westway climbing band still has a free seat.
+ * Office opens 3-4 only after the rest of that day is full.
+ * Staff Today shows those seats as No participant, not as a child.
  */
 function gateAlexClimbSundayThreeFour(slots: OfferSlot[]): OfferSlot[] {
   const sunClimb = slots.filter(
@@ -579,16 +580,12 @@ function gateAlexClimbSundayThreeFour(slots: OfferSlot[]): OfferSlot[] {
   );
   if (!sunClimb.length) return slots;
 
-  function bandOpen(midFrom: number, midTo: number): boolean {
-    return sunClimb.some((s) => {
-      const mid = slotMidMinutes(s);
-      if (mid < midFrom || mid >= midTo) return false;
-      return Math.max(0, Number(s.openSeats) || 0) > 0;
-    });
-  }
-
-  /* 12:00–13:00 and 14:00–15:00 still have Places → lock 15:00–16:00. */
-  const earlierStillOpen = bandOpen(12 * 60, 13 * 60) || bandOpen(14 * 60, 15 * 60);
+  /* Any Sunday Westway climb band except 15:00-16:00 still has Places: lock 3-4. */
+  const earlierStillOpen = sunClimb.some((s) => {
+    const mid = slotMidMinutes(s);
+    if (mid >= 15 * 60 && mid < 16 * 60) return false;
+    return Math.max(0, Number(s.openSeats) || 0) > 0;
+  });
   if (!earlierStillOpen) return slots;
 
   return slots.map((s) => {
@@ -606,7 +603,7 @@ function gateAlexClimbSundayThreeFour(slots: OfferSlot[]): OfferSlot[] {
       ...s,
       openSeats: 0,
       taken: cap,
-      /* Strip Alex from openInstructors so office Assign does not treat it as live Places. */
+      /* No open instructor on 3-4 while the rest of Sunday Westway climb still has space. */
       openInstructors: [],
     };
   });

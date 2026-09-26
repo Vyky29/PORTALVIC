@@ -8,9 +8,9 @@
   }
 
   /**
-   * Office hold seats (e.g. Climbing Westway Tue/Thu 4–6 waitlist probe).
-   * Count as booked in Admin Services / Booking Portal, but must not appear on
-   * instructor Today/Week dashboards until replaced with a real client name.
+   * Office hold seats (Climbing Westway Sunday 3-4, and any HOLD WAITLIST label).
+   * Count as booked in Admin Services / Booking Portal. On the instructor
+   * Today/Week board they show as No participant — not a child, and no feedback.
    */
   function isOfficeHoldWaitlistClient(name) {
     const k = String(name || "")
@@ -969,8 +969,8 @@
       if (!targetSet[wanted]) return;
 
       let nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
-      // Fictitious office holds stay off the worker dashboard (waitlist probe seats).
-      if (isOfficeHoldWaitlistClient(nameRaw)) return;
+      /* HOLD WAITLIST is an office seat, not a child. Alex / Carlos see No participant. */
+      if (isOfficeHoldWaitlistClient(nameRaw)) nameRaw = "No participant";
       const timeSlotLabel = String(row.time_slot || "").trim();
       const rosterService = String(row.service || "").trim();
       const rosterArea =

@@ -2828,7 +2828,7 @@
 
   /**
    * Autumn Sunday Westway climbing (60' books).
-   * Scott de Wolff not renewing — 12–1 open. Alex 2–3 + 3–4 open. Patrick 3–4 Carlos.
+   * Scott de Wolff not renewing - 12-1 open. Alex 2-3 open. Sun 3-4 is HOLD WAITLIST (Alex + Carlos), not a child.
    * Stamp = first standing Autumn Sunday (13 Sep), never a summer week.
    * Muhammad Alex 12-1 is a dated trial that same Sunday — do not project that name
    * onto later Sundays (open seat / bookable). See shouldProjectDatedOneOffTrialFromSnap.
@@ -2897,14 +2897,15 @@
     { staff: "ALEX", name: "Muhammad", time: "12 to 1", trial: true, trialDate: "2026-09-13" },
     { staff: "ALEX", name: "Rodin", time: "1 to 2" },
     { staff: "ALEX", name: "No participant", time: "2 to 3" },
-    /* Alex 3–4: Elia blocked (not bookable) — office hold on Seat 1. */
-    { staff: "ALEX", name: "Elia", time: "3 to 4", closed: true },
+    /* Sun 3-4 stays HOLD WAITLIST on Places until the rest of Sunday Westway climb is full.
+       Instructors see No participant (not Elia / Patrick). */
+    { staff: "ALEX", name: "No participant", time: "3 to 4" },
     { staff: "CARLOS", name: "Hazem", time: "10 to 11" },
     { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
     { staff: "CARLOS", name: "Serine", time: "12 to 1" },
     { staff: "CARLOS", name: "Zakariya", time: "1 to 2" },
     { staff: "CARLOS", name: "No participant", time: "2 to 3" },
-    { staff: "CARLOS", name: "Patrick", time: "3 to 4" },
+    { staff: "CARLOS", name: "No participant", time: "3 to 4" },
   ];
 
   /**
