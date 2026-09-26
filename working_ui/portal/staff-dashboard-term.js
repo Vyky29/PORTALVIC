@@ -1574,6 +1574,14 @@
         String(fbKeys),
         String(fbOutstanding),
         String(dashboardData && dashboardData.portalFeedbackServerSynced ? '1' : '0'),
+        (function(){
+          try{
+            var ovRows = typeof window !== 'undefined' ? window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ : null;
+            var n = Array.isArray(ovRows) ? ovRows.length : 0;
+            var hyd = (typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) ? '1' : '0';
+            return hyd + ':' + String(n);
+          }catch(_){ return '0'; }
+        })(),
         dismissedSig,
         absentPeerSig,
         sharedFbSig,

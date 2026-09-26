@@ -1795,6 +1795,8 @@
       }
       try{
         if(dashboardData && !dashboardData.portalFeedbackServerSynced) return '';
+        /* Absence rows arrive after first paint. Do not flash Pending before they land. */
+        if(typeof window !== 'undefined' && !window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return '';
       }catch(_){}
       if(isSessionStartedForItem(item)){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
@@ -1860,7 +1862,8 @@
           !item.portalOverrideSuppressReviewOrange &&
           !rLife.feedbackDone &&
           !rLife.absent &&
-          !rLife.cancelled
+          !rLife.cancelled &&
+          !(typeof window !== 'undefined' && !window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__)
         ){
           return '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
         }
@@ -2604,6 +2607,17 @@
         if(!t || seen[t]) return;
         seen[t] = true;
         out.push(t);
+        /* Sheet cards say 5.30; absence rows store 17:30. Same minute, both clocks. */
+        const hh = parseInt(t.slice(0, 2), 10);
+        const mm = t.slice(3);
+        let twinH = 0;
+        if(hh >= 1 && hh <= 7) twinH = hh + 12;
+        else if(hh >= 13 && hh <= 19) twinH = hh - 12;
+        if(!twinH) return;
+        const twin = String(twinH).padStart(2, '0') + ':' + mm;
+        if(seen[twin]) return;
+        seen[twin] = true;
+        out.push(twin);
       };
       add(raw);
       const withMinutes = raw.match(/\b\d{1,2}(?::|\.)\d{1,2}(?::\d{1,2})?\b/g) || [];
