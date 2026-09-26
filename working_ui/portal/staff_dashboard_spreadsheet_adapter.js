@@ -1162,6 +1162,9 @@
       if (row.__portal_roster_time_updated) {
         baseSession.portalRosterTimeUpdated = true;
       }
+      if (row.__portal_admin_client_swap) {
+        baseSession.portalAdminClientSwap = true;
+      }
       if (row.__portal_roster_row_id) {
         baseSession.__portal_roster_row_id = row.__portal_roster_row_id;
       }

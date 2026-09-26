@@ -4270,6 +4270,7 @@
           const makeUpPink = isMakeUpCard;
           const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
             && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
+          const adminClientSwap = !!s.portalAdminClientSwap;
           const generalBody = hasReplaceOv && anchorNotesForMakeup
             ? clientGeneralBodyForMakeupSession(anchorNotesForMakeup, c, s, activity, viewDay, supportHidePoolNote)
             : clientGeneralBodyFromNotes(c, s);
@@ -4308,7 +4309,7 @@
             portalOverrideTrialTag: isTrialOv,
             portalOverrideNewClientTag: !!isNewClientOv,
             portalOverrideMoveInTag: !!isClientMoveIn,
-            portalOverrideCardTone: fadiDcCancel ? 'red' : (isMakeUpCard ? 'pink' : (isClientMoveIn || isNewClientOv || slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : ''))),
+            portalOverrideCardTone: fadiDcCancel ? 'red' : (isMakeUpCard ? 'pink' : (isClientMoveIn || isNewClientOv || slotWasUpdated || adminClientSwap ? 'blue' : (isTrialOv ? 'trial' : ''))),
             portalOverrideSymbolText: isTrialOv ? 'Trial' : (isNewClientOv ? 'New Participant' : (isClientMoveIn ? 'Move in' : (isMakeUpCard ? 'Make Up' : ''))),
             portalOverrideHideAdminBadge: !!isClientMoveIn,
             portalOverrideAlertPill: fadiDcCancel ? 'CANCELLED' : (slotWasUpdated && !isClientMoveIn ? 'UPDATED' : ''),
@@ -4317,7 +4318,7 @@
             detailsOpenAllowed: true,
             portalOverrideSuppressReviewOrange: !!fadiDcCancel,
             portalRosterTimeUpdated: !!slotWasUpdated,
-            scheduleAdminAdjusted: !!(isClientMoveIn || isDayReassignReplace || slotWasUpdated)
+            scheduleAdminAdjusted: !!(isClientMoveIn || isDayReassignReplace || slotWasUpdated || adminClientSwap)
           }, meta, isClientMoveIn && replaceOvSameSlot ? { __portalScheduleOverride: replaceOvSameSlot } : null);
         })
         .filter(Boolean),

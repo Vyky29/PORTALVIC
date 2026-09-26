@@ -1945,6 +1945,7 @@
       if (client === "Gabriel" && !hub) {
         next.client_name = "Cyrus";
         next.area = "Small Pool";
+        next.__portal_admin_client_swap = true;
         return next;
       }
       if (client === "Arthur Ma" && !hub) {
@@ -1953,16 +1954,19 @@
       }
       if (client === "Cyrus" && hub) {
         next.client_name = "Gabriel";
+        next.__portal_admin_client_swap = true;
         return next;
       }
     }
     if (time === "11.45 to 12.30") {
       if (client === "Cyrus" && !hub) {
         next.client_name = "Gabriel";
+        next.__portal_admin_client_swap = true;
         return next;
       }
       if (client === "Gabriel" && hub) {
         next.client_name = "Cyrus";
+        next.__portal_admin_client_swap = true;
         return next;
       }
     }
