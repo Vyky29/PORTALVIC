@@ -76,16 +76,18 @@
     } catch (_e2) {}
   }
 
-  function showSignedInAs(parentName) {
+  function showSignedInAs(parentName, parentEmail) {
     var who = document.getElementById("bcWho");
     if (!who) return;
     var name = String(parentName || "").trim() || "an existing family";
+    var email = String(parentEmail || "").trim();
     who.hidden = false;
     who.innerHTML =
-      "Signed in as <strong>" +
+      "Connected as <strong>" +
       esc(name) +
-      "</strong>. " +
-      '<button type="button" id="bcNotYou">Sign out</button>';
+      "</strong>" +
+      (email ? " · " + esc(email) : "") +
+      '. <button type="button" id="bcNotYou">Sign out</button>';
     var btn = document.getElementById("bcNotYou");
     if (btn) {
       btn.addEventListener("click", function () {
@@ -383,7 +385,7 @@
         }
         state.children = out.data.children || [];
         if (!state.children.length) throw new Error("no_children_on_file");
-        showSignedInAs(out.data.parent_name || "");
+        showSignedInAs(out.data.parent_name || "", out.data.email || "");
 
         /* Prefer out-of-class / released child when booking a new place. */
         var prefer =

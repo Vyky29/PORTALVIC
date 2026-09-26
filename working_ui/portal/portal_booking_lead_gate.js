@@ -12,6 +12,8 @@
   var PREVIEW_MS = 5000;
   var state = {
     unlocked: false,
+    /** Real family unlock (PIN, email code, or parent handoff). Preview browsing is not signed in. */
+    signedIn: false,
     lead: null,
     token: "",
     pendingEmail: "",
@@ -94,6 +96,7 @@
     state.token = "";
     state.lead = null;
     state.unlocked = false;
+    state.signedIn = false;
     try {
       global.localStorage.removeItem(STORAGE_KEY);
     } catch (_e) {
@@ -333,6 +336,7 @@
       clearTimeout(state.timer);
       state.timer = null;
     }
+    state.signedIn = true;
     setLocked(false);
     showModal(false);
   }
@@ -343,6 +347,7 @@
         unlock();
         return;
       }
+      state.signedIn = false;
       setLocked(true);
       showStep("details");
       setFlow("choice");
@@ -734,7 +739,7 @@
     root.addEventListener(
       "click",
       function (e) {
-        if (state.unlocked) return;
+        if (state.signedIn) return;
         var t =
           e.target && e.target.closest
             ? e.target.closest(
@@ -852,7 +857,7 @@
     }
 
     state.timer = setTimeout(function () {
-      if (!state.unlocked) openGate();
+      if (!state.signedIn) openGate();
     }, PREVIEW_MS);
     return false;
   }
@@ -867,7 +872,7 @@
     appendSessionToUrl: appendSessionToUrl,
     clearSession: clearSession,
     isUnlocked: function () {
-      return !!state.unlocked;
+      return !!state.signedIn;
     },
     openGate: openGate,
     privacyVersion: PRIVACY_VERSION,

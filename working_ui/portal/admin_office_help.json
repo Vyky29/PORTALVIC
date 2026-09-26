@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-24-v40",
+  "version": "2026-09-26-v41",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -844,6 +844,37 @@
           ],
           "tips": [
             "New-hire invite emails use the staff host, not portalvic or clubsensational.org home."
+          ]
+        },
+        {
+          "id": "booking_connected_and_pay_hold",
+          "title": "Booking Portal: who is connected, and the 30-minute hold",
+          "summary": "The booking page shows the family account at the top. An unpaid finish link holds the seat for 30 minutes, then the seat goes live again.",
+          "where": "www.clubsensational.org/bookingportal",
+          "keywords": [
+            "booking portal",
+            "sign out",
+            "logout",
+            "connected as",
+            "not signed in",
+            "fully booked",
+            "pay hold",
+            "30 minutes",
+            "former",
+            "cliente",
+            "cuenta",
+            "email"
+          ],
+          "steps": [
+            "Open Booking Portal. The top bar says Connected as the parent name and email, or Not signed in.",
+            "Sign in is the welcome popup (family PIN or email code). Sign out clears that browser and asks again.",
+            "Clients and former families both see their own name. A former label only means they are not in class yet.",
+            "When a registration finishes, the pay link holds that seat for 30 minutes. If they do not pay, the hold expires and the seat is free on the offer again.",
+            "Do not send a second hold while they are about to pay. A second hold paints the seat full before payment."
+          ],
+          "tips": [
+            "If the top bar shows another family, Sign out before booking. The slot link does not switch the account by itself.",
+            "Fully booked with no payment usually means the 30-minute hold has not been cleared yet."
           ]
         }
       ]

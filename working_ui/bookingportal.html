@@ -101,14 +101,14 @@
     .top__session[hidden] { display: none !important; }
     .top__who {
       min-width: 0;
-      max-width: 14rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      max-width: min(100%, 28rem);
+      overflow-wrap: anywhere;
       color: var(--ink);
       font-size: 13px;
       font-weight: 600;
+      line-height: 1.35;
     }
+    .top__session.is-out .top__who { color: var(--ok); }
     .top__signout {
       flex: 0 0 auto;
       border: 1px solid var(--line);
@@ -1449,9 +1449,9 @@
       <img src="/portal/F-02-1.png" alt="" width="42" height="42" />
       <span>clubSENsational</span>
     </a>
-    <div class="top__session" id="bookingSessionChip" hidden>
-      <span class="top__who" id="bookingSessionWho"></span>
-      <button type="button" class="top__signout" id="bookingSessionSignOut">Sign out</button>
+    <div class="top__session" id="bookingSessionChip">
+      <span class="top__who" id="bookingSessionWho">Not signed in</span>
+      <button type="button" class="top__signout" id="bookingSessionSignOut" data-mode="in">Sign in</button>
     </div>
   </header>
 
@@ -1887,7 +1887,7 @@
   <script src="/portal/portal_booking_offer.js?v=20260913-aquatic-30"></script>
   <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260926-sign-out"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260926-connected"></script>
   <script src="/portal/portal_booking_waitlist.js?v=20260913-no-cross-family-pii"></script>
   <script>
     (function () {
@@ -1916,14 +1916,27 @@
         } catch (_e) {
           lead = null;
         }
+        var btn = document.getElementById("bookingSessionSignOut");
         var name = lead && (lead.parent_name || lead.first_name);
+        var email = lead && (lead.email || lead.parent_email);
+        chip.hidden = false;
         if (!name) {
-          chip.hidden = true;
-          who.textContent = "";
+          chip.classList.remove("is-out");
+          who.textContent = "Not signed in";
+          if (btn) {
+            btn.textContent = "Sign in";
+            btn.setAttribute("data-mode", "in");
+          }
           return;
         }
-        who.textContent = "Signed in as " + name;
-        chip.hidden = false;
+        chip.classList.add("is-out");
+        who.textContent = email
+          ? "Connected as " + name + " · " + email
+          : "Connected as " + name;
+        if (btn) {
+          btn.textContent = "Sign out";
+          btn.setAttribute("data-mode", "out");
+        }
       }
       window.portalPaintBookingSession = portalPaintBookingSession;
 
@@ -1948,7 +1961,17 @@
       }
 
       var bookingSignOutBtn = document.getElementById("bookingSessionSignOut");
-      if (bookingSignOutBtn) bookingSignOutBtn.addEventListener("click", bookingSignOut);
+      if (bookingSignOutBtn) {
+        bookingSignOutBtn.addEventListener("click", function () {
+          if (bookingSignOutBtn.getAttribute("data-mode") === "in") {
+            if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.openGate) {
+              window.PortalBookingLeadGate.openGate();
+            }
+            return;
+          }
+          bookingSignOut();
+        });
+      }
 
       function tileMediaHtml(svcId) {
         if (svcId === "multi") {

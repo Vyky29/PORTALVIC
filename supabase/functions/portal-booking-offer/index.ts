@@ -19,6 +19,7 @@ import {
   BOOKING_SLOT_HOLD_STATUSES,
   filterActiveBookingHolds,
 } from "../_shared/portal_booking_hold_status.ts";
+import { expireUnpaidBookingPayHolds } from "../_shared/portal_booking_pay_hold.ts";
 import {
   CRASH_HOLD_MINUTES,
   CRASH_INDIVIDUAL_WINDOWS,
@@ -425,6 +426,15 @@ Deno.serve(async (req) => {
     })
     .eq("status", "pending")
     .lt("hold_expires_at", new Date().toISOString());
+
+  /* Awaiting-payment rows keep the public seat until this flips them.
+     The 2-minute cron is the backstop; loading the offer must not leave an
+     unpaid 30-minute window painted Fully booked after the clock. */
+  try {
+    await expireUnpaidBookingPayHolds(supabase);
+  } catch (e) {
+    console.warn("[portal-booking-offer] pay-hold expire", e);
+  }
 
   const { data: holds, error: holdsErr } = await supabase
     .from("portal_booking_slot_reservations")
