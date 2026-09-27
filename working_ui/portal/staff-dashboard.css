@@ -4800,20 +4800,26 @@
     }
     .portal-lead-team-today__chips{
       display:flex;
-      flex-wrap:nowrap;
+      flex-direction:column;
       align-items:center;
       gap:4px;
       min-width:0;
-      justify-content:center;
-      overflow-x:auto;
-      -webkit-overflow-scrolling:touch;
-      scrollbar-width:none;
+      overflow:visible;
     }
-    .portal-lead-team-today__chips::-webkit-scrollbar{display:none}
+    .portal-lead-team-today__chip-row{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      min-width:0;
+      max-width:100%;
+    }
     .portal-lead-team-today__chip{
       display:inline-flex;
-      flex:0 0 auto;
+      flex:0 1 auto;
       align-items:center;
+      max-width:100%;
       padding:2px 7px;
       border-radius:999px;
       font-size:10px;

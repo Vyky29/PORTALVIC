@@ -1553,17 +1553,24 @@ function renderTodayStrip(team) {
       '<p class="portal-lead-team-today__empty">No roster rows in scope for today.</p></div>'
     );
   }
-  const chips = team.members
-    .map(function (m) {
-      const role = m.chipRole && m.chipRole !== "default" ? m.chipRole : "";
-      const roleClass = role ? " portal-lead-team-today__chip--" + role : "";
-      return (
-        '<span class="portal-lead-team-today__chip' +
-        roleClass +
-        '">' +
-        escHtml(m.name || m.key) +
-        "</span>"
-      );
+  const chipHtml = team.members.map(function (m) {
+    const role = m.chipRole && m.chipRole !== "default" ? m.chipRole : "";
+    const roleClass = role ? " portal-lead-team-today__chip--" + role : "";
+    return (
+      '<span class="portal-lead-team-today__chip' +
+      roleClass +
+      '">' +
+      escHtml(m.name || m.key) +
+      "</span>"
+    );
+  });
+  const rowSplit = chipHtml.length > 1 ? Math.ceil(chipHtml.length / 2) : chipHtml.length;
+  const chipRows = [chipHtml.slice(0, rowSplit), chipHtml.slice(rowSplit)].filter(function (row) {
+    return row.length;
+  });
+  const chips = chipRows
+    .map(function (row) {
+      return '<div class="portal-lead-team-today__chip-row">' + row.join("") + "</div>";
     })
     .join("");
   const absents = Array.isArray(team.absents) ? team.absents : [];
