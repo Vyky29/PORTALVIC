@@ -298,6 +298,41 @@ function isAutumnStandingWeek(start: string, end: string): boolean {
     (start <= AUTUMN_STANDING_WEEK_START && (!end || end >= AUTUMN_STANDING_WEEK_END));
 }
 
+/**
+ * From Sun 27 Sep the pool and Hub swap Cyrus and Gabriel for the first two
+ * halves. Staff Today already shows that. The 18:00 nag was still using the
+ * old book, so Godsway was asked for Gabriel at 11.45 when he had Cyrus.
+ */
+function sundayHalfBand(raw: string): "1100" | "1145" | "" {
+  const t = String(raw || "").trim().toLowerCase().replace(/[–—]/g, "-");
+  if (/\b11\s*[.:]?45\b/.test(t) && /\b12\b/.test(t)) return "1145";
+  if (/\b11\b/.test(t) && /\b11\s*[.:]?45\b/.test(t)) return "1100";
+  return "";
+}
+
+function sundayCyrusGabrielFeedbackClient(slot: Feedback2030Slot, iso: string): string {
+  const client = String(slot.client || "").trim();
+  if (!iso || iso < "2026-09-27") return client;
+  if (weekdayLongUtcNoon(iso).toLowerCase() !== "sunday") return client;
+  const band = sundayHalfBand(slot.time);
+  if (!band) return client;
+  const hubArea = /hub/i.test(String(slot.area || ""));
+  const staff = canonStaffKey(slot.staff);
+  const hubStaff = staff === "godsway" || staff === "berta";
+  const poolStaff = staff === "roberto" || staff === "aurora";
+  const isHub = hubArea || (hubStaff && !poolStaff);
+  const isPool = !hubArea && (poolStaff || !hubStaff);
+  if (band === "1100") {
+    if (/^gabriel$/i.test(client) && isPool) return "Cyrus";
+    if (/^cyrus$/i.test(client) && isHub) return "Gabriel";
+  }
+  if (band === "1145") {
+    if (/^cyrus$/i.test(client) && isPool) return "Gabriel";
+    if (/^gabriel$/i.test(client) && isHub) return "Cyrus";
+  }
+  return client;
+}
+
 /** Day-of board policy for Autumn Feedback 20:30 (B1b).
  * Aligns MADRE/roster seats with Overview capacity-chain truth:
  * - client start / Leila Mon swap / dated cancels
@@ -312,6 +347,7 @@ export function applyFeedback2030BoardPolicy(
   return slots
     .map((s) => {
       let client = clientDisplayStem(s.client) || s.client;
+      client = sundayCyrusGabrielFeedbackClient({ ...s, client }, iso);
       /* Mon Dan Northolt 6–6.30: Adaam through Mon 7; Amaar from Mon 14 (Leila swap). */
       if (
         iso < "2026-09-14" &&
