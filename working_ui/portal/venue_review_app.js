@@ -149,12 +149,29 @@ function submittedByNameFromProfileAndUser(profileRow, user) {
  * - keeps authenticated user id/name when available
  * - falls back to query name or generic label for open submissions
  */
+async function resolveVenueAuthUser(supabase) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const sess = await supabase.auth.getSession();
+      const fromSess = sess && sess.data && sess.data.session && sess.data.session.user;
+      if (fromSess && fromSess.id) return fromSess;
+    } catch (_) {}
+    try {
+      const authData = await supabase.auth.getUser();
+      const fromUser = authData && authData.data && authData.data.user;
+      if (fromUser && fromUser.id) return fromUser;
+    } catch (_) {}
+    await new Promise(function (resolve) {
+      setTimeout(resolve, 350);
+    });
+  }
+  return null;
+}
+
 async function resolveSubmissionContext(ctx) {
   const { getSupabaseClient } = await import(portalAuthModuleUrl());
   const supabase = getSupabaseClient();
-  const { data: authData, error: authErr } = await supabase.auth.getUser();
-  const user =
-    !authErr && authData && authData.user && authData.user.id ? authData.user : null;
+  const user = await resolveVenueAuthUser(supabase);
   const uid = user ? String(user.id).trim() : "";
   let profileRow = null;
   if (uid) {
@@ -270,7 +287,7 @@ function venueVideoExtForMime(mime) {
 function formatVenueUploadError(err) {
   const msg = String((err && err.message) || err || "");
   if (/mime|not allowed|invalid|content type/i.test(msg)) {
-    return "This video format was not accepted. Use Upload from Photos, or record a shorter clip.";
+    return "A photo or video was not accepted. Stay on this page and tap Submit again.";
   }
   if (/size|maximum|exceed|too large|payload/i.test(msg)) {
     return "Video is too large (max 50 MB). Record a shorter clip.";
@@ -733,12 +750,10 @@ function initVenuePhotoPicker() {
       const f = list[i];
       if (!f) continue;
       if (files.length >= VENUE_PHOTO_MAX) break;
-      if (f.size > VENUE_PHOTO_MAX_BYTES) {
-        alert("A photo is over 8 MB. Pick a smaller one.");
+      const kind = String(f.type || "").toLowerCase();
+      if (kind && kind.indexOf("image") < 0 && kind.indexOf("heic") < 0 && kind.indexOf("heif") < 0) {
         continue;
       }
-      const kind = String(f.type || "").toLowerCase();
-      if (kind && kind.indexOf("image") < 0 && kind.indexOf("heic") < 0) continue;
       files.push(f);
     }
     try {
@@ -777,6 +792,75 @@ function initVenuePhotoPicker() {
   };
 }
 
+function venuePhotoAsJpegBlob(file) {
+  return new Promise(function (resolve) {
+    let settled = false;
+    let url = "";
+    function finish(blob) {
+      if (settled) return;
+      settled = true;
+      try {
+        if (url) URL.revokeObjectURL(url);
+      } catch (_) {}
+      resolve(blob && blob.size ? blob : null);
+    }
+    const timer = setTimeout(function () {
+      finish(null);
+    }, 8000);
+    try {
+      url = URL.createObjectURL(file);
+    } catch (_) {
+      clearTimeout(timer);
+      finish(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = function () {
+      try {
+        const maxEdge = 1800;
+        let w = img.naturalWidth || img.width || 0;
+        let h = img.naturalHeight || img.height || 0;
+        if (!w || !h) {
+          clearTimeout(timer);
+          finish(null);
+          return;
+        }
+        if (w > maxEdge || h > maxEdge) {
+          const scale = maxEdge / Math.max(w, h);
+          w = Math.max(1, Math.round(w * scale));
+          h = Math.max(1, Math.round(h * scale));
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const g = canvas.getContext("2d");
+        if (!g) {
+          clearTimeout(timer);
+          finish(null);
+          return;
+        }
+        g.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(
+          function (blob) {
+            clearTimeout(timer);
+            finish(blob);
+          },
+          "image/jpeg",
+          0.82
+        );
+      } catch (_) {
+        clearTimeout(timer);
+        finish(null);
+      }
+    };
+    img.onerror = function () {
+      clearTimeout(timer);
+      finish(null);
+    };
+    img.src = url;
+  });
+}
+
 async function uploadVenuePhotos(supabase, submission, ctx, photoFiles) {
   const list = Array.isArray(photoFiles) ? photoFiles : [];
   if (!list.length) return [];
@@ -789,10 +873,24 @@ async function uploadVenuePhotos(supabase, submission, ctx, photoFiles) {
   const paths = [];
   for (let i = 0; i < list.length; i++) {
     const file = list[i];
-    const mime = venuePhotoStorageMime(file.type || "image/jpeg");
-    const ext = venuePhotoExtForMime(mime);
+    let uploadBlob = null;
+    try {
+      uploadBlob = await venuePhotoAsJpegBlob(file);
+    } catch (_) {
+      uploadBlob = null;
+    }
+    let mime = "image/jpeg";
+    let ext = "jpg";
+    if (!uploadBlob) {
+      mime = venuePhotoStorageMime(file.type || "image/jpeg");
+      ext = venuePhotoExtForMime(mime);
+      uploadBlob = String(file.type || "").indexOf(";") >= 0 ? new Blob([file], { type: mime }) : file;
+    }
+    if (uploadBlob.size > 45 * 1024 * 1024) {
+      throw new Error("Photo " + (i + 1) + " is too large. Remove it and take it again.");
+    }
+    setVenueSubmitStatus("Sending photo " + (i + 1) + " of " + list.length + "…");
     const path = uid + "/" + day + "/" + kind + "_photo_" + stamp + "_" + (i + 1) + "." + ext;
-    const uploadBlob = String(file.type || "").indexOf(";") >= 0 ? new Blob([file], { type: mime }) : file;
     const { error } = await supabase.storage.from(VENUE_REVIEW_VIDEO_BUCKET).upload(path, uploadBlob, {
       contentType: mime,
       upsert: false
@@ -965,8 +1063,31 @@ function updateNoButtonText(btnNo) {
   else btnNo.textContent = "No";
 }
 
+function setVenueSubmitStatus(text) {
+  const el = document.getElementById("venueSubmitStatus");
+  if (!el) return;
+  el.textContent = text || "";
+}
+
+function focusVenueControl(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  try {
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+  } catch (_) {}
+  try {
+    el.focus();
+  } catch (_) {}
+}
+
 function initVenueReviewPage() {
   const form = document.getElementById("form");
+  if (form) {
+    form.noValidate = true;
+    form.querySelectorAll("[required]").forEach(function (el) {
+      el.removeAttribute("required");
+    });
+  }
   const backBtn = document.getElementById("venueReviewBackBtn");
   if (backBtn) {
     backBtn.addEventListener("click", function (e) {
@@ -1079,19 +1200,27 @@ function initVenueReviewPage() {
     const submitBtn = form.querySelector(".submit-btn");
 
     if (!clean(ctxNow.venue)) {
+      setVenueSubmitStatus("Select the venue, then tap Submit again.");
+      focusVenueControl("venueSelect");
       alert("Please select the venue.");
       return;
     }
     if (ctxNow.openingClosing !== "Opening" && ctxNow.openingClosing !== "Closing") {
+      setVenueSubmitStatus("Select Opening or Closing, then tap Submit again.");
+      focusVenueControl("kindSelect");
       alert("Please select Opening or Closing.");
       return;
     }
     if (!clean(ctxNow.time)) {
+      setVenueSubmitStatus("Set the time of this check, then tap Submit again.");
+      focusVenueControl("time");
       alert("Please set the time you did this check.");
       return;
     }
 
     if (!issueMode) {
+      setVenueSubmitStatus('Tap "No" or "Yes", then tap Submit again.');
+      focusVenueControl("btnNoReady");
       alert(
         'Please tap "No" or "Yes" to say whether there is anything to report.'
       );
@@ -1107,6 +1236,7 @@ function initVenueReviewPage() {
         try {
           issuesInput.focus();
         } catch (_) {}
+        setVenueSubmitStatus("Describe the issues, then tap Submit again.");
         alert("Please describe the issues, damages or incidents.");
         return;
       }
@@ -1140,7 +1270,18 @@ function initVenueReviewPage() {
     }
     const photoFiles = photos && photos.getFiles ? photos.getFiles() : [];
     const needsMediaUpload = !!(walkthrough.hasBlob() || (photoFiles && photoFiles.length));
+    if (needsMediaUpload && clean(submission.submittedByUserId)) {
+      try {
+        const refreshed = await submission.supabase.auth.refreshSession();
+        const refreshedUser =
+          refreshed && refreshed.data && refreshed.data.session && refreshed.data.session.user;
+        if (refreshedUser && refreshedUser.id) {
+          submission.submittedByUserId = String(refreshedUser.id).trim();
+        }
+      } catch (_) {}
+    }
     if (needsMediaUpload && !clean(submission.submittedByUserId)) {
+      setVenueSubmitStatus("Sign in from the staff app, then open this venue report again.");
       alert("Sign in is required to upload video or photos with this venue report.");
       return;
     }
@@ -1152,6 +1293,11 @@ function initVenueReviewPage() {
     };
 
     if (submitBtn) submitBtn.disabled = true;
+    setVenueSubmitStatus(
+      photoFiles && photoFiles.length
+        ? "Sending the venue report and " + photoFiles.length + " photo" + (photoFiles.length === 1 ? "" : "s") + "…"
+        : "Sending the venue report…"
+    );
     var successSubmitted = false;
     try {
       if (walkthrough.hasBlob()) {
@@ -1186,6 +1332,7 @@ function initVenueReviewPage() {
     } catch (err) {
       console.error(err);
       const msg = formatVenueUploadError(err);
+      setVenueSubmitStatus(msg || "Submission failed. Please try again.");
       alert("Submission failed. Please try again." + (msg ? "\n" + msg : ""));
     } finally {
       if (submitBtn && !successSubmitted) submitBtn.disabled = false;

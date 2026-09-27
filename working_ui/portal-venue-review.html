@@ -476,6 +476,13 @@
     .venue-review-intro ul:last-of-type {
       margin-bottom: 0;
     }
+    #venueSubmitStatus {
+      margin: 14px 0 0;
+      min-height: 1.2em;
+      color: #9b2c2c;
+      font-weight: 650;
+      line-height: 1.35;
+    }
     .submit-btn {
       margin-top: 1.5rem;
       width: 100%;
@@ -684,7 +691,7 @@
     </div>
 
     <div class="card">
-      <form id="form">
+      <form id="form" novalidate>
         <section class="venue-context" aria-label="Venue review details">
           <p class="venue-context__row">
             <span class="venue-context__label"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Completed by</span>
@@ -791,6 +798,7 @@
           <div class="venue-photos__thumbs" id="venuePhotosThumbs"></div>
         </section>
 
+        <p class="hint" id="venueSubmitStatus" role="status" aria-live="polite"></p>
         <button type="submit" class="submit-btn">Submit</button>
         <div class="venue-review-back-wrap">
           <button type="button" class="venue-review-back" id="venueReviewBackBtn" aria-label="Back to dashboard">← Back to dashboard</button>
@@ -819,6 +827,6 @@
   </script>
   <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
   <!-- Canonical module under /portal/ (not portal-shared-js) so auth-handler resolves correctly. -->
-  <script type="module" src="/portal/venue_review_app.js?v=20260920-venue-pick-time"></script>
+  <script type="module" src="/portal/venue_review_app.js?v=20260927-venue-submit-photos"></script>
 </body>
 </html>
