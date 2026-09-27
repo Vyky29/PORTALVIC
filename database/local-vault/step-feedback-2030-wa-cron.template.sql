@@ -1,9 +1,9 @@
--- Feedback WhatsApp: weekdays 20:00 then 20:30 London; Sat/Sun 18:00 then 18:30.
+-- Feedback WhatsApp: Sun-Fri 20:00 then 20:30 London; Saturday only 18:00 then 18:30.
 -- pg_cron is UTC-only. The Edge Function only sends in the matching London window unless force=true.
---   Weekday 20:00 London = 19:00 UTC (BST) / 20:00 UTC (GMT)
---   Weekday 20:30 London = 19:30 UTC (BST) / 20:30 UTC (GMT)
---   Weekend 18:00 London = 17:00 UTC (BST) / 18:00 UTC (GMT)
---   Weekend 18:30 London = 17:30 UTC (BST) / 18:30 UTC (GMT)
+--   Sun-Fri 20:00 London = 19:00 UTC (BST) / 20:00 UTC (GMT)
+--   Sun-Fri 20:30 London = 19:30 UTC (BST) / 20:30 UTC (GMT)
+--   Saturday 18:00 London = 17:00 UTC (BST) / 18:00 UTC (GMT)
+--   Saturday 18:30 London = 17:30 UTC (BST) / 18:30 UTC (GMT)
 -- Replace __PORTAL_PUSH_WEBHOOK_SECRET__ before running (apply-feedback-2030-wa-cron.mjs).
 
 do $ext$
@@ -57,7 +57,7 @@ begin
 
   perform cron.schedule(
     'portal-feedback-2000-whatsapp',
-    '0 19,20 * * 1-5',
+    '0 19,20 * * 0-5',
     $job$
     select net.http_post(
       url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-feedback-2030-whatsapp',
@@ -73,7 +73,7 @@ begin
 
   perform cron.schedule(
     'portal-feedback-2030-whatsapp',
-    '30 19,20 * * 1-5',
+    '30 19,20 * * 0-5',
     $job$
     select net.http_post(
       url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-feedback-2030-whatsapp',
@@ -89,7 +89,7 @@ begin
 
   perform cron.schedule(
     'portal-feedback-2000-whatsapp-weekend',
-    '0 17,18 * * 0,6',
+    '0 17,18 * * 6',
     $job$
     select net.http_post(
       url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-feedback-2030-whatsapp',
@@ -105,7 +105,7 @@ begin
 
   perform cron.schedule(
     'portal-feedback-2030-whatsapp-weekend',
-    '30 17,18 * * 0,6',
+    '30 17,18 * * 6',
     $job$
     select net.http_post(
       url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-feedback-2030-whatsapp',

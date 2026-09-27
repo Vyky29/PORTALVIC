@@ -1,14 +1,14 @@
-// @ts-nocheck — Feedback WhatsApp: 20:00 then 20:30 Europe/London weekdays;
-//   Saturday/Sunday 18:00 then 18:30. Second wave only if still outstanding.
+// @ts-nocheck — Feedback WhatsApp: 20:00 then 20:30 Europe/London Sun-Fri;
+//   Saturday only 18:00 then 18:30. Second wave only if still outstanding.
 //
 // Secrets: SUPABASE_*, META_WHATSAPP_*, PORTAL_STAFF_WHATSAPP_TEMPLATE,
 //   PORTAL_PUSH_WEBHOOK_SECRET (header x-portal-webhook-secret)
 //
 // Cron (UTC; function gates on London wall clock):
-//   0 19,20 * * 1-5  body {wave:"2000"}  — Mon-Fri 20:00 London
-//   30 19,20 * * 1-5 body {wave:"2030"}  — Mon-Fri 20:30 London
-//   0 17,18 * * 0,6  body {wave:"2000"}  — Sat/Sun 18:00 London
-//   30 17,18 * * 0,6 body {wave:"2030"}  — Sat/Sun 18:30 London
+//   0 19,20 * * 0-5  body {wave:"2000"}  — Sun-Fri 20:00 London
+//   30 19,20 * * 0-5 body {wave:"2030"}  — Sun-Fri 20:30 London
+//   0 17,18 * * 6    body {wave:"2000"}  — Saturday 18:00 London
+//   30 17,18 * * 6   body {wave:"2030"}  — Saturday 18:30 London
 // Manual: POST {"force":true,"wave":"2000"} or {"dryRun":true,"force":true,"wave":"2030"}
 //
 // Deploy: supabase functions deploy portal-feedback-2030-whatsapp --no-verify-jwt
@@ -103,28 +103,27 @@ function mergeStaffDebts(
   return [...map.values()].sort((a, b) => a.staffLabel.localeCompare(b.staffLabel));
 }
 
-function isLondonWeekend(london) {
-  const w = String((london && london.weekday) || "").toLowerCase();
-  return w === "saturday" || w === "sunday";
+function isLondonSaturday(london) {
+  return String((london && london.weekday) || "").toLowerCase() === "saturday";
 }
 
 function waveClockLabel(wave, london) {
-  const weekend = isLondonWeekend(london);
-  if (wave === "2030") return weekend ? "18:30" : "20:30";
-  return weekend ? "18:00" : "20:00";
+  const saturday = isLondonSaturday(london);
+  if (wave === "2030") return saturday ? "18:30" : "20:30";
+  return saturday ? "18:00" : "20:00";
 }
 
 function resolveWave(raw, london) {
   const w = String(raw || "").trim();
   if (w === "2000" || w === "2030") return w;
-  const hourWant = isLondonWeekend(london) ? 18 : 20;
+  const hourWant = isLondonSaturday(london) ? 18 : 20;
   if (london.hour === hourWant && london.minute >= 25) return "2030";
   if (london.hour === hourWant) return "2000";
   return "";
 }
 
 function inLondonWaveWindow(wave, london) {
-  const hourWant = isLondonWeekend(london) ? 18 : 20;
+  const hourWant = isLondonSaturday(london) ? 18 : 20;
   if (london.hour !== hourWant) return false;
   if (wave === "2000") return london.minute <= 12;
   if (wave === "2030") return london.minute >= 25 && london.minute <= 45;
@@ -175,13 +174,13 @@ function buildBody(first, pending, sample, wave, london) {
   const n = Math.max(1, pending);
   const list = sample.slice(0, 3).join(", ");
   const more = n > 3 ? ` (+${n - 3} more)` : "";
-  const weekend = isLondonWeekend(london);
+  const saturday = isLondonSaturday(london);
   const timeLine =
     wave === "2030"
-      ? weekend
+      ? saturday
         ? "Final reminder for today - please send them now."
         : "Final reminder: 30 minutes left - the day closes at 9:00pm."
-      : weekend
+      : saturday
         ? "Please send them now."
         : "You have one hour - the day closes at 9:00pm.";
   return (

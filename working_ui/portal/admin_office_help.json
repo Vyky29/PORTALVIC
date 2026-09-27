@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-26-v41",
+  "version": "2026-09-27-v42",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -636,6 +636,31 @@
           "tips": [
             "Audience is admin/staff — not parents.",
             "Schedule changes and outstanding feedback use the logo halo and Quick menu. They are not a blocking Sign and submit sheet."
+          ]
+        },
+        {
+          "id": "feedback_whatsapp_clock",
+          "title": "Feedback WhatsApp clock",
+          "summary": "Sunday to Friday the reminder is 8:00pm then 8:30pm. Saturday is 6:00pm then 6:30pm.",
+          "where": "Automatic WhatsApp to staff who still owe Today's session feedback",
+          "keywords": [
+            "feedback clock",
+            "crono",
+            "reloj",
+            "domingo",
+            "sabado",
+            "8pm",
+            "6pm",
+            "20:30",
+            "18:00"
+          ],
+          "steps": [
+            "Sunday, Monday, Tuesday, Wednesday, Thursday and Friday: first WhatsApp at 8:00pm, second at 8:30pm if feedback is still missing.",
+            "Saturday only: first WhatsApp at 6:00pm, second at 6:30pm if feedback is still missing.",
+            "The second message goes only to people who still owe feedback."
+          ],
+          "tips": [
+            "Sunday is not on the Saturday clock. Sunday uses 8:00 and 8:30, same as the week."
           ]
         },
         {

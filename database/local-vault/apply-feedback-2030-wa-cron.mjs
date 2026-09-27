@@ -1,5 +1,5 @@
 /**
- * Create feedback WhatsApp table, weekday 20:00/20:30 + weekend 18:00/18:30 London cron, deploy Edge Function.
+ * Create feedback WhatsApp table, Sun-Fri 20:00/20:30 + Saturday 18:00/18:30 London cron, deploy Edge Function.
  *
  *   node database/local-vault/apply-feedback-2030-wa-cron.mjs
  */
@@ -65,4 +65,4 @@ run(
   env,
 );
 
-console.log("[feedback-2030-wa] done. Weekdays 20:00/20:30; Sat/Sun 18:00/18:30 London if still outstanding.");
+console.log("[feedback-2030-wa] done. Sun-Fri 20:00/20:30; Saturday 18:00/18:30 London if still outstanding.");

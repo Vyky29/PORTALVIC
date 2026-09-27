@@ -300,7 +300,7 @@ function isAutumnStandingWeek(start: string, end: string): boolean {
 
 /**
  * From Sun 27 Sep the pool and Hub swap Cyrus and Gabriel for the first two
- * halves. Staff Today already shows that. The 18:00 nag was still using the
+ * halves. Staff Today already shows that. The evening nag was still using the
  * old book, so Godsway was asked for Gabriel at 11.45 when he had Cyrus.
  */
 function sundayHalfBand(raw: string): "1100" | "1145" | "" {
