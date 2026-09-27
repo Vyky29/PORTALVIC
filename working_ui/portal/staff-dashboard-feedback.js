@@ -2211,6 +2211,9 @@
         }
         // Same-window navigation keeps the Supabase session (critical on iOS PWA:
         // window.open → Safari has separate storage, so CEOs bounce to admin after re-login).
+        if (/portal-venue-review/i.test(String(target || "")) && typeof window.portalStashVenueAuthHandoff === "function") {
+          try { window.portalStashVenueAuthHandoff(); } catch (_) {}
+        }
         window.location.href = target;
       }catch(_){
         window.location.href = target;

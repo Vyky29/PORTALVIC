@@ -615,6 +615,9 @@
       }
       // Prefer in-app navigation so PWA / standalone keeps the signed-in session.
       // (window.open on iOS opens Safari with empty storage → login → admin for CEOs.)
+      if (/portal-venue-review/i.test(String(target || "")) && typeof global.portalStashVenueAuthHandoff === "function") {
+        try { global.portalStashVenueAuthHandoff(); } catch (_) {}
+      }
       if (typeof global.portalQuickMenuNavigate === "function") {
         global.portalQuickMenuNavigate(target);
         return true;

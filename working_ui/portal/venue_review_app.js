@@ -149,22 +149,130 @@ function submittedByNameFromProfileAndUser(profileRow, user) {
  * - keeps authenticated user id/name when available
  * - falls back to query name or generic label for open submissions
  */
-async function resolveVenueAuthUser(supabase) {
-  for (let attempt = 0; attempt < 4; attempt++) {
-    try {
-      const sess = await supabase.auth.getSession();
-      const fromSess = sess && sess.data && sess.data.session && sess.data.session.user;
-      if (fromSess && fromSess.id) return fromSess;
-    } catch (_) {}
-    try {
-      const authData = await supabase.auth.getUser();
-      const fromUser = authData && authData.data && authData.data.user;
-      if (fromUser && fromUser.id) return fromUser;
-    } catch (_) {}
-    await new Promise(function (resolve) {
-      setTimeout(resolve, 350);
-    });
+const VENUE_AUTH_HANDOFF_KEY = "portalVenueAuthHandoff";
+
+function venueAuthUserFromSession(session) {
+  const user = session && session.user;
+  return user && user.id ? user : null;
+}
+
+function venuePromiseTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise(function (resolve) {
+      setTimeout(function () {
+        resolve(null);
+      }, ms);
+    })
+  ]);
+}
+
+function readVenueAuthHandoff() {
+  try {
+    const raw = sessionStorage.getItem(VENUE_AUTH_HANDOFF_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !data.access_token || !data.user || !data.user.id) return null;
+    if (data.at && Date.now() - Number(data.at) > 12 * 60 * 60 * 1000) return null;
+    return data;
+  } catch (_) {
+    return null;
   }
+}
+
+async function readPersistedVenueAuthSession() {
+  const handoff = readVenueAuthHandoff();
+  if (handoff) return handoff;
+  try {
+    const mod = await import("/portal/supabase-client.js?v=20260914-dc-peer-clear");
+    if (mod && typeof mod.portalReadPersistedSupabaseSession === "function") {
+      const persisted = mod.portalReadPersistedSupabaseSession();
+      if (persisted && persisted.access_token && persisted.user && persisted.user.id) return persisted;
+    }
+  } catch (_) {}
+  return null;
+}
+
+async function applyVenueAuthSession(supabase, persisted) {
+  if (!persisted || !persisted.access_token) return null;
+  try {
+    const set = await venuePromiseTimeout(
+      supabase.auth.setSession({
+        access_token: persisted.access_token,
+        refresh_token: persisted.refresh_token || ""
+      }),
+      8000
+    );
+    const applied = venueAuthUserFromSession(set && set.data && set.data.session);
+    if (applied) return applied;
+  } catch (_) {}
+  try {
+    const again = await venuePromiseTimeout(supabase.auth.getSession(), 2500);
+    return venueAuthUserFromSession(again && again.data && again.data.session);
+  } catch (_) {
+    return null;
+  }
+}
+
+async function resolveVenueAuthUser(supabase) {
+  try {
+    const first = await venuePromiseTimeout(supabase.auth.getSession(), 2500);
+    const fromFirst = venueAuthUserFromSession(first && first.data && first.data.session);
+    if (fromFirst) return fromFirst;
+  } catch (_) {}
+
+  const persisted = await readPersistedVenueAuthSession();
+  if (persisted) {
+    const applied = await applyVenueAuthSession(supabase, persisted);
+    if (applied) {
+      try {
+        sessionStorage.removeItem(VENUE_AUTH_HANDOFF_KEY);
+      } catch (_) {}
+      return applied;
+    }
+  }
+
+  const fromEvent = await new Promise(function (resolve) {
+    let settled = false;
+    let sub = null;
+    const timer = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      try {
+        if (sub) sub.unsubscribe();
+      } catch (_) {}
+      resolve(null);
+    }, 3500);
+    try {
+      const watched = supabase.auth.onAuthStateChange(function (event, next) {
+        if (settled) return;
+        if (
+          next &&
+          next.user &&
+          next.user.id &&
+          (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED")
+        ) {
+          settled = true;
+          clearTimeout(timer);
+          try {
+            if (sub) sub.unsubscribe();
+          } catch (_) {}
+          resolve(next.user);
+        }
+      });
+      sub = watched && watched.data && watched.data.subscription;
+    } catch (_) {
+      clearTimeout(timer);
+      resolve(null);
+    }
+  });
+  if (fromEvent) return fromEvent;
+
+  try {
+    const authData = await venuePromiseTimeout(supabase.auth.getUser(), 8000);
+    const fromUser = authData && authData.data && authData.data.user;
+    if (fromUser && fromUser.id) return fromUser;
+  } catch (_) {}
   return null;
 }
 
@@ -1270,18 +1378,8 @@ function initVenueReviewPage() {
     }
     const photoFiles = photos && photos.getFiles ? photos.getFiles() : [];
     const needsMediaUpload = !!(walkthrough.hasBlob() || (photoFiles && photoFiles.length));
-    if (needsMediaUpload && clean(submission.submittedByUserId)) {
-      try {
-        const refreshed = await submission.supabase.auth.refreshSession();
-        const refreshedUser =
-          refreshed && refreshed.data && refreshed.data.session && refreshed.data.session.user;
-        if (refreshedUser && refreshedUser.id) {
-          submission.submittedByUserId = String(refreshedUser.id).trim();
-        }
-      } catch (_) {}
-    }
     if (needsMediaUpload && !clean(submission.submittedByUserId)) {
-      setVenueSubmitStatus("Sign in from the staff app, then open this venue report again.");
+      setVenueSubmitStatus("Go back to the dashboard and open Venue report again, then Submit.");
       alert("Sign in is required to upload video or photos with this venue report.");
       return;
     }

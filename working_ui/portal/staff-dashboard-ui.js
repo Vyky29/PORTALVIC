@@ -6841,9 +6841,26 @@
         else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
       }catch(_){}
     }
+    function portalStashVenueAuthHandoff(){
+      try{
+        const box = window.__PORTAL_SUPABASE__ || {};
+        const sess = box.session || null;
+        const token = sess && sess.access_token;
+        const user = sess && sess.user;
+        if(!token || !user || !user.id) return;
+        sessionStorage.setItem('portalVenueAuthHandoff', JSON.stringify({
+          access_token: token,
+          refresh_token: sess.refresh_token || '',
+          user: { id: String(user.id), email: String(user.email || '') },
+          at: Date.now()
+        }));
+      }catch(_){}
+    }
+    try{ window.portalStashVenueAuthHandoff = portalStashVenueAuthHandoff; }catch(_){}
     function portalOpenVenueReportEmbed(url){
       const href = String(url || '').trim();
       if(!href) return;
+      portalStashVenueAuthHandoff();
       try{ if(typeof closeSheet === 'function') closeSheet({ skipHistory: true }); }catch(_){}
       /* iOS PWA/iframe blocks getUserMedia. Record + photos need a top-level page. */
       try{
