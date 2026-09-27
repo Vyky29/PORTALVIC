@@ -2077,6 +2077,8 @@
       .order("created_at", { ascending: true })
       .limit(500);
     if ((inn && inn.error) || (out && out.error)) return;
+    await resolveMediaSignedUrls(client, (inn && inn.data) || []);
+    await resolveMediaSignedUrls(client, (out && out.data) || []);
     var items = [];
     ((out && out.data) || []).forEach(function (row) {
       items.push({ direction: "out", created_at: row.created_at, row: row });
@@ -2096,6 +2098,16 @@
     if (state.selectedKey !== key) return;
     var live = findThread(key);
     if (!live) return;
+    var keptMedia = Object.create(null);
+    (live.events || []).forEach(function (ev) {
+      var id = String((ev && (ev.inboundId || ev.id)) || "");
+      if (id && ev.mediaUrl) keptMedia[id] = ev.mediaUrl;
+    });
+    full.events.forEach(function (ev) {
+      if (ev.mediaUrl) return;
+      var id = String((ev && (ev.inboundId || ev.id)) || "");
+      if (id && keptMedia[id]) ev.mediaUrl = keptMedia[id];
+    });
     live.events = full.events;
     live.lastAt = full.lastAt || live.lastAt;
     live.hasInbound = full.hasInbound || live.hasInbound;
