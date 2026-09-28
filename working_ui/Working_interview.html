@@ -1711,6 +1711,9 @@
     const INLINE_AUDIO_MAX_CHARS = 12000;
     const localAudioObjectUrls = Object.create(null);
     const localCvObjectUrls = Object.create(null);
+    /** Paths confirmed by a successful upload. A later autosave must not drop them. */
+    const pinnedAudioPaths = Object.create(null);
+    const audioRelinkDone = Object.create(null);
     let syncUi = { state: "idle", message: "Not synced yet", at: null, error: "" };
 
     /** Populated only from onboarding_portal_config.js (not from this file). */
@@ -2710,9 +2713,14 @@
         const shaped = ensureCandidateShape(c);
         if (!shaped || !shaped.id) return;
         const existing = byId.get(shaped.id);
-        if (!existing || candidateUpdatedMs(shaped) >= candidateUpdatedMs(existing)) {
+        if (!existing) {
           byId.set(shaped.id, shaped);
+          return;
         }
+        const localNewer = candidateUpdatedMs(shaped) >= candidateUpdatedMs(existing);
+        const newer = localNewer ? shaped : existing;
+        const older = localNewer ? existing : shaped;
+        byId.set(shaped.id, mergeCandidateWithRemote(newer, older));
       });
       return Array.from(byId.values()).sort(function (a, b) {
         return candidateUpdatedMs(b) - candidateUpdatedMs(a);
@@ -2779,6 +2787,66 @@
       }
     }
 
+    function pinAudioPath(candidateId, sectionName, questionId, path) {
+      const p = String(path || "").trim();
+      if (!candidateId || !sectionName || !questionId || !p) return;
+      if (!pinnedAudioPaths[candidateId]) pinnedAudioPaths[candidateId] = Object.create(null);
+      pinnedAudioPaths[candidateId][sectionName + "." + questionId + "AudioPath"] = p;
+    }
+
+    function applyPinnedAudioPaths(candidate) {
+      if (!candidate || !candidate.id) return candidate;
+      const bag = pinnedAudioPaths[candidate.id];
+      if (!bag) return candidate;
+      Object.keys(bag).forEach(function (full) {
+        const dot = full.indexOf(".");
+        if (dot < 0) return;
+        const sec = full.slice(0, dot);
+        const field = full.slice(dot + 1);
+        if (!candidate[sec] || typeof candidate[sec] !== "object") candidate[sec] = {};
+        if (!String(candidate[sec][field] || "").trim()) candidate[sec][field] = bag[full];
+      });
+      return candidate;
+    }
+
+    function audioSectionForQuestion(questionId) {
+      if (questionId === "callNotes" || isCallScreeningAudioQuestion(questionId)) return "callInterview";
+      return "faceToFaceInterview";
+    }
+
+    async function relinkMissingAudioFromStorage(candidate) {
+      const sb = getSupabase();
+      if (!sb || !candidate || !candidate.id) return false;
+      const listed = await sb.storage.from(INTERVIEW_AUDIO_BUCKET).list(String(candidate.id), {
+        limit: 100,
+        sortBy: { column: "name", order: "asc" }
+      });
+      if (listed.error || !listed.data) return false;
+      const best = Object.create(null);
+      listed.data.forEach(function (file) {
+        const name = String((file && file.name) || "");
+        const m = /^([A-Za-z][A-Za-z0-9]*)_\d+\./.exec(name);
+        if (!m) return;
+        const size = Number((file.metadata && file.metadata.size) || file.size || 0) || 0;
+        const prev = best[m[1]];
+        if (!prev || size >= prev.size) best[m[1]] = { name: name, size: size };
+      });
+      let changed = false;
+      Object.keys(best).forEach(function (qid) {
+        const secName = audioSectionForQuestion(qid);
+        const section = secName === "callInterview" ? candidate.callInterview : candidate.faceToFaceInterview;
+        if (!section) return;
+        const field = qid + "AudioPath";
+        if (String(section[field] || "").trim()) return;
+        const path = candidate.id + "/" + best[qid].name;
+        section[field] = path;
+        if (!section[qid + "AudioMime"]) section[qid + "AudioMime"] = "audio/webm";
+        pinAudioPath(candidate.id, secName, qid, path);
+        changed = true;
+      });
+      return changed;
+    }
+
     async function saveCandidateToSupabase(candidate) {
       const sb = getSupabase();
       if (!sb) return;
@@ -2797,7 +2865,10 @@
       } catch (_e) {
         /* merge best-effort */
       }
-      const merged = mergeCandidateWithRemote(c, remoteCand);
+      const live = candidates.find(function (x) { return x && x.id === c.id; }) || c;
+      applyPinnedAudioPaths(live);
+      const merged = mergeCandidateWithRemote(live, remoteCand);
+      applyPinnedAudioPaths(merged);
       const payload = prepareCandidatePayload(merged);
       const { error } = await sb.from("onboarding_candidates").upsert({
         id: payload.id,
@@ -5121,6 +5192,7 @@
         if (up.ok) {
           candidate.callInterview.callNotesAudioPath = up.path;
           candidate.callInterview.callNotesAudio = "";
+          pinAudioPath(candidateId, "callInterview", "callNotes", up.path);
         } else {
           candidate.callInterview.callNotesAudio = inlineBase64;
         }
@@ -5131,6 +5203,7 @@
         if (up.ok) {
           candidate.callInterview[questionId + "AudioPath"] = up.path;
           candidate.callInterview[questionId + "Audio"] = "";
+          pinAudioPath(candidateId, "callInterview", questionId, up.path);
         } else {
           candidate.callInterview[questionId + "Audio"] = inlineBase64;
         }
@@ -5141,6 +5214,7 @@
         if (up.ok) {
           candidate.faceToFaceInterview[questionId + "AudioPath"] = up.path;
           candidate.faceToFaceInterview[questionId + "Audio"] = "";
+          pinAudioPath(candidateId, "faceToFaceInterview", questionId, up.path);
         } else {
           candidate.faceToFaceInterview[questionId + "Audio"] = inlineBase64;
         }
@@ -5376,6 +5450,18 @@
 
       stampInterviewOpenMeta(candidate.callInterview);
       if (callSuccessful) stampInterviewOpenMeta(candidate.faceToFaceInterview);
+
+      if (!audioRelinkDone[id]) {
+        audioRelinkDone[id] = "pending";
+        relinkMissingAudioFromStorage(candidate).then(function (changed) {
+          audioRelinkDone[id] = "done";
+          if (!changed || currentCandidateId !== id) return;
+          saveCandidates(id).catch(function () {});
+          renderCandidateDetail(id);
+        }).catch(function () {
+          audioRelinkDone[id] = "";
+        });
+      }
 
       mainContent.innerHTML = `
         <div class="content-header">
