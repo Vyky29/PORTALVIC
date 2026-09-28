@@ -4748,7 +4748,7 @@
       (showMakeup
         ? '<li class="pp-hub-ops__chip-legend__item">' +
           '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--makeup" aria-hidden="true"></span>' +
-          '<span class="pp-hub-ops__chip-legend__text"><strong>Sky</strong> — makeup</span></li>'
+          '<span class="pp-hub-ops__chip-legend__text"><strong>Yellow</strong> — makeup</span></li>'
         : "") +
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--burgundy" aria-hidden="true"></span>' +
@@ -7052,7 +7052,7 @@
       loadOpts.dayColors = built.colMap || {};
       var makeupIso = Object.create(null);
       ((data && data._ppMakeupSessions) || []).forEach(function (row) {
-        if (row && row.iso) makeupIso[row.iso] = "#0284c7";
+        if (row && row.iso) makeupIso[row.iso] = "#facc15";
       });
       if (Object.keys(makeupIso).length) {
         loadOpts.extraIsoColors = makeupIso;
