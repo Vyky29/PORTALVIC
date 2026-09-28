@@ -3996,17 +3996,18 @@
   }
 
   /**
-   * Patience Day Centre with Ikram 11-4, Mon / Wed / Fri, from 28 Sep 2026
-   * through 17 Dec. Half term 26-30 Oct is skipped. Michelle and Wednesday
-   * Luliya stay on Ikram. Dated rows only so earlier September is unchanged.
+   * Patience Day Centre with Ikram 11-4, Mon / Tue / Wed / Fri, from 5 Oct 2026
+   * through 17 Dec. Before that she is shadowing. Half term 26-30 Oct is skipped.
+   * Michelle and Wednesday Luliya stay on Ikram.
    */
-  var PATIENCE_IKRAM_FROM = "2026-09-28";
+  var PATIENCE_IKRAM_FROM = "2026-10-05";
   var PATIENCE_IKRAM_UNTIL = "2026-12-17";
 
   function patienceIkramDates() {
     var out = [];
     var cur = new Date(PATIENCE_IKRAM_FROM + "T12:00:00");
     var end = new Date(PATIENCE_IKRAM_UNTIL + "T12:00:00");
+    var dayName = { 1: "Monday", 2: "Tuesday", 3: "Wednesday", 5: "Friday" };
     while (cur <= end) {
       var dow = cur.getDay();
       var iso =
@@ -4015,14 +4016,8 @@
         String(cur.getMonth() + 1).padStart(2, "0") +
         "-" +
         String(cur.getDate()).padStart(2, "0");
-      if (
-        (dow === 1 || dow === 3 || dow === 5) &&
-        (iso < "2026-10-26" || iso > "2026-10-30")
-      ) {
-        out.push({
-          iso: iso,
-          day: dow === 1 ? "Monday" : dow === 3 ? "Wednesday" : "Friday",
-        });
+      if (dayName[dow] && (iso < "2026-10-26" || iso > "2026-10-30")) {
+        out.push({ iso: iso, day: dayName[dow] });
       }
       cur.setDate(cur.getDate() + 1);
     }
@@ -4714,7 +4709,7 @@
       try {
         out = applyLuliyaNewStandingFrom28(out);
       } catch (_) {}
-      /* Patience with Ikram 11-4 Mon / Wed / Fri from 28 Sep. */
+      /* Patience with Ikram 11-4 Mon / Tue / Wed / Fri from 5 Oct. */
       try {
         out = applyPatienceIkramFrom28(out);
       } catch (_) {}

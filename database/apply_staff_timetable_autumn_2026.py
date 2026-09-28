@@ -237,11 +237,12 @@ def build_autumn_rows() -> list[dict]:
                         rows.append(
                             slot(iso, day_name, "Javi Palankas", tr, venue)
                         )
-                    # Patience takes the empty Day Centre seat: Ikram 11-4
-                    # Mon / Wed / Fri. Luliya Wednesday Northolt pool stays.
-                    if day_name in ("Monday", "Wednesday", "Friday") and vslug in (
-                        "swimfarm",
-                        "swimfarmcentre",
+                    # From Mon 5 Oct Patience is on the Day Centre shift (not shadowing):
+                    # Ikram 11-4. Luliya Wednesday Northolt pool stays.
+                    if (
+                        iso >= "2026-10-05"
+                        and day_name in ("Monday", "Wednesday", "Friday")
+                        and vslug in ("swimfarm", "swimfarmcentre")
                     ):
                         rows.append(
                             slot(iso, day_name, "Patience", "11-4", "SwimFarm")
@@ -374,6 +375,9 @@ def build_autumn_rows() -> list[dict]:
             # Sun 6 Sep: John covers Emmanuel Hub Multi hours.
             if day_name == "Sunday" and iso == "2026-09-06":
                 rows.append(slot(iso, day_name, "John", "9.30-2", "SwimFarm"))
+            # Patience Tuesday Day Centre with Ikram 11-4 from 6 Oct (normal shift).
+            if day_name == "Tuesday" and iso >= "2026-10-05":
+                rows.append(slot(iso, day_name, "Patience", "11-4", "SwimFarm"))
         cur += timedelta(days=1)
 
     # Emmanuel Hub Bespoke on cover Weds: SHADOWING under the hours.
@@ -492,16 +496,17 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
             shift_dates["luliya"].append(luliya_sun_cover)
         shift_dates["luliya"].sort()
 
-    # Patience Day Centre Ikram 11-4: Monday, Wednesday, Friday from 28 Sep.
+    # Patience Day Centre Ikram 11-4 from Mon 5 Oct: Mon, Tue, Wed, Fri.
+    # Before that she is shadowing (schedule cards), not a standing shift.
     patience_dates = []
-    patience_cur = parse_iso("2026-09-28")
+    patience_cur = parse_iso("2026-10-05")
     patience_end = parse_iso(SESSION_TO)
     while patience_cur <= patience_end:
-        if is_session_day(patience_cur) and patience_cur.weekday() in (0, 2, 4):
+        if is_session_day(patience_cur) and patience_cur.weekday() in (0, 1, 2, 4):
             patience_dates.append(iso_from_date(patience_cur))
         patience_cur += timedelta(days=1)
-    staff_wd["patience"] = [1, 3, 5]
-    staff_wd_dashboard["patience"] = [1, 3, 5]
+    staff_wd["patience"] = [1, 2, 3, 5]
+    staff_wd_dashboard["patience"] = [1, 2, 3, 5]
     shift_dates["patience"] = patience_dates
 
     view_month_keys = _month_range_keys(view_from, view_to)
