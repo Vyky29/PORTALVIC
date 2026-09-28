@@ -1564,7 +1564,9 @@ function renderTodayStrip(team) {
       "</span>"
     );
   });
-  const rowSplit = chipHtml.length > 1 ? Math.ceil(chipHtml.length / 2) : chipHtml.length;
+  const isoDay = weekdayFromIso(team.iso);
+  const twoLines = isoDay === "Sunday" && chipHtml.length > 1;
+  const rowSplit = twoLines ? Math.ceil(chipHtml.length / 2) : chipHtml.length;
   const chipRows = [chipHtml.slice(0, rowSplit), chipHtml.slice(rowSplit)].filter(function (row) {
     return row.length;
   });
