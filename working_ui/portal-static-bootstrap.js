@@ -45,6 +45,12 @@
   /** visualVIC Routines — Plan opens Home (library still for building). */
   window.ROUTINES_PLANNER_URL =
     window.ROUTINES_PLANNER_URL || "https://visual-vic.vercel.app/dashboard";
+  /**
+   * Day Centre staff Plan opens the Club app (PixtoLearn on clubsensational-app).
+   * Michelle, Roberto, Luliya, Youssef only. Everyone else stays on visualVIC.
+   */
+  window.CLUB_DAY_CENTRE_PLAN_URL =
+    window.CLUB_DAY_CENTRE_PLAN_URL || "https://clubsensational-app.vercel.app";
   window.ROUTINES_PLANNER_HANDOFF_URL =
     window.ROUTINES_PLANNER_HANDOFF_URL ||
     "https://visual-vic.vercel.app/planner/auth/handoff?return=/dashboard";
@@ -1008,6 +1014,61 @@
     }
 
     var VISUAL_VIC_WINDOW_NAME = "portalVisualVicPlanner";
+    var CLUB_APP_WINDOW_NAME = "portalClubSensationalApp";
+    /** First-name keys for Day Centre Plan → Club app. */
+    var DAY_CENTRE_PLAN_KEYS = {
+      michelle: 1,
+      roberto: 1,
+      luliya: 1,
+      lulia: 1,
+      lulilla: 1,
+      lulya: 1,
+      youssef: 1,
+      yousef: 1,
+      yousuf: 1,
+    };
+
+    function normPlanStaffKey(value) {
+      return String(value || "")
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
+    }
+
+    function planStaffKeyMatchesDayCentre(value) {
+      var raw = String(value || "").trim();
+      if (!raw) return false;
+      if (DAY_CENTRE_PLAN_KEYS[normPlanStaffKey(raw)]) return true;
+      var first = raw.split(/[\s@,/]+/)[0];
+      return !!DAY_CENTRE_PLAN_KEYS[normPlanStaffKey(first)];
+    }
+
+    /** Logged-in Day Centre staff who should open the Club app from Plan. */
+    function portalPlanStaffIsDayCentre() {
+      var bits = [];
+      try {
+        var box = window.__PORTAL_SUPABASE__;
+        var profile = box && box.staff_profile;
+        if (profile) {
+          bits.push(profile.username, profile.full_name, profile.staffName, profile.name);
+        }
+        var user = box && box.session && box.session.user;
+        if (user) {
+          bits.push(user.email);
+          if (user.user_metadata) bits.push(user.user_metadata.full_name, user.user_metadata.name);
+        }
+      } catch (_) {}
+      try {
+        var given = document.getElementById("staffNameGiven");
+        if (given) bits.push(given.textContent);
+      } catch (_) {}
+      for (var i = 0; i < bits.length; i++) {
+        if (planStaffKeyMatchesDayCentre(bits[i])) return true;
+      }
+      return false;
+    }
 
     function openVisualVicPlannerUrl(url) {
       var u = String(url || "").trim();
@@ -1035,6 +1096,25 @@
      * Awaiting auth.getSession() before window.open is blocked on iOS/Safari.
      */
     window.portalOpenRoutinesPlanner = async function portalOpenRoutinesPlanner() {
+      if (portalPlanStaffIsDayCentre()) {
+        var clubUrl = String(window.CLUB_DAY_CENTRE_PLAN_URL || "").trim();
+        if (!clubUrl) return false;
+        try {
+          var clubWin = window.open(clubUrl, CLUB_APP_WINDOW_NAME);
+          if (clubWin) {
+            try {
+              clubWin.focus();
+            } catch (_) {}
+            return true;
+          }
+        } catch (_) {}
+        try {
+          window.location.assign(clubUrl);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
       var handoff = handoffUrl;
       var login = loginUrl;
       if (!handoff && !login) {
