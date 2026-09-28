@@ -2611,10 +2611,7 @@
           e.completed &&
           lateDateSet.has(iso) &&
           iso !== todayIso &&
-          !(
-            timesheetNormStaffKey(e.rosterKey || state.staffRosterKey) === "michelle" &&
-            MICHELLE_VALIDATED_PAY_DATES.has(iso)
-          )
+          !timesheetOfficeValidatedPay(iso, e.rosterKey || state.staffRosterKey)
         );
       });
       state.payableEntries = state.entries.filter((e) => e.completed && !e.dayOff && !e.lateHold && !e.upcoming);
@@ -2755,7 +2752,6 @@
 
     /** LOCAL ghost: staff_unavailability JSON + known extras (no supabase). */
     const LOCAL_TIMESHEET_DAY_OFF_EXTRAS = {
-      youssef: ["2026-09-18", "2026-09-24"],
       luliya: ["2026-09-21", "2026-09-22"]
     };
     /** Office-confirmed absences that must zero the day even if unavailability is not in yet. */
@@ -2905,7 +2901,7 @@
     function timesheetDayForcedComplete(dateKey, staffKey) {
       const key = String(dateKey || "").trim().slice(0, 10);
       const id = String(staffKey || "").trim().toLowerCase();
-      if (id === "michelle" && MICHELLE_VALIDATED_PAY_DATES.has(key)) return true;
+      if (timesheetOfficeValidatedPay(key, id)) return true;
       const map = timesheetTermCfg().termStaffFeedbackCompleteDatesByProfileKey;
       const raw = map && map[id];
       if (!Array.isArray(raw)) return false;
@@ -2973,8 +2969,19 @@
       return cid === "manager" || cid === "interview" || cid === "interviews" || cid === "office";
     }
 
-    /** Office already released these days for pay. No orange, no late penalty. */
-    const MICHELLE_VALIDATED_PAY_DATES = new Set(["2026-09-22", "2026-09-23"]);
+    /** Office already released these days for pay. No orange, no late hold. */
+    const OFFICE_VALIDATED_PAY_DATES = {
+      michelle: new Set(["2026-09-22", "2026-09-23"]),
+      simon: new Set(["2026-09-24"]),
+      dan: new Set(["2026-09-24"]),
+      aurora: new Set(["2026-09-22"]),
+    };
+    function timesheetOfficeValidatedPay(dateKey, staffKey) {
+      const id = timesheetNormStaffKey(staffKey);
+      const set = OFFICE_VALIDATED_PAY_DATES[id];
+      const key = String(dateKey || "").trim().slice(0, 10);
+      return !!(set && set.has(key));
+    }
 
     function timesheetSessionMarkedComplete(rec, session, dateObj, staffKey) {
       if (timesheetSeatNeedsNoFeedback(session)) return true;
@@ -3260,7 +3267,7 @@
     const YOUSSEF_ACTON_AFTERNOON_DAYS = new Set(["Monday", "Tuesday", "Wednesday"]);
     const YOUSSEF_ACTON_LAST_DATE = "2026-07-15";
     const YOUSSEF_AUTUMN_FROM_ISO = "2026-09-01";
-    /** First Autumn Friday Acton session: Amaar until 6, so paid 4:00–6:00 (2h). Later Fridays until 5:30. */
+    /** First Autumn Friday Acton session (4:00-6:00, 2h). Every later Friday Acton stays 4-6. */
     const YOUSSEF_FRIDAY_ACTON_FIRST_ISO = "2026-09-11";
     /** Youssef Saturday Acton mornings: fixed 10:30–12:30 (2h), even if 10.30 client is absent. */
     const YOUSSEF_ACTON_SATURDAY_PAY_HOURS = 2;
@@ -3278,7 +3285,7 @@
       if (String(dayName || "") !== "Friday") return null;
       return youssefAutumnActonPaySpec(dayName, dateKey);
     }
-    /** Autumn Acton after-school: Mon/Wed 1.5h (4–5.30) even if the book is 1h; Fri 11 is 4–6, later Fridays 4–5.30.
+    /** Autumn Acton after-school: Mon/Wed 1.5h (4-5.30) even if the book is 1h; every Friday from 11 Sep is 4-6 (2h).
      * Named seats after the band (makeup / trial) add on top — they are not capped by 1.5h. */
     function youssefAutumnActonPaySpec(dayName, dateKey) {
       const iso = String(dateKey || "").slice(0, 10);
@@ -3286,10 +3293,7 @@
       const day = String(dayName || "");
       if (day === "Friday") {
         if (iso < YOUSSEF_FRIDAY_ACTON_FIRST_ISO) return null;
-        if (iso === YOUSSEF_FRIDAY_ACTON_FIRST_ISO) {
-          return { hours: 2, startMin: 16 * 60, endMin: 18 * 60 };
-        }
-        return { hours: 1.5, startMin: 16 * 60, endMin: 17 * 60 + 30 };
+        return { hours: 2, startMin: 16 * 60, endMin: 18 * 60 };
       }
       if (day === "Monday" || day === "Wednesday") {
         if (iso < "2026-09-07") return null;
@@ -3323,8 +3327,8 @@
     const YOUSSEF_FADI_DC_FROM_ISO = "2026-09-20";
     const YOUSSEF_DC_ELEVEN_TO_THREE_ISOS = { "2026-09-21": true };
     /**
-     * Youssef SwimFarm Day Centre: Autumn Monday 12.30–3 (2.5h) except Mon 21 (11–3);
-     * Thu from 20 Sep 12.30–3 with Fadi; Fri 11 Sep 11–3; later Fridays no DC for now.
+     * Youssef SwimFarm Day Centre: Autumn Monday 12.30-3 (2.5h) except Mon 21 (11-3);
+     * Thu from 20 Sep 12.30-3 with Fadi; every Friday from 4 Sep is 11-3 (4h).
      */
     function youssefSwimfarmDayCentrePaySpec(dayName, dateKey) {
       const iso = String(dateKey || "").slice(0, 10);
@@ -3341,8 +3345,7 @@
           segments: [{ startMin: 12 * 60 + 30, endMin: 15 * 60 }]
         };
       }
-      if (day === "Friday") {
-        if (iso !== YOUSSEF_FRIDAY_ACTON_FIRST_ISO) return null;
+      if (day === "Friday" && isYoussefAutumnTermIso(iso) && iso >= "2026-09-04") {
         return {
           hours: 4,
           segments: [{ startMin: 11 * 60, endMin: 15 * 60 }]
@@ -3551,6 +3554,61 @@
         }
         return true;
       });
+    }
+    /** Friday bands the timetable pays even when the roster did not emit a session row. */
+    function youssefContractPayEntry(dateKey, dayName, hours, timeRange, role, service, venue) {
+      const rate = rateForRole(role);
+      return {
+        date: dateKey,
+        day: dayName,
+        hours,
+        completed: true,
+        service,
+        serviceName: service,
+        serviceLabel: timeRange ? timeRange + " " + service : service,
+        venue,
+        timeRange,
+        role,
+        rate: rate != null ? rate : role === "Support Worker" ? 20 : 24,
+        blendedRate: null
+      };
+    }
+    function ensureYoussefAutumnContractEntries(entries, dateObj, rosterKey) {
+      if (!isYoussefRosterKey(rosterKey)) return entries || [];
+      const dayName = WEEKDAY[dateObj.getDay()];
+      const dateKey = isoDate(dateObj);
+      const list = Array.isArray(entries) ? entries.slice() : [];
+      if (list.some((e) => e && e.dayOff)) return list;
+      const dc = youssefSwimfarmDayCentrePaySpec(dayName, dateKey);
+      const hasDc = list.some((e) => {
+        if (!e || e.dayOff) return false;
+        const venue = String(e.venue || "").toLowerCase();
+        const svc = String(e.serviceName || e.service || "").toLowerCase();
+        return venue.indexOf("swimfarm") >= 0 && /day\s*centre/.test(svc);
+      });
+      if (dc && !hasDc && dayName === "Friday") {
+        const timeRange = clubTimeRangeFromSegments(dc.segments);
+        list.push(
+          youssefContractPayEntry(dateKey, dayName, dc.hours, timeRange, "Support Worker", "Day Centre", "SwimFarm")
+        );
+      }
+      const acton = youssefAutumnActonPaySpec(dayName, dateKey);
+      const hasActon = list.some((e) => e && !e.dayOff && String(e.venue || "").toLowerCase().indexOf("acton") >= 0);
+      if (acton && !hasActon && dayName === "Friday") {
+        const timeRange = clubTimeRangeFromMinutes(acton.startMin, acton.endMin);
+        list.push(
+          youssefContractPayEntry(
+            dateKey,
+            dayName,
+            acton.hours,
+            timeRange,
+            "Swimming Instructor",
+            "Aquatic Activity",
+            "Acton"
+          )
+        );
+      }
+      return list;
     }
     function isYoussefActonSaturdayMorningBand(dayName, rosterKey, dayRows, dateKey) {
       if (dayName !== "Saturday") return false;
@@ -4944,6 +5002,7 @@
         dateObj,
         rosterKey
       );
+      out = ensureYoussefAutumnContractEntries(out, dateObj, rosterKey);
       out = applyTimetablePaidBandToDayEntries(out, rosterKey, isoDate(dateObj));
       (out || []).forEach((e) => timesheetSyncGrantedHours(e));
       /* Fully cancelled Saturday Acton morning → Day Off row (Time off requested), not a blank day. */

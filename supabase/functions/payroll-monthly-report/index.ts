@@ -104,6 +104,29 @@ function fixedSalaryForNames(...names: string[]): number {
   return Number(fixedSalarySpecForNames(...names)?.amount || 0) || 0;
 }
 
+/** From Sep 2026 Roberto's contract is the Day Centre PT (£1,505). Acton and Sunday stay extra at the timesheet rate. */
+const ROBERTO_PT_MONTHLY_FROM_ISO = "2026-09-01";
+const ROBERTO_PT_MONTHLY = 1505;
+
+function robertoHybridExtraFromEntries(entries: unknown): number {
+  const list = Array.isArray(entries) ? entries : [];
+  let extra = 0;
+  for (const raw of list) {
+    const e = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : null;
+    if (!e) continue;
+    if (e.dayOff === true || e.day_off === true) continue;
+    if (e.late_hold === true || e.lateHold === true || e.feedback_late === true) continue;
+    if (e.completed === false) continue;
+    const role = String(e.role || "");
+    if (/day centre pt/i.test(role)) continue;
+    const hours = Number(e.hours || 0);
+    const rate = Number(e.rate);
+    if (!(hours > 0) || !Number.isFinite(rate)) continue;
+    extra += hours * rate;
+  }
+  return Math.round((extra + Number.EPSILON) * 100) / 100;
+}
+
 function firstOfMonthIso(d: Date): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-01`;
 }
@@ -214,7 +237,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
       supabase
         .from("staff_timesheets")
         .select(
-          "submitted_by_user_id, submitted_by_name, role_label, total_hours, hourly_rate_used, total_cost, penalty_amount, net_cost, is_late, created_at"
+          "submitted_by_user_id, submitted_by_name, role_label, total_hours, hourly_rate_used, total_cost, penalty_amount, net_cost, is_late, created_at, entries"
         )
         .eq("period_month", targetMonthIso)
         .order("created_at", { ascending: true }),
@@ -264,7 +287,14 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     if (p.id && payrollStaffLeftOut(uname, fname)) excludedIds.add(String(p.id));
     if (p.id) {
       const sal = fixedSalarySpecForNames(uname, fname);
-      if (sal && sal.amount > 0) salaryById.set(String(p.id), sal);
+      if (sal && sal.amount > 0) {
+        const isRoberto = uname === "roberto" || fname.split(/\s+/)[0] === "roberto";
+        const spec =
+          isRoberto && targetMonthIso >= ROBERTO_PT_MONTHLY_FROM_ISO
+            ? { amount: ROBERTO_PT_MONTHLY, contractType: "Part time", role: sal.role }
+            : sal;
+        salaryById.set(String(p.id), spec);
+      }
     }
   }
   // Salaried invoice staff are always paid separately: drop their portal
@@ -279,7 +309,12 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   for (const r of latestAll) {
     const uid = String(r.submitted_by_user_id || "");
     if (uid && salaryById.has(uid) && r.total_cost != null) {
-      extrasByUser.set(uid, Number(r.total_cost) || 0);
+      const name = String(r.submitted_by_name || "").toLowerCase();
+      if (/\broberto\b/.test(name) && targetMonthIso >= ROBERTO_PT_MONTHLY_FROM_ISO) {
+        extrasByUser.set(uid, robertoHybridExtraFromEntries(r.entries));
+      } else {
+        extrasByUser.set(uid, Number(r.total_cost) || 0);
+      }
     }
   }
   const submitted = latestAll.filter(
