@@ -1062,7 +1062,40 @@
     return src.sundayDateSwimOverrides[isoDate] || null;
   }
 
+  /**
+   * Sun 27 Sep onward: Cyrus swims first with Roberto (11–11.45, Small Pool);
+   * Gabriel is with Aurora at 11.45. Standing template rows stay on the old names
+   * and get projected onto later Sundays, so the swap has to run on the paint date.
+   */
+  function sundayCyrusGabrielPaintRow(isoDate, r) {
+    var iso = String(isoDate || "").substring(0, 10);
+    if (!r || !iso || iso < "2026-09-27") return r;
+    if (weekdayLongFromIso(iso) !== "Sunday") return r;
+    var pt = parseTimeSlot(r.time_slot, "Sunday");
+    var start = pt && pt.start;
+    var end = pt && pt.end;
+    var client = String(r.client_name || "").trim();
+    var area = String(r.area || "");
+    var inst = String(r.instructors || "");
+    var hub = /hub/i.test(area);
+    if (!hub && !/pool/i.test(area)) {
+      if (/\b(berta|godsway)\b/i.test(inst) && !/\b(roberto|aurora|javier)\b/i.test(inst)) hub = true;
+    }
+    var next = null;
+    if (start === "11:00" && end === "11:45") {
+      if (client === "Gabriel" && !hub) next = { client_name: "Cyrus", area: "Small Pool" };
+      else if (client === "Arthur Ma" && !hub) next = { area: "Big Pool" };
+      else if (client === "Cyrus" && hub) next = { client_name: "Gabriel" };
+    } else if (start === "11:45" && end === "12:30") {
+      if (client === "Cyrus" && !hub) next = { client_name: "Gabriel" };
+      else if (client === "Gabriel" && hub) next = { client_name: "Cyrus" };
+    }
+    if (!next) return r;
+    return Object.assign({}, r, next);
+  }
+
   function rosterRowToSlot(isoDate, wd, r) {
+    r = sundayCyrusGabrielPaintRow(isoDate, r);
     var slot = parseTimeSlot(r.time_slot, wd);
     var origInstRaw = clean(r.instructors);
     /* Timetable owns slash pools before parse — never ship Roberto/Youssef as two columns. */
@@ -8460,14 +8493,16 @@
       var n = clean(rows[i].completed_by_name);
       if (n) raw.push(n);
     }
-    if (this.mode !== "feedback") {
+    /* Register must list who is on the book that day, not only who already submitted.
+       Otherwise Sunday hides Aurora when the menu was first built on Monday. */
+    try {
       var overview = this.overviewFilterOptionsForDay(dayIso);
       if (overview && overview.instructors) {
         for (var j = 0; j < overview.instructors.length; j++) {
           raw.push(overview.instructors[j]);
         }
       }
-    }
+    } catch (_ovInst) {}
     return uniqueInstructorFilterNames(raw);
   };
 
@@ -13636,6 +13671,61 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
   };
 
+  function refillAshFilterSelect(selectEl, names, placeholder, currentValue) {
+    if (!selectEl) return;
+    var cur = clean(currentValue);
+    var seen = Object.create(null);
+    selectEl.innerHTML = "";
+    var all = document.createElement("option");
+    all.value = "";
+    all.textContent = placeholder;
+    selectEl.appendChild(all);
+    var list = names || [];
+    for (var i = 0; i < list.length; i++) {
+      var n = clean(list[i]);
+      if (!n) continue;
+      var key = n.toLowerCase();
+      if (seen[key]) continue;
+      seen[key] = true;
+      var opt = document.createElement("option");
+      opt.value = n;
+      opt.textContent = n;
+      if (cur && (n === cur || completedByMatchesInstructor(n, cur))) opt.selected = true;
+      selectEl.appendChild(opt);
+    }
+    if (cur && !seen[cur.toLowerCase()]) {
+      var keep = document.createElement("option");
+      keep.value = cur;
+      keep.textContent = cur;
+      keep.selected = true;
+      selectEl.appendChild(keep);
+    }
+  }
+
+  /** Day change soft-paints the table but used to leave Monday's instructor menu in place. */
+  AdminSessionsHub.prototype.syncRegisterFilterOptions = function () {
+    if (this.mode !== "feedback" && this.tab !== "feedback") return;
+    var root = this.root;
+    if (!root) return;
+    var day = this.selectedDay;
+    try {
+      refillAshFilterSelect(
+        root.querySelector("select#ashInstructorFilter"),
+        this.instructorFilterOptionsForDay(day),
+        "All instructors",
+        this.instructorFilter
+      );
+    } catch (_inst) {}
+    try {
+      refillAshFilterSelect(
+        root.querySelector("select#ashClientFilter"),
+        this.clientFilterOptionsForDay(day),
+        "All participants",
+        this.clientSearch
+      );
+    } catch (_pax) {}
+  };
+
   AdminSessionsHub.prototype.syncFeedbackChromeSelection = function () {
     var root = this.root;
     if (!root) return;
@@ -13696,6 +13786,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       return;
     }
     this.syncFeedbackChromeSelection();
+    try {
+      this.syncRegisterFilterOptions();
+    } catch (_filt) {}
     try {
       this.syncRegisterWeekStripCounts();
     } catch (_strip) {}
