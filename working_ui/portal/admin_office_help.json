@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-28-v45",
+  "version": "2026-09-28-v46",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -430,6 +430,31 @@
             "Do not put OLD / REGISTERED / LEADS on Sessions as booked kids."
           ],
           "tips": []
+        },
+        {
+          "id": "participant_photo_missing",
+          "title": "Participant photo missing on the parent hub",
+          "summary": "Initials and No photo on file mean nothing is stored yet. The hub does not invent a picture.",
+          "where": "Parent hub, under the child circle",
+          "keywords": [
+            "photo",
+            "foto",
+            "no photo",
+            "avatar",
+            "add photo",
+            "iniciales",
+            "logan"
+          ],
+          "steps": [
+            "Open the parent hub for that child.",
+            "If the circle shows initials and No photo on file, there is no saved photo on the participant.",
+            "The parent presses Add photo under the circle and chooses a picture.",
+            "Refresh the hub. The photo then shows for the family and for staff."
+          ],
+          "tips": [
+            "A child added without a registration photo stays on initials until someone adds one.",
+            "Staff only see the photo after it is saved. A picture on a phone or in email does not appear by itself."
+          ]
         },
         {
           "id": "waiting_list",
