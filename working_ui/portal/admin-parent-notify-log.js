@@ -448,6 +448,18 @@
     return d.length >= 10 ? d.slice(-10) : d;
   }
 
+  /**
+   * Schedule notifies store "+44 7595 948125". A single ilike of the 10 digits
+   * misses the space, so those WhatsApps vanish when a thread is opened.
+   */
+  function phoneHistoryOr(column, tail) {
+    var bits = [column + ".ilike.*" + tail + "*"];
+    if (tail.length >= 10) {
+      bits.push(column + ".ilike.*" + tail.slice(0, 4) + "*" + tail.slice(4) + "*");
+    }
+    return bits.join(",");
+  }
+
   function formatPhoneDisplay(phone) {
     var d = canonicalPhoneDigits(phone) || phoneDigits(phone);
     if (!d) return "";
@@ -2058,7 +2070,6 @@
     if (!tail || tail.length < 8) return;
     var client = cfg.getClient();
     if (!client) return;
-    var like = "%" + tail + "%";
     var inboundSel =
       "id, created_at, from_phone, contact_name, message_type, body_text, context_wa_id, wa_message_id, media_url, media_path, media_mime, meta";
     var outboundSel =
@@ -2066,21 +2077,21 @@
     var inn = await client
       .from("portal_parent_whatsapp_inbound")
       .select(inboundSel)
-      .ilike("from_phone", like)
+      .or(phoneHistoryOr("from_phone", tail))
       .order("created_at", { ascending: true })
       .limit(500);
     var out = await client
       .from("portal_parent_notify_log")
       .select(outboundSel)
-      .ilike("parent_phone", like)
-      .or("channel.in.(whatsapp,both,whatsapp_email),whatsapp_message_id.not.is.null")
+      .or(phoneHistoryOr("parent_phone", tail))
       .order("created_at", { ascending: true })
       .limit(500);
     if ((inn && inn.error) || (out && out.error)) return;
     await resolveMediaSignedUrls(client, (inn && inn.data) || []);
-    await resolveMediaSignedUrls(client, (out && out.data) || []);
+    var outboundRows = ((out && out.data) || []).filter(notifyRowHasWhatsapp);
+    await resolveMediaSignedUrls(client, outboundRows);
     var items = [];
-    ((out && out.data) || []).forEach(function (row) {
+    outboundRows.forEach(function (row) {
       items.push({ direction: "out", created_at: row.created_at, row: row });
     });
     ((inn && inn.data) || []).forEach(function (row) {
