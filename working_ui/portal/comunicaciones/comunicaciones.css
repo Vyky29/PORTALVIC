@@ -402,6 +402,16 @@ body.comms-app {
 .comms-bubble.is-call .comms-bubble-meta { text-align: center; }
 .comms-bubble-who { font-size: 11px; font-weight: 800; color: var(--blueDeep); margin-bottom: 4px; }
 .comms-bubble-meta { margin: 6px 0 0; font-size: 11px; color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+.comms-delete {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 0 0 6px;
+}
 .comms-receipt { font-weight: 800; margin-left: 4px; }
 .comms-receipt.is-sent { color: var(--muted); }
 .comms-receipt.is-delivered { color: var(--text); }

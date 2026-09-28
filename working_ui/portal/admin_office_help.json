@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-28-v44",
+  "version": "2026-09-28-v45",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -685,6 +685,31 @@
           ],
           "tips": [
             "Office calling a worker also shows that person's name, not a blank Worker label."
+          ]
+        },
+        {
+          "id": "delete_staff_message",
+          "title": "Delete a staff chat message",
+          "summary": "Remove a message you sent in Communications. It leaves the chat for you and for the other person.",
+          "where": "Communications, open the conversation",
+          "keywords": [
+            "delete message",
+            "borrar mensaje",
+            "eliminar mensaje",
+            "unsend",
+            "whatsapp",
+            "communications",
+            "comunicaciones"
+          ],
+          "steps": [
+            "Open Communications and the conversation.",
+            "On a message you sent, press Delete under the time.",
+            "Confirm Delete this message for everyone.",
+            "The message disappears from the chat. A phone notification that already arrived stays on the phone."
+          ],
+          "tips": [
+            "You can only delete messages you sent, including ones you sent as ADMIN.",
+            "Calls cannot be deleted this way."
           ]
         }
       ]

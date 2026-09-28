@@ -465,6 +465,13 @@ function bubbleIsMine(m) {
   return String(m.performed_by_user_id) === String(state.me.id);
 }
 
+function bubbleCanDelete(m) {
+  if (!m || !state.me) return false;
+  const type = String(m.message_type || "");
+  if (type === "call" || type === "system") return false;
+  return String(m.performed_by_user_id) === String(state.me.id);
+}
+
 function receiptMeta(m, show) {
   if (!show || m.message_type === "call") return "";
   const read = !!m.delivered_read;
@@ -517,6 +524,9 @@ function bubbleHtml(m) {
     body = esc(m.body || "");
   }
   const read = receiptMeta(m, mine);
+  const del = bubbleCanDelete(m)
+    ? ' <button type="button" class="comms-delete" data-delete-msg="' + esc(m.id) + '">Delete</button>'
+    : "";
   return (
     '<article class="' +
     klass +
@@ -529,8 +539,17 @@ function bubbleHtml(m) {
     '</div><p class="comms-bubble-meta">' +
     esc(fmtTime(m.created_at)) +
     read +
+    del +
     "</p></article>"
   );
+}
+
+async function deleteOwnMessage(messageId) {
+  if (!messageId || !state.open) return;
+  if (!window.confirm("Delete this message for everyone?")) return;
+  await rpc("communication_delete_message", { p_message_id: messageId });
+  await openConversation(state.open.conversation_id, state.open, { silent: true });
+  await loadInbox();
 }
 
 function renderThread() {
@@ -2097,6 +2116,14 @@ function bindUi() {
     renderInbox();
   });
   $("commsComposer").addEventListener("submit", sendMessage);
+  $("commsThread").addEventListener("click", function (ev) {
+    const btn = ev.target.closest("[data-delete-msg]");
+    if (!btn) return;
+    ev.preventDefault();
+    deleteOwnMessage(btn.getAttribute("data-delete-msg")).catch(function (err) {
+      window.alert((err && err.message) || "Could not delete.");
+    });
+  });
   $("commsDraft").addEventListener("keydown", function (ev) {
     if (ev.key === "Enter" && !ev.shiftKey) {
       ev.preventDefault();
