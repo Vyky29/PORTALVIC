@@ -932,6 +932,31 @@
       font-size:13px;
       overflow-wrap:anywhere;
     }
+    .legacy-recs{
+      margin-top:10px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-width:0;
+    }
+    .legacy-recs-title{
+      margin:0;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .legacy-rec-label{
+      margin:0 0 4px;
+      font-size:13px;
+      font-weight:650;
+    }
+    .legacy-rec-notes{
+      margin:6px 0 0;
+      font-size:13px;
+      white-space:pre-wrap;
+    }
     .phase-script{
       margin:8px 0 0;
       padding-left:18px;
@@ -2785,7 +2810,15 @@
       }
       const idx = candidates.findIndex(function (x) { return x && x.id === c.id; });
       if (idx >= 0) {
-        candidates[idx] = merged;
+        const live = candidates[idx];
+        const kept = live && live !== merged
+          ? ensureCandidateShape({
+              ...merged,
+              callInterview: mergeInterviewSections(live.callInterview, merged.callInterview),
+              faceToFaceInterview: mergeInterviewSections(live.faceToFaceInterview, merged.faceToFaceInterview)
+            })
+          : merged;
+        candidates[idx] = kept;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
       }
     }
@@ -2948,6 +2981,27 @@
         ]
       }
     ];
+
+    /** Recordings saved on the previous per-question call form, grouped into the new phases. */
+    var LEGACY_CALL_AUDIO = {
+      phase1: [
+        { id: "filterQ1", title: "How did you find us?" },
+        { id: "filterQ2", title: "What do you know about clubSENsational?" },
+        { id: "filterQ3", title: "Why do you want this role / why work with us?" },
+        { id: "filterQ4", title: "What experience do you have with autism or learning disabilities?" }
+      ],
+      phase2: [
+        { id: "filterQ5", title: "What is your availability, and how would you travel to our venues?" },
+        { id: "filterQ6", title: "When could you start, and do you have a notice period?" },
+        { id: "filterQ7", title: "DBS check — anything that could affect or delay it?" },
+        { id: "filterQ8", title: "Anything that would stop you doing a face-to-face interview or the role?" }
+      ],
+      phase3: [
+        { id: "processQ1", title: "Role scales / pay" },
+        { id: "processQ2", title: "Shadowing process and rate" },
+        { id: "processQ3", title: "Stage 2 face-to-face interview" }
+      ]
+    };
 
     function allCallScreeningQuestions() {
       var out = [];
@@ -3690,14 +3744,38 @@
       return !!(audio || path || localUrl);
     }
 
+    function renderLegacyPhaseRecordings(call, phase) {
+      const items = LEGACY_CALL_AUDIO[phase.id] || [];
+      const blocks = items.filter(function (item) {
+        return questionHasAudio(call, item.id, currentCandidateId);
+      }).map(function (item) {
+        const notes = String((call && call[item.id + "Notes"]) || "").trim();
+        const notesHtml = notes
+          ? `<p class="legacy-rec-notes">${escapeHtml(notes)}</p>`
+          : "";
+        return `<div class="legacy-rec">
+          <p class="legacy-rec-label">${escapeHtml(item.title)}</p>
+          ${renderQuestionAudio(call, item.id, currentCandidateId)}
+          ${notesHtml}
+        </div>`;
+      }).join("");
+      if (!blocks) return "";
+      return `<div class="legacy-recs">
+        <p class="legacy-recs-title">Recordings from the previous form</p>
+        ${blocks}
+      </div>`;
+    }
+
     function renderPhaseRecordings(call, phase) {
       const recHas = questionHasAudio(call, phase.recordId, currentCandidateId);
       const fileHas = questionHasAudio(call, phase.fileId, currentCandidateId);
-      if (!recHas && !fileHas) {
+      const legacy = renderLegacyPhaseRecordings(call, phase);
+      const current = (recHas ? renderQuestionAudio(call, phase.recordId, currentCandidateId) : "") +
+        (fileHas ? renderQuestionAudio(call, phase.fileId, currentCandidateId) : "");
+      if (!current && !legacy) {
         return `<div class="question-audio" id="wrap-${escapeHtml(phase.recordId)}"><span class="audio-placeholder">No recording</span></div>`;
       }
-      return (recHas ? renderQuestionAudio(call, phase.recordId, currentCandidateId) : "") +
-        (fileHas ? renderQuestionAudio(call, phase.fileId, currentCandidateId) : "");
+      return current + legacy;
     }
 
     function renderCallPhase(call, phase) {
@@ -3736,7 +3814,13 @@
 
     function callHasFilterAnswers(call) {
       if (!call) return false;
-      const questionHit = allCallScreeningQuestions().some(function (q) {
+      const legacyIds = [];
+      Object.keys(LEGACY_CALL_AUDIO).forEach(function (phaseId) {
+        (LEGACY_CALL_AUDIO[phaseId] || []).forEach(function (item) {
+          legacyIds.push(item);
+        });
+      });
+      const questionHit = allCallScreeningQuestions().concat(legacyIds).some(function (q) {
         const notes = String(call[q.id + "Notes"] || "").trim();
         const audio = String(call[q.id + "Audio"] || "");
         const path = String(call[q.id + "AudioPath"] || "");
@@ -4987,10 +5071,17 @@
         if (localAudioObjectUrls[key]) URL.revokeObjectURL(localAudioObjectUrls[key]);
       } catch (_e) {}
       localAudioObjectUrls[key] = URL.createObjectURL(blob);
-      let up = await uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType);
-      if (!up.ok) {
-        await new Promise(function (resolve) { setTimeout(resolve, 800); });
+      setPhaseAudioStatus(questionId, "Saving recording…");
+      updateAudioWrap(questionId, "", mimeType || "audio/webm", candidateId, durationSec);
+      let up = { ok: false, error: "upload_failed" };
+      try {
         up = await uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType);
+        if (!up.ok) {
+          await new Promise(function (resolve) { setTimeout(resolve, 800); });
+          up = await uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType);
+        }
+      } catch (uploadErr) {
+        up = { ok: false, error: (uploadErr && uploadErr.message) || "upload_failed" };
       }
       const inlineBase64 = "";
       if (questionId === "callNotes") {
@@ -5128,7 +5219,7 @@
           const questionId = btn.getAttribute("data-question");
           if (btn.classList.contains("recording")) {
             if (recordState.recorder && recordState.recorder.state === "recording") {
-              try { recordState.recorder.requestData(); } catch (e) {}
+              setPhaseAudioStatus(questionId, "Saving recording…");
               try { recordState.recorder.stop(); } catch (e) {}
             } else {
               stopCurrentRecording();
@@ -5170,7 +5261,9 @@
               recordState.questionId = null;
               recordState.candidateId = null;
               recordState.startedAt = 0;
-              if (qid) {
+              /* Safari can deliver the last chunk just after stop. */
+              setTimeout(function () {
+                if (!qid) return;
                 if (chunks.length > 0) {
                   const blob = new Blob(chunks, { type: recorder.mimeType || chosenMime || "audio/webm" });
                   void persistRecordingWithUpload(
@@ -5182,14 +5275,13 @@
                   );
                 } else {
                   setPhaseAudioStatus(qid, "Nothing was captured. Record again, or attach a file.");
-                  updateAudioWrap(qid, "", usedMime, recordingCandidateId, elapsedSec);
                 }
-              }
+              }, 150);
             };
             try {
-              recorder.start();
-            } catch (_start) {
               recorder.start(1000);
+            } catch (_start) {
+              recorder.start();
             }
             recordState.stream = stream;
             recordState.recorder = recorder;
@@ -5394,6 +5486,12 @@
                   <label for="callComments">Main call summary</label>
                   <textarea id="callComments" class="textarea" placeholder="Add your summary from the call interview...">${escapeHtml(candidate.callInterview.comments)}</textarea>
                 </div>
+
+                ${questionHasAudio(candidate.callInterview, "callNotes", candidate.id) ? `
+                <div class="field full">
+                  <label>Recording from the earlier call form</label>
+                  ${renderCallNotesAudio(candidate.callInterview)}
+                </div>` : ""}
 
                 ${CALL_PHASES.map(function (phase) {
                   return renderCallPhase(candidate.callInterview, phase);
