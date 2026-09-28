@@ -217,7 +217,7 @@
     closeInterviewOverlay();
 
     var sep = target.indexOf("?") >= 0 ? "&" : "?";
-    var src = target + sep + "embedded=1&v=20260928-keep-audio";
+    var src = target + sep + "embedded=1&v=20260928-phase1-audio";
 
     var ov = document.createElement("div");
     ov.id = "aiInterviewOverlay";

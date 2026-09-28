@@ -3848,7 +3848,13 @@
     }
 
     function renderLegacyPhaseRecordings(call, phase) {
-      const items = LEGACY_CALL_AUDIO[phase.id] || [];
+      if (!phase || phase.id !== "phase1") return "";
+      const items = [];
+      Object.keys(LEGACY_CALL_AUDIO).forEach(function (phaseId) {
+        (LEGACY_CALL_AUDIO[phaseId] || []).forEach(function (item) {
+          items.push(item);
+        });
+      });
       const blocks = items.filter(function (item) {
         return questionHasAudio(call, item.id, currentCandidateId);
       }).map(function (item) {
@@ -3863,10 +3869,7 @@
         </div>`;
       }).join("");
       if (!blocks) return "";
-      return `<div class="legacy-recs">
-        <p class="legacy-recs-title">Recordings from the previous form</p>
-        ${blocks}
-      </div>`;
+      return `<div class="legacy-recs">${blocks}</div>`;
     }
 
     function renderPhaseRecordings(call, phase) {
