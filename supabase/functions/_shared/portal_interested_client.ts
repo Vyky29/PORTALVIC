@@ -224,7 +224,7 @@ export async function ensureInterestedClientFromRegistration(
   }
 
   if (input.generalInfoLines && input.generalInfoLines.length) {
-    const fresh = input.generalInfoLines.map((l) => clean(l, 500)).filter(Boolean).join("\n");
+    const fresh = input.generalInfoLines.map((l) => clean(l, 2000)).filter(Boolean).join("\n");
     if (fresh) {
       const { data: existing } = await admin
         .from("portal_participant_general_info")

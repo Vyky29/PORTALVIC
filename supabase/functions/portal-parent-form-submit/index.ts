@@ -21,6 +21,11 @@ import {
 } from "../_shared/portal_booking_admin_day_override.ts";
 import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
 import {
+  ageLabelFromDobIso,
+  buildClientsInfoFromAnswers,
+  type RegistrationAnswers,
+} from "../_shared/parent_registration_answers.ts";
+import {
   notesWithInstructor,
   pickOpenInstructorsForBand,
 } from "../_shared/portal_booking_reservation_ops.ts";
@@ -66,6 +71,82 @@ function parseDob(raw: string): string | null {
   const dd = m[1].padStart(2, "0");
   const mm = m[2].padStart(2, "0");
   return `${m[3]}-${mm}-${dd}`;
+}
+
+function answerBit(bits: Record<string, unknown>, key: string): string {
+  const v = bits[key];
+  if (v == null) return "";
+  if (Array.isArray(v)) {
+    return v.map((x) => sanitizePart(String(x ?? ""), 400)).filter(Boolean).join(", ");
+  }
+  return sanitizePart(String(v), 2000);
+}
+
+/** Numbered Clients Info sheet so staff General Info matches standing clients. */
+function generalInfoLinesFromRegistration(
+  bits: Record<string, unknown>,
+  dob: string | null,
+  booking: PortalBookingRequest | null,
+): string[] {
+  const answers: RegistrationAnswers = {};
+  const keys = [
+    "motivators",
+    "dislikes",
+    "triggers",
+    "strategies",
+    "support_regulated",
+    "support_dysregulated",
+    "expressive_comm",
+    "understand_instructions",
+    "comm_strategies",
+    "mobility",
+    "personal_care",
+    "task_engagement",
+    "transitions",
+    "risk_awareness",
+    "anything_else",
+    "medical_conditions",
+    "allergies",
+    "medication",
+    "health_plan",
+    "health_plan_details",
+  ];
+  for (const key of keys) {
+    const s = answerBit(bits, key);
+    if (s) answers[key] = s;
+  }
+  if (answerBit(bits, "behaviour_notes")) {
+    answers.strategies = [answers.strategies || "", answerBit(bits, "behaviour_notes")]
+      .filter(Boolean)
+      .join(". ");
+  }
+  const ehcpBits = [
+    answerBit(bits, "ehcp") ? `EHCP: ${answerBit(bits, "ehcp")}` : "",
+    answerBit(bits, "ehcp_details") ? `EHCP details: ${answerBit(bits, "ehcp_details")}` : "",
+    bits.ehcp_storage_path ? "EHCP file: uploaded" : "",
+    answerBit(bits, "social_worker_name")
+      ? `Social worker: ${answerBit(bits, "social_worker_name")}`
+      : "",
+  ].filter(Boolean);
+  if (ehcpBits.length) {
+    answers.medical_conditions = [answers.medical_conditions || "", ehcpBits.join(". ")]
+      .filter(Boolean)
+      .join(". ");
+  }
+  const sheet = buildClientsInfoFromAnswers(answers, ageLabelFromDobIso(dob));
+  const lines = sheet.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (booking) {
+    const slot = [booking.service_name, booking.venue, booking.day, booking.time]
+      .filter(Boolean)
+      .join(" · ");
+    if (slot) lines.push(`16. Requested booking: ${slot}`);
+  }
+  if (lines.length) return lines;
+  return [
+    booking
+      ? `Requested booking ${booking.service_name} · ${booking.venue} · ${booking.day} · ${booking.time}`
+      : "Requested booking None (registration only)",
+  ];
 }
 
 /** Booking Portal seat: 30' window to finish pay (same as finish-booking invoice hold). */
@@ -483,26 +564,11 @@ Deno.serve(async (req) => {
         addressLine1: sanitizePart(String(parentBits.parent_address || parentBits.address || ""), 200) || null,
         postcode: sanitizePart(String(parentBits.parent_postcode || parentBits.postcode || ""), 20) || null,
         registrationDate: String(row.submitted_at || "").slice(0, 10) || null,
-        generalInfoLines: [
-          bookingRequest
-            ? `Requested booking\t${bookingRequest.service_name} · ${bookingRequest.venue} · ${bookingRequest.day} · ${bookingRequest.time}`
-            : "Requested booking\tNone (registration only — Interested in our services)",
-          parentBits.ehcp ? `EHCP\t${sanitizePart(String(parentBits.ehcp), 40)}` : "",
-          parentBits.ehcp_details ? `EHCP details\t${sanitizePart(String(parentBits.ehcp_details), 400)}` : "",
-          parentBits.ehcp_storage_path ? `EHCP file\tuploaded` : "",
-          parentBits.social_worker_name
-            ? `Social worker\t${sanitizePart(String(parentBits.social_worker_name), 120)}`
-            : "",
-          parentBits.social_worker_email
-            ? `Social worker email\t${sanitizePart(String(parentBits.social_worker_email), 120)}`
-            : "",
-          parentBits.support_regulated
-            ? `Support when regulated\t${sanitizePart(String(parentBits.support_regulated), 40)}`
-            : "",
-          parentBits.motivators ? `Motivators\t${sanitizePart(String(parentBits.motivators), 400)}` : "",
-          parentBits.dislikes ? `Dislikes\t${sanitizePart(String(parentBits.dislikes), 400)}` : "",
-          `Registration document\t${row.id}`,
-        ].filter(Boolean),
+        generalInfoLines: generalInfoLinesFromRegistration(
+          parentBits,
+          participantDob,
+          bookingRequest,
+        ),
       });
       if (ensured && ensured.contactId) ensuredContactId = String(ensured.contactId);
     } catch (ensureErr) {

@@ -2799,6 +2799,52 @@
      * Turns prose like "1. Age: … 2. Medical: …" into readable rows (bold label + value).
      * If the pattern does not match, returns an escaped paragraph with line breaks preserved.
      */
+    /** Booking-portal seed is "Label value" on each line (tabs were collapsed on save). */
+    var BOOKING_GENERAL_LABELS = [
+      'Requested booking',
+      'EHCP details',
+      'EHCP file',
+      'Social worker email',
+      'Social worker',
+      'Support when regulated',
+      'Registration document',
+      'Motivators',
+      'Dislikes',
+      'EHCP'
+    ];
+    function bookingGeneralInfoRows(raw){
+      var lines = String(raw == null ? '' : raw).replace(/\r\n|\r/g, '\n').split('\n').map(function(s){
+        return s.trim();
+      }).filter(Boolean);
+      var rows = [];
+      for(var i = 0; i < lines.length; i++){
+        var line = lines[i];
+        var low = line.toLowerCase();
+        var hit = '';
+        for(var j = 0; j < BOOKING_GENERAL_LABELS.length; j++){
+          var lab = BOOKING_GENERAL_LABELS[j];
+          var key = lab.toLowerCase();
+          if(low === key || low.indexOf(key + ' ') === 0 || low.indexOf(key + '\t') === 0){
+            hit = lab;
+            break;
+          }
+        }
+        if(!hit || /^registration document$/i.test(hit)) continue;
+        var value = line.slice(hit.length).replace(/^\t/, '').trim();
+        if(!value) continue;
+        rows.push({ label: hit, value: value });
+      }
+      return rows;
+    }
+    function clientGeneralInfoRowsHtml(rows){
+      if(!rows || !rows.length) return '';
+      return '<div class="client-general-info-list" role="list">' + rows.map(function(row){
+        return '<div class="client-general-info-row" role="listitem">' +
+          '<div class="client-general-info-row__label">' + escapeHtml(row.label) + '</div>' +
+          '<div class="client-general-info-row__value">' + escapeHtml(row.value) + '</div>' +
+          '</div>';
+      }).join('') + '</div>';
+    }
     function formatPortalClientInfoProseHtml(raw, emptyLabel, opts){
       opts = opts || {};
       const hideOtherNotes = opts.hideOtherNotes !== false;
@@ -2842,14 +2888,16 @@
           return '<div class="client-general-info-list" role="list">' + rows.join('') + '</div>';
         }
       }
+      var seedRows = bookingGeneralInfoRows(t);
+      if(seedRows.length) return clientGeneralInfoRowsHtml(seedRows);
       return '<p class="client-general-fallback">' + escapeHtml(t).replace(/\n/g, '<br>') + '</p>';
     }
-    /** Staff General Info: drop section 15 (parent / social worker / office contact notes). */
+    /** Staff General Info: drop section 15 only (keep a later numbered line such as requested booking). */
     function stripStaffGeneralInfoOtherNotes(raw){
       var t = String(raw == null ? '' : raw).replace(/\r\n|\r/g, '\n').trim();
       if(!t) return '';
-      t = t.replace(/(?:^|\n)\s*15\.\s*Other Notes:\s*[\s\S]*$/i, '').trim();
-      t = t.replace(/(?:^|\n)\s*15\.\s*[^:\n]+:\s*[\s\S]*$/i, '').trim();
+      t = t.replace(/(?:^|\n)\s*15\.\s*Other Notes:\s*[\s\S]*?(?=\n\s*\d+\.\s+|$)/i, '').trim();
+      t = t.replace(/(?:^|\n)\s*15\.\s*[^:\n]+:\s*[\s\S]*?(?=\n\s*\d+\.\s+|$)/i, '').trim();
       return t;
     }
     function setClientInfoFormattedBody(elementId, raw, emptyLabel){

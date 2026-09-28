@@ -5085,6 +5085,9 @@
       document.getElementById('clientBtnSessionsOverview')?.setAttribute('aria-expanded', 'true');
       syncDockNavContext();
       if(typeof portalLockLandscape === 'function') void portalLockLandscape();
+      if(typeof portalEnsureDashboardLazyScripts === 'function'){
+        try{ await portalEnsureDashboardLazyScripts(); }catch(_){}
+      }
       if(window.PortalClientSessionsOverview && typeof window.PortalClientSessionsOverview.render === 'function'){
         try{
           await window.PortalClientSessionsOverview.render(host, { clientId, clientName });
@@ -5123,6 +5126,14 @@
       if(ht) ht.textContent = nameEl ? nameEl.textContent.trim() : 'Participant';
       if(sub) sub.textContent = timeEl ? timeEl.textContent.trim() : '';
       setClientInfoFormattedBody('clientGeneral', resolveClientGeneralInfoText(item), 'No general information available.');
+      var expandName = item && item.name ? String(item.name).trim() : (nameEl ? nameEl.textContent.trim() : '');
+      var expandId = item && item.clientId ? String(item.clientId).trim() : '';
+      if(typeof portalExpandGeneralInfoFromRegistration === 'function' && expandName){
+        portalExpandGeneralInfoFromRegistration(expandId, expandName).then(function(expanded){
+          if(!expanded || !sheet.classList.contains('open')) return;
+          setClientInfoFormattedBody('clientGeneral', expanded, 'No general information available.');
+        }).catch(function(){});
+      }
       sheet.classList.add('open');
       sheet.setAttribute('aria-hidden', 'false');
       document.body.classList.add('portal-client-general-open');

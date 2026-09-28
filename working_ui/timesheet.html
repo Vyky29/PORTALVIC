@@ -1273,10 +1273,24 @@
       } else if (extended) {
         el.innerHTML =
           `<strong>On time.</strong> Extended deadline: submit by the <strong>${deadlineLabel}</strong> (after your last working day this term). This timesheet will be included in <strong>${esc(s.onTimeMonth)}</strong>'s pay. Submitting on the ${lateFromLabel} or later moves it to the next month and adds a £${money(LATE_PENALTY_GBP)} penalty.`;
+      } else if (timesheetSubmitNotDueYet()) {
+        el.innerHTML =
+          `<strong>Not due yet.</strong> This period stays open until the <strong>${deadlineLabel}</strong>. Submit it that day, for <strong>${esc(s.onTimeMonth)}</strong>'s pay. It is not a timesheet to file before then.`;
       } else {
         el.innerHTML =
           `<strong>On time.</strong> Submit by the <strong>${deadlineLabel}</strong>. This timesheet will be included in <strong>${esc(s.onTimeMonth)}</strong>'s pay. Submitting on the ${lateFromLabel} or later moves it to the next month and adds a £${money(LATE_PENALTY_GBP)} penalty.`;
       }
+    }
+
+    function timesheetLondonTodayIso() {
+      return isoDate(londonPayrollAnchor(new Date()));
+    }
+
+    /** The next cycle opens on the 25th so staff can see it. It is not submitted until the period closes. */
+    function timesheetSubmitNotDueYet() {
+      const end = String(state.periodEnd || "").slice(0, 10);
+      const today = timesheetLondonTodayIso();
+      return !!(end && today && today < end);
     }
 
     function computePayrollPeriod(anchor = new Date(), rosterKey) {
@@ -5848,7 +5862,8 @@
         B.gapBeforeSummary +
         (B.panelPad * 2 + B.summaryRowH * summaryRows.length);
       const availH = pageH - topY - bottomMargin;
-      const S = Math.max(0.4, Math.min(1, availH / neededH));
+      /* Keep column titles and hours the same size as a short timesheet. Extra rows go on the next page. */
+      const S = neededH <= availH ? 1 : 0.92;
 
       let y = topY;
 
@@ -5891,21 +5906,25 @@
       const rowH = B.rowH * S;
       const headerRowH = B.headerRowH * S;
       const cellBaseline = 4.8 * S;
-      doc.setDrawColor(217, 227, 239);
-      doc.setFillColor(248, 251, 255);
-      doc.rect(colX[0], y, colX[6] - colX[0], headerRowH, "FD");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9 * S);
-      doc.text("Date", (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
-      doc.text(state.manual ? "Description" : "Day", (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
-      doc.text("Service", (colX[2] + colX[3]) / 2, y + cellBaseline, { align: "center" });
-      doc.text("Hours", (colX[3] + colX[4]) / 2, y + cellBaseline, { align: "center" });
-      doc.text("Daily Total", (colX[4] + colX[5]) / 2, y + cellBaseline, { align: "center" });
-      doc.text("Status", (colX[5] + colX[6]) / 2, y + cellBaseline, { align: "center" });
-      y += headerRowH;
+      function paintPdfTableHeader() {
+        doc.setDrawColor(217, 227, 239);
+        doc.setFillColor(248, 251, 255);
+        doc.setTextColor(16, 34, 56);
+        doc.rect(colX[0], y, colX[6] - colX[0], headerRowH, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9 * S);
+        doc.text("Date", (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
+        doc.text(state.manual ? "Description" : "Day", (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
+        doc.text("Service", (colX[2] + colX[3]) / 2, y + cellBaseline, { align: "center" });
+        doc.text("Hours", (colX[3] + colX[4]) / 2, y + cellBaseline, { align: "center" });
+        doc.text("Daily Total", (colX[4] + colX[5]) / 2, y + cellBaseline, { align: "center" });
+        doc.text("Status", (colX[5] + colX[6]) / 2, y + cellBaseline, { align: "center" });
+        y += headerRowH;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5 * S);
+      }
+      paintPdfTableHeader();
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.5 * S);
       for (let i = 0; i < state.entries.length; i++) {
         const e = state.entries[i];
         const daily = (e.payBand === "pt" || e.role === "Day Centre PT") && !e.dayOff
@@ -5916,6 +5935,11 @@
             : e.hours * Number(e.rate != null ? e.rate : state.hourlyRate)
         );
         const thisRowH = rowH * pdfEntryRowHeightScale(e);
+        if (y + thisRowH > pageH - bottomMargin) {
+          doc.addPage();
+          y = topY;
+          paintPdfTableHeader();
+        }
         doc.rect(colX[0], y, colX[6] - colX[0], thisRowH, "S");
         const isFlat = serviceFlatRate(e.service || e.role) != null;
         const noDate = !String(e.date || "").trim();
@@ -5968,6 +5992,10 @@
       const panelPad = B.panelPad * S;
       const rowHeight = B.summaryRowH * S;
       const panelHeight = panelPad * 2 + rowHeight * summaryRows.length;
+      if (y + panelHeight > pageH - bottomMargin) {
+        doc.addPage();
+        y = topY;
+      }
       doc.setDrawColor(217, 227, 239);
       doc.setFillColor(252, 253, 255);
       doc.roundedRect(left, y, right - left, panelHeight, 2, 2, "FD");
@@ -6085,6 +6113,14 @@
       }
       if (state.manual && !state.manualEntries.length) {
         alert("Add at least one block of hours before submitting.");
+        return;
+      }
+      if (timesheetSubmitNotDueYet()) {
+        alert(
+          "This timesheet is not due yet.\n\nSubmit it on " +
+            formatIsoDmy(state.periodEnd) +
+            ", when this pay period closes."
+        );
         return;
       }
       btn.disabled = true;

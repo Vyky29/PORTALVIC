@@ -1038,6 +1038,12 @@
     ]);
     const incidents = mergeRows([liveInc]);
 
+    if (!feedback.length && !incidents.length) {
+      hostEl.innerHTML =
+        '<p class="pcso-empty" role="status">No registers for this participant yet.</p>';
+      return;
+    }
+
     hostEl.innerHTML =
       overviewByServiceHtml(feedback, TERM_LABEL, {
         includeTable: true,

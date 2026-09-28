@@ -1936,6 +1936,10 @@ function rosterRowToSlot(isoDate, wd, r) {
   }
 
   function overrideIsCancelledType(ov) {
+    /* Whole-service end is an empty seat, not a Cancelled session. */
+    if (typeof portalOverrideIsWholeServiceCancel === "function" && portalOverrideIsWholeServiceCancel(ov)) {
+      return false;
+    }
     var t = String(ov && ov.override_type || "").trim();
     if (String(ov && ov.status || "active").trim() !== "active") return false;
     if (t === "slot_close" || t === "client_cancelled") return true;
@@ -1952,6 +1956,9 @@ function rosterRowToSlot(isoDate, wd, r) {
   }
 
   function overrideFeedbackResolution(ov) {
+    if (typeof portalOverrideIsWholeServiceCancel === "function" && portalOverrideIsWholeServiceCancel(ov)) {
+      return "";
+    }
     var p = overridePayloadObj(ov);
     var r = String(p.feedback_resolution || "").trim().toLowerCase();
     if (r === "absent" || r === "cancelled") return r;
@@ -2160,6 +2167,33 @@ function rosterRowToSlot(isoDate, wd, r) {
     if (p.day_reassign === true || p.not_makeup === true) return true;
     var kind = clean(p.booking_kind || p.session_kind || p.replace_kind || p.clear_kind).toLowerCase();
     return kind === "day_reassign" || kind === "instructor_day_cover" || kind === "slot_move";
+  }
+
+  /**
+   * Cancel service (rest of term): the child has left. The hour stays as No participant.
+   * It is not a Cancelled session — that is only the one-day Cancelled button.
+   */
+  function applyWholeServiceCancelClears(hub, out) {
+    var ovs = (hub && hub.payload && hub.payload.schedule_overrides) || [];
+    if (!out || !out.length || !ovs.length) return out;
+    if (typeof portalOverrideIsWholeServiceCancel !== "function") return out;
+    var clears = [];
+    for (var i = 0; i < ovs.length; i++) {
+      if (portalOverrideIsWholeServiceCancel(ovs[i])) clears.push(ovs[i]);
+    }
+    if (!clears.length) return out;
+    return out.map(function (slot) {
+      if (!slot || isOpenRosterSlot(slot.client_name)) return slot;
+      for (var c = 0; c < clears.length; c++) {
+        if (!hub.overrideMatchesSlot(slot, clears[c])) continue;
+        return Object.assign({}, slot, {
+          client_name: "No participant",
+          client_id: "available",
+          portalServiceEnded: true,
+        });
+      }
+      return slot;
+    });
   }
 
   /**
@@ -4170,6 +4204,12 @@ function rosterRowToSlot(isoDate, wd, r) {
           .join(" ") || "\u2014";
       }
       if (coverNeededWho) return formatInstructorPillCoverNeeded("COVER NEEDED");
+      var awayInst = dedupeInstructorNames(slotInstructors(slot));
+      for (var ai = 0; ai < awayInst.length; ai++) {
+        if (opts.hub && hubStaffAwayOnIso(opts.hub, slot.session_date, awayInst[ai])) {
+          return formatInstructorPillCoverNeeded("COVER NEEDED");
+        }
+      }
       return "\u2014";
     }
     if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
@@ -8359,6 +8399,8 @@ function rosterRowToSlot(isoDate, wd, r) {
       out = suppressOpenSlotsCoveredByBookedHours(out, wd);
       /* Same-day moves: clear source seat before cover paint (Anas left Aurora 6–6.30). */
       out = applyClientMoveSlotClears(this, out);
+      /* Cancel service: empty seat. Do not keep the child as a Cancelled register line. */
+      out = applyWholeServiceCancelClears(this, out);
       /* Term/Schedule time edits: rewrite standing clocks before cover match. */
       out = applySlotUpdateOverrides(this, out);
       out = applyInstructorReassignOverrides(this, out);
@@ -10057,7 +10099,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         continue;
       }
-      if (!slotHasOnDutyFeedbackStaff(hub, slot)) continue;
+      /* Booked seat still counts when the instructor is off (cover needed). */
+      if (!slotHasOnDutyFeedbackStaff(hub, slot)) {
+        out.push({ _ashAwaitingSlot: true, slot: slot });
+        continue;
+      }
       out.push({ _ashAwaitingSlot: true, slot: slot });
     }
     for (var j = 0; j < submitted.length; j++) {

@@ -2241,6 +2241,10 @@
         ? portalScheduleOverrideForSessionByType(s, iso, 'slot_close')
         : null;
       if(closeAdminDedicated){
+        if(typeof portalOverrideIsWholeServiceCancel === 'function'
+          && portalOverrideIsWholeServiceCancel(closeAdminDedicated)){
+          return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+        }
         return { feedbackDone: false, incident: false, absent: false, cancelled: true };
       }
       /* Covered away (Anas → Javi): original instructor owes no feedback.
@@ -2280,6 +2284,10 @@
           return { feedbackDone: false, incident: false, absent: true, cancelled: false };
         }
         if(t === 'slot_close'){
+          if(typeof portalOverrideIsWholeServiceCancel === 'function'
+            && portalOverrideIsWholeServiceCancel(ov)){
+            return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+          }
           return { feedbackDone: false, incident: false, absent: false, cancelled: true };
         }
         if(t === 'slot_clear_client'){
@@ -3997,6 +4005,35 @@
           }
           const adminSlotCloseOv = portalScheduleOverrideForSessionByType(s, sessionDateKey, 'slot_close')
             || portalScheduleOverrideForSessionByType(s, sessionDateKey, 'client_cancelled');
+          if(adminSlotCloseOv
+            && typeof portalOverrideIsWholeServiceCancel === 'function'
+            && portalOverrideIsWholeServiceCancel(adminSlotCloseOv)){
+            const cOpen = clientNotesById.available;
+            const showSpecOpen = !isBespokeActivity(activity);
+            return Object.assign({
+              time,
+              kind: 'available',
+              clientId: 'available',
+              name: 'NO PARTICIPANT',
+              activity,
+              areaLabel: '',
+              poolLocationLabel: null,
+              poolTier: poolTierForAreaNoteRow(s, activity, cOpen, viewDay, supportHidePoolNote),
+              showPoolSymbol: true,
+              showSpecialty: showSpecOpen,
+              specialtyLabel: specialtyInfoTitle(activity),
+              general: `Service ended — no participant. ${s.venue || ''}`.trim(),
+              specialty: showSpecOpen ? pickSpecialtyBody(cOpen, activity) : '',
+              openSheet: false,
+              sessionKey: `${sessionDateKey}|${s.start}|available`,
+              sessionStartTs,
+              sessionEndTs,
+              noSessionFeedbackRequired: true,
+              actionsDisabled: true,
+              detailsOpenAllowed: false,
+              portalServiceEnded: true
+            }, meta);
+          }
           if(adminSlotCloseOv && !replaceOvSameSlot
             && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
               && sessionDateKey

@@ -2446,7 +2446,7 @@
     }
     /* Berta day off Sun 13 / 20 Sep / 4 Oct — standing anchor stays Berta.
      * Sun 13: Raul named cover + 11.45 Gabriel↔Arthur Ma with Godsway (schedule_overrides).
-     * Sun 20: Bismark Hub Lead cover (not Victor). Sun 4 Oct: Javi Hub Lead cover.
+     * Sun 20: Bismark Hub Lead cover (not Victor). Sun 4 Oct: Victor Hub Lead cover (not Javi).
      * Climbing: Carlos off those Sundays → Angel Westway cover (not Andres). */
     if (
       (iso === "2026-09-13" || iso === "2026-09-20" || iso === "2026-10-04") &&
@@ -3996,8 +3996,9 @@
   }
 
   /**
-   * From Mon 28 Sep 2026 Luliya standing is Tue DC 11-3, Tue Acton 4-6.30,
-   * Wed Northolt 4.30-6.30. Mon Northolt book → JAVI. Mon/Wed/Fri mornings off.
+   * From Mon 28 Sep 2026 Luliya is off Mondays and Friday mornings.
+   * Mon Northolt book → JAVI. Wednesday Day Centre Ikram 11-3 stays all term.
+   * Tue DC 11-3, Tue Acton 4-6.30 and Wed Northolt 4.30-6.30 stay.
    * Sun 4 Oct Aurora pool cover stays (resolveAutumnInstructorsForCalendarDate).
    */
   var LULIYA_NEW_STANDING_FROM = "2026-09-28";
@@ -4033,7 +4034,6 @@
         }
       }
       var venue = String(r.venue || "");
-      var service = String(r.service || "");
       if (day === "monday" && /northolt/i.test(venue)) {
         out.push(
           Object.assign({}, r, {
@@ -4043,7 +4043,6 @@
         return;
       }
       if (day === "monday" || day === "friday") return;
-      if (day === "wednesday" && /day\s*centre/i.test(service)) return;
       out.push(r);
     });
     return out;
@@ -4650,6 +4649,10 @@
       /* Mon Dan Northolt 6–6.30: Adaam through Mon 7; Amaar from Mon 14 (Leila swap). */
       try {
         out = scrubAndEnsureMonNortholtDan630LeilaSwap(out);
+      } catch (_) {}
+      /* Mon 28 Sep: Luliya off Mondays and Fridays. Wednesday Ikram 11-3 stays. */
+      try {
+        out = applyLuliyaNewStandingFrom28(out);
       } catch (_) {}
       return out;
     },

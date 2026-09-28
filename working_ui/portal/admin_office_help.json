@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-27-v42",
+  "version": "2026-09-28-v44",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -357,6 +357,7 @@
             "One day only → Schedule & Covers.",
             "Every [weekday] until end of term also drops days already delivered. Use Rest of term from the anchor when those past days should stay.",
             "Staff who-works hours → Timetable (H&R), not Edit term slot.",
+            "To seat a worker with a Day Centre child for the rest of term: open that weekday and time, set the instructor, scope Rest of term from the anchor. The anchor must be that weekday.",
             "Example: Joel → Anas every Monday for the rest of Autumn = Edit term slot.",
             "To remove the service for the rest of term, use the Cancel a service lesson."
           ]
@@ -706,7 +707,8 @@
             "One-day staff cover for sessions still goes through Schedule & Covers."
           ],
           "tips": [
-            "Timetable = workers. Edit term slot = client seats. Schedule & Covers = one-day exceptions."
+            "Timetable = workers. Edit term slot = client seats. Schedule & Covers = one-day exceptions.",
+            "To add a worker on a weekday for the rest of term: open that weekday, set their hours (for example 11-3 Day Centre), and save. Then put them on the child's seat with Edit term slot."
           ]
         },
         {
@@ -721,7 +723,8 @@
             "Contracts / training / uniform live under the same H&R card."
           ],
           "tips": [
-            "Staff login host is clubsensational-staff — not the family site."
+            "Staff login host is clubsensational-staff — not the family site.",
+            "Documents only keeps My Documents. Full opens the staff dashboard, Today and feedback. Change it on the worker profile, then they sign in again."
           ]
         },
         {

@@ -2,8 +2,8 @@
  * Staff portal access modes. documents_only = My Documents (+ profile/contract sign) only.
  */
 
-/** Fallback until DB portal_staff_access is set (Giuseppe, Andres — no availability). */
-const DOCUMENTS_ONLY_USERNAMES = new Set(["giuseppe", "andres"]);
+/** Fallback until DB portal_staff_access is set (Giuseppe — no availability). */
+const DOCUMENTS_ONLY_USERNAMES = new Set(["giuseppe"]);
 
 const ALLOWED_PATH_RE =
   /(?:^|\/)(my_documents|staff_profile_update|staff_uniform|contract_sign|training_record_sign|login)(?:\.html)?(?:$|[?#])/i;

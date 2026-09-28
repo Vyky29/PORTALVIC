@@ -359,25 +359,28 @@ function staffExpectedOnTeamIso(staffKey, iso) {
   return true;
 }
 
-/** Standing Hub Tinashe with John: Godsway + Raul (LOCAL EXTRA start; no date split). */
+/** Hub Tinashe with John: Godsway + Bismark (Mon and Wed). Raul is not on that seat. */
 function filterJohnBespokeTeam(keys, iso) {
   const leadKey = "john";
   let pool = excludePeerProgrammeLead(keys, leadKey).filter(function (k) {
     return k && k !== leadKey && !PROGRAMME_LEAD_KEYS.has(k);
   });
-  const prefer = ["godsway", "raul"];
+  const prefer = ["godsway", "bismark"];
   const out = [];
   prefer.forEach(function (w) {
+    if (!staffExpectedOnTeamIso(w, iso)) return;
     if (pool.indexOf(w) >= 0 && out.indexOf(w) < 0) out.push(w);
   });
   prefer.forEach(function (w) {
+    if (!staffExpectedOnTeamIso(w, iso)) return;
     if (out.indexOf(w) < 0 && out.length < 2) out.push(w);
   });
   pool.forEach(function (k) {
     if (out.length >= 2) return;
     if (out.indexOf(k) >= 0) return;
+    if (!staffExpectedOnTeamIso(k, iso)) return;
     const role = teamMemberChipRole(k);
-    if (role === "support-worker" || k === "raul") out.push(k);
+    if (role === "support-worker" || CLIMB_INSTRUCTOR_KEYS.has(k)) out.push(k);
   });
   return dedupeKeys(out).slice(0, 2);
 }

@@ -196,6 +196,32 @@
     return map;
   }
 
+  /**
+   * Edit term slot → Cancel service (the place ends).
+   * Not a Cancelled session: staff/admin Cancelled is one day only.
+   */
+  function portalOverrideIsWholeServiceCancel(ov) {
+    if (!ov) return false;
+    var st = String(ov.status || "active").trim();
+    if (st && st !== "active") return false;
+    var p = ov.payload;
+    if (typeof p === "string") {
+      try {
+        p = JSON.parse(p);
+      } catch (_) {
+        p = null;
+      }
+    }
+    if (!p || typeof p !== "object") p = {};
+    if (p.service_cancelled === true || p.service_cancelled === "true") return true;
+    if (!p.term_roster_edit) return false;
+    var reason = String(ov.reason || "").toLowerCase();
+    if (reason.indexOf("cancel service") >= 0) return true;
+    var action = String(p.action || p.term_action || "").toLowerCase();
+    return action === "cancel_service";
+  }
+
+  global.portalOverrideIsWholeServiceCancel = portalOverrideIsWholeServiceCancel;
   global.PortalClientDayVisibility = {
     FALLBACK_CLIENT_STARTS: FALLBACK_CLIENT_STARTS,
     clientAllowedOnDate: clientAllowedOnDate,
@@ -204,5 +230,6 @@
     canonicalClientSlug: canonicalClientSlug,
     mapEntry: mapEntry,
     noteFirstSessionFromOverrides: noteFirstSessionFromOverrides,
+    overrideIsWholeServiceCancel: portalOverrideIsWholeServiceCancel,
   };
 })(typeof window !== "undefined" ? window : globalThis);
