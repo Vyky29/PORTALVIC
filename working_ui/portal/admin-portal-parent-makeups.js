@@ -233,6 +233,37 @@
     );
   }
 
+  function grantDateIso(g) {
+    var makeup = String((g && g.makeup_day) || "").slice(0, 10);
+    var absent = String((g && g.absence_session_date) || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(makeup)) return makeup;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(absent)) return absent;
+    return "";
+  }
+
+  function grantsNewestFirst(grants) {
+    return (grants || []).slice().sort(function (a, b) {
+      var da = grantDateIso(a);
+      var db = grantDateIso(b);
+      if (da !== db) {
+        if (!da) return 1;
+        if (!db) return -1;
+        return da < db ? 1 : -1;
+      }
+      var aa = String((a && a.absence_session_date) || "").slice(0, 10);
+      var ab = String((b && b.absence_session_date) || "").slice(0, 10);
+      if (aa !== ab) {
+        if (!aa) return 1;
+        if (!ab) return -1;
+        return aa < ab ? 1 : -1;
+      }
+      var ca = String((a && (a.updated_at || a.created_at)) || "");
+      var cb = String((b && (b.updated_at || b.created_at)) || "");
+      if (ca === cb) return 0;
+      return ca < cb ? 1 : -1;
+    });
+  }
+
   function tableHtml(grants) {
     if (!grants.length) {
       return '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">No makeup grants in this filter.</p>';
@@ -291,7 +322,7 @@
       meta.textContent =
         String(state.meta.open || 0) + ' open · ' + String(state.meta.offered || 0) + ' offered';
     }
-    hostEl.innerHTML = tableHtml(state.grants);
+    hostEl.innerHTML = tableHtml(grantsNewestFirst(state.grants));
     bindRowActions(hostEl);
   }
 
