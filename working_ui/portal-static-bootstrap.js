@@ -47,7 +47,7 @@
     window.ROUTINES_PLANNER_URL || "https://visual-vic.vercel.app/dashboard";
   /**
    * Day Centre staff Plan opens the Club app (PixtoLearn on clubsensational-app).
-   * Michelle, Roberto, Luliya, Youssef only. Everyone else stays on visualVIC.
+   * Michelle, Roberto, Luliya, Youssef, Patience only. Everyone else stays on visualVIC.
    */
   window.CLUB_DAY_CENTRE_PLAN_URL =
     window.CLUB_DAY_CENTRE_PLAN_URL || "https://clubsensational-app.vercel.app";
@@ -1026,6 +1026,10 @@
       youssef: 1,
       yousef: 1,
       yousuf: 1,
+      patience: 1,
+      patiencebennett: 1,
+      pairaoje: 1,
+      pairaojeyahoocom: 1,
     };
 
     function normPlanStaffKey(value) {
