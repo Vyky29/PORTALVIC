@@ -248,8 +248,10 @@
   global.portalMarkPreviewSessionDaysByIso = function portalMarkPreviewSessionDaysByIso(
     root,
     isoColorMap,
+    markOpts,
   ) {
     if (!root || !root.querySelectorAll || !isoColorMap) return;
+    markOpts = markOpts || {};
     var grids = root.querySelectorAll(".dc-cal-grid");
     Array.prototype.forEach.call(grids, function (grid) {
       var label = String(grid.getAttribute("aria-label") || "").trim();
@@ -262,7 +264,8 @@
       for (var i = 0; i < cells.length; i++) {
         var cell = cells[i];
         if (!cell || !cell.classList) continue;
-        if (!cell.classList.contains("dc-cal-cell--green")) continue;
+        var paintable = markOpts.includeOpen || cell.classList.contains("dc-cal-cell--green");
+        if (!paintable) continue;
         var dayEl = cell.querySelector(".dc-cal-day");
         var day = Number(dayEl && String(dayEl.textContent || "").trim());
         if (!Number.isFinite(day) || day < 1) continue;
@@ -278,6 +281,8 @@
         var fill = sessionDayBackground(bg);
         if (fill) {
           cell.classList.add("dc-cal-cell--mine");
+          if (markOpts.className) cell.classList.add(markOpts.className);
+          if (markOpts.title) cell.title = markOpts.title;
           if (Array.isArray(bg) && bg.length > 1) {
             cell.classList.add("dc-cal-cell--mine-split");
             cell.classList.add("dc-cal-cell--mine-n" + Math.min(bg.length, 4));
@@ -397,6 +402,15 @@
         try {
           global.portalMarkPreviewSessionDays(node, opts.dayColors);
         } catch (_mine) {}
+      }
+      if (opts.extraIsoColors && typeof opts.extraIsoColors === "object") {
+        try {
+          global.portalMarkPreviewSessionDaysByIso(node, opts.extraIsoColors, {
+            includeOpen: true,
+            title: opts.extraIsoTitle || "Makeup",
+            className: "dc-cal-cell--makeup",
+          });
+        } catch (_extraIso) {}
       }
     } catch (e) {
       try {

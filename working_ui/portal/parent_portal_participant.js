@@ -4308,6 +4308,14 @@
         icon: CHIP_X_SVG,
       };
     }
+    /* Makeup day granted by the office — not a regular weekday. */
+    if (d.makeupSession || st === "makeup") {
+      return {
+        tone: "makeup",
+        title: "Makeup — " + d.iso,
+        icon: "",
+      };
+    }
     /* Red — club cancel (admin / instructor). */
     if (st === "cancelled") {
       return {
@@ -4713,8 +4721,14 @@
     );
   }
 
-  /** Blue / green / orange / red key for date chips (hub + booking). */
-  function termChipColorLegendHtml() {
+  /** Blue / green / red key. Orange absent only when this child has a makeup grant. */
+  function termChipColorLegendHtml(data) {
+    var showAbsent = !!(data && data._ppMakeupGranted);
+    var showMakeup = !!(
+      data &&
+      Array.isArray(data._ppMakeupSessions) &&
+      data._ppMakeupSessions.length
+    );
     return (
       '<ul class="pp-hub-ops__chip-legend" aria-label="Date colour key">' +
       '<li class="pp-hub-ops__chip-legend__item">' +
@@ -4726,9 +4740,16 @@
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--green" aria-hidden="true"></span>' +
       '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed (attended)</span></li>' +
-      '<li class="pp-hub-ops__chip-legend__item">' +
-      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--orange" aria-hidden="true"></span>' +
-      '<span class="pp-hub-ops__chip-legend__text"><strong>Orange</strong> — absent</span></li>' +
+      (showAbsent
+        ? '<li class="pp-hub-ops__chip-legend__item">' +
+          '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--orange" aria-hidden="true"></span>' +
+          '<span class="pp-hub-ops__chip-legend__text"><strong>Orange</strong> — absent</span></li>'
+        : "") +
+      (showMakeup
+        ? '<li class="pp-hub-ops__chip-legend__item">' +
+          '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--makeup" aria-hidden="true"></span>' +
+          '<span class="pp-hub-ops__chip-legend__text"><strong>Sky</strong> — makeup</span></li>'
+        : "") +
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--burgundy" aria-hidden="true"></span>' +
       '<span class="pp-hub-ops__chip-legend__text"><strong>Burgundy</strong> — cancelled (club / instructor)</span></li>' +
@@ -4737,6 +4758,84 @@
       '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — not booked</span></li>' +
       "</ul>"
     );
+  }
+
+  function placedMakeupSessionsFromGrants(grants) {
+    var sessions = [];
+    var seen = Object.create(null);
+    var granted = false;
+    (grants || []).forEach(function (g) {
+      if (!g) return;
+      var gst = String(g.status || "").toLowerCase();
+      if (gst === "open" || gst === "offered" || gst === "consumed") granted = true;
+      if (gst === "cancelled" || gst === "forfeited") return;
+      var offers = Array.isArray(g.offers) ? g.offers.slice() : [];
+      if (g.pending_offer) offers.push(g.pending_offer);
+      offers.forEach(function (o) {
+        if (!o || String(o.status || "") !== "accepted") return;
+        var iso = String(o.session_date || "").slice(0, 10);
+        if (!iso || seen[iso]) return;
+        seen[iso] = true;
+        sessions.push({
+          iso: iso,
+          time: String(o.session_time || "").trim(),
+          venue: String(o.venue || g.preferred_venue || "").trim(),
+          label: String(o.service_label || g.service_label || "").trim(),
+        });
+      });
+    });
+    return { granted: granted, sessions: sessions };
+  }
+
+  function rememberMakeupSessions(data, payload) {
+    if (!data) return { granted: false, sessions: [] };
+    var parsed = placedMakeupSessionsFromGrants((payload && payload.grants) || []);
+    data._ppMakeupGranted = parsed.granted;
+    data._ppMakeupSessions = parsed.sessions;
+    return parsed;
+  }
+
+  function makeupSessionChipRows(data) {
+    var todayIso = isoDateLocal(new Date());
+    return ((data && data._ppMakeupSessions) || [])
+      .map(function (row) {
+        var iso = String((row && row.iso) || "").slice(0, 10);
+        if (!iso) return null;
+        return annotateChipDate(
+          {
+            iso: iso,
+            shortLabel: formatTermChipLabel(iso),
+            past: iso < todayIso,
+            isToday: iso === todayIso,
+            isNext: false,
+            pendingReenrol: false,
+            makeupSession: true,
+          },
+          data,
+        );
+      })
+      .filter(Boolean);
+  }
+
+  function mixMakeupSessionChips(dates, data) {
+    var extra = makeupSessionChipRows(data);
+    var list = (dates || []).slice();
+    if (!extra.length) return list;
+    extra.forEach(function (chip) {
+      var found = false;
+      list.forEach(function (d) {
+        if (!d || d.iso !== chip.iso) return;
+        d.makeupSession = true;
+        d.pendingReenrol = false;
+        d.notBooked = false;
+        found = true;
+      });
+      if (!found) list.push(chip);
+    });
+    list.sort(function (a, b) {
+      return String((a && a.iso) || "").localeCompare(String((b && b.iso) || ""));
+    });
+    return list;
   }
 
   /** True when the family chose term-by-term (not whole-year auto re-enrol). */
@@ -4951,7 +5050,7 @@
           '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
           "</summary>" +
           '<div class="pp-hub-ops__term-body">' +
-          termChipColorLegendHtml() +
+          termChipColorLegendHtml(data) +
           '<p class="pp-muted pp-hub-ops__trial-note" style="margin:0 0 10px;font-size:12px;overflow-wrap:break-word">Blue = your booked trial. Red = other ' +
           esc(trialTermLabel.toLowerCase()) +
           " term dates (not booked yet).</p>" +
@@ -5014,7 +5113,7 @@
       var inner =
         rows.length ?
           '<div class="pp-hub-ops__date-chips-stack" aria-label="Summer 2025/26 session dates">' +
-          termChipColorLegendHtml() +
+          termChipColorLegendHtml(data) +
           rows.join("") +
           "</div>"
         : "";
@@ -5071,7 +5170,7 @@
         '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
         "</summary>" +
         '<div class="pp-hub-ops__term-body">' +
-        termChipColorLegendHtml() +
+        termChipColorLegendHtml(data) +
         contentHtml +
         "</div></details>"
       );
@@ -5245,6 +5344,7 @@
           return String(a.iso || "").localeCompare(String(b.iso || ""));
         });
       } catch (_trialMix) {}
+      nextDates = mixMakeupSessionChips(nextDates, data);
       pushTermAccordionsFromDates(nextDates, true, " Term 26/27");
     } else if (todayIso > summerTo) {
       // Summer 25/26 finished and still not confirmed → 26/27 chips in red.
@@ -5388,7 +5488,7 @@
 
   function bookingDayCentreYearChipsHtml(data, statusByIso) {
     statusByIso = statusByIso || {};
-    var dates = findDayCentreYearSessionDates(data);
+    var dates = mixMakeupSessionChips(findDayCentreYearSessionDates(data), data);
     if (!dates.length) return "";
     var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27 || {};
     var terms = Array.isArray(cal.terms) ? cal.terms : [];
@@ -5425,7 +5525,7 @@
     if (!terms.length) {
       return (
         '<div class="pp-hub-ops__date-chips-stack" aria-label="Day Centre 2026/27">' +
-        termChipColorLegendHtml() +
+        termChipColorLegendHtml(data) +
         chipsOnly(dates, "Day Centre 2026/27") +
         "</div>"
       );
@@ -5466,7 +5566,7 @@
     if (!blocks.length) return "";
     return (
       '<div class="pp-booking-year-dates">' +
-      termChipColorLegendHtml() +
+      termChipColorLegendHtml(data) +
       blocks.join("") +
       "</div>"
     );
@@ -6193,6 +6293,10 @@
         var open = grants.filter(function (g) {
           return g && (g.status === "open" || g.pending_offer);
         });
+        rememberMakeupSessions(data, payload);
+        if (host._ppTermStatusByIso || host.querySelector('[data-pp-term-chips="this"]')) {
+          applyTermDateChipStatuses(host, data, host._ppTermStatusByIso || {});
+        }
         var due = grants.some(function (g) {
           return g && g.pending_offer;
         });
@@ -6846,9 +6950,22 @@
           "</span></li>",
       );
     });
+    var makeupItems = ((data && data._ppMakeupSessions) || [])
+      .map(function (row) {
+        var when = [formatTermChipLabel(row.iso), row.time].filter(Boolean).join(" · ");
+        return (
+          '<li class="pp-cal-legend__item">' +
+          '<span class="pp-cal-legend__swatch pp-cal-legend__swatch--makeup" aria-hidden="true"></span>' +
+          '<span class="pp-cal-legend__text">Makeup' +
+          (when ? " — " + esc(when) : "") +
+          "</span></li>"
+        );
+      })
+      .join("");
     return (
       '<ul class="pp-cal-legend" aria-label="Your session days">' +
       items.join("") +
+      makeupItems +
       '<li class="pp-cal-legend__item pp-cal-legend__item--note">' +
       '<span class="pp-cal-legend__swatch pp-cal-legend__swatch--red" aria-hidden="true"></span>' +
       '<span class="pp-cal-legend__text">Red = closed / half-term (no sessions)</span></li>' +
@@ -6933,6 +7050,14 @@
     } else {
       var built = buildMyCalendarDayColors(data);
       loadOpts.dayColors = built.colMap || {};
+      var makeupIso = Object.create(null);
+      ((data && data._ppMakeupSessions) || []).forEach(function (row) {
+        if (row && row.iso) makeupIso[row.iso] = "#0284c7";
+      });
+      if (Object.keys(makeupIso).length) {
+        loadOpts.extraIsoColors = makeupIso;
+        loadOpts.extraIsoTitle = "Makeup";
+      }
     }
     if (typeof global.portalLoadSessionsCalendar202627Into === "function") {
       calHost.innerHTML = '<p class="pp-muted">Loading calendar…</p>';
@@ -6986,6 +7111,15 @@
     host.innerHTML = subviewShell(data, "calendar", body);
     bindBack(host, data, opts);
     mountMyCalendar(host, data);
+    if (opts && typeof opts.listMakeups === "function") {
+      void opts.listMakeups().then(function (payload) {
+        if (!host.isConnected) return;
+        rememberMakeupSessions(data, payload);
+        var legend = host.querySelector(".pp-cal-block .pp-cal-legend");
+        if (legend) legend.outerHTML = myCalendarLegendHtml(data);
+        mountMyCalendar(host, data);
+      });
+    }
   }
 
   function bookingItemIconSvg(label) {
