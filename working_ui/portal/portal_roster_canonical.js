@@ -812,7 +812,18 @@
     if (!shouldProjectDayCentreRowFromSnap(r, snapIso, targetIso)) return false;
     if (!shouldProjectBespokeHubRowFromSnap(r, snapIso, targetIso)) return false;
     if (!shouldProjectDatedOneOffTrialFromSnap(r, snapIso, targetIso)) return false;
+    /* Tue 8 Acton aquatic is Aurora's day off (Logan sat with Roberto that day only). */
+    if (!shouldProjectTue8ActonAquaticFromSnap(r, snapIso, targetIso)) return false;
     return true;
+  }
+
+  function shouldProjectTue8ActonAquaticFromSnap(row, snapIso, targetIso) {
+    if (normIso(snapIso) !== "2026-09-08") return true;
+    if (normIso(targetIso) === "2026-09-08") return true;
+    if (!row) return true;
+    if (!isActonVenue(row.venue)) return true;
+    if (!isAquaticService(row.service) && String(row.service || "").trim()) return true;
+    return false;
   }
 
   function isTuesdayActonAquaticStandingRow(row) {

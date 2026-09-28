@@ -1397,6 +1397,18 @@
           return false;
         }
         /*
+         * Tue 8 Acton aquatic is a one-off (Aurora off; Logan with Roberto).
+         * Later Tuesdays keep the standing book (Logan with Luliya, then Aurora from 29 Sep).
+         */
+        if (
+          standIso === "2026-09-08" &&
+          isoDate !== "2026-09-08" &&
+          /acton/i.test(String((r && r.venue) || "")) &&
+          (/aquatic|swim/i.test(String((r && r.service) || "")) || !String((r && r.service) || "").trim())
+        ) {
+          return false;
+        }
+        /*
          * Sun 6 Sep Hub Multi is fully owned by scrubAndEnsureSep6HubCover (John + Berta books).
          * Do not also project summer standing Hub Multi onto that day.
          * Pool Multi still projects unless blocked below; climb is dated via scrubAndEnsureSep6Climbing.
@@ -2306,6 +2318,9 @@
         var p = overridePayloadObj(ov);
         /* Brand-new participant on open seat is handled by replace/inject, not clock paint. */
         if (p.term_new_participant === true || p.term_new_participant === "true") continue;
+        /* Term move stored on an earlier Tuesday (Logan → Aurora from 29 Sep) must not rewrite the week before. */
+        var moveFrom = String(p.anchor_date || p.effective_from || "").slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(moveFrom) && clean(slot.session_date) < moveFrom) continue;
         var oCid = canonicalClientSlug(ov.anchor_client_id);
         var toName = canonicalClientSlug(overrideReplacementClientName(p) || p.to_client_name);
         if (oCid && sCid && oCid !== sCid && (!toName || toName !== sCid)) continue;
