@@ -13571,6 +13571,71 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     );
   };
 
+  /** Paint Register week cards from the same received/due count as the day line. */
+  AdminSessionsHub.prototype.syncRegisterWeekCard = function (iso, prog) {
+    var root = this.root;
+    if (!root || !iso || !prog) return;
+    var card = root.querySelector('.ash-day-row--week [data-ash-day="' + iso + '"]');
+    if (!card || card.classList.contains("ash-day-card--closed")) return;
+    var expected = prog.expected || 0;
+    var arrived = prog.arrived || 0;
+    var label = expected ? arrived + "/" + expected : String(arrived);
+    var strong = card.querySelector(".ash-day-card__sessions strong");
+    if (strong) strong.textContent = label;
+    var sessions = card.querySelector(".ash-day-card__sessions");
+    if (sessions) sessions.setAttribute("aria-label", label + " feedbacks");
+    var pct = 0;
+    if (expected) {
+      pct = Math.round((100 * arrived) / expected);
+      if (arrived > 0 && pct < 12) pct = 12;
+    } else if (arrived > 0) {
+      pct = 100;
+    }
+    var bar = card.querySelector(".ash-day-card__bar");
+    if (bar) bar.style.setProperty("--ash-pct", String(pct));
+    card.classList.remove("ash-day-card--none", "ash-day-card--partial", "ash-day-card--complete");
+    if (expected && arrived === 0) card.classList.add("ash-day-card--none");
+    else if (expected && arrived < expected) card.classList.add("ash-day-card--partial");
+    else if (expected && arrived >= expected) card.classList.add("ash-day-card--complete");
+  };
+
+  AdminSessionsHub.prototype.syncRegisterWeekStripCounts = function () {
+    if (this.mode !== "feedback" && this.tab !== "feedback") return;
+    var hub = this;
+    function paintIso(iso) {
+      if (!iso || hubDayIsClubClosed(hub, iso) || hubDayIsProgrammeInactive(hub, iso)) return;
+      hub.syncRegisterWeekCard(iso, hub.registerDayProgress(iso));
+    }
+    var selected = clean(hub.selectedDay);
+    try {
+      paintIso(selected);
+    } catch (_sel) {}
+    var rest = this.weekDaysForDisplay().filter(function (iso) {
+      return iso !== selected;
+    });
+    if (!rest.length) return;
+    if (hub._registerStripIdle && typeof cancelIdleCallback === "function") {
+      try {
+        cancelIdleCallback(hub._registerStripIdle);
+      } catch (_c) {}
+      hub._registerStripIdle = 0;
+    }
+    var runRest = function () {
+      hub._registerStripIdle = 0;
+      if (!hub.hubIsLive()) return;
+      for (var i = 0; i < rest.length; i++) {
+        try {
+          paintIso(rest[i]);
+        } catch (_card) {}
+      }
+    };
+    if (typeof requestIdleCallback === "function") {
+      hub._registerStripIdle = requestIdleCallback(runRest, { timeout: 800 });
+    } else {
+      setTimeout(runRest, 0);
+    }
+  };
+
   AdminSessionsHub.prototype.syncFeedbackChromeSelection = function () {
     var root = this.root;
     if (!root) return;
@@ -13631,6 +13696,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       return;
     }
     this.syncFeedbackChromeSelection();
+    try {
+      this.syncRegisterWeekStripCounts();
+    } catch (_strip) {}
     var root = this.root;
     var breakdownHost = root.querySelector("[data-ash-register-breakdown]");
     if (breakdownHost) {
@@ -13673,6 +13741,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (!tbody) return;
       try {
         tbody.innerHTML = hub.htmlFeedbackRegisterTableBody();
+        var breakdownHost = hub.root.querySelector("[data-ash-register-breakdown]");
+        if (breakdownHost) {
+          var wrapBd = document.createElement("div");
+          wrapBd.innerHTML = hub.htmlRegisterDayBreakdown();
+          var nextBd = wrapBd.firstElementChild;
+          if (nextBd && breakdownHost.parentNode) {
+            breakdownHost.parentNode.replaceChild(nextBd, breakdownHost);
+          }
+        }
+        if (typeof hub.syncRegisterWeekStripCounts === "function") hub.syncRegisterWeekStripCounts();
       } catch (err) {
         console.warn("[AdminSessionsHub] register body", err);
         tbody.innerHTML =
