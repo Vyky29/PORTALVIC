@@ -3164,25 +3164,16 @@
                   </div>`;
       }
 
-      /* General Stage 2 for swimming / climbing / fitness / support worker:
-         organisation, experience, session scenarios, problem-solving.
-         The young-person 1:1 engagement bank is Day Centre only. */
+      /* General Stage 2 for swimming / climbing / fitness / support worker.
+         Call phase 1 already covers who we are, why they want the role, and their experience,
+         so those are not asked again. Day Centre keeps its own bank. */
       return `
-                  <div class="field full phase-block phase-block--org">
-                    <label>Understanding Our Organisation</label>
-                    <div class="check-grid">
-                      ${renderFaceRatedQuestion(face, "orgQ1", "1. What do you know about our company and the work we do with people with autism and learning disabilities?")}
-                      ${renderFaceRatedQuestion(face, "orgQ2", "2. Why do you want to work with us? What makes you interested in this role?")}
-                    </div>
-                  </div>
-
                   <div class="field full phase-block phase-block--exp">
-                    <label>About Your Experience and Knowledge</label>
+                    <label>In the session</label>
                     <div class="check-grid">
-                      ${renderFaceRatedQuestion(face, "expQ1", "1. How would you describe your experience working with individuals with autism or learning disabilities?", "Please include whether this has been in group settings, 1:1, or both, and the type of support you have provided.")}
-                      ${renderFaceRatedQuestion(face, "expQ2", "2. How do you ensure that your sessions feel inclusive, safe, and comfortable for every individual, regardless of age or ability?", "We are particularly interested in how you adapt your approach to meet different needs.")}
-                      ${renderFaceRatedQuestion(face, "expQ3", "3. How would you describe yourself as a practitioner when delivering sessions?", "For example: your approach, communication style, energy, and how you build connection with participants.")}
-                      ${renderFaceRatedQuestion(face, "expQ4", "4. What is one weakness you are currently working to improve?", "Example: \"I am improving my confidence when providing feedback to parents.\"")}
+                      ${renderFaceRatedQuestion(face, "expQ2", "1. How do you ensure that your sessions feel inclusive, safe, and comfortable for every individual, regardless of age or ability?", "We are particularly interested in how you adapt your approach to meet different needs.")}
+                      ${renderFaceRatedQuestion(face, "expQ3", "2. How would you describe yourself as a practitioner when delivering sessions?", "For example: your approach, communication style, energy, and how you build connection with participants.")}
+                      ${renderFaceRatedQuestion(face, "expQ4", "3. What is one weakness you are currently working to improve?", "Example: \"I am improving my confidence when providing feedback to parents.\"")}
                     </div>
                   </div>
 
@@ -5530,7 +5521,7 @@
             <div class="section-head">
               <div>
                 <h3>Stage 2 · Face to Face Interview</h3>
-                <p>This stage becomes active when the call interview is marked as successful. Day Centre Support Worker uses the Day Centre question bank. Other roles use the general Stage 2 set (organisation, experience, session scenarios, problem-solving).</p>
+                <p>This stage becomes active when the call interview is marked as successful. Day Centre Support Worker uses the Day Centre question bank. Other roles use session practice, scenarios and problem-solving. The call already covered who we are, why they want the role, and their experience.</p>
               </div>
             </div>
             <div class="section-body">
