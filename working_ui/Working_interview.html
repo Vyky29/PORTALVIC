@@ -3135,6 +3135,38 @@
         .concat(["shadQ1", "shadQ2", "shadQ3", "finalKnowledge", "finalAttitude"]);
     }
 
+    function renderUnshownFaceAudio(face, shownIds) {
+      const titles = {
+        orgQ1: "What do you know about our company and the work we do?",
+        orgQ2: "Why do you want to work with us?",
+        expQ1: "Experience with autism or learning disabilities"
+      };
+      const ids = [];
+      Object.keys(face || {}).forEach(function (k) {
+        let id = "";
+        if (/AudioPath$/.test(k)) id = k.replace(/AudioPath$/, "");
+        else if (/Audio$/.test(k) && !/Mime$|DurationSec$/.test(k) && String(face[k] || "").length > 32) {
+          id = k.replace(/Audio$/, "");
+        }
+        if (!id || shownIds[id] || ids.indexOf(id) >= 0) return;
+        if (!questionHasAudio(face, id, currentCandidateId)) return;
+        ids.push(id);
+      });
+      if (!ids.length) return "";
+      const blocks = ids.map(function (id) {
+        return `<div class="legacy-rec">
+          <p class="legacy-rec-label">${escapeHtml(titles[id] || id)}</p>
+          ${renderQuestionAudio(face, id, currentCandidateId)}
+        </div>`;
+      }).join("");
+      return `<div class="field full">
+        <div class="legacy-recs">
+          <p class="legacy-recs-title">Recordings from the previous form</p>
+          ${blocks}
+        </div>
+      </div>`;
+    }
+
     function renderFaceStageQuestionBlocks(candidate) {
       var face = candidate.faceToFaceInterview || {};
       var role = (candidate.onboarding && candidate.onboarding.role) || "";
@@ -3148,7 +3180,11 @@
           "Scenario. " + FACE_DC_SUPPORT_SCENARIO.title,
           FACE_DC_SUPPORT_SCENARIO.tip
         );
+        var shownDc = {};
+        FACE_DC_SUPPORT_QUESTIONS.forEach(function (q) { shownDc[q.id] = true; });
+        shownDc[FACE_DC_SUPPORT_SCENARIO.id] = true;
         return `
+                  ${renderUnshownFaceAudio(face, shownDc)}
                   <div class="field full phase-block phase-block--dc">
                     <label>Day Centre Support Worker - Face to Face questions</label>
                     <p class="question-helper" style="margin:0 0 12px">These Stage 2 questions apply when the role is Day Centre Support Worker. Look for curiosity rather than judgement, and for self-regulation when faced with aggression, rejection or repeated challenging behaviour.</p>
@@ -3168,6 +3204,11 @@
          Call phase 1 already covers who we are, why they want the role, and their experience,
          so those are not asked again. Day Centre keeps its own bank. */
       return `
+                  ${renderUnshownFaceAudio(face, {
+                    expQ2: true, expQ3: true, expQ4: true,
+                    scenQ1: true, scenQ2: true, scenQ3: true, scenQ4: true,
+                    probQ1: true, probQ2: true
+                  })}
                   <div class="field full phase-block phase-block--exp">
                     <label>In the session</label>
                     <div class="check-grid">

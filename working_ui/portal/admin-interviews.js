@@ -217,7 +217,7 @@
     closeInterviewOverlay();
 
     var sep = target.indexOf("?") >= 0 ? "&" : "?";
-    var src = target + sep + "embedded=1&v=20260928-stage2-no-repeat";
+    var src = target + sep + "embedded=1&v=20260928-relink-audio";
 
     var ov = document.createElement("div");
     ov.id = "aiInterviewOverlay";
