@@ -5557,8 +5557,29 @@
     if (!host) return;
     var statusByIso = Object.create(null);
 
+    function sessionMarkedAttended(s) {
+      var att = String((s && s.attendance) || "").toLowerCase();
+      if (
+        /\b(absent|absence|no[\s-]?show|noshow|did not attend)\b/.test(att) ||
+        /^(no|n|false|0)$/.test(att)
+      ) {
+        return false;
+      }
+      return /\b(present|attended|yes|y|true|1)\b/.test(att) || att === "present";
+    }
+
+    /* Attended half wins over a club cancel of another half the same day. */
+    function promoteAttendedOverClubCancel() {
+      ((data && data.sessions) || []).forEach(function (s) {
+        var iso = String((s && s.session_date) || "").slice(0, 10);
+        if (!iso || !sessionMarkedAttended(s)) return;
+        if (statusByIso[iso] === "cancelled") statusByIso[iso] = "completed";
+      });
+    }
+
     function mergeAndPaint() {
       if (!host.isConnected) return;
+      promoteAttendedOverClubCancel();
       applyTermDateChipStatuses(host, data, statusByIso);
     }
 
@@ -5625,7 +5646,8 @@
             if (
               kind === "cancellation" ||
               reason === "instructor_cancelled" ||
-              reason === "admin_cancelled"
+              reason === "admin_cancelled" ||
+              reason === "club_cancelled"
             ) {
               if (statusByIso[iso] !== "absent") statusByIso[iso] = "cancelled";
               return;
