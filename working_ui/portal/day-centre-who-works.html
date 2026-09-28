@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Day Centre · Who I work with</title>
+  <style>
+    :root {
+      --ink: #142033;
+      --muted: #5b6b7c;
+      --line: #d5dde6;
+      --dc: #1b7a4a;
+      --dc-soft: #ddf5e8;
+      --home: #c62828;
+      --home-soft: #ffe5e5;
+      --paper: #fff;
+      --bg: #e8eef4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .toolbar p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      min-width: 0;
+    }
+    .toolbar button {
+      border: 2px solid var(--dc);
+      background: var(--dc);
+      color: #fff;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .sheet {
+      max-width: 1100px;
+      margin: 14px auto 28px;
+      padding: 16px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+    .who {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .who img.brand,
+    .who img.kid {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      flex-shrink: 0;
+      background: #fff;
+    }
+    .who img.kid {
+      border-radius: 50%;
+      border: 3px solid var(--dc);
+    }
+    .who .title { min-width: 0; flex: 1; }
+    .who strong {
+      display: block;
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      overflow-wrap: break-word;
+    }
+    .who span {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .who .kid-name {
+      font-weight: 900;
+      font-size: 0.95rem;
+      text-align: center;
+      max-width: 72px;
+      overflow-wrap: break-word;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
+    .day {
+      min-width: 0;
+      border-radius: 14px;
+      border: 3px solid var(--dc);
+      background: var(--dc-soft);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .day.home {
+      border-color: var(--home);
+      background: var(--home-soft);
+    }
+    .day h2 {
+      margin: 0;
+      text-align: center;
+      font-size: clamp(0.85rem, 1.6vw, 1.05rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      overflow-wrap: break-word;
+    }
+    .day.come h2 { color: var(--dc); }
+    .day.home h2 { color: var(--home); }
+    .people {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+    .person {
+      background: #fff;
+      border-radius: 12px;
+      border: 2px solid rgba(0, 0, 0, 0.06);
+      padding: 6px 4px 8px;
+      text-align: center;
+      min-width: 0;
+    }
+    .person img {
+      width: 100%;
+      max-height: 148px;
+      aspect-ratio: 1;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      margin: 0 auto;
+      background: #fff;
+    }
+    .person span {
+      display: block;
+      margin-top: 4px;
+      font-weight: 900;
+      font-size: clamp(0.78rem, 1.4vw, 0.95rem);
+      line-height: 1.15;
+      overflow-wrap: break-word;
+    }
+    .home-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 12px;
+      border: 2px solid rgba(0, 0, 0, 0.06);
+      padding: 10px 8px;
+      min-width: 0;
+      min-height: 0;
+    }
+    .home-body img {
+      width: min(100%, 140px);
+      height: auto;
+      max-height: 160px;
+      object-fit: contain;
+      display: block;
+    }
+    .home-body p {
+      margin: 0;
+      font-weight: 900;
+      font-size: 1.15rem;
+      color: var(--home);
+      text-align: center;
+    }
+    @media (max-width: 760px) {
+      .board { grid-template-columns: 1fr; }
+      .people { flex-direction: row; }
+      .person { flex: 1 1 0; min-width: 0; }
+      .person img { max-height: 120px; }
+      .home-body { min-height: 160px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none; }
+      .sheet {
+        max-width: none;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+      }
+      .board { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .people { flex-direction: column; }
+      .person img { max-height: 28mm; }
+      .home-body { min-height: 0; }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+    @page { size: A4 landscape; margin: 10mm; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <p>Day Centre · Who I work with · Print / PDF</p>
+    <button type="button" id="btnPrint">Print / PDF</button>
+  </div>
+  <main class="sheet">
+    <header class="who">
+      <img class="brand" src="social-story-assets/clubsensational-logo.png" alt="clubSENsational" />
+      <div class="title">
+        <strong>Who I work with</strong>
+        <span>Day Centre · Monday to Friday</span>
+      </div>
+      <div class="kid-name">
+        <img class="kid" src="social-story-assets/avatar-ikram.png" alt="" />
+        Ikram
+      </div>
+    </header>
+    <div class="board">
+      <article class="day come">
+        <h2>Monday</h2>
+        <div class="people">
+          <div class="person"><img src="social-story-assets/staff/youssef.png" alt="" /><span>Youssef</span></div>
+          <div class="person"><img src="social-story-assets/staff/michelle.png" alt="" /><span>Michelle</span></div>
+          <div class="person"><img src="social-story-assets/staff/patience.png" alt="" /><span>Patience</span></div>
+        </div>
+      </article>
+      <article class="day come">
+        <h2>Tuesday</h2>
+        <div class="people">
+          <div class="person"><img src="social-story-assets/staff/luliya.png" alt="" /><span>Luliya</span></div>
+          <div class="person"><img src="social-story-assets/staff/patience.png" alt="" /><span>Patience</span></div>
+        </div>
+      </article>
+      <article class="day come">
+        <h2>Wednesday</h2>
+        <div class="people">
+          <div class="person"><img src="social-story-assets/staff/luliya.png" alt="" /><span>Luliya</span></div>
+          <div class="person"><img src="social-story-assets/staff/patience.png" alt="" /><span>Patience</span></div>
+        </div>
+      </article>
+      <article class="day home">
+        <h2>Thursday</h2>
+        <div class="home-body">
+          <img src="social-story-assets/home.png" alt="" />
+          <p>Home</p>
+        </div>
+      </article>
+      <article class="day come">
+        <h2>Friday</h2>
+        <div class="people">
+          <div class="person"><img src="social-story-assets/staff/youssef.png" alt="" /><span>Youssef</span></div>
+          <div class="person"><img src="social-story-assets/staff/michelle.png" alt="" /><span>Michelle</span></div>
+          <div class="person"><img src="social-story-assets/staff/patience.png" alt="" /><span>Patience</span></div>
+        </div>
+      </article>
+    </div>
+  </main>
+  <script>
+    document.getElementById("btnPrint").addEventListener("click", function () {
+      window.print();
+    });
+  </script>
+</body>
+</html>
