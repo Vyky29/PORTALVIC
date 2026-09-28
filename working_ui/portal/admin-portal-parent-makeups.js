@@ -121,7 +121,7 @@
     if (st === 'consumed') return 'Make up';
     if (st === 'offered') return 'Offered';
     if (st === 'open') return 'Open';
-    if (st === 'cancelled') return 'Cancelled';
+    if (st === 'cancelled') return 'Cancelled by admin';
     if (st === 'forfeited') return 'Forfeited';
     return status || '—';
   }

@@ -3966,6 +3966,45 @@
         transform: none;
       }
     }
+    .pp-hub-shortcut[hidden] { display: none !important; }
+    .pp-hub-shortcut--makeup .pp-hub-shortcut__ico { background: #e0f2fe; color: #0369a1; }
+    .pp-hub-shortcut--makeup-due {
+      border-color: #0284c7;
+      background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+      box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.55);
+      animation: pp-hub-makeup-due-pulse 1.05s ease-in-out infinite;
+    }
+    .pp-hub-shortcut--makeup-due .pp-hub-shortcut__ico {
+      background: #0284c7;
+      color: #fff;
+    }
+    .pp-hub-shortcut--makeup-due .pp-hub-shortcut__label {
+      color: #075985;
+      font-weight: 800;
+    }
+    @keyframes pp-hub-makeup-due-pulse {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.55);
+        border-color: #0284c7;
+        filter: brightness(1);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(2, 132, 199, 0);
+        border-color: #0369a1;
+        filter: brightness(1.08);
+        transform: scale(1.03);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .pp-hub-shortcut--makeup-due {
+        animation: none;
+        outline: 2px solid #0284c7;
+        outline-offset: 2px;
+        transform: none;
+      }
+    }
     .pp-hub-shortcut__ico--club-logo {
       padding: 4px;
       overflow: hidden;
@@ -5702,7 +5741,7 @@
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/parent_portal_team.js?v=20260916-b3-board"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260911-dc-ht"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260928-attended-half"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260928-makeup-sync"></script>
   <script src="/portal/parent_portal_app.js?v=20260922-absence-proof"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

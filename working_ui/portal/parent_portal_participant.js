@@ -2345,6 +2345,7 @@
       '" data-pp-open="' +
       esc(view) +
       '"' +
+      (opts.hidden ? " hidden" : "") +
       (disabled ? ' disabled aria-disabled="true"' : "") +
       ' aria-label="' +
       esc(caption) +
@@ -2438,6 +2439,14 @@
       '<section class="pp-hub-shortcuts" aria-label="Quick access">' +
       '<p class="pp-pax-info-section-label">Quick access</p>' +
       '<div class="pp-hub-shortcuts__grid">' +
+      hubShortcutBtn(
+        "makeup",
+        "Makeup",
+        ico(
+          '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h8M8 18h5"/>',
+        ),
+        { extraClass: " pp-hub-shortcut--makeup", hidden: true },
+      ) +
       (sessionProgressEnabled
         ? hubShortcutBtn(
             "sessions",
@@ -6184,6 +6193,14 @@
         var open = grants.filter(function (g) {
           return g && (g.status === "open" || g.pending_offer);
         });
+        var due = grants.some(function (g) {
+          return g && g.pending_offer;
+        });
+        var makeupBtn = host.querySelector('.pp-hub-shortcut--makeup[data-pp-open="makeup"]');
+        if (makeupBtn) {
+          makeupBtn.hidden = !due;
+          makeupBtn.classList.toggle("pp-hub-shortcut--makeup-due", !!due);
+        }
         var shell = host.querySelector(".pp-pax-shell[data-pp-view='hub']");
         if (!shell) return;
         var old = shell.querySelector("#ppHubMakeupNotice");
@@ -6205,13 +6222,13 @@
             : "") +
           ". Not billed and not on invoices." +
           (notes ? "<br><span class=\"pp-muted\">" + esc(notes) + "</span>" : "") +
-          ' <button type="button" class="pp-hub-alerts__all" data-pp-open="absence">View makeup</button>';
+          ' <button type="button" class="pp-hub-alerts__all" data-pp-open="makeup">View makeup</button>';
         var ops = shell.querySelector(".pp-hub-ops");
         if (ops) shell.insertBefore(banner, ops);
         else shell.appendChild(banner);
         banner.querySelectorAll("[data-pp-open]").forEach(function (btn) {
           btn.addEventListener("click", function () {
-            openSubview(host, data, opts, btn.getAttribute("data-pp-open") || "absence");
+            openSubview(host, data, opts, btn.getAttribute("data-pp-open") || "makeup");
           });
         });
       })
@@ -6235,6 +6252,8 @@
         }
         syncHubMenuChrome(host, data, opts);
         bindHubOpenButtons(host, data, opts);
+        mountHubMakeupNotice(host, data, opts);
+        mountHubMakeupNotice(host, data, opts);
       })
       .catch(function () {});
   }
@@ -8296,10 +8315,21 @@
         "</form>" +
         '<div id="ppAbsenceNotice" class="pp-notice" hidden></div>' +
         "</div>" +
-        '<h4 class="pp-absence-list-title">Makeup offers</h4>' +
-        '<div id="ppMakeupListHost"><p class="pp-muted">Loading…</p></div>' +
         '<h4 class="pp-absence-list-title">Your absence reports</h4>' +
         '<div id="ppAbsenceListHost"><p class="pp-muted">Loading…</p></div>',
+    );
+    bindBack(host, data, opts);
+    bindAbsence(host, data, opts);
+  }
+
+  function renderMakeup(host, data, opts) {
+    host.innerHTML = subviewShell(
+      data,
+      "makeup",
+      '<h3 class="pp-pax-subview-title">Makeup</h3>' +
+        '<p class="pp-muted pp-pax-subview-note">Accept or decline the slot. The office sees your answer straight away. To say they will be absent, use Absent.</p>' +
+        '<div id="ppMakeupNotice" class="pp-notice" hidden></div>' +
+        '<div id="ppMakeupListHost"><p class="pp-muted">Loading…</p></div>',
     );
     bindBack(host, data, opts);
     bindAbsence(host, data, opts);
@@ -10332,6 +10362,7 @@
           ? '<p class="pp-absence-card__reason">' + esc(pending.offer_notes) + "</p>"
           : "") +
         '<p class="pp-notice pp-notice--error" role="status">If you decline, you forfeit this makeup — the slot may go to another family.</p>' +
+        '<p class="pp-makeup-card__status" data-pp-makeup-status hidden></p>' +
         '<div class="pp-makeup-acts">' +
         '<button type="button" class="pp-btn pp-btn--primary" data-pp-makeup-accept="' +
         esc(pending.id) +
@@ -10363,16 +10394,26 @@
             : "Makeup accepted — roster confirmation is in progress."
           : status === "forfeited"
             ? "Makeup forfeited after a declined offer."
-            : "Status: " + status;
+            : status === "cancelled"
+              ? "Cancelled by admin."
+              : "Status: " + status;
     var notes = String(g.notes || "").trim();
     return (
       '<article class="pp-absence-card" data-status="' +
       esc(status) +
       '">' +
       '<div class="pp-absence-card__head">' +
-      "<strong>Makeup session due</strong>" +
+      "<strong>" +
+      (status === "cancelled" ? "Makeup session" : "Makeup session due") +
+      "</strong>" +
       '<span class="pp-absence-chip">' +
-      esc(status === "open" ? "Awaiting slot" : status) +
+      esc(
+        status === "open"
+          ? "Awaiting slot"
+          : status === "cancelled"
+            ? "Cancelled by admin"
+            : status,
+      ) +
       "</span></div>" +
       '<p class="pp-absence-card__svc">' +
       esc(g.preferred_venue || "") +
@@ -10386,7 +10427,7 @@
   }
 
   function bindAbsence(host, data, opts) {
-    var notice = host.querySelector("#ppAbsenceNotice");
+    var notice = host.querySelector("#ppMakeupNotice") || host.querySelector("#ppAbsenceNotice");
     var listHost = host.querySelector("#ppAbsenceListHost");
     var makeupHost = host.querySelector("#ppMakeupListHost");
     var unwellBlock = host.querySelector("#ppAbsenceUnwellBlock");
@@ -10399,6 +10440,16 @@
       notice.hidden = !text;
       notice.className = "pp-notice" + (kind ? " pp-notice--" + kind : "");
       notice.textContent = text || "";
+    }
+
+    function setMakeupCardStatus(btn, kind, text) {
+      var card = btn && btn.closest ? btn.closest(".pp-makeup-card") : null;
+      var line = card ? card.querySelector("[data-pp-makeup-status]") : null;
+      if (!line) return;
+      line.hidden = !text;
+      line.className =
+        "pp-makeup-card__status pp-notice" + (kind ? " pp-notice--" + kind : "");
+      line.textContent = text || "";
     }
 
     function selectedReasonCode() {
@@ -10465,18 +10516,22 @@
               var offerId = btn.getAttribute("data-pp-makeup-accept");
               if (!offerId || typeof opts.respondMakeup !== "function") return;
               btn.disabled = true;
+              setMakeupCardStatus(btn, "info", "Accepting…");
               showNotice("info", "Accepting…");
               void opts
                 .respondMakeup(offerId, "accept")
                 .then(function (r) {
-                  showNotice("info", (r && r.message) || "Accepted.");
+                  var msg = (r && r.message) || "Accepted. The office has your answer.";
+                  setMakeupCardStatus(btn, "info", msg);
+                  showNotice("info", msg);
                   refreshMakeupList();
                 })
                 .catch(function (err) {
-                  showNotice(
-                    "error",
-                    (err && err.messageText) || "Could not accept — try again or contact the office.",
-                  );
+                  var msg =
+                    (err && (err.messageText || err.message)) ||
+                    "Could not accept — try again or contact the office.";
+                  setMakeupCardStatus(btn, "error", msg);
+                  showNotice("error", msg);
                   btn.disabled = false;
                 });
             });
@@ -10498,15 +10553,22 @@
                 return;
               }
               btn.disabled = true;
+              setMakeupCardStatus(btn, "info", "Declining…");
               showNotice("info", "Declining…");
               void opts
                 .respondMakeup(offerId, "decline", reason)
                 .then(function (r) {
-                  showNotice("info", (r && r.message) || "Declined — grant forfeited.");
+                  var msg = (r && r.message) || "Declined — grant forfeited.";
+                  setMakeupCardStatus(btn, "info", msg);
+                  showNotice("info", msg);
                   refreshMakeupList();
                 })
-                .catch(function () {
-                  showNotice("error", "Could not decline — try again.");
+                .catch(function (err) {
+                  var msg =
+                    (err && (err.messageText || err.message)) ||
+                    "Could not decline — try again.";
+                  setMakeupCardStatus(btn, "error", msg);
+                  showNotice("error", msg);
                   btn.disabled = false;
                 });
             });
@@ -10783,6 +10845,7 @@
     else if (view === "booking") renderBooking(host, data, opts);
     else if (view === "calendar") renderCalendar(host, data, opts);
     else if (view === "absence") renderAbsence(host, data, opts);
+    else if (view === "makeup") renderMakeup(host, data, opts);
     else if (view === "balance") renderBalance(host, data, opts);
     else if (view === "invoices") {
       if (!showInvoicesForParticipant(data)) {

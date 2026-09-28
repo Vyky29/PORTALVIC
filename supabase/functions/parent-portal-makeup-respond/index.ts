@@ -73,28 +73,25 @@ Deno.serve(async (req) => {
       .eq("id", offer.grant_id)
       .maybeSingle();
 
-    const roster = await applyAcceptedMakeupToRoster(
-      supabase,
-      offer,
-      grant || {
-        participant_display: "",
-        contact_id: offer.contact_id,
-        preferred_venue: offer.venue,
-        service_label: offer.service_label,
-      },
-      null,
-    );
-
-    if (!roster.override_id) {
-      return json(500, {
-        ok: false,
-        error: "roster_apply_failed",
-        detail: roster.error || "unknown",
-        message:
-          roster.error === "staff_required" || roster.error === "time_required"
-            ? "This offer is missing instructor or time — ask the office to re-offer the slot."
-            : "Could not place this makeup on the roster. Please contact the office.",
-      });
+    let roster: { override_id: string | null; error?: string } = {
+      override_id: null,
+      error: "roster_failed",
+    };
+    try {
+      roster = await applyAcceptedMakeupToRoster(
+        supabase,
+        offer,
+        grant || {
+          participant_display: "",
+          contact_id: offer.contact_id,
+          preferred_venue: offer.venue,
+          service_label: offer.service_label,
+        },
+        null,
+      );
+    } catch (e) {
+      console.error("[parent-portal-makeup-respond] roster", e);
+      roster = { override_id: null, error: "roster_threw" };
     }
 
     const { data: updated, error } = await supabase
@@ -111,6 +108,16 @@ Deno.serve(async (req) => {
       .from("portal_parent_makeup_grants")
       .update({ status: "consumed", closed_at: now, updated_at: now })
       .eq("id", offer.grant_id);
+
+    if (!roster.override_id) {
+      return json(200, {
+        ok: true,
+        offer: updated,
+        roster_error: roster.error || "unknown",
+        message:
+          "Accepted. The office has your answer. If the slot is not on the timetable yet, they will confirm it.",
+      });
+    }
 
     // Confirmed makeup: notify parent + instructor (real WA/email, not soft inbox only).
     let makeup_notify = null;
