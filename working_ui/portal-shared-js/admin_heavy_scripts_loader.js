@@ -6,15 +6,15 @@
 
   var SETS = {
     roster: [
-      "/portal/term_from_timetable.js?v=20260911-emmanuel-no-tue",
+      "/portal/term_from_timetable.js?v=20260928-patience-ikram",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260912-amaar-mon-keep",
       "/portal/clients_info_embed.js?v=20260910-joelle-406",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
-      "/portal/portal_roster_canonical.js?v=20260925-logan-aurora",
-      "/portal/autumn_staff_hours_reference.js?v=20260914-youssef-fri-ikram",
+      "/portal/portal_roster_canonical.js?v=20260928-patience-ikram",
+      "/portal/autumn_staff_hours_reference.js?v=20260928-patience-ikram",
       "/portal/portal_dc_services_local.js?v=20260914-overview-pin2",
       "/portal/portal_capacity_chain_occupants.js?v=20260925-logan-aurora",
       "/portal/portal_overview_capacity_chain.js?v=20260916-muhammad-mon7",
@@ -35,7 +35,7 @@
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: [
       "/portal/spreadsheet_reference_data.js?v=20260911-autumn-labels",
-      "/portal/autumn_staff_hours_reference.js?v=20260914-youssef-fri-ikram",
+      "/portal/autumn_staff_hours_reference.js?v=20260928-patience-ikram",
     ],
   };
 

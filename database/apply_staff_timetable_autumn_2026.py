@@ -237,6 +237,15 @@ def build_autumn_rows() -> list[dict]:
                         rows.append(
                             slot(iso, day_name, "Javi Palankas", tr, venue)
                         )
+                    # Patience takes the empty Day Centre seat: Ikram 11-4
+                    # Mon / Wed / Fri. Luliya Wednesday Northolt pool stays.
+                    if day_name in ("Monday", "Wednesday", "Friday") and vslug in (
+                        "swimfarm",
+                        "swimfarmcentre",
+                    ):
+                        rows.append(
+                            slot(iso, day_name, "Patience", "11-4", "SwimFarm")
+                        )
                     if day_name == "Monday" or day_name == "Friday":
                         continue
                     if day_name == "Wednesday" and vslug in (
@@ -483,6 +492,18 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
             shift_dates["luliya"].append(luliya_sun_cover)
         shift_dates["luliya"].sort()
 
+    # Patience Day Centre Ikram 11-4: Monday, Wednesday, Friday from 28 Sep.
+    patience_dates = []
+    patience_cur = parse_iso("2026-09-28")
+    patience_end = parse_iso(SESSION_TO)
+    while patience_cur <= patience_end:
+        if is_session_day(patience_cur) and patience_cur.weekday() in (0, 2, 4):
+            patience_dates.append(iso_from_date(patience_cur))
+        patience_cur += timedelta(days=1)
+    staff_wd["patience"] = [1, 3, 5]
+    staff_wd_dashboard["patience"] = [1, 3, 5]
+    shift_dates["patience"] = patience_dates
+
     view_month_keys = _month_range_keys(view_from, view_to)
     dashboard_months = [mm - 1 for _, mm in view_month_keys]
     dashboard_year = view_month_keys[0][0] if view_month_keys else 2026
@@ -520,6 +541,7 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
                 "raul",
                 "roberto",
                 "youssef",
+                "patience",
             ],
             "firstDate": first_s,
             "lastDate": last_s,

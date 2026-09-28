@@ -1072,3 +1072,36 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ]
   }
 };
+/* Patience Day Centre with Ikram: Mon / Wed / Fri from 28 Sep through 17 Dec, skip half term. */
+(function () {
+  var t = window.PORTAL_TERM_FROM_TIMETABLE;
+  if (!t) return;
+  var dates = [];
+  var cur = new Date("2026-09-28T12:00:00");
+  var end = new Date("2026-12-17T12:00:00");
+  while (cur <= end) {
+    var dow = cur.getDay();
+    var iso =
+      cur.getFullYear() +
+      "-" +
+      String(cur.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(cur.getDate()).padStart(2, "0");
+    if ((dow === 1 || dow === 3 || dow === 5) && (iso < "2026-10-26" || iso > "2026-10-30")) {
+      dates.push(iso);
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  if (t.termStaffWeekdayIndicesByProfileKey) {
+    t.termStaffWeekdayIndicesByProfileKey.patience = [1, 3, 5];
+  }
+  if (t.termStaffWeekdayIndicesDashboardByProfileKey) {
+    t.termStaffWeekdayIndicesDashboardByProfileKey.patience = [1, 3, 5];
+  }
+  if (t.termStaffShiftDatesByProfileKey) {
+    t.termStaffShiftDatesByProfileKey.patience = dates;
+  }
+  if (Array.isArray(t.termStaffDayCentreCalendarKeys) && t.termStaffDayCentreCalendarKeys.indexOf("patience") < 0) {
+    t.termStaffDayCentreCalendarKeys.push("patience");
+  }
+})();

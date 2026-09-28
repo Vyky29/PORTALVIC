@@ -9,14 +9,14 @@
     var VER = "20260923-move-instructor";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260925-luliya-off",
+    "/portal/term_from_timetable.js?v=20260928-patience-ikram",
     "/portal/term_calendar_dashboard_shared.js?v=20260914-raul-fri18-off",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260914-no-eddie-may",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260914-office-duty-nofb",
     "/portal/portal_staff_feedback_data_loader.js?v=20260915-2to1-shared",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
-      "/portal/portal_roster_canonical.js?v=20260925-logan-aurora",
+      "/portal/portal_roster_canonical.js?v=20260928-patience-ikram",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/portal_client_day_visibility.js?v=20260916-short-names",

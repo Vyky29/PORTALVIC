@@ -3884,7 +3884,7 @@
       pushExpandedStanding(out, [row]);
     });
     /* Sep 6 Hub cover is applied once in resolveCanonicalRosterRows (after DB rows). */
-    return applyLuliyaNewStandingFrom28(out);
+    return applyPatienceIkramFrom28(applyLuliyaNewStandingFrom28(out));
   }
 
   /** LOCAL EXTRA Sunday Hub Multi — Berta Lead book (Aurora pool kids' Hub half). */
@@ -3991,6 +3991,65 @@
     });
     autumnSundaySep6HubCoverRows().forEach(function (row) {
       out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
+  /**
+   * Patience Day Centre with Ikram 11-4, Mon / Wed / Fri, from 28 Sep 2026
+   * through 17 Dec. Half term 26-30 Oct is skipped. Michelle and Wednesday
+   * Luliya stay on Ikram. Dated rows only so earlier September is unchanged.
+   */
+  var PATIENCE_IKRAM_FROM = "2026-09-28";
+  var PATIENCE_IKRAM_UNTIL = "2026-12-17";
+
+  function patienceIkramDates() {
+    var out = [];
+    var cur = new Date(PATIENCE_IKRAM_FROM + "T12:00:00");
+    var end = new Date(PATIENCE_IKRAM_UNTIL + "T12:00:00");
+    while (cur <= end) {
+      var dow = cur.getDay();
+      var iso =
+        cur.getFullYear() +
+        "-" +
+        String(cur.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(cur.getDate()).padStart(2, "0");
+      if (
+        (dow === 1 || dow === 3 || dow === 5) &&
+        (iso < "2026-10-26" || iso > "2026-10-30")
+      ) {
+        out.push({
+          iso: iso,
+          day: dow === 1 ? "Monday" : dow === 3 ? "Wednesday" : "Friday",
+        });
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return out;
+  }
+
+  function applyPatienceIkramFrom28(rows) {
+    var out = Array.isArray(rows) ? rows.slice() : [];
+    var seen = Object.create(null);
+    out.forEach(function (r) {
+      if (!r) return;
+      if (String(r.instructors || "").toLowerCase().indexOf("patience") < 0) return;
+      var iso = normIso(r.session_date);
+      if (iso) seen[iso] = true;
+    });
+    patienceIkramDates().forEach(function (d) {
+      if (seen[d.iso]) return;
+      out.push({
+        client_name: "Ikram",
+        day: d.day,
+        instructors: "PATIENCE",
+        service: "Day Centre",
+        area: "Hub Room",
+        time_slot: "11 to 4",
+        venue: "SwimFarm",
+        session_date: d.iso,
+      });
     });
     return out;
   }
@@ -4248,6 +4307,7 @@
     /* After all Autumn patches: no summer history weeks left to snap onto Sep+. */
     merged = purgeSummerHistoryOutsideAutumnTemplates(merged);
     merged = applyLuliyaNewStandingFrom28(merged);
+    merged = applyPatienceIkramFrom28(merged);
     return dedupeRosterAdapterRows(merged);
   }
 
@@ -4653,6 +4713,10 @@
       /* Mon 28 Sep: Luliya off Mondays and Fridays. Wednesday Ikram 11-3 stays. */
       try {
         out = applyLuliyaNewStandingFrom28(out);
+      } catch (_) {}
+      /* Patience with Ikram 11-4 Mon / Wed / Fri from 28 Sep. */
+      try {
+        out = applyPatienceIkramFrom28(out);
       } catch (_) {}
       return out;
     },
