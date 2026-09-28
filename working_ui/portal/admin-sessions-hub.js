@@ -848,6 +848,62 @@
    * regardless of whether the sheet typed it in 24h ("17.30 to 18") or 12h ("5.30 to 6").
    * Keeps a safe fallback to the raw label so nothing renders blank.
    */
+  /** Consecutive same-child seats (Amar Rai 5–5.30 + 5.30–6) show as one clock. */
+  function registerClockSpanSlot(slot, slots) {
+    if (!slot || !slots || slots.length < 2) return slot;
+    var cid = canonicalClientSlug(slot.client_name);
+    var inst = primaryInstructorKey(slot);
+    if (!cid) return slot;
+    var chain = [];
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (!s || canonicalClientSlug(s.client_name) !== cid) continue;
+      if (primaryInstructorKey(s) !== inst) continue;
+      if (isDayCentreService(s.service) || isDayCentreService(slot.service)) continue;
+      if (clean(s.service) && clean(slot.service) && clean(s.service) !== clean(slot.service)) continue;
+      if (!s.time_start || !s.time_end) continue;
+      chain.push(s);
+    }
+    if (chain.length < 2) return slot;
+    chain.sort(function (a, b) {
+      return a.time_start < b.time_start ? -1 : a.time_start > b.time_start ? 1 : 0;
+    });
+    var idx = -1;
+    for (var j = 0; j < chain.length; j++) {
+      if (chain[j] === slot || (chain[j].time_start === slot.time_start && chain[j].time_end === slot.time_end)) {
+        idx = j;
+        break;
+      }
+    }
+    if (idx < 0) return slot;
+    var start = chain[idx];
+    var end = chain[idx];
+    while (idx > 0 && chain[idx - 1].time_end === start.time_start) {
+      idx -= 1;
+      start = chain[idx];
+    }
+    idx = chain.indexOf(end);
+    if (idx < 0) {
+      for (var k = 0; k < chain.length; k++) {
+        if (chain[k].time_start === end.time_start) {
+          idx = k;
+          break;
+        }
+      }
+    }
+    while (idx >= 0 && idx + 1 < chain.length && chain[idx + 1].time_start === end.time_end) {
+      idx += 1;
+      end = chain[idx];
+    }
+    if (start === end) return slot;
+    var merged = Object.assign({}, slot);
+    merged.time_start = start.time_start;
+    merged.time_end = end.time_end;
+    merged.time_slot =
+      rosterTimeSlotLabelFromBounds(start.time_start, end.time_end, slot.day) || slot.time_slot;
+    return merged;
+  }
+
   function rosterTimeDisplay(slot) {
     if (!slot) return "";
     var raw = clean(slot.time_slot);
@@ -1090,12 +1146,30 @@
       if (client === "Cyrus" && !hub) next = { client_name: "Gabriel" };
       else if (client === "Gabriel" && hub) next = { client_name: "Cyrus" };
     }
-    if (!next) return r;
-    return Object.assign({}, r, next);
-  }
+  if (!next) return r;
+  return Object.assign({}, r, next);
+}
 
-  function rosterRowToSlot(isoDate, wd, r) {
-    r = sundayCyrusGabrielPaintRow(isoDate, r);
+/**
+ * Mon Dan Northolt 6–6.30 is Amaar Ah from Mon 14 Sep. The Mon 7 standing snap
+ * still says Adaam and was projected onto later Mondays.
+ */
+function mondayDanNortholtAmaarPaintRow(isoDate, r) {
+  var iso = String(isoDate || "").substring(0, 10);
+  if (!r || !iso || iso < "2026-09-14") return r;
+  if (weekdayLongFromIso(iso) !== "Monday") return r;
+  if (!/northolt/i.test(String(r.venue || ""))) return r;
+  if (!/aquatic|swim/i.test(String(r.service || ""))) return r;
+  if (!/\bdan\b/i.test(String(r.instructors || ""))) return r;
+  if (!/^adaam\b/i.test(String(r.client_name || "").trim())) return r;
+  var pt = parseTimeSlot(r.time_slot, "Monday");
+  if (!pt || pt.start !== "18:00" || pt.end !== "18:30") return r;
+  return Object.assign({}, r, { client_name: "Amaar Ah" });
+}
+
+function rosterRowToSlot(isoDate, wd, r) {
+  r = sundayCyrusGabrielPaintRow(isoDate, r);
+  r = mondayDanNortholtAmaarPaintRow(isoDate, r);
     var slot = parseTimeSlot(r.time_slot, wd);
     var origInstRaw = clean(r.instructors);
     /* Timetable owns slash pools before parse — never ship Roberto/Youssef as two columns. */
@@ -9761,6 +9835,33 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return row;
   };
 
+  /**
+   * Submitted rows often have no session_time. Attach the roster seat so Register
+   * shows the same clock as an awaiting line (and the full aquatic span).
+   */
+  AdminSessionsHub.prototype.feedbackRowWithRosterClock = function (fb, day) {
+    if (!fb || fb._ashAwaitingSlot || fb._ashDisplaySlot) return fb;
+    var iso = clean(day || this.feedbackRowDate(fb)).slice(0, 10);
+    if (!iso || typeof this.expandSlotsForDate !== "function") return fb;
+    var slots = this.expandSlotsForDate(iso) || [];
+    var cid = canonicalClientSlug(fb.client_name);
+    if (!cid) return fb;
+    var want = normTimeKey(fb.session_time, weekdayLongFromIso(iso));
+    var match = null;
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (!s || canonicalClientSlug(s.client_name) !== cid) continue;
+      var st = s.time_start || normTimeKey(s.time_slot, s.day || weekdayLongFromIso(iso));
+      if (want && st === want) {
+        match = s;
+        break;
+      }
+      if (!match) match = s;
+    }
+    if (!match) return fb;
+    return this.feedbackRowWithDisplaySlot(fb, registerClockSpanSlot(match, slots));
+  };
+
   /** Lead MA: each submitted feedback once + awaiting rows (no merge duplicates). */
   AdminSessionsHub.prototype.feedbackMixRowsLeadUniqueDay = function (day) {
     var hub = this;
@@ -9927,9 +10028,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           }
         }
         if (afb && !isUsed(afb)) {
-          out.push(
-            isDayCentreService(slot.service) ? hub.feedbackRowWithDisplaySlot(afb, slot) : afb
-          );
+          out.push(hub.feedbackRowWithDisplaySlot(afb, registerClockSpanSlot(slot, displaySlots)));
           markUsed(afb);
           if (isDayCentreService(slot.service)) markDayCentreSiblingsUsed(slot);
         } else if (isCancelledSubmitted) {
@@ -9941,7 +10040,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         } else if (isAbsent) {
           var synthAbsent = hub.syntheticAbsentDisplayRow(slot);
           if (synthAbsent) {
-            out.push(synthAbsent);
+            out.push(
+              hub.feedbackRowWithDisplaySlot(synthAbsent, registerClockSpanSlot(slot, displaySlots))
+            );
             markUsed(synthAbsent);
           }
         }
@@ -9950,9 +10051,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (hub.slotFeedbackComplete(slot) || (isDayCentreService(slot.service) && unitComplete[ukey])) {
         var fb = hub.findFeedbackForSlot(slot);
         if (fb && !isUsed(fb)) {
-          out.push(
-            isDayCentreService(slot.service) ? hub.feedbackRowWithDisplaySlot(fb, slot) : fb
-          );
+          out.push(hub.feedbackRowWithDisplaySlot(fb, registerClockSpanSlot(slot, displaySlots)));
           markUsed(fb);
           if (isDayCentreService(slot.service)) markDayCentreSiblingsUsed(slot);
         }
@@ -9994,7 +10093,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         if (dcAlready) continue;
       }
-      out.push(submitted[j]);
+      out.push(hub.feedbackRowWithRosterClock(submitted[j], day));
       markUsed(submitted[j]);
     }
     return out;
@@ -10229,10 +10328,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (displaySlot && clean(displaySlot.service)) ||
       hub.feedbackDisplayService(fb) ||
       "\u2014";
-    var svcTimeSub =
-      displaySlot && displaySlot.time_slot
-        ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(displaySlot)) + "</div>"
-        : "";
+    var clockSlot = null;
+    if (clean(fb.session_time)) {
+      clockSlot = {
+        time_slot: clean(fb.session_time),
+        session_date: fb.session_date,
+        day: weekdayLongFromIso(fb.session_date),
+      };
+    }
+    if (!clockSlot || !rosterTimeDisplay(clockSlot)) clockSlot = displaySlot;
+    var clockLabel = clockSlot ? rosterTimeDisplay(clockSlot) : "";
+    var svcTimeSub = clockLabel
+      ? '<div class="ash-cell-sub">' + esc(clockLabel) + "</div>"
+      : "";
     var ind = terminal ? "N/A" : independenceLabel(fb);
     // Raw "Session feedback" = the narrative the instructor submitted
     // (reception / session / handover). Falls back to positive_feedback for
