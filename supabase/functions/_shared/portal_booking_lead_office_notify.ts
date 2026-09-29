@@ -8,6 +8,10 @@ import {
   sendParentEmailViaSmtp,
 } from "./portal_parent_messaging.ts";
 import { adminPushOpenBase } from "./portal_webpush_util.ts";
+import {
+  suggestedTransferReference,
+  tideBankDetailsFromEnv,
+} from "./tide_bank_details.ts";
 
 function officeNotifyEmails(): string[] {
   const raw = String(
@@ -700,6 +704,32 @@ export async function notifyOfficeBankPaymentReported(opts: {
   }
 }
 
+/** Invoice PDF account, used when Tide secrets are not on this function. */
+const INVOICE_BANK = {
+  payee_name: "ClubSENsational LTD",
+  sort_code: "04-06-05",
+  account_number: "16987295",
+};
+
+function payPlanNeedsBankDetails(payPlan: string): boolean {
+  return /bank transfer/i.test(payPlan);
+}
+
+function payHoldBankBlock(invoiceNumber: string, participant: string): string {
+  const bank = tideBankDetailsFromEnv();
+  const payee = bank.payee_name || INVOICE_BANK.payee_name;
+  const sort = bank.sort_code || INVOICE_BANK.sort_code;
+  const account = bank.account_number || INVOICE_BANK.account_number;
+  const ref = suggestedTransferReference(invoiceNumber, participant);
+  return (
+    `Bank transfer:\n` +
+    `Payee: ${payee}\n` +
+    `Sort code: ${sort}\n` +
+    `Account: ${account}\n` +
+    `Reference: ${ref}\n`
+  );
+}
+
 /** Office FYI when finish-booking creates invoice + 30' pay hold on a live session. */
 export async function notifyOfficePayHoldStarted(opts: {
   invoiceShareId: string;
@@ -729,6 +759,9 @@ export async function notifyOfficePayHoldStarted(opts: {
   const tos = officeNotifyEmails();
   const adminUrl = reenrolmentsReviewUrl();
   const subject = `${kind} pay hold 30' · ${invNo} · ${participant}`;
+  const bankBlock = payPlanNeedsBankDetails(payPlan)
+    ? `\n${payHoldBankBlock(invNo, participant)}\n`
+    : "";
   const bodyText =
     `Finish-booking: parent chose funding / payment and a ${kind.toLowerCase()} seat is on a 30 minute pay hold.\n\n` +
     `Invoice: ${invNo}\n` +
@@ -740,10 +773,31 @@ export async function notifyOfficePayHoldStarted(opts: {
     (funding ? `Funding: ${funding}\n` : "") +
     (payPlan ? `Pay plan: ${payPlan}\n` : "") +
     `Amount due: £${amount.toFixed(2)}\n` +
+    bankBlock +
     `\nNo Mark paid yet - wait until the parent transfers and taps WhatsApp/email (or Stripe pays).\n` +
     `Then check Tide and Mark paid in Admin -> Finance -> Re-enrolments.\n` +
     (adminUrl ? `${adminUrl}\n\n` : "\n") +
     `- clubSENsational portal`;
+
+  if (smtp && email && bankBlock && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const parentMail = await sendParentEmailViaSmtp({
+      config: smtp,
+      to: email,
+      subject: `Bank details to pay · ${invNo} · ${participant}`,
+      bodyText:
+        `Hi ${parent},\n\n` +
+        `Your place for ${participant} is held for 30 minutes.\n` +
+        (slot ? `Session: ${slot}\n` : "") +
+        `Invoice: ${invNo}\n` +
+        `Amount due: £${amount.toFixed(2)}\n\n` +
+        bankBlock +
+        `\nUse that reference on the transfer. After you pay, WhatsApp or email the office.\n\n` +
+        `— clubSENsational`,
+    });
+    if (!parentMail.ok) {
+      console.warn("[pay-hold-parent-bank] email failed", email, parentMail.error);
+    }
+  }
 
   if (smtp && tos.length) {
     for (const to of tos) {
