@@ -994,6 +994,12 @@
     .admin-icon-btn[aria-current="page"] .admin-icon-btn__svg{color:#fff}
     .admin-icon-btn__svg{display:flex;align-items:center;justify-content:center;line-height:0;pointer-events:none}
     .admin-icon-btn__svg svg{display:block}
+    .admin-icon-btn--wa{
+      width:46px;height:46px;color:#fff;background:#25D366;border-color:#128C7E;text-decoration:none;
+    }
+    .admin-icon-btn--wa:hover,.admin-icon-btn--wa:focus-visible{
+      background:#1ebe5d;border-color:#0e7a6d;color:#fff;
+    }
     .admin-icon-btn--chat{width:46px;height:46px}
     .admin-icon-btn--chat .admin-icon-btn__svg svg{width:28px!important;height:28px!important}
     .admin-badge{position:absolute;top:4px;right:4px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;font-weight:800;line-height:16px;text-align:center;z-index:2}
