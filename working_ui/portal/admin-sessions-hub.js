@@ -5708,8 +5708,10 @@ function rosterRowToSlot(isoDate, wd, r) {
     if (!cid || !day) return "";
     var wd = slot.day || weekdayLongFromIso(day);
     var t = slot.time_start || normTimeKey(slot.time_slot, wd);
+    var end = slot.time_end || "";
     var inst = primaryInstructorKey(slot);
-    if (cid && t && inst) return day + "|" + cid + "|" + t + "|" + inst;
+    /* End time is part of the card. A cancelled 11–12 must stay beside an added 11–4. */
+    if (cid && t && inst) return day + "|" + cid + "|" + t + "|" + end + "|" + inst;
     var uk = clean(slot && (slot.feedback_unit_key || feedbackUnitKey(slot)));
     if (uk) return uk;
     var area = sessionAreaKey(slot && slot.area);
