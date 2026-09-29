@@ -192,6 +192,29 @@ function firstNameOf(display: string): string {
  * Staff session narratives often include handover lines ("I explained to mum…")
  * that must never appear in the parent-facing summary.
  */
+function weeklyNoteSentences(text: string): string[] {
+  return clean(text, 8000)
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Relevant information stays off the family note: slang, third-party reports,
+ * and personal-care detail. Unusual days are described as acting differently
+ * from usual, not with the incident itself.
+ */
+export function stripWeeklyNoteSensitive(text: string): string {
+  const sensitive =
+    /\b(weird|weirder|naughty|private parts|genitals|penis|peeing|peed|wet himself|wet herself|personal care)\b/i;
+  const thirdPartyReport =
+    /\b(told us|said (?:that )?(?:he|she|they) was acting)\b/i;
+  const kept = weeklyNoteSentences(text).filter(
+    (s) => !sensitive.test(s) && !thirdPartyReport.test(s),
+  );
+  return kept.join(" ").replace(/\s+/g, " ").trim();
+}
+
 export function stripParentAudienceLeaks(text: string): string {
   const raw = clean(text, 8000);
   if (!raw) return "";
@@ -604,10 +627,13 @@ export async function fingerprintWeeklySources(
 
 function fallbackCelebrateBody(firstName: string, sources: WeeklyNoteDaySource[]): string {
   const name = firstName || "They";
-  const bits = sources
-    .slice(0, 4)
-    .map((s) => stripParentAudienceLeaks(clean(s.text, 400)).slice(0, 220))
-    .filter(Boolean);
+  const bits: string[] = [];
+  for (const s of sources) {
+    const scrubbed = stripWeeklyNoteSensitive(stripParentAudienceLeaks(s.text));
+    if (!scrubbed) continue;
+    bits.push(...weeklyNoteSentences(scrubbed).slice(0, 2));
+    if (bits.length >= 4) break;
+  }
   if (!bits.length) {
     return `${name} had a good week with us. We look forward to seeing them again soon.`;
   }
@@ -630,7 +656,7 @@ async function callOpenAiWeeklyNote(
   const model = clean(Deno.env.get("PORTAL_OPENAI_MODEL"), 64) || DEFAULT_WEEKLY_NOTE_MODEL;
   const scrubbedBlocks = sources
     .map((s) => {
-      const scrubbed = stripParentAudienceLeaks(s.text);
+      const scrubbed = stripWeeklyNoteSensitive(stripParentAudienceLeaks(s.text));
       if (!scrubbed) return "";
       return `Date ${s.session_date} (${s.service}, source=${s.source}):\n${scrubbed.slice(0, 2500)}`;
     })
@@ -646,8 +672,10 @@ async function callOpenAiWeeklyNote(
     "Never mention mum, dad, parents, carers, guardians, handovers, pick-up chats, or how a parent reacted.",
     "Never write lines like \"I shared with his mum\", \"Mum was pleased\", \"handover with Mum\", or \"I explained to mum\".",
     "If day notes include staff↔parent dialogue, ignore that part completely. Summarise only what the child did in the session.",
-    "Tone: warm, plain English, celebrate effort and joy more than problems. Do not sound clinical or technical.",
-    "Avoid jargon (engagement scores, regulation codes, independence levels). Prefer everyday words.",
+    "Tone: warm, constructive, strengths-based clubSENsational language that parents can understand.",
+    "Where it fits the day notes, use this vocabulary: engagement, regulation, sensory regulation, preferred interests, following the client's lead, calm and predictable structure, routines, visual supports, confidence, independence, participation, co-regulation, smooth transition.",
+    "Do not use slang or judgemental words (weird, strange, naughty, bad behaviour). If staff say the child was acting unusually, or that someone else reported that, write only that they were acting differently from their usual self.",
+    "Do not name who reported it. Do not describe personal care, toileting, or other relevant information. Summarise only the activities and how the team supported the child.",
     "If a day mentions a challenge, keep it brief and constructive; lead with what went well.",
     "Do not invent activities, feelings, progress, or parent reactions that are not in the day notes.",
     `Always use the child's first name exactly as given: "${firstName}" (spell it the same way every time; never a variant spelling).`,
@@ -698,7 +726,9 @@ async function callOpenAiWeeklyNote(
       return { ok: false, error: `openai-http-${res.status}:${errText.slice(0, 120)}`, model };
     }
     const json = await res.json();
-    const body = stripParentAudienceLeaks(clean(json?.choices?.[0]?.message?.content, 2500));
+    const body = stripWeeklyNoteSensitive(
+      stripParentAudienceLeaks(clean(json?.choices?.[0]?.message?.content, 2500)),
+    );
     if (body.length < 40) {
       return { ok: false, error: "openai-empty", model };
     }
@@ -828,10 +858,22 @@ export async function generateWeeklyNoteForContact(
 
   const { data: existing } = await supabase
     .from("portal_parent_weekly_notes")
-    .select("id, source_fingerprint, body, share_status")
+    .select("id, source_fingerprint, body, share_status, review_model")
     .eq("contact_id", opts.contactId)
     .eq("week_start", weekStart)
     .maybeSingle();
+
+  if (existing && !opts.force && clean(existing.review_model).startsWith("office-")) {
+    return {
+      ok: true,
+      skipped: true,
+      reason: "office_edit",
+      contact_id: opts.contactId,
+      week_start: weekStart,
+      week_end: weekEnd,
+      body: clean(existing.body),
+    };
+  }
 
   if (
     existing &&
@@ -892,7 +934,7 @@ export async function generateWeeklyNoteForContact(
       if (retry.ok) ai = retry;
     }
     if (ai.ok) {
-      body = stripParentAudienceLeaks(ai.body);
+      body = stripWeeklyNoteSensitive(stripParentAudienceLeaks(ai.body));
       reviewModel = ai.model + (tooSimilarToPriorNotes(body, priorBodies) ? "+sim-warn" : "");
       // Last resort: keep uniqueness by appending week-specific day facts if still near-dup.
       if (tooSimilarToPriorNotes(body, priorBodies) || body.length < 40) {
@@ -908,7 +950,7 @@ export async function generateWeeklyNoteForContact(
     reviewModel = "fallback-no-openai";
   }
 
-  body = stripParentAudienceLeaks(body);
+  body = stripWeeklyNoteSensitive(stripParentAudienceLeaks(body));
 
   const row = {
     contact_id: opts.contactId,
