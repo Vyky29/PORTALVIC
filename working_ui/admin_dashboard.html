@@ -142,11 +142,11 @@
   <script src="/portal/portal_wa_thread_refresh.js?v=20260716-wa-audio-guard"></script>
   <script src="/portal/portal_chat_bubble_icons.js?v=20260904-comms-13"></script>
   <script src="/portal/portal_office_inbox_seen.js?v=20260920-inbox-sync"></script>
-  <script src="/portal/admin-parent-notify-log.js?v=20260928-wa-spaced-phone"></script>
+  <script src="/portal/admin-parent-notify-log.js?v=20260929-open-wa"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260922-job-phone"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
   <script src="/portal/admin-open-places-2627.js?v=20260920-offer-boot"></script>
-  <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260922-override-machine" />
+  <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260929-open-wa" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260929-bespoke-cover"></script>
   <script src="/portal/cfk-app.js?v=20260917-places-first"></script>
@@ -12881,7 +12881,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost" id="pnClose">Close</button>'+
         '<button type="button" class="btn btn--sec" id="pnCopy">Copy</button>'+
         '<button type="button" class="btn btn--sec" id="pnMail">Open email app</button>'+
-        '<button type="button" class="btn btn--sec" id="pnWa">Open WhatsApp app</button>'+
+        '<button type="button" class="btn btn--sec" id="pnWa" title="Opens WhatsApp on this computer. Does not send through the API.">Open WhatsApp</button>'+
         '<button type="button" class="btn btn--pri" id="pnSend" style="background:#15803d;border-color:#15803d">Send now</button>'+
         '</div>'
       );
@@ -13013,7 +13013,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var body = (($('pnBody') && $('pnBody').value) || '').trim();
         var wa = notifyDigitsOnly(($('pnParentWa') && $('pnParentWa').value) || '');
         if(!wa){ alert('Enter a WhatsApp number (digits, country code ok)'); return; }
-        var wh = 'https://wa.me/'+wa+'?text='+encodeURIComponent(body);
+        var wh = 'https://web.whatsapp.com/send?phone='+wa+(body ? '&text='+encodeURIComponent(body) : '');
         pushCommsHistory('parent WhatsApp draft', subj);
         window.open(wh, '_blank', 'noopener,noreferrer');
       };

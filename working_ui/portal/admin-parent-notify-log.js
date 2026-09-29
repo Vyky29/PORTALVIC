@@ -1946,8 +1946,19 @@
       esc(subline) +
       "</div>" +
       enrolledHtml +
-      "</div></div>"
+      "</div></div>" +
+      '<button type="button" class="btn btn--sec btn--sm portal-pnlog-open-wa" id="portalPnlogOpenWhatsapp" title="Opens WhatsApp on this computer. Does not send through the API.">Open WhatsApp</button>'
     );
+  }
+
+  function openComputerWhatsapp(phoneRaw, text) {
+    var digits = canonicalPhoneDigits(phoneRaw) || phoneDigits(phoneRaw);
+    if (!digits) return false;
+    var url = "https://web.whatsapp.com/send?phone=" + digits;
+    var body = String(text || "").trim();
+    if (body) url += "&text=" + encodeURIComponent(body);
+    window.open(url, "_blank", "noopener,noreferrer");
+    return true;
   }
 
   function renderThreadMessagesHtml(t) {
@@ -2966,6 +2977,18 @@
             : "Message";
         }
         startReplyToMessage(replyWaId, preview || "Message", replySide);
+        return;
+      }
+      var openWaBtn = e.target.closest("#portalPnlogOpenWhatsapp");
+      if (openWaBtn) {
+        e.preventDefault();
+        var openThread = findThread(state.selectedKey);
+        var openPhone = openThread && (openThread.sendPhone || openThread.phone);
+        var openDraft = document.getElementById("portalPnlogComposerInput");
+        var openText = openDraft ? openDraft.value : "";
+        if (!openComputerWhatsapp(openPhone, openText)) {
+          alert("This conversation has no WhatsApp number.");
+        }
         return;
       }
       var sendBtn = e.target.closest("#portalPnlogComposerSend");
