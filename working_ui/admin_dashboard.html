@@ -14404,6 +14404,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       list.sort(function(a, b){
         return a.display.localeCompare(b.display, undefined, { sensitivity: 'base' });
       });
+      /* staff_profiles (Ann Allotey and anyone else not on the standing book). */
+      if(sched.staffProfileRows && sched.staffProfileRows.length){
+        return schedMergeStaffProfileRows(list, sched.staffProfileRows);
+      }
       return list;
     }
     function schedResolveInstructorSlugFromTyped(list, typed){
@@ -14556,8 +14560,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       client.from('staff_profiles').select('username,full_name,is_active').limit(400).then(function(res){
         var rows = res && res.data ? res.data : [];
         if(!rows.length) return;
-        schedApplyAddStaffOptions(schedMergeStaffProfileRows(list, rows));
-        schedApplyShadowHostOptions(schedMergeStaffProfileRows(list, rows));
+        sched.staffProfileRows = rows;
+        var merged = schedMergeStaffProfileRows(list, rows);
+        schedApplyAddStaffOptions(merged);
+        schedApplyShadowHostOptions(merged);
+        try{
+          var covInp = $('schedFormCoverInput');
+          if(covInp && String(covInp.value || '').trim() && typeof sched.refreshCoverSuggest === 'function'){
+            sched.refreshCoverSuggest(covInp.value);
+          }
+        }catch(_cov){}
       }).catch(function(){});
     }
     function schedApplyShadowHostOptions(list){
@@ -15052,7 +15064,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var covInp = $('schedFormCoverInput');
       var covHid = $('schedFormCoverSlug');
       var covSug = $('schedCoverSuggest');
-      var coverList = schedBuildInstructorPickList();
       function syncFieldVisibility(){
         var ovType = typeEl && typeEl.value ? typeEl.value : '';
         if(wrapRep) wrapRep.style.display = 'none';
@@ -15077,6 +15088,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return;
         }
         var ql = qt.toLowerCase();
+        var coverList = schedBuildInstructorPickList();
         var matches = [];
         for(var i = 0; i < coverList.length; i++){
           var x = coverList[i];
@@ -15109,6 +15121,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         covSug.hidden = false;
       }
+      sched.refreshCoverSuggest = renderCoverSuggest;
       function renderReplaceSuggest(query){
         if(!sug) return;
         sug.replaceChildren();
@@ -15245,9 +15258,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ev.preventDefault();
             var disp = String(first.textContent || '').trim();
             var hit = null;
-            for(var k = 0; k < coverList.length; k++){
-              if(String(coverList[k].display).trim() === disp){
-                hit = coverList[k];
+            var coverListNow = schedBuildInstructorPickList();
+            for(var k = 0; k < coverListNow.length; k++){
+              if(String(coverListNow[k].display).trim() === disp){
+                hit = coverListNow[k];
                 break;
               }
             }
@@ -15262,7 +15276,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         covInp.addEventListener('blur', function(){
           setTimeout(function(){
             if(covHid && !String(covHid.value || '').trim() && covInp && String(covInp.value || '').trim()){
-              var resolvedCover = schedResolveInstructorSlugFromTyped(coverList, covInp.value);
+              var resolvedCover = schedResolveInstructorSlugFromTyped(schedBuildInstructorPickList(), covInp.value);
               if(resolvedCover) covHid.value = resolvedCover;
             }
             if(covSug){
