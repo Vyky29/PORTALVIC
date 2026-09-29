@@ -2308,18 +2308,39 @@ Deno.serve(async (req) => {
       ),
     ];
 
+    const reservationCols =
+      "date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id, notes";
     let bookedRows: Array<Record<string, unknown>> = [];
     if (docIds.length) {
       const { data } = await supabase
         .from("portal_booking_slot_reservations")
-        .select(
-          "date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id, notes",
-        )
+        .select(reservationCols)
         .in("document_id", docIds)
         .in("status", ["validated", "held", "confirmed", "paid"])
         .order("date_iso", { ascending: true })
         .limit(24);
       bookedRows = Array.isArray(data) ? data : [];
+      /* Attended trial is released after the session, but the hub chip stays purple. */
+      const { data: releasedTrials } = await supabase
+        .from("portal_booking_slot_reservations")
+        .select(reservationCols)
+        .in("document_id", docIds)
+        .eq("status", "released")
+        .ilike("notes", "%booking_kind=trial%")
+        .order("date_iso", { ascending: true })
+        .limit(8);
+      const seenTrialIso = new Set(
+        bookedRows.map((row) => clean(row.date_iso, 12).slice(0, 10)),
+      );
+      for (const row of releasedTrials || []) {
+        const notes = String(row.notes || "");
+        if (!/ops_synced|trial_hold_cleared|trial_paid/i.test(notes)) continue;
+        if (/expired_unpaid/i.test(notes)) continue;
+        const iso = clean(row.date_iso, 12).slice(0, 10);
+        if (!iso || seenTrialIso.has(iso)) continue;
+        seenTrialIso.add(iso);
+        bookedRows.push(row);
+      }
     }
     if (!bookedRows.length && nameCandidates.length) {
       const { data } = await supabase
