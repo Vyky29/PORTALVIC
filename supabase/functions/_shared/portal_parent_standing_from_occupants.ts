@@ -108,6 +108,20 @@ function childHoursFromSeatClient(client: string): string {
   return m ? normalizeTimeSlot(m[1]) : "";
 }
 
+/** "Timi · 11 – 1" → "Timi". The band is the child's hours, not part of the name. */
+function clientStem(client: string): string {
+  const n = clean(client, 80);
+  const parts = n.split(/\s*[·•|]\s*/).map((p) => p.trim()).filter(Boolean);
+  let first = parts[0] || n;
+  first = first.replace(/\s+\d{1,2}(?:[.:]\d{2})?\s*(?:to|–|—|-).*$/i, "").trim();
+  return first || n;
+}
+
+/** week1 / fadi-off / dated boards are past overlays. The parent week is standing. */
+function isPastBoardOverlay(slotId: string): boolean {
+  return /(?:^|-)(?:week1|fadi_off|dated_\d{4}-\d{2}-\d{2})(?:$|-)/i.test(slotId);
+}
+
 /**
  * Sessions for one child from the capacity-chain standing board.
  * Skips open/closed; trials still listed (buildServicesDetail filters term chips).
@@ -120,8 +134,8 @@ export function standingSessionsForParticipantFromOccupants(
   const out: ParentStandingSession[] = [];
   const seen = new Set<string>();
 
-  for (const slot of Object.values(root)) {
-    if (!slot) continue;
+  for (const [slotId, slot] of Object.entries(root)) {
+    if (!slot || isPastBoardOverlay(slotId)) continue;
     const day = clean(slot.day, 20);
     const venue = clean(slot.venue, 80);
     const blockTime = normalizeTimeSlot(slot.timeLabel);
@@ -134,8 +148,9 @@ export function standingSessionsForParticipantFromOccupants(
       const kind = clean(line.kind, 20).toLowerCase();
       if (kind === "open" || kind === "closed" || !kind) continue;
       const clientName = clientNameForLine(line);
-      if (!clientName || /no\s*participant|^closed$|^open$/i.test(clientName)) continue;
-      if (!participantIdentityMatches(identity, clientName, clientName)) continue;
+      const stem = clientStem(clientName);
+      if (!stem || /no\s*participant|^closed$|^open$/i.test(stem)) continue;
+      if (!participantIdentityMatches(identity, stem, stem)) continue;
 
       const instructor = luliyaStandingInstructorNow(day, venue, service, clean(line.instructor, 80));
       if (!instructor) continue;
