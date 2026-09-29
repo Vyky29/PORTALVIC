@@ -5031,8 +5031,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /**
      * Day Centre is two instructors on the same child and time. Keep both on one line.
-     * The one who is off stays as COVER NEEDED. Do not drop them, and do not turn it
-     * into an instructor change (parents of Day Centre do not see that).
+     * The one who is off stays as COVER NEEDED until a cover is saved on that person.
+     * A cover on the person who is off must not drop the instructor who is still there.
      */
     function schedMergeDayCentreCoInstructorLine(twins){
       var list = Array.isArray(twins) ? twins : [];
@@ -5040,9 +5040,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var dayCentreLine = list.every(schedSlotIsDayCentre);
       var tinasheLine = list.every(schedSlotIsTinasheTeam);
       if(!dayCentreLine && !tinasheLine) return null;
-      for(var i = 0; i < list.length; i++){
-        var ov = findOverrideForSlotOfTypes(list[i], ['instructor_reassign']);
-        if(ov) return null;
+      /* Tinashe absence covers stay on the saved instructor row. Day Centre keeps
+         both people on one line so covering the person who is off does not remove
+         the instructor who is still booked. */
+      if(!dayCentreLine){
+        for(var i = 0; i < list.length; i++){
+          var ov = findOverrideForSlotOfTypes(list[i], ['instructor_reassign']);
+          if(ov) return null;
+        }
       }
       var seen = Object.create(null);
       var all = [];
@@ -15605,6 +15610,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       }catch(e){ clearTimeout(payLoadTimer); console.warn('[orders] client_payments load threw:', e); finish(false); }
     }
+    /** Change on a 2:1 Day Centre line acts on the person who is off, not the one who stays. */
+    function schedDrawerSlotForDayCentreCover(slot){
+      if(!slot || !slot.allInstructors || slot.allInstructors.length < 2) return slot;
+      if(!schedSlotIsDayCentre(slot)) return slot;
+      var iso = String(slot.sessionDate || '').slice(0, 10);
+      var away = [];
+      var stayNames = [];
+      slot.allInstructors.forEach(function(inst){
+        if(!inst) return;
+        if(schedStaffAwayOnIso(iso, inst.staffRosterId)) away.push(inst);
+        else stayNames.push(String(inst.staffName || inst.staffRosterId || '').trim());
+      });
+      if(away.length !== 1) return slot;
+      var copy = Object.assign({}, slot);
+      copy.staffRosterId = away[0].staffRosterId;
+      copy.staffName = away[0].staffName;
+      copy.dcCoverTarget = true;
+      copy.dcCoverStays = stayNames.filter(Boolean).join(', ');
+      return copy;
+    }
     function closeSchedDrawer(){
       if(sched._schedDrawerFormCleanup){
         try{ sched._schedDrawerFormCleanup(); }catch(e){}
@@ -15617,6 +15642,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function openSchedSlotDrawer(slot){
       if(!slot) return;
+      slot = schedDrawerSlotForDayCentreCover(slot);
       if(sched._schedDrawerFormCleanup){
         try{ sched._schedDrawerFormCleanup(); }catch(e){}
       }
@@ -15644,7 +15670,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<li><strong style="color:var(--ink)">Participant:</strong> '+esc(slot.clientDisplay)+' <span class="muted">(slug '+esc(slot.clientSlug)+')</span></li>'+
         '<li><strong style="color:var(--ink)">Roster cell:</strong> '+esc(slot.rosterSheetLabel||'—')+' <span class="muted">(raw: '+esc(String(slot.status||'—'))+')</span></li>'+
         '<li><strong style="color:var(--ink)">Notes (sheet + embed):</strong> <span style="color:var(--text);overflow-wrap:break-word">'+esc(String(slot.notesPreview||'').trim()||'—')+'</span></li>'+
-        '</ul><p style="margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" id="schedCreateCardFromSlotBtn">Add a new card (keep this seat)</button><button type="button" class="btn btn--sec btn--sm" id="schedOpenTermSlotBtn">Edit term slot (this band)</button><button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot (blank)</button></p><p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">Add a new card when another worker already on this client picks up extra hours \u2014 Change Instructor would overwrite this row.</p></div>'+ovBlock+
+        '</ul><p style="margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" id="schedCreateCardFromSlotBtn">Add a new card (keep this seat)</button><button type="button" class="btn btn--sec btn--sm" id="schedOpenTermSlotBtn">Edit term slot (this band)</button><button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot (blank)</button></p><p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">'+(slot.dcCoverTarget
+          ? ('Change Instructor replaces <strong style="color:var(--ink)">'+esc(slot.staffName || slot.staffRosterId)+'</strong> (cover needed). '+(slot.dcCoverStays ? esc(slot.dcCoverStays)+' stays on this client.' : 'The other instructor stays.'))
+          : 'Add a new card when another worker already on this client picks up extra hours \u2014 Change Instructor would overwrite this row.')+'</p></div>'+ovBlock+
         '<div class="card card-pad"><div class="kpi-l">New override</div>'+
         '<div class="kpi-l" style="margin-top:10px">Action</div>'+
         schedOverrideActionPickerHtml(canMoveClient)+
@@ -18684,6 +18712,43 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out;
     }
     function schedInstructorCellHtml(slot, ov, schedIso){
+      var coLine = slot && slot.allInstructors;
+      if(coLine && coLine.length > 1 && schedSlotIsDayCentre(slot)){
+        var bitsCo = [];
+        var anyAwayCo = false;
+        coLine.forEach(function(inst){
+          var probe = Object.assign({}, slot, {
+            staffRosterId: inst.staffRosterId,
+            staffName: inst.staffName
+          });
+          var re = findOverrideForSlotOfTypes(probe, ['instructor_reassign']);
+          var coverSlugCo = re ? schedInstructorCoverSlug(re) : '';
+          var coverNameCo = re
+            ? String(re.payload && (re.payload.covering_staff_name || re.payload.to_staff_name) || '').trim()
+            : '';
+          var realCoverCo = !!(re && coverSlugCo && coverSlugCo !== 'cover_needed' && !/^cover[\s_]*needed$/i.test(coverNameCo || coverSlugCo));
+          var awayCo = schedStaffAwayOnIso(schedIso, inst.staffRosterId);
+          if(bitsCo.length) bitsCo.push('<span class="sched-pax-pill-sep">/</span>');
+          if(realCoverCo){
+            var replLabCo = coverNameCo || schedStaffDisplayName(coverSlugCo, coverSlugCo);
+            bitsCo.push(schedStaffPillHtml(inst.staffName, inst.staffRosterId, schedIso, 'out'));
+            bitsCo.push('<span class="sched-pax-pill-sep">/</span>');
+            bitsCo.push(schedStaffPillHtml(replLabCo, coverSlugCo, schedIso, 'in'));
+          }else if(awayCo){
+            anyAwayCo = true;
+            bitsCo.push(schedStaffPillHtml(inst.staffName, inst.staffRosterId, schedIso, 'out'));
+            bitsCo.push('<span class="sched-pax-pill-sep">/</span>');
+            bitsCo.push('<span class="sched-pax-pill sched-pax-pill--cover-needed">COVER NEEDED</span>');
+          }else{
+            bitsCo.push(schedStaffPillHtml(inst.staffName, inst.staffRosterId, schedIso, 'booked'));
+          }
+        });
+        return (
+          '<div class="sched-pax-pill-row' + (anyAwayCo ? ' sched-pax-pill-row--cover-needed' : '') + '">' +
+          bitsCo.join('') +
+          '</div>'
+        );
+      }
       var ovType = ov ? String(ov.override_type || '').trim() : '';
       if(ov && (ovType === 'instructor_reassign' || ovType === 'instructor_cover_needed')){
         var coverSlug = schedInstructorCoverSlug(ov);
@@ -18726,9 +18791,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var bits = [];
         var anyAway = false;
         co.forEach(function(inst){
+          var probe = Object.assign({}, slot, {
+            staffRosterId: inst.staffRosterId,
+            staffName: inst.staffName
+          });
+          var re = findOverrideForSlotOfTypes(probe, ['instructor_reassign']);
+          var coverSlug = re ? schedInstructorCoverSlug(re) : '';
+          var coverName = re
+            ? String(re.payload && (re.payload.covering_staff_name || re.payload.to_staff_name) || '').trim()
+            : '';
+          var realCover = !!(re && coverSlug && coverSlug !== 'cover_needed' && !/^cover[\s_]*needed$/i.test(coverName || coverSlug));
           var away = schedStaffAwayOnIso(schedIso, inst.staffRosterId);
           if(bits.length) bits.push('<span class="sched-pax-pill-sep">/</span>');
-          if(away){
+          if(realCover){
+            var replLab = coverName || schedStaffDisplayName(coverSlug, coverSlug);
+            bits.push(schedStaffPillHtml(inst.staffName, inst.staffRosterId, schedIso, 'out'));
+            bits.push('<span class="sched-pax-pill-sep">/</span>');
+            bits.push(schedStaffPillHtml(replLab, coverSlug, schedIso, 'in'));
+          }else if(away){
             anyAway = true;
             bits.push(schedStaffPillHtml(inst.staffName, inst.staffRosterId, schedIso, 'out'));
             bits.push('<span class="sched-pax-pill-sep">/</span>');
@@ -18851,6 +18931,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var realCover = !!(ovStaff && String(ovStaff.override_type || '').trim() === 'instructor_reassign'
           && ovStaff.payload && ovStaff.payload.covering_staff_id
           && !/^cover[\s_]*needed$/i.test(String(ovStaff.payload.covering_staff_id || '')));
+        if(!realCover && slot.allInstructors && slot.allInstructors.length > 1 && schedSlotIsDayCentre(slot)){
+          for(var coi = 0; coi < slot.allInstructors.length; coi++){
+            var coInst = slot.allInstructors[coi];
+            var coProbe = Object.assign({}, slot, {
+              staffRosterId: coInst.staffRosterId,
+              staffName: coInst.staffName
+            });
+            var coRe = findOverrideForSlotOfTypes(coProbe, ['instructor_reassign']);
+            var coSlug = coRe ? String(coRe.payload && coRe.payload.covering_staff_id || '').trim() : '';
+            if(coRe && coSlug && !/^cover[\s_]*needed$/i.test(coSlug)){
+              ovStaff = coRe;
+              realCover = true;
+              if(!ov) ov = coRe;
+              break;
+            }
+          }
+        }
         if(!cancelled && !realCover && schedStaffAwayOnIso(schedIso, slot.staffRosterId)){
           if(!ovStaff || String(ovStaff.override_type || '').trim() !== 'instructor_cover_needed'){
             ovStaff = schedSyntheticCoverNeededOv(slot);
@@ -18896,7 +18993,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var coverNeededRow = !!(ovStaff && String(ovStaff.override_type || '').trim() === 'instructor_cover_needed');
         if(!coverNeededRow && slot.allInstructors && slot.allInstructors.length){
           coverNeededRow = slot.allInstructors.some(function(inst){
-            return schedStaffAwayOnIso(schedIso, inst.staffRosterId);
+            if(!schedStaffAwayOnIso(schedIso, inst.staffRosterId)) return false;
+            var awayProbe = Object.assign({}, slot, {
+              staffRosterId: inst.staffRosterId,
+              staffName: inst.staffName
+            });
+            var awayRe = findOverrideForSlotOfTypes(awayProbe, ['instructor_reassign']);
+            var awaySlug = awayRe ? String(awayRe.payload && awayRe.payload.covering_staff_id || '').trim() : '';
+            return !(awayRe && awaySlug && !/^cover[\s_]*needed$/i.test(awaySlug));
           });
         }
         return '<tr class="sched-slot-row'+(coverNeededRow ? ' sched-slot-row--cover-needed' : '')+'" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'"'+staffAllAttr+' data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
