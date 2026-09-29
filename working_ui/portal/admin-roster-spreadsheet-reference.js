@@ -700,7 +700,8 @@
   function cellMatchesInstructorFilter(cell, instructorFilter, iso, venue) {
     if (!instructorFilter || instructorFilter === "all") return true;
     var parts = splitStaffHoursNameTime(cellAssignmentRaw(cell));
-    if (!parts.name) return false;
+    /* Empty seat stays clickable so a shift can be added on a day they do not normally have. */
+    if (!parts.name) return true;
     var want = instructorFilterKey(instructorFilter);
     if (instructorFilterKey(parts.name) === want) return true;
     var face = resolveHoursFace(parts, iso, venue);
@@ -1382,7 +1383,7 @@
     return names;
   }
 
-  /** Standing name stays in the editor. The face is the cover, or blank if they are off. */
+  /** Standing name stays in the editor. A cover replaces the face. A day off keeps the hours editable. */
   function resolveHoursFace(parts, iso, venue) {
     var name = (parts && parts.name) || "";
     var time = (parts && parts.time) || "";
@@ -1398,11 +1399,15 @@
         title: "Cover for " + name + " (day off). Hours count for the cover, not " + name + ".",
       };
     }
+    /* Day off does not lock the cell. The date chip still says they requested off.
+       Hours typed here are this date (morning Day Centre on a half day, etc.). Clear empties it. */
     return {
-      name: "",
-      time: "",
-      mode: "blank",
-      title: name + " is off. No cover — hours not counted.",
+      name: name,
+      time: time,
+      mode: "dayoff",
+      title:
+        name +
+        " requested this day off. These hours are for this date — edit them, or Clear if they did not work.",
     };
   }
 
@@ -1580,14 +1585,24 @@
       paidRaw != null
         ? String(paidRaw || "").trim()
         : String(wrap.getAttribute("data-asr-paid") || "").trim();
-    wrap.classList.remove("asr-cell-wrap--dayoff");
+    wrap.classList.toggle("asr-cell-wrap--dayoff", faceParts.mode === "dayoff");
     if (faceParts.title) wrap.setAttribute("title", faceParts.title);
     else wrap.setAttribute("title", "Click to pick staff, shift and paid hours");
     var nameEl = wrap.querySelector(".asr-cell-face__name");
     var timeEl = wrap.querySelector(".asr-cell-face__time");
     var paidEl = wrap.querySelector(".asr-cell-face__paid");
     var badge = wrap.querySelector(".asr-dayoff-badge");
-    if (badge) badge.remove();
+    if (faceParts.mode === "dayoff") {
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "asr-dayoff-badge";
+        var faceHost = wrap.querySelector(".asr-cell-face");
+        if (faceHost) faceHost.appendChild(badge);
+      }
+      badge.textContent = "Day off";
+    } else if (badge) {
+      badge.remove();
+    }
     var showName = faceParts.name || (faceParts.mode === "standing" && val ? val : "·");
     if (nameEl) nameEl.textContent = showName;
     if (timeEl) {
@@ -1602,7 +1617,7 @@
     if (paidEl) {
       var shift = String(faceParts.time || "").replace(/\s+/g, "").trim();
       var paidNorm = String(paid || "").replace(/\s+/g, "").trim();
-      var effectivePaid = faceParts.mode === "blank" ? "" : paidNorm || shift;
+      var effectivePaid = paidNorm || shift;
       if (effectivePaid) {
         paidEl.textContent = effectivePaid;
         paidEl.hidden = false;
@@ -1939,8 +1954,9 @@
         : "";
     var shiftNorm = String(faceParts.time || "").replace(/\s+/g, "").trim();
     var paidNorm = String(paid || "").replace(/\s+/g, "").trim();
-    var effectivePaid = faceParts.mode === "blank" ? "" : paidNorm || shiftNorm;
+    var effectivePaid = paidNorm || shiftNorm;
     var faceName = faceParts.name || (faceParts.mode === "standing" && val ? val : "·");
+    var dayoffCls = faceParts.mode === "dayoff" ? " asr-cell-wrap--dayoff" : "";
     var faceTitle = faceParts.title || "Click to pick staff, shift and paid hours";
     var face =
       '<span class="asr-cell-face" aria-hidden="true">' +
@@ -1955,9 +1971,11 @@
           esc(effectivePaid) +
           "</span>"
         : '<span class="asr-cell-face__paid" hidden></span>') +
+      (faceParts.mode === "dayoff" ? '<span class="asr-dayoff-badge">Day off</span>' : "") +
       "</span>";
     return (
       '<div class="asr-cell-wrap' +
+      dayoffCls +
       dirtyCls +
       savedCls +
       tone +
@@ -2571,7 +2589,12 @@
           (sf !== "all" && !cellMatchesServiceFilter(cell, sf)) ||
           (ifr !== "all" && !cellMatchesInstructorFilter(cell, ifr, iso, lab.venue || ""));
         if (muted) {
-          html += '<td class="' + tdCls + ' asr-cell--muted-filter">—</td>';
+          html +=
+            '<td class="' +
+            tdCls +
+            ' asr-cell--muted-filter">' +
+            cellInputHtml(cell, iso, idx, dayName, lab.venue || "") +
+            "</td>";
           return;
         }
         html += '<td class="' + tdCls + '">' + cellInputHtml(cell, iso, idx, dayName, lab.venue || "") + "</td>";
