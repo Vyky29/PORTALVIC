@@ -3232,7 +3232,8 @@
    * Summer Jul 15 stamp still ships Multi (Cyrus) + Giuseppe Room 2 — drop and rebuild.
    */
   var AUTUMN_ACTON_WEDNESDAY_BOARD = [
-    { staff: "YOUSSEF", name: "No participant", time: "4 to 4.30", area: "Teaching Pool" },
+    /* Elias Thomas: trial 23 Sep, term from 30 Sep (INV-P-0504). Half term 28 Oct is closed. */
+    { staff: "YOUSSEF", name: "Elias Thomas", time: "4 to 4.30", area: "Teaching Pool", bookedFrom: "2026-09-30" },
     /* Stephanie = two 30' seats (Schedule halves; parent/staff merge). */
     { staff: "YOUSSEF", name: "Stephanie", time: "4.30 to 5", area: "Teaching Pool" },
     { staff: "YOUSSEF", name: "Stephanie", time: "5 to 5.30", area: "Teaching Pool" },

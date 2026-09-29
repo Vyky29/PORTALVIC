@@ -159,7 +159,7 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260919-youssef-namekey"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260929-gabriel-cover"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260929-elias-term"></script>
   <script src="/portal/autumn_staff_hours_reference.js?v=20260928-patience-tue"></script>
   <script src="/portal/portal_dc_services_local.js?v=20260925-luliya-standing-28"></script>
   <script src="/portal/portal_capacity_chain_occupants.js?v=20260926-sun-climb-34-hold"></script>
@@ -18789,7 +18789,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function schedInstructorCellHtml(slot, ov, schedIso){
       var coLine = slot && slot.allInstructors;
-      if(coLine && coLine.length > 1 && schedSlotIsDayCentre(slot)){
+      /* Day Centre and Hub Tinashe keep every instructor. A cover replaces only that person. */
+      if(coLine && coLine.length > 1 && (schedSlotIsDayCentre(slot) || schedSlotIsTinasheTeam(slot))){
         var bitsCo = [];
         var anyAwayCo = false;
         coLine.forEach(function(inst){
