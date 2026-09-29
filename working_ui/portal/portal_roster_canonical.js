@@ -1970,6 +1970,7 @@
         next.client_name = "Cyrus";
         next.area = "Small Pool";
         next.__portal_admin_client_swap = true;
+        next.portalSwapFromClient = client;
         return next;
       }
       if (client === "Arthur Ma" && !hub) {
@@ -1979,6 +1980,7 @@
       if (client === "Cyrus" && hub) {
         next.client_name = "Gabriel";
         next.__portal_admin_client_swap = true;
+        next.portalSwapFromClient = client;
         return next;
       }
     }
@@ -1986,11 +1988,13 @@
       if (client === "Cyrus" && !hub) {
         next.client_name = "Gabriel";
         next.__portal_admin_client_swap = true;
+        next.portalSwapFromClient = client;
         return next;
       }
       if (client === "Gabriel" && hub) {
         next.client_name = "Cyrus";
         next.__portal_admin_client_swap = true;
+        next.portalSwapFromClient = client;
         return next;
       }
     }

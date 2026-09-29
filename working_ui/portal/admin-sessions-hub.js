@@ -1146,8 +1146,12 @@
       if (client === "Cyrus" && !hub) next = { client_name: "Gabriel" };
       else if (client === "Gabriel" && hub) next = { client_name: "Cyrus" };
     }
-  if (!next) return r;
-  return Object.assign({}, r, next);
+    if (!next) return r;
+    var out = Object.assign({}, r, next);
+    if (next.client_name && next.client_name !== client) {
+      out.portalSwapFromClient = r.portalSwapFromClient || client;
+    }
+    return out;
 }
 
 /**
@@ -1229,6 +1233,7 @@ function rosterRowToSlot(isoDate, wd, r) {
       session_key: buildSessionKey(isoDate, r),
       __portal_roster_row_id: r.__portal_roster_row_id || null,
       portalRosterTimeUpdated: !!r.__portal_roster_time_updated,
+      portalSwapFromClient: clean(r.portalSwapFromClient),
     };
     if (origInstructors.length) {
       var origKeySet = Object.create(null);
@@ -8943,7 +8948,19 @@ function rosterRowToSlot(isoDate, wd, r) {
       var oCid = canonicalClientSlug(ov.anchor_client_id);
       if (oCid && sCid && oCid !== sCid) {
         var openCoverOk = false;
+        /*
+         * Sunday term swap (Cyrus swims first from 27 Sep): the cover was saved
+         * on the name that seat had before the move. Follow the child now in it.
+         */
         if (
+          overrideIsInstructorReassignType(ov) &&
+          slot.portalSwapFromClient &&
+          canonicalClientSlug(slot.portalSwapFromClient) === oCid
+        ) {
+          openCoverOk = true;
+        }
+        if (
+          !openCoverOk &&
           overrideIsInstructorReassignType(ov) &&
           overrideAnchorIsOpenSlot(ov.anchor_client_id)
         ) {
