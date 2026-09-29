@@ -5040,15 +5040,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var dayCentreLine = list.every(schedSlotIsDayCentre);
       var tinasheLine = list.every(schedSlotIsTinasheTeam);
       if(!dayCentreLine && !tinasheLine) return null;
-      /* Tinashe absence covers stay on the saved instructor row. Day Centre keeps
-         both people on one line so covering the person who is off does not remove
-         the instructor who is still booked. */
-      if(!dayCentreLine){
-        for(var i = 0; i < list.length; i++){
-          var ov = findOverrideForSlotOfTypes(list[i], ['instructor_reassign']);
-          if(ov) return null;
-        }
-      }
+      /* A cover on one person stays on that person. The others remain on the line.
+         Tinashe absence is still kept on the instructor row it was saved on. */
       var seen = Object.create(null);
       var all = [];
       list.forEach(function(sl){
@@ -15630,6 +15623,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       copy.dcCoverStays = stayNames.filter(Boolean).join(', ');
       return copy;
     }
+    /** Trio (Tinashe) or a pair with nobody singled out as off: ask who Change replaces. */
+    function schedCoInstructorsForChange(slot){
+      if(!slot || slot.dcCoverTarget) return [];
+      if(!slot.allInstructors || slot.allInstructors.length < 2) return [];
+      if(!schedSlotIsDayCentre(slot) && !schedSlotIsTinasheTeam(slot)) return [];
+      return slot.allInstructors.filter(function(inst){
+        return inst && normalizeSchedAnchorStaffId(inst.staffRosterId);
+      });
+    }
     function closeSchedDrawer(){
       if(sched._schedDrawerFormCleanup){
         try{ sched._schedDrawerFormCleanup(); }catch(e){}
@@ -15643,6 +15645,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function openSchedSlotDrawer(slot){
       if(!slot) return;
       slot = schedDrawerSlotForDayCentreCover(slot);
+      var coChangeChoices = schedCoInstructorsForChange(slot);
+      if(coChangeChoices.length >= 2){
+        slot = Object.assign({}, slot, { coChangePick: true, coChangeChoices: coChangeChoices });
+      }
       if(sched._schedDrawerFormCleanup){
         try{ sched._schedDrawerFormCleanup(); }catch(e){}
       }
@@ -15670,9 +15676,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<li><strong style="color:var(--ink)">Participant:</strong> '+esc(slot.clientDisplay)+' <span class="muted">(slug '+esc(slot.clientSlug)+')</span></li>'+
         '<li><strong style="color:var(--ink)">Roster cell:</strong> '+esc(slot.rosterSheetLabel||'—')+' <span class="muted">(raw: '+esc(String(slot.status||'—'))+')</span></li>'+
         '<li><strong style="color:var(--ink)">Notes (sheet + embed):</strong> <span style="color:var(--text);overflow-wrap:break-word">'+esc(String(slot.notesPreview||'').trim()||'—')+'</span></li>'+
-        '</ul><p style="margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" id="schedCreateCardFromSlotBtn">Add a new card (keep this seat)</button><button type="button" class="btn btn--sec btn--sm" id="schedOpenTermSlotBtn">Edit term slot (this band)</button><button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot (blank)</button></p><p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">'+(slot.dcCoverTarget
+        '</ul><p style="margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" id="schedCreateCardFromSlotBtn">Add a new card (keep this seat)</button><button type="button" class="btn btn--sec btn--sm" id="schedOpenTermSlotBtn">Edit term slot (this band)</button><button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot (blank)</button></p>'+(slot.coChangePick
+          ? ('<label class="muted" for="schedFormCoChange" style="display:block;margin-top:12px">Change replaces</label><select id="schedFormCoChange" class="sel" style="max-width:100%"><option value="" selected>Which instructor?</option>'+
+            slot.coChangeChoices.map(function(inst){
+              var nm = String(inst.staffName || inst.staffRosterId || '').trim();
+              return '<option value="'+esc(inst.staffRosterId)+'">'+esc(nm || inst.staffRosterId)+'</option>';
+            }).join('')+
+            '</select><p class="muted" id="schedCoChangeHint" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">Choose which instructor Change replaces. The others stay on this client.</p>')
+          : ('<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">'+(slot.dcCoverTarget
           ? ('Change Instructor replaces <strong style="color:var(--ink)">'+esc(slot.staffName || slot.staffRosterId)+'</strong> (cover needed). '+(slot.dcCoverStays ? esc(slot.dcCoverStays)+' stays on this client.' : 'The other instructor stays.'))
-          : 'Add a new card when another worker already on this client picks up extra hours \u2014 Change Instructor would overwrite this row.')+'</p></div>'+ovBlock+
+          : 'Add a new card when another worker already on this client picks up extra hours \u2014 Change Instructor would overwrite this row.')+'</p>'))+'</div>'+ovBlock+
         '<div class="card card-pad"><div class="kpi-l">New override</div>'+
         '<div class="kpi-l" style="margin-top:10px">Action</div>'+
         schedOverrideActionPickerHtml(canMoveClient)+
@@ -15722,6 +15735,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }).finally(function(){
           if(saveBtn) saveBtn.disabled = false;
         });
+      };
+      var coChangeSel = $('schedFormCoChange');
+      if(coChangeSel) coChangeSel.onchange = function(){
+        var want = normalizeSchedAnchorStaffId(coChangeSel.value);
+        var picked = null;
+        var choices = slot.coChangeChoices || [];
+        var ci;
+        for(ci = 0; ci < choices.length; ci++){
+          if(normalizeSchedAnchorStaffId(choices[ci].staffRosterId) === want){
+            picked = choices[ci];
+            break;
+          }
+        }
+        var hint = $('schedCoChangeHint');
+        if(!picked){
+          if(hint) hint.textContent = 'Choose which instructor Change replaces. The others stay on this client.';
+          return;
+        }
+        slot.staffRosterId = picked.staffRosterId;
+        slot.staffName = picked.staffName;
+        var stays = choices.filter(function(inst){
+          return normalizeSchedAnchorStaffId(inst.staffRosterId) !== want;
+        }).map(function(inst){
+          return String(inst.staffName || inst.staffRosterId || '').trim();
+        }).filter(Boolean);
+        if(hint){
+          hint.innerHTML = 'Change Instructor replaces <strong style="color:var(--ink)">'+esc(picked.staffName || picked.staffRosterId)+'</strong>. '+(stays.length ? esc(stays.join(', '))+' stay on this client.' : 'The others stay.');
+        }
       };
       var undoBtn = $('schedUndoOverrideBtn');
       if(undoBtn) undoBtn.onclick = function(){ void undoSchedOverrideFromDrawer(slot); };
@@ -16965,6 +17006,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(isTrial){
         payload.is_trial = true;
         payload.booking_kind = 'trial';
+      }
+      if(ovType === 'instructor_reassign' && slot.coChangePick){
+        var coPickEl = $('schedFormCoChange');
+        var coPickId = coPickEl ? normalizeSchedAnchorStaffId(coPickEl.value) : '';
+        var coPicked = null;
+        var coChoices = slot.coChangeChoices || [];
+        var cpi;
+        for(cpi = 0; cpi < coChoices.length; cpi++){
+          if(normalizeSchedAnchorStaffId(coChoices[cpi].staffRosterId) === coPickId){
+            coPicked = coChoices[cpi];
+            break;
+          }
+        }
+        if(!coPicked){
+          if(msgEl) msgEl.textContent = 'Choose which instructor this change replaces.';
+          return;
+        }
+        slot.staffRosterId = coPicked.staffRosterId;
+        slot.staffName = coPicked.staffName;
       }
       var anchor_staff_id = normalizeSchedAnchorStaffId(slot.staffRosterId);
       var anchor_client_id = (ovType === 'client_replace_in_slot')
@@ -18933,7 +18993,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var realCover = !!(ovStaff && String(ovStaff.override_type || '').trim() === 'instructor_reassign'
           && ovStaff.payload && ovStaff.payload.covering_staff_id
           && !/^cover[\s_]*needed$/i.test(String(ovStaff.payload.covering_staff_id || '')));
-        if(!realCover && slot.allInstructors && slot.allInstructors.length > 1 && schedSlotIsDayCentre(slot)){
+        if(!realCover && slot.allInstructors && slot.allInstructors.length > 1 && (schedSlotIsDayCentre(slot) || schedSlotIsTinasheTeam(slot))){
           for(var coi = 0; coi < slot.allInstructors.length; coi++){
             var coInst = slot.allInstructors[coi];
             var coProbe = Object.assign({}, slot, {
