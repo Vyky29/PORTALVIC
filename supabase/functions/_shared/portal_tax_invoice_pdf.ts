@@ -58,9 +58,11 @@ export type PortalInvoicePdfInput = {
   hidePaymentPlan?: boolean;
   amountPaidGbp?: number | null;
   creditAppliedGbp?: number | null;
-  /** Card / Apple Pay surcharge so the club receives the invoice total. Not part of the session price. */
+  /** Card / Apple Pay surcharge so the club receives the card-paid amount. Not part of the session price. */
   cardFeeGbp?: number | null;
   cardChargeGbp?: number | null;
+  /** True when every pound of this invoice was paid by card, so the fee covers the whole total. */
+  cardCoversInvoice?: boolean;
   /** Instalment plan rows (re-enrolment term invoices). */
   paymentSchedule?: Array<{
     seq: number;
@@ -526,7 +528,7 @@ export async function buildPortalTaxInvoicePdf(
   const cardFee = Number(input.cardFeeGbp);
   const cardCharge = Number(input.cardChargeGbp);
   const showCardFee = Number.isFinite(cardFee) && cardFee > 0.009 &&
-    Number.isFinite(cardCharge) && cardCharge > split.total + 0.009;
+    Number.isFinite(cardCharge) && cardCharge > 0.009;
   if (showCardFee) {
     drawTot("Card / Apple Pay fee", money(cardFee));
     drawTot("Charged to card", money(cardCharge), true);
@@ -539,8 +541,9 @@ export async function buildPortalTaxInvoicePdf(
 
   const credit = input.creditAppliedGbp != null ? Number(input.creditAppliedGbp) : 0;
   const paidAmt = input.amountPaidGbp != null ? Number(input.amountPaidGbp) : 0;
+  const hideServicePaidLine = showCardFee && !!input.cardCoversInvoice;
   if (credit > 0) drawTot("Less Family Credit", money(credit));
-  if ((paidAmt > 0 || input.paid) && !showCardFee) {
+  if ((paidAmt > 0 || input.paid) && !hideServicePaidLine) {
     drawTot("Less Amount Paid", money(paidAmt || split.total - credit));
   }
   const due = Math.max(0, Math.round((split.total - credit - (paidAmt || (input.paid ? split.total - credit : 0))) * 100) / 100);

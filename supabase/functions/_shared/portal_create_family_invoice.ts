@@ -1021,9 +1021,38 @@ export async function regeneratePortalInvoiceSharePdf(
   const amountPaidGbp = round2(Number(share.amount_paid_gbp) || 0);
   const payStatus = String(share.payment_status || "").toLowerCase();
   const paidVia = clean(share.paid_via, 40).toLowerCase();
-  const cardPaid = paidVia === "stripe" || paidVia === "apple_pay" || paidVia === "card";
-  const cardGross = cardPaid && amountGbp > 0 ? stripeGrossUpFromGbp(amountGbp) : null;
+  const isCardVia = (v: string) => v === "stripe" || v === "apple_pay" || v === "card";
   const isPaid = payStatus === "paid";
+  // Each card checkout is its own fee. Rows stamped at the same second were one charge.
+  const cardGroups = new Map<string, number>();
+  for (const row of paymentSchedule) {
+    if (String(row.status || "").toLowerCase() !== "paid") continue;
+    if (!isCardVia(clean(row.paid_via, 40).toLowerCase())) continue;
+    const net = round2(Number(row.amount_gbp) || 0);
+    if (net <= 0) continue;
+    const key = clean(row.paid_at, 19) || `row-${row.seq}`;
+    cardGroups.set(key, round2((cardGroups.get(key) || 0) + net));
+  }
+  if (!cardGroups.size && isPaid && isCardVia(paidVia) && amountGbp > 0) {
+    cardGroups.set("invoice", amountGbp);
+  }
+  let cardFeeGbp: number | null = null;
+  let cardChargeGbp: number | null = null;
+  let cardNetGbp = 0;
+  if (cardGroups.size) {
+    let fee = 0;
+    let charge = 0;
+    for (const net of cardGroups.values()) {
+      const g = stripeGrossUpFromGbp(net);
+      fee += g.fee_gbp;
+      charge += g.charge_gbp;
+      cardNetGbp += net;
+    }
+    cardFeeGbp = round2(fee);
+    cardChargeGbp = round2(charge);
+    cardNetGbp = round2(cardNetGbp);
+  }
+  const cardCoversInvoice = isPaid && cardNetGbp > 0 && Math.abs(cardNetGbp - amountGbp) < 0.02;
   const isPartial =
     payStatus === "partial" ||
     (!isPaid && amountPaidGbp > 0.009);
@@ -1121,8 +1150,9 @@ export async function regeneratePortalInvoiceSharePdf(
       hidePaymentPlan: paymentMethodHint === "la_funded",
       paymentSchedule,
       amountPaidGbp,
-      cardFeeGbp: isPaid && cardGross ? cardGross.fee_gbp : null,
-      cardChargeGbp: isPaid && cardGross ? cardGross.charge_gbp : null,
+      cardFeeGbp,
+      cardChargeGbp,
+      cardCoversInvoice,
       paymentAdviceMonths: hfMonthlySchedule || undefined,
     });
   } catch (err) {
