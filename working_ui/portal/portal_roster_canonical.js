@@ -730,6 +730,13 @@
       .trim();
   }
 
+  function isInterviewDutyName(name) {
+    var n = String(name || "")
+      .trim()
+      .toLowerCase();
+    return n === "interview" || n === "interviews";
+  }
+
   /** True when this DC seat is Autumn standing (not Fadi-off Office / extra halves). */
   function isAutumnDayCentreStandingSeat(row) {
     if (!row || !isDayCentreService(row.service)) return false;
@@ -758,9 +765,15 @@
    * Do not project Office / extra halves onto later Mondays once Fadi is back.
    */
   function shouldProjectDayCentreRowFromSnap(row, snapIso, targetIso) {
-    if (!row || !isDayCentreService(row.service)) return true;
+    if (!row) return true;
+    /* Services stamps Interviews as its own service, so the Day Centre check missed it
+       and Tue 8 / Tue 15 Interviews kept painting on later Tuesdays (not a Covers row). */
+    var interviewDuty =
+      isInterviewDutyName(row.client_name) || isInterviewDutyName(row.service);
+    if (!isDayCentreService(row.service) && !interviewDuty) return true;
     if (!isFadiAbsentDcBoardIso(snapIso)) return true;
     if (isFadiAbsentDcBoardIso(targetIso)) return true;
+    if (interviewDuty) return false;
     return isAutumnDayCentreStandingSeat(row);
   }
 
