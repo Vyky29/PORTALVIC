@@ -7477,7 +7477,13 @@
           .map(function (n, idx) {
             var range = weekRangeLabel(n.week_start, n.week_end);
             var full = String(n.body || "").trim();
-            var teaser = full.replace(/\s+/g, " ");
+            var paras = full
+              .split(/\n\s*\n/)
+              .map(function (p) {
+                return p.replace(/\s+/g, " ").trim();
+              })
+              .filter(Boolean);
+            var teaser = (paras[0] || "").replace(/\s+/g, " ");
             if (teaser.length > 100) {
               teaser = teaser.slice(0, 98).replace(/\s+\S*$/, "") + "…";
             }
@@ -7494,9 +7500,11 @@
                 ? '<span class="pp-week-note__teaser">' + esc(teaser) + "</span>"
                 : "") +
               "</summary>" +
-              '<p class="pp-week-notes-folder__body">' +
-              esc(full) +
-              "</p>" +
+              (paras.length ? paras : [full])
+                .map(function (para) {
+                  return '<p class="pp-week-notes-folder__body">' + esc(para) + "</p>";
+                })
+                .join("") +
               (former
                 ? '<div class="pp-former-dl-row"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-week-note="' +
                   idx +

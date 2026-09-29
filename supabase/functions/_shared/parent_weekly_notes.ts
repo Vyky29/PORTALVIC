@@ -92,7 +92,7 @@ export type WeeklyNoteDaySource = {
   session_date: string;
   service: string;
   text: string;
-  source: "filtered" | "positive" | "narrative" | "lead_brief";
+  source: "filtered" | "positive" | "narrative" | "lead_brief" | "absent";
 };
 
 export type WeeklyNoteBuildResult = {
@@ -388,9 +388,11 @@ export function pickDaySourceText(
   const id = clean(row.id, 80);
   const sessionDate = isoDateOnly(row.session_date);
   if (!id || !sessionDate) return null;
-  if (feedbackAttendanceIsAbsent(row.attendance)) return null;
 
   const service = clean(row.service, 200) || "session";
+  if (feedbackAttendanceIsAbsent(row.attendance)) {
+    return { feedback_id: id, session_date: sessionDate, service, text: "ABSENT", source: "absent" };
+  }
   const filtered = clean(share?.parent_message, 4000);
   const status = clean(share?.share_status, 40).toLowerCase();
   if (status === "approved" && filtered.length >= 12) {
@@ -625,23 +627,34 @@ export async function fingerprintWeeklySources(
   return sha256Hex(payload);
 }
 
+function weekdayLong(iso: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  try {
+    return new Date(y, m - 1, d).toLocaleDateString("en-GB", { weekday: "long" });
+  } catch {
+    return "";
+  }
+}
+
 function fallbackCelebrateBody(firstName: string, sources: WeeklyNoteDaySource[]): string {
   const name = firstName || "They";
-  const bits: string[] = [];
+  const paras: string[] = [];
   for (const s of sources) {
+    const day = weekdayLong(s.session_date) || "That day";
+    if (s.source === "absent") {
+      paras.push(`On ${day} ${name} was absent.`);
+      continue;
+    }
     const scrubbed = stripWeeklyNoteSensitive(stripParentAudienceLeaks(s.text));
-    if (!scrubbed) continue;
-    bits.push(...weeklyNoteSentences(scrubbed).slice(0, 2));
-    if (bits.length >= 4) break;
+    const sentences = weeklyNoteSentences(scrubbed).slice(0, 3);
+    if (!sentences.length) continue;
+    paras.push(`On ${day} ${sentences.join(" ")}`);
   }
-  if (!bits.length) {
-    return `${name} had a good week with us. We look forward to seeing them again soon.`;
+  if (!paras.length) {
+    return `${name} had a good week with us. The team kept a calm and predictable structure and followed his lead.`;
   }
-  return (
-    `${name} had a lovely week with us. ` +
-    bits.join(" ") +
-    ` We're proud of the effort ${name} put in and look forward to next week.`
-  ).slice(0, 1800);
+  return paras.join("\n\n").slice(0, 1800);
 }
 
 async function callOpenAiWeeklyNote(
@@ -656,6 +669,9 @@ async function callOpenAiWeeklyNote(
   const model = clean(Deno.env.get("PORTAL_OPENAI_MODEL"), 64) || DEFAULT_WEEKLY_NOTE_MODEL;
   const scrubbedBlocks = sources
     .map((s) => {
+      if (s.source === "absent") {
+        return `Date ${s.session_date} (${s.service}): ABSENT. Write only that ${firstName} was absent this day.`;
+      }
       const scrubbed = stripWeeklyNoteSensitive(stripParentAudienceLeaks(s.text));
       if (!scrubbed) return "";
       return `Date ${s.session_date} (${s.service}, source=${s.source}):\n${scrubbed.slice(0, 2500)}`;
@@ -679,7 +695,10 @@ async function callOpenAiWeeklyNote(
     "If a day mentions a challenge, keep it brief and constructive; lead with what went well.",
     "Do not invent activities, feelings, progress, or parent reactions that are not in the day notes.",
     `Always use the child's first name exactly as given: "${firstName}" (spell it the same way every time; never a variant spelling).`,
-    "Write 1–3 short paragraphs in English. No bullet lists. No title heading.",
+    "Write one paragraph per day, in date order, a few sentences each. Put a blank line between paragraphs so each day is separate. Do not join two days into one paragraph.",
+    "Start each paragraph with the weekday (On Monday, On Friday).",
+    "If a day is marked ABSENT, that paragraph must say only that the child was absent that day. Do not invent activities for an absent day.",
+    "No bullet lists. No title heading.",
     "Each week's note must feel fresh: vary the opening line and structure. Do not reuse stock openers like \"What a wonderful week…\", \"had a fantastic week…\", or the same closing sentence as earlier notes.",
     "Focus on what was distinctive this week (specific activities, moments, or progress from the day notes). Skip generic praise that could belong to any week.",
     "Output plain text only — no JSON, no markdown.",
