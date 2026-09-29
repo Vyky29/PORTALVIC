@@ -1817,7 +1817,7 @@
     wrap.id = "trsCancelRefundSheet";
     wrap.setAttribute("role", "dialog");
     wrap.style.cssText =
-      "position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px;";
+      "position:fixed;inset:0;z-index:50000;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;";
     var confident = !!(quote && quote.confident);
     var lines = "";
     if (confident) {

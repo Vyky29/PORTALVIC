@@ -252,12 +252,23 @@ export async function quoteTermCancelRefund(
     return base;
   }
 
-  const { data: pax } = await admin
+  let pax: { contact_id?: string; parent_person_id?: string; display_name?: string } | null = null;
+  const exact = await admin
     .from("portal_participants")
     .select("contact_id, parent_person_id, display_name")
     .ilike("display_name", clientName)
     .limit(1)
     .maybeSingle();
+  pax = exact.data || null;
+  if (!pax && clientName && !clientName.includes("%")) {
+    const loose = await admin
+      .from("portal_participants")
+      .select("contact_id, parent_person_id, display_name")
+      .ilike("display_name", clientName + " %")
+      .limit(5);
+    const hits = loose.data || [];
+    if (hits.length === 1) pax = hits[0];
+  }
   const contactId = clean(pax?.contact_id, 120);
   base.contact_id = contactId;
   base.child_first = firstName(pax?.display_name || clientName) || base.child_first;
