@@ -47,14 +47,28 @@ function pad(n: number): string {
 export function parseInvoiceDates(raw: unknown, anchorIso: string): string[] {
   const year0 = Number(String(anchorIso || "").slice(0, 4)) || 2026;
   const anchorMonth = Number(String(anchorIso || "").slice(5, 7)) || 9;
-  const text = String(raw || "").replace(/\b20\d{2}\b/g, " ");
+  // Notes such as "(skip half-term 27 Oct)" must not steal the month of the day list.
+  const text = String(raw || "")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\b20\d{2}\b/g, " ");
   const parts = text.split(";");
   const out: string[] = [];
+  const monthShort = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
   for (const part of parts) {
-    const monTok = part.trim().match(/([A-Za-z]+)\s*$/);
-    if (!monTok) continue;
-    const key = monTok[1].toLowerCase();
-    const mon = MONTHS[key] || MONTHS[key.slice(0, 3)];
+    const words = part.match(/[A-Za-z]+/g) || [];
+    let mon = 0;
+    for (let i = words.length - 1; i >= 0; i--) {
+      const key = words[i].toLowerCase();
+      if (MONTHS[key]) {
+        mon = MONTHS[key];
+        break;
+      }
+      const short = key.slice(0, 3);
+      if (monthShort.includes(short) && MONTHS[short]) {
+        mon = MONTHS[short];
+        break;
+      }
+    }
     if (!mon) continue;
     let year = year0;
     if (mon <= 7 && anchorMonth >= 9) year = year0 + 1;

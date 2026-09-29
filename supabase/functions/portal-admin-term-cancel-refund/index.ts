@@ -55,6 +55,34 @@ Deno.serve(async (req) => {
   if (action !== "notify") return portalAdminJson(200, quote);
 
   if (!quote.parent_mobile && !quote.parent_email) {
+    const anchorMiss = clean(quote.anchor_date, 12);
+    const childMiss = clean(quote.client_name, 120);
+    try {
+      await admin.from("portal_parent_notify_log").insert({
+        sent_by_user_id: verified.userId || null,
+        sent_by_email: clean(verified.email, 200) || "term-cancel-refund",
+        kind: "term_service_cancel",
+        channel: "none",
+        client_display: childMiss,
+        parent_name: clean(quote.parent_first, 80),
+        session_date: anchorMiss || null,
+        subject: "Place cancelled",
+        body_text: String(quote.message || "").slice(0, 4000),
+        email_status: "skipped",
+        whatsapp_status: "skipped",
+        error_detail: "no_parent_channel",
+        meta: {
+          contact_id: quote.contact_id || null,
+          invoice_number: quote.invoice_number || null,
+          confident: !!quote.confident,
+          reason: quote.reason || "no_parent_channel",
+          source: "term_roster_edit",
+          automated: true,
+        },
+      });
+    } catch (err) {
+      console.warn("[term-cancel-refund] log no channel", err);
+    }
     return portalAdminJson(200, { ...quote, sent: false, reason: "no_parent_channel" });
   }
 

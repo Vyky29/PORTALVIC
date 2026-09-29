@@ -66,6 +66,7 @@
     /** Set when the cancel sheet is confirmed; cleared after the parent message. */
     pendingTermRefund: null,
     refundArmed: false,
+    refundNotifyStarted: false,
   };
 
   function esc(s) { return deps.esc(s); }
@@ -1857,7 +1858,16 @@
         go.disabled = true;
         state.pendingTermRefund = quote;
         state.refundArmed = true;
+        state.refundNotifyStarted = true;
         closeTermCancelSheet();
+        var client = deps.getClient();
+        sendTermCancelRefund(client, quote).then(function (sent) {
+          if (sent && sent.sent) deps.toast("Parent message sent.");
+          else if (sent && sent.already_sent) deps.toast("Parent message was already sent.");
+          else deps.toast("Parent message was not sent.");
+        }).catch(function () {
+          deps.toast("Parent message was not sent.");
+        });
         cancelParticipantTermSlot(root);
       };
     }
@@ -2171,12 +2181,16 @@
         if (!shouldBill) {
           var pendingRefund = state.pendingTermRefund;
           state.pendingTermRefund = null;
-          if (pendingRefund && eventAction === "cancel") {
+          if (pendingRefund && eventAction === "cancel" && !state.refundNotifyStarted) {
             sendTermCancelRefund(client, pendingRefund).then(function (sent) {
               if (sent && sent.sent) deps.toast((toastMsg || "Service cancelled.") + " Parent message sent.");
               else if (sent && sent.already_sent) deps.toast((toastMsg || "Service cancelled.") + " Parent message was already sent.");
               else deps.toast((toastMsg || "Service cancelled.") + " Parent message was not sent.");
+            }).catch(function () {
+              deps.toast((toastMsg || "Service cancelled.") + " Parent message was not sent.");
             });
+          } else if (pendingRefund && eventAction === "cancel") {
+            deps.toast(toastMsg || "Service cancelled.");
           } else {
             deps.toast(toastMsg || "Term slot saved.");
           }
