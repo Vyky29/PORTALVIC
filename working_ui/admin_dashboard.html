@@ -108,7 +108,7 @@
   <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos-ceo"></script>
   <script src="/portal/portal_participant_photos.js?v=20260720-zakariya-photo"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
-  <script src="/portal/portal_staff_photos.js?v=20260922-live-avatar"></script>
+  <script src="/portal/portal_staff_photos.js?v=20260929-official-photo"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260716-return-inbox-stay"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-ios-gallery-upload-fix" />
@@ -148,7 +148,7 @@
   <script src="/portal/admin-open-places-2627.js?v=20260920-offer-boot"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260922-override-machine" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
-  <script src="/portal/portal-parent-notify-templates.js?v=20260917-instructor-update2"></script>
+  <script src="/portal/portal-parent-notify-templates.js?v=20260929-next-weekday"></script>
   <script src="/portal/cfk-app.js?v=20260917-places-first"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260919-create-card"></script>
@@ -16737,9 +16737,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(pax && pax.display_name && !display) display = pax.display_name;
       var photoUrl = '';
       try{
-        if(typeof window.portalStaffPhotoUrl === 'function' && (opts.coveringStaffKey || opts.coveringStaffName)){
-          var rel = window.portalStaffPhotoUrl(opts.coveringStaffKey || opts.coveringStaffName, {
-            username: opts.coveringStaffKey || ''
+        var officialPhoto = window.portalOfficialStaffPhotoUrl || window.portalStaffPhotoUrl;
+        if(typeof officialPhoto === 'function' && (opts.coveringStaffKey || opts.coveringStaffName)){
+          var rel = officialPhoto(opts.coveringStaffKey || opts.coveringStaffName, {
+            username: opts.coveringStaffKey || '',
+            officialOnly: true
           });
           if(rel){
             if(/^https?:\/\//i.test(rel)) photoUrl = rel;

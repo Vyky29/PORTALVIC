@@ -64,17 +64,17 @@
     if (!slug && !name) return { url: "", name: "", slug: "" };
     var rel = "";
     try {
-      if (typeof global.portalStaffPhotoUrl === "function") {
-        rel = global.portalStaffPhotoUrl(slug || name, { username: slug });
+      if (typeof global.portalOfficialStaffPhotoUrl === "function") {
+        rel = global.portalOfficialStaffPhotoUrl(slug || name, { username: slug });
       }
     } catch (_) {}
     if (!rel) {
       try {
-        if (typeof global.portalResolveStaffPhotoCandidates === "function") {
-          var cands = global.portalResolveStaffPhotoCandidates(slug || name, {
+        if (typeof global.portalStaffPhotoUrl === "function") {
+          rel = global.portalStaffPhotoUrl(slug || name, {
             username: slug,
+            officialOnly: true,
           });
-          if (cands && cands.length) rel = cands[0];
         }
       } catch (_) {}
     }
@@ -160,6 +160,20 @@
     return raw;
   }
 
+  /** "today" only when the session is today. A later day is "next Saturday". */
+  function unavailableDayPhrase(slot, ov) {
+    var iso = sessionDateIso(slot, ov);
+    if (!iso) return "today";
+    var today = "";
+    try {
+      today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+    } catch (_e) {}
+    if (today && iso === today) return "today";
+    var friendly = friendlyDate(iso);
+    var wd = friendly ? String(friendly).split(" ")[0] : "";
+    return wd ? "next " + wd : "today";
+  }
+
   function sessionVenue(slot) {
     return String((slot && slot.venue) || "").trim();
   }
@@ -233,7 +247,9 @@
     var venuePart = venue ? " at " + venue + "." : ".";
     var changeLine = oldI
       ? oldI +
-        " is not available today. There has been a change of instructor. The session will now be with " +
+        " is not available " +
+        unavailableDayPhrase(slot, ov) +
+        ". There has been a change of instructor. The session will now be with " +
         newI +
         "."
       : "There has been a change of instructor. The session will now be with " +

@@ -262,6 +262,22 @@
     return candidates.length ? candidates[0] : "";
   }
 
+  /** Parent messages use the portal file, never a photo the instructor uploaded. */
+  function portalOfficialStaffPhotoUrl(nameOrKey, opts) {
+    opts = opts || {};
+    var keys = photoLookupKeys(nameOrKey, opts);
+    var base = staffPhotosBase();
+    if (base.charAt(base.length - 1) !== "/") base += "/";
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      if (!key || NO_STATIC_PHOTO[key] || looksLikeOpaquePhotoKey(key)) continue;
+      if (key === "lulia" || key === "luliya") return base + "luliya.png";
+      if (key === "emmanuel" || key === "emanuel") return base + "emmanuel.png";
+      if (STAFF_PHOTO_FILES[key]) return base + key + ".png";
+    }
+    return "";
+  }
+
   function portalStaffInitials(name) {
     var parts = String(name || "")
       .trim()
@@ -485,6 +501,7 @@
   global.portalSanitizeRemoteAvatarUrl = portalSanitizeRemoteAvatarUrl;
   global.portalRememberStaffLiveAvatar = rememberStaffLiveAvatar;
   global.portalStaffPhotoUrl = portalStaffPhotoUrl;
+  global.portalOfficialStaffPhotoUrl = portalOfficialStaffPhotoUrl;
   global.portalStaffInitials = portalStaffInitials;
   global.portalStaffAvatarInnerHtml = portalStaffAvatarInnerHtml;
   global.portalStaffPhotoImgError = portalStaffPhotoImgError;

@@ -28,6 +28,48 @@ function asciiBody(body: string): string {
     .replace(/'/g, "'");
 }
 
+function londonTodayIso(): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  } catch (_e) {
+    return "";
+  }
+}
+
+/** "today" only when the session is today. Otherwise "next Saturday". */
+function unavailableDayPhrase(sessionDate: string): string {
+  const iso = clean(sessionDate, 12);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "today";
+  if (iso === londonTodayIso()) return "today";
+  const wd = formatFriendlyDate(iso).split(" ")[0] || "";
+  return wd ? `next ${wd}` : "today";
+}
+
+/** Drop a leading weekday so "Saturday · 10.30 to 11" does not repeat the date line. */
+function clockPart(sessionTime: string): string {
+  return clean(sessionTime, 80)
+    .replace(
+      /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*(?:[·•,.\-–—]|\s)\s*/i,
+      "",
+    )
+    .trim();
+}
+
+function isStaffUploadedPhoto(url: string): boolean {
+  return /supabase\.co\/storage\//i.test(url) || /\/avatars\//i.test(url);
+}
+
+function officialStaffPhotoUrl(staffKey: string, staffName: string): string {
+  const stem = staffPhotoStem(staffKey, staffName);
+  if (!stem) return "";
+  return `${photoBase()}/portal/staff_photos/${stem}.png`;
+}
+
 function formatFriendlyDate(iso: string): string {
   const s = clean(iso, 12);
   const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -266,7 +308,7 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
   const signOff = `\n\nIf you have any questions, just reply to this message.\n\nThank you,\nClubSENsational`;
   const venue = clean(opts.venue, 80);
   const sessionDate = clean(opts.sessionDate, 12);
-  const sessionTime = clean(opts.sessionTime, 40);
+  const sessionTime = clockPart(clean(opts.sessionTime, 40));
   const friendly = sessionDate ? formatFriendlyDate(sessionDate) : "";
   const whenPart =
     friendly && sessionTime
@@ -276,6 +318,7 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
       : sessionTime
       ? ` (${sessionTime})`
       : "";
+  const awayWhen = unavailableDayPhrase(sessionDate);
   const venuePart = venue ? ` at ${venue}` : "";
   const kind = opts.kind;
   const photoUrl = clean(opts.instructorPhotoUrl, 400);
@@ -289,7 +332,7 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
 
   if (kind === "instructor_change") {
     const changeLine = absent
-      ? `${absent} is not available today. There has been a change of instructor. The session will now be with ${cover || "your cover instructor"}.`
+      ? `${absent} is not available ${awayWhen}. There has been a change of instructor. The session will now be with ${cover || "your cover instructor"}.`
       : `There has been a change of instructor. The session will now be with ${cover || "your cover instructor"}.`;
     return asciiBody(
       greet +
@@ -417,17 +460,13 @@ export async function notifyScheduleOverrideParent(
   }
 
   let photoUrl = clean(opts.instructorPhotoUrl, 400);
-  if (
-    !photoUrl &&
-    (kind === "instructor_change" || kind === "instructor_change_update")
-  ) {
-    const stem = staffPhotoStem(
+  if (kind === "instructor_change" || kind === "instructor_change_update") {
+    const official = officialStaffPhotoUrl(
       clean(opts.coveringStaffKey, 80),
       clean(opts.coveringStaffName, 120),
     );
-    if (stem) {
-      photoUrl = `${photoBase()}/portal/staff_photos/${stem}.png`;
-    }
+    if (official) photoUrl = official;
+    else if (isStaffUploadedPhoto(photoUrl)) photoUrl = "";
   }
 
   const parent = await resolveParentContact(admin, {
