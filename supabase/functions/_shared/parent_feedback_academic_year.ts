@@ -48,8 +48,9 @@ export function sessionDateInFeedbackYear(iso: string, year: ParentFeedbackYearD
 }
 
 export function weekStartInFeedbackYear(weekStart: string, year: ParentFeedbackYearDef): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) return false;
-  return weekStart >= year.fromIso && weekStart <= year.toIso;
+  const iso = String(weekStart || "").match(/\d{4}-\d{2}-\d{2}/);
+  if (!iso) return false;
+  return iso[0] >= year.fromIso && iso[0] <= year.toIso;
 }
 
 /** Earliest session date for the selected year (after-school vs day centre). */

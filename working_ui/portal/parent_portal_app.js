@@ -88,7 +88,10 @@
       /* Notes-only patches used to wipe Absent dates with an empty summary. */
       if (nextHas || !prevHas) base.attendance_summary = nextAtt;
     }
-    if (Array.isArray(patch.weekly_notes)) base.weekly_notes = patch.weekly_notes;
+    var sectionsLoaded = Array.isArray(patch.sections_loaded) ? patch.sections_loaded : [];
+    if (sectionsLoaded.indexOf("weekly_notes") >= 0 && Array.isArray(patch.weekly_notes)) {
+      base.weekly_notes = patch.weekly_notes;
+    }
     if (patch.weekly_note_latest !== undefined) base.weekly_note_latest = patch.weekly_note_latest;
     if (patch.feedback_year != null) base.feedback_year = patch.feedback_year;
     if (patch.feedback_year_label != null) base.feedback_year_label = patch.feedback_year_label;

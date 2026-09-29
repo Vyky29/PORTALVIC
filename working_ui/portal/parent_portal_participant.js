@@ -3559,6 +3559,9 @@
    * Prefer today's cover from Team; else slot / services_detail; Multi keeps all on one line.
    */
   function hubOpsInstructorNamesForSession(s, data) {
+    var lab0 = String((s && (s.rawLabel || s.label)) || "").toLowerCase();
+    /* Day Centre staff stay on Team. The session card does not name them. */
+    if (/day\s*centre|daycentre/.test(lab0)) return [];
     var iso = String((s && s.iso) || "").slice(0, 10);
     var raw = "";
     if (iso && data && Array.isArray(data.team)) {

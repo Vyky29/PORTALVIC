@@ -100,6 +100,14 @@ function clientNameForLine(line: CapacityChainStandingSeatLine): string {
   return "";
 }
 
+/** Seat text is "Timi · 11 – 1" inside a Day Centre block labelled 11.00 – 4.00. */
+function childHoursFromSeatClient(client: string): string {
+  const m = clean(client, 80).match(
+    /[·•|]\s*(\d{1,2}(?:[.:]\d{2})?\s*(?:to|–|—|-)\s*\d{1,2}(?:[.:]\d{2})?)\s*$/i,
+  );
+  return m ? normalizeTimeSlot(m[1]) : "";
+}
+
 /**
  * Sessions for one child from the capacity-chain standing board.
  * Skips open/closed; trials still listed (buildServicesDetail filters term chips).
@@ -116,9 +124,9 @@ export function standingSessionsForParticipantFromOccupants(
     if (!slot) continue;
     const day = clean(slot.day, 20);
     const venue = clean(slot.venue, 80);
-    const timeSlot = normalizeTimeSlot(slot.timeLabel);
+    const blockTime = normalizeTimeSlot(slot.timeLabel);
     const service = serviceIdToProgramme(slot.serviceId);
-    if (!day || !timeSlot) continue;
+    if (!day || !blockTime) continue;
     if (/crash|intensiv/i.test(service)) continue;
 
     for (const line of slot.seatLines || []) {
@@ -131,6 +139,9 @@ export function standingSessionsForParticipantFromOccupants(
 
       const instructor = luliyaStandingInstructorNow(day, venue, service, clean(line.instructor, 80));
       if (!instructor) continue;
+      const ownHours = /day centre/i.test(service) ? childHoursFromSeatClient(clientName) : "";
+      const timeSlot = ownHours || blockTime;
+      if (!timeSlot) continue;
       const key = [day, service, timeSlot, venue, instructor, clientName].join("|").toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);

@@ -942,11 +942,13 @@ function buildServicesDetail(
     }
     if (!g.venue) g.venue = clean(s.venue, 80);
     if (!g.area) g.area = clean(s.area, 80);
-    /* Multi / co-taught slots: keep every unique instructor on one line. */
-    g.instructor = mergeInstructorNames(
-      g.instructor,
-      clean(s.instructor || s.instructors, 80),
-    );
+    /* Day Centre names stay on Team. The hub card is the child's hours only. */
+    if (!/day\s*centre/i.test(svc)) {
+      g.instructor = mergeInstructorNames(
+        g.instructor,
+        clean(s.instructor || s.instructors, 80),
+      );
+    }
     const tok = parseSlotTokens(s.timeSlot, day);
     if (tok) {
       if (tok.start != null && (g.startMin == null || tok.start < g.startMin)) {
@@ -2236,7 +2238,7 @@ Deno.serve(async (req) => {
           generated_at: n.generated_at || null,
           generated_early: !!n.generated_early,
         }))
-        .filter((n) => weekStartInFeedbackYear(String(n.week_start || ""), feedbackYearResolved));
+        .filter((n) => weekStartInFeedbackYear(String(n.week_start || "").slice(0, 10), feedbackYearResolved));
       // One note per week (newest wins) — defensive if rows ever race.
       const byWeek = new Map<string, Record<string, unknown>>();
       for (const n of weeklyNotes) {
