@@ -58,6 +58,9 @@ export type PortalInvoicePdfInput = {
   hidePaymentPlan?: boolean;
   amountPaidGbp?: number | null;
   creditAppliedGbp?: number | null;
+  /** Card / Apple Pay surcharge so the club receives the invoice total. Not part of the session price. */
+  cardFeeGbp?: number | null;
+  cardChargeGbp?: number | null;
   /** Instalment plan rows (re-enrolment term invoices). */
   paymentSchedule?: Array<{
     seq: number;
@@ -520,10 +523,26 @@ export async function buildPortalTaxInvoicePdf(
     y -= 14;
   }
 
+  const cardFee = Number(input.cardFeeGbp);
+  const cardCharge = Number(input.cardChargeGbp);
+  const showCardFee = Number.isFinite(cardFee) && cardFee > 0.009 &&
+    Number.isFinite(cardCharge) && cardCharge > split.total + 0.009;
+  if (showCardFee) {
+    drawTot("Card / Apple Pay fee", money(cardFee));
+    drawTot("Charged to card", money(cardCharge), true);
+    page.drawText(
+      "Session price is the total above. The extra is the card / Apple Pay fee.",
+      { x: left, y, size: 7.5, font, color: muted },
+    );
+    y -= 14;
+  }
+
   const credit = input.creditAppliedGbp != null ? Number(input.creditAppliedGbp) : 0;
   const paidAmt = input.amountPaidGbp != null ? Number(input.amountPaidGbp) : 0;
   if (credit > 0) drawTot("Less Family Credit", money(credit));
-  if (paidAmt > 0 || input.paid) drawTot("Less Amount Paid", money(paidAmt || split.total - credit));
+  if ((paidAmt > 0 || input.paid) && !showCardFee) {
+    drawTot("Less Amount Paid", money(paidAmt || split.total - credit));
+  }
   const due = Math.max(0, Math.round((split.total - credit - (paidAmt || (input.paid ? split.total - credit : 0))) * 100) / 100);
   if (input.paid || credit > 0 || paidAmt > 0) {
     drawTot("AMOUNT DUE GBP", money(input.paid ? 0 : due), true);

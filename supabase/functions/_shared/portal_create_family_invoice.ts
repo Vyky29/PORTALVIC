@@ -22,6 +22,7 @@ import {
   lineItemsToDescription,
   type PortalInvoiceLineItem,
 } from "./portal_xero_product_catalog.ts";
+import { stripeGrossUpFromGbp } from "./stripe_checkout.ts";
 
 const BUCKET = "documents";
 
@@ -1019,6 +1020,9 @@ export async function regeneratePortalInvoiceSharePdf(
   });
   const amountPaidGbp = round2(Number(share.amount_paid_gbp) || 0);
   const payStatus = String(share.payment_status || "").toLowerCase();
+  const paidVia = clean(share.paid_via, 40).toLowerCase();
+  const cardPaid = paidVia === "stripe" || paidVia === "apple_pay" || paidVia === "card";
+  const cardGross = cardPaid && amountGbp > 0 ? stripeGrossUpFromGbp(amountGbp) : null;
   const isPaid = payStatus === "paid";
   const isPartial =
     payStatus === "partial" ||
@@ -1117,6 +1121,8 @@ export async function regeneratePortalInvoiceSharePdf(
       hidePaymentPlan: paymentMethodHint === "la_funded",
       paymentSchedule,
       amountPaidGbp,
+      cardFeeGbp: isPaid && cardGross ? cardGross.fee_gbp : null,
+      cardChargeGbp: isPaid && cardGross ? cardGross.charge_gbp : null,
       paymentAdviceMonths: hfMonthlySchedule || undefined,
     });
   } catch (err) {
