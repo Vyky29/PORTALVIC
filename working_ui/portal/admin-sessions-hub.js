@@ -2846,7 +2846,9 @@ function rosterRowToSlot(isoDate, wd, r) {
       );
       var cid0 = canonicalClientSlug(s && s.client_name);
       var st0 = s && (s.time_start || "");
-      if (staff0 && cid0 && st0) seenKeys[staff0 + "|" + cid0 + "|" + st0] = true;
+      var en0 = s && (s.time_end || "");
+      /* Same start is not the same card: a cancelled 11–12 must not hide an added 11–4. */
+      if (staff0 && cid0 && st0) seenKeys[staff0 + "|" + cid0 + "|" + st0 + "|" + en0] = true;
     }
     var added = [];
     for (var j = 0; j < ovs.length; j++) {
@@ -2858,7 +2860,14 @@ function rosterRowToSlot(isoDate, wd, r) {
       var staffK = canonicalStaffMatchKey(
         (syn.instructors && syn.instructors[0]) || syn.anchor_staff_id || ""
       );
-      var key = staffK + "|" + canonicalClientSlug(syn.client_name) + "|" + (syn.time_start || "");
+      var key =
+        staffK +
+        "|" +
+        canonicalClientSlug(syn.client_name) +
+        "|" +
+        (syn.time_start || "") +
+        "|" +
+        (syn.time_end || "");
       if (seenKeys[key]) continue;
       if (ov.id) seenOvIds[String(ov.id)] = true;
       seenKeys[key] = true;
@@ -8980,6 +8989,10 @@ function rosterRowToSlot(isoDate, wd, r) {
     var oEnd = normTimeShort(ov.anchor_end);
     var sStart = normTimeShort(slot.time_start || slot.anchor_start || slot.time_slot);
     var sEnd = normTimeShort(slot.time_end || slot.anchor_end);
+    /* An added card keeps its own clock. A shorter cancel that only shares the start must not paint it Cancelled. */
+    if (slot.portalCreatedSession && (overrideIsCancelledType(ov) || overrideIsAbsentType(ov))) {
+      return !!(oStart && sStart && oEnd && sEnd && oStart === sStart && oEnd === sEnd);
+    }
     if (overrideIsAbsentType(ov)) {
       function mins(hm) {
         var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);

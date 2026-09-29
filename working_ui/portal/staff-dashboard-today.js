@@ -2798,7 +2798,15 @@
           const est = typeof portalCanonicalHmToken === 'function'
             ? portalCanonicalHmToken(existing && (existing.start || (existing.__portalBaseSession && existing.__portalBaseSession.start)))
             : String((existing && existing.start) || '').trim();
-          if(eid === paxId && startTok && est === startTok){ alreadyAdd = true; break; }
+          const een = typeof portalCanonicalHmToken === 'function'
+            ? portalCanonicalHmToken(existing && (existing.end || (existing.__portalBaseSession && existing.__portalBaseSession.end)))
+            : String((existing && existing.end) || '').trim();
+          const enTok = typeof portalCanonicalHmToken === 'function'
+            ? portalCanonicalHmToken(enAdd)
+            : String(enAdd || '').trim();
+          const sameSpan = !!(est === startTok && een && enTok && een === enTok);
+          const startOnly = !!(est === startTok && (!een || !enTok));
+          if(eid === paxId && startTok && (sameSpan || startOnly)){ alreadyAdd = true; break; }
         }
         if(alreadyAdd) return;
         const activityAdd = String(pAdd.service || 'Day Centre').trim() || 'Day Centre';

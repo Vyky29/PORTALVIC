@@ -2421,6 +2421,10 @@
       return lo1 < hi2 && lo2 < hi1;
     }
     function portalScheduleOverrideAnchorTimesMatchSession(r, s, overrideType){
+      const ownedAdd = s && s.__portalScheduleOverride;
+      if(ownedAdd && String(ownedAdd.override_type || '').trim() === 'session_add'){
+        return portalTimeAnchorsMatch(r.anchor_start, s.start) && portalTimeAnchorsMatch(r.anchor_end, s.end);
+      }
       const ot = overrideType ? String(overrideType || '').trim() : String(r && r.override_type || '').trim();
       if(ot === 'client_absence_announced' || ot === 'client_replace_in_slot' || ot === 'slot_clear_client'){
         if(portalTimeAnchorsMatch(r.anchor_start, s.start) && portalTimeAnchorsMatch(r.anchor_end, s.end)) return true;
