@@ -1668,7 +1668,47 @@
       }catch(_){}
       return false;
     }
+    /**
+     * Off-rota day whose only marks are covers away from this worker
+     * (anchor reassigned to someone else). That is the day off, not a shift
+     * to paint blue. A cover they are doing, or a card added on them, still pulses.
+     */
+    function portalTermNonWorkedDayPulseIsReassignAwayOnly(isoKey, staffId){
+      const iso = String(isoKey || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid) return false;
+      if(typeof portalStaffHasShiftOnCalendarDate === 'function'
+        && portalStaffHasShiftOnCalendarDate(iso, sid) === true) return false;
+      if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+        && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)) return false;
+      if(typeof portalStaffHasAdminAddedShiftOnCalendarDate === 'function'
+        && portalStaffHasAdminAddedShiftOnCalendarDate(iso, sid)) return false;
+      const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      if(typeof portalStaffRosterAppliesOnCalendarDate === 'function'
+        && portalStaffRosterAppliesOnCalendarDate(iso, dayWord, sid)) return false;
+      const rows = typeof portalScheduleOverrideRowsForSessionIso === 'function'
+        ? portalScheduleOverrideRowsForSessionIso(iso)
+        : [];
+      let sawReassignAway = false;
+      for(let i = 0; i < rows.length; i++){
+        const ov = rows[i];
+        if(!ov || String(ov.status || 'active') !== 'active') continue;
+        const anchorMatch = typeof portalStaffKeysMatch === 'function'
+          ? portalStaffKeysMatch(ov.anchor_staff_id, sid)
+          : String(ov.anchor_staff_id || '').trim().toLowerCase() === sid;
+        if(!anchorMatch) continue;
+        if(String(ov.override_type || '').trim() !== 'instructor_reassign') return false;
+        sawReassignAway = true;
+      }
+      return sawReassignAway;
+    }
     function portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWord){
+      const sidPulse = String(
+        (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')
+        || (typeof dashboardData !== 'undefined' && dashboardData && dashboardData.staffId)
+        || ''
+      ).trim().toLowerCase();
+      if(portalTermNonWorkedDayPulseIsReassignAwayOnly(isoKey, sidPulse)) return '';
       let flags = null;
       try{
         flags = typeof portalDayOverrideBadgeFlags === 'function'

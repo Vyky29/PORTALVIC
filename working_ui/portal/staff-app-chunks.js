@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-    var VER = "20260929-added-card";
+    var VER = "20260929-luliya-mon28-off";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260928-patience-tue",
