@@ -243,18 +243,39 @@
     ).trim();
     var newI =
       String(newInstructorName || "").trim() || "[new instructor — edit here]";
+    var continuing = String((opts && opts.continuingWith) || "").trim();
     var whenPart = when ? " on " + when : "";
     var venuePart = venue ? " at " + venue + "." : ".";
-    var changeLine = oldI
-      ? oldI +
-        " is not available " +
-        unavailableDayPhrase(slot, ov) +
-        ". There has been a change of instructor. The session will now be with " +
-        newI +
-        "."
-      : "There has been a change of instructor. The session will now be with " +
-        newI +
-        ".";
+    var changeLine = continuing
+      ? (oldI
+        ? oldI +
+          " is not available " +
+          unavailableDayPhrase(slot, ov) +
+          ". " +
+          newI +
+          " will cover " +
+          oldI +
+          ". " +
+          continuing +
+          " will continue with " +
+          client +
+          " as usual."
+        : newI +
+          " will cover one instructor. " +
+          continuing +
+          " will continue with " +
+          client +
+          " as usual.")
+      : (oldI
+        ? oldI +
+          " is not available " +
+          unavailableDayPhrase(slot, ov) +
+          ". There has been a change of instructor. The session will now be with " +
+          newI +
+          "."
+        : "There has been a change of instructor. The session will now be with " +
+          newI +
+          ".");
     var photoUrl = String((opts && opts.instructorPhotoUrl) || "").trim();
     var photoLine = instructorPhotoTextLine(newI, photoUrl);
     return (

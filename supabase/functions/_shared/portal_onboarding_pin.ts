@@ -436,6 +436,126 @@ function randomFourDigitPin(): string {
   return String(1000 + n);
 }
 
+function hrNameKey(raw: string): string {
+  return String(raw || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function onboardingGivenName(name: string, surname: string): string {
+  const n = name.trim();
+  const s = surname.trim();
+  if (s && n.toLowerCase().endsWith(s.toLowerCase()) && n.length > s.length) {
+    return n.slice(0, n.length - s.length).trim();
+  }
+  const first = n.split(/\s+/)[0] || "";
+  return first || n;
+}
+
+function onboardingText(v: unknown): string {
+  return String(v ?? "").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Submitted job applications were staying in onboarding drafts only, so Staff & HR
+ * opened an empty rota card. Copy the same Employee info shape the matrix uses.
+ * Bank details stay on the draft.
+ */
+export async function foldSubmittedJobIntoHrRecords(
+  portalAdmin: SupabaseClient,
+  userId: string,
+  payload: unknown,
+): Promise<void> {
+  const id = String(userId || "").trim();
+  if (!id || !payload || typeof payload !== "object") return;
+  const job = payload as Record<string, unknown>;
+  const portalMeta = job._portal && typeof job._portal === "object"
+    ? (job._portal as Record<string, unknown>)
+    : null;
+  const submittedAt = String(portalMeta?.submitted_at || "").trim();
+  if (!submittedAt) return;
+
+  const { data: prof, error: profErr } = await portalAdmin
+    .from("staff_profiles")
+    .select(
+      "id, username, full_name, phone_e164, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (profErr || !prof?.id) {
+    if (profErr) console.warn("[foldSubmittedJobIntoHrRecords] profile", profErr.message);
+    return;
+  }
+
+  const nameKey = hrNameKey(String(prof.username || prof.full_name || ""));
+  if (!nameKey) return;
+
+  const { data: existing } = await portalAdmin
+    .from("hr_records")
+    .select("id")
+    .eq("sheet", "Employees info")
+    .or(`staff_id.eq.${id},name_key.eq.${nameKey}`)
+    .limit(1);
+  if (existing && existing.length) return;
+
+  const surname = onboardingText(job.surname);
+  const given = onboardingGivenName(onboardingText(job.name), surname);
+  const display = onboardingText(prof.full_name) || [given, surname].filter(Boolean).join(" ");
+  const employeeInfo: Record<string, string> = {
+    Name: given,
+    Surname: surname,
+    Address: onboardingText(job.address),
+    DOB: onboardingText(job.dob),
+    Nationality: onboardingText(job.nationality),
+    RTWork: onboardingText(job.rtwork),
+    "RTWork code": onboardingText(job.rtwork_code),
+    "RTWork checked": "",
+    Phone: onboardingText(job.phone) || onboardingText(prof.phone_e164),
+    Role: onboardingText(job.role),
+    "Reference 1": onboardingText(job.reference_1),
+    "Reference 2": onboardingText(job.reference_2),
+    "End Contract": "",
+    Shifts: onboardingText(job.availability),
+  };
+
+  const rows: Array<Record<string, unknown>> = [
+    {
+      sheet: "Employees info",
+      row_index: 1,
+      name_key: nameKey,
+      employee_name: display,
+      staff_id: id,
+      data: employeeInfo,
+      source_file: "onboarding_job_application",
+      active: true,
+    },
+  ];
+
+  const emergencyName = onboardingText(prof.emergency_contact_name);
+  if (emergencyName) {
+    rows.push({
+      sheet: "Emergency Contact Info",
+      row_index: 1,
+      name_key: nameKey,
+      employee_name: display,
+      staff_id: id,
+      data: {
+        Employee: display,
+        "Emergency Contact Name": emergencyName,
+        Number: onboardingText(prof.emergency_contact_phone),
+        Relation: onboardingText(prof.emergency_contact_relationship),
+      },
+      source_file: "onboarding_job_application",
+      active: true,
+    });
+  }
+
+  const { error } = await portalAdmin.from("hr_records").insert(rows);
+  if (error) console.warn("[foldSubmittedJobIntoHrRecords]", error.message);
+}
+
 export function mintUniqueStaffPin(existing: Iterable<string>): string {
   const used = new Set(
     Array.from(existing).map((p) => String(p || "").trim()),

@@ -5,7 +5,7 @@ import {
   onboardingSubmittedAt,
   postMakeOnboardingWebhook,
 } from "../_shared/onboarding_make_webhook.ts";
-import { ensureStaffPhoneFromJob } from "../_shared/portal_onboarding_pin.ts";
+import { ensureStaffPhoneFromJob, foldSubmittedJobIntoHrRecords } from "../_shared/portal_onboarding_pin.ts";
 
 const cors: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -132,6 +132,11 @@ Deno.serve(async (req) => {
   }
 
   if (onboardingSubmittedAt(payload)) {
+    try {
+      await foldSubmittedJobIntoHrRecords(portalAdmin, userId, payload);
+    } catch (e) {
+      console.warn("[portal-staff-onboarding-draft-save] hr fold", e);
+    }
     const webhookUrl = (Deno.env.get("ONBOARDING_JOB_APPLICATION_MAKE_WEBHOOK_URL") ??
       "").trim();
     await postMakeOnboardingWebhook(

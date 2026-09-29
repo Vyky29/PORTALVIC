@@ -191,6 +191,8 @@ export type ScheduleOverrideNotifyInput = {
   reason?: string | null;
   /** Roster instructor (absent) for first cover notice */
   absentInstructorName?: string | null;
+  /** Other instructors still on a shared session (Bespoke / Day Centre). */
+  continuingWith?: string | null;
   coveringStaffName?: string | null;
   coveringStaffKey?: string | null;
   priorCoveringStaffName?: string | null;
@@ -325,15 +327,23 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
   const cover = clean(opts.coveringStaffName, 120);
   const prior = clean(opts.priorCoveringStaffName, 120);
   const absent = clean(opts.absentInstructorName, 120);
+  const continuing = clean(opts.continuingWith, 240);
+  const photoWho = continuing && absent
+    ? `${cover} (covering ${absent})`
+    : `${cover} (your instructor)`;
   const photoLine =
     cover && photoUrl
-      ? `\n\nPhoto of ${cover} (your instructor): ${photoUrl}\nPlease show ${child} the photo above so they know who to expect.\n`
+      ? `\n\nPhoto of ${photoWho}: ${photoUrl}\nPlease show ${child} the photo above so they know who to expect.\n`
       : "\n";
 
   if (kind === "instructor_change") {
-    const changeLine = absent
-      ? `${absent} is not available ${awayWhen}. There has been a change of instructor. The session will now be with ${cover || "your cover instructor"}.`
-      : `There has been a change of instructor. The session will now be with ${cover || "your cover instructor"}.`;
+    const changeLine = continuing
+      ? (absent
+        ? `${absent} is not available ${awayWhen}. ${cover || "A cover"} will cover ${absent}. ${continuing} will continue with ${child} as usual.`
+        : `${cover || "A cover"} will cover one instructor. ${continuing} will continue with ${child} as usual.`)
+      : (absent
+        ? `${absent} is not available ${awayWhen}. There has been a change of instructor. The session will now be with ${cover || "your cover instructor"}.`
+        : `There has been a change of instructor. The session will now be with ${cover || "your cover instructor"}.`);
     return asciiBody(
       greet +
         `We are writing about ${child}'s session${whenPart}${venuePart}.\n\n` +

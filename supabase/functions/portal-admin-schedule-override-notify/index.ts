@@ -83,6 +83,7 @@ Deno.serve(async (req) => {
     serviceLabel: clean(body.service_label, 160) || null,
     reason: clean(body.reason, 500) || null,
     absentInstructorName: clean(body.absent_instructor_name, 120) || null,
+    continuingWith: clean(body.continuing_with, 240) || null,
     coveringStaffName: clean(body.covering_staff_name, 120) || null,
     coveringStaffKey: clean(
       body.covering_staff_key || body.covering_staff_id,

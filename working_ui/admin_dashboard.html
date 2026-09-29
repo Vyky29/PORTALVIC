@@ -148,7 +148,7 @@
   <script src="/portal/admin-open-places-2627.js?v=20260920-offer-boot"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260922-override-machine" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
-  <script src="/portal/portal-parent-notify-templates.js?v=20260929-next-weekday"></script>
+  <script src="/portal/portal-parent-notify-templates.js?v=20260929-bespoke-cover"></script>
   <script src="/portal/cfk-app.js?v=20260917-places-first"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260919-create-card"></script>
@@ -12646,7 +12646,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var T = window.PortalParentNotifyTemplates;
       if(T && typeof T.bodyForKind === 'function'){
         ctx = ctx || {};
-        ctx.opts = notifyParentTemplateOpts();
+        ctx.opts = notifyParentTemplateOpts({
+          continuingWith: schedContinuingWithPhrase(
+            ctx.slot,
+            (ctx.slot && ctx.slot.staffName) || '',
+            ctx.newInstructorName || ''
+          )
+        });
         return T.bodyForKind(kind, ctx);
       }
       if(kind === 'payment_due') return notifyParentMessagePayment(ctx.slot, ctx.ov, ctx.meta, ctx.snap || { outstanding:0, nextDue:null });
@@ -16776,6 +16782,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * Auto parent WhatsApp after instructor / cancel / move save (silent, like Absents decide).
      * opts.kind: instructor_change | instructor_change_update | session_cancelled | time_change
      */
+    function schedContinuingWithPhrase(slot, absentName, coverName){
+      var list = slot && slot.allInstructors;
+      if(!list || list.length < 2) return '';
+      function keyOf(name){
+        return String(name || '').toLowerCase().replace(/[^a-z]/g, '');
+      }
+      var skip = {};
+      skip[keyOf(absentName)] = true;
+      skip[keyOf(coverName)] = true;
+      skip[keyOf(slot.staffName)] = true;
+      var names = [];
+      var seen = {};
+      list.forEach(function(inst){
+        var name = String((inst && inst.staffName) || '').trim();
+        var key = keyOf(name);
+        if(!name || !key || skip[key] || seen[key]) return;
+        seen[key] = true;
+        names.push(name);
+      });
+      if(names.length === 1) return names[0];
+      if(names.length === 2) return names[0] + ' and ' + names[1];
+      if(!names.length) return '';
+      return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+    }
     async function schedNotifyOverrideParent(client, slot, overrideId, opts){
       opts = opts || {};
       var kind = String(opts.kind || '').trim();
@@ -16816,6 +16846,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         service_label: typeof schedDecisionQueueServiceLabel === 'function' ? schedDecisionQueueServiceLabel(slot) : String(slot.programme || '').trim(),
         reason: String(opts.reason || '').trim(),
         absent_instructor_name: String(opts.absentInstructorName || slot.staffName || '').trim(),
+        continuing_with: schedContinuingWithPhrase(slot, opts.absentInstructorName || slot.staffName, opts.coveringStaffName),
         covering_staff_name: String(opts.coveringStaffName || '').trim(),
         covering_staff_key: String(opts.coveringStaffKey || '').trim(),
         prior_covering_staff_name: String(opts.priorCoveringStaffName || '').trim(),
