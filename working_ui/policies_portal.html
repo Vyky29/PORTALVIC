@@ -465,8 +465,11 @@
   .cs-index .cs-card .completed{background:#dcfce7;color:#166534}
   .cs-index .cs-card .required{background:#fef3c7;color:#92400e}
   .cs-index .cs-card .na{background:#f3f4f6;color:#6b7280}
-  .cs-index .cs-card.is-not-required{opacity:.55}
-  .cs-index .cs-card.is-not-required:hover{opacity:.85}
+  .cs-index .cs-card.is-not-required,
+  .cs-index .cs-venue-panel.is-not-required,
+  .cs-index .cs-proc-group.is-not-required,
+  .cs-index details.cs-idx-disclosure.is-not-required,
+  .cs-index section.cs-section.is-not-required{display:none!important}
   .cs-scope-banner{margin:0 0 14px;padding:12px 14px;border-radius:12px;border:1px solid #f4b942;background:#fffbeb;color:#374151;font-size:13px;line-height:1.45}
   .cs-scope-banner strong{color:#2d3e50}
   .cs-index .cs-card .meta{font-size:12px;color:#6b7280;margin:0 0 10px}
@@ -12017,6 +12020,10 @@
           var allCards = root.querySelectorAll(".cs-idx-main .cs-card");
           for (var i = 0; i < allCards.length; i++) {
             var card = allCards[i];
+            if (card.classList.contains("is-not-required")) {
+              card.classList.add("is-idx-hidden");
+              continue;
+            }
             var t = card.getAttribute("data-idx-txt") || "";
             if (t.indexOf(q) >= 0) card.classList.remove("is-idx-hidden");
             else card.classList.add("is-idx-hidden");
@@ -12038,7 +12045,10 @@
             if (showPanel) {
               p.classList.remove("is-idx-hidden");
               if (pt.indexOf(q) >= 0) {
-                for (ij = 0; ij < inner.length; ij++) inner[ij].classList.remove("is-idx-hidden");
+                for (ij = 0; ij < inner.length; ij++) {
+                  if (inner[ij].classList.contains("is-not-required")) continue;
+                  inner[ij].classList.remove("is-idx-hidden");
+                }
               }
             } else {
               p.classList.add("is-idx-hidden");
@@ -12046,7 +12056,7 @@
           }
           for (di = 0; di < detailsList.length; di++) {
             var det = detailsList[di];
-            var has = det.querySelector(".cs-card:not(.is-idx-hidden), .cs-venue-panel:not(.is-idx-hidden)");
+            var has = det.querySelector(".cs-card:not(.is-idx-hidden):not(.is-not-required), .cs-venue-panel:not(.is-idx-hidden):not(.is-not-required)");
             if (has) det.classList.remove("is-idx-hidden");
             else det.classList.add("is-idx-hidden");
           }
@@ -12337,9 +12347,9 @@
           return;
         }
         var html =
-          "<strong>Your required reading</strong> is set from your employment contract" +
+          "<strong>Your list</strong> shows only the policies and procedures you need to sign" +
           (label ? " (" + label + ")" : "") +
-          ". Items marked <strong>Required</strong> must be acknowledged. Grey <strong>Not required</strong> items stay available for reference if you work across services later.";
+          ". <strong>Required</strong> still needs your signature. <strong>Completed</strong> is already signed.";
         if (existing) {
           existing.innerHTML = html;
           return;
@@ -12455,8 +12465,8 @@
           if (!pid) continue;
           var docMeta = api && api.DOC_SCOPE ? api.DOC_SCOPE[pid] : null;
           var applies = !docMeta || !api || !api.docApplies || api.docApplies(docMeta, workerTags);
-          card.classList.toggle("is-not-required", !applies);
-          if (!applies) {
+          card.classList.toggle("is-not-required", staffScopeState.loaded && !applies);
+          if (staffScopeState.loaded && !applies) {
             st.className = "status na";
             st.textContent = "Not required";
             continue;
@@ -12505,6 +12515,33 @@
             st.className = "status ok";
             st.textContent = "Reference";
           }
+        }
+        if (staffScopeState.loaded) collapseScopeGroups(root);
+      }
+
+      function collapseScopeGroups(root) {
+        function hasVisibleCard(el) {
+          var cards = el.querySelectorAll(".cs-card");
+          for (var i = 0; i < cards.length; i++) {
+            if (!cards[i].classList.contains("is-not-required")) return true;
+          }
+          return false;
+        }
+        var panels = root.querySelectorAll(".cs-venue-panel");
+        for (var p = 0; p < panels.length; p++) {
+          panels[p].classList.toggle("is-not-required", !hasVisibleCard(panels[p]));
+        }
+        var groups = root.querySelectorAll(".cs-proc-group");
+        for (var g = 0; g < groups.length; g++) {
+          groups[g].classList.toggle("is-not-required", !hasVisibleCard(groups[g]));
+        }
+        var dets = root.querySelectorAll("details.cs-idx-disclosure");
+        for (var di = 0; di < dets.length; di++) {
+          dets[di].classList.toggle("is-not-required", !hasVisibleCard(dets[di]));
+        }
+        var sections = root.querySelectorAll("section.cs-section");
+        for (var s = 0; s < sections.length; s++) {
+          sections[s].classList.toggle("is-not-required", !hasVisibleCard(sections[s]));
         }
       }
 
