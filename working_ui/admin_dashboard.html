@@ -14470,7 +14470,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '<details class="section" id="schedAddSessionWrap" style="margin:0 0 18px">'+
         '<summary style="cursor:pointer;font-weight:600;color:var(--ink)">+ Add session card (new hours / instructor / participant)</summary>'+
         '<div class="card" style="margin-top:10px"><div class="card-pad">'+
-        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Creates a <strong>new row</strong> on this day. Use this when someone already on the board (e.g. Michelle on Ikram) picks up extra hours \u2014 do not Change Instructor over the person who is off. Training / shadowing still pays at <strong>&pound;13.50/h</strong>.</p>'+
+        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Creates a <strong>new row</strong> on this day. Shadowing can be several cards the same day (different hours, different people). Remove deletes only that card. Training / shadowing still pays at <strong>&pound;13.50/h</strong>.</p>'+
         '<div class="filter-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end">'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Staff'+
           (window.PortalAdminSearchCombo ? window.PortalAdminSearchCombo.comboHtml('schedAddStaff', 'Select staff\u2026', '220px') :
@@ -14731,6 +14731,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       box.innerHTML = '<strong>' + esc(hostName) + '</strong> <span class="muted">participants:</span> ' + esc(names.join(', '));
     }
+    function schedVenueForShadowHost(iso, start, end, host){
+      if(!host) return '';
+      var slots = schedSlotsForAddDate(iso);
+      var found = '';
+      slots.forEach(function(slot){
+        if(found || !slot) return;
+        var ids = [slot.staffRosterId];
+        if(slot.allInstructors) slot.allInstructors.forEach(function(inst){ ids.push(inst && inst.staffRosterId); });
+        var mine = ids.some(function(id){ return schedStaffMatchKeysEqual(id, host); });
+        if(!mine && slot.staffName && schedStaffMatchKeysEqual(slot.staffName, host)) mine = true;
+        if(!mine && slot.allInstructors){
+          mine = slot.allInstructors.some(function(inst){
+            return inst && schedStaffMatchKeysEqual(inst.staffName, host);
+          });
+        }
+        if(!mine || !schedSlotOverlapsClock(slot, start, end)) return;
+        var v = String(slot.venue || '').trim();
+        if(v) found = v;
+      });
+      return found;
+    }
     async function saveSchedAddSession(){
       var msg = $('schedAddMsg');
       function showMsg(t, tone){ if(msg){ msg.textContent = t; msg.style.color = tone === 'err' ? 'var(--danger)' : (tone === 'ok' ? 'var(--success)' : ''); } }
@@ -14757,6 +14778,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!dateIso){ showMsg('Pick a date.', 'err'); return; }
       if(!start || !end){ showMsg('Set a start and end time.', 'err'); return; }
       if(end <= start){ showMsg('End time must be after start time.', 'err'); return; }
+      if(!venue && kind === 'shadowing') venue = schedVenueForShadowHost(dateIso, start, end, shadowHost);
+      if(!venue) venue = 'SwimFarm';
       var paxName = '';
       if(kind === 'session'){
         if(!paxSlug){ showMsg('Pick a participant (or Office / No participant).', 'err'); return; }
@@ -14783,7 +14806,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           anchor_staff_id: staffSlug,
           anchor_start: toPgTime(start),
           anchor_end: toPgTime(end),
-          anchor_venue: venue || (kind === 'session' ? 'SwimFarm' : null),
+          anchor_venue: venue,
           anchor_client_id: kind === 'session' ? paxSlug : kind,
           anchor_time_slot_label: start + ' to ' + end,
           override_type: 'session_add',
@@ -14913,7 +14936,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Clears the add/edit form back to "new session" mode. */
     function schedAddSessionFormReset(){
       sched.addEditingId = null;
-      ['schedAddVenue','schedAddTrainer','schedAddNote','schedAddArea'].forEach(function(id){ var e=$(id); if(e) e.value=''; });
+      ['schedAddTrainer','schedAddNote','schedAddArea'].forEach(function(id){ var e=$(id); if(e) e.value=''; });
+      var venueReset = $('schedAddVenue'); if(venueReset) venueReset.value = 'SwimFarm';
       if(window.PortalAdminSearchCombo){
         try{ PortalAdminSearchCombo.setValue('schedAddShadowHost', '', ''); }catch(_sh0){}
       }
@@ -14965,7 +14989,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var btn=$('schedAddSaveBtn'); if(btn) btn.textContent='Update card';
       var cx=$('schedAddCancelEdit'); if(cx) cx.style.display='';
-      var msg=$('schedAddMsg'); if(msg){ msg.textContent='Editing existing '+kind+' card — change anything and Update.'; msg.style.color=''; }
+      var msg=$('schedAddMsg'); if(msg){ msg.textContent='Editing this card only. Update changes this one. To keep it and add another, press Cancel edit, then Add card.'; msg.style.color=''; }
       try{ if(wrap) wrap.scrollIntoView({ behavior:'smooth', block:'nearest' }); }catch(_e){}
     }
     async function schedRemoveAddedSession(id){
@@ -25154,7 +25178,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260929-gabriel-cover';
+    var PORTAL_ADMIN_HUB_BUILD = '20260930-shadow-cards';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

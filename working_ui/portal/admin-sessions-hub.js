@@ -2035,6 +2035,29 @@ function rosterRowToSlot(isoDate, wd, r) {
     return lo1 < hi2 && lo2 < hi1;
   }
 
+  /** Intersection of two clocks. A shadowing card keeps its own hours, not the host's whole session. */
+  function hmOverlapBounds(startA, endA, startB, endB) {
+    function mins(hm) {
+      var p = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+      if (!p) return NaN;
+      return (parseInt(p[1], 10) || 0) * 60 + (parseInt(p[2], 10) || 0);
+    }
+    function fmt(m) {
+      var h = Math.floor(m / 60);
+      var min = m % 60;
+      return String(h).padStart(2, "0") + ":" + String(min).padStart(2, "0");
+    }
+    var lo1 = mins(startA);
+    var hi1 = mins(endA || startA);
+    var lo2 = mins(startB);
+    var hi2 = mins(endB || startB);
+    if (!Number.isFinite(lo1) || !Number.isFinite(hi1) || !Number.isFinite(lo2) || !Number.isFinite(hi2)) return null;
+    var lo = Math.max(lo1, lo2);
+    var hi = Math.min(hi1, hi2);
+    if (!(lo < hi)) return null;
+    return { start: fmt(lo), end: fmt(hi) };
+  }
+
   function trainerMatchesSlotInstructors(trainerRaw, instructors) {
     var parts = parseInstructors(trainerRaw);
     if (!parts.length && clean(trainerRaw)) parts = [clean(trainerRaw)];
@@ -2961,8 +2984,11 @@ function rosterRowToSlot(isoDate, wd, r) {
       for (var cs = 0; cs < cardSources.length; cs++) {
         var hostSeat = cardSources[cs];
         var rowName = hostSeat ? clean(hostSeat.client_name) : cardName;
-        var rowStart = hostSeat ? normTimeShort(hostSeat.time_start || hostSeat.time_slot) || startHm : startHm;
-        var rowEnd = hostSeat ? normTimeShort(hostSeat.time_end || hostSeat.time_start) || endHm : endHm;
+        var seatStart = hostSeat ? normTimeShort(hostSeat.time_start || hostSeat.time_slot) : "";
+        var seatEnd = hostSeat ? normTimeShort(hostSeat.time_end || hostSeat.time_start) : "";
+        var clip = hostSeat ? hmOverlapBounds(startHm, endHm, seatStart, seatEnd) : null;
+        var rowStart = clip ? clip.start : startHm;
+        var rowEnd = clip ? clip.end : endHm;
         var rowLabel = hostSeat
           ? rosterTimeSlotLabelFromBounds(rowStart, rowEnd, wd) || clean(hostSeat.time_slot) || rosterTimeLabel
           : rosterTimeLabel;
@@ -2970,11 +2996,15 @@ function rosterRowToSlot(isoDate, wd, r) {
         var rowVenue = hostSeat ? clean(hostSeat.venue) || venue : venue;
         var rowArea = hostSeat ? clean(hostSeat.area) || area : area;
         var key =
+          String(ov.id || "") +
+          "|" +
           canonicalStaffMatchKey(columnName) +
           "|" +
           canonicalClientSlug(rowName) +
           "|" +
           rowStart +
+          "|" +
+          rowEnd +
           "|" +
           kind;
         if (seen[key]) continue;
