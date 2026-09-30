@@ -748,9 +748,28 @@
       '</div>';
   }
 
+  function formatPaidOn(iso) {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch (_e) {
+      return '';
+    }
+  }
+
   function payCellHtml(it) {
     if (!it || it.type !== 'expense') return '—';
-    if (it.isPaid) return '<span class="portal-documents-expense-paid">Paid</span>';
+    if (it.isPaid) {
+      var when = formatPaidOn(it.expenseAdminPaidAt);
+      return (
+        '<span class="portal-documents-expense-paid">Paid</span>' +
+        (when ? '<div class="portal-documents-pay-date">' + esc(when) + '</div>' : '')
+      );
+    }
     return '<span class="portal-documents-expense-unpaid">Pending</span>';
   }
 
@@ -1273,6 +1292,7 @@
       '#portalDocumentsRoot .portal-documents-expense-banner strong{font-size:14px;color:#9a3412}' +
       '#portalDocumentsRoot .portal-documents-expense-unpaid{color:#b45309;font-weight:700}' +
       '#portalDocumentsRoot .portal-documents-expense-paid{color:#15803d;font-weight:700}' +
+      '#portalDocumentsRoot .portal-documents-pay-date{display:block;margin-top:2px;font-size:11px;font-weight:600;color:var(--muted,#64748b);line-height:1.2}' +
       '#portalDocumentsRoot .portal-documents-expense-mark-btn{background:#0b2a5b;color:#fff;border:0}' +
       '#portalDocumentsRoot .portal-documents-delete-btn{background:#fff;color:#b91c1c;border:1px solid #fca5a5}' +
       '#portalDocumentsRoot .portal-documents-delete-btn:hover{background:#fef2f2;border-color:#ef4444}' +

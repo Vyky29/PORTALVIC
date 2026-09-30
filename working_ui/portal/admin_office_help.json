@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-30-v52",
+  "version": "2026-09-30-v53",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1024,6 +1024,30 @@
           "tips": [
             "Expenses use the month. Timesheets keep the date range.",
             "A camera filename is replaced by this name in the list and on download."
+          ]
+        },
+        {
+          "id": "expense_mark_paid_date",
+          "title": "Mark an expense paid",
+          "summary": "Paid keeps the date you validated it, so payroll can be tracked later.",
+          "where": "Documents → Expenses → Pay column",
+          "keywords": [
+            "paid",
+            "pending",
+            "expense",
+            "gastos",
+            "validar",
+            "mark paid"
+          ],
+          "steps": [
+            "Open Documents and filter Expenses.",
+            "Pending means it is not in payroll yet.",
+            "Press Mark paid when you have paid and validated it.",
+            "The Pay column then shows Paid and the date of that day."
+          ],
+          "tips": [
+            "Mark unpaid clears the date if it was marked by mistake.",
+            "The date is the day you pressed Mark paid, not the expense month."
           ]
         }
       ]
