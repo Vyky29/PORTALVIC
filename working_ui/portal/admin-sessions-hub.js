@@ -476,9 +476,9 @@
     saib: "saaib",
     /* Board short label "Mia"; feedback / portal often "Mia Mesi". */
     mia_mesi: "mia",
-    /* Abate twins — unique first names on board (never full surname for workers). */
+    /* Christian Abate short board id. Do not alias emmanuel_abate → emmanuel
+       (that slug is Day Centre Emanuel and kills Abate's aquatic feedback). */
     christian_abate: "christian",
-    emmanuel_abate: "emmanuel",
     /* Repeated Adam → two letters of surname (Mahmmoud). */
     adam_mahmmoud: "adam_ma",
     adam_mahmoud: "adam_ma",

@@ -102,7 +102,7 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   // Board short labels vs fuller feedback / portal names
   mia_mesi: "mia",
   christian_abate: "christian",
-  emmanuel_abate: "emmanuel",
+  /* Emmanuel Abate is a different child from Day Centre Emanuel (slug emmanuel). */
   adam_mahmmoud: "adam_ma",
   adam_mahmoud: "adam_ma",
   yunis_hussein: "yunis",

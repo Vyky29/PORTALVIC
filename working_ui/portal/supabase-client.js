@@ -927,8 +927,7 @@ const PORTAL_ROSTER_CLIENT_SLUG_CANON = Object.freeze({
   mia: "mia",
   christian_abate: "christian",
   christian: "christian",
-  emmanuel_abate: "emmanuel",
-  emmanuel: "emmanuel",
+  /* emmanuel_abate stays himself. "emmanuel" / "emanuel" is Day Centre Emanuel. */
   adam_mahmmoud: "adam_ma",
   adam_mahmoud: "adam_ma",
   adam_ma: "adam_ma",
@@ -943,11 +942,23 @@ function portalCanonicalClientSlugToken(slug) {
   return PORTAL_ROSTER_CLIENT_SLUG_CANON[s] || s;
 }
 
+/** Day Centre Emanuel must not prefix-match aquatic Emmanuel Abate. */
+function portalClientSlugsAreDifferentPeople(a, b) {
+  const x = String(a || "");
+  const y = String(b || "");
+  if (x === y) return false;
+  const abate = x === "emmanuel_abate" || y === "emmanuel_abate";
+  const dcEmanuel =
+    x === "emmanuel" || x === "emanuel" || y === "emmanuel" || y === "emanuel";
+  return abate && dcEmanuel;
+}
+
 /** Strict client slug match — never treat "amar" as matching "amber". */
 export function portalClientSlugTokensEquivalent(a, b) {
   const rs = portalCanonicalClientSlugToken(a);
   const ss = portalCanonicalClientSlugToken(b);
   if (!rs || !ss) return false;
+  if (portalClientSlugsAreDifferentPeople(rs, ss)) return false;
   if (rs === ss) return true;
   if (/_ah$/.test(rs) && /_ah$/.test(ss) && rs !== ss) return false;
   if (rs.startsWith(`${ss}_`) || ss.startsWith(`${rs}_`)) return true;

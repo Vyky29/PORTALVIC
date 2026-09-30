@@ -714,6 +714,14 @@
     const rKey = slug(r && r.clientName);
     if (!stKey || !rKey) return false;
     if (stKey === rKey) return true;
+    /* "emmanuel" is inside "emmanuel_abate" — they are different children. */
+    const abate = stKey === "emmanuel_abate" || rKey === "emmanuel_abate";
+    const dc =
+      stKey === "emmanuel" ||
+      stKey === "emanuel" ||
+      rKey === "emmanuel" ||
+      rKey === "emanuel";
+    if (abate && dc) return false;
     return stKey.indexOf(rKey) >= 0 || rKey.indexOf(stKey) >= 0;
   }
 

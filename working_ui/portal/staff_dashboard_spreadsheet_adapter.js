@@ -589,9 +589,10 @@
     rayyan_fi: "rayyan_f",
     /* Board short "Mia"; feedback often "Mia Mesi". */
     mia_mesi: "mia",
-    /* Abate twins — unique first names (no full surname on worker boards). */
+    /* Christian Abate — unique first name on the board. Emmanuel Abate must
+       stay emmanuel_abate: "emmanuel" is Day Centre Emanuel, and collapsing
+       them wipes his aquatic session key (card stuck blue, feedback dead). */
     christian_abate: "christian",
-    emmanuel_abate: "emmanuel",
     adam_mahmmoud: "adam_ma",
     adam_mahmoud: "adam_ma",
   };
