@@ -225,7 +225,6 @@
       }
       var obName = r.name || r.path || 'File';
       var obPath = r.path || '';
-      if (n.indexOf('20260910_181418') >= 0) obName = 'Emmanuel Amoakohene — DBS';
       return {
         type: type,
         name: obName,
@@ -269,12 +268,11 @@
     return (rows || []).map(function (r) {
       var type = String(r.document_type || 'other').toLowerCase();
       if (type === 'training_external_certificate') type = 'certificate';
-      var worker = staffNameById(r.user_id);
       var title = String(r.title || type || 'Document').trim();
       return {
         type: type,
         id: r.id || '',
-        name: worker + ' — ' + title,
+        name: title,
         path: r.file_url || '',
         storageBucket: 'documents',
         size: null,
@@ -339,7 +337,166 @@
       state.expenseUnpaidCount = Number((ex.data.meta && ex.data.meta.unpaid_count) || 0);
       out = out.concat(normalizeExpenseRows(ex.data.expenses));
     }
-    return out;
+    return out.map(applyDisplayName);
+  }
+
+  function fileExt(pathOrName) {
+    var base = String(pathOrName || '').split('?')[0].split('#')[0].split('/').pop();
+    var m = base.match(/\.([A-Za-z0-9]{2,5})$/);
+    if (!m) return '';
+    var ext = m[1].toLowerCase();
+    if (ext === 'jpeg') return 'jpg';
+    return ext;
+  }
+
+  function monthNameFromIso(iso) {
+    if (!iso) return '';
+    var d = new Date(String(iso).slice(0, 10) + 'T12:00:00');
+    if (isNaN(d.getTime())) return '';
+    try {
+      return d.toLocaleString('en-GB', { month: 'long' });
+    } catch (_e) {
+      return '';
+    }
+  }
+
+  function looksLikeRawFile(s) {
+    var t = String(s || '').trim();
+    if (!t) return true;
+    if (/^[0-9a-f-]{16,}$/i.test(t.replace(/\.[a-z0-9]+$/i, ''))) return true;
+    if (/^(img|screenshot|camscanner|whatsapp|image)[-_ ]?\d/i.test(t)) return true;
+    if (/^\d{8,}[_-]/.test(t)) return true;
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(t)) return true;
+    if (/\.(jpe?g|png|pdf|docx?|webp)$/i.test(t) && /[_0-9]{6,}/.test(t)) return true;
+    return false;
+  }
+
+  function staffFullName(id) {
+    var want = String(id || '').trim();
+    if (!want) return '';
+    for (var i = 0; i < state.staff.length; i++) {
+      if (String(state.staff[i].id || '') === want) {
+        return String(state.staff[i].full_name || state.staff[i].username || '').trim();
+      }
+    }
+    return '';
+  }
+
+  function staffByLooseName(raw) {
+    var q = String(raw || '').trim().toLowerCase().replace(/['’]s$/, '');
+    if (!q || q === 'worker') return '';
+    var exact = [];
+    var first = [];
+    for (var i = 0; i < state.staff.length; i++) {
+      var full = String(state.staff[i].full_name || '').trim();
+      if (!full) continue;
+      var low = full.toLowerCase();
+      if (low === q) return full;
+      if (low.indexOf(q + ' ') === 0 || q.indexOf(low) === 0) exact.push(full);
+      if (low.split(/\s+/)[0] === q) first.push(full);
+    }
+    if (exact.length === 1) return exact[0];
+    if (first.length === 1) return first[0];
+    return '';
+  }
+
+  function applicantName(id) {
+    var want = String(id || '').trim();
+    if (!want) return '';
+    var list = global._portalDocsApplicants || [];
+    for (var i = 0; i < list.length; i++) {
+      if (String(list[i].applicant_session_id || '') !== want) continue;
+      var name = String(list[i].display_name || list[i].portal_staff_name || '').trim();
+      if (!name || /^session /i.test(name)) return '';
+      return name;
+    }
+    return '';
+  }
+
+  function rawTitle(it) {
+    if (it && it.details && it.details.title) return String(it.details.title);
+    return String((it && it.name) || '');
+  }
+
+  function personFromTitle(title) {
+    var s = String(title || '').trim();
+    var m = s.match(/^(.+?)\s·\s/);
+    if (m) return staffByLooseName(m[1]) || m[1].trim();
+    m = s.match(/^(.+?)'s\s+/i);
+    if (m) return staffByLooseName(m[1]) || m[1].trim();
+    return '';
+  }
+
+  function resolvePerson(it) {
+    var d = (it && it.details) || {};
+    var byId = staffFullName(d.user_id || d.applicant_session_id || it.userId);
+    if (byId) return byId;
+    var path = String((it && it.path) || '');
+    var um = path.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    if (um) {
+      byId = staffFullName(um[0]) || applicantName(um[0]);
+      if (byId) return byId;
+    }
+    byId = applicantName(d.applicant_session_id);
+    if (byId) return byId;
+    var fromTitle = personFromTitle(rawTitle(it));
+    if (fromTitle) return fromTitle;
+    return 'Worker';
+  }
+
+  function timesheetRangeLabel(raw) {
+    var s = String(raw || '');
+    var m = s.match(/(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\s+to\s+(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)/i);
+    if (!m) return '';
+    function tidy(word) {
+      var w = String(word || '');
+      return w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '';
+    }
+    return 'Timesheet ' + Number(m[1]) + ' ' + tidy(m[2]) + ' to ' + Number(m[3]) + ' ' + tidy(m[4]);
+  }
+
+  function humanTitle(raw) {
+    var s = String(raw || '').trim().replace(/\.[A-Za-z0-9]{2,5}$/, '');
+    if (!s || looksLikeRawFile(raw) || looksLikeRawFile(s)) return '';
+    s = s.replace(/^[^·\n]{1,60}\s·\s/, '');
+    s = s.replace(/^[A-Za-z][A-Za-z' .\-]{0,40}'s\s+/i, '');
+    s = s.replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!s || looksLikeRawFile(s)) return '';
+    if (s.length > 80) s = s.slice(0, 80).trim();
+    return s;
+  }
+
+  function resolveLabel(it) {
+    var type = String((it && it.type) || 'other').toLowerCase();
+    var raw = rawTitle(it);
+    var when = (it && it.details && it.details.related_date) || (it && it.created);
+    if (type === 'expense') {
+      var month = monthNameFromIso(when);
+      return month ? month + ' Expenses' : 'Expenses';
+    }
+    if (type === 'timesheet') {
+      var range = timesheetRangeLabel(raw);
+      if (range) return range;
+      var tm = monthNameFromIso(when);
+      return tm ? tm + ' Timesheet' : 'Timesheet';
+    }
+    if (type === 'checklist') return 'Starter Checklist';
+    if (type === 'passport') return 'Passport';
+    if (type === 'righttowork') return 'Right to work';
+    if (type === 'dbs') return 'DBS';
+    if (type === 'firstaid') return 'First aid';
+    if (type === 'safeguarding') return 'Safeguarding certificate';
+    var custom = humanTitle(raw);
+    if (type === 'certificate') return custom || 'Certificate';
+    if (custom) return custom;
+    return TYPE_LABELS[type] || 'Document';
+  }
+
+  function applyDisplayName(it) {
+    if (!it) return it;
+    var ext = fileExt(it.path || it.name);
+    it.name = resolvePerson(it) + ' - ' + resolveLabel(it) + (ext ? '.' + ext : '');
+    return it;
   }
 
   /**
@@ -648,7 +805,7 @@
         return (
           '<tr class="portal-documents-data-row" data-portal-doc-idx="' + idx + '">' +
           '<td><span class="portal-documents-type-pill portal-documents-type-pill--' + esc(it.type) + '">' + esc(typeLabel) + '</span></td>' +
-          '<td><div class="portal-forms-cell-main">' + esc(it.name) + '</div><div class="portal-forms-cell-sub">' + rowMetaHtml(it) + '</div></td>' +
+          '<td style="min-width:0"><div class="portal-forms-cell-main" style="min-width:0;overflow-wrap:anywhere">' + esc(it.name) + '</div><div class="portal-forms-cell-sub" style="min-width:0;overflow-wrap:anywhere">' + rowMetaHtml(it) + '</div></td>' +
           '<td style="white-space:nowrap">' + esc(formatDate(it.created)) + '</td>' +
           '<td style="white-space:nowrap">' + esc(amountOrSizeCell(it)) + '</td>' +
           '<td style="white-space:nowrap">' + actionHtml + '</td></tr>'

@@ -18,6 +18,7 @@ type ExpenseRow = {
   expense_admin_paid_at: string | null;
   is_paid: boolean;
   expense_amount: number | null;
+  user_id: string | null;
 };
 
 function mapDocumentToExpense(row: Record<string, unknown>): ExpenseRow {
@@ -39,6 +40,7 @@ function mapDocumentToExpense(row: Record<string, unknown>): ExpenseRow {
     expense_admin_paid_at: paidAt,
     is_paid: !!paidAt,
     expense_amount: Number.isFinite(amtNum) ? amtNum : null,
+    user_id: row.user_id ? String(row.user_id) : null,
   };
 }
 
@@ -77,7 +79,7 @@ Deno.serve(async (req) => {
   const { data, error } = await admin
     .from("documents")
     .select(
-      "id, title, file_url, created_at, category, related_date, document_type, expense_admin_paid_at, expense_amount",
+      "id, title, file_url, created_at, category, related_date, document_type, expense_admin_paid_at, expense_amount, user_id",
     )
     .eq("document_type", "expense")
     .order("created_at", { ascending: false })

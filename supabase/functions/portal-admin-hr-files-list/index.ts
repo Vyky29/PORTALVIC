@@ -18,6 +18,7 @@ type TimesheetRow = {
   uploaded_at: string | null;
   size: number | null;
   source: string;
+  user_id: string | null;
 };
 
 function mapDocumentToTimesheet(row: Record<string, unknown>): TimesheetRow {
@@ -37,6 +38,7 @@ function mapDocumentToTimesheet(row: Record<string, unknown>): TimesheetRow {
     uploaded_at: created,
     size: null,
     source: "portal",
+    user_id: row.user_id ? String(row.user_id) : null,
   };
 }
 

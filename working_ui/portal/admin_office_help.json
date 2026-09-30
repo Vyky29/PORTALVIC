@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-30-v51",
+  "version": "2026-09-30-v52",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1002,6 +1002,28 @@
           "tips": [
             "A gov.uk right to work screenshot is not a passport.",
             "British / UK nationals can skip this if the passport is already uploaded."
+          ]
+        },
+        {
+          "id": "document_file_names",
+          "title": "How document names show",
+          "summary": "Every file in Documents is named Person - Document.ext.",
+          "where": "Documents",
+          "keywords": [
+            "nombre",
+            "filename",
+            "starter checklist",
+            "passport",
+            "expenses"
+          ],
+          "steps": [
+            "Open Documents.",
+            "Each row is the worker full name, a hyphen, then the document, then the file type.",
+            "Examples: Michelle Caleb - Starter Checklist.jpg, Michelle Caleb - Passport.jpg, Michelle Caleb - September Expenses.pdf."
+          ],
+          "tips": [
+            "Expenses use the month. Timesheets keep the date range.",
+            "A camera filename is replaced by this name in the list and on download."
           ]
         }
       ]
