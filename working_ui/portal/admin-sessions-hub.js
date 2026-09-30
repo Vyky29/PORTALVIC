@@ -12856,9 +12856,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return "";
   }
 
+  function shadowingHostFirstName(slot) {
+    var ov = slot && slot.__portalShadowingOverride;
+    var p = overridePayloadObj(ov);
+    var raw = clean((p && (p.trainer_staff_id || p.trainer)) || "");
+    var name = resolveStaffDisplayName(raw) || clean(p && p.trainer) || raw;
+    return staffPillFirstName(name) || dayBoardStaffLabel(name) || "";
+  }
+
   function dayBoardShadowingChipLabel(slot) {
     if (slot && slot.portalShadowingObserver && !slot.portalShadowingHost) {
-      return "Shadowing";
+      var host = shadowingHostFirstName(slot);
+      return host ? "Shadowing " + host : "Shadowing";
     }
     var obs =
       clean(slot && slot.portalShadowingObserverName) ||
