@@ -19385,6 +19385,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return keys;
     }
+    function schedLogStamp(iso){
+      if(!iso) return '';
+      var d = new Date(iso);
+      if(isNaN(d.getTime())) return '';
+      return d.toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    }
+    function schedLogCreatedCell(row){
+      var created = schedLogStamp(row && row.created_at);
+      var updated = schedLogStamp(row && row.updated_at);
+      if(!created) return updated || '—';
+      if(row && row.updated_at && row.created_at){
+        var gap = new Date(row.updated_at).getTime() - new Date(row.created_at).getTime();
+        if(gap > 2 * 60 * 1000 && updated && updated !== created) return created + ' · edited ' + updated;
+      }
+      return created;
+    }
     function renderSchedLogRows(){
       var dateElL = $('schedDate');
       var logIso = dateElL && dateElL.value ? dateElL.value : isoDateLocal(new Date());
@@ -19399,7 +19415,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         merged.push({
           created_at: o.created_at || '',
           html: (function(){
-            var t = o.created_at ? new Date(o.created_at).toLocaleString('en-GB',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+            var t = schedLogCreatedCell(o);
             var cb = schedResolveOverrideAuthorName(o);
             var cBtn = resolveAdminClientDrawerId(o.anchor_client_id);
             var cLabRaw = String(o.anchor_client_id || '—');
@@ -19660,7 +19676,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           Array.isArray(sched._termEventsCache);
         var fetchJobs = [
           client.from('schedule_overrides')
-            .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
+            .select('id,created_at,updated_at,updated_by,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
             .eq('session_date', iso)
             .order('created_at', { ascending: false }),
           client.from('portal_roster_rows')
@@ -25178,7 +25194,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260930-shadow-cards';
+    var PORTAL_ADMIN_HUB_BUILD = '20260930-shadow-hours';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

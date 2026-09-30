@@ -2983,12 +2983,11 @@ function rosterRowToSlot(isoDate, wd, r) {
       var cardSources = shadowSeats.length ? shadowSeats : [null];
       for (var cs = 0; cs < cardSources.length; cs++) {
         var hostSeat = cardSources[cs];
+        if (cs > 0) continue;
         var rowName = hostSeat ? clean(hostSeat.client_name) : cardName;
-        var seatStart = hostSeat ? normTimeShort(hostSeat.time_start || hostSeat.time_slot) : "";
-        var seatEnd = hostSeat ? normTimeShort(hostSeat.time_end || hostSeat.time_start) : "";
-        var clip = hostSeat ? hmOverlapBounds(startHm, endHm, seatStart, seatEnd) : null;
-        var rowStart = clip ? clip.start : startHm;
-        var rowEnd = clip ? clip.end : endHm;
+        /* The card keeps the hours that were saved. Luliya finishing at 3 must not shorten an 11-4 shadowing. */
+        var rowStart = startHm;
+        var rowEnd = endHm;
         var rowLabel = hostSeat
           ? rosterTimeSlotLabelFromBounds(rowStart, rowEnd, wd) || clean(hostSeat.time_slot) || rosterTimeLabel
           : rosterTimeLabel;
