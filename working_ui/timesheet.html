@@ -64,6 +64,12 @@
     .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;min-width:0;padding:2px 0;width:100%}
     .timesheet-service-cell__time{font-size:13px;font-weight:700;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
     .timesheet-late-start{color:#b91c1c}
+    .timesheet-hour-paid{color:#166534;font-weight:800}
+    .timesheet-hour-steps{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;line-height:1.15;font-weight:700}
+    .timesheet-hour-steps__line{white-space:nowrap}
+    #autoWrap td.td-hours:has(.timesheet-hour-steps),
+    html.portal-timesheet-vertical #autoWrap td.td-hours:has(.timesheet-hour-steps){white-space:normal}
+    html.portal-timesheet-vertical #autoWrap .timesheet-hour-steps{font-size:10px}
     .timesheet-service-cell__service{font-size:12px;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
     .timesheet-service-cell__service--shadow{font-weight:700;color:#7c3aed}
     .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
@@ -73,8 +79,8 @@
     #autoWrap table{table-layout:fixed;width:100%;max-width:100%}
     #autoWrap col.col-date{width:22%}
     #autoWrap col.col-service{width:40%}
-    #autoWrap col.col-hours{width:14%}
-    #autoWrap col.col-daily{width:24%}
+    #autoWrap col.col-hours{width:20%}
+    #autoWrap col.col-daily{width:18%}
     #autoWrap th.th-hours,
     #autoWrap th.th-daily,
     #autoWrap td.td-hours,
@@ -237,8 +243,8 @@
       html.portal-timesheet-vertical .timesheet-service-cell__role{font-size:10px}
       html.portal-timesheet-vertical #autoWrap col.col-date{width:22%}
       html.portal-timesheet-vertical #autoWrap col.col-service{width:32%}
-      html.portal-timesheet-vertical #autoWrap col.col-hours{width:14%}
-      html.portal-timesheet-vertical #autoWrap col.col-daily{width:32%}
+      html.portal-timesheet-vertical #autoWrap col.col-hours{width:20%}
+      html.portal-timesheet-vertical #autoWrap col.col-daily{width:26%}
       html.portal-timesheet-vertical #autoWrap th.th-hours,
       html.portal-timesheet-vertical #autoWrap th.th-daily,
       html.portal-timesheet-vertical #autoWrap td.td-hours,
@@ -2288,7 +2294,7 @@
       let minStart = Infinity;
       let maxEnd = -Infinity;
       list.forEach((s) => {
-        if (!timesheetSessionIsWorkedFeedbackSeat(s)) return;
+        if (!timesheetSeatCountsAsNamedForPay(s, dateKey)) return;
         const a = hmToMinutes(String((s && s.start) || "").trim());
         let b = hmToMinutes(String((s && s.end) || "").trim());
         if (!Number.isFinite(a) || !Number.isFinite(b)) return;
@@ -2333,7 +2339,8 @@
     /** Luliya Day Centre: arrived 30 minutes late. Start shows in red; that half hour is not paid. */
     const LULIYA_MORNING_LATE_MINUTES = {
       "2026-09-08": 30,
-      "2026-09-14": 30
+      "2026-09-14": 30,
+      "2026-09-30": 30
     };
 
     function timesheetRowsAreDayCentre(rows) {
@@ -2347,6 +2354,93 @@
       if (!timesheetRowsAreDayCentre(rows)) return 0;
       const late = LULIYA_MORNING_LATE_MINUTES[String(dateKey || "").slice(0, 10)];
       return late > 0 ? late : 0;
+    }
+
+    /** One hour off the Day Centre shift. Shown under the late start; it is not paid. */
+    const LULIYA_DAY_CENTRE_TIME_OFF_MINUTES = {
+      "2026-09-30": 60
+    };
+
+    function timesheetLuliyaDayCentreTimeOffMinutes(rosterKey, dateKey, rows) {
+      if (timesheetNormStaffKey(rosterKey) !== "luliya") return 0;
+      if (!timesheetRowsAreDayCentre(rows)) return 0;
+      const off = LULIYA_DAY_CENTRE_TIME_OFF_MINUTES[String(dateKey || "").slice(0, 10)];
+      return off > 0 ? off : 0;
+    }
+
+    function timesheetMinutesToClockHm(totalMin) {
+      let m = ((Math.round(Number(totalMin) || 0) % (24 * 60)) + 24 * 60) % (24 * 60);
+      let h = Math.floor(m / 60);
+      const min = m % 60;
+      if (h === 0) h = 12;
+      else if (h > 12) h -= 12;
+      return h + ":" + String(min).padStart(2, "0");
+    }
+
+    function timesheetRowsClockSpan(rows) {
+      let startMin = Infinity;
+      let endMin = -Infinity;
+      (rows || []).forEach((s) => {
+        const a = hmToMinutes(String(s.start || "").trim());
+        let b = hmToMinutes(String(s.end || "").trim());
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+        if (b < a) b += 24 * 60;
+        if (a < startMin) startMin = a;
+        if (b > endMin) endMin = b;
+      });
+      if (!(endMin > startMin)) return null;
+      return { startMin: startMin, endMin: endMin };
+    }
+
+    /** Red full shift, then late start, then the time-off cut, then the green paid hours. */
+    function timesheetLuliyaDayCentrePayDisplay(grossHours, lateMin, offMin, startMin, endMin) {
+      const gross = Number(grossHours) || 0;
+      let net = gross;
+      const steps = [{ text: money(gross), tone: "red" }];
+      const lines = [{ text: clubTimeRangeFromMinutes(startMin, endMin) }];
+      if (lateMin > 0) {
+        net = Math.max(0, net - lateMin / 60);
+        lines.push({
+          lateStart: timesheetMinutesToClockHm(startMin + lateMin),
+          rest: "-" + minutesToClubHm(endMin)
+        });
+      }
+      if (offMin > 0) {
+        steps.push({ text: money(net), deduct: money(offMin / 60) });
+        net = Math.max(0, net - offMin / 60);
+        const offH = offMin / 60;
+        const offLabel = Number.isInteger(offH) ? String(offH) : money(offH);
+        lines.push({ text: "-" + offLabel + "h Time off", red: true });
+      }
+      net = Number(net.toFixed(2));
+      steps.push({ text: money(net), tone: "green" });
+      return {
+        hours: net,
+        payHourSteps: steps,
+        serviceTimeLines: lines,
+        timeRange: clubTimeRangeFromMinutes(startMin, endMin)
+      };
+    }
+
+    /** Open last/first seat with a makeup replace counts as a named client for pay. */
+    function timesheetSeatCountsAsNamedForPay(s, dateKey) {
+      if (timesheetSessionIsWorkedFeedbackSeat(s)) return true;
+      const start = hmToMinutes(String((s && s.start) || "").trim());
+      if (!Number.isFinite(start)) return false;
+      const me = timesheetNormStaffKey(s && s.staffId);
+      const iso = String(dateKey || "").slice(0, 10);
+      return (state.scheduleOverrides || []).some((ov) => {
+        if (!ov) return false;
+        if (String(ov.status || "active").trim().toLowerCase() === "cancelled") return false;
+        if (String(ov.override_type || "").trim() !== "client_replace_in_slot") return false;
+        if (String(ov.session_date || "").trim().slice(0, 10) !== iso) return false;
+        if (timesheetNormStaffKey(ov.anchor_staff_id) !== me) return false;
+        const p = timesheetOverridePayload(ov);
+        const rep = String(p.replacement_client_id || p.to_client_id || "").trim().toLowerCase();
+        if (!rep || rep === "available" || rep === "closed") return false;
+        const a = hmToMinutes(hmFromDbTime(ov.anchor_start));
+        return Number.isFinite(a) && a === start;
+      });
     }
 
     function timesheetDayRowsForPay(sessions, dateObj, rosterKey) {
@@ -4169,6 +4263,55 @@
       return esc(timeRange);
     }
 
+    function timesheetServiceTimeLinesHtml(entry) {
+      const lines = entry && entry.serviceTimeLines;
+      if (!lines || !lines.length) return "";
+      return lines
+        .map(function (line) {
+          if (line && line.lateStart) {
+            return (
+              '<div class="timesheet-service-cell__time"><span class="timesheet-late-start">' +
+              esc(line.lateStart) +
+              "</span>" +
+              esc(line.rest || "") +
+              "</div>"
+            );
+          }
+          const cls = line && line.red ? " timesheet-late-start" : "";
+          return '<div class="timesheet-service-cell__time' + cls + '">' + esc((line && line.text) || "") + "</div>";
+        })
+        .join("");
+    }
+
+    function timesheetHoursCellHtml(entry) {
+      const steps = entry && entry.payHourSteps;
+      if (!steps || !steps.length) return money(entry && entry.hours);
+      return (
+        '<div class="timesheet-hour-steps">' +
+        steps
+          .map(function (step) {
+            if (step && step.deduct) {
+              return (
+                '<div class="timesheet-hour-steps__line">' +
+                esc(step.text) +
+                ' <span class="timesheet-late-start">-' +
+                esc(step.deduct) +
+                "</span></div>"
+              );
+            }
+            const cls =
+              step && step.tone === "red"
+                ? "timesheet-late-start"
+                : step && step.tone === "green"
+                  ? "timesheet-hour-paid"
+                  : "";
+            return '<div class="timesheet-hour-steps__line ' + cls + '">' + esc((step && step.text) || "") + "</div>";
+          })
+          .join("") +
+        "</div>"
+      );
+    }
+
     function timesheetDisplayServiceTitle(title) {
       return String(title || "").replace(/\bBespoke Programme\b/gi, "Bespoke").trim();
     }
@@ -4219,15 +4362,18 @@
         );
       }
       const timeRange = timesheetEntryTimeRangeLabel(entry);
+      const stepTimes = timesheetServiceTimeLinesHtml(entry);
       const title = timesheetEntryServiceTitle(entry);
       const venue = timesheetEntryVenueLabel(entry);
       const roleLabel = timesheetEntryRoleLabel(entry);
       const colorRole = timesheetEntryDisplayRole(entry) || (entry && entry.role);
       const roleHtml = roleLabel ? timesheetRoleHtml(colorRole, roleLabel) : "";
-      const fallback = !timeRange && !title ? timesheetEntryServiceLabel(entry) || "-" : "";
+      const fallback = !stepTimes && !timeRange && !title ? timesheetEntryServiceLabel(entry) || "-" : "";
       return (
         '<div class="timesheet-service-cell">' +
-        (timeRange ? `<div class="timesheet-service-cell__time">${timesheetTimeRangeHtml(entry)}</div>` : "") +
+        (stepTimes
+          ? stepTimes
+          : (timeRange ? `<div class="timesheet-service-cell__time">${timesheetTimeRangeHtml(entry)}</div>` : "")) +
         (title ? `<div class="timesheet-service-cell__service${/shadow/i.test(title) ? " timesheet-service-cell__service--shadow" : ""}">${esc(title)}</div>` : "") +
         (fallback ? `<div class="timesheet-service-cell__service">${esc(fallback)}</div>` : "") +
         (venue ? `<div class="timesheet-service-cell__venue">${esc(venue)}</div>` : "") +
@@ -4238,6 +4384,7 @@
 
     function pdfEntryRowHeightScale(entry) {
       if (entry && entry.dayOff) return 1.38;
+      if (entry && Array.isArray(entry.serviceTimeLines) && entry.serviceTimeLines.length >= 3) return 2.55;
       const timeRange = timesheetEntryTimeRangeLabel(entry);
       const title = timesheetEntryServiceTitle(entry);
       const venue = timesheetEntryVenueLabel(entry);
@@ -4258,6 +4405,44 @@
         : [16, 34, 56];
     }
 
+    function drawPdfHoursCell(doc, entry, cx, midY, S) {
+      const steps = entry && entry.payHourSteps;
+      if (!steps || !steps.length) {
+        doc.setTextColor(16, 34, 56);
+        doc.text(money(entry && entry.hours), cx, midY, { align: "center" });
+        return;
+      }
+      const step = 2.35 * S;
+      let ly = midY - ((steps.length - 1) * step) / 2;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.4 * S);
+      steps.forEach(function (item) {
+        if (item && item.deduct) {
+          const left = String(item.text || "");
+          const right = "-" + String(item.deduct || "");
+          const w1 = doc.getTextWidth(left + " ");
+          const w2 = doc.getTextWidth(right);
+          const x = cx - (w1 + w2) / 2;
+          doc.setTextColor(16, 34, 56);
+          doc.text(left + " ", x, ly);
+          doc.setTextColor(185, 28, 28);
+          doc.text(right, x + w1, ly);
+        } else if (item && item.tone === "red") {
+          doc.setTextColor(185, 28, 28);
+          doc.text(String(item.text || ""), cx, ly, { align: "center" });
+        } else if (item && item.tone === "green") {
+          doc.setTextColor(22, 101, 52);
+          doc.text(String(item.text || ""), cx, ly, { align: "center" });
+        } else {
+          doc.setTextColor(16, 34, 56);
+          doc.text(String((item && item.text) || ""), cx, ly, { align: "center" });
+        }
+        ly += step;
+      });
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(16, 34, 56);
+    }
+
     function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, isManual, thisRowH) {
       const rowH = Number(thisRowH) > 0 ? Number(thisRowH) : cellBaseline * 2;
       const midY = y + rowH / 2;
@@ -4273,6 +4458,59 @@
         });
         doc.setFont("helvetica", "bold");
         doc.text("DAY OFF", cx, midY + 2.2 * S, { align: "center" });
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(16, 34, 56);
+        return;
+      }
+      if (entry && Array.isArray(entry.serviceTimeLines) && entry.serviceTimeLines.length) {
+        const title = String(timesheetEntryServiceTitle(entry) || "").slice(0, 28);
+        const venue = String(timesheetEntryVenueLabel(entry) || "").slice(0, 24);
+        const role = timesheetEntryRoleLabel(entry).slice(0, 24);
+        const tail = [title, venue, role].filter(Boolean);
+        const n = entry.serviceTimeLines.length + tail.length;
+        const step = 2.35 * S;
+        let ly = midY - ((Math.max(n, 1) - 1) * step) / 2;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7.6 * S);
+        entry.serviceTimeLines.forEach(function (line) {
+          if (line && line.lateStart) {
+            const startTxt = String(line.lateStart);
+            const restTxt = String(line.rest || "");
+            const w1 = doc.getTextWidth(startTxt);
+            const w2 = restTxt ? doc.getTextWidth(restTxt) : 0;
+            const x = cx - (w1 + w2) / 2;
+            doc.setTextColor(185, 28, 28);
+            doc.text(startTxt, x, ly);
+            if (restTxt) {
+              doc.setTextColor(16, 34, 56);
+              doc.text(restTxt, x + w1, ly);
+            }
+          } else if (line && line.red) {
+            doc.setTextColor(185, 28, 28);
+            doc.text(String(line.text || ""), cx, ly, { align: "center" });
+          } else {
+            doc.setTextColor(16, 34, 56);
+            doc.text(String((line && line.text) || ""), cx, ly, { align: "center" });
+          }
+          ly += step;
+        });
+        tail.forEach(function (text) {
+          const isRole = role && text === role;
+          if (isRole) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(7.2 * S);
+            const rgb = timesheetRolePdfRgb(
+              timesheetEntryDisplayRole(entry) || (entry && (entry.role || entry.roleLabel))
+            );
+            doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+          } else {
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7.4 * S);
+            doc.setTextColor(16, 34, 56);
+          }
+          doc.text(text, cx, ly, { align: "center" });
+          ly += step;
+        });
         doc.setFont("helvetica", "normal");
         doc.setTextColor(16, 34, 56);
         return;
@@ -4614,8 +4852,10 @@
       const luliyaShift = luliyaPm ? timesheetLuliyaAfternoonShift(dayName, dateKey) : null;
       if (luliyaPm) hours = timesheetLuliyaAfternoonPayHours(luliyaPm, dayName, dateKey);
       const lateMin = timesheetLuliyaMorningLateMinutes(rosterKey, dateKey, rows);
-      const lateArrival = !!(lateMin && hours > 0 && !luliyaPm);
+      const offMin = timesheetLuliyaDayCentreTimeOffMinutes(rosterKey, dateKey, rows);
+      const lateArrival = !!(lateMin && hours > 0 && !luliyaPm && !offMin);
       if (lateArrival) hours = Number(Math.max(0, hours - lateMin / 60).toFixed(2));
+      const dcGross = hours;
       /*
        * Instructor Timetable green paid_hours is a minimum (late arrival / gap pay).
        * Empty paid = same as shift. Do not shrink extra named seats after the band.
@@ -4623,7 +4863,7 @@
        * Luliya weekday pool is the named-client span, not the offered 4.30-6.30 window.
        */
       let ttPay = null;
-      if (hours > 0 && !climbingPay && !luliyaPm && !lateArrival) {
+      if (hours > 0 && !climbingPay && !luliyaPm && !lateArrival && !offMin) {
         ttPay = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
         if (ttPay && ttPay.hours > 0) hours = Math.max(hours, ttPay.hours);
       }
@@ -4661,6 +4901,18 @@
           ? clubTimeRangeFromMinutes(window.startMin + (lateArrival ? lateMin : 0), window.endMin)
           : "";
       }
+      let payHourSteps = null;
+      let serviceTimeLines = null;
+      if (offMin && dcGross > 0 && !luliyaPm) {
+        const span = timesheetRowsClockSpan(rows);
+        if (span) {
+          const shown = timesheetLuliyaDayCentrePayDisplay(dcGross, lateMin, offMin, span.startMin, span.endMin);
+          hours = shown.hours;
+          timeRange = shown.timeRange;
+          payHourSteps = shown.payHourSteps;
+          serviceTimeLines = shown.serviceTimeLines;
+        }
+      }
       return timesheetAttachGrantedHours(
         {
           date: dateKey,
@@ -4679,7 +4931,9 @@
           climbingFeedbackPay: climbingPay,
           luliyaAfternoonNamedSpan: !!luliyaPm,
           shiftHours: luliyaShift ? luliyaShift.hours : null,
-          lateArrival
+          lateArrival,
+          payHourSteps,
+          serviceTimeLines
         },
         rows
       );
@@ -4694,7 +4948,7 @@
     function applyTimetablePaidBandToDayEntries(entries, rosterKey, dateKey) {
       const list = Array.isArray(entries) ? entries : [];
       if (!list.length) return list;
-      if (list.some((e) => e && (e.climbingFeedbackPay || e.luliyaAfternoonNamedSpan || e.lateArrival))) return list;
+      if (list.some((e) => e && (e.climbingFeedbackPay || e.luliyaAfternoonNamedSpan || e.lateArrival || e.payHourSteps))) return list;
       const tt = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
       if (!tt || !(tt.hours > 0)) return list;
       const live = list.filter((e) => e && !e.dayOff && Number(e.hours) > 0);
@@ -4826,8 +5080,10 @@
           const luliyaShift = luliyaPm ? timesheetLuliyaAfternoonShift(dayName, dateKey) : null;
           if (luliyaPm) hours = timesheetLuliyaAfternoonPayHours(luliyaPm, dayName, dateKey);
           const lateMin = timesheetLuliyaMorningLateMinutes(rosterKey, dateKey, groupRows);
-          const lateArrival = !!(lateMin && hours > 0 && !luliyaPm);
+          const offMin = timesheetLuliyaDayCentreTimeOffMinutes(rosterKey, dateKey, groupRows);
+          const lateArrival = !!(lateMin && hours > 0 && !luliyaPm && !offMin);
           if (lateArrival) hours = Number(Math.max(0, hours - lateMin / 60).toFixed(2));
+          const dcGross = hours;
           /*
            * Day-level Timetable paid_hours applied after all groups (see
            * applyTimetablePaidBandToDayEntries). Keep session/hardcode hours here.
@@ -4870,6 +5126,18 @@
               ? clubTimeRangeFromMinutes(window.startMin + (lateArrival ? lateMin : 0), window.endMin)
               : "";
           }
+          let payHourSteps = null;
+          let serviceTimeLines = null;
+          if (offMin && dcGross > 0 && !luliyaPm) {
+            const span = timesheetRowsClockSpan(groupRows);
+            if (span) {
+              const shown = timesheetLuliyaDayCentrePayDisplay(dcGross, lateMin, offMin, span.startMin, span.endMin);
+              hours = shown.hours;
+              timeRange = shown.timeRange;
+              payHourSteps = shown.payHourSteps;
+              serviceTimeLines = shown.serviceTimeLines;
+            }
+          }
           entries.push(
             timesheetAttachGrantedHours(
               {
@@ -4888,7 +5156,9 @@
                 climbingFeedbackPay: climbingPay,
                 luliyaAfternoonNamedSpan: !!luliyaPm,
                 shiftHours: luliyaShift ? luliyaShift.hours : null,
-                lateArrival
+                lateArrival,
+                payHourSteps,
+                serviceTimeLines
               },
               groupRows
             )
@@ -5287,8 +5557,8 @@
           return `<tr class="${cls}">
             <td class="td-date">${displayDateDayStatusCellHtml(e)}</td>
             <td class="td-service">${timesheetEntryServiceCellHtml(e)}</td>
-            <td class="num td-hours">${money(e.hours)}</td>
-            <td class="num td-daily">${dailyCell}</td>
+            <td class="num td-hours">${timesheetHoursCellHtml(e)}</td>
+            <td class="num td-daily">${e.payHourSteps && e.completed && !e.dayOff && dailyCell !== "incl." ? '<span class="timesheet-hour-paid">' + dailyCell + "</span>" : dailyCell}</td>
           </tr>`;
         }).join("");
         if (note) {
@@ -5981,8 +6251,10 @@
         }
         doc.text(midCol, (colX[1] + colX[2]) / 2, midY, { align: "center" });
         drawPdfServiceCell(doc, e, (colX[2] + colX[3]) / 2, y, cellBaseline, S, state.manual, thisRowH);
-        doc.text(money(e.hours), (colX[3] + colX[4]) / 2, midY, { align: "center" });
+        drawPdfHoursCell(doc, e, (colX[3] + colX[4]) / 2, midY, S);
+        if (e.payHourSteps && e.completed && !e.dayOff && daily !== "incl.") doc.setTextColor(22, 101, 52);
         doc.text(daily, (colX[4] + colX[5]) / 2, midY, { align: "center" });
+        doc.setTextColor(16, 34, 56);
         doc.text(statusTxt, (colX[5] + colX[6]) / 2, midY, { align: "center" });
         doc.setTextColor(16, 34, 56);
         y += thisRowH;
