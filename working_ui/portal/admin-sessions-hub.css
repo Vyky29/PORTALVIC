@@ -2391,15 +2391,35 @@
       }
       .ash-filter-row,
       .ash-filter-row--feedback {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        gap: 6px;
+        margin-bottom: 8px;
+        align-items: flex-end;
+      }
+      .ash-filter-row--feedback .ash-filter-label {
+        flex: 1 1 0;
+        min-width: 0;
+        gap: 2px;
+        font-size: 10px;
+        font-weight: 700;
       }
       .ash-input--grow,
       .ash-input--instructor,
-      .ash-input--filter-select,
       .ash-filter-combo {
         min-width: 0;
         max-width: 100%;
-        flex: 1 1 140px;
+        flex: 1 1 0;
+      }
+      .ash-filter-row .ash-input,
+      .ash-filter-row .ash-input--filter-select {
+        flex: none;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        height: 30px;
+        padding: 2px 4px;
+        font-size: 11px;
+        line-height: 1.2;
       }
       .ash-day-board__group,
       .ash-day-board__group--climb,
