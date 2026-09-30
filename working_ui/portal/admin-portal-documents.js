@@ -207,6 +207,8 @@
       }
       /* 10 Sep 2026 photo was filed under checklist; it is Emmanuel's DBS. */
       if (n.indexOf('20260910_181418') >= 0) type = 'dbs';
+      /* CamScanner 10 Sep 21:33 is Emmanuel's portal photo, not a checklist. */
+      if (n.indexOf('camscanner_10-09-2026_21.33') >= 0) return null;
       var obName = r.name || r.path || 'File';
       var obPath = r.path || '';
       if (n.indexOf('20260910_181418') >= 0) obName = 'Emmanuel Amoakohene — DBS';
@@ -220,7 +222,7 @@
         source: r.source || 'onboarding',
         details: r
       };
-    });
+    }).filter(Boolean);
   }
 
   function staffNameById(id) {

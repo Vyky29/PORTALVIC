@@ -73,6 +73,11 @@ function classifyDocType(folderType: DocType, nameOrPath: string): DocType {
   return folderType;
 }
 
+/** Emmanuel's 10 Sep CamScanner is his portal photo, filed under checklist by mistake. */
+function isPortalPhotoMisfiledAsChecklist(nameOrPath: string): boolean {
+  return String(nameOrPath || "").toLowerCase().includes("camscanner_10-09-2026_21.33");
+}
+
 function mapFileRow(
   folder: string,
   bucket: string,
@@ -131,6 +136,7 @@ async function listFolder(
       for (const f of sub.data || []) {
         if (!f?.name || f.name.endsWith("/")) continue;
         if (!f.id && !(f.metadata && f.metadata.size != null)) continue;
+        if (isPortalPhotoMisfiledAsChecklist(f.name)) continue;
         items.push(
           mapFileRow(
             spec.folder,
@@ -147,6 +153,7 @@ async function listFolder(
     }
 
     if (!entry.id && !(entry.metadata && entry.metadata.size != null)) continue;
+    if (isPortalPhotoMisfiledAsChecklist(name)) continue;
     items.push(
       mapFileRow(
         spec.folder,
@@ -187,6 +194,7 @@ async function listLegacyApplicantFolder(
     for (const f of sub.data || []) {
       if (!f?.name || f.name.endsWith("/")) continue;
       if (!f.id && !(f.metadata && f.metadata.size != null)) continue;
+      if (isPortalPhotoMisfiledAsChecklist(f.name)) continue;
       items.push(
         mapFileRow(
           spec.folder,
