@@ -31,8 +31,9 @@
     checklist: 'Checklist',
     passport: 'Passport',
     certificate: 'Certificate',
+    dbs: 'DBS',
     firstaid: 'First aid',
-    safeguarding: 'Safeguarding',
+    safeguarding: 'Safeguarding certificate',
     other: 'Other',
     admin_upload: 'Admin upload'
   };
@@ -40,10 +41,11 @@
   /** Types office can attach for a worker (My Documents). Payslips stay on Payslips screen. */
   var ADMIN_UPLOAD_TYPES = [
     { key: 'certificate', label: 'Certificate', category: 'training' },
+    { key: 'dbs', label: 'DBS', category: 'training' },
     { key: 'passport', label: 'Passport', category: 'documents' },
     { key: 'checklist', label: 'Checklist', category: 'documents' },
     { key: 'firstaid', label: 'First aid', category: 'training' },
-    { key: 'safeguarding', label: 'Safeguarding', category: 'training' },
+    { key: 'safeguarding', label: 'Safeguarding certificate', category: 'training' },
     { key: 'other', label: 'Other document', category: 'documents' }
   ];
 
@@ -54,6 +56,7 @@
     { key: 'checklist', label: 'Checklists' },
     { key: 'passport', label: 'Passports' },
     { key: 'certificate', label: 'Certificates' },
+    { key: 'dbs', label: 'DBS' },
     { key: 'firstaid', label: 'First aids' },
     { key: 'safeguarding', label: 'Safeguarding' }
   ];

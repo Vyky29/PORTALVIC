@@ -497,6 +497,8 @@
               : "L&D funding letter";
         return `${label} • ${prettyDate(doc.related_date || doc.created_at)}`;
       }
+      if (type === "dbs") return `DBS • ${prettyDate(doc.related_date || doc.created_at)}`;
+      if (type === "safeguarding") return `Safeguarding certificate • ${prettyDate(doc.related_date || doc.created_at)}`;
       return `${String(doc.document_type || "").toLowerCase()} • ${prettyDate(doc.related_date || doc.created_at)}`;
     }
 
@@ -975,6 +977,7 @@
           t === "training_attendance_record" ||
           t === "training_external_certificate" ||
           t === "certificate" ||
+          t === "dbs" ||
           t === "firstaid" ||
           t === "safeguarding" ||
           t.includes("train") ||

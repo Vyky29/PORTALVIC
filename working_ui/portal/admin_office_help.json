@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-30-v49",
+  "version": "2026-09-30-v50",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -956,6 +956,29 @@
             "Chase families or staff as needed."
           ],
           "tips": []
+        },
+        {
+          "id": "staff_dbs_safeguarding",
+          "title": "DBS and Safeguarding certificate",
+          "summary": "Attach a worker DBS or Safeguarding certificate so it shows in My Documents.",
+          "where": "Documents → Attach file for worker",
+          "keywords": [
+            "dbs",
+            "safeguarding certificate",
+            "certificado",
+            "disclosure",
+            "attach file"
+          ],
+          "steps": [
+            "Open Documents and use Attach file for worker.",
+            "Search the worker, then set Document type to DBS or Safeguarding certificate.",
+            "Add a title, choose the PDF or photo, and press Attach to My Documents.",
+            "The worker sees it under My Documents, Training."
+          ],
+          "tips": [
+            "DBS is its own type. Do not file it as a generic Certificate.",
+            "Safeguarding certificate is the training file, not the policy sign-off."
+          ]
         }
       ]
     },
