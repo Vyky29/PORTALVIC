@@ -537,14 +537,6 @@
     }
   }
 
-  function formatBytes(n) {
-    var x = Number(n);
-    if (!Number.isFinite(x) || x <= 0) return '—';
-    if (x < 1024) return x + ' B';
-    if (x < 1048576) return (x / 1024).toFixed(1) + ' KB';
-    return (x / 1048576).toFixed(1) + ' MB';
-  }
-
   function formatMoney(n) {
     var x = Number(n);
     if (!Number.isFinite(x)) return '—';
@@ -558,17 +550,19 @@
     }
   }
 
-  function amountOrSizeCell(it) {
-    if (it.type === 'expense') {
-      if (it.amount != null && Number.isFinite(Number(it.amount))) {
-        return formatMoney(it.amount);
-      }
-      if (it.details && it.details.expense_amount != null) {
-        return formatMoney(it.details.expense_amount);
-      }
-      return '—';
+  function moneyColumnsOn() {
+    return state.filter === 'expense';
+  }
+
+  function amountCell(it) {
+    if (!it || it.type !== 'expense') return '';
+    if (it.amount != null && Number.isFinite(Number(it.amount))) {
+      return formatMoney(it.amount);
     }
-    return formatBytes(it.size);
+    if (it.details && it.details.expense_amount != null) {
+      return formatMoney(it.details.expense_amount);
+    }
+    return '—';
   }
 
   function countByType(items, type) {
@@ -840,14 +834,16 @@
   function renderTable(items) {
     var tbody = document.getElementById('portalDocumentsTbody');
     if (!tbody) return;
-    var th = document.getElementById('portalDocumentsAmountSizeTh');
-    if (th) {
-      th.textContent = state.filter === 'expense' ? 'Amount' : 'Amount / size';
-    }
+    var money = moneyColumnsOn();
+    var amountTh = document.getElementById('portalDocumentsAmountTh');
+    var payTh = document.getElementById('portalDocumentsPayTh');
+    if (amountTh) amountTh.hidden = !money;
+    if (payTh) payTh.hidden = !money;
+    var colCount = money ? 6 : 4;
     global._portalDocumentsCurrent = items;
     if (!items.length) {
       tbody.innerHTML =
-        '<tr><td colspan="6" class="muted" style="padding:16px">No files match this filter.</td></tr>';
+        '<tr><td colspan="' + colCount + '" class="muted" style="padding:16px">No files match this filter.</td></tr>';
       return;
     }
     tbody.innerHTML = items
@@ -872,8 +868,10 @@
           '<td><span class="portal-documents-type-pill portal-documents-type-pill--' + esc(it.type) + '">' + esc(typeLabel) + '</span></td>' +
           '<td style="min-width:0"><div class="portal-forms-cell-main" style="min-width:0;overflow-wrap:anywhere">' + esc(it.name) + '</div><div class="portal-forms-cell-sub" style="min-width:0;overflow-wrap:anywhere">' + rowMetaHtml(it) + '</div></td>' +
           '<td style="white-space:nowrap">' + esc(formatDate(it.created)) + '</td>' +
-          '<td style="white-space:nowrap">' + esc(amountOrSizeCell(it)) + '</td>' +
-          '<td style="white-space:nowrap">' + payCellHtml(it) + '</td>' +
+          (money
+            ? '<td style="white-space:nowrap">' + esc(amountCell(it)) + '</td>' +
+              '<td style="white-space:nowrap">' + payCellHtml(it) + '</td>'
+            : '') +
           '<td style="white-space:nowrap">' + actionHtml + '</td></tr>'
         );
       })
@@ -1278,11 +1276,11 @@
       '#portalDocumentsRoot .portal-documents-upload-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}' +
       '#portalDocumentsRoot .portal-documents-main{display:flex;gap:16px;align-items:flex-start;min-width:0}' +
       '#portalDocumentsRoot .portal-documents-listcol{flex:1 1 auto;min-width:0}' +
-      '#portalDocumentsRoot .portal-documents-preview{flex:0 1 500px;width:500px;max-width:40%;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:520px}' +
+      '#portalDocumentsRoot .portal-documents-preview{flex:0 1 640px;width:640px;max-width:48%;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:600px}' +
       '#portalDocumentsRoot .portal-documents-data-row:hover td{background:transparent!important;cursor:default}' +
       '#portalDocumentsRoot .portal-documents-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line,#e5e7eb)}' +
       '#portalDocumentsRoot .portal-documents-preview-title{flex:1;min-width:0;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
-      '#portalDocumentsRoot .portal-documents-preview-stage{position:relative;flex:1;min-height:440px;min-width:0;background:#f8fafc}' +
+      '#portalDocumentsRoot .portal-documents-preview-stage{position:relative;flex:1;min-height:520px;min-width:0;background:#f8fafc}' +
       '#portalDocumentsRoot .portal-documents-preview-empty{margin:0;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;color:var(--muted,#64748b);font-size:14px}' +
       '#portalDocumentsRoot .portal-documents-preview-frame,#portalDocumentsRoot .portal-documents-preview-img{position:absolute;inset:0;width:100%;height:100%;border:0;background:#f8fafc}' +
       '#portalDocumentsRoot .portal-documents-preview-img{object-fit:contain}' +
@@ -1349,7 +1347,7 @@
       '<div class="portal-documents-listcol">' +
       '<div class="portal-forms-table-wrap">' +
       '<table class="portal-forms-table portal-forms-table--full-detail">' +
-      '<thead><tr><th>Type</th><th>Name / details</th><th>Uploaded</th><th id="portalDocumentsAmountSizeTh">Amount</th><th>Pay</th><th>View</th></tr></thead>' +
+      '<thead><tr><th>Type</th><th>Name / details</th><th>Uploaded</th><th id="portalDocumentsAmountTh" hidden>Amount</th><th id="portalDocumentsPayTh" hidden>Pay</th><th>View</th></tr></thead>' +
       '<tbody id="portalDocumentsTbody"><tr><td colspan="6" class="muted" style="padding:16px">Loading…</td></tr></tbody>' +
       '</table></div></div>' +
       '<aside class="portal-documents-preview" id="portalDocumentsPreview">' +

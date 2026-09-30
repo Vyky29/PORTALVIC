@@ -834,11 +834,11 @@
       "#portalPayslipsRoot .portal-payslips-statcard-label{font-size:12px;color:var(--muted,#64748b);text-transform:uppercase;letter-spacing:.03em;overflow-wrap:break-word}" +
       "#portalPayslipsRoot .portal-payslips-main{display:flex;gap:16px;align-items:flex-start;min-width:0}" +
       "#portalPayslipsRoot .portal-payslips-listcol{flex:1 1 auto;min-width:0}" +
-      "#portalPayslipsRoot .portal-payslips-preview{flex:0 1 500px;width:500px;max-width:40%;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:520px}" +
+      "#portalPayslipsRoot .portal-payslips-preview{flex:0 1 640px;width:640px;max-width:48%;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:600px}" +
       "#portalPayslipsRoot .portal-payslips-data-row:hover td{background:transparent!important;cursor:default}" +
       "#portalPayslipsRoot .portal-payslips-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line,#e5e7eb);min-width:0}" +
       "#portalPayslipsRoot .portal-payslips-preview-title{flex:1;min-width:0;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
-      "#portalPayslipsRoot .portal-payslips-preview-stage{position:relative;flex:1;min-height:440px;min-width:0;background:#f8fafc}" +
+      "#portalPayslipsRoot .portal-payslips-preview-stage{position:relative;flex:1;min-height:520px;min-width:0;background:#f8fafc}" +
       "#portalPayslipsRoot .portal-payslips-preview-empty{margin:0;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;color:var(--muted,#64748b);font-size:14px}" +
       "#portalPayslipsRoot .portal-payslips-preview-frame,#portalPayslipsRoot .portal-payslips-preview-img{position:absolute;inset:0;width:100%;height:100%;border:0;background:#f8fafc}" +
       "#portalPayslipsRoot .portal-payslips-preview-img{object-fit:contain}" +
