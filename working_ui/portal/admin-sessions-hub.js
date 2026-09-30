@@ -13733,7 +13733,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var boardHint = chainOn
       ? "Capacity chain + Schedule & Covers — who works and which seats today."
       : "Staffing board — who works and which seats today.";
-    /* Pin week chrome; only the board body scrolls (sticky was letting cards paint above/below). */
+    /* Week strip scrolls with the page so the day board can use the full screen. */
     return (
       '<div class="ash-overview-pin">' +
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true, staffingGuide: true }) +

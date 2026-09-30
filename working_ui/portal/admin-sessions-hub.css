@@ -135,30 +135,23 @@
     .ash-sticky-chrome > .ash-bundle-warn {
       margin: 0 0 8px;
     }
-    /* Overview: pin chrome outside the scrollport so cards never paint above/below it. */
+    /* Overview: week strip scrolls away with the page. No inner scrollport. */
     .ash-overview-pin {
-      display: flex;
-      flex-direction: column;
+      display: block;
       min-height: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
+      overflow: visible;
     }
     .ash-overview-pin > .ash-sticky-chrome,
     .ash-overview-pin > .ash-week-sticky-anchor {
       position: static;
       top: auto;
       z-index: auto;
-      flex: 0 0 auto;
       margin-bottom: 0;
-      box-shadow: 0 6px 10px -8px rgba(15, 23, 42, 0.28);
+      box-shadow: none;
     }
     .ash-overview-scroll {
-      flex: 1 1 auto;
       min-height: 0;
-      overflow-x: hidden;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
+      overflow: visible;
       padding-top: 8px;
     }
     .ash-log-jump, .ash-log-day-link {
