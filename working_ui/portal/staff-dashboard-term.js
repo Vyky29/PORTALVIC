@@ -597,6 +597,60 @@
       }
       return item;
     }
+    /** Consecutive 30' halves of one client (Joelle, Serine, Cyrus, Stephanie) count as one feedback. */
+    function portalConsecutiveBlockFeedbackUnitKeys(sessions, isoKey){
+      const rel = Array.isArray(sessions) ? sessions : [];
+      const iso = String(isoKey || '').trim().slice(0, 10);
+      const override = [];
+      const groups = Object.create(null);
+      function mins(hm){
+        const m = String(hm || '').trim().match(/^(\d{1,2}):(\d{2})/);
+        if(!m) return NaN;
+        return Number(m[1]) * 60 + Number(m[2]);
+      }
+      for(let i = 0; i < rel.length; i++){
+        const s = rel[i];
+        if(!s) continue;
+        const act = String(s.activity || s.rosterService || s.service || '');
+        let kind = '';
+        if(typeof portalStaffLeadIsAquaticActivity === 'function' && portalStaffLeadIsAquaticActivity(act)) kind = 'aquatic';
+        else if(/aquatic|swimm/i.test(act)) kind = 'aquatic';
+        else if(/bespoke/i.test(act)) kind = 'bespoke';
+        if(!kind) continue;
+        if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)) continue;
+        const cid = String(s.clientId || s.clientName || '').trim().toLowerCase();
+        if(!cid) continue;
+        const gk = kind + '|' + cid;
+        if(!groups[gk]) groups[gk] = [];
+        groups[gk].push(i);
+      }
+      Object.keys(groups).forEach(function(gk){
+        const idxs = groups[gk].slice().sort(function(a, b){
+          return mins(rel[a].start) - mins(rel[b].start);
+        });
+        if(!idxs.length) return;
+        const chains = [];
+        let chain = [idxs[0]];
+        for(let j = 1; j < idxs.length; j++){
+          const prev = rel[chain[chain.length - 1]];
+          const cur = rel[idxs[j]];
+          if(mins(prev && prev.end) === mins(cur && cur.start)) chain.push(idxs[j]);
+          else { chains.push(chain); chain = [idxs[j]]; }
+        }
+        chains.push(chain);
+        const kind = gk.slice(0, gk.indexOf('|'));
+        const cid = gk.slice(kind.length + 1);
+        chains.forEach(function(ch){
+          if(ch.length < 2) return;
+          const start = String((rel[ch[0]] && rel[ch[0]].start) || '').trim();
+          const unit = chains.length === 1
+            ? (iso + '|' + cid + '|' + kind)
+            : (iso + '|' + cid + '|' + start + '|' + kind);
+          for(let k = 0; k < ch.length; k++) override[ch[k]] = unit;
+        });
+      });
+      return override;
+    }
     function portalCountPendingFromRosterRows(isoKey, dayWord, sessions, curDate, staffId){
       const key = String(isoKey || '').trim().slice(0, 10);
       const dw = String(dayWord || '').trim();
@@ -608,6 +662,7 @@
       /* One feedback unit per review key (Day Centre Ikram, aquatic 2×30', bespoke shared).
          Spreadsheet/MADRE can list the same DC seat many times — do not inflate the tile. */
       const seenFeedbackUnits = Object.create(null);
+      const chainUnit = portalConsecutiveBlockFeedbackUnitKeys(rel, key);
       for(let i = 0; i < rel.length; i++){
         const s = rel[i];
         if(typeof portalRosterSessionFeedbackExempt === 'function'
@@ -616,19 +671,22 @@
           ? portalMinimalReviewItemFromRosterRow(s, dw, key, cur)
           : null;
         if(!item || !item.sessionKey) continue;
-        const unitKey = String(item.sessionKey || '').trim().toLowerCase();
-        if(unitKey && seenFeedbackUnits[unitKey]) continue;
+        const rawKey = String(item.sessionKey || '').trim().toLowerCase();
+        const chainKey = chainUnit[i] ? String(chainUnit[i]).trim().toLowerCase() : '';
+        const unitKey = chainKey || rawKey;
+        if((chainKey && seenFeedbackUnits[chainKey]) || (rawKey && seenFeedbackUnits[rawKey])) continue;
+        /* A cancelled half must not swallow the other half of the same hour. */
         if(item.noSessionFeedbackRequired){
-          if(unitKey) seenFeedbackUnits[unitKey] = true;
+          if(rawKey) seenFeedbackUnits[rawKey] = true;
           continue;
         }
         const pillPend = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
         if(pillPend === 'CANCELLED' || pillPend === 'ABSENT'){
-          if(unitKey) seenFeedbackUnits[unitKey] = true;
+          if(rawKey) seenFeedbackUnits[rawKey] = true;
           continue;
         }
         if(typeof portalTodayItemIsCancelledCard === 'function' && portalTodayItemIsCancelledCard(item)){
-          if(unitKey) seenFeedbackUnits[unitKey] = true;
+          if(rawKey) seenFeedbackUnits[rawKey] = true;
           continue;
         }
         /* Shared Day Centre: peer (or self) already submitted this unit → not outstanding. */
@@ -663,10 +721,12 @@
           ? (getEffectiveSessionReviewRecord(item) || {})
           : (typeof getSessionReviewRecord === 'function' ? (getSessionReviewRecord(item) || {}) : {});
         if(r.feedbackDone || r.absent || (r.cancelled && !r.cancelNeedsFeedback)){
-          if(unitKey) seenFeedbackUnits[unitKey] = true;
+          if(chainKey) seenFeedbackUnits[chainKey] = true;
+          if(rawKey) seenFeedbackUnits[rawKey] = true;
           continue;
         }
-        if(unitKey) seenFeedbackUnits[unitKey] = true;
+        if(chainKey) seenFeedbackUnits[chainKey] = true;
+        else if(unitKey) seenFeedbackUnits[unitKey] = true;
         pending++;
       }
       return pending;

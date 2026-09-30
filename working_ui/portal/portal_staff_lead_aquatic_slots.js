@@ -116,8 +116,14 @@
       n++;
       var st = rowClockStartHm(r) || "_";
       if (!byStart[st]) byStart[st] = Object.create(null);
-      var tok = rowInstructorToken(r);
-      if (tok) byStart[st][tok] = true;
+      var parts = instructorNameParts(
+        (r && (r.instructors || r.staff || r.staff_name || r.staffId || r.instructor)) || ""
+      );
+      if (!parts.length) {
+        var tok = rowInstructorToken(r);
+        if (tok) parts = [tok];
+      }
+      for (var pi = 0; pi < parts.length; pi++) byStart[st][parts[pi]] = true;
     }
     var starts = Object.keys(byStart);
     if (n < 2 || !starts.length) return false;
@@ -285,11 +291,26 @@
     return labelClockStartHm(r && (r.time || r.time_slot || r.time_slot_label) || "");
   }
 
+  function instructorNameParts(raw) {
+    return String(raw || "")
+      .split(/,|\/|&|\band\b/gi)
+      .map(function (p) {
+        var bit = String(p || "").trim();
+        if (!bit) return "";
+        if (typeof global.portalCanonicalStaffKeyForMatch === "function") {
+          var canon = global.portalCanonicalStaffKeyForMatch(bit);
+          if (canon) bit = String(canon);
+        }
+        return bit.toUpperCase().replace(/[^A-Z0-9]+/g, "");
+      })
+      .filter(Boolean);
+  }
+
   function rowInstructorToken(r) {
-    return String((r && (r.instructors || r.staff || r.staff_name || r.staffId || r.instructor)) || "")
-      .trim()
-      .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, "");
+    var parts = instructorNameParts(
+      (r && (r.instructors || r.staff || r.staff_name || r.staffId || r.instructor)) || ""
+    );
+    return parts.join("+");
   }
 
   function aquaticTwoToOneStaffCountOnSlot(iso, clientId, startHm, dayWord) {
@@ -315,8 +336,16 @@
         continue;
       }
       if (rowClockStartHm(r) !== want) continue;
-      var tok = rowInstructorToken(r);
-      if (tok) seen[tok] = true;
+      var parts = instructorNameParts(
+        (r && (r.instructors || r.staff || r.staff_name || r.staffId || r.instructor)) || ""
+      );
+      if (!parts.length) {
+        var tok = rowInstructorToken(r);
+        if (tok) parts = tok.split("+");
+      }
+      for (var pi = 0; pi < parts.length; pi++) {
+        if (parts[pi]) seen[parts[pi]] = true;
+      }
     }
     return Object.keys(seen).length;
   }
@@ -864,39 +893,69 @@
         passthrough.push(it);
         continue;
       }
-      if (clientNeedsPerSlotAquaticFeedbackOnDate(iso, cid, dayWord)) {
-        passthrough.push(it);
-        continue;
-      }
+      /* Consecutive halves on this instructor's day are one card even when a
+         per-slot flag is set (Joelle, Serine, Cyrus, Stephanie: 2x30' = 1 feedback).
+         A real split (different clock, not touching) stays two cards below. */
       if (!byClient[cid]) byClient[cid] = [];
       byClient[cid].push(it);
     }
     var merged = passthrough.slice();
+    function pushOneAquaticCard(only, cidOne) {
+      var k = buildAquaticSessionReviewKey(
+        iso,
+        cidOne,
+        only.__portalBaseSession || {},
+        dayWord
+      );
+      if (k) only.sessionKey = k;
+      merged.push(only);
+    }
     Object.keys(byClient).forEach(function (cid) {
       var list = byClient[cid];
       if (!list.length) return;
-      var nCancel = 0;
-      for (var ci = 0; ci < list.length; ci++) {
-        if (itemLooksCancelledOrCleared(list[ci])) nCancel++;
-      }
-      if (nCancel && nCancel < list.length) {
-        for (var cj = 0; cj < list.length; cj++) merged.push(list[cj]);
-        return;
-      }
-      if (list.length === 1) {
-        var only = list[0];
-        only.sessionKey = buildAquaticSessionReviewKey(
-          iso,
-          cid,
-          only.__portalBaseSession || {},
-          dayWord
-        );
-        merged.push(only);
-        return;
-      }
       list.sort(function (a, b) {
         return (a.sessionStartTs || 0) - (b.sessionStartTs || 0);
       });
+      var chains = [];
+      var chain = [list[0]];
+      for (var j = 1; j < list.length; j++) {
+        var prev = chain[chain.length - 1];
+        var cur = list[j];
+        var prevEnd = hmFromBaseSession(prev.__portalBaseSession).end;
+        var curStart = hmFromBaseSession(cur.__portalBaseSession).start;
+        if (!prevEnd && prev.sessionEndTs) {
+          prevEnd = new Date(prev.sessionEndTs).toTimeString().slice(0, 5);
+        }
+        if (!curStart && cur.sessionStartTs) {
+          curStart = new Date(cur.sessionStartTs).toTimeString().slice(0, 5);
+        }
+        if (slotsAreConsecutive(prevEnd, curStart)) chain.push(cur);
+        else {
+          chains.push(chain);
+          chain = [cur];
+        }
+      }
+      chains.push(chain);
+      chains.forEach(function (ch) {
+        if (!ch.length) return;
+        var nCancel = 0;
+        for (var ci = 0; ci < ch.length; ci++) {
+          if (itemLooksCancelledOrCleared(ch[ci])) nCancel++;
+        }
+        if (ch.length === 1 || (nCancel && nCancel < ch.length)) {
+          for (var cj = 0; cj < ch.length; cj++) pushOneAquaticCard(ch[cj], cid);
+          return;
+        }
+        emitMergedAquaticChain(merged, ch, iso, cid, dayWord, chains.length === 1);
+      });
+    });
+    merged.sort(function (a, b) {
+      return (a.sessionStartTs || 0) - (b.sessionStartTs || 0);
+    });
+    return merged;
+  }
+
+  function emitMergedAquaticChain(merged, list, iso, cid, dayWord, onlyChain) {
       var rep = list[0];
       var last = list[list.length - 1];
       var startHm = hmFromBaseSession(rep.__portalBaseSession).start;
@@ -910,7 +969,17 @@
       var m = Object.assign({}, rep);
       m.sessionEndTs = last.sessionEndTs;
       m.time = formatSlotRangeUk(startHm, endHm) || rep.time;
-      m.sessionKey = buildAquaticSessionReviewKey(iso, cid, rep.__portalBaseSession || {}, dayWord);
+      var dayKey = String(iso || "").slice(0, 10) + "|" + cid + "|aquatic";
+      var aqKey = buildAquaticSessionReviewKey(iso, cid, rep.__portalBaseSession || {}, dayWord);
+      if (onlyChain) {
+        /* One block that day (Serine 4.30-5.30, Joelle 5.30-6.30, Cyrus 4-5, Stephanie 4.30-5.30). */
+        m.sessionKey = dayKey;
+      } else {
+        var first = canonicalHmToken(startHm);
+        m.sessionKey = first
+          ? String(iso || "").slice(0, 10) + "|" + cid + "|" + first + "|aquatic"
+          : aqKey || dayKey;
+      }
       m.__portalAquaticMergedCount = list.length;
       /* Member keys so a submit on any 30' half (e.g. 17:00|aqsa) marks the merged card done. */
       var memberKeys = memberSessionReviewKeys(list, iso, dayWord);
@@ -941,12 +1010,9 @@
           end: endHm || m.__portalBaseSession.end,
         });
       }
+      if (aqKey) addMemberKey(aqKey);
+      addMemberKey(dayKey);
       merged.push(m);
-    });
-    merged.sort(function (a, b) {
-      return (a.sessionStartTs || 0) - (b.sessionStartTs || 0);
-    });
-    return merged;
   }
 
   /** Day-only keys (date||client) are for merged same-instructor aquatic, day centre, bespoke — not per-slot multi-instructor days. */
