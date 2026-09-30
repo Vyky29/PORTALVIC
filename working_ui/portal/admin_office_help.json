@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-30-v47",
+  "version": "2026-09-30-v48",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -762,6 +762,32 @@
           ],
           "tips": [
             "A green dot with delivered, not read, means the chat app is open and this conversation has not been opened."
+          ]
+        },
+        {
+          "id": "staff_phone_alerts_off",
+          "title": "Staff chat does not ping the phone",
+          "summary": "Communications messages stay unread when the worker is in the app but phone notifications are off.",
+          "where": "Staff app, Quick menu, Alerts & notifications",
+          "keywords": [
+            "notificaciones",
+            "no contesta",
+            "no recibe",
+            "alerts",
+            "push",
+            "iphone",
+            "cs portal",
+            "communications"
+          ],
+          "steps": [
+            "The worker opens the CS Portal icon on the iPhone home screen.",
+            "Quick menu, then Alerts & notifications.",
+            "Press Turn on portal features, or Turn on notifications, and tap Allow.",
+            "If the phone does not ask: iPhone Settings, Notifications, CS Portal, Allow Notifications. Then open the app again."
+          ],
+          "tips": [
+            "A message shows read only after they open that conversation. Being on the staff home screen does not mark it read.",
+            "WhatsApp and a phone call still reach them when this permission is off."
           ]
         }
       ]
