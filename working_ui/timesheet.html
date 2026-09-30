@@ -65,11 +65,11 @@
     .timesheet-service-cell__time{font-size:13px;font-weight:700;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
     .timesheet-late-start{color:#b91c1c}
     .timesheet-hour-paid{color:#166534;font-weight:800}
-    .timesheet-hour-steps{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;line-height:1.15;font-weight:700}
+    .timesheet-hour-steps{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.2;font-weight:800;font-size:16px}
     .timesheet-hour-steps__line{white-space:nowrap}
     #autoWrap td.td-hours:has(.timesheet-hour-steps),
     html.portal-timesheet-vertical #autoWrap td.td-hours:has(.timesheet-hour-steps){white-space:normal}
-    html.portal-timesheet-vertical #autoWrap .timesheet-hour-steps{font-size:10px}
+    html.portal-timesheet-vertical #autoWrap .timesheet-hour-steps{font-size:15px}
     .timesheet-service-cell__service{font-size:12px;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
     .timesheet-service-cell__service--shadow{font-weight:700;color:#7c3aed}
     .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
@@ -242,13 +242,14 @@
       html.portal-timesheet-vertical .timesheet-service-cell__venue,
       html.portal-timesheet-vertical .timesheet-service-cell__role{font-size:10px}
       html.portal-timesheet-vertical #autoWrap col.col-date{width:22%}
-      html.portal-timesheet-vertical #autoWrap col.col-service{width:32%}
-      html.portal-timesheet-vertical #autoWrap col.col-hours{width:20%}
-      html.portal-timesheet-vertical #autoWrap col.col-daily{width:26%}
+      html.portal-timesheet-vertical #autoWrap col.col-service{width:28%}
+      html.portal-timesheet-vertical #autoWrap col.col-hours{width:26%}
+      html.portal-timesheet-vertical #autoWrap col.col-daily{width:24%}
       html.portal-timesheet-vertical #autoWrap th.th-hours,
       html.portal-timesheet-vertical #autoWrap th.th-daily,
       html.portal-timesheet-vertical #autoWrap td.td-hours,
       html.portal-timesheet-vertical #autoWrap td.td-daily{padding-left:1px;padding-right:1px;font-size:11px;white-space:nowrap}
+      html.portal-timesheet-vertical #autoWrap td.td-hours .timesheet-hour-steps{font-size:15px;line-height:1.25;font-weight:800}
       html.portal-timesheet-vertical thead th{
         --th-head-fs:11px;
         font-size:var(--th-head-fs);
@@ -2392,12 +2393,12 @@
       return { startMin: startMin, endMin: endMin };
     }
 
-    /** Red full shift, then late start, then the time-off cut, then the green paid hours. */
+    /** Late start, then the time-off cut. The scheduled 11.00-3.00 line is not shown. */
     function timesheetLuliyaDayCentrePayDisplay(grossHours, lateMin, offMin, startMin, endMin) {
       const gross = Number(grossHours) || 0;
       let net = gross;
       const steps = [{ text: money(gross), tone: "red" }];
-      const lines = [{ text: clubTimeRangeFromMinutes(startMin, endMin) }];
+      const lines = [];
       if (lateMin > 0) {
         net = Math.max(0, net - lateMin / 60);
         lines.push({
@@ -4384,7 +4385,7 @@
 
     function pdfEntryRowHeightScale(entry) {
       if (entry && entry.dayOff) return 1.38;
-      if (entry && Array.isArray(entry.serviceTimeLines) && entry.serviceTimeLines.length >= 3) return 2.55;
+      if (entry && Array.isArray(entry.serviceTimeLines) && entry.serviceTimeLines.length) return 2.35;
       const timeRange = timesheetEntryTimeRangeLabel(entry);
       const title = timesheetEntryServiceTitle(entry);
       const venue = timesheetEntryVenueLabel(entry);
@@ -4415,7 +4416,7 @@
       const step = 2.35 * S;
       let ly = midY - ((steps.length - 1) * step) / 2;
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7.4 * S);
+      doc.setFontSize(9 * S);
       steps.forEach(function (item) {
         if (item && item.deduct) {
           const left = String(item.text || "");
