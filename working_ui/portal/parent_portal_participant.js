@@ -3968,18 +3968,76 @@
     return out;
   }
 
+  /** Accepted makeup the family already chose. It is not on the weekly roster. */
+  function findMakeupUpcomingSessionRows(data, opts) {
+    opts = opts || {};
+    var rows = (data && data._ppMakeupSessions) || [];
+    if (!rows.length) return [];
+    var today = new Date();
+    var todayIso = isoDateLocal(today);
+    var tomorrowIso = isoDateLocal(addDaysLocal(today, 1));
+    var out = [];
+    rows.forEach(function (raw) {
+      if (!raw) return;
+      var iso = String(raw.iso || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+      if (iso < todayIso) {
+        var lookback = Math.max(0, Number(opts.lookbackDays) || 0);
+        if (!lookback) return;
+        var minIso = isoDateLocal(addDaysLocal(today, -lookback));
+        if (iso < minIso) return;
+      }
+      var endM = parseServiceEndMinutes(raw.time);
+      var st = resolveHubSessionStatus(data, iso, endM);
+      var completed = st.status === "completed";
+      var endedToday =
+        iso === todayIso &&
+        (st.endedByClock ||
+          completed ||
+          st.status === "absent" ||
+          st.status === "cancelled" ||
+          st.status === "awaiting_feedback");
+      if (endedToday && !opts.includeCompletedToday) return;
+      var label = String(raw.label || "Makeup").trim() || "Makeup";
+      out.push({
+        iso: iso,
+        dayLabel: formatHubDateLabel(iso),
+        label: shortServiceChipLabel(label) || label,
+        rawLabel: label,
+        day: "",
+        time: hubOpsDisplayTime(raw.time) || raw.time || "",
+        venue: String(raw.venue || "").trim(),
+        area: String(raw.area || "").trim(),
+        instructor: String(raw.instructor || "").trim(),
+        isToday: iso === todayIso,
+        isTomorrow: iso === tomorrowIso,
+        source: "makeup",
+        completed: completed,
+        status: st.status,
+        _start: parseServiceStartMinutes(raw.time),
+        _end: endM,
+      });
+    });
+    out.sort(function (a, b) {
+      if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
+      return (a._start || 0) - (b._start || 0);
+    });
+    return out;
+  }
+
   function findNextSessions(data, limit, opts) {
     opts = opts || {};
     var max = Math.max(1, limit || 3);
     var crash = findCrashUpcomingSessionRows(data, opts);
     var booked = findBookedReservationSessionRows(data, opts);
+    var makeup = findMakeupUpcomingSessionRows(data, opts);
     var roster = findRosterPatternNextSessions(data, Math.max(max, 8), opts);
-    var combined = crash.concat(booked).concat(roster);
+    var combined = crash.concat(booked).concat(makeup).concat(roster);
     /*
      * Same calendar slot can arrive twice: booking row ("Aquatic") + roster
      * projection ("30' Aquatic"). Collapse by day + start + venue; keep booking first.
      */
-    var sourceRank = { crash: 0, booking: 1, roster: 2 };
+    var sourceRank = { crash: 0, booking: 1, makeup: 1, roster: 2 };
     combined.sort(function (a, b) {
       if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
       var as = a._start != null ? a._start : 0;
@@ -4783,7 +4841,9 @@
           iso: iso,
           time: String(o.session_time || "").trim(),
           venue: String(o.venue || g.preferred_venue || "").trim(),
+          area: String(o.area || "").trim(),
           label: String(o.service_label || g.service_label || "").trim(),
+          instructor: String(o.instructor_name || "").trim(),
         });
       });
     });
