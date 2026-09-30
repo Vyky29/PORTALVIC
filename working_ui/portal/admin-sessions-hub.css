@@ -1801,7 +1801,7 @@
     @media (max-width: 560px) {
       .ash-day-board__group,
       .ash-day-board__group--climb {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
     .ash-db-col {
@@ -2425,7 +2425,8 @@
       .ash-day-board__group--climb,
       body.admin-touch-compact .ash-day-board__group,
       body.admin-touch-compact .ash-day-board__group--climb {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
       }
       .ash-db-card__name,
       .ash-db-col__staff,
@@ -2549,6 +2550,30 @@
       .ash-day-board__group--climb,
       body.admin-touch-compact .ash-day-board__group,
       body.admin-touch-compact .ash-day-board__group--climb {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .ash-db-col {
+        padding: 6px 4px 4px;
+      }
+      .ash-db-col__photo,
+      .ash-db-col__head .portal-roster-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 11px;
+      }
+      .ash-db-col__staff {
+        font-size: 12px;
+      }
+      .ash-db-card {
+        padding: 5px;
+      }
+      .ash-db-card__name {
+        font-size: 13px;
+      }
+      .ash-db-card__when,
+      .ash-db-card__venue,
+      .ash-db-card__band {
+        font-size: 10px;
       }
     }
