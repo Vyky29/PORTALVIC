@@ -1210,13 +1210,15 @@
       '#portalDocumentsRoot .portal-documents-suggest__btn:last-child{border-bottom:0}' +
       '#portalDocumentsRoot .portal-documents-suggest__btn:hover,#portalDocumentsRoot .portal-documents-suggest__btn:focus-visible{background:#f0f7ff;outline:none}' +
       '#portalDocumentsRoot .portal-documents-upload-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}' +
-      '#portalDocumentsRoot .portal-documents-main{display:flex;gap:16px;align-items:flex-start;min-width:0}' +
+      '#portalDocumentsRoot .portal-documents-main{display:flex;gap:16px;align-items:stretch;min-width:0}' +
       '#portalDocumentsRoot .portal-documents-listcol{flex:1 1 auto;min-width:0}' +
-      '#portalDocumentsRoot .portal-documents-preview{flex:0 0 420px;max-width:46%;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:440px}' +
-      '#portalDocumentsRoot.portal-documents--has-preview .portal-documents-listcol{flex:1 1 0}' +
+      '#portalDocumentsRoot .portal-documents-preview{flex:0 0 420px;max-width:46%;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:440px}' +
+      '#portalDocumentsRoot.portal-documents--has-preview .portal-documents-listcol{flex:0 1 320px;max-width:34%;min-width:220px;overflow:auto}' +
+      '#portalDocumentsRoot.portal-documents--has-preview .portal-documents-preview{flex:1 1 0;max-width:none;min-height:74vh}' +
       '#portalDocumentsRoot .portal-documents-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line,#e5e7eb)}' +
       '#portalDocumentsRoot .portal-documents-preview-title{flex:1;min-width:0;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
       '#portalDocumentsRoot .portal-documents-preview-frame{flex:1;width:100%;border:0;min-height:380px;background:#f8fafc}' +
+      '#portalDocumentsRoot.portal-documents--has-preview .portal-documents-preview-frame{min-height:66vh}' +
       '#portalDocumentsRoot .portal-documents-preview-foot{display:flex;gap:8px;justify-content:flex-end;padding:10px 12px;border-top:1px solid var(--line,#e5e7eb)}' +
       '#portalDocumentsRoot .portal-documents-expense-banner{display:flex;flex-direction:column;gap:4px;padding:12px 14px;margin:0 0 14px;border-radius:12px;border:1px solid #f5c78a;background:#fff7ed;color:#7c2d12;font-size:13px;line-height:1.35}' +
       '#portalDocumentsRoot .portal-documents-expense-banner strong{font-size:14px;color:#9a3412}' +
@@ -1226,7 +1228,7 @@
       '#portalDocumentsRoot .portal-documents-delete-btn{background:#fff;color:#b91c1c;border:1px solid #fca5a5}' +
       '#portalDocumentsRoot .portal-documents-delete-btn:hover{background:#fef2f2;border-color:#ef4444}' +
       '#portalDocumentsRoot .portal-documents-delete-btn:disabled{opacity:.6;cursor:default}' +
-      '@media(max-width:860px){#portalDocumentsRoot .portal-documents-main{flex-direction:column}#portalDocumentsRoot .portal-documents-preview{flex:1 1 auto;max-width:none;width:100%}}' +
+      '@media(max-width:860px){#portalDocumentsRoot .portal-documents-main{flex-direction:column}#portalDocumentsRoot .portal-documents-preview,#portalDocumentsRoot.portal-documents--has-preview .portal-documents-preview{flex:1 1 auto;max-width:none;width:100%;min-height:70vh}#portalDocumentsRoot.portal-documents--has-preview .portal-documents-listcol{flex:1 1 auto;max-width:none;min-width:0}#portalDocumentsRoot.portal-documents--has-preview .portal-documents-preview-frame{min-height:62vh}}' +
       '</style>'
     );
   }
