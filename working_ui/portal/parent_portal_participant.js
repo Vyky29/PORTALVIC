@@ -6272,6 +6272,44 @@
     host.__ppNextLive = null;
   }
 
+  /**
+   * Rebuild the hub session card. Makeup sessions arrive after the first paint,
+   * so the next-session block has to be drawn again once they are known.
+   */
+  function repaintHubOpsCard(host, data, opts) {
+    if (!host || !host.isConnected) return;
+    if (!host.querySelector('.pp-pax-shell[data-pp-view="hub"]')) return;
+    var oldOps = host.querySelector(".pp-hub-ops");
+    if (!oldOps) return;
+    var openTerms = {};
+    oldOps.querySelectorAll("details.pp-hub-ops__term-accordion").forEach(function (el, i) {
+      openTerms[i] = !!el.open;
+    });
+    var wrap = document.createElement("div");
+    wrap.innerHTML = hubOpsCardHtml(data);
+    var neu = wrap.firstChild;
+    if (!neu) return;
+    var alerts = oldOps.querySelector("#ppHubAlerts");
+    var alertsHtml = alerts ? alerts.outerHTML : "";
+    var alertsHidden = alerts ? alerts.hidden : true;
+    oldOps.replaceWith(neu);
+    neu.querySelectorAll("details.pp-hub-ops__term-accordion").forEach(function (el, i) {
+      if (openTerms[i]) el.open = true;
+    });
+    if (alertsHtml) {
+      var spot = neu.querySelector("#ppHubAlerts");
+      if (spot) {
+        spot.outerHTML = alertsHtml;
+        var restored = neu.querySelector("#ppHubAlerts");
+        if (restored) restored.hidden = alertsHidden;
+      }
+    }
+    bindHubOpenButtons(host, data, opts, neu);
+    if (host._ppTermStatusByIso || neu.querySelector('[data-pp-term-chips="this"]')) {
+      applyTermDateChipStatuses(host, data, host._ppTermStatusByIso || {});
+    }
+  }
+
   /** Refresh Today/Tomorrow heading when today's last slot ends (without full hub reload). */
   function mountHubNextSessionLive(host, data, opts) {
     clearHubNextSessionLive(host);
@@ -6281,32 +6319,7 @@
         clearHubNextSessionLive(host);
         return;
       }
-      var oldOps = host.querySelector(".pp-hub-ops");
-      if (!oldOps) return;
-      var openTerms = {};
-      oldOps.querySelectorAll("details.pp-hub-ops__term-accordion").forEach(function (el, i) {
-        openTerms[i] = !!el.open;
-      });
-      var wrap = document.createElement("div");
-      wrap.innerHTML = hubOpsCardHtml(data);
-      var neu = wrap.firstChild;
-      if (!neu) return;
-      var alerts = oldOps.querySelector("#ppHubAlerts");
-      var alertsHtml = alerts ? alerts.outerHTML : "";
-      var alertsHidden = alerts ? alerts.hidden : true;
-      oldOps.replaceWith(neu);
-      neu.querySelectorAll("details.pp-hub-ops__term-accordion").forEach(function (el, i) {
-        if (openTerms[i]) el.open = true;
-      });
-      if (alertsHtml) {
-        var spot = neu.querySelector("#ppHubAlerts");
-        if (spot) {
-          spot.outerHTML = alertsHtml;
-          var restored = neu.querySelector("#ppHubAlerts");
-          if (restored) restored.hidden = alertsHidden;
-        }
-      }
-      // Re-apply chip statuses onto the new ops block.
+      repaintHubOpsCard(host, data, opts);
       mountTermDateChipStatuses(host, data, opts, null);
     }, 30000);
   }
@@ -6357,9 +6370,7 @@
           return g && (g.status === "open" || g.pending_offer);
         });
         rememberMakeupSessions(data, payload);
-        if (host._ppTermStatusByIso || host.querySelector('[data-pp-term-chips="this"]')) {
-          applyTermDateChipStatuses(host, data, host._ppTermStatusByIso || {});
-        }
+        repaintHubOpsCard(host, data, opts);
         var due = grants.some(function (g) {
           return g && g.pending_offer;
         });
