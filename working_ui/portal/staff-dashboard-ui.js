@@ -2732,6 +2732,17 @@
         && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
       /* Grandfather / forced-complete (Jun 1–7, Javier May catch-up) wins over stale fbMap late. */
       if(staffId && portalTermDateForcedComplete(key, staffId)) return 'complete';
+      /* Absences (Yunis, Gabriel) arrive with schedule overrides. Until that fetch
+         settles, do not paint the day orange — it asks for feedback and then corrects. */
+      let overridesSettled = false;
+      try{
+        overridesSettled = typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_FETCH_SETTLED__ === true;
+      }catch(_){}
+      if(!overridesSettled && key <= todayKey){
+        if(explicit === 'cancelled') return 'cancelled';
+        if(explicit === 'complete') return 'complete';
+        return 'pending';
+      }
       if(staffId && portalTermIsCatchUpFeedbackDate(key, staffId)){
         const dayWordCatch = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
         const curCatch = new Date(key + 'T12:00:00');
@@ -3054,6 +3065,7 @@
         revPart,
         srvPart,
         ovHydrated,
+        (typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_FETCH_SETTLED__) ? 'settled' : 'wait',
         String(dashboardData.termDashboardCalendarFrom || ''),
         String(dashboardData.termDashboardCalendarTo || '')
       ].join('\0');

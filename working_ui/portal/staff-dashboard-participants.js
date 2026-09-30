@@ -843,17 +843,23 @@
       const viewerKey = portalShareCanonStaff(sidRaw);
       if(!viewerKey) return '';
       const byStaff = Object.create(null);
-      function addStaff(raw, startMins){
+      function addStaff(raw, startMins, endMins){
         const key = portalShareCanonStaff(raw);
         if(!key || portalShareStaffSkip(key)) return;
         if(iso && portalShareStaffAwayOnIso(key, iso)
           && !(typeof portalStaffHasAdminAddedShiftOnCalendarDate === 'function'
             && portalStaffHasAdminAddedShiftOnCalendarDate(iso, key))) return;
         const mins = Number(startMins);
+        const start = Number.isFinite(mins) ? mins : 24 * 60;
+        let end = Number(endMins);
+        if(!Number.isFinite(end) || end <= start) end = start + 30;
         const prev = byStaff[key];
-        if(!prev || (Number.isFinite(mins) && mins < prev.mins)){
-          byStaff[key] = { key: key, mins: Number.isFinite(mins) ? mins : 24 * 60 };
+        if(!prev){
+          byStaff[key] = { key: key, mins: start, spans: [{ start: start, end: end }] };
+          return;
         }
+        if(start < prev.mins) prev.mins = start;
+        prev.spans.push({ start: start, end: end });
       }
       function rowOnDay(row){
         if(!row) return false;
@@ -880,7 +886,8 @@
           if(Number.isFinite(want) && Number.isFinite(got) && Math.abs(want - got) > 5) return;
         }
         const mins = portalShareStartMins(row);
-        portalShareStaffTokens(row).forEach(function(tok){ addStaff(tok, mins); });
+        const endMins = portalShareEndMins(row);
+        portalShareStaffTokens(row).forEach(function(tok){ addStaff(tok, mins, endMins); });
       }
       try{
         const src = window.STAFF_DASHBOARD_SOURCE;
@@ -908,7 +915,12 @@
             }, pax);
             if(famOv !== family) return;
             const st = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_start) : ov.anchor_start;
-            addStaff(ov.anchor_staff_id, portalShareStartMins({ start: st, time_slot: ov.anchor_time_slot_label }));
+            const en = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_end) : ov.anchor_end;
+            addStaff(
+              ov.anchor_staff_id,
+              portalShareStartMins({ start: st, time_slot: ov.anchor_time_slot_label }),
+              portalShareEndMins({ end: en, time_slot: ov.anchor_time_slot_label })
+            );
             return;
           }
           if(t === 'instructor_reassign'){
@@ -923,13 +935,14 @@
               return;
             }
             const st = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_start) : ov.anchor_start;
-            addStaff(cover, portalShareStartMins({ start: st }));
+            const en = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_end) : ov.anchor_end;
+            addStaff(cover, portalShareStartMins({ start: st }), portalShareEndMins({ end: en }));
             const origKey = portalShareCanonStaff(orig);
             if(origKey && origKey !== portalShareCanonStaff(cover) && byStaff[origKey]) delete byStaff[origKey];
           }
         });
       }
-      addStaff(sidRaw, portalShareStartMins(sessionRow));
+      addStaff(sidRaw, portalShareStartMins(sessionRow), portalShareEndMins(sessionRow));
       const keys = Object.keys(byStaff);
       const others = keys.filter(function(k){ return k !== viewerKey; });
       if(!others.length){
@@ -943,6 +956,10 @@
           if(other) return '(2:1 with ' + other + ')';
         }
         return '';
+      }
+      if(family === 'day_centre'){
+        const dcLab = portalDayCentreTurnLabel(byStaff, viewerKey, others);
+        if(dcLab) return dcLab;
       }
       others.sort(function(a, b){
         const da = byStaff[a].mins - byStaff[b].mins;
@@ -1057,6 +1074,25 @@
       if(h >= 1 && h <= 7) h += 12;
       return h * 60 + min;
     }
+    function portalShareEndMins(row){
+      if(!row) return NaN;
+      try{
+        if(typeof portalCanonicalHmToken === 'function'){
+          const hm = portalCanonicalHmToken(row.end || row.anchor_end || '');
+          if(hm && /^\d{1,2}:\d{2}$/.test(hm)){
+            const p = hm.split(':');
+            return (parseInt(p[0], 10) * 60) + parseInt(p[1], 10);
+          }
+        }
+      }catch(_){}
+      const ts = String(row.time_slot || row.time || row.anchor_time_slot_label || '').trim().toLowerCase();
+      const m = ts.match(/(\d{1,2})(?:[:.](\d{2}))?\s*(?:to|-)\s*(\d{1,2})(?:[:.](\d{2}))?/);
+      if(!m) return NaN;
+      let h = parseInt(m[3], 10);
+      const min = m[4] ? parseInt(m[4], 10) : 0;
+      if(h >= 1 && h <= 7) h += 12;
+      return h * 60 + min;
+    }
     function portalShareStaffFirstName(staffKey){
       try{
         if(typeof portalStaffAuthorFirstName === 'function'){
@@ -1079,6 +1115,81 @@
       if(names.length === 1) return names[0];
       if(names.length === 2) return names[0] + ' & ' + names[1];
       return names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1];
+    }
+    /** Day Centre: partners who take turns are 2:1 each, with their own time. Not one 3:1. */
+    function portalDayCentreTurnLabel(byStaff, viewerKey, otherKeys){
+      const viewer = byStaff[viewerKey];
+      if(!viewer || !viewer.spans || !viewer.spans.length) return '';
+      const winStart = viewer.spans.reduce(function(m, sp){ return Math.min(m, sp.start); }, viewer.spans[0].start);
+      const winEnd = viewer.spans.reduce(function(m, sp){ return Math.max(m, sp.end); }, viewer.spans[0].end);
+      if(!(winEnd > winStart)) return '';
+      function mergeSpans(spans){
+        const s = (spans || []).slice().sort(function(a, b){ return a.start - b.start; });
+        const out = [];
+        s.forEach(function(sp){
+          const last = out[out.length - 1];
+          if(last && sp.start <= last.end + 1) last.end = Math.max(last.end, sp.end);
+          else out.push({ start: sp.start, end: sp.end });
+        });
+        return out;
+      }
+      const partners = [];
+      otherKeys.forEach(function(k){
+        const row = byStaff[k];
+        if(!row || !row.spans) return;
+        const spans = mergeSpans(row.spans);
+        if(!spans.length) return;
+        partners.push({ key: k, spans: spans });
+      });
+      if(!partners.length) return '';
+      const events = [];
+      partners.forEach(function(p){
+        p.spans.forEach(function(sp){
+          const a = Math.max(sp.start, winStart);
+          const b = Math.min(sp.end, winEnd);
+          if(b > a + 1){
+            events.push({ t: a, d: 1 });
+            events.push({ t: b, d: -1 });
+          }
+        });
+      });
+      events.sort(function(a, b){ return a.t - b.t || a.d - b.d; });
+      let curN = 0;
+      let maxOthers = 0;
+      events.forEach(function(e){
+        curN += e.d;
+        if(curN > maxOthers) maxOthers = curN;
+      });
+      const ratio = 1 + Math.max(1, maxOthers);
+      function coversAll(p){
+        return p.spans.length === 1 && p.spans[0].start <= winStart + 5 && p.spans[0].end >= winEnd - 5;
+      }
+      const allFull = partners.every(coversAll);
+      if(allFull){
+        const names = partners.map(function(p){ return portalShareStaffFirstName(p.key); }).filter(Boolean);
+        if(!names.length) return '';
+        return '(' + (names.length + 1) + ':1 with ' + portalShareJoinNames(names) + ')';
+      }
+      function fmtRange(a, b){
+        function pad(n){ return (n < 10 ? '0' : '') + n; }
+        const sh = Math.floor(a / 60);
+        const sm = a % 60;
+        const eh = Math.floor(b / 60);
+        const em = b % 60;
+        if(typeof portalFormatRosterBandLabel === 'function'){
+          const lab = portalFormatRosterBandLabel(pad(sh) + ':' + pad(sm), pad(eh) + ':' + pad(em));
+          if(lab) return lab;
+        }
+        return pad(sh) + ':' + pad(sm) + '-' + pad(eh) + ':' + pad(em);
+      }
+      partners.sort(function(a, b){ return a.spans[0].start - b.spans[0].start; });
+      return partners.map(function(p){
+        const name = portalShareStaffFirstName(p.key);
+        if(!name) return '';
+        if(partners.length === 1 && coversAll(p)) return ratio + ':1 with ' + name;
+        const ranges = p.spans.map(function(sp){ return fmtRange(sp.start, sp.end); }).filter(Boolean).join(', ');
+        return ratio + ':1 with ' + name + (ranges ? ' ' + ranges : '');
+      }).filter(Boolean).join('\n');
     }
     try{ window.portalTwoToOneSupportLabelForSession = portalTwoToOneSupportLabelForSession; }catch(_){}
     function portalSessionAddPeopleChips(kind, payload, ov, sessionDateIso){
@@ -2044,6 +2155,25 @@
       }
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
+    function portalItemIsDayCentreCard(item){
+      if(!item) return false;
+      const base = item.__portalBaseSession || item;
+      if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(base)) return true;
+      if(typeof portalClientIsDayCentreSharedParticipant === 'function'
+        && portalClientIsDayCentreSharedParticipant(item.clientId || item.name || base.clientId || base.clientName)) return true;
+      return /day\s*centre/i.test(String(item.activity || item.service || base.activity || base.rosterService || base.service || ''));
+    }
+    /** Day Centre partners sit under the time, not under the name. */
+    function portalDcSupportBlockHtml(item){
+      if(!portalItemIsDayCentreCard(item)) return '';
+      const raw = String(item.portalTwoToOneSupportLabel || '').trim();
+      if(!raw) return '';
+      const lines = raw.split('\n').map(function(line){
+        return escapeHtml(String(line || '').trim());
+      }).filter(Boolean);
+      if(!lines.length) return '';
+      return '<div class="session-dc-with">' + lines.join('<br>') + '</div>';
+    }
     function todaySessionSegmentRowsHtml(item){
       return (item.segments || []).map(function(seg){
         const tRaw = String((seg && (seg.time_slot || seg.time)) || '').trim();
@@ -2072,14 +2202,15 @@
       const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
       const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
       const supportSub = String(item.portalTwoToOneSupportLabel || '').trim();
-      const supportLine = supportSub
+      const dcBlock = portalDcSupportBlockHtml(item);
+      const supportLine = !dcBlock && supportSub
         ? '<span class="session-meta-support">' + escapeHtml(supportSub) + '</span>'
         : '';
       const namePart = `<span class="session-name-stack">${nameCore}${supportLine}${chipsRow}</span>`;
       return `<div class="session-card-body session-card-body--segments">`
         + `<div class="session-line session-line--name session-line--name-lead">${namePart}</div>`
         + `<div class="session-seg-list">${todaySessionSegmentRowsHtml(item)}</div>`
-        + `</div>`;
+        + `</div>` + dcBlock;
     }
     function todaySessionCardInnerHtml(item){
       if(item && Array.isArray(item.segments) && item.segments.length){
@@ -2098,7 +2229,8 @@
           ? `<span class="session-meta-name session-meta-name--home"><span>${escapeHtml(item.name)}</span></span>`
           : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`);
       const supportSub = String(item.portalTwoToOneSupportLabel || '').trim();
-      const supportLine = supportSub
+      const dcBlock = portalDcSupportBlockHtml(item);
+      const supportLine = !dcBlock && supportSub
         ? '<span class="session-meta-support">' + escapeHtml(supportSub) + '</span>'
         : '';
       const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
@@ -2108,6 +2240,9 @@
       const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
       const namePart = `<span class="session-name-stack">${nameCore}${supportLine}${chipsRow}</span>`;
       const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
+      if(dcBlock){
+        return `<div class="session-card-body session-card-body--dc-turns"><div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}<span class="session-slot-time">${time}</span>${dcBlock}</div></div>`;
+      }
       return `<div class="session-card-body">${timeStack}<div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}</div></div>`;
     }
 

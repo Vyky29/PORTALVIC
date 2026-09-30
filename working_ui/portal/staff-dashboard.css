@@ -5923,6 +5923,48 @@
       overflow-wrap:anywhere;
       max-width:100%;
     }
+    .section-card--today .session-dc-with{
+      display:block;
+      width:100%;
+      min-width:0;
+      box-sizing:border-box;
+      margin:0;
+      padding:1px 2px 0;
+      font-size:10px;
+      font-weight:650;
+      line-height:1.2;
+      color:#5b6470;
+      text-align:center;
+      overflow-wrap:anywhere;
+    }
+    .section-card--today .session-card-body.session-card-body--dc-turns{
+      grid-template-columns:minmax(0, 1fr) minmax(96px, 136px);
+    }
+    .section-card--today .session-card-body--dc-turns .session-line--symbol{
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      max-width:136px;
+      gap:2px;
+      line-height:normal;
+    }
+    .section-card--today .today-grid-rows > .session-card .session-card-body--dc-turns .session-line--symbol{
+      overflow:visible;
+    }
+    .section-card--today .session-card:has(.session-card-body--dc-turns){
+      flex:0 0 auto;
+      overflow:visible;
+    }
+    .section-card--today .session-card-body--dc-turns .session-slot-time{
+      display:block;
+      width:100%;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.1;
+      color:#000;
+      text-align:center;
+      white-space:nowrap;
+    }
     .section-card--today .session-line--name .session-name-stack > .portal-sched-ov-badge{
       margin-left:0;
       max-width:100%;
