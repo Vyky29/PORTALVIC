@@ -72,23 +72,25 @@
       { staff: "Youssef", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
     ],
     tuesday: [
+      /* From Tue 6 Oct. Sep Tuesdays stay on the occupants phase that ends 30 Sep. */
       {
         staff: "Roberto",
         clients: [
           { name: "ACAT", time: "11 to 12" },
-          { name: "Ikram", time: "12 to 3" },
+          { name: "Fadi", time: "12.30 to 3" },
         ],
       },
-      /* Michelle Tue: Ikram 11–12, Manager 12–3, Ikram 3–4. */
+      /* Michelle Tue: Manager 11-12.30, Fadi 12.30-3, Ikram 3-4. */
       {
         staff: "Michelle",
         clients: [
-          { name: "Ikram", time: "11 to 12" },
-          { name: "Manager", time: "12 to 3" },
+          { name: "Manager", time: "11 to 12.30" },
+          { name: "Fadi", time: "12.30 to 3" },
           { name: "Ikram", time: "3 to 4" },
         ],
       },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      /* Patience Ikram 11-4 is dated from 5 Oct (applyPatienceIkramFrom28), not this template. */
       /* Raul OFF Tuesdays (no DC). Ikram 3-4 stays Michelle. */
       { staff: "Raul", clients: [] },
       /* Victor Tue: Cyrus Bespoke 3.30–5 (not DC) — see CYRUS_BESPOKE_ROW. */

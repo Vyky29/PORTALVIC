@@ -131,6 +131,14 @@
     return /^fadi\b/i.test(String(name || "").trim());
   }
 
+  /** Patience Ikram seat skips half term 26-30 Oct, same as the roster inject. */
+  function patienceDcColumnsHalfTerm(iso, columns) {
+    if (!iso || iso < "2026-10-26" || iso > "2026-10-30") return columns;
+    return (columns || []).filter(function (col) {
+      return !/\bpatience\b/i.test(String((col && col.staff) || ""));
+    });
+  }
+
   /** From Mon 28 Sep Luliya leaves Mon / Wed / Fri Day Centre. Tue DC stays. */
   function luliyaDcColumnsFrom28(iso, dk, columns) {
     if (!iso || iso < "2026-09-28") return columns;
@@ -178,7 +186,10 @@
       return {
         phase: String(slot.phase || "services"),
         phaseLabel: String(slot.phaseLabel || slot.phase || "Services"),
-        columns: luliyaDcColumnsFrom28(d, dk, columnsFromOccupantSlot(slot)),
+        columns: patienceDcColumnsHalfTerm(
+          d,
+          luliyaDcColumnsFrom28(d, dk, columnsFromOccupantSlot(slot)),
+        ),
         source: "services",
         slotId: slot.id || null,
         validFrom: slot.validFrom || null,
