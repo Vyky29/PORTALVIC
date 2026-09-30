@@ -651,14 +651,9 @@
     var row = global._portalDocumentsCurrent && global._portalDocumentsCurrent[idx];
     if (!row || !row.path) return;
     state.previewIdx = idx;
-    var panel = document.getElementById('portalDocumentsPreview');
-    var frame = document.getElementById('portalDocumentsPreviewFrame');
     var title = document.getElementById('portalDocumentsPreviewTitle');
-    var root = document.getElementById('portalDocumentsRoot');
-    if (root) root.classList.add('portal-documents--has-preview');
-    if (panel) panel.hidden = false;
     if (title) title.textContent = row.name || 'Document';
-    if (frame) frame.removeAttribute('src');
+    clearPreviewMedia();
     setStatus('<strong>Opening…</strong> Generating a secure link.');
     var url = await getSignedUrl(row.path, row.storageBucket, row.source);
     setStatus('');
@@ -666,7 +661,7 @@
       try { window.alert('Could not open file. Sign in again or check admin allow-list.'); } catch (_e) {}
       return;
     }
-    if (frame) frame.src = url;
+    showPreviewMedia(row.path, url);
     var openBtn = document.getElementById('portalDocumentsPreviewOpen');
     if (openBtn) openBtn.onclick = function () {
       try {
@@ -697,12 +692,9 @@
 
   function closePreview() {
     state.previewIdx = -1;
-    var panel = document.getElementById('portalDocumentsPreview');
-    var frame = document.getElementById('portalDocumentsPreviewFrame');
-    var root = document.getElementById('portalDocumentsRoot');
-    if (frame) frame.removeAttribute('src');
-    if (panel) panel.hidden = true;
-    if (root) root.classList.remove('portal-documents--has-preview');
+    var title = document.getElementById('portalDocumentsPreviewTitle');
+    if (title) title.textContent = 'Document';
+    clearPreviewMedia();
   }
 
   async function markExpensePaid(documentId, paid) {
@@ -756,17 +748,71 @@
       '</div>';
   }
 
+  function payCellHtml(it) {
+    if (!it || it.type !== 'expense') return '—';
+    if (it.isPaid) return '<span class="portal-documents-expense-paid">Paid</span>';
+    return '<span class="portal-documents-expense-unpaid">Pending</span>';
+  }
+
+  function previewIsImage(path) {
+    return /\.(png|jpe?g|gif|webp)(\?|$)/i.test(String(path || '').split('#')[0]);
+  }
+
+  function previewFitUrl(url, path) {
+    if (previewIsImage(path)) return url;
+    if (!/\.pdf(\?|$)/i.test(String(path || '').split('#')[0])) return url;
+    var base = String(url || '').split('#')[0];
+    return base + '#toolbar=0&navpanes=0&zoom=page-fit';
+  }
+
+  function showPreviewMedia(path, url) {
+    var frame = document.getElementById('portalDocumentsPreviewFrame');
+    var img = document.getElementById('portalDocumentsPreviewImg');
+    var empty = document.getElementById('portalDocumentsPreviewEmpty');
+    if (empty) empty.hidden = true;
+    if (previewIsImage(path)) {
+      if (frame) {
+        frame.hidden = true;
+        frame.removeAttribute('src');
+      }
+      if (img) {
+        img.hidden = false;
+        img.src = url;
+        img.alt = 'Document';
+      }
+      return;
+    }
+    if (img) {
+      img.hidden = true;
+      img.removeAttribute('src');
+    }
+    if (frame) {
+      frame.hidden = false;
+      frame.src = previewFitUrl(url, path);
+    }
+  }
+
+  function clearPreviewMedia() {
+    var frame = document.getElementById('portalDocumentsPreviewFrame');
+    var img = document.getElementById('portalDocumentsPreviewImg');
+    var empty = document.getElementById('portalDocumentsPreviewEmpty');
+    if (frame) {
+      frame.hidden = true;
+      frame.removeAttribute('src');
+    }
+    if (img) {
+      img.hidden = true;
+      img.removeAttribute('src');
+    }
+    if (empty) empty.hidden = false;
+  }
+
   function rowMetaHtml(it) {
     if (it.type === 'expense' && it.details) {
       var ex = it.details;
       var bits = [];
       if (ex.category) bits.push('Category: ' + esc(ex.category));
       if (ex.related_date) bits.push('Date: ' + esc(ex.related_date));
-      if (it.isPaid) {
-        bits.push('<span class="portal-documents-expense-paid">Paid</span>');
-      } else {
-        bits.push('<span class="portal-documents-expense-unpaid">Pending payment</span>');
-      }
       return bits.join(' · ');
     }
     return it.path ? esc(it.path) : '';
@@ -782,7 +828,7 @@
     global._portalDocumentsCurrent = items;
     if (!items.length) {
       tbody.innerHTML =
-        '<tr><td colspan="5" class="muted" style="padding:16px">No files match this filter.</td></tr>';
+        '<tr><td colspan="6" class="muted" style="padding:16px">No files match this filter.</td></tr>';
       return;
     }
     tbody.innerHTML = items
@@ -808,6 +854,7 @@
           '<td style="min-width:0"><div class="portal-forms-cell-main" style="min-width:0;overflow-wrap:anywhere">' + esc(it.name) + '</div><div class="portal-forms-cell-sub" style="min-width:0;overflow-wrap:anywhere">' + rowMetaHtml(it) + '</div></td>' +
           '<td style="white-space:nowrap">' + esc(formatDate(it.created)) + '</td>' +
           '<td style="white-space:nowrap">' + esc(amountOrSizeCell(it)) + '</td>' +
+          '<td style="white-space:nowrap">' + payCellHtml(it) + '</td>' +
           '<td style="white-space:nowrap">' + actionHtml + '</td></tr>'
         );
       })
@@ -1211,14 +1258,16 @@
       '#portalDocumentsRoot .portal-documents-suggest__btn:hover,#portalDocumentsRoot .portal-documents-suggest__btn:focus-visible{background:#f0f7ff;outline:none}' +
       '#portalDocumentsRoot .portal-documents-upload-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}' +
       '#portalDocumentsRoot .portal-documents-main{display:flex;gap:16px;align-items:stretch;min-width:0}' +
-      '#portalDocumentsRoot .portal-documents-listcol{flex:1 1 auto;min-width:0}' +
-      '#portalDocumentsRoot .portal-documents-preview{flex:0 0 420px;max-width:46%;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:440px}' +
-      '#portalDocumentsRoot.portal-documents--has-preview .portal-documents-listcol{flex:0 1 320px;max-width:34%;min-width:220px;overflow:auto}' +
-      '#portalDocumentsRoot.portal-documents--has-preview .portal-documents-preview{flex:1 1 0;max-width:none;min-height:74vh}' +
+      '#portalDocumentsRoot .portal-documents-listcol{flex:0 0 340px;width:340px;max-width:36%;min-width:220px;min-height:0;overflow:auto}' +
+      '#portalDocumentsRoot .portal-documents-preview{flex:1 1 auto;min-width:0;max-width:none;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:78vh}' +
+      '#portalDocumentsRoot .portal-documents-data-row:hover td{background:transparent!important;cursor:default}' +
       '#portalDocumentsRoot .portal-documents-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line,#e5e7eb)}' +
       '#portalDocumentsRoot .portal-documents-preview-title{flex:1;min-width:0;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
-      '#portalDocumentsRoot .portal-documents-preview-frame{flex:1;width:100%;border:0;min-height:380px;background:#f8fafc}' +
-      '#portalDocumentsRoot.portal-documents--has-preview .portal-documents-preview-frame{min-height:66vh}' +
+      '#portalDocumentsRoot .portal-documents-preview-stage{position:relative;flex:1;min-height:70vh;min-width:0;background:#f8fafc}' +
+      '#portalDocumentsRoot .portal-documents-preview-empty{margin:0;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;color:var(--muted,#64748b);font-size:14px}' +
+      '#portalDocumentsRoot .portal-documents-preview-frame,#portalDocumentsRoot .portal-documents-preview-img{position:absolute;inset:0;width:100%;height:100%;border:0;background:#f8fafc}' +
+      '#portalDocumentsRoot .portal-documents-preview-img{object-fit:contain}' +
+      '#portalDocumentsRoot .portal-documents-preview-frame[hidden],#portalDocumentsRoot .portal-documents-preview-img[hidden],#portalDocumentsRoot .portal-documents-preview-empty[hidden]{display:none!important}' +
       '#portalDocumentsRoot .portal-documents-preview-foot{display:flex;gap:8px;justify-content:flex-end;padding:10px 12px;border-top:1px solid var(--line,#e5e7eb)}' +
       '#portalDocumentsRoot .portal-documents-expense-banner{display:flex;flex-direction:column;gap:4px;padding:12px 14px;margin:0 0 14px;border-radius:12px;border:1px solid #f5c78a;background:#fff7ed;color:#7c2d12;font-size:13px;line-height:1.35}' +
       '#portalDocumentsRoot .portal-documents-expense-banner strong{font-size:14px;color:#9a3412}' +
@@ -1228,7 +1277,7 @@
       '#portalDocumentsRoot .portal-documents-delete-btn{background:#fff;color:#b91c1c;border:1px solid #fca5a5}' +
       '#portalDocumentsRoot .portal-documents-delete-btn:hover{background:#fef2f2;border-color:#ef4444}' +
       '#portalDocumentsRoot .portal-documents-delete-btn:disabled{opacity:.6;cursor:default}' +
-      '@media(max-width:860px){#portalDocumentsRoot .portal-documents-main{flex-direction:column}#portalDocumentsRoot .portal-documents-preview,#portalDocumentsRoot.portal-documents--has-preview .portal-documents-preview{flex:1 1 auto;max-width:none;width:100%;min-height:70vh}#portalDocumentsRoot.portal-documents--has-preview .portal-documents-listcol{flex:1 1 auto;max-width:none;min-width:0}#portalDocumentsRoot.portal-documents--has-preview .portal-documents-preview-frame{min-height:62vh}}' +
+      '@media(max-width:860px){#portalDocumentsRoot .portal-documents-main{flex-direction:column}#portalDocumentsRoot .portal-documents-listcol{flex:1 1 auto;width:auto;max-width:none}#portalDocumentsRoot .portal-documents-preview{width:100%;min-height:72vh}#portalDocumentsRoot .portal-documents-preview-stage{min-height:64vh}}' +
       '</style>'
     );
   }
@@ -1280,15 +1329,19 @@
       '<div class="portal-documents-listcol">' +
       '<div class="portal-forms-table-wrap">' +
       '<table class="portal-forms-table portal-forms-table--full-detail">' +
-      '<thead><tr><th>Type</th><th>Name / details</th><th>Uploaded</th><th id="portalDocumentsAmountSizeTh">Amount</th><th>View</th></tr></thead>' +
-      '<tbody id="portalDocumentsTbody"><tr><td colspan="5" class="muted" style="padding:16px">Loading…</td></tr></tbody>' +
+      '<thead><tr><th>Type</th><th>Name / details</th><th>Uploaded</th><th id="portalDocumentsAmountSizeTh">Amount</th><th>Pay</th><th>View</th></tr></thead>' +
+      '<tbody id="portalDocumentsTbody"><tr><td colspan="6" class="muted" style="padding:16px">Loading…</td></tr></tbody>' +
       '</table></div></div>' +
-      '<aside class="portal-documents-preview" id="portalDocumentsPreview" hidden>' +
+      '<aside class="portal-documents-preview" id="portalDocumentsPreview">' +
       '<div class="portal-documents-preview-head">' +
       '<span class="portal-documents-preview-title" id="portalDocumentsPreviewTitle">Document</span>' +
       '<button type="button" class="btn btn--ghost btn--sm" id="portalDocumentsPreviewClose" aria-label="Close preview">✕</button>' +
       '</div>' +
-      '<iframe class="portal-documents-preview-frame" id="portalDocumentsPreviewFrame" title="Document preview"></iframe>' +
+      '<div class="portal-documents-preview-stage">' +
+      '<p class="portal-documents-preview-empty" id="portalDocumentsPreviewEmpty">Press View to see the file here.</p>' +
+      '<iframe class="portal-documents-preview-frame" id="portalDocumentsPreviewFrame" title="Document preview" hidden></iframe>' +
+      '<img class="portal-documents-preview-img" id="portalDocumentsPreviewImg" alt="" hidden />' +
+      '</div>' +
       '<div class="portal-documents-preview-foot">' +
       '<button type="button" class="btn btn--ghost btn--sm" id="portalDocumentsPreviewOpen">Open</button>' +
       '<button type="button" class="btn btn--pri btn--sm" id="portalDocumentsPreviewDownload">Download</button>' +

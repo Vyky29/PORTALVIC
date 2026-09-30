@@ -421,17 +421,12 @@
     var row = rows[idx];
     if (!row || !row.file_url) return;
     state.previewIdx = idx;
-    var panel = document.getElementById("portalPayslipsPreview");
-    var frame = document.getElementById("portalPayslipsPreviewFrame");
     var title = document.getElementById("portalPayslipsPreviewTitle");
-    var root = document.getElementById("portalPayslipsRoot");
-    if (root) root.classList.add("portal-payslips--has-preview");
-    if (panel) panel.hidden = false;
+    clearPayslipPreview();
     if (title) {
       title.textContent =
         row.title || monthLabelFromIso(monthKeyFromRow(row) + "-01") + " Payslip";
     }
-    if (frame) frame.removeAttribute("src");
     setStatus("<strong>Opening…</strong> Generating a secure link.");
     var url = await getSignedUrl(row.file_url);
     setStatus("");
@@ -441,7 +436,7 @@
       } catch (_e) {}
       return;
     }
-    if (frame) frame.src = url;
+    showPayslipPreview(row.file_url, url);
     var openBtn = document.getElementById("portalPayslipsPreviewOpen");
     if (openBtn) {
       openBtn.onclick = function () {
@@ -465,12 +460,58 @@
 
   function closePreview() {
     state.previewIdx = -1;
-    var panel = document.getElementById("portalPayslipsPreview");
+    var title = document.getElementById("portalPayslipsPreviewTitle");
+    if (title) title.textContent = "Payslip";
+    clearPayslipPreview();
+  }
+
+  function payslipIsImage(path) {
+    return /\.(png|jpe?g|gif|webp)(\?|$)/i.test(String(path || "").split("#")[0]);
+  }
+
+  function showPayslipPreview(path, url) {
     var frame = document.getElementById("portalPayslipsPreviewFrame");
-    var root = document.getElementById("portalPayslipsRoot");
-    if (frame) frame.removeAttribute("src");
-    if (panel) panel.hidden = true;
-    if (root) root.classList.remove("portal-payslips--has-preview");
+    var img = document.getElementById("portalPayslipsPreviewImg");
+    var empty = document.getElementById("portalPayslipsPreviewEmpty");
+    if (empty) empty.hidden = true;
+    if (payslipIsImage(path)) {
+      if (frame) {
+        frame.hidden = true;
+        frame.removeAttribute("src");
+      }
+      if (img) {
+        img.hidden = false;
+        img.src = url;
+        img.alt = "Payslip";
+      }
+      return;
+    }
+    if (img) {
+      img.hidden = true;
+      img.removeAttribute("src");
+    }
+    if (frame) {
+      frame.hidden = false;
+      var base = String(url || "").split("#")[0];
+      frame.src = /\.pdf(\?|$)/i.test(String(path || ""))
+        ? base + "#toolbar=0&navpanes=0&zoom=page-fit"
+        : url;
+    }
+  }
+
+  function clearPayslipPreview() {
+    var frame = document.getElementById("portalPayslipsPreviewFrame");
+    var img = document.getElementById("portalPayslipsPreviewImg");
+    var empty = document.getElementById("portalPayslipsPreviewEmpty");
+    if (frame) {
+      frame.hidden = true;
+      frame.removeAttribute("src");
+    }
+    if (img) {
+      img.hidden = true;
+      img.removeAttribute("src");
+    }
+    if (empty) empty.hidden = false;
   }
 
   async function deletePayslip(row) {
@@ -792,20 +833,21 @@
       "#portalPayslipsRoot .portal-payslips-statcard-num{font-size:22px;font-weight:800;color:var(--ink,#0f172a);line-height:1.1}" +
       "#portalPayslipsRoot .portal-payslips-statcard-label{font-size:12px;color:var(--muted,#64748b);text-transform:uppercase;letter-spacing:.03em;overflow-wrap:break-word}" +
       "#portalPayslipsRoot .portal-payslips-main{display:flex;gap:16px;align-items:stretch;min-width:0}" +
-      "#portalPayslipsRoot .portal-payslips-listcol{flex:1 1 auto;min-width:0}" +
-      "#portalPayslipsRoot .portal-payslips-preview{flex:0 0 420px;max-width:46%;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:440px}" +
-      "#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-listcol{flex:0 1 320px;max-width:34%;min-width:220px;overflow:auto}" +
-      "#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-preview{flex:1 1 0;max-width:none;min-height:74vh}" +
+      "#portalPayslipsRoot .portal-payslips-listcol{flex:0 0 340px;width:340px;max-width:36%;min-width:220px;min-height:0;overflow:auto}" +
+      "#portalPayslipsRoot .portal-payslips-preview{flex:1 1 auto;min-width:0;max-width:none;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:78vh}" +
+      "#portalPayslipsRoot .portal-payslips-data-row:hover td{background:transparent!important;cursor:default}" +
       "#portalPayslipsRoot .portal-payslips-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line,#e5e7eb);min-width:0}" +
       "#portalPayslipsRoot .portal-payslips-preview-title{flex:1;min-width:0;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
-      "#portalPayslipsRoot .portal-payslips-preview-frame{flex:1;width:100%;border:0;min-height:380px;background:#f8fafc}" +
-      "#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-preview-frame{min-height:66vh}" +
+      "#portalPayslipsRoot .portal-payslips-preview-stage{position:relative;flex:1;min-height:70vh;min-width:0;background:#f8fafc}" +
+      "#portalPayslipsRoot .portal-payslips-preview-empty{margin:0;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;color:var(--muted,#64748b);font-size:14px}" +
+      "#portalPayslipsRoot .portal-payslips-preview-frame,#portalPayslipsRoot .portal-payslips-preview-img{position:absolute;inset:0;width:100%;height:100%;border:0;background:#f8fafc}" +
+      "#portalPayslipsRoot .portal-payslips-preview-img{object-fit:contain}" +
+      "#portalPayslipsRoot .portal-payslips-preview-frame[hidden],#portalPayslipsRoot .portal-payslips-preview-img[hidden],#portalPayslipsRoot .portal-payslips-preview-empty[hidden]{display:none!important}" +
       "#portalPayslipsRoot .portal-payslips-preview-foot{display:flex;gap:8px;justify-content:flex-end;padding:10px 12px;border-top:1px solid var(--line,#e5e7eb)}" +
       "#portalPayslipsRoot .portal-payslips-month-pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;background:#fff7ed;color:#c2410c;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}" +
-      "#portalPayslipsRoot .portal-payslips-data-row:hover td{background:#f8fafc!important;cursor:pointer}" +
       "#portalPayslipsRoot .portal-payslips-delete-btn{background:#fff;color:#b91c1c;border:1px solid #fca5a5}" +
       "#portalPayslipsRoot .portal-payslips-delete-btn:hover{background:#fef2f2;border-color:#ef4444}" +
-      "@media(max-width:860px){#portalPayslipsRoot .portal-payslips-main{flex-direction:column}#portalPayslipsRoot .portal-payslips-preview,#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-preview{flex:1 1 auto;max-width:none;width:100%;min-height:70vh}#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-listcol{flex:1 1 auto;max-width:none;min-width:0}#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-preview-frame{min-height:62vh}}" +
+      "@media(max-width:860px){#portalPayslipsRoot .portal-payslips-main{flex-direction:column}#portalPayslipsRoot .portal-payslips-listcol{flex:1 1 auto;width:auto;max-width:none}#portalPayslipsRoot .portal-payslips-preview{width:100%;min-height:72vh}#portalPayslipsRoot .portal-payslips-preview-stage{min-height:64vh}}" +
       "</style>"
     );
   }
@@ -846,12 +888,16 @@
       "<thead><tr><th>Month</th><th>Name / details</th><th>Uploaded</th><th>Size</th><th>View</th></tr></thead>" +
       '<tbody id="portalPayslipsTbody"><tr><td colspan="5" class="muted" style="padding:16px">Loading…</td></tr></tbody>' +
       "</table></div></div>" +
-      '<aside class="portal-payslips-preview" id="portalPayslipsPreview" hidden>' +
+      '<aside class="portal-payslips-preview" id="portalPayslipsPreview">' +
       '<div class="portal-payslips-preview-head">' +
       '<span class="portal-payslips-preview-title" id="portalPayslipsPreviewTitle">Payslip</span>' +
       '<button type="button" class="btn btn--ghost btn--sm" id="portalPayslipsPreviewClose" aria-label="Close preview">✕</button>' +
       "</div>" +
-      '<iframe class="portal-payslips-preview-frame" id="portalPayslipsPreviewFrame" title="Payslip preview"></iframe>' +
+      '<div class="portal-payslips-preview-stage">' +
+      '<p class="portal-payslips-preview-empty" id="portalPayslipsPreviewEmpty">Press View to see the payslip here.</p>' +
+      '<iframe class="portal-payslips-preview-frame" id="portalPayslipsPreviewFrame" title="Payslip preview" hidden></iframe>' +
+      '<img class="portal-payslips-preview-img" id="portalPayslipsPreviewImg" alt="" hidden />' +
+      "</div>" +
       '<div class="portal-payslips-preview-foot">' +
       '<button type="button" class="btn btn--ghost btn--sm" id="portalPayslipsPreviewOpen">Open</button>' +
       '<button type="button" class="btn btn--pri btn--sm" id="portalPayslipsPreviewDownload">Download</button>' +
