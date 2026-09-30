@@ -1276,13 +1276,13 @@
       '#portalDocumentsRoot .portal-documents-suggest__btn:last-child{border-bottom:0}' +
       '#portalDocumentsRoot .portal-documents-suggest__btn:hover,#portalDocumentsRoot .portal-documents-suggest__btn:focus-visible{background:#f0f7ff;outline:none}' +
       '#portalDocumentsRoot .portal-documents-upload-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}' +
-      '#portalDocumentsRoot .portal-documents-main{display:flex;gap:16px;align-items:stretch;min-width:0}' +
-      '#portalDocumentsRoot .portal-documents-listcol{flex:0 0 340px;width:340px;max-width:36%;min-width:220px;min-height:0;overflow:auto}' +
-      '#portalDocumentsRoot .portal-documents-preview{flex:1 1 auto;min-width:0;max-width:none;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:78vh}' +
+      '#portalDocumentsRoot .portal-documents-main{display:flex;gap:16px;align-items:flex-start;min-width:0}' +
+      '#portalDocumentsRoot .portal-documents-listcol{flex:1 1 auto;min-width:0}' +
+      '#portalDocumentsRoot .portal-documents-preview{flex:0 1 500px;width:500px;max-width:40%;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:520px}' +
       '#portalDocumentsRoot .portal-documents-data-row:hover td{background:transparent!important;cursor:default}' +
       '#portalDocumentsRoot .portal-documents-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line,#e5e7eb)}' +
       '#portalDocumentsRoot .portal-documents-preview-title{flex:1;min-width:0;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
-      '#portalDocumentsRoot .portal-documents-preview-stage{position:relative;flex:1;min-height:70vh;min-width:0;background:#f8fafc}' +
+      '#portalDocumentsRoot .portal-documents-preview-stage{position:relative;flex:1;min-height:440px;min-width:0;background:#f8fafc}' +
       '#portalDocumentsRoot .portal-documents-preview-empty{margin:0;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;color:var(--muted,#64748b);font-size:14px}' +
       '#portalDocumentsRoot .portal-documents-preview-frame,#portalDocumentsRoot .portal-documents-preview-img{position:absolute;inset:0;width:100%;height:100%;border:0;background:#f8fafc}' +
       '#portalDocumentsRoot .portal-documents-preview-img{object-fit:contain}' +
@@ -1297,7 +1297,7 @@
       '#portalDocumentsRoot .portal-documents-delete-btn{background:#fff;color:#b91c1c;border:1px solid #fca5a5}' +
       '#portalDocumentsRoot .portal-documents-delete-btn:hover{background:#fef2f2;border-color:#ef4444}' +
       '#portalDocumentsRoot .portal-documents-delete-btn:disabled{opacity:.6;cursor:default}' +
-      '@media(max-width:860px){#portalDocumentsRoot .portal-documents-main{flex-direction:column}#portalDocumentsRoot .portal-documents-listcol{flex:1 1 auto;width:auto;max-width:none}#portalDocumentsRoot .portal-documents-preview{width:100%;min-height:72vh}#portalDocumentsRoot .portal-documents-preview-stage{min-height:64vh}}' +
+      '@media(max-width:860px){#portalDocumentsRoot .portal-documents-main{flex-direction:column}#portalDocumentsRoot .portal-documents-preview{width:100%;max-width:none;min-height:480px}#portalDocumentsRoot .portal-documents-preview-stage{min-height:400px}}' +
       '</style>'
     );
   }
