@@ -791,19 +791,21 @@
       "#portalPayslipsRoot .portal-payslips-statcard.is-active{border-color:var(--brand,#2563eb);box-shadow:0 0 0 2px rgba(37,99,235,.18)}" +
       "#portalPayslipsRoot .portal-payslips-statcard-num{font-size:22px;font-weight:800;color:var(--ink,#0f172a);line-height:1.1}" +
       "#portalPayslipsRoot .portal-payslips-statcard-label{font-size:12px;color:var(--muted,#64748b);text-transform:uppercase;letter-spacing:.03em;overflow-wrap:break-word}" +
-      "#portalPayslipsRoot .portal-payslips-main{display:flex;gap:16px;align-items:flex-start;min-width:0}" +
+      "#portalPayslipsRoot .portal-payslips-main{display:flex;gap:16px;align-items:stretch;min-width:0}" +
       "#portalPayslipsRoot .portal-payslips-listcol{flex:1 1 auto;min-width:0}" +
-      "#portalPayslipsRoot .portal-payslips-preview{flex:0 0 420px;max-width:46%;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:440px}" +
-      "#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-listcol{flex:1 1 0}" +
+      "#portalPayslipsRoot .portal-payslips-preview{flex:0 0 420px;max-width:46%;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:440px}" +
+      "#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-listcol{flex:0 1 320px;max-width:34%;min-width:220px;overflow:auto}" +
+      "#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-preview{flex:1 1 0;max-width:none;min-height:74vh}" +
       "#portalPayslipsRoot .portal-payslips-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line,#e5e7eb);min-width:0}" +
       "#portalPayslipsRoot .portal-payslips-preview-title{flex:1;min-width:0;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
       "#portalPayslipsRoot .portal-payslips-preview-frame{flex:1;width:100%;border:0;min-height:380px;background:#f8fafc}" +
+      "#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-preview-frame{min-height:66vh}" +
       "#portalPayslipsRoot .portal-payslips-preview-foot{display:flex;gap:8px;justify-content:flex-end;padding:10px 12px;border-top:1px solid var(--line,#e5e7eb)}" +
       "#portalPayslipsRoot .portal-payslips-month-pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;background:#fff7ed;color:#c2410c;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}" +
       "#portalPayslipsRoot .portal-payslips-data-row:hover td{background:#f8fafc!important;cursor:pointer}" +
       "#portalPayslipsRoot .portal-payslips-delete-btn{background:#fff;color:#b91c1c;border:1px solid #fca5a5}" +
       "#portalPayslipsRoot .portal-payslips-delete-btn:hover{background:#fef2f2;border-color:#ef4444}" +
-      "@media(max-width:860px){#portalPayslipsRoot .portal-payslips-main{flex-direction:column}#portalPayslipsRoot .portal-payslips-preview{flex:1 1 auto;max-width:none;width:100%}}" +
+      "@media(max-width:860px){#portalPayslipsRoot .portal-payslips-main{flex-direction:column}#portalPayslipsRoot .portal-payslips-preview,#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-preview{flex:1 1 auto;max-width:none;width:100%;min-height:70vh}#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-listcol{flex:1 1 auto;max-width:none;min-width:0}#portalPayslipsRoot.portal-payslips--has-preview .portal-payslips-preview-frame{min-height:62vh}}" +
       "</style>"
     );
   }
