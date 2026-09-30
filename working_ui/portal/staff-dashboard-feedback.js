@@ -865,7 +865,13 @@
     }
     /** Feedback chips stay neutral until export bundle + Supabase sync finish — avoids Pending→green flips. */
     function portalStaffFeedbackPipelineReady(){
-      return !!(dashboardData && dashboardData.portalFeedbackPipelineReady);
+      if(!(dashboardData && dashboardData.portalFeedbackPipelineReady)) return false;
+      /* Covers must be in before we count "feedbacks left". Otherwise the tile
+         shows a number from the standing week, then drops it a moment later. */
+      try{
+        if(window.__PORTAL_SCHEDULE_OVERRIDES_FETCH_SETTLED__ !== true) return false;
+      }catch(_){}
+      return true;
     }
     window.portalStaffFeedbackPipelineReady = portalStaffFeedbackPipelineReady;
     function portalStaffFinishFeedbackPipelineReady(opts){

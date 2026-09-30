@@ -1514,6 +1514,12 @@
       }finally{
         if(markHydrated){
           try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+          try{ window.__PORTAL_SCHEDULE_OVERRIDES_FETCH_SETTLED__ = true; }catch(_){}
+          try{ if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache(); }catch(_){}
+          try{
+            if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+            else if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+          }catch(_){}
         }
       }
       if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();

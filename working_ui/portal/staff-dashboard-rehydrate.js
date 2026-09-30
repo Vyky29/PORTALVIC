@@ -1140,6 +1140,7 @@
               _portalStaffRebuildAfterOverridesFetch(staffId);
             }else{
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+              try{ window.__PORTAL_SCHEDULE_OVERRIDES_FETCH_SETTLED__ = true; }catch(_){}
             }
           }catch(_preOvUi){
             try{
@@ -1190,6 +1191,7 @@
               _portalStaffRebuildAfterOverridesFetch(staffId);
             }else{
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+              try{ window.__PORTAL_SCHEDULE_OVERRIDES_FETCH_SETTLED__ = true; }catch(_){}
             }
           }catch(_preOvUi){
             try{
