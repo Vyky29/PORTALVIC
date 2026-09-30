@@ -202,7 +202,8 @@
     if (!sb) throw new Error("Supabase client not available.");
     var resp = await sb
       .from("documents")
-      .select("id, user_id, title, related_date, created_at, file_url, document_type")
+      .select("id, user_id, title, related_date, created_at, file_url, document_type, expense_amount")
+      // expense_amount is the payslip net pay in GBP.
       .eq("category", "payslips")
       .order("related_date", { ascending: false })
       .order("created_at", { ascending: false })
@@ -521,10 +522,14 @@
     return res.data;
   }
 
-  function docKindLabel(row) {
-    var dt = String((row && row.document_type) || "").toLowerCase();
-    if (dt === "contractor_invoice") return "Invoice";
-    return "Payslip";
+  function formatMoney(n) {
+    var x = Number(n);
+    if (!Number.isFinite(x)) return "—";
+    try {
+      return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(x);
+    } catch (_e) {
+      return "£" + x.toFixed(2);
+    }
   }
 
   function renderUploadsTable() {
@@ -542,7 +547,6 @@
         var title = row.title || monthLabelFromIso(monthKeyFromRow(row) + "-01") + " Payslip";
         var worker = staffNameById(row.user_id);
         var path = String(row.file_url || "");
-        var kind = docKindLabel(row);
         return (
           '<tr class="portal-payslips-data-row" data-payslip-idx="' +
           idx +
@@ -560,7 +564,7 @@
           esc(formatDateTime(row.created_at)) +
           "</td>" +
           '<td style="white-space:nowrap">' +
-          esc(kind) +
+          esc(formatMoney(row.expense_amount)) +
           "</td>" +
           '<td style="white-space:nowrap">' +
           '<button type="button" class="portal-forms-view-btn" data-payslip-view="' +
@@ -885,7 +889,7 @@
       '<div class="portal-payslips-listcol">' +
       '<div class="portal-forms-table-wrap">' +
       '<table class="portal-forms-table portal-forms-table--full-detail">' +
-      "<thead><tr><th>Month</th><th>Name / details</th><th>Uploaded</th><th>Size</th><th>View</th></tr></thead>" +
+      "<thead><tr><th>Month</th><th>Name / details</th><th>Uploaded</th><th>Amount</th><th>View</th></tr></thead>" +
       '<tbody id="portalPayslipsTbody"><tr><td colspan="5" class="muted" style="padding:16px">Loading…</td></tr></tbody>' +
       "</table></div></div>" +
       '<aside class="portal-payslips-preview" id="portalPayslipsPreview">' +
