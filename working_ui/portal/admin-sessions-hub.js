@@ -10402,10 +10402,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       );
     }
 
-    function cellNoteHtml(text) {
+    function cellNoteHtml(text, keepFull) {
       var t = clean(text);
       if (!t) return "\u2014";
-      if (variant === "register") {
+      if (variant === "register" && !keepFull) {
         var clipped = t.split(/\n+/).slice(0, 3).join("\n");
         if (clipped.length > 180) clipped = clipped.slice(0, 180).replace(/\s+\S*$/, "") + "\u2026";
         t = clipped;
@@ -10542,7 +10542,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '" tabindex="0" role="button" title="Click to filter for parents"'
         : "") +
       ">" +
-      (terminal ? cellNa() : cellNoteHtml(rawFeedback === "\u2014" ? "" : rawFeedback)) +
+      (terminal ? cellNa() : cellNoteHtml(rawFeedback === "\u2014" ? "" : rawFeedback, true)) +
       (canFilter ? '<div class="ash-cell-open">Open to filter</div>' : "") +
       "</td>";
     var filteredRawCell = "";

@@ -2352,3 +2352,183 @@
       color: var(--text, #334155);
       overflow-wrap: break-word;
     }
+
+    /* Phone portrait and landscape: keep the week and the register inside the screen. */
+    @media (max-width: 900px), (orientation: landscape) and (max-height: 520px) {
+      .c4k-sessions-hub,
+      #adminSessionsHubRoot,
+      .ash-panels,
+      .ash-overview-pin,
+      .ash-overview-scroll,
+      .ash-overview-body,
+      .ash-sticky-chrome,
+      .ash-week-sticky-anchor,
+      .ash-week-block,
+      .ash-feedback-week,
+      .ash-day-board,
+      .ash-table-wrap,
+      .ash-filter-row,
+      .ash-filter-row--feedback {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+      .ash-sticky-chrome,
+      .ash-week-sticky-anchor,
+      body.admin-touch-compact .ash-sticky-chrome,
+      body.admin-touch-compact .ash-week-sticky-anchor {
+        position: static;
+        top: auto;
+        z-index: auto;
+        box-shadow: none;
+      }
+      .ash-week-block,
+      .ash-feedback-week {
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+      }
+      .ash-filter-row,
+      .ash-filter-row--feedback {
+        flex-wrap: wrap;
+      }
+      .ash-input--grow,
+      .ash-input--instructor,
+      .ash-input--filter-select,
+      .ash-filter-combo {
+        min-width: 0;
+        max-width: 100%;
+        flex: 1 1 140px;
+      }
+      .ash-day-board__group,
+      .ash-day-board__group--climb,
+      body.admin-touch-compact .ash-day-board__group,
+      body.admin-touch-compact .ash-day-board__group--climb {
+        grid-template-columns: 1fr;
+      }
+      .ash-db-card__name,
+      .ash-db-col__staff,
+      .ash-db-card__when,
+      .ash-db-card__venue {
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+      .ash-table-wrap {
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .ash-table--register {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        table-layout: auto;
+      }
+      .ash-table--register thead {
+        display: none;
+      }
+      .ash-table--register tbody,
+      .ash-table--register tr,
+      .ash-table--register td {
+        display: block;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        box-sizing: border-box;
+      }
+      .ash-table--register tr {
+        margin: 0 0 10px;
+        padding: 8px 10px;
+        border: 1px solid var(--border, #e2e8f0);
+        border-radius: 12px;
+        background: #fff;
+      }
+      .ash-table--register td {
+        text-align: left;
+        border: 0;
+        padding: 6px 0;
+        white-space: normal;
+      }
+      .ash-table--register td::before {
+        display: block;
+        margin-bottom: 2px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted, #64748b);
+      }
+      .ash-table--register tr:not(:has([colspan])) td:nth-child(1)::before { content: "Participant / service"; }
+      .ash-table--register tr:not(:has([colspan])) td:nth-child(2)::before { content: "Engagement"; }
+      .ash-table--register tr:not(:has([colspan])) td:nth-child(3)::before { content: "Regulation"; }
+      .ash-table--register tr:not(:has([colspan])) td:nth-child(4)::before { content: "Independence"; }
+      .ash-table--register tr:not(:has([colspan])) td:nth-child(5)::before { content: "Session feedback"; }
+      .ash-table--register tr:not(:has([colspan])) td:nth-child(6)::before { content: "Notes"; }
+      .ash-table--register tr:not(:has([colspan])) td:nth-child(7)::before { content: "Reviewed by"; }
+      .ash-table--register tr:has([colspan]) td:nth-child(1)::before { content: "Participant / service"; }
+      .ash-table--register tr:has([colspan]) td:nth-child(2)::before { content: "Status"; }
+      .ash-table--register tr:has([colspan]) td:nth-child(3)::before { content: "Reviewed by"; }
+      .ash-table--register .ash-cell-raw-feedback,
+      .ash-table--register .ash-cell-note {
+        font-size: 14px;
+        line-height: 1.4;
+        text-align: left;
+        white-space: normal;
+        overflow-wrap: break-word;
+      }
+    }
+    @media (max-width: 900px) and (orientation: portrait) {
+      .ash-day-row--feedback,
+      .ash-day-row--week,
+      body.admin-touch-compact .ash-day-row--feedback,
+      body.admin-touch-compact .ash-day-row--week {
+        grid-template-columns: repeat(7, minmax(78px, 1fr));
+        width: max-content;
+        min-width: 100%;
+        max-width: none;
+      }
+    }
+    @media (orientation: landscape) and (max-height: 520px),
+      (max-width: 900px) and (orientation: landscape) {
+      .ash-day-row--feedback,
+      .ash-day-row--week,
+      body.admin-touch-compact .ash-day-row--feedback,
+      body.admin-touch-compact .ash-day-row--week {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+      }
+      .ash-day-card--feedback,
+      .ash-day-card--week,
+      .ash-day-card--day-picker,
+      body.admin-touch-compact .ash-day-card--feedback,
+      body.admin-touch-compact .ash-day-card--week,
+      body.admin-touch-compact .ash-day-card--day-picker {
+        min-width: 0;
+        max-width: 100%;
+        padding: 6px 3px 6px;
+        overflow: hidden;
+      }
+      .ash-day-card__top {
+        flex-wrap: wrap;
+        gap: 2px;
+        margin-bottom: 4px;
+      }
+      .ash-day-card__dt,
+      body.admin-touch-compact .ash-day-card--feedback .ash-day-card__dt,
+      body.admin-touch-compact .ash-day-card--week .ash-day-card__dt,
+      body.admin-touch-compact .ash-day-card--day-picker .ash-day-card__dt {
+        font-size: 10px;
+      }
+      .ash-feedback-week__head,
+      .ash-week-head {
+        margin-bottom: 6px;
+      }
+      .ash-day-board__group,
+      .ash-day-board__group--climb,
+      body.admin-touch-compact .ash-day-board__group,
+      body.admin-touch-compact .ash-day-board__group--climb {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
