@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-28-v46",
+  "version": "2026-09-30-v47",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -735,6 +735,33 @@
           "tips": [
             "You can only delete messages you sent, including ones you sent as ADMIN.",
             "Calls cannot be deleted this way."
+          ]
+        },
+        {
+          "id": "comms_green_vs_read",
+          "title": "Green light, admin bar, and read",
+          "summary": "The green dot in Communications is not the same as STAFF on the admin bar. Delivered is not read.",
+          "where": "Admin top bar and Communications",
+          "keywords": [
+            "green light",
+            "luz verde",
+            "conectado",
+            "online",
+            "read",
+            "delivered",
+            "leido",
+            "entregado",
+            "presence",
+            "communications"
+          ],
+          "steps": [
+            "STAFF on the admin bar lists people who have the staff app open. Communications alone does not put them there.",
+            "The green dot next to a name in Communications means that person has the Communications page open right now.",
+            "Delivered means their Communications page received the message.",
+            "Read means they opened this conversation with the screen in front. Opening another chat, or leaving this one in the background, stays on delivered."
+          ],
+          "tips": [
+            "A green dot with delivered, not read, means the chat app is open and this conversation has not been opened."
           ]
         }
       ]
