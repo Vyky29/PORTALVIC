@@ -3123,7 +3123,9 @@
         ? portalCanonicalStaffKeyForMatch(staffId)
         : portalNormKeyStr(staffId);
       const iso = normaliseIsoDate(sessionDateKey);
-      const bySlot = Object.create(null);
+      /* Keep every half. A 90' aquatic cover is three 30' rows for the same
+         client/day. Collapsing to the latest row painted only the first half. */
+      const byStart = Object.create(null);
       portalScheduleOverrideRowsForSessionIso(iso).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() !== 'instructor_reassign') return;
@@ -3131,11 +3133,13 @@
         if(!cov || cov !== sid) return;
         const slotKey = portalScheduleOverrideInstructorCoverSlotKey(ov);
         if(!slotKey) return;
-        const prev = bySlot[slotKey];
-        if(!prev || new Date(ov.created_at || 0) > new Date(prev.created_at || 0)) bySlot[slotKey] = ov;
+        const st = portalHmFromDbTime(ov.anchor_start) || '';
+        const startKey = slotKey + '|' + st;
+        const prev = byStart[startKey];
+        if(!prev || new Date(ov.created_at || 0) >= new Date(prev.created_at || 0)) byStart[startKey] = ov;
       });
       return portalCoalesceContiguousInstructorCoverOverrides(
-        Object.keys(bySlot).map(function(k){ return bySlot[k]; })
+        Object.keys(byStart).map(function(k){ return byStart[k]; })
       );
     }
     /**
@@ -3182,10 +3186,14 @@
         const curEnd = portalHmFromDbTime(cur.anchor_end) || portalHmFromDbTime(cur.anchor_start) || '';
         const curEndM = hmMin(curEnd);
         const stM = hmMin(st);
-        const consecutive = Number.isFinite(curEndM) && Number.isFinite(stM) && curEndM === stM;
-        if(cid && cid === curCid && venue === curVenue && cov && cov === curCov && consecutive){
+        const enM = hmMin(en);
+        /* Touching (4.30 then 5.00) or overlapping clocks of the same cover. */
+        const touches = Number.isFinite(curEndM) && Number.isFinite(stM) && stM <= curEndM;
+        if(cid && cid === curCid && venue === curVenue && cov && cov === curCov && touches){
+          const laterEnd = Number.isFinite(enM) && enM > curEndM ? ov.anchor_end : cur.anchor_end;
           cur = Object.assign({}, cur, {
-            anchor_end: ov.anchor_end,
+            anchor_end: laterEnd,
+            anchor_time_slot_label: '',
             __portalCoalescedCoverStarts: (cur.__portalCoalescedCoverStarts || []).concat(st ? [st] : [])
           });
           return;
@@ -4412,6 +4420,14 @@
           end: coverWinEnd,
           clientId: String(coverCid || ov.anchor_client_id || baseFound.clientId || '').toLowerCase() || baseFound.clientId
         });
+        /* Coalesced halves must show the full shift (4 to 5.30), not the first 30' label. */
+        if(Array.isArray(ov.__portalCoalescedCoverStarts) && ov.__portalCoalescedCoverStarts.length > 1){
+          const wideStart = portalHmFromDbTime(ov.anchor_start) || base.start;
+          const wideEnd = portalHmFromDbTime(ov.anchor_end) || base.end;
+          if(wideStart) base.start = wideStart;
+          if(wideEnd) base.end = wideEnd;
+          base.timeSlotLabel = '';
+        }
         if(inferredService && (!base.rosterService || /multi|swimming/i.test(String(base.rosterService)))){
           base.rosterService = inferredService;
           base.activity = inferredService;

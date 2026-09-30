@@ -16833,10 +16833,103 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!names.length) return '';
       return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
     }
+    var schedParentNotifyBatches = {};
+    function schedParentNotifyBatchKey(slot, opts){
+      function compact(v){
+        return String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      }
+      return [
+        String(opts.kind || ''),
+        compact(opts.contactId || slot.clientSlug || slot.clientDisplay),
+        String(slot.sessionDate || opts.sessionDate || '').slice(0, 10),
+        compact(opts.venue || slot.venue),
+        compact(opts.coveringStaffKey || opts.coveringStaffName)
+      ].join('|');
+    }
+    function schedParentNotifyHmMin(hm){
+      var m = String(hm || '').match(/(\d{1,2}):(\d{2})/);
+      if(!m) return NaN;
+      return Number(m[1]) * 60 + Number(m[2]);
+    }
+    function schedFlushParentNotifyBatch(key){
+      var batch = schedParentNotifyBatches[key];
+      if(!batch) return;
+      if(batch.timer) clearTimeout(batch.timer);
+      delete schedParentNotifyBatches[key];
+      var day = '';
+      try{
+        day = typeof portalWeekdayLongFromIsoDate === 'function'
+          ? portalWeekdayLongFromIsoDate(batch.slot.sessionDate)
+          : '';
+      }catch(_d){}
+      var label = '';
+      if(typeof rosterBandLabelFromPg === 'function'){
+        label = rosterBandLabelFromPg(batch.start, batch.end, day);
+      }
+      if(!label) label = String(batch.slot.whenLabel || batch.slot.anchorTimeLabel || '').trim();
+      var sendSlot = Object.assign({}, batch.slot, {
+        whenLabel: label,
+        anchorTimeLabel: label,
+        anchorStart: batch.start || batch.slot.anchorStart,
+        anchorEnd: batch.end || batch.slot.anchorEnd
+      });
+      var sendOpts = Object.assign({}, batch.opts, { sessionTime: label, _flush: true });
+      schedNotifyOverrideParent(batch.client, sendSlot, batch.overrideId, sendOpts);
+    }
+    /**
+     * Several 30' overrides for one child are one shift.
+     * Wait a minute so the parent gets a single WhatsApp for the full span.
+     */
+    function schedQueueParentNotify(client, slot, overrideId, opts){
+      var key = schedParentNotifyBatchKey(slot, opts);
+      var prev = schedParentNotifyBatches[key];
+      if(prev && prev.timer) clearTimeout(prev.timer);
+      var start = String(slot.anchorStart || '');
+      var end = String(slot.anchorEnd || '');
+      var batch = prev || {
+        client: client,
+        slot: slot,
+        overrideId: overrideId,
+        opts: Object.assign({}, opts),
+        start: start,
+        end: end
+      };
+      batch.client = client;
+      batch.slot = slot;
+      batch.overrideId = overrideId || batch.overrideId;
+      batch.opts = Object.assign({}, batch.opts || {}, opts || {});
+      var startMin = schedParentNotifyHmMin(start);
+      var endMin = schedParentNotifyHmMin(end);
+      var batchStartMin = schedParentNotifyHmMin(batch.start);
+      var batchEndMin = schedParentNotifyHmMin(batch.end);
+      if(start && (!batch.start || (Number.isFinite(startMin) && (!Number.isFinite(batchStartMin) || startMin < batchStartMin)))){
+        batch.start = start;
+      }
+      if(end && (!batch.end || (Number.isFinite(endMin) && (!Number.isFinite(batchEndMin) || endMin > batchEndMin)))){
+        batch.end = end;
+      }
+      batch.timer = setTimeout(function(){ schedFlushParentNotifyBatch(key); }, 60000);
+      schedParentNotifyBatches[key] = batch;
+      if(sched){
+        sched.lastMsg = String(sched.lastMsg || 'Override saved.') +
+          ' Parent WhatsApp waits 1 minute so extra halves of this session go in one message.';
+      }
+      return { queued: true };
+    }
+    try{
+      window.addEventListener('pagehide', function(){
+        Object.keys(schedParentNotifyBatches).forEach(function(key){
+          schedFlushParentNotifyBatch(key);
+        });
+      });
+    }catch(_hide){}
     async function schedNotifyOverrideParent(client, slot, overrideId, opts){
       opts = opts || {};
       var kind = String(opts.kind || '').trim();
       if(!kind) return null;
+      if(!opts._flush && (kind === 'instructor_change' || kind === 'instructor_change_update' || kind === 'session_cancelled')){
+        return schedQueueParentNotify(client, slot, overrideId, opts);
+      }
       var display = String(opts.participantDisplay || slot.clientDisplay || '').trim();
       var contactHint = String(opts.contactId || slot.clientSlug || '').trim();
       var pax = null;
