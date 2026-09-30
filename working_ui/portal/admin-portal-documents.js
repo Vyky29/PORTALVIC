@@ -205,8 +205,11 @@
       if (type === 'firstaid' && (n.indexOf('safeguarding') >= 0 || n.indexOf('nspcc') >= 0)) {
         type = 'safeguarding';
       }
+      /* 10 Sep 2026 photo was filed under checklist; it is Emmanuel's DBS. */
+      if (n.indexOf('20260910_181418') >= 0) type = 'dbs';
       var obName = r.name || r.path || 'File';
       var obPath = r.path || '';
+      if (n.indexOf('20260910_181418') >= 0) obName = 'Emmanuel Amoakohene — DBS';
       return {
         type: type,
         name: obName,
@@ -438,6 +441,7 @@
       checklist: countByType(items, 'checklist'),
       passport: countByType(items, 'passport'),
       certificate: countByType(items, 'certificate'),
+      dbs: countByType(items, 'dbs'),
       firstaid: countByType(items, 'firstaid'),
       safeguarding: countByType(items, 'safeguarding')
     };

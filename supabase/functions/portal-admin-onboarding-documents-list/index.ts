@@ -23,7 +23,8 @@ type DocType =
   | "passport"
   | "certificate"
   | "firstaid"
-  | "safeguarding";
+  | "safeguarding"
+  | "dbs";
 
 type OnboardingDocRow = {
   type: DocType;
@@ -51,6 +52,7 @@ const FOLDER_SPECS: Array<{ folder: string; type: DocType }> = [
 /** Prefer filename signals over storage folder — applicants often pick the wrong type. */
 function classifyDocType(folderType: DocType, nameOrPath: string): DocType {
   const base = String(nameOrPath || "").toLowerCase();
+  if (base.includes("20260910_181418")) return "dbs";
   if (base.includes("safeguarding") || base.includes("nspcc")) return "safeguarding";
   if (
     base.startsWith("firstaid-") ||
@@ -257,6 +259,7 @@ type UploadCounts = {
   certificate: number;
   firstaid: number;
   safeguarding: number;
+  dbs: number;
 };
 
 type UploadPaths = {
@@ -265,6 +268,7 @@ type UploadPaths = {
   certificate: string[];
   firstaid: string[];
   safeguarding: string[];
+  dbs: string[];
 };
 
 type ApplicantProgress = {
@@ -339,7 +343,7 @@ function lastUploadAtForApplicant(
 }
 
 function emptyUploadCounts(): UploadCounts {
-  return { passport: 0, checklist: 0, certificate: 0, firstaid: 0, safeguarding: 0 };
+  return { passport: 0, checklist: 0, certificate: 0, firstaid: 0, safeguarding: 0, dbs: 0 };
 }
 
 function emptyUploadPaths(): UploadPaths {
@@ -349,6 +353,7 @@ function emptyUploadPaths(): UploadPaths {
     certificate: [],
     firstaid: [],
     safeguarding: [],
+    dbs: [],
   };
 }
 
@@ -383,6 +388,7 @@ function countDocForApplicant(doc: OnboardingDocRow, counts: UploadCounts) {
   else if (doc.type === "checklist") counts.checklist++;
   else if (doc.type === "firstaid") counts.firstaid++;
   else if (doc.type === "safeguarding") counts.safeguarding++;
+  else if (doc.type === "dbs") counts.dbs++;
   else if (doc.type === "certificate") counts.certificate++;
 }
 
@@ -734,6 +740,7 @@ Deno.serve(async (req) => {
     certificate: 0,
     firstaid: 0,
     safeguarding: 0,
+    dbs: 0,
   };
   for (const doc of documents) {
     if (counts[doc.type] !== undefined) counts[doc.type]++;
