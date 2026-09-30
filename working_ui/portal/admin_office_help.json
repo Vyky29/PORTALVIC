@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-30-v50",
+  "version": "2026-09-30-v51",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -978,6 +978,30 @@
           "tips": [
             "DBS is its own type. Do not file it as a generic Certificate.",
             "Safeguarding certificate is the training file, not the policy sign-off."
+          ]
+        },
+        {
+          "id": "staff_right_to_work",
+          "title": "Right to work",
+          "summary": "Keep share-code screenshots and visa proof under Right to work, not Passport.",
+          "where": "Documents → Attach file for worker, or Onboarding → Documents",
+          "keywords": [
+            "right to work",
+            "share code",
+            "visa",
+            "rtw",
+            "righttowork"
+          ],
+          "steps": [
+            "Open Documents and use Attach file for worker.",
+            "Search the worker, then set Document type to Right to work.",
+            "Add a title, choose the PDF or photo, and press Attach to My Documents.",
+            "The worker sees it under My Documents, Documents.",
+            "New hires can also use Upload right to work in the onboarding hub."
+          ],
+          "tips": [
+            "A gov.uk right to work screenshot is not a passport.",
+            "British / UK nationals can skip this if the passport is already uploaded."
           ]
         }
       ]

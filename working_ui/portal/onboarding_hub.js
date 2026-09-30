@@ -80,6 +80,7 @@
     if (!host) return;
     var labels = [
       ["passport", "Passport"],
+      ["righttowork", "Right to work"],
       ["checklist", "Checklist"],
       ["certificate", "Certificate"],
       ["firstaid", "First aid"],
@@ -275,6 +276,11 @@
       global.document.getElementById("obHubDocForm"),
       global.document.getElementById("obHubDocStatus"),
       global.document.getElementById("obHubDocFileName")
+    );
+    bindDocUploadForm(
+      global.document.getElementById("obHubRtwForm"),
+      global.document.getElementById("obHubRtwStatus"),
+      global.document.getElementById("obHubRtwFileName")
     );
     bindDocUploadForm(
       global.document.getElementById("obHubExtraDocForm"),

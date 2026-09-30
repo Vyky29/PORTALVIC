@@ -11,10 +11,17 @@ const cors: Record<string, string> = {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-type DocType = "passport" | "checklist" | "certificate" | "firstaid" | "safeguarding";
+type DocType =
+  | "passport"
+  | "righttowork"
+  | "checklist"
+  | "certificate"
+  | "firstaid"
+  | "safeguarding";
 
 const DOC_FOLDER: Record<DocType, string> = {
   passport: "passport",
+  righttowork: "right_to_work",
   checklist: "checklist",
   certificate: "certificate",
   firstaid: "first_aid",
@@ -50,6 +57,13 @@ function safeFileName(name: string, docType: DocType): string {
   }
   if (docType === "firstaid" && !/^firstaid-/i.test(base) && !/first.?aid/i.test(base)) {
     return `firstaid-${base}`;
+  }
+  if (
+    docType === "righttowork" &&
+    !/right[_-]?to[_-]?work/i.test(base) &&
+    !/^righttowork-/i.test(base)
+  ) {
+    return `righttowork-${base}`;
   }
   return base || "upload.bin";
 }
@@ -148,12 +162,13 @@ Deno.serve(async (req) => {
   if (action === "list") {
     const types: DocType[] = [
       "passport",
+      "righttowork",
       "checklist",
       "certificate",
       "firstaid",
       "safeguarding",
     ];
-    const folders = ["passport", "checklist", "certificate", "first_aid"];
+    const folders = ["passport", "right_to_work", "checklist", "certificate", "first_aid"];
     const uploads: Array<{
       doc_type: string;
       name: string;
@@ -171,7 +186,15 @@ Deno.serve(async (req) => {
         if (!f?.name || f.name.endsWith("/")) continue;
         const low = f.name.toLowerCase();
         let docType: string = "certificate";
-        if (low.includes("safeguarding") || low.includes("nspcc")) {
+        if (
+          low.includes("righttowork") ||
+          low.includes("right_to_work") ||
+          low.includes("right-to-work") ||
+          low.includes("screenshot_20260911_070957") ||
+          folder === "right_to_work"
+        ) {
+          docType = "righttowork";
+        } else if (low.includes("safeguarding") || low.includes("nspcc")) {
           docType = "safeguarding";
         } else if (
           folder === "first_aid" ||

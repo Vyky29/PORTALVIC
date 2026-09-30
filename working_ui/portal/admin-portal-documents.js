@@ -30,6 +30,7 @@
     portalpin: 'Portal PIN',
     checklist: 'Checklist',
     passport: 'Passport',
+    righttowork: 'Right to work',
     certificate: 'Certificate',
     dbs: 'DBS',
     firstaid: 'First aid',
@@ -43,6 +44,7 @@
     { key: 'certificate', label: 'Certificate', category: 'training' },
     { key: 'dbs', label: 'DBS', category: 'training' },
     { key: 'passport', label: 'Passport', category: 'documents' },
+    { key: 'righttowork', label: 'Right to work', category: 'documents' },
     { key: 'checklist', label: 'Checklist', category: 'documents' },
     { key: 'firstaid', label: 'First aid', category: 'training' },
     { key: 'safeguarding', label: 'Safeguarding certificate', category: 'training' },
@@ -55,6 +57,7 @@
     { key: 'expense', label: 'Expenses' },
     { key: 'checklist', label: 'Checklists' },
     { key: 'passport', label: 'Passports' },
+    { key: 'righttowork', label: 'Right to work' },
     { key: 'certificate', label: 'Certificates' },
     { key: 'dbs', label: 'DBS' },
     { key: 'firstaid', label: 'First aids' },
@@ -209,6 +212,17 @@
       if (n.indexOf('20260910_181418') >= 0) type = 'dbs';
       /* CamScanner 10 Sep 21:33 is Emmanuel's portal photo, not a checklist. */
       if (n.indexOf('camscanner_10-09-2026_21.33') >= 0) return null;
+      /* Share-code screenshots were filed under passport. They are right to work. */
+      if (
+        n.indexOf('screenshot_20260911_070957') >= 0 ||
+        n.indexOf('righttowork') >= 0 ||
+        n.indexOf('right_to_work') >= 0 ||
+        n.indexOf('right-to-work') >= 0 ||
+        n.indexOf('right to work') >= 0 ||
+        /(^|[^a-z])rtw([^a-z]|$)/.test(n)
+      ) {
+        type = 'righttowork';
+      }
       var obName = r.name || r.path || 'File';
       var obPath = r.path || '';
       if (n.indexOf('20260910_181418') >= 0) obName = 'Emmanuel Amoakohene — DBS';
@@ -442,6 +456,7 @@
       portalpin: countByType(items, 'portalpin'),
       checklist: countByType(items, 'checklist'),
       passport: countByType(items, 'passport'),
+      righttowork: countByType(items, 'righttowork'),
       certificate: countByType(items, 'certificate'),
       dbs: countByType(items, 'dbs'),
       firstaid: countByType(items, 'firstaid'),
@@ -1026,7 +1041,7 @@
       '#portalDocumentsRoot .portal-documents-statcard:hover{border-color:var(--brand,#2563eb)}' +
       '#portalDocumentsRoot .portal-documents-statcard.is-active{border-color:var(--brand,#2563eb);box-shadow:0 0 0 2px rgba(37,99,235,.18)}' +
       '#portalDocumentsRoot .portal-documents-statcard-num{font-size:22px;font-weight:800;color:var(--ink,#0f172a);line-height:1.1}' +
-      '#portalDocumentsRoot .portal-documents-statcard-label{font-size:12px;color:var(--muted,#64748b);text-transform:uppercase;letter-spacing:.03em}' +
+      '#portalDocumentsRoot .portal-documents-statcard-label{font-size:12px;color:var(--muted,#64748b);text-transform:uppercase;letter-spacing:.03em;overflow-wrap:break-word}' +
       '#portalDocumentsRoot .portal-documents-upload-card{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-radius:14px;padding:16px 18px;margin:0 0 16px;min-width:0}' +
       '#portalDocumentsRoot .portal-documents-upload-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end;min-width:0}' +
       '#portalDocumentsRoot .portal-documents-upload-card label{display:block;font-size:12px;font-weight:700;color:var(--muted,#64748b);margin:0 0 6px;text-transform:uppercase;letter-spacing:.03em}' +
@@ -1070,7 +1085,7 @@
       '<div id="portalDocumentsRoot" class="portal-documents-embed portal-day-ops-embed" data-portal-documents-bound="0">' +
       styleHtml() +
       '<h1 class="page-title">Documents</h1>' +
-      '<p class="page-intro" id="portalDocumentsMeta">Attach files for a worker (certificate, passport, checklist, etc.), plus timesheets, expenses and onboarding uploads. Payslips stay under <strong>Payslips</strong>.</p>' +
+      '<p class="page-intro" id="portalDocumentsMeta">Attach files for a worker (certificate, passport, right to work, checklist, etc.), plus timesheets, expenses and onboarding uploads. Payslips stay under <strong>Payslips</strong>.</p>' +
       '<div id="portalDocumentsExpenseBanner" hidden></div>' +
       '<div id="portalDocumentsStatus" class="portal-forms-status" role="status"></div>' +
       '<div class="portal-documents-upload-card">' +

@@ -497,6 +497,7 @@
               : "L&D funding letter";
         return `${label} • ${prettyDate(doc.related_date || doc.created_at)}`;
       }
+      if (type === "righttowork") return `Right to work • ${prettyDate(doc.related_date || doc.created_at)}`;
       if (type === "dbs") return `DBS • ${prettyDate(doc.related_date || doc.created_at)}`;
       if (type === "safeguarding") return `Safeguarding certificate • ${prettyDate(doc.related_date || doc.created_at)}`;
       return `${String(doc.document_type || "").toLowerCase()} • ${prettyDate(doc.related_date || doc.created_at)}`;
@@ -961,6 +962,7 @@
         t === "employment_contract" ||
         t === "calendar_2026_27" ||
         t === "passport" ||
+        t === "righttowork" ||
         t === "checklist" ||
         t === "other" ||
         cat === "documents" ||

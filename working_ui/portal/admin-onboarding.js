@@ -237,6 +237,7 @@
       n + " registered applicant" + (n === 1 ? "" : "s") +
       ". Total in storage: " +
       (uc.passport || 0) + " passport, " +
+      (uc.righttowork || 0) + " right to work, " +
       (uc.checklist || 0) + " checklist, " +
       (uc.certificate || 0) + " certificate, " +
       (uc.firstaid || 0) + " first aid, " +

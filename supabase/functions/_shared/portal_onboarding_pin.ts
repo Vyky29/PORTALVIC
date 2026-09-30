@@ -356,11 +356,16 @@ function classifyRequiredDoc(folder: "passport" | "checklist", nameOrPath: strin
   const base = String(nameOrPath || "").toLowerCase();
   if (base.includes("checklist") || base.includes("starter")) return "checklist";
   if (
-    base.includes("passport") ||
-    /\bdbs\b/.test(base) ||
+    base.includes("righttowork") ||
     base.includes("right_to_work") ||
-    base.includes("rtw")
+    base.includes("right-to-work") ||
+    base.includes("right to work") ||
+    base.includes("screenshot_20260911_070957") ||
+    /(^|[^a-z])rtw([^a-z]|$)/.test(base)
   ) {
+    return "other";
+  }
+  if (base.includes("passport") || /\bdbs\b/.test(base)) {
     return "passport";
   }
   return folder;

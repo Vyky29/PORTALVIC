@@ -21,6 +21,7 @@ import {
 type DocType =
   | "checklist"
   | "passport"
+  | "righttowork"
   | "certificate"
   | "firstaid"
   | "safeguarding"
@@ -45,14 +46,31 @@ const DEFAULT_BUCKETS = ["club-files", "club-onboarding"];
 const FOLDER_SPECS: Array<{ folder: string; type: DocType }> = [
   { folder: "checklist", type: "checklist" },
   { folder: "passport", type: "passport" },
+  { folder: "right_to_work", type: "righttowork" },
   { folder: "certificate", type: "certificate" },
   { folder: "first_aid", type: "firstaid" },
 ];
+
+/** Share-code screenshots and right-to-work files were often stored under passport. */
+function isRightToWorkFile(nameOrPath: string): boolean {
+  const base = String(nameOrPath || "").toLowerCase();
+  if (base.includes("screenshot_20260911_070957")) return true;
+  if (
+    base.includes("righttowork") ||
+    base.includes("right_to_work") ||
+    base.includes("right-to-work") ||
+    base.includes("right to work")
+  ) {
+    return true;
+  }
+  return /(^|[^a-z])rtw([^a-z]|$)/.test(base);
+}
 
 /** Prefer filename signals over storage folder — applicants often pick the wrong type. */
 function classifyDocType(folderType: DocType, nameOrPath: string): DocType {
   const base = String(nameOrPath || "").toLowerCase();
   if (base.includes("20260910_181418")) return "dbs";
+  if (isRightToWorkFile(base)) return "righttowork";
   if (base.includes("safeguarding") || base.includes("nspcc")) return "safeguarding";
   if (
     base.startsWith("firstaid-") ||
@@ -62,12 +80,7 @@ function classifyDocType(folderType: DocType, nameOrPath: string): DocType {
     return "firstaid";
   }
   if (base.includes("checklist") || base.includes("starter")) return "checklist";
-  if (
-    base.includes("passport") ||
-    /\bdbs\b/.test(base) ||
-    base.includes("right_to_work") ||
-    base.includes("rtw")
-  ) {
+  if (base.includes("passport") || /\bdbs\b/.test(base)) {
     return "passport";
   }
   return folderType;
@@ -263,6 +276,7 @@ async function resolveOnboardingBucket(obAdmin: SupabaseClient): Promise<{
 
 type UploadCounts = {
   passport: number;
+  righttowork: number;
   checklist: number;
   certificate: number;
   firstaid: number;
@@ -272,6 +286,7 @@ type UploadCounts = {
 
 type UploadPaths = {
   passport: string[];
+  righttowork: string[];
   checklist: string[];
   certificate: string[];
   firstaid: string[];
@@ -351,12 +366,21 @@ function lastUploadAtForApplicant(
 }
 
 function emptyUploadCounts(): UploadCounts {
-  return { passport: 0, checklist: 0, certificate: 0, firstaid: 0, safeguarding: 0, dbs: 0 };
+  return {
+    passport: 0,
+    righttowork: 0,
+    checklist: 0,
+    certificate: 0,
+    firstaid: 0,
+    safeguarding: 0,
+    dbs: 0,
+  };
 }
 
 function emptyUploadPaths(): UploadPaths {
   return {
     passport: [],
+    righttowork: [],
     checklist: [],
     certificate: [],
     firstaid: [],
@@ -393,6 +417,7 @@ function displayNameFromPayload(payload: unknown): string {
 
 function countDocForApplicant(doc: OnboardingDocRow, counts: UploadCounts) {
   if (doc.type === "passport") counts.passport++;
+  else if (doc.type === "righttowork") counts.righttowork++;
   else if (doc.type === "checklist") counts.checklist++;
   else if (doc.type === "firstaid") counts.firstaid++;
   else if (doc.type === "safeguarding") counts.safeguarding++;
@@ -745,6 +770,7 @@ Deno.serve(async (req) => {
     all: documents.length,
     checklist: 0,
     passport: 0,
+    righttowork: 0,
     certificate: 0,
     firstaid: 0,
     safeguarding: 0,
