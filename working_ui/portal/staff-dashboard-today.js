@@ -1244,6 +1244,9 @@
       if(raw === 'javier'){ add('stf010'); }
       if(raw === 'javi'){ add('stf017'); }
       if(raw === 'emmanuel'){ add('emanuel'); }
+      if(raw === 'luliya' || raw === 'lulia' || raw === 'aida' || raw === 'stf021'){
+        add('luliya'); add('lulia'); add('aida'); add('stf021');
+      }
       return out;
     }
     /** PostgREST .or() filter: my anchors + rows where I am the cover. */
@@ -1370,7 +1373,8 @@
           const viewerSidOff = (typeof portalAuthStaffRosterId === 'function'
             ? portalAuthStaffRosterId()
             : '') || String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-          const wantClubOff = !!(viewerSidOff && typeof portalStaffNeedsFullDayOverrides === 'function'
+          const ghostOn = !!(typeof window !== 'undefined' && window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active);
+          const wantClubOff = ghostOn || !!(viewerSidOff && typeof portalStaffNeedsFullDayOverrides === 'function'
             && portalStaffNeedsFullDayOverrides(viewerSidOff));
           let offQ = box.client.from('staff_unavailability')
             .select('off_date,reason,staff_id,name_key,staff_name');
@@ -1453,6 +1457,36 @@
             continue;
           }
           (res.data || []).forEach(function(row){ merged.push(row); });
+        }
+        /* A cover is anchored to the original instructor. The absence often is too
+           (Kareena Tue 29: Javier anchor, Luliya cover). Pull those absences in. */
+        if(scopeSelf && merged.length){
+          const absDates = [];
+          const absClients = [];
+          const seenAbsDate = Object.create(null);
+          const seenAbsClient = Object.create(null);
+          merged.forEach(function(row){
+            if(!row || String(row.override_type || '').trim() !== 'instructor_reassign') return;
+            const d = String(row.session_date || '').trim().slice(0, 10);
+            const c = String(row.anchor_client_id || '').trim().toLowerCase();
+            if(/^\d{4}-\d{2}-\d{2}$/.test(d) && !seenAbsDate[d]){ seenAbsDate[d] = true; absDates.push(d); }
+            if(c && c !== 'available' && c !== 'closed' && !seenAbsClient[c]){ seenAbsClient[c] = true; absClients.push(c); }
+          });
+          if(absDates.length && absClients.length){
+            const absRes = await box.client.from('schedule_overrides')
+              .select(selectCols)
+              .eq('status', 'active')
+              .eq('override_type', 'client_absence_announced')
+              .in('session_date', absDates.slice(0, 80))
+              .in('anchor_client_id', absClients.slice(0, 80));
+            if(!absRes.error && Array.isArray(absRes.data)){
+              const haveAbs = Object.create(null);
+              merged.forEach(function(r){ if(r && r.id != null) haveAbs[String(r.id)] = true; });
+              absRes.data.forEach(function(r){
+                if(r && r.id != null && !haveAbs[String(r.id)]) merged.push(r);
+              });
+            }
+          }
         }
         if(scopeSelf && typeof portalStaffFilterOverrideRowsForSelf === 'function'){
           const scoped = portalStaffFilterOverrideRowsForSelf(merged, viewerSid);
@@ -4763,10 +4797,20 @@
           return;
         }
         if(slotOv && slotOv.override_type === 'client_absence_announced'){
+          const absName = String(base.clientId || coverClientId || '')
+            .replace(/[_-]+/g, ' ')
+            .replace(/\b[a-z]/g, function(ch){ return ch.toUpperCase(); })
+            .trim();
           const cAbs = (typeof portalClientNotesLookup === 'function'
             ? portalClientNotesLookup(base.clientId)
-            : null) || clientNotesById[base.clientId];
-          if(!cAbs) return;
+            : null) || clientNotesById[base.clientId] || {
+              name: absName || 'Participant',
+              generalLead: '',
+              specialty: '',
+              specialtyClimbing: '',
+              specialtyFitness: '',
+              generalInfoSheet: ''
+            };
           const activityA = (s.activity || 'Swimming').trim();
           const timeA = rosterSlotTimeLabel(s);
           let poolLocationAbs = resolvePoolLocationLabelFromSession(s, activityA, cAbs, viewDay);
@@ -6438,25 +6482,26 @@
             base && (base.activity || base.service)
           ].join(' ').toLowerCase();
           if(blob.indexOf('ikram') >= 0 || /day\s*centre/.test(blob)) return true;
-          const bits = [row && row.time, row && row.start, row && row.timeLabel, base && base.start];
-          const segs = row && row.segments;
-          if(Array.isArray(segs)){
-            segs.forEach(function(seg){
-              if(seg) bits.push(seg.time, seg.label, seg.start);
-            });
+          /* Start time decides. A morning token on the same card must not keep Northolt 4.30. */
+          const startRaw = (base && base.start) || (row && row.start) || (row && row.time) || (row && row.timeLabel) || '';
+          let startM = NaN;
+          if(typeof portalHmToMinutes === 'function'){
+            const hm = typeof portalCanonicalHmToken === 'function'
+              ? portalCanonicalHmToken(startRaw)
+              : String(startRaw || '').trim();
+            startM = portalHmToMinutes(hm);
           }
-          let keep = false;
-          let sawTime = false;
-          bits.forEach(function(bit){
-            const m = String(bit || '').match(/(\d{1,2})(?:[:.](\d{2}))?/);
-            if(!m) return;
-            sawTime = true;
-            let h = Number(m[1]);
-            const min = Number(m[2] || 0);
-            if(h >= 1 && h <= 7) h += 12;
-            if(h * 60 + min < 15 * 60) keep = true;
-          });
-          return keep;
+          if(!Number.isFinite(startM)){
+            const m = String(startRaw || '').match(/(\d{1,2})(?:[:.](\d{2}))?/);
+            if(m){
+              let h = Number(m[1]);
+              const min = Number(m[2] || 0);
+              if(h >= 1 && h <= 7) h += 12;
+              startM = h * 60 + min;
+            }
+          }
+          if(!Number.isFinite(startM)) return false;
+          return startM < 15 * 60;
         });
       }
       if(dashboardData) dashboardData.portalTodayAfternoonOff = !!afternoonOnlyAway;

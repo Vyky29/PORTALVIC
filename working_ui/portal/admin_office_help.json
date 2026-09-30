@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-30-v48",
+  "version": "2026-09-30-v49",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -260,6 +260,9 @@
           ],
           "tips": [
             "A planned absence is the whole day, not only the venue written on the disruption report.",
+            "Afternoon only keeps the morning (before 3pm, including Day Centre) and shows Day off Afternoon under it. Northolt or Acton from 4.30 must not stay on that day.",
+            "Dashboard teleport must show the same day as the worker's own app, including that day off.",
+            "If the class was given to a cover and the child is Absent, the cover sees the name with Absent. The empty NO PARTICIPANT seat does not replace that name.",
             "Parents never see instructor day offs or COVER NEEDED.",
             "Prefer DB day offs over hardcoding in LOCAL / canonical."
           ]

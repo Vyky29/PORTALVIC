@@ -2478,7 +2478,8 @@
           // DB rows were fetched for auth.uid() only. Apply when this card is that person
           // (owner stamp may be empty on early hydrate before roster id resolves).
           const isOwner = ownerCandidates.some(function(k){ return keys.indexOf(k) >= 0; });
-          if(isOwner){
+          const ghostView = !!(typeof window !== 'undefined' && window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active);
+          if(isOwner && !ghostView){
             dbDates.forEach(function(d){
               const iso = String(d || '').trim().slice(0, 10);
               if(iso && !seen[iso]){ seen[iso] = true; out.push(iso); }
@@ -2486,6 +2487,27 @@
           }
         }
       }catch(_dbAway){}
+      /* Ghost / teleport: the signed-in admin is not the worker, so the owner
+         list above is empty. Use this card's rows from the club day-off table. */
+      try{
+        const offRows = (typeof window !== 'undefined' && window.__PORTAL_STAFF_UNAVAILABILITY__) || [];
+        const cardKeys = typeof portalTermStaffProfileLookupKeys === 'function'
+          ? portalTermStaffProfileLookupKeys(staffId)
+          : [String(staffId || '').trim().toLowerCase()];
+        offRows.forEach(function(r){
+          if(!r) return;
+          const who = String(r.name_key || r.staff_name || '').trim().toLowerCase();
+          if(!who) return;
+          const mine = cardKeys.some(function(k){
+            const key = String(k || '').trim().toLowerCase();
+            if(!key) return false;
+            return who === key || who.indexOf(key) >= 0 || key.indexOf(who) === 0;
+          });
+          if(!mine) return;
+          const iso = String(r.off_date || '').trim().slice(0, 10);
+          if(iso && !seen[iso]){ seen[iso] = true; out.push(iso); }
+        });
+      }catch(_clubCardOff){}
       return out.sort();
     }
     /** Day off / time off requested by staff (term timetable away list only — not admin overrides). */
