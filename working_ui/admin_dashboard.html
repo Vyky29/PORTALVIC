@@ -21592,12 +21592,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(n === 'yassir' || n === 'yassir boujettif' || n === 'yasser') return true;
       return false;
     }
+    /** Crash courses only. Not a term place, so they stay REGISTERED and can be offered one. */
+    function paxContactsCrashOnlyClient(p){
+      var n = String((p && p.name) || '').trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
+      if(n === 'summer messing') return true;
+      var parent = String((p && (p.parentDisplay || (p.reg && p.reg.carer))) || '').trim().toLowerCase();
+      if(n === 'summer' && parent.indexOf('messing') >= 0) return true;
+      return false;
+    }
     function paxContactsBucket(p){
       var st = String((p && p.bookingStatus) || '');
       var seats = 0;
       try{ seats = paxContactsCurrentSeatBands(p).length; }catch(_seats){ seats = 0; }
       var live = paxContactsLiveRow(p);
       if(paxContactsNamedOldClient(p)) return 'booking_history';
+      if(paxContactsCrashOnlyClient(p)) return 'registered';
       if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
       if(live && live.in_class === true) return st === 'trial' ? 'trial' : 'programme_in';
       if(paxContactsHasBookingHistory(p)) return 'booking_history';
@@ -21978,6 +21987,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var dash = '<span class="muted">—</span>';
       var empty = { svc: dash, slot: dash };
       if(!p || !String(p.name || '').trim()) return empty;
+      if(paxContactsCrashOnlyClient(p)){
+        return {
+          svc: '<div style="min-width:0;overflow-wrap:break-word">Crash courses</div>',
+          slot: dash
+        };
+      }
       var bands = [];
       try{ bands = paxContactsListBands(p) || []; }catch(_e){ bands = []; }
       if(!bands.length && (!window.PORTAL_CAPACITY_CHAIN_OCCUPANTS || !window.PORTAL_CAPACITY_CHAIN_OCCUPANTS.bySlotId)){
