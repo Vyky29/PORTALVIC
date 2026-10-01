@@ -21809,6 +21809,74 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return false;
       }
     }
+    /** Autumn invoices from Bookings & Payments, keyed by contact id. */
+    async function paxContactsLoadAutumnPay(){
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(!client || typeof client.from !== 'function') return false;
+      try{
+        var res = await client.from('portal_parent_invoice_share')
+          .select('contact_id,payment_status,payment_method_hint,vat_mode,created_via,amount_gbp,payment_schedule,notes')
+          .eq('billing_term', 'autumn')
+          .neq('payment_status', 'void')
+          .limit(2000);
+        if(res.error || !res.data) return false;
+        var byId = Object.create(null);
+        res.data.forEach(function(row){
+          var id = String(row.contact_id || '').trim();
+          if(!id) return;
+          var prev = byId[id];
+          if(!prev){ byId[id] = row; return; }
+          var ns = Array.isArray(row.payment_schedule) ? row.payment_schedule.length : 0;
+          var ps = Array.isArray(prev.payment_schedule) ? prev.payment_schedule.length : 0;
+          if(ns > ps || (ns === ps && Number(row.amount_gbp || 0) > Number(prev.amount_gbp || 0))) byId[id] = row;
+        });
+        window.PAX_CONTACTS_AUTUMN_PAY = byId;
+        return true;
+      }catch(_pay){
+        return false;
+      }
+    }
+    function paxContactsLabelsFromAutumnInvoice(inv){
+      if(!inv) return null;
+      var hint = String(inv.payment_method_hint || '').toLowerCase();
+      var vat = String(inv.vat_mode || '').toLowerCase();
+      var via = String(inv.created_via || '').toLowerCase();
+      var sched = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
+      var schedBlob = sched.map(function(s){
+        return String((s && s.label) || '') + ' ' + String((s && s.paid_via) || '') + ' ' + String((s && s.collect_via) || '');
+      }).join(' ').toLowerCase();
+      var la = hint === 'la_funded' || via === 'la_office_auto';
+      var hasGc = hint === 'gocardless' || schedBlob.indexOf('gocardless') >= 0;
+      var hasBank = hint === 'bank_transfer' || hint === 'tide' || /\boffice_bank\b|\bbank\b/.test(schedBlob);
+      var hasCard = hint === 'payment_link' || /stripe|apple|\bcard\b/.test(schedBlob);
+      var flexi = sched.length === 2 || /1st half|2nd half|\bflexi\b/.test(schedBlob);
+      var bill = (String(inv.notes || '').match(/LA bill-to:\s*([^\n]+)/i) || ['', ''])[1].toLowerCase();
+      var src = '';
+      var meth = '';
+      if(la){
+        if(bill.indexOf('ealing') >= 0) src = 'Local authority · Ealing';
+        else if(/hammersmith|fulham|lbhf/.test(bill)) src = 'Local authority · H&F';
+        else if(/nhs|\bsbs\b/.test(bill)) src = 'NHS · SBS';
+        else src = 'Local authority';
+        meth = src.indexOf('Ealing') >= 0 ? 'LA invoice (Care in Finance)' : 'LA invoice (BACS)';
+      }else if(vat === 'exempt'){
+        src = 'Using Funds from LA · Direct Payments';
+        if(hasGc && hasBank) meth = 'GoCardless (monthly) · first month bank transfer';
+        else if(hasGc) meth = 'GoCardless';
+        else if(hasCard) meth = 'Card / Apple Pay';
+        else if(flexi) meth = 'Bank Transfer (Flexi)';
+        else if(hasBank) meth = 'Bank Transfer (One payment)';
+      }else{
+        src = 'Using Own money (private family funds)';
+        if(hasGc && hasBank) meth = 'GoCardless (monthly) · first month bank transfer';
+        else if(hasGc) meth = 'GoCardless';
+        else if(hasCard && hasBank) meth = 'Bank Transfer / Card / Apple Pay';
+        else if(hasCard) meth = 'Card / Apple Pay';
+        else if(flexi) meth = 'Bank Transfer (Flexi)';
+        else if(hasBank) meth = 'Bank Transfer (One payment)';
+      }
+      return { src: src, meth: meth };
+    }
     async function paxContactsLoadLiveWaitlist(){
       try{
         if(typeof portalAdminWaitlistConfigureOnce === 'function') portalAdminWaitlistConfigureOnce();
@@ -22208,6 +22276,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var meth = String((p && (p._adminPaymentMethodLabel || (p.reg && p.reg.paymentMethod))) || '').trim();
       if(src === '—') src = '';
       if(meth === '—') meth = '';
+      var cid = String((p && (p.contactId || (typeof adminClientsInfoContactIdKey === 'function' ? adminClientsInfoContactIdKey(p.id) : ''))) || '').trim();
+      var invMap = window.PAX_CONTACTS_AUTUMN_PAY || {};
+      var fromInv = paxContactsLabelsFromAutumnInvoice(invMap[cid]);
+      if(fromInv && !src && !meth){
+        src = fromInv.src;
+        meth = fromInv.meth;
+      }else if(fromInv && src && !meth){
+        meth = fromInv.meth;
+      }
       var blob = (src + ' ' + meth).toLowerCase();
       var directPay = /direct payment|ehcp|exempt/.test(blob);
       var billedLa = /local authority|nhs|\bla invoice\b|care in finance|\bsbs\b|hammersmith|\bealing\b|\bbacs\b/.test(blob) && !directPay;
@@ -33148,9 +33225,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             adminHydrateParentContactsFromSupabase(),
             paxContactsLoadRosterMoveRows(),
             paxContactsLoadParticipantFaces(),
-            paxContactsLoadLiveWaitlist()
+            paxContactsLoadLiveWaitlist(),
+            paxContactsLoadAutumnPay()
           ]).then(function(results){
-            if(!(results && (results[0] || results[1] || results[2] || results[3]))) return;
+            if(!(results && (results[0] || results[1] || results[2] || results[3] || results[4]))) return;
             if(typeof state.rebuildPaxContactsList === 'function'){
               state.rebuildPaxContactsList();
               if(typeof paxContactsRefreshFilters === 'function') paxContactsRefreshFilters();
