@@ -1609,8 +1609,8 @@
     .ash-table--register td:nth-child(4) {
       width: 16%;
       min-width: 0;
-      text-align: left;
-      vertical-align: top;
+      text-align: center;
+      vertical-align: middle;
     }
     .ash-table--register th:nth-child(5),
     .ash-table--register td:nth-child(5),
@@ -1619,8 +1619,8 @@
       width: 27%;
       min-width: 0;
       overflow-wrap: break-word;
-      text-align: left;
-      vertical-align: top;
+      text-align: center;
+      vertical-align: middle;
     }
     .ash-table--register td:nth-child(7) {
       width: 7%;
@@ -1650,11 +1650,11 @@
     .ash-indep-lines {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
+      align-items: center;
       gap: 3px;
       min-width: 0;
       width: 100%;
-      text-align: left;
+      text-align: center;
     }
     .ash-indep-line {
       display: block;
@@ -1676,6 +1676,24 @@
       vertical-align: top;
       white-space: normal;
       overflow-wrap: break-word;
+    }
+    .ash-table--feedback.ash-table--register th,
+    .ash-table--feedback.ash-table--register td {
+      text-align: center;
+      vertical-align: middle;
+    }
+    .ash-table--feedback.ash-table--register .ash-cell-participant-service,
+    .ash-table--feedback.ash-table--register .ash-cell-service,
+    .ash-table--feedback.ash-table--register .ash-cell-sub,
+    .ash-table--feedback.ash-table--register .ash-cell-raw-feedback,
+    .ash-table--feedback.ash-table--register .ash-cell-note,
+    .ash-table--feedback.ash-table--register .ash-cell-open,
+    .ash-table--feedback.ash-table--register .ash-indep-line {
+      text-align: center;
+    }
+    .ash-table--feedback.ash-table--register .ash-pill {
+      margin-left: 2px;
+      margin-right: 2px;
     }
     .ash-cell-raw-feedback { white-space: normal; overflow-wrap: break-word; }
     .ash-cell-family { min-width: 0; max-width: min(280px, 32vw); }
