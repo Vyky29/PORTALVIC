@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v104",
+  "version": "2026-10-02-v106",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -466,7 +466,7 @@
             "crash courses"
           ],
           "steps": [
-            "Clients & Families in the left menu opens a screen with the same buttons. Under Clients: Active (the old CLIENT list), WAITING LIST, Registered, Leads. Under Family: WhatsApp Business (Messages), API/Portal (Messages), Portal PINs (Family), Dashboard Teleport (Family). The title is on the left. Back sits on the right.",
+            "Clients & Families in the left menu opens a screen with the same buttons. Under Clients: Active (the old CLIENT list), WAITING LIST, REGISTERED, Leads. REGISTERED is the same contacts table as Active, filtered to people who finished the form and have never had a place. Registration Form under Documents is every Booking Portal form, including people already in class. That page is not LEADS. Under Family: WhatsApp Business (Messages), API/Portal (Messages), Portal PINs (Family), Dashboard Teleport (Family). The title is on the left. Back sits on the right.",
             "The circle with i next to a page title opens what that page is for, plus the matching Office help steps. That text stays off the page.",
             "ACTIVE: on a place now. A cancelled place is not ACTIVE. ACTIVE stays under the name, with the date of birth.",
             "Support is the ratio, such as 1:1. Funding and Payment are separate columns. Funding is only one of three: Using Private funds (VAT 20%), Using LA funds (Exempt), or LA/NHS funded.",
@@ -573,7 +573,7 @@
     },
     {
       "id": "money",
-      "title": "Money",
+      "title": "Finance",
       "blurb": "Invoices, payments, Direct Payment mandate, refunds, credits and make-ups.",
       "priority": 1,
       "lessons": [
@@ -1060,9 +1060,9 @@
       "lessons": [
         {
           "id": "registered_docs",
-          "title": "REGISTERED documents",
-          "summary": "Registration form completed, never been a CLIENT. The pack is the PDF and the photo.",
-          "where": "Clients and Families, then Registered",
+          "title": "Registration Form",
+          "summary": "Every Booking Portal form, including people already in class. Not the REGISTERED list, and not LEADS. The pack is the PDF, the photo, and the pay link.",
+          "where": "Clients & Families → Documents → Registration Form",
           "keywords": [
             "registered",
             "registration form",
@@ -1075,7 +1075,7 @@
             "pay hold"
           ],
           "steps": [
-            "Open Registered. Each row is a submitted registration. There is no Accept step.",
+            "Open Registration Form under Documents. Each row is a form that came in through the Booking Portal. People already in class are on this table too. It is not the REGISTERED list in Clients, and it is not LEADS.",
             "New-client registration is the PDF and the photo, for the office to read. Parents finish funding and payment later on the finish-booking link.",
             "Place is live only: REGISTERED only, WAITING, Pay hold, Awaiting Tide, In class, or Did not finish.",
             "The chosen slot is not on this table. It arrives in the pay-hold alert and the I have paid office alert.",
@@ -1086,7 +1086,7 @@
             "Do not show them as booked kids on Sessions until they are a CLIENT."
           ],
           "tips": [
-            "The explanation stays on the i next to Registered. Climbing registrations and Parent consents are in the menu, under Clients & Families, Documents."
+            "REGISTERED in Clients is only people who finished the form and have never had a place. LEADS started OTP and did not finish the form. Climbing registrations and Parent consents stay under Documents."
           ]
         },
         {

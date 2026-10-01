@@ -109,7 +109,7 @@
     g_c4k: "Servicios y participantes (CFK)",
     g_zoho: "H&R",
     g_supabase: "Documentos",
-    g_xero: "Dinero",
+    g_xero: "Finance",
     g_settings_portal: "Ajustes",
   };
 

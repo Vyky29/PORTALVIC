@@ -459,6 +459,10 @@
       { id:'new_client', label:'New client', hubLabel:'New client', dayOpsAct:'new_participant' },
       { id:'c4k_payments', label:'Programme payments (operations)', hubLabel:'Ops payments' },
       { id:'reenrol_payments', label:'Finance', hubLabel:'Finance' },
+      { id:'finance_create', label:'Create invoice', hubLabel:'Create invoice' },
+      { id:'finance_reenrolments', label:'Re-enrolments & Bookings', hubLabel:'Re-enrolments & Bookings' },
+      { id:'finance_xero', label:'Xero products', hubLabel:'Xero products' },
+      { id:'finance_payments', label:'Payments', hubLabel:'Payments' },
       { id:'commissioning_terms', label:'LA / Commissioning Terms', hubLabel:'LA Terms' },
       { id:'invoices', label:'Finance', hubLabel:'Finance' },
       { id:'c4k_sessions', label:'Sessions overview', hubLabel:'Overview' },
@@ -533,7 +537,7 @@
       { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','c4k_late_submissions','office_calendar','sessions_lead','sessions_incidents','sessions_venue','sessions_pickup','session_disruptions'] },
       { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','orders_all','participant_achievements'] },
       { id:'g_clients', label:'Clients & Families', children:['__h:Clients','new_client','clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','__h:Family','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
-      { id:'g_xero', label:'Money', children:['reenrol_payments','absents_refunds'] },
+      { id:'g_xero', label:'Finance', children:['finance_create','finance_reenrolments','finance_xero','finance_payments','absents_refunds'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','interviews','__h:Messages','announcements','portal_staff_comms','portal_staff_whatsapp','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','__h:Documents','policies_portal','policies','portal_payslips','payroll_report','pay_rates','portal_docs_timesheet','portal_docs_expense','portal_docs_checklist','portal_docs_firstaid','day_centre_documents','portal_docs_portalpin'] },
       { id:'g_more', label:'More', children:['__h:Extra hubs','operator','receptionist','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','staff_ghost_teleport'] },
       { id:'g_settings_portal', label:'Settings', children:['settings','admin_office_help','portal_activity','portal_training_progress','portal_push_devices','portal_device_notifications','logs','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
@@ -651,6 +655,10 @@
       if(id === 'sessions_venue') id = 'c4k_services';
       if(id === 'sessions_pickup') id = 'scheduling';
       if(id === 'new_client') id = 'new_participant';
+      if(id === 'finance_create') id = 'staffhr_contracts';
+      if(id === 'finance_reenrolments') id = 'clients';
+      if(id === 'finance_xero') id = 'reenrol_payments';
+      if(id === 'finance_payments') id = 'c4k_payments';
       if(id === 'payroll_report') id = 'invoices';
       if(id === 'pay_rates') id = 'c4k_payments';
       var inner = NAV_ICON_SVGS[id];
@@ -2273,7 +2281,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id === 'operations') id = 'dashboard';
       if(id === 'recruitment') id = 'staffhr';
       if(id === 'operations-admin') id = 'operations_admin';
-      if(id === 'invoices') id = 'reenrol_payments';
+      if(id === 'finance_create') state.financeTab = 'create';
+      else if(id === 'finance_reenrolments') state.financeTab = 'reenrolments';
+      else if(id === 'finance_xero') state.financeTab = 'xero_products';
+      else if(id === 'finance_payments') state.financeTab = 'payments';
+      else if(id === 'invoices'){
+        state.financeTab = 'create';
+        id = 'finance_create';
+      }else if(id === 'reenrol_payments'){
+        var financeNavByTab = { create:'finance_create', reenrolments:'finance_reenrolments', xero_products:'finance_xero', payments:'finance_payments' };
+        id = financeNavByTab[state.financeTab] || 'finance_payments';
+      }
       if(id === 'nav_hub' && !state._navHubKeepGroup){
         state.navHubGroup = null;
       }
@@ -2479,7 +2497,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v105')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v106')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -29601,7 +29619,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='c4k_late_submissions') html = viewC4kLateSubmissions();
       else if(id==='session_disruptions') html = viewSessionDisruptions();
       else if(id==='c4k_payments') html = viewC4kPaymentsView();
-      else if(id==='reenrol_payments') html = viewReenrolPayments();
+      else if(id==='reenrol_payments' || id==='finance_create' || id==='finance_reenrolments' || id==='finance_xero' || id==='finance_payments') html = viewReenrolPayments();
       else if(id==='logs') html = viewLogs();
       else if(id==='c4k_waitlist') html = viewC4kWaitlistView();
       else if(id==='office_calendar') html = viewOfficeCalendar();
@@ -30494,14 +30512,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       {
         id:'finance',
         icon:'💷',
-        title:'Money',
-        description:'Invoices, payments, refunds and credits.',
+        title:'Finance',
+        description:'Invoices, re-enrolments, Xero products, payments, and absents.',
         preview:[],
         status:'',
-        primary:[
-          { id:'reenrol_payments', label:'Finance' },
-          { id:'absents_refunds', label:'Absents & credits' }
-        ],
+        primary:['finance_create','finance_reenrolments','finance_xero','finance_payments','absents_refunds'],
         secondary:[]
       },
       {
@@ -31936,7 +31951,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var next = btn.getAttribute('data-finance-tab') || 'payments';
           if(next === tab) return;
           state.financeTab = next;
-          setView('reenrol_payments');
+          var financeNavByTab = { create:'finance_create', reenrolments:'finance_reenrolments', xero_products:'finance_xero', payments:'finance_payments' };
+          setView(financeNavByTab[next] || 'finance_payments');
         });
       });
       portalParentInvoicesConfigureOnce();
@@ -33993,7 +34009,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       }
 
-      if(id==='reenrol_payments'){
+      if(id==='reenrol_payments' || id==='finance_create' || id==='finance_reenrolments' || id==='finance_xero' || id==='finance_payments'){
         bindFinanceView();
       }
       if(id==='logs'){
