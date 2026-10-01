@@ -85,7 +85,7 @@
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
-  <script src="/portal/portal_participant_identity.js?v=20261001-rayan-thapa"></script>
+  <script src="/portal/portal_participant_identity.js?v=20261001-joelle-ja"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20261001-sessions-quiet"></script>
   <script src="/portal/admin-portal-documents.js?v=20261001-pay-expenses-only"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20261001-no-doc-btns"></script>
@@ -20974,6 +20974,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * Two rows share a first name but are different children (Ayaan vs Ayaan Towle,
      * Yusuf Ah vs Yusuf Harzi). The bare first name stays with the earliest contact.
      */
+    /** Waiting list wrote "JA Atoui". That child is Joelle Atoui. */
+    function adminPortalJaAtouiIsJoelle(a, b){
+      function norm(n){
+        return String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      var x = norm(a);
+      var y = norm(b);
+      function ja(n){ return n === 'ja atoui' || n === 'j a atoui'; }
+      function joelle(n){ return n === 'joelle' || n === 'joelle atoui' || n === 'joelle a'; }
+      return (ja(x) && joelle(y)) || (ja(y) && joelle(x));
+    }
     /** Mia on the board is Mia Mesi. Mia Smoliar is a different child. */
     function adminPortalMiaSmoliarIsOtherChild(a, b){
       function norm(n){
@@ -21051,7 +21062,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             break;
           }
         }
-        if(already) return;
+        if(already){
+          if(r.on_waiting_list === true && out[i]){
+            out[i].onWaitingList = true;
+            out[i]._listedWaiting = true;
+            paxContactsSetWaitingJoined(out[i], r.created_at, 'recorded');
+          }
+          return;
+        }
         out.push(paxContactsPortalRowToPax({
           contactId: cid,
           childDisplay: name,
@@ -21269,6 +21287,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         for(i = 0; i < out.length; i++){
           if(adminPortalNormalizedPersonName(out[i].name) === key){ already = true; break; }
           if(exactId && paxContactsRealContactId(out[i]) === exactId){ already = true; break; }
+          if(paxContactsNameIsWaitRow(out[i].name, g.name)){ already = true; break; }
         }
         if(already){
           if(joined) paxContactsSetWaitingJoined(out[i], joined, 'booking_portal');
@@ -21366,6 +21385,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(sl === 999) return;
           if(dispLen === 999 || sl > dispLen){ dispLen = sl; disp = m.name; }
         });
+        var sawJa = false;
+        var sawJoelle = false;
+        cl.members.forEach(function(m){
+          var n = String(m && m.name || '');
+          if(adminPortalJaAtouiIsJoelle(n, 'Joelle')) sawJa = true;
+          if(/^joelle\b/i.test(n)) sawJoelle = true;
+        });
+        if(sawJa && sawJoelle) disp = 'Joelle Atoui';
         var merged = Object.assign({}, base);
         if(disp && disp !== base.name) merged.name = disp;
         cl.members.forEach(function(m){ paxContactsKeepBookingFacts(merged, m); });
@@ -22472,6 +22499,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function paxContactsSameChild(a, b, amb){
       var aa = String(a || '').replace(/_/g, ' ');
       var bb = String(b || '').replace(/_/g, ' ');
+      if(adminPortalJaAtouiIsJoelle(aa, bb)) return true;
       try{
         var idn = window.PortalParticipantIdentity;
         if(idn && typeof idn.canonicalClientId === 'function'){
@@ -23226,6 +23254,63 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return merged;
     }
+    /**
+     * Place they asked for on the waiting list. One line per request.
+     * Current seats stay in the normal cells; this is only shown on Waiting List.
+     */
+    function paxContactsRequestedWaitLines(p){
+      var lines = [];
+      function add(service, slot, loc){
+        var svc = String(service || '').trim();
+        var sl = String(slot || '').trim();
+        var venue = String(loc || '').trim();
+        if(svc === '—' || svc === '-') svc = '';
+        if(sl === '—' || sl === '-') sl = '';
+        if(venue === '—' || venue === '-') venue = '';
+        if(venue && sl.toLowerCase().indexOf(venue.toLowerCase()) < 0){
+          sl = (sl ? sl + ' ' : '') + '(' + venue.toUpperCase() + ')';
+        }else if(venue && !sl){
+          sl = '(' + venue.toUpperCase() + ')';
+        }
+        sl = sl.replace(/\s*·\s*/g, ', ');
+        if(!svc && !sl) return;
+        var key = (svc + '|' + sl).toLowerCase();
+        var n;
+        for(n = 0; n < lines.length; n++){
+          if(lines[n].key === key) return;
+        }
+        lines.push({ key: key, svc: svc, slot: sl });
+      }
+      var live = [];
+      var wb = [];
+      try{ live = paxContactsActiveLiveWaitRows(); }catch(_live){ live = []; }
+      try{ wb = adminWaitingListPortalRows(); }catch(_wb){ wb = []; }
+      var i;
+      for(i = 0; i < live.length; i++){
+        if(paxContactsNameIsWaitRow(p && p.name, live[i].pax)) add(live[i].service, live[i].slotTime, live[i].loc);
+      }
+      if(!lines.length){
+        for(i = 0; i < wb.length; i++){
+          if(paxContactsNameIsWaitRow(p && p.name, wb[i].pax)) add(wb[i].service, wb[i].slotTime, wb[i].loc);
+        }
+      }
+      if(!lines.length && p && p._waitDetail) add(p._waitDetail.service, p._waitDetail.slot, p._waitDetail.loc);
+      return lines;
+    }
+    function paxContactsWaitSeatCells(p){
+      var dash = '<span class="muted">—</span>';
+      var lines = [];
+      try{ lines = paxContactsRequestedWaitLines(p); }catch(_req){ lines = []; }
+      if(!lines.length) return { svc: dash, slot: dash };
+      return {
+        svc: lines.map(function(l){
+          return l.svc ? '<div class="pax-svc-line">'+esc(l.svc)+'</div>' : '<div class="pax-svc-line">'+dash+'</div>';
+        }).join(''),
+        slot: lines.map(function(l){
+          return l.slot ? '<div class="pax-slot-line">'+esc(l.slot)+'</div>' : '<div class="pax-slot-line">'+dash+'</div>';
+        }).join('')
+      };
+    }
     /** Participant list: aligned "Service/s" and "Time slot/s" cells (one line per current seat). */
     function paxContactsServiceSlotCells(p){
       var dash = '<span class="muted">—</span>';
@@ -23471,6 +23556,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(phRaw && phRaw !== '—') whoParts.push('<div class="pax-who__phone">'+esc(phRaw)+'</div>');
         var whoHtml = '<div class="pax-who">'+whoParts.join('')+'</div>';
         var cells = paxContactsServiceSlotCells(p);
+        var waitSeat = paxContactsWaitSeatCells(p);
         var trialSeat = paxContactsTrialServiceSlotCells(p);
         var trialCells = paxContactsTrialCells(p);
         var photoName = String(p.name || '').replace(/_/g, ' ').trim();
@@ -23479,10 +23565,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var photoHtml = (typeof portalParticipantAvatarInnerHtml === 'function')
           ? portalParticipantAvatarInnerHtml(photoName, photoCid, { esc: esc, className: 'portal-roster-avatar pax-contacts-avatar' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
           : '';
-        var bkMeta = paxContactsBookingStatusMeta(paxContactsBucket(p));
-        var bkChip = bkMeta
-          ? '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+bkMeta.bg+';color:'+bkMeta.fg+'">'+esc(bkMeta.label)+'</span>'
-          : '';
+        var bucket = paxContactsBucket(p);
+        var bkMeta = paxContactsBookingStatusMeta(bucket);
+        function paxStatusChip(meta){
+          if(!meta) return '';
+          return '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+meta.bg+';color:'+meta.fg+'">'+esc(meta.label)+'</span>';
+        }
+        var bkChip = paxStatusChip(bkMeta);
+        var alsoWait = '';
+        var waitKind = '';
+        try{ waitKind = paxContactsWaitingKind(p); }catch(_waitChip){ waitKind = ''; }
+        if((waitKind === 'portal_waiting' || waitKind === 'old_waiting') && bucket !== 'waiting_list' && (bucket === 'programme_in' || bucket === 'booking_history' || bucket === 'trial')){
+          alsoWait = paxStatusChip(paxContactsBookingStatusMeta('waiting_list'));
+        }
         var ratio = adminParticipantSupportRatio(p.name);
         var ratioHi = ratio && ratio !== '1:1';
         var ratioChip = ratio
@@ -23507,8 +23602,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var payChips = (money.payments || []).map(function(pay){
           return '<span class="pax-chip pax-chip--'+(payKind[pay.id] || 'bank1')+'" title="Payment">'+esc(pay.label)+'</span>';
         }).join('');
-        var statusRow = bkChip
-          ? '<div class="pax-contacts-chips">'+bkChip+'</div>'
+        var statusRow = (bkChip || alsoWait)
+          ? '<div class="pax-contacts-chips">'+(alsoWait ? '<span class="pax-also-waiting" hidden>'+alsoWait+'</span>' : '')+bkChip+'</div>'
           : '';
         if(paxContactsBucket(p) === 'cfk_leads'){
           statusRow += '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:anywhere">Class for Kids file</div>';
@@ -23522,15 +23617,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '<span class="muted">—</span>';
         var payIds = (money.payments || []).map(function(pay){ return pay.id; }).join(' ');
         return (
-          '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-registered="'+esc(p.registeredIso || '')+'" data-pax-trial="'+esc(paxContactsTrialLatestIso(p))+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'">'+
+          '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-registered="'+esc(p.registeredIso || '')+'" data-pax-trial="'+esc(paxContactsTrialLatestIso(p))+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-wait="'+((waitKind === 'portal_waiting' || waitKind === 'old_waiting') ? '1' : '')+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'">'+
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
           '<td class="pax-contacts-name-td"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+paxContactsWaitExtraHtml(p)+'</div></div></td>'+
           '<td class="pax-contacts-meta">'+supportCell+'</td>'+
           '<td class="pax-contacts-meta pax-money-col">'+fundingCell+'</td>'+
           '<td class="pax-contacts-meta pax-money-col">'+paymentCell+'</td>'+
           '<td class="pax-contacts-age">'+ageCell+'</td>'+
-          '<td class="pax-contacts-svc"><div class="pax-seat-lines">'+cells.svc+'</div><div class="pax-trial-seat" hidden>'+trialSeat.svc+'</div></td>'+
-          '<td class="pax-contacts-slot"><div class="pax-seat-lines">'+cells.slot+'</div><div class="pax-trial-seat" hidden>'+trialSeat.slot+'</div></td>'+
+          '<td class="pax-contacts-svc"><div class="pax-seat-lines">'+cells.svc+'</div><div class="pax-wait-seat" hidden>'+waitSeat.svc+'</div><div class="pax-trial-seat" hidden>'+trialSeat.svc+'</div></td>'+
+          '<td class="pax-contacts-slot"><div class="pax-seat-lines">'+cells.slot+'</div><div class="pax-wait-seat" hidden>'+waitSeat.slot+'</div><div class="pax-trial-seat" hidden>'+trialSeat.slot+'</div></td>'+
           '<td class="pax-joined-col" hidden>'+paxContactsJoinedCell(p)+'</td>'+
           '<td class="pax-source-col" hidden>'+paxContactsSourceCell(p)+'</td>'+
           '<td class="pax-registered-col" hidden>'+paxContactsRegisteredCell(p)+'</td>'+
@@ -34119,7 +34214,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           root2.querySelectorAll('.pax-source-col').forEach(function(el){ el.hidden = !showSource; });
           root2.querySelectorAll('.pax-registered-col').forEach(function(el){ el.hidden = !showRegistered; });
           root2.querySelectorAll('.pax-trial-col').forEach(function(el){ el.hidden = !showTrial; });
-          root2.querySelectorAll('.pax-seat-lines').forEach(function(el){ el.hidden = showTrial; });
+          root2.querySelectorAll('.pax-seat-lines').forEach(function(el){
+            var onWait = !!(el.closest && el.closest('tr') && el.closest('tr').getAttribute('data-pax-wait') === '1');
+            el.hidden = showTrial || (showJoined && onWait);
+          });
+          root2.querySelectorAll('.pax-wait-seat').forEach(function(el){
+            var onWait = !!(el.closest && el.closest('tr') && el.closest('tr').getAttribute('data-pax-wait') === '1');
+            el.hidden = !(showJoined && onWait);
+          });
+          root2.querySelectorAll('.pax-also-waiting').forEach(function(el){ el.hidden = !showJoined; });
           root2.querySelectorAll('.pax-trial-seat').forEach(function(el){ el.hidden = !showTrial; });
           root2.querySelectorAll('.pax-money-col, .pax-money-filter').forEach(function(el){ el.hidden = !showMoney; });
           var ansTh = $('paxRegAnsTh');

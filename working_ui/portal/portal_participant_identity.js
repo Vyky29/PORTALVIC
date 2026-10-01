@@ -36,6 +36,9 @@
     rayyan_fda: "rayyan_f",
     /* Asli's child. Muhammad Andi is the same registration as Muhammad. */
     muhammad_andi: "muhammad",
+    /* Waiting-list initials. JA Atoui is Joelle Atoui. */
+    ja_atoui: "joelle",
+    j_a_atoui: "joelle",
     /* Anab's son. The contact row says Mohamed Yusuf; the list name is Mohamed Mohamud. */
     mohamed_yusuf: "mohamed_mohamud",
   };
