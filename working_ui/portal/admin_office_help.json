@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v68",
+  "version": "2026-10-01-v69",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -851,9 +851,10 @@
           "id": "staff_roster",
           "title": "Staff roster and profiles",
           "summary": "Browse workers, open a profile, check onboarding.",
-          "where": "H&R → H&R / Onboarding",
+          "where": "Frequent → Staff, or the left menu H&R",
           "steps": [
-            "Open H&R to browse staff. Each row shows that worker's own photo.",
+            "Open Staff on Frequent to browse workers. H&R is the left-menu category. Each row shows that worker's own photo.",
+            "Interview on Frequent opens the candidate pipeline. Registration opens the parent registration forms.",
             "Shifts, services, days on rota and venues are this week's Autumn timetable. Days off are the dates already requested.",
             "Open a worker for profile and employment tools.",
             "Job application and Health questionnaire on that card are the forms they already filled. Bank account is its own section. Employee info stays the short working record.",

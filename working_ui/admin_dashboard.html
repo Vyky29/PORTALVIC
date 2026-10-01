@@ -476,6 +476,7 @@
       { id:'portal_training_progress', label:'Training & readiness' },
       { id:'portal_push_devices', label:'Staff push devices' },
       { id:'staff_ghost_teleport', label:'Dashboard teleport' },
+      { id:'portal_parent_teleport', label:'Parents teleport', externalUrl:'https://www.clubsensational.org/parent', skipBottomNav:true },
       { id:'staffhr', label:'H&R' },
       { id:'onboarding', label:'Onboarding' },
       { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
@@ -583,6 +584,7 @@
       portal_training_progress:'<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
       portal_push_devices:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/><path d="M12 2v2"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/>',
       staff_ghost_teleport:'<path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>',
+      portal_parent_teleport:'<path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>',
       reports:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
       policies:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
       policies_portal:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M8 7h8M8 11h8M8 15h5"/>',
@@ -29430,6 +29432,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portal_payslips: 'Worker payslip PDFs',
       participant_achievements: 'Session photos after feedback',
       staff_ghost_teleport: 'Read-only view of a worker app',
+      portal_parent_teleport: 'Open the family portal',
+      interviews: 'Call and face-to-face stages',
       portal_documents: 'Staff timesheets, expenses &amp; files',
       portal_participant_documents: 'Parent registration forms',
       staffhr: 'Staff, contracts &amp; training',
@@ -29505,17 +29509,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         { id: 'absents_refunds', label: 'Absents, cancellations & credits' }
       ];
       var frequentActions = [
-        { id:'reenrol_payments', label:'Finance' },
         'clients',
         'c4k_waitlist',
-        { id:'portal_payslips', label:'Payslips' },
-        { id:'participant_achievements', label:'Achievement photos' },
-        { id:'staff_ghost_teleport', label:'Dashboard teleport' },
-        { id:'portal_documents', label:'Staff documents' },
-        { id:'portal_participant_documents', label:'Parent documents' },
-        'staffhr',
+        { id:'portal_participant_documents', label:'Registration' },
+        { id:'reenrol_payments', label:'Bookings & Payments' },
         'c4k_services',
-        'onboarding'
+        { id:'staffhr', label:'Staff' },
+        { id:'interviews', label:'Interview' },
+        'onboarding',
+        { id:'portal_payslips', label:'Payslips' },
+        { id:'portal_documents', label:'Staff documents' },
+        { id:'staff_ghost_teleport', label:'Dashboard teleport' },
+        { id:'portal_parent_teleport', label:'Parents teleport' },
+        { id:'participant_achievements', label:'Achievement photos' }
       ];
       return (
         '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub ops-hub--today-first">' +
