@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
   const { data: participants, error: pErr } = await admin
     .from("portal_participants")
     .select("contact_id, display_name, first_name, last_name, parent_person_id, in_class")
+    .eq("in_class", true)
     .order("display_name", { ascending: true })
     .limit(limit);
 

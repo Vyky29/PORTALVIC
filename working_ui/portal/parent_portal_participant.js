@@ -748,6 +748,12 @@
     return p.in_class === false;
   }
 
+  /** Consents only for ACTIVE clients. REGISTERED / WAITING / OLD do not see or sign them. */
+  function consentsForActiveClient(data) {
+    var p = (data && data.participant) || {};
+    return p.in_class === true;
+  }
+
   function downloadTextFile(filename, text) {
     var name = String(filename || "download.txt").replace(/[^\w.\-]+/g, "_");
     var blob = new Blob([String(text || "")], { type: "text/plain;charset=utf-8" });
@@ -2394,8 +2400,11 @@
         "</div></section>"
       );
     }
+    var showConsents = consentsForActiveClient(data);
     var consentPending =
-      opts && typeof opts.consentsPendingCount === "function" ? opts.consentsPendingCount() : 0;
+      showConsents && opts && typeof opts.consentsPendingCount === "function"
+        ? opts.consentsPendingCount()
+        : 0;
     var consentBadge =
       opts && typeof opts.unreadBadgeHtml === "function" && consentPending > 0
         ? opts.unreadBadgeHtml(consentPending, "Pending consents")
@@ -2474,12 +2483,14 @@
         ),
         { extraClass: " pp-hub-shortcut--team" },
       ) +
-      hubShortcutBtn(
-        "consents",
-        "Consents",
-        ico('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>'),
-        { unreadBadge: consentBadge, extraClass: " pp-hub-shortcut--consents" },
-      ) +
+      (showConsents
+        ? hubShortcutBtn(
+            "consents",
+            "Consents",
+            ico('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>'),
+            { unreadBadge: consentBadge, extraClass: " pp-hub-shortcut--consents" },
+          )
+        : "") +
       (showInvoicesForParticipant(data)
         ? hubShortcutBtn(
             "invoices",
@@ -2652,8 +2663,11 @@
       opts && typeof opts.unreadBadgeHtml === "function" && msgUnread > 0
         ? opts.unreadBadgeHtml(msgUnread, "Unread messages")
         : "";
+    var showConsents = consentsForActiveClient(data);
     var consentPending =
-      opts && typeof opts.consentsPendingCount === "function" ? opts.consentsPendingCount() : 0;
+      showConsents && opts && typeof opts.consentsPendingCount === "function"
+        ? opts.consentsPendingCount()
+        : 0;
     var consentBadge =
       opts && typeof opts.unreadBadgeHtml === "function" && consentPending > 0
         ? opts.unreadBadgeHtml(consentPending, "Pending consents")
@@ -2785,16 +2799,18 @@
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--paper">Paperwork</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--paper">' +
-      infoBtnHtml("consents", "Consents & forms", consentIcon, {
-        extraClass:
-          " pp-pax-info-btn--consents" +
-          (consentPending > 0 ? " pp-pax-info-btn--has-unread" : ""),
-        subtitle:
-          consentPending > 0
-            ? consentPending + " pending"
-            : "Permissions & registration PDFs",
-        unreadBadge: consentBadge,
-      }) +
+      (showConsents
+        ? infoBtnHtml("consents", "Consents & forms", consentIcon, {
+            extraClass:
+              " pp-pax-info-btn--consents" +
+              (consentPending > 0 ? " pp-pax-info-btn--has-unread" : ""),
+            subtitle:
+              consentPending > 0
+                ? consentPending + " pending"
+                : "Permissions & registration PDFs",
+            unreadBadge: consentBadge,
+          })
+        : "") +
       (showInvoicesForParticipant(data)
         ? infoBtnHtml("invoices", "My invoices", invoiceIcon, {
             extraClass: " pp-pax-info-btn--invoices",
@@ -6401,6 +6417,10 @@
 
   function refreshConsentsHubBadge(host, data, opts) {
     if (!host || !opts || typeof opts.loadConsents !== "function") return;
+    if (!consentsForActiveClient(data)) {
+      if (typeof opts.setConsentsPendingCount === "function") opts.setConsentsPendingCount(0);
+      return;
+    }
     void opts
       .loadConsents()
       .then(function (j) {
@@ -11063,7 +11083,13 @@
       }
       renderInvoices(host, data, opts);
     }
-    else if (view === "documents" || view === "consents") renderConsents(host, data, opts);
+    else if (view === "documents" || view === "consents") {
+      if (!consentsForActiveClient(data)) {
+        renderHub(host, data, opts);
+        return;
+      }
+      renderConsents(host, data, opts);
+    }
     else if (view === "messages") {
       var msgOpts = opts || {};
       if (viewOpts.prefillMessage) {

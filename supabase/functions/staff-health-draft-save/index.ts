@@ -4,6 +4,7 @@ import {
   buildMakeOnboardingBody,
   postMakeOnboardingWebhook,
 } from "../_shared/onboarding_make_webhook.ts";
+import { foldSubmittedHealthIntoHrRecords } from "../_shared/portal_onboarding_pin.ts";
 
 const cors: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -90,6 +91,11 @@ Deno.serve(async (req) => {
   }
 
   if (submittedAt) {
+    try {
+      await foldSubmittedHealthIntoHrRecords(admin, sid, staffName, payload);
+    } catch (e) {
+      console.warn("[staff-health-draft-save] hr fold", e);
+    }
     const webhookUrl = (Deno.env.get("ONBOARDING_HEALTH_QUESTIONNAIRE_MAKE_WEBHOOK_URL") ??
       "").trim();
     await postMakeOnboardingWebhook(

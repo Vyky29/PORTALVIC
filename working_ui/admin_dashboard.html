@@ -97,7 +97,7 @@
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20260909-gemma-keeper"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260928-makeup-date-desc"></script>
-  <script src="/portal/admin-portal-parent-consents.js?v=20260709-offsite-annual"></script>
+  <script src="/portal/admin-portal-parent-consents.js?v=20261001-active-only"></script>
   <script src="/portal/admin-payslips.js?v=20261001-payslip-amount"></script>
   <script src="/portal/admin-portal-pins.js?v=20260911-roberto-fast"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
@@ -122,7 +122,7 @@
   <script src="/portal/admin_ld_funding_review.js?v=20260714-ld-docs-rls"></script>
   <script src="/portal/admin-training-records.js?v=20260714-tr-p3"></script>
   <script src="/portal/admin-uniform.js?v=20260911-uniform-issue-note"></script>
-  <script src="/portal/admin-hr.js?v=20260922-annual-newhire"></script>
+  <script src="/portal/admin-hr.js?v=20261001-job-health-on-card"></script>
   <script src="/portal/policy-signoff-scope.js?v=20260728-home-office"></script>
   <script src="/portal/admin-policy-signoffs.js?v=20260728-home-office"></script>
   <script src="/portal/admin-payments.js?v=20260924-samer-13x120"></script>
@@ -20389,8 +20389,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         dobIso: String(row.dobIso || '').trim(),
         ageDisplay: '',
         addressFull: paxContactsFormatAddressFromPortal(row),
+        firstBookingIso: String(row.firstBookingIso || '').trim(),
+        lastBookingIso: String(row.lastBookingIso || '').trim(),
         firstBookingDisplay: String(row.firstBookingDisplay || '').trim() || '—',
         latestBookingDisplay: String(row.lastBookingDisplay || '').trim() || '—',
+        onWaitingList: wl,
+        _cfkContact: row._cfkContact === true,
+        _portalRegistration: row._livePortalCreated === true || row._portalRegistration === true,
         bookingStatus: bookingStatus,
         reg: {
           carer: parentDisp,
@@ -20773,10 +20778,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           childDisplay: name,
           childFirstName: String(r.first_name || '').trim(),
           childLastName: String(r.last_name || '').trim(),
-          inClass: 'No',
+          inClass: r.in_class === true ? 'Yes' : 'No',
+          onWaitingList: r.on_waiting_list === true,
           avatarStoragePath: String(r.avatar_storage_path || '').trim(),
-          _livePortalCreated: true
-        }, cid, 'programme_in'));
+          _livePortalCreated: true,
+          _portalRegistration: true
+        }, cid, r.on_waiting_list === true ? 'waiting_list' : 'programme_in'));
       });
       return out;
     }
@@ -20879,6 +20886,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
         var merged = Object.assign({}, base);
         if(disp && disp !== base.name) merged.name = disp;
+        cl.members.forEach(function(m){ paxContactsKeepBookingFacts(merged, m); });
         /* Same child, two contacts: keep the fuller parent (Maysoun) and any funding the other row had. */
         cl.members.forEach(function(m){
           if(!m || m === base) return;
@@ -20923,8 +20931,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       for(var w = 0; w < wlOnly.length; w++) out.push(wlOnly[w]);
       var oldR = adminOldParticipantsPortalRows();
       for(var j = 0; j < oldR.length; j++){
-        var op = paxContactsPortalRowToPax(oldR[j], j, 'old_participants');
+        var cfkRow = Object.assign({}, oldR[j], { _cfkContact: true });
+        var op = paxContactsPortalRowToPax(cfkRow, j, null);
         op.id = 'old-' + String(oldR[j].contactId != null ? oldR[j].contactId : j);
+        op._cfkContact = true;
         out.push(op);
       }
       out = paxContactsAppendLiveWaitlist(paxContactsAppendUnlistedParticipants(paxContactsDedupeByPerson(out)));
@@ -21430,25 +21440,82 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var labels = (typeof ADMIN_CLIENTS_INFO_SECTION_LABELS !== 'undefined' && ADMIN_CLIENTS_INFO_SECTION_LABELS) ? ADMIN_CLIENTS_INFO_SECTION_LABELS : [];
       return (Number.isFinite(n) && n >= 1 && labels[n - 1]) ? labels[n - 1] : 'Registration answer';
     }
-    /** CLIENT only with a current seat. Registered with no place, or a Booking Portal join, is WAITING. */
+    function paxContactsRealBookingIso(v){
+      var s = String(v || '').trim();
+      return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : '';
+    }
+    function paxContactsLiveRow(p){
+      var cid = paxContactsRealContactId(p);
+      if(!cid) return null;
+      var live = window.PORTAL_PARTICIPANT_LIVE_ROWS || [];
+      var i;
+      for(i = 0; i < live.length; i++){
+        if(String(live[i].contact_id || '') === cid) return live[i];
+      }
+      return null;
+    }
+    /** Copy booking dates and list flags across a merged child. */
+    function paxContactsKeepBookingFacts(merged, m){
+      if(!merged || !m) return;
+      if(m._cfkContact) merged._cfkContact = true;
+      if(m._portalRegistration || m._livePortalCreated) merged._portalRegistration = true;
+      if(m.onWaitingList) merged.onWaitingList = true;
+      if(m._waitlistOnly) merged._waitlistOnly = true;
+      if(m.bookingStatus === 'waiting_list') merged._listedWaiting = true;
+      var firstIso = paxContactsRealBookingIso(m.firstBookingIso);
+      var lastIso = paxContactsRealBookingIso(m.lastBookingIso);
+      if(firstIso && !paxContactsRealBookingIso(merged.firstBookingIso)) merged.firstBookingIso = firstIso;
+      if(lastIso && !paxContactsRealBookingIso(merged.lastBookingIso)) merged.lastBookingIso = lastIso;
+      var fd = String(m.firstBookingDisplay || '').trim();
+      var ld = String(m.latestBookingDisplay || '').trim();
+      if(fd && fd !== '—' && (!merged.firstBookingDisplay || merged.firstBookingDisplay === '—')) merged.firstBookingDisplay = fd;
+      if(ld && ld !== '—' && (!merged.latestBookingDisplay || merged.latestBookingDisplay === '—')) merged.latestBookingDisplay = ld;
+    }
+    function paxContactsHasBookingHistory(p){
+      if(!p) return false;
+      if(paxContactsRealBookingIso(p.firstBookingIso) || paxContactsRealBookingIso(p.lastBookingIso)) return true;
+      var disp = String(p.latestBookingDisplay || p.firstBookingDisplay || '').trim();
+      if(disp && disp !== '—' && disp !== '-') return true;
+      try{
+        if(typeof paxContactsFormerSeatBands === 'function' && paxContactsFormerSeatBands(p, []).length) return true;
+      }catch(_hist){}
+      return false;
+    }
+    function paxContactsIsWaiting(p){
+      if(!p) return false;
+      if(p.onWaitingList === true || p._waitlistOnly || p._listedWaiting) return true;
+      if(String(p.bookingStatus || '') === 'waiting_list') return true;
+      var live = paxContactsLiveRow(p);
+      return !!(live && live.on_waiting_list === true);
+    }
+    function paxContactsIsPortalRegistration(p){
+      if(!p) return false;
+      if(p._portalRegistration || p._livePortalCreated) return true;
+      var live = paxContactsLiveRow(p);
+      if(!live) return false;
+      if(String(live.avatar_storage_path || '').trim()) return true;
+      if(p._cfkContact === true) return false;
+      return true;
+    }
+    /**
+     * One list each.
+     * ACTIVE: on a place now.
+     * HAS BOOKING HISTORY: had a service and is not here now (true OLD).
+     * WAITING: registered onto a waiting list, and not also listed under REGISTERED.
+     * REGISTERED: registration form, no service, not on a waiting list.
+     * CFK LEADS: Class for Kids contact file, asked, never had a service.
+     */
     function paxContactsBucket(p){
       var st = String((p && p.bookingStatus) || '');
       var seats = 0;
       try{ seats = paxContactsCurrentSeatBands(p).length; }catch(_seats){ seats = 0; }
-      if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
-      if(st === 'old_participants' || st === 'not_in_programme') return 'old_participants';
-      if(st === 'trial') return 'trial';
-      if(st === 'waiting_list' || (p && p._waitlistOnly)) return 'waiting_list';
-      var occ = window.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
-      if(!(occ && occ.bySlotId)) return 'registered';
-      var cid = paxContactsRealContactId(p);
-      if(!cid) return 'registered';
-      var live = window.PORTAL_PARTICIPANT_LIVE_ROWS || [];
-      for(var i = 0; i < live.length; i++){
-        if(String(live[i].contact_id || '') !== cid) continue;
-        if(live[i].in_class === true) return 'registered';
-        return 'waiting_list';
-      }
+      var live = paxContactsLiveRow(p);
+      if(seats > 0 || (live && live.in_class === true)) return st === 'trial' ? 'trial' : 'programme_in';
+      if(paxContactsHasBookingHistory(p)) return 'booking_history';
+      if(paxContactsIsWaiting(p)) return 'waiting_list';
+      if(paxContactsIsPortalRegistration(p)) return 'registered';
+      if(p && p._cfkContact) return 'cfk_leads';
+      if(st === 'old_participants' || st === 'not_in_programme') return 'booking_history';
       return 'registered';
     }
     function paxContactsMatchesBookingStatus(p, bk){
@@ -21458,11 +21525,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function paxContactsBookingStatusOptionsHtml(){
       return (
         '<option value="all">All</option>'+
-        '<option value="programme_in" selected>CLIENT</option>'+
-        '<option value="registered">REGISTERED</option>'+
-        '<option value="trial">On a trial</option>'+
+        '<option value="programme_in" selected>ACTIVE</option>'+
         '<option value="waiting_list">WAITING</option>'+
-        '<option value="old_participants">OLD</option>'
+        '<option value="booking_history">HAS BOOKING HISTORY</option>'+
+        '<option value="registered">REGISTERED</option>'+
+        '<option value="cfk_leads">CFK LEADS</option>'+
+        '<option value="trial">On a trial</option>'
       );
     }
     /** Compact booked-services cell for the participants list (programme + day abbreviations). */
@@ -21537,7 +21605,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!client || typeof client.from !== 'function') return false;
       try{
         var res = await client.from('portal_participants')
-          .select('contact_id,display_name,first_name,last_name,avatar_storage_path,in_class')
+          .select('contact_id,display_name,first_name,last_name,avatar_storage_path,in_class,on_waiting_list')
           .limit(2000);
         if(res.error || !res.data) return false;
         var byId = Object.create(null);
@@ -21795,13 +21863,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function paxContactsBookingStatusMeta(st){
       switch(String(st || '')){
         case 'programme_in': case 'in_class': case 'in_camp':
-          return { label: 'CLIENT', bg: '#dcfce7', fg: '#166534' };
+          return { label: 'ACTIVE', bg: '#dcfce7', fg: '#166534' };
         case 'trial':
           return { label: 'On a trial', bg: '#e0f2fe', fg: '#075985' };
         case 'waiting_list':
           return { label: 'WAITING', bg: '#fef9c3', fg: '#854d0e' };
-        case 'old_participants': case 'not_in_programme':
-          return { label: 'OLD', bg: '#f1f5f9', fg: '#475569' };
+        case 'booking_history': case 'old_participants': case 'not_in_programme':
+          return { label: 'HAS BOOKING HISTORY', bg: '#f1f5f9', fg: '#475569' };
+        case 'cfk_leads':
+          return { label: 'CFK LEADS', bg: '#ede9fe', fg: '#5b21b6' };
         case 'registered':
           return { label: 'REGISTERED', bg: '#ffedd5', fg: '#9a3412' };
         default:
@@ -21896,7 +21966,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">CLIENT</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">CLIENT is only people on a place now. WAITING is everyone who registered and has no place yet, including the new registrations, plus Booking Portal joins. The Photo column is that child\'s own picture. Tap anyone to open the full record.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. WAITING is registered and on a waiting list, so they do not also show under REGISTERED. HAS BOOKING HISTORY had a service and is not here now. REGISTERED filled the form and has no service. CFK LEADS is the Class for Kids contact file: they asked and never had a service. The Photo column is that child\'s own picture.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+

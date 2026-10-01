@@ -220,8 +220,49 @@
     );
   }
 
+  function isActiveClient(e) {
+    return !!(e && e.in_class === true);
+  }
+
+  function matchesFilter(e, filter) {
+    if (filter === 'pending') return e.pending_count > 0;
+    if (filter === 'photo_yes') return e.photo_done && e.photo_consent === 'yes';
+    if (filter === 'photo_no') return e.photo_done && e.photo_consent === 'no';
+    if (filter === 'med_yes') return e.medication_done && e.medication_at_centre_needed === 'yes';
+    if (filter === 'emergency_pending') return !e.emergency_done;
+    if (filter === 'offsite_pending') return !e.offsite_done;
+    if (filter === 'renewal') return !!e.renewal_needed;
+    if (filter === 'complete') return e.pending_count === 0;
+    return true;
+  }
+
+  function countsFor(entries) {
+    var photoPending = 0;
+    var medPending = 0;
+    var emergencyPending = 0;
+    var offsitePending = 0;
+    var renewal = 0;
+    (entries || []).forEach(function (e) {
+      if (!e.photo_done) photoPending += 1;
+      if (!e.medication_done) medPending += 1;
+      if (!e.emergency_done) emergencyPending += 1;
+      if (!e.offsite_done) offsitePending += 1;
+      if (e.renewal_needed) renewal += 1;
+    });
+    return {
+      photo_pending: photoPending,
+      medication_pending: medPending,
+      emergency_pending: emergencyPending,
+      offsite_pending: offsitePending,
+      renewal_needed: renewal
+    };
+  }
+
   function tableHtml(entries) {
     if (!entries || !entries.length) {
+      if (state.filter === 'renewal') {
+        return '<p class="muted" style="margin:0;max-width:40rem;overflow-wrap:break-word">Annual renewal is for ACTIVE clients who already signed, when that signature is older than 12 months. Nobody is due yet. People who have not signed are under Pending.</p>';
+      }
       return '<p class="muted" style="margin:0">No participants match this filter.</p>';
     }
     return (
@@ -244,13 +285,26 @@
     var hostEl = global.document.getElementById('portalParentConsentsHost');
     if (!hostEl) return;
     hostEl.innerHTML = '<p class="muted">Loading…</p>';
-    var res = await api({ filter: state.filter, q: state.q, limit: 400 });
+    var res = await api({ filter: 'all', q: '', limit: 500 });
     if (res.error) {
       hostEl.innerHTML = '<p class="muted">Could not load consents (' + esc(res.error) + ').</p>';
       return;
     }
-    state.entries = res.entries || [];
-    state.meta = res.meta || {};
+    var active = (res.entries || []).filter(isActiveClient);
+    state.meta = countsFor(active);
+    var q = String(state.q || '').trim().toLowerCase();
+    state.entries = active.filter(function (e) {
+      if (!matchesFilter(e, state.filter)) return false;
+      if (!q) return true;
+      var hay = (
+        String(e.participant_display || '') +
+        ' ' +
+        String(e.parent_display || '') +
+        ' ' +
+        String(e.contact_id || '')
+      ).toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
     var metaEl = global.document.getElementById('portalParentConsentsMeta');
     if (metaEl) {
       metaEl.textContent =
@@ -271,12 +325,13 @@
   function viewHtml() {
     return (
       '<h1 class="page-title">Parent consents</h1>' +
-      '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Photo consent is for <strong>website / marketing / training / research</strong> only — portal progress photos do not need this. Also tracks medication, emergency treatment, and off-site travel (walk / public transport / taxi with PA). Consents expire after <strong>12 months</strong>.</p>' +
+      '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Only <strong>ACTIVE</strong> clients. Photo consent is for <strong>website / marketing / training / research</strong> only — portal progress photos do not need this. Also tracks medication, emergency treatment, and off-site travel (walk / public transport / taxi with PA). <strong>Annual renewal</strong> is a signature older than 12 months. People who have not signed yet stay under Pending.</p>' +
       '<div class="card" style="margin-bottom:14px">' +
       '<div class="card-h"><h3>Consent status</h3>' +
       '<span class="chip chip--pend" id="portalParentConsentsMeta">…</span></div>' +
       '<div class="card-pad">' +
-      '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
+      '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px;align-items:center">' +
+      '<input id="portalParentConsentsSearch" type="search" placeholder="Search name…" style="min-width:0;width:14rem;max-width:100%;flex:0 1 14rem;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit" />' +
       '<button type="button" class="btn btn--sm" data-consents-filter="pending">Pending</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="renewal">Annual renewal</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="photo_yes">Marketing OK</button>' +
@@ -286,8 +341,7 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="offsite_pending">Travel pending</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="complete">Complete</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="all">All</button>' +
-      '<input id="portalParentConsentsSearch" type="search" placeholder="Search name…" style="min-width:10rem;max-width:100%;flex:1 1 12rem;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit" />' +
-      '<button type="button" class="btn btn--sec btn--sm" id="portalParentConsentsRefresh">Refresh</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="portalParentConsentsRefresh" style="margin-left:auto">Refresh</button>' +
       '</div>' +
       '<div id="portalParentConsentsHost"><p class="muted">Loading…</p></div>' +
       '</div></div>'

@@ -463,10 +463,195 @@ function onboardingText(v: unknown): string {
   return String(v ?? "").replace(/\s+/g, " ").trim();
 }
 
+function onboardingYesNo(v: unknown): string {
+  const s = onboardingText(v).toLowerCase();
+  if (s === "yes") return "Yes";
+  if (s === "no") return "No";
+  return onboardingText(v);
+}
+
+/** Labels match the job application form, in the same order. */
+export function jobApplicationHrData(job: Record<string, unknown>): Record<string, string> {
+  const pairs: Array<[string, string]> = [
+    ["Name", onboardingText(job.name)],
+    ["Surname", onboardingText(job.surname)],
+    ["Address", onboardingText(job.address)],
+    ["Date of birth", onboardingText(job.dob)],
+    ["Phone", onboardingText(job.phone)],
+    ["Nationality", onboardingText(job.nationality)],
+    ["Right to work", onboardingText(job.rtwork)],
+    ["Right to work code", onboardingText(job.rtwork_code)],
+    ["Role", onboardingText(job.role)],
+    ["Status", onboardingText(job.status)],
+    ["Location", onboardingText(job.location)],
+    ["Availability", onboardingText(job.availability)],
+    ["Education", onboardingText(job.education)],
+    ["Qualifications", onboardingText(job.qualifications)],
+    ["Qualifications date", onboardingText(job.date)],
+    ["Additional certifications", onboardingText(job.additional_certifications)],
+    ["Employment history", onboardingText(job.employment_history)],
+    ["Gaps in employment", onboardingText(job.gaps)],
+    ["Additional skills", onboardingText(job.additional_skills)],
+    ["Criminal record", onboardingYesNo(job.criminal_record)],
+    ["Criminal record details", onboardingText(job.criminal_record_info)],
+    ["Bank account", onboardingText(job.bank_account)],
+    ["Sort code", onboardingText(job.sort_code)],
+    ["Account number", onboardingText(job.account_number)],
+  ];
+  const out: Record<string, string> = {};
+  for (const [label, value] of pairs) {
+    if (value) out[label] = value;
+  }
+  return out;
+}
+
+/** Labels match the health questionnaire, in the same order. */
+export function healthQuestionnaireHrData(health: Record<string, unknown>): Record<string, string> {
+  const legacy = [
+    ["Medical conditions", "q1", "q1_detail"],
+    ["Medication", "q2", "q2_detail"],
+    ["Allergies", "q3", "q3_detail"],
+    ["Mental health", "q4", "q4_detail"],
+    ["Musculoskeletal", "q5", "q5_detail"],
+    ["Respiratory", "q6", "q6_detail"],
+    ["Hearing impairments", "q7", "q7_detail"],
+    ["Communicable diseases", "q8", "q8_detail"],
+    ["Hospital admissions", "q9", "q9_detail"],
+    ["Workplace adjustments", "q10", "q10_detail"],
+  ] as const;
+  const current = [
+    ["Medical conditions", "medical_conditions", "medical_condition_info"],
+    ["Medication", "medication", "medication_info"],
+    ["Allergies", "allergies", "allergies_info"],
+    ["Mental health", "mental_health", "mental_health_info"],
+    ["Musculoskeletal", "musculoskeletal", "musculoskeletal_info"],
+    ["Respiratory", "respiratory", "respiratory_info"],
+    ["Hearing impairments", "hearing_impairments", "hearing_impairments_info"],
+    ["Communicable diseases", "communicable_diseases", "communicable_diseases_info"],
+    ["Hospital admissions", "surgeries_or_hospital_admissions", "hospital_admissions_info"],
+    ["Workplace adjustments", "require_workplace_adjustments", "adjustments_info"],
+  ] as const;
+  const useLegacy = health.q1 != null && health.medical_conditions == null;
+  const pairs: Array<[string, unknown, unknown]> = (useLegacy ? legacy : current).map(
+    ([label, answerKey, infoKey]) => [label, health[answerKey], health[infoKey]],
+  );
+  const out: Record<string, string> = {};
+  const name = [
+    onboardingText(health.name) || onboardingText(health.firstName),
+    onboardingText(health.surname) || onboardingText(health.lastName),
+  ].filter(Boolean).join(" ");
+  if (name) out.Name = name;
+  if (onboardingText(health.dob)) out["Date of birth"] = onboardingText(health.dob);
+  const role = onboardingText(health.role) || onboardingText(health.positionLabel) ||
+    onboardingText(health.position);
+  if (role) out.Role = role;
+  for (const [label, answer, info] of pairs) {
+    const yn = onboardingYesNo(answer);
+    if (yn) out[label] = yn;
+    const detail = onboardingText(info);
+    if (detail) out[label + " details"] = detail;
+  }
+  const confirmed = ["confirmation_1", "confirmation_2", "confirmation_3"].every((k) => {
+    const v = health[k];
+    return v === true || v === "true" || v === "on" || v === "yes";
+  }) || ["confirm_accurate", "confirm_impact", "consent_health"].every((k) => {
+    const v = onboardingText(health[k]).toLowerCase();
+    return v === "true" || v === "yes" || v === "on";
+  });
+  if (confirmed) out.Declarations = "Confirmed";
+  if (onboardingText(health.declarationDate)) out["Declaration date"] = onboardingText(health.declarationDate);
+  return out;
+}
+
+async function hrAnchorForStaff(
+  portalAdmin: SupabaseClient,
+  userId: string,
+  fallbackName: string,
+): Promise<{ nameKey: string; employeeName: string; staffId: string | null; active: boolean } | null> {
+  const id = String(userId || "").trim();
+  if (id) {
+    const { data } = await portalAdmin
+      .from("hr_records")
+      .select("name_key, employee_name, staff_id, active")
+      .eq("sheet", "Employees info")
+      .eq("staff_id", id)
+      .limit(1);
+    const row = data && data[0];
+    if (row?.name_key) {
+      return {
+        nameKey: String(row.name_key),
+        employeeName: String(row.employee_name || fallbackName || ""),
+        staffId: row.staff_id ? String(row.staff_id) : id,
+        active: row.active !== false,
+      };
+    }
+  }
+  const want = fallbackName.trim().toLowerCase();
+  if (want) {
+    const { data: named } = await portalAdmin
+      .from("hr_records")
+      .select("name_key, employee_name, staff_id, active")
+      .eq("sheet", "Employees info")
+      .ilike("employee_name", fallbackName.trim())
+      .limit(1);
+    const row = named && named[0];
+    if (row?.name_key) {
+      return {
+        nameKey: String(row.name_key),
+        employeeName: String(row.employee_name || fallbackName),
+        staffId: row.staff_id ? String(row.staff_id) : (id || null),
+        active: row.active !== false,
+      };
+    }
+  }
+  const nameKey = hrNameKey(fallbackName);
+  if (!nameKey) return null;
+  return { nameKey, employeeName: fallbackName.trim(), staffId: id || null, active: true };
+}
+
+async function upsertHrFormSheet(
+  portalAdmin: SupabaseClient,
+  anchor: { nameKey: string; employeeName: string; staffId: string | null; active: boolean },
+  sheet: string,
+  data: Record<string, string>,
+  sourceFile: string,
+): Promise<void> {
+  if (!Object.keys(data).length) return;
+  const { data: existing } = await portalAdmin
+    .from("hr_records")
+    .select("id")
+    .eq("sheet", sheet)
+    .eq("name_key", anchor.nameKey)
+    .limit(1);
+  const row = {
+    sheet,
+    row_index: 1,
+    name_key: anchor.nameKey,
+    employee_name: anchor.employeeName,
+    staff_id: anchor.staffId,
+    data,
+    source_file: sourceFile,
+    active: anchor.active,
+  };
+  if (existing && existing[0]?.id) {
+    const { error } = await portalAdmin.from("hr_records").update({
+      data,
+      employee_name: anchor.employeeName,
+      staff_id: anchor.staffId,
+      source_file: sourceFile,
+      active: anchor.active,
+    }).eq("id", existing[0].id);
+    if (error) console.warn("[upsertHrFormSheet]", sheet, error.message);
+    return;
+  }
+  const { error } = await portalAdmin.from("hr_records").insert(row);
+  if (error) console.warn("[upsertHrFormSheet]", sheet, error.message);
+}
+
 /**
  * Submitted job applications were staying in onboarding drafts only, so Staff & HR
  * opened an empty rota card. Copy the same Employee info shape the matrix uses.
- * Bank details stay on the draft.
+ * The full form, including bank details, is the Job application section.
  */
 export async function foldSubmittedJobIntoHrRecords(
   portalAdmin: SupabaseClient,
@@ -497,6 +682,20 @@ export async function foldSubmittedJobIntoHrRecords(
   const nameKey = hrNameKey(String(prof.username || prof.full_name || ""));
   if (!nameKey) return;
 
+  const surname = onboardingText(job.surname);
+  const given = onboardingGivenName(onboardingText(job.name), surname);
+  const display = onboardingText(prof.full_name) || [given, surname].filter(Boolean).join(" ");
+  const anchorEarly = await hrAnchorForStaff(portalAdmin, id, display);
+  if (anchorEarly) {
+    await upsertHrFormSheet(
+      portalAdmin,
+      anchorEarly,
+      "Job application",
+      jobApplicationHrData(job),
+      "onboarding_job_application",
+    );
+  }
+
   const { data: existing } = await portalAdmin
     .from("hr_records")
     .select("id")
@@ -505,9 +704,6 @@ export async function foldSubmittedJobIntoHrRecords(
     .limit(1);
   if (existing && existing.length) return;
 
-  const surname = onboardingText(job.surname);
-  const given = onboardingGivenName(onboardingText(job.name), surname);
-  const display = onboardingText(prof.full_name) || [given, surname].filter(Boolean).join(" ");
   const employeeInfo: Record<string, string> = {
     Name: given,
     Surname: surname,
@@ -559,6 +755,33 @@ export async function foldSubmittedJobIntoHrRecords(
 
   const { error } = await portalAdmin.from("hr_records").insert(rows);
   if (error) console.warn("[foldSubmittedJobIntoHrRecords]", error.message);
+}
+
+/** Copy a submitted health questionnaire onto the Staff & HR person card. */
+export async function foldSubmittedHealthIntoHrRecords(
+  portalAdmin: SupabaseClient,
+  userId: string,
+  staffName: string,
+  payload: unknown,
+): Promise<void> {
+  if (!payload || typeof payload !== "object") return;
+  const health = payload as Record<string, unknown>;
+  const portalMeta = health._portal && typeof health._portal === "object"
+    ? (health._portal as Record<string, unknown>)
+    : null;
+  const submittedAt = String(portalMeta?.submitted_at || "").trim();
+  if (!submittedAt) return;
+  const display = onboardingText(staffName) ||
+    [onboardingText(health.name), onboardingText(health.surname)].filter(Boolean).join(" ");
+  const anchor = await hrAnchorForStaff(portalAdmin, userId, display);
+  if (!anchor) return;
+  await upsertHrFormSheet(
+    portalAdmin,
+    anchor,
+    "Health Questionaire",
+    healthQuestionnaireHrData(health),
+    "onboarding_health_questionnaire",
+  );
 }
 
 export function mintUniqueStaffPin(existing: Iterable<string>): string {

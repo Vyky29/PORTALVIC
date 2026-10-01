@@ -141,18 +141,17 @@ Deno.serve(async (req) => {
 
   const { data: participant } = await supabase
     .from("portal_participants")
-    .select("contact_id")
+    .select("contact_id, in_class")
     .eq("parent_person_id", session.parent_person_id)
     .eq("contact_id", contactId)
     .maybeSingle();
-  if (!participant) {
-    const fallback = await supabase
-      .from("portal_parent_contacts")
-      .select("contact_id")
-      .eq("parent_person_id", session.parent_person_id)
-      .eq("contact_id", contactId)
-      .maybeSingle();
-    if (!fallback.data) return parentPortalJsonInvalid(403);
+  if (!participant || participant.in_class !== true) {
+    return json(200, {
+      ok: true,
+      available: false,
+      consents: { ...EMPTY },
+      summary: summarize(EMPTY),
+    });
   }
 
   const { data: row, error } = await supabase

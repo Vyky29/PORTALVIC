@@ -72,27 +72,14 @@ Deno.serve(async (req) => {
 
   const { data: linkedParticipant } = await supabase
     .from("portal_participants")
-    .select("contact_id, display_name, first_name, last_name, dob_iso")
+    .select("contact_id, display_name, first_name, last_name, dob_iso, in_class")
     .eq("parent_person_id", session.parent_person_id)
     .eq("contact_id", contactId)
     .maybeSingle();
-  let participant = linkedParticipant;
-  if (!participant) {
-    const fallback = await supabase
-      .from("portal_parent_contacts")
-      .select("contact_id")
-      .eq("parent_person_id", session.parent_person_id)
-      .eq("contact_id", contactId)
-      .maybeSingle();
-    if (!fallback.data) return parentPortalJsonInvalid(403);
-    participant = {
-      contact_id: contactId,
-      display_name: null,
-      first_name: null,
-      last_name: null,
-      dob_iso: null,
-    };
+  if (!linkedParticipant || linkedParticipant.in_class !== true) {
+    return json(403, { ok: false, error: "not_active_client" });
   }
+  const participant = linkedParticipant;
 
   const photoConsent = clean(body.photo_consent, 40).toLowerCase();
   const medNeeded = clean(body.medication_at_centre_needed, 40).toLowerCase();

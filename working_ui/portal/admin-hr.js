@@ -44,9 +44,10 @@
     "Health Questionaire": "Health questionnaire",
   };
   var CATEGORY_ORDER = [
+    "Job application", "Health Questionaire",
     "Employee Docs", "Emergency Contact Info", "Induction & Safeguarding",
     "Shadowings & Trainings", "Observations", "Paid CoursesCertificatesFirst A",
-    "Health Questionaire", "Job application", "Interviews",
+    "Interviews",
   ];
 
   var ANNUAL_PROFILE_CAMPAIGN_START_MS = Date.parse("2026-07-03T00:00:00Z");
@@ -179,8 +180,10 @@
       ".hr-field{display:flex;flex-direction:column;gap:4px;min-width:0}",
       ".hr-field label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.03em}",
       ".hr-field label .hr-ico{flex:0 0 auto;color:#94a3b8}",
-      ".hr-field input,.hr-field textarea{font:inherit;font-size:14px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:9px;background:#fff;color:#0f172a;width:100%}",
+      ".hr-field input,.hr-field textarea{font:inherit;font-size:14px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:9px;background:#fff;color:#0f172a;width:100%;min-width:0;overflow-wrap:break-word}",
       ".hr-field textarea{min-height:62px;resize:vertical}",
+      ".hr-field--wide{grid-column:1 / -1}",
+      ".hr-field--wide textarea{min-height:96px}",
       ".hr-toggle{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#0f172a;font-weight:700}",
       ".hr-multi{font-size:11px;color:#64748b;margin:2px 0 0}",
       /* Days off */
@@ -1191,12 +1194,13 @@
 
   function fieldInput(rowId, key, value, ico) {
     var v = value == null ? "" : String(value);
-    var long = v.length > 48;
+    var long = v.length > 48 || v.indexOf("\n") >= 0;
     var control = long
       ? '<textarea data-field="' + esc(key) + '">' + esc(v) + '</textarea>'
       : '<input type="text" data-field="' + esc(key) + '" value="' + esc(v) + '" />';
     var lab = icon(ico || "field", 13) + "<span>" + esc(key) + "</span>";
-    return '<div class="hr-field" data-row-id="' + esc(rowId) + '"><label>' + lab + '</label>' + control + '</div>';
+    var wide = long ? " hr-field--wide" : "";
+    return '<div class="hr-field' + wide + '" data-row-id="' + esc(rowId) + '"><label>' + lab + '</label>' + control + '</div>';
   }
 
   function openPerson(nameKey) {
@@ -1254,7 +1258,7 @@
       var secIco = SHEET_ICONS[r.sheet] || "field";
       var fields = keys.map(function (k) { return fieldInput(r.id, k, d[k], secIco); }).join("");
       if (!fields) fields = '<p class="muted" style="margin:0;font-size:13px">No fields.</p>';
-      var openAttr = (r.sheet === PEOPLE_SHEET || idx === 0) ? " open" : "";
+      var openAttr = (r.sheet === PEOPLE_SHEET || r.sheet === "Job application" || r.sheet === "Health Questionaire" || idx === 0) ? " open" : "";
       var chev = '<svg class="hr-ico hr-sec__chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
       sections += '<details class="hr-sec"' + openAttr + ' data-sheet-row="' + esc(r.id) + '">'
         + '<summary>' + sheetIcon(r.sheet, 17) + '<span>' + esc(labelFor(r.sheet)) + '</span>' + chev + '</summary>'
