@@ -468,7 +468,7 @@
       { id:'sessions_notes', label:'Register', hubLabel:'Register', dayOpsAct:'sessions_hub_feedback' },
       { id:'c4k_late_submissions', label:'Late feedback' },
       { id:'session_disruptions', label:'Session disruptions' },
-      { id:'c4k_waitlist', label:'Waiting List' },
+      { id:'c4k_waitlist', label:'WAITING LIST' },
       { id:'office_calendar', label:'Office calendar', hubLabel:'Office calendar' },
       { id:'open_places_2627', label:'Open places → Services §3' },
       { id:'c4k_reviews', label:'Reviews' },
@@ -2465,7 +2465,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v103')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v104')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -2488,7 +2488,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       { key:'active', title:'ACTIVE', tone:'green', re:/^ACTIVE\b|^A cancelled place/i },
       { key:'old', title:'OLD CLIENTS', tone:'slate', re:/^OLD CLIENTS\b/i },
       { key:'registered', title:'REGISTERED', tone:'blue', re:/REGISTERED|September registration/i },
-      { key:'waiting', title:'Waiting List', tone:'amber', re:/^Waiting List\b|^Portal Waiting|^Old Waiting|^Source is|^Newest join/i },
+      { key:'waiting', title:'WAITING LIST', tone:'amber', re:/^WAITING LIST\b|^Waiting List\b|^portal waiting list\b|^old waiting list\b|^Portal Waiting|^Old Waiting|^Source is|^Newest join/i },
       { key:'cfk', title:'CFK LEADS', tone:'violet', re:/CFK LEADS|Funding and Payment/i },
       { key:'trial', title:'On Trial / Trialled', tone:'teal', re:/^On Trial|^Booked is|^Service and Time|^Trial session|^A session /i },
       { key:'photo', title:'Photo', tone:'rose', re:/^The Photo\b|^Photo column/i }
@@ -22486,9 +22486,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         opt('all', 'All')+
         opt('programme_in', 'ACTIVE')+
-        opt('waiting', 'Waiting List')+
-        opt('portal_waiting', 'Portal Waiting List')+
-        opt('old_waiting', 'Old Waiting List')+
+        opt('waiting', 'WAITING LIST')+
+        opt('portal_waiting', 'portal waiting list')+
+        opt('old_waiting', 'old waiting list')+
         opt('booking_history', 'OLD CLIENTS')+
         opt('registered', 'REGISTERED')+
         opt('cfk_leads', 'CFK LEADS')+
@@ -23435,8 +23435,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var bits = [];
       var kind = '';
       try{ kind = paxContactsWaitingKind(p); }catch(_kind){ kind = ''; }
-      if(kind === 'old_waiting') bits.push('Old Waiting List');
-      else if(kind === 'portal_waiting') bits.push('Portal Waiting List');
+      if(kind === 'old_waiting') bits.push('old waiting list');
+      else if(kind === 'portal_waiting') bits.push('portal waiting list');
       var meta = null;
       try{ meta = paxContactsBookingStatusMeta(paxContactsBucket(p)); }catch(_bucket){ meta = null; }
       if(meta && meta.label && bits.indexOf(meta.label) < 0) bits.push(meta.label);
@@ -23670,8 +23670,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var listRows = paxContactsListRowsHtml();
       var n = paxContactsUnifiedList().length;
       var intro = bookingSelected === 'waiting'
-        ? 'Waiting List in the menu is this same table. Booking status Waiting List shows Portal Waiting List and Old Waiting List together. Portal is the Booking Portal queue from 12 Aug 2026. Old is the workbook from before that, and drops anyone who already has a service. Someone who already has a service can still be on Portal Waiting List for another place. Desired service, slot, place, last booking and parent stay on the row.'
-        : 'ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. Waiting List in the left menu is this same table. Portal Waiting List is the Booking Portal queue from 12 Aug 2026 (Tala) to now. Old Waiting List is the workbook queue from before that, and drops anyone who already has a service. Source is on this table. Funding and Payment stay off waiting lists and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of a waiting list. REGISTERED shows the day they registered, newest at the top. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.';
+        ? 'WAITING LIST in the menu is this same table. Booking status WAITING LIST shows portal waiting list and old waiting list together. portal waiting list is the Booking Portal queue from 12 Aug 2026. old waiting list is the workbook from before that, and drops anyone who already has a service. Someone who already has a service can still be on portal waiting list for another place. Desired service, slot, place, last booking and parent stay on the row.'
+        : 'ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. WAITING LIST in the left menu is this same table. portal waiting list is the Booking Portal queue from 12 Aug 2026 (Tala) to now. old waiting list is the workbook queue from before that, and drops anyone who already has a service. Source is on this table. Funding and Payment stay off waiting lists and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of a waiting list. REGISTERED shows the day they registered, newest at the top. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.';
       var focus = bookingSelected === 'waiting' ? (state.waitlistFocus || null) : null;
       var focusBanner = '';
       if(focus && (focus.prog || focus.venue)){
@@ -28805,7 +28805,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var preset = state.paxBookingPreset || 'waiting';
       state.paxBookingPreset = '';
       if(preset !== 'portal_waiting' && preset !== 'old_waiting') preset = 'waiting';
-      return viewC4kParticipants({ title: 'Waiting List', bookingStatus: preset });
+      return viewC4kParticipants({ title: 'WAITING LIST', bookingStatus: preset });
     }
     function sessionFeedbackEnsureState(){
       state.sessionFeedback = state.sessionFeedback || {};
@@ -30460,7 +30460,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id:'clients',
         icon:'👥',
         title:'Clients & Families',
-        description:'Active, Waiting List, Registered and Leads, plus family messages and family documents.',
+        description:'Active, WAITING LIST, Registered and Leads, plus family messages and family documents.',
         preview:[],
         status:'',
         primary:['clients','c4k_waitlist','portal_participant_documents','leads','family_whatsapp_business','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'],
