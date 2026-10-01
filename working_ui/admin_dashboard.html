@@ -20467,15 +20467,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var byNorm = Object.create(null);
 
       function touchClient(displayName, sessionIso){
-        var cn = String(displayName || '').trim();
+        var cn = String(displayName || '').replace(/\s*[·\u00b7]\s*\d.*$/, '').trim();
         var cnL = cn.toLowerCase();
         // Empty/offerable slots are not participants — they belong in capacity
         // (Available), never the participant directory.
         if(!cn || cnL === 'closed' || cnL === 'available' || cnL === 'no client' || cnL === 'noclient' || cnL === 'no participant' || cnL === 'open' || cnL === 'open slot' || cnL === '—') return;
         // Non-participant roster rows: HOME/MANAGER are director dashboard cards,
-        // Q6 College is an outreach booking that ended and did not renew. ACAT is
-        // an active booking and intentionally kept.
-        if(cnL === 'home' || cnL === 'manager' || cnL === 'q6 college' || cnL === 'q6college') return;
+        // Q6 College is an outreach booking that ended and did not renew.
+        // ACAT is the Tuesday Day Centre group. Jack W, Jack S, Kamy and Kate
+        // are the clients, so the group label is not its own person.
+        if(cnL === 'home' || cnL === 'manager' || cnL === 'q6 college' || cnL === 'q6college' || cnL === 'acat') return;
         var norm = adminPortalNormalizedPersonName(cn);
         if(!norm) return;
         var iso = String(sessionIso || '').trim().slice(0, 10);
@@ -20721,6 +20722,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * Yusuf Ah vs Yusuf Harzi). The bare first name stays with the earliest contact.
      */
     function paxContactsKeepSeparate(a, b){
+      try{
+        var idn = window.PortalParticipantIdentity;
+        if(idn && typeof idn.canonicalClientId === 'function'){
+          var ca = idn.canonicalClientId(a && a.name);
+          var cb = idn.canonicalClientId(b && b.name);
+          if(ca && cb && ca === cb) return false;
+        }
+      }catch(_keepSame){}
       var pa = paxContactsNormParts(a && a.name);
       var pb = paxContactsNormParts(b && b.name);
       if(!pa.length || !pb.length || pa[0] !== pb[0]) return false;
@@ -21881,7 +21890,70 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return c4kRosterSheetDowOrder(a.day) - c4kRosterSheetDowOrder(b.day)
           || String(a.timeDisp || '').localeCompare(String(b.timeDisp || ''));
       });
-      return out;
+      return paxContactsMergeContiguousBands(out);
+    }
+    function paxContactsClockToMin(bit){
+      var m = String(bit || '').trim().match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/i);
+      if(!m) return null;
+      var h = parseInt(m[1], 10);
+      var min = parseInt(m[2], 10);
+      var ap = m[3].toLowerCase();
+      if(ap === 'pm' && h < 12) h += 12;
+      if(ap === 'am' && h === 12) h = 0;
+      return h * 60 + min;
+    }
+    function paxContactsMinToClock(mins){
+      var h24 = Math.floor(mins / 60) % 24;
+      var min = mins % 60;
+      var ap = h24 >= 12 ? 'pm' : 'am';
+      var h12 = h24 % 12;
+      if(h12 === 0) h12 = 12;
+      return h12 + ':' + (min < 10 ? '0' : '') + min + ' ' + ap;
+    }
+    /** Consecutive same-day halves (4.00-4.30 + 4.30-5.00 + 5.00-5.30) read as one band. */
+    function paxContactsMergeContiguousBands(bands){
+      var open = (bands || []).slice().sort(function(a, b){
+        var d = c4kRosterSheetDowOrder(a.day) - c4kRosterSheetDowOrder(b.day);
+        if(d) return d;
+        var as = paxContactsClockToMin(String(a.timeDisp || '').split(/\s+to\s+/i)[0]);
+        var bs = paxContactsClockToMin(String(b.timeDisp || '').split(/\s+to\s+/i)[0]);
+        if(as == null || bs == null) return String(a.timeDisp || '').localeCompare(String(b.timeDisp || ''));
+        return as - bs;
+      });
+      var merged = [];
+      open.forEach(function(b){
+        var parts = String(b.timeDisp || '').split(/\s+to\s+/i);
+        var start = parts.length === 2 ? paxContactsClockToMin(parts[0]) : null;
+        var end = parts.length === 2 ? paxContactsClockToMin(parts[1]) : null;
+        var prev = merged.length ? merged[merged.length - 1] : null;
+        if(prev && start != null && end != null && prev._end != null
+          && prev.day === b.day
+          && String(prev.programme || '').toLowerCase() === String(b.programme || '').toLowerCase()
+          && String(prev.venue || '').toLowerCase() === String(b.venue || '').toLowerCase()
+          && start === prev._end){
+          prev._end = end;
+          prev.timeDisp = paxContactsMinToClock(prev._start) + ' to ' + paxContactsMinToClock(end);
+          (b.instructors || []).forEach(function(ins){
+            if(prev.instructors.indexOf(ins) < 0) prev.instructors.push(ins);
+          });
+          return;
+        }
+        merged.push({
+          programme: b.programme,
+          day: b.day,
+          timeDisp: b.timeDisp,
+          venue: b.venue,
+          instructors: (b.instructors || []).slice(),
+          moved: b.moved,
+          _start: start,
+          _end: end
+        });
+      });
+      merged.forEach(function(b){
+        delete b._start;
+        delete b._end;
+      });
+      return merged;
     }
     /** Participant list: aligned "Service/s" and "Time slot/s" cells (one line per current seat). */
     function paxContactsServiceSlotCells(p){
@@ -21915,6 +21987,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       return { svc: svc, slot: slot };
     }
+    /**
+     * Birth line from the registration client-info sheet when the contact has no DOB.
+     * "born 13 October 2013" keeps the day. "born June 2002" keeps the month only.
+     */
+    function paxContactsRegistrationBorn(p){
+      var blob = '';
+      try{
+        var idn = window.PortalParticipantIdentity;
+        if(idn && typeof idn.lookupClientsInfoSheet === 'function'){
+          blob = idn.lookupClientsInfoSheet(p && p.name, '', '') || '';
+        }
+      }catch(_born){}
+      if(!blob) return null;
+      var m = blob.match(/born\s+(?:(\d{1,2})\s+)?([A-Za-z]+)\s+(\d{4})/i);
+      if(!m) return null;
+      var months = {
+        january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+        july: 7, august: 8, september: 9, october: 10, november: 11, december: 12
+      };
+      var mon = months[String(m[2] || '').toLowerCase()];
+      if(!mon) return null;
+      var dayKnown = !!m[1];
+      var day = dayKnown ? parseInt(m[1], 10) : 1;
+      if(day < 1 || day > 31) return null;
+      var y = m[3];
+      var iso = y + '-' + (mon < 10 ? '0' : '') + mon + '-' + (day < 10 ? '0' : '') + day;
+      var shortMon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mon - 1];
+      var display = dayKnown
+        ? ((day < 10 ? '0' : '') + day + '/' + (mon < 10 ? '0' : '') + mon + '/' + y)
+        : (shortMon + ' ' + y);
+      return { iso: iso, display: display };
+    }
     /** Current age in whole years from dobIso (preferred) or dd/mm/yyyy display — recomputes every render so it stays correct each year. */
     function paxContactsAgeYears(p){
       var d = null;
@@ -21925,6 +22029,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var disp = String((p && (p.dobDisplay || (p.reg && p.reg.dobDisplay))) || '').trim();
         var m = disp.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if(m) d = new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+      }
+      if(!d || isNaN(d.getTime())){
+        var born = paxContactsRegistrationBorn(p);
+        if(born && born.iso) d = new Date(born.iso + 'T00:00:00');
       }
       if(!d || isNaN(d.getTime())) return null;
       var now = new Date();
@@ -21961,6 +22069,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var phRaw = String(r.phone || '').trim();
         var contact = esc(String(p.parentDisplay || r.carer || '—'));
         var dobDisp = String(p.dobDisplay || r.dobDisplay || '').trim();
+        if(!dobDisp || dobDisp === '—'){
+          var bornLine = paxContactsRegistrationBorn(p);
+          if(bornLine && bornLine.display) dobDisp = bornLine.display;
+        }
         var dobLine = (dobDisp && dobDisp !== '—')
           ? '<span class="muted">DOB '+esc(dobDisp)+'</span>'
           : '';
