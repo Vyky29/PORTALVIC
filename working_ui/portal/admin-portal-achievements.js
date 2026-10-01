@@ -1565,46 +1565,75 @@
     return true;
   }
 
+  function personCardHtml(g, oldClient) {
+    var n = g.photos.length;
+    return (
+      '<button type="button" class="portal-ach-person' +
+      (oldClient ? " portal-ach-person--old" : "") +
+      '" data-participant-key="' +
+      esc(g.key) +
+      '"' +
+      (oldClient
+        ? ' title="OLD. Not on Autumn services. No reminders. Portal needs a new code from admin."'
+        : "") +
+      ">" +
+      participantAvatarHtml(g.clientName, g.key) +
+      '<span class="portal-ach-person__text">' +
+      '<span class="portal-ach-person__name">' +
+      esc(g.clientName) +
+      "</span>" +
+      '<span class="portal-ach-person__count">' +
+      n +
+      " photo" +
+      (n === 1 ? "" : "s") +
+      (oldClient ? " · OLD" : "") +
+      "</span></span></button>"
+    );
+  }
+
+  function letterSectionHtml(title, participants, oldClient) {
+    if (!participants.length) return "";
+    return (
+      '<section class="portal-ach-letter' +
+      (oldClient ? " portal-ach-letter--old" : "") +
+      '">' +
+      '<h2 class="portal-ach-letter__title">' +
+      esc(title) +
+      "</h2>" +
+      '<div class="portal-ach-letter__grid">' +
+      participants
+        .map(function (g) {
+          return personCardHtml(g, oldClient);
+        })
+        .join("") +
+      "</div></section>"
+    );
+  }
+
   function renderDirectory() {
     var host = document.getElementById("portalAdminAchievementsList");
     if (!host) return;
-    var buckets = letterBuckets(directoryState.groups);
-    if (!buckets.length) {
+    var current = [];
+    var oldClients = [];
+    (directoryState.groups || []).forEach(function (g) {
+      if (isOldAutumnClient(g)) oldClients.push(g);
+      else current.push(g);
+    });
+    oldClients.sort(function (a, b) {
+      return String(a.clientName || "").localeCompare(String(b.clientName || ""), "en", {
+        sensitivity: "base",
+      });
+    });
+    var buckets = letterBuckets(current);
+    if (!buckets.length && !oldClients.length) {
       host.innerHTML = '<p class="muted">No achievement photos yet.</p>';
       return;
     }
     var html = '<div class="portal-ach-dir">';
     buckets.forEach(function (bucket) {
-      html += '<section class="portal-ach-letter">';
-      html += '<h2 class="portal-ach-letter__title">' + esc(bucket.letter) + "</h2>";
-      html += '<div class="portal-ach-letter__grid">';
-      bucket.participants.forEach(function (g) {
-        var n = g.photos.length;
-        var oldClient = isOldAutumnClient(g);
-        html +=
-          '<button type="button" class="portal-ach-person' +
-          (oldClient ? " portal-ach-person--old" : "") +
-          '" data-participant-key="' +
-          esc(g.key) +
-          '"' +
-          (oldClient
-            ? ' title="OLD. Not on Autumn services. No reminders. Portal needs a new code from admin."'
-            : "") +
-          ">" +
-          participantAvatarHtml(g.clientName, g.key) +
-          '<span class="portal-ach-person__text">' +
-          '<span class="portal-ach-person__name">' +
-          esc(g.clientName) +
-          "</span>" +
-          '<span class="portal-ach-person__count">' +
-          n +
-          " photo" +
-          (n === 1 ? "" : "s") +
-          (oldClient ? " · OLD" : "") +
-          "</span></span></button>";
-      });
-      html += "</div></section>";
+      html += letterSectionHtml(bucket.letter, bucket.participants, false);
     });
+    html += letterSectionHtml("OLD CLIENTES", oldClients, true);
     html += "</div>";
     host.innerHTML = html;
   }

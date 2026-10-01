@@ -1639,6 +1639,10 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   color: var(--navy, #0f172a);
   line-height: 1;
 }
+.portal-ach-letter--old .portal-ach-letter__title {
+  color: #dc2626;
+  border-bottom-color: #fecaca;
+}
 .portal-ach-letter__grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
