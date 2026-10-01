@@ -2517,7 +2517,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       c4k_waitlist: ['waiting_list'],
       portal_participant_documents: ['leads_vs_registered', 'clients_list', 'buckets'],
       portal_registration_form: ['registered_docs'],
-      leads: ['leads_what', 'leads_tools', 'leads_message', 'leads_add', 'leads_not'],
+      leads: ['leads_do', 'leads_what', 'leads_tools', 'leads_message', 'leads_add', 'leads_not'],
       portal_parent_notify_log: ['parent_notify'],
       scheduling: ['schedule_covers', 'undo_schedule_change'],
       c4k_sessions: ['sessions_overview'],
@@ -2587,7 +2587,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v112')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v113')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;

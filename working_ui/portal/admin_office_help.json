@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v112",
+  "version": "2026-10-02-v113",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -435,6 +435,25 @@
           "tips": [
             "Do not say former / alumni in office chat — say OLD.",
             "Kareena returned Tue 15 Sep 2026 → CLIENT again."
+          ]
+        },
+        {
+          "id": "leads_do",
+          "title": "What you do with the people on Leads",
+          "summary": "This page is not a to-do list. Existing client means do nothing here.",
+          "where": "Clients & Families → Leads",
+          "keywords": ["what to do", "existing client", "otp", "que hacer", "clientes"],
+          "steps": [
+            "A row that says Existing client already has a child in class. You do nothing on Leads. Their place is on Active, their day is on Sessions, their money is on Finance.",
+            "Track status New on an Existing client is only the default label. It is not a job waiting. Leave it, or set Booked if you want that email off the marketing list.",
+            "The line under Existing client (exploring services, booking completed, waiting list, registration started) is what they did on the Booking Portal. It does not ask you to book them again.",
+            "The only work on this page is a parent who is not Existing client, and only if you want to write to them. Tick those rows, then Send via Family broadcast, or Copy emails / Copy phones.",
+            "Portal visitors is a count of times the portal was opened, not a list of people to call. Portal OTP contacts asked for a code. If that row says Existing client, they already have access.",
+            "Email interest is an old office file. Those people never opened the portal. Write to them only if you choose a marketing send. Otherwise leave the file.",
+            "Add / update potential client is only for a parent you type in by hand. Save potential does not give them a place."
+          ],
+          "tips": [
+            "Shown now is how many rows the filter is displaying. It is not a number of clients left to process."
           ]
         },
         {
