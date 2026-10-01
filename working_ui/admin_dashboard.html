@@ -164,7 +164,7 @@
   <script src="/portal/portal_dc_services_local.js?v=20260930-tue-fadi"></script>
   <script src="/portal/portal_capacity_chain_occupants.js?v=20260930-tue-fadi"></script>
   <script src="/portal/portal_overview_capacity_chain.js?v=20260925-luliya-standing-28"></script>
-  <script src="/portal/portal_client_identity.js?v=20261001-client-identity"></script>
+  <script src="/portal/portal_client_identity.js?v=20261001-register-fast"></script>
   <script src="/portal/portal_client_day_visibility.js?v=20261001-client-identity"></script>
   <script src="/portal/portal_resolve_day_board.js?v=20260920-victor-week1-snap"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260915-kareena-return"></script>
@@ -25288,7 +25288,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20261001-client-identity';
+    var PORTAL_ADMIN_HUB_BUILD = '20261001-register-fast';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -25882,6 +25882,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(rows.length){
         adminPublishSessionFeedbackCache(rows, via === 'rpc' ? 'rpc-recent' : via, null);
         console.info('[admin] session_feedback recent window:', rows.length, 'rows since', sinceRecent);
+        /* Register paints from this window. The 150-day merge must not block the table. */
+        if(!__adminSessionFeedbackWideDone){
+          wideP.then(function(wideResult){
+            return mergeWideAndFallback(wideResult);
+          }).catch(function(wideErr){
+            console.warn('[admin] session_feedback wide merge failed', wideErr);
+          });
+        }
+        return rows;
       }
 
       async function mergeWideAndFallback(wideResult){

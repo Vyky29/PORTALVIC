@@ -179,22 +179,14 @@
       countLabel = noteN === 1 ? "note" : "notes";
       if (noteN > 0) innerPct = 100;
     } else if (hub.tab === "feedback" || hub.mode === "feedback") {
-      var prog = hub.registerDayProgress(iso);
-      var expectedN = prog.expected;
-      var arrivedN = prog.arrived;
-      countStrong = expectedN ? arrivedN + "/" + expectedN : String(arrivedN);
+      /* Submitted count only. Full arrived/expected needs a roster expand per day
+         and freezes Register before the table appears. Idle fill writes the ratio. */
+      var lightN = hub.feedbackCountForDateLight
+        ? hub.feedbackCountForDateLight(iso)
+        : 0;
+      countStrong = lightN ? String(lightN) : "\u2026";
       countLabel = "feedbacks";
-      if (expectedN) {
-        innerPct = Math.round((100 * arrivedN) / expectedN);
-        if (arrivedN > 0 && innerPct < 12) innerPct = 12;
-      } else if (arrivedN > 0) {
-        innerPct = 100;
-      }
-      if (expectedN && arrivedN === 0) stateCls = " ash-day-card--none";
-      else if (expectedN && arrivedN < expectedN) stateCls = " ash-day-card--partial";
-      else if (expectedN && arrivedN >= expectedN && expectedN > 0) {
-        stateCls = " ash-day-card--complete";
-      }
+      innerPct = 0;
     } else if (hub.tab === "tracking") {
       /* Overview: each board seat = 1 session = 1 feedback. Swim AA+MA pairs count as 2;
        * slotFeedbackComplete still paints both when either half is submitted. */
@@ -6667,6 +6659,7 @@ function rosterRowToSlot(isoDate, wd, r) {
     this._fbIndexSig = "";
     this._expandingSlotsIso = "";
     this._fbLogByIso = null;
+    this._registerRowsByIso = null;
     this._termLogHtml = "";
     this._termLogSig = "";
   };
@@ -6674,6 +6667,7 @@ function rosterRowToSlot(isoDate, wd, r) {
   AdminSessionsHub.prototype.invalidateFeedbackIndexOnly = function () {
     this._fbIndexSig = "";
     this._fbLogByIso = null;
+    this._registerRowsByIso = null;
     this._termLogHtml = "";
     this._termLogSig = "";
   };
@@ -6741,6 +6735,14 @@ function rosterRowToSlot(isoDate, wd, r) {
         try {
           if (quietHub.opts && quietHub.opts.externalTabs) quietHub.indexFeedback();
         } catch (_idx) {}
+        if (
+          quietHub.mode === "feedback" &&
+          typeof quietHub.feedbackSurfaceReady === "function" &&
+          quietHub.feedbackSurfaceReady() &&
+          typeof quietHub.scheduleRegisterBodyPaint === "function"
+        ) {
+          quietHub.scheduleRegisterBodyPaint();
+        }
       }, 80);
       return;
     }
@@ -7554,8 +7556,14 @@ function rosterRowToSlot(isoDate, wd, r) {
     var hub = this;
     var day = clean(iso || hub.selectedDay);
     if (!day) return [];
-    var rows = hub.feedbackLogRowsForDay(day);
-    if (!(hub.opts && hub.opts.feedbackMixAwaitingSlots)) return rows;
+    if (!hub._registerRowsByIso) hub._registerRowsByIso = Object.create(null);
+    if (hub._registerRowsByIso[day]) return hub._registerRowsByIso[day];
+    /* slice: the log cache is shared. Mixing awaiting seats must not append onto it. */
+    var rows = hub.feedbackLogRowsForDay(day).slice();
+    if (!(hub.opts && hub.opts.feedbackMixAwaitingSlots)) {
+      hub._registerRowsByIso[day] = rows;
+      return rows;
+    }
     var mixed = hub.feedbackMixRowsForDay(day);
     var seen = {};
     var awaitingHead = [];
@@ -7575,8 +7583,9 @@ function rosterRowToSlot(isoDate, wd, r) {
         rows.push(m);
       }
     }
-    if (awaitingHead.length) return awaitingHead.concat(rows);
-    return rows;
+    var mixedRows = awaitingHead.length ? awaitingHead.concat(rows) : rows;
+    hub._registerRowsByIso[day] = mixedRows;
+    return mixedRows;
   };
 
   /** feedback | absent | cancelled | awaiting | skip */
@@ -8677,7 +8686,9 @@ function rosterRowToSlot(isoDate, wd, r) {
       if (n) raw.push(n);
     }
     /* Register must list who is on the book that day, not only who already submitted.
-       Otherwise Sunday hides Aurora when the menu was first built on Monday. */
+       Otherwise Sunday hides Aurora when the menu was first built on Monday.
+       First shell skips this expand so the table can appear; the paint fills it after. */
+    if (this._registerDeferRosterFilters) return uniqueInstructorFilterNames(raw);
     try {
       var overview = this.overviewFilterOptionsForDay(dayIso);
       if (overview && overview.instructors) {
@@ -13856,7 +13867,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.syncRegisterWeekCard = function (iso, prog) {
     var root = this.root;
     if (!root || !iso || !prog) return;
-    var card = root.querySelector('.ash-day-row--week [data-ash-day="' + iso + '"]');
+    var card =
+      root.querySelector('.ash-day-row--week [data-ash-day="' + iso + '"]') ||
+      root.querySelector('.ash-day-row--feedback [data-ash-feedback-metric-day="' + iso + '"]');
     if (!card || card.classList.contains("ash-day-card--closed")) return;
     var expected = prog.expected || 0;
     var arrived = prog.arrived || 0;
@@ -13865,6 +13878,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (strong) strong.textContent = label;
     var sessions = card.querySelector(".ash-day-card__sessions");
     if (sessions) sessions.setAttribute("aria-label", label + " feedbacks");
+    var countFull = card.querySelector(".ash-day-card__count-full");
+    var countShort = card.querySelector(".ash-day-card__count-short");
+    if (countFull) countFull.textContent = label;
+    if (countShort) countShort.textContent = label;
     var pct = 0;
     if (expected) {
       pct = Math.round((100 * arrived) / expected);
@@ -13901,19 +13918,26 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       } catch (_c) {}
       hub._registerStripIdle = 0;
     }
-    var runRest = function () {
+    var stepI = 0;
+    var runOne = function () {
       hub._registerStripIdle = 0;
       if (!hub.hubIsLive()) return;
-      for (var i = 0; i < rest.length; i++) {
-        try {
-          paintIso(rest[i]);
-        } catch (_card) {}
+      if (stepI >= rest.length) return;
+      try {
+        paintIso(rest[stepI]);
+      } catch (_card) {}
+      stepI++;
+      if (stepI >= rest.length) return;
+      if (typeof requestIdleCallback === "function") {
+        hub._registerStripIdle = requestIdleCallback(runOne, { timeout: 500 });
+      } else {
+        setTimeout(runOne, 0);
       }
     };
     if (typeof requestIdleCallback === "function") {
-      hub._registerStripIdle = requestIdleCallback(runRest, { timeout: 800 });
+      hub._registerStripIdle = requestIdleCallback(runOne, { timeout: 500 });
     } else {
-      setTimeout(runRest, 0);
+      setTimeout(runOne, 0);
     }
   };
 
@@ -14080,6 +14104,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (!tbody) return;
       try {
         tbody.innerHTML = hub.htmlFeedbackRegisterTableBody();
+        if (typeof hub.syncRegisterFilterOptions === "function") hub.syncRegisterFilterOptions();
         var breakdownHost = hub.root.querySelector("[data-ash-register-breakdown]");
         if (breakdownHost) {
           var wrapBd = document.createElement("div");
@@ -14737,34 +14762,39 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           );
         }
         /* Overview day picker: skip dayStats (7× expandSlots freezes the tab).
-         * Register: count submitted feedback only — same freeze if we expand Autumn roster. */
+         * Register: submitted count now. Arrived/expected is filled one day at a time. */
         var ds;
         if (opts.overviewPicker && !opts.computeOverviewDayStats) {
           ds = { total: 0, done: 0 };
         } else if (hub.mode === "feedback" && !opts.overviewPicker) {
-          var prog = hub.registerDayProgress
-            ? hub.registerDayProgress(iso)
-            : { expected: 0, arrived: 0 };
-          ds = { total: prog.expected, done: prog.arrived };
+          var lightN = hub.feedbackCountForDateLight
+            ? hub.feedbackCountForDateLight(iso)
+            : 0;
+          ds = { total: 0, done: lightN, light: true };
         } else {
           ds = hub.dayStats(iso);
         }
         var col = DAY_COLORS[idx % DAY_COLORS.length];
         var tint = DAY_BG_TINTS[idx % DAY_BG_TINTS.length];
         var innerPct = 0;
-        if (ds.total) {
+        if (!ds.light && ds.total) {
           innerPct = Math.round((100 * ds.done) / ds.total);
           if (ds.done > 0 && innerPct < 12) innerPct = 12;
         }
         var stateCls = "";
         if (opts.overviewPicker && !opts.computeOverviewDayStats) {
           stateCls = "";
+        } else if (ds.light) {
+          stateCls = "";
         } else if (ds.total && ds.done === 0) stateCls = " ash-day-card--none";
         else if (ds.total && ds.done < ds.total) stateCls = " ash-day-card--partial";
         else if (ds.total && ds.done >= ds.total) stateCls = " ash-day-card--complete";
         var countHtml = dayPickerOnly
           ? ""
-          : htmlAshRatioCount(esc, ds.done + "/" + ds.total);
+          : htmlAshRatioCount(
+              esc,
+              ds.light ? (ds.done ? String(ds.done) : "\u2026") : ds.done + "/" + ds.total
+            );
         var barHtml = dayPickerOnly
           ? ""
           : '<div class="ash-day-card__bar" style="--ash-pct:' +
@@ -15013,6 +15043,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hub = this;
     var tableRows =
       '<tr><td colspan="7"><div class="ash-empty">Loading register\u2026</div></td></tr>';
+    hub._registerDeferRosterFilters = true;
 
     var weekBlock =
       hub.opts && hub.opts.showFullWeekDayStrip
@@ -15057,24 +15088,28 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       this._termLogSig = logSig;
     }
 
-    return (
-      this.htmlFeedbackMetricStripLite(this.engagementSummary(this.feedbackRowsForMetrics())) +
-      weekBlock +
-      truncateHtml +
-      noteFilterHtml +
-      this.htmlRegisterDayBreakdown() +
-      '<p class="ash-feedback-filter-hint">Click <strong>Session feedback</strong> to filter for parents when needed. Click <strong>Notes</strong> to escalate internally or ask the instructor who wrote it. Notes stay internal.</p>' +
-      this.feedbackFilterRowHtml() +
-      '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback ash-table--register"><thead><tr>' +
-      AdminSessionsHub.REGISTER_TABLE_HEAD +
-      "</tr></thead><tbody data-ash-client-filter-tbody>" +
-      tableRows +
-      "</tbody></table></div>" +
-      (hub.opts && hub.opts.showFullWeekDayStrip
-        ? ""
-        : '<p class="ash-metric-foot ash-metric-foot--center">Absents show as <strong>Submitted (Absent)</strong> with N/A (except Reviewed by). Use <strong>Sessions overview</strong> for the roster table.</p>') +
-      logHtml
-    );
+    try {
+      return (
+        this.htmlFeedbackMetricStripLite(this.engagementSummary(this.feedbackRowsForMetrics())) +
+        weekBlock +
+        truncateHtml +
+        noteFilterHtml +
+        '<p class="ash-feedback-filter-hint" data-ash-register-breakdown hidden></p>' +
+        '<p class="ash-feedback-filter-hint">Click <strong>Session feedback</strong> to filter for parents when needed. Click <strong>Notes</strong> to escalate internally or ask the instructor who wrote it. Notes stay internal.</p>' +
+        this.feedbackFilterRowHtml() +
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback ash-table--register"><thead><tr>' +
+        AdminSessionsHub.REGISTER_TABLE_HEAD +
+        "</tr></thead><tbody data-ash-client-filter-tbody>" +
+        tableRows +
+        "</tbody></table></div>" +
+        (hub.opts && hub.opts.showFullWeekDayStrip
+          ? ""
+          : '<p class="ash-metric-foot ash-metric-foot--center">Absents show as <strong>Submitted (Absent)</strong> with N/A (except Reviewed by). Use <strong>Sessions overview</strong> for the roster table.</p>') +
+        logHtml
+      );
+    } finally {
+      hub._registerDeferRosterFilters = false;
+    }
   };
 
   /**

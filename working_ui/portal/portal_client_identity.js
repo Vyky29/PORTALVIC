@@ -22,6 +22,13 @@
   }
 
   var cache = { rows: null, alias: null, list: null };
+  var familyCache = {
+    rows: null,
+    alias: null,
+    byFirst: null,
+    families: null,
+    resolved: null,
+  };
 
   function rosterRows() {
     var src = global.STAFF_DASHBOARD_SOURCE;
@@ -139,14 +146,51 @@
    * slug is already alias-normalized. aliasSlug maps a roster client_name the same way.
    * Returns the roster label for that child, or slug when it is ambiguous or unknown.
    */
+  function familiesByFirst(aliasSlug) {
+    var rows = rosterRows();
+    var known = knownSlugs(aliasSlug);
+    if (!known.length) return null;
+    if (
+      familyCache.rows === rows &&
+      familyCache.alias === aliasSlug &&
+      familyCache.byFirst &&
+      familyCache.resolved
+    ) {
+      return familyCache;
+    }
+    var byFirst = Object.create(null);
+    for (var i = 0; i < known.length; i++) {
+      var first = firstOf(known[i]);
+      if (!byFirst[first]) byFirst[first] = [];
+      byFirst[first].push(known[i]);
+    }
+    var families = Object.create(null);
+    for (var k in byFirst) {
+      if (!Object.prototype.hasOwnProperty.call(byFirst, k)) continue;
+      families[k] = familiesFor(byFirst[k]);
+    }
+    familyCache.rows = rows;
+    familyCache.alias = aliasSlug;
+    familyCache.byFirst = byFirst;
+    familyCache.families = families;
+    familyCache.resolved = Object.create(null);
+    return familyCache;
+  }
+
   function foldAliasedSlug(slug, aliasSlug) {
     if (!slug) return slug || "";
-    var known = knownSlugs(aliasSlug);
-    if (!known.length) return slug;
-    var group = groupByFirst(known, firstOf(slug));
-    if (!group.length) return slug;
-    var canon = familyCanon(familiesFor(group), slug);
-    return canon || slug;
+    var pack = familiesByFirst(aliasSlug);
+    if (!pack) return slug;
+    if (Object.prototype.hasOwnProperty.call(pack.resolved, slug)) return pack.resolved[slug];
+    var first = firstOf(slug);
+    var group = pack.byFirst[first];
+    if (!group || !group.length) {
+      pack.resolved[slug] = slug;
+      return slug;
+    }
+    var canon = familyCanon(pack.families[first], slug) || slug;
+    pack.resolved[slug] = canon;
+    return canon;
   }
 
   global.PortalClientIdentity = {
