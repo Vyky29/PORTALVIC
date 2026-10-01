@@ -4368,6 +4368,17 @@
     gone.Kareena = "2026-09-29";
     gone.kareena = "2026-09-29";
     gone["Kareena Al hassani"] = "2026-09-29";
+    /* Place finished or cancelled. Not on the Autumn board from 1 Oct 2026. */
+    gone.Junaid = "2026-10-01";
+    gone["Junaid F"] = "2026-10-01";
+    gone["Junaid Fussaini"] = "2026-10-01";
+    gone.junaid = "2026-10-01";
+    gone.Patrick = "2026-10-01";
+    gone["Patrick Dhennin"] = "2026-10-01";
+    gone.Thushyan = "2026-10-01";
+    gone["Thushyan Suthakaran"] = "2026-10-01";
+    gone.Yassir = "2026-10-01";
+    gone["Yassir Boujettif"] = "2026-10-01";
     return Object.assign({}, base, {
       rows: rows,
       clientRosterStartDates: starts,

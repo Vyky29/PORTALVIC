@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v63",
+  "version": "2026-10-01-v64",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -440,19 +440,20 @@
             "cfk leads",
             "class for kids",
             "old",
+            "old clients",
             "active"
           ],
           "steps": [
-            "ACTIVE: on a place now. Someone with no seat this term is not ACTIVE. If they had a service before, they are HAS BOOKING HISTORY (OLD).",
+            "ACTIVE: on a place now. A cancelled place is not ACTIVE.",
+            "OLD CLIENTS is the filter for people who had a service and are not here now. It is on the same CLIENT page, in the booking status menu.",
             "WAITING: registered and on a waiting list. They do not also appear under REGISTERED. Joined waiting is the day they joined. Booking Portal has that day. Not on file means the Class for Kids row has no date.",
-            "HAS BOOKING HISTORY: had a service and is not here now.",
             "REGISTERED: filled the registration form, no service, not on a waiting list.",
             "CFK LEADS: Class for Kids contact file. They asked and never had a service.",
             "A short name on the bookings shows on that child's row when it is the same person. Consecutive halves on the same day show as one time, such as 4:00 pm to 5:30 pm.",
             "Age uses the date of birth. If the contact has no date, the list uses the birth line on the registration (Clients Info).",
             "A group label such as a Day Centre block is not an extra client when the children in that group are already on the list.",
             "The Photo column is that child's own picture.",
-            "Do not put WAITING, REGISTERED, CFK LEADS or HAS BOOKING HISTORY on Sessions as booked kids."
+            "Do not put WAITING, REGISTERED, CFK LEADS or OLD CLIENTS on Sessions as booked kids."
           ],
           "tips": [
             "A shared first name does not share a photo. Each row keeps that child's own face."
