@@ -1569,9 +1569,16 @@
       min-width: 0;
     }
     .ash-table--feedback .ash-cell-sub { text-align: center; }
+    .ash-table--register col.ash-reg-col-who { width: 11%; }
+    .ash-table--register col.ash-reg-col-star { width: 4%; }
+    .ash-table--register col.ash-reg-col-reg { width: 8%; }
+    .ash-table--register col.ash-reg-col-ind { width: 16%; }
+    .ash-table--register col.ash-reg-col-fb,
+    .ash-table--register col.ash-reg-col-notes { width: 27%; }
+    .ash-table--register col.ash-reg-col-by { width: 7%; }
     .ash-table--register .ash-cell-participant-service {
-      min-width: 150px;
-      max-width: 220px;
+      min-width: 0;
+      max-width: none;
       overflow-wrap: break-word;
     }
     .ash-table--register .ash-cell-service {
@@ -1579,27 +1586,82 @@
       line-height: 1.3;
       overflow-wrap: break-word;
     }
+    .ash-table--register th:nth-child(1),
+    .ash-table--register td:nth-child(1) {
+      width: 11%;
+      min-width: 0;
+    }
+    .ash-table--register th:nth-child(2),
+    .ash-table--register td:nth-child(2) {
+      width: 4%;
+      padding-left: 2px;
+      padding-right: 2px;
+    }
     .ash-table--register th:nth-child(3),
     .ash-table--register td:nth-child(3) {
-      width: 116px;
-      min-width: 116px;
-      max-width: 116px;
-      padding-left: 6px;
-      padding-right: 6px;
+      width: 8%;
+      padding-left: 4px;
+      padding-right: 4px;
+      overflow-wrap: normal;
+      word-break: normal;
     }
-    .ash-table--register th:nth-child(5),
-    .ash-table--register td:nth-child(5) {
-      width: 38%;
+    .ash-table--register th:nth-child(4),
+    .ash-table--register td:nth-child(4) {
+      width: 16%;
       min-width: 0;
-      max-width: none;
-      overflow-wrap: break-word;
-    }
-    .ash-table--register th:nth-child(5),
-    .ash-table--register th:nth-child(6),
-    .ash-table--register td:nth-child(5),
-    .ash-table--register td:nth-child(6) {
       text-align: left;
       vertical-align: top;
+    }
+    .ash-table--register th:nth-child(5),
+    .ash-table--register td:nth-child(5),
+    .ash-table--register th:nth-child(6),
+    .ash-table--register td:nth-child(6) {
+      width: 27%;
+      min-width: 0;
+      overflow-wrap: break-word;
+      text-align: left;
+      vertical-align: top;
+    }
+    .ash-table--register td:nth-child(7) {
+      width: 7%;
+      padding-left: 4px;
+      padding-right: 4px;
+      font-size: 11px;
+      line-height: 1.25;
+      overflow-wrap: break-word;
+    }
+    .ash-table--register th:nth-child(7) {
+      width: 7%;
+      padding-left: 4px;
+      padding-right: 4px;
+      font-size: 10px;
+      line-height: 1.2;
+      overflow-wrap: break-word;
+    }
+    .ash-table--register .ash-regulation-group {
+      justify-content: center;
+      max-width: 100%;
+    }
+    .ash-table--register .ash-regulation-face,
+    .ash-table--register .ash-regulation-face svg {
+      width: 22px;
+      height: 22px;
+    }
+    .ash-indep-lines {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+      min-width: 0;
+      width: 100%;
+      text-align: left;
+    }
+    .ash-indep-line {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      overflow-wrap: break-word;
+      line-height: 1.3;
     }
     .ash-table--feedback .ash-regulation-group { justify-content: center; }
     .ash-table--feedback .ash-cell-note { max-width: none; width: 100%; white-space: normal; line-height: 1.35; font-size: 12px; hyphens: auto; overflow-wrap: break-word; }

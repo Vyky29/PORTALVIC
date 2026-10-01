@@ -179,8 +179,8 @@
       countLabel = noteN === 1 ? "note" : "notes";
       if (noteN > 0) innerPct = 100;
     } else if (hub.tab === "feedback" || hub.mode === "feedback") {
-      /* Submitted count only. Full arrived/expected needs a roster expand per day
-         and freezes Register before the table appears. Idle fill writes the ratio. */
+      /* Placeholder until syncRegisterWeekStripCounts writes arrived/expected
+         for every day. A bare number here is not the real total. */
       var lightN = hub.feedbackCountForDateLight
         ? hub.feedbackCountForDateLight(iso)
         : 0;
@@ -6272,6 +6272,28 @@ function rosterRowToSlot(isoDate, wd, r) {
     return "\u2014";
   }
 
+  /** Register column: one chosen answer per line, not a comma run. */
+  function independenceLinesHtml(fb, escFn) {
+    var raw = independenceLabel(fb);
+    if (!raw || raw === "\u2014") return "\u2014";
+    var parts = String(raw)
+      .split(/\s*;\s*|\s*,\s*/g)
+      .map(function (x) {
+        return clean(x);
+      })
+      .filter(Boolean);
+    if (!parts.length) return "\u2014";
+    return (
+      '<span class="ash-indep-lines">' +
+      parts
+        .map(function (p) {
+          return '<span class="ash-indep-line">' + escFn(p) + "</span>";
+        })
+        .join("") +
+      "</span>"
+    );
+  }
+
   function independenceTokens(fb) {
     var p = fb.engagement_patterns;
     if (Array.isArray(p)) {
@@ -10566,15 +10588,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "</td>";
     var emotionCell =
       "<td>" +
+      (terminal ? cellNa() : emotionFacesHtml(fb, esc)) +
+      "</td>";
+    var independenceCell =
+      '<td class="ash-cell-note' +
+      (variant === "register" ? " ash-cell-indep" : "") +
+      '">' +
       (terminal
         ? cellNa()
         : variant === "register"
-          ? emotionFacesLite(fb, esc)
-          : emotionFacesHtml(fb, esc)) +
-      "</td>";
-    var independenceCell =
-      '<td class="ash-cell-note">' +
-      (terminal ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
+          ? independenceLinesHtml(fb, esc)
+          : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
       "</td>";
     var fbId = String((fb && (fb.id || fb.session_feedback_id)) || "").trim();
     var canFilter = variant === "register" && !terminal && !!fbId;
@@ -14030,45 +14054,43 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.syncRegisterWeekStripCounts = function () {
     if (this.mode !== "feedback" && this.tab !== "feedback") return;
     var hub = this;
-    function paintIso(iso) {
-      if (!iso || hubDayIsClubClosed(hub, iso) || hubDayIsProgrammeInactive(hub, iso)) return;
-      hub.syncRegisterWeekCard(iso, hub.registerDayProgress(iso));
-    }
-    var selected = clean(hub.selectedDay);
-    try {
-      paintIso(selected);
-    } catch (_sel) {}
-    var rest = this.weekDaysForDisplay().filter(function (iso) {
-      return iso !== selected;
-    });
-    if (!rest.length) return;
     if (hub._registerStripIdle && typeof cancelIdleCallback === "function") {
       try {
         cancelIdleCallback(hub._registerStripIdle);
       } catch (_c) {}
       hub._registerStripIdle = 0;
     }
-    var stepI = 0;
-    var runOne = function () {
-      hub._registerStripIdle = 0;
-      if (!hub.hubIsLive()) return;
-      if (stepI >= rest.length) return;
-      try {
-        paintIso(rest[stepI]);
-      } catch (_card) {}
-      stepI++;
-      if (stepI >= rest.length) return;
-      if (typeof requestIdleCallback === "function") {
-        hub._registerStripIdle = requestIdleCallback(runOne, { timeout: 500 });
-      } else {
-        setTimeout(runOne, 0);
-      }
-    };
-    if (typeof requestIdleCallback === "function") {
-      hub._registerStripIdle = requestIdleCallback(runOne, { timeout: 500 });
-    } else {
-      setTimeout(runOne, 0);
+    if (hub._registerStripRetry) {
+      clearTimeout(hub._registerStripRetry);
+      hub._registerStripRetry = 0;
     }
+    function paintIso(iso) {
+      if (!iso || hubDayIsClubClosed(hub, iso) || hubDayIsProgrammeInactive(hub, iso)) return false;
+      hub.syncRegisterWeekCard(iso, hub.registerDayProgress(iso));
+      return true;
+    }
+    /* Every day in this pass. Idle used to skip the open day when the first
+       count threw, and a later refresh cancelled the rest, so a card stayed on
+       the raw submitted number until it was clicked. */
+    var days = this.weekDaysForDisplay();
+    var failed = [];
+    for (var i = 0; i < days.length; i++) {
+      try {
+        paintIso(days[i]);
+      } catch (_card) {
+        failed.push(days[i]);
+      }
+    }
+    if (!failed.length) return;
+    hub._registerStripRetry = setTimeout(function () {
+      hub._registerStripRetry = 0;
+      if (!hub.hubIsLive()) return;
+      for (var f = 0; f < failed.length; f++) {
+        try {
+          paintIso(failed[f]);
+        } catch (_again) {}
+      }
+    }, 0);
   };
 
   function refillAshFilterSelect(selectEl, names, placeholder, currentValue) {
@@ -14205,7 +14227,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       try {
         var sum = this.engagementSummary(this.feedbackRowsForMetrics());
         var wrap = document.createElement("div");
-        wrap.innerHTML = this.htmlFeedbackMetricStripLite(sum);
+        wrap.innerHTML = this.htmlFeedbackMetricStrip(sum);
         var next = wrap.firstElementChild;
         if (next && metrics.parentNode) metrics.parentNode.replaceChild(next, metrics);
       } catch (_m) {}
@@ -15220,14 +15242,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     try {
       return (
-        this.htmlFeedbackMetricStripLite(this.engagementSummary(this.feedbackRowsForMetrics())) +
+        this.htmlFeedbackMetricStrip(this.engagementSummary(this.feedbackRowsForMetrics())) +
         weekBlock +
         truncateHtml +
         noteFilterHtml +
-        '<p class="ash-feedback-filter-hint" data-ash-register-breakdown hidden></p>' +
-        '<p class="ash-feedback-filter-hint">Click <strong>Session feedback</strong> to filter for parents when needed. Click <strong>Notes</strong> to escalate internally or ask the instructor who wrote it. Notes stay internal.</p>' +
         this.feedbackFilterRowHtml() +
-        '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback ash-table--register"><thead><tr>' +
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback ash-table--register"><colgroup>' +
+        '<col class="ash-reg-col-who"><col class="ash-reg-col-star"><col class="ash-reg-col-reg">' +
+        '<col class="ash-reg-col-ind"><col class="ash-reg-col-fb"><col class="ash-reg-col-notes"><col class="ash-reg-col-by">' +
+        '</colgroup><thead><tr>' +
         AdminSessionsHub.REGISTER_TABLE_HEAD +
         "</tr></thead><tbody data-ash-client-filter-tbody>" +
         tableRows +

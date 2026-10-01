@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v101",
+  "version": "2026-10-01-v102",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1082,7 +1082,7 @@
             "After a bank transfer the parent must WhatsApp or email the office. A tap alone does not change admin.",
             "Then check Tide, Mark paid in Re-enrolments and Bookings, and send the PIN.",
             "Mark reviewed means you opened the PDF. Resend finish link if they lost it.",
-            "Climbing forms are the Climbing registrations button. Annual consents are Parent consents.",
+            "Climbing forms and Parent consents are under Clients & Families, Documents. Registration Form is there too.",
             "Do not show them as booked kids on Sessions until they are a CLIENT."
           ],
           "tips": [
@@ -1093,7 +1093,7 @@
           "id": "consents_policies",
           "title": "Consents and policies",
           "summary": "Parent consents are only for ACTIVE clients. Annual renewal stays empty until a signature is older than 12 months.",
-          "where": "Documents → Parent consents / Climbing / Policies",
+          "where": "Clients & Families → Documents → Parent consents / Climbing. Policies are under H&R → Documents.",
           "keywords": [
             "consents",
             "consentimiento",

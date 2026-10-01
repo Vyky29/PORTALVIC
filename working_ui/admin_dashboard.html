@@ -71,12 +71,12 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260920-messages-menu"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20261001-moved-away" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20261001-register-cols" />
   <script src="/portal/portal_staff_display_names.js?v=20260909-luliya-first"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261001-page-info-front" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261001-info-cards" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -479,7 +479,7 @@
       { id:'portal_push_devices', label:'Staff push devices' },
       { id:'staff_ghost_teleport', label:'Dashboard teleport' },
       { id:'portal_parent_teleport', label:'Dashboard Teleport (Family)', skipBottomNav:true },
-      { id:'staffhr', label:'H&R' },
+      { id:'staffhr', label:'Workers', hubLabel:'Workers' },
       { id:'onboarding', label:'Onboarding' },
       { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
       { id:'staffhr_training_records', label:'Training records', hubLabel:'TRAINING RECORDS' },
@@ -499,6 +499,7 @@
       { id:'portal_docs_checklist', label:'Checklists' },
       { id:'portal_docs_firstaid', label:'First aids' },
       { id:'portal_participant_documents', label:'Registered', hubLabel:'Registered' },
+      { id:'portal_registration_form', label:'Registration Form', hubLabel:'Registration Form' },
       { id:'portal_climbing_registrations', label:'Climbing registrations', hubLabel:'Climbing regs' },
       { id:'portal_parent_consents', label:'Parent consents', hubLabel:'Parent consents' },
       { id:'policies_portal', label:'Policies portal', externalUrl:'/policies_portal.html', skipBottomNav:true },
@@ -523,11 +524,10 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','c4k_late_submissions','office_calendar','__h:More day tools','sessions_incidents','session_disruptions'] },
       { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','orders_all'] },
-      { id:'g_clients', label:'Clients & Families', children:['__h:Clients','clients','c4k_waitlist','portal_participant_documents','leads','__h:Family','family_whatsapp_business','portal_parent_notify_log','portal_family_pins','portal_parent_teleport'] },
+      { id:'g_clients', label:'Clients & Families', children:['__h:Clients','clients','c4k_waitlist','portal_participant_documents','leads','__h:Family','family_whatsapp_business','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
       { id:'g_xero', label:'Money', children:['reenrol_payments','absents_refunds'] },
       { id:'g_messages', label:'Messages', children:['__h:FAMILY','portal_parent_broadcast','__h:STAFF','portal_staff_comms','portal_staff_whatsapp'] },
-      { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews'] },
-      { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Forms','portal_climbing_registrations','portal_parent_consents','__h:Care Plans','care_plans','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','__h:More files','day_centre_documents','portal_docs_portalpin','portal_docs_checklist','portal_docs_firstaid'] },
+      { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews','__h:Documents','policies_portal','policies','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_checklist','portal_docs_firstaid','day_centre_documents','portal_docs_portalpin'] },
       { id:'g_more', label:'More', children:['__h:Extra hubs','dashboard','operations_admin','operator','receptionist','c4k_reviews','c4k_reports','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_ghost_teleport'] },
       { id:'g_settings_portal', label:'Settings', children:['settings','admin_office_help','portal_device_notifications','logs','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
     ];
@@ -639,6 +639,7 @@
     function adminNavIconHtml(id){
       if(id === 'family_whatsapp_business') id = 'portal_staff_whatsapp';
       if(id === 'portal_family_pins') id = 'portal_docs_portalpin';
+      if(id === 'portal_registration_form') id = 'portal_participant_documents';
       var inner = NAV_ICON_SVGS[id];
       if(!inner) return '';
       return '<span class="admin-nav-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg></span>';
@@ -2446,6 +2447,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       clients: ['clients_list', 'buckets'],
       c4k_waitlist: ['waiting_list'],
       portal_participant_documents: ['registered_docs'],
+      portal_registration_form: ['registered_docs'],
       leads: ['buckets'],
       portal_parent_notify_log: ['parent_notify'],
       scheduling: ['schedule_covers', 'undo_schedule_change'],
@@ -2463,7 +2465,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v101')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v102')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -2482,19 +2484,88 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return want.map(function(id){ return byId[id]; }).filter(Boolean);
     }
-    function portalAdminInfoBodyHtml(info, pack){
-      var html = '';
-      var intro = String(info && info.intro || '').trim();
-      if(intro){
-        html += '<div class="admin-page-info-pop__lead">'+intro+'</div>';
+    var PORTAL_INFO_BLOCK_SPECS = [
+      { key:'active', title:'ACTIVE', tone:'green', re:/^ACTIVE\b|^A cancelled place/i },
+      { key:'old', title:'OLD CLIENTS', tone:'slate', re:/^OLD CLIENTS\b/i },
+      { key:'registered', title:'REGISTERED', tone:'blue', re:/REGISTERED|September registration/i },
+      { key:'waiting', title:'Waiting List', tone:'amber', re:/^Waiting List\b|^Portal Waiting|^Old Waiting|^Source is|^Newest join/i },
+      { key:'cfk', title:'CFK LEADS', tone:'violet', re:/CFK LEADS|Funding and Payment/i },
+      { key:'trial', title:'On Trial / Trialled', tone:'teal', re:/^On Trial|^Booked is|^Service and Time|^Trial session|^A session /i },
+      { key:'photo', title:'Photo', tone:'rose', re:/^The Photo\b|^Photo column/i }
+    ];
+    function portalAdminInfoPlain(intro){
+      var holder = document.createElement('div');
+      holder.innerHTML = String(intro || '');
+      return String(holder.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+    function portalAdminInfoSentences(text){
+      return String(text || '').split(/(?<=[.!?])\s+(?=[A-Z])/).map(function(s){
+        return s.trim();
+      }).filter(Boolean);
+    }
+    function portalAdminInfoLeadHtml(intro){
+      var raw = String(intro || '').trim();
+      if(!raw) return '';
+      if(/<(section|h3|ul|ol)\b/i.test(raw)){
+        return '<div class="admin-page-info-pop__lead">'+raw+'</div>';
       }
-      portalAdminHelpLessonsForView(info && info.viewId, pack).forEach(function(ls){
+      var sentences = portalAdminInfoSentences(portalAdminInfoPlain(raw));
+      if(sentences.length < 2){
+        return '<p class="admin-page-info-pop__para">'+esc(portalAdminInfoPlain(raw) || raw)+'</p>';
+      }
+      var groups = [];
+      var byKey = {};
+      sentences.forEach(function(sentence){
+        var spec = null;
+        for(var i = 0; i < PORTAL_INFO_BLOCK_SPECS.length; i++){
+          if(PORTAL_INFO_BLOCK_SPECS[i].re.test(sentence)){
+            spec = PORTAL_INFO_BLOCK_SPECS[i];
+            break;
+          }
+        }
+        if(spec){
+          if(!byKey[spec.key]){
+            byKey[spec.key] = { key:spec.key, title:spec.title, tone:spec.tone, lines:[] };
+            groups.push(byKey[spec.key]);
+          }
+          byKey[spec.key].lines.push(sentence);
+          return;
+        }
+        if(groups.length) groups[groups.length - 1].lines.push(sentence);
+        else {
+          if(!byKey.page){
+            byKey.page = { key:'page', title:'This page', tone:'slate', lines:[] };
+            groups.push(byKey.page);
+          }
+          byKey.page.lines.push(sentence);
+        }
+      });
+      var named = groups.filter(function(g){ return g.key !== 'page'; }).length;
+      if(named < 1){
+        return '<div class="admin-page-info-pop__block">'+
+          sentences.map(function(s){ return '<p class="admin-page-info-pop__para">'+esc(s)+'</p>'; }).join('')+
+          '</div>';
+      }
+      return groups.map(function(g){
+        return '<section class="admin-page-info-pop__block">'+
+          '<h3 class="admin-page-info-pop__block-title"><span class="admin-page-info-pop__ico admin-page-info-pop__ico--'+g.tone+'" aria-hidden="true"></span>'+esc(g.title)+'</h3>'+
+          g.lines.map(function(s){ return '<p class="admin-page-info-pop__para">'+esc(s)+'</p>'; }).join('')+
+          '</section>';
+      }).join('');
+    }
+    function portalAdminInfoBodyHtml(info, pack){
+      var html = portalAdminInfoLeadHtml(info && info.intro);
+      var lessons = portalAdminHelpLessonsForView(info && info.viewId, pack);
+      if(lessons.length){
+        html += '<h3 class="admin-page-info-pop__guide-title"><span class="admin-page-info-pop__ico admin-page-info-pop__ico--navy" aria-hidden="true"></span>Guide</h3>';
+      }
+      lessons.forEach(function(ls){
         html += '<section class="admin-page-info-pop__lesson">';
         html += '<h3>'+esc(ls.title || '')+'</h3>';
         if(ls.summary) html += '<p>'+esc(ls.summary)+'</p>';
-        if(ls.where) html += '<p class="muted">Where: '+esc(ls.where)+'</p>';
+        if(ls.where) html += '<p class="admin-page-info-pop__where">Where: '+esc(ls.where)+'</p>';
         if(ls.steps && ls.steps.length){
-          html += '<ol>'+ls.steps.map(function(step){ return '<li>'+esc(step)+'</li>'; }).join('')+'</ol>';
+          html += '<p class="admin-page-info-pop__kicker">Steps</p><ol>'+ls.steps.map(function(step){ return '<li>'+esc(step)+'</li>'; }).join('')+'</ol>';
         }
         if(ls.tips && ls.tips.length){
           html += '<p class="admin-page-info-pop__kicker">Tips</p><ul>'+ls.tips.map(function(tip){ return '<li>'+esc(tip)+'</li>'; }).join('')+'</ul>';
@@ -27486,7 +27557,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20261001-sessions-quiet';
+    var PORTAL_ADMIN_HUB_BUILD = '20261001-register-quiet';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -29442,7 +29513,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__portalDocsPresetFilter = 'all';
         html = viewPortalDocuments();
       }else if(id==='portal_payslips') html = viewPortalPayslips();
-      else if(id==='portal_participant_documents') html = viewPortalParticipantDocuments();
+      else if(id==='portal_participant_documents' || id==='portal_registration_form') html = viewPortalParticipantDocuments();
       else if(id==='portal_climbing_registrations') html = viewPortalClimbingRegistrations();
       else if(id==='portal_parent_consents') html = viewPortalParentConsents();
       else if(id==='portal_docs_portalpin') html = viewPortalPins();
@@ -30186,7 +30257,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         clients:'Children on a place now.',
         leads:'Enquired and got an OTP, registration not finished.',
         family_whatsapp_business:'Day-to-day family chats on the company WhatsApp Business number.',
-        portal_family_pins:'Family portal login PINs only. Staff PINs stay under Documents.',
+        portal_family_pins:'Family portal login PINs only. Staff PINs stay under H&R, Documents.',
         orders_all:'Every booking and order — slot state, funding route and waiting-list links. Use Outstanding only on the Orders page to filter balances.',
         comms_ops:'Programme comms log · staff notices',
         portal_parent_notify_log:'Messages sent and received through the portal WhatsApp API.',
@@ -30294,10 +30365,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id:'clients',
         icon:'👥',
         title:'Clients & Families',
-        description:'Active, Waiting List, Registered and Leads, plus family messages, PINs and teleport.',
+        description:'Active, Waiting List, Registered and Leads, plus family messages and family documents.',
         preview:[],
         status:'',
-        primary:['clients','c4k_waitlist','portal_participant_documents','leads','family_whatsapp_business','portal_parent_notify_log','portal_family_pins','portal_parent_teleport'],
+        primary:['clients','c4k_waitlist','portal_participant_documents','leads','family_whatsapp_business','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'],
         secondary:[]
       },
       {
@@ -30327,21 +30398,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id:'staffhr',
         icon:'👥',
         title:'H&R',
-        description:'Staff roster, Timetable, certificates and passports.',
+        description:'Workers, Timetable, certificates, and worker documents.',
         preview:[],
         status:'',
-        primary:['staffhr','roster_spreadsheets','onboarding','portal_docs_certificate','portal_docs_passport'],
-        secondary:[{ id:'staffhr_contracts', label:'Contracts' },{ id:'staffhr_training_records', label:'Training records' },{ id:'staffhr_uniform', label:'Uniform' },'recruitment','interviews']
-      },
-      {
-        id:'documents',
-        icon:'📄',
-        title:'Documents',
-        description:'Policies and worker uploads (payslips, timesheets).',
-        preview:[],
-        status:'',
-        primary:['policies_portal','policies','portal_payslips'],
-        secondary:['portal_climbing_registrations','care_plans','portal_docs_timesheet','portal_docs_expense','day_centre_documents']
+        primary:['staffhr','roster_spreadsheets','onboarding','portal_docs_certificate','portal_docs_passport','policies_portal','policies','portal_payslips'],
+        secondary:[{ id:'staffhr_contracts', label:'Contracts' },{ id:'staffhr_training_records', label:'Training records' },{ id:'staffhr_uniform', label:'Uniform' },'recruitment','interviews','portal_docs_timesheet','portal_docs_expense','portal_docs_checklist','portal_docs_firstaid','day_centre_documents','portal_docs_portalpin']
       },
       {
         id:'more',
@@ -30783,7 +30844,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         { id:'portal_participant_documents', label:'Registration' },
         { id:'reenrol_payments', label:'Bookings & Payments' },
         'c4k_services',
-        { id:'staffhr', label:'Staff' },
+        { id:'staffhr', label:'Workers' },
         { id:'interviews', label:'Interview' },
         'onboarding',
         { id:'portal_payslips', label:'Payslips' },
@@ -31875,7 +31936,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewStaffHR(){
       // Live staff roster / H&R (powered by public.hr_records). Rendered by
       // /portal/admin-hr.js into #hrModuleRoot (see bindView 'staffhr').
-      return '<h1 class="page-title">H&amp;R</h1><p class="page-intro">Staff roster — filter by active, tap a person to open and edit every detail. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button>.</p>'+
+      return '<h1 class="page-title">Workers</h1><p class="page-intro">Staff roster — filter by active, tap a person to open and edit every detail. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button>.</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--pri" data-view-target="staffhr_contracts">+ New employment contract</button>'+
         '<button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">Compose announcement</button></div>'+
@@ -33604,7 +33665,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='office_calendar'||v==='open_places_2627'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='staffhr_uniform'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='reenrol_payments'||v==='commissioning_terms'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='day_centre_documents'||v==='portal_participant_documents'||v==='portal_climbing_registrations'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_ghost_teleport'||v==='portal_parent_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='office_calendar'||v==='open_places_2627'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='staffhr_uniform'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='reenrol_payments'||v==='commissioning_terms'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='day_centre_documents'||v==='portal_participant_documents'||v==='portal_registration_form'||v==='portal_climbing_registrations'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_ghost_teleport'||v==='portal_parent_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -34014,7 +34075,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='portal_docs_portalpin' || id==='portal_family_pins') bindPortalPinsModule();
       else if(id==='portal_payslips') bindPortalPayslipsModule();
       else if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
-      else if(id==='portal_participant_documents') bindPortalParticipantDocumentsModule();
+      else if(id==='portal_participant_documents' || id==='portal_registration_form') bindPortalParticipantDocumentsModule();
       else if(id==='portal_climbing_registrations') bindPortalClimbingRegistrationsModule();
       else if(id==='portal_parent_consents') bindPortalParentConsentsModule();
       if(id==='absents_refunds') bindPortalParentAbsencesModule();
@@ -37612,7 +37673,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tab === 'absents'){
         return;
       }
-      if(tab.indexOf('portal_docs_') === 0 || tab === 'portal_documents' || tab === 'portal_payslips' || tab === 'portal_participant_documents' || tab === 'portal_climbing_registrations' || tab === 'portal_parent_consents'){
+      if(tab.indexOf('portal_docs_') === 0 || tab === 'portal_documents' || tab === 'portal_payslips' || tab === 'portal_participant_documents' || tab === 'portal_registration_form' || tab === 'portal_climbing_registrations' || tab === 'portal_parent_consents'){
         if(tab.indexOf('portal_docs_') === 0){
           window.__portalDocsPresetFilter = tab.slice('portal_docs_'.length);
         }else if(tab === 'portal_documents'){
