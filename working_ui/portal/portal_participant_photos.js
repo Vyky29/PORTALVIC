@@ -142,6 +142,86 @@
     }
   }
 
+  function participantAvatarPublicUrl(storagePath) {
+    var path = String(storagePath || "").trim();
+    if (!path) return "";
+    var base = String(global.SUPABASE_URL || "").replace(/\/$/, "");
+    if (!base) return "";
+    return (
+      base +
+      "/storage/v1/object/public/participant-avatars/" +
+      path
+        .split("/")
+        .map(function (part) {
+          return encodeURIComponent(part);
+        })
+        .join("/")
+    );
+  }
+
+  function refreshOpenParticipantPhotos() {
+    try {
+      if (typeof global.portalRefreshDashboardParticipantPhotos === "function") {
+        global.portalRefreshDashboardParticipantPhotos(document);
+      }
+    } catch (_) {}
+    try {
+      var slot = document.getElementById("clientPhotoSlot");
+      var nm = slot && slot.getAttribute("data-participant-name");
+      if (nm && typeof global.syncClientPhotoSlot === "function") {
+        global.syncClientPhotoSlot(nm, slot.getAttribute("data-participant-client-id") || "");
+      }
+    } catch (_) {}
+  }
+
+  /** Parents upload to participant-avatars. Instructors only had the old static PNGs. */
+  function portalHydrateParticipantAvatars() {
+    var box = global.__PORTAL_SUPABASE__;
+    var sb = box && box.client;
+    if (!sb || typeof sb.from !== "function") return Promise.resolve(false);
+    return sb
+      .from("portal_participants")
+      .select("contact_id, display_name, avatar_storage_path")
+      .not("avatar_storage_path", "is", null)
+      .limit(1000)
+      .then(function (res) {
+        if (!res || res.error || !Array.isArray(res.data)) return false;
+        var rows = res.data.filter(function (r) {
+          return r && r.avatar_storage_path && r.display_name;
+        });
+        var firstCount = Object.create(null);
+        rows.forEach(function (r) {
+          var first = storageAvatarKey(r.display_name).split(" ")[0];
+          if (first) firstCount[first] = (firstCount[first] || 0) + 1;
+        });
+        rows.forEach(function (r) {
+          var url = participantAvatarPublicUrl(r.avatar_storage_path);
+          if (!url) return;
+          portalRegisterParticipantStorageAvatar(r.contact_id, r.display_name, url);
+          var nk = storageAvatarKey(r.display_name);
+          var parts = nk.split(" ").filter(Boolean);
+          if (parts[0] && firstCount[parts[0]] === 1) {
+            PARTICIPANT_STORAGE_AVATARS.byName[parts[0]] = url;
+            PARTICIPANT_STORAGE_AVATARS.byId[parts[0]] = url;
+          }
+        });
+        refreshOpenParticipantPhotos();
+        return true;
+      })
+      .catch(function () {
+        return false;
+      });
+  }
+
+  function bindParticipantAvatarHydrate() {
+    global.addEventListener("portal:supabase-ready", function () {
+      void portalHydrateParticipantAvatars();
+    });
+    if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client) {
+      void portalHydrateParticipantAvatars();
+    }
+  }
+
   function portalParticipantStorageAvatarUrl(contactId, displayName) {
     var id = String(contactId || "").trim();
     if (id && PARTICIPANT_STORAGE_AVATARS.byId[id]) return PARTICIPANT_STORAGE_AVATARS.byId[id];
@@ -583,6 +663,8 @@
   global.PARTICIPANT_PHOTO_FILES_ON_DISK = PARTICIPANT_PHOTO_FILES_ON_DISK;
   global.PARTICIPANT_STORAGE_AVATARS = PARTICIPANT_STORAGE_AVATARS;
   global.portalRegisterParticipantStorageAvatar = portalRegisterParticipantStorageAvatar;
+  global.portalHydrateParticipantAvatars = portalHydrateParticipantAvatars;
+  bindParticipantAvatarHydrate();
   global.portalParticipantStorageAvatarUrl = portalParticipantStorageAvatarUrl;
   global.portalParticipantPhotoUrl = portalParticipantPhotoUrl;
   global.portalParticipantPhotoPathCandidates = participantPhotoPathCandidates;

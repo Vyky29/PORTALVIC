@@ -256,40 +256,84 @@
     const incSel =
       "session_date, client_name, client_id, service, session_time, incident_category, statement_during, statement_before, statement_after, location, submitted_by_name, created_at";
 
-    const queries = [];
+    const feedback = [];
+    const incidents = [];
+    const seenFb = Object.create(null);
+    const seenInc = Object.create(null);
+
+    function takeRows(res, kind) {
+      if (!res || res.error || !Array.isArray(res.data)) {
+        if (res && res.error) {
+          console.warn("[sessions-overview]", kind, res.error.message || res.error);
+        }
+        return;
+      }
+      res.data.forEach(function (row) {
+        if (!row) return;
+        if (kind === "incident") {
+          if (!participantMatches(clientId, clientName, row.client_name, row.client_id)) return;
+          const ik = mergeKey(mapDbIncident(row));
+          if (seenInc[ik]) return;
+          seenInc[ik] = true;
+          incidents.push(mapDbIncident(row));
+          return;
+        }
+        if (row.attendance == null && row.engagement_rating == null && !clean(row.session_narrative) && !clean(row.positive_feedback)) {
+          return;
+        }
+        if (!participantMatches(clientId, clientName, row.client_name, row.client_id)) return;
+        const mapped = mapDbFeedback(row);
+        const fk = mergeKey(mapped);
+        if (seenFb[fk]) return;
+        seenFb[fk] = true;
+        feedback.push(mapped);
+      });
+    }
+
+    const jobs = [];
     if (name) {
-      queries.push(
-        sb.from("session_feedback").select(fbSel).ilike("client_name", name),
-        sb.from("incident_reports").select(incSel).ilike("client_name", name)
+      jobs.push(
+        sb
+          .from("session_feedback")
+          .select(fbSel)
+          .ilike("client_name", name)
+          .order("session_date", { ascending: false })
+          .limit(400)
+          .then(function (res) {
+            takeRows(res, "feedback");
+          })
+      );
+      jobs.push(
+        sb
+          .from("incident_reports")
+          .select(incSel)
+          .ilike("client_name", name)
+          .order("session_date", { ascending: false })
+          .limit(80)
+          .then(function (res) {
+            takeRows(res, "incident");
+          })
       );
     }
-    if (id) {
-      queries.push(
-        sb.from("session_feedback").select(fbSel).eq("client_id", id),
-        sb.from("incident_reports").select(incSel).eq("client_id", id)
+    if (id && id !== slugify(name)) {
+      jobs.push(
+        sb
+          .from("session_feedback")
+          .select(fbSel)
+          .eq("client_id", id)
+          .order("session_date", { ascending: false })
+          .limit(400)
+          .then(function (res) {
+            takeRows(res, "feedback");
+          })
       );
     }
 
-    const feedback = [];
-    const incidents = [];
     try {
-      const results = await Promise.all(queries);
-      results.forEach(function (res) {
-        if (!res || res.error || !Array.isArray(res.data)) return;
-        res.data.forEach(function (row) {
-          if (!row) return;
-          if (row.incident_category != null) {
-            if (participantMatches(clientId, clientName, row.client_name, row.client_id)) {
-              incidents.push(mapDbIncident(row));
-            }
-          } else if (row.attendance != null || row.engagement_rating != null) {
-            if (participantMatches(clientId, clientName, row.client_name, row.client_id)) {
-              feedback.push(mapDbFeedback(row));
-            }
-          }
-        });
-      });
-    } catch (_) {}
+      await Promise.all(jobs);
+    } catch (err) {
+      console.warn("[sessions-overview]", err && err.message ? err.message : err);
+    }
     return { feedback: feedback, incidents: incidents };
   }
 

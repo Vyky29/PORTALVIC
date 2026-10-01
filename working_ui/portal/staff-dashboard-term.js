@@ -3042,6 +3042,7 @@
         slot.classList.add('client-photo-slot--has-photo');
         slot.classList.remove('client-photo-slot--m', 'client-photo-slot--f');
         slot.setAttribute('data-participant-name', displayName);
+        if(clientId) slot.setAttribute('data-participant-client-id', String(clientId));
         slot.innerHTML = '<img class="portal-screenshot-protected" src="' + escapeHtml(url) + '" alt="" loading="eager" fetchpriority="low" decoding="async" draggable="false" onerror="portalClientPhotoSlotFallback(this)">';
       } else {
         slot.classList.remove('client-photo-slot--has-photo');
@@ -3050,6 +3051,7 @@
         if(g === 'm') slot.classList.add('client-photo-slot--m');
         else if(g === 'f') slot.classList.add('client-photo-slot--f');
         slot.setAttribute('data-participant-name', displayName);
+        if(clientId) slot.setAttribute('data-participant-client-id', String(clientId));
         slot.innerHTML = clientPhotoSlotPlaceholderHtml(displayName);
       }
     }
