@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v54",
+  "version": "2026-10-01-v55",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -424,12 +424,15 @@
         {
           "id": "clients_list",
           "title": "CLIENT list and profiles",
-          "summary": "Browse active clients and open a profile / services. REGISTERED people who are not on Achievements photos are in the REGISTERED filter, with their own face in the Photo column.",
+          "summary": "Browse active clients and open a profile / services. People who registered and have no place yet are under WAITING, with their own face in the Photo column.",
           "where": "Clients & families → CLIENT",
           "keywords": [
             "photo",
             "foto",
             "registered",
+            "waiting",
+            "waiting list",
+            "lista de espera",
             "celda",
             "quien son",
             "achievements"
@@ -437,10 +440,11 @@
           "steps": [
             "Open CLIENT to see families on services now.",
             "The Photo column is that child's own picture.",
-            "For someone who finished registration but has no seat and is not on Achievements photos, set the filter to REGISTERED.",
+            "For someone who finished registration and has no place yet, set the filter to WAITING.",
+            "WAITING also includes Booking Portal joins for a full slot.",
             "Open a person for profile, services and related tools.",
-            "Use OLD filter only when looking at people with no current slots.",
-            "Do not put OLD / REGISTERED / LEADS on Sessions as booked kids."
+            "Use OLD only for people who used to have slots and have none now.",
+            "Do not put OLD / REGISTERED / LEADS / WAITING on Sessions as booked kids."
           ],
           "tips": [
             "A shared first name does not share a photo. Each row keeps that child's own face."

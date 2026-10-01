@@ -20743,6 +20743,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function paxContactsPhotoLookupId(p){
       var cid = paxContactsRealContactId(p);
+      if(!cid) cid = paxContactsContactIdForExactName(p && p.name);
       if(!cid) return '';
       var rec = (window.PORTAL_PARTICIPANT_AVATAR_BY_CONTACT || {})[cid];
       if(rec && rec.path && !paxContactsStoredFaceMatchesRow(p && p.name, rec)) return '';
@@ -20776,6 +20777,65 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           avatarStoragePath: String(r.avatar_storage_path || '').trim(),
           _livePortalCreated: true
         }, cid, 'programme_in'));
+      });
+      return out;
+    }
+    function paxContactsContactIdForExactName(name){
+      var want = adminPortalNormalizedPersonName(name);
+      if(!want) return '';
+      var map = window.PORTAL_PARTICIPANT_AVATAR_BY_CONTACT || {};
+      var hit = '';
+      var ids = Object.keys(map);
+      for(var i = 0; i < ids.length; i++){
+        var rec = map[ids[i]];
+        if(!rec || adminPortalNormalizedPersonName(rec.display_name) !== want) continue;
+        if(hit && hit !== ids[i]) return '';
+        hit = ids[i];
+      }
+      return hit;
+    }
+    /** Booking Portal joins that are not already a row (Aden, Phoebe, and the rest). */
+    function paxContactsAppendLiveWaitlist(out){
+      var live = window.__PORTAL_WAITLIST_LIVE_ROWS__ || [];
+      if(!live.length) return out;
+      var byName = Object.create(null);
+      live.forEach(function(w){
+        if(!w || String(w.liveStatus || 'active') === 'withdrawn' || String(w.liveStatus || '') === 'placed') return;
+        var name = String(w.pax || '').trim();
+        var key = adminPortalNormalizedPersonName(name);
+        if(!key || name === '—') return;
+        if(!byName[key]) byName[key] = { name: name, rows: [] };
+        byName[key].rows.push(w);
+      });
+      Object.keys(byName).forEach(function(key){
+        var g = byName[key];
+        var exactId = paxContactsContactIdForExactName(g.name);
+        var already = false;
+        var i;
+        for(i = 0; i < out.length; i++){
+          if(adminPortalNormalizedPersonName(out[i].name) === key){ already = true; break; }
+          if(exactId && paxContactsRealContactId(out[i]) === exactId){ already = true; break; }
+        }
+        if(already) return;
+        var pax = paxContactsWaitlistRowToPax(g.rows[0], key);
+        var svcs = [];
+        var slots = [];
+        g.rows.forEach(function(r){
+          var svc = String(r.service || '').trim();
+          var slot = String(r.slotTime || '').trim();
+          if(svc && svc !== '—' && svcs.indexOf(svc) < 0) svcs.push(svc);
+          var line = [slot && slot !== '—' ? slot : ''].filter(Boolean).join('');
+          var label = [svc && svc !== '—' ? svc : '', line].filter(Boolean).join(' · ');
+          if(label && slots.indexOf(label) < 0) slots.push(label);
+        });
+        pax.contactId = exactId;
+        pax.bookingStatus = 'waiting_list';
+        pax._waitlistOnly = true;
+        if(pax.service){
+          pax.service.services = svcs;
+          pax.service.slotCurrent = slots.join(' | ') || '—';
+        }
+        out.push(pax);
       });
       return out;
     }
@@ -20867,7 +20927,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         op.id = 'old-' + String(oldR[j].contactId != null ? oldR[j].contactId : j);
         out.push(op);
       }
-      out = paxContactsAppendUnlistedParticipants(paxContactsDedupeByPerson(out));
+      out = paxContactsAppendLiveWaitlist(paxContactsAppendUnlistedParticipants(paxContactsDedupeByPerson(out)));
       out.sort(function(a, b){
         return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), undefined, { sensitivity: 'base' });
       });
@@ -21370,15 +21430,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var labels = (typeof ADMIN_CLIENTS_INFO_SECTION_LABELS !== 'undefined' && ADMIN_CLIENTS_INFO_SECTION_LABELS) ? ADMIN_CLIENTS_INFO_SECTION_LABELS : [];
       return (Number.isFinite(n) && n >= 1 && labels[n - 1]) ? labels[n - 1] : 'Registration answer';
     }
-    /** CLIENT only with a current seat. No seat and not WAITING / OLD / trial = REGISTERED. */
+    /** CLIENT only with a current seat. Registered with no place, or a Booking Portal join, is WAITING. */
     function paxContactsBucket(p){
       var st = String((p && p.bookingStatus) || '');
-      if(st === 'waiting_list' || (p && p._waitlistOnly)) return 'waiting_list';
       var seats = 0;
       try{ seats = paxContactsCurrentSeatBands(p).length; }catch(_seats){ seats = 0; }
       if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
       if(st === 'old_participants' || st === 'not_in_programme') return 'old_participants';
       if(st === 'trial') return 'trial';
+      if(st === 'waiting_list' || (p && p._waitlistOnly)) return 'waiting_list';
+      var occ = window.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+      if(!(occ && occ.bySlotId)) return 'registered';
+      var cid = paxContactsRealContactId(p);
+      if(!cid) return 'registered';
+      var live = window.PORTAL_PARTICIPANT_LIVE_ROWS || [];
+      for(var i = 0; i < live.length; i++){
+        if(String(live[i].contact_id || '') !== cid) continue;
+        if(live[i].in_class === true) return 'registered';
+        return 'waiting_list';
+      }
       return 'registered';
     }
     function paxContactsMatchesBookingStatus(p, bk){
@@ -21467,7 +21537,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!client || typeof client.from !== 'function') return false;
       try{
         var res = await client.from('portal_participants')
-          .select('contact_id,display_name,first_name,last_name,avatar_storage_path')
+          .select('contact_id,display_name,first_name,last_name,avatar_storage_path,in_class')
           .limit(2000);
         if(res.error || !res.data) return false;
         var byId = Object.create(null);
@@ -21489,6 +21559,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.PORTAL_PARTICIPANT_LIVE_ROWS = res.data;
         return true;
       }catch(_faces){
+        return false;
+      }
+    }
+    async function paxContactsLoadLiveWaitlist(){
+      try{
+        if(typeof portalAdminWaitlistConfigureOnce === 'function') portalAdminWaitlistConfigureOnce();
+        if(!window.PortalAdminWaitlist || typeof window.PortalAdminWaitlist.refresh !== 'function') return false;
+        var res = await window.PortalAdminWaitlist.refresh();
+        return !!(res && res.ok);
+      }catch(_wl){
         return false;
       }
     }
@@ -21672,6 +21752,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           try{ bands = paxPortalMergedBandsForParticipant(p) || []; }catch(_e2){ bands = []; }
         }
       }
+      if(!bands.length && p._waitlistOnly && p.service){
+        var waitSvcs = p.service.services || [];
+        var waitSlot = String(p.service.slotCurrent || '').trim();
+        return {
+          svc: waitSvcs.length ? waitSvcs.map(function(s){ return '<div style="min-width:0;overflow-wrap:break-word">'+esc(s)+'</div>'; }).join('') : dash,
+          slot: (waitSlot && waitSlot !== '—') ? '<div style="min-width:0;overflow-wrap:break-word">'+esc(waitSlot)+'</div>' : dash
+        };
+      }
       if(!bands.length) return empty;
       var svc = bands.map(function(b){
         var prog = String(b.programme || '').trim() || 'Service';
@@ -21808,7 +21896,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">CLIENT</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">CLIENT is only people on a place now. REGISTERED, WAITING and OLD are separate filters. The Photo column is that child\'s own picture, so you can see who a REGISTERED person is even when they are not on Achievements photos. Tap anyone to open the full record.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">CLIENT is only people on a place now. WAITING is everyone who registered and has no place yet, including the new registrations, plus Booking Portal joins. The Photo column is that child\'s own picture. Tap anyone to open the full record.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
@@ -32527,9 +32615,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           void Promise.all([
             adminHydrateParentContactsFromSupabase(),
             paxContactsLoadRosterMoveRows(),
-            paxContactsLoadParticipantFaces()
+            paxContactsLoadParticipantFaces(),
+            paxContactsLoadLiveWaitlist()
           ]).then(function(results){
-            if(!(results && (results[0] || results[1] || results[2]))) return;
+            if(!(results && (results[0] || results[1] || results[2] || results[3]))) return;
             if(typeof state.rebuildPaxContactsList === 'function'){
               state.rebuildPaxContactsList();
               if(typeof paxContactsRefreshFilters === 'function') paxContactsRefreshFilters();
