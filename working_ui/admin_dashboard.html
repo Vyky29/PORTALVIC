@@ -181,7 +181,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-client-photo-seats" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-client-photo-cell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -1355,11 +1355,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var disp = adminPortalNormalizedPersonName(adminParticipantsParentsChildDisplayName(rows[i]));
         if(disp && disp === want) return rows[i];
       }
+      var hits = [];
       for(i = 0; i < rows.length; i++){
         var d2 = adminParticipantsParentsChildDisplayName(rows[i]);
-        if(d2 && adminPortalNameMatchesBooking(d2, displayName)) return rows[i];
+        if(d2 && adminPortalNameMatchesBooking(d2, displayName)) hits.push(rows[i]);
       }
-      return null;
+      if(!hits.length) return null;
+      if(hits.length === 1) return hits[0];
+      var surnameHits = hits.filter(function(h){
+        return adminPortalNameMatchesPaxBookedServices(adminParticipantsParentsChildDisplayName(h), displayName);
+      });
+      var pool = surnameHits.length ? surnameHits : hits;
+      var wantFirst = adminPortalNormalizedPersonName(displayName).split(' ').filter(Boolean)[0] || '';
+      if(wantFirst && pool.length > 1 && typeof paxContactsBareFirstOwner === 'function'){
+        var ownerId = paxContactsBareFirstOwner(wantFirst);
+        if(ownerId){
+          for(i = 0; i < pool.length; i++){
+            if(String(pool[i].contactId || '').trim() === ownerId) return pool[i];
+          }
+        }
+      }
+      return pool[0];
     }
     /** <code>Clients Info (PORTAL).xlsx</code> → <code>clients_info_embed.js</code> (<code>PORTAL_CLIENTS_INFO_ROWS</code>) — registration blob per shortened name. */
     function adminClientsInfoPortalRows(){
@@ -20364,6 +20380,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var paxObj = {
         id: id,
+        contactId: cid,
+        avatarStoragePath: String(row.avatarStoragePath || '').trim(),
         name: nm,
         parentDisplay: parentDisp,
         gender: String(row.gender || '').trim() || '—',
@@ -20661,6 +20679,106 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * the richest source. Schedule &amp; Cover tables read `clientDisplay` (roster short form)
      * independently, so they stay first-name + 2-letter surname for staff / lead.
      */
+    function paxContactsNormParts(name){
+      return adminPortalNormalizedPersonName(String(name || '').replace(/_/g, ' ')).split(' ').filter(Boolean);
+    }
+    function paxContactsRealContactId(p){
+      var cid = String((p && p.contactId) || '').trim();
+      if(!cid && p && p.id){
+        var pid = String(p.id);
+        if(pid.indexOf('pp-') === 0) cid = pid.slice(3);
+        else if(pid.indexOf('old-') === 0) cid = pid.slice(4);
+      }
+      if(!/^\d+$/.test(cid)) return '';
+      return cid;
+    }
+    /** Lowest contact id among people who share a first name. Empty when the first name is unique. */
+    function paxContactsBareFirstOwner(first){
+      var rows = window.PORTAL_PARTICIPANT_LIVE_ROWS || [];
+      var ids = [];
+      rows.forEach(function(r){
+        var parts = paxContactsNormParts(r.display_name);
+        if(!parts.length || parts[0] !== first) return;
+        var id = String(r.contact_id || '').trim();
+        if(/^\d+$/.test(id)) ids.push(id);
+      });
+      if(ids.length < 2) return '';
+      ids.sort(function(a, b){ return a.localeCompare(b, undefined, { numeric: true }); });
+      return ids[0];
+    }
+    /**
+     * Two rows share a first name but are different children (Ayaan vs Ayaan Towle,
+     * Yusuf Ah vs Yusuf Harzi). The bare first name stays with the earliest contact.
+     */
+    function paxContactsKeepSeparate(a, b){
+      var pa = paxContactsNormParts(a && a.name);
+      var pb = paxContactsNormParts(b && b.name);
+      if(!pa.length || !pb.length || pa[0] !== pb[0]) return false;
+      if(pa.join(' ') === pb.join(' ')) return false;
+      var owner = paxContactsBareFirstOwner(pa[0]);
+      if(!owner) return false;
+      function stranger(parts, person){
+        if(parts.length < 2) return false;
+        var id = paxContactsRealContactId(person);
+        return !!(id && id !== owner);
+      }
+      return stranger(pa, a) || stranger(pb, b);
+    }
+    function paxContactsStoredFaceMatchesRow(rowName, rec){
+      if(!rec) return false;
+      var row = paxContactsNormParts(rowName);
+      var stored = paxContactsNormParts(rec.display_name);
+      if(!row.length || !stored.length || row[0] !== stored[0]) return false;
+      if(row.join(' ') === stored.join(' ')) return true;
+      if(row.length >= 2 && stored.length >= 2){
+        var a = row[row.length - 1];
+        var b = stored[stored.length - 1];
+        return a === b || (a.length >= 2 && b.length >= 2 && (a.indexOf(b) === 0 || b.indexOf(a) === 0));
+      }
+      if(row.length === 1){
+        var owner = paxContactsBareFirstOwner(row[0]);
+        return !owner || String(rec.contact_id || '') === owner;
+      }
+      return false;
+    }
+    function paxContactsPhotoLookupId(p){
+      var cid = paxContactsRealContactId(p);
+      if(!cid) return '';
+      var rec = (window.PORTAL_PARTICIPANT_AVATAR_BY_CONTACT || {})[cid];
+      if(rec && rec.path && !paxContactsStoredFaceMatchesRow(p && p.name, rec)) return '';
+      return cid;
+    }
+    function paxContactsAppendUnlistedParticipants(out){
+      var live = window.PORTAL_PARTICIPANT_LIVE_ROWS || [];
+      if(!live.length) return out;
+      var amb = (typeof adminPortalParticipantAmbiguityMap === 'function') ? adminPortalParticipantAmbiguityMap() : {};
+      live.forEach(function(r){
+        var cid = String(r.contact_id || '').trim();
+        var name = String(r.display_name || '').trim();
+        if(!/^\d+$/.test(cid) || !name) return;
+        var probe = { name: name, contactId: cid, id: 'pp-' + cid };
+        var already = false;
+        var i;
+        for(i = 0; i < out.length; i++){
+          if(paxContactsRealContactId(out[i]) === cid){ already = true; break; }
+          if(paxContactsSameChild(out[i].name, name, amb) && !paxContactsKeepSeparate(out[i], probe)){
+            already = true;
+            break;
+          }
+        }
+        if(already) return;
+        out.push(paxContactsPortalRowToPax({
+          contactId: cid,
+          childDisplay: name,
+          childFirstName: String(r.first_name || '').trim(),
+          childLastName: String(r.last_name || '').trim(),
+          inClass: 'No',
+          avatarStoragePath: String(r.avatar_storage_path || '').trim(),
+          _livePortalCreated: true
+        }, cid, 'programme_in'));
+      });
+      return out;
+    }
     function paxContactsDedupeByPerson(list){
       var amb = (typeof adminPortalParticipantAmbiguityMap === 'function') ? adminPortalParticipantAmbiguityMap() : {};
       var clusters = [];
@@ -20670,12 +20788,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var placed = false;
         if(nm){
           for(var c = 0; c < clusters.length; c++){
-            if(clusters[c].repName && paxContactsSameChild(clusters[c].repName, nm, amb)){
-              clusters[c].members.push(p);
-              if(paxContactsSurnameLen(nm) < paxContactsSurnameLen(clusters[c].repName)) clusters[c].repName = nm;
-              placed = true;
-              break;
+            if(!clusters[c].repName || !paxContactsSameChild(clusters[c].repName, nm, amb)) continue;
+            var clash = false;
+            for(var m = 0; m < clusters[c].members.length; m++){
+              if(paxContactsKeepSeparate(clusters[c].members[m], p)){ clash = true; break; }
             }
+            if(clash) continue;
+            clusters[c].members.push(p);
+            if(paxContactsSurnameLen(nm) < paxContactsSurnameLen(clusters[c].repName)) clusters[c].repName = nm;
+            placed = true;
+            break;
           }
         }
         if(!placed) clusters.push({ repName: nm, members: [p] });
@@ -20745,7 +20867,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         op.id = 'old-' + String(oldR[j].contactId != null ? oldR[j].contactId : j);
         out.push(op);
       }
-      out = paxContactsDedupeByPerson(out);
+      out = paxContactsAppendUnlistedParticipants(paxContactsDedupeByPerson(out));
       out.sort(function(a, b){
         return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), undefined, { sensitivity: 'base' });
       });
@@ -21339,6 +21461,37 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return false;
       }
     }
+    /** Faces saved on portal_participants. REGISTERED people are often missing from the roster catalog. */
+    async function paxContactsLoadParticipantFaces(){
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(!client || typeof client.from !== 'function') return false;
+      try{
+        var res = await client.from('portal_participants')
+          .select('contact_id,display_name,first_name,last_name,avatar_storage_path')
+          .limit(2000);
+        if(res.error || !res.data) return false;
+        var byId = Object.create(null);
+        var base = String(window.SUPABASE_URL || '').replace(/\/$/, '');
+        res.data.forEach(function(r){
+          var id = String(r.contact_id || '').trim();
+          var name = String(r.display_name || '').trim();
+          if(!/^\d+$/.test(id) || !name) return;
+          var path = String(r.avatar_storage_path || '').trim();
+          byId[id] = { contact_id: id, display_name: name, path: path };
+          if(path && base && path.indexOf('..') < 0 && typeof portalRegisterParticipantStorageAvatar === 'function'){
+            var url = base + '/storage/v1/object/public/participant-avatars/' + path.split('/').map(function(part){
+              return encodeURIComponent(part);
+            }).join('/');
+            portalRegisterParticipantStorageAvatar(id, name, url);
+          }
+        });
+        window.PORTAL_PARTICIPANT_AVATAR_BY_CONTACT = byId;
+        window.PORTAL_PARTICIPANT_LIVE_ROWS = res.data;
+        return true;
+      }catch(_faces){
+        return false;
+      }
+    }
     /** Undated cancelled seat on a day they no longer stand — previous day this term. */
     function paxContactsFormerSeatBands(p, current){
       var name = String((p && p.name) || '').trim();
@@ -21349,7 +21502,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       rows.forEach(function(r){
         var cn = paxContactsSeatClientName(r && r.client_name);
         if(!cn || /no participant|no client|^closed$|^home$|^manager$|^office$/i.test(cn)) return;
-        if(!paxContactsSameChild(name, cn, amb)) return;
+        if(!paxContactsSameChild(name, cn, amb) || paxContactsKeepSeparate(p, { name: cn })) return;
         if(r.session_date) return;
         mine.push(r);
       });
@@ -21480,6 +21633,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var client = paxContactsSeatClientName(line.client);
           if(!client || /no participant|no client|^closed$|^home$|^manager$|^office$|^interview$|^available$|^hold waitlist$/i.test(client)) return;
           if(!paxContactsSameChild(name, client, amb)) return;
+          if(paxContactsKeepSeparate(p, { name: client })) return;
           hit = true;
           var ins = String(line.instructor || '').trim();
           if(ins && instructors.indexOf(ins) < 0) instructors.push(ins);
@@ -21487,7 +21641,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!hit){
           (slot.bookedNames || []).forEach(function(nm){
             var bn = paxContactsSeatClientName(nm);
-            if(bn && paxContactsSameChild(name, bn, amb)) hit = true;
+            if(bn && paxContactsSameChild(name, bn, amb) && !paxContactsKeepSeparate(p, { name: bn })) hit = true;
           });
         }
         if(!hit) return;
@@ -21586,8 +21740,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var cells = paxContactsServiceSlotCells(p);
         var photoName = String(p.name || '').replace(/_/g, ' ').trim();
         var photoYunis = /^yunis\b/i.test(photoName);
+        var photoCid = paxContactsPhotoLookupId(p);
         var photoHtml = (typeof portalParticipantAvatarInnerHtml === 'function')
-          ? portalParticipantAvatarInnerHtml(photoName, '', { esc: esc, className: 'portal-roster-avatar pax-contacts-avatar' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
+          ? portalParticipantAvatarInnerHtml(photoName, photoCid, { esc: esc, className: 'portal-roster-avatar pax-contacts-avatar' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
           : '';
         var bkMeta = paxContactsBookingStatusMeta(paxContactsBucket(p));
         var bkChip = bkMeta
@@ -21610,7 +21765,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '';
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
-          '<td style="min-width:0"><div class="pax-contacts-namecell">'+photoHtml+'<div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+chipsRow+'</div></div></td>'+
+          '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
+          '<td class="pax-contacts-name-td" style="min-width:0"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+chipsRow+'</div></div></td>'+
           '<td style="white-space:nowrap">'+ageCell+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:14rem">'+cells.svc+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+cells.slot+'</td>'+
@@ -21652,7 +21808,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">CLIENT</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">CLIENT is only people on a place now. REGISTERED, WAITING and OLD are separate filters. Tap anyone to open the full record.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">CLIENT is only people on a place now. REGISTERED, WAITING and OLD are separate filters. The Photo column is that child\'s own picture, so you can see who a REGISTERED person is even when they are not on Achievements photos. Tap anyone to open the full record.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
@@ -21665,7 +21821,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
         '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th>Participant name</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th>Contact</th><th>Email / phone</th>'+
+        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th>Contact</th><th>Email / phone</th>'+
         '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
@@ -32370,9 +32526,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           };
           void Promise.all([
             adminHydrateParentContactsFromSupabase(),
-            paxContactsLoadRosterMoveRows()
+            paxContactsLoadRosterMoveRows(),
+            paxContactsLoadParticipantFaces()
           ]).then(function(results){
-            if(!(results && (results[0] || results[1]))) return;
+            if(!(results && (results[0] || results[1] || results[2]))) return;
             if(typeof state.rebuildPaxContactsList === 'function'){
               state.rebuildPaxContactsList();
               if(typeof paxContactsRefreshFilters === 'function') paxContactsRefreshFilters();
