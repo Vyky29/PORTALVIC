@@ -2011,6 +2011,27 @@
       overflow-wrap: anywhere;
       min-width: 0;
     }
+    .ash-db-card--moved-away {
+      background: #fef2f2;
+      border-color: #f87171;
+      box-shadow: inset 3px 0 0 #dc2626;
+    }
+    .ash-db-card--moved-away .ash-db-card__name,
+    .ash-db-card--moved-away .ash-db-card__name-text,
+    .ash-db-card--moved-away .ash-db-card__band,
+    .ash-db-card--moved-away .ash-db-card__when {
+      color: #b91c1c;
+    }
+    .override--moved-away {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+    .override--from-shift {
+      background: #e0f2fe;
+      color: #075985;
+      border: 1px solid #bae6fd;
+    }
     .ash-db-card--needs-cover {
       background: rgba(220, 38, 38, 0.08);
       border-color: rgba(185, 28, 28, 0.35);

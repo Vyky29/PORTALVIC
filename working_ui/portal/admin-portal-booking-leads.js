@@ -916,7 +916,7 @@
 
   function viewHtml() {
     return (
-      '<h1 class="page-title">LEADS</h1>' +
+      '<h1 class="page-title">Leads</h1>' +
       '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">' +
       "Bucket <strong>LEADS</strong>: asked and received OTP, registration not finished. " +
       "Track email, phone, enquiry, activity, status. " +

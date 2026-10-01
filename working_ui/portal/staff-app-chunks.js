@@ -6,13 +6,13 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-    var VER = "20260930-luliya-off";
+    var VER = "20261001-open-hold-no-cover";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260928-patience-tue",
     "/portal/term_calendar_dashboard_shared.js?v=20260914-raul-fri18-off",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260914-no-eddie-may",
-    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260930-abate-aquatic-feedback",
+    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20261001-hold-not-a-card",
     "/portal/portal_staff_feedback_data_loader.js?v=20261001-no-global",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",

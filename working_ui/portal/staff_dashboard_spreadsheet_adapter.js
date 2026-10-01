@@ -974,8 +974,8 @@
       if (!targetSet[wanted]) return;
 
       let nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
-      /* HOLD WAITLIST is an office seat, not a child. Alex / Carlos see No participant. */
-      if (isOfficeHoldWaitlistClient(nameRaw)) nameRaw = "No participant";
+      /* HOLD WAITLIST is an office block. It is not a worker card and it does not need cover. */
+      if (isOfficeHoldWaitlistClient(nameRaw)) return;
       const timeSlotLabel = String(row.time_slot || "").trim();
       const rosterService = String(row.service || "").trim();
       const rosterArea =

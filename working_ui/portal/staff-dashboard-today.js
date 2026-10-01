@@ -4569,9 +4569,9 @@
           && coverClientId !== 'available'
           && coverClientId !== 'closed'
           && !/^(no[_\s-]?client|no[_\s-]?participant|open[_\s-]?slot)$/i.test(coverClientId));
-        /* Closed open covers stay hidden. Available / No participant covers must still
-           paint (Overview shows the hueco) — previously we dropped them entirely. */
+        /* Closed, empty, and hold-waitlist covers are not worker cards. */
         if(!coverHasRealClient && (st2 === 'Closed' || coverClientId === 'closed')) return;
+        if(portalClientIsHoldWaitlistNoFeedback(coverClientId) || portalClientIsHoldWaitlistNoFeedback(base.clientId)) return;
         if(!coverHasRealClient && (st2 === 'Available' || coverClientId === 'available'
           || /^(no[_\s-]?client|no[_\s-]?participant|open[_\s-]?slot)$/i.test(coverClientId))){
           /* Vacated same-day move-out on the covered instructor: show Cancelled + name, not empty open. */
@@ -4660,43 +4660,7 @@
               return;
             }
           }
-          const cOpen = (clientNotesById && clientNotesById.available) || {};
-          const activityOpen = (s.activity || base.activity || 'Aquatic Activity').trim();
-          const timeOpen = rosterSlotTimeLabel(s);
-          let poolLocationOpen = resolvePoolLocationLabelFromSession(s, activityOpen, cOpen, viewDay);
-          if(supportHidePoolNote) poolLocationOpen = null;
-          const areaOpen = rosterAreaLabelForSession(s, activityOpen, supportHidePoolNote);
-          const coverName = String(
-            (ov.payload && (ov.payload.covering_staff_name || ov.payload.coveringStaffName))
-            || cov
-            || 'cover'
-          ).trim();
-          const awayName = String(ov.anchor_staff_id || 'instructor').trim();
-          extra.push(Object.assign({
-            time: timeOpen,
-            kind: 'available',
-            clientId: 'available',
-            name: 'NO PARTICIPANT',
-            activity: activityOpen,
-            areaLabel: areaOpen,
-            poolLocationLabel: poolLocationOpen,
-            poolTier: poolTierForAreaNoteRow(s, activityOpen, cOpen, viewDay, supportHidePoolNote),
-            showPoolSymbol: !!(poolLocationOpen || areaOpen),
-            showSpecialty: !isBespokeActivity(activityOpen),
-            specialtyLabel: specialtyInfoTitle(activityOpen),
-            general: (`Open seat — covering ${awayName}. ${s.venue || ''} · ${cOpen.generalLead || ''}`).trim(),
-            specialty: !isBespokeActivity(activityOpen) ? pickSpecialtyBody(cOpen, activityOpen) : '',
-            openSheet: false,
-            sessionKey: `${sessionDateKey}|${s.start}|available`,
-            ...portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor),
-            noSessionFeedbackRequired: true,
-            portalOverrideSuppressReviewOrange: true,
-            scheduleAdminAdjusted: true,
-            portalCoveringStaffLabel: coverName,
-            sessionVenue: String(s.venue || '').trim() || '—',
-            __portalBaseSession: base,
-            __portalScheduleOverride: ov
-          }));
+          /* Empty seat: the instructor who is off does not need a cover, and it is not a worker card. */
           return;
         }
         if((st2 === 'Closed' || st2 === 'Available') && coverHasRealClient){

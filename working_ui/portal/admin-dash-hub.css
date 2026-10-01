@@ -1525,11 +1525,11 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
 .dash-hub--nav-group{
   max-width:100%;
 }
-/* Unified page head: back + title, then intro underneath (same pattern as Sessions Overview). */
+/* Unified page head: title + info on the left, back on the right. */
 .admin-page-head{
   display:flex;
   flex-direction:column;
-  align-items:flex-start;
+  align-items:stretch;
   gap:8px;
   margin:0 0 18px;
   min-width:0;
@@ -1539,9 +1539,129 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
   display:flex;
   flex-wrap:wrap;
   align-items:center;
-  gap:10px 14px;
+  justify-content:space-between;
+  gap:10px 16px;
   min-width:0;
   width:100%;
+}
+.admin-page-head__lead{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  flex:1 1 auto;
+}
+.admin-page-head__actions{
+  margin-left:auto;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:8px;
+  flex:0 1 auto;
+}
+.admin-page-info{
+  width:28px;
+  height:28px;
+  border-radius:999px;
+  border:1.5px solid #94a3b8;
+  background:#fff;
+  color:#1e293b;
+  font-family:Georgia, "Times New Roman", serif;
+  font-style:italic;
+  font-weight:700;
+  font-size:16px;
+  line-height:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.admin-page-info:hover,
+.admin-page-info:focus-visible{
+  border-color:#334155;
+  background:#f8fafc;
+}
+.admin-page-info-pop{
+  position:fixed;
+  inset:0;
+  z-index:80;
+  background:rgba(15,23,42,.35);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:56px 16px 24px;
+}
+.admin-page-info-pop[hidden]{display:none}
+.admin-page-info-pop__card{
+  width:min(680px,100%);
+  max-height:min(78vh,760px);
+  overflow:auto;
+  background:#fff;
+  border-radius:16px;
+  box-shadow:0 18px 50px rgba(15,23,42,.22);
+  padding:18px 18px 16px;
+  min-width:0;
+}
+.admin-page-info-pop__head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 0 12px;
+}
+.admin-page-info-pop__head h2{
+  margin:0;
+  font-size:1.25rem;
+  line-height:1.25;
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.admin-page-info-pop__close{
+  width:32px;
+  height:32px;
+  border-radius:999px;
+  border:1px solid #e2e8f0;
+  background:#fff;
+  font-size:20px;
+  line-height:1;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.admin-page-info-pop__body,
+.admin-page-info-pop__lead,
+.admin-page-info-pop__lesson{
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.admin-page-info-pop__lead{
+  margin:0 0 14px;
+  font-size:14px;
+  line-height:1.5;
+  color:#334155;
+}
+.admin-page-info-pop__lesson{
+  margin:0 0 16px;
+  padding-top:12px;
+  border-top:1px solid #e2e8f0;
+}
+.admin-page-info-pop__lesson h3{
+  margin:0 0 6px;
+  font-size:15px;
+}
+.admin-page-info-pop__lesson p,
+.admin-page-info-pop__lesson li{
+  font-size:14px;
+  line-height:1.45;
+}
+.admin-page-info-pop__kicker{
+  margin:10px 0 4px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:#64748b;
 }
 .admin-page-head__back{
   flex-shrink:0;
@@ -1570,7 +1690,14 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
   overflow-wrap:break-word;
 }
 .dash-hub--nav-group .admin-page-head{
-  margin-bottom:16px;
+  margin-bottom:18px;
+}
+.dash-hub--nav-group .admin-page-head .admin-page-head__title{
+  font-size:clamp(1.75rem, 2.8vw, 2.2rem) !important;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  color:#0f172a;
+  line-height:1.15;
 }
 .dash-hub--nav-index-pick .admin-page-head{
   margin-bottom:10px;
@@ -1615,6 +1742,16 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
   .admin-page-head__intro{
     max-width:100%;
   }
+}
+.dash-hub__menu-section{min-width:0;margin:0 0 22px}
+.dash-hub__menu-section-title{
+  margin:0 0 10px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:#64748b;
+  overflow-wrap:break-word;
 }
 .dash-hub--nav-group .dash-hub__grid--hub-menu{
   gap:14px 16px;

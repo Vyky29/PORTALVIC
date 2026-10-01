@@ -34,7 +34,7 @@
   var SCOPE = {
     client: {
       form_type: 'client_registration',
-      title: 'REGISTERED',
+      title: 'Registered',
       intro:
         'Bucket <strong>REGISTERED</strong>: registration form completed, never been a CLIENT. ' +
         '<strong>New-client registration</strong> — PDF + photo (FYI). No Accept gate; parents finish funding/payment later via the finish-booking link. ' +

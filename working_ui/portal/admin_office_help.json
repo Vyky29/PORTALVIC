@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v87",
+  "version": "2026-10-01-v96",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -54,6 +54,17 @@
           "title": "Sessions Overview (day look-here)",
           "summary": "Overview is the only day board to trust. Standing seats repeat; exceptions come from Schedule & Covers and day offs.",
           "where": "Operator → Day operations → Sessions overview",
+          "keywords": [
+            "sessions overview",
+            "now",
+            "shift",
+            "cambio de instructor",
+            "move instructor",
+            "instructor shift",
+            "hold waitlist",
+            "wait hold",
+            "hueco"
+          ],
           "demos": [
             {
               "demo": "ops_hub",
@@ -71,6 +82,8 @@
             "After a change, wait for the board to refresh (or use the in-page refresh if shown)."
           ],
           "tips": [
+            "When a child moves to another instructor the same day, the old card is red and says Now plus the new instructor. The instructor who has the child shows a chip with the old instructor's Shift. This is admin Sessions Overview only. The worker portal keeps its own chips and alerts.",
+            "An empty seat and a Hold Waitlist do not need a cover. They do not appear on a worker card. A real child on that day still needs a cover when their instructor is off.",
             "Parents do not see instructor day offs or COVER NEEDED — that is office/staff only.",
             "Aquatic halves may merge on Staff Today; Overview / Schedule keep 30-minute cards when needed."
           ]
@@ -401,7 +414,7 @@
     },
     {
       "id": "clients_families",
-      "title": "Clients & families",
+      "title": "Clients & Families",
       "blurb": "People buckets, CLIENT list, waiting list and profiles — separate from capacity.",
       "priority": 1,
       "lessons": [
@@ -426,7 +439,7 @@
           "id": "clients_list",
           "title": "CLIENT list and profiles",
           "summary": "ACTIVE, WAITING, OLD CLIENTS, REGISTERED and CFK LEADS are separate filters. A person on WAITING does not also show under REGISTERED.",
-          "where": "Clients & families → CLIENT",
+          "where": "Clients & Families → Clients → Active",
           "keywords": [
             "photo",
             "foto",
@@ -437,6 +450,8 @@
             "joined waiting",
             "fecha",
             "cuando se unieron",
+            "cuando se registraron",
+            "registered date",
             "booking history",
             "cfk leads",
             "trial",
@@ -450,27 +465,30 @@
             "crash courses"
           ],
           "steps": [
+            "Clients & Families in the left menu opens a screen with the same buttons. Under Clients: Active (the old CLIENT list), Waiting List, Registered, Leads. Under Family: WhatsApp Business (Messages), API/Portal (Messages), Portal PINs (Family), Dashboard Teleport (Family). The title is on the left. Back sits on the right.",
+            "The circle with i next to a page title opens what that page is for, plus the matching Office help steps. That text stays off the page.",
             "ACTIVE: on a place now. A cancelled place is not ACTIVE. ACTIVE stays under the name, with the date of birth.",
             "Support is the ratio, such as 1:1. Funding and Payment are separate columns. Funding is only one of three: Using Private funds (VAT 20%), Using LA funds (Exempt), or LA/NHS funded.",
-            "Payment can be more than one. The payment names are Bank Transfer (One off-Manually), Bank Transfer (Flexi-Manually), Apple Pay/Stripe, GoCardless, BACS (Ealing), Monthly Arrears (NHS), Monthly Arrears (NHS/ILA), Monthly Arrears (H&F), and Payment Link. When Bookings and Payments has two funders for the same child, both chips show. Ealing is BACS (Ealing). NHS/ILA, including a Friday paid by them, is Monthly Arrears (NHS/ILA).",
+            "Payment can be more than one. The payment names are Bank Transfer (One off-Manually), Bank Transfer (Flexi-Manually), Apple Pay/Stripe, GoCardless, BACS (Ealing), Monthly Arrears (NHS), Monthly Arrears (NHS/ILA), Monthly Arrears (H&F), and Payment Link. Payment Link is an invoice marked payment link that is paid or part-paid. A Stripe checkout on that link stays Payment Link. An unpaid link does not count. When Bookings and Payments has two funders for the same child, both chips show. Ealing is BACS (Ealing). NHS/ILA, including a Friday paid by them, is Monthly Arrears (NHS/ILA).",
             "Filter Funding and Payment on the CLIENT page. A payment filter keeps anyone who has that method, even if they also have another.",
             "Funding and Payment come from the invoice. VAT 20% means the family pays (Using Private funds). No VAT and the family pays means Using LA funds (Exempt). No VAT and the office bills the council or NHS means LA/NHS funded. Summer is used when that is the invoice on file. Each funding type and each payment method has its own colour.",
             "OLD CLIENTS were in summer 2026, or had a September service, and are not here now. Set Funding to All funding to see the whole list.",
-            "Someone who was never in summer is not OLD CLIENTS. A registration in September with no service stays REGISTERED. A Class for Kids waiting request with no booking stays WAITING. A Class for Kids booking from September 2025 through August 2026 is OLD CLIENTS. The Class for Kids file with no booking in that window, and no waiting request, stays under CFK LEADS.",
-            "WAITING: on a waiting list. Many only did OTP and asked for a place, with no registration. Funding and Payment are hidden here. They fill in when the child has a service. Someone who already has a service or a trial can also be waiting for another place. Newest join is at the top. Oldest is at the bottom. Not on file sits at the bottom. They do not also show under REGISTERED.",
-            "REGISTERED: filled the registration form, no term place, not on a waiting list. Someone who only comes to crash courses stays here, with Service set to Crash courses, so you can offer them a term place.",
+            "Someone who was never in summer is not OLD CLIENTS. A registration in September with no service stays REGISTERED. A Class for Kids waiting request with no booking stays Old Waiting List. A Class for Kids booking from September 2025 through August 2026 is OLD CLIENTS. The Class for Kids file with no booking in that window, and no waiting request, stays under CFK LEADS.",
+            "Portal Waiting List is the Booking Portal queue from 12 Aug 2026 onward. Old Waiting List is the workbook queue from before that. Source shows Booking Portal or Workbook, the same labels as the WAITING page. Funding and Payment are hidden. Newest join is at the top. A child who already has a service can also be on Portal Waiting List for another place. OTP with no finished registration stays in LEADS, not on these lists.",
+            "REGISTERED: filled the registration form, no term place, not on a waiting list. The Registered column is the day they registered, newest at the top. Someone who only comes to crash courses stays here, with Service set to Crash courses, so you can offer them a term place.",
             "CFK LEADS: the Class for Kids contact file. Funding and Payment stay hidden. Age comes from the date of birth on that file. Service says Class for Kids. The time column is the first and last booking date from that file, when the file has them. The line under the status says Class for Kids file.",
-            "On Trial / Trialled: someone who booked a trial and has a trial session. Booked is the day they booked. Trial session is the day they came, with the service and time when we have them. A session still ahead is On Trial. A session already held is Trialled. Newest session is at the top. They stay ACTIVE as well when they took a term place afterwards.",
+            "On Trial / Trialled: someone who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. Newest session is at the top. They stay ACTIVE as well when they took a term place afterwards.",
             "A short name on the bookings shows on that child's row when it is the same person. Consecutive halves on the same day show as one time. The venue is in brackets after the time, such as Tuesday, 3:30 pm to 5:00 pm (SWIMFARM).",
             "Age uses the date of birth. If the contact has no date, the list uses the birth line on the registration (Clients Info).",
             "Contact, email, phone and age come from the child's contact record. A short roster name still shows that parent and those details.",
             "A group label such as a Day Centre block is not an extra client when the children in that group are already on the list. Tuesday ACAT 11-12 shows as Aquatic Activity on each member, at SwimFarm.",
             "Direct Payments sit under Using LA funds (Exempt). The family pays. LA/NHS funded means the office bills the authority.",
-            "The Photo column is that child's own picture.",
+            "The Photo column is that child's own picture. A picture the parent uploaded or replaced in the portal is the one that shows. Until then, the office picture shows when we have one. If neither side has a picture, the initials show.",
             "Do not put WAITING, REGISTERED, CFK LEADS or OLD CLIENTS on Sessions as booked kids."
           ],
           "tips": [
             "A shared first name does not share a photo. Each row keeps that child's own face.",
+            "The Registered column is the registration date on the contact. If that date is empty, it is the day the child was added in the portal. Date of birth is not that day. If neither date is on file, the cell says Not on file.",
             "A one-word name on the bookings is one child. Another child with that first name does not take the place."
           ]
         },
@@ -501,12 +519,17 @@
         },
         {
           "id": "waiting_list",
-          "title": "WAITING list",
-          "summary": "Families waiting for a full service place. Newest join is at the top.",
-          "where": "Clients & families → CLIENT → Booking status WAITING",
+          "title": "Portal Waiting List and Old Waiting List",
+          "summary": "Same queue as the WAITING page. From 12 Aug 2026 it is Portal Waiting List. Before that it is Old Waiting List.",
+          "where": "Clients & Families → Clients → Active → Booking status",
           "keywords": [
             "waiting",
             "waiting list",
+            "portal waiting list",
+            "old waiting list",
+            "source",
+            "workbook",
+            "booking portal",
             "lista de espera",
             "joined waiting",
             "otp",
@@ -516,14 +539,17 @@
             "mas nuevo"
           ],
           "steps": [
-            "Open CLIENT and set Booking status to WAITING.",
+            "Open CLIENT and set Booking status to Portal Waiting List or Old Waiting List.",
+            "Portal Waiting List is Booking Portal from 12 Aug 2026 to now. Old Waiting List is the workbook from before that day.",
+            "Source is Booking Portal or Workbook. It is the same split as the WAITING page.",
             "The list is newest join at the top and oldest at the bottom. Not on file sits at the bottom.",
             "Funding and Payment are hidden. They fill in on ACTIVE when the child has a service.",
-            "Many rows are OTP plus a waiting request, with no registration. A child who already has a service or a trial can also be waiting for another place.",
+            "A child who already has a service can also be on Portal Waiting List for another place.",
+            "OTP with no finished registration stays in LEADS. Do not add a separate OTP-only filter on this list.",
             "When a place opens (Services / Edit term slot / finish-booking), move them through your usual offer flow."
           ],
           "tips": [
-            "Keep WAITING separate from LEADS and REGISTERED."
+            "Keep both waiting lists separate from LEADS and REGISTERED."
           ]
         },
         {

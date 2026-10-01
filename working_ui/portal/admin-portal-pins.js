@@ -90,6 +90,7 @@
 
   var state = {
     tab: "staff", // staff | family
+    familyOnly: false,
     revealed: false,
     fromDb: false,
     rowsByPortal: { staff: [], lead: [], admin: [] },
@@ -324,7 +325,13 @@
     );
   }
 
+  function setFamilyOnly(on) {
+    state.familyOnly = !!on;
+    if (state.familyOnly) state.tab = "family";
+  }
+
   function viewHtml() {
+    var familyOnly = !!state.familyOnly;
     return (
       '<div id="portalPinsRoot" class="portal-pins-embed">' +
       "<style>" +
@@ -334,11 +341,17 @@
       "#portalPinsRoot .portal-pin-tbl th:first-child,#portalPinsRoot .portal-pin-tbl td:first-child{width:52px;padding-right:14px;border-right:1px solid rgba(23,50,71,.14);font-size:11px;color:#8a9bab}" +
       "#portalPinsRoot .portal-pin-tbl th:nth-child(4),#portalPinsRoot .portal-pin-tbl td:nth-child(4){padding-left:14px}" +
       "</style>" +
-      '<h1 class="page-title">Portal PINs</h1>' +
-      '<p class="page-intro">Login codes for staff portals and Family portal parents. Hidden by default — reveal only when needed.</p>' +
+      '<h1 class="page-title">' +
+      (familyOnly ? "Portal PINs (Family)" : "Portal PINs") +
+      "</h1>" +
+      '<p class="page-intro">' +
+      (familyOnly
+        ? "Family portal login codes only. A parent signs in with the child first name and this 4-digit PIN. Staff PINs stay under Documents."
+        : "Login codes for staff portals and Family portal parents. Hidden by default — reveal only when needed.") +
+      "</p>" +
       '<div class="op-banner" style="margin-bottom:14px"><strong>Keep this private.</strong>' +
       "<p>Working login PINs (admin/CEO only). For families, use these when helping a parent sign in or when sending their PIN on WhatsApp.</p></div>" +
-      tabBarHtml() +
+      (familyOnly ? "" : tabBarHtml()) +
       '<div class="toolbar" style="margin-bottom:14px;gap:8px;display:flex;align-items:center;flex-wrap:wrap">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalPinsReveal">Reveal all</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" id="portalPinsRefresh">Refresh</button>' +
@@ -621,6 +634,13 @@
       }
     });
 
+    if (state.familyOnly) {
+      state.tab = "family";
+      loadFamilyPins().then(function () {
+        renderSections(root);
+      });
+      return;
+    }
     loadFromDb().then(function () {
       renderSections(root);
     });
@@ -630,6 +650,7 @@
     configure: configure,
     viewHtml: viewHtml,
     bindModule: bindModule,
+    setFamilyOnly: setFamilyOnly,
     totalCount: totalStaffCount,
   };
 })(typeof window !== "undefined" ? window : globalThis);

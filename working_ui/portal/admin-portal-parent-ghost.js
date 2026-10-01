@@ -367,7 +367,7 @@
       '<div id="portalParentGhostRoot" class="portal-day-ops-embed">' +
       '<div class="portal-staff-map-header">' +
       '<div class="portal-staff-map-title-row">' +
-      '<h1 class="page-title">Parents teleport</h1>' +
+      '<h1 class="page-title">Dashboard Teleport (Family)</h1>' +
       '<div class="portal-staff-map-toolbar">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentGhostRefresh">Refresh</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="nav_hub">Operations hub</button>' +

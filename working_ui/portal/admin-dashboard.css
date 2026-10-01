@@ -184,7 +184,7 @@
     .admin-nav-pending-badge.is-empty{display:none}
     .admin-nav-group[data-group-id="g_c4k"] .admin-nav-subhead,
     .admin-nav-group[data-group-id="g_services"] .admin-nav-subhead{color:rgba(254,243,199,.5)}
-    .admin-nav-group[data-group-id="g_clients"] .admin-nav-subhead{color:rgba(237,233,254,.5)}
+    .admin-nav-group[data-group-id="g_clients"] .admin-nav-subhead{color:#e9d5ff;font-size:11px;letter-spacing:.06em}
     .admin-nav-group[data-group-id="g_messages"] .admin-nav-subhead{color:rgba(224,242,254,.55)}
     .admin-nav-toggle-inner{display:flex;align-items:center;gap:10px;min-width:0;flex:1;text-align:left}
     .admin-nav-label{min-width:0;flex:1;overflow-wrap:break-word;text-align:left}
@@ -1098,6 +1098,14 @@
       line-height:1.32;
       min-width:0;
       overflow-wrap:break-word;
+    }
+    .admin-page-head .admin-page-head__title{
+      margin:0;
+      font-size:clamp(1.7rem, 2.6vw, 2.1rem);
+      font-weight:700;
+      letter-spacing:-0.02em;
+      color:#0f172a;
+      line-height:1.15;
     }
     /* Kill any leftover focus styling if an h1 was focused before this fix */
     .page-title:focus,
@@ -5019,6 +5027,10 @@
       line-height:1.42 !important
     }
     body.admin-touch-compact .page-title{font-size:15px !important;margin-bottom:4px !important}
+    body.admin-touch-compact .admin-page-head .admin-page-head__title{
+      font-size:1.45rem !important;
+      margin-bottom:0 !important;
+    }
     body.admin-touch-compact .page-desc{font-size:11px !important;line-height:1.4 !important;margin-bottom:10px !important}
     body.admin-touch-compact .page-intro{font-size:10.5px !important;line-height:1.35 !important;margin-bottom:8px !important}
     body.admin-touch-compact .dayops-screen-nav--row3,

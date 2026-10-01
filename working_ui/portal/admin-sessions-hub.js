@@ -774,6 +774,16 @@
     return false;
   }
 
+  /** Sunday climb HOLD WAITLIST: office block, not a child and not a cover. */
+  function slotIsCoverFreeOfficeHold(name) {
+    var low = clean(name).toLowerCase().replace(/[_-]+/g, " ");
+    if (!low) return false;
+    if (low === "hold waitlist" || low === "waitlist" || low === "waiting list" || low === "waiting") {
+      return true;
+    }
+    return /^hold\b/.test(low) && /wait/.test(low);
+  }
+
   function parseHm(token) {
     var t = String(token || "").trim();
     if (!t) return { h: 0, m: 0 };
@@ -9059,6 +9069,15 @@ function rosterRowToSlot(isoDate, wd, r) {
           return false;
         }
       }
+      /*
+       * Same-day client move (Raul loses Emanuel, Victor keeps him): the clear
+       * is anchored to one instructor. Do not paint the other column moved-out.
+       */
+      if (overrideIsClientMoveClear(ov) && clean(ov.anchor_staff_id)) {
+        if (!staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)) {
+          return false;
+        }
+      }
     }
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();
@@ -12914,12 +12933,112 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return "Cover";
   }
 
+  function adminOverviewMoveShiftChips() {
+    try {
+      var path = String((global.location && global.location.pathname) || "").toLowerCase();
+      if (path.indexOf("portal-lead-session-overview") !== -1) return false;
+    } catch (_path) {}
+    return true;
+  }
+
+  function dayBoardClockMins(hm) {
+    var p = String(hm || "").match(/(\d{1,2}):(\d{2})/);
+    if (!p) return NaN;
+    return (parseInt(p[1], 10) || 0) * 60 + (parseInt(p[2], 10) || 0);
+  }
+
+  function dayBoardSlotBounds(slot) {
+    var wd = (slot && slot.day) || weekdayLongFromIso(slot && slot.session_date);
+    var start = normTimeShort(slot && (slot.time_start || slot.anchor_start));
+    var end = normTimeShort(slot && (slot.time_end || slot.anchor_end));
+    if ((!start || !end) && slot && slot.time_slot) {
+      var parsed = parseTimeSlot(slot.time_slot, wd);
+      if (parsed) {
+        start = start || parsed.start;
+        end = end || parsed.end;
+      }
+    }
+    return { start: start || "", end: end || "" };
+  }
+
+  function dayBoardSlotsOverlap(a, b) {
+    var ab = dayBoardSlotBounds(a);
+    var bb = dayBoardSlotBounds(b);
+    var a0 = dayBoardClockMins(ab.start);
+    var a1 = dayBoardClockMins(ab.end || ab.start);
+    var b0 = dayBoardClockMins(bb.start);
+    var b1 = dayBoardClockMins(bb.end || bb.start);
+    if (Number.isFinite(a0) && Number.isFinite(a1) && Number.isFinite(b0) && Number.isFinite(b1)) {
+      return a0 < b1 && b0 < a1;
+    }
+    return !!(ab.start && bb.start && ab.start === bb.start);
+  }
+
+  function dayBoardSlotStaffKey(slot) {
+    var list = slotInstructors(slot);
+    return canonicalStaffMatchKey((list && list[0]) || "");
+  }
+
+  function dayBoardSlotStaffFirst(slot) {
+    var list = slotInstructors(slot);
+    return dayBoardStaffLabel((list && list[0]) || "");
+  }
+
+  /**
+   * Admin Overview only: a moved-out card names who has the child now,
+   * and that instructor's card gets "[name]'s Shift".
+   */
+  function dayBoardLinkInstructorMoves(slots) {
+    if (!slots || !slots.length) return;
+    var i;
+    for (i = 0; i < slots.length; i++) {
+      if (!slots[i]) continue;
+      slots[i].portalMovedToFirst = "";
+      slots[i].portalShiftFromFirst = "";
+    }
+    if (!adminOverviewMoveShiftChips()) return;
+    for (i = 0; i < slots.length; i++) {
+      var src = slots[i];
+      if (!src || !src.portalClientMovedOut || isOpenRosterSlot(src.client_name)) continue;
+      var srcName = canonicalClientSlug(src.client_name);
+      var srcStaff = dayBoardSlotStaffKey(src);
+      if (!srcName || !srcStaff) continue;
+      var best = null;
+      for (var j = 0; j < slots.length; j++) {
+        var other = slots[j];
+        if (!other || other === src || other.portalClientMovedOut) continue;
+        if (isOpenRosterSlot(other.client_name)) continue;
+        if (clean(other.session_date) !== clean(src.session_date)) continue;
+        if (canonicalClientSlug(other.client_name) !== srcName) continue;
+        var otherStaff = dayBoardSlotStaffKey(other);
+        if (!otherStaff || otherStaff === srcStaff) continue;
+        if (!dayBoardSlotsOverlap(src, other)) continue;
+        best = other;
+        break;
+      }
+      if (!best) continue;
+      var toFirst = dayBoardSlotStaffFirst(best);
+      var fromFirst = dayBoardSlotStaffFirst(src);
+      if (toFirst) src.portalMovedToFirst = toFirst;
+      if (fromFirst) best.portalShiftFromFirst = fromFirst;
+    }
+  }
+
   function htmlDayBoardOverrideChipList(hub, slot, st, esc) {
     var chips = [];
+    var showMoveShift = adminOverviewMoveShiftChips();
     if (slot && slot.portalClientMovedOut) {
-      chips.push(
-        '<span class="override-chip override--instructor">Move in and change instructor</span>'
-      );
+      if (showMoveShift && slot.portalMovedToFirst) {
+        chips.push(
+          '<span class="override-chip override--moved-away">Now ' +
+            esc(slot.portalMovedToFirst) +
+            "</span>"
+        );
+      } else {
+        chips.push(
+          '<span class="override-chip override--instructor">Move in and change instructor</span>'
+        );
+      }
     } else if (slot && slot.portalOverrideDayMoveTag && !st.isAbsent) {
       chips.push('<span class="override-chip override--instructor">Moved in</span>');
     }
@@ -12980,6 +13099,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       chips.push(
         '<span class="override-chip override--instructor">' +
           esc(dayBoardCoverChipLabel(st) || (st.slotOv ? hubOverrideLabel(st.slotOv) : "Cover")) +
+          "</span>"
+      );
+    }
+    if (showMoveShift && slot && slot.portalShiftFromFirst && !slot.portalClientMovedOut) {
+      chips.push(
+        '<span class="override-chip override--from-shift">' +
+          esc(slot.portalShiftFromFirst + "'s Shift") +
           "</span>"
       );
     }
@@ -13104,9 +13230,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var cardTone = st.tone;
     if (st.boardPlace === "away" || st.isStaffDayOff) cardTone = "dayoff";
     if (st.boardPlace === "mirror") cardTone = "cover";
+    var movedAway =
+      adminOverviewMoveShiftChips() && slot && slot.portalClientMovedOut && slot.portalMovedToFirst;
     return (
       '<article class="ash-db-card ash-db-card--' +
       esc(cardTone) +
+      (movedAway ? " ash-db-card--moved-away" : "") +
       (st.boardPlace === "away" || st.isStaffDayOff ? " ash-db-card--needs-cover" : "") +
       (st.boardPlace === "mirror" ? " ash-db-card--cover-mirror" : "") +
       (st.isCoverNeeded && st.boardPlace !== "away" ? " ash-db-card--cover-needed" : "") +
@@ -13131,6 +13260,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.htmlDayBoard = function (displaySlots, unitComplete, unitAbsent) {
     var esc = this.escapeHtml;
     var hub = this;
+    dayBoardLinkInstructorMoves(displaySlots);
     if (!displaySlots || !displaySlots.length) {
       return (
         '<div class="ash-db-empty">' +
@@ -13196,6 +13326,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       for (var oi = 0; oi < origInsts.length; oi++) {
         if (hubStaffAwayOnIso(hub, iso, origInsts[oi])) awayOrig.push(origInsts[oi]);
       }
+      /*
+       * HOLD WAITLIST is an office block: no cover, and it does not sit on a worker card.
+       * An empty seat stays with the instructor who is in. If they are off, nobody covers it.
+       */
+      if (slotIsCoverFreeOfficeHold(slot.client_name)) continue;
+      if ((st.isOpenSlot || isOpenRosterSlot(slot.client_name)) && awayOrig.length) continue;
       var fromLabel = dayBoardStaffLabel((awayOrig[0] || origInsts[0]));
       var realCover = !!(st.isRealCover && (slot.portalCoveringStaffName || slot.portalCoveringStaffId));
       var pushedNamedCover = false;
