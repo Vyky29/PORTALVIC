@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v67",
+  "version": "2026-10-01-v68",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -447,7 +447,8 @@
             "crash courses"
           ],
           "steps": [
-            "ACTIVE: on a place now. A cancelled place is not ACTIVE.",
+            "ACTIVE: on a place now. A cancelled place is not ACTIVE. ACTIVE stays under the name, with the date of birth.",
+            "Support is the ratio, such as 1:1. Funding is LA/NHS funds or Private funds, and the invoice method sits under that.",
             "OLD CLIENTS is the filter for people who had a service and are not here now. It is on the same CLIENT page, in the booking status menu.",
             "WAITING: registered and on a waiting list. They do not also appear under REGISTERED. Joined waiting is the day they joined. Booking Portal has that day. Not on file means the Class for Kids row has no date.",
             "REGISTERED: filled the registration form, no term place, not on a waiting list. Someone who only comes to crash courses stays here, with Service set to Crash courses, so you can offer them a term place.",

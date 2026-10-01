@@ -181,7 +181,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-client-photo-cell" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-support-funding-cols" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -22163,13 +22163,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var methodChip = fundInfo.method
           ? '<span title="Payment method" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:#f1f5f9;color:#334155;max-width:100%;overflow-wrap:break-word">'+esc(fundInfo.method)+'</span>'
           : '';
-        var chipsRow = (bkChip || ratioChip || fundingChip || methodChip)
-          ? '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;min-width:0">'+bkChip+ratioChip+fundingChip+methodChip+'</div>'
+        var statusRow = bkChip
+          ? '<div class="pax-contacts-chips">'+bkChip+'</div>'
           : '';
+        var supportCell = ratioChip || '<span class="muted">—</span>';
+        var fundingBits = fundingChip + methodChip;
+        var fundingCell = fundingBits
+          ? '<div class="pax-contacts-chips">'+fundingBits+'</div>'
+          : '<span class="muted">—</span>';
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
-          '<td class="pax-contacts-name-td" style="min-width:0"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+chipsRow+'</div></div></td>'+
+          '<td class="pax-contacts-name-td" style="min-width:0"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+'</div></div></td>'+
+          '<td class="pax-contacts-meta">'+supportCell+'</td>'+
+          '<td class="pax-contacts-meta">'+fundingCell+'</td>'+
           '<td style="white-space:nowrap">'+ageCell+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:14rem">'+cells.svc+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+cells.slot+'</td>'+
@@ -22225,7 +22232,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
         '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th>Contact</th><th>Email / phone</th>'+
+        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th>Funding</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th>Contact</th><th>Email / phone</th>'+
         '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
@@ -32778,7 +32785,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
-          var headers = ['Participant name', 'DOB', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Contact', 'Email', 'Phone'];
+          var headers = ['Participant name', 'DOB', 'Support', 'Funding', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Contact', 'Email', 'Phone'];
           if(showAns) headers.push(paxContactsRegQuestionLabel(qv));
           function csvCell(v){
             var s = String(v == null ? '' : v).replace(/\u2014/g, '').replace(/\s+/g, ' ').trim();
@@ -32791,7 +32798,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var slot = bands.map(function(b){
               var dayFull = c4kServiceDowLong(String(b.day || '').trim().slice(0, 3));
               var t = String(b.timeDisp || '').trim();
-              return (dayFull && dayFull !== '\u2014') ? (dayFull + (t && t !== '\u2014' ? ', ' + t : '')) : (t || '');
+              var venue = String(b.venue || '').trim();
+              var venueBit = venue ? ' (' + venue.toUpperCase() + ')' : '';
+              var label = (dayFull && dayFull !== '\u2014') ? (dayFull + (t && t !== '\u2014' ? ', ' + t : '')) : (t || '');
+              return label + (t && t !== '\u2014' ? venueBit : '');
             });
             return { svc: svc.join(' | '), slot: slot.join(' | ') };
           }
@@ -32810,14 +32820,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   slot: seatBands.map(function(b){
                     var dayFull = c4kServiceDowLong(String(b.day || '').trim().slice(0, 3));
                     var t = String(b.timeDisp || '').trim();
-                    return (dayFull && dayFull !== '\u2014') ? (dayFull + (t ? ', ' + t : '')) : (t || '');
+                    var venue = String(b.venue || '').trim();
+                    var venueBit = venue ? ' (' + venue.toUpperCase() + ')' : '';
+                    var label = (dayFull && dayFull !== '\u2014') ? (dayFull + (t ? ', ' + t : '')) : (t || '');
+                    return label + (t ? venueBit : '');
                   }).join(' | ')
                 }
               : bandsText(p);
             var ageY = paxContactsAgeYears(p);
+            var fundInfo = adminParticipantFundingInfo(p);
+            var fundCsv = [fundInfo.source, fundInfo.method].filter(Boolean).join(' | ');
             var row = [
               p.name || '',
               p.dobDisplay || r.dobDisplay || '',
+              adminParticipantSupportRatio(p.name) || '',
+              fundCsv,
               ageY != null ? String(ageY) : '',
               bt.svc,
               bt.slot,

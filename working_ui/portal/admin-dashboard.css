@@ -424,6 +424,9 @@
     .pax-contacts-tbl th.pax-contacts-photo-th{width:76px}
     .pax-contacts-tbl td.pax-contacts-photo-cell{width:76px;text-align:center;vertical-align:middle}
     .pax-contacts-tbl td.pax-contacts-name-td{text-align:left}
+    .pax-contacts-tbl td.pax-contacts-meta{min-width:0;max-width:14rem}
+    .pax-contacts-tbl .pax-contacts-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;min-width:0}
+    .pax-contacts-tbl td.pax-contacts-name-td .pax-contacts-chips{margin-top:4px;justify-content:flex-start}
     .pax-contacts-namecell{display:flex;align-items:flex-start;gap:10px;min-width:0;text-align:left}
     .pax-contacts-namecell__body{min-width:0;flex:1 1 auto}
     .pax-contacts-avatar{
