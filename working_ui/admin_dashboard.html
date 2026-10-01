@@ -21766,10 +21766,37 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /**
      * ACTIVE: on a place now.
-     * OLD CLIENTS: summer 2026 client, or had an Autumn service, and not here now.
-     * CFK LEADS: Class for Kids file, never in summer 2026.
+     * OLD CLIENTS: summer 2026, an Autumn service, or a Class for Kids booking from Sep 2025 through Aug 2026, and not here now.
+     * CFK LEADS: Class for Kids file with no booking in that window.
      * REGISTERED: portal / webhook registration, never in summer 2026, not on a waiting list.
      */
+    function paxContactsCfkLaterBookingIso(p){
+      var last = paxContactsRealBookingIso(p && p.lastBookingIso);
+      var first = paxContactsRealBookingIso(p && p.firstBookingIso);
+      if(last && first) return last > first ? last : first;
+      return last || first || '';
+    }
+    /** Class for Kids booking in autumn 2025, spring 2026, or summer 2026. */
+    function paxContactsHadAutumn25OrLaterBooking(p){
+      var day = paxContactsCfkLaterBookingIso(p);
+      return !!(day && day >= '2025-09-01' && day < '2026-09-01');
+    }
+    function paxContactsCfkHistoryPlain(p){
+      var first = paxContactsRealBookingIso(p && p.firstBookingIso);
+      var last = paxContactsRealBookingIso(p && p.lastBookingIso);
+      var slot = '';
+      if(first && last && first !== last) slot = paxContactsFormatJoinedDay(first) + ' to ' + paxContactsFormatJoinedDay(last);
+      else if(last || first) slot = 'Last booking ' + paxContactsFormatJoinedDay(last || first);
+      return { svc: 'Class for Kids', slot: slot };
+    }
+    function paxContactsCfkHistoryCells(p){
+      var plain = paxContactsCfkHistoryPlain(p);
+      var dash = '<span class="muted">—</span>';
+      return {
+        svc: '<div class="pax-svc-line">'+esc(plain.svc)+'</div>',
+        slot: plain.slot ? '<div class="pax-slot-line">'+esc(plain.slot)+'</div>' : dash
+      };
+    }
     /** Had a service and left before this term. No Autumn seat, so not ACTIVE. */
     function paxContactsNamedOldClient(p){
       var n = String((p && p.name) || '').trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
@@ -21801,7 +21828,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(paxContactsCrashOnlyClient(p)) return 'registered';
       if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
       if(live && live.in_class === true) return st === 'trial' ? 'trial' : 'programme_in';
-      if(paxContactsWasSummer2026(p) || paxContactsStartedSeptember(p) || paxContactsNamedOldClient(p)) return 'booking_history';
+      if(paxContactsWasSummer2026(p) || paxContactsStartedSeptember(p) || paxContactsNamedOldClient(p) || paxContactsHadAutumn25OrLaterBooking(p)) return 'booking_history';
       if(paxContactsIsWaiting(p)) return 'waiting_list';
       if(p && p._cfkContact) return 'cfk_leads';
       if(paxContactsIsPortalRegistration(p)) return 'registered';
@@ -22454,6 +22481,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           slot: (waitSlot && waitSlot !== '—') ? '<div class="pax-slot-line">'+esc(waitSlot)+'</div>' : dash
         };
       }
+      if(!bands.length && p._cfkContact) return paxContactsCfkHistoryCells(p);
       if(!bands.length) return empty;
       var svc = bands.map(function(b){
         var prog = String(b.programme || '').trim() || 'Service';
@@ -22690,6 +22718,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var statusRow = bkChip
           ? '<div class="pax-contacts-chips">'+bkChip+'</div>'
           : '';
+        if(paxContactsBucket(p) === 'cfk_leads'){
+          statusRow += '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:anywhere">Class for Kids file</div>';
+        }
         var supportCell = ratioChip || '<span class="muted">—</span>';
         var fundingCell = fundingChip
           ? '<div class="pax-contacts-chips pax-contacts-chips--stack">'+fundingChip+'</div>'
@@ -22746,7 +22777,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">CLIENT</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. OLD CLIENTS were in summer 2026, or had a September service, and are not here now. A September registration with no service stays REGISTERED. A Class for Kids waiting request with no booking stays WAITING. Funding and Payment stay off WAITING until the child has a service. Newest join is at the top. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. A Class for Kids waiting request with no booking stays WAITING. Funding and Payment stay off WAITING and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of WAITING. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
@@ -33319,7 +33350,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
           var showJoined = bk === 'waiting_list';
-          var showMoney = bk !== 'waiting_list';
+          var showMoney = bk !== 'waiting_list' && bk !== 'cfk_leads';
           root2.querySelectorAll('.pax-joined-col').forEach(function(el){ el.hidden = !showJoined; });
           root2.querySelectorAll('.pax-money-col, .pax-money-filter').forEach(function(el){ el.hidden = !showMoney; });
           var ansTh = $('paxRegAnsTh');
@@ -33433,17 +33464,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                     return label + (t ? venueBit : '');
                   }).join(' | ')
                 }
-              : bandsText(p);
+              : (p._cfkContact ? paxContactsCfkHistoryPlain(p) : bandsText(p));
             var ageY = paxContactsAgeYears(p);
             var moneyCsv = paxContactsFundingPayment(p);
             var payCsv = (moneyCsv.payments || []).map(function(pay){ return pay.label; }).join(' | ');
-            var waitingExport = (($('paxContactsBookingStatus') && $('paxContactsBookingStatus').value) || '') === 'waiting_list';
+            var bookingExport = (($('paxContactsBookingStatus') && $('paxContactsBookingStatus').value) || '');
+            var hideMoneyExport = bookingExport === 'waiting_list' || bookingExport === 'cfk_leads';
             var row = [
               p.name || '',
               p.dobDisplay || r.dobDisplay || '',
               adminParticipantSupportRatio(p.name) || '',
-              waitingExport ? '' : (moneyCsv.fundingLabel || ''),
-              waitingExport ? '' : payCsv,
+              hideMoneyExport ? '' : (moneyCsv.fundingLabel || ''),
+              hideMoneyExport ? '' : payCsv,
               ageY != null ? String(ageY) : '',
               bt.svc,
               bt.slot,

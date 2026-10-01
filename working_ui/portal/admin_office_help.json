@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v85",
+  "version": "2026-10-01-v86",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -453,10 +453,10 @@
             "Filter Funding and Payment on the CLIENT page. A payment filter keeps anyone who has that method, even if they also have another.",
             "Funding and Payment come from the invoice. VAT 20% means the family pays (Using Private funds). No VAT and the family pays means Using LA funds (Exempt). No VAT and the office bills the council or NHS means LA/NHS funded. Summer is used when that is the invoice on file. Each funding type and each payment method has its own colour.",
             "OLD CLIENTS were in summer 2026, or had a September service, and are not here now. Set Funding to All funding to see the whole list.",
-            "Someone who was never in summer is not OLD CLIENTS. A registration in September with no service stays REGISTERED. A Class for Kids waiting request with no booking stays WAITING. The Class for Kids file with no summer service and no waiting request stays under CFK LEADS.",
+            "Someone who was never in summer is not OLD CLIENTS. A registration in September with no service stays REGISTERED. A Class for Kids waiting request with no booking stays WAITING. A Class for Kids booking from September 2025 through August 2026 is OLD CLIENTS. The Class for Kids file with no booking in that window, and no waiting request, stays under CFK LEADS.",
             "WAITING: on a waiting list. Many only did OTP and asked for a place, with no registration. Funding and Payment are hidden here. They fill in when the child has a service. Someone who already has a service or a trial can also be waiting for another place. Newest join is at the top. Oldest is at the bottom. Not on file sits at the bottom. They do not also show under REGISTERED.",
             "REGISTERED: filled the registration form, no term place, not on a waiting list. Someone who only comes to crash courses stays here, with Service set to Crash courses, so you can offer them a term place.",
-            "CFK LEADS: Class for Kids contact file. They asked and never had a service.",
+            "CFK LEADS: the Class for Kids contact file. Funding and Payment stay hidden. Age comes from the date of birth on that file. Service says Class for Kids. The time column is the first and last booking date from that file, when the file has them. The line under the status says Class for Kids file.",
             "A short name on the bookings shows on that child's row when it is the same person. Consecutive halves on the same day show as one time. The venue is in brackets after the time, such as Tuesday, 3:30 pm to 5:00 pm (SWIMFARM).",
             "Age uses the date of birth. If the contact has no date, the list uses the birth line on the registration (Clients Info).",
             "Contact, email, phone and age come from the child's contact record. A short roster name still shows that parent and those details.",
