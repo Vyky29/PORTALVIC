@@ -7,6 +7,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import { sha256Hex } from "../_shared/parent_portal_auth.ts";
 
 const ONLINE_MS = 5 * 60 * 1000;
 const RECENT_MS = 24 * 60 * 60 * 1000;
@@ -33,6 +34,7 @@ function surfaceLabel(raw: string): string {
     enquire: "Enquire / waitlist",
     registration: "Registration form",
     registration_submit: "Submitted registration",
+    otp_request: "Requested access code",
   };
   const k = clean(raw, 40).toLowerCase();
   return map[k] || (k ? k.replace(/_/g, " ") : "—");
@@ -40,16 +42,80 @@ function surfaceLabel(raw: string): string {
 
 function visitorLabel(s: {
   id?: unknown;
+  parent_name?: unknown;
   geo_label?: unknown;
   geo_city?: unknown;
   client_device?: unknown;
 }): string {
+  const named = clean(s.parent_name, 120);
+  if (named) return named;
   const loc = clean(s.geo_label, 80) || clean(s.geo_city, 60);
   const device = deviceLabel(s.client_device);
   const bits = [loc, device].filter(Boolean);
   if (bits.length) return bits.join(" · ");
   const id = clean(s.id, 12);
   return id ? "Visitor " + id.slice(0, 8) : "Visitor";
+}
+
+/** Sessions that only have an IP pick up the parent from a recent access-code request on that IP. */
+async function fillIdentityFromRecentOtps(
+  admin: ReturnType<typeof createClient>,
+  sessions: Record<string, unknown>[],
+  sinceIso: string,
+) {
+  const need = sessions.filter((s) => !clean(s.parent_name, 2) && clean(s.client_ip, 64));
+  if (!need.length) return;
+  const hashByIp = new Map<string, string>();
+  for (const s of need) {
+    const ip = clean(s.client_ip, 64);
+    if (!ip || hashByIp.has(ip)) continue;
+    hashByIp.set(ip, await sha256Hex(ip));
+  }
+  const { data: otps } = await admin
+    .from("portal_booking_lead_otps")
+    .select("lead_id, ip_hash, created_at")
+    .gte("created_at", sinceIso)
+    .order("created_at", { ascending: false })
+    .limit(400);
+  const leadByHash = new Map<string, string>();
+  for (const row of otps || []) {
+    const hash = clean((row as { ip_hash?: unknown }).ip_hash, 80);
+    const leadId = clean((row as { lead_id?: unknown }).lead_id, 40);
+    if (!hash || !leadId || leadByHash.has(hash)) continue;
+    if (![...hashByIp.values()].includes(hash)) continue;
+    leadByHash.set(hash, leadId);
+  }
+  const ids = [...new Set(leadByHash.values())];
+  if (!ids.length) return;
+  const { data: leads } = await admin
+    .from("portal_booking_leads")
+    .select("id, parent_name, email, mobile")
+    .in("id", ids);
+  const byId = new Map((leads || []).map((row) => [String(row.id), row]));
+  const writes: Promise<unknown>[] = [];
+  for (const s of need) {
+    const ip = clean(s.client_ip, 64);
+    const lead = byId.get(leadByHash.get(hashByIp.get(ip) || "") || "");
+    if (!lead) continue;
+    s.parent_name = lead.parent_name || null;
+    s.parent_email = lead.email || null;
+    s.parent_phone = lead.mobile || null;
+    s.lead_id = lead.id;
+    writes.push(
+      admin
+        .from("portal_booking_service_sessions")
+        .update({
+          lead_id: lead.id,
+          parent_name: lead.parent_name || null,
+          parent_email: lead.email || null,
+          parent_phone: lead.mobile || null,
+        })
+        .eq("id", s.id)
+        .is("lead_id", null)
+        .then(() => null),
+    );
+  }
+  if (writes.length) await Promise.all(writes);
 }
 
 Deno.serve(async (req) => {
@@ -83,7 +149,7 @@ Deno.serve(async (req) => {
   const { data: sessions, error: sessErr } = await admin
     .from("portal_booking_service_sessions")
     .select(
-      "id, issued_at, expires_at, last_used_at, revoked_at, last_surface, last_detail, client_device, client_ip, geo_bucket, geo_label, geo_lat, geo_lng, geo_city, geo_region, geo_country",
+      "id, issued_at, expires_at, last_used_at, revoked_at, last_surface, last_detail, client_device, client_ip, geo_bucket, geo_label, geo_lat, geo_lng, geo_city, geo_region, geo_country, lead_id, parent_name, parent_email, parent_phone",
     )
     .is("revoked_at", null)
     .gt("expires_at", new Date(now).toISOString())
@@ -96,13 +162,20 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "sessions_query_failed" });
   }
 
+  const sessionRows = (sessions || []) as Record<string, unknown>[];
+  try {
+    await fillIdentityFromRecentOtps(admin, sessionRows, recentSince);
+  } catch (fillErr) {
+    console.warn("[portal-ceo-booking-service-presence] identity fill", fillErr);
+  }
+
   const online: Record<string, unknown>[] = [];
   const recent: Record<string, unknown>[] = [];
   const mapPoints: Record<string, unknown>[] = [];
   const outsideList: Record<string, unknown>[] = [];
   const geoSummary = { london: 0, england: 0, outside: 0, unknown: 0 };
 
-  for (const s of sessions || []) {
+  for (const s of sessionRows) {
     const lastUsed = s.last_used_at ? new Date(String(s.last_used_at)).getTime() : 0;
     const isOnline = lastUsed >= now - ONLINE_MS;
     const bucket = clean(s.geo_bucket, 20).toLowerCase();
@@ -121,6 +194,10 @@ Deno.serve(async (req) => {
       client_device: device,
       client_device_label: deviceLabel(device) || null,
       client_ip: ip,
+      parent_name: clean(s.parent_name, 120) || null,
+      parent_email: clean(s.parent_email, 160) || null,
+      parent_phone: clean(s.parent_phone, 40) || null,
+      identified: !!clean(s.parent_name, 2),
       geo_bucket: bucket || null,
       geo_label: geoLabel,
       geo_city: clean(s.geo_city, 80) || null,
@@ -178,7 +255,7 @@ Deno.serve(async (req) => {
     .order("created_at", { ascending: false })
     .limit(80);
 
-  const sessById = new Map((sessions || []).map((s) => [String(s.id), s]));
+  const sessById = new Map(sessionRows.map((s) => [String(s.id), s]));
   const activity = (activityRows || []).map((a) => {
     const sid = String(a.session_id || "");
     const s = sessById.get(sid);
@@ -186,6 +263,8 @@ Deno.serve(async (req) => {
       at: a.created_at,
       session_id: sid,
       visitor_label: s ? visitorLabel(s) : "Visitor",
+      parent_name: s ? clean(s.parent_name, 120) || null : null,
+      parent_email: s ? clean(s.parent_email, 160) || null : null,
       client_ip: s ? clean((s as { client_ip?: unknown }).client_ip, 64) || null : null,
       event_type: clean(a.event_type, 40),
       event_label: surfaceLabel(String(a.event_type || "")),

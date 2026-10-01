@@ -209,6 +209,62 @@ Deno.serve(async (req) => {
 
   let leadId = existingLead?.id as string | undefined;
 
+  async function linkVisitToLead(id: string) {
+    const stamp: Record<string, unknown> = {
+      lead_id: id,
+      parent_name: parentName || null,
+      parent_email: email || null,
+      parent_phone: mobile || null,
+      last_surface: "otp_request",
+      last_detail: "Access code requested",
+      last_used_at: nowIso,
+    };
+    let sessionId = "";
+    const token = String(req.headers.get("x-booking-service-session") || "").trim();
+    if (/^[a-f0-9]{32,128}$/i.test(token)) {
+      const tokenHash = await sha256Hex(token);
+      const { data: sess } = await supabase
+        .from("portal_booking_service_sessions")
+        .select("id, revoked_at, expires_at")
+        .eq("token_hash", tokenHash)
+        .maybeSingle();
+      if (
+        sess &&
+        !sess.revoked_at &&
+        new Date(String(sess.expires_at)).getTime() > Date.now()
+      ) {
+        sessionId = String(sess.id);
+      }
+    }
+    if (!sessionId && ip) {
+      const sinceVisit = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data: rows } = await supabase
+        .from("portal_booking_service_sessions")
+        .select("id")
+        .eq("client_ip", ip)
+        .is("revoked_at", null)
+        .is("lead_id", null)
+        .gte("last_used_at", sinceVisit)
+        .order("last_used_at", { ascending: false })
+        .limit(1);
+      if (rows && rows[0]) sessionId = String(rows[0].id);
+    }
+    if (!sessionId) return;
+    const { error: linkErr } = await supabase
+      .from("portal_booking_service_sessions")
+      .update(stamp)
+      .eq("id", sessionId);
+    if (linkErr) {
+      console.warn("[portal-booking-lead-otp-request] visit link failed", linkErr.message);
+      return;
+    }
+    await supabase.from("portal_booking_service_activity").insert({
+      session_id: sessionId,
+      event_type: "otp_request",
+      detail: parentName || null,
+    });
+  }
+
   if (leadId) {
     const patch: Record<string, unknown> = {
       parent_name: parentName,
@@ -256,9 +312,17 @@ Deno.serve(async (req) => {
       source: recognition === "existing_client" ? "Existing Client" : "Booking Page",
       clientStatus,
       event: "created",
-    }).catch((e) =>
+    }    ).catch((e) =>
       console.warn("[portal-booking-lead-otp-request] office notify failed", e)
     );
+  }
+
+  if (leadId) {
+    try {
+      await linkVisitToLead(leadId);
+    } catch (linkErr) {
+      console.warn("[portal-booking-lead-otp-request] visit link failed", linkErr);
+    }
   }
 
   const { count: emailCount } = await supabase

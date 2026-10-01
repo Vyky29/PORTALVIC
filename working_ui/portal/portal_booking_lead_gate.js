@@ -197,9 +197,21 @@
     return false;
   }
 
+  function bookingServiceSessionToken() {
+    try {
+      var raw = global.localStorage.getItem("clubsens_booking_service_session_v1");
+      if (!raw) return "";
+      var j = JSON.parse(raw);
+      return j && j.token ? String(j.token) : "";
+    } catch (_e) {
+      return "";
+    }
+  }
+
   async function api(path, body, headers) {
     var c = cfg();
     if (!c.url || !c.anon) throw new Error("missing_config");
+    var visitToken = bookingServiceSessionToken();
     var res = await fetch(c.url + "/functions/v1/" + path, {
       method: "POST",
       headers: Object.assign(
@@ -208,6 +220,7 @@
           Authorization: "Bearer " + c.anon,
           apikey: c.anon,
         },
+        visitToken ? { "x-booking-service-session": visitToken } : {},
         headers || {}
       ),
       body: JSON.stringify(body || {}),

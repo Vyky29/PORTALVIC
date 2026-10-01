@@ -66,13 +66,27 @@
     });
   }
 
+  function identityLine(p) {
+    var bits = [];
+    if (p && p.parent_email) bits.push(String(p.parent_email).trim());
+    if (p && p.parent_phone) bits.push(String(p.parent_phone).trim());
+    return bits.filter(Boolean).join(" · ");
+  }
+
+  function visitorTitle(p) {
+    var named = p && p.parent_name ? String(p.parent_name).trim() : "";
+    return named || (p && p.visitor_label) || "Visitor";
+  }
+
   function placeItemHtml(p) {
     var ip = p.client_ip ? String(p.client_ip).trim() : "";
+    var who = identityLine(p);
     return (
       "<li><strong>" +
-      esc(p.visitor_label || "Visitor") +
+      esc(visitorTitle(p)) +
       "</strong> — " +
       esc(p.label || "Unknown") +
+      (who ? " · " + esc(who) : "") +
       (ip ? ' · IP <code class="cpp-ip">' + esc(ip) + "</code>" : "") +
       (p.online ? " — online" : "") +
       "</li>"
@@ -129,14 +143,17 @@
           ? "Tablet"
           : "");
     var ip = p.client_ip ? String(p.client_ip).trim() : "";
+    var who = identityLine(p);
     return (
       '<li class="cpp-row cpp-row--' +
       esc(tone) +
+      (p.identified ? " cpp-row--known" : "") +
       '">' +
       '<div class="cpp-row__main">' +
       '<strong class="cpp-row__name">' +
-      esc(p.visitor_label || "Visitor") +
+      esc(visitorTitle(p)) +
       "</strong>" +
+      (who ? '<span class="cpp-row__who">' + esc(who) + "</span>" : "") +
       '<span class="cpp-row__meta">' +
       esc(p.last_surface_label || "Browsing") +
       esc(detail) +
@@ -211,8 +228,9 @@
                 esc(ago(a.at)) +
                 "</span>" +
                 "<div><strong>" +
-                esc(a.visitor_label || "Visitor") +
+                esc(a.parent_name || a.visitor_label || "Visitor") +
                 "</strong>" +
+                (a.parent_email ? " · " + esc(a.parent_email) : "") +
                 (a.client_ip
                   ? ' · IP <code class="cpp-ip">' + esc(a.client_ip) + "</code>"
                   : "") +
