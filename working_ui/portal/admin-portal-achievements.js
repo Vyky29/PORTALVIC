@@ -78,11 +78,13 @@
       .replace(/[^a-z0-9]+/g, "_")
       .replace(/^_+|_+$/g, "");
     if (slug === "rayyan_f" || slug === "rayyan_fida" || slug === "rayyan_fda") return "rayyan_fi";
+    if (slug === "adam_memy" || slug === "adam_me" || slug === "adam_mahmmoud" || slug === "adam_mahmoud" || slug === "adam_ma") return "adam_ma";
     return slug || normalizeClientId(raw);
   }
 
   function achievementDisplayName(key, fallback) {
     if (key === "rayyan_fi") return "Rayyan Fi";
+    if (key === "adam_ma") return "Adam Mahmmoud";
     return String(fallback || key || "").trim();
   }
 

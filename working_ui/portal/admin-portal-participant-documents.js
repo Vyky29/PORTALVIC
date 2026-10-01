@@ -208,8 +208,10 @@
           placeTone = 'okDark';
         }
         if (!placeLab) {
-          placeLab = 'Registered only';
+          placeLab = 'REGISTERED';
           placeTone = 'pend';
+          placeSec = 'Not a client';
+          placeSecTone = 'urg';
         }
         var placeDetail = String(d.place_detail || '').trim();
         var placeSec = String(d.place_secondary_label || '').trim();
@@ -241,36 +243,28 @@
               });
             }
             if (/local authority|direct payment|privately funded/i.test(placeLow)) {
-              placeLab = placeDetail ? "Pending place" : "Registered only";
+              placeLab = placeDetail ? "Pending place" : "REGISTERED";
               placeTone = "pend";
-              placeSec = "";
+              placeSec = placeDetail ? "" : "Not a client";
+              placeSecTone = "urg";
               placeChips = null;
             }
           }
         }
         // Split trial-expired office tags into 3 chips if API did not send place_chips yet.
-        if (
-          !placeChips &&
-          (placeKind === 'registered_trial_expired_slot_lost' ||
-            placeKind === 'registered_trial_expired_admin_hold' ||
-            /registered\s*·\s*trial expired/i.test(placeLab))
-        ) {
+        var registeredNotClient =
+          placeKind === 'registered_only' ||
+          placeKind === 'registered_trial_expired_slot_lost' ||
+          placeKind === 'registered_trial_expired_admin_hold' ||
+          placeKind === 'expired' ||
+          placeKind === 'released' ||
+          /^registered/i.test(placeLab);
+        if (registeredNotClient && placeKind !== 'in_class' && placeKind !== 'trial_in_class' && placeKind !== 'formal') {
           placeChips = [
-            { label: 'Registered', tone: 'pend' },
-            { label: 'Trial expired', tone: 'orange' },
-            {
-              label:
-                placeKind === 'registered_trial_expired_admin_hold' ||
-                /slot hold by admin/i.test(placeSec)
-                  ? 'Slot hold by admin'
-                  : placeSec || 'Slot lost',
-              tone:
-                placeKind === 'registered_trial_expired_admin_hold' ||
-                /slot hold by admin/i.test(placeSec)
-                  ? 'urgSoft'
-                  : 'urg',
-            },
+            { label: 'REGISTERED', tone: 'pend' },
+            { label: 'Not a client', tone: 'urg' },
           ];
+          placeLab = 'REGISTERED';
           placeSec = '';
         }
         var placeTitle = placeDetail

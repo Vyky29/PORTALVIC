@@ -471,9 +471,11 @@
     /* Christian Abate short board id. Do not alias emmanuel_abate → emmanuel
        (that slug is Day Centre Emanuel and kills Abate's aquatic feedback). */
     christian_abate: "christian",
-    /* Repeated Adam → two letters of surname (Mahmmoud). */
+    /* Adam Ma / Adam Mahmmoud / old account Adam Memy are one child. */
     adam_mahmmoud: "adam_ma",
     adam_mahmoud: "adam_ma",
+    adam_memy: "adam_ma",
+    adam_me: "adam_ma",
   };
 
   function aliasClientSlug(name) {

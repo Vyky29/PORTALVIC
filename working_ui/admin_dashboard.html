@@ -88,7 +88,7 @@
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260924-added-card"></script>
   <script src="/portal/admin-portal-documents.js?v=20261001-pay-expenses-only"></script>
-  <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
+  <script src="/portal/admin-portal-participant-documents.js?v=20261001-registered-not-client"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260923-auto-makeup"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260905-buckets"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
@@ -181,7 +181,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260930-overview-scroll" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-client-photo-seats" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -602,6 +602,7 @@
       day_centre_documents:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h8M8 18h5"/>',
       care_plans:'<path d="M12 21s-6.5-4.2-6.5-8.4a3.6 3.6 0 0 1 6.5-2 3.6 3.6 0 0 1 6.5 2C18.5 16.8 12 21 12 21z"/>',
       portal_payslips:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+      participant_achievements:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
       portal_docs_timesheet:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/>',
       portal_docs_expense:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
       portal_docs_portalpin:'<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>',
@@ -20669,7 +20670,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var placed = false;
         if(nm){
           for(var c = 0; c < clusters.length; c++){
-            if(clusters[c].repName && adminPortalParticipantMatchesDisplayName(clusters[c].repName, nm, amb)){
+            if(clusters[c].repName && paxContactsSameChild(clusters[c].repName, nm, amb)){
               clusters[c].members.push(p);
               if(paxContactsSurnameLen(nm) < paxContactsSurnameLen(clusters[c].repName)) clusters[c].repName = nm;
               placed = true;
@@ -20694,10 +20695,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(sl === 999) return;
           if(dispLen === 999 || sl > dispLen){ dispLen = sl; disp = m.name; }
         });
-        if(disp && disp !== base.name){
-          return Object.assign({}, base, { name: disp });
-        }
-        return base;
+        var merged = Object.assign({}, base);
+        if(disp && disp !== base.name) merged.name = disp;
+        /* Same child, two contacts: keep the fuller parent (Maysoun) and any funding the other row had. */
+        cl.members.forEach(function(m){
+          if(!m || m === base) return;
+          var parent = String(m.parentDisplay || (m.reg && m.reg.carer) || '').trim();
+          var kept = String(merged.parentDisplay || '').trim();
+          var keptWeak = !kept || kept === '—' || kept.split(/\s+/).length < 2;
+          var parentFull = parent && parent !== '—' && parent.split(/\s+/).length >= 2;
+          if(keptWeak && parentFull){
+            merged.parentDisplay = parent;
+            merged.reg = Object.assign({}, merged.reg || {}, { carer: parent });
+            var keptPhone = String((merged.reg && merged.reg.phone) || '').trim();
+            var keptEmail = String((merged.reg && merged.reg.email) || '').trim();
+            if((!keptPhone || keptPhone === '—') && m.reg && m.reg.phone && m.reg.phone !== '—') merged.reg.phone = m.reg.phone;
+            if((!keptEmail || keptEmail === '—') && m.reg && m.reg.email && m.reg.email !== '—') merged.reg.email = m.reg.email;
+          }
+          if(!merged._adminFundingLabel && m._adminFundingLabel) merged._adminFundingLabel = m._adminFundingLabel;
+          if(!merged._adminPaymentMethodLabel && m._adminPaymentMethodLabel) merged._adminPaymentMethodLabel = m._adminPaymentMethodLabel;
+          if(merged.reg && !merged.reg.fundingRoute && m.reg && m.reg.fundingRoute && m.reg.fundingRoute !== '—') merged.reg.fundingRoute = m.reg.fundingRoute;
+          if(merged.reg && (!merged.reg.paymentMethod || merged.reg.paymentMethod === '—') && m.reg && m.reg.paymentMethod && m.reg.paymentMethod !== '—') merged.reg.paymentMethod = m.reg.paymentMethod;
+        });
+        return merged;
       });
     }
     function paxContactsUnifiedList(){
@@ -21117,7 +21137,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : '<div class="pax-contacts-more-inner"><p class="muted" style="margin:0">Registration forms module failed to load.</p></div>';
       return (
         '<div class="pax-contacts-workspace">'+
-        '<div class="pax-contacts-ws-head"><strong>'+esc(P.name||'—')+'</strong><span class="muted" style="font-weight:600;font-size:13px"> · '+esc(P.id)+'</span></div>'+
+        '<div class="pax-contacts-ws-head"><div class="pax-contacts-namecell">'+
+        (function(){
+          var photoName = String(P.name || '').replace(/_/g, ' ').trim();
+          var photoYunis = /^yunis\b/i.test(photoName);
+          return (typeof portalParticipantAvatarInnerHtml === 'function')
+            ? portalParticipantAvatarInnerHtml(photoName, '', { esc: esc, className: 'portal-roster-avatar pax-contacts-avatar pax-contacts-avatar--lg' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
+            : '';
+        })()+
+        '<div class="pax-contacts-namecell__body"><strong>'+esc(P.name||'—')+'</strong><span class="muted" style="font-weight:600;font-size:13px"> · '+esc(P.id)+'</span></div></div></div>'+
         '<div class="c4k-tabs" role="tablist">'+
         tabBtn('ov','Overview',true)+tabBtn('preg','Registration',false)+tabBtn('asm','Assessment',false)+tabBtn('svc','Services',false)+tabBtn('ses','Sessions',false)+
         tabBtn('att','Attendance & Credits',false)+tabBtn('bill','Booking & Billing',false)+tabBtn('pay','Payments',false)+tabBtn('docs','Documents',false)+tabBtn('rpt','Reports',false)+tabBtn('rev','Term Reviews',false)+
@@ -21134,10 +21162,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         payFundingStatusHtml+
         adminPaxWsKvIcoRowColon('\ud83d\udcb3', 'Payment method', esc(rPayDisp))+'</section>'+
         '<section>'+adminPaxWsSectionH4('\ud83e\udde9', 'Current services &amp; slot')+
-        adminPaxWsKvIcoRowColon('\ud83c\udff7\ufe0f', 'Services', (s.services?esc(s.services.join(' · ')):'—'))+
-        adminPaxWsKvIcoRowColon('\ud83e\uddd1\u200d\ud83c\udfeb', 'Assigned instructors', esc(s.staffPrimary||'—'))+
-        adminPaxWsKvIcoRowColon('\ud83d\udd50', 'Slot', esc(s.slotCurrent||'—'))+
-        adminPaxWsKvIcoRowColon('\ud83d\udccd', 'Venue / ratio', esc(s.venueNow||'—')+' · '+esc(s.serviceLevel||'—'))+
+        (function(){
+          var bands = [];
+          try{ bands = paxContactsListBands(P) || []; }catch(_bands){ bands = []; }
+          if(!bands.length){
+            return adminPaxWsKvIcoRowColon('\ud83c\udff7\ufe0f', 'Services', (s.services && s.services.length ? esc(s.services.join(' · ')) : '—'))+
+              adminPaxWsKvIcoRowColon('\ud83e\uddd1\u200d\ud83c\udfeb', 'Assigned instructors', esc(s.staffPrimary||'—'))+
+              adminPaxWsKvIcoRowColon('\ud83d\udd50', 'Slot', esc(s.slotCurrent||'—'))+
+              adminPaxWsKvIcoRowColon('\ud83d\udccd', 'Venue / ratio', esc(s.venueNow||'—')+' · '+esc(s.serviceLevel||'—'));
+          }
+          var svc = [];
+          var slots = [];
+          var venues = [];
+          var staff = [];
+          bands.forEach(function(b){
+            if(b.programme && svc.indexOf(b.programme) < 0) svc.push(b.programme);
+            var dayFull = c4kServiceDowLong(String(b.day || '').trim().slice(0, 3));
+            var line = (dayFull && dayFull !== '—') ? (dayFull + (b.timeDisp ? ', ' + b.timeDisp : '')) : (b.timeDisp || '');
+            if(line) slots.push(b.moved ? ('<span style="color:#dc2626" title="Previous day this term">'+esc(line)+'</span>') : esc(line));
+            if(b.venue && venues.indexOf(b.venue) < 0) venues.push(b.venue);
+            (b.instructors || []).forEach(function(ins){ if(ins && staff.indexOf(ins) < 0) staff.push(ins); });
+          });
+          return adminPaxWsKvIcoRowColon('\ud83c\udff7\ufe0f', 'Services', esc(svc.join(' · ') || '—'))+
+            adminPaxWsKvIcoRowColon('\ud83e\uddd1\u200d\ud83c\udfeb', 'Assigned instructors', esc(staff.join(' · ') || '—'))+
+            adminPaxWsKvIcoRowColon('\ud83d\udd50', 'Slot', slots.join(' · ') || '—')+
+            adminPaxWsKvIcoRowColon('\ud83d\udccd', 'Venue / ratio', esc(venues.join(' · ') || '—')+' · '+esc(s.serviceLevel && s.serviceLevel !== '—' ? s.serviceLevel : (adminParticipantSupportRatio(P.name) || '—')));
+        })()+
         adminPaxWsKvIcoBody('\ud83d\udcc8', '<strong>Feedback pending:</strong> '+esc(String(s.feedbackPend||0))+' · <strong>Attendance YTD</strong> '+esc(String(s.attendancePct||'—'))+'%')+'</section>'+
         '<section>'+adminPaxWsSectionH4('\ud83d\udcca', 'Admin snapshot')+
         adminPaxWsKvIcoRowColon('\ud83d\udcac', 'Comms notes', esc(c.notesN||0)+' · Last parent msg: '+esc(c.lastParentMsg||'—'))+
@@ -21198,44 +21248,285 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var labels = (typeof ADMIN_CLIENTS_INFO_SECTION_LABELS !== 'undefined' && ADMIN_CLIENTS_INFO_SECTION_LABELS) ? ADMIN_CLIENTS_INFO_SECTION_LABELS : [];
       return (Number.isFinite(n) && n >= 1 && labels[n - 1]) ? labels[n - 1] : 'Registration answer';
     }
+    /** CLIENT only with a current seat. No seat and not WAITING / OLD / trial = REGISTERED. */
+    function paxContactsBucket(p){
+      var st = String((p && p.bookingStatus) || '');
+      if(st === 'waiting_list' || (p && p._waitlistOnly)) return 'waiting_list';
+      var seats = 0;
+      try{ seats = paxContactsCurrentSeatBands(p).length; }catch(_seats){ seats = 0; }
+      if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
+      if(st === 'old_participants' || st === 'not_in_programme') return 'old_participants';
+      if(st === 'trial') return 'trial';
+      return 'registered';
+    }
     function paxContactsMatchesBookingStatus(p, bk){
       if(bk === 'all') return true;
-      var st = String(p.bookingStatus || '');
-      if(bk === 'programme_in') return ['programme_in','in_class','in_camp','trial'].indexOf(st) >= 0;
-      if(bk === 'waiting_list') return st === 'waiting_list' || p._waitlistOnly === true;
-      if(bk === 'old_participants' || bk === 'not_in_programme') return st === 'old_participants' || st === 'not_in_programme';
-      return st === bk;
+      return paxContactsBucket(p) === bk;
     }
     function paxContactsBookingStatusOptionsHtml(){
       return (
         '<option value="all">All</option>'+
         '<option value="programme_in" selected>CLIENT</option>'+
+        '<option value="registered">REGISTERED</option>'+
         '<option value="trial">On a trial</option>'+
         '<option value="waiting_list">WAITING</option>'+
         '<option value="old_participants">OLD</option>'
       );
     }
     /** Compact booked-services cell for the participants list (programme + day abbreviations). */
-    /** Participant list: aligned "Service/s" and "Time slot/s" cells (one line per booked band). */
+    function paxContactsSameChild(a, b, amb){
+      var aa = String(a || '').replace(/_/g, ' ');
+      var bb = String(b || '').replace(/_/g, ' ');
+      if(typeof adminPortalParticipantMatchesDisplayName === 'function' && adminPortalParticipantMatchesDisplayName(aa, bb, amb || {})) return true;
+      try{
+        var idn = window.PortalParticipantIdentity;
+        if(idn && typeof idn.canonicalClientId === 'function'){
+          var ca = idn.canonicalClientId(aa);
+          var cb = idn.canonicalClientId(bb);
+          if(ca && cb && ca === cb) return true;
+        }
+      }catch(_same){}
+      return false;
+    }
+    function paxContactsProgrammeFromServiceId(serviceId){
+      var s = String(serviceId || '').trim().toLowerCase().replace(/_/g, ' ');
+      if(s === 'multi') s = 'multi-activity';
+      if(s === 'physical') s = 'physical activity';
+      if(s === 'aquatic') s = 'aquatic activity';
+      if(s === 'climbing') s = 'climbing activity';
+      if(s === 'day centre') s = 'day centre';
+      return portalDisplayProgrammeFromSheet(s);
+    }
+    function paxContactsFormatChainTime(raw){
+      var s = String(raw || '').trim();
+      if(!s) return '';
+      var sep = '';
+      if(/\s+to\s+/i.test(s)) sep = 'to';
+      else if(s.indexOf('\u2013') >= 0) sep = '\u2013';
+      else if(s.indexOf('-') >= 0) sep = '-';
+      function one(bit){
+        var t = String(bit || '').trim().replace('.', ':');
+        var m = t.match(/^(\d{1,2})(?::(\d{2}))?$/);
+        if(!m) return String(bit || '').trim();
+        var h = parseInt(m[1], 10);
+        var min = m[2] || '00';
+        var pm = h >= 12 || h < 8;
+        var h12 = h % 12;
+        if(h12 === 0) h12 = 12;
+        return h12 + ':' + min + (pm ? ' pm' : ' am');
+      }
+      if(!sep) return one(s);
+      var parts = sep === 'to' ? s.split(/\s+to\s+/i) : s.split(sep);
+      if(parts.length !== 2) return s;
+      return one(parts[0]) + ' to ' + one(parts[1]);
+    }
+    function paxContactsRosterMoveRows(){
+      return Array.isArray(window.PAX_CONTACTS_ROSTER_MOVE_ROWS) ? window.PAX_CONTACTS_ROSTER_MOVE_ROWS : [];
+    }
+    async function paxContactsLoadRosterMoveRows(){
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(!client || typeof client.from !== 'function') return false;
+      try{
+        var res = await client.from('portal_roster_rows')
+          .select('client_name,status,service,day,time_slot,session_date,venue')
+          .in('status', ['active', 'cancelled'])
+          .is('session_date', null)
+          .limit(2000);
+        if(res.error || !res.data) return false;
+        window.PAX_CONTACTS_ROSTER_MOVE_ROWS = res.data;
+        return true;
+      }catch(_mv){
+        return false;
+      }
+    }
+    /** Undated cancelled seat on a day they no longer stand — previous day this term. */
+    function paxContactsFormerSeatBands(p, current){
+      var name = String((p && p.name) || '').trim();
+      var rows = paxContactsRosterMoveRows();
+      if(!name || !rows.length) return [];
+      var amb = (typeof adminPortalParticipantAmbiguityMap === 'function') ? adminPortalParticipantAmbiguityMap() : {};
+      var mine = [];
+      rows.forEach(function(r){
+        var cn = paxContactsSeatClientName(r && r.client_name);
+        if(!cn || /no participant|no client|^closed$|^home$|^manager$|^office$/i.test(cn)) return;
+        if(!paxContactsSameChild(name, cn, amb)) return;
+        if(r.session_date) return;
+        mine.push(r);
+      });
+      if(!mine.length) return [];
+      var activeDays = Object.create(null);
+      mine.forEach(function(r){
+        if(String(r.status || '') !== 'active') return;
+        var prog = portalDisplayProgrammeFromSheet(String(r.service || ''));
+        var day = String(r.day || '').trim().toLowerCase();
+        if(!prog || !day) return;
+        if(!activeDays[prog]) activeDays[prog] = Object.create(null);
+        activeDays[prog][day] = true;
+      });
+      (current || []).forEach(function(b){
+        var prog = String(b.programme || '').trim();
+        var day = String(b.day || '').trim().toLowerCase();
+        if(!prog || !day) return;
+        if(!activeDays[prog]) activeDays[prog] = Object.create(null);
+        activeDays[prog][day] = true;
+      });
+      var out = [];
+      var seen = Object.create(null);
+      mine.forEach(function(r){
+        if(String(r.status || '') !== 'cancelled') return;
+        var prog = portalDisplayProgrammeFromSheet(String(r.service || ''));
+        var day = String(r.day || '').trim();
+        var dayKey = day.toLowerCase();
+        if(!prog || !dayKey || !activeDays[prog] || activeDays[prog][dayKey]) return;
+        var otherDay = false;
+        Object.keys(activeDays[prog]).forEach(function(d){ if(d !== dayKey) otherDay = true; });
+        if(!otherDay) return;
+        var timeDisp = paxContactsFormatChainTime(r.time_slot);
+        var key = prog + '\t' + dayKey + '\t' + timeDisp;
+        if(seen[key]) return;
+        seen[key] = true;
+        out.push({ programme: prog, day: day, timeDisp: timeDisp, venue: String(r.venue || '').trim(), instructors: [], moved: true });
+      });
+      return out;
+    }
+    function paxContactsListBands(p){
+      var current = [];
+      try{ current = paxContactsCurrentSeatBands(p) || []; }catch(_cur){ current = []; }
+      var former = [];
+      try{ former = paxContactsFormerSeatBands(p, current) || []; }catch(_old){ former = []; }
+      if(!former.length) return current;
+      var all = current.slice();
+      former.forEach(function(f){
+        var at = all.length;
+        var i;
+        for(i = all.length - 1; i >= 0; i--){
+          if(!all[i].moved && String(all[i].programme || '').toLowerCase() === String(f.programme || '').toLowerCase()){
+            at = i + 1;
+            break;
+          }
+        }
+        all.splice(at, 0, f);
+      });
+      return all;
+    }
+    function paxContactsBandLineHtml(b){
+      var dayFull = c4kServiceDowLong(String(b.day || '').trim().slice(0, 3));
+      var t = String(b.timeDisp || '').trim();
+      var label = (dayFull && dayFull !== '—')
+        ? (dayFull + (t && t !== '—' ? ', ' + t : ''))
+        : (t || '—');
+      var style = b.moved ? ' style="color:#dc2626;overflow-wrap:break-word"' : ' style="min-width:0;overflow-wrap:break-word"';
+      var title = b.moved ? ' title="Previous day this term"' : '';
+      return '<div'+style+title+'>'+esc(label || '—')+'</div>';
+    }
+    function paxContactsTodayIso(){
+      var d = new Date();
+      var m = d.getMonth() + 1;
+      var day = d.getDate();
+      return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+    }
+    function paxContactsChainSlotWindow(slot){
+      var from = String((slot && slot.validFrom) || '').slice(0, 10);
+      var to = String((slot && slot.validTo) || '').slice(0, 10);
+      return { from: from, to: to, phased: !!(from || to) };
+    }
+    /** Seat client without the "· 11 – 3" band painted on Day Centre lines. */
+    function paxContactsSeatClientName(raw){
+      return String(raw || '').split('\u00b7')[0].split('·')[0].trim();
+    }
+    /** Phased slots (Day Centre week-1 / Fadi off / dated) only when that phase is current. */
+    function paxContactsActiveChainSlotIds(slots){
+      var today = paxContactsTodayIso();
+      var active = Object.create(null);
+      Object.keys(slots).forEach(function(id){
+        var w = paxContactsChainSlotWindow(slots[id]);
+        if(!w.phased){ active[id] = true; return; }
+        if(w.to && w.to < today) return;
+        if((!w.from || w.from <= today) && (!w.to || w.to >= today)) active[id] = true;
+      });
+      Object.keys(slots).forEach(function(id){
+        if(active[id]) return;
+        var slot = slots[id];
+        var w = paxContactsChainSlotWindow(slot);
+        if(!w.phased || !w.from || w.from <= today) return;
+        var hasLive = Object.keys(active).some(function(oid){
+          var o = slots[oid];
+          if(!o || o.day !== slot.day || o.serviceId !== slot.serviceId || o.venue !== slot.venue) return false;
+          var ow = paxContactsChainSlotWindow(o);
+          return ow.phased && (!ow.from || ow.from <= today);
+        });
+        if(!hasLive) active[id] = true;
+      });
+      return active;
+    }
+    /** Standing Autumn seats for this child (capacity chain). Empty when they have no place. */
+    function paxContactsCurrentSeatBands(p){
+      var name = String((p && p.name) || '').trim();
+      if(!name) return [];
+      var occ = window.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+      var slots = occ && occ.bySlotId;
+      if(!slots) return [];
+      var activeIds = paxContactsActiveChainSlotIds(slots);
+      var amb = (typeof adminPortalParticipantAmbiguityMap === 'function') ? adminPortalParticipantAmbiguityMap() : {};
+      var out = [];
+      var seen = Object.create(null);
+      Object.keys(slots).forEach(function(id){
+        if(!activeIds[id]) return;
+        var slot = slots[id] || {};
+        var hit = false;
+        var instructors = [];
+        (slot.seatLines || []).forEach(function(line){
+          if(!line || String(line.kind || '') === 'open') return;
+          var client = paxContactsSeatClientName(line.client);
+          if(!client || /no participant|no client|^closed$|^home$|^manager$|^office$|^interview$|^available$|^hold waitlist$/i.test(client)) return;
+          if(!paxContactsSameChild(name, client, amb)) return;
+          hit = true;
+          var ins = String(line.instructor || '').trim();
+          if(ins && instructors.indexOf(ins) < 0) instructors.push(ins);
+        });
+        if(!hit){
+          (slot.bookedNames || []).forEach(function(nm){
+            var bn = paxContactsSeatClientName(nm);
+            if(bn && paxContactsSameChild(name, bn, amb)) hit = true;
+          });
+        }
+        if(!hit) return;
+        var programme = paxContactsProgrammeFromServiceId(slot.serviceId);
+        var day = String(slot.day || '').trim();
+        var timeDisp = paxContactsFormatChainTime(slot.timeLabel);
+        var venue = String(slot.venue || '').trim();
+        var key = day + '\t' + programme + '\t' + timeDisp + '\t' + venue;
+        if(seen[key]) return;
+        seen[key] = true;
+        out.push({ programme: programme, day: day, timeDisp: timeDisp, venue: venue, instructors: instructors });
+      });
+      out.sort(function(a, b){
+        return c4kRosterSheetDowOrder(a.day) - c4kRosterSheetDowOrder(b.day)
+          || String(a.timeDisp || '').localeCompare(String(b.timeDisp || ''));
+      });
+      return out;
+    }
+    /** Participant list: aligned "Service/s" and "Time slot/s" cells (one line per current seat). */
     function paxContactsServiceSlotCells(p){
       var dash = '<span class="muted">—</span>';
       var empty = { svc: dash, slot: dash };
       if(!p || !String(p.name || '').trim()) return empty;
-      if(typeof adminSpreadsheetAdapterAvailable !== 'function' || !adminSpreadsheetAdapterAvailable()) return empty;
       var bands = [];
-      try{ bands = paxPortalMergedBandsForParticipant(p) || []; }catch(_e){ bands = []; }
+      try{ bands = paxContactsListBands(p) || []; }catch(_e){ bands = []; }
+      if(!bands.length && (!window.PORTAL_CAPACITY_CHAIN_OCCUPANTS || !window.PORTAL_CAPACITY_CHAIN_OCCUPANTS.bySlotId)){
+        if(typeof adminSpreadsheetAdapterAvailable === 'function' && adminSpreadsheetAdapterAvailable()){
+          try{ bands = paxPortalMergedBandsForParticipant(p) || []; }catch(_e2){ bands = []; }
+        }
+      }
       if(!bands.length) return empty;
       var svc = bands.map(function(b){
         var prog = String(b.programme || '').trim() || 'Service';
-        return '<div style="min-width:0;overflow-wrap:break-word">'+esc(prog)+'</div>';
+        var style = b.moved ? ' style="color:#dc2626;overflow-wrap:break-word"' : ' style="min-width:0;overflow-wrap:break-word"';
+        var title = b.moved ? ' title="Previous day this term"' : '';
+        return '<div'+style+title+'>'+esc(prog)+'</div>';
       }).join('');
       var slot = bands.map(function(b){
-        var dayFull = c4kServiceDowLong(String(b.day || '').trim().slice(0, 3));
-        var t = String(b.timeDisp || '').trim();
-        var label = (dayFull && dayFull !== '—')
-          ? (dayFull + (t && t !== '—' ? ', ' + t : ''))
-          : (t || '—');
-        return '<div style="min-width:0;overflow-wrap:break-word">'+esc(label || '—')+'</div>';
+        return paxContactsBandLineHtml(b);
       }).join('');
       return { svc: svc, slot: slot };
     }
@@ -21269,6 +21560,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return { label: 'WAITING', bg: '#fef9c3', fg: '#854d0e' };
         case 'old_participants': case 'not_in_programme':
           return { label: 'OLD', bg: '#f1f5f9', fg: '#475569' };
+        case 'registered':
+          return { label: 'REGISTERED', bg: '#ffedd5', fg: '#9a3412' };
         default:
           return null;
       }
@@ -21291,7 +21584,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(phRaw && phRaw !== '—') emPhoneParts.push('<div style="white-space:nowrap">'+esc(phRaw)+'</div>');
         var emPhone = emPhoneParts.length ? emPhoneParts.join('') : '<span class="muted">—</span>';
         var cells = paxContactsServiceSlotCells(p);
-        var bkMeta = paxContactsBookingStatusMeta(p.bookingStatus);
+        var photoName = String(p.name || '').replace(/_/g, ' ').trim();
+        var photoYunis = /^yunis\b/i.test(photoName);
+        var photoHtml = (typeof portalParticipantAvatarInnerHtml === 'function')
+          ? portalParticipantAvatarInnerHtml(photoName, '', { esc: esc, className: 'portal-roster-avatar pax-contacts-avatar' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
+          : '';
+        var bkMeta = paxContactsBookingStatusMeta(paxContactsBucket(p));
         var bkChip = bkMeta
           ? '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+bkMeta.bg+';color:'+bkMeta.fg+'">'+esc(bkMeta.label)+'</span>'
           : '';
@@ -21312,7 +21610,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '';
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
-          '<td style="min-width:0"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+chipsRow+'</td>'+
+          '<td style="min-width:0"><div class="pax-contacts-namecell">'+photoHtml+'<div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+chipsRow+'</div></div></td>'+
           '<td style="white-space:nowrap">'+ageCell+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:14rem">'+cells.svc+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+cells.slot+'</td>'+
@@ -21354,7 +21652,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">CLIENT</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">People in services (CLIENT), plus filters for WAITING and OLD. Tap anyone to open the full record.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">CLIENT is only people on a place now. REGISTERED, WAITING and OLD are separate filters. Tap anyone to open the full record.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
@@ -21445,7 +21743,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var n = String(name || '').trim().toLowerCase();
       if(!n) return false;
       var all = [
-        'adam me', 'adam memy', 'scott', 'joel',
+        // Adam Memy / Adam Me is Adam Mahmmoud (Adam Ma). One client. Do not blank the seat.
+        'scott', 'joel',
         // Rayyan Fi / Huma — confirmed office 10 Aug 2026 (Multi Sun); do not blank in Services.
         // Patrick Dhennin — office reassigned Climbing Sun 12–1 Alex (Aug 2026); keep visible.
         'ayden w', 'ayden', 'amir', 'jad', 'kamy', 'kate',
@@ -28561,13 +28860,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       reenrol_payments: 'Invoices, payments &amp; shares',
       clients: 'Families on services now',
       c4k_waitlist: 'Waiting for a full place',
-      portal_parent_notify_log: 'Parent family messages (API)',
-      portal_parent_broadcast: 'Email + WhatsApp to many families',
-      portal_staff_comms: 'Staff in-app Communications',
-      portal_staff_whatsapp: 'Staff WhatsApp API threads',
+      portal_payslips: 'Worker payslip PDFs',
+      participant_achievements: 'Session photos after feedback',
+      staff_ghost_teleport: 'Read-only view of a worker app',
+      portal_documents: 'Staff timesheets, expenses &amp; files',
+      portal_participant_documents: 'Parent registration forms',
       staffhr: 'Staff, contracts &amp; training',
       c4k_services: 'Places, capacity &amp; standing seats',
-      office_calendar: 'Notes &amp; meetings',
       onboarding: 'New staff hub'
     };
     function opsHubTileDesc(item){
@@ -28640,15 +28939,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       ];
       var frequentActions = [
         { id:'reenrol_payments', label:'Finance' },
-        { id:'absents_refunds', label:'Absents & credits' },
         'clients',
         'c4k_waitlist',
-        'portal_parent_notify_log',
-        'portal_staff_comms',
-        'portal_staff_whatsapp',
+        { id:'portal_payslips', label:'Payslips' },
+        { id:'participant_achievements', label:'Achievement photos' },
+        { id:'staff_ghost_teleport', label:'Dashboard teleport' },
+        { id:'portal_documents', label:'Staff documents' },
+        { id:'portal_participant_documents', label:'Parent documents' },
         'staffhr',
         'c4k_services',
-        'office_calendar',
         'onboarding'
       ];
       return (
@@ -28672,7 +28971,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }) +
         portalDashPanel({
           title: 'Frequent',
-          subtitle: 'People, money, messages and office tools you open often',
+          subtitle: 'People, money, documents and the tools you open often',
           iconId: 'staffhr',
           panelClass: 'dash-hub__panel--team',
           gridClass: 'dash-hub__grid--5',
@@ -31941,7 +32240,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var p = paxContactsFindById(tr.getAttribute('data-pax-id'));
             if(!p) return;
             var r = p.reg || {};
-            var bt = bandsText(p);
+            var seatBands = [];
+            try{ seatBands = paxContactsCurrentSeatBands(p) || []; }catch(_sb){ seatBands = []; }
+            var bt = seatBands.length
+              ? {
+                  svc: seatBands.map(function(b){ return String(b.programme || '').trim() || 'Service'; }).join(' | '),
+                  slot: seatBands.map(function(b){
+                    var dayFull = c4kServiceDowLong(String(b.day || '').trim().slice(0, 3));
+                    var t = String(b.timeDisp || '').trim();
+                    return (dayFull && dayFull !== '\u2014') ? (dayFull + (t ? ', ' + t : '')) : (t || '');
+                  }).join(' | ')
+                }
+              : bandsText(p);
             var ageY = paxContactsAgeYears(p);
             var row = [
               p.name || '',
@@ -32058,8 +32368,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var pp = paxContactsFindById(state.openPaxContactId);
             if(pp) paxContactsShowDetail(pp);
           };
-          void adminHydrateParentContactsFromSupabase().then(function(changed){
-            if(changed && typeof state.rebuildPaxContactsList === 'function'){
+          void Promise.all([
+            adminHydrateParentContactsFromSupabase(),
+            paxContactsLoadRosterMoveRows()
+          ]).then(function(results){
+            if(!(results && (results[0] || results[1]))) return;
+            if(typeof state.rebuildPaxContactsList === 'function'){
               state.rebuildPaxContactsList();
               if(typeof paxContactsRefreshFilters === 'function') paxContactsRefreshFilters();
               if(state.openPaxContactId && typeof state.reopenPaxDetail === 'function') state.reopenPaxDetail();
@@ -32314,7 +32628,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       'yamik': 'yamik limbu',
       'yamik (trial 18/05)': 'yamik limbu',
       'tinashe': 'tinashe nekati',
-      'ikram': 'ikram omar'
+      'ikram': 'ikram omar',
+      // One child. Board short name Adam Ma, registration Adam Mahmmoud, old account Adam Memy / Adam Me.
+      'adam ma': 'adam mahmmoud',
+      'adam me': 'adam mahmmoud',
+      'adam memy': 'adam mahmmoud',
+      'adam mahmoud': 'adam mahmmoud'
     };
     function adminPortalNormalizedPersonName(s){
       var n = String(s || '')

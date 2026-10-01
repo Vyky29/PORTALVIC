@@ -595,6 +595,8 @@
     christian_abate: "christian",
     adam_mahmmoud: "adam_ma",
     adam_mahmoud: "adam_ma",
+    adam_memy: "adam_ma",
+    adam_me: "adam_ma",
   };
 
   /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */
@@ -654,6 +656,8 @@
     put("emmanuel_abate", "Emmanuel");
     put("adam_ma", "Adam Ma");
     put("adam_mahmmoud", "Adam Ma");
+    put("adam_memy", "Adam Ma");
+    put("adam_me", "Adam Ma");
     put("yossi", "Yossi");
     put("yossi_sium", "Yossi");
     put("yosiyas", "Yossi");

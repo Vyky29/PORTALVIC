@@ -930,6 +930,8 @@ const PORTAL_ROSTER_CLIENT_SLUG_CANON = Object.freeze({
   /* emmanuel_abate stays himself. "emmanuel" / "emanuel" is Day Centre Emanuel. */
   adam_mahmmoud: "adam_ma",
   adam_mahmoud: "adam_ma",
+  adam_memy: "adam_ma",
+  adam_me: "adam_ma",
   adam_ma: "adam_ma",
   yunis_hussein: "yunis",
   yunis: "yunis",

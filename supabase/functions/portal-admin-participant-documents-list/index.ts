@@ -340,11 +340,15 @@ function derivePlace(row: {
   const detail = slotDetailFromReservation(res);
   const none: PlaceOut = {
     kind: "registered_only",
-    label: "Registered only",
+    label: "REGISTERED",
     tone: "pend",
     detail: null,
-    secondary_label: null,
-    secondary_tone: null,
+    secondary_label: "Not a client",
+    secondary_tone: "urg",
+    chips: [
+      { label: "REGISTERED", tone: "pend" },
+      { label: "Not a client", tone: "urg" },
+    ],
   };
 
   const waitFromPayload =
@@ -367,30 +371,28 @@ function derivePlace(row: {
   if (officeTag === "registered_trial_expired_admin_hold") {
     return {
       kind: "registered_trial_expired_admin_hold",
-      label: "Registered",
+      label: "REGISTERED",
       tone: "pend",
       detail,
       secondary_label: null,
       secondary_tone: null,
       chips: [
-        { label: "Registered", tone: "pend" },
-        { label: "Trial expired", tone: "orange" },
-        { label: "Slot hold by admin", tone: "urgSoft" },
+        { label: "REGISTERED", tone: "pend" },
+        { label: "Not a client", tone: "urg" },
       ],
     };
   }
   if (officeTag === "registered_trial_expired_slot_lost") {
     return {
       kind: "registered_trial_expired_slot_lost",
-      label: "Registered",
+      label: "REGISTERED",
       tone: "pend",
       detail,
       secondary_label: null,
       secondary_tone: null,
       chips: [
-        { label: "Registered", tone: "pend" },
-        { label: "Trial expired", tone: "orange" },
-        { label: "Slot lost", tone: "urg" },
+        { label: "REGISTERED", tone: "pend" },
+        { label: "Not a client", tone: "urg" },
       ],
     };
   }
@@ -493,11 +495,15 @@ function derivePlace(row: {
       // Accepted / held trial but no paid marker — treat as admin hold pending contact.
       return {
         kind: "registered_trial_expired_admin_hold",
-        label: "Registered · trial expired",
+        label: "REGISTERED",
         tone: "pend",
         detail,
-        secondary_label: "Slot hold by admin",
-        secondary_tone: "warn",
+        secondary_label: "Not a client",
+        secondary_tone: "urg",
+        chips: [
+          { label: "REGISTERED", tone: "pend" },
+          { label: "Not a client", tone: "urg" },
+        ],
       };
     }
     return withWaitSecondary(
@@ -535,31 +541,43 @@ function derivePlace(row: {
     if (/admin_hold|accepted_by_admin/i.test(notes)) {
       return {
         kind: "registered_trial_expired_admin_hold",
-        label: "Registered · trial expired",
+        label: "REGISTERED",
         tone: "pend",
         detail,
-        secondary_label: "Slot hold by admin",
-        secondary_tone: "warn",
+        secondary_label: "Not a client",
+        secondary_tone: "urg",
+        chips: [
+          { label: "REGISTERED", tone: "pend" },
+          { label: "Not a client", tone: "urg" },
+        ],
       };
     }
     return {
       kind: "expired",
-      label: "Registered · trial expired",
+      label: "REGISTERED",
       tone: "pend",
       detail,
-      secondary_label: "Slot lost",
+      secondary_label: "Not a client",
       secondary_tone: "urg",
+      chips: [
+        { label: "REGISTERED", tone: "pend" },
+        { label: "Not a client", tone: "urg" },
+      ],
     };
   }
 
   if (resStatus === "released") {
     return {
       kind: "released",
-      label: "Registered · trial expired",
+      label: "REGISTERED",
       tone: "pend",
       detail,
-      secondary_label: "Slot lost",
+      secondary_label: "Not a client",
       secondary_tone: "urg",
+      chips: [
+        { label: "REGISTERED", tone: "pend" },
+        { label: "Not a client", tone: "urg" },
+      ],
     };
   }
 

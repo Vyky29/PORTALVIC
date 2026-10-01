@@ -50,6 +50,10 @@
     yossi_si: "yossi",
     yosiyas: "yossi",
     yosiyas_sium: "yossi",
+    adam_mahmmoud: "adam_ma",
+    adam_mahmoud: "adam_ma",
+    adam_memy: "adam_ma",
+    adam_me: "adam_ma",
   };
 
   var CLIENT_INFO_SHEET_ALIASES = {

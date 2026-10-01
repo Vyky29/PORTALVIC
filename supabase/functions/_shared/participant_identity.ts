@@ -107,6 +107,8 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   /* Emmanuel Abate is a different child from Day Centre Emanuel (slug emmanuel). */
   adam_mahmmoud: "adam_ma",
   adam_mahmoud: "adam_ma",
+  adam_memy: "adam_ma",
+  adam_me: "adam_ma",
   yunis_hussein: "yunis",
 };
 
