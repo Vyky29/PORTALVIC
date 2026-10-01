@@ -2463,7 +2463,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v97')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v98')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -2863,6 +2863,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!row.source || row.source === 'Waiting list (Portal)') row.source = 'Waiting list (workbook)';
         row._live = false;
         return row;
+      });
+      pr = pr.filter(function(w){
+        try{
+          if(typeof paxContactsHasServiceNow === 'function' && paxContactsHasServiceNow({ name: w.pax })) return false;
+        }catch(_placed){}
+        return true;
       });
       if(live.length || pr.length) return live.concat(pr);
       return MOCK.c4kWaitlist || [];
@@ -21055,15 +21061,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       });
     }
+    /** A current seat means they are no longer on the old workbook queue. */
+    function paxContactsHasServiceNow(p){
+      try{ return paxContactsCurrentSeatBands(p).length > 0; }catch(_svcNow){ return false; }
+    }
     function paxContactsWaitingKind(p){
       if(!p || !p._waitSource) return '';
+      var kind = '';
       if(p._waitSource === 'booking_portal'){
         var day = String(p.waitingJoinedIso || '').slice(0, 10);
-        if(!day || day >= PAX_PORTAL_WAITING_FROM) return 'portal_waiting';
-        return 'old_waiting';
-      }
-      if(p._waitSource === 'workbook') return 'old_waiting';
-      return '';
+        kind = (!day || day >= PAX_PORTAL_WAITING_FROM) ? 'portal_waiting' : 'old_waiting';
+      }else if(p._waitSource === 'workbook') kind = 'old_waiting';
+      if(kind === 'old_waiting' && paxContactsHasServiceNow(p)) return '';
+      return kind;
     }
     function paxContactsStampRegisteredDates(list){
       var byId = window.PAX_CONTACTS_LIVE_BY_ID || {};
@@ -23417,7 +23427,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">Active</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. Portal Waiting List is the Booking Portal queue from 12 Aug 2026 (Tala) to now. Old Waiting List is the workbook queue from before that. Source is the same column as the WAITING page. Funding and Payment stay off both waiting lists and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of a waiting list. REGISTERED shows the day they registered, newest at the top. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. Portal Waiting List is the Booking Portal queue from 12 Aug 2026 (Tala) to now. Old Waiting List is the workbook queue from before that, and drops anyone who already has a service. Source is the same column as the WAITING page. Funding and Payment stay off both waiting lists and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of a waiting list. REGISTERED shows the day they registered, newest at the top. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
