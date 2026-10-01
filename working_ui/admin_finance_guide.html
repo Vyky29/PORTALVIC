@@ -418,6 +418,8 @@
         5) Factura PAID en Portal; ACCREC + Payment en Xero; el tick verde se OK’ea en el bank feed de Xero si hace falta.
       </div>
 
+      <div class="note" data-lang="en"><strong>Amount filters:</strong> Year 25/26 is summer crash / intensive (day centre). Year 26/27 Autumn / Spring / Summer is re-enrol and new booking terms. Use the filters to switch booked totals. <strong>Push to Xero</strong> creates the full ACCREC (awaiting payment) for paid or partial Portal INV-Ps.</div>
+      <div class="note" data-lang="es"><strong>Filtros de importe:</strong> Year 25/26 es crash de verano / intensive (day centre). Year 26/27 Autumn / Spring / Summer es re-enrol y plazas nuevas. Usa los filtros para cambiar el total. <strong>Push to Xero</strong> crea el ACCREC completo (awaiting payment) de los INV-P paid o partial.</div>
       <div class="note" data-lang="en"><strong>Resubmits:</strong> changing the plan later does not auto-create duplicate invoices. Adjust amounts / create new rows in Finance.</div>
       <div class="note" data-lang="es"><strong>Reenvíos:</strong> cambiar el plan después no duplica facturas solos. Ajusta importes / crea filas nuevas en Finance.</div>
     </section>
@@ -505,10 +507,12 @@
       <p data-lang="en">From programme payments grid, <span class="k">Invoice</span> jumps into Finance create/share.</p>
       <p data-lang="es">Desde la rejilla de pagos del programa, <span class="k">Invoice</span> salta a Finance create/share.</p>
 
+      <div id="credits">
       <h3 data-lang="en">Credits</h3>
       <h3 data-lang="es">Créditos</h3>
       <p data-lang="en">Absents marked as Credit → parent can <span class="k">Use … credit</span> on an unpaid invoice. Admin can Mark applied / refunded / Cancel in credits.</p>
       <p data-lang="es">Ausencias como Credit → el padre puede <span class="k">Use … credit</span> en una factura. Admin puede Mark applied / refunded / Cancel en créditos.</p>
+      </div>
     </section>
 
     <!-- 6 -->
@@ -683,17 +687,16 @@
           es.setAttribute("aria-pressed", wh === "es" ? "true" : "false");
         }
         try {
-          localStorage.setItem("portal_finance_guide_lang", wh);
+          localStorage.setItem("portal_finance_guide_lang_pick", wh);
         } catch (_) {}
       }
       if (en) en.addEventListener("click", function () { setLang("en"); });
       if (es) es.addEventListener("click", function () { setLang("es"); });
       var saved = "";
       try {
-        saved = localStorage.getItem("portal_finance_guide_lang") || "";
+        saved = localStorage.getItem("portal_finance_guide_lang_pick") || "";
       } catch (_) {}
-      if (saved === "es" || saved === "en") setLang(saved);
-      else if ((navigator.language || "").toLowerCase().indexOf("es") === 0) setLang("es");
+      setLang(saved === "es" ? "es" : "en");
     })();
   </script>
 </body>

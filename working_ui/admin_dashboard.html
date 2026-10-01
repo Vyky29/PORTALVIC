@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261001-info-cards" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-finance-info" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -95,7 +95,7 @@
   <script src="/portal/admin-office-calendar.js?v=20260917-title-raul-sev"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260919-chip-center"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
-  <script src="/portal/admin-portal-parent-invoices.js?v=20260909-gemma-keeper"></script>
+  <script src="/portal/admin-portal-parent-invoices.js?v=20261002-quiet"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260928-makeup-date-desc"></script>
   <script src="/portal/admin-portal-parent-consents.js?v=20261001-active-only"></script>
   <script src="/portal/admin-payslips.js?v=20261001-payslip-amount"></script>
@@ -2448,8 +2448,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var titleIconId = String(opts.titleIconId || '').trim();
       var headExtraClass = opts.headStacked ? ' admin-page-head--stacked' : '';
       var plainTitle = title.replace(/<[^>]+>/g, '').trim();
+      var infoTitle = plainTitle;
+      if(PORTAL_FINANCE_GUIDE_SECTIONS[viewId]){
+        var finItem = navGetItem(viewId);
+        if(finItem && finItem.label) infoTitle = finItem.label;
+      }
       var showInfo = portalAdminPageHasInfo(viewId, intro);
-      window.__ADMIN_PAGE_INFO = { viewId: viewId, title: plainTitle, intro: intro };
+      window.__ADMIN_PAGE_INFO = { viewId: viewId, title: infoTitle, intro: intro };
       var infoBtn = showInfo
         ? '<button type="button" class="admin-page-info" data-admin-page-info="1" aria-label="About '+escAttr(plainTitle)+'" title="About this page"><span aria-hidden="true">i</span></button>'
         : '';
@@ -2489,7 +2494,58 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       reenrol_payments: ['create_invoice', 'validate_paid'],
       office_calendar: ['office_calendar']
     };
+    var PORTAL_FINANCE_GUIDE_SECTIONS = {
+      finance_create: ['manual', 'crash'],
+      finance_reenrolments: ['reenroll', 'office-day', 'cheat'],
+      finance_xero: ['xero'],
+      finance_payments: ['pay'],
+      absents_refunds: ['credits']
+    };
+    function portalFinanceGuideLang(){
+      try { return localStorage.getItem('portal_finance_guide_lang_pick') === 'es' ? 'es' : 'en'; }
+      catch(_e){ return 'en'; }
+    }
+    function portalFinanceGuideSetLang(wh){
+      var lang = wh === 'es' ? 'es' : 'en';
+      try { localStorage.setItem('portal_finance_guide_lang_pick', lang); } catch(_e){}
+      return lang;
+    }
+    function portalFinanceGuideLoad(){
+      if(window.__PORTAL_FINANCE_GUIDE_HTML) return Promise.resolve(window.__PORTAL_FINANCE_GUIDE_HTML);
+      if(!window.__PORTAL_FINANCE_GUIDE_PROMISE){
+        window.__PORTAL_FINANCE_GUIDE_PROMISE = fetch('/admin_finance_guide.html?v=20261002-en')
+          .then(function(r){ return r.ok ? r.text() : ''; })
+          .then(function(html){
+            window.__PORTAL_FINANCE_GUIDE_HTML = html || '';
+            return window.__PORTAL_FINANCE_GUIDE_HTML;
+          })
+          .catch(function(){ return ''; });
+      }
+      return window.__PORTAL_FINANCE_GUIDE_PROMISE;
+    }
+    function portalFinanceGuideSectionsHtml(viewId){
+      var ids = PORTAL_FINANCE_GUIDE_SECTIONS[String(viewId || '').trim()];
+      if(!ids || !ids.length) return Promise.resolve('');
+      return portalFinanceGuideLoad().then(function(html){
+        if(!html) return '';
+        var doc;
+        try { doc = new DOMParser().parseFromString(html, 'text/html'); }
+        catch(_e){ return ''; }
+        var chunks = ids.map(function(id){
+          var node = doc.getElementById(id);
+          return node ? node.outerHTML : '';
+        }).filter(Boolean).join('');
+        if(!chunks) return '';
+        var lang = portalFinanceGuideLang();
+        return '<div class="finance-guide-embed '+(lang === 'es' ? 'lang-es' : 'lang-en')+'" data-finance-guide-embed="1">'+
+          '<div class="finance-guide-embed__langs" role="group" aria-label="Language">'+
+          '<button type="button" class="finance-guide-embed__lang'+(lang !== 'es' ? ' is-on' : '')+'" data-finance-guide-lang="en">English</button>'+
+          '<button type="button" class="finance-guide-embed__lang'+(lang === 'es' ? ' is-on' : '')+'" data-finance-guide-lang="es">Español</button>'+
+          '</div>'+chunks+'</div>';
+      });
+    }
     function portalAdminPageHasInfo(viewId, intro){
+      if(PORTAL_FINANCE_GUIDE_SECTIONS[String(viewId || '').trim()]) return true;
       if(String(intro || '').trim()) return true;
       var ids = ADMIN_PAGE_INFO_LESSONS[String(viewId || '').trim()];
       return !!(ids && ids.length);
@@ -2627,6 +2683,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '</div>';
         document.body.appendChild(pop);
         pop.addEventListener('click', function(ev){
+          var langBtn = ev.target && ev.target.closest ? ev.target.closest('[data-finance-guide-lang]') : null;
+          if(langBtn){
+            var lang = portalFinanceGuideSetLang(langBtn.getAttribute('data-finance-guide-lang'));
+            var box = pop.querySelector('[data-finance-guide-embed]');
+            if(box){
+              box.classList.toggle('lang-en', lang !== 'es');
+              box.classList.toggle('lang-es', lang === 'es');
+            }
+            pop.querySelectorAll('[data-finance-guide-lang]').forEach(function(b){
+              b.classList.toggle('is-on', b.getAttribute('data-finance-guide-lang') === lang);
+            });
+            return;
+          }
           if(ev.target === pop) portalAdminClosePageInfo();
           if(ev.target && ev.target.closest && ev.target.closest('[data-admin-page-info-close]')) portalAdminClosePageInfo();
         });
@@ -2636,6 +2705,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(titleEl) titleEl.textContent = info.title || 'This page';
       if(bodyEl) bodyEl.innerHTML = '<p class="muted">Loading the guide…</p>';
       pop.hidden = false;
+      var financeIds = PORTAL_FINANCE_GUIDE_SECTIONS[String(info.viewId || '').trim()];
+      if(financeIds){
+        Promise.all([
+          portalFinanceGuideSectionsHtml(info.viewId),
+          portalAdminLoadOfficeHelp()
+        ]).then(function(parts){
+          if(pop.hidden || !bodyEl) return;
+          var guideHtml = parts[0] || '';
+          var lessons = portalAdminInfoBodyHtml({ intro: '', viewId: info.viewId }, parts[1]);
+          bodyEl.innerHTML = (guideHtml + lessons) || '<p class="muted">No notes for this page yet.</p>';
+        });
+        return;
+      }
       portalAdminLoadOfficeHelp().then(function(pack){
         if(pop.hidden || !bodyEl) return;
         bodyEl.innerHTML = portalAdminInfoBodyHtml(info, pack);
@@ -31936,7 +32018,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var xeroProductsHtml = typeof xeroProd.mountHtml === 'function' ? xeroProd.mountHtml() : '';
       var hide = function(id){ return tab === id ? '' : ' hidden'; };
       return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2d84b3"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="none"><text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" font-family="system-ui,Segoe UI,sans-serif">\u00a3</text></svg></span><span>Finance</span></h1>'+
-        '<p class="page-intro" style="max-width:48rem;overflow-wrap:break-word">Create invoices, track re-enrolment and Booking Portal instalments, and review term payments by family — Summer Term 25/26 vs Autumn Term 26/27. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a> — booking leads → pay → Xero.</p>'+
         '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Finance">'+financeHubTabsHtml(tab)+'</div>'+
         '<div id="financePanelCreate" class="finance-hub-panel"'+hide('create')+'>'+createHtml+'</div>'+
         '<div id="financePanelReenrolments" class="finance-hub-panel"'+hide('reenrolments')+'>'+reenrolHtml+'</div>'+
