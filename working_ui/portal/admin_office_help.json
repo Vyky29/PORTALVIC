@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v79",
+  "version": "2026-10-01-v80",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -452,7 +452,8 @@
             "Payment can be more than one. The payment names are Bank Transfer (One off-Manually), Bank Transfer (Flexi-Manually), Apple Pay/Stripe, GoCardless, BACS (Ealing), Monthly Arrears (NHS), Monthly Arrears (NHS/ILA), Monthly Arrears (H&F), and Payment Link.",
             "Filter Funding and Payment on the CLIENT page. A payment filter keeps anyone who has that method, even if they also have another.",
             "Funding and Payment come from the invoice. VAT 20% means the family pays (Using Private funds). No VAT and the family pays means Using LA funds (Exempt). No VAT and the office bills the council or NHS means LA/NHS funded. Summer is used when that is the invoice on file. Each funding type and each payment method has its own colour.",
-            "OLD CLIENTS is the filter for people who had a service and are not here now. It is on the same CLIENT page, in the booking status menu.",
+            "OLD CLIENTS were in summer 2026, or started in September, and are not here now. Set Funding to All funding to see the whole list.",
+            "Someone who was never in summer is not OLD CLIENTS. The Class for Kids file stays under CFK LEADS. A portal or webhook registration with no summer service stays under REGISTERED.",
             "WAITING: registered and on a waiting list. They do not also appear under REGISTERED. Joined waiting is the day they joined. Booking Portal has that day. Not on file means the Class for Kids row has no date.",
             "REGISTERED: filled the registration form, no term place, not on a waiting list. Someone who only comes to crash courses stays here, with Service set to Crash courses, so you can offer them a term place.",
             "CFK LEADS: Class for Kids contact file. They asked and never had a service.",

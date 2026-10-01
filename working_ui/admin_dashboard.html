@@ -21646,13 +21646,57 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(p._cfkContact === true) return false;
       return true;
     }
+    /** Summer term 2026 workbook row (June/July money, or a Summer term label). */
+    function paxContactsPayRowIsSummer(r){
+      var d = (r && r.data) || {};
+      var term = String(d.Term || '');
+      if(/summer/i.test(term)) return true;
+      if(term) return false;
+      function hasMoney(v){ return Number(String(v || '').replace(/[^0-9.]/g, '')) > 0; }
+      return hasMoney(d.June) || hasMoney(d.July) || hasMoney(d.May) || hasMoney(d['Mar/Apr']);
+    }
+    /** Payments sheet name is this child. A one-word sheet name stays with that first name's owner. */
+    function paxContactsPayRowIsThisChild(p, r){
+      var person = paxContactsNormName(p && p.name);
+      var sheet = paxContactsNormName(r && r.client_name).replace(/\bacat\b/g, ' ').replace(/\s+/g, ' ').trim();
+      if(!person || !sheet) return false;
+      if(person === sheet) return true;
+      try{ if(paxContactsSameChild(p.name, r.client_name)) return true; }catch(_samePay){}
+      var pParts = person.split(' ');
+      var sParts = sheet.split(' ').filter(Boolean);
+      if(!pParts[0] || pParts[0] !== sParts[0]) return false;
+      if(sParts.length === 1){
+        var owner = paxContactsBareFirstOwner(pParts[0]);
+        if(!owner) return true;
+        return paxContactsRealContactId(p) === owner;
+      }
+      return false;
+    }
+    function paxContactsWasSummer2026(p){
+      var rows = window.PAX_CONTACTS_CLIENT_PAYMENTS || [];
+      for(var i = 0; i < rows.length; i++){
+        if(!paxContactsPayRowIsSummer(rows[i])) continue;
+        if(paxContactsPayRowIsThisChild(p, rows[i])) return true;
+      }
+      return false;
+    }
+    /** Started in September 2026 (registration or an Autumn term payments row). */
+    function paxContactsStartedSeptember(p){
+      var live = paxContactsLiveRow(p);
+      var created = String((live && live.created_at) || (p && p.createdIso) || '').slice(0, 7);
+      if(created === '2026-09') return true;
+      var rows = window.PAX_CONTACTS_CLIENT_PAYMENTS || [];
+      for(var i = 0; i < rows.length; i++){
+        if(!/autumn/i.test(String((rows[i].data && rows[i].data.Term) || ''))) continue;
+        if(paxContactsPayRowIsThisChild(p, rows[i])) return true;
+      }
+      return false;
+    }
     /**
-     * One list each.
      * ACTIVE: on a place now.
-     * HAS BOOKING HISTORY: had a service and is not here now (true OLD).
-     * WAITING: registered onto a waiting list, and not also listed under REGISTERED.
-     * REGISTERED: registration form, no service, not on a waiting list.
-     * CFK LEADS: Class for Kids contact file, asked, never had a service.
+     * OLD CLIENTS: summer 2026 client, or started in September, and not here now.
+     * CFK LEADS: Class for Kids file, never in summer 2026.
+     * REGISTERED: portal / webhook registration, never in summer 2026, not on a waiting list.
      */
     /** Had a service and left before this term. No Autumn seat, so not ACTIVE. */
     function paxContactsNamedOldClient(p){
@@ -21682,15 +21726,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var seats = 0;
       try{ seats = paxContactsCurrentSeatBands(p).length; }catch(_seats){ seats = 0; }
       var live = paxContactsLiveRow(p);
-      if(paxContactsNamedOldClient(p)) return 'booking_history';
       if(paxContactsCrashOnlyClient(p)) return 'registered';
       if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
       if(live && live.in_class === true) return st === 'trial' ? 'trial' : 'programme_in';
-      if(paxContactsHasBookingHistory(p)) return 'booking_history';
+      if(paxContactsWasSummer2026(p) || paxContactsStartedSeptember(p) || paxContactsNamedOldClient(p)) return 'booking_history';
       if(paxContactsIsWaiting(p)) return 'waiting_list';
-      if(paxContactsIsPortalRegistration(p)) return 'registered';
       if(p && p._cfkContact) return 'cfk_leads';
-      if(st === 'old_participants' || st === 'not_in_programme') return 'booking_history';
+      if(paxContactsIsPortalRegistration(p)) return 'registered';
       return 'registered';
     }
     function paxContactsMatchesBookingStatus(p, bk){
@@ -22618,7 +22660,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">CLIENT</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. WAITING is registered and on a waiting list, so they do not also show under REGISTERED. Joined waiting is the day they joined: Booking Portal has that day, and Not on file means the Class for Kids row has no date. OLD CLIENTS had a service and are not here now. A cancelled place is not ACTIVE. REGISTERED filled the form and has no service. CFK LEADS is the Class for Kids contact file: they asked and never had a service. The Photo column is that child\'s own picture.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. OLD CLIENTS were in summer 2026, or started in September, and are not here now. Someone who was never in summer stays under CFK LEADS (Class for Kids file) or REGISTERED (portal / webhook). WAITING is registered and on a waiting list, so they do not also show under REGISTERED. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
