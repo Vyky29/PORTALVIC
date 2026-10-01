@@ -917,13 +917,6 @@
   function viewHtml() {
     return (
       '<h1 class="page-title">Leads</h1>' +
-      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">' +
-      "Bucket <strong>LEADS</strong>: asked and received OTP, registration not finished. " +
-      "Track email, phone, enquiry, activity, status. " +
-      "If track status is anything other than <strong>Booked</strong>, their email joins the marketing outreach list automatically. " +
-      "Also lists Portal OTP contacts and the email-interest import. " +
-      "Tick rows → <strong>Send via Family broadcast</strong> (or copy emails/phones)." +
-      "</p>" +
       '<div id="bkLeadHost"></div>'
     );
   }

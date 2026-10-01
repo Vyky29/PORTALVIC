@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v108",
+  "version": "2026-10-02-v109",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -434,6 +434,94 @@
           "tips": [
             "Do not say former / alumni in office chat — say OLD.",
             "Kareena returned Tue 15 Sep 2026 → CLIENT again."
+          ]
+        },
+        {
+          "id": "leads_what",
+          "title": "What Leads is",
+          "summary": "Leads is a list of parents, not children. Three kinds of row sit in the same table.",
+          "where": "Clients & Families → Leads",
+          "keywords": ["leads", "visitors", "otp", "email interest", "potential"],
+          "steps": [
+            "This page is not the child list. A row is a parent who opened the Booking Portal, asked for a code, or was typed in by the office.",
+            "Portal visitors are times someone opened the Booking Portal. The big number is visits, not people.",
+            "Portal OTP contacts asked for a code on the portal. They have not finished the registration form.",
+            "Email interest is an old office file. Those rows never opened the portal. They are there so you can write to them.",
+            "A row that says Existing client is a parent who already has a child in class. The row is still a portal visit. It does not create a new child."
+          ],
+          "tips": [
+            "REGISTERED, under Clients, is the child who finished the form and has no place. That is a different screen."
+          ]
+        },
+        {
+          "id": "leads_tools",
+          "title": "What each block on Leads does",
+          "summary": "The top of the page is tools. The yellow box is a count. The table is the people.",
+          "where": "Clients & Families → Leads",
+          "keywords": ["add potential", "yellow", "contact selection", "origin", "track status"],
+          "steps": [
+            "Add / update potential client is a form. You type a parent by hand: name, email, phone, activity, track status, and a note. Email is required. Save potential stores that parent.",
+            "Track status is your office label: New, Following up, Waiting, Not booking, Booked, or Closed. If it is anything other than Booked, that email joins the marketing outreach list.",
+            "The yellow box only counts. It is not a status of a child. It says how many portal visits, how many OTP contacts, how many email-interest rows, and how many rows are in the table if you choose All origins.",
+            "Contact selection is for messages. The line under the title says how many you ticked, how many on the list viewed services, and how many existing clients are showing.",
+            "Select all shown ticks every row in the current filter. Select viewed services ticks people who opened a service. Select existing clients ticks parents who already have a child here. Clear unticks. None of these book a place.",
+            "Under that, Search looks at name, email, phone, and the enquiry note. Origin splits the table: All, Office potential clients, Marketing outreach list, Portal OTP only, or Email interest. Track status and client status narrow it again. Refresh reloads the table.",
+            "The four cards repeat the same counts: Portal visitors, Portal OTP contacts, Email interest import, and Shown now.",
+            "Each table row is one parent. Track status is the dropdown you can change. Portal status says Existing client, Prospective, or similar. Open PDF opens a form when one is linked. The date is the last activity."
+          ],
+          "tips": [
+            "Use Origin before you tick rows. All mixes portal visits with the old email file."
+          ]
+        },
+        {
+          "id": "leads_message",
+          "title": "How to email or WhatsApp people on Leads",
+          "summary": "Tick rows, then send. That writes to the parent. It does not reserve a place.",
+          "where": "Clients & Families → Leads → Contact selection",
+          "keywords": ["broadcast", "copy emails", "copy phones", "whatsapp", "select"],
+          "steps": [
+            "Set Origin and the status filters so the table is the group you want.",
+            "Tick the rows, or use Select all shown, Select viewed services, or Select existing clients.",
+            "Copy emails puts the ticked addresses on the clipboard. Copy phones does the same for numbers.",
+            "Send via Family broadcast opens the family message with those people already chosen.",
+            "Sending a message does not book a place and does not move the child to REGISTERED or ACTIVE."
+          ],
+          "tips": [
+            "Family broadcast lives under Clients & Families → Family. Leads only chooses who receives it."
+          ]
+        },
+        {
+          "id": "leads_add",
+          "title": "How to add a parent who never opened the portal",
+          "summary": "Use Add / update potential client. They join the outreach list unless you mark them Booked.",
+          "where": "Clients & Families → Leads → Add / update potential client",
+          "keywords": ["save potential", "new lead", "outreach"],
+          "steps": [
+            "Type the parent name, email, and phone. Email is required.",
+            "Activity is a note such as Aquatic Wed. Enquiry / notes is whatever they asked.",
+            "Leave track status as New unless you already know they will not book, or they are Booked.",
+            "Save potential. The row appears in the table.",
+            "To see only people the office typed in, set Origin to Office potential clients."
+          ],
+          "tips": [
+            "Booked takes them off the automatic marketing list. Every other track status keeps them on it."
+          ]
+        },
+        {
+          "id": "leads_not",
+          "title": "What Leads is not",
+          "summary": "Hold, lost slot, REGISTERED, and CFK LEADS are other screens.",
+          "where": "Clients & Families → Leads",
+          "keywords": ["registered", "hold", "lost slot", "pay hold", "cfk"],
+          "steps": [
+            "REGISTERED is Clients → REGISTERED. That child finished the registration form and has no place now. Service and Time slot stay empty. The date is the day they registered.",
+            "On that REGISTERED list, Booking status Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released. The chip sits under the name. You do not open Documents to see that.",
+            "Someone who already has a place stays ACTIVE. They do not get the Pay hold, Hold, or Lost slot chip.",
+            "CFK LEADS is a filter on the contacts table. It is the old Class for Kids file. It is not this Leads page.",
+            "Lost slot on Finance is a family who re-enrolled and did not pay. That chip is on the invoice, not on Leads."
+          ],
+          "tips": [
+            "The i on each page is the manual for that screen. Leads does not book a seat."
           ]
         },
         {
