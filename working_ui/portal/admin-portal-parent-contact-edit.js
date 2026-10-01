@@ -322,6 +322,13 @@
       out.paymentMethodLabel = String(live.payment_method_label).trim();
       out._adminPaymentMethodLabel = out.paymentMethodLabel;
     }
+    if (live.dob_iso) {
+      var dobIso = String(live.dob_iso).slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dobIso)) {
+        out.dobIso = dobIso;
+        out.dobDisplay = isoToUk(dobIso) || out.dobDisplay;
+      }
+    }
     if (live.in_class != null) out.inClass = live.in_class === true ? "Yes" : "No";
     if (live.on_waiting_list != null) out.onWaitingList = live.on_waiting_list === true;
     return out;

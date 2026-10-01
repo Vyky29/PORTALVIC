@@ -104,7 +104,7 @@
   <script src="/portal/admin-training-progress.js?v=20260923-induction-real"></script>
   <script src="/portal/admin-push-devices.js?v=20260920-pwa-app"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
-  <script src="/portal/admin-portal-parent-contact-edit.js?v=20260730-add-contact"></script>
+  <script src="/portal/admin-portal-parent-contact-edit.js?v=20261001-live-contact"></script>
   <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos-ceo"></script>
   <script src="/portal/portal_participant_photos.js?v=20261001-no-cross-child-photo"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
@@ -12346,6 +12346,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
         window.PAX_CONTACTS_LABELS = labelById;
         window.PAX_CONTACTS_ID_BY_NAME = idByName;
+        window.PAX_CONTACTS_LIVE_BY_ID = byId;
         var src = typeof window !== 'undefined' ? window.PARTICIPANTS_PARENTS_PORTAL_SOURCE : null;
         if(!src || !Array.isArray(src.rows)){
           window.PARTICIPANTS_PARENTS_PORTAL_SOURCE = { rows: [] };
@@ -21011,6 +21012,63 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return merged;
       });
     }
+    /** Roster short names (Elias, Christian, Joelle) keep the contact's parent, email, phone and date of birth. */
+    function paxContactsLiveContactFor(p){
+      var byId = window.PAX_CONTACTS_LIVE_BY_ID || {};
+      var ids = Object.keys(byId);
+      if(!ids.length || !p || p._cfkContact) return null;
+      var cid = paxContactsRealContactId(p);
+      if(cid && byId[cid]) return byId[cid];
+      var name = paxContactsNormName(p.name);
+      var i;
+      for(i = 0; i < ids.length; i++){
+        if(name && paxContactsNormName(byId[ids[i]].child_display) === name) return byId[ids[i]];
+      }
+      var same = [];
+      for(i = 0; i < ids.length; i++){
+        var child = String(byId[ids[i]].child_display || '').trim();
+        if(!child) continue;
+        try{ if(paxContactsSameChild(p.name, child)) same.push(byId[ids[i]]); }catch(_liveSame){}
+      }
+      return same.length === 1 ? same[0] : null;
+    }
+    function paxContactsBlankFact(v){
+      var s = String(v || '').trim();
+      return !s || s === '—' || s === '-';
+    }
+    function paxContactsApplyLiveFacts(p){
+      var live = paxContactsLiveContactFor(p);
+      if(!live) return p;
+      var parent = String(live.parent_display || '').trim();
+      if(parent && paxContactsBlankFact(p.parentDisplay)){
+        p.parentDisplay = parent;
+        p.reg = p.reg || {};
+        p.reg.carer = parent;
+      }
+      p.reg = p.reg || {};
+      var email = String(live.email || '').trim();
+      var phone = String(live.mobile || '').trim();
+      if(email && paxContactsBlankFact(p.reg.email)) p.reg.email = email;
+      if(phone && paxContactsBlankFact(p.reg.phone)) p.reg.phone = phone;
+      var dob = String(live.dob_iso || '').slice(0, 10);
+      if(/^\d{4}-\d{2}-\d{2}$/.test(dob) && (paxContactsBlankFact(p.dobDisplay) || !p.dobIso)){
+        p.dobIso = dob;
+        var parts = dob.split('-');
+        p.dobDisplay = parts[2] + '/' + parts[1] + '/' + parts[0];
+      }
+      var fund = String(live.funding_label || '').trim();
+      var pay = String(live.payment_method_label || '').trim();
+      if(fund && !p._adminFundingLabel){
+        p._adminFundingLabel = fund;
+        if(paxContactsBlankFact(p.reg.fundingRoute)) p.reg.fundingRoute = fund;
+      }
+      if(pay && !p._adminPaymentMethodLabel){
+        p._adminPaymentMethodLabel = pay;
+        if(paxContactsBlankFact(p.reg.paymentMethod)) p.reg.paymentMethod = pay;
+      }
+      if(!paxContactsRealContactId(p) && live.contact_id) p.contactId = String(live.contact_id);
+      return p;
+    }
     function paxContactsUnifiedList(){
       var catalog = adminPortalParticipantsCatalogRows();
       var out = [];
@@ -21039,6 +21097,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         out.push(op);
       }
       out = paxContactsDedupeByPerson(paxContactsAppendLiveWaitlist(paxContactsAppendUnlistedParticipants(out)));
+      out.forEach(paxContactsApplyLiveFacts);
       out.sort(function(a, b){
         return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), undefined, { sensitivity: 'base' });
       });

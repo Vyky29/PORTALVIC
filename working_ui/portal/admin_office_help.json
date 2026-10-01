@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v81",
+  "version": "2026-10-01-v82",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -459,6 +459,7 @@
             "CFK LEADS: Class for Kids contact file. They asked and never had a service.",
             "A short name on the bookings shows on that child's row when it is the same person. Consecutive halves on the same day show as one time. The venue is in brackets after the time, such as Tuesday, 3:30 pm to 5:00 pm (SWIMFARM).",
             "Age uses the date of birth. If the contact has no date, the list uses the birth line on the registration (Clients Info).",
+            "Contact, email, phone and age come from the child's contact record. A short roster name still shows that parent and those details.",
             "A group label such as a Day Centre block is not an extra client when the children in that group are already on the list. Tuesday ACAT 11-12 shows as Aquatic Activity on each member, at SwimFarm.",
             "Direct Payments sit under Using LA funds (Exempt). The family pays. LA/NHS funded means the office bills the authority.",
             "The Photo column is that child's own picture.",
