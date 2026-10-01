@@ -1527,7 +1527,7 @@
     return Object.keys(set).length ? set : null;
   }
 
-  /** Alphabetical directory: letter boxes, each with small participant buttons (max 6 per row). */
+  /** Alphabetical directory: letter boxes, 5 participant buttons per row. */
   function isOldAutumnClient(g) {
     if (!g || isInboxGroupKey(g.key)) return false;
     var set = autumnClientSet();
