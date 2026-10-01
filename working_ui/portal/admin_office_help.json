@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v70",
+  "version": "2026-10-01-v71",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -887,7 +887,7 @@
             "Search the parent, the child, or the email.",
             "Click View portal. The family home opens on this screen in ghost view.",
             "You can look at sessions, invoices and the hub. Paying, absences, messages and PIN changes stay blocked.",
-            "Click Close to leave. Their own login on their phone stays open."
+            "Click Close to leave. Their own login on their phone stays open. They do not appear on the PARENT online chip."
           ],
           "tips": [
             "This is the same idea as Dashboard teleport for staff.",

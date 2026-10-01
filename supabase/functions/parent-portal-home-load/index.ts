@@ -51,30 +51,34 @@ Deno.serve(async (req) => {
   const tokenHash = await sha256Hex(token);
   const { data: sess, error: sessErr } = await supabase
     .from("portal_parent_portal_sessions")
-    .select("id, parent_person_id, expires_at, revoked_at")
+    .select("id, parent_person_id, expires_at, revoked_at, last_surface")
     .eq("token_hash", tokenHash)
     .maybeSingle();
 
   if (sessErr || !sess || sess.revoked_at) return parentPortalJsonInvalid();
   if (new Date(sess.expires_at).getTime() < Date.now()) return parentPortalJsonInvalid();
 
-  const sessionPatch: Record<string, unknown> = {
-    last_used_at: new Date().toISOString(),
-    client_device: clientDeviceFromRequest(req),
-  };
+  const isAdminGhost = String(sess.last_surface || "") === "admin_ghost";
   let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {
     body = {};
   }
-  try {
-    const geo = await resolveParentGeo(req, clientIp(req), body.geo_hint);
-    if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
-  } catch {
-    /* ignore */
+  /* Office ghost view must not light the PARENT online chip or move their location. */
+  if (!isAdminGhost) {
+    const sessionPatch: Record<string, unknown> = {
+      last_used_at: new Date().toISOString(),
+      client_device: clientDeviceFromRequest(req),
+    };
+    try {
+      const geo = await resolveParentGeo(req, clientIp(req), body.geo_hint);
+      if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
+    } catch {
+      /* ignore */
+    }
+    await supabase.from("portal_parent_portal_sessions").update(sessionPatch).eq("id", sess.id);
   }
-  await supabase.from("portal_parent_portal_sessions").update(sessionPatch).eq("id", sess.id);
 
   const parentPersonId = String(sess.parent_person_id || "");
 

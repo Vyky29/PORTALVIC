@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
     .is("revoked_at", null)
     .gt("expires_at", new Date(now).toISOString())
     .gte("last_used_at", recentSince)
+    .or("last_surface.is.null,last_surface.neq.admin_ghost")
     .order("last_used_at", { ascending: false })
     .limit(200);
 
@@ -170,6 +171,7 @@ Deno.serve(async (req) => {
   }
 
   for (const s of sessions || []) {
+    if (String(s.last_surface || "") === "admin_ghost") continue;
     const pid = clean(s.parent_person_id, 80);
     if (!pid) continue;
     const lastUsed = s.last_used_at ? new Date(String(s.last_used_at)).getTime() : 0;
