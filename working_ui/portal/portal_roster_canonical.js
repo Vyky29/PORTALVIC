@@ -351,7 +351,7 @@
   /**
    * Acton Tue pool notes (office 16 Sep): summer keep / FIX / NEW.
    * Abate brothers Teaching Pool; Logan Teaching Pool; Rayan Ta Teaching Pool;
-   * Ayman always Lane (SE) Tue/Wed/Thu; Kareena Lane (SE).
+   * Ayman always Lane (SE) Tue/Wed/Thu. Kareena is OLD from 16 Sep; Javier 5.30 is open.
    * Overview seats: 1 Aurora · 2 Javier · 3 Roberto · 4 Luliya.
    * Brothers: Aydaan Javier 6–6.30 Lane (DE); Adaam Luliya 6–6.30 Lane (SE). Aurora 5.30 open.
    */
@@ -389,8 +389,8 @@
     /* Invoice INV-P-0139: Aquatic 60' Tue 4–5 Acton (same as Thu). */
     { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (SE)" },
     { staff: "JAVIER", name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
-    /* Kareena (Chopi) from Tue 15 Sep — Private one-off; was Rayan Ta (now Roberto 5.30). */
-    { staff: "JAVIER", name: "Kareena", time: "5.30 to 6", area: "Lane (SE)", bookedFrom: "2026-09-15" },
+    /* Kareena Tue 15 Sep was a private one-off. Not a client from 16 Sep — seat stays open. */
+    { staff: "JAVIER", name: "No participant", time: "5.30 to 6", area: "Lane (SE)" },
     /* Aydaan NEW CLIENT first session Tue 15 Sep with Javier (not before). */
     {
       staff: "JAVIER",
@@ -4125,7 +4125,7 @@
   /**
    * OLD / released clients — never keep their names on Autumn Sessions seats.
    * Exact Joel only (never Joelle). Aug15 unpaid still OFF: Karo, Shire.
-   * Kareena returned Tue 15 Sep 2026 (Javier Acton 5.30) — do not scrub.
+   * Kareena is OLD from 16 Sep 2026 (Tue 15 was a one-off only).
    */
   function isAug15ReleasedFormerClient(name) {
     var n = String(name || "")
@@ -4337,9 +4337,6 @@
       "Ayman El Bakry": "2026-09-08",
       ayman: "2026-09-08",
       ayman_el_bakry: "2026-09-08",
-      Kareena: KAREENA_ACTON_TUE_FROM,
-      "Kareena Al hassani": KAREENA_ACTON_TUE_FROM,
-      kareena: KAREENA_ACTON_TUE_FROM,
       /* Term after Luliya trial 15 Sep — first standing Tue 22. */
       "Reggie Conlon": "2026-09-22",
       Reggie: "2026-09-22",
@@ -4347,10 +4344,10 @@
       reggie_conlon: "2026-09-22",
     });
     var gone = Object.assign({}, base.clientRosterGoneFromDates || {});
-    /* Kareena returned Tue 15 Sep 2026 — never keep Aug15 gone-from on live source. */
-    delete gone.Kareena;
-    delete gone.kareena;
-    delete gone["Kareena Al hassani"];
+    /* Kareena: Tue 15 Sep one-off only. OLD from the next day. */
+    gone.Kareena = "2026-09-16";
+    gone.kareena = "2026-09-16";
+    gone["Kareena Al hassani"] = "2026-09-16";
     return Object.assign({}, base, {
       rows: rows,
       clientRosterStartDates: starts,
