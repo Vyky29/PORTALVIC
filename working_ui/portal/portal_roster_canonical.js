@@ -351,7 +351,7 @@
   /**
    * Acton Tue pool notes (office 16 Sep): summer keep / FIX / NEW.
    * Abate brothers Teaching Pool; Logan Teaching Pool; Rayan Ta Teaching Pool;
-   * Ayman always Lane (SE) Tue/Wed/Thu. Kareena is OLD from 16 Sep; Javier 5.30 is open.
+   * Ayman always Lane (SE) Tue/Wed/Thu. Kareena counts Tue 15 and 22 Sep; Javier 5.30 is open from 29 Sep.
    * Overview seats: 1 Aurora · 2 Javier · 3 Roberto · 4 Luliya.
    * Brothers: Aydaan Javier 6–6.30 Lane (DE); Adaam Luliya 6–6.30 Lane (SE). Aurora 5.30 open.
    */
@@ -389,8 +389,15 @@
     /* Invoice INV-P-0139: Aquatic 60' Tue 4–5 Acton (same as Thu). */
     { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (SE)" },
     { staff: "JAVIER", name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
-    /* Kareena Tue 15 Sep was a private one-off. Not a client from 16 Sep — seat stays open. */
-    { staff: "JAVIER", name: "No participant", time: "5.30 to 6", area: "Lane (SE)" },
+    /* Kareena (Chopi) Tue Acton 5.30 through last week (22 Sep). Open from Tue 29 Sep. */
+    {
+      staff: "JAVIER",
+      name: "Kareena",
+      time: "5.30 to 6",
+      area: "Lane (SE)",
+      bookedFrom: "2026-09-15",
+      bookedUntil: "2026-09-29",
+    },
     /* Aydaan NEW CLIENT first session Tue 15 Sep with Javier (not before). */
     {
       staff: "JAVIER",
@@ -4125,7 +4132,7 @@
   /**
    * OLD / released clients — never keep their names on Autumn Sessions seats.
    * Exact Joel only (never Joelle). Aug15 unpaid still OFF: Karo, Shire.
-   * Kareena is OLD from 16 Sep 2026 (Tue 15 was a one-off only).
+   * Kareena counts through Sun 28 Sep 2026. Not on the seat from Tue 29 Sep.
    */
   function isAug15ReleasedFormerClient(name) {
     var n = String(name || "")
@@ -4158,7 +4165,7 @@
         return;
       }
       var d = normIso(r.session_date);
-      if (d && d < KAREENA_ACTON_TUE_FROM) {
+      if (d && (d < KAREENA_ACTON_TUE_FROM || d >= "2026-09-29")) {
         out.push(Object.assign({}, r, { client_name: "No participant" }));
         return;
       }
@@ -4337,6 +4344,9 @@
       "Ayman El Bakry": "2026-09-08",
       ayman: "2026-09-08",
       ayman_el_bakry: "2026-09-08",
+      Kareena: KAREENA_ACTON_TUE_FROM,
+      "Kareena Al hassani": KAREENA_ACTON_TUE_FROM,
+      kareena: KAREENA_ACTON_TUE_FROM,
       /* Term after Luliya trial 15 Sep — first standing Tue 22. */
       "Reggie Conlon": "2026-09-22",
       Reggie: "2026-09-22",
@@ -4344,10 +4354,10 @@
       reggie_conlon: "2026-09-22",
     });
     var gone = Object.assign({}, base.clientRosterGoneFromDates || {});
-    /* Kareena: Tue 15 Sep one-off only. OLD from the next day. */
-    gone.Kareena = "2026-09-16";
-    gone.kareena = "2026-09-16";
-    gone["Kareena Al hassani"] = "2026-09-16";
+    /* Kareena counts through Sun 28 Sep. Off the seat from Tue 29 Sep. */
+    gone.Kareena = "2026-09-29";
+    gone.kareena = "2026-09-29";
+    gone["Kareena Al hassani"] = "2026-09-29";
     return Object.assign({}, base, {
       rows: rows,
       clientRosterStartDates: starts,

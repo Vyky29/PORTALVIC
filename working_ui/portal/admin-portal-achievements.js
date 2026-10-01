@@ -1550,6 +1550,10 @@
   /** Alphabetical directory: letter boxes, 5 participant buttons per row. */
   function isOldAutumnClient(g) {
     if (!g || isInboxGroupKey(g.key)) return false;
+    /* Client through Sun 28 Sep 2026 (Tue 15 and 22). That still counts. */
+    if (achievementClientKey(g.key) === "kareena" || achievementClientKey(g.clientName) === "kareena") {
+      return false;
+    }
     var set = autumnClientSet();
     if (!set) return false;
     var key = achievementClientKey(g.key);

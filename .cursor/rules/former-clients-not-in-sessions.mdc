@@ -9,7 +9,7 @@ Bucket **OLD** (see `participant-buckets-office.mdc`): had services before, **no
 
 Known **OLD** from unpaid Aug 15 2026 release (live from **2026-08-16**): **Karo, Shire**.
 
-**Kareena** had one private session **Tue 15 Sep 2026** (Javier Acton Aquatic 5.30–6). From **16 Sep 2026** she is **OLD** again. Javier's Tuesday 5.30 seat stays open.
+**Kareena** was a client through **Sun 28 Sep 2026** (Javier Acton Aquatic 5.30–6 on Tue 15 and Tue 22). Those sessions count. From **Tue 29 Sep 2026** the seat is open.
 
 ## Do not
 
@@ -20,5 +20,5 @@ Known **OLD** from unpaid Aug 15 2026 release (live from **2026-08-16**): **Karo
 ## Do
 
 - Empty seats = **No participant** (open), matching LOCAL (e.g. Javier Tue Acton 6–6.30).
-- Keep `clientRosterGoneFromDates` (Karo / Shire from 2026-08-16, Kareena from 2026-09-16) + `scrubAug15ReleasedFormerClientRows` / `clientAllowedOnDate`.
+- Keep `clientRosterGoneFromDates` (Karo / Shire from 2026-08-16, Kareena from 2026-09-29) + `scrubAug15ReleasedFormerClientRows` / `clientAllowedOnDate`.
 ---

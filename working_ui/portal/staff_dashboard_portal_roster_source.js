@@ -263,10 +263,10 @@
       (bundle && bundle.clientRosterGoneFromDates) || {},
       chainSrc.clientRosterGoneFromDates || {}
     );
-    /* Kareena is OLD from 16 Sep 2026. Do not strip gone-from. */
-    gone.Kareena = gone.Kareena || "2026-09-16";
-    gone.kareena = gone.kareena || "2026-09-16";
-    gone["Kareena Al hassani"] = gone["Kareena Al hassani"] || "2026-09-16";
+    /* Kareena counts through 28 Sep 2026. Off from Tue 29 Sep. */
+    gone.Kareena = "2026-09-29";
+    gone.kareena = "2026-09-29";
+    gone["Kareena Al hassani"] = "2026-09-29";
     var weekdays = Object.assign(
       {},
       (pinned && pinned.clientWeekdaysOnly) || {},
