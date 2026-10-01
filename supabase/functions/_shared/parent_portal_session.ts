@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { sha256Hex } from "./parent_portal_auth.ts";
+import { parentPortalCorsHeaders, sha256Hex } from "./parent_portal_auth.ts";
 
 export type ParentPortalSession = {
   id: string;
@@ -7,7 +7,16 @@ export type ParentPortalSession = {
   expires_at: string;
   geo_bucket?: string | null;
   client_device?: string | null;
+  /** Admin Parents teleport. Reads stay open. Writes must stop. */
+  ghost?: boolean;
 };
+
+export function parentPortalGhostWriteResponse(): Response {
+  return new Response(JSON.stringify({ ok: false, error: "ghost_read_only" }), {
+    status: 403,
+    headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 export async function resolveParentPortalSessionFromToken(
   supabase: SupabaseClient,
@@ -19,17 +28,20 @@ export async function resolveParentPortalSessionFromToken(
   const tokenHash = await sha256Hex(token);
   const { data: sess, error } = await supabase
     .from("portal_parent_portal_sessions")
-    .select("id, parent_person_id, expires_at, revoked_at, geo_bucket, client_device")
+    .select("id, parent_person_id, expires_at, revoked_at, geo_bucket, client_device, last_surface")
     .eq("token_hash", tokenHash)
     .maybeSingle();
 
   if (error || !sess || sess.revoked_at) return null;
   if (new Date(sess.expires_at).getTime() < Date.now()) return null;
 
-  await supabase
-    .from("portal_parent_portal_sessions")
-    .update({ last_used_at: new Date().toISOString() })
-    .eq("id", sess.id);
+  const ghost = String(sess.last_surface || "") === "admin_ghost";
+  if (!ghost) {
+    await supabase
+      .from("portal_parent_portal_sessions")
+      .update({ last_used_at: new Date().toISOString() })
+      .eq("id", sess.id);
+  }
 
   return {
     id: String(sess.id),
@@ -37,6 +49,7 @@ export async function resolveParentPortalSessionFromToken(
     expires_at: String(sess.expires_at),
     geo_bucket: sess.geo_bucket != null ? String(sess.geo_bucket) : null,
     client_device: sess.client_device != null ? String(sess.client_device) : null,
+    ghost,
   };
 }
 

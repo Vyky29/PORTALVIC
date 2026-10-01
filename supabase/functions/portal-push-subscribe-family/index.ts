@@ -10,7 +10,7 @@ import {
   parentPortalCorsHeaders,
   parentPortalJsonInvalid,
 } from "../_shared/parent_portal_auth.ts";
-import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { resolveParentPortalSession, parentPortalGhostWriteResponse } from "../_shared/parent_portal_session.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
   });
 
   const session = await resolveParentPortalSession(req, admin);
+  if (session && session.ghost) return parentPortalGhostWriteResponse();
   if (!session?.parent_person_id) {
     return parentPortalJsonInvalid();
   }

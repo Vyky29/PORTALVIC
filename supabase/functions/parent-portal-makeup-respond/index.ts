@@ -6,7 +6,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
-import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { resolveParentPortalSession, parentPortalGhostWriteResponse } from "../_shared/parent_portal_session.ts";
 import { applyAcceptedMakeupToRoster } from "../_shared/parent_portal_makeup_roster.ts";
 import { notifyMakeupConfirmed } from "../_shared/portal_makeup_confirmed_notify.ts";
 
@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
   });
 
   const session = await resolveParentPortalSession(req, supabase);
+  if (session && session.ghost) return parentPortalGhostWriteResponse();
   if (!session) return parentPortalJsonInvalid();
 
   let body: { offer_id?: string; action?: string; decline_reason?: string } = {};

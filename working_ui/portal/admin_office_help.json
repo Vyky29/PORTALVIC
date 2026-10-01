@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v69",
+  "version": "2026-10-01-v70",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -875,6 +875,32 @@
             "rota",
             "venues",
             "days off"
+          ]
+        },
+        {
+          "id": "parents_teleport",
+          "title": "Parents teleport",
+          "summary": "Look at a family portal without their PIN and without signing them out.",
+          "where": "Frequent → Parents teleport",
+          "steps": [
+            "Open Parents teleport on Frequent.",
+            "Search the parent, the child, or the email.",
+            "Click View portal. The family home opens on this screen in ghost view.",
+            "You can look at sessions, invoices and the hub. Paying, absences, messages and PIN changes stay blocked.",
+            "Click Close to leave. Their own login on their phone stays open."
+          ],
+          "tips": [
+            "This is the same idea as Dashboard teleport for staff.",
+            "The ghost view lasts about 30 minutes. Open it again if it expires."
+          ],
+          "keywords": [
+            "parents teleport",
+            "parent portal",
+            "ghost",
+            "pin",
+            "familia",
+            "portal padres",
+            "sin pin"
           ]
         },
         {

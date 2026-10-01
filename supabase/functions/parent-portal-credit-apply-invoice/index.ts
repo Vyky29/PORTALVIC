@@ -6,7 +6,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
-import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { resolveParentPortalSession, parentPortalGhostWriteResponse } from "../_shared/parent_portal_session.ts";
 import { assertNoPriorUnconfirmedInvoice } from "../_shared/portal_invoice_pay_sequence.ts";
 import { applyOpenCreditToInvoice } from "../_shared/portal_family_credit_apply.ts";
 
@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
   });
 
   const session = await resolveParentPortalSession(req, supabase);
+  if (session && session.ghost) return parentPortalGhostWriteResponse();
   if (!session) return parentPortalJsonInvalid();
 
   let body: { contact_id?: string; invoice_id?: string; credit_id?: string } = {};

@@ -5,7 +5,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
-import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { resolveParentPortalSession, parentPortalGhostWriteResponse } from "../_shared/parent_portal_session.ts";
 import { stripeConfigured, stripeCreateCheckoutSession, stripeGrossUpFromGbp } from "../_shared/stripe_checkout.ts";
 import { amountDueNow } from "../_shared/portal_invoice_payment_schedule.ts";
 import { assertNoPriorUnconfirmedInvoice } from "../_shared/portal_invoice_pay_sequence.ts";
@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
   });
 
   const session = await resolveParentPortalSession(req, supabase);
+  if (session && session.ghost) return parentPortalGhostWriteResponse();
   if (!session) return parentPortalJsonInvalid();
 
   let body: { invoice_id?: string; contact_id?: string; return_origin?: string } = {};

@@ -2,7 +2,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
-import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { resolveParentPortalSession, parentPortalGhostWriteResponse } from "../_shared/parent_portal_session.ts";
 import {
   ageLabelFromDobIso,
   buildClientsInfoFromAnswers,
@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
   });
 
   const session = await resolveParentPortalSession(req, supabase);
+  if (session && session.ghost) return parentPortalGhostWriteResponse();
   if (!session) return parentPortalJsonInvalid();
 
   let body: { contact_id?: string; answers?: RegistrationAnswers; participant_dob?: string } = {};

@@ -8,6 +8,7 @@
 
   var state = {
     step: "identify",
+    ghost: false,
     session: { token: "", expiresAt: 0 },
     home: null,
     messaging: { unreadTotal: 0, unreadByContact: {} },
@@ -847,7 +848,7 @@
   var _pingDisabled = false;
   function pingActivity(surface, contactId, detail) {
     var s = String(surface || "").trim().toLowerCase();
-    if (!s || !state.session.token || _pingDisabled) return Promise.resolve();
+    if (!s || !state.session.token || _pingDisabled || state.ghost) return Promise.resolve();
     var now = Date.now();
     if (_pingLast.surface === s && now - _pingLast.at < 20000) return Promise.resolve();
     _pingLast = { surface: s, at: now };
@@ -875,6 +876,7 @@
   }
 
   function saveSession() {
+    if (state.ghost) return;
     try {
       localStorage.setItem(
         SESSION_KEY,
@@ -911,7 +913,7 @@
     state.participant = { contactId: "", data: null, loaded: {} };
     clearMessagingCounts();
     try {
-      localStorage.removeItem(SESSION_KEY);
+      if (!state.ghost) localStorage.removeItem(SESSION_KEY);
       /* Avoid opening child A from family 1 after signing in as family 2 on the same browser. */
       localStorage.removeItem("pp_last_contact_id");
     } catch (_e) {}
@@ -1889,7 +1891,7 @@
     }
     renderHome(body);
     hideNotice($("ppNotice"));
-    syncFamilyWebPush();
+    if (!state.ghost) syncFamilyWebPush();
 
     var children = (body && body.children) || [];
     if (!skipAutoHub && children.length) {
@@ -2170,12 +2172,58 @@
     } catch (_e2) {}
   }
 
+  function ghostTokenFromUrl() {
+    try {
+      return String(new URLSearchParams(global.location.search || "").get("ghostToken") || "").trim();
+    } catch (_e) {
+      return "";
+    }
+  }
+
+  function mountGhostBar() {
+    if (document.getElementById("ppGhostBar")) return;
+    var style = document.createElement("style");
+    style.textContent =
+      ".pp-ghost-bar{position:sticky;top:0;z-index:40;margin:0;padding:8px 12px;background:#173247;color:#fff;font:600 13px/1.35 system-ui,sans-serif;text-align:center}" +
+      "html.pp-ghost .pp-ghost-bar{display:block}";
+    document.head.appendChild(style);
+    var bar = document.createElement("div");
+    bar.id = "ppGhostBar";
+    bar.className = "pp-ghost-bar";
+    bar.textContent = "Ghost view. Looking only. This does not use their PIN and does not sign them out.";
+    document.body.insertBefore(bar, document.body.firstChild);
+    document.documentElement.classList.add("pp-ghost");
+  }
+
+  function stripGhostTokenFromUrl() {
+    try {
+      var clean = new URL(global.location.href);
+      if (!clean.searchParams.has("ghostToken")) return;
+      clean.searchParams.delete("ghostToken");
+      global.history.replaceState({}, "", clean.pathname + clean.search + clean.hash);
+    } catch (_e) {}
+  }
+
   async function bootstrap() {
     try {
       initBrand();
       bindEvents();
       bindChildCards();
       bindChildPhotoHandlers();
+      var ghostTok = ghostTokenFromUrl();
+      if (ghostTok) {
+        state.ghost = true;
+        state.session.token = ghostTok;
+        state.session.expiresAt = Date.now() + 30 * 60 * 1000;
+        mountGhostBar();
+        stripGhostTokenFromUrl();
+        var ghostParams = readParticipantDeepLink();
+        var ghostDeep = ghostParams.get("contact_id") || ghostParams.get("contact") || "";
+        var ghostOk = await loadHome(ghostDeep ? { skipAutoHub: true, preferredContactId: ghostDeep } : {});
+        if (!ghostOk) setStep("identify");
+        else maybeOpenParticipantFromUrl();
+        return;
+      }
       if (loadStoredSession()) {
         var params = readParticipantDeepLink();
         var deepId = params.get("contact_id") || params.get("contact") || "";

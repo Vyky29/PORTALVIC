@@ -480,6 +480,9 @@ verify_jwt = false
 [functions.portal-admin-ghost-start]
 verify_jwt = false
 
+[functions.portal-admin-parent-ghost-start]
+verify_jwt = false
+
 [functions.portal-admin-ghost-verify]
 verify_jwt = false
 

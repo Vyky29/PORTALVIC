@@ -117,6 +117,7 @@
   <script src="/portal/portal_admin_surface_map.js?v=20260704-login-map-fix"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260911-teleport-iso" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260920-no-live-map"></script>
+  <script src="/portal/admin-portal-parent-ghost.js?v=20261001-parent-ghost"></script>
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
   <script src="/portal/portal_ld_funding_letters.js?v=20260714-ld-pdf-logo"></script>
   <script src="/portal/admin_ld_funding_review.js?v=20260714-ld-docs-rls"></script>
@@ -476,7 +477,7 @@
       { id:'portal_training_progress', label:'Training & readiness' },
       { id:'portal_push_devices', label:'Staff push devices' },
       { id:'staff_ghost_teleport', label:'Dashboard teleport' },
-      { id:'portal_parent_teleport', label:'Parents teleport', externalUrl:'https://www.clubsensational.org/parent', skipBottomNav:true },
+      { id:'portal_parent_teleport', label:'Parents teleport', skipBottomNav:true },
       { id:'staffhr', label:'H&R' },
       { id:'onboarding', label:'Onboarding' },
       { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
@@ -2215,6 +2216,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             window.PortalGhostTeleport.destroyModule();
           }
         }catch(_ghostDestroy){}
+      }
+      if(state.view === 'portal_parent_teleport' && id !== 'portal_parent_teleport'){
+        try{
+          if(window.PortalParentGhostTeleport && typeof window.PortalParentGhostTeleport.destroyModule === 'function'){
+            window.PortalParentGhostTeleport.destroyModule();
+          }
+        }catch(_parentGhostDestroy){}
       }
       if(id === 'novo_dashboard') id = 'dashboard';
       if(id === 'novo_schedule') id = 'c4k_services';
@@ -28245,6 +28253,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='portal_push_devices') html = viewPortalPushDevices();
       else if(id==='participant_achievements') html = viewParticipantAchievements();
       else if(id==='staff_ghost_teleport') html = viewStaffGhostTeleport();
+      else if(id==='portal_parent_teleport') html = viewParentGhostTeleport();
             else if(id==='policies') html = viewPoliciesSignoffs();
       else if(id==='onboarding') html = viewOnboarding();
       else if(id==='commissioning_terms') html = viewCommissioningTerms();
@@ -28974,6 +28983,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_training_progress:'Staff readiness — training, compliance sign-offs, and app/device setup in one operational view.',
         portal_push_devices:'Who has Web Push registered on their phone or browser — real background alerts, not just the browser Allow flag.',
         staff_ghost_teleport:'Open any worker dashboard in read-only ghost view — roster and TODAY mirror without their PIN or logging them out.',
+        portal_parent_teleport:'Open a family portal in read-only ghost view — sessions and invoices without their PIN or signing them out.',
         policies:'Live matrix: every worker × company policies and procedures.',
         policies_portal:'Company policies and procedures library (How we work, What to open, emergency guides).',
         invoices:'Create, share and collect family invoices in Portal (Tide / Card). Same as Family invoices.',
@@ -29467,7 +29477,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portal_payslips: 'Worker payslip PDFs',
       participant_achievements: 'Session photos after feedback',
       staff_ghost_teleport: 'Read-only view of a worker app',
-      portal_parent_teleport: 'Open the family portal',
+      portal_parent_teleport: 'Read-only view of a family portal',
       interviews: 'Call and face-to-face stages',
       portal_documents: 'Staff timesheets, expenses &amp; files',
       portal_participant_documents: 'Parent registration forms',
@@ -30391,6 +30401,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalGhostTeleportConfigureOnce();
       if(window.PortalGhostTeleport && typeof window.PortalGhostTeleport.bindModule === 'function'){
         window.PortalGhostTeleport.bindModule();
+      }
+    }
+    function portalParentGhostConfigureOnce(){
+      if(window.__portalParentGhostConfigured || !window.PortalParentGhostTeleport) return;
+      window.__portalParentGhostConfigured = true;
+      window.PortalParentGhostTeleport.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function viewParentGhostTeleport(){
+      portalParentGhostConfigureOnce();
+      return window.PortalParentGhostTeleport ? window.PortalParentGhostTeleport.viewHtml() : '<p class="page-intro">Parents teleport failed to load.</p>';
+    }
+    function bindParentGhostTeleportModule(){
+      portalParentGhostConfigureOnce();
+      if(window.PortalParentGhostTeleport && typeof window.PortalParentGhostTeleport.bindModule === 'function'){
+        window.PortalParentGhostTeleport.bindModule();
       }
     }
     function portalAdminCsCliqConfigureOnce(){
@@ -32338,7 +32374,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='office_calendar'||v==='open_places_2627'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='staffhr_uniform'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='reenrol_payments'||v==='commissioning_terms'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='day_centre_documents'||v==='portal_participant_documents'||v==='portal_climbing_registrations'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='office_calendar'||v==='open_places_2627'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='staffhr_uniform'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='reenrol_payments'||v==='commissioning_terms'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='day_centre_documents'||v==='portal_participant_documents'||v==='portal_climbing_registrations'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_ghost_teleport'||v==='portal_parent_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -32762,6 +32798,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='portal_parent_broadcast') bindPortalParentBroadcastModule();
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_ghost_teleport') bindStaffGhostTeleportModule();
+      if(id==='portal_parent_teleport') bindParentGhostTeleportModule();
       if(id==='cs_cliq') bindCsCliqModule();
       if(id==='clients'){
         var root2 = $('workspace');

@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
   const tokenHash = await sha256Hex(parentToken);
   const { data: sess, error: sessErr } = await supabase
     .from("portal_parent_portal_sessions")
-    .select("id, parent_person_id, expires_at, revoked_at")
+    .select("id, parent_person_id, expires_at, revoked_at, last_surface")
     .eq("token_hash", tokenHash)
     .maybeSingle();
 
@@ -66,6 +66,10 @@ Deno.serve(async (req) => {
   }
   if (new Date(sess.expires_at).getTime() < Date.now()) {
     return bookingLeadJson({ ok: false, error: "invalid_session" }, 401);
+  }
+
+  if (String(sess.last_surface || "") === "admin_ghost") {
+    return bookingLeadJson({ ok: false, error: "ghost_read_only" }, 403);
   }
 
   const parentPersonId = String(sess.parent_person_id || "").trim();

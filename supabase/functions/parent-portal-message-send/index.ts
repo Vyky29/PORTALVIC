@@ -9,7 +9,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
-import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { resolveParentPortalSession, parentPortalGhostWriteResponse } from "../_shared/parent_portal_session.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 import { handleParentSaysPaidMessage } from "../_shared/portal_parent_says_paid.ts";
 import { notifyAdminsParentWhatsappInbound } from "../_shared/portal_parent_whatsapp_admin_push.ts";
@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
   });
 
   const session = await resolveParentPortalSession(req, supabase);
+  if (session && session.ghost) return parentPortalGhostWriteResponse();
   if (!session) return parentPortalJsonInvalid();
 
   let body: { message?: string; contact_id?: string } = {};

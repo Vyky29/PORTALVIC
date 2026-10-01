@@ -63,6 +63,13 @@ Deno.serve(async (req) => {
   if (!session) {
     return parentPortalJsonInvalid(401, { ok: false, error: "session_expired" });
   }
+  /* Ghost view must not paint the family as online or overwrite admin_ghost. */
+  if (session.ghost) {
+    return new Response(JSON.stringify({ ok: true, ghost: true, logged: false }), {
+      status: 200,
+      headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   let body: Record<string, unknown> = {};
   try {
