@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v107",
+  "version": "2026-10-02-v108",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -458,7 +458,7 @@
             "Add potential, Select all, Copy emails and Send via Family broadcast are for writing to those parents. They do not book a place.",
             "A row that says Existing client is a parent who already has a child in class. The row is still a portal visit.",
             "REGISTERED is the contacts table. The child finished the form and has no place now. Service and Time slot stay empty. The date is the day they registered.",
-            "A pay hold that is still open stays on Registration Form under Documents, labelled Pay hold. When the hold ends or the place is released, that form shows REGISTERED. Admin hold and lost slot are still stored. The chip does not say which one.",
+            "On REGISTERED, Booking status Pay hold, Hold and Lost slot filters that same table. Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released. The chip sits under the name. Someone who already has a place stays ACTIVE and does not get that chip.",
             "CFK LEADS is a filter on the contacts table, the old Class for Kids file. It is not the Leads page."
           ],
           "tips": [

@@ -2558,7 +2558,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v107')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v108')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -21631,6 +21631,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       paxContactsStampWaitSources(out);
       paxContactsStampRegisteredDates(out);
       out = paxContactsAppendUnmatchedTrials(out);
+      out = paxContactsAppendPlaceFlagPeople(out);
       out.sort(function(a, b){
         return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), undefined, { sensitivity: 'base' });
       });
@@ -22595,6 +22596,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(bk === 'portal_waiting') return paxContactsWaitingKind(p) === 'portal_waiting';
       if(bk === 'old_waiting') return paxContactsWaitingKind(p) === 'old_waiting';
+      if(bk === 'pay_hold' || bk === 'hold' || bk === 'lost_slot') return paxContactsPlaceFlag(p) === bk;
       return paxContactsBucket(p) === bk;
     }
     function paxContactsBookingStatusOptionsHtml(selected){
@@ -22610,6 +22612,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         opt('old_waiting', 'old waiting list')+
         opt('booking_history', 'OLD CLIENTS')+
         opt('registered', 'REGISTERED')+
+        opt('pay_hold', 'Pay hold')+
+        opt('hold', 'Hold')+
+        opt('lost_slot', 'Lost slot')+
         opt('cfk_leads', 'CFK LEADS')+
         opt('trial', 'On Trial / Trialled')
       );
@@ -22942,6 +22947,108 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       window.PAX_CONTACTS_TRIALS = Object.keys(groups).map(function(k){ return groups[k]; });
       return window.PAX_CONTACTS_TRIALS.length > 0;
+    }
+    /** Pay hold, office hold, or lost slot from the booking reservation. Not the Finance invoice lost slot. */
+    function paxContactsPlaceFlagFromReservation(row){
+      var status = String((row && row.status) || '').toLowerCase();
+      var notes = String((row && row.notes) || '');
+      var office = '';
+      var tag = notes.match(/office_place\s*=\s*([a-z0-9_]+)/i);
+      if(tag && tag[1]) office = String(tag[1]).toLowerCase();
+      if(office === 'registered_trial_expired_slot_lost') return 'lost_slot';
+      if(office === 'registered_trial_expired_admin_hold') return 'hold';
+      if((status === 'pending' || status === 'awaiting_payment') && !/office_confirm_hold/i.test(notes)) return 'pay_hold';
+      if(status === 'validated' && /pay_hold/i.test(notes)){
+        var openUntil = Date.parse(String(row.hold_expires_at || ''));
+        if(isFinite(openUntil) && openUntil > Date.now()) return 'pay_hold';
+        return 'lost_slot';
+      }
+      if(status === 'expired' && /admin_hold|accepted_by_admin/i.test(notes)) return 'hold';
+      if(status === 'expired' || status === 'released') return 'lost_slot';
+      return '';
+    }
+    async function paxContactsLoadPlaceFlags(){
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(!client || typeof client.from !== 'function') return false;
+      try{
+        var res = await client.from('portal_booking_slot_reservations')
+          .select('participant_name,status,notes,hold_expires_at,service_name,venue,day_label,time_label,updated_at,created_at')
+          .in('status', ['pending', 'awaiting_payment', 'validated', 'expired', 'released'])
+          .limit(1000);
+        if(res.error || !res.data) return false;
+        var rows = [];
+        res.data.forEach(function(row){
+          var name = String(row.participant_name || '').trim();
+          var flag = paxContactsPlaceFlagFromReservation(row);
+          if(!name || !flag) return;
+          var at = Date.parse(String(row.updated_at || row.created_at || '')) || 0;
+          var detail = [row.service_name, row.venue, row.day_label, row.time_label].map(function(bit){
+            return String(bit || '').trim();
+          }).filter(Boolean).join(' · ');
+          rows.push({ name: name, flag: flag, at: at, detail: detail });
+        });
+        window.PAX_CONTACTS_PLACE_FLAGS = rows;
+        window.__paxPlaceFlagIndexRows = null;
+        return rows.length > 0;
+      }catch(_place){
+        return false;
+      }
+    }
+    function paxContactsPlaceFlagIndex(){
+      var rows = window.PAX_CONTACTS_PLACE_FLAGS || [];
+      if(window.__paxPlaceFlagIndexRows === rows && window.__paxPlaceFlagIndex) return window.__paxPlaceFlagIndex;
+      var idx = Object.create(null);
+      rows.forEach(function(r){
+        var key = paxContactsTrialAliasKey(paxContactsTrialNameKey(r.name));
+        if(!key) return;
+        if(!idx[key]) idx[key] = [];
+        idx[key].push(r);
+      });
+      window.__paxPlaceFlagIndexRows = rows;
+      window.__paxPlaceFlagIndex = idx;
+      return idx;
+    }
+    function paxContactsPlaceFlag(p){
+      if(!p || !p.name) return '';
+      var bucket = '';
+      try{ bucket = paxContactsBucket(p); }catch(_bucket){ bucket = ''; }
+      if(bucket === 'programme_in' || bucket === 'trial' || bucket === 'waiting_list' || bucket === 'booking_history') return '';
+      var key = paxContactsTrialAliasKey(paxContactsTrialNameKey(p.name));
+      var list = key ? (paxContactsPlaceFlagIndex()[key] || []) : [];
+      var best = null;
+      var i;
+      for(i = 0; i < list.length; i++){
+        if(!paxContactsSameChild(p.name, list[i].name)) continue;
+        if(paxContactsKeepSeparate(p, { name: list[i].name })) continue;
+        if(!best || list[i].at > best.at) best = list[i];
+      }
+      return best ? best.flag : '';
+    }
+    function paxContactsAppendPlaceFlagPeople(rows){
+      var flags = window.PAX_CONTACTS_PLACE_FLAGS || [];
+      if(!flags.length) return rows;
+      var added = Object.create(null);
+      flags.forEach(function(f){
+        var key = paxContactsTrialAliasKey(paxContactsTrialNameKey(f.name));
+        if(!key || added[key]) return;
+        var i;
+        for(i = 0; i < rows.length; i++){
+          if(paxContactsSameChild(rows[i].name, f.name) && !paxContactsKeepSeparate(rows[i], { name: f.name })){
+            added[key] = true;
+            return;
+          }
+        }
+        added[key] = true;
+        rows.push({
+          id: 'place-' + key.replace(/\s+/g, '-'),
+          name: paxContactsTrialDisplayName(f.name) || f.name,
+          bookingStatus: 'registered',
+          parentDisplay: '',
+          reg: {},
+          _placeOnly: true
+        });
+      });
+      return rows;
     }
     function paxContactsNormName(s){
       return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -23691,6 +23798,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+meta.bg+';color:'+meta.fg+'">'+esc(meta.label)+'</span>';
         }
         var bkChip = paxStatusChip(bkMeta);
+        var placeFlag = '';
+        try{ placeFlag = paxContactsPlaceFlag(p); }catch(_placeFlag){ placeFlag = ''; }
+        var placeMeta = placeFlag === 'pay_hold'
+          ? { label: 'Pay hold', bg: '#fef3c7', fg: '#92400e' }
+          : placeFlag === 'hold'
+            ? { label: 'Hold', bg: '#ffedd5', fg: '#9a3412' }
+            : placeFlag === 'lost_slot'
+              ? { label: 'Lost slot', bg: '#fee2e2', fg: '#991b1b' }
+              : null;
+        if(placeMeta) bkChip += paxStatusChip(placeMeta);
         var alsoWait = '';
         var waitKind = '';
         try{ waitKind = paxContactsWaitingKind(p); }catch(_waitChip){ waitKind = ''; }
@@ -23736,7 +23853,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '<span class="muted">—</span>';
         var payIds = (money.payments || []).map(function(pay){ return pay.id; }).join(' ');
         return (
-          '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-registered="'+esc(p.registeredIso || '')+'" data-pax-trial="'+esc(paxContactsTrialLatestIso(p))+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-wait="'+((waitKind === 'portal_waiting' || waitKind === 'old_waiting') ? '1' : '')+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'">'+
+          '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-registered="'+esc(p.registeredIso || '')+'" data-pax-trial="'+esc(paxContactsTrialLatestIso(p))+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-place="'+esc(placeFlag)+'" data-pax-wait="'+((waitKind === 'portal_waiting' || waitKind === 'old_waiting') ? '1' : '')+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'">'+
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
           '<td class="pax-contacts-name-td"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+paxContactsWaitExtraHtml(p)+'</div></div></td>'+
           '<td class="pax-contacts-meta">'+supportCell+'</td>'+
@@ -28927,8 +29044,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return viewC4kParticipants({ title: 'WAITING LIST', bookingStatus: preset });
     }
     function viewC4kRegisteredView(){
+      var preset = state.paxPlacePreset || 'registered';
+      state.paxPlacePreset = '';
       state.paxBookingPreset = '';
-      return viewC4kParticipants({ title: 'REGISTERED', bookingStatus: 'registered' });
+      if(preset !== 'pay_hold' && preset !== 'hold' && preset !== 'lost_slot') preset = 'registered';
+      return viewC4kParticipants({ title: 'REGISTERED', bookingStatus: preset });
     }
     function sessionFeedbackEnsureState(){
       state.sessionFeedback = state.sessionFeedback || {};
@@ -34331,7 +34451,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var showAns = qv !== 'all';
           var showJoined = bk === 'waiting' || bk === 'portal_waiting' || bk === 'old_waiting';
           var showSource = showJoined;
-          var showRegistered = bk === 'registered';
+          var showRegistered = bk === 'registered' || bk === 'pay_hold' || bk === 'hold' || bk === 'lost_slot';
           var showTrial = bk === 'trial';
           var showMoney = bk !== 'waiting' && bk !== 'portal_waiting' && bk !== 'old_waiting' && bk !== 'cfk_leads';
           root2.querySelectorAll('.pax-wait-extra').forEach(function(el){ el.hidden = !showJoined; });
@@ -34651,9 +34771,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             paxContactsLoadAutumnPay(),
             paxContactsLoadReenrolChoices(),
             paxContactsLoadClientPayments(),
-            paxContactsLoadTrials()
+            paxContactsLoadTrials(),
+            paxContactsLoadPlaceFlags()
           ]).then(function(results){
-            if(!(results && (results[0] || results[1] || results[2] || results[3] || results[4] || results[5] || results[6] || results[7]))) return;
+            if(!(results && (results[0] || results[1] || results[2] || results[3] || results[4] || results[5] || results[6] || results[7] || results[8]))) return;
             if(typeof state.rebuildPaxContactsList === 'function'){
               state.rebuildPaxContactsList();
               if(typeof paxContactsRefreshFilters === 'function') paxContactsRefreshFilters();
@@ -34666,8 +34787,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(pb) pb.addEventListener('change', function(){
             var v = String(pb.value || '');
             var waitingFamily = v === 'waiting' || v === 'portal_waiting' || v === 'old_waiting';
-            var registeredOnly = v === 'registered';
+            var placeOnly = v === 'pay_hold' || v === 'hold' || v === 'lost_slot';
+            var registeredOnly = v === 'registered' || placeOnly;
             function openBucket(){
+              state.paxPlacePreset = placeOnly ? v : '';
               state.paxBookingPreset = v;
               if(waitingFamily) setView('c4k_waitlist');
               else if(registeredOnly) setView('portal_participant_documents');
