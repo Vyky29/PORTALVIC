@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v59",
+  "version": "2026-10-01-v60",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -841,7 +841,8 @@
           "summary": "Browse workers, open a profile, check onboarding.",
           "where": "H&R → H&R / Onboarding",
           "steps": [
-            "Open H&R to browse staff.",
+            "Open H&R to browse staff. Each row shows that worker's own photo.",
+            "Shifts, services, days on rota and venues are this week's Autumn timetable. Days off are the dates already requested.",
             "Open a worker for profile and employment tools.",
             "Job application and Health questionnaire on that card are the forms they already filled. Bank account is its own section. Employee info stays the short working record.",
             "Use Onboarding for new-hire progress.",
@@ -849,7 +850,18 @@
           ],
           "tips": [
             "Staff login host is clubsensational-staff — not the family site.",
-            "Documents only keeps My Documents. Full opens the staff dashboard, Today and feedback. Change it on the worker profile, then they sign in again."
+            "Documents only keeps My Documents. Full opens the staff dashboard, Today and feedback. Change it on the worker profile, then they sign in again.",
+            "A dash means that worker is not on the timetable this week. Job-form availability stays on the worker card, not in the shifts column."
+          ],
+          "keywords": [
+            "staff photo",
+            "foto",
+            "fotos trabajadores",
+            "shifts",
+            "turnos",
+            "rota",
+            "venues",
+            "days off"
           ]
         },
         {

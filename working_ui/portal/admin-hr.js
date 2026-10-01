@@ -469,10 +469,19 @@
   function hrStaffAvatarHtml(person) {
     if (typeof global.portalStaffAvatarInnerHtml !== "function") return "";
     var name = person && (person.employee_name || person.staff_name) ? String(person.employee_name || person.staff_name).trim() : "";
-    var key = person && person.staff_id ? String(person.staff_id).trim() : firstKey(name);
-    return global.portalStaffAvatarInnerHtml(key || name, {
+    var prof = person && person.staff_id ? profileRowById(person.staff_id) : null;
+    if (!prof && name) {
+      var rows = state.profileConfirmRows || [];
+      var want = normName(name);
+      for (var i = 0; i < rows.length; i++) {
+        if (normName(rows[i].full_name) === want) { prof = rows[i]; break; }
+      }
+    }
+    return global.portalStaffAvatarInnerHtml(name, {
       esc: esc,
       displayName: name,
+      username: prof && prof.username ? String(prof.username) : "",
+      avatarUrl: prof && prof.avatar_url ? String(prof.avatar_url) : "",
       className: "portal-roster-avatar portal-roster-avatar--staff",
     });
   }
@@ -576,7 +585,164 @@
     });
   }
 
+  function londonTodayIso() {
+    try {
+      return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+    } catch (_) {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }
+  function isoAddDays(iso, n) {
+    var p = String(iso || "").split("-");
+    if (p.length < 3) return "";
+    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    if (isNaN(d.getTime())) return "";
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+  function isoMonday(iso) {
+    var p = String(iso || "").split("-");
+    if (p.length < 3) return "";
+    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    if (isNaN(d.getTime())) return "";
+    var wd = d.getUTCDay();
+    return isoAddDays(iso, wd === 0 ? -6 : 1 - wd);
+  }
+  function staffCanon(name) {
+    if (typeof global.portalCanonicalStaffMatchKey === "function") {
+      return String(global.portalCanonicalStaffMatchKey(name) || "");
+    }
+    return firstKey(name);
+  }
+  function hoursSplitNameTime(text) {
+    var raw = String(text || "").replace(/\s+/g, " ").trim();
+    if (!raw || /^closed$/i.test(raw)) return null;
+    var m = raw.match(/^(.+?)\s+(\d{1,2}(?:[.:]\d{2})?\s*-\s*\d{1,2}(?:[.:]\d{2})?)(.*)$/);
+    if (!m) {
+      var office = raw.match(/^(.+?)\s+(Office.*)$/i);
+      if (!office) return null;
+      return { name: office[1].trim(), time: "", note: office[2].trim() };
+    }
+    return {
+      name: String(m[1] || "").trim(),
+      time: String(m[2] || "").replace(/\s+/g, ""),
+      note: String(m[3] || "").trim(),
+    };
+  }
+  function hoursVenueAt(groups, index) {
+    var cursor = 0;
+    var list = groups || [];
+    for (var i = 0; i < list.length; i++) {
+      var span = Number(list[i].span) || ((list[i].labels && list[i].labels.length) || 1);
+      if (index < cursor + span) return String(list[i].venue || "").trim();
+      cursor += span;
+    }
+    return "";
+  }
+  function hoursServiceLabel(venue, band, day, text) {
+    var v = String(venue || "").toLowerCase();
+    var b = String(band || "").toLowerCase();
+    var d = String(day || "").toLowerCase();
+    var t = String(text || "");
+    if (/\boffice\b/i.test(t)) return "Office";
+    if (v === "westway") return d === "sunday" ? "Climbing" : "Fitness";
+    if (v === "northolt" || v === "acton" || (v === "swimfarm" && d === "saturday")) return "Aquatic";
+    if (v === "swimfarm" && d === "sunday") {
+      if (b === "day_centre" || b === "dc") return "Day Centre";
+      if (b === "bespoke" || /4\.15\s*-?\s*6\.15/.test(t)) return "Bespoke";
+      return "Multi-Activity";
+    }
+    if (/4\.15\s*-?\s*6\.15/.test(t) || /3\.30\s*-?\s*5\b/.test(t) || b === "bespoke") return "Bespoke";
+    if (b === "day_centre" || b === "dc") return "Day Centre";
+    return "Day Centre";
+  }
+  function pickHoursDate(dates, monday, sunday, today) {
+    var inWeek = null;
+    var past = null;
+    var future = null;
+    (dates || []).forEach(function (row) {
+      var iso = String((row && row.date) || "").slice(0, 10);
+      if (!iso) return;
+      if (iso >= monday && iso <= sunday) inWeek = row;
+      else if (iso <= today) past = row;
+      else if (!future) future = row;
+    });
+    return inWeek || past || future;
+  }
+  // Autumn Instructor Timetable for the current week. The spreadsheet adapter
+  // is not on this page, and Employees info "Shifts" is job-form availability.
+  function buildAutumnRosterSummary() {
+    var payload = global.PORTAL_AUTUMN_STAFF_HOURS;
+    var hours = payload && payload.staffHours;
+    if (!hours) return null;
+    var today = londonTodayIso();
+    var monday = isoMonday(today);
+    var sunday = monday ? isoAddDays(monday, 6) : "";
+    if (!monday) return null;
+    var byKey = {};
+    function bucket(key) {
+      if (!byKey[key]) {
+        byKey[key] = { days: [], venues: [], services: [], byDayLabels: {}, officeDays: [] };
+      }
+      return byKey[key];
+    }
+    Object.keys(DAY_ORDER).forEach(function (dayLower) {
+      var dayName = dayLower.charAt(0).toUpperCase() + dayLower.slice(1);
+      var block = hours[dayName];
+      if (!block) return;
+      var row = pickHoursDate(block.dates, monday, sunday, today);
+      if (!row || !row.cells) return;
+      row.cells.forEach(function (cell, index) {
+        var parsed = hoursSplitNameTime(cell && cell.text);
+        if (!parsed || !parsed.name) return;
+        var key = staffCanon(parsed.name);
+        if (!key || key === "coverneeded" || key === "tbc" || key === "tba") return;
+        var b = bucket(key);
+        if (b.days.indexOf(dayName) < 0) b.days.push(dayName);
+        var venue = hoursVenueAt(block.venueGroups, index);
+        if (venue && b.venues.indexOf(venue) < 0) b.venues.push(venue);
+        var svc = hoursServiceLabel(venue, cell && cell.band, dayName, cell && cell.text);
+        if (svc && b.services.indexOf(svc) < 0) b.services.push(svc);
+        if (parsed.time) {
+          var lbl = normTime(parsed.time.replace("-", " to "));
+          if (!b.byDayLabels[dayName]) b.byDayLabels[dayName] = [];
+          if (b.byDayLabels[dayName].indexOf(lbl) < 0) b.byDayLabels[dayName].push(lbl);
+        } else if (/\boffice\b/i.test(parsed.note) && b.officeDays.indexOf(dayName) < 0) {
+          b.officeDays.push(dayName);
+        }
+      });
+    });
+    var map = {};
+    Object.keys(byKey).forEach(function (key) {
+      var b = byKey[key];
+      b.days.sort(function (a, c) {
+        return (DAY_ORDER[a.toLowerCase()] || 9) - (DAY_ORDER[c.toLowerCase()] || 9);
+      });
+      var parts = [];
+      b.days.forEach(function (day) {
+        shiftCompress(b.byDayLabels[day] || []).forEach(function (g) {
+          parts.push(g + " (" + shortDay(day) + ")");
+        });
+        if ((!b.byDayLabels[day] || !b.byDayLabels[day].length) && b.officeDays.indexOf(day) >= 0) {
+          parts.push("Office (" + shortDay(day) + ")");
+        }
+      });
+      var dd = b.days.length <= 1 ? b.days.join("") : (b.days.length === 2 ? b.days.join(" & ") : b.days.join(", "));
+      map[key] = {
+        shifts: parts.join(" / "),
+        services: b.services.join(", "),
+        venues: b.venues.join(", "),
+        days: dd,
+        track: "",
+        primaryService: b.services[0] || "",
+      };
+    });
+    return map;
+  }
+
   function buildRosterSummary() {
+    var autumn = buildAutumnRosterSummary();
+    if (autumn && Object.keys(autumn).length) return autumn;
     var src = global.STAFF_DASHBOARD_SOURCE;
     var adapter = global.StaffDashboardSpreadsheetAdapter;
     if (!src || !src.staffProfiles || !adapter || typeof adapter.bootstrap !== "function") return {};
@@ -635,6 +801,8 @@
   function rosterFor(p) {
     var m = rosterMap();
     if (!p) return null;
+    var canon = staffCanon(p.employee_name);
+    if (canon && m[canon]) return m[canon];
     var fk = firstKey(p.employee_name);
     if (fk && m[fk]) return m[fk];
     var full = normName(p.employee_name);
@@ -1018,10 +1186,10 @@
         var dash = '<span class="muted">—</span>';
         var rsum = rosterFor(p);
         var role = roleLabel(d.Role || d.role || "", rsum);
-        var shifts = (rsum && rsum.shifts) || String(d.Shifts || "");
-        var svc = (rsum && rsum.services) || pickData(d, STAFF_COL_KEYS.services);
-        var ven = (rsum && rsum.venues) || pickData(d, STAFF_COL_KEYS.venues);
-        var rota = (rsum && rsum.days) || pickData(d, STAFF_COL_KEYS.rota);
+        var shifts = (rsum && rsum.shifts) || "";
+        var svc = (rsum && rsum.services) || "";
+        var ven = (rsum && rsum.venues) || "";
+        var rota = (rsum && rsum.days) || "";
         html += '<tr data-hr-person="' + esc(nk(p)) + '">'
           + hrNameCell(p)
           + '<td>' + (esc(role) || dash) + '</td>'
@@ -1983,7 +2151,7 @@
     return client
       .from("staff_profiles")
       .select(
-        "id, full_name, username, created_at, profile_last_confirmed_at, profile_last_updated_at, is_active, " +
+        "id, full_name, username, avatar_url, created_at, profile_last_confirmed_at, profile_last_updated_at, is_active, " +
           "availability_status, availability_summary, availability_changes, " +
           "other_work_status, other_work_organisation, other_work_schedule, other_work_affects_availability, " +
           "wellbeing_notes",
@@ -2031,6 +2199,12 @@
     }
     return page(0);
   }
+
+  try {
+    global.addEventListener("portal:staff-avatars", function () {
+      if (state.rootEl) render();
+    });
+  } catch (_) {}
 
   global.AdminHR = { configure: configure, mount: mount };
 })(typeof window !== "undefined" ? window : globalThis);

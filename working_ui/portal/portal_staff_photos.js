@@ -56,23 +56,33 @@
   function photoLookupKeys(nameOrKey, opts) {
     opts = opts || {};
     var keys = [];
+    function pushStem(stem) {
+      stem = canonicalStaffKey(stem);
+      if (FULL_NAME_PHOTO_ALIASES[stem]) stem = FULL_NAME_PHOTO_ALIASES[stem];
+      stem = canonicalStaffKey(stem);
+      if (!stem || looksLikeOpaquePhotoKey(stem)) return;
+      if (keys.indexOf(stem) < 0) keys.push(stem);
+    }
     function add(v) {
-      var k = canonicalStaffKey(v);
-      if (!k) return;
-      if (FULL_NAME_PHOTO_ALIASES[k] && keys.indexOf(FULL_NAME_PHOTO_ALIASES[k]) < 0) {
-        keys.push(FULL_NAME_PHOTO_ALIASES[k]);
+      var raw = String(v || "").trim();
+      if (!raw) return;
+      if (typeof global.portalCanonicalStaffMatchKey === "function") {
+        var canon = String(global.portalCanonicalStaffMatchKey(raw) || "").trim();
+        if (canon && !looksLikeOpaquePhotoKey(canon)) {
+          pushStem(canon);
+          return;
+        }
       }
-      if (keys.indexOf(k) < 0) keys.push(k);
+      var parts = raw.split(/\s+/).filter(Boolean);
+      if (parts.length > 1) {
+        pushStem(parts.join(""));
+        pushStem(parts[0]);
+        return;
+      }
+      pushStem(raw);
     }
     if (opts.username) add(opts.username);
-    var raw = String(nameOrKey || "").trim();
-    if (!raw) return keys;
-    var parts = raw.split(/\s+/).filter(Boolean);
-    if (parts.length > 1) {
-      add(parts[0]);
-      return keys;
-    }
-    add(raw);
+    add(nameOrKey);
     return keys;
   }
 
@@ -485,6 +495,9 @@
             rememberStaffLiveAvatar(row && row.username, row && row.avatar_url);
             rememberStaffLiveAvatar(row && row.full_name, row && row.avatar_url);
           });
+          try {
+            global.dispatchEvent(new Event("portal:staff-avatars"));
+          } catch (_) {}
         })
         .catch(function () {
           hydrateLiveAvatarsFromDb._done = false;
