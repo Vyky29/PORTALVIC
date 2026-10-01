@@ -22,13 +22,17 @@
     arthur_ma: "arthur_manners",
     amar_ra: "amar_rai",
     sammer: "samer",
+    samer_bakhiet: "samer",
     rayan_tapa: "rayan_ta",
+    steven_cesare: "steven",
     steven_ces: "steven",
     steven_c: "steven",
     steven_ce: "steven",
     yusuf: "yusuf_ah",
     yusef: "yusuf_ah",
     rayyan_fi: "rayyan_f",
+    rayyan_fida: "rayyan_f",
+    rayyan_fda: "rayyan_f",
   };
 
   var CLIENT_INFO_SLUG_ALIASES = {

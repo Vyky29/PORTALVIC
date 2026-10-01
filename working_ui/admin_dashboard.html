@@ -85,7 +85,7 @@
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
-  <script src="/portal/portal_participant_identity.js?v=20261001-mahmmoud-arthur-elias"></script>
+  <script src="/portal/portal_participant_identity.js?v=20261001-samer-steven-rayyan"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260924-added-card"></script>
   <script src="/portal/admin-portal-documents.js?v=20261001-pay-expenses-only"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20261001-registered-not-client"></script>
@@ -21666,6 +21666,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(ca && cb && ca !== cb){
             var pair = [ca, cb].sort().join('|');
             if(pair === 'adam_ma|adam_mahmmoud') return false;
+            /* Monday Northolt "Muhammad" is Asli's child. Muhammad Elmi is a different old contact. */
+            if(pair === 'muhammad|muhammad_elmi') return false;
           }
         }
       }catch(_canonFirst){}
@@ -21845,9 +21847,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function paxContactsBandLineHtml(b){
       var dayFull = c4kServiceDowLong(String(b.day || '').trim().slice(0, 3));
       var t = String(b.timeDisp || '').trim();
+      var venue = String(b.venue || '').trim();
+      var venueBit = venue ? ' (' + venue.toUpperCase() + ')' : '';
       var label = (dayFull && dayFull !== '—')
-        ? (dayFull + (t && t !== '—' ? ', ' + t : ''))
-        : (t || '—');
+        ? (dayFull + (t && t !== '—' ? ', ' + t : '') + venueBit)
+        : ((t || '—') + (t && t !== '—' ? venueBit : ''));
       var style = b.moved ? ' style="color:#dc2626;overflow-wrap:break-word"' : ' style="min-width:0;overflow-wrap:break-word"';
       var title = b.moved ? ' title="Previous day this term"' : '';
       return '<div'+style+title+'>'+esc(label || '—')+'</div>';
