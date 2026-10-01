@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v110",
+  "version": "2026-10-02-v111",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1001,14 +1001,14 @@
     {
       "id": "hr",
       "title": "H&R",
-      "blurb": "Staff roster, onboarding, contracts — and Timetable (who works).",
+      "blurb": "Formal workers, timetable, and worker documents. Onboarding and interviews are under Potential workers.",
       "priority": 2,
       "lessons": [
         {
           "id": "timetable",
           "title": "Timetable (staff hours / rota)",
           "summary": "Who works which hours. Does not change who is booked as a client.",
-          "where": "H&R → Timetable (Who works)",
+          "where": "H&R → Formal workers → Instructor timetable",
           "steps": [
             "Open Timetable / Who works for the week.",
             "Read instructor hours for each day — this gates timesheet and standing projection.",
@@ -1024,14 +1024,14 @@
           "id": "staff_roster",
           "title": "Staff roster and profiles",
           "summary": "Browse workers, open a profile, check onboarding.",
-          "where": "Frequent → Staff, or the left menu H&R",
+          "where": "H&R → Formal workers → Workers",
           "steps": [
-            "Open Staff on Frequent to browse workers. H&R is the left-menu category. Each row shows that worker's own photo.",
-            "Interview on Frequent opens the candidate pipeline. Registration opens the parent registration forms.",
+            "Open Workers under H&R, Formal workers. Each row shows that worker's own photo.",
+            "Onboarding and Interviews are under Potential workers, not Formal workers.",
             "Shifts, services, days on rota and venues are this week's Autumn timetable. Days off are the dates already requested.",
             "Open a worker for profile and employment tools.",
             "Job application and Health questionnaire on that card are the forms they already filled. Bank account is its own section. Employee info stays the short working record.",
-            "Use Onboarding for new-hire progress.",
+            "Use Potential workers, then Onboarding, for new-hire progress.",
             "Contracts / training / uniform live under the same H&R card."
           ],
           "tips": [
