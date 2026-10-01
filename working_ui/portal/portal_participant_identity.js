@@ -33,6 +33,8 @@
     rayyan_fi: "rayyan_f",
     rayyan_fida: "rayyan_f",
     rayyan_fda: "rayyan_f",
+    /* Asli's child. Muhammad Andi is the same registration as Muhammad. */
+    muhammad_andi: "muhammad",
   };
 
   var CLIENT_INFO_SLUG_ALIASES = {

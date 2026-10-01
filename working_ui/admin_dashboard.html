@@ -85,7 +85,7 @@
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
-  <script src="/portal/portal_participant_identity.js?v=20261001-adam-one-child"></script>
+  <script src="/portal/portal_participant_identity.js?v=20261001-muhammad-one-child"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260924-added-card"></script>
   <script src="/portal/admin-portal-documents.js?v=20261001-pay-expenses-only"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20261001-registered-not-client"></script>
@@ -20893,6 +20893,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return out;
     }
+    /** Same first name and the same parent email or mobile: one child, two spellings. */
+    function paxContactsShareParentContact(a, b){
+      var fa = (paxContactsNormParts(a && a.name)[0] || '');
+      var fb = (paxContactsNormParts(b && b.name)[0] || '');
+      if(!fa || fa !== fb) return false;
+      function emailOf(p){
+        var em = String(p && p.reg && p.reg.email || '').trim().toLowerCase();
+        if(!em || em === '—' || em.indexOf('@') < 0) return '';
+        return em;
+      }
+      function phoneOf(p){
+        var ph = String(p && p.reg && p.reg.phone || '').replace(/\D/g, '');
+        if(ph.length < 10) return '';
+        return ph.slice(-10);
+      }
+      var ea = emailOf(a);
+      var eb = emailOf(b);
+      if(ea && eb && ea === eb) return true;
+      var pa = phoneOf(a);
+      var pb = phoneOf(b);
+      return !!(pa && pb && pa === pb);
+    }
     function paxContactsDedupeByPerson(list){
       var amb = (typeof adminPortalParticipantAmbiguityMap === 'function') ? adminPortalParticipantAmbiguityMap() : {};
       var clusters = [];
@@ -20902,10 +20924,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var placed = false;
         if(nm){
           for(var c = 0; c < clusters.length; c++){
-            if(!clusters[c].repName || !paxContactsSameChild(clusters[c].repName, nm, amb)) continue;
+            var nameMatch = !!(clusters[c].repName && paxContactsSameChild(clusters[c].repName, nm, amb));
+            var contactMatch = false;
+            if(!nameMatch){
+              for(var s = 0; s < clusters[c].members.length; s++){
+                if(paxContactsShareParentContact(clusters[c].members[s], p)){ contactMatch = true; break; }
+              }
+            }
+            if(!nameMatch && !contactMatch) continue;
             var clash = false;
-            for(var m = 0; m < clusters[c].members.length; m++){
-              if(paxContactsKeepSeparate(clusters[c].members[m], p)){ clash = true; break; }
+            if(!contactMatch){
+              for(var m = 0; m < clusters[c].members.length; m++){
+                if(paxContactsKeepSeparate(clusters[c].members[m], p)){ clash = true; break; }
+              }
             }
             if(clash) continue;
             clusters[c].members.push(p);
@@ -20953,6 +20984,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!merged._adminPaymentMethodLabel && m._adminPaymentMethodLabel) merged._adminPaymentMethodLabel = m._adminPaymentMethodLabel;
           if(merged.reg && !merged.reg.fundingRoute && m.reg && m.reg.fundingRoute && m.reg.fundingRoute !== '—') merged.reg.fundingRoute = m.reg.fundingRoute;
           if(merged.reg && (!merged.reg.paymentMethod || merged.reg.paymentMethod === '—') && m.reg && m.reg.paymentMethod && m.reg.paymentMethod !== '—') merged.reg.paymentMethod = m.reg.paymentMethod;
+          if((!merged.dobIso || !String(merged.dobDisplay || '').trim() || merged.dobDisplay === '—') && m.dobIso){
+            merged.dobIso = m.dobIso;
+            if(m.dobDisplay && m.dobDisplay !== '—') merged.dobDisplay = m.dobDisplay;
+          }
         });
         return merged;
       });
@@ -20984,7 +21019,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         op._cfkContact = true;
         out.push(op);
       }
-      out = paxContactsAppendLiveWaitlist(paxContactsAppendUnlistedParticipants(paxContactsDedupeByPerson(out)));
+      out = paxContactsDedupeByPerson(paxContactsAppendLiveWaitlist(paxContactsAppendUnlistedParticipants(out)));
       out.sort(function(a, b){
         return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), undefined, { sensitivity: 'base' });
       });
