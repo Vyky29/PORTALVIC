@@ -2463,7 +2463,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v100')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v101')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -17998,10 +17998,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void window.portalAdminLoadScriptSet('payments');
         return;
       }
-      if(id === 'clients'){
+      if(id === 'clients' || id === 'c4k_waitlist'){
         void window.portalAdminLoadScriptSet('roster');
         void window.portalAdminLoadScriptSet('participants');
         void window.portalAdminLoadScriptSet('oldpax');
+        void window.portalAdminLoadScriptSet('waitlist');
         // Session feedback powers the participant "Sessions" KPIs + "All feedbacks" table.
         void window.portalAdminLoadScriptSet('feedback').then(function(){
           if(state.view === 'clients' && state.openPaxContactId && typeof state.reopenPaxDetail === 'function'){
@@ -21040,6 +21041,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(hitLive){
           p._waitSource = 'booking_portal';
           p._listedWaiting = true;
+          paxContactsCopyWaitDetail(p, hitLive);
           paxContactsSetWaitingJoined(p, hitLive.created_at, 'booking_portal');
           return;
         }
@@ -21055,6 +21057,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(hitWb || (p._cfkContact && (p.onWaitingList || p._listedWaiting || String(p.bookingStatus || '') === 'waiting_list'))){
           p._waitSource = 'workbook';
           if(hitWb){
+            paxContactsCopyWaitDetail(p, hitWb);
             var since = paxContactsParseLooseDay(hitWb.since);
             if(since) paxContactsSetWaitingJoined(p, since, 'recorded');
           }
@@ -21064,6 +21067,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** A current seat means they are no longer on the old workbook queue. */
     function paxContactsHasServiceNow(p){
       try{ return paxContactsCurrentSeatBands(p).length > 0; }catch(_svcNow){ return false; }
+    }
+    function paxContactsCopyWaitDetail(p, row){
+      if(!p || !row) return;
+      function keep(v){
+        var s = String(v || '').trim();
+        return s && s !== '—' ? s : '';
+      }
+      p._waitDetail = {
+        service: keep(row.service),
+        slot: keep(row.slotTime),
+        pref: keep(row.pref),
+        loc: keep(row.loc),
+        pri: keep(row.pri),
+        match: keep(row.match),
+        last: keep(row.last),
+        parent: keep(row.parentLine)
+      };
     }
     function paxContactsWaitingKind(p){
       if(!p || !p._waitSource) return '';
@@ -21958,6 +21978,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(src === p.waitingJoinedSource && day < p.waitingJoinedIso) p.waitingJoinedIso = day;
     }
+    function paxContactsWaitExtraHtml(p){
+      var d = p && p._waitDetail;
+      if(!d) return '';
+      var bits = [];
+      if(d.parent) bits.push(d.parent);
+      if(d.loc) bits.push(d.loc);
+      if(d.last) bits.push('Last booking ' + d.last);
+      if(d.pref) bits.push('Pref ' + d.pref);
+      if(d.pri) bits.push('Priority ' + d.pri);
+      if(d.match) bits.push(d.match);
+      if(!bits.length) return '';
+      return '<div class="pax-wait-extra muted" hidden style="font-size:11px;margin-top:4px;overflow-wrap:anywhere">'+esc(bits.join(' · '))+'</div>';
+    }
     function paxContactsJoinedCell(p){
       var kind = paxContactsWaitingKind(p);
       if(kind !== 'portal_waiting' && kind !== 'old_waiting' && paxContactsBucket(p) !== 'waiting_list') return '<span class="muted">—</span>';
@@ -22327,20 +22360,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function paxContactsMatchesBookingStatus(p, bk){
       if(bk === 'all') return true;
       if(bk === 'trial') return paxContactsTrialsForPerson(p).length > 0;
+      if(bk === 'waiting'){
+        var both = paxContactsWaitingKind(p);
+        return both === 'portal_waiting' || both === 'old_waiting';
+      }
       if(bk === 'portal_waiting') return paxContactsWaitingKind(p) === 'portal_waiting';
       if(bk === 'old_waiting') return paxContactsWaitingKind(p) === 'old_waiting';
       return paxContactsBucket(p) === bk;
     }
-    function paxContactsBookingStatusOptionsHtml(){
+    function paxContactsBookingStatusOptionsHtml(selected){
+      selected = selected || 'programme_in';
+      function opt(value, label){
+        return '<option value="'+value+'"'+(selected === value ? ' selected' : '')+'>'+label+'</option>';
+      }
       return (
-        '<option value="all">All</option>'+
-        '<option value="programme_in" selected>ACTIVE</option>'+
-        '<option value="portal_waiting">Portal Waiting List</option>'+
-        '<option value="old_waiting">Old Waiting List</option>'+
-        '<option value="booking_history">OLD CLIENTS</option>'+
-        '<option value="registered">REGISTERED</option>'+
-        '<option value="cfk_leads">CFK LEADS</option>'+
-        '<option value="trial">On Trial / Trialled</option>'
+        opt('all', 'All')+
+        opt('programme_in', 'ACTIVE')+
+        opt('waiting', 'Waiting List')+
+        opt('portal_waiting', 'Portal Waiting List')+
+        opt('old_waiting', 'Old Waiting List')+
+        opt('booking_history', 'OLD CLIENTS')+
+        opt('registered', 'REGISTERED')+
+        opt('cfk_leads', 'CFK LEADS')+
+        opt('trial', 'On Trial / Trialled')
       );
     }
     /** Compact booked-services cell for the participants list (programme + day abbreviations). */
@@ -23124,6 +23166,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           slot: (waitSlot && waitSlot !== '—') ? '<div class="pax-slot-line">'+esc(waitSlot)+'</div>' : dash
         };
       }
+      var want = p._waitDetail || null;
+      if(!bands.length && want && (want.service || want.slot)){
+        return {
+          svc: want.service ? '<div class="pax-svc-line">'+esc(want.service)+'</div>' : dash,
+          slot: want.slot ? '<div class="pax-slot-line">'+esc(want.slot)+'</div>' : dash
+        };
+      }
       if(!bands.length && p._cfkContact) return paxContactsCfkHistoryCells(p);
       if(!bands.length) return empty;
       var svc = bands.map(function(b){
@@ -23389,7 +23438,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-registered="'+esc(p.registeredIso || '')+'" data-pax-trial="'+esc(paxContactsTrialLatestIso(p))+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'">'+
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
-          '<td class="pax-contacts-name-td"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+'</div></div></td>'+
+          '<td class="pax-contacts-name-td"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+paxContactsWaitExtraHtml(p)+'</div></div></td>'+
           '<td class="pax-contacts-meta">'+supportCell+'</td>'+
           '<td class="pax-contacts-meta pax-money-col">'+fundingCell+'</td>'+
           '<td class="pax-contacts-meta pax-money-col">'+paymentCell+'</td>'+
@@ -23432,16 +23481,35 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'
       );
     }
-    function viewC4kParticipants(){
+    function viewC4kParticipants(opts){
+      opts = opts || {};
+      var pageTitle = String(opts.title || 'Active');
+      var bookingSelected = String(opts.bookingStatus || state.paxBookingPreset || 'programme_in');
+      if(!opts.bookingStatus) state.paxBookingPreset = '';
       var listRows = paxContactsListRowsHtml();
       var n = paxContactsUnifiedList().length;
+      var intro = bookingSelected === 'waiting'
+        ? 'Waiting List in the menu is this same table. Booking status Waiting List shows Portal Waiting List and Old Waiting List together. Portal is the Booking Portal queue from 12 Aug 2026. Old is the workbook from before that, and drops anyone who already has a service. Someone who already has a service can still be on Portal Waiting List for another place. Desired service, slot, place, last booking and parent stay on the row.'
+        : 'ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. Waiting List in the left menu is this same table. Portal Waiting List is the Booking Portal queue from 12 Aug 2026 (Tala) to now. Old Waiting List is the workbook queue from before that, and drops anyone who already has a service. Source is on this table. Funding and Payment stay off waiting lists and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of a waiting list. REGISTERED shows the day they registered, newest at the top. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.';
+      var focus = bookingSelected === 'waiting' ? (state.waitlistFocus || null) : null;
+      var focusBanner = '';
+      if(focus && (focus.prog || focus.venue)){
+        focusBanner =
+          '<div class="card card-pad" style="margin:0 0 12px;border-color:#fbbf24;background:#fffbeb;min-width:0">'+
+          '<p style="margin:0;font-size:13px;line-height:1.45;overflow-wrap:break-word"><strong>Filtered from Services</strong> — '+
+          esc(String(focus.prog || '—'))+' · '+esc(String(focus.venue || '—'))+
+          (focus.day ? (' · '+esc(String(focus.day))) : '')+
+          (focus.time || focus.segA ? (' · '+esc(String(focus.time || (focus.segA + (focus.segB ? ('-'+focus.segB) : ''))))) : '')+
+          '. <button type="button" class="btn btn--ghost btn--sm" id="c4kWaitlistClearFocus" style="vertical-align:baseline">Show all</button></p></div>';
+      }
       return (
-        '<div class="pax-contacts-toolbar"><h1 class="page-title">Active</h1>'+
+        '<div class="pax-contacts-toolbar"><h1 class="page-title">'+esc(pageTitle)+'</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. Portal Waiting List is the Booking Portal queue from 12 Aug 2026 (Tala) to now. Old Waiting List is the workbook queue from before that, and drops anyone who already has a service. Source is the same column as the WAITING page. Funding and Payment stay off both waiting lists and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of a waiting list. REGISTERED shows the day they registered, newest at the top. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">'+intro+'</p>'+
+        focusBanner+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
-        '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
+        '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml(bookingSelected)+'</select></div>'+
         '<div class="pax-contacts-fld pax-money-filter"><label for="paxContactsFunding">Funding</label><select class="sel" id="paxContactsFunding">'+
         '<option value="all">All funding</option>'+
         '<option value="private">Using Private funds (VAT 20%)</option>'+
@@ -28553,93 +28621,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     function viewC4kWaitlistView(){
-      var live = adminLiveWaitlistRows();
-      var wlPortal = adminWaitingListPortalRows();
-      var list = adminC4kWaitlistRows();
-      var focus = state.waitlistFocus || null;
-      var focusBanner = '';
-      if(focus && (focus.prog || focus.venue)){
-        var focused = focus.segA
-          ? adminServiceBandWaitlistRows(focus.prog, focus.venue, focus.day, focus.segA, focus.segB)
-          : adminCapacityWaitMatchRowsForProgVenue(focus.prog, focus.venue);
-        var focusIds = {};
-        focused.forEach(function(w){
-          var id = String((w && (w.id || w.liveId || w.pax)) || '');
-          if(id) focusIds[id] = true;
-        });
-        list = list.filter(function(w){
-          var id = String((w && (w.id || w.liveId || w.pax)) || '');
-          return id && focusIds[id];
-        });
-        focusBanner =
-          '<div class="card card-pad" style="margin:0 0 12px;border-color:#fbbf24;background:#fffbeb;min-width:0">'+
-          '<p style="margin:0;font-size:13px;line-height:1.45;overflow-wrap:break-word"><strong>Filtered from Services</strong> — '+
-          esc(String(focus.prog || '—'))+' · '+esc(String(focus.venue || '—'))+
-          (focus.day ? (' · '+esc(String(focus.day))) : '')+
-          (focus.time || focus.segA ? (' · '+esc(String(focus.time || (focus.segA + (focus.segB ? ('–'+focus.segB) : ''))))) : '')+
-          ' · '+esc(String(list.length))+' shown.'+
-          ' <button type="button" class="btn btn--ghost btn--sm" id="c4kWaitlistClearFocus" style="vertical-align:baseline">Show all</button>'+
-          ' <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services" style="vertical-align:baseline">Back to Services</button></p></div>';
-      }
-      var meta = wlPortal.length && window.WAITING_LIST_PORTAL_SOURCE && window.WAITING_LIST_PORTAL_SOURCE.meta;
-      var liveMeta = window.__PORTAL_WAITLIST_LIVE_META__ || {};
-      var chips = [];
-      if(live.length){
-        chips.push('<span class="chip chip--ok">Live Booking Portal · '+String(liveMeta.active != null ? liveMeta.active : live.length)+'</span>');
-      }
-      if(wlPortal.length){
-        chips.push('<span class="chip chip--info">Workbook · '+String(wlPortal.length)+'</span>');
-      }
-      if(!chips.length){
-        chips.push('<span class="chip chip--info">Demo queue</span>');
-      }
-      var metaLine = chips.join(' ');
-      var optHint = '';
-      if(meta && meta.optionalColumns && (!meta.optionalColumns.desiredService || !meta.optionalColumns.slotTime)){
-        optHint = '<p class="muted" style="margin:8px 0 0;font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">Add <strong>desiredService</strong> and <strong>slotTime</strong> to the workbook (aliases: <em>Service</em>, <em>Slot time</em>, <em>preferredSlot</em>), then run <code>database/export_waiting_list_portal_js.py</code>.</p>';
-      }
-      var rows = list.map(function(w){
-        var slot = (w.slotTime != null && String(w.slotTime).trim()) ? String(w.slotTime).trim() : '—';
-        var pri = String(w.pri != null ? w.pri : '—').trim() || '—';
-        var par = (w.parentLine != null && String(w.parentLine).trim() && String(w.parentLine).trim() !== '—') ? String(w.parentLine).trim() : '';
-        var srcChip = w._live
-          ? '<span class="chip chip--ok" style="margin-top:4px;display:inline-block">Booking Portal</span>'
-          : (w.sourceTag === 'Workbook' || !w._live
-            ? '<span class="chip chip--info" style="margin-top:4px;display:inline-block">Workbook</span>'
-            : '');
-        return '<tr>'+
-          '<td style="min-width:0;max-width:220px;overflow-wrap:break-word"><strong>'+esc(w.pax)+'</strong>'+
-          (par ? '<div class="muted" style="font-size:11px;margin-top:3px;overflow-wrap:break-word">'+esc(par)+'</div>' : '')+
-          srcChip+
-          '</td>'+
-          '<td style="min-width:0;max-width:180px;overflow-wrap:break-word">'+esc(String(w.service != null ? w.service : '—'))+'</td>'+
-          '<td class="muted" style="min-width:0;max-width:180px;overflow-wrap:break-word">'+esc(slot)+'</td>'+
-          '<td class="muted" style="min-width:0;max-width:160px;overflow-wrap:break-word">'+esc(String(w.pref != null ? w.pref : '—'))+'</td>'+
-          '<td class="muted" style="min-width:0;max-width:120px;overflow-wrap:break-word">'+esc(String(w.ratio != null ? w.ratio : '—'))+'</td>'+
-          '<td class="muted" style="min-width:0;max-width:180px;overflow-wrap:break-word">'+esc(String(w.loc != null ? w.loc : '—'))+'</td>'+
-          '<td><span class="chip '+(pri==='A'?'chip--urg':'chip--info')+'">'+esc(pri)+'</span></td>'+
-          '<td class="muted" style="max-width:200px;min-width:0;overflow-wrap:break-word">'+esc(String(w.match != null ? w.match : '—'))+'</td>'+
-          '<td style="min-width:0;max-width:220px;overflow-wrap:break-word">'+esc(String(w.cont != null ? w.cont : '—'))+'</td>'+
-          '<td class="muted" style="white-space:nowrap">'+esc(String(w.last != null ? w.last : '—'))+'</td>'+
-          '<td class="toolbar"><button type="button" class="btn btn--pri btn--sm c4k-mock-act" data-c4k-mock="woffer">Offer</button> <button type="button" class="btn btn--sec btn--sm c4k-mock-act" data-c4k-mock="wkeep">Keep</button> <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Match</button></td></tr>';
-      }).join('');
-      if(!rows){
-        rows = '<tr><td colspan="11" class="muted" style="padding:16px;overflow-wrap:break-word">'+(
-          focus
-            ? 'No waiting-list matches for this Services filter. Use <strong>Show all</strong> or join from Booking Portal full slots.'
-            : 'No waiting list rows yet. Joins from Booking Portal full slots appear here automatically; older workbook rows stay tagged as Workbook.'
-        )+'</td></tr>';
-      }
-      var foot = '<p class="muted" style="margin:10px 0 0;font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">Live rows come from Booking Portal <strong>Join waiting list</strong>. Workbook history loads from <code>waiting_list_portal_data.js</code>.</p>';
-      return (
-        '<h1 class="page-title">Waiting List</h1>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Registered families waiting for a full service — triage, match, and progress offers. '+metaLine+' Day context: <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>.</p>'+optHint+
-        focusBanner+
-        '<div class="section"><div class="section-h"><h2>Pipeline</h2><p>Live Booking Portal joins first; workbook history kept below.</p></div>'+
-        '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="bookingWaitlistTable"><thead><tr><th>Participant</th><th>Source</th><th>Stage</th><th>Since</th></tr></thead><tbody></tbody></table></div></div></div>'+
-        '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Service matching queue</h2><p>Desired service, slot time, and preferences when present.</p></div>'+
-        '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="c4kWaitlistMatchTable" style="min-width:1120px"><thead><tr><th>Participant</th><th>Service</th><th>Slot time</th><th>Pref. time</th><th>Ratio</th><th>Location</th><th>Pri</th><th>Possible match</th><th>Contact</th><th>Last booking</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+foot+'</div></div>'
-      );
+      var preset = state.paxBookingPreset || 'waiting';
+      state.paxBookingPreset = '';
+      if(preset !== 'portal_waiting' && preset !== 'old_waiting') preset = 'waiting';
+      return viewC4kParticipants({ title: 'Waiting List', bookingStatus: preset });
     }
     function sessionFeedbackEnsureState(){
       state.sessionFeedback = state.sessionFeedback || {};
@@ -34030,7 +34015,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='staff_ghost_teleport') bindStaffGhostTeleportModule();
       if(id==='portal_parent_teleport') bindParentGhostTeleportModule();
       if(id==='cs_cliq') bindCsCliqModule();
-      if(id==='clients'){
+      if(id==='clients' || id==='c4k_waitlist'){
         var root2 = $('workspace');
         function paxContactsFindById(pid){
           var L = paxContactsUnifiedList();
@@ -34048,11 +34033,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
-          var showJoined = bk === 'portal_waiting' || bk === 'old_waiting';
+          var showJoined = bk === 'waiting' || bk === 'portal_waiting' || bk === 'old_waiting';
           var showSource = showJoined;
           var showRegistered = bk === 'registered';
           var showTrial = bk === 'trial';
-          var showMoney = bk !== 'portal_waiting' && bk !== 'old_waiting' && bk !== 'cfk_leads';
+          var showMoney = bk !== 'waiting' && bk !== 'portal_waiting' && bk !== 'old_waiting' && bk !== 'cfk_leads';
+          root2.querySelectorAll('.pax-wait-extra').forEach(function(el){ el.hidden = !showJoined; });
           root2.querySelectorAll('.pax-joined-col').forEach(function(el){ el.hidden = !showJoined; });
           root2.querySelectorAll('.pax-source-col').forEach(function(el){ el.hidden = !showSource; });
           root2.querySelectorAll('.pax-registered-col').forEach(function(el){ el.hidden = !showRegistered; });
@@ -34072,6 +34058,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var byId = {};
           var L = paxContactsUnifiedList();
           for(var li = 0; li < L.length; li++){ byId[String(L[li].id)] = L[li]; }
+          var focusNames = null;
+          if(state.view === 'c4k_waitlist' && state.waitlistFocus && (state.waitlistFocus.prog || state.waitlistFocus.venue)){
+            focusNames = {};
+            var focusRows = state.waitlistFocus.segA
+              ? adminServiceBandWaitlistRows(state.waitlistFocus.prog, state.waitlistFocus.venue, state.waitlistFocus.day, state.waitlistFocus.segA, state.waitlistFocus.segB)
+              : adminCapacityWaitMatchRowsForProgVenue(state.waitlistFocus.prog, state.waitlistFocus.venue);
+            (focusRows || []).forEach(function(w){
+              var key = adminPortalNormalizedPersonName(w && w.pax);
+              if(key) focusNames[key] = true;
+            });
+          }
           var n = 0;
           var missed = [];
           root2.querySelectorAll('#paxContactsTbl tbody tr').forEach(function(tr){
@@ -34097,8 +34094,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               ).toLowerCase();
               if(blob.indexOf(q) < 0) nameOk = false;
             }
-            var ok = statusOk && fundOk && payOk && regOk && nameOk;
-            if(!ok && q && nameOk && fundOk && payOk && regOk && !statusOk) missed.push({ tr: tr, p: p });
+            var focusOk = true;
+            if(focusNames && !focusNames[adminPortalNormalizedPersonName(p.name)]) focusOk = false;
+            var ok = statusOk && fundOk && payOk && regOk && nameOk && focusOk;
+            if(!ok && q && nameOk && fundOk && payOk && regOk && focusOk && !statusOk) missed.push({ tr: tr, p: p });
             var ansCell = tr.querySelector('[data-pax-ans]');
             if(ansCell){
               ansCell.hidden = !showAns;
@@ -34360,7 +34359,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var ps = $('paxContactsSearch');
           if(ps) ps.addEventListener('input', paxContactsRefreshFilters);
           var pb = $('paxContactsBookingStatus');
-          if(pb) pb.addEventListener('change', paxContactsRefreshFilters);
+          if(pb) pb.addEventListener('change', function(){
+            var v = String(pb.value || '');
+            var waitingFamily = v === 'waiting' || v === 'portal_waiting' || v === 'old_waiting';
+            if(state.view === 'c4k_waitlist' && !waitingFamily){
+              state.paxBookingPreset = v;
+              setView('clients');
+              return;
+            }
+            if(state.view === 'clients' && waitingFamily){
+              state.paxBookingPreset = v;
+              setView('c4k_waitlist');
+              return;
+            }
+            paxContactsRefreshFilters();
+          });
           var pf = $('paxContactsFunding');
           if(pf) pf.addEventListener('change', paxContactsRefreshFilters);
           var ppay = $('paxContactsPayment');
