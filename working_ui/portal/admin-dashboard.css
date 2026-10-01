@@ -419,12 +419,13 @@
     .pax-contacts-tbl th{text-align:center;font-size:11px;font-weight:700;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
     .pax-contacts-tbl td{padding:12px;border-bottom:1px solid #eef2f7;vertical-align:middle;text-align:center;min-width:0}
     .pax-contacts-tbl tbody tr:hover{background:#f8fafc}
-    .pax-contacts-tbl td{vertical-align:top}
-    .pax-contacts-tbl td:first-child{text-align:left}
     .pax-contacts-tbl th.pax-contacts-photo-th{width:76px}
     .pax-contacts-tbl td.pax-contacts-photo-cell{width:76px;text-align:center;vertical-align:middle}
-    .pax-contacts-tbl td.pax-contacts-name-td{text-align:left}
-    .pax-contacts-tbl td.pax-contacts-meta{min-width:0;max-width:16rem}
+    .pax-contacts-tbl td.pax-contacts-name-td{text-align:center}
+    .pax-contacts-tbl td.pax-contacts-meta{min-width:0;max-width:16rem;text-align:center}
+    .pax-contacts-tbl td.pax-contacts-age{white-space:nowrap;text-align:center}
+    .pax-contacts-tbl td.pax-contacts-svc{text-align:center;white-space:nowrap}
+    .pax-contacts-tbl td.pax-contacts-slot{text-align:center;white-space:nowrap}
     .pax-contacts-tbl .pax-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;max-width:100%;overflow-wrap:break-word;text-align:center}
     .pax-contacts-tbl .pax-chip--private{background:#dcfce7;color:#166534}
     .pax-contacts-tbl .pax-chip--la-exempt{background:#ffedd5;color:#c2410c}
@@ -441,8 +442,8 @@
     .pax-contacts-tbl .pax-contacts-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;min-width:0}
     .pax-contacts-tbl .pax-contacts-chips--stack{flex-direction:column;align-items:center;flex-wrap:nowrap}
     .pax-contacts-tbl .pax-contacts-chips--stack > span{max-width:100%;white-space:normal;overflow-wrap:break-word;text-align:center}
-    .pax-contacts-tbl td.pax-contacts-name-td .pax-contacts-chips{margin-top:4px;justify-content:flex-start}
-    .pax-contacts-namecell{display:flex;align-items:flex-start;gap:10px;min-width:0;text-align:left}
+    .pax-contacts-tbl td.pax-contacts-name-td .pax-contacts-chips{margin-top:4px;justify-content:center}
+    .pax-contacts-namecell{display:flex;align-items:center;justify-content:center;gap:10px;min-width:0;text-align:center}
     .pax-contacts-namecell__body{min-width:0;flex:1 1 auto}
     .pax-contacts-avatar{
       position:relative;flex:0 0 52px;width:52px;height:52px;border-radius:12px;
@@ -457,10 +458,16 @@
     }
     .pax-contacts-avatar--yunis .portal-roster-avatar__img{object-position:center center}
     .pax-contacts-avatar.portal-roster-avatar--has-photo{color:transparent}
-    .pax-contacts-tbl .pax-contacts-namebtn{display:block;width:100%;text-align:left;border:0;background:transparent;padding:0;cursor:pointer;font:inherit;min-width:0}
+    .pax-contacts-tbl .pax-contacts-namebtn{display:block;width:100%;text-align:center;border:0;background:transparent;padding:0;cursor:pointer;font:inherit;min-width:0}
     .pax-contacts-tbl .pax-contacts-namebtn strong{display:block;color:var(--blue);font-weight:700;overflow-wrap:break-word}
     .pax-contacts-tbl .pax-contacts-namebtn .muted{display:block;font-size:12px;margin-top:2px;overflow-wrap:break-word}
-    .pax-contacts-tbl .pax-contacts-contact{font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word}
+    .pax-contacts-tbl .pax-svc-line,
+    .pax-contacts-tbl .pax-slot-line{white-space:nowrap;line-height:1.45;text-align:center}
+    .pax-contacts-tbl td.pax-contacts-who{text-align:center;min-width:0;max-width:16rem}
+    .pax-contacts-tbl .pax-who{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+    .pax-contacts-tbl .pax-who__name{font-weight:700;overflow-wrap:break-word;text-align:center}
+    .pax-contacts-tbl .pax-who__mail{font-size:12px;line-height:1.35;overflow-wrap:anywhere;text-align:center}
+    .pax-contacts-tbl .pax-who__phone{font-size:12px;line-height:1.35;white-space:nowrap;text-align:center}
     .pax-contacts-tbl .pax-owe{font-variant-numeric:tabular-nums;font-weight:700}
     .pax-contacts-tbl .pax-owe--zero{color:var(--success, #15803d)}
     .pax-contacts-tbl .pax-owe--due{color:var(--danger)}

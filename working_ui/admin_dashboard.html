@@ -182,7 +182,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-pay-names" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-slots-center" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -22166,9 +22166,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var label = (dayFull && dayFull !== '—')
         ? (dayFull + (t && t !== '—' ? ', ' + t : '') + venueBit)
         : ((t || '—') + (t && t !== '—' ? venueBit : ''));
-      var style = b.moved ? ' style="color:#dc2626;overflow-wrap:break-word"' : ' style="min-width:0;overflow-wrap:break-word"';
+      var style = b.moved ? ' style="color:#dc2626"' : '';
       var title = b.moved ? ' title="Previous day this term"' : '';
-      return '<div'+style+title+'>'+esc(label || '—')+'</div>';
+      return '<div class="pax-slot-line"'+style+title+'>'+esc(label || '—')+'</div>';
     }
     function paxContactsTodayIso(){
       var d = new Date();
@@ -22363,7 +22363,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!p || !String(p.name || '').trim()) return empty;
       if(paxContactsCrashOnlyClient(p)){
         return {
-          svc: '<div style="min-width:0;overflow-wrap:break-word">Crash courses</div>',
+          svc: '<div class="pax-svc-line">Crash courses</div>',
           slot: dash
         };
       }
@@ -22378,16 +22378,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var waitSvcs = p.service.services || [];
         var waitSlot = String(p.service.slotCurrent || '').trim();
         return {
-          svc: waitSvcs.length ? waitSvcs.map(function(s){ return '<div style="min-width:0;overflow-wrap:break-word">'+esc(s)+'</div>'; }).join('') : dash,
-          slot: (waitSlot && waitSlot !== '—') ? '<div style="min-width:0;overflow-wrap:break-word">'+esc(waitSlot)+'</div>' : dash
+          svc: waitSvcs.length ? waitSvcs.map(function(s){ return '<div class="pax-svc-line">'+esc(s)+'</div>'; }).join('') : dash,
+          slot: (waitSlot && waitSlot !== '—') ? '<div class="pax-slot-line">'+esc(waitSlot)+'</div>' : dash
         };
       }
       if(!bands.length) return empty;
       var svc = bands.map(function(b){
         var prog = String(b.programme || '').trim() || 'Service';
-        var style = b.moved ? ' style="color:#dc2626;overflow-wrap:break-word"' : ' style="min-width:0;overflow-wrap:break-word"';
+        var style = b.moved ? ' style="color:#dc2626"' : '';
         var title = b.moved ? ' title="Previous day this term"' : '';
-        return '<div'+style+title+'>'+esc(prog)+'</div>';
+        return '<div class="pax-svc-line"'+style+title+'>'+esc(prog)+'</div>';
       }).join('');
       var slot = bands.map(function(b){
         return paxContactsBandLineHtml(b);
@@ -22576,10 +22576,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '';
         var ageY = paxContactsAgeYears(p);
         var ageCell = (ageY != null) ? String(ageY) : '<span class="muted">—</span>';
-        var emPhoneParts = [];
-        if(emRaw && emRaw !== '—') emPhoneParts.push('<div style="overflow-wrap:break-word">'+esc(emRaw)+'</div>');
-        if(phRaw && phRaw !== '—') emPhoneParts.push('<div style="white-space:nowrap">'+esc(phRaw)+'</div>');
-        var emPhone = emPhoneParts.length ? emPhoneParts.join('') : '<span class="muted">—</span>';
+        var whoParts = ['<div class="pax-who__name">'+contact+'</div>'];
+        if(emRaw && emRaw !== '—') whoParts.push('<div class="pax-who__mail">'+esc(emRaw)+'</div>');
+        if(phRaw && phRaw !== '—') whoParts.push('<div class="pax-who__phone">'+esc(phRaw)+'</div>');
+        var whoHtml = '<div class="pax-who">'+whoParts.join('')+'</div>';
         var cells = paxContactsServiceSlotCells(p);
         var photoName = String(p.name || '').replace(/_/g, ' ').trim();
         var photoYunis = /^yunis\b/i.test(photoName);
@@ -22629,16 +22629,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'">'+
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
-          '<td class="pax-contacts-name-td" style="min-width:0"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+'</div></div></td>'+
+          '<td class="pax-contacts-name-td"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+'</div></div></td>'+
           '<td class="pax-contacts-meta">'+supportCell+'</td>'+
           '<td class="pax-contacts-meta">'+fundingCell+'</td>'+
           '<td class="pax-contacts-meta">'+paymentCell+'</td>'+
-          '<td style="white-space:nowrap">'+ageCell+'</td>'+
-          '<td class="pax-contacts-contact" style="min-width:0;max-width:14rem">'+cells.svc+'</td>'+
-          '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+cells.slot+'</td>'+
-          '<td class="pax-joined-col" hidden style="white-space:nowrap;min-width:0">'+paxContactsJoinedCell(p)+'</td>'+
-          '<td style="min-width:0;overflow-wrap:break-word">'+contact+'</td>'+
-          '<td class="pax-contacts-contact" style="min-width:0">'+emPhone+'</td>'+
+          '<td class="pax-contacts-age">'+ageCell+'</td>'+
+          '<td class="pax-contacts-svc">'+cells.svc+'</td>'+
+          '<td class="pax-contacts-slot">'+cells.slot+'</td>'+
+          '<td class="pax-joined-col" hidden>'+paxContactsJoinedCell(p)+'</td>'+
+          '<td class="pax-contacts-who">'+whoHtml+'</td>'+
           '<td class="pax-reg-ans-col" data-pax-ans hidden style="min-width:0;max-width:26rem;white-space:normal;overflow-wrap:break-word"></td>'+
           '</tr>'
         );
@@ -22706,7 +22705,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
         '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th>Funding</th><th>Payment</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th>Contact</th><th>Email / phone</th>'+
+        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th>Funding</th><th>Payment</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th>Contact</th>'+
         '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
