@@ -300,7 +300,10 @@ async function handleBillingRequestFulfilled(
   const br = await gocardlessGetBillingRequest(brId);
   if (!br.ok) return { ok: false, reason: br.error, detail: br.detail };
 
-  const mandateId = clean(br.data.links?.mandate, 80);
+  /* Mandate-only setups (first month already paid) put the id on
+   * mandate_request_mandate. Payment+mandate setups use mandate. */
+  const brLinks = br.data.links || {};
+  const mandateId = clean(brLinks.mandate || brLinks.mandate_request_mandate, 80);
   const customerId = clean(br.data.links?.customer, 80);
   const paymentId = clean(br.data.links?.payment, 80);
 
