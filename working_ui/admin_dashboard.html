@@ -182,7 +182,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-fund-pay-colors" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-pay-names" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -22408,7 +22408,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /**
      * Three funding categories. Payment is separate and can be more than one.
-     * LA/NHS funded is billed to the authority: H&F and NHS monthly in arrears, Ealing over 52 weeks.
+     * LA/NHS funded is billed to the authority: BACS (Ealing), or monthly arrears for NHS, NHS/ILA, or H&F.
      */
     function paxContactsFundingPayment(p){
       var src = String((p && (p._adminFundingLabel || (p.reg && p.reg.fundingRoute))) || '').trim();
@@ -22451,17 +22451,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         payments.push({ id: id, label: label });
       }
       if(funding === 'la_nhs'){
-        if(/\bealing\b/.test(blob)) addPay('ealing_52', '52 weeks');
-        else addPay('arrears', 'Monthly in arrears');
+        if(/\bealing\b/.test(blob)) addPay('bacs_ealing', 'BACS (Ealing)');
+        else if(/nhs\s*\/\s*ila|nhs\s*\(\s*ila\s*\)|\bila\b/.test(blob)) addPay('arrears_nhs_ila', 'Monthly Arrears (NHS/ILA)');
+        else if(/\bnhs\b|\bsbs\b/.test(blob)) addPay('arrears_nhs', 'Monthly Arrears (NHS)');
+        else if(/hammer|fulham|h\s*&\s*f|lbhf/.test(blob)) addPay('arrears_hf', 'Monthly Arrears (H&F)');
       }else if(funding){
         var hasGc = /gocardless|go cardless/.test(blob);
-        var hasCard = /apple|stripe|payment link|\bcard\b/.test(blob);
+        var hasLink = /payment link/.test(blob);
+        var hasCard = /apple|stripe|\bcard\b/.test(blob);
         var hasBank = /\bbank\b/.test(blob);
         var isFlexi = /\bflexi\b|1st half|2 per term/.test(blob);
-        var plan = isFlexi ? 'Flexi' : '1';
         if(hasGc) addPay('gocardless', 'GoCardless');
-        if(hasBank) addPay(isFlexi ? 'bank_flexi_manual' : 'bank_1_manual', 'Bank transfer (' + plan + ') · manual');
-        if(hasCard) addPay(isFlexi ? 'bank_flexi_card' : 'bank_1_card', 'Bank transfer (' + plan + ') · Apple/Stripe');
+        if(hasLink) addPay('payment_link', 'Payment Link');
+        if(hasCard) addPay('apple_stripe', 'Apple Pay/Stripe');
+        if(hasBank) addPay(isFlexi ? 'bank_flexi' : 'bank_1', isFlexi ? 'Bank Transfer (Flexi-Manually)' : 'Bank Transfer (One off-Manually)');
       }
       return { funding: funding, fundingLabel: fundingLabel, payments: payments };
     }
@@ -22470,10 +22473,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var list = payments || [];
       for(var i = 0; i < list.length; i++){
         var id = list[i].id;
-        if(filterId === 'bank_1' && id.indexOf('bank_1_') === 0) return true;
-        if(filterId === 'bank_flexi' && id.indexOf('bank_flexi_') === 0) return true;
-        if(filterId === 'card' && id.indexOf('_card') > 0) return true;
-        if(filterId === 'manual' && id.indexOf('_manual') > 0) return true;
         if(id === filterId) return true;
       }
       return false;
@@ -22522,12 +22521,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '';
         var payKind = {
           gocardless: 'gc',
-          bank_1_manual: 'bank1',
-          bank_1_card: 'bank1-card',
-          bank_flexi_manual: 'flexi',
-          bank_flexi_card: 'flexi-card',
-          arrears: 'arrears',
-          ealing_52: 'ealing'
+          bank_1: 'bank1',
+          bank_flexi: 'flexi',
+          apple_stripe: 'apple',
+          payment_link: 'link',
+          bacs_ealing: 'ealing',
+          arrears_nhs: 'arrears-nhs',
+          arrears_nhs_ila: 'arrears-ila',
+          arrears_hf: 'arrears-hf'
         };
         var payChips = (money.payments || []).map(function(pay){
           return '<span class="pax-chip pax-chip--'+(payKind[pay.id] || 'bank1')+'" title="Payment">'+esc(pay.label)+'</span>';
@@ -22604,13 +22605,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</select></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsPayment">Payment</label><select class="sel" id="paxContactsPayment">'+
         '<option value="all">All payments</option>'+
-        '<option value="bank_1">Bank transfer (1)</option>'+
-        '<option value="bank_flexi">Bank transfer (Flexi)</option>'+
-        '<option value="manual">Manual</option>'+
-        '<option value="card">Apple/Stripe</option>'+
+        '<option value="bank_1">Bank Transfer (One off-Manually)</option>'+
+        '<option value="bank_flexi">Bank Transfer (Flexi-Manually)</option>'+
+        '<option value="apple_stripe">Apple Pay/Stripe</option>'+
         '<option value="gocardless">GoCardless</option>'+
-        '<option value="arrears">Monthly in arrears</option>'+
-        '<option value="ealing_52">52 weeks</option>'+
+        '<option value="bacs_ealing">BACS (Ealing)</option>'+
+        '<option value="arrears_nhs">Monthly Arrears (NHS)</option>'+
+        '<option value="arrears_nhs_ila">Monthly Arrears (NHS/ILA)</option>'+
+        '<option value="arrears_hf">Monthly Arrears (H&amp;F)</option>'+
+        '<option value="payment_link">Payment Link</option>'+
         '</select></div>'+
         '<div class="pax-contacts-fld">'+
         '<label class="muted" for="paxContactsRegQuestion" style="display:block;font-size:11px;font-weight:700;margin-bottom:6px;letter-spacing:.02em">Registration question</label>'+
