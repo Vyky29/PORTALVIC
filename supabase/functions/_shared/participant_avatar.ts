@@ -193,7 +193,8 @@ export async function lookupLatestParentFormPhotoPath(
     if (!row?.photo_storage_path) continue;
     const rowNorm = normalizeParticipantLookupName(String(row.participant_name || ""));
     if (rowNorm !== norm) continue;
-    if (dobIso && row.participant_dob) {
+    if (dobIso) {
+      if (!row.participant_dob) continue;
       if (String(row.participant_dob).slice(0, 10) !== dobIso.slice(0, 10)) continue;
     }
     return String(row.photo_storage_path);
@@ -278,28 +279,10 @@ export async function syncParentFormPhotoToParticipantAvatar(
       }
       return true;
     }
-    /* First-name match only when unique among portal_participants. */
     return false;
   });
 
-  let contactId = matches.length === 1 ? String(matches[0].contact_id || "") : "";
-
-  if (!contactId) {
-    const first = norm.split(/\s+/)[0] || "";
-    if (first.length >= 2) {
-      const firstHits = (parts || []).filter((p) => {
-        const dn = normalizeParticipantLookupName(p.display_name);
-        const pf = dn.split(/\s+/)[0] || "";
-        if (pf !== first) return false;
-        if (participantDob && p.dob_iso) {
-          return String(p.dob_iso).slice(0, 10) === participantDob.slice(0, 10);
-        }
-        return !participantDob;
-      });
-      if (firstHits.length === 1) contactId = String(firstHits[0].contact_id || "");
-    }
-  }
-
+  const contactId = matches.length === 1 ? String(matches[0].contact_id || "") : "";
   if (!contactId) return null;
   const result = await saveParticipantAvatarWithArchive(
     admin,

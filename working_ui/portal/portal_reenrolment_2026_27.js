@@ -1171,11 +1171,6 @@
   function resolveAvatarUrl(data) {
     var p = data && data.participant;
     if (p && p.avatar_url) return String(p.avatar_url);
-    var name = participantDisplayName(data);
-    var cid = p && p.contact_id;
-    if (typeof global.portalParticipantPhotoUrl === "function") {
-      return global.portalParticipantPhotoUrl(name, "", cid) || "";
-    }
     return "";
   }
 

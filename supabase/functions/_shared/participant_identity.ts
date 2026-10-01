@@ -435,3 +435,47 @@ export function participantIdentityMatches(
 
   return false;
 }
+
+/**
+ * Parent gallery and download. A shared first name is not enough.
+ * Bare "Ayaan" session photos stay with the original roster child, not Ayaan Towle.
+ * "Yusuf Harzi" never opens for Yusuf Ahmed.
+ */
+export function parentMaySeeChildPhoto(
+  input: ParticipantIdentityInput,
+  rowName: string,
+  rowClientId: string,
+  sameFirstNameContactIds: string[],
+): boolean {
+  if (!participantIdentityMatches(input, rowName, rowClientId)) return false;
+
+  const first = normalizeParticipantLookupName(
+    input.firstName || String(input.displayName || "").trim().split(/\s+/)[0] || "",
+  );
+  const last = normalizeParticipantLookupName(
+    input.lastName ||
+      String(input.displayName || "").trim().split(/\s+/).slice(1).join(" "),
+  );
+  const row = normalizeParticipantLookupName(rowName);
+  const parts = row.split(" ").filter(Boolean);
+
+  if (parts.length >= 2 && last) {
+    const rowLast = parts[parts.length - 1];
+    const sameFamily = rowLast.length >= 2 &&
+      (last.startsWith(rowLast) || rowLast.startsWith(last));
+    if (!sameFamily) return false;
+  }
+
+  const nameIsBare = !row || (parts.length === 1 && parts[0] === first);
+  const idSlug = slugifyParticipantKey(rowClientId);
+  const idIsSharedFirstName = !idSlug || idSlug === slugifyParticipantKey(first);
+  const peers = [...new Set(
+    (sameFirstNameContactIds || []).map((id) => String(id || "").trim()).filter(Boolean),
+  )];
+  if (nameIsBare && idIsSharedFirstName && peers.length > 1) {
+    const owner = peers.slice().sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))[0];
+    if (owner && owner !== String(input.contactId || "")) return false;
+  }
+
+  return true;
+}

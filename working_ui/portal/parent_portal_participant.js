@@ -502,20 +502,7 @@
   function participantPhotoHtml(p) {
     p = p || {};
     var name = p.display_name || "Participant";
-    var contactId = p.contact_id || "";
-    if (p.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
-      global.portalRegisterParticipantStorageAvatar(contactId, name, p.avatar_url);
-    }
-    var candidates =
-      typeof global.portalParticipantPhotoPathCandidates === "function"
-        ? global.portalParticipantPhotoPathCandidates(name, p.avatar_url || "", contactId)
-        : [];
-    if (!candidates.length && typeof global.portalParticipantPhotoUrl === "function") {
-      var one = global.portalParticipantPhotoUrl(name, p.avatar_url || "", contactId);
-      if (one) candidates = [one];
-    }
-    var url = candidates.length ? candidates[0] : "";
-    var fallbacks = candidates.slice(1).join("|");
+    var url = String(p.avatar_url || "").trim();
     var initials =
       typeof global.portalParticipantInitials === "function"
         ? global.portalParticipantInitials(name)
@@ -531,8 +518,7 @@
         '"><img src="' +
         esc(url) +
         '" alt="" width="64" height="64" loading="eager" decoding="async" draggable="false"' +
-        (fallbacks ? ' data-photo-fallbacks="' + esc(fallbacks) + '"' : "") +
-        ' onerror="if(window.portalParticipantPhotoTryFallback){window.portalParticipantPhotoTryFallback(this);}else{this.remove();this.parentElement.classList.remove(\'pp-pax-photo--img\');}" /><span class="pp-pax-photo__init" aria-hidden="true">' +
+        ' onerror="this.remove();this.parentElement.classList.remove(\'pp-pax-photo--img\');" /><span class="pp-pax-photo__init" aria-hidden="true">' +
         esc(initials) +
         "</span></div>"
       );

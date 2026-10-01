@@ -1063,24 +1063,14 @@
     );
   }
 
+  /** Parent portal: only the photo stored on this child's own record. Never a shared roster file or another child's upload. */
   function childPhotoCandidates(c, urlOverride) {
-    var name = c.display_name || "Participant";
-    var contactId = c.contact_id || "";
     if (urlOverride != null) {
       var pending = String(urlOverride || "").trim();
       return pending ? [pending] : [];
     }
-    if (c.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
-      global.portalRegisterParticipantStorageAvatar(contactId, name, c.avatar_url);
-    }
-    if (typeof global.portalParticipantPhotoPathCandidates === "function") {
-      return global.portalParticipantPhotoPathCandidates(name, c.avatar_url || "", contactId);
-    }
-    if (typeof global.portalParticipantPhotoUrl === "function") {
-      var one = global.portalParticipantPhotoUrl(name, c.avatar_url || "", contactId);
-      return one ? [one] : [];
-    }
-    return c.avatar_url ? [String(c.avatar_url)] : [];
+    var own = String((c && c.avatar_url) || "").trim();
+    return own ? [own] : [];
   }
 
   function childHasResolvedPhoto(c) {
@@ -1091,7 +1081,6 @@
     var name = c.display_name || "Participant";
     var candidates = childPhotoCandidates(c, urlOverride);
     var url = candidates.length ? candidates[0] : "";
-    var fallbacks = candidates.slice(1).join("|");
     var initials =
       typeof global.portalParticipantInitials === "function"
         ? global.portalParticipantInitials(name)
@@ -1108,8 +1097,7 @@
         '<img src="' +
         esc(url) +
         '" alt="" width="80" height="80" loading="lazy" decoding="async" draggable="false"' +
-        (fallbacks ? ' data-photo-fallbacks="' + esc(fallbacks) + '"' : "") +
-        ' onerror="if(window.portalParticipantPhotoTryFallback){window.portalParticipantPhotoTryFallback(this);}else{this.remove();this.parentElement.classList.remove(\'pp-child-photo--has-img\');}" />' +
+        ' onerror="this.remove();this.parentElement.classList.remove(\'pp-child-photo--has-img\');" />' +
         '<span class="pp-child-photo__init" aria-hidden="true">' +
         esc(initials) +
         "</span></div>"
@@ -1274,9 +1262,6 @@
         void loadParticipantDetail(cid);
         return;
       }
-      if (typeof global.portalRegisterParticipantStorageAvatar === "function" && newUrl) {
-        global.portalRegisterParticipantStorageAvatar(cid, c.display_name, newUrl);
-      }
       setChildPhotoStatus(block, "", "");
     } catch (_e) {
       setChildPhotoStatus(block, "Network error saving photo.", "error");
@@ -1429,9 +1414,6 @@
       } else {
         childList.innerHTML = children
           .map(function (c) {
-            if (c.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
-              global.portalRegisterParticipantStorageAvatar(c.contact_id, c.display_name, c.avatar_url);
-            }
             var chips = [];
             if (c.portal_access === "former" || c.in_class === false) {
               chips.push('<span class="pp-chip pp-chip--former">Former client</span>');
@@ -1496,9 +1478,6 @@
       rememberContactId(contactId);
 
       var p = body.participant || {};
-      if (p.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
-        global.portalRegisterParticipantStorageAvatar(p.contact_id, p.display_name, p.avatar_url);
-      }
       if (title) title.textContent = (p.display_name || "Participant") + "\u2019s Hub";
       var refreshBtn = $("ppParticipantRefresh");
       if (refreshBtn) refreshBtn.setAttribute("data-contact-id", contactId);

@@ -33,6 +33,8 @@ import {
   acatGroupFeedbackEligibleSlugs,
   parentPortalSuppressSessionProgress,
   participantBlocksExtraBooking,
+  normalizeParticipantLookupName,
+  parentMaySeeChildPhoto,
   participantIdentityMatches,
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
@@ -1687,6 +1689,30 @@ Deno.serve(async (req) => {
   let achievements: Record<string, unknown>[] = [];
   let hasAchievementPhotos = false;
 
+  const firstToken = normalizeParticipantLookupName(
+    identityInput.firstName || String(displayName || "").split(/\s+/)[0] || "",
+  );
+  let sameFirstNameContactIds: string[] = [contactId];
+  if (firstToken) {
+    const { data: peerRows } = await supabase
+      .from("portal_participants")
+      .select("contact_id, display_name, first_name")
+      .or(`first_name.ilike.${firstToken},display_name.ilike.${firstToken}%`)
+      .limit(50);
+    const ids = (peerRows || []).filter((r) => {
+      const f = normalizeParticipantLookupName(
+        r.first_name || String(r.display_name || "").split(/\s+/)[0] || "",
+      );
+      return f === firstToken;
+    }).map((r) => String(r.contact_id || "")).filter(Boolean);
+    if (!ids.includes(contactId)) ids.push(contactId);
+    sameFirstNameContactIds = ids;
+  }
+
+  function achievementVisibleToThisParent(rowName: string, rowClientId: string): boolean {
+    return parentMaySeeChildPhoto(identityInput, rowName, rowClientId, sameFirstNameContactIds);
+  }
+
   async function probeAchievementPhotos(): Promise<boolean> {
     const expandedSlugs = expandParticipantClientSlugs(clientSlugs);
     const achProbeSelect = "id, client_name, client_id";
@@ -1695,8 +1721,7 @@ Deno.serve(async (req) => {
       for (const row of rows || []) {
         if (!row || typeof row !== "object") continue;
         const rec = row as Record<string, unknown>;
-        if (!participantIdentityMatches(
-          identityInput,
+        if (!achievementVisibleToThisParent(
           String(rec.client_name || ""),
           String(rec.client_id || ""),
         )) continue;
@@ -1740,8 +1765,7 @@ Deno.serve(async (req) => {
       for (const row of rows || []) {
         if (!row || typeof row !== "object") continue;
         const rec = row as Record<string, unknown>;
-        if (!participantIdentityMatches(
-          identityInput,
+        if (!achievementVisibleToThisParent(
           String(rec.client_name || ""),
           String(rec.client_id || ""),
         )) continue;

@@ -11,9 +11,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
 import {
-  participantIdentityMatches,
-  resolveParticipantClientSlugs,
-  resolveParticipantLookupNames,
+  normalizeParticipantLookupName,
+  parentMaySeeChildPhoto,
 } from "../_shared/participant_identity.ts";
 
 const ACH_BUCKET = "participant-achievements";
@@ -93,11 +92,32 @@ Deno.serve(async (req) => {
     return parentPortalJsonInvalid(403);
   }
 
+  const firstToken = normalizeParticipantLookupName(
+    identityInput.firstName || String(displayName || "").split(/\s+/)[0] || "",
+  );
+  let sameFirstNameContactIds = [contactId];
+  if (firstToken) {
+    const { data: peerRows } = await supabase
+      .from("portal_participants")
+      .select("contact_id, display_name, first_name")
+      .or(`first_name.ilike.${firstToken},display_name.ilike.${firstToken}%`)
+      .limit(50);
+    const ids = (peerRows || []).filter((r) => {
+      const f = normalizeParticipantLookupName(
+        r.first_name || String(r.display_name || "").split(/\s+/)[0] || "",
+      );
+      return f === firstToken;
+    }).map((r) => String(r.contact_id || "")).filter(Boolean);
+    if (!ids.includes(contactId)) ids.push(contactId);
+    sameFirstNameContactIds = ids;
+  }
+
   if (
-    !participantIdentityMatches(
+    !parentMaySeeChildPhoto(
       identityInput,
       String(photo.client_name || ""),
       String(photo.client_id || ""),
+      sameFirstNameContactIds,
     )
   ) {
     return parentPortalJsonInvalid(403);
