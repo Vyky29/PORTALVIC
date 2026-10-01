@@ -182,7 +182,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-slots-center" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-trial-dates" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -21098,6 +21098,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       out = paxContactsDedupeByPerson(paxContactsAppendLiveWaitlist(paxContactsAppendUnlistedParticipants(out)));
       out.forEach(paxContactsApplyLiveFacts);
+      out = paxContactsAppendUnmatchedTrials(out);
       out.sort(function(a, b){
         return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), undefined, { sensitivity: 'base' });
       });
@@ -21834,8 +21835,160 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(paxContactsIsPortalRegistration(p)) return 'registered';
       return 'registered';
     }
+    function paxContactsTrialNameKey(name){
+      if(typeof adminServiceNormPaxKey === 'function') return adminServiceNormPaxKey(name);
+      return String(name || '').toLowerCase()
+        .replace(/\([^)]*trial[^)]*\)/gi, ' ')
+        .replace(/\btrial\b/gi, ' ')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    /** Eddie Ri is Eddie Ritzema. Do not fold that onto Eddie Mckenzie. */
+    function paxContactsTrialAliasKey(key){
+      if(key === 'eddie ri') return 'eddie ritzema';
+      return key || '';
+    }
+    function paxContactsTrialDisplayName(name){
+      return String(name || '')
+        .replace(/\s*\([^)]*trial[^)]*\)/ig, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    function paxContactsIsoFromStamp(stamp){
+      var m = String(stamp || '').match(/^(\d{4}-\d{2}-\d{2})/);
+      return m ? m[1] : '';
+    }
+    function paxContactsDaysApart(a, b){
+      if(!a || !b) return 99;
+      var da = Date.parse(a + 'T00:00:00Z');
+      var db = Date.parse(b + 'T00:00:00Z');
+      if(!isFinite(da) || !isFinite(db)) return 99;
+      return Math.abs(Math.round((da - db) / 86400000));
+    }
+    function paxContactsClockLabel(raw){
+      var m = String(raw || '').trim().match(/^(\d{1,2}):(\d{2})/);
+      if(!m) return '';
+      var h = parseInt(m[1], 10);
+      if(!isFinite(h)) return '';
+      var ap = h >= 12 ? 'pm' : 'am';
+      var h12 = h % 12;
+      if(h12 === 0) h12 = 12;
+      return h12 + ':' + m[2] + ' ' + ap;
+    }
+    function paxContactsTidyTimeLabel(label){
+      var s = String(label || '').replace(/\u2013|\u2014/g, '-').trim();
+      if(!s) return '';
+      var parts = s.split(/\s*(?:-|to)\s*/i);
+      if(parts.length === 2){
+        var a = paxContactsLooseClock(parts[0]);
+        var b = paxContactsLooseClock(parts[1]);
+        if(a && b) return a + ' to ' + b;
+      }
+      return s;
+    }
+    function paxContactsLooseClock(raw){
+      var m = String(raw || '').trim().match(/^(\d{1,2})[.:](\d{2})/);
+      if(!m) return paxContactsClockLabel(raw);
+      return paxContactsClockLabel(('0' + m[1]).slice(-2) + ':' + m[2]);
+    }
+    function paxContactsTodayIso(){
+      var d = new Date();
+      var m = d.getMonth() + 1;
+      var day = d.getDate();
+      return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+    }
+    function paxContactsTrialStateLabel(sessionIso){
+      if(!sessionIso) return '';
+      return sessionIso > paxContactsTodayIso() ? 'On Trial' : 'Trialled';
+    }
+    function paxContactsTrialsForPerson(p){
+      var key = paxContactsTrialAliasKey(paxContactsTrialNameKey(p && p.name));
+      if(!key) return [];
+      var rows = window.PAX_CONTACTS_TRIALS || [];
+      var out = [];
+      var i;
+      for(i = 0; i < rows.length; i++){
+        if(paxContactsTrialAliasKey(paxContactsTrialNameKey(rows[i].name)) === key) out.push(rows[i]);
+      }
+      out.sort(function(a, b){
+        var da = String(a.sessionIso || '');
+        var db = String(b.sessionIso || '');
+        if(da !== db) return da < db ? 1 : -1;
+        return 0;
+      });
+      return out;
+    }
+    function paxContactsTrialLatestIso(p){
+      var rows = paxContactsTrialsForPerson(p);
+      return rows.length ? String(rows[0].sessionIso || '') : '';
+    }
+    function paxContactsTrialPlain(p){
+      var rows = paxContactsTrialsForPerson(p);
+      var booked = [];
+      var session = [];
+      rows.forEach(function(t){
+        booked.push(paxContactsFormatJoinedDay(t.bookedIso) || '');
+        var bits = [paxContactsFormatJoinedDay(t.sessionIso), paxContactsTrialStateLabel(t.sessionIso)];
+        var when = paxContactsTidyTimeLabel(t.time);
+        var venue = String(t.venue || '').trim();
+        var where = [t.service || '', when].filter(Boolean).join(', ');
+        if(venue) where = where ? (where + ' (' + venue.toUpperCase() + ')') : venue.toUpperCase();
+        session.push([bits.filter(Boolean).join(' · '), where].filter(Boolean).join(' · '));
+      });
+      return { booked: booked.filter(Boolean).join(' | '), session: session.filter(Boolean).join(' | ') };
+    }
+    function paxContactsTrialCells(p){
+      var dash = '<span class="muted">—</span>';
+      var rows = paxContactsTrialsForPerson(p);
+      if(!rows.length) return { booked: dash, session: dash };
+      var booked = rows.map(function(t){
+        var label = paxContactsFormatJoinedDay(t.bookedIso);
+        return '<div class="pax-slot-line">'+(label ? esc(label) : '—')+'</div>';
+      }).join('');
+      var session = rows.map(function(t){
+        var day = paxContactsFormatJoinedDay(t.sessionIso);
+        var state = paxContactsTrialStateLabel(t.sessionIso);
+        var head = [day, state].filter(Boolean).join(' · ');
+        var when = paxContactsTidyTimeLabel(t.time);
+        var venue = String(t.venue || '').trim();
+        var where = [String(t.service || '').trim(), when].filter(Boolean).join(', ');
+        if(venue) where = where ? (where + ' (' + venue.toUpperCase() + ')') : venue.toUpperCase();
+        return '<div class="pax-trial-block">'+
+          '<div class="pax-slot-line">'+esc(head || '—')+'</div>'+
+          (where ? '<div class="pax-slot-line">'+esc(where)+'</div>' : '')+
+          '</div>';
+      }).join('');
+      return { booked: booked, session: session };
+    }
+    function paxContactsAppendUnmatchedTrials(rows){
+      var trials = window.PAX_CONTACTS_TRIALS || [];
+      if(!trials.length) return rows;
+      var seen = Object.create(null);
+      rows.forEach(function(p){
+        var key = paxContactsTrialAliasKey(paxContactsTrialNameKey(p && p.name));
+        if(key && paxContactsTrialsForPerson(p).length) seen[key] = true;
+      });
+      var added = Object.create(null);
+      trials.forEach(function(t){
+        var key = paxContactsTrialAliasKey(paxContactsTrialNameKey(t.name));
+        if(!key || seen[key] || added[key]) return;
+        added[key] = true;
+        var clean = paxContactsTrialDisplayName(t.name);
+        rows.push({
+          id: 'trial-' + key.replace(/\s+/g, '-'),
+          name: clean || t.name,
+          bookingStatus: 'trial',
+          parentDisplay: '',
+          reg: {},
+          _trialOnly: true
+        });
+      });
+      return rows;
+    }
     function paxContactsMatchesBookingStatus(p, bk){
       if(bk === 'all') return true;
+      if(bk === 'trial') return paxContactsTrialsForPerson(p).length > 0;
       return paxContactsBucket(p) === bk;
     }
     function paxContactsBookingStatusOptionsHtml(){
@@ -21846,7 +21999,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<option value="booking_history">OLD CLIENTS</option>'+
         '<option value="registered">REGISTERED</option>'+
         '<option value="cfk_leads">CFK LEADS</option>'+
-        '<option value="trial">On a trial</option>'
+        '<option value="trial">On Trial / Trialled</option>'
       );
     }
     /** Compact booked-services cell for the participants list (programme + day abbreviations). */
@@ -22028,6 +22181,146 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_cp){
         return false;
       }
+    }
+    /**
+     * Trials the office already placed: schedule_overrides is_trial, plus the post-trial
+     * offer when the seat was folded into term. Booking day prefers the reservation.
+     */
+    async function paxContactsLoadTrials(){
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(!client || typeof client.from !== 'function') return false;
+      var ovRes = null;
+      var offerRes = null;
+      var holdRes = null;
+      try{
+        ovRes = await client.from('schedule_overrides')
+          .select('created_at,session_date,anchor_start,anchor_end,anchor_venue,status,payload')
+          .filter('payload->>is_trial', 'eq', 'true')
+          .limit(300);
+      }catch(_ov){ ovRes = null; }
+      try{
+        offerRes = await client.from('portal_post_trial_offers')
+          .select('participant_name,status,trial_session_date,trial_time_label,trial_venue,trial_service,created_at,meta')
+          .limit(200);
+      }catch(_off){ offerRes = null; }
+      try{
+        holdRes = await client.from('portal_booking_slot_reservations')
+          .select('participant_name,created_at,date_iso,service_name,time_label,venue,status')
+          .in('status', ['validated', 'released'])
+          .limit(300);
+      }catch(_hold){ holdRes = null; }
+      var groups = Object.create(null);
+      function touch(rec){
+        var keyName = paxContactsTrialAliasKey(paxContactsTrialNameKey(rec.name));
+        if(!keyName || !rec.sessionIso) return;
+        var k = keyName + '|' + rec.sessionIso;
+        var g = groups[k];
+        if(!g){
+          groups[k] = {
+            name: paxContactsTrialDisplayName(rec.name) || rec.name,
+            keyName: keyName,
+            sessionIso: rec.sessionIso,
+            bookedIso: rec.bookedIso || '',
+            service: rec.service || '',
+            time: rec.time || '',
+            venue: rec.venue || '',
+            live: !!rec.live,
+            fromOverride: !!rec.fromOverride
+          };
+          return;
+        }
+        if(rec.bookedIso && (!g.bookedIso || rec.bookedIso < g.bookedIso)) g.bookedIso = rec.bookedIso;
+        if(rec.service && !g.service) g.service = rec.service;
+        if(rec.live && rec.time) g.time = rec.time;
+        else if(rec.time && !g.time) g.time = rec.time;
+        if(rec.venue && !g.venue) g.venue = rec.venue;
+        if(rec.live) g.live = true;
+        if(rec.fromOverride) g.fromOverride = true;
+        if(rec.name && !/\btrial\b/i.test(rec.name)) g.name = paxContactsTrialDisplayName(rec.name);
+      }
+      function findClose(keyName, day, windowDays){
+        var best = null;
+        var bestD = 99;
+        Object.keys(groups).forEach(function(k){
+          var g = groups[k];
+          if(!g || g.keyName !== keyName) return;
+          var d = paxContactsDaysApart(g.sessionIso, day);
+          if(d <= windowDays && d < bestD){ best = g; bestD = d; }
+        });
+        return best;
+      }
+      var ovRows = (ovRes && !ovRes.error && ovRes.data) ? ovRes.data : [];
+      ovRows.forEach(function(ov){
+        var payload = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+        var name = payload.replacement_client_name || payload.to_client_name || payload.client_name || '';
+        var live = String(ov.status || '').toLowerCase() !== 'cancelled';
+        var start = paxContactsClockLabel(ov.anchor_start);
+        var end = paxContactsClockLabel(ov.anchor_end);
+        touch({
+          name: name,
+          sessionIso: String(ov.session_date || '').slice(0, 10),
+          bookedIso: paxContactsIsoFromStamp(ov.created_at),
+          service: '',
+          time: (start && end) ? (start + ' to ' + end) : (start || end || ''),
+          venue: String(ov.anchor_venue || '').trim(),
+          live: live,
+          fromOverride: live
+        });
+      });
+      Object.keys(groups).forEach(function(k){
+        if(!groups[k].live) delete groups[k];
+      });
+      var offerRows = (offerRes && !offerRes.error && offerRes.data) ? offerRes.data : [];
+      offerRows.forEach(function(o){
+        if(String(o.status || '') === 'cancelled') return;
+        var keyName = paxContactsTrialAliasKey(paxContactsTrialNameKey(o.participant_name));
+        var original = paxContactsIsoFromStamp(o.meta && o.meta.original_trial_date);
+        var day = original || String(o.trial_session_date || '').slice(0, 10);
+        var hit = findClose(keyName, day, original ? 3 : 1);
+        if(hit){
+          if(!hit.service && o.trial_service) hit.service = o.trial_service;
+          if(!hit.time && o.trial_time_label) hit.time = paxContactsTidyTimeLabel(o.trial_time_label);
+          if(!hit.venue && o.trial_venue) hit.venue = o.trial_venue;
+          var booked = paxContactsIsoFromStamp(o.created_at);
+          if(booked && (!hit.bookedIso || booked < hit.bookedIso)) hit.bookedIso = booked;
+          return;
+        }
+        touch({
+          name: o.participant_name,
+          sessionIso: day,
+          bookedIso: paxContactsIsoFromStamp(o.created_at),
+          service: o.trial_service || '',
+          time: paxContactsTidyTimeLabel(o.trial_time_label),
+          venue: o.trial_venue || '',
+          live: true,
+          fromOverride: false
+        });
+      });
+      var holdRows = (holdRes && !holdRes.error && holdRes.data) ? holdRes.data : [];
+      holdRows.forEach(function(r){
+        var keyName = paxContactsTrialAliasKey(paxContactsTrialNameKey(r.participant_name));
+        var day = String(r.date_iso || '').slice(0, 10);
+        if(!keyName || !day) return;
+        var exact = findClose(keyName, day, 0);
+        if(exact){
+          var bookedExact = paxContactsIsoFromStamp(r.created_at);
+          if(bookedExact && (!exact.bookedIso || bookedExact < exact.bookedIso)) exact.bookedIso = bookedExact;
+          if(!exact.service && r.service_name) exact.service = r.service_name;
+          if(!exact.time && r.time_label) exact.time = paxContactsTidyTimeLabel(r.time_label);
+          if(!exact.venue && r.venue) exact.venue = r.venue;
+          return;
+        }
+        var near = findClose(keyName, day, 1);
+        if(!near || near.fromOverride) return;
+        var bookedNear = paxContactsIsoFromStamp(r.created_at);
+        if(bookedNear && (!near.bookedIso || bookedNear < near.bookedIso)) near.bookedIso = bookedNear;
+        near.sessionIso = day;
+        if(r.service_name) near.service = near.service || r.service_name;
+        if(r.time_label) near.time = paxContactsTidyTimeLabel(r.time_label) || near.time;
+        if(r.venue) near.venue = near.venue || r.venue;
+      });
+      window.PAX_CONTACTS_TRIALS = Object.keys(groups).map(function(k){ return groups[k]; });
+      return window.PAX_CONTACTS_TRIALS.length > 0;
     }
     function paxContactsNormName(s){
       return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -22555,7 +22848,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         case 'programme_in': case 'in_class': case 'in_camp':
           return { label: 'ACTIVE', bg: '#dcfce7', fg: '#166534' };
         case 'trial':
-          return { label: 'On a trial', bg: '#e0f2fe', fg: '#075985' };
+          return { label: 'On Trial', bg: '#e0f2fe', fg: '#075985' };
         case 'waiting_list':
           return { label: 'WAITING', bg: '#fef9c3', fg: '#854d0e' };
         case 'booking_history': case 'old_participants': case 'not_in_programme':
@@ -22681,6 +22974,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(phRaw && phRaw !== '—') whoParts.push('<div class="pax-who__phone">'+esc(phRaw)+'</div>');
         var whoHtml = '<div class="pax-who">'+whoParts.join('')+'</div>';
         var cells = paxContactsServiceSlotCells(p);
+        var trialCells = paxContactsTrialCells(p);
         var photoName = String(p.name || '').replace(/_/g, ' ').trim();
         var photoYunis = /^yunis\b/i.test(photoName);
         var photoCid = paxContactsPhotoLookupId(p);
@@ -22730,7 +23024,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '<span class="muted">—</span>';
         var payIds = (money.payments || []).map(function(pay){ return pay.id; }).join(' ');
         return (
-          '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'">'+
+          '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-trial="'+esc(paxContactsTrialLatestIso(p))+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'">'+
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
           '<td class="pax-contacts-name-td"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+'</div></div></td>'+
           '<td class="pax-contacts-meta">'+supportCell+'</td>'+
@@ -22740,6 +23034,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td class="pax-contacts-svc">'+cells.svc+'</td>'+
           '<td class="pax-contacts-slot">'+cells.slot+'</td>'+
           '<td class="pax-joined-col" hidden>'+paxContactsJoinedCell(p)+'</td>'+
+          '<td class="pax-trial-col" hidden>'+trialCells.booked+'</td>'+
+          '<td class="pax-trial-col" hidden>'+trialCells.session+'</td>'+
           '<td class="pax-contacts-who">'+whoHtml+'</td>'+
           '<td class="pax-reg-ans-col" data-pax-ans hidden style="min-width:0;max-width:26rem;white-space:normal;overflow-wrap:break-word"></td>'+
           '</tr>'
@@ -22777,7 +23073,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">CLIENT</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. A Class for Kids waiting request with no booking stays WAITING. Funding and Payment stay off WAITING and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of WAITING. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. A Class for Kids waiting request with no booking stays WAITING. Funding and Payment stay off WAITING and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of WAITING. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Trial session is the day they came. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
@@ -22808,7 +23104,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
         '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th class="pax-money-col">Funding</th><th class="pax-money-col">Payment</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th>Contact</th>'+
+        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th class="pax-money-col">Funding</th><th class="pax-money-col">Payment</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th class="pax-trial-col" hidden>Booked</th><th class="pax-trial-col" hidden>Trial session</th><th>Contact</th>'+
         '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
@@ -33350,8 +33646,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
           var showJoined = bk === 'waiting_list';
+          var showTrial = bk === 'trial';
           var showMoney = bk !== 'waiting_list' && bk !== 'cfk_leads';
           root2.querySelectorAll('.pax-joined-col').forEach(function(el){ el.hidden = !showJoined; });
+          root2.querySelectorAll('.pax-trial-col').forEach(function(el){ el.hidden = !showTrial; });
           root2.querySelectorAll('.pax-money-col, .pax-money-filter').forEach(function(el){ el.hidden = !showMoney; });
           var ansTh = $('paxRegAnsTh');
           if(ansTh){
@@ -33409,6 +33707,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   return da < db ? 1 : -1;
                 }
               }
+              if(showTrial){
+                var ta = a.getAttribute('data-pax-trial') || '';
+                var tb = b.getAttribute('data-pax-trial') || '';
+                if(ta !== tb){
+                  if(!ta) return 1;
+                  if(!tb) return -1;
+                  return ta < tb ? 1 : -1;
+                }
+              }
               var na = a.getAttribute('data-pax-name') || '';
               var nb = b.getAttribute('data-pax-name') || '';
               return na.localeCompare(nb, undefined, { sensitivity: 'base' });
@@ -33423,7 +33730,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
-          var headers = ['Participant name', 'DOB', 'Support', 'Funding', 'Payment', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Contact', 'Email', 'Phone'];
+          var headers = ['Participant name', 'DOB', 'Support', 'Funding', 'Payment', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Booked', 'Trial session', 'Contact', 'Email', 'Phone'];
           if(showAns) headers.push(paxContactsRegQuestionLabel(qv));
           function csvCell(v){
             var s = String(v == null ? '' : v).replace(/\u2014/g, '').replace(/\s+/g, ' ').trim();
@@ -33480,6 +33787,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               bt.svc,
               bt.slot,
               paxContactsBucket(p) === 'waiting_list' ? (paxContactsFormatJoinedDay(p.waitingJoinedIso) || 'Not on file') : '',
+              bookingExport === 'trial' ? (paxContactsTrialPlain(p).booked || '') : '',
+              bookingExport === 'trial' ? (paxContactsTrialPlain(p).session || '') : '',
               p.parentDisplay || r.carer || '',
               r.email || '',
               r.phone || ''
@@ -33596,9 +33905,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             paxContactsLoadLiveWaitlist(),
             paxContactsLoadAutumnPay(),
             paxContactsLoadReenrolChoices(),
-            paxContactsLoadClientPayments()
+            paxContactsLoadClientPayments(),
+            paxContactsLoadTrials()
           ]).then(function(results){
-            if(!(results && (results[0] || results[1] || results[2] || results[3] || results[4] || results[5] || results[6]))) return;
+            if(!(results && (results[0] || results[1] || results[2] || results[3] || results[4] || results[5] || results[6] || results[7]))) return;
             if(typeof state.rebuildPaxContactsList === 'function'){
               state.rebuildPaxContactsList();
               if(typeof paxContactsRefreshFilters === 'function') paxContactsRefreshFilters();

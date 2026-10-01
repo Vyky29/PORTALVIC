@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v86",
+  "version": "2026-10-01-v87",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -439,6 +439,9 @@
             "cuando se unieron",
             "booking history",
             "cfk leads",
+            "trial",
+            "trialled",
+            "on trial",
             "class for kids",
             "old",
             "old clients",
@@ -457,6 +460,7 @@
             "WAITING: on a waiting list. Many only did OTP and asked for a place, with no registration. Funding and Payment are hidden here. They fill in when the child has a service. Someone who already has a service or a trial can also be waiting for another place. Newest join is at the top. Oldest is at the bottom. Not on file sits at the bottom. They do not also show under REGISTERED.",
             "REGISTERED: filled the registration form, no term place, not on a waiting list. Someone who only comes to crash courses stays here, with Service set to Crash courses, so you can offer them a term place.",
             "CFK LEADS: the Class for Kids contact file. Funding and Payment stay hidden. Age comes from the date of birth on that file. Service says Class for Kids. The time column is the first and last booking date from that file, when the file has them. The line under the status says Class for Kids file.",
+            "On Trial / Trialled: someone who booked a trial and has a trial session. Booked is the day they booked. Trial session is the day they came, with the service and time when we have them. A session still ahead is On Trial. A session already held is Trialled. Newest session is at the top. They stay ACTIVE as well when they took a term place afterwards.",
             "A short name on the bookings shows on that child's row when it is the same person. Consecutive halves on the same day show as one time. The venue is in brackets after the time, such as Tuesday, 3:30 pm to 5:00 pm (SWIMFARM).",
             "Age uses the date of birth. If the contact has no date, the list uses the birth line on the registration (Clients Info).",
             "Contact, email, phone and age come from the child's contact record. A short roster name still shows that parent and those details.",

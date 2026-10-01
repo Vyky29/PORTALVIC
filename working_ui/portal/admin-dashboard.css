@@ -463,6 +463,9 @@
     .pax-contacts-tbl .pax-contacts-namebtn .muted{display:block;font-size:12px;margin-top:2px;overflow-wrap:break-word}
     .pax-contacts-tbl .pax-svc-line,
     .pax-contacts-tbl .pax-slot-line{white-space:nowrap;line-height:1.45;text-align:center}
+    .pax-contacts-tbl .pax-trial-block{margin:0 0 8px}
+    .pax-contacts-tbl .pax-trial-block:last-child{margin-bottom:0}
+    .pax-contacts-tbl td.pax-trial-col{min-width:0;text-align:center}
     .pax-contacts-tbl td.pax-contacts-who{text-align:center;min-width:0;max-width:16rem}
     .pax-contacts-tbl .pax-who{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
     .pax-contacts-tbl .pax-who__name{font-weight:700;overflow-wrap:break-word;text-align:center}
