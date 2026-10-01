@@ -474,8 +474,8 @@
       { id:'c4k_waitlist', label:'WAITING LIST' },
       { id:'office_calendar', label:'Office calendar', hubLabel:'Office calendar' },
       { id:'open_places_2627', label:'Open places → Services §3' },
-      { id:'c4k_reviews', label:'Reviews' },
-      { id:'c4k_reports', label:'Report requests' },
+      { id:'c4k_reviews', label:'Progress', hubLabel:'Progress' },
+      { id:'c4k_reports', label:'Reports', hubLabel:'Reports' },
       { id:'servicecap', label:'Fill seats → Services §2 Booking Portal' },
       { id:'portal_activity', label:'Portal activity' },
       { id:'portal_training_progress', label:'Staff readiness', hubLabel:'Staff readiness' },
@@ -529,11 +529,11 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','c4k_late_submissions','office_calendar','sessions_lead','sessions_incidents','sessions_venue','sessions_pickup','session_disruptions'] },
       { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','orders_all','participant_achievements'] },
-      { id:'g_clients', label:'Clients & Families', children:['__h:Clients','clients','c4k_waitlist','portal_participant_documents','leads','__h:Family','family_whatsapp_business','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
+      { id:'g_clients', label:'Clients & Families', children:['__h:Clients','clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','__h:Family','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
       { id:'g_xero', label:'Money', children:['reenrol_payments','absents_refunds'] },
-      { id:'g_messages', label:'Messages', children:['__h:FAMILY','portal_parent_broadcast','__h:STAFF','announcements','portal_staff_comms','portal_staff_whatsapp'] },
+      { id:'g_messages', label:'Messages', children:['__h:STAFF','announcements','portal_staff_comms','portal_staff_whatsapp'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews','__h:Documents','policies_portal','policies','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_checklist','portal_docs_firstaid','day_centre_documents','portal_docs_portalpin'] },
-      { id:'g_more', label:'More', children:['__h:Extra hubs','dashboard','operations_admin','operator','receptionist','c4k_reviews','c4k_reports','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','staff_ghost_teleport'] },
+      { id:'g_more', label:'More', children:['__h:Extra hubs','dashboard','operations_admin','operator','receptionist','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','staff_ghost_teleport'] },
       { id:'g_settings_portal', label:'Settings', children:['settings','admin_office_help','portal_activity','portal_training_progress','portal_push_devices','portal_device_notifications','logs','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
@@ -30481,7 +30481,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Active, WAITING LIST, Registered and Leads, plus family messages and family documents.',
         preview:[],
         status:'',
-        primary:['clients','c4k_waitlist','portal_participant_documents','leads','family_whatsapp_business','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'],
+        primary:['clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'],
         secondary:[]
       },
       {
@@ -30504,7 +30504,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Family and staff WhatsApp / notify.',
         preview:[],
         status:'',
-        primary:['portal_parent_notify_log','portal_parent_broadcast','announcements','portal_staff_comms','portal_staff_whatsapp'],
+        primary:['announcements','portal_staff_comms','portal_staff_whatsapp'],
         secondary:[]
       },
       {
@@ -30525,7 +30525,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         preview:[],
         status:'',
         primary:['admin_office_help','settings','logs','portal_nav_alerts'],
-        secondary:['dashboard','operations_admin','operator','c4k_reviews','c4k_reports']
+        secondary:['dashboard','operations_admin','operator']
       }
     ];
     function opsHubResolveAction(action){
@@ -30880,6 +30880,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portal_activity: 'Login, pages &amp; time on app',
       portal_training_progress: 'Training, compliance and app setup',
       portal_push_devices: 'Background alerts registered',
+      c4k_reviews: 'Term reviews &amp; goals',
+      c4k_reports: 'Request packs &amp; LA delivery',
+      portal_parent_broadcast: 'One message to many families',
       staff_ghost_teleport: 'Read-only view of a worker app',
       portal_parent_teleport: 'Read-only view of a family portal',
       interviews: 'Call and face-to-face stages',
@@ -31065,9 +31068,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         (portalAdminBookingsHidden()
           ? portalDashTileHtml('c4k_services', '', 'c4k_services', 'Services', 'Weekly programme grid &amp; capacity', false, 'sessions')
           : portalDashTileHtml('orders_all', '', 'bookings', 'Bookings / orders', 'Bookings &amp; wait list', false, 'bookings'))+
-        portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Finance', 'Invoices &amp; term payments', false, 'payments')+
-        portalDashTileHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews')+
-        portalDashTileHtml('c4k_reports', '', 'c4k_reports', 'Reports', 'Request packs &amp; LA delivery', false, 'reports_q');
+        portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Finance', 'Invoices &amp; term payments', false, 'payments');
       var staffRow1 =
         portalDashTileHtml('staffhr', '', 'staffhr', 'Staff roster', 'All staff — tap for full profile &amp; HR', false, 'sessions')+
         portalDashTileHtml('staffhr_contracts', '', 'staffhr_contracts', 'Contracts', 'Employment contracts &amp; signatures', false, 'reviews')+
