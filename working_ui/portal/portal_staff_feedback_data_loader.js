@@ -8,7 +8,7 @@
   var SCRIPTS = [
     "/portal/session_feedback_portal_data.js?v=20260614-acat-jun8-absent",
     "/portal/session_feedback_status_portal_data.js?v=20260614-acat-jun8-absent",
-    "/portal/staff_portal_feedback_bridge.js?v=20260930-abate-aquatic-feedback",
+    "/portal/staff_portal_feedback_bridge.js?v=20261001-client-identity",
   ];
 
   var inflight = null;

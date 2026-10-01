@@ -90,6 +90,12 @@
     const rs = canonicalClientSlugToken(a);
     const ss = canonicalClientSlugToken(b);
     if (!rs || !ss) return false;
+    const ident = global.PortalClientIdentity;
+    if (ident && typeof ident.foldAliasedSlug === "function") {
+      const fa = ident.foldAliasedSlug(rs, canonicalClientSlugToken);
+      const fb = ident.foldAliasedSlug(ss, canonicalClientSlugToken);
+      if (fa && fb && fa === fb) return true;
+    }
     if (rs === ss) return true;
     if (/_ah$/.test(rs) && /_ah$/.test(ss) && rs !== ss) return false;
     if (rs.startsWith(ss + "_") || ss.startsWith(rs + "_")) return true;

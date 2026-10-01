@@ -44,13 +44,20 @@
       .replace(/^_+|_+$/g, "");
   }
 
-  function canonicalClientSlug(name) {
+  function aliasClientSlug(name) {
     var s = slugify(name);
     s = s
       .replace(/^(trial|makeup|make_up|cover)_+/g, "")
       .replace(/_+(trial|makeup|make_up)$/g, "")
       .replace(/^(trial|makeup)_+/g, "");
     return s;
+  }
+
+  function canonicalClientSlug(name) {
+    var s = aliasClientSlug(name);
+    var ident = global.PortalClientIdentity;
+    if (!s || !ident || typeof ident.foldAliasedSlug !== "function") return s;
+    return ident.foldAliasedSlug(s, aliasClientSlug);
   }
 
   function mapEntry(map, clientName) {

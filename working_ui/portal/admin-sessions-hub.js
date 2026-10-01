@@ -484,7 +484,7 @@
     adam_mahmoud: "adam_ma",
   };
 
-  function canonicalClientSlug(name) {
+  function aliasClientSlug(name) {
     var s = slugify(name);
     /* "Trial - Zaid Alfadhl (Trial)" / "MakeUp - Yossi" → same person as roster short id. */
     s = s
@@ -492,6 +492,13 @@
       .replace(/_+(trial|makeup|make_up)$/g, "")
       .replace(/^(trial|makeup)_+/g, "");
     return CLIENT_SLUG_ALIASES[s] || s;
+  }
+
+  function canonicalClientSlug(name) {
+    var s = aliasClientSlug(name);
+    var ident = global.PortalClientIdentity;
+    if (!s || !ident || typeof ident.foldAliasedSlug !== "function") return s;
+    return ident.foldAliasedSlug(s, aliasClientSlug);
   }
 
   function isMisnamedAdamAbFeedbackClientName(name) {
