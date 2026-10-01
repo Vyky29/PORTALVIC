@@ -182,7 +182,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-support-funding-cols" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-funding-two-lines" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -22249,7 +22249,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var supportCell = ratioChip || '<span class="muted">—</span>';
         var fundingBits = fundingChip + methodChip;
         var fundingCell = fundingBits
-          ? '<div class="pax-contacts-chips">'+fundingBits+'</div>'
+          ? '<div class="pax-contacts-chips pax-contacts-chips--stack">'+fundingBits+'</div>'
           : '<span class="muted">—</span>';
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
@@ -33387,6 +33387,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * name + carer. Falls back to the curated ADMIN_PARTICIPANT_FUNDING_RAW map
      * when no payment row matches. Returns { source, method, isLA }.
      */
+    /** Line 1 is LA/NHS or Private. Line 2 is the authority or how they pay. */
+    function adminParticipantFundingLines(srcRaw, methRaw){
+      var srcA = String(srcRaw || '').trim();
+      var methA = String(methRaw || '').trim();
+      if(srcA === '—') srcA = '';
+      if(methA === '—') methA = '';
+      var authorityRe = /^local authority\s*[·\u00b7•|-]\s*\S/i;
+      var authority = authorityRe.test(srcA) ? srcA : (authorityRe.test(methA) ? methA : '');
+      var directPay = /parent\s*[·.\-]\s*direct payments/i.test(methA)
+        ? methA
+        : (/parent\s*[·.\-]\s*direct payments/i.test(srcA) ? srcA : '');
+      var blob = (srcA + ' ' + methA).toLowerCase();
+      var isLA = /using money from la|la\/nhs|local authority|nhs|cwd|care in finance|bacs|direct payment/.test(blob);
+      var isPrivate = /private|own money|bank transfer|go\s*cardless|card|apple pay/.test(blob) && !isLA;
+      var source = isLA ? 'LA/NHS funds' : (isPrivate || /private/i.test(srcA) ? 'Private funds' : (srcA || ''));
+      var method = authority || directPay || methA;
+      if(method && source && method.toLowerCase() === source.toLowerCase()) method = '';
+      if(/^la\/nhs funds$/i.test(method) || /^private funds$/i.test(method)) method = '';
+      if(authority && /la invoice|care in finance/i.test(method) && method !== authority) method = authority;
+      return { source: source, method: method, isLA: isLA };
+    }
     function adminParticipantFundingInfo(p){
       if(p && (p._adminFundingLabel || p._adminPaymentMethodLabel || (p.reg && (p.reg.fundingRoute || p.reg.paymentMethod) && p._adminContactEdited))){
         var srcA = String(p._adminFundingLabel || (p.reg && p.reg.fundingRoute) || '').trim();
@@ -33394,16 +33415,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(srcA === '—') srcA = '';
         if(methA === '—') methA = '';
         if(srcA || methA){
-          var directPay = /parent\s*[·.\-]\s*direct payments/i.test(methA)
-            ? methA
-            : (/parent\s*[·.\-]\s*direct payments/i.test(srcA) ? srcA : '');
-          if(directPay) return { source: directPay, method: '', isLA: true };
-          var isLAAdmin = /using money from la|la\/nhs|local authority|nhs|cwd|care in finance|bacs|direct payment/i.test(srcA + ' ' + methA);
-          return {
-            source: srcA ? (/private/i.test(srcA) && !isLAAdmin ? 'Private funds' : (isLAAdmin ? 'LA/NHS funds' : srcA)) : '',
-            method: methA,
-            isLA: isLAAdmin
-          };
+          return adminParticipantFundingLines(srcA, methA);
         }
       }
       var info = null;
@@ -33412,11 +33424,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ? adminClientsPaymentsPortalFundingForParticipant(p) : null;
       }catch(_e){ info = null; }
       if(info && (info.fund || info.payMethod)){
-        var blob = ((info.fund||'')+' '+(info.payMethod||'')+' '+(info.next||'')).toLowerCase();
-        var method = String(info.payMethod||'').replace(/^\s*\d+\s*[-\u2013]\s*/, '').trim();
-        if(/parent\s*[·.\-]\s*direct payments/i.test(method)) return { source: method, method: '', isLA: true };
-        var isLA = /nhs|local authority|direct payment|remittance|invoice|\bpo\b|\bila\b|\bsbs\b|\bcwd\b|funder/.test(blob);
-        return { source: isLA ? 'LA/NHS funds' : 'Private funds', method: method, isLA: isLA };
+        var methodPay = String(info.payMethod||'').replace(/^\s*\d+\s*[-\u2013]\s*/, '').trim();
+        return adminParticipantFundingLines(String(info.fund || '').trim(), methodPay);
       }
       var manual = adminParticipantFunding(p && p.name);
       if(manual){
