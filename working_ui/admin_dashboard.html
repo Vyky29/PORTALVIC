@@ -4522,7 +4522,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
           }
           var dk = adminSessionDedupeKey(sObj);
-          if(seen[dk]) continue;
+          if(row.portalSwapFromClient) sObj.portalSwapFromClient = row.portalSwapFromClient;
+          if(seen[dk]){
+            /* Bootstrap already kept this seat. The Sunday Cyrus/Gabriel swap
+               still has to travel with it so a cover saved on the old name follows. */
+            if(sObj.portalSwapFromClient){
+              for(var swapI = 0; swapI < merged.length; swapI++){
+                if(adminSessionDedupeKey(merged[swapI]) !== dk) continue;
+                merged[swapI].portalSwapFromClient = sObj.portalSwapFromClient;
+                break;
+              }
+            }
+            continue;
+          }
           seen[dk] = true;
           merged.push(sObj);
         }
@@ -4720,7 +4732,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         status: String(s.status||''),
         rosterSheetLabel: schedRosterSheetLabelFromSession(s),
         notesPreview: schedNotesPreviewOneLine(nid, notesById),
-        override: String(s.override || '')
+        override: String(s.override || ''),
+        portalSwapFromClient: String(s.portalSwapFromClient || '').trim()
       };
     }
     function toPgTime(t){
@@ -11101,8 +11114,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         );
         if(repCid && sCid && repCid === sCid) return true;
       }
-      /* Adam P / Adam Pi / Adam Pilcher must match the same aquatic seat. */
-      if(oCid && sCid && oCid !== sCid) return false;
+      /* Adam P / Adam Pi / Adam Pilcher must match the same aquatic seat.
+         Sunday from 27 Sep: Cyrus and Gabriel swap seats. A cover saved on the
+         name that seat had before the move follows the child who is there now. */
+      if(oCid && sCid && oCid !== sCid){
+        var swapFrom = adminCanonicalClientSlug(slot.portalSwapFromClient || '');
+        var swapType = String(o.override_type || '').trim();
+        var swapCover = (swapType === 'instructor_reassign' || swapType === 'instructor_cover_needed')
+          && swapFrom && swapFrom === oCid;
+        if(!swapCover) return false;
+      }
       if(oType === 'client_absence_announced'){
         return schedTimeRangesOverlap(o.anchor_start, o.anchor_end, slot.anchorStart, slot.anchorEnd);
       }
