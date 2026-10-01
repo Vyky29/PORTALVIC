@@ -30218,8 +30218,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         secondary += window.PortalParentCredits.embedHtml();
       }
       return '<h1 class="page-title">Absents, refunds &amp; credits</h1>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">One decide queue for absents and cancellations since 1 Sep. Approve credit / refund / makeup here; makeup waiting list and family ledger are secondary.</p>'+
-        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec" data-view-target="dashboard">Day operations</button> <button type="button" class="btn btn--sec" data-view-target="bookings">Bookings</button> <button type="button" class="btn btn--ghost" data-view-target="communications">Comms log</button></div>'+
+        '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Finance">'+financeHubTabsHtml('absents')+'</div>'+
         parentQueue+
         '<details style="margin:0 0 14px;min-width:0">'+
         '<summary style="cursor:pointer;font-weight:700;font-size:14px;padding:8px 0;overflow-wrap:break-word">Makeup grants &amp; family credits / refunds (after you decide above)</summary>'+
@@ -31997,15 +31996,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function financeHubTabsHtml(active){
       var tabs = [
-        { id:'create', label:'Create invoice', iconId:'staffhr_contracts' },
         { id:'reenrolments', label:'Re-enrolments & Bookings', iconId:'clients' },
-        { id:'xero_products', label:'Xero products', iconId:'reenrol_payments' },
-        { id:'payments', label:'Payments', iconId:'c4k_payments' }
+        { id:'payments', label:'Payments', iconId:'c4k_payments' },
+        { id:'absents', label:'Absents, refunds & credits', iconId:'absents_refunds', view:'absents_refunds' }
       ];
       return tabs.map(function(t){
         var on = t.id === active;
         var ico = adminNavIconHtml(t.iconId || t.id);
-        return '<button type="button" class="c4k-sessions-hub-tab'+(on?' is-active':'')+'" role="tab" data-finance-tab="'+esc(t.id)+'" aria-selected="'+(on?'true':'false')+'">'+
+        var attr = t.view
+          ? (' data-view-target="'+esc(t.view)+'"')
+          : (' data-finance-tab="'+esc(t.id)+'"');
+        return '<button type="button" class="c4k-sessions-hub-tab'+(on?' is-active':'')+'" role="tab"'+attr+' aria-selected="'+(on?'true':'false')+'">'+
           (ico ? '<span class="c4k-sessions-hub-tab__ico" aria-hidden="true">'+ico+'</span>' : '')+
           '<span class="c4k-sessions-hub-tab__label">'+esc(t.label)+'</span></button>';
       }).join('');
