@@ -1586,7 +1586,7 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
 .admin-page-info-pop{
   position:fixed;
   inset:0;
-  z-index:80;
+  z-index:21000;
   background:rgba(15,23,42,.35);
   display:flex;
   align-items:flex-start;
