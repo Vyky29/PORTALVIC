@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v80",
+  "version": "2026-10-01-v81",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -449,7 +449,7 @@
           "steps": [
             "ACTIVE: on a place now. A cancelled place is not ACTIVE. ACTIVE stays under the name, with the date of birth.",
             "Support is the ratio, such as 1:1. Funding and Payment are separate columns. Funding is only one of three: Using Private funds (VAT 20%), Using LA funds (Exempt), or LA/NHS funded.",
-            "Payment can be more than one. The payment names are Bank Transfer (One off-Manually), Bank Transfer (Flexi-Manually), Apple Pay/Stripe, GoCardless, BACS (Ealing), Monthly Arrears (NHS), Monthly Arrears (NHS/ILA), Monthly Arrears (H&F), and Payment Link.",
+            "Payment can be more than one. The payment names are Bank Transfer (One off-Manually), Bank Transfer (Flexi-Manually), Apple Pay/Stripe, GoCardless, BACS (Ealing), Monthly Arrears (NHS), Monthly Arrears (NHS/ILA), Monthly Arrears (H&F), and Payment Link. When Bookings and Payments has two funders for the same child, both chips show. Ealing is BACS (Ealing). NHS/ILA, including a Friday paid by them, is Monthly Arrears (NHS/ILA).",
             "Filter Funding and Payment on the CLIENT page. A payment filter keeps anyone who has that method, even if they also have another.",
             "Funding and Payment come from the invoice. VAT 20% means the family pays (Using Private funds). No VAT and the family pays means Using LA funds (Exempt). No VAT and the office bills the council or NHS means LA/NHS funded. Summer is used when that is the invoice on file. Each funding type and each payment method has its own colour.",
             "OLD CLIENTS were in summer 2026, or started in September, and are not here now. Set Funding to All funding to see the whole list.",

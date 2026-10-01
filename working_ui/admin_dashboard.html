@@ -22518,10 +22518,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         payments.push({ id: id, label: label });
       }
       if(funding === 'la_nhs'){
-        if(/\bealing\b/.test(blob)) addPay('bacs_ealing', 'BACS (Ealing)');
-        else if(/nhs\s*\/\s*ila|nhs\s*\(\s*ila\s*\)|\bila\b/.test(blob)) addPay('arrears_nhs_ila', 'Monthly Arrears (NHS/ILA)');
-        else if(/\bnhs\b|\bsbs\b/.test(blob)) addPay('arrears_nhs', 'Monthly Arrears (NHS)');
-        else if(/hammer|fulham|h\s*&\s*f|lbhf/.test(blob)) addPay('arrears_hf', 'Monthly Arrears (H&F)');
+        /* One child can have more than one funder. Ealing and Friday NHS/ILA both show. */
+        var funderTexts = [blob];
+        (window.PAX_CONTACTS_CLIENT_PAYMENTS || []).forEach(function(row){
+          if(!paxContactsPayRowIsThisChild(p, row)) return;
+          var d = row.data || {};
+          funderTexts.push([d.Funder, d.Funding, d['Invoice type'], d.Paid].join(' ').toLowerCase());
+        });
+        function textIsIla(t){ return /nhs\s*\/\s*ila|nhs\s*\(\s*ila\s*\)|\bila\b/.test(t); }
+        var sawEaling = false, sawIla = false, sawNhs = false, sawHf = false;
+        funderTexts.forEach(function(t){
+          if(/\bealing\b/.test(t)) sawEaling = true;
+          if(textIsIla(t)) sawIla = true;
+          else if(/\bnhs\b|\bsbs\b/.test(t)) sawNhs = true;
+          if(/hammer|fulham|h\s*&\s*f|lbhf/.test(t)) sawHf = true;
+        });
+        if(sawEaling) addPay('bacs_ealing', 'BACS (Ealing)');
+        if(sawIla) addPay('arrears_nhs_ila', 'Monthly Arrears (NHS/ILA)');
+        if(sawNhs) addPay('arrears_nhs', 'Monthly Arrears (NHS)');
+        if(sawHf) addPay('arrears_hf', 'Monthly Arrears (H&F)');
       }else if(funding){
         var hasGc = /gocardless|go cardless/.test(blob);
         var hasLink = /payment link/.test(blob);
