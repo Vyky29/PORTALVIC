@@ -182,7 +182,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-sessions-quiet" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261002-search" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -285,17 +285,21 @@
         <button type="button" class="admin-menu-mob" id="btnMenuMob" aria-label="Open menu" aria-controls="adminSidebar" aria-expanded="false">☰</button>
         <div class="admin-search-wrap">
           <span class="admin-search-ico" aria-hidden="true">⌕</span>
-          <input type="search" id="globalSearch" placeholder="Search participants, staff, sessions…" autocomplete="off" aria-label="Global search" />
+          <input type="search" id="globalSearch" placeholder="Search people, staff, pages…" autocomplete="off" aria-label="Search people, staff and pages" aria-controls="adminSearchResults" aria-expanded="false" />
+          <div id="adminSearchResults" class="admin-search-results" hidden role="listbox" aria-label="Related results"></div>
         </div>
         <div id="portalLivePresenceBar" class="portal-live-presence admin-topbar-presence" hidden aria-live="polite"></div>
         <div class="admin-topbar-meta">
-          <span class="admin-date" id="topDate"></span>
           <a class="admin-icon-btn admin-icon-btn--wa" id="btnOpenWhatsapp" href="https://web.whatsapp.com" target="_blank" rel="noopener noreferrer" aria-label="Open WhatsApp on this computer" title="WhatsApp on this computer (07592 558671)">
             <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.04 2C6.58 2 2.15 6.4 2.15 11.83c0 1.74.46 3.44 1.34 4.94L2 22l5.39-1.41a10.1 10.1 0 0 0 4.65 1.12h.01c5.46 0 9.89-4.4 9.89-9.83C21.94 6.4 17.5 2 12.04 2zm0 17.95h-.01a8.4 8.4 0 0 1-4.28-1.17l-.31-.18-3.2.84.85-3.11-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.72-8.23 8.3-8.23 2.22 0 4.3.86 5.87 2.42a8.18 8.18 0 0 1 2.43 5.81c0 4.54-3.72 8.23-8.29 8.23zm4.55-6.16c-.25-.12-1.47-.72-1.7-.8-.23-.08-.39-.12-.56.13-.17.24-.64.8-.78.96-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.77-1.84-.2-.48-.41-.42-.56-.42h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.01 2.56c.13.17 1.75 2.67 4.24 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.1-.23-.17-.48-.29z"/></svg>
           </a>
           <button type="button" class="admin-icon-btn admin-icon-btn--chat" id="btnFamilyMsgs" aria-label="Family messages — parents WhatsApp" title="Family messages (parents)">
             <span class="admin-icon-btn__svg" id="btnFamilyMsgsIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="familyMsgBadge">0</span>
+          </button>
+          <button type="button" class="admin-icon-btn admin-icon-btn--chat" id="btnStaffWa" aria-label="Staff messages — staff WhatsApp API" title="Staff messages (API)">
+            <span class="admin-icon-btn__svg" id="btnStaffWaIco" aria-hidden="true"></span>
+            <span class="admin-badge is-empty" id="staffWaBadge">0</span>
           </button>
           <a class="admin-icon-btn admin-icon-btn--chat" id="btnComunicaciones" href="comunicaciones.html?from=admin" aria-label="Communications" title="Communications" data-comms-unread-host>
             <span class="admin-icon-btn__svg" id="btnComunicacionesIco" aria-hidden="true"></span>
@@ -408,7 +412,7 @@
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260924-makeup-accept-bell"></script>
   <script type="module">
-    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260923-office-help";
+    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20261002-no-guide";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
       try{
         mountPortalLivePresenceBar("portalLivePresenceBar");
@@ -37651,7 +37655,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var host = document.getElementById('portalLivePresenceBar');
       if(!host) return;
       window.__portalAdminPresenceBarMounted = true;
-      import('/portal/portal_live_presence.js?v=20260923-office-help')
+      import('/portal/portal_live_presence.js?v=20261002-no-guide')
         .then(function(mod){
           if(!mod || typeof mod.mountPortalLivePresenceBar !== 'function') return;
           mod.mountPortalLivePresenceBar('portalLivePresenceBar');
@@ -38564,20 +38568,152 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_e){}
       return null;
     }
-    function globalSearch(){
-      var q = ($('globalSearch').value||'').trim().toLowerCase();
-      if(!q) return;
-      var hit = Object.keys(MOCK.clientsById).find(function(k){ return MOCK.clientsById[k].name.toLowerCase().indexOf(q)>=0; });
-      if(hit){ setView('clients'); setTimeout(function(){ openClientDrawer(hit); }, 0); return; }
-      var st = MOCK.staff.find(function(s){ return s.name.toLowerCase().indexOf(q)>=0; });
-      if(st){ setView('staffhr'); setTimeout(function(){ openStaffDrawer(st.id); }, 0); return; }
-      var liveName = adminFindLiveParticipantName(q);
-      if(liveName && adminOpenLiveParticipantByName(liveName)) return;
-      var liveStaff = adminFindLiveStaff(q);
-      if(liveStaff){
-        try{ openStaffDrawerByRosterKey(liveStaff.rosterId, { label: liveStaff.name }); return; }catch(_eStaff){}
+    function adminSearchNorm(s){
+      return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+    function adminSearchBlobHit(blob, q){
+      return adminSearchNorm(blob).indexOf(q) >= 0;
+    }
+    function adminSearchCollect(raw){
+      var q = adminSearchNorm(raw);
+      var people = [];
+      var staff = [];
+      var pages = [];
+      if(q.length < 2) return { q: q, people: people, staff: staff, pages: pages, short: true };
+      var seenPeople = Object.create(null);
+      try{
+        var list = paxContactsUnifiedList();
+        var i;
+        for(i = 0; i < list.length && people.length < 12; i++){
+          var p = list[i];
+          var name = String((p && p.name) || '').trim();
+          if(!name) continue;
+          var parent = String((p && (p.parentDisplay || (p.reg && p.reg.carer))) || '').trim();
+          var phone = String((p && p.reg && p.reg.phone) || '').trim();
+          var email = String((p && p.reg && p.reg.email) || '').trim();
+          var bucket = '';
+          try{
+            var meta = paxContactsBookingStatusMeta(paxContactsBucket(p));
+            bucket = (meta && meta.label) || '';
+          }catch(_bucket){ bucket = ''; }
+          if(!adminSearchBlobHit([name, parent, phone, email, bucket].join(' '), q)) continue;
+          var personKey = name.toLowerCase() + '|' + parent.toLowerCase();
+          if(seenPeople[personKey]) continue;
+          seenPeople[personKey] = true;
+          var sub = [bucket, parent, phone].filter(Boolean).join(' · ');
+          people.push({ kind: 'person', name: name, sub: sub });
+        }
+      }catch(_people){}
+      try{
+        var src = window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.staffProfiles;
+        if(src){
+          Object.keys(src).forEach(function(key){
+            if(staff.length >= 8) return;
+            if(String(key || '').trim().toLowerCase() === 'teflon') return;
+            var row = src[key] || {};
+            var nm = String(row.staffName || '').trim();
+            if(!nm) return;
+            var role = String(row.role || row.jobTitle || row.staffRole || row.position || '').trim();
+            if(!adminSearchBlobHit(nm + ' ' + role, q)) return;
+            staff.push({ kind: 'staff', id: key, name: nm, sub: role || 'Worker' });
+          });
+        }
+      }catch(_staff){}
+      var seenPage = Object.create(null);
+      NAV_GROUPS.forEach(function(group){
+        (group.children || []).forEach(function(cid){
+          if(pages.length >= 10) return;
+          if(String(cid).indexOf('__h:') === 0) return;
+          if(typeof portalAdminNavViewAllowed === 'function' && !portalAdminNavViewAllowed(cid)) return;
+          var item = navGetItem(cid);
+          if(!item || item.navAction === 'logout') return;
+          var label = String(item.label || item.hubLabel || cid).trim();
+          if(!label) return;
+          if(!adminSearchBlobHit(label + ' ' + (item.hubLabel || '') + ' ' + group.label, q)) return;
+          var pageKey = label.toLowerCase();
+          if(seenPage[pageKey]) return;
+          seenPage[pageKey] = true;
+          pages.push({ kind: 'page', id: cid, name: label, sub: group.label });
+        });
+      });
+      return { q: q, people: people, staff: staff, pages: pages, short: false };
+    }
+    function adminSearchHide(){
+      var box = $('adminSearchResults');
+      var input = $('globalSearch');
+      if(box){
+        box.hidden = true;
+        box.innerHTML = '';
       }
-      alert('No match for "'+q+'" — try a participant or staff name from your roster or directory.');
+      if(input) input.setAttribute('aria-expanded', 'false');
+    }
+    function adminSearchOpenHit(hit){
+      if(!hit) return;
+      adminSearchHide();
+      if(hit.kind === 'person'){
+        adminOpenLiveParticipantByName(hit.name);
+        return;
+      }
+      if(hit.kind === 'staff'){
+        try{ openStaffDrawerByRosterKey(hit.id, { label: hit.name }); }catch(_openStaff){}
+        return;
+      }
+      var item = navGetItem(hit.id);
+      if(item && item.externalUrl){
+        if(item.externalBlank) window.open(item.externalUrl, '_blank', 'noopener');
+        else window.location.href = item.externalUrl;
+        return;
+      }
+      if(item && item.dayOpsAct){
+        portalRunDayOpsAct(item.dayOpsAct);
+        return;
+      }
+      if(item && item.navAction === 'alerts'){
+        try{ toggleAlerts(); }catch(_alerts){}
+        return;
+      }
+      if(item && item.navAction === 'device_notifications'){
+        setView('settings');
+        return;
+      }
+      if(hit.id) setView(hit.id);
+    }
+    function adminSearchRender(){
+      var input = $('globalSearch');
+      var box = $('adminSearchResults');
+      if(!input || !box) return;
+      var pack = adminSearchCollect(input.value);
+      if(!pack.q){
+        adminSearchHide();
+        return;
+      }
+      var flat = pack.people.concat(pack.staff).concat(pack.pages);
+      function groupHtml(title, rows){
+        if(!rows.length) return '';
+        return '<div class="admin-search-results__group"><p class="admin-search-results__h">'+esc(title)+'</p>'+
+          rows.map(function(row){
+            var idx = flat.indexOf(row);
+            return '<button type="button" class="admin-search-results__btn" role="option" data-search-i="'+String(idx)+'">'+
+              '<span class="admin-search-results__title">'+esc(row.name)+'</span>'+
+              (row.sub ? '<span class="admin-search-results__sub">'+esc(row.sub)+'</span>' : '')+
+              '</button>';
+          }).join('')+
+          '</div>';
+      }
+      var html = '';
+      if(pack.short){
+        html = '<p class="admin-search-results__empty">Type at least two letters.</p>';
+      }else{
+        html = groupHtml('People', pack.people) + groupHtml('Staff', pack.staff) + groupHtml('Pages', pack.pages);
+        if(!html) html = '<p class="admin-search-results__empty">Nothing matches.</p>';
+      }
+      box._adminSearchHits = flat;
+      box.innerHTML = html;
+      box.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+    }
+    function globalSearch(){
+      adminSearchRender();
     }
 
     function initOpWorkflowMock(){
@@ -39002,11 +39138,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         setView('portal_parent_notify_log');
         closeSidebarMob();
       });
+      var btnStaffWaEl = $('btnStaffWa');
+      if(btnStaffWaEl) btnStaffWaEl.addEventListener('click', function(e){
+        e.stopPropagation();
+        setView('portal_staff_whatsapp');
+        closeSidebarMob();
+      });
       (function portalAdminInitWaTopbarIcons(){
         var pIco = $('btnFamilyMsgsIco');
+        var sIco = $('btnStaffWaIco');
         var cIco = $('btnComunicacionesIco');
         if(typeof window.portalParentChatIconSvg === 'function' && pIco){
           pIco.innerHTML = window.portalParentChatIconSvg({ size: 28 });
+        }
+        if(typeof window.portalStaffChatIconSvg === 'function' && sIco){
+          sIco.innerHTML = window.portalStaffChatIconSvg({ size: 28 });
         }
         if(typeof window.portalCommsChatIconSvg === 'function' && cIco){
           cIco.innerHTML = window.portalCommsChatIconSvg({ size: 28 });
@@ -39054,6 +39200,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             n = (typeof n === 'number' && n > 0) ? n : 0;
             badge.textContent = n > 99 ? '99+' : String(n);
             badge.classList.toggle('is-empty', n < 1);
+            var staffBtn = $('btnStaffWa');
+            if(staffBtn) staffBtn.classList.toggle('admin-icon-btn--has-alerts', n > 0);
             if (typeof window.portalSetHomeBadgePart === "function") window.portalSetHomeBadgePart("staffWa", n);
           }).catch(function(){});
         };
@@ -39132,7 +39280,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var apEl = $('alertsPop');
       if(apEl) apEl.addEventListener('click', function(e){ e.stopPropagation(); });
       var gSearch = $('globalSearch');
-      if(gSearch) gSearch.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); globalSearch(); }});
+      var gSearchBox = $('adminSearchResults');
+      if(gSearch){
+        var gSearchTimer = 0;
+        gSearch.addEventListener('input', function(){
+          clearTimeout(gSearchTimer);
+          gSearchTimer = setTimeout(adminSearchRender, 160);
+        });
+        gSearch.addEventListener('focus', function(){
+          if(String(gSearch.value || '').trim()) adminSearchRender();
+        });
+        gSearch.addEventListener('keydown', function(e){
+          if(e.key === 'Enter'){ e.preventDefault(); adminSearchRender(); }
+          if(e.key === 'Escape'){ adminSearchHide(); gSearch.blur(); }
+        });
+      }
+      if(gSearchBox && !gSearchBox.dataset.searchBound){
+        gSearchBox.dataset.searchBound = '1';
+        gSearchBox.addEventListener('click', function(ev){
+          var btn = ev.target && ev.target.closest ? ev.target.closest('[data-search-i]') : null;
+          if(!btn || !gSearchBox.contains(btn)) return;
+          ev.preventDefault();
+          var hits = gSearchBox._adminSearchHits || [];
+          var n = parseInt(btn.getAttribute('data-search-i'), 10);
+          if(hits[n]) adminSearchOpenHit(hits[n]);
+        });
+      }
+      if(!window.__adminSearchOutsideBound){
+        window.__adminSearchOutsideBound = true;
+        document.addEventListener('click', function(ev){
+          var wrap = document.querySelector('.admin-search-wrap');
+          if(!wrap || (ev.target && wrap.contains(ev.target))) return;
+          adminSearchHide();
+        });
+      }
       if(!window.__c4kMockDeleg){
         window.__c4kMockDeleg = true;
         $('workspace').addEventListener('click', function(e){

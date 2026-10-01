@@ -951,6 +951,30 @@
     }
     .admin-search-wrap input:focus{outline:2px solid rgba(45,132,179,.25);border-color:var(--blue);background:#fff}
     .admin-search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.45;font-size:14px}
+    .admin-search-results{
+      position:absolute;left:0;top:calc(100% + 6px);z-index:80;width:min(440px,86vw);
+      background:#fff;border:1px solid var(--line);border-radius:12px;
+      box-shadow:0 12px 32px rgba(15,23,42,.12);
+      max-height:min(70vh,440px);overflow:auto;min-width:0
+    }
+    .admin-search-results[hidden]{display:none!important}
+    .admin-search-results__group{padding:8px 8px 2px;min-width:0}
+    .admin-search-results__h{
+      margin:0 8px 4px;font-size:10px;font-weight:800;letter-spacing:.06em;
+      text-transform:uppercase;color:#64748b
+    }
+    .admin-search-results__btn{
+      display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+      width:100%;text-align:left;border:0;background:transparent;cursor:pointer;
+      border-radius:8px;padding:8px 10px;min-width:0;font:inherit;color:inherit
+    }
+    .admin-search-results__btn:hover,.admin-search-results__btn:focus-visible{background:#f1f5f9;outline:none}
+    .admin-search-results__title,.admin-search-results__sub{
+      max-width:100%;min-width:0;overflow-wrap:anywhere
+    }
+    .admin-search-results__title{font-weight:700;font-size:13px}
+    .admin-search-results__sub{font-size:12px;color:#64748b}
+    .admin-search-results__empty{padding:12px 14px;font-size:13px;color:#64748b;overflow-wrap:anywhere}
     .admin-topbar-meta{display:flex;align-items:center;gap:10px;flex-shrink:0;overflow:visible}
     .admin-topbar .admin-topbar-chat-wrap.portal-admin-floating-chat-wrap{
       position:relative;
