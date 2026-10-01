@@ -12331,10 +12331,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .limit(5000);
         if(res.error || !res.data || !res.data.length) return false;
         var byId = Object.create(null);
+        var labelById = Object.create(null);
         res.data.forEach(function(row){
           var cid = String(row.contact_id || '').trim();
-          if(cid) byId[cid] = row;
+          if(!cid) return;
+          byId[cid] = row;
+          labelById[cid] = {
+            funding: String(row.funding_label || '').trim(),
+            payment: String(row.payment_method_label || '').trim()
+          };
         });
+        window.PAX_CONTACTS_LABELS = labelById;
         var src = typeof window !== 'undefined' ? window.PARTICIPANTS_PARENTS_PORTAL_SOURCE : null;
         if(!src || !Array.isArray(src.rows)){
           window.PARTICIPANTS_PARENTS_PORTAL_SOURCE = { rows: [] };
@@ -22408,11 +22415,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var meth = String((p && (p._adminPaymentMethodLabel || (p.reg && p.reg.paymentMethod))) || '').trim();
       if(src === '—') src = '';
       if(meth === '—') meth = '';
+      var labelCid = String((p && (p.contactId || (typeof adminClientsInfoContactIdKey === 'function' ? adminClientsInfoContactIdKey(p.id) : ''))) || '').trim();
+      var saved = (window.PAX_CONTACTS_LABELS || {})[labelCid];
+      if(saved){
+        if(!src && saved.funding) src = saved.funding;
+        if(!meth && saved.payment) meth = saved.payment;
+      }
       var fromSources = paxContactsMoneyFromSources(p);
-      if(fromSources && (fromSources.src || fromSources.meth)){
-        if(fromSources.src) src = fromSources.src;
-        if(fromSources.meth) meth = fromSources.meth;
-      }else{
+      /* Invoice labels already stored on the contact win. Sources only fill a blank. */
+      if(!src && fromSources && fromSources.src) src = fromSources.src;
+      if(!meth && fromSources && fromSources.meth) meth = fromSources.meth;
+      if(!src || !meth){
         var cid = String((p && (p.contactId || (typeof adminClientsInfoContactIdKey === 'function' ? adminClientsInfoContactIdKey(p.id) : ''))) || '').trim();
         var fromInv = paxContactsLabelsFromAutumnInvoice((window.PAX_CONTACTS_AUTUMN_PAY || {})[cid]);
         if(fromInv && !src && !meth){
