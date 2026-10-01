@@ -17328,6 +17328,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(dcInstructorOnlyCancel || payload.dc_instructor_only){
             var dcWho = String(slot.clientDisplay || slot.clientSlug || 'This client').trim();
             sched.lastMsg = 'Override saved. ' + dcWho + ' stays booked: only this Day Centre instructor was cancelled.';
+          }else if(schedSlotIsDayCentre(slot)){
+            /* Day Centre override cancels stay on the staff board. Parents are not notified. */
+            sched.lastMsg = 'Override saved. Day Centre change stays with staff (no parent notification).';
           }else{
             autoNotifyKind = 'session_cancelled';
             try{

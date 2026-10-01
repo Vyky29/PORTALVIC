@@ -404,6 +404,33 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
   );
 }
 
+function labelIsDayCentre(raw: string): boolean {
+  const svc = raw.toLowerCase();
+  return (
+    svc.indexOf("day centre") >= 0 ||
+    svc.indexOf("daycentre") >= 0 ||
+    /(^|\b)dc(\b|$)/.test(svc)
+  );
+}
+
+/** True when this override is a Day Centre seat, or the child only has Day Centre seats. */
+async function dayCentreParentNotifyBlocked(
+  admin: SupabaseClient,
+  opts: ScheduleOverrideNotifyInput,
+): Promise<boolean> {
+  if (labelIsDayCentre(clean(opts.serviceLabel, 160))) return true;
+  const first = clean(opts.participantDisplay, 120).split(/\s+/)[0] || "";
+  if (first.length < 3) return false;
+  const { data } = await admin
+    .from("portal_roster_rows")
+    .select("service")
+    .ilike("client_name", first)
+    .eq("status", "active")
+    .limit(40);
+  if (!data?.length) return false;
+  return data.every((row) => labelIsDayCentre(String(row.service || "")));
+}
+
 function subjectForKind(kind: ScheduleOverrideNotifyKind, child: string): string {
   if (kind === "instructor_change" || kind === "instructor_change_update") {
     return `Instructor update · ${child}`;
@@ -437,16 +464,9 @@ export async function notifyScheduleOverrideParent(
     return { ok: false, skipped: true, reason: "no_named_cover", kind };
   }
 
-  /* Day Centre staff rotate between kids — Team shows the cover; do not WhatsApp. */
-  if (kind === "instructor_change" || kind === "instructor_change_update") {
-    const svc = clean(opts.serviceLabel, 160).toLowerCase();
-    if (
-      svc.indexOf("day centre") >= 0 ||
-      svc.indexOf("daycentre") >= 0 ||
-      /(^|\b)dc(\b|$)/.test(svc)
-    ) {
-      return { ok: true, skipped: true, reason: "day_centre_no_instructor_notify", kind };
-    }
+  /* Day Centre overrides (cover, cancel, time) stay on the staff board. Parents are not notified. */
+  if (await dayCentreParentNotifyBlocked(admin, opts)) {
+    return { ok: true, skipped: true, reason: "day_centre_no_parent_notify", kind };
   }
 
   const overrideId = clean(opts.overrideId, 60);
