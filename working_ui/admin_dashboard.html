@@ -21668,6 +21668,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(ca && cb && ca !== cb){
             var pair = [ca, cb].sort().join('|');
             if(pair === 'muhammad|muhammad_elmi') return false;
+            /* Wednesday Acton 4.00 "Elias" is Elias Thomas. Elias Flinter is an old contact. */
+            if(pair === 'elias|elias_flinter') return false;
           }
         }
       }catch(_canonFirst){}
