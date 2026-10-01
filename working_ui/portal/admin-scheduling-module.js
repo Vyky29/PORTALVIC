@@ -76,7 +76,7 @@
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot</button></div>' +
       '<p id="schedConnMsg" class="muted" style="margin:0 0 12px;min-height:1.25em;max-width:900px;overflow-wrap:break-word"></p>' +
       deps.schedAddSessionFormHtml() +
-      '<div class="section"><div class="section-h"><h2>Base schedule</h2><p>Click a row for full context and to add or review an override. Instructor and participant names open profiles when linked in admin data.</p></div>' +
+      '<div class="section">' +
       '<div class="card"><div class="card-pad sched-tbl-wrap"><table class="tbl sched-tbl" id="schedBaseTable"><thead><tr><th>Participant</th><th>Service</th><th>Time</th><th>Notes</th><th>Venue</th><th>Instructor</th><th>Roster</th><th>Override</th><th>Action</th></tr></thead><tbody></tbody></table></div></div></div>' +
       '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Change log</h2><p>Day overrides and term roster edits for the selected date (Supabase).</p></div>' +
       '<div class="card"><div class="card-pad sched-tbl-wrap"><table class="tbl sched-tbl" id="schedLogTable"><thead><tr><th>Time</th><th>Type</th><th>Participant</th><th>Instructor</th><th>Reason</th><th>Created by</th><th>Created</th></tr></thead><tbody></tbody></table></div></div></div>'
@@ -85,9 +85,8 @@
 
   function viewHtml() {
     return (
-      '<h1 class="page-title">Sessions · Schedule &amp; Covers</h1>' +
-      '<p class="page-intro">Day changes here update the same truth as <strong>Sessions Overview</strong> (covers, trials, absents). Use Overview to check the board; use this page to make the change. ' +
-      '<a href="admin_roster_guide.html" target="_blank" rel="noopener" style="font-weight:700">Roster flow guide (English, with diagrams)</a> — which tool to use for term vs one-day changes.</p>' +
+      '<h1 class="page-title">Sessions · Schedule & Covers</h1>' +
+      '<p class="page-intro">Day changes here update the same truth as Sessions Overview (covers, trials, absents). Use Overview to check the board. Use this page to make the one-day change. Edit term slot is for the rest of the term. Click a row for the full context and to add or review an override. Instructor and participant names open profiles when they are linked.</p>' +
       moduleInnerHtml()
     );
   }

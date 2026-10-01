@@ -88,7 +88,7 @@
   <script src="/portal/portal_participant_identity.js?v=20261001-joelle-ja"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20261001-sessions-quiet"></script>
   <script src="/portal/admin-portal-documents.js?v=20261001-pay-expenses-only"></script>
-  <script src="/portal/admin-portal-participant-documents.js?v=20261001-no-doc-btns"></script>
+  <script src="/portal/admin-portal-participant-documents.js?v=20261001-reg-form"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260923-auto-makeup"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20261001-clients-families"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
@@ -152,7 +152,7 @@
   <script src="/portal/portal-parent-notify-templates.js?v=20260929-bespoke-cover"></script>
   <script src="/portal/cfk-app.js?v=20260917-places-first"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
-  <script src="/portal/admin-scheduling-module.js?v=20260919-create-card"></script>
+  <script src="/portal/admin-scheduling-module.js?v=20261001-sched-quiet"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -498,7 +498,7 @@
       { id:'portal_docs_passport', label:'Passports' },
       { id:'portal_docs_checklist', label:'Checklists' },
       { id:'portal_docs_firstaid', label:'First aids' },
-      { id:'portal_participant_documents', label:'Registered', hubLabel:'Registered' },
+      { id:'portal_participant_documents', label:'REGISTERED', hubLabel:'REGISTERED' },
       { id:'portal_registration_form', label:'Registration Form', hubLabel:'Registration Form' },
       { id:'portal_climbing_registrations', label:'Climbing registrations', hubLabel:'Climbing regs' },
       { id:'portal_parent_consents', label:'Parent consents', hubLabel:'Parent consents' },
@@ -2446,7 +2446,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       g_clients: ['buckets'],
       clients: ['clients_list', 'buckets'],
       c4k_waitlist: ['waiting_list'],
-      portal_participant_documents: ['registered_docs'],
+      portal_participant_documents: ['clients_list', 'buckets'],
       portal_registration_form: ['registered_docs'],
       leads: ['buckets'],
       portal_parent_notify_log: ['parent_notify'],
@@ -2465,7 +2465,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v104')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v105')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -23671,7 +23671,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var n = paxContactsUnifiedList().length;
       var intro = bookingSelected === 'waiting'
         ? 'WAITING LIST in the menu is this same table. Booking status WAITING LIST shows portal waiting list and old waiting list together. portal waiting list is the Booking Portal queue from 12 Aug 2026. old waiting list is the workbook from before that, and drops anyone who already has a service. Someone who already has a service can still be on portal waiting list for another place. Desired service, slot, place, last booking and parent stay on the row.'
-        : 'ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. WAITING LIST in the left menu is this same table. portal waiting list is the Booking Portal queue from 12 Aug 2026 (Tala) to now. old waiting list is the workbook queue from before that, and drops anyone who already has a service. Source is on this table. Funding and Payment stay off waiting lists and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of a waiting list. REGISTERED shows the day they registered, newest at the top. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.';
+        : 'ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. REGISTERED in the left menu is this same table. Registration Form under Documents is every Booking Portal form, including people already in class, and it is tied to the pay link. That page is not LEADS. LEADS started OTP and did not finish the form. WAITING LIST in the left menu is this same table. portal waiting list is the Booking Portal queue from 12 Aug 2026 (Tala) to now. old waiting list is the workbook queue from before that, and drops anyone who already has a service. Source is on this table. Funding and Payment stay off waiting lists and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of a waiting list. REGISTERED shows the day they registered, newest at the top. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.';
       var focus = bookingSelected === 'waiting' ? (state.waitlistFocus || null) : null;
       var focusBanner = '';
       if(focus && (focus.prog || focus.venue)){
@@ -28807,6 +28807,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(preset !== 'portal_waiting' && preset !== 'old_waiting') preset = 'waiting';
       return viewC4kParticipants({ title: 'WAITING LIST', bookingStatus: preset });
     }
+    function viewC4kRegisteredView(){
+      state.paxBookingPreset = '';
+      return viewC4kParticipants({ title: 'REGISTERED', bookingStatus: 'registered' });
+    }
     function sessionFeedbackEnsureState(){
       state.sessionFeedback = state.sessionFeedback || {};
       var st = state.sessionFeedback;
@@ -29608,7 +29612,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__portalDocsPresetFilter = 'all';
         html = viewPortalDocuments();
       }else if(id==='portal_payslips') html = viewPortalPayslips();
-      else if(id==='portal_participant_documents' || id==='portal_registration_form') html = viewPortalParticipantDocuments();
+      else if(id==='portal_participant_documents') html = viewC4kRegisteredView();
+      else if(id==='portal_registration_form') html = viewPortalParticipantDocuments();
       else if(id==='portal_climbing_registrations') html = viewPortalClimbingRegistrations();
       else if(id==='portal_parent_consents') html = viewPortalParentConsents();
       else if(id==='portal_docs_portalpin') html = viewPortalPins();
@@ -30860,7 +30865,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portal_parent_teleport: 'Read-only view of a family portal',
       interviews: 'Call and face-to-face stages',
       portal_documents: 'Staff timesheets, expenses &amp; files',
-      portal_participant_documents: 'Parent registration forms',
+      portal_participant_documents: 'Form done, never a CLIENT',
+      portal_registration_form: 'Booking Portal forms and pay links',
       staffhr: 'Staff, contracts &amp; training',
       c4k_services: 'Places, capacity &amp; standing seats',
       onboarding: 'New staff hub'
@@ -34170,7 +34176,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='portal_docs_portalpin' || id==='portal_family_pins') bindPortalPinsModule();
       else if(id==='portal_payslips') bindPortalPayslipsModule();
       else if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
-      else if(id==='portal_participant_documents' || id==='portal_registration_form') bindPortalParticipantDocumentsModule();
+      else if(id==='portal_registration_form') bindPortalParticipantDocumentsModule();
       else if(id==='portal_climbing_registrations') bindPortalClimbingRegistrationsModule();
       else if(id==='portal_parent_consents') bindPortalParentConsentsModule();
       if(id==='absents_refunds') bindPortalParentAbsencesModule();
@@ -34186,7 +34192,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='staff_ghost_teleport') bindStaffGhostTeleportModule();
       if(id==='portal_parent_teleport') bindParentGhostTeleportModule();
       if(id==='cs_cliq') bindCsCliqModule();
-      if(id==='clients' || id==='c4k_waitlist'){
+      if(id==='clients' || id==='c4k_waitlist' || id==='portal_participant_documents'){
         var root2 = $('workspace');
         function paxContactsFindById(pid){
           var L = paxContactsUnifiedList();
@@ -34541,14 +34547,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(pb) pb.addEventListener('change', function(){
             var v = String(pb.value || '');
             var waitingFamily = v === 'waiting' || v === 'portal_waiting' || v === 'old_waiting';
-            if(state.view === 'c4k_waitlist' && !waitingFamily){
+            var registeredOnly = v === 'registered';
+            function openBucket(){
               state.paxBookingPreset = v;
-              setView('clients');
+              if(waitingFamily) setView('c4k_waitlist');
+              else if(registeredOnly) setView('portal_participant_documents');
+              else setView('clients');
+            }
+            if(state.view === 'c4k_waitlist' && !waitingFamily){
+              openBucket();
               return;
             }
-            if(state.view === 'clients' && waitingFamily){
-              state.paxBookingPreset = v;
-              setView('c4k_waitlist');
+            if(state.view === 'portal_participant_documents' && !registeredOnly){
+              openBucket();
+              return;
+            }
+            if(state.view === 'clients' && (waitingFamily || registeredOnly)){
+              openBucket();
               return;
             }
             paxContactsRefreshFilters();
