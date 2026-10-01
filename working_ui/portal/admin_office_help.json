@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v99",
+  "version": "2026-10-01-v100",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1060,14 +1060,33 @@
         {
           "id": "registered_docs",
           "title": "REGISTERED documents",
-          "summary": "Registration forms for people who registered but are not seated clients yet.",
-          "where": "Documents → REGISTERED",
-          "steps": [
-            "Open REGISTERED to review submitted registration packs.",
-            "Move people toward WAITING or CLIENT when a place and payment path exist.",
-            "Do not show them as booked Sessions kids until they are CLIENT."
+          "summary": "Registration form completed, never been a CLIENT. The pack is the PDF and the photo.",
+          "where": "Clients and Families, then Registered",
+          "keywords": [
+            "registered",
+            "registration form",
+            "finish booking",
+            "mark paid",
+            "mark reviewed",
+            "resend finish link",
+            "tide",
+            "pin",
+            "pay hold"
           ],
-          "tips": []
+          "steps": [
+            "Open Registered. Each row is a submitted registration. There is no Accept step.",
+            "New-client registration is the PDF and the photo, for the office to read. Parents finish funding and payment later on the finish-booking link.",
+            "Place is live only: REGISTERED only, WAITING, Pay hold, Awaiting Tide, In class, or Did not finish.",
+            "The chosen slot is not on this table. It arrives in the pay-hold alert and the I have paid office alert.",
+            "After a bank transfer the parent must WhatsApp or email the office. A tap alone does not change admin.",
+            "Then check Tide, Mark paid in Re-enrolments and Bookings, and send the PIN.",
+            "Mark reviewed means you opened the PDF. Resend finish link if they lost it.",
+            "Climbing forms are the Climbing registrations button. Annual consents are Parent consents.",
+            "Do not show them as booked kids on Sessions until they are a CLIENT."
+          ],
+          "tips": [
+            "The explanation stays on the i next to Registered. The page keeps Refresh, Climbing registrations and Parent consents."
+          ]
         },
         {
           "id": "consents_policies",
