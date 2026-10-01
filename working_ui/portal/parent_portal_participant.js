@@ -6799,6 +6799,12 @@
     );
     bindBack(host, data, opts);
     bindAchievementDownloads(host, data, opts);
+    if (
+      global.PortalClientSessionsOverview &&
+      typeof global.PortalClientSessionsOverview.primeAchievementVideoFrames === "function"
+    ) {
+      global.PortalClientSessionsOverview.primeAchievementVideoFrames(host);
+    }
   }
 
   function bindAchievementDownloads(host, data, opts) {

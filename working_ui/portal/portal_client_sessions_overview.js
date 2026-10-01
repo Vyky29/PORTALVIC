@@ -1321,6 +1321,38 @@
     return null;
   }
 
+  function achievementIsVideo(a) {
+    var t = String((a && a.media_type) || "").toLowerCase();
+    if (t === "video") return true;
+    var url = String((a && a.url) || "").split("?")[0].split("#")[0];
+    return /\.(mp4|webm|mov|m4v)$/i.test(url);
+  }
+
+  /** iOS paints a black box until the playhead moves. Seek a fraction in so the tile shows a frame. */
+  function primeAchievementVideoFrames(root) {
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll("video.pp-ach-video").forEach(function (v) {
+      if (v.getAttribute("data-pp-ach-primed") === "1") return;
+      v.setAttribute("data-pp-ach-primed", "1");
+      function showFrame() {
+        try {
+          var dur = Number(v.duration);
+          var t = 0.15;
+          if (Number.isFinite(dur) && dur > 0 && dur < t) t = dur / 2;
+          var now = Number(v.currentTime) || 0;
+          if (Math.abs(now - t) > 0.02) v.currentTime = t;
+        } catch (_e) {}
+      }
+      v.addEventListener("loadedmetadata", showFrame);
+      v.addEventListener("seeked", function () {
+        try {
+          v.pause();
+        } catch (_p) {}
+      });
+      if (v.readyState >= 1) showFrame();
+    });
+  }
+
   function achievementsGalleryHtml(items, opts) {
     var list = Array.isArray(items) ? items : [];
     var parentDownloads = !!(opts && opts.parentDownloads);
@@ -1345,6 +1377,24 @@
           var imgDims = aspect
             ? ' width="' + aspect.w + '" height="' + aspect.h + '"'
             : ' width="160" height="120"';
+          var isVideo = achievementIsVideo(a);
+          var rawUrl = String(a.url || "");
+          var frameUrl = rawUrl;
+          if (isVideo && rawUrl && rawUrl.indexOf("#") < 0) frameUrl = rawUrl + "#t=0.1";
+          var media = isVideo
+            ? '<video class="pp-ach-video" src="' +
+              esc(frameUrl) +
+              '" muted playsinline preload="metadata"' +
+              imgDims +
+              '></video>' +
+              '<span class="pp-ach-play" aria-hidden="true"></span>'
+            : '<img src="' +
+              esc(rawUrl) +
+              '" alt="Achievement photo, ' +
+              esc(when) +
+              '" loading="lazy"' +
+              imgDims +
+              " />";
           var dlBtn = parentDownloads && photoId
             ? '<button type="button" class="pp-ach-dl-btn' +
               (isDownloaded ? " pp-ach-dl-btn--saved" : "") +
@@ -1361,17 +1411,12 @@
             itemClass +
             '" role="listitem">' +
             '<a href="' +
-            esc(a.url || "#") +
+            esc(rawUrl || "#") +
             '" target="_blank" rel="noopener noreferrer"' +
+            (isVideo ? ' aria-label="Play video, ' + esc(when) + '"' : "") +
             linkStyle +
             ">" +
-            '<img src="' +
-            esc(a.url || "") +
-            '" alt="Achievement photo, ' +
-            esc(when) +
-            '" loading="lazy"' +
-            imgDims +
-            ' />' +
+            media +
             "</a>" +
             '<figcaption class="pp-ach-cap">' +
             esc(when) +
@@ -1457,10 +1502,11 @@
     );
   }
 
-  global.PortalClientSessionsOverview = {
+    global.PortalClientSessionsOverview = {
     render: render,
     renderParent: renderParent,
     parentOverviewHtml: parentOverviewHtml,
     achievementsGalleryHtml: achievementsGalleryHtml,
+    primeAchievementVideoFrames: primeAchievementVideoFrames,
   };
 })(typeof window !== "undefined" ? window : globalThis);
