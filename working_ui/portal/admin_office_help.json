@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v111",
+  "version": "2026-10-02-v112",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -584,7 +584,7 @@
             "crash courses"
           ],
           "steps": [
-            "Clients & Families in the left menu opens a screen with the same buttons. Under Clients: Active (the old CLIENT list), WAITING LIST, REGISTERED, Leads. REGISTERED is the same contacts table as Active, filtered to people who finished the form and have never had a place. Registration Form under Documents is every Booking Portal form, including people already in class. That page is not LEADS. Under Family: WhatsApp Business (Messages), API/Portal (Messages), Portal PINs (Family), Dashboard Teleport (Family). The title is on the left. Back sits on the right.",
+            "Clients & Families in the left menu opens a screen with the same buttons. Under Clients: Active (the old CLIENT list), WAITING LIST, REGISTERED, Leads. REGISTERED is the same contacts table as Active, filtered to people who finished the form and have never had a place. Registration Form under Documents is every Booking Portal form, including people already in class. That page is not LEADS. Under Family: Achievement photos, Family broadcast, Portal PINs (Family), Dashboard Teleport (Family). WhatsApp, family messages (P), staff messages (S), Comms (C) and Announcements (A) are the buttons in the top bar. The title is on the left. Back sits on the right.",
             "The circle with i next to a page title opens what that page is for, plus the matching Office help steps. That text stays off the page.",
             "ACTIVE: on a place now. A cancelled place is not ACTIVE. ACTIVE stays under the name, with the date of birth.",
             "Support is the ratio, such as 1:1. Funding and Payment are separate columns. Funding is only one of three: Using Private funds (VAT 20%), Using LA funds (Exempt), or LA/NHS funded.",
@@ -858,8 +858,9 @@
           "id": "announcements",
           "title": "Staff announcements / reminders",
           "summary": "Workers must confirm pending announcements before using the app.",
-          "where": "Day operations / Announcements",
+          "where": "Top bar → A (Announcements)",
           "steps": [
+            "Press A in the top bar. That opens Announcements. It is not in the left menu.",
             "Compose the announcement or reminder.",
             "Pick audience (group roster shows who is in the group).",
             "Publish — staff see a blocking sheet until they confirm.",
