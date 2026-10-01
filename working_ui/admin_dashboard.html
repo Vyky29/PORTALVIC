@@ -456,6 +456,7 @@
       { id:'portal_parent_broadcast', label:'Family broadcast' },
       { id:'portal_staff_comms', label:'Comms', externalUrl:'/comunicaciones.html?from=admin', skipBottomNav:true },
       { id:'clients', label:'Active' },
+      { id:'new_client', label:'New client', hubLabel:'New client', dayOpsAct:'new_participant' },
       { id:'c4k_payments', label:'Programme payments (operations)', hubLabel:'Ops payments' },
       { id:'reenrol_payments', label:'Finance', hubLabel:'Finance' },
       { id:'commissioning_terms', label:'LA / Commissioning Terms', hubLabel:'LA Terms' },
@@ -529,7 +530,7 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','c4k_late_submissions','office_calendar','sessions_lead','sessions_incidents','sessions_venue','sessions_pickup','session_disruptions'] },
       { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','orders_all','participant_achievements'] },
-      { id:'g_clients', label:'Clients & Families', children:['__h:Clients','clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','__h:Family','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
+      { id:'g_clients', label:'Clients & Families', children:['__h:Clients','new_client','clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','__h:Family','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
       { id:'g_xero', label:'Money', children:['reenrol_payments','absents_refunds'] },
       { id:'g_messages', label:'Messages', children:['announcements'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','portal_staff_comms','portal_staff_whatsapp','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews','__h:Documents','policies_portal','policies','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_checklist','portal_docs_firstaid','day_centre_documents','portal_docs_portalpin'] },
@@ -648,6 +649,7 @@
       if(id === 'sessions_lead') id = 'portal_nav_lead';
       if(id === 'sessions_venue') id = 'c4k_services';
       if(id === 'sessions_pickup') id = 'scheduling';
+      if(id === 'new_client') id = 'new_participant';
       var inner = NAV_ICON_SVGS[id];
       if(!inner) return '';
       return '<span class="admin-nav-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg></span>';
@@ -18633,12 +18635,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var openInner = function(){
       var slotOpts = portalDayOpsCollectOpenSlotOptions({ horizonDays: 14 });
       openModal(
-        '<div class="modal-h"><h2 id="modalTitle">New participant</h2></div>'+
+        '<div class="modal-h"><h2 id="modalTitle">New client</h2></div>'+
         '<div class="modal-b" style="min-width:0">'+
         '<p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Quick add before the family completes the questionnaire — their answers will merge with this record later. Or wait for the <strong>new client</strong> notification and offer times after the form is in.</p>'+
         '<details class="muted" style="margin:0 0 14px;font-size:12px;line-height:1.5;min-width:0;overflow-wrap:break-word"><summary style="cursor:pointer;color:var(--ink-soft)"><strong>Which admin tool when?</strong></summary>'+
         '<ul style="margin:8px 0 0;padding-left:18px">'+
-        '<li><strong>New participant</strong> — trial / intake on an <em>open</em> cell (here).</li>'+
+        '<li><strong>New client</strong> — trial / intake on an <em>open</em> cell (here).</li>'+
         '<li><strong>Edit term slot</strong> — change who is booked every Monday (or rest of term).</li>'+
         '<li><strong>Schedule &amp; Covers</strong> — today only: absent, cancel, cover instructor, make-up.</li>'+
         '<li><strong>Spreadsheet reference</strong> — read-only grid; does not save.</li>'+
@@ -30363,6 +30365,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         roster_spreadsheets:'Staff rota (day / shift / paid). Places = Services open seats. Chain: Places → Timetable → Services → Schedule & Covers.',
         term_roster_edit:'Participant first — see current seat, pick an available open seat, then save (day / every weekday / rest of term).',
         clients:'Children on a place now.',
+        new_client:'Add a child, then place them on an open seat.',
         leads:'Enquired and got an OTP, registration not finished.',
         family_whatsapp_business:'Day-to-day family chats on the company WhatsApp Business number.',
         portal_family_pins:'Family portal login PINs only. Staff PINs stay under H&R, Documents.',
@@ -30481,7 +30484,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Active, WAITING LIST, Registered and Leads, plus family messages and family documents.',
         preview:[],
         status:'',
-        primary:['clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'],
+        primary:['new_client','clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'],
         secondary:[]
       },
       {
@@ -30870,6 +30873,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       absents_refunds: 'Absents, cancels, refunds, makeup',
       reenrol_payments: 'Invoices, payments &amp; shares',
       clients: 'On a place now',
+      new_client: 'Name, age and an open seat',
       c4k_waitlist: 'Waiting for a full place',
       portal_payslips: 'Worker payslip PDFs',
       participant_achievements: 'Session photos after feedback',
@@ -31119,7 +31123,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalOperatorNewLeadsHubHtml(){
       var tiles =
-        portalDashTileHtml('', '', 'new_participant', 'New participant', 'Name, age &amp; open slot', false, 'new_participant', 'new_participant')+
         portalDashTileHtml('c4k_waitlist', '', 'c4k_waitlist', 'WAITING', 'Full service — waiting for a place', false, 'waitlist')+
         portalDashTileHtml('c4k_services', '', 'c4k_services', 'Services', 'Roster · fill seats · live places', false, 'c4k_services')+
         portalDashTileHtml('open_places_2627', '', 'open_places_2627', 'Live open places', 'Jumps to Services §3', false, 'open_places')+
