@@ -1688,6 +1688,11 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   flex: 0 0 auto;
 }
 
+.portal-ach-person[data-participant-key="yunis"] .portal-roster-avatar__img,
+.portal-ach-person[data-participant-key="yunis_hussein"] .portal-roster-avatar__img {
+  object-position: center center;
+}
+
 .portal-ach-person__text {
   display: flex;
   flex-direction: column;
