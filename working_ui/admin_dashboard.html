@@ -182,7 +182,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-funding-payment-cols" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-fund-pay-colors" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -21836,6 +21836,138 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return false;
       }
     }
+    /** Latest 2026-27 re-enrolment choices, keyed by contact id. */
+    async function paxContactsLoadReenrolChoices(){
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(!client || typeof client.from !== 'function') return false;
+      try{
+        var res = await client.from('portal_re_enrolment_submissions')
+          .select('participant_contact_id,submitted_at,payload')
+          .eq('academic_year', '2026-27')
+          .order('submitted_at', { ascending: false })
+          .limit(500);
+        if(res.error || !res.data) return false;
+        var byId = Object.create(null);
+        res.data.forEach(function(row){
+          var id = String(row.participant_contact_id || '').trim();
+          if(!id || byId[id]) return;
+          var payload = row.payload && typeof row.payload === 'object' ? row.payload : {};
+          var funding = payload.funding && typeof payload.funding === 'object' ? payload.funding : {};
+          var choices = funding.choices_2627 && typeof funding.choices_2627 === 'object' ? funding.choices_2627 : {};
+          byId[id] = choices;
+        });
+        window.PAX_CONTACTS_REENROL = byId;
+        return true;
+      }catch(_re){
+        return false;
+      }
+    }
+    /** Bookings & Payments sheet (client_payments). */
+    async function paxContactsLoadClientPayments(){
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(!client || typeof client.from !== 'function') return false;
+      try{
+        var res = await client.from('client_payments')
+          .select('sheet,client_key,client_name,data')
+          .limit(500);
+        if(res.error || !res.data) return false;
+        window.PAX_CONTACTS_CLIENT_PAYMENTS = res.data;
+        return true;
+      }catch(_cp){
+        return false;
+      }
+    }
+    function paxContactsNormName(s){
+      return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    }
+    function paxContactsClientPaymentFor(p){
+      var rows = window.PAX_CONTACTS_CLIENT_PAYMENTS || [];
+      if(!rows.length || !p) return null;
+      var name = paxContactsNormName(p.name);
+      var pool = rows.filter(function(r){
+        var cn = paxContactsNormName(r.client_name);
+        var key = paxContactsNormName(r.client_key);
+        return (cn && cn === name) || (key && key === name);
+      });
+      if(!pool.length){
+        pool = rows.filter(function(r){
+          try{ return paxContactsSameChild(p.name, r.client_name); }catch(_e){ return false; }
+        });
+      }
+      if(!pool.length){
+        var first = name.split(' ')[0];
+        if(first){
+          var tokenHits = rows.filter(function(r){
+            return paxContactsNormName(r.client_name).split(' ')[0] === first;
+          });
+          if(tokenHits.length === 1) pool = tokenHits;
+        }
+      }
+      if(!pool.length) return null;
+      var autumn = pool.filter(function(r){
+        return /autumn|26\/27|26-27/i.test(String((r.data && r.data.Term) || ''));
+      });
+      return (autumn.length ? autumn : pool)[0];
+    }
+    function paxContactsMoneyFromSources(p){
+      var cid = String((p && (p.contactId || (typeof adminClientsInfoContactIdKey === 'function' ? adminClientsInfoContactIdKey(p.id) : ''))) || '').trim();
+      var re = (window.PAX_CONTACTS_REENROL || {})[cid] || null;
+      var inv = (window.PAX_CONTACTS_AUTUMN_PAY || {})[cid] || null;
+      var pay = paxContactsClientPaymentFor(p);
+      var payData = (pay && pay.data) || {};
+      var sheet = String((pay && pay.sheet) || '').toUpperCase();
+      var paid = String(payData.Paid || '');
+      var funderBlob = [payData.Funder, payData.Funding, payData['Invoice type'], paid].join(' ');
+      var code = String((re && re.funding_code) || '').toLowerCase();
+      var billing = String((re && re.billing_mode) || '').toLowerCase();
+      var methodCode = String((re && re.payment_method_code) || '').toLowerCase();
+      var scheduleCode = String((re && re.payment_schedule_code) || '').toLowerCase();
+      var hint = String((inv && inv.payment_method_hint) || '').toLowerCase();
+      var via = String((inv && inv.created_via) || '').toLowerCase();
+      var sched = inv && Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
+      var schedBlob = sched.map(function(s){
+        return String((s && s.label) || '') + ' ' + String((s && s.paid_via) || '') + ' ' + String((s && s.collect_via) || '');
+      }).join(' ').toLowerCase();
+      var bill = (String((inv && inv.notes) || '').match(/LA bill-to:\s*([^\n]+)/i) || ['', ''])[1];
+      var where = (funderBlob + ' ' + bill + ' ' + String((re && re.funding_label) || '')).toLowerCase();
+      var sheetLa = sheet === 'LA' || /funded by (la|nhs)/i.test(paid);
+      var sheetDirect = sheet === 'DIRECT_PAYMENTS';
+      var sheetPrivate = sheet === 'PARENTS';
+      var laOffice = sheetLa || (!sheetDirect && !sheetPrivate && (code === 'la_managed' || billing === 'funder_invoice' || billing === 'la_managed' || hint === 'la_funded' || via === 'la_office_auto'));
+      var direct = !laOffice && (sheetDirect || code === 'la_direct_payments' || billing === 'direct_payments' || /funds from la|direct payment/.test(paid.toLowerCase()));
+      var priv = !laOffice && !direct && (sheetPrivate || code === 'privately_funded' || code === 'private' || billing === 'private' || /private/.test(paid.toLowerCase()) || (inv && String(inv.vat_mode || '').toLowerCase() === 'vat_20'));
+      if(!laOffice && !direct && !priv) return null;
+      var src = '';
+      var meth = '';
+      if(laOffice){
+        if(where.indexOf('ealing') >= 0){
+          src = 'Local authority · Ealing';
+          meth = 'LA invoice (Care in Finance)';
+        }else if(/\bnhs\b|\bsbs\b/.test(where)){
+          src = 'NHS · SBS';
+          meth = 'LA invoice (BACS)';
+        }else if(/hammer|fulham|h\s*&\s*f|lbhf/.test(where)){
+          src = 'Local authority · H&F';
+          meth = 'LA invoice (BACS)';
+        }else{
+          return null;
+        }
+        return { src: src, meth: meth };
+      }
+      src = direct ? 'Using Funds from LA · Direct Payments' : 'Using Own money (private family funds)';
+      var hasGc = methodCode === 'gocardless' || hint === 'gocardless' || schedBlob.indexOf('gocardless') >= 0;
+      var hasBank = methodCode === 'bank_transfer' || hint === 'bank_transfer' || hint === 'tide' || /\boffice_bank\b|\bbank\b/.test(schedBlob);
+      var hasCard = hint === 'payment_link' || /stripe|apple|\bcard\b/.test(schedBlob + ' ' + hint);
+      var flexi = scheduleCode === 'term_flexi' || (!scheduleCode && (sched.length === 2 || /1st half|2nd half|\bflexi\b/.test(schedBlob)));
+      if(hasGc && hasBank && !flexi) meth = 'GoCardless (monthly) · first month bank transfer';
+      else if(hasGc) meth = 'GoCardless';
+      else if(hasCard && hasBank) meth = flexi ? 'Bank Transfer (Flexi) / Card / Apple Pay' : 'Bank Transfer / Card / Apple Pay';
+      else if(hasCard) meth = flexi ? 'Card / Apple Pay Flexi' : 'Card / Apple Pay';
+      else if(flexi) meth = 'Bank Transfer (Flexi)';
+      else if(hasBank || scheduleCode === 'term_3' || scheduleCode === 'yearly_1off' || scheduleCode === 'monthly_10' || scheduleCode === 'monthly_term') meth = 'Bank Transfer (One payment)';
+      else meth = String(payData['Payment method'] || '').trim();
+      return { src: src, meth: meth };
+    }
     function paxContactsLabelsFromAutumnInvoice(inv){
       if(!inv) return null;
       var hint = String(inv.payment_method_hint || '').toLowerCase();
@@ -22276,14 +22408,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var meth = String((p && (p._adminPaymentMethodLabel || (p.reg && p.reg.paymentMethod))) || '').trim();
       if(src === '—') src = '';
       if(meth === '—') meth = '';
-      var cid = String((p && (p.contactId || (typeof adminClientsInfoContactIdKey === 'function' ? adminClientsInfoContactIdKey(p.id) : ''))) || '').trim();
-      var invMap = window.PAX_CONTACTS_AUTUMN_PAY || {};
-      var fromInv = paxContactsLabelsFromAutumnInvoice(invMap[cid]);
-      if(fromInv && !src && !meth){
-        src = fromInv.src;
-        meth = fromInv.meth;
-      }else if(fromInv && src && !meth){
-        meth = fromInv.meth;
+      var fromSources = paxContactsMoneyFromSources(p);
+      if(fromSources && (fromSources.src || fromSources.meth)){
+        if(fromSources.src) src = fromSources.src;
+        if(fromSources.meth) meth = fromSources.meth;
+      }else{
+        var cid = String((p && (p.contactId || (typeof adminClientsInfoContactIdKey === 'function' ? adminClientsInfoContactIdKey(p.id) : ''))) || '').trim();
+        var fromInv = paxContactsLabelsFromAutumnInvoice((window.PAX_CONTACTS_AUTUMN_PAY || {})[cid]);
+        if(fromInv && !src && !meth){
+          src = fromInv.src;
+          meth = fromInv.meth;
+        }else if(fromInv && src && !meth){
+          meth = fromInv.meth;
+        }
       }
       var blob = (src + ' ' + meth).toLowerCase();
       var directPay = /direct payment|ehcp|exempt/.test(blob);
@@ -22366,13 +22503,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ? '<span title="Support ratio" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+(ratioHi?'#fee2e2':'#eef2ff')+';color:'+(ratioHi?'#991b1b':'#3730a3')+'">'+esc(ratio)+'</span>'
           : '';
         var money = paxContactsFundingPayment(p);
-        var fundBg = money.funding === 'private' ? '#f0fdf4' : (money.funding === 'la_exempt' ? '#fff7ed' : '#ecfeff');
-        var fundFg = money.funding === 'private' ? '#166534' : (money.funding === 'la_exempt' ? '#c2410c' : '#155e75');
+        var fundKind = money.funding === 'private' ? 'private' : (money.funding === 'la_exempt' ? 'la-exempt' : 'la-nhs');
         var fundingChip = money.fundingLabel
-          ? '<span title="Funding" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+fundBg+';color:'+fundFg+';max-width:100%;overflow-wrap:break-word">'+esc(money.fundingLabel)+'</span>'
+          ? '<span class="pax-chip pax-chip--'+fundKind+'" title="Funding">'+esc(money.fundingLabel)+'</span>'
           : '';
+        var payKind = {
+          gocardless: 'gc',
+          bank_1_manual: 'bank1',
+          bank_1_card: 'bank1-card',
+          bank_flexi_manual: 'flexi',
+          bank_flexi_card: 'flexi-card',
+          arrears: 'arrears',
+          ealing_52: 'ealing'
+        };
         var payChips = (money.payments || []).map(function(pay){
-          return '<span title="Payment" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:#f1f5f9;color:#334155;max-width:100%;overflow-wrap:break-word">'+esc(pay.label)+'</span>';
+          return '<span class="pax-chip pax-chip--'+(payKind[pay.id] || 'bank1')+'" title="Payment">'+esc(pay.label)+'</span>';
         }).join('');
         var statusRow = bkChip
           ? '<div class="pax-contacts-chips">'+bkChip+'</div>'
@@ -33226,9 +33371,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             paxContactsLoadRosterMoveRows(),
             paxContactsLoadParticipantFaces(),
             paxContactsLoadLiveWaitlist(),
-            paxContactsLoadAutumnPay()
+            paxContactsLoadAutumnPay(),
+            paxContactsLoadReenrolChoices(),
+            paxContactsLoadClientPayments()
           ]).then(function(results){
-            if(!(results && (results[0] || results[1] || results[2] || results[3] || results[4]))) return;
+            if(!(results && (results[0] || results[1] || results[2] || results[3] || results[4] || results[5] || results[6]))) return;
             if(typeof state.rebuildPaxContactsList === 'function'){
               state.rebuildPaxContactsList();
               if(typeof paxContactsRefreshFilters === 'function') paxContactsRefreshFilters();
