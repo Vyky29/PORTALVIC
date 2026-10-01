@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v58",
+  "version": "2026-10-01-v59",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -843,7 +843,7 @@
           "steps": [
             "Open H&R to browse staff.",
             "Open a worker for profile and employment tools.",
-            "Job application and Health questionnaire on that card are the forms they already filled. Employee info stays the short working record.",
+            "Job application and Health questionnaire on that card are the forms they already filled. Bank account is its own section. Employee info stays the short working record.",
             "Use Onboarding for new-hire progress.",
             "Contracts / training / uniform live under the same H&R card."
           ],

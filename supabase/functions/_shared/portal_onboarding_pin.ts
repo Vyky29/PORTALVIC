@@ -494,6 +494,17 @@ export function jobApplicationHrData(job: Record<string, unknown>): Record<strin
     ["Additional skills", onboardingText(job.additional_skills)],
     ["Criminal record", onboardingYesNo(job.criminal_record)],
     ["Criminal record details", onboardingText(job.criminal_record_info)],
+  ];
+  const out: Record<string, string> = {};
+  for (const [label, value] of pairs) {
+    if (value) out[label] = value;
+  }
+  return out;
+}
+
+/** Bank details stay off the job application and live in their own card section. */
+export function bankAccountHrData(job: Record<string, unknown>): Record<string, string> {
+  const pairs: Array<[string, string]> = [
     ["Bank account", onboardingText(job.bank_account)],
     ["Sort code", onboardingText(job.sort_code)],
     ["Account number", onboardingText(job.account_number)],
@@ -651,7 +662,7 @@ async function upsertHrFormSheet(
 /**
  * Submitted job applications were staying in onboarding drafts only, so Staff & HR
  * opened an empty rota card. Copy the same Employee info shape the matrix uses.
- * The full form, including bank details, is the Job application section.
+ * Bank details go in their own Bank account section.
  */
 export async function foldSubmittedJobIntoHrRecords(
   portalAdmin: SupabaseClient,
@@ -692,6 +703,13 @@ export async function foldSubmittedJobIntoHrRecords(
       anchorEarly,
       "Job application",
       jobApplicationHrData(job),
+      "onboarding_job_application",
+    );
+    await upsertHrFormSheet(
+      portalAdmin,
+      anchorEarly,
+      "Bank account",
+      bankAccountHrData(job),
       "onboarding_job_application",
     );
   }
