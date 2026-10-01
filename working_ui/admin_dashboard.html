@@ -460,6 +460,8 @@
       { id:'receptionist', label:'Receptionist hub' },
       { id:'leads', label:'Leads' },
       { id:'c4k_services', label:'Services' },
+      { id:'services_places', label:'Places (Booking Portal)', hubLabel:'Places (Booking Portal)' },
+      { id:'services_roster', label:'Service roster', hubLabel:'Service roster' },
       { id:'orders_all', label:'All', hubLabel:'Bookings' },
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
@@ -549,8 +551,8 @@
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'c4k_sessions', 'scheduling', 'nav_all_menu'];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','c4k_late_submissions','office_calendar','sessions_lead','sessions_incidents','sessions_venue','sessions_pickup','session_disruptions'] },
-      { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','orders_all','participant_achievements'] },
-      { id:'g_clients', label:'Clients & Families', children:['__h:Clients','new_client','clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','__h:Family','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
+      { id:'g_services', label:'Services & places', children:['services_places','services_roster','new_client','term_roster_edit'] },
+      { id:'g_clients', label:'Clients & Families', children:['__h:Clients','clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','__h:Family','participant_achievements','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
       { id:'g_xero', label:'Finance', children:['__h:Xero','finance_xero','finance_create','__h:Tide','finance_reenrolments','finance_payments','__h:Other','absents_refunds','commissioning_terms','family_terms'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','staff_ghost_teleport','roster_spreadsheets','onboarding','interviews','__h:Messages','announcements','portal_staff_comms','portal_staff_whatsapp','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','__h:Documents','policies_portal','policies','portal_payslips','payroll_report','pay_rates','portal_docs_timesheet','portal_docs_expense','portal_docs_checklist','portal_docs_firstaid','day_centre_documents','portal_docs_portalpin'] },
       { id:'g_settings_portal', label:'Settings', children:['settings','admin_office_help','portal_activity','portal_training_progress','portal_push_devices','portal_device_notifications','logs','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
@@ -668,6 +670,7 @@
       if(id === 'sessions_venue') id = 'c4k_services';
       if(id === 'sessions_pickup') id = 'scheduling';
       if(id === 'new_client') id = 'new_participant';
+      if(id === 'services_places' || id === 'services_roster') id = 'c4k_services';
       if(id === 'finance_create') id = 'staffhr_contracts';
       if(id === 'finance_reenrolments') id = 'clients';
       if(id === 'finance_xero') id = 'reenrol_payments';
@@ -2128,7 +2131,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       void adminFetchScheduleOverridesForHub().then(function(){
         portalOperatorPatchLiveHosts();
         try{
-          if(state.view === 'c4k_services' && typeof refreshC4kServicesPartial === 'function'){
+          if(portalAdminIsServicesView(state.view) && typeof refreshC4kServicesPartial === 'function'){
             refreshC4kServicesPartial();
           }
         }catch(_svc){}
@@ -2265,16 +2268,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }catch(_parentGhostDestroy){}
       }
       if(id === 'novo_dashboard') id = 'dashboard';
-      if(id === 'novo_schedule') id = 'c4k_services';
-      if(id === 'open_places_2627'){
+      if(id === 'novo_schedule') id = 'services_places';
+      if(id === 'c4k_services' || id === 'open_places_2627' || id === 'servicecap' || id === 'services_places'){
+        state.scrollToServicesRoster = false;
         state.scrollToOpenPlaces = true;
-        id = 'c4k_services';
+        id = 'services_places';
       }
-      if(id === 'servicecap'){
-        state.scrollToOpenPlaces = true;
-        id = 'c4k_services';
+      if(id === 'services_roster'){
+        state.scrollToOpenPlaces = false;
+        state.scrollToServicesRoster = true;
       }
-      if(id === 'novo_orders') id = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
+      if(id === 'novo_orders') id = portalAdminBookingsHidden() ? 'services_places' : 'orders_all';
       if(typeof portalAdminRedirectView === 'function') id = portalAdminRedirectView(id);
       try{
         var bdNav = $('modalBackdrop');
@@ -2290,8 +2294,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         openSessionsHubTab('feedback');
         return;
       }
-      if(id === 'c4k_home') id = 'c4k_services';
-      if(id === 'c4k_service_register') id = 'c4k_services';
+      if(id === 'c4k_home') id = 'services_places';
+      if(id === 'c4k_service_register') id = 'services_places';
       if(id === 'operations') id = 'dashboard';
       if(id === 'recruitment') id = 'staffhr';
       if(id === 'operations-admin') id = 'operations_admin';
@@ -2318,8 +2322,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           booking.ordersScope = 'all';
         }
       }
-      var _hadRegisterPeek = !!(id !== 'c4k_services' && state.c4kServicesRegisterOpen);
-      if(id !== 'c4k_services'){
+      if(id === 'c4k_services'){
+        state.scrollToServicesRoster = false;
+        state.scrollToOpenPlaces = true;
+        id = 'services_places';
+      }
+      var onServicesBoard = (id === 'services_places' || id === 'services_roster');
+      var _hadRegisterPeek = !!( !onServicesBoard && state.c4kServicesRegisterOpen);
+      if(!onServicesBoard){
         state.registerSessionSlot = null;
         state.c4kServicesRegisterOpen = false;
       }
@@ -2388,6 +2398,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       for(var i=0;i<NAV.length;i++) if(NAV[i].id===id) return NAV[i];
       return null;
     }
+    function portalAdminIsServicesView(id){
+      return id === 'c4k_services' || id === 'services_places' || id === 'services_roster';
+    }
     function navGroupForView(viewId){
       if(viewId === 'comms_ops_order') return 'g_settings_portal';
       if(viewId === 'settings') return 'g_settings_portal';
@@ -2396,7 +2409,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var g = NAV_GROUPS[i];
         if((g.children||[]).indexOf(viewId)>=0) return g.id;
       }
-      if(viewId === 'g_c4k') return 'g_services';
+      if(viewId === 'g_c4k' || viewId === 'c4k_services' || viewId === 'services_places' || viewId === 'services_roster') return 'g_services';
       return '';
     }
     var PORTAL_ADMIN_PAGE_HEAD_SKIP = {
@@ -2505,6 +2518,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       c4k_sessions: ['sessions_overview'],
       term_roster_edit: ['edit_term_slot'],
       c4k_services: ['services_board'],
+      services_places: ['services_board'],
+      services_roster: ['services_board'],
       absents_refunds: ['refunds_credits'],
       reenrol_payments: ['create_invoice', 'validate_paid'],
       office_calendar: ['office_calendar']
@@ -2567,7 +2582,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v109')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v110')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -11386,8 +11401,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       // Services opens the Who’s-in roster panel only (no attendance / Summer Term grid).
       state.registerSessionSlot = slot;
       state.c4kServicesRegisterOpen = true;
-      if(state.view !== 'c4k_services'){
-        setView('c4k_services');
+      if(!portalAdminIsServicesView(state.view)){
+        setView('services_places');
       }else{
         mountRegisterSessionInline(slot);
       }
@@ -16855,12 +16870,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         !!opts.forSessionsOverview ||
         view === 'c4k_sessions' ||
         view === 'scheduling' ||
-        view === 'c4k_services' ||
+        portalAdminIsServicesView(view) ||
         view === 'servicecap' ||
         view === 'term_roster_edit' ||
         view === 'roster_spreadsheets' ||
         view === 'absents_refunds' ||
-        /c4k_sessions|scheduling|c4k_services|servicecap|term_roster|roster_spreadsheets|absents_refunds/i.test(hash) ||
+        /c4k_sessions|scheduling|c4k_services|services_places|services_roster|servicecap|term_roster|roster_spreadsheets|absents_refunds/i.test(hash) ||
         !!window.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ ||
         !!window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__;
       if(typeof window.portalRefreshStaffDashboardSourceFromPortal !== 'function') return;
@@ -18087,7 +18102,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminRefreshRosterDependentViews(viewId){
       var id = String(viewId || state.view || '');
-      if(id === 'c4k_services'){
+      if(portalAdminIsServicesView(id)){
         fillC4kServicesFilterSelects();
         refreshC4kServicesPartial();
         return;
@@ -18181,9 +18196,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void window.portalAdminLoadHeavyScripts(['roster', 'feedback']);
         return;
       }
-      if(id === 'scheduling' || id === 'c4k_services' || id === 'servicecap' || id === 'absents_refunds' || id === 'term_roster_edit'){
+      if(id === 'scheduling' || portalAdminIsServicesView(id) || id === 'servicecap' || id === 'absents_refunds' || id === 'term_roster_edit'){
         var loads = [window.portalAdminLoadScriptSet('roster')];
-        if(id === 'c4k_services' || id === 'servicecap'){
+        if(portalAdminIsServicesView(id) || id === 'servicecap'){
           loads.push(window.portalAdminLoadScriptSet('feedback'));
           loads.push(window.portalAdminLoadScriptSet('waitlist'));
         }
@@ -29830,7 +29845,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='operations_admin') html = viewOperationsAdmin();
       else if(id==='dashboard' || id==='operations') html = viewOperations();
       else if(id==='clients') html = viewC4kParticipants();
-      else if(id==='c4k_services') html = viewC4kServices();
+      else if(id==='c4k_services' || id==='services_places') html = viewC4kServices();
+      else if(id==='services_roster') html = viewC4kServices();
       else if(id==='c4k_sessions') html = viewC4kSessions();
       else if(id==='c4k_late_submissions') html = viewC4kLateSubmissions();
       else if(id==='session_disruptions') html = viewSessionDisruptions();
@@ -30602,7 +30618,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         roster_spreadsheets:'Staff rota (day / shift / paid). Places = Services open seats. Chain: Places → Timetable → Services → Schedule & Covers.',
         term_roster_edit:'Participant first — see current seat, pick an available open seat, then save (day / every weekday / rest of term).',
         clients:'Children on a place now.',
-        new_client:'Add a child, then place them on an open seat.',
+        new_client:'Add a child, then place them on an open seat from Places.',
+        services_places:'Booking Portal seats and who is taken. An open space is where a new client can go.',
+        services_roster:'Who is booked, and the standing instructor for that seat.',
         leads:'Enquired and got an OTP, registration not finished.',
         family_whatsapp_business:'Day-to-day family chats on the company WhatsApp Business number.',
         portal_family_pins:'Family portal login PINs only. Staff PINs stay under H&R, Documents.',
@@ -30711,7 +30729,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Capacity, open places and standing seat edits.',
         preview:[],
         status:'',
-        primary:['c4k_services','term_roster_edit','participant_achievements'],
+        primary:['services_places','services_roster','new_client','term_roster_edit'],
         secondary:['orders_all']
       },
       {
@@ -30721,7 +30739,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Active, WAITING LIST, Registered and Leads, plus family messages and family documents.',
         preview:[],
         status:'',
-        primary:['new_client','clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'],
+        primary:['clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','participant_achievements','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'],
         secondary:[]
       },
       {
@@ -31108,6 +31126,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       reenrol_payments: 'Invoices, payments &amp; shares',
       clients: 'On a place now',
       new_client: 'Name, age and an open seat',
+      services_places: 'Booking Portal seats and who is taken',
+      services_roster: 'Who is booked and the standing instructor',
       c4k_waitlist: 'Waiting for a full place',
       portal_payslips: 'Worker payslip PDFs',
       participant_achievements: 'Session photos after feedback',
@@ -34947,7 +34967,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='c4k_sessions' || id==='c4k_late_submissions'){
         portalLateAdminScheduleBadgeRefresh();
       }
-      if(id==='c4k_services'){
+      if(id==='c4k_services' || id==='services_places' || id==='services_roster'){
         ensureC4kServicesFiltersDelegated();
         var btnSv = $('c4kServicesRefreshBtn');
         if(btnSv) btnSv.onclick = function(){ portalAdminForceServicesRosterRefresh(); };
@@ -34973,6 +34993,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           setTimeout(function(){
             var opEl = $('op2627Anchor') || $('op2627Root');
             if(opEl) opEl.scrollIntoView({ block:'start', behavior:'smooth' });
+          }, 120);
+        }
+        if(state.scrollToServicesRoster){
+          state.scrollToServicesRoster = false;
+          setTimeout(function(){
+            var rosterEl = $('c4kServicesRosterAnchor') || $('c4kServicesRosterRoot');
+            if(rosterEl) rosterEl.scrollIntoView({ block:'start', behavior:'smooth' });
           }, 120);
         }
         if(state.registerSessionSlot){
@@ -37379,7 +37406,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
             btn += '</button>';
           }
-          if(item.id === 'c4k_services' && state.view === 'c4k_services' && state.c4kServicesRegisterOpen){
+          if(item.id === state.view && portalAdminIsServicesView(state.view) && state.c4kServicesRegisterOpen){
             var regLab = (window.PortalUiLocale && window.PortalUiLocale.getLang && window.PortalUiLocale.getLang() === 'es') ? 'Registro' : 'Register';
             btn += '<div class="admin-nav-register-peek" role="status" aria-live="polite" title="Opened from Services — use Back or close to return">'+adminNavIconHtml('c4k_registers')+
               '<span class="admin-nav-label">'+esc(regLab)+'</span></div>';
