@@ -159,7 +159,7 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260919-youssef-namekey"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20261001-kareena-through-28"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20261001-old-aboodi-amir-mensah"></script>
   <script src="/portal/autumn_staff_hours_reference.js?v=20260928-patience-tue"></script>
   <script src="/portal/portal_dc_services_local.js?v=20260930-tue-fadi"></script>
   <script src="/portal/portal_capacity_chain_occupants.js?v=20261001-kareena-through-28"></script>
@@ -402,7 +402,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260928-patience-tue"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20261001-old-aboodi-amir-mensah"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260924-makeup-accept-bell"></script>
@@ -21568,12 +21568,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * REGISTERED: registration form, no service, not on a waiting list.
      * CFK LEADS: Class for Kids contact file, asked, never had a service.
      */
+    /** Had a service and left before this term. No Autumn seat, so not ACTIVE. */
+    function paxContactsNamedOldClient(p){
+      var n = String((p && p.name) || '').trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
+      if(!n) return false;
+      if(n === 'aboodi patel' || n === 'abodi pa' || n === 'abodi p' || n === 'abodi') return true;
+      if(n === 'amir kais' || n === 'amir kals') return true;
+      if(n === 'bediako mensah' || n === 'bediako') return true;
+      if(n === 'cayra mensah' || n === 'cayra') return true;
+      return false;
+    }
     function paxContactsBucket(p){
       var st = String((p && p.bookingStatus) || '');
       var seats = 0;
       try{ seats = paxContactsCurrentSeatBands(p).length; }catch(_seats){ seats = 0; }
       var live = paxContactsLiveRow(p);
-      if(seats > 0 || (live && live.in_class === true)) return st === 'trial' ? 'trial' : 'programme_in';
+      if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
+      if(paxContactsNamedOldClient(p)) return 'booking_history';
+      if(live && live.in_class === true) return st === 'trial' ? 'trial' : 'programme_in';
       if(paxContactsHasBookingHistory(p)) return 'booking_history';
       if(paxContactsIsWaiting(p)) return 'waiting_list';
       if(paxContactsIsPortalRegistration(p)) return 'registered';

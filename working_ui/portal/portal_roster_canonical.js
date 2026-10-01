@@ -4354,6 +4354,16 @@
       reggie_conlon: "2026-09-22",
     });
     var gone = Object.assign({}, base.clientRosterGoneFromDates || {});
+    /* Last sessions were July 2026. No Autumn seat. */
+    gone["Amir Kais"] = gone["Amir Kais"] || "2026-09-01";
+    gone["Amir Kals"] = gone["Amir Kals"] || "2026-09-01";
+    gone.Amir = gone.Amir || "2026-09-01";
+    gone["Bediako Mensah"] = gone["Bediako Mensah"] || "2026-09-01";
+    gone.Bediako = gone.Bediako || "2026-09-01";
+    gone.bediako = gone.bediako || "2026-09-01";
+    gone["Cayra Mensah"] = gone["Cayra Mensah"] || "2026-09-01";
+    gone.Cayra = gone.Cayra || "2026-09-01";
+    gone.cayra = gone.cayra || "2026-09-01";
     /* Kareena counts through Sun 28 Sep. Off the seat from Tue 29 Sep. */
     gone.Kareena = "2026-09-29";
     gone.kareena = "2026-09-29";

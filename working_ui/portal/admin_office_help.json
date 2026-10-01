@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v61",
+  "version": "2026-10-01-v62",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -443,7 +443,7 @@
             "active"
           ],
           "steps": [
-            "ACTIVE: on a place now.",
+            "ACTIVE: on a place now. Someone with no seat this term is not ACTIVE. If they had a service before, they are HAS BOOKING HISTORY (OLD).",
             "WAITING: registered and on a waiting list. They do not also appear under REGISTERED. Joined waiting is the day they joined. Booking Portal has that day. Not on file means the Class for Kids row has no date.",
             "HAS BOOKING HISTORY: had a service and is not here now.",
             "REGISTERED: filled the registration form, no service, not on a waiting list.",
