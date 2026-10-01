@@ -20903,7 +20903,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * Two rows share a first name but are different children (Ayaan vs Ayaan Towle,
      * Yusuf Ah vs Yusuf Harzi). The bare first name stays with the earliest contact.
      */
+    /** Mia on the board is Mia Mesi. Mia Smoliar is a different child. */
+    function adminPortalMiaSmoliarIsOtherChild(a, b){
+      function norm(n){
+        return String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      var x = norm(a);
+      var y = norm(b);
+      function smoliar(n){ return n === 'mia smoliar' || /(^| )smoliar$/.test(n); }
+      function mesiSeat(n){ return n === 'mia' || n === 'mia mesi' || n === 'mia m'; }
+      return (smoliar(x) && mesiSeat(y)) || (smoliar(y) && mesiSeat(x));
+    }
     function paxContactsKeepSeparate(a, b){
+      if(adminPortalMiaSmoliarIsOtherChild(a && a.name, b && b.name)) return true;
       try{
         var idn = window.PortalParticipantIdentity;
         if(idn && typeof idn.canonicalClientId === 'function'){
@@ -22401,9 +22413,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(pair === 'muhammad|muhammad_elmi') return false;
             /* Wednesday Acton 4.00 "Elias" is Elias Thomas. Elias Flinter is an old contact. */
             if(pair === 'elias|elias_flinter') return false;
+            /* Board "Mia" is Mia Mesi. Mia Smoliar is another child. */
+            if(pair === 'mia|mia_smoliar' || pair === 'mia_mesi|mia_smoliar') return false;
           }
         }
       }catch(_canonFirst){}
+      if(adminPortalMiaSmoliarIsOtherChild(aa, bb)) return false;
       if(typeof adminPortalParticipantMatchesDisplayName === 'function' && adminPortalParticipantMatchesDisplayName(aa, bb, amb || {})) return true;
       try{
         var idn = window.PortalParticipantIdentity;
@@ -34861,6 +34876,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var portalNorm = adminPortalNormalizedPersonName(portalFullName);
       var rosterNorm = adminPortalNormalizedPersonName(rosterOrSheetDisplayName);
       if(!portalNorm || !rosterNorm) return false;
+      if(adminPortalMiaSmoliarIsOtherChild(portalFullName, rosterOrSheetDisplayName)) return false;
       if(portalNorm === rosterNorm) return true;
       var pf = adminPortalFuzzyFirstToken(portalFullName);
       var rf = adminPortalFuzzyFirstToken(rosterOrSheetDisplayName);
