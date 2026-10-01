@@ -411,12 +411,7 @@
     var embedded = !!(opts && opts.embedded);
     var head = embedded
       ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:0;min-width:0;scroll-margin-top:14px;padding-top:4px">' +
-        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">1 · Places (Booking Portal)</h2>' +
-        '<p class="page-intro" style="max-width:52rem;margin:0 0 12px;min-width:0;overflow-wrap:break-word">' +
-        "Same bands as the public Booking Portal. Numbers are slots that day (taken / capacity), not weeks of term. " +
-        "Tuesday Acton 4.00 is 3 slots because Aurora starts at 4.30; from 4.30 it is 4 instructors. Climbing Tue/Thu Elia is an office hold (not bookable). " +
-        "Who works each seat is on <strong>Services</strong> below. Weekly Autumn days first; Intensive / Camps grouped below." +
-        "</p>"
+        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">1 · Places (Booking Portal)</h2>'
       : '<div class="page-head" style="min-width:0">' +
         '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Places 2026/27</h2>' +
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
@@ -866,12 +861,6 @@
         ? '<p class="op2627-band-hint muted">Showing band from Services: <strong>' +
           esc(state.bandHint) +
           "</strong></p>"
-        : "") +
-      (metaBits.length
-        ? '<p class="muted" style="margin:0 0 10px;max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-          esc(metaBits.join(" · ")) +
-          (state.termBadge ? " · " + esc(state.termBadge) : "") +
-          "</p>"
         : "") +
       '<div class="card card-pad" style="margin-bottom:12px;min-width:0">' +
       '<div class="toolbar" style="flex-wrap:wrap;gap:10px;align-items:flex-end;min-width:0">' +

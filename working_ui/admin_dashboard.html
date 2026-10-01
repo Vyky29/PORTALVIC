@@ -146,11 +146,11 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260929-header-wa"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260922-job-phone"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
-  <script src="/portal/admin-open-places-2627.js?v=20260920-offer-boot"></script>
+  <script src="/portal/admin-open-places-2627.js?v=20261001-quiet"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260929-header-wa" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260929-bespoke-cover"></script>
-  <script src="/portal/cfk-app.js?v=20260917-places-first"></script>
+  <script src="/portal/cfk-app.js?v=20261001-quiet"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20261001-sched-quiet"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -496,6 +496,8 @@
       { id:'day_centre_documents', label:'Day Centre documents', hubLabel:'Day Centre docs' },
       { id:'care_plans', label:'Care Plans', hubLabel:'Care Plans' },
       { id:'portal_payslips', label:'Payslips', hubLabel:'Payslips' },
+      { id:'payroll_report', label:'Payroll report', hubLabel:'Payroll report', externalUrl:'/payroll-report.html', skipBottomNav:true },
+      { id:'pay_rates', label:'Pay rates', hubLabel:'Pay rates', externalUrl:'/pay-rates.html', skipBottomNav:true },
       { id:'portal_docs_timesheet', label:'Timesheets' },
       { id:'portal_docs_expense', label:'Expenses' },
       { id:'portal_docs_portalpin', label:'Portal PINs' },
@@ -532,9 +534,8 @@
       { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','orders_all','participant_achievements'] },
       { id:'g_clients', label:'Clients & Families', children:['__h:Clients','new_client','clients','c4k_waitlist','portal_participant_documents','leads','c4k_reviews','c4k_reports','__h:Family','family_whatsapp_business','portal_parent_broadcast','portal_parent_notify_log','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
       { id:'g_xero', label:'Money', children:['reenrol_payments','absents_refunds'] },
-      { id:'g_messages', label:'Messages', children:['announcements'] },
-      { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','portal_staff_comms','portal_staff_whatsapp','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','interviews','__h:Documents','policies_portal','policies','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_checklist','portal_docs_firstaid','day_centre_documents','portal_docs_portalpin'] },
-      { id:'g_more', label:'More', children:['__h:Extra hubs','dashboard','operations_admin','operator','receptionist','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','staff_ghost_teleport'] },
+      { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','interviews','__h:Messages','announcements','portal_staff_comms','portal_staff_whatsapp','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','__h:Documents','policies_portal','policies','portal_payslips','payroll_report','pay_rates','portal_docs_timesheet','portal_docs_expense','portal_docs_checklist','portal_docs_firstaid','day_centre_documents','portal_docs_portalpin'] },
+      { id:'g_more', label:'More', children:['__h:Extra hubs','operator','receptionist','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','staff_ghost_teleport'] },
       { id:'g_settings_portal', label:'Settings', children:['settings','admin_office_help','portal_activity','portal_training_progress','portal_push_devices','portal_device_notifications','logs','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
@@ -650,6 +651,8 @@
       if(id === 'sessions_venue') id = 'c4k_services';
       if(id === 'sessions_pickup') id = 'scheduling';
       if(id === 'new_client') id = 'new_participant';
+      if(id === 'payroll_report') id = 'invoices';
+      if(id === 'pay_rates') id = 'c4k_payments';
       var inner = NAV_ICON_SVGS[id];
       if(!inner) return '';
       return '<span class="admin-nav-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg></span>';
@@ -2354,7 +2357,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return null;
     }
     function navGroupForView(viewId){
-      if(viewId === 'comms_ops_order') return 'g_messages';
+      if(viewId === 'comms_ops_order') return 'g_more';
       if(viewId === 'settings') return 'g_settings_portal';
       if(viewId === 'sessions_register' || viewId === 'sessions_feedback' || viewId === 'sessions_absents' || viewId === 'sessions_incidents' || viewId === 'sessions_notes' || viewId === 'session_disruptions') return 'g_operator';
       for(var i=0;i<NAV_GROUPS.length;i++){
@@ -30518,7 +30521,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Workers, Timetable, certificates, and worker documents.',
         preview:[],
         status:'',
-        primary:['staffhr','roster_spreadsheets','onboarding','portal_staff_comms','portal_staff_whatsapp','portal_docs_certificate','portal_docs_passport','policies_portal','policies','portal_payslips'],
+        primary:['staffhr','roster_spreadsheets','onboarding','interviews','announcements','portal_staff_comms','portal_staff_whatsapp','portal_docs_certificate','portal_docs_passport','policies_portal','policies','portal_payslips','payroll_report','pay_rates'],
         secondary:[{ id:'staffhr_contracts', label:'Contracts' },{ id:'staffhr_training_records', label:'Training records' },{ id:'staffhr_uniform', label:'Uniform' },'interviews','portal_docs_timesheet','portal_docs_expense','portal_docs_checklist','portal_docs_firstaid','day_centre_documents','portal_docs_portalpin']
       },
       {
@@ -32740,8 +32743,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     function viewOperator(){
-      return portalOperatorNewLeadsHubHtml()+
-        '<h1 class="page-title">Control centre</h1>'+
+      return '<h1 class="page-title">Control centre</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Live operational snapshot from the portal — roster, late submissions, absences, and staff activity. KPI tiles open the relevant screen.</p>'+
         '<div id="portalOperatorKpiHost">'+portalOperatorKpiGridHtml()+'</div>'+
         portalOperatorRecentActivityHtml()+

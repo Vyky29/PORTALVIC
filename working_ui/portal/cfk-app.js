@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "Places first (Booking Portal seats + who is taken), then Services roster (who is booked + normal instructor). Day covers / day offs stay on Schedule & Covers; Timetable owns who-works shift/paid (dated overrides can differ from standing).";
+    "Places is the Booking Portal seats and who is taken. Services roster is who is booked and the normal instructor. Day covers and day offs stay on Schedule & Covers. Timetable owns who works and what is paid. Dated overrides can differ from standing. Same bands as the public Booking Portal. Numbers are slots that day (taken / capacity), not weeks of term. Tuesday Acton 4.00 is 3 slots because Aurora starts at 4.30; from 4.30 it is 4 instructors. Climbing Tue/Thu Elia is an office hold (not bookable). Autumn Term 2026 runs Sat 5 September 2026 to Fri 18 December 2026. After-schools and weekends are closed 24 Oct-1 Nov (half term). Day Centre stays open on weekdays through half term. Day Centre starts Tue 1 September. Monday after-school starts 7 September.";
 
   var deps = {
     $: function (id) {
@@ -297,12 +297,9 @@
       '<h1 class="page-title">' +
       deps.esc(PAGE_TITLE) +
       "</h1>" +
-      '<p class="page-intro cfk-app-intro" style="margin-top:0;max-width:52rem;min-width:0;overflow-wrap:break-word">' +
+      '<p class="page-intro">' +
       deps.esc(PAGE_INTRO) +
-      ' <span class="chip chip--info" style="vertical-align:middle;margin-left:4px">' +
-      deps.esc(PRODUCT_NAME) +
-      "</span>" +
-      ' <span class="chip" style="vertical-align:middle;margin-left:4px">Autumn 26/27</span></p>' +
+      "</p>" +
       '<div class="c4k-svc-jumpbar" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;min-width:0" role="navigation" aria-label="Jump on this page">' +
       '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to Booking Portal places">' +
       "1 · Places (Booking Portal)</button>" +
@@ -344,7 +341,6 @@
       capacityEmbedHtml() +
       '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
       '<h2 class="page-title" style="font-size:1.15rem;margin:28px 0 6px;min-width:0;overflow-wrap:break-word">2 · Services roster</h2>' +
-      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who is booked on each standing seat + the <strong>normal instructor</strong> for that seat (from Timetable / roster). Day covers stay on Schedule &amp; Overview; shift/paid edits on Instructor timetable.</p>' +
       '<div id="c4kServicesRosterRoot" style="min-width:0">' +
       rosterPart +
       "</div></section>"
