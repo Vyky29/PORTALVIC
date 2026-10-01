@@ -21715,20 +21715,36 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return hasMoney(d.June) || hasMoney(d.July) || hasMoney(d.May) || hasMoney(d['Mar/Apr']);
     }
     /** Payments sheet name is this child. A one-word sheet name stays with that first name's owner. */
+    function paxContactsPayCanonicalId(name){
+      try{
+        var idn = window.PortalParticipantIdentity;
+        if(idn && typeof idn.canonicalClientId === 'function') return idn.canonicalClientId(name) || '';
+      }catch(_payId){}
+      return '';
+    }
     function paxContactsPayRowIsThisChild(p, r){
       var person = paxContactsNormName(p && p.name);
       var sheet = paxContactsNormName(r && r.client_name).replace(/\bacat\b/g, ' ').replace(/\s+/g, ' ').trim();
       if(!person || !sheet) return false;
       if(person === sheet) return true;
-      try{ if(paxContactsSameChild(p.name, r.client_name)) return true; }catch(_samePay){}
-      var pParts = person.split(' ');
+      var pParts = person.split(' ').filter(Boolean);
       var sParts = sheet.split(' ').filter(Boolean);
       if(!pParts[0] || pParts[0] !== sParts[0]) return false;
+      var personId = paxContactsPayCanonicalId(p.name);
+      var sheetId = paxContactsPayCanonicalId(r.client_name);
+      /* One-word sheet name stays with that first name's owner. "Ayaan" is Ayaan Imam, not Ayaan Towle. */
       if(sParts.length === 1){
+        if(personId && sheetId && personId === sheetId) return true;
         var owner = paxContactsBareFirstOwner(pParts[0]);
         if(!owner) return true;
         return paxContactsRealContactId(p) === owner;
       }
+      if(personId && sheetId && personId === sheetId) return true;
+      /* "Adam P" is Adam Pilcher. A one-letter surname is not every surname that starts with that letter. */
+      var sheetSurname = sParts.slice(1).join(' ');
+      if(sheetSurname.length === 1) return false;
+      if(personId && sheetId && personId !== sheetId) return false;
+      try{ if(paxContactsSameChild(p.name, r.client_name)) return true; }catch(_samePay){}
       return false;
     }
     function paxContactsWasSummer2026(p){
@@ -21739,11 +21755,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return false;
     }
-    /** Started in September 2026 (registration or an Autumn term payments row). */
+    /** Had an Autumn 2026 service and left. A September registration with no service is not this. */
     function paxContactsStartedSeptember(p){
-      var live = paxContactsLiveRow(p);
-      var created = String((live && live.created_at) || (p && p.createdIso) || '').slice(0, 7);
-      if(created === '2026-09') return true;
       var rows = window.PAX_CONTACTS_CLIENT_PAYMENTS || [];
       for(var i = 0; i < rows.length; i++){
         if(!/autumn/i.test(String((rows[i].data && rows[i].data.Term) || ''))) continue;
@@ -21753,7 +21766,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /**
      * ACTIVE: on a place now.
-     * OLD CLIENTS: summer 2026 client, or started in September, and not here now.
+     * OLD CLIENTS: summer 2026 client, or had an Autumn service, and not here now.
      * CFK LEADS: Class for Kids file, never in summer 2026.
      * REGISTERED: portal / webhook registration, never in summer 2026, not on a waiting list.
      */
@@ -22733,7 +22746,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">CLIENT</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. OLD CLIENTS were in summer 2026, or started in September, and are not here now. Someone who was never in summer stays under CFK LEADS (Class for Kids file) or REGISTERED (portal / webhook). WAITING is on a waiting list. Funding and Payment stay off that list until the child has a service. Newest join is at the top. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. OLD CLIENTS were in summer 2026, or had a September service, and are not here now. A September registration with no service stays REGISTERED. A Class for Kids waiting request with no booking stays WAITING. Funding and Payment stay off WAITING until the child has a service. Newest join is at the top. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
