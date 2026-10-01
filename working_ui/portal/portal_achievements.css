@@ -1667,6 +1667,15 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   transform: translateY(-1px);
   outline: none;
 }
+.portal-ach-person--old {
+  border: 2px solid #dc2626;
+  background: #fff5f5;
+}
+.portal-ach-person--old:hover,
+.portal-ach-person--old:focus-visible {
+  border-color: #b91c1c;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.18);
+}
 .portal-ach-person .portal-roster-avatar {
   width: 36px;
   height: 36px;

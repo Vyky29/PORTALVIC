@@ -459,7 +459,7 @@
         var errCode = sign.data && sign.data.error;
         var human =
           errCode === "former_client"
-            ? "Family portal access has ended for this place. Contact the office."
+            ? "This child is not on Autumn services. Ask admin to validate a new access code."
             : errCode === "ambiguous_name"
               ? "That participant name matches more than one family. Contact the office."
               : "We could not unlock. Check the names and PIN, then try again.";

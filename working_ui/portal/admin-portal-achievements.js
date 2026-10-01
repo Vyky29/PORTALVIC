@@ -26,6 +26,9 @@
     getParticipants: function () {
       return [];
     },
+    getAutumnClients: function () {
+      return null;
+    },
   };
 
   var viewerState = { photos: [], index: -1, busy: false };
@@ -42,6 +45,7 @@
     if (options.esc) cfg.esc = options.esc;
     if (options.getClient) cfg.getClient = options.getClient;
     if (typeof options.getParticipants === "function") cfg.getParticipants = options.getParticipants;
+    if (typeof options.getAutumnClients === "function") cfg.getAutumnClients = options.getAutumnClients;
   }
 
   function esc(s) {
@@ -1471,6 +1475,24 @@
   }
 
   /** Alphabetical directory: letter boxes, each with small participant buttons (max 6 per row). */
+  function isOldAutumnClient(g) {
+    if (!g || isInboxGroupKey(g.key)) return false;
+    var set = null;
+    try {
+      set = cfg.getAutumnClients ? cfg.getAutumnClients() : null;
+    } catch (_e) {
+      set = null;
+    }
+    if (!set) return false;
+    var key = normalizeClientId(g.key);
+    if (key && set[key]) return false;
+    var name = normalizeParticipantName(g.clientName);
+    if (name && set["name:" + name]) return false;
+    var first = name ? name.split(" ")[0] : "";
+    if (first && set["name:" + first]) return false;
+    return true;
+  }
+
   function renderDirectory() {
     var host = document.getElementById("portalAdminAchievementsList");
     if (!host) return;
@@ -1486,10 +1508,17 @@
       html += '<div class="portal-ach-letter__grid">';
       bucket.participants.forEach(function (g) {
         var n = g.photos.length;
+        var oldClient = isOldAutumnClient(g);
         html +=
-          '<button type="button" class="portal-ach-person" data-participant-key="' +
+          '<button type="button" class="portal-ach-person' +
+          (oldClient ? " portal-ach-person--old" : "") +
+          '" data-participant-key="' +
           esc(g.key) +
-          '">' +
+          '"' +
+          (oldClient
+            ? ' title="OLD. Not on Autumn services. No reminders. Portal needs a new code from admin."'
+            : "") +
+          ">" +
           participantAvatarHtml(g.clientName, g.key) +
           '<span class="portal-ach-person__text">' +
           '<span class="portal-ach-person__name">' +

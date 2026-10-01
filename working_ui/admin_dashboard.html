@@ -109,9 +109,9 @@
   <script src="/portal/portal_participant_photos.js?v=20260720-zakariya-photo"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
   <script src="/portal/portal_staff_photos.js?v=20260929-official-photo"></script>
-  <script src="/portal/admin-portal-achievements.js?v=20260716-return-inbox-stay"></script>
+  <script src="/portal/admin-portal-achievements.js?v=20261001-old-outline"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
-  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-ios-gallery-upload-fix" />
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20261001-old-outline" />
 <script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
 <script src="/portal/portal_admin_topbar.js?v=20260919-sel-chip"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260704-login-map-fix"></script>
@@ -29382,8 +29382,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.PortalAdminAchievements.configure({
         esc: esc,
         getClient: getSchedSupabaseClient,
-        getParticipants: adminAchievementsParticipantOptions
+        getParticipants: adminAchievementsParticipantOptions,
+        getAutumnClients: adminAchievementsAutumnClients
       });
+    }
+    /** Clients with an Autumn seat. Everyone else on the photo board is OLD. */
+    function adminAchievementsAutumnClients(){
+      var set = Object.create(null);
+      var n = 0;
+      try{
+        var src = window.STAFF_DASHBOARD_SOURCE;
+        var rows = src && Array.isArray(src.rows) ? src.rows : [];
+        rows.forEach(function(row){
+          var name = String(row && row.client_name || '').trim();
+          var low = name.toLowerCase().replace(/\s+/g, ' ');
+          if(!low || low === 'closed' || low === 'no participant' || low === 'no client' || low === 'home' || low === 'manager') return;
+          var st = String(row.status || 'active').toLowerCase();
+          if(st === 'cancelled' || st === 'inactive') return;
+          var dated = String(row.session_date || row.date || '').slice(0, 10);
+          if(dated && dated < '2026-09-01') return;
+          var id = '';
+          try{ id = adminCanonicalClientSlug(name); }catch(_id){ id = low.replace(/[^a-z0-9]+/g, '_'); }
+          if(id){ set[id] = true; n++; }
+          set['name:' + low] = true;
+          var first = low.split(' ')[0];
+          if(first) set['name:' + first] = true;
+        });
+      }catch(_e){ return null; }
+      return n ? set : null;
     }
     /** All roster participants as {key, clientName} so empty folders can receive inbox photos. */
     function adminAchievementsParticipantOptions(){

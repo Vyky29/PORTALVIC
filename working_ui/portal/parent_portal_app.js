@@ -1895,7 +1895,13 @@
     if (!res.ok || !body.ok) {
       clearSession();
       setStep("identify");
-      showNotice($("ppNotice"), "error", "Your session expired. Please sign in again.");
+      showNotice(
+        $("ppNotice"),
+        "error",
+        body && body.error === "former_client"
+          ? "This child is not on Autumn services. Ask admin to validate a new access code."
+          : "Your session expired. Please sign in again.",
+      );
       return false;
     }
     if (body.session && body.session.expires_at) {
@@ -1975,7 +1981,7 @@
           $("ppNotice"),
           "error",
           errCode === "former_client"
-            ? "Family portal access has ended for this place. Use the booking portal to book again, or contact admin."
+            ? "This child is not on Autumn services. Ask admin to validate a new access code."
             : errCode === "ambiguous_name"
               ? "That first name matches more than one family. Contact the office."
               : "We could not sign you in. Check the first name and PIN, then try again.",

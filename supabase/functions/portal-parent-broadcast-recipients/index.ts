@@ -24,6 +24,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import { loadAutumnClientNames, personOnAutumn } from "../_shared/portal_autumn_access.ts";
 
 const DEMO_EMAIL = "victor@clubsensational.org";
 const REENROL_YEAR = "2026-27";
@@ -304,7 +305,18 @@ Deno.serve(async (req) => {
       }
     }
 
+    const autumnNames = audience === "in_class" || audience === "all"
+      ? await loadAutumnClientNames(admin)
+      : null;
+
     for (const raw of (data || []) as ContactRow[]) {
+      if (
+        autumnNames &&
+        (audience === "in_class" || raw.in_class === true) &&
+        !personOnAutumn(autumnNames, raw.child_display)
+      ) {
+        continue;
+      }
       const email = String(raw.email || "").trim();
       const cid = clean(raw.contact_id, 40);
       let pay = cid ? payByContact.get(cid) : undefined;

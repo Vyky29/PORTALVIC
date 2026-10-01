@@ -23,6 +23,7 @@ import {
   normalizePinDigits,
   verifyFamilyPinHash,
 } from "../_shared/parent_portal_pin.ts";
+import { loadAutumnClientNames, personOnAutumn } from "../_shared/portal_autumn_access.ts";
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_ATTEMPTS_PER_HOUR = 20;
@@ -201,6 +202,19 @@ Deno.serve(async (req) => {
       await recordFail();
       return parentPortalJsonInvalid();
     }
+    /* OLD: no Autumn seat. The old PIN does not open the portal. */
+    const autumnNames = await loadAutumnClientNames(supabase);
+    const autumnHits = hits.filter((pid) =>
+      matchedRows.some((row) =>
+        String(row.parent_person_id) === pid &&
+        personOnAutumn(autumnNames, row.child_display, row.child_first_name)
+      )
+    );
+    if (!autumnHits.length) {
+      return json(403, { ok: false, error: "former_client" });
+    }
+    hits.length = 0;
+    autumnHits.forEach((pid) => hits.push(pid));
     /* Co-parents share one family PIN — multiple hits with the same PIN is OK.
        Prefer a non-demo parent_person_id when test rows collide on first name. */
     matchedParentId = hits.find((pid) => !/demo|test/i.test(pid)) || hits[0];

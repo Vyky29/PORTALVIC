@@ -18,6 +18,7 @@ import { resolveParentGeo, parentGeoToDbFields } from "../_shared/parent_geo.ts"
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
 import { buildReenrolmentParentSummary } from "../_shared/reenrolment_parent_summary.ts";
+import { loadAutumnClientNames, personOnAutumn } from "../_shared/portal_autumn_access.ts";
 import {
   applyUnreadFlagsToMessages,
   countUnreadOutboundMessages,
@@ -105,7 +106,17 @@ Deno.serve(async (req) => {
   const participantById = new Map(
     (participantRows || []).map((p) => [String(p.contact_id || ""), p]),
   );
-  const contacts = (linkedRows || []).map((row) => {
+  const autumnNames = await loadAutumnClientNames(supabase);
+  const contacts = (linkedRows || []).filter((row) => {
+    const p = participantById.get(String(row.contact_id || ""));
+    return personOnAutumn(
+      autumnNames,
+      p?.display_name,
+      p?.first_name,
+      row.child_display,
+      row.child_first_name,
+    );
+  }).map((row) => {
     const p = participantById.get(String(row.contact_id || ""));
     return {
       contact_id: row.contact_id,
@@ -127,6 +138,17 @@ Deno.serve(async (req) => {
       child_last_name: row.child_last_name,
     };
   });
+
+  if (!contacts.length) {
+    await supabase
+      .from("portal_parent_portal_sessions")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", sess.id);
+    return new Response(JSON.stringify({ ok: false, error: "former_client" }), {
+      status: 403,
+      headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   const { data: parentMeta } = await supabase
     .from("portal_parent_contacts")
