@@ -182,7 +182,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261002-search" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261002-search-pop" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -285,8 +285,7 @@
         <button type="button" class="admin-menu-mob" id="btnMenuMob" aria-label="Open menu" aria-controls="adminSidebar" aria-expanded="false">☰</button>
         <div class="admin-search-wrap">
           <span class="admin-search-ico" aria-hidden="true">⌕</span>
-          <input type="search" id="globalSearch" placeholder="Search people, staff, pages…" autocomplete="off" aria-label="Search people, staff and pages" aria-controls="adminSearchResults" aria-expanded="false" />
-          <div id="adminSearchResults" class="admin-search-results" hidden role="listbox" aria-label="Related results"></div>
+          <input type="search" id="globalSearch" placeholder="Search the portal and press Enter" autocomplete="off" aria-label="Search the portal" aria-controls="adminSearchResults" aria-expanded="false" />
         </div>
         <div id="portalLivePresenceBar" class="portal-live-presence admin-topbar-presence" hidden aria-live="polite"></div>
         <div class="admin-topbar-meta">
@@ -319,6 +318,16 @@
           </button>
         </div>
       </header>
+      <div id="adminSearchResults" class="admin-search-pop" hidden>
+        <button type="button" class="admin-search-pop__backdrop" data-search-close="1" aria-label="Close search"></button>
+        <div class="admin-search-pop__panel" role="dialog" aria-modal="true" aria-labelledby="adminSearchPopTitle">
+          <div class="admin-search-pop__head">
+            <h2 id="adminSearchPopTitle" class="admin-search-pop__title">Search</h2>
+            <button type="button" class="btn btn--sec btn--sm" data-search-close="1">Close</button>
+          </div>
+          <div class="admin-search-pop__body" id="adminSearchPopBody"></div>
+        </div>
+      </div>
       <main class="admin-workspace" id="workspace"></main>
     </div>
     <nav class="admin-bottom-nav" id="adminBottomNav" aria-label="Quick mobile navigation"></nav>
@@ -38707,7 +38716,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var list = paxContactsUnifiedList();
         var i;
-        for(i = 0; i < list.length && people.length < 12; i++){
+        for(i = 0; i < list.length; i++){
           var p = list[i];
           var name = String((p && p.name) || '').trim();
           if(!name) continue;
@@ -38726,12 +38735,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var sub = [bucket, parent, phone].filter(Boolean).join(' · ');
           people.push({ kind: 'person', name: name, sub: sub });
         }
+        people = people.slice(0, 24);
       }catch(_people){}
       try{
         var src = window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.staffProfiles;
         if(src){
           Object.keys(src).forEach(function(key){
-            if(staff.length >= 8) return;
+            if(staff.length >= 16) return;
             if(String(key || '').trim().toLowerCase() === 'teflon') return;
             var row = src[key] || {};
             var nm = String(row.staffName || '').trim();
@@ -38745,7 +38755,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var seenPage = Object.create(null);
       NAV_GROUPS.forEach(function(group){
         (group.children || []).forEach(function(cid){
-          if(pages.length >= 10) return;
+          if(pages.length >= 16) return;
           if(String(cid).indexOf('__h:') === 0) return;
           if(typeof portalAdminNavViewAllowed === 'function' && !portalAdminNavViewAllowed(cid)) return;
           var item = navGetItem(cid);
@@ -38763,10 +38773,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function adminSearchHide(){
       var box = $('adminSearchResults');
+      var body = $('adminSearchPopBody');
       var input = $('globalSearch');
+      if(body) body.innerHTML = '';
       if(box){
         box.hidden = true;
-        box.innerHTML = '';
+        box._adminSearchHits = [];
       }
       if(input) input.setAttribute('aria-expanded', 'false');
     }
@@ -38804,34 +38816,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function adminSearchRender(){
       var input = $('globalSearch');
       var box = $('adminSearchResults');
-      if(!input || !box) return;
+      var body = $('adminSearchPopBody');
+      var title = $('adminSearchPopTitle');
+      if(!input || !box || !body) return;
       var pack = adminSearchCollect(input.value);
       if(!pack.q){
         adminSearchHide();
         return;
       }
       var flat = pack.people.concat(pack.staff).concat(pack.pages);
-      function groupHtml(title, rows){
+      function groupHtml(titleText, rows){
         if(!rows.length) return '';
-        return '<div class="admin-search-results__group"><p class="admin-search-results__h">'+esc(title)+'</p>'+
+        return '<section class="admin-search-pop__group"><h3 class="admin-search-pop__h">'+esc(titleText)+'</h3>'+
           rows.map(function(row){
             var idx = flat.indexOf(row);
-            return '<button type="button" class="admin-search-results__btn" role="option" data-search-i="'+String(idx)+'">'+
-              '<span class="admin-search-results__title">'+esc(row.name)+'</span>'+
-              (row.sub ? '<span class="admin-search-results__sub">'+esc(row.sub)+'</span>' : '')+
-              '</button>';
+            return '<div class="admin-search-pop__row">'+
+              '<div class="admin-search-pop__copy">'+
+              '<strong class="admin-search-pop__name">'+esc(row.name)+'</strong>'+
+              (row.sub ? '<span class="admin-search-pop__sub">'+esc(row.sub)+'</span>' : '')+
+              '</div>'+
+              '<button type="button" class="btn btn--pri btn--sm admin-search-pop__open" data-search-i="'+String(idx)+'">Open</button>'+
+              '</div>';
           }).join('')+
-          '</div>';
+          '</section>';
       }
       var html = '';
       if(pack.short){
-        html = '<p class="admin-search-results__empty">Type at least two letters.</p>';
+        html = '<p class="admin-search-pop__empty">Type at least two letters, then press Enter.</p>';
       }else{
         html = groupHtml('People', pack.people) + groupHtml('Staff', pack.staff) + groupHtml('Pages', pack.pages);
-        if(!html) html = '<p class="admin-search-results__empty">Nothing matches.</p>';
+        if(!html) html = '<p class="admin-search-pop__empty">Nothing matches.</p>';
       }
+      if(title) title.textContent = 'Related to "' + pack.q + '"';
       box._adminSearchHits = flat;
-      box.innerHTML = html;
+      body.innerHTML = html;
       box.hidden = false;
       input.setAttribute('aria-expanded', 'true');
     }
@@ -39405,36 +39423,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var gSearch = $('globalSearch');
       var gSearchBox = $('adminSearchResults');
       if(gSearch){
-        var gSearchTimer = 0;
-        gSearch.addEventListener('input', function(){
-          clearTimeout(gSearchTimer);
-          gSearchTimer = setTimeout(adminSearchRender, 160);
-        });
-        gSearch.addEventListener('focus', function(){
-          if(String(gSearch.value || '').trim()) adminSearchRender();
-        });
         gSearch.addEventListener('keydown', function(e){
           if(e.key === 'Enter'){ e.preventDefault(); adminSearchRender(); }
-          if(e.key === 'Escape'){ adminSearchHide(); gSearch.blur(); }
+          if(e.key === 'Escape'){ adminSearchHide(); }
         });
       }
       if(gSearchBox && !gSearchBox.dataset.searchBound){
         gSearchBox.dataset.searchBound = '1';
         gSearchBox.addEventListener('click', function(ev){
+          var closer = ev.target && ev.target.closest ? ev.target.closest('[data-search-close]') : null;
+          if(closer && gSearchBox.contains(closer)){
+            ev.preventDefault();
+            adminSearchHide();
+            return;
+          }
           var btn = ev.target && ev.target.closest ? ev.target.closest('[data-search-i]') : null;
           if(!btn || !gSearchBox.contains(btn)) return;
           ev.preventDefault();
           var hits = gSearchBox._adminSearchHits || [];
           var n = parseInt(btn.getAttribute('data-search-i'), 10);
           if(hits[n]) adminSearchOpenHit(hits[n]);
-        });
-      }
-      if(!window.__adminSearchOutsideBound){
-        window.__adminSearchOutsideBound = true;
-        document.addEventListener('click', function(ev){
-          var wrap = document.querySelector('.admin-search-wrap');
-          if(!wrap || (ev.target && wrap.contains(ev.target))) return;
-          adminSearchHide();
         });
       }
       if(!window.__c4kMockDeleg){
@@ -39478,6 +39486,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(sdb) sdb.onclick = function(e){ if(e.target=== $('schedDrawerBackdrop')) closeSchedDrawer(); };
       document.addEventListener('keydown', function(e){
         if(e.key === 'Escape'){
+          var searchPop = $('adminSearchResults');
+          if(searchPop && !searchPop.hidden){
+            adminSearchHide();
+            e.preventDefault();
+            return;
+          }
           if(document.body.classList.contains('sidebar-open')){
             closeMenu();
             e.preventDefault();
