@@ -20394,6 +20394,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         firstBookingDisplay: String(row.firstBookingDisplay || '').trim() || '—',
         latestBookingDisplay: String(row.lastBookingDisplay || '').trim() || '—',
         onWaitingList: wl,
+        waitingJoinedIso: '',
+        waitingJoinedSource: '',
         _cfkContact: row._cfkContact === true,
         _portalRegistration: row._livePortalCreated === true || row._portalRegistration === true,
         bookingStatus: bookingStatus,
@@ -20440,6 +20442,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(window.AdminParentContactEdit && typeof window.AdminParentContactEdit.applyOverrideToPax === 'function'){
         try{ window.AdminParentContactEdit.applyOverrideToPax(paxObj); }catch(_ov){}
       }
+      if(wl) paxContactsSetWaitingJoined(paxObj, row.createdIso || row.registrationDate || '', 'recorded');
       return paxObj;
     }
     function paxContactsPortalHasPaxName(paxName){
@@ -20646,7 +20649,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         regQsChild: {},
         regQsParent: {},
         mockEnrichId: null,
-        _waitlistOnly: true
+        _waitlistOnly: true,
+        waitingJoinedIso: '',
+        waitingJoinedSource: ''
       };
     }
     function paxContactsWaitlistOnlyRows(){
@@ -20781,6 +20786,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           inClass: r.in_class === true ? 'Yes' : 'No',
           onWaitingList: r.on_waiting_list === true,
           avatarStoragePath: String(r.avatar_storage_path || '').trim(),
+          createdIso: r.on_waiting_list === true ? String(r.created_at || '').slice(0, 10) : '',
           _livePortalCreated: true,
           _portalRegistration: true
         }, cid, r.on_waiting_list === true ? 'waiting_list' : 'programme_in'));
@@ -20817,13 +20823,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       Object.keys(byName).forEach(function(key){
         var g = byName[key];
         var exactId = paxContactsContactIdForExactName(g.name);
+        var joined = '';
+        g.rows.forEach(function(r){
+          var day = paxContactsIsoDay(r && r.created_at);
+          if(day && (!joined || day < joined)) joined = day;
+        });
         var already = false;
         var i;
         for(i = 0; i < out.length; i++){
           if(adminPortalNormalizedPersonName(out[i].name) === key){ already = true; break; }
           if(exactId && paxContactsRealContactId(out[i]) === exactId){ already = true; break; }
         }
-        if(already) return;
+        if(already){
+          if(joined) paxContactsSetWaitingJoined(out[i], joined, 'booking_portal');
+          return;
+        }
         var pax = paxContactsWaitlistRowToPax(g.rows[0], key);
         var svcs = [];
         var slots = [];
@@ -20838,6 +20852,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         pax.contactId = exactId;
         pax.bookingStatus = 'waiting_list';
         pax._waitlistOnly = true;
+        if(joined) paxContactsSetWaitingJoined(pax, joined, 'booking_portal');
         if(pax.service){
           pax.service.services = svcs;
           pax.service.slotCurrent = slots.join(' | ') || '—';
@@ -21470,6 +21485,54 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var ld = String(m.latestBookingDisplay || '').trim();
       if(fd && fd !== '—' && (!merged.firstBookingDisplay || merged.firstBookingDisplay === '—')) merged.firstBookingDisplay = fd;
       if(ld && ld !== '—' && (!merged.latestBookingDisplay || merged.latestBookingDisplay === '—')) merged.latestBookingDisplay = ld;
+      if(m.waitingJoinedIso) paxContactsSetWaitingJoined(merged, m.waitingJoinedIso, m.waitingJoinedSource || 'recorded');
+    }
+    function paxContactsIsoDay(value){
+      var s = String(value || '').trim();
+      if(!s || s === '—' || s === '-') return '';
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      var t = Date.parse(s);
+      if(!isFinite(t)) return '';
+      try{
+        return new Date(t).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+      }catch(_e){
+        return '';
+      }
+    }
+    function paxContactsFormatJoinedDay(iso){
+      var day = paxContactsIsoDay(iso);
+      if(!day) return '';
+      var p = day.split('-');
+      var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+      try{
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+      }catch(_e){
+        return p[2] + '/' + p[1] + '/' + p[0];
+      }
+    }
+    /** Booking Portal join wins over the day the contact was recorded. */
+    function paxContactsSetWaitingJoined(p, iso, source){
+      if(!p) return;
+      var day = paxContactsIsoDay(iso);
+      if(!day) return;
+      var src = source === 'booking_portal' ? 'booking_portal' : 'recorded';
+      if(!p.waitingJoinedIso){
+        p.waitingJoinedIso = day;
+        p.waitingJoinedSource = src;
+        return;
+      }
+      if(src === 'booking_portal' && p.waitingJoinedSource !== 'booking_portal'){
+        p.waitingJoinedIso = day;
+        p.waitingJoinedSource = src;
+        return;
+      }
+      if(src === p.waitingJoinedSource && day < p.waitingJoinedIso) p.waitingJoinedIso = day;
+    }
+    function paxContactsJoinedCell(p){
+      if(paxContactsBucket(p) !== 'waiting_list') return '<span class="muted">—</span>';
+      var label = paxContactsFormatJoinedDay(p && p.waitingJoinedIso);
+      if(label) return esc(label);
+      return '<span class="muted">Not on file</span>';
     }
     function paxContactsHasBookingHistory(p){
       if(!p) return false;
@@ -21605,7 +21668,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!client || typeof client.from !== 'function') return false;
       try{
         var res = await client.from('portal_participants')
-          .select('contact_id,display_name,first_name,last_name,avatar_storage_path,in_class,on_waiting_list')
+          .select('contact_id,display_name,first_name,last_name,avatar_storage_path,in_class,on_waiting_list,created_at')
           .limit(2000);
         if(res.error || !res.data) return false;
         var byId = Object.create(null);
@@ -21928,6 +21991,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td style="white-space:nowrap">'+ageCell+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:14rem">'+cells.svc+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+cells.slot+'</td>'+
+          '<td class="pax-joined-col" hidden style="white-space:nowrap;min-width:0">'+paxContactsJoinedCell(p)+'</td>'+
           '<td style="min-width:0;overflow-wrap:break-word">'+contact+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0">'+emPhone+'</td>'+
           '<td class="pax-reg-ans-col" data-pax-ans hidden style="min-width:0;max-width:26rem;white-space:normal;overflow-wrap:break-word"></td>'+
@@ -21966,7 +22030,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">CLIENT</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. WAITING is registered and on a waiting list, so they do not also show under REGISTERED. HAS BOOKING HISTORY had a service and is not here now. REGISTERED filled the form and has no service. CFK LEADS is the Class for Kids contact file: they asked and never had a service. The Photo column is that child\'s own picture.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">ACTIVE is on a place now. WAITING is registered and on a waiting list, so they do not also show under REGISTERED. Joined waiting is the day they joined: Booking Portal has that day, and Not on file means the Class for Kids row has no date. HAS BOOKING HISTORY had a service and is not here now. REGISTERED filled the form and has no service. CFK LEADS is the Class for Kids contact file: they asked and never had a service. The Photo column is that child\'s own picture.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
@@ -21979,7 +22043,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
         '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th>Contact</th><th>Email / phone</th>'+
+        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th>Contact</th><th>Email / phone</th>'+
         '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
@@ -32485,6 +32549,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
+          var showJoined = bk === 'waiting_list';
+          root2.querySelectorAll('.pax-joined-col').forEach(function(el){ el.hidden = !showJoined; });
           var ansTh = $('paxRegAnsTh');
           if(ansTh){
             ansTh.hidden = !showAns;
@@ -32530,7 +32596,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
-          var headers = ['Participant name', 'DOB', 'Age', 'Service/s', 'Time slot/s', 'Contact', 'Email', 'Phone'];
+          var headers = ['Participant name', 'DOB', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Contact', 'Email', 'Phone'];
           if(showAns) headers.push(paxContactsRegQuestionLabel(qv));
           function csvCell(v){
             var s = String(v == null ? '' : v).replace(/\u2014/g, '').replace(/\s+/g, ' ').trim();
@@ -32573,6 +32639,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               ageY != null ? String(ageY) : '',
               bt.svc,
               bt.slot,
+              paxContactsBucket(p) === 'waiting_list' ? (paxContactsFormatJoinedDay(p.waitingJoinedIso) || 'Not on file') : '',
               p.parentDisplay || r.carer || '',
               r.email || '',
               r.phone || ''

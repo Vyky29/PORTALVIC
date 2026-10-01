@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v60",
+  "version": "2026-10-01-v61",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -433,6 +433,9 @@
             "waiting",
             "waiting list",
             "lista de espera",
+            "joined waiting",
+            "fecha",
+            "cuando se unieron",
             "booking history",
             "cfk leads",
             "class for kids",
@@ -441,7 +444,7 @@
           ],
           "steps": [
             "ACTIVE: on a place now.",
-            "WAITING: registered and on a waiting list. They do not also appear under REGISTERED.",
+            "WAITING: registered and on a waiting list. They do not also appear under REGISTERED. Joined waiting is the day they joined. Booking Portal has that day. Not on file means the Class for Kids row has no date.",
             "HAS BOOKING HISTORY: had a service and is not here now.",
             "REGISTERED: filled the registration form, no service, not on a waiting list.",
             "CFK LEADS: Class for Kids contact file. They asked and never had a service.",
