@@ -408,7 +408,7 @@
     /* Participants — Contacts-style list + detail (internal demo) */
     .pax-contacts-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px;min-width:0}
     .pax-contacts-toolbar h1{margin:0;font-size:1.65rem;font-weight:800;letter-spacing:-.02em;color:var(--ink);min-width:0;overflow-wrap:break-word}
-    .pax-contacts-filters{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,0.85fr) minmax(0,1.1fr);gap:12px;margin:0 0 14px;align-items:end;min-width:0}
+    .pax-contacts-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:12px;margin:0 0 14px;align-items:end;min-width:0}
     @media (max-width:900px){ .pax-contacts-filters{grid-template-columns:1fr; } }
     .pax-contacts-fld{min-width:0;display:flex;flex-direction:column;gap:4px}
     .pax-contacts-fld label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.02em}
@@ -424,7 +424,7 @@
     .pax-contacts-tbl th.pax-contacts-photo-th{width:76px}
     .pax-contacts-tbl td.pax-contacts-photo-cell{width:76px;text-align:center;vertical-align:middle}
     .pax-contacts-tbl td.pax-contacts-name-td{text-align:left}
-    .pax-contacts-tbl td.pax-contacts-meta{min-width:0;max-width:14rem}
+    .pax-contacts-tbl td.pax-contacts-meta{min-width:0;max-width:16rem}
     .pax-contacts-tbl .pax-contacts-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;min-width:0}
     .pax-contacts-tbl .pax-contacts-chips--stack{flex-direction:column;align-items:center;flex-wrap:nowrap}
     .pax-contacts-tbl .pax-contacts-chips--stack > span{max-width:100%;white-space:normal;overflow-wrap:break-word;text-align:center}

@@ -182,7 +182,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-funding-two-lines" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-funding-payment-cols" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -22199,6 +22199,58 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return null;
       }
     }
+    /**
+     * Three funding categories. Payment is separate and can be more than one.
+     * LA/NHS funded is billed to the authority: H&F and NHS monthly in arrears, Ealing over 52 weeks.
+     */
+    function paxContactsFundingPayment(p){
+      var src = String((p && (p._adminFundingLabel || (p.reg && p.reg.fundingRoute))) || '').trim();
+      var meth = String((p && (p._adminPaymentMethodLabel || (p.reg && p.reg.paymentMethod))) || '').trim();
+      if(src === '—') src = '';
+      if(meth === '—') meth = '';
+      var blob = (src + ' ' + meth).toLowerCase();
+      var directPay = /direct payment|ehcp|exempt/.test(blob);
+      var billedLa = /local authority|nhs|\bla invoice\b|care in finance|\bsbs\b|hammersmith|\bealing\b|\bbacs\b/.test(blob) && !directPay;
+      var funding = '';
+      if(billedLa) funding = 'la_nhs';
+      else if(directPay || /using funds from la|using la money|using money from la/.test(blob)) funding = 'la_exempt';
+      else if(/private|own money|vat\s*20|parent invoice/.test(blob)) funding = 'private';
+      var fundingLabel = funding === 'private'
+        ? 'Using Private funds (VAT 20%)'
+        : (funding === 'la_exempt' ? 'Using LA funds (Exempt)' : (funding === 'la_nhs' ? 'LA/NHS funded' : ''));
+      var payments = [];
+      function addPay(id, label){
+        for(var i = 0; i < payments.length; i++){ if(payments[i].id === id) return; }
+        payments.push({ id: id, label: label });
+      }
+      if(funding === 'la_nhs'){
+        if(/\bealing\b/.test(blob)) addPay('ealing_52', '52 weeks');
+        else addPay('arrears', 'Monthly in arrears');
+      }else if(funding){
+        var hasGc = /gocardless|go cardless/.test(blob);
+        var hasCard = /apple|stripe|payment link|\bcard\b/.test(blob);
+        var hasBank = /\bbank\b/.test(blob);
+        var isFlexi = /\bflexi\b|1st half|2 per term/.test(blob);
+        var plan = isFlexi ? 'Flexi' : '1';
+        if(hasGc) addPay('gocardless', 'GoCardless');
+        if(hasBank) addPay(isFlexi ? 'bank_flexi_manual' : 'bank_1_manual', 'Bank transfer (' + plan + ') · manual');
+        if(hasCard) addPay(isFlexi ? 'bank_flexi_card' : 'bank_1_card', 'Bank transfer (' + plan + ') · Apple/Stripe');
+      }
+      return { funding: funding, fundingLabel: fundingLabel, payments: payments };
+    }
+    function paxContactsPayFilterMatch(payments, filterId){
+      if(!filterId || filterId === 'all') return true;
+      var list = payments || [];
+      for(var i = 0; i < list.length; i++){
+        var id = list[i].id;
+        if(filterId === 'bank_1' && id.indexOf('bank_1_') === 0) return true;
+        if(filterId === 'bank_flexi' && id.indexOf('bank_flexi_') === 0) return true;
+        if(filterId === 'card' && id.indexOf('_card') > 0) return true;
+        if(filterId === 'manual' && id.indexOf('_manual') > 0) return true;
+        if(id === filterId) return true;
+      }
+      return false;
+    }
     function paxContactsListRowsHtml(){
       var rows = paxContactsUnifiedList();
       return rows.map(function(p){
@@ -22236,27 +22288,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var ratioChip = ratio
           ? '<span title="Support ratio" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+(ratioHi?'#fee2e2':'#eef2ff')+';color:'+(ratioHi?'#991b1b':'#3730a3')+'">'+esc(ratio)+'</span>'
           : '';
-        var fundInfo = adminParticipantFundingInfo(p);
-        var fundingChip = fundInfo.source
-          ? '<span title="Funding source" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+(fundInfo.isLA?'#ecfeff':'#f0fdf4')+';color:'+(fundInfo.isLA?'#155e75':'#166534')+';max-width:100%;overflow-wrap:break-word">'+esc(fundInfo.source)+'</span>'
+        var money = paxContactsFundingPayment(p);
+        var fundBg = money.funding === 'private' ? '#f0fdf4' : (money.funding === 'la_exempt' ? '#fff7ed' : '#ecfeff');
+        var fundFg = money.funding === 'private' ? '#166534' : (money.funding === 'la_exempt' ? '#c2410c' : '#155e75');
+        var fundingChip = money.fundingLabel
+          ? '<span title="Funding" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+fundBg+';color:'+fundFg+';max-width:100%;overflow-wrap:break-word">'+esc(money.fundingLabel)+'</span>'
           : '';
-        var methodChip = fundInfo.method
-          ? '<span title="Payment method" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:#f1f5f9;color:#334155;max-width:100%;overflow-wrap:break-word">'+esc(fundInfo.method)+'</span>'
-          : '';
+        var payChips = (money.payments || []).map(function(pay){
+          return '<span title="Payment" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:#f1f5f9;color:#334155;max-width:100%;overflow-wrap:break-word">'+esc(pay.label)+'</span>';
+        }).join('');
         var statusRow = bkChip
           ? '<div class="pax-contacts-chips">'+bkChip+'</div>'
           : '';
         var supportCell = ratioChip || '<span class="muted">—</span>';
-        var fundingBits = fundingChip + methodChip;
-        var fundingCell = fundingBits
-          ? '<div class="pax-contacts-chips pax-contacts-chips--stack">'+fundingBits+'</div>'
+        var fundingCell = fundingChip
+          ? '<div class="pax-contacts-chips pax-contacts-chips--stack">'+fundingChip+'</div>'
           : '<span class="muted">—</span>';
+        var paymentCell = payChips
+          ? '<div class="pax-contacts-chips pax-contacts-chips--stack">'+payChips+'</div>'
+          : '<span class="muted">—</span>';
+        var payIds = (money.payments || []).map(function(pay){ return pay.id; }).join(' ');
         return (
-          '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
+          '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'">'+
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
           '<td class="pax-contacts-name-td" style="min-width:0"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+'</div></div></td>'+
           '<td class="pax-contacts-meta">'+supportCell+'</td>'+
           '<td class="pax-contacts-meta">'+fundingCell+'</td>'+
+          '<td class="pax-contacts-meta">'+paymentCell+'</td>'+
           '<td style="white-space:nowrap">'+ageCell+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:14rem">'+cells.svc+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+cells.slot+'</td>'+
@@ -22303,6 +22361,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
+        '<div class="pax-contacts-fld"><label for="paxContactsFunding">Funding</label><select class="sel" id="paxContactsFunding">'+
+        '<option value="all">All funding</option>'+
+        '<option value="private">Using Private funds (VAT 20%)</option>'+
+        '<option value="la_exempt">Using LA funds (Exempt)</option>'+
+        '<option value="la_nhs">LA/NHS funded</option>'+
+        '</select></div>'+
+        '<div class="pax-contacts-fld"><label for="paxContactsPayment">Payment</label><select class="sel" id="paxContactsPayment">'+
+        '<option value="all">All payments</option>'+
+        '<option value="bank_1">Bank transfer (1)</option>'+
+        '<option value="bank_flexi">Bank transfer (Flexi)</option>'+
+        '<option value="manual">Manual</option>'+
+        '<option value="card">Apple/Stripe</option>'+
+        '<option value="gocardless">GoCardless</option>'+
+        '<option value="arrears">Monthly in arrears</option>'+
+        '<option value="ealing_52">52 weeks</option>'+
+        '</select></div>'+
         '<div class="pax-contacts-fld">'+
         '<label class="muted" for="paxContactsRegQuestion" style="display:block;font-size:11px;font-weight:700;margin-bottom:6px;letter-spacing:.02em">Registration question</label>'+
         '<select class="sel" id="paxContactsRegQuestion">'+paxContactsRegQuestionOptionsHtml()+'</select></div>'+
@@ -22312,7 +22386,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
         '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th>Funding</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th>Contact</th><th>Email / phone</th>'+
+        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th>Funding</th><th>Payment</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th>Contact</th><th>Email / phone</th>'+
         '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
@@ -32848,6 +32922,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!root2) return;
           var q = ($('paxContactsSearch') && $('paxContactsSearch').value || '').trim().toLowerCase();
           var bk = ($('paxContactsBookingStatus') && $('paxContactsBookingStatus').value) || 'all';
+          var fundF = ($('paxContactsFunding') && $('paxContactsFunding').value) || 'all';
+          var payF = ($('paxContactsPayment') && $('paxContactsPayment').value) || 'all';
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
@@ -32874,6 +32950,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             /* Booking status always applies — even with a search query (e.g. "amir"
                + In Sessions must not surface Old participants). */
             if(bk !== 'all' && !paxContactsMatchesBookingStatus(p, bk)) ok = false;
+            if(fundF !== 'all' && String(tr.getAttribute('data-pax-fund') || '') !== fundF) ok = false;
+            if(payF !== 'all'){
+              var payIds = String(tr.getAttribute('data-pax-pay') || '').split(/\s+/);
+              var payObjs = payIds.filter(Boolean).map(function(id){ return { id: id }; });
+              if(!paxContactsPayFilterMatch(payObjs, payF)) ok = false;
+            }
             if(qv !== 'all' && !paxContactsRegQuestionHasAnswer(p, qv)) ok = false;
             if(q){
               var blob = (
@@ -32898,7 +32980,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
-          var headers = ['Participant name', 'DOB', 'Support', 'Funding', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Contact', 'Email', 'Phone'];
+          var headers = ['Participant name', 'DOB', 'Support', 'Funding', 'Payment', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Contact', 'Email', 'Phone'];
           if(showAns) headers.push(paxContactsRegQuestionLabel(qv));
           function csvCell(v){
             var s = String(v == null ? '' : v).replace(/\u2014/g, '').replace(/\s+/g, ' ').trim();
@@ -32941,13 +33023,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 }
               : bandsText(p);
             var ageY = paxContactsAgeYears(p);
-            var fundInfo = adminParticipantFundingInfo(p);
-            var fundCsv = [fundInfo.source, fundInfo.method].filter(Boolean).join(' | ');
+            var moneyCsv = paxContactsFundingPayment(p);
+            var payCsv = (moneyCsv.payments || []).map(function(pay){ return pay.label; }).join(' | ');
             var row = [
               p.name || '',
               p.dobDisplay || r.dobDisplay || '',
               adminParticipantSupportRatio(p.name) || '',
-              fundCsv,
+              moneyCsv.fundingLabel || '',
+              payCsv,
               ageY != null ? String(ageY) : '',
               bt.svc,
               bt.slot,
@@ -33078,6 +33161,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(ps) ps.addEventListener('input', paxContactsRefreshFilters);
           var pb = $('paxContactsBookingStatus');
           if(pb) pb.addEventListener('change', paxContactsRefreshFilters);
+          var pf = $('paxContactsFunding');
+          if(pf) pf.addEventListener('change', paxContactsRefreshFilters);
+          var ppay = $('paxContactsPayment');
+          if(ppay) ppay.addEventListener('change', paxContactsRefreshFilters);
           var pq = $('paxContactsRegQuestion');
           if(pq) pq.addEventListener('change', paxContactsRefreshFilters);
           var exB = $('paxContactsExportBtn');
