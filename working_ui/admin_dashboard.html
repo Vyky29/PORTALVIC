@@ -12332,6 +12332,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(res.error || !res.data || !res.data.length) return false;
         var byId = Object.create(null);
         var labelById = Object.create(null);
+        var idByName = Object.create(null);
         res.data.forEach(function(row){
           var cid = String(row.contact_id || '').trim();
           if(!cid) return;
@@ -12340,8 +12341,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             funding: String(row.funding_label || '').trim(),
             payment: String(row.payment_method_label || '').trim()
           };
+          var childKey = String(row.child_display || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+          if(childKey) idByName[childKey] = cid;
         });
         window.PAX_CONTACTS_LABELS = labelById;
+        window.PAX_CONTACTS_ID_BY_NAME = idByName;
         var src = typeof window !== 'undefined' ? window.PARTICIPANTS_PARENTS_PORTAL_SOURCE : null;
         if(!src || !Array.isArray(src.rows)){
           window.PARTICIPANTS_PARENTS_PORTAL_SOURCE = { rows: [] };
@@ -21907,14 +21911,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var tokenHits = rows.filter(function(r){
             return paxContactsNormName(r.client_name).split(' ')[0] === first;
           });
-          if(tokenHits.length === 1) pool = tokenHits;
+          var names = Object.create(null);
+          tokenHits.forEach(function(r){ names[paxContactsNormName(r.client_name)] = true; });
+          if(Object.keys(names).length === 1) pool = tokenHits;
         }
       }
       if(!pool.length) return null;
-      var autumn = pool.filter(function(r){
-        return /autumn|26\/27|26-27/i.test(String((r.data && r.data.Term) || ''));
-      });
-      return (autumn.length ? autumn : pool)[0];
+      function sheetPhrase(r){ return paxContactsSheetPayPhrase(r); }
+      var withPay = pool.filter(sheetPhrase);
+      var chosen = (withPay.length ? withPay : pool)[0];
+      return chosen;
+    }
+    /** Summer sheet codes: 1 - Bank Transfer is one off, 2 - Bank Transfer is flexi. */
+    function paxContactsSheetPayPhrase(pay){
+      var d = (pay && pay.data) || {};
+      var raw = String(d['Payment Method'] || d['Payment method'] || pay._sheetPayPhrase || '').trim();
+      if(/^2\b/i.test(raw) || /\bflexi\b/i.test(raw)) return 'Bank Transfer (Flexi)';
+      if(/^1\b/i.test(raw) || /\bbank\b/i.test(raw)) return 'Bank Transfer (One payment)';
+      if(/go\s*card/i.test(raw)) return 'GoCardless';
+      if(/payment link/i.test(raw)) return 'Payment Link';
+      if(/apple|stripe|\bcard\b/i.test(raw)) return 'Card / Apple Pay';
+      return '';
+    }
+    function paxContactsPayTextIsMethod(s){
+      return /gocardless|go cardless|\bbank\b|apple|stripe|\bcard\b|payment link|\bflexi\b/i.test(String(s || ''));
     }
     function paxContactsMoneyFromSources(p){
       var cid = String((p && (p.contactId || (typeof adminClientsInfoContactIdKey === 'function' ? adminClientsInfoContactIdKey(p.id) : ''))) || '').trim();
@@ -21972,7 +21992,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(hasCard) meth = flexi ? 'Card / Apple Pay Flexi' : 'Card / Apple Pay';
       else if(flexi) meth = 'Bank Transfer (Flexi)';
       else if(hasBank || scheduleCode === 'term_3' || scheduleCode === 'yearly_1off' || scheduleCode === 'monthly_10' || scheduleCode === 'monthly_term') meth = 'Bank Transfer (One payment)';
-      else meth = String(payData['Payment method'] || '').trim();
+      else meth = paxContactsSheetPayPhrase(pay);
       return { src: src, meth: meth };
     }
     function paxContactsLabelsFromAutumnInvoice(inv){
@@ -22417,9 +22437,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(meth === '—') meth = '';
       var labelCid = String((p && (p.contactId || (typeof adminClientsInfoContactIdKey === 'function' ? adminClientsInfoContactIdKey(p.id) : ''))) || '').trim();
       var saved = (window.PAX_CONTACTS_LABELS || {})[labelCid];
+      if(!saved){
+        var nameId = (window.PAX_CONTACTS_ID_BY_NAME || {})[paxContactsNormName(p && p.name)];
+        if(nameId) saved = (window.PAX_CONTACTS_LABELS || {})[nameId];
+      }
+      if(meth && !paxContactsPayTextIsMethod(meth)) meth = '';
       if(saved){
         if(!src && saved.funding) src = saved.funding;
-        if(!meth && saved.payment) meth = saved.payment;
+        if((!meth || !paxContactsPayTextIsMethod(meth)) && paxContactsPayTextIsMethod(saved.payment)) meth = saved.payment;
       }
       var fromSources = paxContactsMoneyFromSources(p);
       /* Invoice labels already stored on the contact win. Sources only fill a blank. */
