@@ -1474,22 +1474,69 @@
     void openViewer(viewerState.photos, next);
   }
 
+  function autumnSlug(name) {
+    return String(name || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  function rememberAutumnName(set, raw) {
+    var name = String(raw || "").replace(/\s+/g, " ").trim();
+    if (!name || /no participant|no client|^closed$|^home$|^manager$/i.test(name)) return;
+    var low = name.toLowerCase();
+    set["name:" + low] = true;
+    var slug = autumnSlug(name);
+    if (slug) set[slug] = true;
+  }
+
+  /** Standing Autumn seats. Historical spreadsheet rows are not a current place. */
+  function autumnClientSet() {
+    var set = Object.create(null);
+    var n = 0;
+    try {
+      var occ = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+      var slots = occ && occ.bySlotId ? occ.bySlotId : null;
+      if (slots) {
+        Object.keys(slots).forEach(function (id) {
+          var slot = slots[id] || {};
+          var names = slot.bookedNames || [];
+          names.forEach(function (nm) {
+            var before = n;
+            rememberAutumnName(set, nm);
+            if (Object.keys(set).length > before) n += 1;
+          });
+          (slot.seatLines || []).forEach(function (line) {
+            if (line && line.client) rememberAutumnName(set, line.client);
+          });
+        });
+      }
+    } catch (_occ) {}
+    try {
+      var src = global.STAFF_DASHBOARD_SOURCE;
+      var rows = src && Array.isArray(src.rows) ? src.rows : [];
+      rows.forEach(function (row) {
+        var dated = String((row && (row.session_date || row.date)) || "").slice(0, 10);
+        if (!dated || dated < "2026-09-01") return;
+        rememberAutumnName(set, row && row.client_name);
+      });
+    } catch (_rows) {}
+    return Object.keys(set).length ? set : null;
+  }
+
   /** Alphabetical directory: letter boxes, each with small participant buttons (max 6 per row). */
   function isOldAutumnClient(g) {
     if (!g || isInboxGroupKey(g.key)) return false;
-    var set = null;
-    try {
-      set = cfg.getAutumnClients ? cfg.getAutumnClients() : null;
-    } catch (_e) {
-      set = null;
-    }
+    var set = autumnClientSet();
     if (!set) return false;
     var key = normalizeClientId(g.key);
     if (key && set[key]) return false;
     var name = normalizeParticipantName(g.clientName);
     if (name && set["name:" + name]) return false;
-    var first = name ? name.split(" ")[0] : "";
-    if (first && set["name:" + first]) return false;
+    if (name && set[autumnSlug(name)]) return false;
     return true;
   }
 
@@ -1528,6 +1575,7 @@
           n +
           " photo" +
           (n === 1 ? "" : "s") +
+          (oldClient ? " · OLD" : "") +
           "</span></span></button>";
       });
       html += "</div></section>";
