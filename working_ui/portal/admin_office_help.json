@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v102",
+  "version": "2026-10-01-v103",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1086,7 +1086,7 @@
             "Do not show them as booked kids on Sessions until they are a CLIENT."
           ],
           "tips": [
-            "The explanation stays on the i next to Registered. The page keeps Refresh, Climbing registrations and Parent consents."
+            "The explanation stays on the i next to Registered. Climbing registrations and Parent consents are in the menu, under Clients & Families, Documents."
           ]
         },
         {

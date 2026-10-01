@@ -46,11 +46,7 @@
       emptyFiltered: 'No client registration forms matched this participant yet.',
       hostId: 'portalParticipantDocsHost',
       refreshId: 'portalParticipantDocsRefresh',
-      rootClass: 'portal-participant-docs-embed',
-      siblingBtn: {
-        target: 'portal_climbing_registrations',
-        label: 'Open Climbing registrations'
-      }
+      rootClass: 'portal-participant-docs-embed'
     },
     climbing: {
       form_type: 'climbing_registration',
@@ -63,11 +59,7 @@
       emptyFiltered: 'No climbing registration forms matched this participant yet.',
       hostId: 'portalClimbingRegsHost',
       refreshId: 'portalClimbingRegsRefresh',
-      rootClass: 'portal-climbing-regs-embed',
-      siblingBtn: {
-        target: 'portal_participant_documents',
-        label: 'Open Registration forms'
-      }
+      rootClass: 'portal-climbing-regs-embed'
     }
   };
 
@@ -421,17 +413,6 @@
       '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">' +
       scope.intro +
       '</p>' +
-      '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" class="btn btn--sec btn--sm" id="' +
-      scope.refreshId +
-      '">Refresh</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="' +
-      scope.siblingBtn.target +
-      '">' +
-      esc(scope.siblingBtn.label) +
-      '</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Open Parent consents</button>' +
-      '</div>' +
       '<div id="' +
       scope.hostId +
       '"><p class="muted">Loading…</p></div>' +
