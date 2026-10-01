@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v83",
+  "version": "2026-10-01-v84",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -454,7 +454,7 @@
             "Funding and Payment come from the invoice. VAT 20% means the family pays (Using Private funds). No VAT and the family pays means Using LA funds (Exempt). No VAT and the office bills the council or NHS means LA/NHS funded. Summer is used when that is the invoice on file. Each funding type and each payment method has its own colour.",
             "OLD CLIENTS were in summer 2026, or started in September, and are not here now. Set Funding to All funding to see the whole list.",
             "Someone who was never in summer is not OLD CLIENTS. The Class for Kids file stays under CFK LEADS. A portal or webhook registration with no summer service stays under REGISTERED.",
-            "WAITING: registered and on a waiting list. They do not also appear under REGISTERED. Joined waiting is the day they joined. Booking Portal has that day. Not on file means the Class for Kids row has no date.",
+            "WAITING: on a waiting list. Many only did OTP and asked for a place, with no registration. Funding and Payment are hidden here. They fill in when the child has a service. Someone who already has a service or a trial can also be waiting for another place. Newest join is at the top. Oldest is at the bottom. Not on file sits at the bottom. They do not also show under REGISTERED.",
             "REGISTERED: filled the registration form, no term place, not on a waiting list. Someone who only comes to crash courses stays here, with Service set to Crash courses, so you can offer them a term place.",
             "CFK LEADS: Class for Kids contact file. They asked and never had a service.",
             "A short name on the bookings shows on that child's row when it is the same person. Consecutive halves on the same day show as one time. The venue is in brackets after the time, such as Tuesday, 3:30 pm to 5:00 pm (SWIMFARM).",
@@ -498,14 +498,29 @@
         {
           "id": "waiting_list",
           "title": "WAITING list",
-          "summary": "Families waiting for a full service place.",
-          "where": "Clients & families → WAITING",
-          "steps": [
-            "Open WAITING when a service is full and someone wants in.",
-            "When a place opens (Services / Edit term slot / finish-booking), move them through your usual offer flow.",
-            "Keep WAITING separate from LEADS and REGISTERED."
+          "summary": "Families waiting for a full service place. Newest join is at the top.",
+          "where": "Clients & families → CLIENT → Booking status WAITING",
+          "keywords": [
+            "waiting",
+            "waiting list",
+            "lista de espera",
+            "joined waiting",
+            "otp",
+            "funding",
+            "payment",
+            "reciente",
+            "mas nuevo"
           ],
-          "tips": []
+          "steps": [
+            "Open CLIENT and set Booking status to WAITING.",
+            "The list is newest join at the top and oldest at the bottom. Not on file sits at the bottom.",
+            "Funding and Payment are hidden. They fill in on ACTIVE when the child has a service.",
+            "Many rows are OTP plus a waiting request, with no registration. A child who already has a service or a trial can also be waiting for another place.",
+            "When a place opens (Services / Edit term slot / finish-booking), move them through your usual offer flow."
+          ],
+          "tips": [
+            "Keep WAITING separate from LEADS and REGISTERED."
+          ]
         },
         {
           "id": "parent_vs_office",
