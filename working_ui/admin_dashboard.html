@@ -2463,7 +2463,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v98')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v99')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -23211,6 +23211,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return null;
       }
     }
+    function paxContactsSearchHomeLabel(p){
+      var bits = [];
+      var kind = '';
+      try{ kind = paxContactsWaitingKind(p); }catch(_kind){ kind = ''; }
+      if(kind === 'old_waiting') bits.push('Old Waiting List');
+      else if(kind === 'portal_waiting') bits.push('Portal Waiting List');
+      var meta = null;
+      try{ meta = paxContactsBookingStatusMeta(paxContactsBucket(p)); }catch(_bucket){ meta = null; }
+      if(meta && meta.label && bits.indexOf(meta.label) < 0) bits.push(meta.label);
+      return bits.join(', ') || 'another list';
+    }
     /**
      * Three funding categories. Payment is separate and can be more than one.
      * LA/NHS funded is billed to the authority: BACS (Ealing), or monthly arrears for NHS, NHS/ILA, or H&F.
@@ -34062,28 +34073,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var L = paxContactsUnifiedList();
           for(var li = 0; li < L.length; li++){ byId[String(L[li].id)] = L[li]; }
           var n = 0;
+          var missed = [];
           root2.querySelectorAll('#paxContactsTbl tbody tr').forEach(function(tr){
             var id = tr.getAttribute('data-pax-id');
             var p = byId[String(id)];
             if(!p){ tr.style.display = 'none'; return; }
-            var ok = true;
-            /* Booking status always applies — even with a search query (e.g. "amir"
-               + In Sessions must not surface Old participants). */
-            if(bk !== 'all' && !paxContactsMatchesBookingStatus(p, bk)) ok = false;
-            if(showMoney && fundF !== 'all' && String(tr.getAttribute('data-pax-fund') || '') !== fundF) ok = false;
+            var statusOk = bk === 'all' || paxContactsMatchesBookingStatus(p, bk);
+            var fundOk = true;
+            var payOk = true;
+            var regOk = true;
+            var nameOk = true;
+            if(showMoney && fundF !== 'all' && String(tr.getAttribute('data-pax-fund') || '') !== fundF) fundOk = false;
             if(showMoney && payF !== 'all'){
               var payIds = String(tr.getAttribute('data-pax-pay') || '').split(/\s+/);
-              var payObjs = payIds.filter(Boolean).map(function(id){ return { id: id }; });
-              if(!paxContactsPayFilterMatch(payObjs, payF)) ok = false;
+              var payObjs = payIds.filter(Boolean).map(function(pid){ return { id: pid }; });
+              if(!paxContactsPayFilterMatch(payObjs, payF)) payOk = false;
             }
-            if(qv !== 'all' && !paxContactsRegQuestionHasAnswer(p, qv)) ok = false;
+            if(qv !== 'all' && !paxContactsRegQuestionHasAnswer(p, qv)) regOk = false;
             if(q){
               var blob = (
                 (p.name || '') + ' ' + (p.parentDisplay || '') + ' ' + ((p.reg && p.reg.carer) || '') + ' ' +
                 ((p.reg && p.reg.email) || '') + ' ' + ((p.reg && p.reg.phone) || '') + ' ' + (p.addressFull || '')
               ).toLowerCase();
-              if(blob.indexOf(q) < 0) ok = false;
+              if(blob.indexOf(q) < 0) nameOk = false;
             }
+            var ok = statusOk && fundOk && payOk && regOk && nameOk;
+            if(!ok && q && nameOk && fundOk && payOk && regOk && !statusOk) missed.push({ tr: tr, p: p });
             var ansCell = tr.querySelector('[data-pax-ans]');
             if(ansCell){
               ansCell.hidden = !showAns;
@@ -34129,8 +34144,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             });
             for(var oi = 0; oi < ordered.length; oi++) tbody.appendChild(ordered[oi]);
           }
+          var searchNote = '';
+          if(!n && missed.length && missed.length <= 8){
+            missed.forEach(function(hit){ hit.tr.style.display = ''; });
+            n = missed.length;
+            var statusSel = $('paxContactsBookingStatus');
+            var here = (statusSel && statusSel.selectedOptions && statusSel.selectedOptions[0]) ? statusSel.selectedOptions[0].textContent : 'this list';
+            searchNote = 'Not in ' + here + '. ' + missed.map(function(hit){
+              return (hit.p.name || 'Contact') + ' is in ' + paxContactsSearchHomeLabel(hit.p);
+            }).join('. ') + '.';
+          }else if(!n && missed.length > 8){
+            var statusSelMany = $('paxContactsBookingStatus');
+            var hereMany = (statusSelMany && statusSelMany.selectedOptions && statusSelMany.selectedOptions[0]) ? statusSelMany.selectedOptions[0].textContent : 'this list';
+            searchNote = 'Showing 0 in ' + hereMany + '. ' + String(missed.length) + ' contacts match on other lists. Set Booking status to All.';
+          }
           var cEl = $('paxContactsCount');
-          if(cEl) cEl.textContent = 'Showing ' + n + ' contact' + (n === 1 ? '' : 's');
+          if(cEl) cEl.textContent = searchNote || ('Showing ' + n + ' contact' + (n === 1 ? '' : 's'));
         }
         function paxContactsExportVisibleCsv(){
           if(!root2) return;
