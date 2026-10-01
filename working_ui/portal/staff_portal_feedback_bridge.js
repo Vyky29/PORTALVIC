@@ -90,7 +90,8 @@
     const rs = canonicalClientSlugToken(a);
     const ss = canonicalClientSlugToken(b);
     if (!rs || !ss) return false;
-    const ident = global.PortalClientIdentity;
+    const root = typeof globalThis !== "undefined" ? globalThis : window;
+    const ident = root && root.PortalClientIdentity;
     if (ident && typeof ident.foldAliasedSlug === "function") {
       const fa = ident.foldAliasedSlug(rs, canonicalClientSlugToken);
       const fb = ident.foldAliasedSlug(ss, canonicalClientSlugToken);

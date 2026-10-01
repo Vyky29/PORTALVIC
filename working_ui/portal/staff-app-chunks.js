@@ -13,7 +13,7 @@
     "/portal/term_calendar_dashboard_shared.js?v=20260914-raul-fri18-off",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260914-no-eddie-may",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260930-abate-aquatic-feedback",
-    "/portal/portal_staff_feedback_data_loader.js?v=20260930-abate-aquatic-feedback",
+    "/portal/portal_staff_feedback_data_loader.js?v=20261001-no-global",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
       "/portal/portal_roster_canonical.js?v=20260929-elias-term",
