@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v106",
+  "version": "2026-10-02-v107",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -434,6 +434,35 @@
           "tips": [
             "Do not say former / alumni in office chat — say OLD.",
             "Kareena returned Tue 15 Sep 2026 → CLIENT again."
+          ]
+        },
+        {
+          "id": "leads_vs_registered",
+          "title": "Leads and REGISTERED",
+          "summary": "Leads is who opened the Booking Portal. REGISTERED is a child who finished the form and has no place.",
+          "where": "Clients & Families → Leads, and Clients → REGISTERED",
+          "keywords": [
+            "leads",
+            "visitors",
+            "registered",
+            "hold",
+            "lost slot",
+            "pay hold",
+            "broadcast",
+            "otp",
+            "potential"
+          ],
+          "steps": [
+            "Leads is not a second child list. It is parents who opened the Booking Portal, asked for a code, or were typed in by the office as a potential parent.",
+            "The yellow box is a count, not a status. Visits are times someone opened the portal. OTP contacts asked for a code. The email-interest rows never opened the portal. They are an old outreach file.",
+            "Add potential, Select all, Copy emails and Send via Family broadcast are for writing to those parents. They do not book a place.",
+            "A row that says Existing client is a parent who already has a child in class. The row is still a portal visit.",
+            "REGISTERED is the contacts table. The child finished the form and has no place now. Service and Time slot stay empty. The date is the day they registered.",
+            "A pay hold that is still open stays on Registration Form under Documents, labelled Pay hold. When the hold ends or the place is released, that form shows REGISTERED. Admin hold and lost slot are still stored. The chip does not say which one.",
+            "CFK LEADS is a filter on the contacts table, the old Class for Kids file. It is not the Leads page."
+          ],
+          "tips": [
+            "Lost slot on Finance is a family who re-enrolled and did not pay. That chip is on the invoice, not on this Leads page."
           ]
         },
         {
