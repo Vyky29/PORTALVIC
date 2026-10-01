@@ -21941,6 +21941,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return active;
     }
+    /** Tuesday ACAT 11-12 is Aquatic for Jack S, Jack W, Kamy and Kate. The group label is not a person. */
+    function paxContactsIsAcatMember(name){
+      var id = '';
+      try{
+        var idn = window.PortalParticipantIdentity;
+        if(idn && typeof idn.canonicalClientId === 'function') id = String(idn.canonicalClientId(name) || '');
+      }catch(_acat){}
+      return id === 'jack_s' || id === 'jack_stratton' || id === 'jack_w' || id === 'jack_walker'
+        || id === 'kamy' || id === 'kamy_akhavan' || id === 'kate' || id === 'kate_fordham';
+    }
+    function paxContactsAcatLineTime(raw){
+      var s = String(raw || '');
+      var parts = s.split('·');
+      if(parts.length < 2) parts = s.split('\u00b7');
+      if(parts.length < 2) return '';
+      if(!/^acat$/i.test(String(parts[0] || '').trim())) return '';
+      return paxContactsFormatChainTime(parts.slice(1).join(' '));
+    }
     /** Standing Autumn seats for this child (capacity chain). Empty when they have no place. */
     function paxContactsCurrentSeatBands(p){
       var name = String((p && p.name) || '').trim();
@@ -21959,8 +21977,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var instructors = [];
         (slot.seatLines || []).forEach(function(line){
           if(!line || String(line.kind || '') === 'open') return;
+          var acatTime = paxContactsAcatLineTime(line.client);
+          if(acatTime && paxContactsIsAcatMember(name)){
+            var acatDay = String(slot.day || '').trim();
+            var acatVenue = String(slot.venue || '').trim();
+            var acatKey = acatDay + '\tAquatic Activity\t' + acatTime + '\t' + acatVenue;
+            if(!seen[acatKey]){
+              seen[acatKey] = true;
+              out.push({
+                programme: 'Aquatic Activity',
+                day: acatDay,
+                timeDisp: acatTime,
+                venue: acatVenue,
+                instructors: String(line.instructor || '').trim() ? [String(line.instructor || '').trim()] : []
+              });
+            }
+            return;
+          }
           var client = paxContactsSeatClientName(line.client);
-          if(!client || /no participant|no client|^closed$|^home$|^manager$|^office$|^interview$|^available$|^hold waitlist$/i.test(client)) return;
+          if(!client || /no participant|no client|^closed$|^home$|^manager$|^office$|^interview$|^available$|^hold waitlist$|^acat$/i.test(client)) return;
           if(!paxContactsSameChild(name, client, amb)) return;
           if(paxContactsKeepSeparate(p, { name: client })) return;
           hit = true;
@@ -33359,6 +33394,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(srcA === '—') srcA = '';
         if(methA === '—') methA = '';
         if(srcA || methA){
+          var directPay = /parent\s*[·.\-]\s*direct payments/i.test(methA)
+            ? methA
+            : (/parent\s*[·.\-]\s*direct payments/i.test(srcA) ? srcA : '');
+          if(directPay) return { source: directPay, method: '', isLA: true };
           var isLAAdmin = /using money from la|la\/nhs|local authority|nhs|cwd|care in finance|bacs|direct payment/i.test(srcA + ' ' + methA);
           return {
             source: srcA ? (/private/i.test(srcA) && !isLAAdmin ? 'Private funds' : (isLAAdmin ? 'LA/NHS funds' : srcA)) : '',
@@ -33374,8 +33413,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_e){ info = null; }
       if(info && (info.fund || info.payMethod)){
         var blob = ((info.fund||'')+' '+(info.payMethod||'')+' '+(info.next||'')).toLowerCase();
-        var isLA = /nhs|local authority|direct payment|remittance|invoice|\bpo\b|\bila\b|\bsbs\b|\bcwd\b|funder/.test(blob);
         var method = String(info.payMethod||'').replace(/^\s*\d+\s*[-\u2013]\s*/, '').trim();
+        if(/parent\s*[·.\-]\s*direct payments/i.test(method)) return { source: method, method: '', isLA: true };
+        var isLA = /nhs|local authority|direct payment|remittance|invoice|\bpo\b|\bila\b|\bsbs\b|\bcwd\b|funder/.test(blob);
         return { source: isLA ? 'LA/NHS funds' : 'Private funds', method: method, isLA: isLA };
       }
       var manual = adminParticipantFunding(p && p.name);
