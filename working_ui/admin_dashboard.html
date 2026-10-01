@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
   <script src="/portal/portal_participant_identity.js?v=20261001-rayan-thapa"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260924-added-card"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20261001-sessions-quiet"></script>
   <script src="/portal/admin-portal-documents.js?v=20261001-pay-expenses-only"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20261001-clients-families"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260923-auto-makeup"></script>
@@ -182,7 +182,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-page-head" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261001-sessions-quiet" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -2463,13 +2463,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v96')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261001-v97')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
     }
     function portalAdminHelpLessonsForView(viewId, pack){
-      var want = ADMIN_PAGE_INFO_LESSONS[String(viewId || '').trim()] || [];
+      var info = window.__ADMIN_PAGE_INFO || {};
+      var want = info.lessonIds
+        ? info.lessonIds
+        : (ADMIN_PAGE_INFO_LESSONS[String(viewId || '').trim()] || []);
       if(!pack || !want.length) return [];
       var byId = Object.create(null);
       (pack.sections || []).forEach(function(sec){
@@ -26094,7 +26097,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       { id:'pickup', label:'Pick up', iconId:'scheduling', mode:'panelPickup' }
     ];
     var SESSIONS_HUB_HEAD_META = {
-      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Day truth you look at — covers, trials and absents from Schedule & Covers / bookings land here. Decide absents / cancels under Absents & credits.' },
+      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Day truth you look at. Covers, trials and absents from Schedule & Covers / bookings land here. Decide absents / cancels under Absents & credits. The board is the capacity chain plus Schedule & Covers: who works and which seats today.' },
       feedback:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it. Click Session feedback to filter for parents, or Notes to escalate internally / ask the instructor. Notes stay internal.' },
       positive:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it. Click Session feedback to filter for parents, or Notes to escalate internally / ask the instructor. Notes stay internal.' },
       relevant:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it. Click Session feedback to filter for parents, or Notes to escalate internally / ask the instructor. Notes stay internal.' },
@@ -27041,20 +27044,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function sessionsHubHeadHtml(tab){
       var meta = SESSIONS_HUB_HEAD_META[tab] || SESSIONS_HUB_HEAD_META.overview;
       var showRefresh = sessionsHubTabShowsRefresh(tab);
+      var plainTitle = String(meta.title || 'Sessions').replace(/<[^>]+>/g, '').trim();
+      window.__ADMIN_PAGE_INFO = {
+        viewId: 'c4k_sessions',
+        title: plainTitle,
+        intro: String(meta.sub || '').trim(),
+        lessonIds: (tab === 'overview' || !tab) ? ['sessions_overview'] : []
+      };
       return (
         '<div class="c4k-sessions-hub__head">' +
         '<div class="c4k-sessions-hub__title-row">' +
         sessionsHubHeadIconHtml(meta.iconId, meta.tone) +
         '<div class="c4k-sessions-hub__title-block">' +
         '<div class="c4k-sessions-hub__title-line">' +
+        '<div class="c4k-sessions-hub__title-lead">' +
         '<h1 class="c4k-sessions-hub__title">' + esc(meta.title) + '</h1>' +
+        '<button type="button" class="admin-page-info" data-admin-page-info="1" aria-label="About '+escAttr(plainTitle)+'" title="About this page"><span aria-hidden="true">i</span></button>' +
+        '</div>' +
         '<div class="c4k-sessions-hub__title-actions" id="c4kHubToolbarActions">' +
         '<button type="button" class="btn btn--ghost btn--sm" id="c4kHubRefresh"' + (showRefresh ? '' : ' hidden') + '>Refresh</button>' +
         '<span class="c4k-sessions-hub__refresh-at" id="c4kHubRefreshAt" aria-live="polite"' + (showRefresh ? '' : ' hidden') + '></span>' +
         sessionsHubDashJumpHtml() +
         '</div>' +
         '</div>' +
-        '<p class="c4k-sessions-hub__sub">' + esc(meta.sub) + '</p>' +
         '</div></div></div>'
       );
     }
@@ -27370,7 +27382,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20261001-open-hold-no-cover';
+    var PORTAL_ADMIN_HUB_BUILD = '20261001-sessions-quiet';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

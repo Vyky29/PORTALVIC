@@ -921,18 +921,7 @@
       return;
     }
     el.className = 'portal-forms-status';
-    el.innerHTML =
-      '<strong>Live data OK</strong> · Feedback: <strong>' +
-      esc(String(fbCount)) +
-      '</strong> rows · Overrides: <strong>' +
-      esc(String(ovCount)) +
-      '</strong> · Incidents: <strong>' +
-      esc(String(incCount)) +
-      '</strong> · Venue: <strong>' +
-      esc(String(venueCount)) +
-      '</strong> · build <code>' +
-      esc(PORTAL_DAY_OPS_BUILD) +
-      '</code>';
+    el.innerHTML = '';
   }
 
   function exposePortalAdminDebugGlobals() {

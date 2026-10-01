@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v96",
+  "version": "2026-10-01-v97",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -85,7 +85,8 @@
             "When a child moves to another instructor the same day, the old card is red and says Now plus the new instructor. The instructor who has the child shows a chip with the old instructor's Shift. This is admin Sessions Overview only. The worker portal keeps its own chips and alerts.",
             "An empty seat and a Hold Waitlist do not need a cover. They do not appear on a worker card. A real child on that day still needs a cover when their instructor is off.",
             "Parents do not see instructor day offs or COVER NEEDED — that is office/staff only.",
-            "Aquatic halves may merge on Staff Today; Overview / Schedule keep 30-minute cards when needed."
+            "Aquatic halves may merge on Staff Today; Overview / Schedule keep 30-minute cards when needed.",
+            "The page itself stays quiet. The i next to Sessions Overview holds what the board is. Live row counts stay off the page."
           ]
         },
         {

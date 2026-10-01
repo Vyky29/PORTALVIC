@@ -11911,17 +11911,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         " Hard-refresh and sign in again as admin. Console: portalAdminLiveLoadStatus()</p>"
       );
     }
-    var ovLine = ovCount
-      ? " · <strong>" + esc(String(ovCount)) + "</strong> schedule overrides loaded"
-      : (ovMeta && ovMeta.error ? " · overrides failed: " + esc(String(ovMeta.error)) : "");
-    /* Keep this hint O(1) — diagnoseDay / missingFeedbackForDay freeze Overview on large payloads. */
-    return (
-      '<p class="ash-feedback-filter-hint" role="status">Live feedback: <strong>' +
-      esc(String(fbCount)) +
-      "</strong> rows from Supabase" +
-      ovLine +
-      " · Console: <code>portalAdminMissingFeedbackReport()</code></p>"
-    );
+    return "";
   };
 
   /** Preferred column order (LOCAL weekday / weekend staff). Unknown staff append A-Z. */
@@ -13896,19 +13886,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     var srcNote = global.STAFF_DASHBOARD_SOURCE || {};
     var chainOn = !!(srcNote.capacityChainNoCanonicalRemap || global.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__);
-    var boardHint = chainOn
-      ? "Capacity chain + Schedule & Covers — who works and which seats today."
-      : "Staffing board — who works and which seats today.";
     /* Week strip scrolls with the page so the day board can use the full screen. */
     return (
       '<div class="ash-overview-pin">' +
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true, staffingGuide: true }) +
       '<div class="ash-overview-scroll">' +
-      '<p class="ash-feedback-filter-hint" role="status" data-ash-overview-source="' +
-      esc(chainOn ? "capacity-chain" : "other") +
-      '">' +
-      esc(boardHint) +
-      "</p>" +
       this.overviewFilterRowHtml() +
       '<div class="ash-table-title-row">' +
       '<h3 class="ash-table-title">' +
@@ -15614,11 +15596,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '<p class="ash-bundle-warn" role="status">Live session feedback did not load (0 rows).' +
         metaLine +
         ' Hard-refresh, then sign in again as admin (Victor/Raul/Javi/Sevitha). Open console (F12) for details.</p>';
-    } else if ((this.opts && this.opts.externalTabs) && fbCount > 0) {
-      warn +=
-        '<p class="ash-feedback-filter-hint" role="status">Live feedback loaded: <strong>' +
-        esc(String(fbCount)) +
-        '</strong> rows from Supabase.</p>';
     }
     if (this.mode === "feedback") {
       if (!this.hubIsLive()) return;
