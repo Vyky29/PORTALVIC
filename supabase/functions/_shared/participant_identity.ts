@@ -36,6 +36,8 @@ const CLIENT_INFO_SLUG_ALIASES: Record<string, string> = {
   junaid: "junaid_f",
   khalid_ab: "khalid",
   rayyan_fi: "rayyan_f",
+  rayyan_fida: "rayyan_f",
+  rayyan_fda: "rayyan_f",
   chaitanya_trial_28_06: "chaitanya",
 };
 

@@ -19,6 +19,18 @@ export function normPersonName(raw: unknown): string {
     .toLowerCase();
 }
 
+/** Old portal account and the current roster label are one child. */
+const SAME_AUTUMN_CHILD: Record<string, string> = {
+  "rayyan f": "rayyan fi",
+  "rayyan fida": "rayyan fi",
+  "rayyan fda": "rayyan fi",
+};
+
+function autumnPersonKey(raw: unknown): string {
+  const name = normPersonName(raw);
+  return SAME_AUTUMN_CHILD[name] || name;
+}
+
 export async function loadAutumnClientNames(
   admin: { from: (table: string) => any },
 ): Promise<Set<string> | null> {
@@ -33,7 +45,7 @@ export async function loadAutumnClientNames(
     return null;
   }
   for (const row of data || []) {
-    const name = normPersonName(row.client_name);
+    const name = autumnPersonKey(row.client_name);
     if (SKIP_NAMES.has(name)) continue;
     const dated = String(row.session_date || "").slice(0, 10);
     if (dated && dated < AUTUMN_TERM_FROM) continue;
@@ -46,7 +58,7 @@ export async function loadAutumnClientNames(
 export function personOnAutumn(names: Set<string> | null, ...bits: unknown[]): boolean {
   if (!names || !names.size) return true;
   for (const bit of bits) {
-    const name = normPersonName(bit);
+    const name = autumnPersonKey(bit);
     if (!name) continue;
     if (names.has(name)) return true;
     const first = name.split(" ")[0];

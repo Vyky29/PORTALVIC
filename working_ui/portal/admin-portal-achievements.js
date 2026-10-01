@@ -66,6 +66,26 @@
       .toLowerCase();
   }
 
+  /** Same child, old account name and current roster label. */
+  function achievementClientKey(raw) {
+    var plain = normalizeClientId(raw);
+    if (plain === "_inbox") return plain;
+    var slug = String(raw || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (slug === "rayyan_f" || slug === "rayyan_fida" || slug === "rayyan_fda") return "rayyan_fi";
+    return slug || normalizeClientId(raw);
+  }
+
+  function achievementDisplayName(key, fallback) {
+    if (key === "rayyan_fi") return "Rayyan Fi";
+    return String(fallback || key || "").trim();
+  }
+
   function statusLabel(status) {
     if (status === "attached") return "In feedback";
     if (status === "downloaded") return "Downloaded";
@@ -649,9 +669,9 @@
     });
     emptyDirectoryParticipants().forEach(function (p) {
       if (!p) return;
-      var key = normalizeClientId(p.key || p.clientName);
+      var key = achievementClientKey(p.key || p.clientName);
       if (!key || isInboxGroupKey(key)) return;
-      var name = String(p.clientName || p.key || key).trim();
+      var name = achievementDisplayName(key, p.clientName || p.key || key);
       if (isNonParticipantDirectoryEntry(key, name)) return;
       var nameKey = normalizeParticipantName(name);
       if (byKey[key] || (nameKey && byName[nameKey])) return;
@@ -671,10 +691,10 @@
     var map = Object.create(null);
     var order = [];
     rows.forEach(function (row) {
-      var key = normalizeClientId(row.client_id) || String(row.client_name || "").trim().toLowerCase();
+      var key = achievementClientKey(row.client_id) || achievementClientKey(row.client_name);
       if (!key) key = "unknown";
       if (!map[key]) {
-        var displayName = String(row.client_name || row.client_id || key).trim();
+        var displayName = achievementDisplayName(key, row.client_name || row.client_id || key);
         if (key === INBOX_CLIENT_ID) displayName = INBOX_CLIENT_NAME;
         map[key] = {
           key: key,
@@ -1532,11 +1552,12 @@
     if (!g || isInboxGroupKey(g.key)) return false;
     var set = autumnClientSet();
     if (!set) return false;
-    var key = normalizeClientId(g.key);
+    var key = achievementClientKey(g.key);
     if (key && set[key]) return false;
     var name = normalizeParticipantName(g.clientName);
     if (name && set["name:" + name]) return false;
     if (name && set[autumnSlug(name)]) return false;
+    if (name && set[achievementClientKey(name)]) return false;
     return true;
   }
 
