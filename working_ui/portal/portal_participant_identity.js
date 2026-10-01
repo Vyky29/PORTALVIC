@@ -24,6 +24,7 @@
     sammer: "samer",
     samer_bakhiet: "samer",
     rayan_tapa: "rayan_ta",
+    rayan_thapa: "rayan_ta",
     steven_cesare: "steven",
     steven_ces: "steven",
     steven_c: "steven",
