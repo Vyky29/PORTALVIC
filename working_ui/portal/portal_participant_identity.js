@@ -16,7 +16,7 @@
     aadam_ah: "adaam_ah",
     abodi_p: "abodi_pa",
     adam_pi: "adam_p",
-    /* Tue 4.30 Acton with Aurora is Adam Mahmmoud, not Adam Memy. */
+    /* Adam Ma / Adam Memy / Adam Me are the same child as Adam Mahmmoud. */
     adam_ma: "adam_mahmmoud",
     arthur_mo: "arthur_morrissey",
     arthur_ma: "arthur_manners",
@@ -60,8 +60,8 @@
     yossi_si: "yossi",
     yosiyas: "yossi",
     yosiyas_sium: "yossi",
-    adam_memy: "adam_ma",
-    adam_me: "adam_ma",
+    adam_memy: "adam_mahmmoud",
+    adam_me: "adam_mahmmoud",
   };
 
   var CLIENT_INFO_SHEET_ALIASES = {
