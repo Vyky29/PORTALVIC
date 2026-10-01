@@ -13,9 +13,11 @@
     "arthur mo": "portal/participants/arthur-mo.png",
     "arthur manners": "portal/participants/arthur-manners.png",
     ayaan: "portal/participants/ayaan.png",
+    "ayaan imam": "portal/participants/ayaan.png",
     "adam ab": "portal/participants/adam-ab.png",
     haneef: "portal/participants/haneef.png",
     haneff: "portal/participants/haneef.png",
+    "haneef yusuf": "portal/participants/haneef.png",
     "amaar ah": "portal/participants/amaar-ah.png",
     "aydaan ah": "portal/participants/aydaan-ah.png",
     "aydan ah": "portal/participants/aydaan-ah.png",
@@ -27,16 +29,25 @@
     "amaar ahmed": "portal/participants/amaar-ah.png",
     "aydaan ahmed": "portal/participants/aydaan-ah.png",
     amir: "portal/participants/amir.png",
+    "amir kais": "portal/participants/amir.png",
     anas: "portal/participants/anas.png",
     "anas ismail": "portal/participants/anas.png",
     serine: "portal/participants/serine.png",
+    "serine hodroje": "portal/participants/serine.png",
     fadi: "portal/participants/fadi.png",
+    "fadi abu daud": "portal/participants/fadi.png",
     scott: "portal/participants/scott.png",
+    "scott de wolff": "portal/participants/scott.png",
     stephanie: "portal/participants/stephanie.png",
+    "stephanie ng": "portal/participants/stephanie.png",
     timi: "portal/participants/timi.png?v=20260628-timi-smile",
+    "timi dairo": "portal/participants/timi.png?v=20260628-timi-smile",
     ikram: "portal/participants/ikram.png",
+    "ikram omar": "portal/participants/ikram.png",
     rodin: "portal/participants/rodin.png",
+    "rodin esmati": "portal/participants/rodin.png",
     zaid: "portal/participants/zaid.png",
+    "zaid alfadhl": "portal/participants/zaid.png",
     "yusef ah": "portal/participants/yusef-ah.png",
     "yusuf ah": "portal/participants/yusef-ah.png",
     "rayyan fi": "portal/participants/rayaan-fi.png",
@@ -44,18 +55,29 @@
     "rayyan f": "portal/participants/rayaan-fi.png",
     "rayaan f": "portal/participants/rayaan-fi.png",
     tinashe: "portal/participants/tinashe.png",
+    "tinashe nekati": "portal/participants/tinashe.png",
     yassir: "portal/participants/yassir.png",
+    "yassir boujettif": "portal/participants/yassir.png",
     faris: "portal/participants/faris.png",
+    "faris lobinet": "portal/participants/faris.png",
     eiji: "portal/participants/eiji.png",
     emanuel: "portal/participants/emanuel.png?v=20260628-emanuel-smile",
+    "emanuel dodson": "portal/participants/emanuel.png?v=20260628-emanuel-smile",
     hazem: "portal/participants/hazem.png",
     samer: "portal/participants/samer.png",
+    "samer bakhiet": "portal/participants/samer.png",
     kate: "portal/participants/kate.png",
+    "kate fordham": "portal/participants/kate.png",
     kamy: "portal/participants/kamy.png",
+    "kamy akhavan": "portal/participants/kamy.png",
     cyrus: "portal/participants/cyrus.png",
+    "cyrus mahdavi": "portal/participants/cyrus.png",
     erik: "portal/participants/erik.png",
+    "erik ndregjoni": "portal/participants/erik.png",
     gabriel: "portal/participants/gabriel.png",
+    "gabriel chapplow": "portal/participants/gabriel.png",
     yoan: "portal/participants/yoan.png",
+    "yoan bekele": "portal/participants/yoan.png",
     zakariya: "portal/participants/zakariya.png",
     "zakariya warsame": "portal/participants/zakariya.png",
   };
@@ -114,6 +136,11 @@
       .trim();
   }
 
+  /**
+   * Index a storage photo on this child's own ids only.
+   * Do not copy it onto a roster spelling alias (yusuf -> yusuf_ah) or a bare
+   * first name. That showed Yusuf Harzi on Yusuf Ah, and Ayaan Towle on Ayaan.
+   */
   function portalRegisterParticipantStorageAvatar(contactId, displayName, url) {
     url = normalizePhotoUrl(String(url || "").trim());
     if (!url || !/^https?:\/\//i.test(url)) return;
@@ -121,25 +148,24 @@
     if (id) PARTICIPANT_STORAGE_AVATARS.byId[id] = url;
     var nk = storageAvatarKey(displayName);
     if (nk) PARTICIPANT_STORAGE_AVATARS.byName[nk] = url;
-    /* Roster keys are often short (Joelle) while portal display is full (Joelle Atoui). */
-    if (
-      typeof global.PortalParticipantIdentity !== "undefined" &&
-      typeof global.PortalParticipantIdentity.canonicalClientId === "function"
-    ) {
-      var slug = String(
-        global.PortalParticipantIdentity.canonicalClientId(displayName) || "",
-      ).trim();
-      if (slug) {
-        PARTICIPANT_STORAGE_AVATARS.byId[slug] = url;
-        var slugName = slug.replace(/_/g, " ");
-        if (slugName) PARTICIPANT_STORAGE_AVATARS.byName[slugName] = url;
-      }
-    }
+    var rawSlug = nk ? nk.replace(/\s+/g, "_") : "";
+    if (rawSlug) PARTICIPANT_STORAGE_AVATARS.byId[rawSlug] = url;
     var parts = nk ? nk.split(/\s+/).filter(Boolean) : [];
     if (parts.length >= 2) {
       var short2 = parts[0] + " " + parts[1].slice(0, 2);
-      PARTICIPANT_STORAGE_AVATARS.byName[short2] = url;
+      if (short2 !== nk) PARTICIPANT_STORAGE_AVATARS.byName[short2] = url;
     }
+  }
+
+  /** Bare first name is free only when one child has it, and the roster does not already give that word to someone else. */
+  function bareFirstNameIsSafe(displayName, first, firstCount) {
+    if (!first || !firstCount || firstCount[first] !== 1) return false;
+    var idn = global.PortalParticipantIdentity;
+    if (!idn || typeof idn.canonicalClientId !== "function") return true;
+    var claimed = String(idn.canonicalClientId(first) || "").trim();
+    var own = String(idn.canonicalClientId(displayName) || "").trim();
+    if (!claimed || claimed === first || claimed === own) return true;
+    return false;
   }
 
   function participantAvatarPublicUrl(storagePath) {
@@ -182,25 +208,23 @@
     return sb
       .from("portal_participants")
       .select("contact_id, display_name, avatar_storage_path")
-      .not("avatar_storage_path", "is", null)
-      .limit(1000)
+      .limit(2000)
       .then(function (res) {
         if (!res || res.error || !Array.isArray(res.data)) return false;
-        var rows = res.data.filter(function (r) {
-          return r && r.avatar_storage_path && r.display_name;
-        });
         var firstCount = Object.create(null);
-        rows.forEach(function (r) {
+        res.data.forEach(function (r) {
+          if (!r || !r.display_name) return;
           var first = storageAvatarKey(r.display_name).split(" ")[0];
           if (first) firstCount[first] = (firstCount[first] || 0) + 1;
         });
-        rows.forEach(function (r) {
+        res.data.forEach(function (r) {
+          if (!r || !r.avatar_storage_path || !r.display_name) return;
           var url = participantAvatarPublicUrl(r.avatar_storage_path);
           if (!url) return;
           portalRegisterParticipantStorageAvatar(r.contact_id, r.display_name, url);
           var nk = storageAvatarKey(r.display_name);
           var parts = nk.split(" ").filter(Boolean);
-          if (parts[0] && firstCount[parts[0]] === 1) {
+          if (parts.length >= 2 && bareFirstNameIsSafe(r.display_name, parts[0], firstCount)) {
             PARTICIPANT_STORAGE_AVATARS.byName[parts[0]] = url;
             PARTICIPANT_STORAGE_AVATARS.byId[parts[0]] = url;
           }
@@ -227,29 +251,9 @@
     if (id && PARTICIPANT_STORAGE_AVATARS.byId[id]) return PARTICIPANT_STORAGE_AVATARS.byId[id];
     var nk = storageAvatarKey(displayName);
     if (nk && PARTICIPANT_STORAGE_AVATARS.byName[nk]) return PARTICIPANT_STORAGE_AVATARS.byName[nk];
-    if (
-      typeof global.PortalParticipantIdentity !== "undefined" &&
-      typeof global.PortalParticipantIdentity.canonicalClientId === "function"
-    ) {
-      var slug = String(
-        global.PortalParticipantIdentity.canonicalClientId(displayName || id) || "",
-      ).trim();
-      if (slug && PARTICIPANT_STORAGE_AVATARS.byId[slug]) {
-        return PARTICIPANT_STORAGE_AVATARS.byId[slug];
-      }
-      var slugName = slug.replace(/_/g, " ");
-      if (slugName && PARTICIPANT_STORAGE_AVATARS.byName[slugName]) {
-        return PARTICIPANT_STORAGE_AVATARS.byName[slugName];
-      }
-      var keys = Object.keys(PARTICIPANT_STORAGE_AVATARS.byName);
-      for (var i = 0; i < keys.length; i++) {
-        if (
-          global.PortalParticipantIdentity.canonicalClientId(keys[i]) === slug &&
-          PARTICIPANT_STORAGE_AVATARS.byName[keys[i]]
-        ) {
-          return PARTICIPANT_STORAGE_AVATARS.byName[keys[i]];
-        }
-      }
+    var rawSlug = nk ? nk.replace(/\s+/g, "_") : "";
+    if (rawSlug && PARTICIPANT_STORAGE_AVATARS.byId[rawSlug]) {
+      return PARTICIPANT_STORAGE_AVATARS.byId[rawSlug];
     }
     return "";
   }
@@ -288,7 +292,8 @@
     add(cleaned);
     var parts = cleaned.split(/\s+/).filter(Boolean);
     if (parts.length) {
-      add(parts[0]);
+      /* Bare first name only for a one-word roster label. "Ayaan Towle" must not pick Ayaan Imam's file. */
+      if (parts.length === 1) add(parts[0]);
       if (parts.length > 1) add(parts[0] + " " + parts[1].slice(0, 2));
       if (/^eiji/.test(parts[0])) add("eiji");
       if (/^hazem/.test(parts[0])) add("hazem");
