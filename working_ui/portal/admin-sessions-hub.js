@@ -3947,6 +3947,9 @@ function rosterRowToSlot(isoDate, wd, r) {
     if (svc === "interview" || svc === "interviews" || svc.indexOf("interview") === 0) {
       return true;
     }
+    /* The shadower's own card does not owe feedback. The child on the host seat still does. */
+    if (slot.portalDutyPersonCard) return true;
+    if (slot.portalShadowingHost && isRosterClient(slot.client_name)) return false;
     if (overrideIsShadowingSessionAdd(slot.__portalScheduleOverride)) return true;
     var ov =
       slot.__portalScheduleOverride ||
@@ -5668,6 +5671,13 @@ function rosterRowToSlot(isoDate, wd, r) {
   function pickRepresentativeSlotForUnit(unit) {
     var slots = unit.slots;
     if (!slots || !slots.length) return null;
+    /* Shadowing / training cards share the child's name. They must not replace the feedback seat. */
+    var booked = [];
+    for (var bi = 0; bi < slots.length; bi++) {
+      if (slots[bi] && slots[bi].portalDutyPersonCard) continue;
+      booked.push(slots[bi]);
+    }
+    if (booked.length) slots = booked;
     var rep = slots[0];
     var si;
     for (si = 1; si < slots.length; si++) {

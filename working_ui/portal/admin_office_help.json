@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v82",
+  "version": "2026-10-01-v83",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -135,10 +135,10 @@
           ],
           "tips": [
             "This adds a new row. It does not replace the instructor already on the client.",
-            "Staff Today shows a Shadowing or Training card. No session feedback is required.",
+            "Staff Today shows a Shadowing or Training card. The shadower does not submit session feedback. The child stays on Session feedback for the instructor already on that seat.",
             "Timesheet pays these hours at £13.50/h.",
             "Type Session is a client seat, not the shadowing rate. Use Shadowing when they are learning the shift.",
-            "Sessions Overview keeps the chip on the trainer's client row and also gives the shadower their own column, with one card per participant of the person they shadow, at that child's own time. People in a training or meeting show on the host column as participant cards. On Staff Today the card stays even on a day off. Area shows Online with an icon. The chip is one line: host name, then the group in brackets. Families are not messaged. No session feedback."
+            "Sessions Overview keeps the chip on the trainer's client row and also gives the shadower their own column, with one card per participant of the person they shadow, at that child's own time. People in a training or meeting show on the host column as participant cards. On Staff Today the card stays even on a day off. Area shows Online with an icon. The chip is one line: host name, then the group in brackets. Families are not messaged. The shadower does not submit feedback. The child still shows as awaiting feedback for the instructor on the seat."
           ]
         },
         {
