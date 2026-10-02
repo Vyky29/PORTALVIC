@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-hub-phone7" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-hub-phone8" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -31708,25 +31708,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function opsHubScrollOpenCatIntoView(){
+      function run(){
+        var chips = document.getElementById('opsHubCats');
+        var scroller = document.querySelector('.admin-workspace');
+        if(!chips || !scroller) return;
+        var delta = chips.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+        scroller.scrollTop = Math.max(0, scroller.scrollTop + delta - 4);
+      }
       window.requestAnimationFrame(function(){
-        window.requestAnimationFrame(function(){
-          var chips = document.getElementById('opsHubCats');
-          if(!chips) return;
-          var scroller = chips.parentElement;
-          while(scroller && scroller !== document.body){
-            var st = window.getComputedStyle(scroller);
-            var oy = st.overflowY;
-            if((oy === 'auto' || oy === 'scroll') && scroller.scrollHeight > scroller.clientHeight + 8) break;
-            scroller = scroller.parentElement;
-          }
-          if(!scroller || scroller === document.body){
-            chips.scrollIntoView({ block:'start', behavior:'smooth' });
-            return;
-          }
-          var delta = chips.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
-          scroller.scrollTo({ top: Math.max(0, scroller.scrollTop + delta - 4), behavior:'smooth' });
-        });
+        window.requestAnimationFrame(run);
       });
+      window.setTimeout(run, 80);
+      window.setTimeout(run, 320);
     }
     function opsHubSheetCatId(){
       var id = state.opsHubCat || 'services';

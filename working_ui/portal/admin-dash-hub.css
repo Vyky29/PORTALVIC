@@ -4175,10 +4175,14 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
     gap:6px;
   }
   .ops-hub--today-first .ops-hub-sheet .dash-hub__tile{
+    width:100%;
+    max-width:100%;
     min-width:0;
     min-height:72px;
     max-height:none;
     height:auto;
+    aspect-ratio:auto;
+    box-sizing:border-box;
     padding:4px 3px 6px;
   }
   .ops-hub--today-first .ops-hub-sheet .dash-hub__tile-label{
