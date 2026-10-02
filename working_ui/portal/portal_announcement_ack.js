@@ -462,6 +462,9 @@
       if (typeof loadMap !== "function" || typeof saveMap !== "function") return false;
       var ack = loadMap();
       var liveSet = liveRemIdSet && typeof liveRemIdSet === "object" ? liveRemIdSet : {};
+      /* An empty set means this load has not finished, not that every reminder ended.
+         Wiping acks here made a signed reminder (the first test one) come back. */
+      if (!Object.keys(liveSet).length) return false;
       var changed = false;
       Object.keys(ack).forEach(function (k) {
         if (String(k || "").indexOf("portal-rem:") !== 0) return;

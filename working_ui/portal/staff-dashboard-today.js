@@ -7154,6 +7154,14 @@
             document.body.classList.remove('announcement-gate-active', 'dock-context-announcement-lock');
             document.documentElement.classList.remove('announcement-gate-active');
           }catch(_off){}
+          try{
+            const annSheet = document.getElementById('announcementsSheet');
+            const signedLog = portalAnnouncementsSheetEntry === 'signedLog';
+            /* Only shut a gate that was already demanding a signature. A signed log stays open. */
+            if(annSheet && annSheet.classList.contains('open') && !signedLog && portalAnnouncementLockRequired && typeof closeSheet === 'function'){
+              closeSheet({ bypassAnnouncementLock: true, forceCloseAnnouncementGate: true });
+            }
+          }catch(_closeSigned){}
           return false;
         }
         try{
@@ -7381,7 +7389,9 @@
           if(typ === 'announcement' && !annLiveFrom(row.created_at)) return false;
           return true;
         });
-        dashboardData.portalLiveAnnouncementIdSet = {};
+        /* Local maps: a second hydrate must not replace this set with {} while we prune. */
+        var liveAnnouncementIdSet = {};
+        var liveReminderIdSet = {};
         visible.forEach(function(row){
           var rowTyp = String(row.message_type || '').toLowerCase().trim();
           /* incident_team / incident_encounter are signed like announcements; they
@@ -7389,10 +7399,9 @@
              the local ack (id not in liveSet) and the notice re-prompts on the next
              hydrate / PWA resume reload / realtime event. */
           if(rowTyp === 'announcement' || rowTyp === 'contract_signing' || rowTyp === 'incident_team' || rowTyp === 'incident_encounter'){
-            dashboardData.portalLiveAnnouncementIdSet[String(row.id)] = true;
+            liveAnnouncementIdSet[String(row.id)] = true;
           }
         });
-        dashboardData.portalLiveReminderIdSet = {};
         const completedContractIds = {};
         const completedContractAnnIds = {};
         const awaitingContractIds = {};
@@ -7539,7 +7548,7 @@
               onAckAction: String(row.on_ack_action || '').trim(),
               photos: (mediaById && mediaById[id]) || []
             });
-            dashboardData.portalLiveReminderIdSet[id] = true;
+            liveReminderIdSet[id] = true;
             return;
           }
           if(typ === 'contract_signing'){
@@ -7757,32 +7766,34 @@
           });
           if(ackChanged) portalAnnouncementAckMapSave(ackPatch);
         }
+        dashboardData.portalLiveAnnouncementIdSet = liveAnnouncementIdSet;
+        dashboardData.portalLiveReminderIdSet = liveReminderIdSet;
         if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
           portalPrunePreLaunchAnnouncementAcks(
             portalAnnouncementAckMapLoad,
             portalAnnouncementAckMapSave,
-            dashboardData.portalLiveAnnouncementIdSet || {}
+            liveAnnouncementIdSet
           );
         }
         if(typeof portalPruneStaleSignedAnnouncementAcks === 'function'){
           portalPruneStaleSignedAnnouncementAcks(
             portalAnnouncementAckMapLoad,
             portalAnnouncementAckMapSave,
-            dashboardData.portalLiveAnnouncementIdSet || {}
+            liveAnnouncementIdSet
           );
         }
         if(typeof portalPruneSupersededPortalReadyAnnouncementAcks === 'function'){
           portalPruneSupersededPortalReadyAnnouncementAcks(
             portalAnnouncementAckMapLoad,
             portalAnnouncementAckMapSave,
-            dashboardData.portalLiveAnnouncementIdSet || {}
+            liveAnnouncementIdSet
           );
         }
         if(typeof portalPruneStaleReminderAcks === 'function'){
           portalPruneStaleReminderAcks(
             portalReminderAckMapLoad,
             portalReminderAckMapSave,
-            dashboardData.portalLiveReminderIdSet || {}
+            liveReminderIdSet
           );
         }
         dashboardData.portalAnnouncementAcksMerged = true;
