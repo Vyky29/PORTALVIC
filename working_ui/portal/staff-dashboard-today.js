@@ -7158,7 +7158,9 @@
             const annSheet = document.getElementById('announcementsSheet');
             const signedLog = portalAnnouncementsSheetEntry === 'signedLog';
             /* Only shut a gate that was already demanding a signature. A signed log stays open. */
-            if(annSheet && annSheet.classList.contains('open') && !signedLog && portalAnnouncementLockRequired && typeof closeSheet === 'function'){
+            var pendingHost = document.getElementById('announcementPendingHost');
+            var showingGate = portalAnnouncementLockRequired || !!(pendingHost && pendingHost.querySelector('.announcement-lock-card--gate'));
+            if(annSheet && annSheet.classList.contains('open') && !signedLog && showingGate && typeof closeSheet === 'function'){
               closeSheet({ bypassAnnouncementLock: true, forceCloseAnnouncementGate: true });
             }
           }catch(_closeSigned){}
@@ -7381,6 +7383,10 @@
             : function(iso){ return String(iso || '').slice(0, 10) >= '2026-06-02'; };
         const visible = inboxRows.filter(function(row){
           if(!row || !row.id) return false;
+          var typEarly = String(row.message_type || '').toLowerCase().trim();
+          /* Cover removed / schedule stays on the halo. A failed ends_at parse must not put it back on Sign and submit. */
+          if(typEarly === 'schedule') return false;
+          if(/^cover removed\b/i.test(String(row.title || '').trim())) return false;
           if(row.ends_at){
             const t = Date.parse(row.ends_at);
             if(Number.isFinite(t) && t < now) return false;
@@ -7987,6 +7993,14 @@
         });
       }
     }
+    function portalSignableItemIsCoverRemovedNotice(n){
+      if(!n || typeof n !== 'object') return false;
+      var title = String(n.title || '').trim();
+      var text = String(n.text || n.body || '').trim();
+      if(/^cover removed\b/i.test(title)) return true;
+      if(/no longer on your rota/i.test(text) && /not covering this session/i.test(text)) return true;
+      return false;
+    }
     function portalActiveAnnouncementItems(){
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
       var memoNow = Date.now();
@@ -7998,6 +8012,7 @@
       const items = [];
       portalAnnouncementItemsFromNotices().forEach(function(n){
         if(n && n.requiresSignature === false) return;
+        if(portalSignableItemIsCoverRemovedNotice(n)) return;
         if(
           typeof portalSignableItemIsCalendar202627 === 'function' &&
           portalSignableItemIsCalendar202627(n)
