@@ -228,9 +228,9 @@
       var t = ev.target;
       if (!t || !t.id || !ids[t.id]) return;
       var st = deps.getState();
-      if (st && st.view === VIEW_ID) {
+      if (st && (st.view === VIEW_ID || st.view === "services_roster")) {
         refreshPartial();
-        syncOpenPlacesFromFilters();
+        if (deps.$("op2627Root")) syncOpenPlacesFromFilters();
       }
     });
   }
@@ -257,7 +257,7 @@
   function openPlacesEmbedHtml() {
     var op = global.PortalAdminOpenPlaces2627;
     if (op && typeof op.viewHtml === "function") {
-      return op.viewHtml({ embedded: true });
+      return op.viewHtml({ embedded: true, hideHead: true });
     }
     return (
       '<div id="op2627Anchor" class="op2627-embed" style="margin-top:28px;min-width:0">' +
@@ -289,23 +289,8 @@
     }
   }
 
-  function viewHtml() {
-    ensureFiltersDelegated();
-    var anchorIso = deps.isoDateLocal(new Date());
-    var rosterPart = deps.renderRosterHtml(anchorIso, anchorIso, {});
+  function rosterFiltersHtml() {
     return (
-      '<h1 class="page-title">' +
-      deps.esc(PAGE_TITLE) +
-      "</h1>" +
-      '<p class="page-intro">' +
-      deps.esc(PAGE_INTRO) +
-      "</p>" +
-      '<div class="c4k-svc-jumpbar" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;min-width:0" role="navigation" aria-label="Jump on this page">' +
-      '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to Booking Portal places">' +
-      "1 · Places (Booking Portal)</button>" +
-      '<button type="button" class="btn btn--ghost btn--sm" id="c4kServicesJumpRoster" title="Jump to standing roster">' +
-      "2 · Services roster</button></div>" +
-      '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>' +
       '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>' +
       '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class, instructor or participant</summary>' +
       '<div class="c4k-svc-filters__body">' +
@@ -336,14 +321,38 @@
       '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesRefreshBtn">Refresh</button>' +
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterSpace"><span>Space available</span> <input type="checkbox" id="c4kSvcFilterSpace" /></label>' +
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterWait"><span>Participants on waiting list</span> <input type="checkbox" id="c4kSvcFilterWait" /></label>' +
-      "</div></div></details>" +
-      openPlacesEmbedHtml() +
-      capacityEmbedHtml() +
-      '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
-      '<h2 class="page-title" style="font-size:1.15rem;margin:28px 0 6px;min-width:0;overflow-wrap:break-word">2 · Services roster</h2>' +
-      '<div id="c4kServicesRosterRoot" style="min-width:0">' +
-      rosterPart +
-      "</div></section>"
+      "</div></div></details>"
+    );
+  }
+
+  /**
+   * @param {{ mode?: "places"|"roster" }} [opts]
+   * places = Booking Portal seats only. roster = standing who-is-booked, with its own filter.
+   */
+  function viewHtml(opts) {
+    ensureFiltersDelegated();
+    var mode = opts && opts.mode === "roster" ? "roster" : "places";
+    var title = mode === "roster" ? "Service roster" : "Places (Booking Portal)";
+    var body = "";
+    if (mode === "roster") {
+      var anchorIso = deps.isoDateLocal(new Date());
+      var rosterPart = deps.renderRosterHtml(anchorIso, anchorIso, {});
+      body =
+        rosterFiltersHtml() +
+        capacityEmbedHtml() +
+        '<section id="c4kServicesRosterAnchor" aria-label="Service roster" style="min-width:0">' +
+        '<div id="c4kServicesRosterRoot" style="min-width:0">' +
+        rosterPart +
+        "</div></section>";
+    } else {
+      body = openPlacesEmbedHtml();
+    }
+    return (
+      '<h1 class="page-title">' +
+      deps.esc(title) +
+      "</h1>" +
+      '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>' +
+      body
     );
   }
 

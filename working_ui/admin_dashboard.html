@@ -146,11 +146,11 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260929-header-wa"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260922-job-phone"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
-  <script src="/portal/admin-open-places-2627.js?v=20261001-quiet"></script>
+  <script src="/portal/admin-open-places-2627.js?v=20261002-places-split"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260929-header-wa" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260929-bespoke-cover"></script>
-  <script src="/portal/cfk-app.js?v=20261001-quiet"></script>
+  <script src="/portal/cfk-app.js?v=20261002-places-split"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20261001-sched-quiet"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -2587,7 +2587,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v114')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v115')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -26632,9 +26632,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(root) root.innerHTML = viewC4kRosterServicesFromSlotsHtml(a, a, filt);
       bindCapacityBoardFilters(root || document.getElementById('workspace') || document);
     }
-    function viewC4kServices(){
+    function viewC4kServices(mode){
       if(window.PortalCfkApp && typeof window.PortalCfkApp.viewHtml === 'function'){
-        return window.PortalCfkApp.viewHtml();
+        var m = mode === 'roster' || (state && state.view === 'services_roster') ? 'roster' : 'places';
+        if(mode === 'places' || mode === 'roster') m = mode;
+        return window.PortalCfkApp.viewHtml({ mode: m });
       }
       return '<p class="muted">CFK Services module not loaded.</p>';
     }
@@ -29866,8 +29868,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='operations_admin') html = viewOperationsAdmin();
       else if(id==='dashboard' || id==='operations') html = viewOperations();
       else if(id==='clients') html = viewC4kParticipants();
-      else if(id==='c4k_services' || id==='services_places') html = viewC4kServices();
-      else if(id==='services_roster') html = viewC4kServices();
+      else if(id==='c4k_services' || id==='services_places') html = viewC4kServices('places');
+      else if(id==='services_roster') html = viewC4kServices('roster');
       else if(id==='c4k_sessions') html = viewC4kSessions();
       else if(id==='c4k_late_submissions') html = viewC4kLateSubmissions();
       else if(id==='session_disruptions') html = viewSessionDisruptions();
@@ -35018,39 +35020,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(id==='c4k_services' || id==='services_places' || id==='services_roster'){
         ensureC4kServicesFiltersDelegated();
-        var btnSv = $('c4kServicesRefreshBtn');
-        if(btnSv) btnSv.onclick = function(){ portalAdminForceServicesRosterRefresh(); };
-        var btnJumpRoster = $('c4kServicesJumpRoster');
-        if(btnJumpRoster) btnJumpRoster.onclick = function(){
-          var rosterEl = $('c4kServicesRosterAnchor') || $('c4kServicesRosterRoot');
-          if(rosterEl) rosterEl.scrollIntoView({ block:'start', behavior:'smooth' });
-        };
-        var btnJumpOp = $('c4kServicesJumpOpenPlaces');
-        if(btnJumpOp) btnJumpOp.onclick = function(){
-          var opEl = $('op2627Anchor') || $('op2627Root');
-          if(opEl) opEl.scrollIntoView({ block:'start', behavior:'smooth' });
-        };
-        portalAdminForceServicesRosterRefresh();
-        bindOpenPlaces2627Module();
-        if(state.scrollToCapacityEmbed){
-          /* Legacy flag → live Booking Portal section (mock §2 removed). */
-          state.scrollToCapacityEmbed = false;
-          state.scrollToOpenPlaces = true;
+        if(id==='services_roster'){
+          var btnSv = $('c4kServicesRefreshBtn');
+          if(btnSv) btnSv.onclick = function(){ portalAdminForceServicesRosterRefresh(); };
+          portalAdminForceServicesRosterRefresh();
+        } else {
+          bindOpenPlaces2627Module();
         }
-        if(state.scrollToOpenPlaces){
-          state.scrollToOpenPlaces = false;
-          setTimeout(function(){
-            var opEl = $('op2627Anchor') || $('op2627Root');
-            if(opEl) opEl.scrollIntoView({ block:'start', behavior:'smooth' });
-          }, 120);
-        }
-        if(state.scrollToServicesRoster){
-          state.scrollToServicesRoster = false;
-          setTimeout(function(){
-            var rosterEl = $('c4kServicesRosterAnchor') || $('c4kServicesRosterRoot');
-            if(rosterEl) rosterEl.scrollIntoView({ block:'start', behavior:'smooth' });
-          }, 120);
-        }
+        /* Each menu item is its own page, so do not scroll a section under the title. */
+        state.scrollToCapacityEmbed = false;
+        state.scrollToOpenPlaces = false;
+        state.scrollToServicesRoster = false;
         if(state.registerSessionSlot){
           mountRegisterSessionInline(state.registerSessionSlot);
         }

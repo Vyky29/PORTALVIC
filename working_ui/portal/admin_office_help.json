@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v114",
+  "version": "2026-10-02-v115",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -328,10 +328,10 @@
           "id": "services_board",
           "title": "Services board (capacity & open places)",
           "summary": "See filled vs open seats for the term — the capacity / places view for booking and office.",
-          "where": "Services & places → Places (Booking Portal), or Service roster",
+          "where": "Services & places → Places (Booking Portal). Service roster is its own screen.",
           "steps": [
-            "Open Places (Booking Portal) for free and taken seats. A new client is added from Services & places so they can take an open space.",
-            "Open Service roster for who is booked and the standing instructor.",
+            "Open Places (Booking Portal) for free and taken seats. That screen has its own day, service and venue filter. A new client is added from Services & places so they can take an open space.",
+            "Open Service roster on its own screen for who is booked and the standing instructor. The weekday, class, venue, instructor and participant filter lives only there.",
             "Read filled seats vs open places — this is capacity truth for offering places.",
             "Use open places when talking to families or checking Booking Portal offer.",
             "Standing who-is-booked changes go through Edit term slot or finish-booking paid — not Timetable."

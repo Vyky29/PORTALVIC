@@ -409,15 +409,18 @@
    */
   function viewHtml(opts) {
     var embedded = !!(opts && opts.embedded);
-    var head = embedded
-      ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:0;min-width:0;scroll-margin-top:14px;padding-top:4px">' +
-        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">1 · Places (Booking Portal)</h2>'
-      : '<div class="page-head" style="min-width:0">' +
-        '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Places 2026/27</h2>' +
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-        "This board lives under <strong>Services</strong> (section 1 · Places). Opening this shortcut takes you there." +
-        "</p></div>";
-    var close = embedded ? "</div>" : "";
+    var hideHead = !!(opts && opts.hideHead);
+    var head = hideHead
+      ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:0;min-width:0">'
+      : embedded
+        ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:0;min-width:0;scroll-margin-top:14px;padding-top:4px">' +
+          '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">Places (Booking Portal)</h2>'
+        : '<div class="page-head" style="min-width:0">' +
+          '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Places (Booking Portal)</h2>' +
+          '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
+          "Booking Portal seats and who is taken. An open space is where a new client can go." +
+          "</p></div>";
+    var close = embedded || hideHead ? "</div>" : "";
     return (
       stylesHtml() +
       head +
