@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v133",
+  "version": "2026-10-02-v134",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1435,6 +1435,49 @@
             "Add makeup: type the first letters of the name, pick the centre, then an open seat (their instructor or another instructor) and the day. Send to parent. They Accept or Decline in the parent portal. The seat is not on the roster until they Accept.",
             "If a makeup was placed on a seat that is not on that day's roster, Schedule and Covers still shows that name so you can open Change and Undo change."
           ]
+        },
+        {
+          "id": "programme_payments",
+          "title": "Programme payments (from the photo)",
+          "summary": "The header photo opens Settings. Programme payments is the term-fees grid, one row per family. It is the Clients Payments sheet, not Create invoice.",
+          "where": "Settings, then Programme payments. Also under Finance.",
+          "keywords": [
+            "programme payments",
+            "pagos",
+            "pagos de programa",
+            "foto",
+            "photo",
+            "header",
+            "settings",
+            "clients payments",
+            "funding mix",
+            "owed"
+          ],
+          "steps": [
+            "The photo in the header opens Settings. It is not your profile and it does not open this grid by itself.",
+            "On Settings, under Programme money, open Outstanding, Payment rows, or the Programme payments button. That is this screen.",
+            "One row per family for the term: pay method, cost, sessions, invoice, billed, paid, still owed, and funding (LA invoice, NHS, private, Direct Payment).",
+            "The number next to Clients Payments is how many rows are in the table.",
+            "Create invoice and Xero are a different Finance screen. This grid is the spreadsheet mirror."
+          ],
+          "tips": [
+            "Back to dashboard returns to the Operations Hub."
+          ],
+          "es": {
+            "title": "Programme payments (desde la foto)",
+            "summary": "La foto del header abre Settings. Programme payments es la tabla de cuotas del termino, una fila por familia. Es la hoja Clients Payments, no Create invoice.",
+            "where": "Settings, luego Programme payments. Tambien en Finance.",
+            "steps": [
+              "La foto del header abre Settings. No es tu perfil y no abre esta tabla sola.",
+              "En Settings, en Programme money, abre Outstanding, Payment rows o el boton Programme payments. Esa es esta pantalla.",
+              "Una fila por familia del termino: metodo de pago, coste, sesiones, factura, facturado, pagado, lo que falta, y funding (LA invoice, NHS, private, Direct Payment).",
+              "El numero junto a Clients Payments es cuantas filas hay en la tabla.",
+              "Create invoice y Xero son otra pantalla de Finance. Esta tabla es el espejo de la hoja."
+            ],
+            "tips": [
+              "Back to dashboard vuelve al Operations Hub."
+            ]
+          }
         }
       ]
     },
