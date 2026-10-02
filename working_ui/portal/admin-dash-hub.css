@@ -3677,11 +3677,9 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   }
 }
 
-/* One box colour. Menu colour stays on the icon and the title. */
+/* Menu colours on the boxes. Calendar stays quiet so the month reads. */
 .ops-hub--today-first{
   --ops-tile-h:156px;
-  --ops-box:#c5dcf2;
-  --ops-panel:#e7f3fb;
 }
 .ops-hub--today-first .ops-hub__today{
   grid-template-columns:repeat(6,minmax(0,1fr));
@@ -3698,7 +3696,8 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   max-height:var(--ops-tile-h);
   justify-self:stretch;
   align-self:start;
-  background:var(--ops-box);
+  background:#fbcfe8;
+  border-color:#f9a8d4;
   color:#9d174d;
   --dh-tile-fg:#db2777;
 }
@@ -3715,17 +3714,41 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   min-height:var(--ops-tile-h);
   max-height:var(--ops-tile-h);
 }
-.ops-hub--today-first .ops-hub__feature,
-.ops-hub--today-first .ops-hub-fixed .dash-hub__tile,
-.ops-hub--today-first .ops-hub-sheet .dash-hub__tile,
-.ops-hub--today-first .ops-hub-panel--today .dash-hub__tile,
-.ops-hub--today-first .ops-hub-panel--services .dash-hub__tile,
-.ops-hub--today-first .ops-hub-panel--families .dash-hub__tile,
-.ops-hub--today-first .ops-hub-panel--finance .dash-hub__tile,
-.ops-hub--today-first .ops-hub-panel--formal .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--today .dash-hub__tile{
+  background:#fbcfe8;
+  border-color:#f9a8d4;
+  color:#9d174d;
+  --dh-tile-fg:#db2777;
+}
+.ops-hub--today-first .ops-hub-panel--services .dash-hub__tile{
+  background:#fde68a;
+  border-color:#fbbf24;
+  color:#78350f;
+  --dh-tile-fg:#d97706;
+}
+.ops-hub--today-first .ops-hub-panel--families .dash-hub__tile{
+  background:#ddd6fe;
+  border-color:#c4b5fd;
+  color:#4c1d95;
+  --dh-tile-fg:#7c3aed;
+}
+.ops-hub--today-first .ops-hub-panel--finance .dash-hub__tile{
+  background:#99f6e4;
+  border-color:#5eead4;
+  color:#115e59;
+  --dh-tile-fg:#0f766e;
+}
+.ops-hub--today-first .ops-hub-panel--formal .dash-hub__tile{
+  background:#fecaca;
+  border-color:#fca5a5;
+  color:#b91c1c;
+  --dh-tile-fg:#ef4444;
+}
 .ops-hub--today-first .ops-hub-panel--potential .dash-hub__tile{
-  background:var(--ops-box);
-  border-color:#e2e8f0;
+  background:#bae6fd;
+  border-color:#7dd3fc;
+  color:#0c4a6e;
+  --dh-tile-fg:#0284c7;
 }
 .ops-hub--today-first .dash-hub__tile-label,
 .ops-hub--today-first .ops-hub__feature .dash-hub__tile-label{
@@ -3750,26 +3773,23 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   height:32px;
 }
 .dash-hub--ops-hub.ops-hub.ops-hub--today-first{
-  --ops-panel:#d4e8f8;
+  --ops-panel:#f8fafc;
 }
 .ops-hub--today-first .dash-hub__panel{
-  background:#d4e8f8;
-  border-color:#b7d0e6;
-}
-.ops-hub--today-first .dash-hub__panel-ico{
-  background:var(--ops-box);
+  background:#f8fafc;
+  border-color:#e2e8f0;
 }
 .ops-hub--today-first .ops-hub__today-item--calendar{
-  background:var(--ops-box);
-  border-color:#b7d0e6;
+  background:#fff;
+  border-color:#e2e8f0;
 }
 .ops-hub--today-first .ops-hub__today-item--calendar:hover,
 .ops-hub--today-first .ops-hub__today-item--calendar:focus-visible{
-  background:#b7d4ee;
+  background:#f8fafc;
 }
 .ops-hub--today-first .ops-hub-cal-day{
-  background:#eef6fc;
-  border-color:#d3e6f5;
+  background:#f8fafc;
+  border-color:#e2e8f0;
 }
 .ops-hub--today-first .dash-hub__panel-jump{
   width:auto;
@@ -3790,9 +3810,9 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   margin-left:10px;
   align-self:center;
   padding:5px 12px;
-  border:1px solid #b7d0e6;
+  border:1px solid #e2e8f0;
   border-radius:999px;
-  background:var(--ops-box);
+  background:#fff;
   font-size:12px;
   line-height:1.2;
   letter-spacing:.08em;
@@ -3803,31 +3823,37 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 .ops-hub--today-first .ops-hub-panel--finance .dash-hub__panel-title{color:#0f766e}
 .ops-hub--today-first .ops-hub-panel--formal .dash-hub__panel-title{color:#ef4444}
 .ops-hub--today-first .ops-hub-panel--potential .dash-hub__panel-title{color:#0284c7}
-.ops-hub--today-first .ops-hub-cat,
-.ops-hub--today-first .ops-hub-cat.is-on,
-.ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"]{
-  background:var(--ops-box);
+.ops-hub--today-first .ops-hub-cat{
+  background:var(--ops-cat-soft,#fff);
   color:var(--ops-cat-ink,#142033);
-  border:1px solid #e2e8f0;
+  border:1px solid transparent;
 }
 .ops-hub--today-first .ops-hub-cat.is-on{
-  background:#a9cce8;
-  border-color:var(--ops-cat,#94a3b8);
-  box-shadow:inset 0 0 0 1px var(--ops-cat,#94a3b8);
+  background:var(--ops-cat,#0e4d6e);
+  color:#fff;
+  border-color:transparent;
+  box-shadow:none;
 }
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="services"],
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="finance"],
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="potential"]{
+  color:#142033;
+}
+.ops-hub--today-first .ops-hub-cat[data-cat="formal"]{color:#b91c1c}
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"]{color:#fff}
 .ops-hub--today-first .ops-hub-cat,
 .ops-hub--today-first .ops-hub-cat.is-on{
   min-height:76px;
   padding:12px 18px;
   gap:12px;
 }
-.ops-hub--today-first .ops-hub-cat .admin-nav-ico,
-.ops-hub--today-first .ops-hub-cat.is-on .admin-nav-ico,
-.ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"] .admin-nav-ico{
+.ops-hub--today-first .ops-hub-cat .admin-nav-ico{
   color:var(--ops-cat,#142033);
   width:36px;
   height:36px;
 }
+.ops-hub--today-first .ops-hub-cat.is-on .admin-nav-ico{color:currentColor}
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"] .admin-nav-ico{color:#fff}
 .ops-hub--today-first .ops-hub-cat .admin-nav-ico svg{width:36px;height:36px}
 .ops-hub--today-first .ops-hub-cat__label{
   font-size:26px;
@@ -3835,5 +3861,3 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   font-weight:800;
   overflow-wrap:break-word;
 }
-.ops-hub--today-first .ops-hub-cat[data-cat="formal"],
-.ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"]{color:#b91c1c}
