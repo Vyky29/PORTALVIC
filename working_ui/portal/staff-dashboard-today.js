@@ -1235,6 +1235,22 @@
         out.push(k);
       }
       add(raw);
+      /* schedule_overrides.anchor_staff_id is the roster slug ("simon"), not the auth uuid.
+         A uuid-only filter drops Yuri's absence, the tile counts it, then a later fetch clears it. */
+      try{
+        var prof = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+        if(prof){
+          add(prof.username);
+          add(String(prof.full_name || '').trim().split(/\s+/)[0]);
+          if(typeof portalCanonicalStaffKeyForMatch === 'function'){
+            add(portalCanonicalStaffKeyForMatch(prof.username));
+            add(portalCanonicalStaffKeyForMatch(String(prof.full_name || '').trim().split(/\s+/)[0]));
+          }
+        }
+      }catch(_){}
+      try{
+        if(typeof STAFF_DASHBOARD_ID !== 'undefined') add(STAFF_DASHBOARD_ID);
+      }catch(_){}
       try{
         if(typeof portalCanonicalStaffKeyForMatch === 'function') add(portalCanonicalStaffKeyForMatch(raw));
       }catch(_){}
@@ -1299,6 +1315,9 @@
       }
       window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__ = (async function(){
       var markHydrated = false;
+      /* Only seal the outstanding-feedback count after this fetch was built with a
+         roster slug (simon), so an earlier uuid-scoped pull cannot paint "1 left". */
+      var feedbackCountOverridesReady = false;
       try{
       try{
         if(typeof window.portalWaitForSupabaseClientReady === 'function'){
@@ -1441,6 +1460,19 @@
         const orFilter = scopeSelf && typeof portalStaffScheduleOverrideOrFilter === 'function'
           ? portalStaffScheduleOverrideOrFilter(viewerSid)
           : '';
+        try{
+          var matchKeysForCount = typeof portalStaffOverrideMatchKeys === 'function'
+            ? portalStaffOverrideMatchKeys(viewerSid)
+            : [];
+          feedbackCountOverridesReady = matchKeysForCount.some(function(k){
+            k = String(k || '').trim().toLowerCase();
+            /* Roster slug only. A 32-char hex of the auth uuid must not seal the count. */
+            if(!/^[a-z][a-z0-9_]{1,20}$/.test(k)) return false;
+            if(/^stf\d{3}$/.test(k)) return false;
+            if(/^[0-9a-f]{16,}$/.test(k)) return false;
+            return true;
+          });
+        }catch(_countReady){}
         for(let start = 0; start < isoList.length; start += CHUNK){
           const chunk = isoList.slice(start, start + CHUNK);
           if(!chunk.length) continue;
@@ -1535,6 +1567,9 @@
           console.warn('[portal] schedule_overrides empty after', fetchErrors, 'chunk error(s)');
         }
         markHydrated = true;
+        if(feedbackCountOverridesReady && !fetchErrors){
+          try{ window.__PORTAL_FEEDBACK_COUNT_OVERRIDES_READY__ = true; }catch(_){}
+        }
       }catch(e){
         console.warn('[portal] schedule_overrides fetch', e);
         // Never wipe an already-loaded set on a transient error (see anti-flicker above).
@@ -1609,6 +1644,9 @@
     function portalStaffKickScheduleOverridesHydrate(opts){
       opts = opts || {};
       if(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__){
+        if(opts.force && typeof window.portalRefreshScheduleOverridesCache === 'function'){
+          return window.portalRefreshScheduleOverridesCache({ termCalendar: !!opts.termCalendar });
+        }
         return window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__;
       }
       var needAuthRetry = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__);
@@ -6928,7 +6966,11 @@
         if(typeof renderToday === 'function') renderToday();
       }catch(_){}
       if(typeof portalStaffKickScheduleOverridesHydrate === 'function'){
-        void portalStaffKickScheduleOverridesHydrate();
+        /* Refetch once the roster slug is known. A fetch sealed on the auth uuid
+           misses anchor_staff_id "simon" (Yuri absence) and the feedback tile flashes. */
+        void portalStaffKickScheduleOverridesHydrate({
+          force: window.__PORTAL_FEEDBACK_COUNT_OVERRIDES_READY__ !== true
+        });
       }
       return true;
     }

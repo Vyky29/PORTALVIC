@@ -866,10 +866,13 @@
     /** Feedback chips stay neutral until export bundle + Supabase sync finish — avoids Pending→green flips. */
     function portalStaffFeedbackPipelineReady(){
       if(!(dashboardData && dashboardData.portalFeedbackPipelineReady)) return false;
-      /* Covers must be in before we count "feedbacks left". Otherwise the tile
-         shows a number from the standing week, then drops it a moment later. */
+      /* Standing week must not paint "1 left" before two facts land:
+         announced absences (Yuri Thu) and a co-instructor's shared submit
+         (Joelle 2:1, Aurora). Otherwise the Quick Menu flashes orange, then clears. */
+      if(!dashboardData.portalFeedbackServerSynced && !dashboardData.portalFeedbackServerSyncFailed) return false;
       try{
         if(window.__PORTAL_SCHEDULE_OVERRIDES_FETCH_SETTLED__ !== true) return false;
+        if(window.__PORTAL_FEEDBACK_COUNT_OVERRIDES_READY__ !== true) return false;
       }catch(_){}
       return true;
     }
@@ -1850,6 +1853,14 @@
         }
       }catch(e){
         console.warn('[portal] server review merge skipped', e);
+        try{
+          if(dashboardData) dashboardData.portalFeedbackServerSyncFailed = true;
+        }catch(_){}
+        try{
+          if(typeof portalStaffFinishFeedbackPipelineReady === 'function'){
+            portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
+          }
+        }catch(_){}
       }
     }
 
