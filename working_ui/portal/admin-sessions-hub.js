@@ -13181,6 +13181,48 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return s;
   }
 
+  function dayBoardCardPhotoName(slot, st) {
+    if (!slot || !st || st.isDuty || st.isOpenSlot || st.isClosed) return "";
+    var raw = "";
+    if (st.makeupDisp) {
+      raw =
+        dayBoardParticipantDisplayName(
+          (st.makeupDisp.makeupSlot && st.makeupDisp.makeupSlot.client_name) ||
+            overrideReplacementClientName(overridePayloadObj(st.makeupDisp.ov))
+        ) || "";
+    } else {
+      raw = dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name) || "";
+    }
+    raw = String(raw)
+      .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
+      .replace(/^trial\s*[-·:]?\s*/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!raw || raw === "\u2014" || raw === "-" || raw === "\u2013") return "";
+    if (
+      /^(no participant|open|available|closed|unassigned|duty|office|manager|interview|interviews|admin|home|casa|makeup|trial|cover needed)$/i.test(
+        raw
+      )
+    ) {
+      return "";
+    }
+    return raw;
+  }
+
+  function dayBoardCardParticipantPhotoHtml(slot, st, esc) {
+    var name = dayBoardCardPhotoName(slot, st);
+    if (!name || typeof global.portalParticipantAvatarInnerHtml !== "function") return "";
+    var clientId = clean(slot.client_id || slot.contact_id || slot.participant_id || "");
+    return (
+      '<div class="ash-db-card__photo">' +
+      global.portalParticipantAvatarInnerHtml(name, clientId, {
+        esc: esc,
+        className: "portal-roster-avatar ash-db-card__avatar",
+      }) +
+      "</div>"
+    );
+  }
+
   function htmlDayBoardCard(hub, slot, st, esc) {
     var band = dayBoardServiceBand(slot);
     var nameHtml;
@@ -13266,6 +13308,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (st.boardPlace === "mirror" ? " ash-db-card--cover-mirror" : "") +
       (st.isCoverNeeded && st.boardPlace !== "away" ? " ash-db-card--cover-needed" : "") +
       '">' +
+      '<div class="ash-db-card__body">' +
       '<div class="ash-db-card__band">' +
       esc(band) +
       "</div>" +
@@ -13275,6 +13318,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       whenHtml +
       (venue ? '<span class="ash-db-card__venue">' + esc(venue) + "</span>" : "") +
       chipsHtml +
+      "</div>" +
+      dayBoardCardParticipantPhotoHtml(slot, st, esc) +
       "</article>"
     );
   }
