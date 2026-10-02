@@ -183,7 +183,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261002-sessions-nav" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261002-api-chips" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -306,12 +306,20 @@
             <span class="admin-badge is-empty" id="announceBadge">0</span>
           </button>
           <span class="admin-topbar-split" aria-hidden="true"></span>
-          <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--p" id="btnFamilyMsgs" aria-label="Family messages — parents WhatsApp" title="Family messages (parents)">
-            <span class="admin-icon-btn__svg" id="btnFamilyMsgsIco" aria-hidden="true"></span>
+          <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--p admin-api-chip" id="btnFamilyMsgs" aria-label="Parents API" title="Parents API">
+            <span class="admin-api-chip__mark" aria-hidden="true">P</span>
+            <span class="admin-api-chip__name">
+              <span class="admin-api-chip__who">Parents</span>
+              <span class="admin-api-chip__api">API</span>
+            </span>
             <span class="admin-badge is-empty" id="familyMsgBadge">0</span>
           </button>
-          <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--s" id="btnStaffWa" aria-label="Staff messages — staff WhatsApp API" title="Staff messages (API)">
-            <span class="admin-icon-btn__svg" id="btnStaffWaIco" aria-hidden="true"></span>
+          <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--s admin-api-chip" id="btnStaffWa" aria-label="Staff API" title="Staff API">
+            <span class="admin-api-chip__mark" aria-hidden="true">S</span>
+            <span class="admin-api-chip__name">
+              <span class="admin-api-chip__who">Staff</span>
+              <span class="admin-api-chip__api">API</span>
+            </span>
             <span class="admin-badge is-empty" id="staffWaBadge">0</span>
           </button>
           <nav class="admin-portal-switch" id="adminPortalSwitch" aria-label="Switch portal" hidden></nav>
@@ -2597,7 +2605,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v143')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v144')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -39628,10 +39636,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var pIco = $('btnFamilyMsgsIco');
         var sIco = $('btnStaffWaIco');
         var cIco = $('btnComunicacionesIco');
-        if(typeof window.portalParentChatIconSvg === 'function' && pIco){
+        if(typeof window.portalParentChatIconSvg === 'function' && pIco && !pIco.closest('.admin-api-chip')){
           pIco.innerHTML = window.portalParentChatIconSvg({ size: 28 });
         }
-        if(typeof window.portalStaffChatIconSvg === 'function' && sIco){
+        if(typeof window.portalStaffChatIconSvg === 'function' && sIco && !sIco.closest('.admin-api-chip')){
           sIco.innerHTML = window.portalStaffChatIconSvg({ size: 28 });
         }
         if(typeof window.portalCommsChatIconSvg === 'function' && cIco){

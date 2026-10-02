@@ -1195,6 +1195,74 @@
     .admin-av img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
     .admin-av.admin-av--photo,#miniAv.admin-av--photo{background:transparent;color:transparent}
     .admin-profile span#miniName{font-size:12px;font-weight:600;color:var(--ink);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .admin-api-chip.admin-icon-btn--p,
+    .admin-api-chip.admin-icon-btn--p:hover,
+    .admin-api-chip.admin-icon-btn--p:focus-visible,
+    .admin-api-chip.admin-icon-btn--s,
+    .admin-api-chip.admin-icon-btn--s:hover,
+    .admin-api-chip.admin-icon-btn--s:focus-visible{
+      width:auto;
+      height:auto;
+      min-height:40px;
+      max-width:148px;
+      padding:4px 12px 4px 4px;
+      border-radius:9999px;
+      gap:8px;
+      background:var(--btnSecBg);
+      border-color:var(--btnSecBorder);
+      color:var(--ink);
+      box-shadow:none;
+    }
+    .admin-api-chip.admin-icon-btn--p.is-current,
+    .admin-api-chip.admin-icon-btn--p[aria-current="page"],
+    .admin-api-chip.admin-icon-btn--s.is-current,
+    .admin-api-chip.admin-icon-btn--s[aria-current="page"]{
+      width:auto;
+      height:auto;
+      background:#fff;
+      border-color:var(--blue);
+      color:var(--ink);
+      box-shadow:0 0 0 3px rgba(45,132,179,.35);
+    }
+    .admin-api-chip__mark{
+      width:32px;
+      height:32px;
+      border-radius:8px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 32px;
+      font-size:13px;
+      font-weight:800;
+      color:#fff;
+      line-height:1;
+    }
+    .admin-icon-btn--p .admin-api-chip__mark{background:#0b5c3b}
+    .admin-icon-btn--s .admin-api-chip__mark{background:#ea580c}
+    .admin-api-chip__name{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      justify-content:center;
+      min-width:0;
+      line-height:1.05;
+      text-align:left;
+    }
+    .admin-api-chip__who{
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      color:var(--ink);
+      white-space:nowrap;
+    }
+    .admin-api-chip__api{
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.08em;
+      color:#64748b;
+      white-space:nowrap;
+    }
     .admin-portal-switch{display:flex;align-items:center;gap:4px;flex-shrink:0;padding:2px;border-radius:12px;border:1px solid var(--line);background:#f8fafc}
     .admin-portal-switch__btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;border:none;background:transparent;color:#64748b;text-decoration:none;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s;padding:0;flex-shrink:0}
     .admin-portal-switch__btn svg{width:18px;height:18px;display:block}
