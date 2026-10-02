@@ -991,6 +991,8 @@
     .admin-search-pop__open{flex-shrink:0}
     .admin-search-pop__empty{margin:8px;font-size:13px;color:#64748b;overflow-wrap:anywhere}
     .admin-topbar-meta{display:flex;align-items:center;gap:10px;flex-shrink:0;overflow:visible}
+    .admin-topbar-split{width:22px;flex:0 0 22px}
+    #adminPortalSwitch{display:none !important}
     .admin-topbar .admin-topbar-chat-wrap.portal-admin-floating-chat-wrap{
       position:relative;
       right:auto;

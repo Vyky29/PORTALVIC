@@ -384,6 +384,9 @@
     var host = document.getElementById("adminPortalSwitch");
     if (!host) return;
     host.textContent = "";
+    host.hidden = true;
+    host.setAttribute("aria-hidden", "true");
+    return;
 
     var ctx = global.__PORTAL_SUPABASE__ || {};
     var profile = ctx.staff_profile || null;
