@@ -1534,7 +1534,7 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
 .dash-hub--nav-group{
   max-width:100%;
 }
-/* Unified page head: title + info on the left, back on the right. */
+/* Page head: title, info circle, then back or help. They stay together. */
 .admin-page-head{
   display:flex;
   flex-direction:column;
@@ -1548,23 +1548,24 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
   display:flex;
   flex-wrap:wrap;
   align-items:center;
-  justify-content:space-between;
+  justify-content:flex-start;
   gap:10px 16px;
   min-width:0;
   width:100%;
 }
 .admin-page-head__lead{
   display:flex;
+  flex-wrap:wrap;
   align-items:center;
   gap:10px;
   min-width:0;
-  flex:1 1 auto;
+  flex:0 1 auto;
 }
 .admin-page-head__actions{
-  margin-left:auto;
+  margin-left:0;
   display:flex;
   flex-wrap:wrap;
-  justify-content:flex-end;
+  justify-content:flex-start;
   gap:8px;
   flex:0 1 auto;
 }
@@ -2021,7 +2022,7 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   display:flex;
   flex-wrap:wrap;
   align-items:center;
-  justify-content:space-between;
+  justify-content:flex-start;
   gap:10px;
   min-width:0;
 }

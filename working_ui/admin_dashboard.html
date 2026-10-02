@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-hub-cards" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-head-cluster" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -183,7 +183,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261002-api-chips" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261002-head-cluster" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -2508,32 +2508,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var finItem = navGetItem(viewId);
         if(finItem && finItem.label) infoTitle = finItem.label;
       }
-      var showInfo = portalAdminPageHasInfo(viewId, intro);
       window.__ADMIN_PAGE_INFO = { viewId: viewId, title: infoTitle, intro: intro };
-      var infoBtn = showInfo
-        ? '<button type="button" class="admin-page-info" data-admin-page-info="1" aria-label="About '+escAttr(plainTitle)+'" title="About this page"><span aria-hidden="true">i</span></button>'
-        : '';
+      var infoBtn = '<button type="button" class="admin-page-info" data-admin-page-info="1" aria-label="About '+escAttr(plainTitle)+'" title="About this page"><span aria-hidden="true">i</span></button>';
       var titleEl = '<h1 class="page-title admin-page-head__title">'+esc(plainTitle)+'</h1>';
+      var actions = backBtn ? '<div class="admin-page-head__actions">'+backBtn+'</div>' : '';
       var titleBlock = titleIconId
         ? (
           '<div class="admin-page-head__title-stack">'+
           '<span class="admin-page-head__title-ico" aria-hidden="true">'+adminNavIconHtml(titleIconId)+'</span>'+
-          '<div class="admin-page-head__lead">'+titleEl+infoBtn+'</div>'+
+          '<div class="admin-page-head__lead">'+titleEl+infoBtn+actions+'</div>'+
           '</div>'
         )
-        : ('<div class="admin-page-head__lead">'+titleEl+infoBtn+'</div>');
-      var actions = backBtn ? '<div class="admin-page-head__actions">'+backBtn+'</div>' : '';
+        : ('<div class="admin-page-head__lead">'+titleEl+infoBtn+actions+'</div>');
       return (
         '<header class="admin-page-head'+headExtraClass+'">'+
         '<div class="admin-page-head__main">'+
         titleBlock+
-        actions+
         '</div>'+
         '</header>'
       );
     }
     /** Page view → Office help lesson ids. The i button opens these plus the old intro. */
     var ADMIN_PAGE_INFO_LESSONS = {
+      nav_hub: ['ops_hub_chips'],
+      g_operator: ['ops_hub_chips', 'sessions_overview'],
       g_clients: ['buckets'],
       clients: ['clients_list', 'buckets'],
       c4k_waitlist: ['waiting_list'],
@@ -2605,7 +2603,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v144')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v145')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -31446,11 +31444,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       var sheet = opsHubSheetCatId();
+      window.__ADMIN_PAGE_INFO = { viewId: 'nav_hub', title: 'Operations Hub', intro: '', lessonIds: ['ops_hub_chips'] };
       return (
         '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub ops-hub--today-first">' +
         '<header class="ops-hub__intro">' +
         '<div class="ops-hub__intro-row">' +
         '<h1 class="ops-hub__intro-title">Operations Hub</h1>' +
+        '<button type="button" class="admin-page-info" data-admin-page-info="1" aria-label="About Operations Hub" title="About this page"><span aria-hidden="true">i</span></button>' +
         '<a class="ops-hub__help-link" href="/admin_office_help.html">Office help</a>' +
         '</div>' +
         '</header>' +

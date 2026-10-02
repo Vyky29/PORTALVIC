@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v144",
+  "version": "2026-10-02-v145",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -406,7 +406,7 @@
             "comms"
           ],
           "steps": [
-            "Open Operations Hub. The Today strip (title and Open) sits under the title.",
+            "Open Operations Hub. The title, the info circle and Office help sit together. The Today strip (title and Open) sits under that.",
             "Schedule and Covers, Sessions overview and the calendar are the next row. The two buttons match the calendar height. The Today tiles sit under that row: Register, Lead report, Incidents, Venue review, and Pick up / drop off. Those boxes are white cards, the same idea as Sessions Overview. Colour stays on the icon and the category title. Places is in Services and places. Absents and cancellations are in Finance.",
             "Open another category is the sheet under Today. The chips are Services and places, Families, Finance, Formal workers and Potential workers. Today does not move when you change the sheet.",
             "Click the category title (the Open label next to Today, Finance, Families and the rest) to open that whole section. Finance then shows Xero, Tide and Other, with every button in the category. Back to dashboard returns to the hub.",
@@ -415,14 +415,15 @@
             "When that lane has unread messages, the button lights up and shows the number. A number on Announcements is live notices from the last 7 days."
           ],
           "tips": [
-            "The sheet shows a short row. Open on the title shows every button in that category, including Create invoice and Xero products under Finance."
+            "The sheet shows a short row. Open on the title shows every button in that category, including Create invoice and Xero products under Finance.",
+            "On every admin page the title, the info circle and Back or Help sit in one row. They do not go to the far right."
           ],
           "es": {
             "title": "Operations Hub: Today y luego una hoja",
             "summary": "Today se queda en el inicio. Las otras categorias se abren en la hoja de debajo. WhatsApp, P, S, C y A siguen en la barra.",
             "where": "Operations Hub (inicio)",
             "steps": [
-              "Abre Operations Hub. La franja de Today (titulo y Open) va bajo el titulo.",
+              "Abre Operations Hub. El titulo, el circulo de info y Office help van juntos. La franja de Today (titulo y Open) va debajo.",
               "Schedule and Covers, Sessions overview y el calendario son la fila siguiente. Los dos botones tienen la misma altura que el calendario. Las cajas de Today van debajo: Register, Lead report, Incidents, Venue review y Pick up / drop off. Esas cajas son blancas, como las tarjetas de Sessions Overview. El color queda en el icono y en el titulo de la categoria. Places esta en Services and places. Absents y cancellations estan en Finance.",
               "Open another category es la hoja bajo Today. Los chips son Services and places, Families, Finance, Formal workers y Potential workers. Today no se mueve al cambiar la hoja.",
               "Pulsa el titulo de la categoria (la palabra Open junto a Today, Finance, Families y el resto) para abrir la seccion entera. Finance muestra Xero, Tide y Other, con todos los botones. Back to dashboard vuelve al hub.",
@@ -431,7 +432,8 @@
               "Cuando ese canal tiene mensajes sin leer, el boton se ilumina y muestra el numero. Un numero en Announcements son avisos vivos de los ultimos 7 dias."
             ],
             "tips": [
-              "La hoja muestra una fila corta. Open en el titulo abre todos los botones de esa categoria, incluidos Create invoice y Xero products en Finance."
+              "La hoja muestra una fila corta. Open en el titulo abre todos los botones de esa categoria, incluidos Create invoice y Xero products en Finance.",
+            "En cada pagina de admin el titulo, el circulo de info y Back o Help van en la misma fila. No se van al borde derecho."
             ]
           }
         }
