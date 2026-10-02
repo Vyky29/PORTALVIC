@@ -2709,6 +2709,39 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   gap:8px;
   margin-bottom:clamp(8px,1.2vw,12px);
 }
+.ops-hub-cats{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 12px;
+  min-width:0;
+}
+.ops-hub-cat{
+  border:1px solid #d7e0e7;
+  background:#fff;
+  color:#142033;
+  border-radius:999px;
+  padding:7px 12px;
+  font:inherit;
+  font-size:13px;
+  font-weight:750;
+  cursor:pointer;
+  min-width:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+.ops-hub-cat:hover,.ops-hub-cat:focus-visible{
+  border-color:#8eb4d0;
+  outline:none;
+}
+.ops-hub-cat.is-on{color:#fff;border-color:transparent}
+.ops-hub-cat.is-on[data-cat="today"]{background:#0a4f64}
+.ops-hub-cat.is-on[data-cat="services"]{background:#0f6b6b}
+.ops-hub-cat.is-on[data-cat="families"]{background:#0b5c3b}
+.ops-hub-cat.is-on[data-cat="finance"]{background:#a16207}
+.ops-hub-cat.is-on[data-cat="formal"]{background:#1d4e89}
+.ops-hub-cat.is-on[data-cat="potential"]{background:#c2410c}
+#opsHubCatBoard{min-width:0}
 .ops-hub__today-item{
   border-radius:6px;
   border-color:var(--ops-line);

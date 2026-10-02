@@ -19,7 +19,7 @@
   <script src="/portal/portal_ensure_web_push.js?v=20260619-denied-help"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260906-comms-inapp-39"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
-  <script src="/portal/portal_comunicaciones_entry.js?v=20260925-call-both"></script>
+  <script src="/portal/portal_comunicaciones_entry.js?v=20261002-msg-glow"></script>
   <script>
     /* Register push SW on admin so Send test alert / background push work. */
     (function () {
@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-finance-info" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-hub-chips" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -182,7 +182,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261002-search-pop" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261002-msg-colors" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -292,20 +292,21 @@
           <a class="admin-icon-btn admin-icon-btn--wa" id="btnOpenWhatsapp" href="https://web.whatsapp.com" target="_blank" rel="noopener noreferrer" aria-label="Open WhatsApp on this computer" title="WhatsApp on this computer (07592 558671)">
             <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.04 2C6.58 2 2.15 6.4 2.15 11.83c0 1.74.46 3.44 1.34 4.94L2 22l5.39-1.41a10.1 10.1 0 0 0 4.65 1.12h.01c5.46 0 9.89-4.4 9.89-9.83C21.94 6.4 17.5 2 12.04 2zm0 17.95h-.01a8.4 8.4 0 0 1-4.28-1.17l-.31-.18-3.2.84.85-3.11-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.72-8.23 8.3-8.23 2.22 0 4.3.86 5.87 2.42a8.18 8.18 0 0 1 2.43 5.81c0 4.54-3.72 8.23-8.29 8.23zm4.55-6.16c-.25-.12-1.47-.72-1.7-.8-.23-.08-.39-.12-.56.13-.17.24-.64.8-.78.96-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.77-1.84-.2-.48-.41-.42-.56-.42h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.01 2.56c.13.17 1.75 2.67 4.24 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.1-.23-.17-.48-.29z"/></svg>
           </a>
-          <button type="button" class="admin-icon-btn admin-icon-btn--chat" id="btnFamilyMsgs" aria-label="Family messages — parents WhatsApp" title="Family messages (parents)">
+          <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--p" id="btnFamilyMsgs" aria-label="Family messages — parents WhatsApp" title="Family messages (parents)">
             <span class="admin-icon-btn__svg" id="btnFamilyMsgsIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="familyMsgBadge">0</span>
           </button>
-          <button type="button" class="admin-icon-btn admin-icon-btn--chat" id="btnStaffWa" aria-label="Staff messages — staff WhatsApp API" title="Staff messages (API)">
+          <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--s" id="btnStaffWa" aria-label="Staff messages — staff WhatsApp API" title="Staff messages (API)">
             <span class="admin-icon-btn__svg" id="btnStaffWaIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="staffWaBadge">0</span>
           </button>
-          <a class="admin-icon-btn admin-icon-btn--chat" id="btnComunicaciones" href="comunicaciones.html?from=admin" aria-label="Communications" title="Communications" data-comms-unread-host>
+          <a class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--c" id="btnComunicaciones" href="comunicaciones.html?from=admin" aria-label="Communications" title="Communications" data-comms-unread-host>
             <span class="admin-icon-btn__svg" id="btnComunicacionesIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="commsBadge" data-comms-unread>0</span>
           </a>
-          <button type="button" class="admin-icon-btn admin-icon-btn--chat" id="btnAnnouncements" aria-label="Announcements" title="Announcements">
+          <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--a" id="btnAnnouncements" aria-label="Announcements" title="Announcements">
             <span class="admin-icon-btn__svg" id="btnAnnouncementsIco" aria-hidden="true"></span>
+            <span class="admin-badge is-empty" id="announceBadge">0</span>
           </button>
           <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
             🔔
@@ -2587,7 +2588,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v117')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v118')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -31054,6 +31055,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           else setView('absents_refunds');
         });
       }
+      if(!window.__opsHubCatClickBound){
+        window.__opsHubCatClickBound = true;
+        document.addEventListener('click', function(ev){
+          var t = ev.target;
+          var btn = t && t.closest ? t.closest('[data-ops-hub-cat]') : null;
+          if(!btn) return;
+          var next = btn.getAttribute('data-ops-hub-cat') || 'today';
+          if(state.opsHubCat === next) return;
+          ev.preventDefault();
+          state.opsHubCat = next;
+          var chips = document.getElementById('opsHubCats');
+          var board = document.getElementById('opsHubCatBoard');
+          if(chips) chips.innerHTML = opsHubCatButtonsHtml(next);
+          if(board) board.innerHTML = opsHubCatBoardHtml(next);
+        });
+      }
       opsHubPatchCalendarGlance();
       opsHubPatchPendingGlance();
       void portalAdminBootstrapActivityAlerts().finally(function(){
@@ -31155,6 +31172,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       new_client: 'Name, age and an open seat',
       services_places: 'Booking Portal seats and who is taken',
       services_roster: 'Who is booked and the standing instructor',
+      leads: 'OTP leads and what happened next',
+      term_roster_edit: 'Change a standing seat for the rest of term',
+      finance_reenrolments: 'Re-enrolments and bookings',
+      finance_payments: 'Payments in and shares',
+      portal_family_pins: 'Family portal login PINs',
       c4k_waitlist: 'Waiting for a full place',
       portal_payslips: 'Worker payslip PDFs',
       participant_achievements: 'Session photos after feedback',
@@ -31219,6 +31241,70 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</section>'
       );
     }
+    var OPS_HUB_CATS = [
+      { id:'today', label:'Today', tone:'sessions', panel:'dash-hub__panel--sessions', icon:'c4k_sessions', sub:'Register, lead, incidents, venue, pickup and absents' },
+      { id:'services', label:'Services & places', tone:'bookings', panel:'dash-hub__panel--bookings', icon:'services_places', sub:'Places, leads, waiting list, registered and the roster' },
+      { id:'families', label:'Families', tone:'participants', panel:'dash-hub__panel--clients', icon:'clients', sub:'Active clients, progress, reports and family tools' },
+      { id:'finance', label:'Finance', tone:'payments', panel:'dash-hub__panel--finance', icon:'finance_payments', sub:'Re-enrolments, payments, absents and credits' },
+      { id:'formal', label:'Formal workers', tone:'scheduling', panel:'dash-hub__panel--team', icon:'staffhr', sub:'Late feedback, disruptions, workers and staff PINs' },
+      { id:'potential', label:'Potential workers', tone:'scheduling', panel:'dash-hub__panel--team', icon:'onboarding', sub:'Onboarding and interviews' }
+    ];
+    function opsHubCatById(id){
+      for(var i = 0; i < OPS_HUB_CATS.length; i++){
+        if(OPS_HUB_CATS[i].id === id) return OPS_HUB_CATS[i];
+      }
+      return OPS_HUB_CATS[0];
+    }
+    function opsHubCatActions(id){
+      if(id === 'services'){
+        return ['services_places','leads','c4k_waitlist','portal_participant_documents','services_roster','new_client','term_roster_edit'];
+      }
+      if(id === 'families'){
+        return ['clients','c4k_reviews','c4k_reports','participant_achievements','portal_parent_broadcast','portal_family_pins','portal_parent_teleport'];
+      }
+      if(id === 'finance'){
+        return ['finance_reenrolments','finance_payments','absents_refunds'];
+      }
+      if(id === 'formal'){
+        return [
+          'c4k_late_submissions',
+          'session_disruptions',
+          { id:'staffhr', label:'Workers' },
+          'roster_spreadsheets',
+          { id:'staff_ghost_teleport', label:'Dashboard teleport' },
+          'portal_docs_portalpin'
+        ];
+      }
+      if(id === 'potential'){
+        return ['onboarding', { id:'interviews', label:'Interviews' }];
+      }
+      return [
+        'sessions_register',
+        'sessions_lead',
+        'sessions_incidents',
+        'sessions_venue',
+        'sessions_pickup',
+        { id: 'absents_refunds', label: 'Absents, cancellations & credits' }
+      ];
+    }
+    function opsHubCatButtonsHtml(active){
+      return OPS_HUB_CATS.map(function(c){
+        var on = c.id === active;
+        return '<button type="button" class="ops-hub-cat'+(on ? ' is-on' : '')+'" data-ops-hub-cat="'+esc(c.id)+'" data-cat="'+esc(c.id)+'" role="tab" aria-selected="'+(on ? 'true' : 'false')+'">'+esc(c.label)+'</button>';
+      }).join('');
+    }
+    function opsHubCatBoardHtml(id){
+      var cat = opsHubCatById(id);
+      return portalDashPanel({
+        title: cat.label,
+        subtitle: cat.sub,
+        iconId: cat.icon,
+        panelClass: cat.panel,
+        gridClass: 'dash-hub__grid--5',
+        tiles: opsHubDashTilesHtml(opsHubCatActions(cat.id), cat.tone),
+        ariaLabel: cat.label
+      });
+    }
     function viewNavHubDashboard(){
       if(state.navHubGroup){
         var group = navGroupById(state.navHubGroup);
@@ -31238,37 +31324,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           );
         }
       }
-      /* Home = Today board + frequent jumps. Full nav stays in the left menu. */
-      var todayActions = [
-        'sessions_register',
-        'sessions_lead',
-        'sessions_incidents',
-        'sessions_venue',
-        'sessions_pickup',
-        { id: 'absents_refunds', label: 'Absents, cancellations & credits' }
-      ];
-      var formalWorkerActions = [
-        'c4k_late_submissions',
-        'session_disruptions',
-        { id:'staffhr', label:'Workers' },
-        'roster_spreadsheets',
-        { id:'staff_ghost_teleport', label:'Dashboard teleport' },
-        'portal_docs_portalpin'
-      ];
-      var potentialWorkerActions = [
-        'onboarding',
-        { id:'interviews', label:'Interviews' }
-      ];
-      var frequentActions = [
-        'clients',
-        'c4k_waitlist',
-        { id:'portal_participant_documents', label:'Registration' },
-        { id:'reenrol_payments', label:'Bookings & Payments' },
-        'c4k_services',
-        { id:'portal_payslips', label:'Payslips' },
-        { id:'portal_documents', label:'Staff documents' },
-        { id:'portal_parent_teleport', label:'Dashboard Teleport (Family)' }
-      ];
+      var cat = opsHubCatById(state.opsHubCat || 'today');
+      state.opsHubCat = cat.id;
       return (
         '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub ops-hub--today-first">' +
         '<header class="ops-hub__intro">' +
@@ -31278,44 +31335,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>' +
         '</header>' +
         opsHubGlanceHtml() +
-        '<div class="dash-hub__stack ops-hub__body ops-hub__body--flat">' +
-        portalDashPanel({
-          title: 'Today',
-          subtitle: 'Day board tools - overview, covers and register',
-          iconId: 'c4k_sessions',
-          panelClass: 'dash-hub__panel--sessions',
-          gridClass: 'dash-hub__grid--5',
-          tiles: opsHubDashTilesHtml(todayActions, 'sessions'),
-          ariaLabel: 'Today'
-        }) +
-        portalDashPanel({
-          title: 'Formal workers',
-          subtitle: 'H&R - late feedback, disruptions, workers and staff PINs',
-          iconId: 'staffhr',
-          panelClass: 'dash-hub__panel--team',
-          gridClass: 'dash-hub__grid--5',
-          tiles: opsHubDashTilesHtml(formalWorkerActions, 'scheduling'),
-          ariaLabel: 'Formal workers'
-        }) +
-        portalDashPanel({
-          title: 'Potential workers',
-          subtitle: 'People not on the staff roster yet',
-          iconId: 'onboarding',
-          panelClass: 'dash-hub__panel--team',
-          gridClass: 'dash-hub__grid--5',
-          tiles: opsHubDashTilesHtml(potentialWorkerActions, 'scheduling'),
-          ariaLabel: 'Potential workers'
-        }) +
-        portalDashPanel({
-          title: 'Frequent',
-          subtitle: 'People, money, documents and the tools you open often',
-          iconId: 'staffhr',
-          panelClass: 'dash-hub__panel--team',
-          gridClass: 'dash-hub__grid--5',
-          tiles: opsHubDashTilesHtml(frequentActions, 'scheduling'),
-          ariaLabel: 'Frequent'
-        }) +
-        '</div>' +
+        '<div class="ops-hub-cats" id="opsHubCats" role="tablist" aria-label="Dashboard categories">'+opsHubCatButtonsHtml(cat.id)+'</div>' +
+        '<div class="dash-hub__stack ops-hub__body ops-hub__body--flat" id="opsHubCatBoard">'+opsHubCatBoardHtml(cat.id)+'</div>' +
         '</div>'
       );
     }
@@ -39438,8 +39459,42 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
         };
         window.addEventListener('portal:supabase-ready', function(){ window.portalAdminRefreshCommsBadge(); });
-        window.addEventListener('portal:comms-unread', function(){});
+        window.addEventListener('portal:comms-unread', function(ev){
+          var n = ev && ev.detail && Number(ev.detail.count);
+          var commsBtn = $('btnComunicaciones');
+          if(commsBtn && typeof n === 'number' && !isNaN(n)){
+            commsBtn.classList.toggle('admin-icon-btn--has-alerts', n > 0);
+          }
+        });
         setTimeout(function(){ window.portalAdminRefreshCommsBadge(); }, 400);
+      }
+      if(!window.__portalAdminAnnounceBadgeBound){
+        window.__portalAdminAnnounceBadgeBound = true;
+        window.portalAdminRefreshAnnounceBadge = function portalAdminRefreshAnnounceBadge(){
+          var badge = $('announceBadge');
+          var btn = $('btnAnnouncements');
+          if(!badge || !btn) return;
+          var client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+          if(!client) return;
+          var since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+          var nowIso = new Date().toISOString();
+          client.from('portal_staff_announcements')
+            .select('id', { count: 'exact', head: true })
+            .gte('created_at', since)
+            .or('ends_at.is.null,ends_at.gt."' + nowIso + '"')
+            .then(function(res){
+              var n = res && !res.error && typeof res.count === 'number' && res.count > 0 ? res.count : 0;
+              badge.textContent = n > 99 ? '99+' : String(n);
+              badge.classList.toggle('is-empty', n < 1);
+              btn.classList.toggle('admin-icon-btn--has-alerts', n > 0);
+              btn.setAttribute('aria-label', n > 0 ? ('Announcements (' + n + ')') : 'Announcements');
+            }).catch(function(){});
+        };
+        window.addEventListener('portal:supabase-ready', function(){ window.portalAdminRefreshAnnounceBadge(); });
+        document.addEventListener('visibilitychange', function(){
+          if(document.visibilityState === 'visible') window.portalAdminRefreshAnnounceBadge();
+        });
+        setTimeout(function(){ window.portalAdminRefreshAnnounceBadge(); }, 1800);
       }
       var alertsPopEl = $('alertsPop');
       if(alertsPopEl && !alertsPopEl.dataset.activityJumpBound){

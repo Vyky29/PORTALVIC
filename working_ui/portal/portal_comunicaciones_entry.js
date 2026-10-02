@@ -296,9 +296,10 @@
       "grid-template-columns:none!important;overflow:visible!important;max-width:none!important}" +
       "#commsBadge.is-empty,.topbar-staff-wa-btn__badge.is-empty,.portal-comms-corner-badge.is-empty,.comms-badge.is-empty{display:none!important}" +
       "#btnComunicaciones.admin-icon-btn--has-alerts,#btnComunicaciones.portal-comms-has-unread{" +
-      "border-color:#dc2626!important;background:#fff5f5!important;" +
-      "box-shadow:0 0 0 2px rgba(220,38,38,.55)!important;animation:portalCommsBtnPulse 1.1s ease infinite}" +
-      "@keyframes portalCommsBtnPulse{0%,100%{box-shadow:0 0 0 2px rgba(220,38,38,.45)}50%{box-shadow:0 0 0 6px rgba(220,38,38,.2)}}" +
+      "color:#173247!important;border-color:#f59e0b!important;" +
+      "background:linear-gradient(180deg,#ffe9a3,#f5d56a)!important;" +
+      "box-shadow:0 0 0 3px rgba(245,158,11,.7)!important;animation:portalCommsBtnPulse 1.1s ease infinite}" +
+      "@keyframes portalCommsBtnPulse{0%,100%{box-shadow:0 0 0 2px rgba(245,158,11,.5);filter:brightness(1)}50%{box-shadow:0 0 0 6px rgba(245,158,11,.28);filter:brightness(1.18)}}" +
       /* Same red number chip as inside Communications (.comms-badge / .comms-ctx-unread). */ +
       "#topbarStaffWaBtn .comms-badge," +
       "#topbarStaffWaBtn .comms-ctx-unread," +
@@ -370,6 +371,9 @@
     } catch (_p) {}
     if (count > 0) host.setAttribute("data-comms-count", unreadLabel(count));
     else host.removeAttribute("data-comms-count");
+    if (host.id === "btnComunicaciones") {
+      host.classList.toggle("admin-icon-btn--has-alerts", count > 0);
+    }
     var badge =
       host.querySelector("#commsBadge, .comms-badge, .comms-ctx-unread, .topbar-staff-wa-btn__badge, [data-comms-unread], .portal-comms-corner-badge") ||
       null;

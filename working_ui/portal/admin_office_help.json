@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v117",
+  "version": "2026-10-02-v118",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -315,6 +315,35 @@
             "Anyone with portal admin access sees the same calendar."
           ],
           "tips": []
+        },
+        {
+          "id": "ops_hub_chips",
+          "title": "Operations Hub categories",
+          "summary": "The home board switches with one chip. WhatsApp, P, S, C and A stay in the top bar.",
+          "where": "Operations Hub (home)",
+          "keywords": [
+            "chips",
+            "categorias",
+            "today",
+            "services",
+            "families",
+            "finance",
+            "formal workers",
+            "potential workers",
+            "whatsapp",
+            "announcements",
+            "comms"
+          ],
+          "steps": [
+            "Open Operations Hub. Schedule and Covers, Sessions overview, Places and the calendar stay at the top.",
+            "Tap a chip: Today, Services and places, Families, Finance, Formal workers or Potential workers. Only that board changes.",
+            "WhatsApp, P (family messages), S (staff messages), C (Comms) and A (Announcements) stay in the top bar. They are not cards on the board.",
+            "WhatsApp is green. P is dark green. C is yellow, the same yellow as the staff Comms button. S is orange. A is red.",
+            "When that lane has unread messages, the button lights up and shows the number. A number on Announcements is live notices from the last 7 days."
+          ],
+          "tips": [
+            "Finance on this board is Re-enrolments, Payments, and Absents, refunds and credits. Create invoice and Xero products stay in the Finance menu."
+          ]
         }
       ]
     },

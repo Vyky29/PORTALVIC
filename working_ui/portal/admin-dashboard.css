@@ -1082,9 +1082,82 @@
       z-index:8;
       box-shadow:0 0 0 2px var(--surface,#fff);
     }
-    .admin-icon-btn--chat.admin-icon-btn--has-alerts{
-      border-color:#dc2626;
-      box-shadow:0 0 0 2px rgba(220,38,38,.4);
+    .admin-icon-btn--p,
+    .admin-icon-btn--p:hover,
+    .admin-icon-btn--p:focus-visible,
+    .admin-icon-btn--p.is-current,
+    .admin-icon-btn--p[aria-current="page"]{
+      color:#fff;background:#0b5c3b;border-color:#084830;
+    }
+    .admin-icon-btn--s,
+    .admin-icon-btn--s:hover,
+    .admin-icon-btn--s:focus-visible,
+    .admin-icon-btn--s.is-current,
+    .admin-icon-btn--s[aria-current="page"]{
+      color:#fff;background:#ea580c;border-color:#c2410c;
+    }
+    .admin-icon-btn--c,
+    .admin-icon-btn--c:hover,
+    .admin-icon-btn--c:focus-visible,
+    .admin-icon-btn--c.is-current,
+    .admin-icon-btn--c[aria-current="page"]{
+      color:#173247;
+      background:linear-gradient(180deg,#ffe9a3,#f5d56a);
+      border-color:rgba(232,196,74,.85);
+    }
+    .admin-icon-btn--a,
+    .admin-icon-btn--a:hover,
+    .admin-icon-btn--a:focus-visible,
+    .admin-icon-btn--a.is-current,
+    .admin-icon-btn--a[aria-current="page"]{
+      color:#fff;background:#dc2626;border-color:#991b1b;
+    }
+    .admin-icon-btn--p .admin-icon-btn__svg,
+    .admin-icon-btn--s .admin-icon-btn__svg,
+    .admin-icon-btn--a .admin-icon-btn__svg{color:#fff}
+    .admin-icon-btn--c .admin-icon-btn__svg,
+    .admin-icon-btn--c.is-current .admin-icon-btn__svg,
+    .admin-icon-btn--c[aria-current="page"] .admin-icon-btn__svg{color:#173247}
+    .admin-icon-btn--p.admin-icon-btn--has-alerts{
+      border-color:#16a34a;
+      box-shadow:0 0 0 3px rgba(22,163,74,.55);
+      animation:admin-msg-glow 1.15s ease-in-out infinite;
+    }
+    .admin-icon-btn--s.admin-icon-btn--has-alerts{
+      border-color:#fdba74;
+      box-shadow:0 0 0 3px rgba(251,146,60,.7);
+      animation:admin-msg-glow 1.15s ease-in-out infinite;
+    }
+    .admin-icon-btn--c.admin-icon-btn--has-alerts{
+      border-color:#f59e0b;
+      box-shadow:0 0 0 3px rgba(245,158,11,.65);
+      animation:admin-msg-glow 1.15s ease-in-out infinite;
+    }
+    .admin-icon-btn--a.admin-icon-btn--has-alerts{
+      border-color:#fecaca;
+      box-shadow:0 0 0 3px rgba(254,202,202,.75);
+      animation:admin-msg-glow 1.15s ease-in-out infinite;
+    }
+    @keyframes admin-msg-glow{
+      0%,100%{filter:brightness(1)}
+      50%{filter:brightness(1.22)}
+    }
+    .admin-icon-btn--p .admin-badge:not(.is-empty),
+    .admin-icon-btn--s .admin-badge:not(.is-empty),
+    .admin-icon-btn--a .admin-badge:not(.is-empty){
+      display:inline-flex !important;
+      align-items:center;
+      justify-content:center;
+      background:#fff;
+      color:#991b1b;
+      box-shadow:0 0 0 2px currentColor;
+    }
+    .admin-icon-btn--c .admin-badge:not(.is-empty){
+      display:inline-flex !important;
+      align-items:center;
+      justify-content:center;
+      background:#991b1b;
+      color:#fff;
     }
     .dayops-screen-nav__card--portal-dm-unread,
     .dayops-screen-nav__card--portal-ceo-dm-unread,
