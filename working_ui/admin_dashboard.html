@@ -90,7 +90,7 @@
   <script src="/portal/admin-portal-documents.js?v=20261001-pay-expenses-only"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20261001-reg-form"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260923-auto-makeup"></script>
-  <script src="/portal/admin-portal-booking-leads.js?v=20261002-leads-guide"></script>
+  <script src="/portal/admin-portal-booking-leads.js?v=20261002-leads-outcome"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
   <script src="/portal/admin-office-calendar.js?v=20260917-title-raul-sev"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260919-chip-center"></script>
@@ -2587,7 +2587,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v116')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v117')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -30644,7 +30644,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         new_client:'Add a child, then place them on an open seat from Places.',
         services_places:'Booking Portal seats and who is taken. An open space is where a new client can go.',
         services_roster:'Who is booked, and the standing instructor for that seat.',
-        leads:'Who came in through the Booking Portal: visitors, OTP, or the email interest file.',
+        leads:'People who asked for an OTP code, and what they did next.',
         family_whatsapp_business:'Day-to-day family chats on the company WhatsApp Business number.',
         portal_family_pins:'Family portal login PINs only. Staff PINs stay under H&R, Formal workers.',
         c4k_late_submissions:'Feedback still owed after the session day.',

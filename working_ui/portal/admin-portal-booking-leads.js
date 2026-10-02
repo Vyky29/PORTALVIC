@@ -25,9 +25,9 @@
   };
 
   var state = {
-    /* Default portal-only — email interest import is outreach list, not visits. */
-    filter: "all",
-    origin: "all",
+    /* Leads are people who asked for an OTP code. Email interest stays behind Origin. */
+    outcome: "all",
+    origin: "portal",
     trackFilter: "all",
     q: "",
     leads: [],
@@ -132,12 +132,52 @@
 
   function clientStatusLabel(raw) {
     var s = String(raw || "").toLowerCase();
-    if (s === "registered") return "Interested in our services";
-    if (s === "active_client") return "Existing client";
+    if (s === "registered") return "Registered";
+    if (s === "active_client") return "Already a client";
     if (s === "waiting_list") return "Waiting list";
-    if (s === "prospective") return "Prospective";
+    if (s === "prospective") return "Only looked";
     if (s === "closed") return "Closed";
     return String(raw || "—").replace(/_/g, " ");
+  }
+
+  /** What this OTP lead did after asking for the code. */
+  function leadOutcome(r) {
+    r = r || {};
+    var client = String(r.client_status || "").toLowerCase();
+    var book = String(r.booking_status || "").toLowerCase();
+    var reg = String(r.registration_status || "").toLowerCase();
+    var source = String(r.source || "").toLowerCase();
+    var existing = client === "active_client" || source.indexOf("existing client") >= 0;
+    var regSubmitted = reg === "submitted" || book === "registration_submitted";
+    var booked = book === "booking_completed";
+    var started = reg === "started" || book === "booking_started";
+    var waiting = client === "waiting_list" || book === "waiting_list";
+    if (existing && regSubmitted && !booked) {
+      return { key: "client_again", label: "Already a client, registered again", tone: "ok" };
+    }
+    if (existing && booked) {
+      return { key: "client", label: "Already a client", tone: "ok" };
+    }
+    if (existing) {
+      return { key: "client_looked", label: "Already a client, only looked", tone: "info" };
+    }
+    if (waiting) return { key: "waiting", label: "Waiting list", tone: "info" };
+    if (booked) return { key: "booked", label: "Registered, place booked", tone: "ok" };
+    if (regSubmitted || client === "registered") {
+      return { key: "registered", label: "Registered", tone: "ok" };
+    }
+    if (started) return { key: "started", label: "Started registration", tone: "pend" };
+    if (!r.email_verified_at) return { key: "code", label: "Asked for a code", tone: "pend" };
+    return { key: "looked", label: "Only looked", tone: "info" };
+  }
+
+  function visibleLeads() {
+    var rows = state.leads || [];
+    var key = state.outcome || "all";
+    if (key === "all") return rows;
+    return rows.filter(function (r) {
+      return leadOutcome(r).key === key;
+    });
   }
 
   function statusTone(status) {
@@ -225,12 +265,8 @@
         apikey: cfg.getAnonKey(),
       },
       body: JSON.stringify({
-        client_status:
-          state.filter === "all" || state.filter === "reg_started"
-            ? "all"
-            : state.filter,
-        booking_status:
-          state.filter === "reg_started" ? "registration_submitted" : "all",
+        client_status: "all",
+        booking_status: "all",
         track_status: state.trackFilter || "all",
         origin: state.origin || "all",
         q: state.q,
@@ -253,13 +289,11 @@
     var em = emailKey(r);
     var imported = isImportRow(r);
     var checked = em && state.selected[em] ? " checked" : "";
-    var verified = imported
-      ? chip("Import — not a portal visit", "warn")
-      : String((r.source || "")).toLowerCase().includes("office potential")
-        ? chip("Office potential", "info")
-        : r.email_verified_at
-          ? chip("Verified", "ok")
-          : chip("Code sent / pending", "pend");
+    var outcome = leadOutcome(r);
+    var lookedAt =
+      Array.isArray(r.services_viewed) && r.services_viewed.length
+        ? r.services_viewed.slice(0, 2).join(", ")
+        : "";
     var formBits = [];
     if (r.form_pdf_url) {
       formBits.push(
@@ -332,13 +366,17 @@
       '<td style="min-width:0">' +
       trackSelectHtml(r) +
       "</td>" +
-      "<td>" +
-      chip(clientStatusLabel(r.client_status), statusTone(r.client_status)) +
-      '<div style="margin-top:4px">' +
-      chip(String(r.booking_status || "").replace(/_/g, " "), statusTone(r.booking_status)) +
-      "</div></td>" +
-      "<td>" +
-      verified +
+      '<td style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
+      '<span class="chip chip--' +
+      esc(outcome.tone) +
+      '" style="white-space:normal;overflow-wrap:anywhere;max-width:100%;display:inline-block">' +
+      esc(outcome.label) +
+      "</span>" +
+      (lookedAt
+        ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">Looked at ' +
+          esc(lookedAt) +
+          "</div>"
+        : "") +
       "</td>" +
       '<td style="min-width:7rem">' +
       '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
@@ -386,40 +424,13 @@
     );
   }
 
-  function clarifyBanner(meta) {
-    var visitors = meta.portal_visitors_total != null ? meta.portal_visitors_total : "—";
-    var portalContacts = meta.portal_otp_contacts != null ? meta.portal_otp_contacts : "—";
-    var imported = meta.email_interest_imported != null ? meta.email_interest_imported : "—";
-    var allRows = meta.leads_all_rows != null ? meta.leads_all_rows : "—";
-    return (
-      '<div class="card" style="margin:0 0 14px;border-color:rgba(180,120,20,.35);background:rgba(255,196,60,.08)">' +
-      '<div class="card-pad" style="min-width:0">' +
-      '<p style="margin:0 0 8px;font-weight:700;overflow-wrap:break-word">Do not read the big lead list as “visitors”.</p>' +
-      '<p class="muted" style="margin:0;font-size:13px;line-height:1.5;overflow-wrap:break-word">' +
-      "Real Booking Portal visitors (people who opened <code>/bookingportal</code>): about <strong>" +
-      esc(visitors) +
-      "</strong> sessions since tracking started. " +
-      "OTP contacts from the portal itself: <strong>" +
-      esc(portalContacts) +
-      "</strong>. " +
-      "The other <strong>" +
-      esc(imported) +
-      "</strong> rows are an office <em>email interest</em> import for outreach — they never visited the portal. " +
-      "Total rows in this table if you choose All origins: " +
-      esc(allRows) +
-      "." +
-      "</p>" +
-      '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">' +
-      'Tick people below → <strong>Send via Family broadcast</strong> to email/WhatsApp them. Live presence: <a href="/ceo_booking_service_portal.html" target="_blank" rel="noopener">CEO → Booking Portal visitors</a>.' +
-      "</p>" +
-      "</div></div>"
-    );
-  }
-
   function selectionBarHtml() {
     var n = selectedCount();
     var withSvc = (state.leads || []).filter(hasServices).length;
-    var existing = (state.leads || []).filter(isExistingClient).length;
+    var existing = (state.leads || []).filter(function (r) {
+      var key = leadOutcome(r).key;
+      return key === "client" || key === "client_looked" || key === "client_again";
+    }).length;
     return (
       '<div class="card" style="margin:0 0 14px">' +
       '<div class="card-pad" style="min-width:0">' +
@@ -431,7 +442,7 @@
       esc(withSvc) +
       " on this list viewed services · " +
       esc(existing) +
-      " existing clients shown. Use Origin / status filters first, then select." +
+      " already a client on this list. Outcome is what they did after the code." +
       "</p>" +
       '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelAll">Select all shown</button>' +
@@ -452,17 +463,16 @@
 
   function renderHost(host) {
     if (!host) return;
-    var meta = state.meta || {};
-    var rows = state.leads || [];
+    var rows = visibleLeads();
     var body = state.loading
-      ? '<tr><td colspan="10" class="muted">Loading booking leads…</td></tr>'
+      ? '<tr><td colspan="9" class="muted">Loading OTP leads…</td></tr>'
       : state.error
-        ? '<tr><td colspan="10" class="muted">Could not load leads (' +
+        ? '<tr><td colspan="9" class="muted">Could not load leads (' +
           esc(state.error) +
           ").</td></tr>"
         : rows.length
           ? rows.map(rowHtml).join("")
-          : '<tr><td colspan="10" class="muted">No leads match this filter. Try <strong>All origins</strong>, <strong>Outreach list</strong>, or add a potential client above.</td></tr>';
+          : '<tr><td colspan="9" class="muted">No OTP leads with this outcome.</td></tr>';
 
     var trackFilterOpts = [
       { value: "all", label: "All track statuses" },
@@ -484,9 +494,32 @@
       })
       .join("");
 
+    var outcomeOpts = [
+      { value: "all", label: "All outcomes" },
+      { value: "code", label: "Asked for a code" },
+      { value: "looked", label: "Only looked" },
+      { value: "started", label: "Started registration" },
+      { value: "registered", label: "Registered" },
+      { value: "booked", label: "Registered, place booked" },
+      { value: "client_looked", label: "Already a client, only looked" },
+      { value: "client_again", label: "Already a client, registered again" },
+      { value: "client", label: "Already a client" },
+      { value: "waiting", label: "Waiting list" },
+    ]
+      .map(function (t) {
+        return (
+          '<option value="' +
+          esc(t.value) +
+          '"' +
+          (state.outcome === t.value ? " selected" : "") +
+          ">" +
+          esc(t.label) +
+          "</option>"
+        );
+      })
+      .join("");
     host.innerHTML =
       potentialFormHtml() +
-      clarifyBanner(meta) +
       selectionBarHtml() +
       '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px">' +
       '<input class="inp" id="bkLeadSearch" type="search" placeholder="Search name, email, phone, enquiry…" value="' +
@@ -512,48 +545,28 @@
       '<select class="inp" id="bkLeadTrackFilter" style="max-width:220px;min-width:0">' +
       trackFilterOpts +
       "</select>" +
-      '<select class="inp" id="bkLeadFilter" style="max-width:220px;min-width:0">' +
-      '<option value="all"' +
-      (state.filter === "all" ? " selected" : "") +
-      ">All client statuses</option>" +
-      '<option value="prospective"' +
-      (state.filter === "prospective" ? " selected" : "") +
-      ">Prospective</option>" +
-      '<option value="registered"' +
-      (state.filter === "registered" ? " selected" : "") +
-      ">Interested in our services</option>" +
-      '<option value="reg_started"' +
-      (state.filter === "reg_started" ? " selected" : "") +
-      ">Registration submitted</option>" +
-      '<option value="active_client"' +
-      (state.filter === "active_client" ? " selected" : "") +
-      ">Existing clients</option>" +
-      '<option value="waiting_list"' +
-      (state.filter === "waiting_list" ? " selected" : "") +
-      ">Waiting list</option>" +
+      '<select class="inp" id="bkLeadFilter" style="max-width:280px;min-width:0" title="What the lead did after the code">' +
+      outcomeOpts +
       "</select>" +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadRefresh">Refresh</button>' +
       "</div>" +
       '<div class="grid-kpi" style="margin:0 0 14px">' +
-      '<div class="kpi"><div class="kpi-l">Portal visitors</div><div class="kpi-v">' +
-      esc(meta.portal_visitors_total != null ? meta.portal_visitors_total : "—") +
-      '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">Real /bookingportal sessions</div></div>' +
-      '<div class="kpi"><div class="kpi-l">Portal OTP contacts</div><div class="kpi-v">' +
-      esc(meta.portal_otp_contacts != null ? meta.portal_otp_contacts : "—") +
-      '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">Asked for a code on the portal</div></div>' +
-      '<div class="kpi"><div class="kpi-l">Email interest import</div><div class="kpi-v">' +
-      esc(meta.email_interest_imported != null ? meta.email_interest_imported : "—") +
-      '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">Not visitors — outreach list</div></div>' +
-      '<div class="kpi"><div class="kpi-l">Shown now</div><div class="kpi-v">' +
-      esc(meta.total != null ? meta.total : rows.length) +
-      '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">OTP verified (portal): ' +
-      esc(meta.portal_otp_verified != null ? meta.portal_otp_verified : "—") +
+      '<div class="kpi"><div class="kpi-l">' +
+      (state.origin === "portal" ? "OTP leads" : "Shown now") +
+      '</div><div class="kpi-v">' +
+      esc(rows.length) +
+      '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">' +
+      (state.origin === "portal"
+        ? state.outcome === "all"
+          ? "People who asked for a code. Outcome is in the table."
+          : "OTP leads with this outcome."
+        : "This origin is not the OTP list.") +
       "</div></div></div>" +
       '<div class="card"><div class="card-pad" style="overflow:auto;padding:0;min-width:0">' +
       '<table class="tbl tbl--center tbl--dense" id="bkLeadTable">' +
       "<thead><tr>" +
       '<th style="width:2.2rem" title="Select"></th>' +
-      "<th>Parent / carer</th><th>Email / phone</th><th>Activity</th><th>Enquiry</th><th>Track status</th><th>Portal status</th><th>Verify</th><th>Forms</th><th>Updated</th>" +
+      "<th>Parent / carer</th><th>Email / phone</th><th>Activity</th><th>Enquiry</th><th>Track status</th><th>Outcome</th><th>Forms</th><th>Updated</th>" +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div></div>";
@@ -690,9 +703,9 @@
     }
     if (filter) {
       filter.addEventListener("change", function () {
-        state.filter = String(filter.value || "all");
-        state.selected = {};
-        void reload(host);
+        state.outcome = String(filter.value || "all");
+        renderHost(host);
+        wire(host);
       });
     }
     if (refresh) {
@@ -796,7 +809,7 @@
     var selAll = host.querySelector("#bkLeadSelAll");
     if (selAll) {
       selAll.addEventListener("click", function () {
-        (state.leads || []).forEach(function (r) {
+        visibleLeads().forEach(function (r) {
           var em = emailKey(r);
           if (em) state.selected[em] = true;
         });
@@ -808,7 +821,7 @@
     if (selSvc) {
       selSvc.addEventListener("click", function () {
         state.selected = {};
-        (state.leads || []).forEach(function (r) {
+        visibleLeads().forEach(function (r) {
           if (!hasServices(r)) return;
           var em = emailKey(r);
           if (em) state.selected[em] = true;
@@ -822,8 +835,9 @@
     if (selEx) {
       selEx.addEventListener("click", function () {
         state.selected = {};
-        (state.leads || []).forEach(function (r) {
-          if (!isExistingClient(r)) return;
+        visibleLeads().forEach(function (r) {
+          var key = leadOutcome(r).key;
+          if (key !== "client" && key !== "client_looked" && key !== "client_again") return;
           var em = emailKey(r);
           if (em) state.selected[em] = true;
         });
