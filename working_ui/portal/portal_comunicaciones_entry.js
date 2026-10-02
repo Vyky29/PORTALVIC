@@ -120,6 +120,14 @@
     var params = {};
     if (lastToastMode) params.mode = lastToastMode;
     if (lastToastConv) params.conv = lastToastConv;
+    var onAdmin = false;
+    try {
+      onAdmin = /admin_dashboard/i.test(String(global.location.pathname || "")) || detectFromPortal() === "admin";
+    } catch (_admin) {}
+    if (onAdmin && !isCommsAppPage() && typeof global.portalAdminOpenComms === "function") {
+      global.portalAdminOpenComms(params);
+      return;
+    }
     global.location.href = commsUrlWith(params);
   }
 

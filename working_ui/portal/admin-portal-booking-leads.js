@@ -218,11 +218,9 @@
       '" style="max-width:9.5rem;min-width:0;font-size:12px" title="Office track status">' +
       opts +
       "</select>" +
-      (r.outreach_joined_at
-        ? '<div class="muted" style="font-size:10px;margin-top:3px">On outreach list</div>'
-        : cur !== "booked"
-          ? '<div class="muted" style="font-size:10px;margin-top:3px">Will join outreach</div>'
-          : "")
+      (cur === "booked"
+        ? '<div class="muted" style="font-size:10px;margin-top:3px">Off the marketing list</div>'
+        : "")
     );
   }
 
@@ -434,15 +432,16 @@
     return (
       '<div class="card" style="margin:0 0 14px">' +
       '<div class="card-pad" style="min-width:0">' +
-      '<p style="margin:0 0 8px;font-weight:600;overflow-wrap:break-word">Contact selection</p>' +
+      '<p style="margin:0 0 8px;font-weight:600;overflow-wrap:break-word">Write to this filter</p>' +
       '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;overflow-wrap:break-word">' +
+      "This is not a filter. Use Search, Origin, Track status and Outcome above first. Then tick rows, or use these buttons, to copy emails, copy phones, or open Family broadcast. " +
       '<strong id="bkLeadSelCount">' +
       esc(n) +
-      "</strong> selected · " +
+      "</strong> ticked · " +
       esc(withSvc) +
-      " on this list viewed services · " +
+      " viewed a service · " +
       esc(existing) +
-      " already a client on this list. Outcome is what they did after the code." +
+      " already a client. Nothing here books a place." +
       "</p>" +
       '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelAll">Select all shown</button>' +
@@ -520,7 +519,6 @@
       .join("");
     host.innerHTML =
       potentialFormHtml() +
-      selectionBarHtml() +
       '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px">' +
       '<input class="inp" id="bkLeadSearch" type="search" placeholder="Search name, email, phone, enquiry…" value="' +
       esc(state.q) +
@@ -550,6 +548,7 @@
       "</select>" +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadRefresh">Refresh</button>' +
       "</div>" +
+      selectionBarHtml() +
       '<div class="grid-kpi" style="margin:0 0 14px">' +
       '<div class="kpi"><div class="kpi-l">' +
       (state.origin === "portal" ? "OTP leads" : "Shown now") +
@@ -566,7 +565,9 @@
       '<table class="tbl tbl--center tbl--dense" id="bkLeadTable">' +
       "<thead><tr>" +
       '<th style="width:2.2rem" title="Select"></th>' +
-      "<th>Parent / carer</th><th>Email / phone</th><th>Activity</th><th>Enquiry</th><th>Track status</th><th>Outcome</th><th>Forms</th><th>Updated</th>" +
+      "<th>Parent / carer</th><th>Email / phone</th><th>Activity</th><th>Enquiry</th>" +
+      '<th title="Optional. Leave New. Booked takes the email off the marketing list. It does not change Outcome.">Track status</th>' +
+      "<th>Outcome</th><th>Forms</th><th>Updated</th>" +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div></div>";

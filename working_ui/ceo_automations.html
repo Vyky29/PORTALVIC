@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>What runs by itself — clubSENsational</title>
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueSoft: #eaf5fb;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.12);
+      --white: #ffffff;
+      --shadow: 0 18px 50px rgba(23, 50, 71, 0.08);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 24px 18px 48px; min-width: 0; }
+    h1 { margin: 0 0 8px; font-size: 1.35rem; font-weight: 800; color: var(--ink); overflow-wrap: break-word; }
+    .sub { margin: 0; max-width: 46rem; font-size: 0.92rem; line-height: 1.45; color: var(--muted); overflow-wrap: break-word; }
+    .nav { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .nav a {
+      font-size: 0.88rem; font-weight: 700; color: var(--blue); text-decoration: none;
+      border: 1px solid rgba(45, 132, 179, 0.35); padding: 8px 14px; border-radius: 12px; background: var(--white);
+    }
+    .card {
+      background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+      border: 1px solid var(--line); padding: 18px 16px 8px; margin: 16px 0; min-width: 0;
+    }
+    .card h2 { margin: 0 0 6px; font-size: 1.05rem; color: var(--ink); overflow-wrap: break-word; }
+    .card p.lead { margin: 0 0 12px; font-size: 0.88rem; line-height: 1.45; color: var(--muted); overflow-wrap: break-word; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th, td {
+      text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line);
+      vertical-align: top; min-width: 0; overflow-wrap: break-word;
+    }
+    th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 800; }
+    td strong { color: var(--ink); }
+    .when { color: var(--ink); font-weight: 700; }
+    .lang {
+      margin-top: 8px; padding: 14px 14px 4px; border-radius: 16px; border: 1px solid var(--line); min-width: 0;
+    }
+    .lang--en { background: #f8fafc; }
+    .lang--es { background: #fffbeb; }
+    .lang h3 { margin: 0 0 8px; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>What runs by itself</h1>
+      <p class="sub">Company map. These jobs run without anyone pressing a button. This page does not start them or stop them.</p>
+      <div class="nav">
+        <a href="ceo_dashboard.html">Back to CEO</a>
+        <a href="admin_office_help.html#cat=day_ops&amp;lesson=what_runs_by_itself">Office help</a>
+      </div>
+    </header>
+
+    <section class="lang lang--en" lang="en">
+      <h3>English</h3>
+      <article class="card">
+        <h2>On a clock</h2>
+        <p class="lead">Times are London. Pay hold, trial offers, the 06:00 buffer and the 21:00 office push are on the saved clock. Staff feedback WhatsApp is on. The timesheet reminder and the weekly notes are built for the times below.</p>
+        <table>
+          <thead>
+            <tr><th>What</th><th>When</th><th>What it does alone</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Pay hold</strong></td>
+              <td class="when">Every 2 minutes</td>
+              <td>Around minute 25 of a 30-minute pay hold it nudges the parent by WhatsApp or email. When the 30 minutes end unpaid, the hold expires and the seat is free again.</td>
+            </tr>
+            <tr>
+              <td><strong>After a paid trial</strong></td>
+              <td class="when">Every 10 minutes</td>
+              <td>When the trial session has ended, it sends the first offer. If the family has not moved by 20:00, it sends a second. At the end of the day it drops the soft hold and tells the office.</td>
+            </tr>
+            <tr>
+              <td><strong>Own-arrangement buffer</strong></td>
+              <td class="when">About 06:00</td>
+              <td>If a family on their own arrangement is below the prepaid buffer, it puts a soft hold. If the buffer is back, it clears that soft hold. It never cuts the sessions by itself.</td>
+            </tr>
+            <tr>
+              <td><strong>Missing feedback, office</strong></td>
+              <td class="when">21:00</td>
+              <td>Push to admin about yesterday's missing session feedback.</td>
+            </tr>
+            <tr>
+              <td><strong>Feedback WhatsApp to staff</strong></td>
+              <td class="when">Sun-Fri 20:00, then 20:30. Saturday 18:00, then 18:30.</td>
+              <td>WhatsApp to the worker who still owes feedback. The second message only goes if it is still missing. This chase is on.</td>
+            </tr>
+            <tr>
+              <td><strong>Timesheet reminder</strong></td>
+              <td class="when">23:00 on the 24th</td>
+              <td>WhatsApp to staff who have not submitted the timesheet for the cycle that ends that day. People outside payroll are skipped.</td>
+            </tr>
+            <tr>
+              <td><strong>Weekly notes for parents</strong></td>
+              <td class="when">Tuesday evening, and Saturday morning</td>
+              <td>Writes the Saturday-to-Friday note into the family portal. No WhatsApp. Tuesday is for children who only come Saturday, Sunday or Monday. Saturday morning is for the rest of the week.</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="card">
+        <h2>When something happens</h2>
+        <p class="lead">No clock. The other system, or a saved change, starts it.</p>
+        <table>
+          <thead>
+            <tr><th>What</th><th>Starts when</th><th>What it does alone</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Stripe payment</strong></td>
+              <td class="when">The parent pays</td>
+              <td>Marks the invoice paid, can finish the booking, confirm a trial seat, tell the office, clear a payment hold, and put the payment in Xero.</td>
+            </tr>
+            <tr>
+              <td><strong>GoCardless payment</strong></td>
+              <td class="when">The bank payment or the mandate succeeds</td>
+              <td>The booking can complete, the instalment is recorded, and a payment hold can clear.</td>
+            </tr>
+            <tr>
+              <td><strong>GoCardless failed payment</strong></td>
+              <td class="when">The bank payment fails</td>
+              <td>Starts a grace window. A follow-up job is written to move an expired window onto Hold. The every-5-minutes clock for that follow-up is not in the saved schedule.</td>
+            </tr>
+            <tr>
+              <td><strong>Schedule change or cover</strong></td>
+              <td class="when">The change is saved</td>
+              <td>Staff and leads get a push. The logo halo and the Quick menu tile light up. Parents do not see an instructor day off.</td>
+            </tr>
+            <tr>
+              <td><strong>Outstanding feedback</strong></td>
+              <td class="when">A session still needs feedback</td>
+              <td>Halo and the Outstanding feedbacks tile. It does not lock the app with a sign-and-submit sheet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="card">
+        <h2>Already finished</h2>
+        <p class="lead">The date has passed. They do not keep acting on new days.</p>
+        <table>
+          <thead>
+            <tr><th>What</th><th>When</th><th>What it did</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Unpaid Autumn release</strong></td>
+              <td class="when">After 15 Aug 2026</td>
+              <td>Families whose first Autumn bank payment was still unpaid lost the seat, so Booking Portal could offer it. Live from 16 Aug 2026.</td>
+            </tr>
+            <tr>
+              <td><strong>June payroll email</strong></td>
+              <td class="when">26 Jun 2026, morning</td>
+              <td>One payroll email that morning. It does not repeat each month.</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="card">
+        <h2>Still needs a person</h2>
+        <p class="lead">None of these run alone: a new place, New client, a cover, a day off, creating an invoice, Xero products, an announcement, Family broadcast. The Office Operator does not write covers or invoices by itself.</p>
+      </article>
+    </section>
+
+    <section class="lang lang--es" lang="es">
+      <h3>Espanol</h3>
+      <article class="card">
+        <h2>Con reloj</h2>
+        <p class="lead">Las horas son de Londres. Pay hold, ofertas de trial, el buffer de las 06:00 y el push de las 21:00 a la oficina estan en el reloj guardado. El WhatsApp de feedback al staff esta encendido. El recordatorio de timesheet y las notas semanales estan hechos para las horas de abajo.</p>
+        <table>
+          <thead>
+            <tr><th>Que</th><th>Cuando</th><th>Que hace solo</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Pay hold</strong></td>
+              <td class="when">Cada 2 minutos</td>
+              <td>Hacia el minuto 25 de un pay hold de 30 minutos avisa al padre por WhatsApp o email. Si los 30 minutos acaban sin pago, el hold caduca y la plaza queda libre.</td>
+            </tr>
+            <tr>
+              <td><strong>Despues de un trial pagado</strong></td>
+              <td class="when">Cada 10 minutos</td>
+              <td>Cuando la sesion de trial ha terminado, manda la primera oferta. Si la familia no se ha movido a las 20:00, manda una segunda. Al final del dia suelta el soft hold y avisa a la oficina.</td>
+            </tr>
+            <tr>
+              <td><strong>Buffer de own arrangement</strong></td>
+              <td class="when">Sobre las 06:00</td>
+              <td>Si una familia en own arrangement esta por debajo del buffer pagado por adelantado, pone un soft hold. Si el buffer vuelve, quita ese soft hold. Nunca corta las sesiones solo.</td>
+            </tr>
+            <tr>
+              <td><strong>Feedback que falta, oficina</strong></td>
+              <td class="when">21:00</td>
+              <td>Push al admin sobre el feedback de sesion que falto ayer.</td>
+            </tr>
+            <tr>
+              <td><strong>WhatsApp de feedback al staff</strong></td>
+              <td class="when">Dom-vie 20:00 y luego 20:30. Sabado 18:00 y luego 18:30.</td>
+              <td>WhatsApp al trabajador que aun debe el feedback. El segundo mensaje solo sale si sigue faltando. Este aviso esta encendido.</td>
+            </tr>
+            <tr>
+              <td><strong>Recordatorio de timesheet</strong></td>
+              <td class="when">23:00 el dia 24</td>
+              <td>WhatsApp a quien no ha enviado el timesheet del ciclo que acaba ese dia. Quien esta fuera de nomina no entra.</td>
+            </tr>
+            <tr>
+              <td><strong>Notas semanales para padres</strong></td>
+              <td class="when">Martes por la tarde, y sabado por la manana</td>
+              <td>Escribe la nota de sabado a viernes en el portal de la familia. Sin WhatsApp. El martes es para ninos que solo vienen sabado, domingo o lunes. El sabado por la manana es para el resto de la semana.</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="card">
+        <h2>Cuando pasa algo</h2>
+        <p class="lead">Sin reloj. Lo arranca el otro sistema, o un cambio ya guardado.</p>
+        <table>
+          <thead>
+            <tr><th>Que</th><th>Empieza cuando</th><th>Que hace solo</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Pago Stripe</strong></td>
+              <td class="when">El padre paga</td>
+              <td>Marca la factura pagada, puede cerrar la reserva, confirmar la plaza de trial, avisar a la oficina, quitar un payment hold y meter el pago en Xero.</td>
+            </tr>
+            <tr>
+              <td><strong>Pago GoCardless</strong></td>
+              <td class="when">El pago del banco o el mandato sale bien</td>
+              <td>La reserva puede completarse, el plazo queda anotado y un payment hold puede quitarse.</td>
+            </tr>
+            <tr>
+              <td><strong>GoCardless fallido</strong></td>
+              <td class="when">El pago del banco falla</td>
+              <td>Abre una ventana de gracia. Hay un trabajo escrito para pasar una ventana caducada a Hold. El reloj de cada 5 minutos de ese seguimiento no esta en el horario guardado.</td>
+            </tr>
+            <tr>
+              <td><strong>Cambio de horario o cover</strong></td>
+              <td class="when">El cambio se guarda</td>
+              <td>Staff y leads reciben un push. El halo del logo y la ficha del Quick menu se encienden. Los padres no ven el day off de un instructor.</td>
+            </tr>
+            <tr>
+              <td><strong>Feedback pendiente</strong></td>
+              <td class="when">Una sesion sigue sin feedback</td>
+              <td>Halo y la ficha Outstanding feedbacks. No bloquea la app con una hoja de firmar y enviar.</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="card">
+        <h2>Ya terminado</h2>
+        <p class="lead">La fecha ya paso. No siguen actuando en dias nuevos.</p>
+        <table>
+          <thead>
+            <tr><th>Que</th><th>Cuando</th><th>Que hizo</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Suelta de Autumn sin pagar</strong></td>
+              <td class="when">Despues del 15 ago 2026</td>
+              <td>Las familias cuyo primer pago de banco de Autumn seguia sin pagar perdieron la plaza, para que Booking Portal pudiera ofrecerla. En vivo desde el 16 ago 2026.</td>
+            </tr>
+            <tr>
+              <td><strong>Email de nomina de junio</strong></td>
+              <td class="when">26 jun 2026, por la manana</td>
+              <td>Un email de nomina esa manana. No se repite cada mes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="card">
+        <h2>Sigue haciendo falta una persona</h2>
+        <p class="lead">Nada de esto corre solo: una plaza nueva, New client, un cover, un day off, crear una factura, productos de Xero, un anuncio, Family broadcast. Office Operator no escribe covers ni facturas solo.</p>
+      </article>
+    </section>
+  </div>
+</body>
+</html>

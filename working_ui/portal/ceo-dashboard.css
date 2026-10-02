@@ -358,6 +358,9 @@
     .ceo-ops-team-btn:active {
       transform: scale(0.99);
     }
+    .ceo-ops-team-btn + .ceo-ops-team-btn {
+      margin-top: 10px;
+    }
     .ceo-insights-embed-wrap {
       margin-top: 12px;
       border: 1px solid var(--line);
@@ -812,6 +815,11 @@
       background: rgba(56, 189, 248, 0.14);
       color: #e2e8f0;
       box-shadow: inset 3px 0 0 var(--sidebarActive);
+    }
+    .ceo-nav-link--sub {
+      margin-left: 18px;
+      width: calc(100% - 18px);
+      font-size: 12.5px;
     }
 
     @media (max-width: 1024px) and (orientation: landscape) {

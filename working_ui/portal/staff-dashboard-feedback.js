@@ -2225,6 +2225,7 @@
         window.location.href = target;
       }
     }
+    try{ window.portalQuickMenuNavigate = portalQuickMenuNavigate; }catch(_){}
     /** `return` value: absolute dashboard URL so it works even when feedback lives on another path on the same site. */
     function portalFeedbackReturnParam(){
       try{

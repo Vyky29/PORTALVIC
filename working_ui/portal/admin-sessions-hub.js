@@ -11062,6 +11062,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             sessionStorage.setItem("portal_comms_prefill", askBody);
             if (staffQ) sessionStorage.setItem("portal_comms_staff", staffQ);
           } catch (_ss) {}
+          if (typeof window.portalAdminOpenComms === "function") {
+            window.portalAdminOpenComms({ mode: "administration", staff: staffQ });
+            return;
+          }
           var commsUrl = "comunicaciones.html?from=admin&mode=administration";
           if (staffQ) commsUrl += "&staff=" + encodeURIComponent(staffQ);
           window.location.href = commsUrl;
@@ -11073,6 +11077,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           try {
             if (staffU) sessionStorage.setItem("portal_comms_staff", staffU);
           } catch (_as) {}
+          if (typeof window.portalAdminOpenComms === "function") {
+            window.portalAdminOpenComms({ mode: "administration", staff: staffU });
+            return;
+          }
           window.location.href =
             "comunicaciones.html?from=admin&mode=administration" +
             (staffU ? "&staff=" + encodeURIComponent(staffU) : "");
@@ -11087,6 +11095,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             sessionStorage.setItem("portal_comms_prefill", askWa);
             if (staffWa) sessionStorage.setItem("portal_comms_staff", staffWa);
           } catch (_wa) {}
+          if (typeof window.portalAdminOpenComms === "function") {
+            window.portalAdminOpenComms({ mode: "administration", staff: staffWa });
+            return;
+          }
           window.location.href =
             "comunicaciones.html?from=admin&mode=administration" +
             (staffWa ? "&staff=" + encodeURIComponent(staffWa) : "");

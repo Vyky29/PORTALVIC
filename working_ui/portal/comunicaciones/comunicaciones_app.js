@@ -283,16 +283,25 @@ function withTimeout(promise, ms, message) {
   });
 }
 
+function commsEmbedMode() {
+  try {
+    return new URLSearchParams(String(window.location.search || "").replace(/^\?/, "")).get("embed") === "1";
+  } catch (_e) {
+    return false;
+  }
+}
+
 function bootBrandHtml() {
+  var back = commsEmbedMode()
+    ? ""
+    : '<p><a class="comms-boot-back" href="' + esc(portalHome()) + '">Back to portal</a></p>';
   return (
     '<div class="comms-boot-stack">' +
     '<div class="portal-comms-call-logo-aura">' +
     '<img class="portal-comms-call-logo" src="/portal/F-02-1.png" alt="" width="96" height="96" />' +
     "</div>" +
     '<p id="commsBootMsg"></p>' +
-    '<p><a class="comms-boot-back" href="' +
-    esc(portalHome()) +
-    '">Back to portal</a></p>' +
+    back +
     "</div>"
   );
 }
@@ -2094,6 +2103,10 @@ async function tearDownCall(notify) {
 
 function bindUi() {
   $("commsBackPortal").href = portalHome();
+  if (commsEmbedMode()) {
+    document.body.classList.add("comms-embed");
+    $("commsBackPortal").hidden = true;
+  }
   document.querySelectorAll("[data-comms-mode]").forEach((btn) => {
     btn.addEventListener("click", async function () {
       state.mode = btn.getAttribute("data-comms-mode");

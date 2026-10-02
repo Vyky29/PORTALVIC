@@ -3265,51 +3265,32 @@
     try {
       await hydrateOfficeSeen();
       /* Prefer the same thread model as the inbox once it has loaded. */
-      if (state.threads && state.threads.length) {
-        var fromThreads = 0;
-        state.threads.forEach(function (t) {
-          if (isThreadUnread(t)) fromThreads += 1;
-        });
-        return fromThreads;
+      var threads = state.threads && state.threads.length ? state.threads : null;
+      if (!threads) {
+        /* Same window as the inbox (newest 800 WhatsApp events). A separate
+           inbound scan was counting old threads the list no longer shows. */
+        var outboundRes = await client
+          .from("portal_parent_notify_log")
+          .select(
+            "id, created_at, sent_by_email, channel, parent_phone, whatsapp_status, whatsapp_message_id, meta"
+          )
+          .or("channel.in.(whatsapp,both,whatsapp_email),whatsapp_message_id.not.is.null")
+          .order("created_at", { ascending: false })
+          .limit(FETCH_LIMIT);
+        if (outboundRes.error) return 0;
+        var inboundRes = await client
+          .from("portal_parent_whatsapp_inbound")
+          .select("id, created_at, from_phone, contact_name, wa_message_id, context_wa_id, meta")
+          .order("created_at", { ascending: false })
+          .limit(FETCH_LIMIT);
+        if (inboundRes.error) return 0;
+        threads = buildWhatsAppThreads(mergeTimeline(outboundRes.data || [], inboundRes.data || []));
       }
-      var res = await client
-        .from("portal_parent_whatsapp_inbound")
-        .select("id, from_phone, created_at")
-        .order("created_at", { ascending: false })
-        .limit(FETCH_LIMIT);
-      if (res.error) return 0;
-      var lastInboundByPhone = {};
-      (res.data || []).forEach(function (r) {
-        var pk = phoneMatchKey(r && r.from_phone) || phoneDigits(r && r.from_phone);
-        if (!pk) return;
-        var at = String((r && r.created_at) || "");
-        if (!lastInboundByPhone[pk] || at > lastInboundByPhone[pk]) lastInboundByPhone[pk] = at;
+      var fromThreads = 0;
+      threads.forEach(function (t) {
+        if (isThreadUnread(t)) fromThreads += 1;
       });
-      var lastOutboundByPhone = {};
-      var outRes = await client
-        .from("portal_parent_notify_log")
-        .select("parent_phone, created_at, channel, whatsapp_status, whatsapp_message_id")
-        .order("created_at", { ascending: false })
-        .limit(FETCH_LIMIT);
-      if (!outRes.error) {
-        (outRes.data || []).forEach(function (r) {
-          if (!notifyRowHasWhatsapp(r)) return;
-          if (!waOutboundCountsAsReply(r && r.whatsapp_status)) return;
-          var pk = phoneMatchKey(r && r.parent_phone) || phoneDigits(r && r.parent_phone);
-          if (!pk) return;
-          var at = String((r && r.created_at) || "");
-          if (!lastOutboundByPhone[pk] || at > lastOutboundByPhone[pk]) lastOutboundByPhone[pk] = at;
-        });
-      }
-      var seen = readSeenMap();
-      var n = 0;
-      Object.keys(lastInboundByPhone).forEach(function (pk) {
-        var inn = String(lastInboundByPhone[pk] || "");
-        var out = String(lastOutboundByPhone[pk] || "");
-        if (out && out >= inn) return;
-        if (inn > String(seen[pk] || "")) n += 1;
-      });
-      return n;
+      return fromThreads;
     } catch (_e) {
       return 0;
     }

@@ -9,7 +9,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260911-en-only"></script>
-  <link rel="stylesheet" href="/portal/ceo-dashboard.css?v=20260904-menu-fix" />
+  <link rel="stylesheet" href="/portal/ceo-dashboard.css?v=20261002-automations" />
 </head>
 <body>
   <div class="ceo-shell" id="ceoShell">
@@ -35,8 +35,12 @@
           <a class="ceo-nav-link" href="#ceo-strategic" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">📊</span>Strategic snapshot</a>
           <a class="ceo-nav-link" href="#ceo-finance" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">💷</span>Finance</a>
           <a class="ceo-nav-link" href="#ceo-insights" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">🗂️</span>Company insights</a>
+          <a class="ceo-nav-link ceo-nav-link--sub" href="admin_dashboard.html?view=logs"><span class="ceo-nav-ico" aria-hidden="true">🗒️</span>Activity log</a>
+          <a class="ceo-nav-link ceo-nav-link--sub" href="ceo_automations.html"><span class="ceo-nav-ico" aria-hidden="true">⏱️</span>What runs by itself</a>
           <a class="ceo-nav-link" href="comunicaciones.html?from=ceo" data-comms-unread-host><span class="ceo-nav-ico" aria-hidden="true">💬</span>Communications<span class="portal-comms-unread-badge is-empty" data-comms-unread hidden>0</span></a>
           <a class="ceo-nav-link" href="ceo_parents_portal.html"><span class="ceo-nav-ico" aria-hidden="true">👨‍👩‍👧</span>Parents in portal</a>
+          <a class="ceo-nav-link" href="admin_dashboard.html?view=portal_activity"><span class="ceo-nav-ico" aria-hidden="true">👁️</span>Portal activity</a>
+          <a class="ceo-nav-link" href="admin_dashboard.html?view=portal_training_progress"><span class="ceo-nav-ico" aria-hidden="true">✅</span>Staff readiness</a>
           <a class="ceo-nav-link" href="ceo_booking_service_portal.html"><span class="ceo-nav-ico" aria-hidden="true">🆕</span>Booking Portal visitors</a>
           <a class="ceo-nav-link" href="policies_portal.html" target="_blank" rel="noopener"><span class="ceo-nav-ico" aria-hidden="true">📖</span>Policies &amp; compliance</a>
         </nav>
@@ -83,6 +87,7 @@
             Full catalogue of portal forms and data sources — opens in its own tab for readability on any screen.
           </p>
           <a class="ceo-ops-team-btn" id="portalCeoNavInsights" href="company_insights.html" target="_blank" rel="noopener">Open company insights registry</a>
+          <a class="ceo-ops-team-btn" href="ceo_automations.html">What runs by itself</a>
         </section>
 
         <section id="ceo-parents" class="ceo-panel ceo-panel--insights" aria-labelledby="ceoParentsTitle">

@@ -74,6 +74,14 @@ body.comms-app {
   max-height: 100dvh;
   background: var(--white);
 }
+body.comms-embed .comms-back-portal,
+body.comms-embed .comms-boot-back {
+  display: none !important;
+}
+body.comms-embed .comms-shell {
+  height: 100%;
+  max-height: 100%;
+}
 
 .comms-sidebar {
   display: flex;

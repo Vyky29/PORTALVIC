@@ -6053,6 +6053,186 @@
     document.getElementById('dockQuickMenuTile')?.addEventListener('click', function(){
       handleQuickMenuDockClick();
     });
+    (function portalStaffPageSearch(){
+      var ALIASES = {
+        quickMenuSessionDisruption: 'session disruption day off absence interrupcion ausencia',
+        quickMenuWorkTimesheet: 'timesheet time sheet timesheets hours payroll parte horas nomina',
+        quickMenuWorkExpenses: 'expenses receipts gastos',
+        quickMenuContractorInvoice: 'invoice factura contractor',
+        quickMenuStaffIncident: 'incident injury incidente',
+        quickMenuParticipantAchievements: 'photos achievement fotos logros camera',
+        quickMenuSessionParticipants: 'participants clients roster participantes',
+        quickMenuWorkVenue: 'venue report sede',
+        quickMenuDropoffPickup: 'pickup drop off dropoff handover recogida',
+        quickMenuPolicies: 'policies policy politicas',
+        quickMenuStaffHandbook: 'handbook manual',
+        quickMenuInduction: 'induction training induccion',
+        quickMenuSafeguarding: 'safeguarding nspcc salvaguarda',
+        quickMenuMyDocsPayslips: 'payslip payslips pay slip nomina',
+        quickMenuAnnualProfileCheckin: 'profile annual perfil',
+        quickMenuStaffWellbeingReview: 'wellbeing bienestar',
+        quickMenuMyDocsUniform: 'uniform uniforme',
+        quickMenuRiskAssessments: 'risk assessment riesgos',
+        quickMenuLdFunding: 'funding learning development',
+        quickMenuCarePlans: 'care plan behaviour',
+        topbarStaffWaBtn: 'comms messages communications mensajes comunicaciones whatsapp'
+      };
+      function esc(s){
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      function norm(s){
+        return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+      }
+      function visible(el){
+        if(!el || el.disabled) return false;
+        if(el.hidden || el.getAttribute('aria-hidden') === 'true') return false;
+        var node = el.parentElement;
+        while(node){
+          var skip = node.classList && (node.classList.contains('menu-group-panel') || node.classList.contains('sheet'));
+          if(!skip && (node.hidden || node.getAttribute('aria-hidden') === 'true')) return false;
+          node = node.parentElement;
+        }
+        var cell = el.closest('.topbar-tool-cell');
+        if(cell && (cell.hidden || cell.getAttribute('aria-hidden') === 'true')) return false;
+        return true;
+      }
+      function catalog(){
+        var out = [];
+        var seen = {};
+        document.querySelectorAll('#menuSheet .menu-btn').forEach(function(el){
+          if(!visible(el)) return;
+          var strong = el.querySelector('strong');
+          var sub = el.querySelector('.menu-btn-sub');
+          var name = strong ? String(strong.textContent || '').trim() : '';
+          if(!name) return;
+          var key = norm(name);
+          if(seen[key]) return;
+          seen[key] = true;
+          var group = el.closest('.menu-group');
+          var title = group && (group.querySelector('.menu-accordion-trigger__label') || group.querySelector('.menu-group-title'));
+          out.push({
+            id: el.id,
+            name: name,
+            where: title ? String(title.textContent || '').trim() : 'Menu',
+            hay: norm([name, sub ? sub.textContent : '', el.getAttribute('aria-label') || '', ALIASES[el.id] || ''].join(' '))
+          });
+        });
+        var comms = document.getElementById('topbarStaffWaBtn');
+        if(visible(comms) && !seen.comms){
+          out.push({
+            id: 'topbarStaffWaBtn',
+            name: 'Comms',
+            where: 'Top bar',
+            hay: norm('comms messages communications ' + (ALIASES.topbarStaffWaBtn || ''))
+          });
+        }
+        return out;
+      }
+      function paint(){
+        var box = document.getElementById('staffPortalSearchResults');
+        var input = document.getElementById('staffPortalSearch');
+        if(!box) return;
+        var q = norm(input && input.value);
+        if(!q){
+          box.innerHTML = '<p class="staff-search-empty">Type a page. For example timesheet or session disruption.</p>';
+          return;
+        }
+        var words = q.split(' ').filter(Boolean);
+        function wordHit(hay, w){
+          var bits = hay.split(' ');
+          for(var i = 0; i < bits.length; i++){
+            if(bits[i] === w) return true;
+            if(w.length >= 4 && bits[i].indexOf(w) === 0) return true;
+          }
+          return false;
+        }
+        var hits = catalog().filter(function(row){
+          return words.every(function(w){ return wordHit(row.hay, w); });
+        });
+        if(!hits.length){
+          box.innerHTML = '<p class="staff-search-empty">Nothing matches. Try timesheet or session disruption.</p>';
+          return;
+        }
+        box.innerHTML = hits.map(function(row){
+          return '<button type="button" class="staff-search-row" data-staff-search-open="'+esc(row.id)+'">' +
+            '<span class="staff-search-row__copy"><span class="staff-search-row__name">'+esc(row.name)+'</span>' +
+            '<span class="staff-search-row__where">'+esc(row.where)+'</span></span>' +
+            '<span class="staff-search-row__go">Open</span></button>';
+        }).join('');
+      }
+      function goUrl(u){
+        var href = String(u || '').trim();
+        if(!href) return;
+        if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+        if(typeof portalQuickMenuNavigate === 'function'){
+          portalQuickMenuNavigate(href);
+          return;
+        }
+        if(typeof window.portalQuickMenuNavigate === 'function'){
+          window.portalQuickMenuNavigate(href);
+          return;
+        }
+        window.location.assign(new URL(href, window.location.href).href);
+      }
+      function openHit(id){
+        var el = document.getElementById(id);
+        if(!el) return;
+        if(id === 'quickMenuParticipantAchievements' && typeof window.portalOpenParticipantAchievements === 'function'){
+          if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+          window.portalOpenParticipantAchievements();
+          return;
+        }
+        var sheetId = el.getAttribute('data-open');
+        if(sheetId){
+          if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+          if(typeof openSheet === 'function') openSheet(sheetId);
+          return;
+        }
+        var href = el.getAttribute('data-portal-external-url') || '';
+        if(id === 'topbarStaffWaBtn') href = el.getAttribute('href') || 'comunicaciones.html?from=staff';
+        if(id === 'quickMenuWorkVenue' && href && typeof portalBuildVenueQuickMenuUrl === 'function'){
+          href = portalBuildVenueQuickMenuUrl(href);
+        }
+        if(id === 'quickMenuDropoffPickup' && href && typeof portalBuildPickupQuickMenuUrl === 'function'){
+          href = portalBuildPickupQuickMenuUrl(href);
+          try{
+            var names = typeof portalCollectTodayParticipantNames === 'function' ? portalCollectTodayParticipantNames() : [];
+            if(names.length) sessionStorage.setItem('portalPickupRosterToday', JSON.stringify(names));
+          }catch(_){}
+        }
+        if(href){
+          goUrl(href);
+          return;
+        }
+        el.click();
+      }
+      var input = document.getElementById('staffPortalSearch');
+      var box = document.getElementById('staffPortalSearchResults');
+      if(input){
+        input.addEventListener('input', paint);
+        input.addEventListener('keydown', function(ev){
+          if(ev.key !== 'Enter') return;
+          ev.preventDefault();
+          var first = box && box.querySelector('[data-staff-search-open]');
+          if(first) openHit(first.getAttribute('data-staff-search-open'));
+        });
+      }
+      if(box){
+        box.addEventListener('click', function(ev){
+          var btn = ev.target && ev.target.closest ? ev.target.closest('[data-staff-search-open]') : null;
+          if(!btn) return;
+          openHit(btn.getAttribute('data-staff-search-open'));
+        });
+      }
+      document.getElementById('quickMenuSearch')?.addEventListener('click', function(){
+        setTimeout(function(){
+          var field = document.getElementById('staffPortalSearch');
+          if(field) field.focus();
+          paint();
+        }, 60);
+      });
+      paint();
+    })();
     if(typeof syncDockNavContext === 'function') syncDockNavContext();
     if(typeof portalSyncQuickMenuDockChrome === 'function') portalSyncQuickMenuDockChrome();
     if(typeof portalSyncParticipantsDockChrome === 'function') portalSyncParticipantsDockChrome();

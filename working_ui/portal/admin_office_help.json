@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v119",
+  "version": "2026-10-02-v131",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -87,7 +87,25 @@
             "Parents do not see instructor day offs or COVER NEEDED — that is office/staff only.",
             "Aquatic halves may merge on Staff Today; Overview / Schedule keep 30-minute cards when needed.",
             "The page itself stays quiet. The i next to Sessions Overview holds what the board is. Live row counts stay off the page."
-          ]
+          ],
+          "es": {
+            "title": "Sessions Overview (el tablero del dia)",
+            "summary": "Overview es el unico tablero del dia en el que mirar. Las plazas fijas se repiten. Las excepciones vienen de Schedule & Covers y de los dias libres.",
+            "where": "Today → Sessions overview",
+            "steps": [
+              "Abre Sessions Overview y elige el dia.",
+              "Mira ninos reservados, plazas libres, covers y el dia libre, solo en esa fecha.",
+              "Si algo esta mal, arreglalo en Schedule & Covers o en Validate / HR day off. No edites LOCAL para mirar el dia.",
+              "Despues de un cambio, espera a que el tablero se refresque."
+            ],
+            "tips": [
+              "Cuando un nino pasa a otro instructor el mismo dia, la tarjeta vieja va en rojo y dice Now mas el instructor nuevo. El instructor que tiene al nino ve un chip con el Shift del instructor anterior. Esto es solo el Sessions Overview de admin. El portal del trabajador tiene sus propios chips y avisos.",
+              "Una plaza vacia y un Hold Waitlist no necesitan cover. No salen en la tarjeta del trabajador. Un nino de verdad ese dia si necesita cover cuando su instructor esta libre.",
+              "Los padres no ven dias libres del instructor ni COVER NEEDED. Eso es solo oficina y staff.",
+              "Las medias de aquatic pueden juntarse en Staff Today. Overview y Schedule mantienen tarjetas de 30 minutos cuando hace falta.",
+              "La pagina se queda limpia. La i al lado de Sessions Overview explica el tablero. Los contadores vivos no van en la pagina."
+            ]
+          }
         },
         {
           "id": "schedule_covers",
@@ -114,7 +132,27 @@
             "A makeup on an open seat still shows that child when the instructor is off that day. The row name is the child, not No participant.",
             "If a child is absent and someone moves into that seat the same day, the row shows the absent child, then Free, then the move-in. No participant is a standing empty seat.",
             "From Sun 27 Sep, Gabriel and Cyrus swap the 11.00 and 11.45 halves. A cover saved on that seat follows the child who is in it now. It does not stay as COVER NEEDED on the new name."
-          ]
+          ],
+          "es": {
+            "title": "Schedule & Covers (un dia)",
+            "summary": "Excepciones de un dia: cancelar una franja, poner cover, falta del cliente, o sustituir solo esa fecha.",
+            "where": "Today → Schedule & Covers",
+            "steps": [
+              "Abre Schedule & Covers y elige la fecha y la franja.",
+              "Elige la accion solo de ese dia (cancelar, cover, falta, reasignar).",
+              "Guarda. Overview, Staff Today y los chips del padre se actualizan desde schedule_overrides.",
+              "Si el cambio tiene que durar el resto del term, para y usa Edit term slot."
+            ],
+            "tips": [
+              "No uses Schedule & Covers para cambiar un cliente todos los lunes del term. Eso es Edit term slot.",
+              "Los avisos naranja o rojo saltan cuando una accion de un dia choca con el roster fijo.",
+              "Un turno nuevo de shadowing o training es + Add session card, Type Shadowing o Training.",
+              "Move to another slot today es el cambio de un dia, tambien a una plaza que ya tiene una falta de admin. En Overview el instructor original sigue viendo a ese nino, con el chip Move in and change instructor, no No participant. El otro instructor ve al nino ausente y, en la misma hora, la tarjeta Moved in. Edit term slot cambia el dia fijo el resto del term.",
+              "Un makeup en una plaza libre sigue ensenando a ese nino cuando el instructor esta libre ese dia. El nombre de la fila es el nino, no No participant.",
+              "Si un nino falta y alguien entra en esa plaza el mismo dia, la fila ensena al nino ausente, luego Free, luego el que entra. No participant es una plaza fija vacia.",
+              "Desde el domingo 27 Sep, Gabriel y Cyrus cambian las medias de las 11.00 y las 11.45. Un cover guardado en esa plaza sigue al nino que esta ahora. No se queda como COVER NEEDED en el nombre nuevo."
+            ]
+          }
         },
         {
           "id": "add_shadowing_shift",
@@ -205,7 +243,23 @@
           "tips": [
             "To drop one standing row for a single day (for example Office that should not run that Monday), Change → Cancelled → Save override. That is one day, not the rest of term.",
             "Office is not a child. Ignore an absents / parent-notify toast if you cancel an Office row."
-          ]
+          ],
+          "es": {
+            "title": "Deshacer un cambio de un dia",
+            "summary": "Undo change quita un override guardado en esa fila. Un COVER NEEDED rosa de un dia libre no es un override.",
+            "where": "Today → Schedule & Covers → Change en una fila",
+            "steps": [
+              "Abre la fecha y pulsa Change en la fila.",
+              "Si el cajon dice Current override y ensena Undo change, ese boton quita solo ese cambio de un dia.",
+              "Si dice Current override: None, no hay nada que deshacer. Cierra el cajon.",
+              "Un COVER NEEDED rosa de Validate day / HR day off es el dia libre. No guardes Absent, Cancelled ni Change Instructor en esa plaza solo para quitar el rosa.",
+              "Para quitar una tarjeta que anadiste con Add session card, usa Remove en Added cards de esa fecha."
+            ],
+            "tips": [
+              "Para quitar una fila fija un solo dia (por ejemplo Office que no debe salir ese lunes), Change → Cancelled → Save override. Es un dia, no el resto del term.",
+              "Office no es un nino. Ignora un aviso de absents / parent-notify si cancelas una fila Office."
+            ]
+          }
         },
         {
           "id": "day_centre_one_instructor",
@@ -314,12 +368,27 @@
             "Mark items Done when finished so open counts drop.",
             "Anyone with portal admin access sees the same calendar."
           ],
-          "tips": []
+          "tips": [],
+          "es": {
+            "title": "Calendario de oficina (notas y reuniones)",
+            "summary": "Notas compartidas de la oficina por fecha. La tarjeta del mes en Operations Hub abre el calendario entero.",
+            "where": "Operations Hub → Calendar → Office calendar",
+            "steps": [
+              "Pulsa la tarjeta Calendar en Operations Hub (el mes pequeno).",
+              "Anade o edita una nota o una reunion en una fecha.",
+              "Marca Done cuando este hecha, para que baje el numero de abiertas.",
+              "Quien tiene acceso de admin ve el mismo calendario.",
+              "El numero de la tarjeta es cuantas notas siguen abiertas este mes, no cuantas reuniones hay en el ano."
+            ],
+            "tips": [
+              "Las notas del calendario no cambian plazas ni covers. Un cambio de dia se hace en Schedule & Covers."
+            ]
+          }
         },
         {
           "id": "ops_hub_chips",
-          "title": "Operations Hub categories",
-          "summary": "The home board switches with one chip. WhatsApp, P, S, C and A stay in the top bar.",
+          "title": "Operations Hub: Today, then a sheet",
+          "summary": "Today stays on the home. The other categories open in the sheet under it. WhatsApp, P, S, C and A stay in the top bar.",
           "where": "Operations Hub (home)",
           "keywords": [
             "chips",
@@ -336,14 +405,31 @@
           ],
           "steps": [
             "Open Operations Hub. Schedule and Covers, Sessions overview, Places and the calendar stay at the top.",
-            "Tap a chip: Today, Services and places, Families, Finance, Formal workers or Potential workers. Only that board changes.",
+            "Today stays under that: Register, Lead report, Incidents, Venue review, Pick up / drop off, and Absents.",
+            "Open another category is the sheet under Today. The chips are Services and places, Families, Finance, Formal workers and Potential workers. Today does not move when you change the sheet.",
             "WhatsApp, P (family messages), S (staff messages), C (Comms) and A (Announcements) stay in the top bar. They are not cards on the board.",
             "WhatsApp is green. P is dark green. C is yellow, the same yellow as the staff Comms button. S is orange. A is red.",
             "When that lane has unread messages, the button lights up and shows the number. A number on Announcements is live notices from the last 7 days."
           ],
           "tips": [
             "Finance on this board is Re-enrolments, Payments, and Absents, refunds and credits. Create invoice and Xero products stay in the Finance menu."
-          ]
+          ],
+          "es": {
+            "title": "Operations Hub: Today y luego una hoja",
+            "summary": "Today se queda en el inicio. Las otras categorias se abren en la hoja de debajo. WhatsApp, P, S, C y A siguen en la barra.",
+            "where": "Operations Hub (inicio)",
+            "steps": [
+              "Abre Operations Hub. Schedule and Covers, Sessions overview, Places y el calendario se quedan arriba.",
+              "Today se queda debajo: Register, Lead report, Incidents, Venue review, Pick up / drop off y Absents.",
+              "Open another category es la hoja bajo Today. Los chips son Services and places, Families, Finance, Formal workers y Potential workers. Today no se mueve al cambiar la hoja.",
+              "WhatsApp, P (mensajes de familia), S (mensajes de staff), C (Comms) y A (Announcements) siguen en la barra. No son tarjetas del tablero.",
+              "WhatsApp es verde. P es verde oscuro. C es amarillo, el mismo amarillo que el boton Comms de staff. S es naranja. A es rojo.",
+              "Cuando ese canal tiene mensajes sin leer, el boton se ilumina y muestra el numero. Un numero en Announcements son avisos vivos de los ultimos 7 dias."
+            ],
+            "tips": [
+              "Finance en este tablero es Re-enrolments, Payments, y Absents, refunds and credits. Create invoice y Xero products siguen en el menu Finance."
+            ]
+          }
         }
       ]
     },
@@ -380,23 +466,114 @@
           ],
           "tips": [
             "The path is Leads, then REGISTERED, then WAITING LIST if the service is full, then New client from an open seat on Places. After that they are on the Service roster as CLIENT."
-          ]
+          ],
+          "es": {
+            "title": "Places, Leads, WAITING LIST y REGISTERED son cosas distintas",
+            "summary": "Un menu, dos trabajos. La plaza es Places y el roster. La persona que todavia no es CLIENT es Leads, REGISTERED o WAITING LIST.",
+            "where": "Services & places",
+            "steps": [
+              "Places (Booking Portal) es la oferta: plazas libres y plazas cogidas. Service roster es quien ya esta reservado y el instructor de siempre. New client mete a una persona en una plaza libre. Edit term slot cambia esa plaza para el resto del term.",
+              "Leads es un padre o una madre que pidio un codigo OTP. Lee Outcome: solo miro, empezo el formulario, se registro, ya era cliente, o lista de espera.",
+              "REGISTERED termino el formulario y nunca ha tenido plaza. Servicio y hora van vacios. Pay hold, Hold y Lost slot son chips en esa lista.",
+              "WAITING LIST es alguien que se registro y el servicio que quiere esta lleno. Esta esperando una plaza. No es Leads y no es REGISTERED.",
+              "Quien ya tiene plaza es CLIENT. Esa lista esta en Clients & Families, Active. No esta en estas tres listas."
+            ],
+            "tips": [
+              "El camino es Leads, luego REGISTERED, luego WAITING LIST si el servicio esta lleno, y New client cuando hay un hueco en Places. Despues sale en Service roster como CLIENT."
+            ]
+          }
         },
         {
           "id": "services_board",
-          "title": "Services board (capacity & open places)",
-          "summary": "See filled vs open seats for the term — the capacity / places view for booking and office.",
-          "where": "Services & places → Places (Booking Portal). Service roster is its own screen.",
+          "title": "Places (Booking Portal)",
+          "summary": "This screen is the offer families can book. Each row is one time band: who is already in it, and how many seats are still open.",
+          "where": "Services & places → Places (Booking Portal)",
           "steps": [
-            "Open Places (Booking Portal) for free and taken seats. That screen has its own day, service and venue filter. A new client is added from Services & places so they can take an open space.",
-            "Open Service roster on its own screen for who is booked and the standing instructor. The weekday, class, venue, instructor and participant filter lives only there.",
-            "Read filled seats vs open places — this is capacity truth for offering places.",
-            "Use open places when talking to families or checking Booking Portal offer.",
-            "Standing who-is-booked changes go through Edit term slot or finish-booking paid — not Timetable."
+            "This page is not Service roster. Places is the Booking Portal offer. Service roster is a different screen: who is booked and the standing instructor.",
+            "Refresh reloads the live seats from the roster. Open Booking Portal opens the family site in a new tab, so you see the same offer they see. Waiting list opens the WAITING LIST screen.",
+            "Day, Service and Venue filter the board. All days, All services and All venues show the whole offer. Open places only hides bands that are already full. Turn that box off when you also need to see full bands.",
+            "Open bands is how many bands in this filter still have at least one free seat. Free slots is how many empty seats those bands add up to. Full bands is how many bands are full, and those rows only show when Open places only is off. Total rows is how many bands the filter is showing. None of those numbers is a count of people to call.",
+            "Each weekday is its own block, for example Monday, 11 bands. One row is one band: service, venue, time, the seat list, and Place.",
+            "In Slots, each name is a taken seat. Open plus a number means free seats in that band. Full means there is no free seat. A line such as 2/2 means both seats are taken.",
+            "Place existing puts someone who is already REGISTERED, on the WAITING LIST, or already a CLIENT into that open seat. Place new starts a new client on that open seat. Those two buttons only appear when the band still has a free seat.",
+            "New client, in the Services & places menu, is the same job as Place new: a person who is not on a place yet, taking an open seat from this screen.",
+            "Aquatic on the Booking Portal is always 30 minutes. A family may book two halves in a row with the same instructor. This screen keeps the halves as two rows, so one half can be offered or filled without the other.",
+            "Intensive Courses and Camps sit under the weekday blocks. They are the July crash weeks. They are not the weekly Autumn days.",
+            "Who sits in a band for the rest of term is Edit term slot. One date only is Schedule & Covers. The Instructor timetable is staff hours, not this offer.",
+            "When a family pays a finish-booking or trial link, that child should appear on Sessions Overview on the first session date. You do not type that into LOCAL.",
+            "Leads, REGISTERED and WAITING LIST are the people before they are CLIENT. They are the next menu items. They are not extra filters on this board."
           ],
           "tips": [
-            "Booking Portal aquatic offer is always 30-minute slots."
-          ]
+            "Do not read Open bands, Free slots or Total rows as families to phone.",
+            "Parents do not see an instructor day off on the Booking Portal.",
+            "Pay hold, Hold and Lost slot are chips on REGISTERED. They are not columns on this board.",
+            "A cancelled place is not an open seat until Edit term slot or the release has cleared the child."
+          ],
+          "es": {
+            "title": "Places (Booking Portal)",
+            "summary": "Esta pantalla es la oferta que las familias pueden reservar. Cada fila es una franja: quien ya esta dentro y cuantas plazas siguen libres.",
+            "where": "Services & places → Places (Booking Portal)",
+            "steps": [
+              "Esta pagina no es Service roster. Places es la oferta del Booking Portal. Service roster es otra pantalla: quien esta reservado y el instructor de siempre.",
+              "Refresh vuelve a cargar las plazas vivas. Open Booking Portal abre la web de familias en otra pestana, para ver la misma oferta que ven ellos. Waiting list abre la pantalla WAITING LIST.",
+              "Day, Service y Venue filtran el tablero. All days, All services y All venues ensenan toda la oferta. Open places only esconde las franjas que ya estan llenas. Quitale la marca si tambien quieres ver las llenas.",
+              "Open bands es cuantas franjas de este filtro siguen con al menos una plaza libre. Free slots es cuantas plazas vacias suman esas franjas. Full bands es cuantas franjas estan llenas, y solo se ven si quitas Open places only. Total rows es cuantas franjas ensena el filtro. Ninguno de esos numeros es gente a la que llamar.",
+              "Cada dia es un bloque, por ejemplo Monday, 11 bands. Una fila es una franja: servicio, sede, hora, la lista de plazas, y Place.",
+              "En Slots, cada nombre es una plaza ocupada. Open y un numero son plazas libres en esa franja. Full quiere decir que no queda plaza. Una linea como 2/2 quiere decir que las dos plazas estan cogidas.",
+              "Place existing mete en esa plaza libre a alguien que ya es REGISTERED, esta en WAITING LIST, o ya es CLIENT. Place new empieza un cliente nuevo en esa plaza libre. Esos dos botones solo salen si la franja todavia tiene un hueco.",
+              "New client, en el menu Services & places, es el mismo trabajo que Place new: una persona que todavia no tiene plaza y coge un hueco de esta pantalla.",
+              "Aquatic en el Booking Portal es siempre 30 minutos. Una familia puede coger dos medias seguidas con el mismo instructor. Esta pantalla las deja en dos filas, para poder ofrecer o llenar una mitad sin tocar la otra.",
+              "Intensive Courses and Camps va debajo de los dias de la semana. Son las semanas crash de julio. No son los dias semanales de Autumn.",
+              "Quien se sienta el resto del term se cambia en Edit term slot. Un solo dia es Schedule & Covers. El Instructor timetable son las horas del personal, no esta oferta.",
+              "Cuando una familia paga el enlace de finish-booking o de trial, ese nino tiene que salir en Sessions Overview el dia de la primera sesion. Eso no se escribe en LOCAL.",
+              "Leads, REGISTERED y WAITING LIST son las personas antes de ser CLIENT. Son las siguientes pantallas del menu. No son filtros de este tablero."
+            ],
+            "tips": [
+              "No leas Open bands, Free slots ni Total rows como familias a las que llamar.",
+              "Los padres no ven el dia libre de un instructor en el Booking Portal.",
+              "Pay hold, Hold y Lost slot son chips en REGISTERED. No son columnas de este tablero.",
+              "Una plaza cancelada no es un hueco hasta que Edit term slot o la baja hayan quitado al nino."
+            ]
+          }
+        },
+        {
+          "id": "services_roster_screen",
+          "title": "Service roster",
+          "summary": "Who is booked on the standing seat, and which instructor holds that band. This is not the Booking Portal offer.",
+          "where": "Services & places → Service roster",
+          "steps": [
+            "Service roster is its own screen. The Places day, service and venue filter does not belong here.",
+            "Open the filter: Weekday, Class, Venue, Instructor, Participant. Any day, Any class, Any venue, Any instructor and Any participant show the whole standing board.",
+            "Refresh reloads the roster. Space available keeps bands that still have a free seat. Participants on waiting list keeps rows that have someone waiting for that band.",
+            "A row is the standing booking: the child, the time, the venue and the instructor. Two aquatic halves on the same day stay as two rows here, so one half can change without the other.",
+            "To change who is booked, or the instructor, for the rest of term, use Edit term slot. The anchor date must be the same weekday as the service.",
+            "To change one date only, use Schedule & Covers. That does not rewrite the standing roster.",
+            "New client and Place new live on Places (Booking Portal), because a new person takes an open seat from the offer.",
+            "CLIENT names on this roster are people on a place now. REGISTERED, LEADS, WAITING and OLD are not standing booked rows."
+          ],
+          "tips": [
+            "Instructor hours for the week are the Instructor timetable under H&R, not this roster.",
+            "A cancelled standing place becomes No participant and can show as open on Places."
+          ],
+          "es": {
+            "title": "Service roster",
+            "summary": "Quien esta reservado en la plaza de siempre, y que instructor lleva esa franja. No es la oferta del Booking Portal.",
+            "where": "Services & places → Service roster",
+            "steps": [
+              "Service roster es su propia pantalla. El filtro de dia, servicio y sede de Places no va aqui.",
+              "Abre el filtro: Weekday, Class, Venue, Instructor, Participant. Any day, Any class, Any venue, Any instructor y Any participant ensenan todo el roster.",
+              "Refresh vuelve a cargar el roster. Space available deja las franjas que aun tienen plaza libre. Participants on waiting list deja las filas con alguien esperando esa franja.",
+              "Una fila es la reserva fija: el nino, la hora, la sede y el instructor. Dos medias de aquatic el mismo dia siguen siendo dos filas, para poder cambiar una mitad sin la otra.",
+              "Para cambiar quien esta reservado, o el instructor, el resto del term, usa Edit term slot. La fecha ancla tiene que ser el mismo dia de la semana que el servicio.",
+              "Para cambiar un solo dia, usa Schedule & Covers. Eso no reescribe el roster fijo.",
+              "New client y Place new estan en Places (Booking Portal), porque una persona nueva coge un hueco de la oferta.",
+              "Los nombres CLIENT de este roster son gente que tiene plaza ahora. REGISTERED, LEADS, WAITING y OLD no son filas reservadas."
+            ],
+            "tips": [
+              "Las horas del instructor en la semana son el Instructor timetable en H&R, no este roster.",
+              "Una plaza fija cancelada pasa a No participant y puede salir como hueco en Places."
+            ]
+          }
         },
         {
           "id": "finish_booking",
@@ -414,7 +591,24 @@
             "Do not put suitability wording on pay links.",
             "Aquatic: one override per 30-minute half, not one 60-minute band.",
             "The term link is automatic. Reply FREE releases the place. A different slot is a reply to the office, not a new trial."
-          ]
+          ],
+          "es": {
+            "title": "Finish-booking / trial pagado y Overview",
+            "summary": "Cuando una familia paga finish-booking, la plaza de trial sale en el tablero del dia sin tocar LOCAL.",
+            "where": "Enlace de pago y luego Sessions Overview",
+            "steps": [
+              "La familia paga finish-booking (Stripe o confirmacion de banco).",
+              "El sistema pliega MADRE, el override de trial y la fila del roster de ese dia.",
+              "Abre Sessions Overview en la fecha de la primera sesion. El nino tiene que salir.",
+              "Si no sale, mira el pago y Schedule & Covers / overrides de ese dia.",
+              "Cuando acaba el trial, al padre le llega un enlace de term para la misma plaza. Tienen hasta el final de ese dia. Si no contestan, la plaza se suelta."
+            ],
+            "tips": [
+              "En los enlaces de pago no pongas frases de suitability.",
+              "Aquatic: un override por cada media hora, no una banda de 60 minutos.",
+              "El enlace de term sale solo. Contestar FREE suelta la plaza. Otra hora es una respuesta a la oficina, no un trial nuevo."
+            ]
+          }
         },
         {
           "id": "edit_term_slot",
@@ -437,7 +631,29 @@
             "To seat a worker with a Day Centre child for the rest of term: open that weekday and time, set the instructor, scope Rest of term from the anchor. The anchor must be that weekday.",
             "Example: Joel → Anas every Monday for the rest of Autumn = Edit term slot.",
             "To remove the service for the rest of term, use the Cancel a service lesson."
-          ]
+          ],
+          "es": {
+            "title": "Edit term slot (clientes fijos)",
+            "summary": "Cambia quien esta reservado el resto del term (o ese dia de la semana). Es clientes y plazas, no las horas del personal.",
+            "where": "Services & places → Edit term slot (o desde el nombre en Timetable → Edit term slot)",
+            "steps": [
+              "Abre Edit term slot para la sede, el dia de la semana y la franja.",
+              "Cambia el participante, la plaza libre, o la piscina / zona.",
+              "El alcance es el resto del term o los mismos dias de la semana. No es una excepcion de un solo dia.",
+              "La fecha ancla marca el dia de la semana. Para cancelar domingos, el ancla tiene que ser un domingo. Un ancla en miercoles cancela miercoles.",
+              "Rest of term from the anchor quita ese dia y los mismos dias de la semana que vienen despues. Los dias anteriores al ancla se quedan.",
+              "Pon la franja de hora antes de guardar. Pulsar la tarjeta Now elige la plaza. No cambia la fecha ancla.",
+              "Guarda. Services, Overview y los chips del padre se actualizan con el roster vivo."
+            ],
+            "tips": [
+              "Un solo dia es Schedule & Covers.",
+              "Every [weekday] until end of term tambien quita dias que ya se dieron. Usa Rest of term from the anchor cuando esos dias pasados tienen que quedarse.",
+              "Las horas de quien trabaja son Timetable (H&R), no Edit term slot.",
+              "Para sentar a un trabajador con un nino de Day Centre el resto del term: abre ese dia y esa hora, pon el instructor, alcance Rest of term from the anchor. El ancla tiene que ser ese dia de la semana.",
+              "Ejemplo: Joel a Anas todos los lunes el resto de Autumn = Edit term slot.",
+              "Para quitar el servicio el resto del term, usa la leccion Cancel a service."
+            ]
+          }
         },
         {
           "id": "cancel_service",
@@ -468,7 +684,27 @@
             "One session only: Schedule & Covers, not Edit term slot.",
             "Private pay-in-advance: 10% of the unused amount, minimum £25, maximum £100. Delivered sessions and a summer crash course stay paid. LA / NHS do not use this fee.",
             "Parents do not cancel the standing service from the parent hub. A one-day absence is Absents / Refunds and credits. The whole service is admin, Edit term slot, Cancel service."
-          ]
+          ],
+          "es": {
+            "title": "Cancelar un servicio (resto del term)",
+            "summary": "Quita una plaza fija desde una fecha ancla hacia delante. El ancla decide que dia de la semana se cancela.",
+            "where": "Services & places → Edit term slot",
+            "steps": [
+              "Abre Edit term slot en la plaza de ese cliente.",
+              "Accion: Cancel service.",
+              "Alcance: Rest of term (from anchor) cuando los dias ya dados tienen que quedarse.",
+              "Pon el ancla en una fecha que sea el mismo dia de la semana que el servicio. Una plaza de domingo necesita un ancla en domingo. Un ancla en miercoles cancela miercoles.",
+              "Pon la franja y guarda. Pulsar la tarjeta Now solo elige la plaza. No cambia el ancla.",
+              "Ese dia ancla y los mismos dias de la semana posteriores se caen. Los dias anteriores se quedan. La plaza sigue en el tablero como No participant y se abre en la oferta publica. El instructor recibe un aviso de roster por el primer dia cancelado.",
+              "Los padres ven un chip cancelado en esas fechas. Rest of term y Every weekday abren una hoja con el reembolso (pagado, sesiones ya dadas, 10% de administracion, lo que se devuelve y lo que no se va a cobrar). Confirm manda un mensaje al padre. La transferencia se devuelve igual. LA / NHS no llevan ese cargo de administracion."
+            ],
+            "tips": [
+              "Every [weekday] until end of term tambien quita dias ya dados. Usalo solo cuando todo ese dia de la semana tiene que irse, incluido el pasado.",
+              "Una sola sesion: Schedule & Covers, no Edit term slot.",
+              "Pago privado por adelantado: 10% de lo no usado, minimo 25 libras, maximo 100. Las sesiones ya dadas y un crash de verano siguen pagados. LA / NHS no usan esta tasa.",
+              "Los padres no cancelan el servicio fijo desde su portal. Una falta de un dia es Absents / Refunds and credits. El servicio entero es admin, Edit term slot, Cancel service."
+            ]
+          }
         }
       ]
     },
@@ -492,34 +728,81 @@
           ],
           "tips": [
             "Do not say former / alumni in office chat — say OLD.",
-            "Kareena returned Tue 15 Sep 2026 → CLIENT again."
-          ]
+            "Kareena counted through Sun 28 Sep 2026. From Tue 29 Sep 2026 she is OLD."
+          ],
+          "es": {
+            "title": "Cubos de participantes",
+            "summary": "Lenguaje de oficina: CLIENT, REGISTERED, LEADS, WAITING, OLD. Usa solo estas etiquetas.",
+            "where": "Cubos de personas en el menu / filtros de CLIENT",
+            "steps": [
+              "CLIENT: tiene servicio ahora (plazas de Autumn).",
+              "REGISTERED: termino el registro y nunca ha tenido plaza.",
+              "LEADS: pidio OTP o pregunto, y no termino el registro.",
+              "WAITING: quiere un servicio que esta lleno; esta en lista de espera.",
+              "OLD: fueron clientes pero no tienen plaza desde septiembre 2026 (por ejemplo la baja impagada de agosto)."
+            ],
+            "tips": [
+              "En la oficina no digas former ni alumni. Di OLD.",
+              "Kareena conto hasta el domingo 28 Sep 2026. Desde el martes 29 Sep 2026 es OLD."
+            ]
+          }
         },
         {
           "id": "leads_do",
           "title": "What you do with the people on Leads",
           "summary": "Leads are people who asked for an OTP code. Outcome says what they did next.",
           "where": "Services & places → Leads",
-          "keywords": ["what to do", "existing client", "otp", "outcome", "que hacer", "clientes"],
+          "keywords": [
+            "what to do",
+            "existing client",
+            "otp",
+            "outcome",
+            "que hacer",
+            "clientes"
+          ],
           "steps": [
             "The page opens on Portal OTP only. Each row is a parent who asked for a code.",
             "Outcome is the result of that lead. Only looked means they used the code and did not register. Registered means they finished the form. Already a client, only looked means they already had a place and came back. Already a client, registered again means they sent a new registration. Asked for a code means the code is not used yet.",
             "Filter Outcome to see one of those results. OTP leads is how many rows that filter is showing.",
-            "Track status is your office label. It does not change the outcome.",
-            "Tick a row only when you want to write to that parent. Send via Family broadcast, or Copy emails / Copy phones.",
+            "Track status is optional. Leave New. You do not work through those rows. Booked takes that email off the marketing list. It does not change Outcome.",
+            "Filter first with Search, Origin, Track status and Outcome. Write to this filter sits under those filters. Tick a row only when you want to write to that parent. Send via Family broadcast, or Copy emails / Copy phones.",
             "Email interest is an old office file. Open it from Origin only when you want a marketing send.",
             "Add / update potential client is only for a parent you type in by hand. Save potential does not give them a place."
           ],
           "tips": [
             "Visits to the Booking Portal are not on this page. A visit is not a lead."
-          ]
+          ],
+          "es": {
+            "title": "Que hacer con la gente de Leads",
+            "summary": "Leads son personas que pidieron un codigo OTP. Outcome dice que hicieron despues.",
+            "where": "Services & places → Leads",
+            "steps": [
+              "La pagina abre solo en Portal OTP. Cada fila es un padre o una madre que pidio un codigo.",
+              "Outcome es el resultado de ese lead. Only looked: uso el codigo y no se registro. Registered: termino el formulario. Already a client, only looked: ya tenia plaza y volvio. Already a client, registered again: mando un registro nuevo. Asked for a code: el codigo todavia no se ha usado.",
+              "Filtra Outcome para ver uno de esos resultados. OTP leads es cuantas filas ensena ese filtro.",
+              "Track status es opcional. Dejalo en New. No tienes que pasar fila por fila. Booked saca ese email de la lista de marketing. No cambia Outcome.",
+              "Filtra primero con Search, Origin, Track status y Outcome. Write to this filter va debajo de esos filtros. Marca una fila solo cuando quieras escribir a ese padre. Send via Family broadcast, o Copy emails / Copy phones.",
+              "Email interest es un archivo viejo de oficina. Abrelo en Origin solo cuando quieras un envio de marketing.",
+              "Add / update potential client es solo para un padre que escribes a mano. Save potential no le da una plaza."
+            ],
+            "tips": [
+              "Las visitas al Booking Portal no estan en esta pagina. Una visita no es un lead."
+            ]
+          }
         },
         {
           "id": "leads_what",
           "title": "What Leads is",
           "summary": "A lead is a parent who asked for an OTP code. Outcome is what happened next.",
           "where": "Services & places → Leads",
-          "keywords": ["leads", "visitors", "otp", "outcome", "email interest", "potential"],
+          "keywords": [
+            "leads",
+            "visitors",
+            "otp",
+            "outcome",
+            "email interest",
+            "potential"
+          ],
           "steps": [
             "This page is not the child list. A row is a parent who asked for a code.",
             "Outcome Only looked: they used the code and did not finish the form.",
@@ -530,35 +813,79 @@
           ],
           "tips": [
             "REGISTERED, under Services & places, is the child who finished the form and has no place. That is a different screen."
-          ]
+          ],
+          "es": {
+            "title": "Que es Leads",
+            "summary": "Un lead es un padre o una madre que pidio un codigo OTP. Outcome es lo que paso despues.",
+            "where": "Services & places → Leads",
+            "steps": [
+              "Esta pagina no es la lista de ninos. Una fila es un padre que pidio un codigo.",
+              "Outcome Only looked: uso el codigo y no termino el formulario.",
+              "Outcome Registered: termino el formulario de registro y todavia no tiene plaza.",
+              "Outcome Already a client, only looked: ya tiene un nino en clase y volvio sin un formulario nuevo.",
+              "Outcome Already a client, registered again: ya tiene un nino aqui y mando un registro nuevo.",
+              "Email interest es un archivo viejo de oficina, dentro de Origin. No es la lista de leads."
+            ],
+            "tips": [
+              "REGISTERED, en Services & places, es el nino que termino el formulario y no tiene plaza. Es otra pantalla."
+            ]
+          }
         },
         {
           "id": "leads_tools",
           "title": "What each block on Leads does",
           "summary": "The page opens on OTP leads. Outcome filters the table. The count is those rows.",
           "where": "Services & places → Leads",
-          "keywords": ["add potential", "outcome", "contact selection", "origin", "track status", "otp"],
+          "keywords": [
+            "add potential",
+            "outcome",
+            "contact selection",
+            "origin",
+            "track status",
+            "otp"
+          ],
           "steps": [
             "Add / update potential client is a form. You type a parent by hand: name, email, phone, activity, track status, and a note. Email is required. Save potential stores that parent.",
-            "Track status is your office label: New, Following up, Waiting, Not booking, Booked, or Closed. If it is anything other than Booked, that email joins the marketing outreach list.",
+            "Track status is optional. Leave it on New. Booked takes that email off the marketing list. Following up, Waiting, Not booking and Closed are only if you want your own mark. It does not change Outcome.",
             "OTP leads is the number of rows in the current filter. It is people, not visits.",
-            "Contact selection is for messages. The line under the title says how many you ticked, how many viewed a service, and how many are already a client.",
+            "Write to this filter sits under the filters. It is not a filter. The line says how many you ticked, how many viewed a service, and how many are already a client.",
             "Select all shown ticks every row in the current filter. Select viewed services ticks people who opened a service. Select existing clients ticks parents who already have a child here. Clear unticks. None of these book a place.",
             "Search looks at name, email, phone, and the enquiry note. Origin stays on Portal OTP only. The other origins are the old email file and people the office typed in. Outcome narrows the table. Refresh reloads it.",
             "Each table row is one parent. Outcome says what they did after the code. Open PDF opens a form when one is linked. The date is the last activity."
           ],
           "tips": [
             "Leave Origin on Portal OTP only. Email interest is only for a marketing send."
-          ]
+          ],
+          "es": {
+            "title": "Que hace cada bloque de Leads",
+            "summary": "La pagina abre en OTP leads. Outcome filtra la tabla. El numero son esas filas.",
+            "where": "Services & places → Leads",
+            "steps": [
+              "Add / update potential client es un formulario. Escribes a mano nombre, email, telefono, actividad, track status y una nota. El email es obligatorio. Save potential guarda a ese padre.",
+              "Track status es opcional. Dejalo en New. Booked saca ese email de la lista de marketing. Following up, Waiting, Not booking y Closed son solo si quieres tu propia marca. No cambia Outcome.",
+              "OTP leads es el numero de filas del filtro actual. Son personas, no visitas.",
+              "Write to this filter va debajo de los filtros. No es un filtro. La linea dice cuantos marcaste, cuantos vieron un servicio y cuantos ya son cliente.",
+              "Select all shown marca todas las filas del filtro. Select viewed services marca quien abrio un servicio. Select existing clients marca padres que ya tienen un nino aqui. Clear quita las marcas. Nada de esto reserva una plaza.",
+              "Search mira nombre, email, telefono y la nota. Origin se queda en Portal OTP only. Los otros origenes son el archivo viejo de emails y la gente que escribio la oficina. Outcome estrecha la tabla. Refresh la recarga.",
+              "Cada fila es un padre. Outcome dice que hizo despues del codigo. Open PDF abre un formulario cuando hay uno enlazado. La fecha es la ultima actividad."
+            ],
+            "tips": []
+          }
         },
         {
           "id": "leads_message",
           "title": "How to email or WhatsApp people on Leads",
-          "summary": "Tick rows, then send. That writes to the parent. It does not reserve a place.",
-          "where": "Services & places → Leads → Contact selection",
-          "keywords": ["broadcast", "copy emails", "copy phones", "whatsapp", "select"],
+          "summary": "Filter first, then tick rows and send. That writes to the parent. It does not reserve a place.",
+          "where": "Services & places → Leads → Write to this filter",
+          "keywords": [
+            "broadcast",
+            "copy emails",
+            "copy phones",
+            "whatsapp",
+            "select"
+          ],
           "steps": [
-            "Set Origin and the status filters so the table is the group you want.",
+            "Use Search, Origin, Track status and Outcome first, so the table is the group you want. Write to this filter is under those filters.",
             "Tick the rows, or use Select all shown, Select viewed services, or Select existing clients.",
             "Copy emails puts the ticked addresses on the clipboard. Copy phones does the same for numbers.",
             "Send via Family broadcast opens the family message with those people already chosen.",
@@ -566,14 +893,33 @@
           ],
           "tips": [
             "Family broadcast lives under Clients & Families → Family. Leads only chooses who receives it."
-          ]
+          ],
+          "es": {
+            "title": "Como escribir por email o WhatsApp a gente de Leads",
+            "summary": "Filtra primero, luego marca filas y envia. Eso escribe al padre. No reserva una plaza.",
+            "where": "Services & places → Leads → Write to this filter",
+            "steps": [
+              "Usa Search, Origin, Track status y Outcome primero, para que la tabla sea el grupo que quieres. Write to this filter va debajo de esos filtros.",
+              "Marca las filas, o usa Select all shown, Select viewed services o Select existing clients.",
+              "Copy emails copia los emails marcados. Copy phones hace lo mismo con los telefonos.",
+              "Send via Family broadcast abre el mensaje a familias con esa gente ya elegida.",
+              "Enviar un mensaje no reserva una plaza y no mueve al nino a REGISTERED ni a ACTIVE."
+            ],
+            "tips": [
+              "Family broadcast esta en Clients & Families → Family. Leads solo elige quien lo recibe."
+            ]
+          }
         },
         {
           "id": "leads_add",
           "title": "How to add a parent who never opened the portal",
           "summary": "Use Add / update potential client. They join the outreach list unless you mark them Booked.",
           "where": "Services & places → Leads → Add / update potential client",
-          "keywords": ["save potential", "new lead", "outreach"],
+          "keywords": [
+            "save potential",
+            "new lead",
+            "outreach"
+          ],
           "steps": [
             "Type the parent name, email, and phone. Email is required.",
             "Activity is a note such as Aquatic Wed. Enquiry / notes is whatever they asked.",
@@ -583,24 +929,60 @@
           ],
           "tips": [
             "Booked takes them off the automatic marketing list. Every other track status keeps them on it."
-          ]
+          ],
+          "es": {
+            "title": "Como anadir un padre que nunca abrio el portal",
+            "summary": "Usa Add / update potential client. Entra en la lista de contacto salvo que lo marques Booked.",
+            "where": "Services & places → Leads → Add / update potential client",
+            "steps": [
+              "Escribe nombre del padre, email y telefono. El email es obligatorio.",
+              "Activity es una nota, por ejemplo Aquatic Wed. Enquiry / notes es lo que preguntaron.",
+              "Deja track status en New salvo que ya sepas que no van a reservar, o que estan Booked.",
+              "Save potential. La fila sale en la tabla.",
+              "Para ver solo gente que escribio la oficina, pon Origin en Office potential clients."
+            ],
+            "tips": [
+              "Booked les saca de la lista automatica de marketing. Cualquier otro track status les deja dentro."
+            ]
+          }
         },
         {
           "id": "leads_not",
           "title": "What Leads is not",
           "summary": "Hold, lost slot, REGISTERED, and CFK LEADS are other screens.",
           "where": "Services & places → Leads",
-          "keywords": ["registered", "hold", "lost slot", "pay hold", "cfk"],
+          "keywords": [
+            "registered",
+            "hold",
+            "lost slot",
+            "pay hold",
+            "cfk"
+          ],
           "steps": [
             "REGISTERED is Services & places → REGISTERED. That child finished the registration form and has no place now. Service and Time slot stay empty. The date is the day they registered.",
-            "On that REGISTERED list, Booking status Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released. The chip sits under the name. You do not open Documents to see that.",
+            "On that REGISTERED list, Booking status stays REGISTERED. The Place filter next to it chooses All, Pay hold, Hold or Lost slot. Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released. The chip sits under the name.",
             "Someone who already has a place stays ACTIVE. They do not get the Pay hold, Hold, or Lost slot chip.",
             "CFK LEADS is a filter on the contacts table. It is the old Class for Kids file. It is not this Leads page.",
             "Lost slot on Finance is a family who re-enrolled and did not pay. That chip is on the invoice, not on Leads."
           ],
           "tips": [
             "The i on each page is the manual for that screen. Leads does not book a seat."
-          ]
+          ],
+          "es": {
+            "title": "Lo que Leads no es",
+            "summary": "Hold, lost slot, REGISTERED y CFK LEADS son otras pantallas.",
+            "where": "Services & places → Leads",
+            "steps": [
+              "REGISTERED es Services & places → REGISTERED. Ese nino termino el formulario y no tiene plaza ahora. Service y Time slot van vacios. La fecha es el dia en que se registro.",
+              "En esa lista REGISTERED, Booking status se queda en REGISTERED. El filtro Place, al lado, elige All, Pay hold, Hold o Lost slot. Pay hold: la plaza sigue retenida para el pago. Hold: retencion de oficina. Lost slot: la retencion acabo o la plaza se solto. El chip va bajo el nombre.",
+              "Quien ya tiene plaza se queda ACTIVE. No lleva el chip Pay hold, Hold ni Lost slot.",
+              "CFK LEADS es un filtro de la tabla de contactos. Es el archivo viejo de Class for Kids. No es esta pagina de Leads.",
+              "Lost slot en Finance es una familia que rehizo la inscripcion y no pago. Ese chip esta en la factura, no en Leads."
+            ],
+            "tips": [
+              "La i de cada pagina es el manual de esa pantalla. Leads no reserva una plaza."
+            ]
+          }
         },
         {
           "id": "leads_vs_registered",
@@ -624,12 +1006,29 @@
             "Add potential, Select all, Copy emails and Send via Family broadcast are for writing to those parents. They do not book a place.",
             "Outcome Already a client means that parent already has a child in class. Already a client, registered again means they sent a new form.",
             "REGISTERED is the contacts table. The child finished the form and has no place now. Service and Time slot stay empty. The date is the day they registered.",
-            "On REGISTERED, Booking status Pay hold, Hold and Lost slot filters that same table. Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released. The chip sits under the name. Someone who already has a place stays ACTIVE and does not get that chip.",
+            "On REGISTERED, Booking status stays REGISTERED. The Place filter next to it chooses Pay hold, Hold or Lost slot. Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released. The chip sits under the name. Someone who already has a place stays ACTIVE and does not get that chip.",
             "CFK LEADS is a filter on the contacts table, the old Class for Kids file. It is not the Leads page."
           ],
           "tips": [
             "Lost slot on Finance is a family who re-enrolled and did not pay. That chip is on the invoice, not on this Leads page."
-          ]
+          ],
+          "es": {
+            "title": "Leads y REGISTERED",
+            "summary": "Leads es quien pidio un codigo OTP. REGISTERED es un nino que termino el formulario y no tiene plaza.",
+            "where": "Services & places → Leads, y Services & places → REGISTERED",
+            "steps": [
+              "Leads no es una segunda lista de ninos. Son padres que pidieron un codigo OTP. La pagina abre con esa gente.",
+              "OTP leads cuenta esos padres. No son visitas. Email interest es un archivo viejo dentro de Origin, solo para un envio de marketing.",
+              "Add potential, Select all, Copy emails y Send via Family broadcast sirven para escribir a esos padres. No reservan una plaza.",
+              "Outcome Already a client quiere decir que ese padre ya tiene un nino en clase. Already a client, registered again quiere decir que mando un formulario nuevo.",
+              "REGISTERED es la tabla de contactos. El nino termino el formulario y no tiene plaza ahora. Service y Time slot van vacios. La fecha es el dia en que se registro.",
+              "En REGISTERED, Booking status se queda en REGISTERED. El filtro Place, al lado, elige Pay hold, Hold o Lost slot. Pay hold: la plaza sigue retenida para el pago. Hold: retencion de oficina. Lost slot: la retencion acabo o la plaza se solto. El chip va bajo el nombre. Quien ya tiene plaza se queda ACTIVE y no lleva ese chip.",
+              "CFK LEADS es un filtro de la tabla de contactos, el archivo viejo de Class for Kids. No es la pagina Leads."
+            ],
+            "tips": [
+              "Lost slot en Finance es una familia que rehizo la inscripcion y no pago. Ese chip esta en la factura, no en esta pagina de Leads."
+            ]
+          }
         },
         {
           "id": "clients_list",
@@ -670,7 +1069,7 @@
             "Funding and Payment come from the invoice. VAT 20% means the family pays (Using Private funds). No VAT and the family pays means Using LA funds (Exempt). No VAT and the office bills the council or NHS means LA/NHS funded. Summer is used when that is the invoice on file. Each funding type and each payment method has its own colour.",
             "OLD CLIENTS were in summer 2026, or had a September service, and are not here now. Set Funding to All funding to see the whole list.",
             "Someone who was never in summer is not OLD CLIENTS. A registration in September with no service stays REGISTERED. A Class for Kids waiting request with no booking stays old waiting list. A Class for Kids booking from September 2025 through August 2026 is OLD CLIENTS. The Class for Kids file with no booking in that window, and no waiting request, stays under CFK LEADS.",
-            "WAITING LIST under Services & places is this same table. Booking status WAITING LIST shows portal waiting list and old waiting list together. portal waiting list is the Booking Portal queue from 12 Aug 2026 onward. old waiting list is the workbook queue from before that. Someone who already has a service is off old waiting list and stays ACTIVE. Source shows Booking Portal or Workbook. Funding and Payment are hidden. Newest join is at the top. A child who already has a service can also be on portal waiting list for another place. OTP with no finished registration stays in LEADS, not on these lists.",
+            "WAITING LIST under Services & places is this same table. Booking status stays WAITING LIST. The Waiting list filter next to it chooses All, Portal (Booking Portal from 12 Aug 2026), or Before the portal (CFK and the workbook from before that). Someone who already has a service is off Before the portal and stays ACTIVE. Source shows Booking Portal or Workbook. Funding and Payment are hidden. Newest join is at the top. A child who already has a service can also be on the Portal waiting list for another place. OTP with no finished registration stays in LEADS, not on these lists.",
             "REGISTERED: filled the registration form, no term place, not on a waiting list. The Registered column is the day they registered, newest at the top. Someone who only comes to crash courses stays here, with Service set to Crash courses, so you can offer them a term place.",
             "CFK LEADS: the Class for Kids contact file. Funding and Payment stay hidden. Age comes from the date of birth on that file. Service says Class for Kids. The time column is the first and last booking date from that file, when the file has them. The line under the status says Class for Kids file.",
             "On Trial / Trialled: someone who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. Newest session is at the top. They stay ACTIVE as well when they took a term place afterwards.",
@@ -687,7 +1086,40 @@
             "A shared first name does not share a photo. Each row keeps that child's own face.",
             "The Registered column is the registration date on the contact. If that date is empty, it is the day the child was added in the portal. Date of birth is not that day. If neither date is on file, the cell says Not on file.",
             "A one-word name on the bookings is one child. Another child with that first name does not take the place."
-          ]
+          ],
+          "es": {
+            "title": "Lista CLIENT y fichas",
+            "summary": "ACTIVE, WAITING, OLD CLIENTS, REGISTERED y CFK LEADS son filtros distintos. Alguien en WAITING no sale tambien en REGISTERED.",
+            "where": "Clients & Families → Clients → Active",
+            "steps": [
+              "Clients & Families abre Active, Progress y Reports. WAITING LIST y REGISTERED estan en Services & places, al lado de Places y Leads. REGISTERED es la misma tabla de contactos que Active, filtrada a quien termino el formulario y nunca ha tenido plaza. Registration Form, en Documents, es cada formulario del Booking Portal, tambien gente que ya esta en clase. Esa pagina no es LEADS. En Family estan Achievement photos, Family broadcast, Portal PINs (Family) y Dashboard Teleport (Family). WhatsApp, P, S, C y A son los botones de la barra. El titulo va a la izquierda. Back va a la derecha.",
+              "La i al lado del titulo abre para que sirve la pagina y los pasos de Office help. Ese texto no se queda en la pagina.",
+              "ACTIVE: tiene plaza ahora. Una plaza cancelada no es ACTIVE. ACTIVE va bajo el nombre, con la fecha de nacimiento.",
+              "Support es el ratio, por ejemplo 1:1. Funding y Payment son columnas distintas. Funding es solo una de tres: Using Private funds (VAT 20%), Using LA funds (Exempt), o LA/NHS funded.",
+              "Payment puede ser mas de uno. Los nombres son Bank Transfer (One off-Manually), Bank Transfer (Flexi-Manually), Apple Pay/Stripe, GoCardless, BACS (Ealing), Monthly Arrears (NHS), Monthly Arrears (NHS/ILA), Monthly Arrears (H&F) y Payment Link. Payment Link es una factura marcada payment link que esta pagada o pagada en parte. Un checkout de Stripe en ese enlace sigue siendo Payment Link. Un enlace sin pagar no cuenta. Si Bookings and Payments tiene dos pagadores para el mismo nino, salen los dos chips. Ealing es BACS (Ealing). NHS/ILA, incluido un viernes pagado por ellos, es Monthly Arrears (NHS/ILA).",
+              "Filtra Funding y Payment en la pagina CLIENT. Un filtro de pago deja a quien tiene ese metodo, aunque tenga otro tambien.",
+              "Funding y Payment salen de la factura. VAT 20% quiere decir que paga la familia (Using Private funds). Sin VAT y paga la familia quiere decir Using LA funds (Exempt). Sin VAT y la oficina factura al council o al NHS quiere decir LA/NHS funded. Summer se usa cuando esa es la factura que hay. Cada tipo de funding y cada metodo de pago tiene su color.",
+              "OLD CLIENTS estuvieron en verano 2026, o tuvieron un servicio en septiembre, y ahora no estan. Pon Funding en All funding para ver la lista entera.",
+              "Quien nunca estuvo en verano no es OLD CLIENTS. Un registro de septiembre sin servicio se queda REGISTERED. Una peticion de espera de Class for Kids sin reserva se queda en old waiting list. Una reserva de Class for Kids de septiembre 2025 a agosto 2026 es OLD CLIENTS. El archivo de Class for Kids sin reserva en esa ventana, y sin peticion de espera, se queda en CFK LEADS.",
+              "WAITING LIST en Services & places es esta misma tabla. Booking status se queda en WAITING LIST. El filtro Waiting list, al lado, elige All, Portal (Booking Portal desde el 12 Aug 2026), o Before the portal (CFK y el workbook de antes). Quien ya tiene un servicio sale de Before the portal y se queda ACTIVE. Source dice Booking Portal o Workbook. Funding y Payment van ocultos. El alta mas reciente va arriba. Un nino que ya tiene un servicio puede estar tambien en la lista Portal para otra plaza. OTP sin registro terminado se queda en LEADS, no en estas listas.",
+              "REGISTERED: relleno el formulario, no tiene plaza de term, y no esta en lista de espera. La columna Registered es el dia en que se registro, el mas reciente arriba. Quien solo viene a crash courses se queda aqui, con Service en Crash courses, para poder ofrecerle una plaza de term.",
+              "CFK LEADS: el archivo de contactos de Class for Kids. Funding y Payment van ocultos. La edad sale de la fecha de nacimiento de ese archivo. Service dice Class for Kids. La columna de hora es la primera y la ultima fecha de reserva de ese archivo, cuando el archivo las tiene. La linea bajo el estado dice Class for Kids file.",
+              "On Trial / Trialled: alguien que reservo un trial y tiene una sesion de trial. Booked es el dia en que reservo. Service y Time slot son ese trial, no la plaza que tiene ahora. Trial session es solo el dia, mas On Trial o Trialled. Una sesion que todavia no ha llegado es On Trial. Una sesion ya dada es Trialled. La sesion mas reciente va arriba. Siguen ACTIVE tambien si despues cogieron una plaza de term.",
+              "Search encuentra un nombre aunque Booking status sea otra lista. La linea bajo los filtros dice en que lista esta esa persona.",
+              "Un nombre corto de las reservas sale en la fila de ese nino cuando es la misma persona. Dos medias seguidas el mismo dia se ven como una hora. La sede va entre parentesis despues de la hora, por ejemplo Tuesday, 3:30 pm to 5:00 pm (SWIMFARM).",
+              "La edad usa la fecha de nacimiento. Si el contacto no tiene fecha, la lista usa la linea de nacimiento del registro (Clients Info).",
+              "Contacto, email, telefono y edad salen del registro de contacto del nino. Un nombre corto del roster sigue ensenando a ese padre y esos datos.",
+              "Una etiqueta de grupo, como un bloque de Day Centre, no es un cliente extra cuando los ninos de ese grupo ya estan en la lista. El martes ACAT 11-12 sale como Aquatic Activity en cada miembro, en SwimFarm.",
+              "Direct Payments va bajo Using LA funds (Exempt). Paga la familia. LA/NHS funded quiere decir que la oficina factura a la autoridad.",
+              "La columna Photo es la foto de ese nino. La foto que el padre subio o cambio en el portal es la que se ve. Hasta entonces se ve la foto de oficina, si la hay. Si no hay foto de ninguno de los dos lados, salen las iniciales.",
+              "No pongas WAITING, REGISTERED, CFK LEADS ni OLD CLIENTS en Sessions como ninos reservados."
+            ],
+            "tips": [
+              "Un nombre de pila compartido no comparte foto. Cada fila guarda la cara de ese nino.",
+              "La columna Registered es la fecha de registro del contacto. Si esa fecha esta vacia, es el dia en que se anadio el nino en el portal. La fecha de nacimiento no es ese dia. Si no hay ninguna de las dos, la celda dice Not on file.",
+              "Un nombre de una sola palabra en las reservas es un nino. Otro nino con ese nombre de pila no se queda la plaza."
+            ]
+          }
         },
         {
           "id": "participant_photo_missing",
@@ -716,8 +1148,8 @@
         },
         {
           "id": "waiting_list",
-          "title": "portal waiting list and old waiting list",
-          "summary": "Same queue as WAITING LIST. From 12 Aug 2026 it is portal waiting list. Before that it is old waiting list.",
+          "title": "One waiting list, then Portal or before",
+          "summary": "Booking status stays WAITING LIST. The Waiting list filter splits Portal from Before the portal.",
           "where": "Services & places → WAITING LIST",
           "keywords": [
             "waiting",
@@ -736,9 +1168,9 @@
             "mas nuevo"
           ],
           "steps": [
-            "Open Services & places → WAITING LIST. It is the same table as Active, with Booking status WAITING LIST.",
-            "WAITING LIST shows portal waiting list and old waiting list together. portal waiting list is Booking Portal from 12 Aug 2026. old waiting list is the workbook from before that day.",
-            "Use Booking status to see only portal waiting list or only old waiting list. Those two are filters inside WAITING LIST. It is the same table, not a second one.",
+            "Open Services & places → WAITING LIST. Booking status stays WAITING LIST. It is the same table as Active.",
+            "The Waiting list filter next to Booking status chooses All, Portal (from 12 Aug 2026), or Before the portal (CFK and the workbook from before that day).",
+            "Portal and Before the portal are that filter, not extra rows in Booking status. It is the same table.",
             "Source is Booking Portal or Workbook. It is the same split as the WAITING page.",
             "The list is newest join at the top and oldest at the bottom. Not on file sits at the bottom.",
             "Funding and Payment are hidden. They fill in on ACTIVE when the child has a service.",
@@ -749,7 +1181,27 @@
           ],
           "tips": [
             "Keep both waiting lists separate from LEADS and REGISTERED."
-          ]
+          ],
+          "es": {
+            "title": "Una lista de espera, luego Portal o antes",
+            "summary": "Booking status se queda en WAITING LIST. El filtro Waiting list separa Portal de Before the portal.",
+            "where": "Services & places → WAITING LIST",
+            "steps": [
+              "Abre Services & places → WAITING LIST. Booking status se queda en WAITING LIST. Es la misma tabla que Active.",
+              "El filtro Waiting list, al lado de Booking status, elige All, Portal (desde el 12 Aug 2026), o Before the portal (CFK y el workbook de antes de ese dia).",
+              "Portal y Before the portal van en ese filtro, no como filas extra de Booking status. Es la misma tabla.",
+              "Source es Booking Portal o Workbook. Es el mismo corte que la pagina WAITING.",
+              "La lista pone arriba quien se apunto mas reciente y abajo el mas antiguo. Not on file se queda abajo.",
+              "Funding y Payment van ocultos. Se rellenan en ACTIVE cuando el nino tiene un servicio.",
+              "Un nino que ya tiene un servicio puede estar tambien en portal waiting list para otra plaza.",
+              "old waiting list quita a quien ya tiene un servicio. Esos se quedan en ACTIVE.",
+              "OTP sin registro terminado se queda en LEADS. No anadas un filtro solo de OTP en esta lista.",
+              "Cuando se abre una plaza (Services / Edit term slot / finish-booking), pasalos por el camino de oferta de siempre."
+            ],
+            "tips": [
+              "Deja las dos listas de espera separadas de LEADS y de REGISTERED."
+            ]
+          }
         },
         {
           "id": "parent_vs_office",
@@ -825,7 +1277,14 @@
           "title": "Create and share an invoice",
           "summary": "Build a family invoice in Portal Finance and send the pay / view link.",
           "where": "Finance → Finance",
-          "keywords": ["invoice", "create invoice", "share invoice", "finance", "pay link", "factura"],
+          "keywords": [
+            "invoice",
+            "create invoice",
+            "share invoice",
+            "finance",
+            "pay link",
+            "factura"
+          ],
           "demos": [
             {
               "demo": "finance",
@@ -840,28 +1299,78 @@
           ],
           "tips": [
             "Keep finish-booking copy free of suitability wording."
-          ]
+          ],
+          "es": {
+            "title": "Crear y compartir una factura",
+            "summary": "Monta una factura de familia en Finance y manda el enlace de pago o de ver.",
+            "where": "Finance → Create invoice",
+            "steps": [
+              "Abre Create invoice. El titulo de la pantalla es Create invoice, no Finance.",
+              "Busca el contacto, elige al participante, el modo de VAT, el importe, la cantidad y el vencimiento.",
+              "Los campos de LA salen cuando el modo es LA / NHS. Mid-term y la subida del PDF van cerrados hasta que los abras.",
+              "Comparte el enlace por WhatsApp o email con las herramientas del portal.",
+              "Sigue el estado hasta que este pagada o hasta el siguiente aviso."
+            ],
+            "tips": [
+              "En el texto del enlace de finish-booking no pongas frases de suitability.",
+              "Create invoice y Xero products no son los tres botones de la fila de Finance. Esos tres son Re-enrolments, Payments y Absents."
+            ]
+          }
         },
         {
           "id": "validate_paid",
           "title": "Validate / mark paid",
           "summary": "Confirm payment so the family and ops state match.",
           "where": "Finance → Finance (payments / invoice status)",
-          "keywords": ["mark paid", "validate paid", "bank payment", "stripe", "tide", "confirm payment"],
+          "keywords": [
+            "mark paid",
+            "validate paid",
+            "bank payment",
+            "stripe",
+            "tide",
+            "confirm payment"
+          ],
           "steps": [
             "Open the invoice or payment row.",
             "Confirm bank / Stripe payment as your process requires.",
             "Mark paid / validate so re-enrol and booking status update.",
             "If a finish-booking trial was waiting, check Overview for the first session date."
           ],
-          "tips": []
+          "tips": [],
+          "es": {
+            "title": "Validar / marcar pagado",
+            "summary": "Confirma el pago para que la familia y la oficina coincidan.",
+            "where": "Finance → Payments, o Re-enrolments & Bookings",
+            "steps": [
+              "Abre la fila de la factura o del pago.",
+              "Confirma el pago de banco o de Stripe segun el camino.",
+              "Mark paid / valida para que re-enrolment y el estado de la reserva se actualicen.",
+              "Si un trial de finish-booking estaba esperando, mira Overview en la fecha de la primera sesion.",
+              "Despues de una transferencia, el padre tiene que avisar a la oficina. Un toque en el enlace no marca el pago solo."
+            ],
+            "tips": [
+              "Payment Link es una factura marcada como payment link que esta pagada o pagada en parte. Un enlace sin pagar no cuenta."
+            ]
+          }
         },
         {
           "id": "refunds_credits",
           "title": "Absents, refunds and credits",
           "summary": "Decide missed sessions: no action, credit, refund path, or close.",
           "where": "Finance → Refunds & credits (or Pending → absents)",
-          "keywords": ["refund", "credit", "absent", "absents", "cancel credit", "decide absent", "no instructor", "sin instructor", "cancelar", "club cancel", "instructor cancelled"],
+          "keywords": [
+            "refund",
+            "credit",
+            "absent",
+            "absents",
+            "cancel credit",
+            "decide absent",
+            "no instructor",
+            "sin instructor",
+            "cancelar",
+            "club cancel",
+            "instructor cancelled"
+          ],
           "steps": [
             "One day with no instructor: Schedule and Covers, that date, Change on the child's card, then Cancelled. Do not use Absent. Absent is the family missing the session.",
             "In Reason write that there is no instructor and ask the parent to reply refund or credit. Save. That day only is cancelled. The standing service stays.",
@@ -874,7 +1383,25 @@
             "The automatic cancel WhatsApp does not choose refund or credit. Put the question in Reason so the parent can reply.",
             "Private pay-in-advance cancellation: unused prepaid can be refunded with a fee of 10% of the unused amount (minimum £25, maximum £100). Sessions already delivered, including a summer crash course, stay paid. LA / NHS do not use this fee.",
             "Cancelling the standing place is Edit term slot. Set the anchor to a date on that weekday, then Rest of term from the anchor."
-          ]
+          ],
+          "es": {
+            "title": "Faltas, reembolsos y creditos",
+            "summary": "Decide las sesiones perdidas: nada, credito, camino de reembolso, o cerrar.",
+            "where": "Finance → Absents, refunds & credits",
+            "steps": [
+              "Un dia sin instructor: Schedule & Covers, esa fecha, Change en la tarjeta del nino, y luego Cancelled. No uses Absent. Absent es la familia que falta a la sesion.",
+              "En Reason escribe que no hay instructor y pide al padre que conteste refund o credit. Guarda. Solo ese dia se cancela. El servicio fijo se queda.",
+              "El padre recibe un WhatsApp de que la sesion esta cancelada, con esa nota. La fila cae en Absents, refunds and credits.",
+              "Cuando el padre contesta, abre esa fila. Elige Credit o Refund, y luego Approve. En un refund pon el importe de la sesion. En un credit pon el mismo importe, o dejalo en blanco para un credito de sesion sin cifra.",
+              "Approve escribe el libro de la familia y manda el mensaje del resultado. Makeup solo si piden otro dia."
+            ],
+            "tips": [
+              "Las faltas y cancelaciones de septiembre en adelante comparten una sola cola de decision.",
+              "El WhatsApp automatico de cancelacion no elige refund ni credit. Pon la pregunta en Reason para que el padre pueda contestar.",
+              "Cancelacion de pago privado por adelantado: lo no usado se puede devolver con una tasa del 10% de lo no usado (minimo 25 libras, maximo 100). Las sesiones ya dadas, incluido un crash de verano, siguen pagadas. LA / NHS no usan esta tasa.",
+              "Cancelar la plaza fija es Edit term slot. Pon el ancla en una fecha de ese dia de la semana, y luego Rest of term from the anchor."
+            ]
+          }
         },
         {
           "id": "makeup",
@@ -929,7 +1456,22 @@
           "tips": [
             "API WhatsApp number — not the company mobile.",
             "Template portal_parent_update covers common drafts."
-          ]
+          ],
+          "es": {
+            "title": "Avisos a padres / WhatsApp",
+            "summary": "Envia plantillas aprobadas (pago, falta, borradores de makeup, etc.).",
+            "where": "Communications → Parent notify / herramientas de WhatsApp de staff",
+            "steps": [
+              "Abre parent notify o la herramienta de WhatsApp de esa familia.",
+              "Usa una plantilla Meta aprobada cuando WhatsApp la pida.",
+              "Revisa el texto. Respeta el largo de la plantilla.",
+              "Envia y mira el registro de avisos si no llega."
+            ],
+            "tips": [
+              "El numero de WhatsApp API no es el movil de la empresa.",
+              "La plantilla portal_parent_update cubre los borradores habituales."
+            ]
+          }
         },
         {
           "id": "announcements",
@@ -1079,9 +1621,50 @@
     {
       "id": "hr",
       "title": "H&R",
-      "blurb": "Formal workers, timetable, and worker documents. Onboarding and interviews are under Potential workers.",
+      "blurb": "Formal workers, timetable, Documents, Finance and Policies. Onboarding and interviews are under Potential workers.",
       "priority": 2,
       "lessons": [
+        {
+          "id": "hr_files_menu",
+          "title": "Documents, Finance and Policies",
+          "summary": "H&R lists three screens. Each screen has buttons to move between what is inside.",
+          "where": "H&R → Files",
+          "keywords": [
+            "documents",
+            "finance",
+            "policies",
+            "timesheets",
+            "payslips",
+            "expenses",
+            "pay rates",
+            "payroll",
+            "nominas",
+            "politicas"
+          ],
+          "steps": [
+            "Open H&R. Under Files you see Documents, Finance, Policies, and Day Centre documents.",
+            "Documents is the worker files. The buttons on that page switch Timesheets, Expenses, Checklists, Passports, Certificates, First aid and the rest.",
+            "Finance is pay. The buttons switch Timesheets, Payslips, Expenses, Pay rates and Payroll.",
+            "Policies switches between the Policies portal and Policy sign-offs."
+          ],
+          "tips": [
+            "Certificates and passports are buttons inside Documents. They are not separate lines in the menu."
+          ],
+          "es": {
+            "title": "Documents, Finance y Policies",
+            "summary": "H&R tiene tres pantallas. Cada una lleva botones para moverse por lo que hay dentro.",
+            "where": "H&R → Files",
+            "steps": [
+              "Abre H&R. En Files estan Documents, Finance, Policies y Day Centre documents.",
+              "Documents son los archivos del trabajador. Los botones cambian Timesheets, Expenses, Checklists, Passports, Certificates, First aid y el resto.",
+              "Finance es el pago. Los botones cambian Timesheets, Payslips, Expenses, Pay rates y Payroll.",
+              "Policies cambia entre Policies portal y Policy sign-offs."
+            ],
+            "tips": [
+              "Certificates y passports son botones dentro de Documents. No son lineas sueltas del menu."
+            ]
+          }
+        },
         {
           "id": "timetable",
           "title": "Timetable (staff hours / rota)",
@@ -1214,6 +1797,203 @@
           ]
         },
         {
+          "id": "staff_portal_search",
+          "title": "Staff portal search",
+          "summary": "Search is the first button in the staff Quick menu. It finds a page and opens it.",
+          "where": "Staff portal, Quick menu, top",
+          "keywords": [
+            "lupa",
+            "search",
+            "buscar",
+            "timesheet",
+            "session disruption",
+            "staff portal"
+          ],
+          "steps": [
+            "On the staff app, open Quick menu. Search is the first button, at the top.",
+            "Type the page. Timesheet, time sheet, session disruption, day off, expenses, policies, payslip and comms all match.",
+            "Tap Open. That opens the same screen as the Quick menu button.",
+            "A page that is hidden for that worker does not appear. Leads-only tools stay hidden for everyone else."
+          ],
+          "tips": [
+            "Search does not book a place and does not change Today."
+          ],
+          "es": {
+            "title": "Buscador del portal de staff",
+            "summary": "Search es el primer boton del Quick menu de staff. Encuentra una pagina y la abre.",
+            "where": "Portal de staff, Quick menu, arriba",
+            "steps": [
+              "En la app de staff, abre Quick menu. Search es el primer boton, arriba del todo.",
+              "Escribe la pagina. Timesheet, time sheet, session disruption, day off, expenses, policies, payslip y comms coinciden.",
+              "Pulsa Open. Abre la misma pantalla que el boton del Quick menu.",
+              "Una pagina oculta para ese trabajador no sale. Las herramientas solo de leads siguen ocultas para el resto."
+            ],
+            "tips": [
+              "Search no reserva una plaza y no cambia Today."
+            ]
+          }
+        },
+        {
+          "id": "what_runs_by_itself",
+          "title": "What runs by itself",
+          "summary": "The CEO page lists the jobs the portal does without a button: clocks, payments, and pushes.",
+          "where": "CEO portal, Company insights, What runs by itself",
+          "keywords": [
+            "automation",
+            "automatizacion",
+            "cron",
+            "solo",
+            "what runs",
+            "pay hold",
+            "weekly notes",
+            "feedback whatsapp",
+            "gocardless",
+            "stripe"
+          ],
+          "steps": [
+            "Open the CEO portal.",
+            "Under Company insights, open What runs by itself.",
+            "Read English and Spanish on the same page.",
+            "On a clock: pay hold every 2 minutes, trial offers every 10 minutes, own-arrangement buffer about 06:00, office missing-feedback push at 21:00, staff feedback WhatsApp at 20:00 and 20:30 (Saturday 18:00 and 18:30), timesheet WhatsApp at 23:00 on the 24th, parent weekly notes Tuesday evening and Saturday morning.",
+            "When something happens: Stripe or GoCardless payment finishes the booking path. A saved cover or schedule change pushes staff. Outstanding feedback lights the halo. It does not lock the app.",
+            "A new place, New client, a cover, a day off, an invoice, Xero products, an announcement and Family broadcast still need a person."
+          ],
+          "tips": [
+            "The page explains the jobs. It does not start them or stop them.",
+            "Pay hold, trial offers, the 06:00 buffer and the 21:00 office push are on the saved clock. Staff feedback WhatsApp is on. The timesheet reminder and weekly notes are built for those times.",
+            "The 15 Aug 2026 unpaid release and the 26 Jun 2026 payroll email are finished. They do not repeat."
+          ],
+          "es": {
+            "title": "Lo que corre solo",
+            "summary": "La pagina del CEO lista los trabajos que el portal hace sin un boton: relojes, pagos y avisos.",
+            "where": "Portal CEO, Company insights, What runs by itself",
+            "steps": [
+              "Abre el portal CEO.",
+              "En Company insights, abre What runs by itself.",
+              "Lee ingles y espanol en la misma pagina.",
+              "Con reloj: pay hold cada 2 minutos, ofertas de trial cada 10 minutos, buffer de own arrangement sobre las 06:00, push a la oficina del feedback que falta a las 21:00, WhatsApp de feedback al staff a las 20:00 y 20:30 (sabado 18:00 y 18:30), WhatsApp de timesheet a las 23:00 el dia 24, notas semanales de padres el martes por la tarde y el sabado por la manana.",
+              "Cuando pasa algo: un pago Stripe o GoCardless sigue el camino de cerrar la reserva. Un cover o cambio de horario guardado avisa al staff. El feedback pendiente enciende el halo. No bloquea la app.",
+              "Una plaza nueva, New client, un cover, un day off, una factura, productos de Xero, un anuncio y Family broadcast siguen necesitando una persona."
+            ],
+            "tips": [
+              "La pagina explica los trabajos. No los enciende ni los apaga.",
+              "Pay hold, ofertas de trial, el buffer de las 06:00 y el push de las 21:00 estan en el reloj guardado. El WhatsApp de feedback al staff esta encendido. El timesheet y las notas semanales estan hechos para esas horas.",
+              "La suelta del 15 ago 2026 y el email de nomina del 26 jun 2026 ya terminaron. No se repiten."
+            ]
+          }
+        },
+        {
+          "id": "admin_comms_stays",
+          "title": "Admin Comms stays in admin",
+          "summary": "The yellow C in the admin header opens Communications inside the admin page. The full screen with a way out is the staff app.",
+          "where": "Admin header, yellow C",
+          "keywords": [
+            "comms",
+            "comunicaciones",
+            "c button",
+            "admin comms",
+            "staff portal"
+          ],
+          "steps": [
+            "In admin, tap the yellow C in the header.",
+            "Communications opens in the admin page, under the same header as P, S and A.",
+            "Leave it by opening another admin screen. There is no separate Communications page to exit.",
+            "On the staff app, C still opens the full Communications screen."
+          ],
+          "tips": [
+            "A new Comms message toast in admin also opens inside admin."
+          ],
+          "es": {
+            "title": "Comms de admin se queda en admin",
+            "summary": "La C amarilla del header de admin abre Communications dentro de la pagina de admin. La pantalla completa, con salida, es la app de staff.",
+            "where": "Header de admin, C amarilla",
+            "steps": [
+              "En admin, pulsa la C amarilla del header.",
+              "Communications se abre en la pagina de admin, bajo el mismo header que P, S y A.",
+              "Sales abriendo otra pantalla de admin. No hay una pagina aparte de Communications de la que salir.",
+              "En la app de staff, la C sigue abriendo la pantalla completa de Communications."
+            ],
+            "tips": [
+              "Un aviso de mensaje nuevo de Comms en admin tambien se abre dentro de admin."
+            ]
+          }
+        },
+        {
+          "id": "admin_bell_popup",
+          "title": "Alerts bell is a popup",
+          "summary": "The bell opens a large popup in the middle of admin. Each alert title and detail is big enough to read.",
+          "where": "Admin header, bell",
+          "keywords": [
+            "bell",
+            "campana",
+            "alerts",
+            "alertas",
+            "popup"
+          ],
+          "steps": [
+            "Tap the bell in the admin header.",
+            "The alerts open in a popup over the page. The page behind goes dim.",
+            "Read the title and the detail on each row. Tap a row to open that screen.",
+            "Tap the dim area, or the bell again, to close the popup."
+          ],
+          "tips": [
+            "The number on the bell is how many alerts are in the popup."
+          ],
+          "es": {
+            "title": "La campana es un popup",
+            "summary": "La campana abre un popup grande en el centro del admin. El titulo y el detalle de cada alerta se leen en grande.",
+            "where": "Header de admin, campana",
+            "steps": [
+              "Pulsa la campana del header de admin.",
+              "Las alertas se abren en un popup encima de la pagina. El fondo se oscurece.",
+              "Lee el titulo y el detalle de cada fila. Pulsa una fila para abrir esa pantalla.",
+              "Pulsa la zona oscura, o la campana otra vez, para cerrar el popup."
+            ],
+            "tips": [
+              "El numero de la campana es cuantas alertas hay en el popup."
+            ]
+          }
+        },
+        {
+          "id": "announcements_inbox",
+          "title": "Announcements like WhatsApp",
+          "summary": "The red A opens announcements as conversations. Each group is a chat. Open a message to see who signed and who has not.",
+          "where": "Admin header, red A",
+          "keywords": [
+            "announcements",
+            "reminders",
+            "anuncios",
+            "firmado",
+            "signed",
+            "whatsapp"
+          ],
+          "steps": [
+            "Tap the red A in the admin header.",
+            "The left list is the groups the messages went to: All staff, Leads, a role, or one person.",
+            "Open a group. Each send is a message in that chat.",
+            "Tap a message. Signed and Not signed are on the same page.",
+            "Announcement and Reminder at the top start a new send. Edit changes the open message."
+          ],
+          "tips": [
+            "Reminders use Marked read and Not marked. Announcements use Signed and Not signed."
+          ],
+          "es": {
+            "title": "Anuncios como WhatsApp",
+            "summary": "La A roja abre los anuncios como conversaciones. Cada grupo es un chat. Abre un mensaje para ver quien firmo y quien no.",
+            "where": "Header de admin, A roja",
+            "steps": [
+              "Pulsa la A roja del header de admin.",
+              "La lista de la izquierda son los grupos a los que se mando: All staff, Leads, un rol, o una persona.",
+              "Abre un grupo. Cada envio es un mensaje de ese chat.",
+              "Pulsa un mensaje. Firmados y No firmados estan en la misma pagina.",
+              "Announcement y Reminder arriba empiezan un envio nuevo. Edit cambia el mensaje abierto."
+            ],
+            "tips": [
+              "Los reminders dicen Marked read y Not marked. Los anuncios dicen Signed y Not signed."
+            ]
+          }
+        },
+        {
           "id": "timesheet_what_counts",
           "title": "What the timesheet counts",
           "summary": "Hours on the timesheet follow the shift and the feedbacks. You do not type granted hours by hand.",
@@ -1283,7 +2063,26 @@
           ],
           "tips": [
             "REGISTERED under Services & places is only people who finished the form and have never had a place. LEADS started OTP and did not finish the form. Climbing registrations and Parent consents stay under Documents."
-          ]
+          ],
+          "es": {
+            "title": "Registration Form",
+            "summary": "Todos los formularios del Booking Portal, tambien gente que ya esta en clase. No es la lista REGISTERED, y no es LEADS. El paquete es el PDF, la foto y el enlace de pago.",
+            "where": "Clients & Families → Documents → Registration Form",
+            "steps": [
+              "Abre Registration Form en Documents. Cada fila es un formulario que entro por el Booking Portal. La gente que ya esta en clase tambien sale aqui. No es la lista REGISTERED de Services & places, y no es LEADS.",
+              "El registro de cliente nuevo es el PDF y la foto, para que la oficina los lea. El padre termina funding y pago despues, en el enlace de finish-booking.",
+              "Place es solo el estado vivo: REGISTERED only, WAITING, Pay hold, Awaiting Tide, In class, o Did not finish.",
+              "La franja elegida no esta en esta tabla. Llega en el aviso de pay-hold y en el aviso de oficina I have paid.",
+              "Despues de una transferencia el padre tiene que escribir por WhatsApp o email a la oficina. Un toque solo no cambia el admin.",
+              "Luego mira Tide, Mark paid en Re-enrolments and Bookings, y manda el PIN.",
+              "Mark reviewed quiere decir que abriste el PDF. Resend finish link si lo perdieron.",
+              "Climbing forms y Parent consents estan en Clients & Families, Documents. Registration Form tambien esta ahi.",
+              "No los pongas como ninos reservados en Sessions hasta que sean CLIENT."
+            ],
+            "tips": [
+              "REGISTERED en Services & places es solo gente que termino el formulario y nunca ha tenido plaza. LEADS pidio OTP y no termino el formulario. Climbing registrations y Parent consents se quedan en Documents."
+            ]
+          }
         },
         {
           "id": "consents_policies",
@@ -1420,6 +2219,31 @@
           "tips": [
             "New-hire invite emails use the staff host, not portalvic or clubsensational.org home."
           ]
+        },
+        {
+          "id": "ceo_menu_from_settings",
+          "title": "CEO menu and what left Settings",
+          "summary": "Staff readiness, Activity log and Portal activity are on the CEO menu. Alerts and Office help stay in the top bar.",
+          "where": "CEO portal menu, and admin top bar",
+          "keywords": [
+            "ceo",
+            "settings",
+            "ajustes",
+            "alerts inbox",
+            "campana",
+            "office help",
+            "staff readiness",
+            "activity log",
+            "portal activity"
+          ],
+          "steps": [
+            "Open the CEO portal. Under Company insights is Activity log. Next to Parents in portal is Portal activity, then Staff readiness.",
+            "Those three open the same admin screens. They are not in the admin Settings menu.",
+            "Alerts inbox is the bell in the admin top bar. It is not a Settings item.",
+            "Office help is the link on Operations Hub and the i on each page. It is not a Settings item.",
+            "Settings still has Settings, Staff push devices, Device notifications, the other portals, and Log out."
+          ],
+          "tips": []
         },
         {
           "id": "booking_connected_and_pay_hold",

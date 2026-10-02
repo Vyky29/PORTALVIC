@@ -53,15 +53,15 @@
 
   // Stat-card filters for actual file types (Portal PINs is a separate screen).
   var STAT_CARDS = [
-    { key: 'timesheet', label: 'Timesheets' },
-    { key: 'expense', label: 'Expenses' },
-    { key: 'checklist', label: 'Checklists' },
-    { key: 'passport', label: 'Passports' },
-    { key: 'righttowork', label: 'Right to work' },
-    { key: 'certificate', label: 'Certificates' },
-    { key: 'dbs', label: 'DBS' },
-    { key: 'firstaid', label: 'First aids' },
-    { key: 'safeguarding', label: 'Safeguarding' }
+    { key: 'timesheet', label: 'Timesheets', icon: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/>' },
+    { key: 'expense', label: 'Expenses', icon: '<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>' },
+    { key: 'checklist', label: 'Checklists', icon: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>' },
+    { key: 'passport', label: 'Passports', icon: '<rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="10" r="3"/><line x1="9" y1="17" x2="15" y2="17"/>' },
+    { key: 'righttowork', label: 'Right to work', icon: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>' },
+    { key: 'certificate', label: 'Certificates', icon: '<circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/>' },
+    { key: 'dbs', label: 'DBS', icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' },
+    { key: 'firstaid', label: 'First aids', icon: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="9.5" y1="13.5" x2="14.5" y2="13.5"/>' },
+    { key: 'safeguarding', label: 'Safeguarding', icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>' }
   ];
 
   var state = {
@@ -1247,6 +1247,7 @@
     return STAT_CARDS.map(function (c) {
       return (
         '<button type="button" class="portal-documents-statcard" data-portal-doc-filter="' + esc(c.key) + '">' +
+        '<span class="portal-documents-statcard-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + c.icon + '</svg></span>' +
         '<span class="portal-documents-statcard-num" data-portal-doc-stat="' + esc(c.key) + '">0</span>' +
         '<span class="portal-documents-statcard-label">' + esc(c.label) + '</span>' +
         '</button>'
@@ -1257,12 +1258,15 @@
   function styleHtml() {
     return (
       '<style>' +
-      '#portalDocumentsRoot .portal-documents-statrow{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 16px}' +
-      '#portalDocumentsRoot .portal-documents-statcard{flex:1 1 120px;min-width:110px;background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;cursor:pointer;text-align:left;transition:border-color .12s,box-shadow .12s}' +
+      '#portalDocumentsRoot{max-width:100%;min-width:0;box-sizing:border-box}' +
+      '#portalDocumentsRoot .portal-documents-statrow{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 16px;justify-content:center;width:100%;max-width:100%;min-width:0;box-sizing:border-box}' +
+      '#portalDocumentsRoot .portal-documents-statcard{flex:1 1 0;min-width:92px;max-width:160px;min-height:0;background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;text-align:center;transition:border-color .12s,box-shadow .12s;box-sizing:border-box}' +
       '#portalDocumentsRoot .portal-documents-statcard:hover{border-color:var(--brand,#2563eb)}' +
       '#portalDocumentsRoot .portal-documents-statcard.is-active{border-color:var(--brand,#2563eb);box-shadow:0 0 0 2px rgba(37,99,235,.18)}' +
-      '#portalDocumentsRoot .portal-documents-statcard-num{font-size:22px;font-weight:800;color:var(--ink,#0f172a);line-height:1.1}' +
-      '#portalDocumentsRoot .portal-documents-statcard-label{font-size:12px;color:var(--muted,#64748b);text-transform:uppercase;letter-spacing:.03em;overflow-wrap:break-word}' +
+      '#portalDocumentsRoot .portal-documents-statcard-ico{display:flex;align-items:center;justify-content:center;width:28px;height:28px;color:#2563eb;flex:0 0 auto}' +
+      '#portalDocumentsRoot .portal-documents-statcard-ico svg{width:22px;height:22px;display:block}' +
+      '#portalDocumentsRoot .portal-documents-statcard-num{font-size:22px;font-weight:800;color:var(--ink,#0f172a);line-height:1.1;text-align:center}' +
+      '#portalDocumentsRoot .portal-documents-statcard-label{font-size:12px;color:var(--muted,#64748b);text-transform:uppercase;letter-spacing:.03em;overflow-wrap:break-word;text-align:center;max-width:100%}' +
       '#portalDocumentsRoot .portal-documents-upload-card{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-radius:14px;padding:16px 18px;margin:0 0 16px;min-width:0}' +
       '#portalDocumentsRoot .portal-documents-upload-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end;min-width:0}' +
       '#portalDocumentsRoot .portal-documents-upload-card label{display:block;font-size:12px;font-weight:700;color:var(--muted,#64748b);margin:0 0 6px;text-transform:uppercase;letter-spacing:.03em}' +
@@ -1307,14 +1311,17 @@
   }
 
   function viewHtml() {
+    var embed = global.__portalDocsHideChrome === true;
+    global.__portalDocsHideChrome = false;
     return (
       '<div id="portalDocumentsRoot" class="portal-documents-embed portal-day-ops-embed" data-portal-documents-bound="0">' +
       styleHtml() +
+      (embed ? '' :
       '<h1 class="page-title">Documents</h1>' +
-      '<p class="page-intro" id="portalDocumentsMeta">Attach files for a worker (certificate, passport, right to work, checklist, etc.), plus timesheets, expenses and onboarding uploads. Payslips stay under <strong>Payslips</strong>.</p>' +
+      '<p class="page-intro" id="portalDocumentsMeta">Attach files for a worker (certificate, passport, right to work, checklist, etc.), plus timesheets, expenses and onboarding uploads. The buttons below switch the file type. Payslips are under H&amp;R, Finance.</p>') +
       '<div id="portalDocumentsExpenseBanner" hidden></div>' +
       '<div id="portalDocumentsStatus" class="portal-forms-status" role="status"></div>' +
-      '<div class="portal-documents-upload-card">' +
+      (embed ? '' : '<div class="portal-documents-upload-card">' +
       '<h2 style="margin:0 0 12px;font-size:16px;color:var(--ink,#0f172a)">Attach file for worker</h2>' +
       '<form id="portalDocumentsUploadForm">' +
       '<div class="portal-documents-upload-grid">' +
@@ -1337,12 +1344,12 @@
       '<button type="submit" class="btn btn--pri" id="portalDocumentsUploadSubmit">Attach to My Documents</button>' +
       '<span class="muted" style="font-size:12px;min-width:0;overflow-wrap:break-word">Visible in the worker’s staff app under My Documents.</span>' +
       '</div>' +
-      '</form></div>' +
+      '</form></div>') +
       '<div class="portal-documents-toolbar">' +
       '<input type="search" class="inp" id="portalDocumentsSearch" placeholder="Search files, names…" style="max-width:280px;min-width:0" />' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalDocumentsRefresh">Refresh</button>' +
       '</div>' +
-      '<div class="portal-documents-statrow">' + statCardsHtml() + '</div>' +
+      (embed ? '' : '<div class="portal-documents-statrow">' + statCardsHtml() + '</div>') +
       '<div class="portal-documents-main">' +
       '<div class="portal-documents-listcol">' +
       '<div class="portal-forms-table-wrap">' +

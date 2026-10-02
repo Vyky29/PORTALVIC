@@ -10345,6 +10345,68 @@
       pointer-events:auto;
       gap:4px;
     }
+    #menuSheet .menu-search-launch{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      width:100%;
+      min-width:0;
+      margin:0 0 12px;
+      padding:12px 14px;
+      border:1px solid rgba(23,50,71,.16);
+      border-radius:14px;
+      background:#fff;
+      color:var(--muted,#5b6b7c);
+      font:inherit;
+      font-size:15px;
+      font-weight:650;
+      text-align:left;
+      cursor:pointer;
+      box-sizing:border-box;
+    }
+    #menuSheet .menu-search-launch__icon{
+      display:flex;
+      flex:0 0 auto;
+      width:22px;
+      height:22px;
+      color:var(--ink,#173247);
+    }
+    #menuSheet .menu-search-launch__icon svg{width:22px;height:22px;display:block}
+    #menuSheet .menu-search-launch__label{min-width:0;overflow-wrap:break-word}
+    .staff-search-field{
+      width:100%;
+      max-width:100%;
+      box-sizing:border-box;
+      min-width:0;
+      margin:0 0 12px;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(23,50,71,.16);
+      font:inherit;
+      font-size:16px;
+    }
+    .staff-search-list{display:flex;flex-direction:column;gap:8px;min-width:0}
+    .staff-search-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      width:100%;
+      min-width:0;
+      text-align:left;
+      border:1px solid rgba(23,50,71,.12);
+      background:#fff;
+      border-radius:12px;
+      padding:10px 12px;
+      font:inherit;
+      color:inherit;
+      cursor:pointer;
+    }
+    .staff-search-row__copy{flex:1 1 auto;min-width:0}
+    .staff-search-row__name,.staff-search-row__where{display:block;overflow-wrap:break-word}
+    .staff-search-row__name{font-weight:750}
+    .staff-search-row__where{margin-top:2px;font-size:12px;color:var(--muted,#5b6b7c)}
+    .staff-search-row__go{flex:0 0 auto;font-size:12px;font-weight:750;color:var(--blue,#1d4e89)}
+    .staff-search-empty{margin:0;font-size:13px;line-height:1.4;color:var(--muted,#5b6b7c);overflow-wrap:break-word}
     .dock-nav-item{
       flex:1;
       min-width:0;

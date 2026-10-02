@@ -34,9 +34,11 @@
   var SCOPE = {
     client: {
       form_type: 'client_registration',
-      title: 'Registered',
+      title: 'Registration Form',
       intro:
-        'REGISTERED means the registration form is done and they have never been a CLIENT. ' +
+        'Registration Form is every form that came in through the Booking Portal. It is not the REGISTERED list, and it is not LEADS. ' +
+        'A row can already be in class, on a trial, waiting, or still REGISTERED. The pay link and Mark reviewed stay here because this page is tied to booking and payment. ' +
+        'REGISTERED in Clients is only people who finished the form and have never had a place. LEADS started OTP and did not finish the form. ' +
         'New-client registration is the PDF and the photo, for the office to read. There is no Accept step. Parents finish funding and payment later on the finish-booking link. ' +
         'Place is live only: REGISTERED only, WAITING, Pay hold, Awaiting Tide, In class, or Did not finish. The chosen slot is not on this table. It arrives in the pay-hold and I have paid office alerts. ' +
         'After a bank transfer the parent must WhatsApp or email the office. A tap alone does not change admin. Then check Tide, Mark paid in Re-enrolments and Bookings, and send the PIN. ' +
@@ -54,7 +56,7 @@
       intro:
         'Climbing registration forms use the same pay-first flow as client registration. The finish-booking link goes out on submit. There is no Accept step. ' +
         'The office gets a note by email and reviews the PDF after they pay. ' +
-        'Client forms are on Registered. Annual consents are on Parent consents.',
+        'Client forms are on Registration Form. Annual consents are on Parent consents.',
       empty: 'No climbing registration forms yet.',
       emptyFiltered: 'No climbing registration forms matched this participant yet.',
       hostId: 'portalClimbingRegsHost',
