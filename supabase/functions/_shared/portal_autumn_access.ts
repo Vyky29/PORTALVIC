@@ -29,7 +29,26 @@ const SAME_AUTUMN_CHILD: Record<string, string> = {
   "adam mahmmoud": "adam ma",
   "adam mahmoud": "adam ma",
   "adam ab": "adam abed",
+  "adam p": "adam pilcher",
+  "adam pi": "adam pilcher",
+  "amaar ah": "amaar ahmed",
+  "amar rai": "amar-rai singh",
+  "arthur ma": "arthur manners",
+  "arthur mo": "arthur morrissey",
+  "aydaan ah": "aydaan ahmed",
+  "eddie mc": "eddie mckenzie iglesias",
+  "jack s": "jack stratton",
+  "jack w": "jack walker",
+  "khalid ab": "khalid abdulla",
+  "rayan ta": "rayan thapa",
+  "tom": "thomas (tom) eriksson",
+  "thomas (tom)": "thomas (tom) eriksson",
+  "yusef": "yusuf ahmed",
+  "yusuf ah": "yusuf ahmed",
 };
+
+/** Weekday timetable still seats these. Their roster rows are all before Sep 2026, so the date filter would drop them. */
+const TIMETABLE_NAMES_STILL_SEATED = ["fadi"];
 
 function autumnPersonKey(raw: unknown): string {
   const name = normPersonName(raw);
@@ -56,6 +75,7 @@ export async function loadAutumnClientNames(
     if (dated && dated < AUTUMN_TERM_FROM) continue;
     names.add(name);
   }
+  for (const extra of TIMETABLE_NAMES_STILL_SEATED) names.add(autumnPersonKey(extra));
   return names;
 }
 
