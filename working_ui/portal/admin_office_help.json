@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v131",
+  "version": "2026-10-02-v132",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -407,12 +407,13 @@
             "Open Operations Hub. Schedule and Covers, Sessions overview, Places and the calendar stay at the top.",
             "Today stays under that: Register, Lead report, Incidents, Venue review, Pick up / drop off, and Absents.",
             "Open another category is the sheet under Today. The chips are Services and places, Families, Finance, Formal workers and Potential workers. Today does not move when you change the sheet.",
+            "Click the category title (the Open label next to Today, Finance, Families and the rest) to open that whole section. Finance then shows Xero, Tide and Other, with every button in the category. Back to dashboard returns to the hub.",
             "WhatsApp, P (family messages), S (staff messages), C (Comms) and A (Announcements) stay in the top bar. They are not cards on the board.",
             "WhatsApp is green. P is dark green. C is yellow, the same yellow as the staff Comms button. S is orange. A is red.",
             "When that lane has unread messages, the button lights up and shows the number. A number on Announcements is live notices from the last 7 days."
           ],
           "tips": [
-            "Finance on this board is Re-enrolments, Payments, and Absents, refunds and credits. Create invoice and Xero products stay in the Finance menu."
+            "The sheet shows a short row. Open on the title shows every button in that category, including Create invoice and Xero products under Finance."
           ],
           "es": {
             "title": "Operations Hub: Today y luego una hoja",
@@ -422,12 +423,13 @@
               "Abre Operations Hub. Schedule and Covers, Sessions overview, Places y el calendario se quedan arriba.",
               "Today se queda debajo: Register, Lead report, Incidents, Venue review, Pick up / drop off y Absents.",
               "Open another category es la hoja bajo Today. Los chips son Services and places, Families, Finance, Formal workers y Potential workers. Today no se mueve al cambiar la hoja.",
+              "Pulsa el titulo de la categoria (la palabra Open junto a Today, Finance, Families y el resto) para abrir la seccion entera. Finance muestra Xero, Tide y Other, con todos los botones. Back to dashboard vuelve al hub.",
               "WhatsApp, P (mensajes de familia), S (mensajes de staff), C (Comms) y A (Announcements) siguen en la barra. No son tarjetas del tablero.",
               "WhatsApp es verde. P es verde oscuro. C es amarillo, el mismo amarillo que el boton Comms de staff. S es naranja. A es rojo.",
               "Cuando ese canal tiene mensajes sin leer, el boton se ilumina y muestra el numero. Un numero en Announcements son avisos vivos de los ultimos 7 dias."
             ],
             "tips": [
-              "Finance en este tablero es Re-enrolments, Payments, y Absents, refunds and credits. Create invoice y Xero products siguen en el menu Finance."
+              "La hoja muestra una fila corta. Open en el titulo abre todos los botones de esa categoria, incluidos Create invoice y Xero products en Finance."
             ]
           }
         }
