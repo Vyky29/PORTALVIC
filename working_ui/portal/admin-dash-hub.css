@@ -3885,13 +3885,22 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 @media (min-width:981px){
   .ops-hub--today-first .ops-hub__today{
     align-items:stretch;
+    grid-template-rows:210px;
   }
-  .ops-hub--today-first .ops-hub__today > .ops-hub__feature{
-    height:210px;
-    min-height:210px;
-    max-height:210px;
+  .ops-hub--today-first .ops-hub__today > .ops-hub__feature,
+  .ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
+    height:100%;
+    min-height:0;
+    max-height:100%;
     align-self:stretch;
+    box-sizing:border-box;
   }
+}
+.ops-hub--today-first .ops-hub__today > .ops-hub__feature{
+  background:#ff8ec4;
+  border-color:#f472b6;
+  color:#9d174d;
+  --dh-tile-fg:#be185d;
 }
 .ops-hub-today-strip{
   margin:0;
