@@ -3925,3 +3925,60 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 .ops-hub--today-first .ops-hub-panel--today.dash-hub__panel{
   padding-top:10px;
 }
+
+/* Boxes match Sessions Overview cards: white, thin border. Colour stays on the icon and the title. */
+.ops-hub--today-first .ops-hub__today > .ops-hub__feature,
+.ops-hub--today-first .ops-hub-panel--today .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--services .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--families .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--finance .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--formal .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--potential .dash-hub__tile{
+  background:#fff;
+  border:1px solid #d9e3ee;
+  border-radius:10px;
+  color:#243447;
+  box-shadow:none;
+}
+.ops-hub--today-first .ops-hub__today > .ops-hub__feature{
+  --dh-tile-fg:#be185d;
+}
+.ops-hub--today-first .ops-hub-panel--today .dash-hub__tile{--dh-tile-fg:#db2777}
+.ops-hub--today-first .ops-hub-panel--services .dash-hub__tile{--dh-tile-fg:#d97706}
+.ops-hub--today-first .ops-hub-panel--families .dash-hub__tile{--dh-tile-fg:#7c3aed}
+.ops-hub--today-first .ops-hub-panel--finance .dash-hub__tile{--dh-tile-fg:#0f766e}
+.ops-hub--today-first .ops-hub-panel--formal .dash-hub__tile{--dh-tile-fg:#ef4444}
+.ops-hub--today-first .ops-hub-panel--potential .dash-hub__tile{--dh-tile-fg:#0284c7}
+.ops-hub--today-first .ops-hub__feature .dash-hub__tile-label,
+.ops-hub--today-first .dash-hub__tile .dash-hub__tile-label{
+  color:#243447;
+}
+.ops-hub--today-first .ops-hub__today > .ops-hub__feature:hover,
+.ops-hub--today-first .ops-hub__today > .ops-hub__feature:focus-visible,
+.ops-hub--today-first .ops-hub-sheet .dash-hub__tile:hover,
+.ops-hub--today-first .ops-hub-sheet .dash-hub__tile:focus-visible,
+.ops-hub--today-first .ops-hub-fixed .dash-hub__tile:hover,
+.ops-hub--today-first .ops-hub-fixed .dash-hub__tile:focus-visible{
+  background:#fff;
+  border-color:#9aa8b8;
+}
+.ops-hub--today-first .ops-hub-cat,
+.ops-hub--today-first .ops-hub-cat.is-on{
+  background:#fff;
+  border:1px solid #d9e3ee;
+  border-radius:10px;
+  box-shadow:none;
+  color:var(--ops-cat-ink,#142033);
+}
+.ops-hub--today-first .ops-hub-cat.is-on{
+  border:2px solid var(--ops-cat,#0e4d6e);
+}
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"]{
+  color:#b91c1c;
+}
+.ops-hub--today-first .ops-hub-cat.is-on .admin-nav-ico{
+  color:var(--ops-cat,#142033);
+}
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"] .admin-nav-ico{
+  color:#ef4444;
+}
