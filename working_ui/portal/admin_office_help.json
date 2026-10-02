@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v142",
+  "version": "2026-10-02-v143",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -619,6 +619,18 @@
           "title": "Edit term slot (standing clients)",
           "summary": "Change who is booked for the rest of term (or that weekday pattern). This is clients/places — not staff hours.",
           "where": "Services & places → Edit term slot (or from Timetable name → Edit term slot)",
+          "keywords": [
+            "swap",
+            "intercambiar",
+            "cruzar",
+            "domingo",
+            "hub",
+            "pool",
+            "eiji",
+            "hazem",
+            "available",
+            "plaza ocupada"
+          ],
           "steps": [
             "Open Edit term slot for the venue, weekday and time band.",
             "Change the participant, open seat, or pool / area as needed.",
@@ -634,7 +646,8 @@
             "Staff who-works hours → Timetable (H&R), not Edit term slot.",
             "To seat a worker with a Day Centre child for the rest of term: open that weekday and time, set the instructor, scope Rest of term from the anchor. The anchor must be that weekday.",
             "Example: Joel → Anas every Monday for the rest of Autumn = Edit term slot.",
-            "To remove the service for the rest of term, use the Cancel a service lesson."
+            "To remove the service for the rest of term, use the Cancel a service lesson.",
+            "Swapping two children who already sit in each other's halves (pool at 11.00, Hub at 11.45, then they switch) is not this screen. Available only lists empty seats. Schedule and Covers is one date, and Move to another slot today does not exchange two booked seats. Gabriel and Cyrus from Sun 27 Sep is that standing Sunday order. The instructors stay on their times. Only the children change seats."
           ],
           "es": {
             "title": "Edit term slot (clientes fijos)",
@@ -655,7 +668,8 @@
               "Las horas de quien trabaja son Timetable (H&R), no Edit term slot.",
               "Para sentar a un trabajador con un nino de Day Centre el resto del term: abre ese dia y esa hora, pon el instructor, alcance Rest of term from the anchor. El ancla tiene que ser ese dia de la semana.",
               "Ejemplo: Joel a Anas todos los lunes el resto de Autumn = Edit term slot.",
-              "Para quitar el servicio el resto del term, usa la leccion Cancel a service."
+              "Para quitar el servicio el resto del term, usa la leccion Cancel a service.",
+            "Cruzar a dos ninos que ya ocupan las medias del otro (piscina a las 11.00, Hub a las 11.45, y luego al reves) no se hace aqui. Available solo lista plazas vacias. Schedule and Covers es un dia, y Move to another slot today no intercambia dos plazas ocupadas. Gabriel y Cyrus desde el domingo 27 Sep es ese orden fijo de los domingos. Los instructores se quedan en su hora. Solo cambian los ninos."
             ]
           }
         },
