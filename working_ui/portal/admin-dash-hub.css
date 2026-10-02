@@ -3680,7 +3680,8 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 /* One box colour. Menu colour stays on the icon and the title. */
 .ops-hub--today-first{
   --ops-tile-h:156px;
-  --ops-box:#fff;
+  --ops-box:#c5dcf2;
+  --ops-panel:#e7f3fb;
 }
 .ops-hub--today-first .ops-hub__today{
   grid-template-columns:repeat(6,minmax(0,1fr));
@@ -3748,8 +3749,27 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   width:32px;
   height:32px;
 }
+.dash-hub--ops-hub.ops-hub.ops-hub--today-first{
+  --ops-panel:#d4e8f8;
+}
+.ops-hub--today-first .dash-hub__panel{
+  background:#d4e8f8;
+  border-color:#b7d0e6;
+}
 .ops-hub--today-first .dash-hub__panel-ico{
-  background:#f8fafc;
+  background:var(--ops-box);
+}
+.ops-hub--today-first .ops-hub__today-item--calendar{
+  background:var(--ops-box);
+  border-color:#b7d0e6;
+}
+.ops-hub--today-first .ops-hub__today-item--calendar:hover,
+.ops-hub--today-first .ops-hub__today-item--calendar:focus-visible{
+  background:#b7d4ee;
+}
+.ops-hub--today-first .ops-hub-cal-day{
+  background:#eef6fc;
+  border-color:#d3e6f5;
 }
 .ops-hub--today-first .dash-hub__panel-jump{
   width:auto;
@@ -3770,9 +3790,9 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   margin-left:10px;
   align-self:center;
   padding:5px 12px;
-  border:1px solid #e2e8f0;
+  border:1px solid #b7d0e6;
   border-radius:999px;
-  background:#fff;
+  background:var(--ops-box);
   font-size:12px;
   line-height:1.2;
   letter-spacing:.08em;
@@ -3791,6 +3811,7 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   border:1px solid #e2e8f0;
 }
 .ops-hub--today-first .ops-hub-cat.is-on{
+  background:#a9cce8;
   border-color:var(--ops-cat,#94a3b8);
   box-shadow:inset 0 0 0 1px var(--ops-cat,#94a3b8);
 }
