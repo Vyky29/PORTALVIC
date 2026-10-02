@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-today-fill" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-hub-menu-color" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -31379,7 +31379,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function opsHubCatButtonsHtml(active){
       return OPS_HUB_CATS.filter(function(c){ return c.id !== 'today'; }).map(function(c){
         var on = c.id === active;
-        return '<button type="button" class="ops-hub-cat'+(on ? ' is-on' : '')+'" data-ops-hub-cat="'+esc(c.id)+'" data-cat="'+esc(c.id)+'" role="tab" aria-selected="'+(on ? 'true' : 'false')+'">'+esc(c.label)+'</button>';
+        return '<button type="button" class="ops-hub-cat'+(on ? ' is-on' : '')+'" data-ops-hub-cat="'+esc(c.id)+'" data-cat="'+esc(c.id)+'" role="tab" aria-selected="'+(on ? 'true' : 'false')+'">'+adminNavIconHtml(c.icon)+'<span class="ops-hub-cat__label">'+esc(c.label)+'</span></button>';
       }).join('');
     }
     function opsHubCatBoardHtml(id){
@@ -31388,7 +31388,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         title: cat.label,
         subtitle: cat.sub,
         iconId: cat.icon,
-        panelClass: cat.panel,
+        panelClass: cat.panel+' ops-hub-panel--'+cat.id,
         gridClass: 'dash-hub__grid--5',
         tiles: opsHubDashTilesHtml(opsHubCatActions(cat.id), cat.tone),
         ariaLabel: cat.label
