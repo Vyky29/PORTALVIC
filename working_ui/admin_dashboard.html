@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-hub-phone4" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-hub-phone5" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -2603,7 +2603,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v147')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v148')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -31465,11 +31465,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var btn = t && t.closest ? t.closest('[data-ops-hub-cat]') : null;
           if(!btn) return;
           var next = btn.getAttribute('data-ops-hub-cat') || 'services';
-          if(next === 'today' || state.opsHubCat === next) return;
+          if(next === 'today') return;
           ev.preventDefault();
-          state.opsHubCat = next;
           var chips = document.getElementById('opsHubCats');
           var board = document.getElementById('opsHubCatBoard');
+          var sheetEl = document.querySelector('.ops-hub--today-first > .ops-hub-sheet');
+          if(opsHubPhoneCatAccordion()){
+            var opening = !(state.opsHubCatOpen && state.opsHubCat === next);
+            state.opsHubCat = next;
+            state.opsHubCatOpen = opening;
+            if(chips) chips.innerHTML = opsHubCatButtonsHtml(opening ? next : '');
+            if(opening && board) board.innerHTML = opsHubCatBoardHtml(next);
+            if(sheetEl) sheetEl.classList.toggle('is-cat-open', opening);
+            return;
+          }
+          if(state.opsHubCat === next) return;
+          state.opsHubCat = next;
           if(chips) chips.innerHTML = opsHubCatButtonsHtml(next);
           if(board) board.innerHTML = opsHubCatBoardHtml(next);
         });
@@ -31688,6 +31699,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         'sessions_pickup'
       ];
     }
+    function opsHubPhoneCatAccordion(){
+      try{
+        return window.matchMedia('(max-width: 720px)').matches;
+      }catch(_){
+        return false;
+      }
+    }
     function opsHubSheetCatId(){
       var id = state.opsHubCat || 'services';
       if(id === 'today') id = 'services';
@@ -31748,6 +31766,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       var sheet = opsHubSheetCatId();
+      var phoneAcc = opsHubPhoneCatAccordion();
+      var sheetOpen = !phoneAcc || !!state.opsHubCatOpen;
       window.__ADMIN_PAGE_INFO = { viewId: 'nav_hub', title: 'Operations Hub', intro: '', lessonIds: ['ops_hub_chips'] };
       return (
         '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub ops-hub--today-first">' +
@@ -31761,9 +31781,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         opsHubTodayStripHtml() +
         opsHubGlanceHtml() +
         '<section class="ops-hub-fixed" aria-label="Today">'+opsHubCatBoardHtml('today', { omitHead: true })+'</section>' +
-        '<section class="ops-hub-sheet" aria-label="Open another category">' +
+        '<section class="ops-hub-sheet'+(sheetOpen ? ' is-cat-open' : '')+'" aria-label="Open another category">' +
         '<h2 class="ops-hub-sheet__title">Open another category</h2>' +
-        '<div class="ops-hub-cats" id="opsHubCats" role="tablist" aria-label="Other categories">'+opsHubCatButtonsHtml(sheet)+'</div>' +
+        '<div class="ops-hub-cats" id="opsHubCats" role="tablist" aria-label="Other categories">'+opsHubCatButtonsHtml(sheetOpen ? sheet : '')+'</div>' +
         '<div class="dash-hub__stack ops-hub__body ops-hub__body--flat" id="opsHubCatBoard">'+opsHubCatBoardHtml(sheet)+'</div>' +
         '</section>' +
         '</div>'

@@ -4144,7 +4144,27 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
     text-align:center;
   }
   .ops-hub--today-first > .ops-hub-sheet{
+    flex:0 0 auto;
     min-height:0;
+    padding:0;
+    border:none;
+    border-radius:0;
+    background:transparent;
+  }
+  .ops-hub--today-first #opsHubCatBoard{
+    display:none;
+  }
+  .ops-hub--today-first > .ops-hub-sheet.is-cat-open{
+    flex:1 1 auto;
+    margin-top:6px;
+    padding:8px;
+    border:1px solid var(--ops-line, #e2e8f0);
+    border-radius:16px;
+    background:#fff;
+  }
+  .ops-hub--today-first > .ops-hub-sheet.is-cat-open #opsHubCatBoard{
+    display:flex;
+    margin-top:6px;
   }
   .ops-hub--today-first .ops-hub-sheet .dash-hub__grid{
     grid-template-columns:repeat(2,minmax(0,1fr));
