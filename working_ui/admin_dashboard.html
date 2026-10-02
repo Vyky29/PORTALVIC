@@ -22388,9 +22388,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(n === 'patrick' || n === 'patrick dhennin') return true;
       if(n === 'thushyan' || n === 'thushyan suthakaran' || n === 'thusian') return true;
       if(n === 'yassir' || n === 'yassir boujettif' || n === 'yasser') return true;
+      if(n === 'summer messing') return true;
+      if(n === 'summer'){
+        var summerParent = String((p && (p.parentDisplay || (p.reg && p.reg.carer))) || '').trim().toLowerCase();
+        if(summerParent.indexOf('messing') >= 0) return true;
+      }
+      if(n === 'chaitanya' || n === 'chaitanya marasini') return true;
       return false;
     }
-    /** Crash courses only. Not a term place, so they stay REGISTERED and can be offered one. */
+    /** Crash courses label on the service column. Summer Messing is OLD, not REGISTERED. */
     function paxContactsCrashOnlyClient(p){
       var n = String((p && p.name) || '').trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
       if(n === 'summer messing') return true;
@@ -22403,7 +22409,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var seats = 0;
       try{ seats = paxContactsCurrentSeatBands(p).length; }catch(_seats){ seats = 0; }
       var live = paxContactsLiveRow(p);
-      if(paxContactsCrashOnlyClient(p)) return 'registered';
       if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
       if(live && live.in_class === true) return st === 'trial' ? 'trial' : 'programme_in';
       if(paxContactsWasSummer2026(p) || paxContactsStartedSeptember(p) || paxContactsNamedOldClient(p) || paxContactsHadAutumn25OrLaterBooking(p)) return 'booking_history';
@@ -23600,6 +23605,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         };
       }
       if(!bands.length && p._cfkContact) return paxContactsCfkHistoryCells(p);
+      if(!bands.length && paxContactsNamedOldClient(p) && paxContactsTrialsForPerson(p).length){
+        return paxContactsTrialServiceSlotCells(p);
+      }
       if(!bands.length) return empty;
       var svc = bands.map(function(b){
         var prog = String(b.programme || '').trim() || 'Service';
@@ -23837,6 +23845,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               ? { label: 'Lost slot', bg: '#fee2e2', fg: '#991b1b' }
               : null;
         if(placeMeta) bkChip += paxStatusChip(placeMeta);
+        if(bucket === 'booking_history'){
+          var oldTrials = [];
+          try{ oldTrials = paxContactsTrialsForPerson(p); }catch(_oldTrial){ oldTrials = []; }
+          if(oldTrials.length && paxContactsNamedOldClient(p) && /^chaitanya\b/i.test(String(p.name || '').trim())){
+            var trialLab = paxContactsTrialStateLabel(oldTrials[0].sessionIso) || 'Trialled';
+            bkChip += paxStatusChip({ label: trialLab, bg: '#ede9fe', fg: '#5b21b6' });
+          }
+        }
         var alsoWait = '';
         var waitKind = '';
         try{ waitKind = paxContactsWaitingKind(p); }catch(_waitChip){ waitKind = ''; }
