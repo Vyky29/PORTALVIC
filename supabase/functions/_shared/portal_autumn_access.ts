@@ -28,6 +28,7 @@ const SAME_AUTUMN_CHILD: Record<string, string> = {
   "adam me": "adam ma",
   "adam mahmmoud": "adam ma",
   "adam mahmoud": "adam ma",
+  "adam ab": "adam abed",
 };
 
 function autumnPersonKey(raw: unknown): string {
