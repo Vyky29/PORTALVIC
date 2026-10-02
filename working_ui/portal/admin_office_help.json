@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v118",
+  "version": "2026-10-02-v119",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -353,6 +353,35 @@
       "blurb": "Places, leads, waiting list, registered, and standing seats.",
       "priority": 1,
       "lessons": [
+        {
+          "id": "services_menu_kinds",
+          "title": "Places, Leads, WAITING LIST and REGISTERED are different",
+          "summary": "One menu, two jobs. The seat is Places and the roster. The person who is not a CLIENT yet is Leads, REGISTERED or WAITING LIST.",
+          "where": "Services & places",
+          "keywords": [
+            "clasificar",
+            "clasificacion",
+            "diferentes",
+            "places",
+            "leads",
+            "waiting list",
+            "lista de espera",
+            "registered",
+            "service roster",
+            "new client",
+            "edit term slot"
+          ],
+          "steps": [
+            "Places (Booking Portal) is the offer: open seats and taken seats. Service roster is who is already booked and the standing instructor. New client puts a person into an open seat. Edit term slot changes that seat for the rest of term.",
+            "Leads is a parent who asked for an OTP code. Read Outcome: only looked, started registration, registered, already a client, or waiting list.",
+            "REGISTERED finished the registration form and has never had a place. Service and time stay empty. Pay hold, Hold and Lost slot are chips on that list.",
+            "WAITING LIST is someone who registered and the service they want is full. They are waiting for a place. They are not Leads and they are not REGISTERED.",
+            "A person with a place now is CLIENT. That list is Clients and Families, Active. They are not in these three lists."
+          ],
+          "tips": [
+            "The path is Leads, then REGISTERED, then WAITING LIST if the service is full, then New client from an open seat on Places. After that they are on the Service roster as CLIENT."
+          ]
+        },
         {
           "id": "services_board",
           "title": "Services board (capacity & open places)",
