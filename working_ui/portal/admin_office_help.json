@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v132",
+  "version": "2026-10-02-v133",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -404,7 +404,7 @@
             "comms"
           ],
           "steps": [
-            "Open Operations Hub. Schedule and Covers, Sessions overview, Places and the calendar stay at the top.",
+            "Open Operations Hub. Schedule and Covers, Sessions overview and the calendar stay at the top. Places is in Services and places.",
             "Today stays under that: Register, Lead report, Incidents, Venue review, Pick up / drop off, and Absents.",
             "Open another category is the sheet under Today. The chips are Services and places, Families, Finance, Formal workers and Potential workers. Today does not move when you change the sheet.",
             "Click the category title (the Open label next to Today, Finance, Families and the rest) to open that whole section. Finance then shows Xero, Tide and Other, with every button in the category. Back to dashboard returns to the hub.",
@@ -420,7 +420,7 @@
             "summary": "Today se queda en el inicio. Las otras categorias se abren en la hoja de debajo. WhatsApp, P, S, C y A siguen en la barra.",
             "where": "Operations Hub (inicio)",
             "steps": [
-              "Abre Operations Hub. Schedule and Covers, Sessions overview, Places y el calendario se quedan arriba.",
+              "Abre Operations Hub. Schedule and Covers, Sessions overview y el calendario se quedan arriba. Places esta en Services and places.",
               "Today se queda debajo: Register, Lead report, Incidents, Venue review, Pick up / drop off y Absents.",
               "Open another category es la hoja bajo Today. Los chips son Services and places, Families, Finance, Formal workers y Potential workers. Today no se mueve al cambiar la hoja.",
               "Pulsa el titulo de la categoria (la palabra Open junto a Today, Finance, Families y el resto) para abrir la seccion entera. Finance muestra Xero, Tide y Other, con todos los botones. Back to dashboard vuelve al hub.",

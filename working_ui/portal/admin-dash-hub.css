@@ -3666,4 +3666,121 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
     grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
     grid-auto-rows:minmax(112px,auto);
   }
+  .ops-hub--today-first .ops-hub__today{
+    grid-template-columns:1fr 1fr;
+  }
+  .ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
+    grid-column:1 / -1;
+    height:168px;
+    min-height:168px;
+    max-height:168px;
+  }
 }
+
+/* One box colour. Menu colour stays on the icon and the title. */
+.ops-hub--today-first{
+  --ops-tile-h:156px;
+  --ops-box:#fff;
+}
+.ops-hub--today-first .ops-hub__today{
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  align-items:start;
+  gap:10px;
+}
+.ops-hub--today-first .ops-hub__today > .ops-hub__feature{
+  grid-column:span 1;
+  width:100%;
+  max-width:none;
+  aspect-ratio:auto;
+  height:var(--ops-tile-h);
+  min-height:var(--ops-tile-h);
+  max-height:var(--ops-tile-h);
+  justify-self:stretch;
+  align-self:start;
+  background:var(--ops-box);
+  color:#9d174d;
+  --dh-tile-fg:#db2777;
+}
+.ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
+  grid-column:span 4;
+  width:auto;
+  height:210px;
+  min-height:210px;
+  max-height:210px;
+  align-self:start;
+}
+.ops-hub--today-first .ops-hub-fixed .dash-hub__tile{
+  height:var(--ops-tile-h);
+  min-height:var(--ops-tile-h);
+  max-height:var(--ops-tile-h);
+}
+.ops-hub--today-first .ops-hub__feature,
+.ops-hub--today-first .ops-hub-fixed .dash-hub__tile,
+.ops-hub--today-first .ops-hub-sheet .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--today .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--services .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--families .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--finance .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--formal .dash-hub__tile,
+.ops-hub--today-first .ops-hub-panel--potential .dash-hub__tile{
+  background:var(--ops-box);
+  border-color:#e2e8f0;
+}
+.ops-hub--today-first .dash-hub__tile-label,
+.ops-hub--today-first .ops-hub__feature .dash-hub__tile-label{
+  color:var(--dh-tile-fg,#0b1f33);
+  font-size:15px;
+  line-height:1.25;
+  padding:8px 10px 0;
+  overflow-wrap:break-word;
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.ops-hub--today-first .dash-hub__tile-band .admin-nav-ico,
+.ops-hub--today-first .ops-hub__feature .dash-hub__tile-band .admin-nav-ico{
+  width:40px;
+  height:40px;
+}
+.ops-hub--today-first .dash-hub__tile-band .admin-nav-ico svg,
+.ops-hub--today-first .ops-hub__feature .dash-hub__tile-band .admin-nav-ico svg{
+  width:32px;
+  height:32px;
+}
+.ops-hub--today-first .dash-hub__panel-ico{
+  background:#f8fafc;
+}
+.ops-hub--today-first .dash-hub__panel-title{
+  font-size:17px;
+  line-height:1.2;
+  overflow-wrap:break-word;
+}
+.ops-hub--today-first .ops-hub-panel--today .dash-hub__panel-title{color:#db2777}
+.ops-hub--today-first .ops-hub-panel--services .dash-hub__panel-title{color:#d97706}
+.ops-hub--today-first .ops-hub-panel--families .dash-hub__panel-title{color:#7c3aed}
+.ops-hub--today-first .ops-hub-panel--finance .dash-hub__panel-title{color:#0f766e}
+.ops-hub--today-first .ops-hub-panel--formal .dash-hub__panel-title{color:#ef4444}
+.ops-hub--today-first .ops-hub-panel--potential .dash-hub__panel-title{color:#0284c7}
+.ops-hub--today-first .ops-hub-cat,
+.ops-hub--today-first .ops-hub-cat.is-on,
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"]{
+  background:var(--ops-box);
+  color:var(--ops-cat-ink,#142033);
+  border:1px solid #e2e8f0;
+}
+.ops-hub--today-first .ops-hub-cat.is-on{
+  border-color:var(--ops-cat,#94a3b8);
+  box-shadow:inset 0 0 0 1px var(--ops-cat,#94a3b8);
+}
+.ops-hub--today-first .ops-hub-cat .admin-nav-ico,
+.ops-hub--today-first .ops-hub-cat.is-on .admin-nav-ico,
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"] .admin-nav-ico{
+  color:var(--ops-cat,#142033);
+  width:22px;
+  height:22px;
+}
+.ops-hub--today-first .ops-hub-cat .admin-nav-ico svg{width:22px;height:22px}
+.ops-hub--today-first .ops-hub-cat__label{font-size:14px;line-height:1.2}
+.ops-hub--today-first .ops-hub-cat[data-cat="formal"],
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"]{color:#b91c1c}
