@@ -5580,13 +5580,92 @@
       min-width:0;
     }
 
-    /* Phone: who is online sits on its own row under the icons. Search stays on the computer. */
+    /* Phone: line 1 is menu + search. Line 2 is the message buttons and the photo. Who is online stays under that. */
     @media (max-width:720px), (max-width:1180px) and (max-height:540px){
       body.admin-touch-compact .admin-topbar,
       .admin-topbar{
         flex-wrap:wrap;
+        align-items:center;
         height:auto;
-        row-gap:4px;
+        row-gap:6px;
+        column-gap:8px;
+      }
+      body.admin-touch-compact .admin-menu-mob,
+      .admin-topbar .admin-menu-mob{
+        order:1;
+        flex:0 0 auto;
+      }
+      body.admin-touch-compact .admin-topbar .admin-search-wrap,
+      .admin-topbar .admin-search-wrap{
+        display:block !important;
+        order:2;
+        flex:1 1 auto;
+        width:auto;
+        max-width:none;
+        min-width:0;
+      }
+      .admin-topbar .admin-search-wrap input{
+        padding:8px 10px 8px 32px;
+        font-size:13px;
+      }
+      body.admin-touch-compact .admin-topbar-meta,
+      .admin-topbar-meta{
+        order:3;
+        flex:1 0 100%;
+        width:100%;
+        max-width:100%;
+        margin-left:0;
+        min-width:0;
+        justify-content:flex-start;
+        gap:6px;
+        flex-wrap:nowrap;
+      }
+      .admin-topbar-meta .admin-topbar-split{display:none}
+      .admin-topbar-meta .admin-icon-btn--wa,
+      .admin-topbar-meta .admin-icon-btn--chat{
+        width:36px;
+        height:36px;
+        min-width:36px;
+        flex:0 0 36px;
+      }
+      .admin-topbar-meta .admin-icon-btn--wa svg{
+        width:20px;
+        height:20px;
+      }
+      .admin-topbar-meta .admin-icon-btn--chat .admin-icon-btn__svg svg{
+        width:20px !important;
+        height:20px !important;
+      }
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--p,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--s,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--p:hover,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--s:hover{
+        flex:1 1 0;
+        width:auto;
+        max-width:none;
+        min-width:0;
+        height:36px;
+        min-height:36px;
+        padding:2px 6px 2px 2px;
+        gap:4px;
+      }
+      .admin-topbar-meta .admin-api-chip__mark{
+        width:26px;
+        height:26px;
+        flex-basis:26px;
+        font-size:12px;
+      }
+      .admin-topbar-meta .admin-api-chip__who,
+      .admin-topbar-meta .admin-api-chip__api{
+        overflow:hidden;
+        text-overflow:ellipsis;
+        max-width:100%;
+      }
+      .admin-topbar-meta .admin-api-chip__who{font-size:9px;letter-spacing:0}
+      .admin-topbar-meta .admin-api-chip__api{font-size:8px;letter-spacing:0}
+      .admin-topbar-meta .admin-profile{
+        margin-left:auto;
+        flex:0 0 auto;
       }
       .admin-topbar-presence{
         display:flex !important;

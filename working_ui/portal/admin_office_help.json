@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v153",
+  "version": "2026-10-02-v154",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -428,7 +428,7 @@
           ],
           "tips": [
             "The sheet shows a short row. Open on the title shows every button in that category, including Create invoice and Xero products under Finance.",
-            "Phone: only the category icons show until you tap one. The page scrolls so those icons sit at the top and the boxes open underneath, three across. Tap the same chip again to close. Held sideways, the phone keeps this same compact hub. Who is online (Staff, Parent, Booking) sits under the top icons. Search stays on the computer.",
+            "Phone: the first header line is the menu and search. The second line is WhatsApp, Communications, Announcements, Parents API, Staff API and the photo. Who is online sits under that. Only the category icons show until you tap one. The page scrolls so those icons sit at the top and the boxes open underneath, three across. Tap the same chip again to close.",
             "On every admin page the title, the info circle and Back or Help sit in one row. They do not go to the far right."
           ],
           "es": {
@@ -446,7 +446,7 @@
             ],
             "tips": [
               "La hoja muestra una fila corta. Open en el titulo abre todos los botones de esa categoria, incluidos Create invoice y Xero products en Finance.",
-              "Telefono: solo se ven los iconos de categoria hasta que tocas uno. La pagina baja sola para dejar esos iconos arriba y las cajas debajo, de tres en tres. Toca el mismo chip otra vez para cerrarlo. En horizontal el telefono mantiene este mismo hub compacto. Quien esta conectado (Staff, Parent, Booking) va debajo de los iconos de arriba. Search se queda en el ordenador.",
+              "Telefono: la primera linea de arriba es el menu y el buscador. La segunda es WhatsApp, Communications, Announcements, Parents API, Staff API y la foto. Quien esta conectado va debajo. Solo se ven los iconos de categoria hasta que tocas uno. La pagina baja sola para dejar esos iconos arriba y las cajas debajo, de tres en tres. Toca el mismo chip otra vez para cerrarlo.",
             "En cada pagina de admin el titulo, el circulo de info y Back o Help van en la misma fila. No se van al borde derecho."
             ]
           }
