@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-glance-match" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-today-strip" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -2597,7 +2597,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v139')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v140')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -30515,7 +30515,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       opts = opts || {};
       var gridCls = 'dash-hub__grid'+(opts.gridClass ? (' '+String(opts.gridClass).trim()) : '');
       var head = '';
-      if(opts.linkView || opts.openGroup){
+      if(opts.omitHead){
+        head = '';
+      }else if(opts.linkView || opts.openGroup){
         var jumpAttr = opts.openGroup
           ? (' data-ops-hub-open-group="'+esc(opts.openGroup)+'"')
           : (' data-view-target="'+esc(opts.linkView)+'"');
@@ -31390,7 +31392,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<button type="button" class="ops-hub-cat'+(on ? ' is-on' : '')+'" data-ops-hub-cat="'+esc(c.id)+'" data-cat="'+esc(c.id)+'" role="tab" aria-selected="'+(on ? 'true' : 'false')+'">'+adminNavIconHtml(c.icon)+'<span class="ops-hub-cat__label">'+esc(c.label)+'</span></button>';
       }).join('');
     }
-    function opsHubCatBoardHtml(id){
+    function opsHubTodayStripHtml(){
+      var cat = opsHubCatById('today');
+      return (
+        '<div class="ops-hub-today-strip">' +
+        '<button type="button" class="dash-hub__panel-jump" data-ops-hub-open-group="'+esc(cat.groupId)+'" title="Open Today">' +
+        '<span class="dash-hub__panel-ico" aria-hidden="true">'+adminNavIconHtml(cat.icon)+'</span>' +
+        '<span class="dash-hub__panel-titles"><h2 class="dash-hub__panel-title">'+esc(cat.label)+'</h2></span>' +
+        '<span class="dash-hub__panel-open">Open</span>' +
+        '</button></div>'
+      );
+    }
+    function opsHubCatBoardHtml(id, opts){
+      opts = opts || {};
       var cat = opsHubCatById(id);
       return portalDashPanel({
         title: cat.label,
@@ -31400,7 +31414,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         panelClass: cat.panel+' ops-hub-panel--'+cat.id,
         gridClass: 'dash-hub__grid--5',
         tiles: opsHubDashTilesHtml(opsHubCatActions(cat.id), cat.tone),
-        ariaLabel: cat.label
+        ariaLabel: cat.label,
+        omitHead: !!opts.omitHead
       });
     }
     function viewNavHubDashboard(){
@@ -31431,8 +31446,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<a class="ops-hub__help-link" href="/admin_office_help.html">Office help</a>' +
         '</div>' +
         '</header>' +
+        opsHubTodayStripHtml() +
         opsHubGlanceHtml() +
-        '<section class="ops-hub-fixed" aria-label="Today">'+opsHubCatBoardHtml('today')+'</section>' +
+        '<section class="ops-hub-fixed" aria-label="Today">'+opsHubCatBoardHtml('today', { omitHead: true })+'</section>' +
         '<section class="ops-hub-sheet" aria-label="Open another category">' +
         '<h2 class="ops-hub-sheet__title">Open another category</h2>' +
         '<div class="ops-hub-cats" id="opsHubCats" role="tablist" aria-label="Other categories">'+opsHubCatButtonsHtml(sheet)+'</div>' +

@@ -3893,3 +3893,26 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
     align-self:stretch;
   }
 }
+.ops-hub-today-strip{
+  margin:0;
+  min-width:0;
+}
+.ops-hub-today-strip .dash-hub__panel-jump{
+  width:auto;
+  max-width:100%;
+}
+.ops-hub-today-strip .dash-hub__panel-title{
+  color:#db2777;
+  font-size:24px;
+  line-height:1.15;
+  letter-spacing:.04em;
+  font-weight:800;
+  text-transform:uppercase;
+}
+.ops-hub-today-strip .dash-hub__panel-ico{
+  background:rgba(244,114,182,.22);
+  color:#db2777;
+}
+.ops-hub--today-first .ops-hub-panel--today.dash-hub__panel{
+  padding-top:10px;
+}

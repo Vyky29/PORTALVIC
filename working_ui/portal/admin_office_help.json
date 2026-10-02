@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v139",
+  "version": "2026-10-02-v140",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -404,8 +404,8 @@
             "comms"
           ],
           "steps": [
-            "Open Operations Hub. Schedule and Covers, Sessions overview and the calendar are the first row under the title. The two buttons are the same height as the calendar.",
-            "Today sits directly under that row: Register, Lead report, Incidents, Venue review, and Pick up / drop off. Places is in Services and places. Absents and cancellations are in Finance.",
+            "Open Operations Hub. The Today strip (title and Open) sits under the title.",
+            "Schedule and Covers, Sessions overview and the calendar are the next row. The two buttons match the calendar height. The Today tiles sit under that row: Register, Lead report, Incidents, Venue review, and Pick up / drop off. Places is in Services and places. Absents and cancellations are in Finance.",
             "Open another category is the sheet under Today. The chips are Services and places, Families, Finance, Formal workers and Potential workers. Today does not move when you change the sheet.",
             "Click the category title (the Open label next to Today, Finance, Families and the rest) to open that whole section. Finance then shows Xero, Tide and Other, with every button in the category. Back to dashboard returns to the hub.",
             "WhatsApp, P (family messages), S (staff messages), C (Comms) and A (Announcements) stay in the top bar. They are not cards on the board.",
@@ -420,8 +420,8 @@
             "summary": "Today se queda en el inicio. Las otras categorias se abren en la hoja de debajo. WhatsApp, P, S, C y A siguen en la barra.",
             "where": "Operations Hub (inicio)",
             "steps": [
-              "Abre Operations Hub. Schedule and Covers, Sessions overview y el calendario son la primera fila bajo el titulo. Los dos botones tienen la misma altura que el calendario.",
-              "Today va justo debajo de esa fila: Register, Lead report, Incidents, Venue review y Pick up / drop off. Places esta en Services and places. Absents y cancellations estan en Finance.",
+              "Abre Operations Hub. La franja de Today (titulo y Open) va bajo el titulo.",
+              "Schedule and Covers, Sessions overview y el calendario son la fila siguiente. Los dos botones tienen la misma altura que el calendario. Las cajas de Today van debajo: Register, Lead report, Incidents, Venue review y Pick up / drop off. Places esta en Services and places. Absents y cancellations estan en Finance.",
               "Open another category es la hoja bajo Today. Los chips son Services and places, Families, Finance, Formal workers y Potential workers. Today no se mueve al cambiar la hoja.",
               "Pulsa el titulo de la categoria (la palabra Open junto a Today, Finance, Families y el resto) para abrir la seccion entera. Finance muestra Xero, Tide y Other, con todos los botones. Back to dashboard vuelve al hub.",
               "WhatsApp, P (mensajes de familia), S (mensajes de staff), C (Comms) y A (Announcements) siguen en la barra. No son tarjetas del tablero.",
