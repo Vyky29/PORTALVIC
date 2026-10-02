@@ -2186,6 +2186,12 @@ function rosterRowToSlot(isoDate, wd, r) {
     );
   }
 
+  function overrideIsClientSwapReplace(ov) {
+    if (!overrideIsReplaceType(ov)) return false;
+    var p = overridePayloadObj(ov);
+    return p.client_swap === true || p.client_swap === "true";
+  }
+
   /** Day ops seat move (not a parent-absence makeup). */
   function overrideIsDayReassignReplace(ov) {
     if (!overrideIsReplaceType(ov)) return false;
@@ -3145,6 +3151,7 @@ function rosterRowToSlot(isoDate, wd, r) {
     if (overrideIsInstructorReassignType(ov)) return "Changed instructor";
     if (overrideIsTrialType(ov)) return "Trial";
     if (overrideIsNewClientReplace(ov)) return "NEW PARTICIPANT";
+    if (overrideIsClientSwapReplace(ov)) return "Swapped";
     if (overrideIsDayReassignReplace(ov)) return "Moved";
     if (overrideIsMakeupReplaceType(ov)) return "MakeUp";
     return String(ov.override_type || "").trim() || "Override";
@@ -13066,7 +13073,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         );
       }
     } else if (slot && slot.portalOverrideDayMoveTag && !st.isAbsent) {
-      chips.push('<span class="override-chip override--instructor">Moved in</span>');
+      var moveLab =
+        slot.__portalScheduleOverride && hubOverrideLabel(slot.__portalScheduleOverride) === "Swapped"
+          ? "Swapped"
+          : "Moved in";
+      chips.push('<span class="override-chip override--instructor">' + esc(moveLab) + "</span>");
     }
     if (st.isCancelled) {
       chips.push('<span class="override-chip override--cancelled">Cancelled</span>');

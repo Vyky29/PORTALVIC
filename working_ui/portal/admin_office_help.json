@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v146",
+  "version": "2026-10-02-v147",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -114,6 +114,13 @@
           "title": "Schedule & Covers (one day)",
           "summary": "One-day exceptions: cancel a slot, assign cover, client absence, replace for that date only.",
           "where": "Operator → Schedule & Covers",
+          "keywords": [
+            "swap",
+            "intercambiar",
+            "cruzar",
+            "un dia",
+            "swap with another child"
+          ],
           "demos": [
             {
               "demo": "schedule_covers",
@@ -131,6 +138,7 @@
             "Orange / red banners warn when a one-day action fights the standing roster.",
             "A new shadowing or training shift is + Add session card, Type Shadowing or Training — see that lesson.",
             "Move to another slot today is the one-day move, including into a seat that already has an admin absence. On Overview the original instructor still shows that child, with the chip Move in and change instructor, not No participant. The other instructor shows the absent child and, under that same time, the Moved in card. Edit term slot changes the standing weekday for the rest of term.",
+            "Swap with another child today exchanges every seat those two children have on that date only. Instructors stay on their times. Overview shows Swapped. Undo on either row removes the whole swap. The rest of term does not change.",
             "A makeup on an open seat still shows that child when the instructor is off that day. The row name is the child, not No participant.",
             "If a child is absent and someone moves into that seat the same day, the row shows the absent child, then Free, then the move-in. No participant is a standing empty seat.",
             "From Sun 27 Sep, Gabriel and Cyrus swap the 11.00 and 11.45 halves. A cover saved on that seat follows the child who is in it now. It does not stay as COVER NEEDED on the new name."
@@ -150,6 +158,7 @@
               "Los avisos naranja o rojo saltan cuando una accion de un dia choca con el roster fijo.",
               "Un turno nuevo de shadowing o training es + Add session card, Type Shadowing o Training.",
               "Move to another slot today es el cambio de un dia, tambien a una plaza que ya tiene una falta de admin. En Overview el instructor original sigue viendo a ese nino, con el chip Move in and change instructor, no No participant. El otro instructor ve al nino ausente y, en la misma hora, la tarjeta Moved in. Edit term slot cambia el dia fijo el resto del term.",
+              "Swap with another child today cruza todas las plazas de esos dos ninos solo ese dia. Los instructores se quedan en su hora. Overview pone Swapped. Undo en cualquiera de las dos filas quita el cruce entero. El resto del term no cambia.",
               "Un makeup en una plaza libre sigue ensenando a ese nino cuando el instructor esta libre ese dia. El nombre de la fila es el nino, no No participant.",
               "Si un nino falta y alguien entra en esa plaza el mismo dia, la fila ensena al nino ausente, luego Free, luego el que entra. No participant es una plaza fija vacia.",
               "Desde el domingo 27 Sep, Gabriel y Cyrus cambian las medias de las 11.00 y las 11.45. Un cover guardado en esa plaza sigue al nino que esta ahora. No se queda como COVER NEEDED en el nombre nuevo."
@@ -649,7 +658,7 @@
             "To seat a worker with a Day Centre child for the rest of term: open that weekday and time, set the instructor, scope Rest of term from the anchor. The anchor must be that weekday.",
             "Example: Joel → Anas every Monday for the rest of Autumn = Edit term slot.",
             "To remove the service for the rest of term, use the Cancel a service lesson.",
-            "Swapping two children who already sit in each other's halves (pool at 11.00, Hub at 11.45, then they switch) is not this screen. Available only lists empty seats. Schedule and Covers is one date, and Move to another slot today does not exchange two booked seats. Gabriel and Cyrus from Sun 27 Sep is that standing Sunday order. The instructors stay on their times. Only the children change seats."
+            "One date only, two children who already have seats: Schedule and Covers, Swap with another child today. They exchange every seat that day. Instructors stay. Edit term slot is only when that order should stay for the rest of term. Gabriel and Cyrus from Sun 27 Sep is that standing Sunday order."
           ],
           "es": {
             "title": "Edit term slot (clientes fijos)",
@@ -671,7 +680,7 @@
               "Para sentar a un trabajador con un nino de Day Centre el resto del term: abre ese dia y esa hora, pon el instructor, alcance Rest of term from the anchor. El ancla tiene que ser ese dia de la semana.",
               "Ejemplo: Joel a Anas todos los lunes el resto de Autumn = Edit term slot.",
               "Para quitar el servicio el resto del term, usa la leccion Cancel a service.",
-            "Cruzar a dos ninos que ya ocupan las medias del otro (piscina a las 11.00, Hub a las 11.45, y luego al reves) no se hace aqui. Available solo lista plazas vacias. Schedule and Covers es un dia, y Move to another slot today no intercambia dos plazas ocupadas. Gabriel y Cyrus desde el domingo 27 Sep es ese orden fijo de los domingos. Los instructores se quedan en su hora. Solo cambian los ninos."
+            "Un solo dia, dos ninos que ya tienen plaza: Schedule and Covers, Swap with another child today. Cambian todas las plazas de ese dia. Los instructores se quedan. Edit term slot es solo si ese orden tiene que quedarse el resto del term. Gabriel y Cyrus desde el domingo 27 Sep es ese orden fijo de los domingos."
             ]
           }
         },

@@ -2603,7 +2603,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v146')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v147')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -5623,6 +5623,95 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           String(a.venue || '').localeCompare(String(b.venue || ''));
       });
       return out;
+    }
+    function schedSlotEffectiveChild(slot){
+      var slug = String(slot && slot.clientSlug || '').trim().toLowerCase();
+      var name = String(slot && (slot.clientDisplay || slot.clientSlug) || '').trim();
+      var ov = slot ? findOverrideForSlot(slot) : null;
+      if(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot' && ov.payload){
+        var pl = ov.payload;
+        var toSlug = String(pl.to_client_id || pl.replacement_client_id || '').trim().toLowerCase();
+        var toName = String(pl.to_client_name || pl.replacement_client_name || '').trim();
+        if(toSlug) slug = toSlug;
+        if(toName) name = toName;
+      }
+      if(!slug || slug === 'available' || slug === 'closed' || slug === 'noclient' || slug === 'no client' || slug === 'no_participant'){
+        return null;
+      }
+      return { slug: slug, name: name || slug };
+    }
+    function schedSeatAnchorKey(slot){
+      return [
+        normalizeSchedAnchorStaffId(slot && slot.staffRosterId),
+        String(slot && slot.anchorStart || ''),
+        String(slot && slot.anchorEnd || ''),
+        String(slot && slot.clientSlug || '').trim().toLowerCase()
+      ].join('|');
+    }
+    function schedSeatsForChildOnDate(slug, sessionDate, pool){
+      var want = String(slug || '').trim().toLowerCase();
+      var out = [];
+      var seen = Object.create(null);
+      if(!want) return out;
+      (pool || []).forEach(function(t){
+        if(!t || String(t.sessionDate || '') !== String(sessionDate || '')) return;
+        var child = schedSlotEffectiveChild(t);
+        if(!child || child.slug !== want) return;
+        var key = schedSeatAnchorKey(t);
+        if(seen[key]) return;
+        seen[key] = true;
+        out.push(t);
+      });
+      out.sort(function(a, b){
+        return String(a.anchorStart || '').localeCompare(String(b.anchorStart || ''));
+      });
+      return out;
+    }
+    function schedBuildSwapTargetOptions(sourceSlot, allSlots){
+      var src = schedSlotEffectiveChild(sourceSlot);
+      if(!src) return [];
+      var bySlug = Object.create(null);
+      (allSlots || []).forEach(function(t){
+        if(!t || !sourceSlot) return;
+        if(String(t.sessionDate || '') !== String(sourceSlot.sessionDate || '')) return;
+        var child = schedSlotEffectiveChild(t);
+        if(!child || child.slug === src.slug) return;
+        if(!bySlug[child.slug]) bySlug[child.slug] = { slug: child.slug, name: child.name, seats: [] };
+        var key = schedSeatAnchorKey(t);
+        var seats = bySlug[child.slug].seats;
+        var seen = false;
+        for(var i = 0; i < seats.length; i++){
+          if(seats[i].key === key){ seen = true; break; }
+        }
+        if(seen) return;
+        seats.push({
+          key: key,
+          slot: t,
+          label: (t.anchorTimeLabel || normTimeShort(t.anchorStart) || '') + ' ' + String(t.rosterArea || t.venue || '')
+        });
+      });
+      return Object.keys(bySlug).map(function(slug){
+        var row = bySlug[slug];
+        row.seats.sort(function(a, b){
+          return String(a.slot.anchorStart || '').localeCompare(String(b.slot.anchorStart || ''));
+        });
+        return row;
+      }).sort(function(a, b){ return String(a.name).localeCompare(String(b.name)); });
+    }
+    function schedPopulateSwapTargetSelect(sourceSlot){
+      var sel = $('schedFormSwapTarget');
+      if(!sel) return 0;
+      var pool = sched.cachedDaySlots && sched.cachedDaySlots.length
+        ? sched.cachedDaySlots
+        : Object.keys(sched.slotsById || {}).map(function(k){ return sched.slotsById[k]; });
+      var opts = schedBuildSwapTargetOptions(sourceSlot, pool);
+      sel.innerHTML = '<option value="" selected disabled>Select the other child</option>' +
+        opts.map(function(row){
+          var bits = row.seats.map(function(s){ return s.label; }).filter(Boolean).join(', ');
+          var label = row.name + (bits ? ' · ' + bits : '');
+          return '<option value="' + esc(row.slug) + '">' + esc(label) + '</option>';
+        }).join('');
+      return opts.length;
     }
     function schedPopulateMoveTargetSelect(sourceSlot){
       var sel = $('schedFormMoveTarget');
@@ -15526,12 +15615,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         client_trial: 'Trial',
         instructor_reassign: 'Change Instructor',
         client_move_same_day: 'Move to another slot today',
+        client_swap_same_day: 'Swap with another child today',
         slot_open: 'Open closed slot'
       };
       var k = String(val == null ? '' : val).trim();
       return map[k] || k || 'None';
     }
-    function schedOverrideActionChoices(canMoveClient){
+    function schedOverrideActionChoices(canMoveClient, canSwapClient){
       var out = [
         { value: 'client_absence_announced', label: 'Absent' },
         { value: 'client_cancelled', label: 'Cancelled' }
@@ -15540,11 +15630,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       /* Trial → booking portal (finish-booking), not Schedule & Covers. */
       out.push({ value: 'instructor_reassign', label: 'Change Instructor' });
       if(canMoveClient) out.push({ value: 'client_move_same_day', label: 'Move to another slot today' });
+      if(canSwapClient) out.push({ value: 'client_swap_same_day', label: 'Swap with another child today' });
       out.push({ value: 'slot_open', label: 'Open closed slot' });
       return out;
     }
-    function schedOverrideActionPickerHtml(canMoveClient){
-      var choices = schedOverrideActionChoices(canMoveClient);
+    function schedOverrideActionPickerHtml(canMoveClient, canSwapClient){
+      var choices = schedOverrideActionChoices(canMoveClient, canSwapClient);
       var btns = choices.map(function(c){
         return '<button type="button" class="btn btn--sec btn--sm sched-ov-type-btn" data-ov="'+esc(c.value)+'" aria-pressed="false">'+esc(c.label)+'</button>';
       }).join('');
@@ -15572,11 +15663,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(wrapRep) wrapRep.style.display = 'none';
         if(wrapCov) wrapCov.style.display = ovType === 'instructor_reassign' ? '' : 'none';
         if(wrapMove) wrapMove.style.display = ovType === 'client_move_same_day' ? '' : 'none';
+        var wrapSwap = $('schedWrapSwapTarget');
+        if(wrapSwap) wrapSwap.style.display = ovType === 'client_swap_same_day' ? '' : 'none';
         if(wrapRea) wrapRea.style.display = '';
         var repLab = document.querySelector('label[for="schedFormReplaceInput"]');
         if(repLab) repLab.textContent = 'Replacement participant';
         if(ovType === 'client_move_same_day' && sched.activeSlot){
           schedPopulateMoveTargetSelect(sched.activeSlot);
+        }
+        if(ovType === 'client_swap_same_day' && sched.activeSlot){
+          schedPopulateSwapTargetSelect(sched.activeSlot);
         }
         try{
           schedUpdateTermMismatchBanner(sched.activeSlot, ovType === 'client_cancelled' ? 'slot_clear_client' : ovType);
@@ -15888,6 +15984,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!ov) return '';
       var t = String(ov.override_type || '').trim();
       var payload = ov.payload || {};
+      if(t === 'client_replace_in_slot' && payload && (payload.client_swap === true || payload.client_swap === 'true')) return 'Swapped';
       if(t === 'slot_clear_client' && payload && payload.client_move) return 'Moved out';
       if(t === 'client_replace_in_slot' && payload && payload.client_move) return 'Moved in';
       if(t === 'client_replace_in_slot' && schedOverrideIsTrial(ov)) return 'Trial';
@@ -16175,8 +16272,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ? sched.cachedDaySlots
         : Object.keys(sched.slotsById || {}).map(function(k){ return sched.slotsById[k]; });
       var moveTargetCount = schedBuildMoveTargetOptions(slot, movePool).length;
+      var swapTargetCount = schedBuildSwapTargetOptions(slot, movePool).length;
       var srcSlug = String(slot.clientSlug || '').trim().toLowerCase();
-      var canMoveClient = !!(srcSlug && srcSlug !== 'available' && srcSlug !== 'closed' && srcSlug !== 'noclient' && srcSlug !== 'no client' && moveTargetCount > 0);
+      var bookedChild = !!(srcSlug && srcSlug !== 'available' && srcSlug !== 'closed' && srcSlug !== 'noclient' && srcSlug !== 'no client');
+      var canMoveClient = !!(bookedChild && moveTargetCount > 0);
+      var canSwapClient = !!(bookedChild && swapTargetCount > 0);
       $('schedDrawerSub').textContent = slot.whenLabel+' · '+slot.venue;
       var ovBlock = ov
         ? '<div class="card card-pad" style="margin-bottom:12px"><div class="kpi-l">Current override</div><p style="margin:6px 0 0;font-size:13px"><span class="override-chip '+esc(schedOverrideTypeClass(ov.override_type, ov))+'">'+esc(schedOverrideLabelForRow(ov))+'</span> · Changed by: '+esc(schedResolveOverrideAuthorName(ov))+(schedFormatOverrideWhenShort(ov) ? ' · '+esc(schedFormatOverrideWhenShort(ov)) : '')+' · '+esc(ov.reason||'—')+'</p><p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Row id: '+esc(String(ov.id))+'</p><p style="margin:10px 0 0"><button type="button" class="btn btn--sec btn--sm" id="schedUndoOverrideBtn">Undo change</button></p></div>'
@@ -16205,7 +16305,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : 'Add a new card when another worker already on this client picks up extra hours \u2014 Change Instructor would overwrite this row.')+'</p>'))+'</div>'+ovBlock+
         '<div class="card card-pad"><div class="kpi-l">New override</div>'+
         '<div class="kpi-l" style="margin-top:10px">Action</div>'+
-        schedOverrideActionPickerHtml(canMoveClient)+
+        schedOverrideActionPickerHtml(canMoveClient, canSwapClient)+
         '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Parent <strong>MakeUp</strong> (grants / Offer slot) is only under <button type="button" class="btn btn--ghost btn--sm" data-view-target="absents_refunds" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Absents, refunds &amp; credits</button>. Trials come from the booking portal. After-school / weekend Change Instructor, Cancelled, or Move still WhatsApps the parent. Day Centre instructor changes do not — Team updates only.</p>'+
         '<p id="schedTermMismatchWarn" role="status" hidden class="muted" style="margin:10px 0 0;padding:10px 12px;background:#fff7ed;border:1px solid rgba(234,88,12,.35);border-radius:8px;font-size:12px;line-height:1.5;min-width:0;overflow-wrap:break-word"></p>'+
         '<div id="schedWrapMoveTarget" style="display:none">'+
@@ -16214,6 +16314,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<option value="" selected disabled>Select target slot</option>'+
         '</select>'+
         '<p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Choose a vacant, absent, or open slot — same instructor or another. This participant moves there; this row becomes open.</p>'+
+        '</div>'+
+        '<div id="schedWrapSwapTarget" style="display:none">'+
+        '<label class="muted" for="schedFormSwapTarget" style="display:block;margin-top:12px">Other child (this date only)</label>'+
+        '<select id="schedFormSwapTarget" class="sel" style="max-width:100%">'+
+        '<option value="" selected disabled>Select the other child</option>'+
+        '</select>'+
+        '<p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">They exchange every seat they have on this date. Instructors stay on their times. The rest of term does not change. Undo on either row removes the whole swap.</p>'+
         '</div>'+
         '<div id="schedWrapReplace" style="display:none">'+
         '<label class="muted" for="schedFormReplaceInput" style="display:block;margin-top:12px">Replacement participant</label>'+
@@ -16415,7 +16522,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!(await adminEnsureScheduleOverrideEditor(msgEl))) return;
       var beforeSnap;
       try{ beforeSnap = JSON.parse(JSON.stringify(ov)); }catch(_e){ beforeSnap = ov; }
-      var updRes = await client.from('schedule_overrides').update({ status: 'cancelled' }).eq('id', ov.id);
+      var swapPayload = ov.payload || {};
+      var swapGroup = String(swapPayload.swap_group || '').trim();
+      var isSwap = (swapPayload.client_swap === true || swapPayload.client_swap === 'true') && !!swapGroup;
+      var undoIds = [ov.id];
+      if(isSwap){
+        var grp = await client.from('schedule_overrides')
+          .select('id, payload, status')
+          .eq('session_date', ov.session_date)
+          .eq('status', 'active');
+        if(grp.error){
+          if(msgEl) msgEl.textContent = 'Undo failed: '+esc(String(grp.error.message||grp.error));
+          return;
+        }
+        undoIds = (grp.data || []).filter(function(row){
+          var p = row && row.payload || {};
+          return String(p.swap_group || '') === swapGroup && (p.client_swap === true || p.client_swap === 'true') && row.id;
+        }).map(function(row){ return row.id; });
+        if(undoIds.indexOf(ov.id) < 0) undoIds.push(ov.id);
+      }
+      var updRes = isSwap
+        ? await client.from('schedule_overrides').update({ status: 'cancelled' }).in('id', undoIds)
+        : await client.from('schedule_overrides').update({ status: 'cancelled' }).eq('id', ov.id);
       if(updRes.error){
         if(msgEl) msgEl.textContent = 'Undo failed: '+esc(String(updRes.error.message||updRes.error))+(updRes.error.hint?(' — '+esc(updRes.error.hint)):'');
         return;
@@ -16431,7 +16559,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(evRes.error){
         if(msgEl) msgEl.textContent = 'Override cancelled but audit log failed: '+esc(String(evRes.error.message||evRes.error))+'.';
       }else{
-        sched.lastMsg = 'Change undone for this slot.';
+        sched.lastMsg = isSwap ? 'Swap undone for this date.' : 'Change undone for this slot.';
       }
       if(String(ov.override_type || '').trim() === 'instructor_reassign'){
         try{ await schedNotifyCoverRemoved(client, ov); }catch(_covN){}
@@ -16503,6 +16631,178 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(destCover && destCover.id && destCoverId && destCoverId !== coverId){
         try{ await client.from('schedule_overrides').update({ status: 'cancelled' }).eq('id', destCover.id); }catch(_c3){}
+      }
+    }
+    function schedSwapReplaceRow(slot, toChild, fromChild, group, reason){
+      var staffId = normalizeSchedAnchorStaffId(slot.staffRosterId);
+      return {
+        session_date: slot.sessionDate,
+        anchor_staff_id: staffId,
+        anchor_start: slot.anchorStart,
+        anchor_end: slot.anchorEnd,
+        anchor_venue: slot.venue,
+        anchor_client_id: slot.clientSlug,
+        anchor_time_slot_label: slot.whenLabel || slot.anchorTimeLabel || '',
+        override_type: 'client_replace_in_slot',
+        payload: {
+          client_swap: true,
+          not_makeup: true,
+          day_reassign: true,
+          swap_group: group,
+          to_client_id: toChild.slug,
+          to_client_name: toChild.name,
+          replacement_client_id: toChild.slug,
+          replacement_client_name: toChild.name,
+          swapped_with_client_id: fromChild.slug,
+          swapped_with_client_name: fromChild.name
+        },
+        reason: reason || null,
+        status: 'active',
+        superseded_by: null,
+        spreadsheet_revision: 'admin-dashboard:client_swap_same_day'
+      };
+    }
+    async function saveSchedClientSwapFromDrawer(){
+      var msgEl = $('schedFormErr');
+      var saveBtn = $('schedSaveBtn');
+      if(msgEl) msgEl.textContent = '';
+      var sourceSlot = sched.activeSlot;
+      if(!sourceSlot){ if(msgEl) msgEl.textContent = 'No slot selected.'; return; }
+      var client = getSchedSupabaseClient();
+      if(!client){ if(msgEl) msgEl.textContent = 'Supabase connection not available. Sign in as admin and wait for session to load.'; return; }
+      if(!(await adminEnsureScheduleOverrideEditor(msgEl))) return;
+      var otherSlug = String(($('schedFormSwapTarget') && $('schedFormSwapTarget').value) || '').trim().toLowerCase();
+      if(!otherSlug){
+        if(msgEl) msgEl.textContent = 'Choose the other child for this swap.';
+        return;
+      }
+      var pool = sched.cachedDaySlots && sched.cachedDaySlots.length
+        ? sched.cachedDaySlots
+        : Object.keys(sched.slotsById || {}).map(function(k){ return sched.slotsById[k]; });
+      var srcChild = schedSlotEffectiveChild(sourceSlot);
+      var opts = schedBuildSwapTargetOptions(sourceSlot, pool);
+      var other = null;
+      for(var oi = 0; oi < opts.length; oi++){
+        if(opts[oi].slug === otherSlug){ other = opts[oi]; break; }
+      }
+      if(!srcChild || !other){
+        if(msgEl) msgEl.textContent = 'That child is not on this date. Refresh the day and try again.';
+        return;
+      }
+      var srcSeats = schedSeatsForChildOnDate(srcChild.slug, sourceSlot.sessionDate, pool);
+      var otherSeats = other.seats.map(function(s){ return s.slot; });
+      if(!srcSeats.length || !otherSeats.length){
+        if(msgEl) msgEl.textContent = 'Both children need a booked seat on this date.';
+        return;
+      }
+      var group = (window.crypto && typeof crypto.randomUUID === 'function')
+        ? crypto.randomUUID()
+        : ('swap-' + Date.now());
+      var reason = ($('schedFormReason') && $('schedFormReason').value) || '';
+      var rows = [];
+      srcSeats.forEach(function(seat){
+        rows.push(schedSwapReplaceRow(seat, other, srcChild, group, reason));
+      });
+      otherSeats.forEach(function(seat){
+        rows.push(schedSwapReplaceRow(seat, srcChild, other, group, reason));
+      });
+      if(saveBtn){
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+      }
+      try{
+        var prior = await client.from('schedule_overrides')
+          .select('id, anchor_staff_id, anchor_start, anchor_end, anchor_client_id, override_type, status')
+          .eq('session_date', sourceSlot.sessionDate)
+          .eq('status', 'active')
+          .eq('override_type', 'client_replace_in_slot');
+        if(prior.error){
+          if(msgEl) msgEl.textContent = 'Could not read today\'s overrides: ' + esc(String(prior.error.message || prior.error));
+          return;
+        }
+        var replaceKeys = Object.create(null);
+        rows.forEach(function(row){
+          replaceKeys[[
+            normalizeSchedAnchorStaffId(row.anchor_staff_id),
+            String(row.anchor_start || ''),
+            String(row.anchor_end || ''),
+            String(row.anchor_client_id || '').trim().toLowerCase()
+          ].join('|')] = true;
+        });
+        var cancelIds = [];
+        (prior.data || []).forEach(function(row){
+          var key = [
+            normalizeSchedAnchorStaffId(row.anchor_staff_id),
+            String(row.anchor_start || ''),
+            String(row.anchor_end || ''),
+            String(row.anchor_client_id || '').trim().toLowerCase()
+          ].join('|');
+          if(replaceKeys[key] && row.id) cancelIds.push(row.id);
+        });
+        var ins = await client.from('schedule_overrides').insert(rows).select('id, created_at, created_by');
+        if(ins.error || !ins.data || ins.data.length !== rows.length){
+          if(msgEl) msgEl.textContent = 'Swap did not save: ' + esc(String((ins.error && (ins.error.message || ins.error)) || 'missing rows'));
+          return;
+        }
+        if(cancelIds.length){
+          var cleared = await client.from('schedule_overrides').update({ status: 'cancelled' }).in('id', cancelIds);
+          if(cleared.error){
+            console.warn('[sched] swap could not cancel the previous seat row', cleared.error);
+          }
+        }
+        try{
+          var evRows = ins.data.map(function(inserted, idx){
+            return {
+              override_id: inserted.id,
+              action: 'create',
+              before_snapshot: null,
+              after_snapshot: { row: rows[idx], inserted: inserted },
+              client_context: { page: 'admin_dashboard', module: 'scheduling_cover', action: 'client_swap_same_day' }
+            };
+          });
+          if(evRows.length) await client.from('schedule_override_events').insert(evRows);
+        }catch(_ev){}
+        closeSchedDrawer();
+        sched.lastMsg = srcChild.name + ' and ' + other.name + ' swapped for ' + String(sourceSlot.sessionDate || '') + '. Instructors stay.';
+        try{ if(typeof portalAdminToast === 'function') portalAdminToast(sched.lastMsg); }catch(_toast){}
+        function seatTimes(list){
+          return list.map(function(seat){
+            return seat.anchorTimeLabel || normTimeShort(seat.anchorStart) || '';
+          }).filter(Boolean).join(', ');
+        }
+        try{
+          await schedNotifyOverrideParent(client, srcSeats[0], ins.data[0] && ins.data[0].id, {
+            kind: 'time_change',
+            participantDisplay: srcChild.name,
+            contactId: srcChild.slug,
+            venue: srcSeats[0].venue,
+            sessionDate: sourceSlot.sessionDate,
+            sessionTime: seatTimes(otherSeats),
+            oldTime: seatTimes(srcSeats),
+            newTime: seatTimes(otherSeats),
+            reason: reason
+          });
+          await schedNotifyOverrideParent(client, otherSeats[0], ins.data[0] && ins.data[0].id, {
+            kind: 'time_change',
+            participantDisplay: other.name,
+            contactId: other.slug,
+            venue: otherSeats[0].venue,
+            sessionDate: sourceSlot.sessionDate,
+            sessionTime: seatTimes(srcSeats),
+            oldTime: seatTimes(otherSeats),
+            newTime: seatTimes(srcSeats),
+            reason: reason
+          });
+        }catch(_n){
+          console.warn('[portal] swap parent notify failed', _n);
+        }
+        await portalSyncOverviewDayTruth(client, { refreshScheduling: false, forceOverviewRender: false });
+        await refreshSchedulingModule();
+      }finally{
+        if(saveBtn){
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save override';
+        }
       }
     }
     async function saveSchedClientMoveFromDrawer(){
@@ -17553,6 +17853,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(ovTypeRaw === 'client_move_same_day'){
         await saveSchedClientMoveFromDrawer();
+        return;
+      }
+      if(ovTypeRaw === 'client_swap_same_day'){
+        await saveSchedClientSwapFromDrawer();
         return;
       }
       if(ovTypeRaw === 'client_trial'){
@@ -28018,7 +28322,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20261002-card-photo';
+    var PORTAL_ADMIN_HUB_BUILD = '20261002-client-swap';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
