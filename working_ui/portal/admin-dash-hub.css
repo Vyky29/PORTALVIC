@@ -3991,11 +3991,11 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   color:#ef4444;
 }
 
-/* Phone: smaller boxes so the hub fits one screen. Desktop row stays 210px. */
+/* Phone: smaller boxes so Today and the category chips fit without scrolling. Desktop row stays 210px. */
 @media (max-width:720px){
   .ops-hub--today-first{
-    gap:6px;
-    --ops-tile-h:68px;
+    gap:4px;
+    --ops-tile-h:48px;
   }
   .ops-hub--today-first .ops-hub__intro-title{
     font-size:20px;
@@ -4013,8 +4013,8 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   }
   .ops-hub--today-first .ops-hub__today{
     grid-template-columns:minmax(0,1.45fr) minmax(0,1fr) minmax(0,1fr);
-    grid-template-rows:112px;
-    gap:6px;
+    grid-template-rows:88px;
+    gap:4px;
     align-items:stretch;
   }
   .ops-hub--today-first .ops-hub__today > .ops-hub__feature{
@@ -4040,9 +4040,9 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   }
   .ops-hub--today-first .ops-hub__feature .dash-hub__tile-label,
   .ops-hub--today-first .dash-hub__tile .dash-hub__tile-label{
-    font-size:11px;
-    line-height:1.15;
-    padding:4px 4px 0;
+    font-size:10px;
+    line-height:1.1;
+    padding:2px 3px 0;
     -webkit-line-clamp:2;
     overflow-wrap:normal;
     word-break:normal;
@@ -4054,13 +4054,13 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   }
   .ops-hub--today-first .dash-hub__tile-band .admin-nav-ico,
   .ops-hub--today-first .ops-hub__feature .dash-hub__tile-band .admin-nav-ico{
-    width:22px;
-    height:22px;
+    width:16px;
+    height:16px;
   }
   .ops-hub--today-first .dash-hub__tile-band .admin-nav-ico svg,
   .ops-hub--today-first .ops-hub__feature .dash-hub__tile-band .admin-nav-ico svg{
-    width:18px;
-    height:18px;
+    width:14px;
+    height:14px;
   }
   .ops-hub--today-first .ops-hub-cal-month{
     gap:1px;
@@ -4087,7 +4087,7 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   }
   .ops-hub--today-first .ops-hub-fixed .dash-hub__grid{
     grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:6px;
+    gap:4px;
   }
   .ops-hub--today-first .ops-hub-fixed .dash-hub__tile{
     height:var(--ops-tile-h);
@@ -4105,29 +4105,34 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   }
   .ops-hub--today-first .ops-hub-panel--today.dash-hub__panel,
   .ops-hub--today-first .dash-hub__panel{
-    padding:8px;
+    padding:6px;
+  }
+  .ops-hub--today-first .ops-hub-sheet__title{
+    margin:0 0 4px;
+    font-size:13px;
   }
   .ops-hub--today-first .ops-hub-cats{
     grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:6px;
+    gap:4px;
+    margin:0;
   }
   .ops-hub--today-first .ops-hub-cat,
   .ops-hub--today-first .ops-hub-cat.is-on{
-    min-height:44px;
-    padding:6px 8px;
-    gap:6px;
+    min-height:28px;
+    padding:3px 8px;
+    gap:4px;
   }
   .ops-hub--today-first .ops-hub-cat .admin-nav-ico{
-    width:18px;
-    height:18px;
+    width:14px;
+    height:14px;
   }
   .ops-hub--today-first .ops-hub-cat .admin-nav-ico svg{
-    width:18px;
-    height:18px;
+    width:14px;
+    height:14px;
   }
   .ops-hub--today-first .ops-hub-cat__label{
-    font-size:13px;
-    line-height:1.15;
+    font-size:11px;
+    line-height:1.1;
   }
   .ops-hub--today-first > .ops-hub-sheet{
     min-height:0;
