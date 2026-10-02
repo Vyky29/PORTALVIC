@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v134",
+  "version": "2026-10-02-v135",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1476,6 +1476,49 @@
             ],
             "tips": [
               "Back to dashboard vuelve al Operations Hub."
+            ]
+          }
+        },
+        {
+          "id": "settings_photo_shortcuts",
+          "title": "Settings from the photo is shortcuts",
+          "summary": "The header photo opens Settings. The money tiles and most buttons already live in Today, Finance or H&R. A few old tools only open from this page.",
+          "where": "Header photo, or Settings in the left menu",
+          "keywords": [
+            "settings",
+            "foto",
+            "photo",
+            "outstanding",
+            "payment rows",
+            "device notifications",
+            "quick links",
+            "atajos"
+          ],
+          "steps": [
+            "Outstanding, Programme money, Payment rows and LA / NHS rows open Finance, Payments. That is the Programme payments grid.",
+            "Open incidents opens Today, Incidents. Absents pending opens Finance, Absent, credits and refunds. Late approvals opens H&R, Late feedback.",
+            "Device notifications is also in the Settings menu. Log out is there too.",
+            "Send test WhatsApp on this page is a test. Family messages are P, staff messages are S, and Business is the green button.",
+            "Orders catalogue, Ops comms and log, Activity log, Change log, Training progress and Report generator are only linked from this page. They are not in the left menu.",
+            "Connections and Data exports loaded in this browser are a technical snapshot of this login. They are not a daily screen."
+          ],
+          "tips": [
+            "You do not need the duplicate tiles for day-to-day work. Use Today, Finance and H&R."
+          ],
+          "es": {
+            "title": "Settings desde la foto son atajos",
+            "summary": "La foto del header abre Settings. Las cajas de dinero y casi todos los botones ya estan en Today, Finance o H&R. Unos pocos tools viejos solo se abren desde esta pagina.",
+            "where": "Foto del header, o Settings en el menu de la izquierda",
+            "steps": [
+              "Outstanding, Programme money, Payment rows y LA / NHS rows abren Finance, Payments. Esa es la tabla Programme payments.",
+              "Open incidents abre Today, Incidents. Absents pending abre Finance, Absent, credits and refunds. Late approvals abre H&R, Late feedback.",
+              "Device notifications tambien esta en el menu Settings. Log out tambien.",
+              "Send test WhatsApp en esta pagina es una prueba. Los mensajes de familia son P, los de staff son S, y Business es el boton verde.",
+              "Orders catalogue, Ops comms and log, Activity log, Change log, Training progress y Report generator solo estan enlazados desde esta pagina. No estan en el menu de la izquierda.",
+              "Connections y Data exports loaded in this browser son una foto tecnica de este login. No es una pantalla del dia."
+            ],
+            "tips": [
+              "No hace falta usar las cajas repetidas para el dia a dia. Usa Today, Finance y H&R."
             ]
           }
         }
