@@ -3990,3 +3990,157 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 .ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"] .admin-nav-ico{
   color:#ef4444;
 }
+
+/* Phone: smaller boxes so the hub fits one screen. Desktop row stays 210px. */
+@media (max-width:720px){
+  .ops-hub--today-first{
+    gap:6px;
+    --ops-tile-h:68px;
+  }
+  .ops-hub--today-first .ops-hub__intro-title{
+    font-size:20px;
+  }
+  .ops-hub--today-first .ops-hub__help-link{
+    padding:6px 10px;
+    font-size:11px;
+  }
+  .ops-hub-today-strip .dash-hub__panel-title{
+    font-size:15px;
+  }
+  .ops-hub-today-strip .dash-hub__panel-ico{
+    width:22px;
+    height:22px;
+  }
+  .ops-hub--today-first .ops-hub__today{
+    grid-template-columns:minmax(0,1.45fr) minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows:112px;
+    gap:6px;
+    align-items:stretch;
+  }
+  .ops-hub--today-first .ops-hub__today > .ops-hub__feature{
+    grid-column:auto;
+    width:100%;
+    height:100%;
+    min-height:0;
+    max-height:100%;
+    align-self:stretch;
+    padding:6px 4px 4px;
+    justify-content:center;
+  }
+  .ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
+    grid-column:1;
+    grid-row:1;
+    order:-1;
+    width:100%;
+    height:100%;
+    min-height:0;
+    max-height:100%;
+    padding:6px 6px 4px;
+    align-self:stretch;
+  }
+  .ops-hub--today-first .ops-hub__feature .dash-hub__tile-label,
+  .ops-hub--today-first .dash-hub__tile .dash-hub__tile-label{
+    font-size:11px;
+    line-height:1.15;
+    padding:4px 4px 0;
+    -webkit-line-clamp:2;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  .ops-hub--today-first .dash-hub__tile-band,
+  .ops-hub--today-first .ops-hub__feature .dash-hub__tile-band{
+    min-height:0;
+    padding:2px 4px 0;
+  }
+  .ops-hub--today-first .dash-hub__tile-band .admin-nav-ico,
+  .ops-hub--today-first .ops-hub__feature .dash-hub__tile-band .admin-nav-ico{
+    width:22px;
+    height:22px;
+  }
+  .ops-hub--today-first .dash-hub__tile-band .admin-nav-ico svg,
+  .ops-hub--today-first .ops-hub__feature .dash-hub__tile-band .admin-nav-ico svg{
+    width:18px;
+    height:18px;
+  }
+  .ops-hub--today-first .ops-hub-cal-month{
+    gap:1px;
+  }
+  .ops-hub--today-first .ops-hub-cal-month__label{
+    font-size:9px;
+    letter-spacing:.04em;
+  }
+  .ops-hub--today-first .ops-hub-cal-month__head,
+  .ops-hub--today-first .ops-hub-cal-month__grid{
+    gap:1px;
+  }
+  .ops-hub--today-first .ops-hub-cal-month__wd{
+    font-size:8px;
+    padding:0;
+  }
+  .ops-hub--today-first .ops-hub-cal-day{
+    border-radius:3px;
+    padding:0;
+  }
+  .ops-hub--today-first .ops-hub-cal-day__n{
+    font-size:9px;
+    line-height:1;
+  }
+  .ops-hub--today-first .ops-hub-fixed .dash-hub__grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+  }
+  .ops-hub--today-first .ops-hub-fixed .dash-hub__tile{
+    height:var(--ops-tile-h);
+    min-height:var(--ops-tile-h);
+    max-height:var(--ops-tile-h);
+    padding:4px 2px 4px;
+  }
+  .ops-hub--today-first .dash-hub__panel-title{
+    font-size:15px;
+  }
+  .ops-hub--today-first .dash-hub__panel-open{
+    margin-left:6px;
+    padding:3px 8px;
+    font-size:10px;
+  }
+  .ops-hub--today-first .ops-hub-panel--today.dash-hub__panel,
+  .ops-hub--today-first .dash-hub__panel{
+    padding:8px;
+  }
+  .ops-hub--today-first .ops-hub-cats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px;
+  }
+  .ops-hub--today-first .ops-hub-cat,
+  .ops-hub--today-first .ops-hub-cat.is-on{
+    min-height:44px;
+    padding:6px 8px;
+    gap:6px;
+  }
+  .ops-hub--today-first .ops-hub-cat .admin-nav-ico{
+    width:18px;
+    height:18px;
+  }
+  .ops-hub--today-first .ops-hub-cat .admin-nav-ico svg{
+    width:18px;
+    height:18px;
+  }
+  .ops-hub--today-first .ops-hub-cat__label{
+    font-size:13px;
+    line-height:1.15;
+  }
+  .ops-hub--today-first > .ops-hub-sheet{
+    min-height:0;
+  }
+  .ops-hub--today-first .ops-hub-sheet .dash-hub__grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-auto-rows:var(--ops-tile-h);
+    gap:6px;
+  }
+  .ops-hub--today-first .ops-hub-sheet .dash-hub__tile{
+    min-height:var(--ops-tile-h);
+    max-height:var(--ops-tile-h);
+    height:var(--ops-tile-h);
+    padding:4px 2px 4px;
+  }
+}
