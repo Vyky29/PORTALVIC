@@ -94,23 +94,23 @@
       '<tr class="xero-map-row" data-service-key="' +
       key +
       '">' +
-      '<td style="min-width:0;overflow-wrap:break-word"><code>' +
+      '<td style="min-width:0"><div class="xero-map__name">' +
+      cfg.esc(row.label || key) +
+      '</div><div class="xero-map__code">' +
       key +
-      '</code><div class="muted" style="font-size:12px">' +
-      cfg.esc(row.label || '') +
       '</div></td>' +
-      '<td><select class="inp xero-map-vat" style="max-width:100%;min-width:0">' +
+      '<td style="min-width:12rem"><select class="inp xero-map-vat">' +
       itemOptionsHtml(items, row.xero_item_code_vat) +
       '</select></td>' +
-      '<td><select class="inp xero-map-exempt" style="max-width:100%;min-width:0">' +
+      '<td style="min-width:12rem"><select class="inp xero-map-exempt">' +
       itemOptionsHtml(items, row.xero_item_code_exempt) +
       '</select></td>' +
-      '<td><span class="chip chip--' +
+      '<td class="xero-map__status"><span class="chip chip--' +
       tone +
       '">' +
       (vatOk && exOk ? 'Both' : vatOk ? 'VAT only' : exOk ? 'Exempt only' : 'Unmapped') +
       '</span></td>' +
-      '<td><button type="button" class="btn btn--sm btn--primary xero-map-save">Save</button></td>' +
+      '<td><button type="button" class="btn btn--sm btn--ghost xero-map-save">Save</button></td>' +
       '</tr>'
     );
   }
@@ -125,44 +125,54 @@
       : 'No items cached — sync from Xero first.';
 
     root.innerHTML =
-      '<div class="card" style="min-width:0">' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">' +
-      '<div style="min-width:0">' +
-      '<h2 style="margin:0 0 4px;font-size:16px">Xero product map</h2>' +
-      '<p class="muted" style="margin:0;font-size:13px;overflow-wrap:break-word">Link each Portal programme to your Xero Items — <strong>VAT 20%</strong> (private parents) and <strong>exempt</strong> (Direct Payment / LA).</p>' +
-      '<p class="muted" style="margin:6px 0 0;font-size:12px">' +
-      cfg.esc(synced) +
-      ' · ' +
-      cfg.esc(String(stats.items_cached || 0)) +
-      ' items · ' +
-      cfg.esc(String(stats.mapped_vat || 0)) +
-      ' VAT mapped · ' +
-      cfg.esc(String(stats.mapped_exempt || 0)) +
-      ' exempt mapped</p>' +
+      '<style>' +
+      '.xero-map{display:flex;flex-direction:column;gap:12px;min-width:0}' +
+      '.xero-map__bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;min-width:0}' +
+      '.xero-map__stats{display:flex;flex-wrap:wrap;gap:6px;min-width:0}' +
+      '.xero-map__stat{display:inline-flex;align-items:center;min-width:0;padding:4px 8px;border-radius:999px;background:#f4f7fb;border:1px solid #e2e8f0;font-size:12px;overflow-wrap:anywhere}' +
+      '.xero-map__actions{display:flex;flex-wrap:wrap;gap:8px}' +
+      '.xero-map__lead{margin:0;max-width:42rem;line-height:1.45;overflow-wrap:break-word}' +
+      '.xero-map__add{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:#f8fafc;min-width:0}' +
+      '.xero-map__add label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px;font-weight:650;color:#5c6b7a}' +
+      '.xero-map__add .inp{width:100%;max-width:100%;box-sizing:border-box}' +
+      '.xero-map__scroll{overflow:auto;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:12px}' +
+      '.xero-map__table{width:100%;min-width:720px;border-collapse:collapse}' +
+      '.xero-map__table th{text-align:left;font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:#5c6b7a;padding:10px 12px;background:#f8fafc;border-bottom:1px solid #e5e7eb}' +
+      '.xero-map__table td{padding:10px 12px;border-bottom:1px solid #eef2f6;vertical-align:middle;min-width:0}' +
+      '.xero-map__table tr:last-child td{border-bottom:0}' +
+      '.xero-map__name{font-weight:700;overflow-wrap:anywhere}' +
+      '.xero-map__code{font-size:11px;color:#7b8794;overflow-wrap:anywhere}' +
+      '.xero-map__table .inp{width:100%;max-width:100%;min-width:0;box-sizing:border-box}' +
+      '.xero-map__status{white-space:nowrap}' +
+      '</style>' +
+      '<div class="card xero-map"><div class="card-pad" style="min-width:0">' +
+      '<div class="xero-map__bar">' +
+      '<div class="xero-map__stats">' +
+      '<span class="xero-map__stat">' + cfg.esc(String(stats.items_cached || 0)) + ' Xero items</span>' +
+      '<span class="xero-map__stat">' + cfg.esc(String(stats.mapped_vat || 0)) + ' VAT</span>' +
+      '<span class="xero-map__stat">' + cfg.esc(String(stats.mapped_exempt || 0)) + ' exempt</span>' +
+      '<span class="xero-map__stat">' + cfg.esc(synced) + '</span>' +
       '</div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-      '<button type="button" class="btn btn--ghost" id="xeroMapAddBtn">＋ Add row</button>' +
-      '<button type="button" class="btn btn--primary" id="xeroMapSyncBtn">Sync from Xero</button>' +
-      '<button type="button" class="btn btn--ghost" id="xeroMapReloadBtn">Reload</button>' +
+      '<div class="xero-map__actions">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="xeroMapAddBtn">Add row</button>' +
+      '<button type="button" class="btn btn--primary btn--sm" id="xeroMapSyncBtn">Sync from Xero</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="xeroMapReloadBtn">Reload</button>' +
       '</div></div>' +
-      '<div id="xeroMapAddForm" hidden style="margin-top:12px;padding:12px;border:1px solid var(--line,#d9dee8);border-radius:12px;min-width:0">' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end;min-width:0">' +
-      '<label style="min-width:0"><span class="muted" style="display:block;font-size:12px;margin-bottom:4px">Portal key</span>' +
-      '<input class="inp" id="xeroMapNewKey" maxlength="80" placeholder="e.g. TRANSPORT" style="width:100%;max-width:100%;box-sizing:border-box;text-transform:uppercase"></label>' +
-      '<label style="min-width:0"><span class="muted" style="display:block;font-size:12px;margin-bottom:4px">Name</span>' +
-      '<input class="inp" id="xeroMapNewLabel" maxlength="160" placeholder="e.g. Transport" style="width:100%;max-width:100%;box-sizing:border-box"></label>' +
+      '<p class="muted xero-map__lead">Each programme needs a VAT item for private parents and an exempt item for LA or Direct Payment. Re-enrolment invoices use this map.</p>' +
+      '<div id="xeroMapAddForm" class="xero-map__add" hidden>' +
+      '<label>Portal key<input class="inp" id="xeroMapNewKey" maxlength="80" placeholder="TRANSPORT" style="text-transform:uppercase"></label>' +
+      '<label>Name<input class="inp" id="xeroMapNewLabel" maxlength="160" placeholder="Transport"></label>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;min-width:0">' +
-      '<button type="button" class="btn btn--primary" id="xeroMapCreateBtn">Create row</button>' +
-      '<button type="button" class="btn btn--ghost" id="xeroMapCancelAddBtn">Cancel</button>' +
-      '</div></div></div>' +
-      '<div style="overflow:auto;margin-top:12px;min-width:0">' +
-      '<table class="data-table" style="width:100%;min-width:640px"><thead><tr>' +
-      '<th>Portal service</th><th>Xero item (VAT)</th><th>Xero item (Exempt)</th><th>Status</th><th></th>' +
+      '<button type="button" class="btn btn--primary btn--sm" id="xeroMapCreateBtn">Create row</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="xeroMapCancelAddBtn">Cancel</button>' +
+      '</div></div>' +
+      '<div class="xero-map__scroll">' +
+      '<table class="xero-map__table"><thead><tr>' +
+      '<th>Portal service</th><th>VAT item</th><th>Exempt item</th><th>Status</th><th></th>' +
       '</tr></thead><tbody>' +
-      (map.length ? map.map(function (r) { return mapRowHtml(r, items); }).join('') : '<tr><td colspan="5" class="muted">No map rows.</td></tr>') +
+      (map.length ? map.map(function (r) { return mapRowHtml(r, items); }).join('') : '<tr><td colspan="5" class="muted">No programmes yet.</td></tr>') +
       '</tbody></table></div>' +
-      '<p class="muted" style="margin:12px 0 0;font-size:12px">Re-enrolment invoices use this map for line items (Aquatic, Climbing, etc.) when parents submit.</p>' +
-      '</div>';
+      '</div></div>';
   }
 
   async function load(root) {

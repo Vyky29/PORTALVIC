@@ -3015,7 +3015,10 @@
         var idEl = global.document.getElementById('portalParentInvoiceContactId');
         var nameEl = global.document.getElementById('portalParentInvoiceParticipantLabel');
         if (idEl) idEl.value = cid;
-        if (nameEl) nameEl.textContent = name + ' (' + cid + ')';
+        if (nameEl) {
+          nameEl.textContent = name + ' (' + cid + ')';
+          nameEl.classList.remove('is-empty');
+        }
         var clientIdEl = global.document.getElementById('portalParentInvoiceClientId');
         if (clientIdEl && !String(clientIdEl.value || '').trim()) clientIdEl.value = cid;
         void (async function () {
@@ -3285,7 +3288,10 @@
           var qtyReset = global.document.getElementById('portalParentInvoiceQty');
           if (qtyReset) qtyReset.value = '1';
           var nameEl = global.document.getElementById('portalParentInvoiceParticipantLabel');
-          if (nameEl) nameEl.textContent = 'No participant selected';
+          if (nameEl) {
+            nameEl.textContent = 'No participant selected';
+            nameEl.classList.add('is-empty');
+          }
           var idEl = global.document.getElementById('portalParentInvoiceContactId');
           if (idEl) idEl.value = '';
           void renderHost(global.document.getElementById('portalParentInvoicesHost'));
@@ -3361,7 +3367,10 @@
         cfg.toast('Invoice shared with family', 'ok');
         form.reset();
         var nameEl = global.document.getElementById('portalParentInvoiceParticipantLabel');
-        if (nameEl) nameEl.textContent = 'No participant selected';
+        if (nameEl) {
+          nameEl.textContent = 'No participant selected';
+          nameEl.classList.add('is-empty');
+        }
         var idEl = global.document.getElementById('portalParentInvoiceContactId');
         if (idEl) idEl.value = '';
         void renderHost(global.document.getElementById('portalParentInvoicesHost'));
@@ -3371,76 +3380,108 @@
 
   function createInvoiceEmbedHtml() {
     return (
-      '<div class="card" style="margin-bottom:14px">' +
-      '<div class="card-h"><h3>Create invoice</h3></div>' +
-      '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word"><strong>Create in Portal</strong> generates a TAX INVOICE PDF and shares it with the family. Use the term reference (e.g. Summer Term 25/26 or Autumn Term 26/27) so invoices group correctly in Payments.</p>' +
-      '<form id="portalParentInvoiceCreateForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line,#e5e7eb)">' +
-      '<div style="font-weight:700">Create invoice in Portal</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">' +
-      '<label style="flex:1 1 200px;min-width:0">Search participant' +
-      '<input class="inp" id="portalParentInvoiceSearch" type="search" placeholder="Name or contact id" autocomplete="off" style="width:100%" />' +
+      '<style>' +
+      '.fin-sheet{display:flex;flex-direction:column;gap:12px;min-width:0}' +
+      '.fin-sheet .card{min-width:0}' +
+      '.fin-sheet__lead{margin:0 0 14px;max-width:42rem;line-height:1.45;overflow-wrap:break-word}' +
+      '.fin-form{display:flex;flex-direction:column;gap:12px;min-width:0}' +
+      '.fin-form__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}' +
+      '.fin-form__span2{grid-column:span 2}' +
+      '.fin-form__span4{grid-column:1 / -1}' +
+      '.fin-form label,.fin-field{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px;font-weight:650;color:#5c6b7a}' +
+      '.fin-form .inp,.fin-field .inp{width:100%;max-width:100%;box-sizing:border-box}' +
+      '.fin-picked{min-height:38px;display:flex;align-items:center;padding:8px 10px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:#f8fafc;font-weight:700;color:#142033;overflow-wrap:anywhere}' +
+      '.fin-picked.is-empty{font-weight:500;color:#7b8794}' +
+      '.fin-form #portalParentInvoiceLaFields{flex-wrap:wrap;min-width:0;align-items:end}' +
+      '.fin-form__actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}' +
+      '.fin-sheet details{padding:12px 14px}' +
+      '.fin-sheet summary{cursor:pointer;font-weight:700}' +
+      '@media (max-width:900px){.fin-form__grid{grid-template-columns:1fr 1fr}.fin-form__span2,.fin-form__span4{grid-column:1 / -1}}' +
+      '@media (max-width:560px){.fin-form__grid{grid-template-columns:1fr}}' +
+      '</style>' +
+      '<div class="fin-sheet">' +
+      '<div class="card"><div class="card-pad">' +
+      '<p class="muted fin-sheet__lead">A tax invoice PDF goes to the family. The reference is the term (Autumn Term 26/27) so it groups in Payments. Parents pay Tide with the participant name.</p>' +
+      '<form id="portalParentInvoiceCreateForm" class="fin-form">' +
+      '<div class="fin-form__grid">' +
+      '<label class="fin-form__span2">Participant' +
+      '<input class="inp" id="portalParentInvoiceSearch" type="search" placeholder="Search name or contact id" autocomplete="off" />' +
       '</label>' +
-      '<div style="flex:1 1 180px;min-width:0"><span class="muted" style="font-size:12px">Selected</span>' +
-      '<div id="portalParentInvoiceParticipantLabel" style="font-weight:700;overflow-wrap:break-word">No participant selected</div>' +
+      '<div class="fin-field fin-form__span2">Selected' +
+      '<div id="portalParentInvoiceParticipantLabel" class="fin-picked is-empty">No participant selected</div>' +
       '<input type="hidden" id="portalParentInvoiceContactId" value="" />' +
-      '</div></div>' +
-      '<div id="portalParentInvoicesSearchHits" hidden style="margin-top:-4px"></div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-      '<label style="flex:1 1 140px;min-width:0">VAT / funding' +
-      '<select class="inp" id="portalParentInvoiceVatMode" style="width:100%">' +
-      '<option value="vat_20">Private · Includes 20% VAT (in price)</option>' +
-      '<option value="exempt">LA funded · Exempt</option>' +
+      '</div>' +
+      '<div id="portalParentInvoicesSearchHits" class="fin-form__span4" hidden></div>' +
+      '<label class="fin-form__span2">VAT / funding' +
+      '<select class="inp" id="portalParentInvoiceVatMode">' +
+      '<option value="vat_20">Private - includes 20% VAT</option>' +
+      '<option value="exempt">LA funded - Exempt</option>' +
       '</select></label>' +
-      '<label style="flex:1 1 100px;min-width:0">Amount £ (total)<input class="inp" id="portalParentInvoiceAmount" type="number" min="0.01" step="0.01" required style="width:100%" /></label>' +
-      '<label style="flex:1 1 80px;min-width:0">Qty<input class="inp" id="portalParentInvoiceQty" type="number" min="0.01" step="0.01" value="1" style="width:100%" /></label>' +
-      '<label style="flex:1 1 140px;min-width:0">Due date<input class="inp" id="portalParentInvoiceDue" type="date" style="width:100%" /></label>' +
+      '<label>Amount (total)' +
+      '<input class="inp" id="portalParentInvoiceAmount" type="number" min="0.01" step="0.01" required placeholder="0.00" />' +
+      '</label>' +
+      '<label>Due date' +
+      '<input class="inp" id="portalParentInvoiceDue" type="date" />' +
+      '</label>' +
+      '<div id="portalParentInvoiceLaFields" class="fin-form__span4" hidden style="display:none;gap:12px">' +
+      '<label style="flex:1 1 160px;min-width:0">Client Id' +
+      '<input class="inp" id="portalParentInvoiceClientId" placeholder="Usually the contact id" />' +
+      '</label>' +
+      '<label style="flex:1 1 200px;min-width:0">PO (required for LA)' +
+      '<input class="inp" id="portalParentInvoicePo" placeholder="Purchase order" />' +
+      '</label>' +
       '</div>' +
-      '<div id="portalParentInvoiceLaFields" hidden style="display:none;flex-wrap:wrap;gap:8px">' +
-      '<label style="flex:1 1 140px;min-width:0">Client Id<input class="inp" id="portalParentInvoiceClientId" placeholder="Usually contact id" style="width:100%" /></label>' +
-      '<label style="flex:1 1 180px;min-width:0">PO (required for LA)<input class="inp" id="portalParentInvoicePo" placeholder="Purchase order — changes each time" style="width:100%" /></label>' +
+      '<p class="muted fin-form__span4" id="portalParentInvoiceLaHint" hidden style="margin:0">LA invoices stay in the office. Parents see the booking. LA pays. Client Id and PO are required.</p>' +
+      '<label class="fin-form__span4">Description' +
+      '<textarea class="inp" id="portalParentInvoiceDesc" rows="3" placeholder="Name and service, e.g. Adaam - Aquatic Activity" style="min-height:4.5rem;resize:vertical"></textarea>' +
+      '</label>' +
+      '<label class="fin-form__span2">Term reference' +
+      '<input class="inp" id="portalParentInvoiceRef" placeholder="Autumn Term 26/27" />' +
+      '</label>' +
+      '<label>Invoice number' +
+      '<input class="inp" id="portalParentInvoiceNumber" placeholder="INV-P-####" />' +
+      '</label>' +
+      '<label>Qty' +
+      '<input class="inp" id="portalParentInvoiceQty" type="number" min="0.01" step="0.01" value="1" />' +
+      '</label>' +
+      '<label class="fin-form__span4">Notes' +
+      '<input class="inp" id="portalParentInvoiceNotes" placeholder="Optional" />' +
+      '</label>' +
       '</div>' +
-      '<p class="muted" id="portalParentInvoiceLaHint" hidden style="margin:0;max-width:48rem;overflow-wrap:break-word">LA funded invoices are created <strong>manually</strong> here (Client Id + PO). They stay <strong>office-only</strong> — parents see the booking, not the invoice (LA pays).</p>' +
-      '<label style="min-width:0">Description<textarea class="inp" id="portalParentInvoiceDesc" rows="3" placeholder="Structured activity support…" style="width:100%;max-width:36rem;min-height:4.5rem"></textarea></label>' +
-      '<label style="min-width:0">Invoice Reference (term label)<input class="inp" id="portalParentInvoiceRef" placeholder="e.g. Summer term 25/26" style="width:100%;max-width:28rem" /></label>' +
-      '<p class="muted" style="margin:0 0 8px;max-width:48rem;overflow-wrap:break-word">PDF/Xero <strong>Reference</strong> = term. Parents use the <strong>participant name</strong> as the Tide bank payment reference. Put name + service in the description.</p>' +
-      '<label style="min-width:0">Invoice # (optional — auto INV-P-####)<input class="inp" id="portalParentInvoiceNumber" style="width:100%;max-width:16rem" /></label>' +
-      '<label style="min-width:0">Notes (optional)<input class="inp" id="portalParentInvoiceNotes" style="width:100%;max-width:28rem" /></label>' +
-      '<div><button type="submit" class="btn btn--primary btn--sm">Create &amp; share</button></div>' +
-      '</form>' +
-      '<details style="margin:0 0 18px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
-      '<summary style="cursor:pointer;font-weight:700">New Booking Portal client · mid-term pro-rata</summary>' +
-      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">For <strong>new</strong> places confirmed from Booking Portal after the term has started (or starting mid-term). Builds <strong>1 invoice</strong> for remaining sessions. <strong>GoCardless</strong>: collections only on the <strong>1st of each month</strong> (same day for all clients — avoids separate GC payment fees). If they finish <strong>after</strong> this month\'s 1st, first instalment = <strong>bank transfer now</strong>; later months on the 1st via GoCardless. <strong>Flexi</strong>: first half on the fixed term due (e.g. Autumn 15 August), or <strong>booking day</strong> if that date has passed; second on the mid-term date.</p>' +
-      '<form id="portalParentInvoiceMidtermForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px">' +
-      '<p class="muted" style="margin:0;font-size:12px">Uses the participant selected above.</p>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-      '<label style="flex:1 1 120px;min-width:0">Term<select class="inp" id="portalMidtermTerm" style="width:100%"><option value="autumn">Autumn</option><option value="spring">Spring</option><option value="summer">Summer</option></select></label>' +
-      '<label style="flex:1 1 120px;min-width:0">Weekday<select class="inp" id="portalMidtermDay" style="width:100%"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></label>' +
-      '<label style="flex:1 1 110px;min-width:0">£ / session<input class="inp" id="portalMidtermUnit" type="number" min="0.01" step="0.01" value="50" required style="width:100%" /></label>' +
-      '<label style="flex:1 1 140px;min-width:0">Booking / start date<input class="inp" id="portalMidtermAsOf" type="date" style="width:100%" /></label>' +
+      '<div class="fin-form__actions"><button type="submit" class="btn btn--primary">Create &amp; share</button></div>' +
+      '</form></div></div>' +
+      '<details class="card">' +
+      '<summary>Mid-term pro-rata</summary>' +
+      '<p class="muted" style="margin:10px 0;max-width:42rem;overflow-wrap:break-word;line-height:1.45">One invoice for the sessions left when a new Booking Portal place starts after the term has begun. Uses the participant selected above. GoCardless collects on the 1st. If they join after this month\'s 1st, the first part is a bank transfer now.</p>' +
+      '<form id="portalParentInvoiceMidtermForm" class="fin-form">' +
+      '<div class="fin-form__grid">' +
+      '<label>Term<select class="inp" id="portalMidtermTerm"><option value="autumn">Autumn</option><option value="spring">Spring</option><option value="summer">Summer</option></select></label>' +
+      '<label>Weekday<select class="inp" id="portalMidtermDay"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></label>' +
+      '<label>Price per session<input class="inp" id="portalMidtermUnit" type="number" min="0.01" step="0.01" value="50" required /></label>' +
+      '<label>Start date<input class="inp" id="portalMidtermAsOf" type="date" /></label>' +
+      '<label class="fin-form__span2">Pay plan<select class="inp" id="portalMidtermPlan"><option value="gocardless_monthly">GoCardless - monthly, 1st</option><option value="flexi_bank">Flexi bank - 2 instalments</option><option value="one_off_bank">Bank - one payment</option></select></label>' +
+      '<label>Service<input class="inp" id="portalMidtermService" value="Aquatic Activity 30\'" /></label>' +
+      '<label>Time and venue<input class="inp" id="portalMidtermDetail" placeholder="Tuesday 6-6.30, Acton" /></label>' +
       '</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-      '<label style="flex:1 1 220px;min-width:0">Pay plan<select class="inp" id="portalMidtermPlan" style="width:100%"><option value="gocardless_monthly">GoCardless · monthly (1st due today)</option><option value="flexi_bank">Flexi bank · 2 instalments</option><option value="one_off_bank">Bank · one-off (due today)</option></select></label>' +
-      '<label style="flex:1 1 160px;min-width:0">Service label<input class="inp" id="portalMidtermService" value="Aquatic Activity 30\'" style="width:100%" /></label>' +
-      '<label style="flex:1 1 140px;min-width:0">Detail (time · venue)<input class="inp" id="portalMidtermDetail" placeholder="e.g. Tuesday 6–6.30 · Acton" style="width:100%" /></label>' +
-      '</div>' +
-      '<div id="portalMidtermPreview" class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word;font-size:13px;line-height:1.45"></div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+      '<div id="portalMidtermPreview" class="muted" style="margin:0;overflow-wrap:break-word;line-height:1.45"></div>' +
+      '<div class="fin-form__actions">' +
       '<button type="button" class="btn btn--ghost btn--sm" id="portalMidtermPreviewBtn">Preview schedule</button>' +
       '<button type="submit" class="btn btn--primary btn--sm">Create mid-term invoice &amp; share</button>' +
       '</div></form></details>' +
-      '<details style="margin:0">' +
-      '<summary class="muted" style="cursor:pointer;font-weight:600">Or upload a Xero / office PDF</summary>' +
-      '<form id="portalParentInvoiceUploadForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px">' +
-      '<label style="min-width:0">Xero Invoice ID (GUID, optional sync)<input class="inp" id="portalParentInvoiceXeroId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="width:100%;max-width:28rem" /></label>' +
-      '<label style="min-width:0">Title (optional)<input class="inp" id="portalParentInvoiceTitle" style="width:100%;max-width:28rem" /></label>' +
-      '<label style="min-width:0">GoCardless URL (optional)<input class="inp" id="portalParentInvoiceGcUrl" type="url" placeholder="https://…" style="width:100%;max-width:28rem" /></label>' +
-      '<label style="min-width:0">Payment Link URL (rare)<input class="inp" id="portalParentInvoicePlUrl" type="url" placeholder="https://…" style="width:100%;max-width:28rem" /></label>' +
-      '<label style="min-width:0">Payment Link surcharge note<input class="inp" id="portalParentInvoicePlNote" placeholder="e.g. +2.5% card fee" style="width:100%;max-width:28rem" /></label>' +
-      '<label style="min-width:0">PDF<input class="inp" id="portalParentInvoiceFile" type="file" accept="application/pdf,.pdf" style="width:100%;max-width:28rem" /></label>' +
-      '<div><button type="submit" class="btn btn--sec btn--sm">Upload &amp; share PDF</button></div>' +
+      '<details class="card">' +
+      '<summary>Upload a Xero or office PDF</summary>' +
+      '<form id="portalParentInvoiceUploadForm" class="fin-form" style="margin-top:12px">' +
+      '<div class="fin-form__grid">' +
+      '<label class="fin-form__span2">Xero invoice ID<input class="inp" id="portalParentInvoiceXeroId" placeholder="Optional GUID" /></label>' +
+      '<label class="fin-form__span2">Title<input class="inp" id="portalParentInvoiceTitle" placeholder="Optional" /></label>' +
+      '<label class="fin-form__span2">GoCardless URL<input class="inp" id="portalParentInvoiceGcUrl" type="url" placeholder="https://" /></label>' +
+      '<label class="fin-form__span2">Payment link URL<input class="inp" id="portalParentInvoicePlUrl" type="url" placeholder="https://" /></label>' +
+      '<label class="fin-form__span2">Card fee note<input class="inp" id="portalParentInvoicePlNote" placeholder="e.g. +2.5% card fee" /></label>' +
+      '<label class="fin-form__span2">PDF<input class="inp" id="portalParentInvoiceFile" type="file" accept="application/pdf,.pdf" /></label>' +
+      '</div>' +
+      '<div class="fin-form__actions"><button type="submit" class="btn btn--sec btn--sm">Upload &amp; share PDF</button></div>' +
       '</form></details>' +
-      '</div></div>'
+      '</div>'
     );
   }
 

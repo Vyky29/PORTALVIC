@@ -94,8 +94,8 @@
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
   <script src="/portal/admin-office-calendar.js?v=20260917-title-raul-sev"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260919-chip-center"></script>
-  <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
-  <script src="/portal/admin-portal-parent-invoices.js?v=20261002-quiet"></script>
+  <script src="/portal/admin-portal-xero-products.js?v=20261002-xero-ui"></script>
+  <script src="/portal/admin-portal-parent-invoices.js?v=20261002-invoice-ui"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260928-makeup-date-desc"></script>
   <script src="/portal/admin-portal-parent-consents.js?v=20261001-active-only"></script>
   <script src="/portal/admin-payslips.js?v=20261001-payslip-amount"></script>
@@ -32215,6 +32215,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<span class="c4k-sessions-hub-tab__label">'+esc(t.label)+'</span></button>';
       }).join('');
     }
+    function financeScreenTitle(tab){
+      if(tab === 'create') return 'Create invoice';
+      if(tab === 'xero_products') return 'Xero products';
+      if(tab === 'reenrolments') return 'Re-enrolments & Bookings';
+      if(tab === 'payments') return 'Payments';
+      return 'Finance';
+    }
     function viewReenrolPayments(){
       portalParentInvoicesConfigureOnce();
       var tab = state.financeTab || 'payments';
@@ -32224,8 +32231,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var reenrolHtml = typeof inv.reenrolmentsEmbedHtml === 'function' ? inv.reenrolmentsEmbedHtml() : '';
       var xeroProductsHtml = typeof xeroProd.mountHtml === 'function' ? xeroProd.mountHtml() : '';
       var hide = function(id){ return tab === id ? '' : ' hidden'; };
-      return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2d84b3"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="none"><text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" font-family="system-ui,Segoe UI,sans-serif">\u00a3</text></svg></span><span>Finance</span></h1>'+
-        '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Finance">'+financeHubTabsHtml(tab)+'</div>'+
+      var ownScreen = tab === 'create' || tab === 'xero_products';
+      var tabs = ownScreen ? '' : ('<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Finance">'+financeHubTabsHtml(tab)+'</div>');
+      return '<h1 class="page-title">'+esc(financeScreenTitle(tab))+'</h1>'+
+        tabs+
         '<div id="financePanelCreate" class="finance-hub-panel"'+hide('create')+'>'+createHtml+'</div>'+
         '<div id="financePanelReenrolments" class="finance-hub-panel"'+hide('reenrolments')+'>'+reenrolHtml+'</div>'+
         '<div id="financePanelXeroProducts" class="finance-hub-panel"'+hide('xero_products')+'>'+xeroProductsHtml+'</div>'+
