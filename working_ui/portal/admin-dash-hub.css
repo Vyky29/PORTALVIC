@@ -4095,6 +4095,13 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
     max-height:var(--ops-tile-h);
     padding:4px 2px 4px;
   }
+  .ops-hub--today-first .ops-hub-fixed .dash-hub__tile[data-dayops-act="sessions_hub_feedback"]{order:1}
+  .ops-hub--today-first .ops-hub-fixed .dash-hub__tile[data-dayops-act="sessions_hub_venue"]{order:2}
+  .ops-hub--today-first .ops-hub-fixed .dash-hub__tile[data-dayops-act="sessions_hub_incidents"]{order:3}
+  .ops-hub--today-first .ops-hub-fixed .dash-hub__tile[data-dayops-act="sessions_hub_lead"],
+  .ops-hub--today-first .ops-hub-fixed .dash-hub__tile[data-dayops-act="sessions_hub_pickup"]{
+    display:none;
+  }
   .ops-hub--today-first .dash-hub__panel-title{
     font-size:15px;
   }
