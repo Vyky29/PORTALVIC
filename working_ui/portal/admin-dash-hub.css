@@ -3751,10 +3751,31 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 .ops-hub--today-first .dash-hub__panel-ico{
   background:#f8fafc;
 }
+.ops-hub--today-first .dash-hub__panel-jump{
+  width:auto;
+  max-width:100%;
+  justify-content:flex-start;
+}
+.ops-hub--today-first .dash-hub__panel-titles{
+  flex:0 1 auto;
+  min-width:0;
+}
 .ops-hub--today-first .dash-hub__panel-title{
-  font-size:17px;
-  line-height:1.2;
+  font-size:24px;
+  line-height:1.15;
+  letter-spacing:.04em;
   overflow-wrap:break-word;
+}
+.ops-hub--today-first .dash-hub__panel-open{
+  margin-left:10px;
+  align-self:center;
+  padding:5px 12px;
+  border:1px solid #e2e8f0;
+  border-radius:999px;
+  background:#fff;
+  font-size:12px;
+  line-height:1.2;
+  letter-spacing:.08em;
 }
 .ops-hub--today-first .ops-hub-panel--today .dash-hub__panel-title{color:#db2777}
 .ops-hub--today-first .ops-hub-panel--services .dash-hub__panel-title{color:#d97706}
