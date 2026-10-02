@@ -3794,14 +3794,25 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   border-color:var(--ops-cat,#94a3b8);
   box-shadow:inset 0 0 0 1px var(--ops-cat,#94a3b8);
 }
+.ops-hub--today-first .ops-hub-cat,
+.ops-hub--today-first .ops-hub-cat.is-on{
+  min-height:76px;
+  padding:12px 18px;
+  gap:12px;
+}
 .ops-hub--today-first .ops-hub-cat .admin-nav-ico,
 .ops-hub--today-first .ops-hub-cat.is-on .admin-nav-ico,
 .ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"] .admin-nav-ico{
   color:var(--ops-cat,#142033);
-  width:22px;
-  height:22px;
+  width:36px;
+  height:36px;
 }
-.ops-hub--today-first .ops-hub-cat .admin-nav-ico svg{width:22px;height:22px}
-.ops-hub--today-first .ops-hub-cat__label{font-size:14px;line-height:1.2}
+.ops-hub--today-first .ops-hub-cat .admin-nav-ico svg{width:36px;height:36px}
+.ops-hub--today-first .ops-hub-cat__label{
+  font-size:26px;
+  line-height:1.15;
+  font-weight:800;
+  overflow-wrap:break-word;
+}
 .ops-hub--today-first .ops-hub-cat[data-cat="formal"],
 .ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"]{color:#b91c1c}
