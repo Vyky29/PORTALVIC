@@ -3861,3 +3861,24 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   font-weight:800;
   overflow-wrap:break-word;
 }
+/* Today sits under the Operations Hub title, flush with the glance row. */
+.ops-hub--today-first{
+  gap:8px;
+}
+.ops-hub--today-first .ops-hub__intro{
+  padding-bottom:0;
+  border-bottom:none;
+}
+.ops-hub--today-first > .ops-hub-fixed{
+  margin:0;
+}
+.ops-hub--today-first .ops-hub__today{
+  margin:0;
+}
+.ops-hub--today-first .ops-hub-panel--today.dash-hub__panel{
+  padding-top:8px;
+  padding-bottom:8px;
+}
+.ops-hub--today-first .ops-hub-panel--today .dash-hub__panel-head--link{
+  margin-bottom:8px;
+}
