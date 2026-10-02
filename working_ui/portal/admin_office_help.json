@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v149",
+  "version": "2026-10-02-v150",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -714,7 +714,8 @@
             "Every [weekday] until end of term also removes days already delivered. Use that only when the whole weekday pattern should go, including the past.",
             "One session only: Schedule & Covers, not Edit term slot.",
             "Private pay-in-advance: 10% of the unused amount, minimum £25, maximum £100. Delivered sessions and a summer crash course stay paid. LA / NHS do not use this fee.",
-            "Parents do not cancel the standing service from the parent hub. A one-day absence is Absents / Refunds and credits. The whole service is admin, Edit term slot, Cancel service."
+            "Parents do not cancel the standing service from the parent hub. A one-day absence is Absents / Refunds and credits. The whole service is admin, Edit term slot, Cancel service.",
+            "A finished service cancellation with money returned is its own Finance list, beside Absents. Absents stays one session: credit, refund, makeup, or none. The service list is the place gone and the unused money paid back."
           ],
           "es": {
             "title": "Cancelar un servicio (resto del term)",
@@ -733,7 +734,8 @@
               "Every [weekday] until end of term tambien quita dias ya dados. Usalo solo cuando todo ese dia de la semana tiene que irse, incluido el pasado.",
               "Una sola sesion: Schedule & Covers, no Edit term slot.",
               "Pago privado por adelantado: 10% de lo no usado, minimo 25 libras, maximo 100. Las sesiones ya dadas y un crash de verano siguen pagados. LA / NHS no usan esta tasa.",
-              "Los padres no cancelan el servicio fijo desde su portal. Una falta de un dia es Absents / Refunds and credits. El servicio entero es admin, Edit term slot, Cancel service."
+              "Los padres no cancelan el servicio fijo desde su portal. Una falta de un dia es Absents / Refunds and credits. El servicio entero es admin, Edit term slot, Cancel service.",
+              "Una cancelacion de servicio ya cerrada, con el dinero devuelto, es una lista propia en Finance, al lado de Absents. Absents sigue siendo una sesion: credit, refund, makeup o none. La lista de servicio es la plaza que se fue y el dinero no usado que se devolvio."
             ]
           }
         }
