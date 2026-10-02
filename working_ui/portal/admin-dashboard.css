@@ -740,8 +740,9 @@
     @media (max-width:960px){
       .admin-topbar-presence{max-width:none;border-left:none;margin:0}
     }
-    @media (max-width:720px){
-      .admin-topbar-presence{display:none!important}
+    @media (max-width:720px), (max-width:1180px) and (max-height:540px){
+      .admin-topbar-presence,
+      .admin-topbar .admin-search-wrap{display:none!important}
     }
     .c4k-sessions-hub{min-width:0}
     .c4k-sessions-hub__head{margin-bottom:12px;min-width:0}

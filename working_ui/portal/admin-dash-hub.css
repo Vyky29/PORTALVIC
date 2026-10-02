@@ -3991,8 +3991,8 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   color:#ef4444;
 }
 
-/* Phone: smaller boxes so Today and the category chips fit without scrolling. Desktop row stays 210px. */
-@media (max-width:720px){
+/* Phone portrait, and a phone held sideways (short screen). Desktop row stays 210px. */
+@media (max-width:720px), (max-width:1180px) and (max-height:540px){
   .ops-hub--today-first{
     gap:4px;
     --ops-tile-h:48px;

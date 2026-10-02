@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v148",
+  "version": "2026-10-02-v149",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -425,7 +425,7 @@
           ],
           "tips": [
             "The sheet shows a short row. Open on the title shows every button in that category, including Create invoice and Xero products under Finance.",
-            "Phone: only the category icons show until you tap one. The Services and places panel (title and Open) opens under that chip and closes if you tap it again.",
+            "Phone: only the category icons show until you tap one. The Services and places panel (title and Open) opens under that chip and closes if you tap it again. Held sideways, the phone keeps this same compact hub. Search and who is online (Staff, Parent, Booking) stay on the computer.",
             "On every admin page the title, the info circle and Back or Help sit in one row. They do not go to the far right."
           ],
           "es": {
@@ -443,7 +443,7 @@
             ],
             "tips": [
               "La hoja muestra una fila corta. Open en el titulo abre todos los botones de esa categoria, incluidos Create invoice y Xero products en Finance.",
-              "Telefono: solo se ven los iconos de categoria hasta que tocas uno. El panel Services and places (titulo y Open) se abre bajo ese chip y se cierra si lo tocas otra vez.",
+              "Telefono: solo se ven los iconos de categoria hasta que tocas uno. El panel Services and places (titulo y Open) se abre bajo ese chip y se cierra si lo tocas otra vez. En horizontal el telefono mantiene este mismo hub compacto. Search y quien esta conectado (Staff, Parent, Booking) se quedan en el ordenador.",
             "En cada pagina de admin el titulo, el circulo de info y Back o Help van en la misma fila. No se van al borde derecho."
             ]
           }
