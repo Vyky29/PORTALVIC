@@ -3927,7 +3927,7 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   padding-top:10px;
 }
 
-/* Boxes match Sessions Overview cards: white, thin border. Colour stays on the icon and the title. */
+/* Boxes use the Sessions Overview day-card pastel. Category chips sit a step darker. */
 .ops-hub--today-first .ops-hub__today > .ops-hub__feature,
 .ops-hub--today-first .ops-hub-panel--today .dash-hub__tile,
 .ops-hub--today-first .ops-hub-panel--services .dash-hub__tile,
@@ -3935,21 +3935,22 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 .ops-hub--today-first .ops-hub-panel--finance .dash-hub__tile,
 .ops-hub--today-first .ops-hub-panel--formal .dash-hub__tile,
 .ops-hub--today-first .ops-hub-panel--potential .dash-hub__tile{
-  background:#fff;
-  border:1px solid #d9e3ee;
-  border-radius:10px;
+  border-radius:12px;
+  border:1.5px solid color-mix(in srgb, var(--ops-wash, #94a3b8) 38%, #fff);
+  background:linear-gradient(165deg, color-mix(in srgb, var(--ops-wash, #94a3b8) 16%, transparent) 0%, #fff 68%);
   color:#243447;
-  box-shadow:none;
+  box-shadow:0 1px 2px rgba(15,35,65,.04);
 }
 .ops-hub--today-first .ops-hub__today > .ops-hub__feature{
   --dh-tile-fg:#be185d;
+  --ops-wash:#db2777;
 }
-.ops-hub--today-first .ops-hub-panel--today .dash-hub__tile{--dh-tile-fg:#db2777}
-.ops-hub--today-first .ops-hub-panel--services .dash-hub__tile{--dh-tile-fg:#d97706}
-.ops-hub--today-first .ops-hub-panel--families .dash-hub__tile{--dh-tile-fg:#7c3aed}
-.ops-hub--today-first .ops-hub-panel--finance .dash-hub__tile{--dh-tile-fg:#0f766e}
-.ops-hub--today-first .ops-hub-panel--formal .dash-hub__tile{--dh-tile-fg:#ef4444}
-.ops-hub--today-first .ops-hub-panel--potential .dash-hub__tile{--dh-tile-fg:#0284c7}
+.ops-hub--today-first .ops-hub-panel--today .dash-hub__tile{--dh-tile-fg:#db2777;--ops-wash:#db2777}
+.ops-hub--today-first .ops-hub-panel--services .dash-hub__tile{--dh-tile-fg:#d97706;--ops-wash:#d97706}
+.ops-hub--today-first .ops-hub-panel--families .dash-hub__tile{--dh-tile-fg:#7c3aed;--ops-wash:#7c3aed}
+.ops-hub--today-first .ops-hub-panel--finance .dash-hub__tile{--dh-tile-fg:#0f766e;--ops-wash:#0f766e}
+.ops-hub--today-first .ops-hub-panel--formal .dash-hub__tile{--dh-tile-fg:#ef4444;--ops-wash:#ef4444}
+.ops-hub--today-first .ops-hub-panel--potential .dash-hub__tile{--dh-tile-fg:#0284c7;--ops-wash:#0284c7}
 .ops-hub--today-first .ops-hub__feature .dash-hub__tile-label,
 .ops-hub--today-first .dash-hub__tile .dash-hub__tile-label{
   color:#243447;
@@ -3960,19 +3961,25 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 .ops-hub--today-first .ops-hub-sheet .dash-hub__tile:focus-visible,
 .ops-hub--today-first .ops-hub-fixed .dash-hub__tile:hover,
 .ops-hub--today-first .ops-hub-fixed .dash-hub__tile:focus-visible{
-  background:#fff;
-  border-color:#9aa8b8;
+  background:linear-gradient(165deg, color-mix(in srgb, var(--ops-wash, #94a3b8) 22%, transparent) 0%, #fff 62%);
+  border-color:color-mix(in srgb, var(--ops-wash, #94a3b8) 55%, #fff);
 }
 .ops-hub--today-first .ops-hub-cat,
 .ops-hub--today-first .ops-hub-cat.is-on{
-  background:#fff;
-  border:1px solid #d9e3ee;
-  border-radius:10px;
+  border-radius:12px;
   box-shadow:none;
   color:var(--ops-cat-ink,#142033);
+  border:1.5px solid color-mix(in srgb, var(--ops-cat, #94a3b8) 62%, #fff);
+  background:linear-gradient(165deg, color-mix(in srgb, var(--ops-cat, #94a3b8) 34%, #fff) 0%, color-mix(in srgb, var(--ops-cat, #94a3b8) 20%, #fff) 100%);
 }
 .ops-hub--today-first .ops-hub-cat.is-on{
   border:2px solid var(--ops-cat,#0e4d6e);
+  background:linear-gradient(165deg, color-mix(in srgb, var(--ops-cat, #94a3b8) 52%, #fff) 0%, color-mix(in srgb, var(--ops-cat, #94a3b8) 32%, #fff) 100%);
+}
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="services"],
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="finance"],
+.ops-hub--today-first .ops-hub-cat.is-on[data-cat="potential"]{
+  color:var(--ops-cat-ink,#142033);
 }
 .ops-hub--today-first .ops-hub-cat.is-on[data-cat="formal"]{
   color:#b91c1c;
