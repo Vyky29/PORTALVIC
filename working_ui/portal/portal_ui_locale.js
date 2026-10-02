@@ -101,7 +101,7 @@
   };
 
   var ADMIN_GROUP_ES = {
-    g_operator: "Hoy",
+    g_operator: "Sesiones",
     g_services: "Servicios y plazas",
     g_clients: "Clientes y familias",
     g_messages: "Mensajes",
@@ -114,6 +114,8 @@
   };
 
   var ADMIN_SUBHEAD_ES = {
+    Today: "Hoy",
+    Other: "Otros",
     Sessions: "Sesiones",
     "More day tools": "Más del día",
     "More HR": "Más H&R",

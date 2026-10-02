@@ -185,6 +185,7 @@
     .admin-nav-group[data-group-id="g_c4k"] .admin-nav-subhead,
     .admin-nav-group[data-group-id="g_services"] .admin-nav-subhead{color:rgba(254,243,199,.5)}
     .admin-nav-group[data-group-id="g_clients"] .admin-nav-subhead{color:#e9d5ff;font-size:11px;letter-spacing:.06em}
+    .admin-nav-group[data-group-id="g_operator"] .admin-nav-subhead{color:#f9a8d4;font-size:11px;letter-spacing:.08em}
     .admin-nav-group[data-group-id="g_messages"] .admin-nav-subhead{color:rgba(224,242,254,.55)}
     .admin-nav-toggle-inner{display:flex;align-items:center;gap:10px;min-width:0;flex:1;text-align:left}
     .admin-nav-label{min-width:0;flex:1;overflow-wrap:break-word;text-align:left}
