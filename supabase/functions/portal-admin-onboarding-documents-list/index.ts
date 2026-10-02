@@ -761,7 +761,33 @@ Deno.serve(async (req) => {
 
   const { bucket, errors: bucketErrors } = await resolveOnboardingBucket(obAdmin);
   const { documents, errors: listErrors } = await listAllDocuments(obAdmin, bucket);
-  const applicants = await loadApplicantProgress(portalAdmin, documents, portalAdmin);
+  const loaded = await loadApplicantProgress(portalAdmin, documents, portalAdmin);
+  const droppedIds = new Set<string>();
+  const applicants = loaded.filter((a) => {
+    const name = String(a.display_name || "").trim();
+    const anonymous = /^Session [0-9a-f]{8}$/i.test(name) &&
+      !String(a.portal_staff_name || "").trim() &&
+      !a.job &&
+      !a.health;
+    if (anonymous) droppedIds.add(a.applicant_session_id);
+    return !anonymous;
+  });
+  if (droppedIds.size) {
+    const paths = documents
+      .filter((d) => d.applicant_session_id && droppedIds.has(d.applicant_session_id))
+      .map((d) => d.path)
+      .filter(Boolean);
+    if (paths.length) {
+      const removed = await obAdmin.storage.from(bucket).remove(paths);
+      if (removed.error) {
+        console.warn("[portal-admin-onboarding-documents-list] drop test files", removed.error.message);
+      }
+    }
+    for (let i = documents.length - 1; i >= 0; i--) {
+      const id = documents[i].applicant_session_id;
+      if (id && droppedIds.has(id)) documents.splice(i, 1);
+    }
+  }
   await chaseIncompleteOnboardingApplicants(portalAdmin, applicants, verified);
   const upload_counts = uploadCountsFromDocuments(documents);
   const unlinked_documents = documents.filter((d) => !d.applicant_session_id).length;

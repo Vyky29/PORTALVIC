@@ -500,7 +500,16 @@
       });
       var body = await res.json().catch(function () { return {}; });
       state.meta = body.meta || {};
-      state.applicants = body.applicants || [];
+      state.applicants = (body.applicants || []).filter(function (a) {
+        var name = String((a && a.display_name) || "").trim();
+        var staff = String((a && a.portal_staff_name) || "").trim();
+        return !(
+          /^Session [0-9a-f]{8}$/i.test(name) &&
+          !staff &&
+          !a.job &&
+          !a.health
+        );
+      });
       state.uploadCounts = body.upload_counts || {};
       state.unlinked = body.unlinked_documents || 0;
       if (!res.ok || !body.ok) {
