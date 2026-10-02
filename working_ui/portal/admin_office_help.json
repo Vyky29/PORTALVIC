@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v115",
+  "version": "2026-10-02-v116",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -321,7 +321,7 @@
     {
       "id": "services_places",
       "title": "Services & places",
-      "blurb": "Capacity board, open places, finish-booking, and standing seat edits.",
+      "blurb": "Places, leads, waiting list, registered, and standing seats.",
       "priority": 1,
       "lessons": [
         {
@@ -417,7 +417,7 @@
     {
       "id": "clients_families",
       "title": "Clients & Families",
-      "blurb": "People buckets, CLIENT list, waiting list and profiles — separate from capacity.",
+      "blurb": "CLIENT list, family messages and family documents.",
       "priority": 1,
       "lessons": [
         {
@@ -470,7 +470,7 @@
             "A row that says Existing client is a parent who already has a child in class. The row is still a portal visit. It does not create a new child."
           ],
           "tips": [
-            "REGISTERED, under Clients, is the child who finished the form and has no place. That is a different screen."
+            "REGISTERED, under Services & places, is the child who finished the form and has no place. That is a different screen."
           ]
         },
         {
@@ -534,7 +534,7 @@
           "where": "Services & places → Leads",
           "keywords": ["registered", "hold", "lost slot", "pay hold", "cfk"],
           "steps": [
-            "REGISTERED is Clients → REGISTERED. That child finished the registration form and has no place now. Service and Time slot stay empty. The date is the day they registered.",
+            "REGISTERED is Services & places → REGISTERED. That child finished the registration form and has no place now. Service and Time slot stay empty. The date is the day they registered.",
             "On that REGISTERED list, Booking status Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released. The chip sits under the name. You do not open Documents to see that.",
             "Someone who already has a place stays ACTIVE. They do not get the Pay hold, Hold, or Lost slot chip.",
             "CFK LEADS is a filter on the contacts table. It is the old Class for Kids file. It is not this Leads page.",
@@ -548,7 +548,7 @@
           "id": "leads_vs_registered",
           "title": "Leads and REGISTERED",
           "summary": "Leads is who opened the Booking Portal. REGISTERED is a child who finished the form and has no place.",
-          "where": "Services & places → Leads, and Clients → REGISTERED",
+          "where": "Services & places → Leads, and Services & places → REGISTERED",
           "keywords": [
             "leads",
             "visitors",
@@ -603,7 +603,7 @@
             "crash courses"
           ],
           "steps": [
-            "Clients & Families in the left menu opens a screen with the same buttons. Under Clients: Active (the old CLIENT list), WAITING LIST, REGISTERED. Leads is under Services & places, next to Places: visitors, OTP, and the email interest file. REGISTERED is the same contacts table as Active, filtered to people who finished the form and have never had a place. Registration Form under Documents is every Booking Portal form, including people already in class. That page is not LEADS. Under Family: Achievement photos, Family broadcast, Portal PINs (Family), Dashboard Teleport (Family). WhatsApp, family messages (P), staff messages (S), Comms (C) and Announcements (A) are the buttons in the top bar. The title is on the left. Back sits on the right.",
+            "Clients & Families in the left menu opens a screen with the same buttons. Under Clients: Active (the old CLIENT list), Progress and Reports. WAITING LIST and REGISTERED are under Services & places, next to Places and Leads. REGISTERED is the same contacts table as Active, filtered to people who finished the form and have never had a place. Registration Form under Documents is every Booking Portal form, including people already in class. That page is not LEADS. Under Family: Achievement photos, Family broadcast, Portal PINs (Family), Dashboard Teleport (Family). WhatsApp, family messages (P), staff messages (S), Comms (C) and Announcements (A) are the buttons in the top bar. The title is on the left. Back sits on the right.",
             "The circle with i next to a page title opens what that page is for, plus the matching Office help steps. That text stays off the page.",
             "ACTIVE: on a place now. A cancelled place is not ACTIVE. ACTIVE stays under the name, with the date of birth.",
             "Support is the ratio, such as 1:1. Funding and Payment are separate columns. Funding is only one of three: Using Private funds (VAT 20%), Using LA funds (Exempt), or LA/NHS funded.",
@@ -612,7 +612,7 @@
             "Funding and Payment come from the invoice. VAT 20% means the family pays (Using Private funds). No VAT and the family pays means Using LA funds (Exempt). No VAT and the office bills the council or NHS means LA/NHS funded. Summer is used when that is the invoice on file. Each funding type and each payment method has its own colour.",
             "OLD CLIENTS were in summer 2026, or had a September service, and are not here now. Set Funding to All funding to see the whole list.",
             "Someone who was never in summer is not OLD CLIENTS. A registration in September with no service stays REGISTERED. A Class for Kids waiting request with no booking stays old waiting list. A Class for Kids booking from September 2025 through August 2026 is OLD CLIENTS. The Class for Kids file with no booking in that window, and no waiting request, stays under CFK LEADS.",
-            "WAITING LIST in the left menu is this same table. Booking status WAITING LIST shows portal waiting list and old waiting list together. portal waiting list is the Booking Portal queue from 12 Aug 2026 onward. old waiting list is the workbook queue from before that. Someone who already has a service is off old waiting list and stays ACTIVE. Source shows Booking Portal or Workbook. Funding and Payment are hidden. Newest join is at the top. A child who already has a service can also be on portal waiting list for another place. OTP with no finished registration stays in LEADS, not on these lists.",
+            "WAITING LIST under Services & places is this same table. Booking status WAITING LIST shows portal waiting list and old waiting list together. portal waiting list is the Booking Portal queue from 12 Aug 2026 onward. old waiting list is the workbook queue from before that. Someone who already has a service is off old waiting list and stays ACTIVE. Source shows Booking Portal or Workbook. Funding and Payment are hidden. Newest join is at the top. A child who already has a service can also be on portal waiting list for another place. OTP with no finished registration stays in LEADS, not on these lists.",
             "REGISTERED: filled the registration form, no term place, not on a waiting list. The Registered column is the day they registered, newest at the top. Someone who only comes to crash courses stays here, with Service set to Crash courses, so you can offer them a term place.",
             "CFK LEADS: the Class for Kids contact file. Funding and Payment stay hidden. Age comes from the date of birth on that file. Service says Class for Kids. The time column is the first and last booking date from that file, when the file has them. The line under the status says Class for Kids file.",
             "On Trial / Trialled: someone who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. Newest session is at the top. They stay ACTIVE as well when they took a term place afterwards.",
@@ -660,7 +660,7 @@
           "id": "waiting_list",
           "title": "portal waiting list and old waiting list",
           "summary": "Same queue as WAITING LIST. From 12 Aug 2026 it is portal waiting list. Before that it is old waiting list.",
-          "where": "Clients & Families → Clients → Active → Booking status",
+          "where": "Services & places → WAITING LIST",
           "keywords": [
             "waiting",
             "waiting list",
@@ -678,7 +678,7 @@
             "mas nuevo"
           ],
           "steps": [
-            "Open WAITING LIST in the left menu. It is the same table as Active, with Booking status WAITING LIST.",
+            "Open Services & places → WAITING LIST. It is the same table as Active, with Booking status WAITING LIST.",
             "WAITING LIST shows portal waiting list and old waiting list together. portal waiting list is Booking Portal from 12 Aug 2026. old waiting list is the workbook from before that day.",
             "Use Booking status to see only portal waiting list or only old waiting list. Those two are filters inside WAITING LIST. It is the same table, not a second one.",
             "Source is Booking Portal or Workbook. It is the same split as the WAITING page.",
@@ -1213,7 +1213,7 @@
             "pay hold"
           ],
           "steps": [
-            "Open Registration Form under Documents. Each row is a form that came in through the Booking Portal. People already in class are on this table too. It is not the REGISTERED list in Clients, and it is not LEADS.",
+            "Open Registration Form under Documents. Each row is a form that came in through the Booking Portal. People already in class are on this table too. It is not the REGISTERED list under Services & places, and it is not LEADS.",
             "New-client registration is the PDF and the photo, for the office to read. Parents finish funding and payment later on the finish-booking link.",
             "Place is live only: REGISTERED only, WAITING, Pay hold, Awaiting Tide, In class, or Did not finish.",
             "The chosen slot is not on this table. It arrives in the pay-hold alert and the I have paid office alert.",
@@ -1224,7 +1224,7 @@
             "Do not show them as booked kids on Sessions until they are a CLIENT."
           ],
           "tips": [
-            "REGISTERED in Clients is only people who finished the form and have never had a place. LEADS started OTP and did not finish the form. Climbing registrations and Parent consents stay under Documents."
+            "REGISTERED under Services & places is only people who finished the form and have never had a place. LEADS started OTP and did not finish the form. Climbing registrations and Parent consents stay under Documents."
           ]
         },
         {

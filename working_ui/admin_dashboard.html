@@ -554,8 +554,8 @@
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'c4k_sessions', 'scheduling', 'nav_all_menu'];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','office_calendar','sessions_lead','sessions_incidents','sessions_venue','sessions_pickup'] },
-      { id:'g_services', label:'Services & places', children:['services_places','leads','services_roster','new_client','term_roster_edit'] },
-      { id:'g_clients', label:'Clients & Families', children:['__h:Clients','clients','c4k_waitlist','portal_participant_documents','c4k_reviews','c4k_reports','__h:Family','participant_achievements','portal_parent_broadcast','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
+      { id:'g_services', label:'Services & places', children:['services_places','leads','c4k_waitlist','portal_participant_documents','services_roster','new_client','term_roster_edit'] },
+      { id:'g_clients', label:'Clients & Families', children:['__h:Clients','clients','c4k_reviews','c4k_reports','__h:Family','participant_achievements','portal_parent_broadcast','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
       { id:'g_xero', label:'Finance', children:['__h:Xero','finance_xero','finance_create','__h:Tide','finance_reenrolments','finance_payments','__h:Other','absents_refunds','commissioning_terms','family_terms'] },
       { id:'g_zoho', label:'H&R', children:['__h:Formal workers','c4k_late_submissions','session_disruptions','staffhr','roster_spreadsheets','staff_ghost_teleport','portal_docs_portalpin','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','__h:Documents','policies_portal','policies','portal_payslips','payroll_report','pay_rates','portal_docs_timesheet','portal_docs_expense','portal_docs_checklist','portal_docs_firstaid','day_centre_documents'] },
       { id:'g_potential', label:'Potential workers', children:['onboarding','interviews'] },
@@ -2587,7 +2587,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v115')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v116')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -23952,7 +23952,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var n = paxContactsUnifiedList().length;
       var intro = bookingSelected === 'waiting'
         ? 'WAITING LIST in the menu is this same table. Booking status WAITING LIST shows portal waiting list and old waiting list together. portal waiting list is the Booking Portal queue from 12 Aug 2026. old waiting list is the workbook from before that, and drops anyone who already has a service. Someone who already has a service can still be on portal waiting list for another place. Desired service, slot, place, last booking and parent stay on the row.'
-        : 'ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. REGISTERED in the left menu is this same table. Registration Form under Documents is every Booking Portal form, including people already in class, and it is tied to the pay link. That page is not LEADS. LEADS started OTP and did not finish the form. WAITING LIST in the left menu is this same table. portal waiting list is the Booking Portal queue from 12 Aug 2026 (Tala) to now. old waiting list is the workbook queue from before that, and drops anyone who already has a service. Source is on this table. Funding and Payment stay off waiting lists and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of a waiting list. REGISTERED shows the day they registered, newest at the top. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.';
+        : 'ACTIVE is on a place now. OLD CLIENTS were in summer 2026, had a September service, or a Class for Kids booking from September 2025 through August 2026, and are not here now. A September registration with no service stays REGISTERED. REGISTERED under Services & places is this same table. Registration Form under Documents is every Booking Portal form, including people already in class, and it is tied to the pay link. That page is not LEADS. LEADS started OTP and did not finish the form. WAITING LIST under Services & places is this same table. portal waiting list is the Booking Portal queue from 12 Aug 2026 (Tala) to now. old waiting list is the workbook queue from before that, and drops anyone who already has a service. Source is on this table. Funding and Payment stay off waiting lists and CFK LEADS. On CFK LEADS, Service is Class for Kids and the time column is the booking dates from that file. Newest join is at the top of a waiting list. REGISTERED shows the day they registered, newest at the top. On Trial / Trialled lists who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.';
       var focus = bookingSelected === 'waiting' ? (state.waitlistFocus || null) : null;
       var focusBanner = '';
       if(focus && (focus.prog || focus.venue)){
@@ -30751,20 +30751,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id:'services',
         icon:'🎯',
         title:'Services & places',
-        description:'Capacity, open places and standing seat edits.',
+        description:'Places, leads, waiting list, registered, and standing seats.',
         preview:[],
         status:'',
-        primary:['services_places','leads','services_roster','new_client','term_roster_edit'],
+        primary:['services_places','leads','c4k_waitlist','portal_participant_documents','services_roster','new_client','term_roster_edit'],
         secondary:['orders_all']
       },
       {
         id:'clients',
         icon:'👥',
         title:'Clients & Families',
-        description:'Active, WAITING LIST, Registered and Leads, plus family messages and family documents.',
+        description:'Children on a place now, plus family messages and family documents.',
         preview:[],
         status:'',
-        primary:['clients','c4k_waitlist','portal_participant_documents','c4k_reviews','c4k_reports','participant_achievements','portal_parent_broadcast','portal_family_pins','portal_parent_teleport','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'],
+        primary:['clients','c4k_reviews','c4k_reports','participant_achievements','portal_parent_broadcast','portal_family_pins','portal_parent_teleport','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'],
         secondary:[]
       },
       {
