@@ -3792,6 +3792,17 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   background:#f8fafc;
   border-color:#e2e8f0;
 }
+.ops-hub--today-first .ops-hub-cal-day.has-notes{
+  background:#ffedd5;
+  border-color:#f97316;
+}
+.ops-hub--today-first .ops-hub-cal-day.has-notes .ops-hub-cal-day__n{
+  color:#9a3412;
+}
+.ops-hub--today-first .ops-hub-cal-day.has-done{
+  background:#e2e8f0;
+  border-color:#94a3b8;
+}
 .ops-hub--today-first .dash-hub__panel-jump{
   width:auto;
   max-width:100%;
