@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v113",
+  "version": "2026-10-02-v114",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -441,7 +441,7 @@
           "id": "leads_do",
           "title": "What you do with the people on Leads",
           "summary": "This page is not a to-do list. Existing client means do nothing here.",
-          "where": "Clients & Families → Leads",
+          "where": "Services & places → Leads",
           "keywords": ["what to do", "existing client", "otp", "que hacer", "clientes"],
           "steps": [
             "A row that says Existing client already has a child in class. You do nothing on Leads. Their place is on Active, their day is on Sessions, their money is on Finance.",
@@ -460,7 +460,7 @@
           "id": "leads_what",
           "title": "What Leads is",
           "summary": "Leads is a list of parents, not children. Three kinds of row sit in the same table.",
-          "where": "Clients & Families → Leads",
+          "where": "Services & places → Leads",
           "keywords": ["leads", "visitors", "otp", "email interest", "potential"],
           "steps": [
             "This page is not the child list. A row is a parent who opened the Booking Portal, asked for a code, or was typed in by the office.",
@@ -477,7 +477,7 @@
           "id": "leads_tools",
           "title": "What each block on Leads does",
           "summary": "The top of the page is tools. The yellow box is a count. The table is the people.",
-          "where": "Clients & Families → Leads",
+          "where": "Services & places → Leads",
           "keywords": ["add potential", "yellow", "contact selection", "origin", "track status"],
           "steps": [
             "Add / update potential client is a form. You type a parent by hand: name, email, phone, activity, track status, and a note. Email is required. Save potential stores that parent.",
@@ -497,7 +497,7 @@
           "id": "leads_message",
           "title": "How to email or WhatsApp people on Leads",
           "summary": "Tick rows, then send. That writes to the parent. It does not reserve a place.",
-          "where": "Clients & Families → Leads → Contact selection",
+          "where": "Services & places → Leads → Contact selection",
           "keywords": ["broadcast", "copy emails", "copy phones", "whatsapp", "select"],
           "steps": [
             "Set Origin and the status filters so the table is the group you want.",
@@ -514,7 +514,7 @@
           "id": "leads_add",
           "title": "How to add a parent who never opened the portal",
           "summary": "Use Add / update potential client. They join the outreach list unless you mark them Booked.",
-          "where": "Clients & Families → Leads → Add / update potential client",
+          "where": "Services & places → Leads → Add / update potential client",
           "keywords": ["save potential", "new lead", "outreach"],
           "steps": [
             "Type the parent name, email, and phone. Email is required.",
@@ -531,7 +531,7 @@
           "id": "leads_not",
           "title": "What Leads is not",
           "summary": "Hold, lost slot, REGISTERED, and CFK LEADS are other screens.",
-          "where": "Clients & Families → Leads",
+          "where": "Services & places → Leads",
           "keywords": ["registered", "hold", "lost slot", "pay hold", "cfk"],
           "steps": [
             "REGISTERED is Clients → REGISTERED. That child finished the registration form and has no place now. Service and Time slot stay empty. The date is the day they registered.",
@@ -548,7 +548,7 @@
           "id": "leads_vs_registered",
           "title": "Leads and REGISTERED",
           "summary": "Leads is who opened the Booking Portal. REGISTERED is a child who finished the form and has no place.",
-          "where": "Clients & Families → Leads, and Clients → REGISTERED",
+          "where": "Services & places → Leads, and Clients → REGISTERED",
           "keywords": [
             "leads",
             "visitors",
@@ -603,7 +603,7 @@
             "crash courses"
           ],
           "steps": [
-            "Clients & Families in the left menu opens a screen with the same buttons. Under Clients: Active (the old CLIENT list), WAITING LIST, REGISTERED, Leads. REGISTERED is the same contacts table as Active, filtered to people who finished the form and have never had a place. Registration Form under Documents is every Booking Portal form, including people already in class. That page is not LEADS. Under Family: Achievement photos, Family broadcast, Portal PINs (Family), Dashboard Teleport (Family). WhatsApp, family messages (P), staff messages (S), Comms (C) and Announcements (A) are the buttons in the top bar. The title is on the left. Back sits on the right.",
+            "Clients & Families in the left menu opens a screen with the same buttons. Under Clients: Active (the old CLIENT list), WAITING LIST, REGISTERED. Leads is under Services & places, next to Places: visitors, OTP, and the email interest file. REGISTERED is the same contacts table as Active, filtered to people who finished the form and have never had a place. Registration Form under Documents is every Booking Portal form, including people already in class. That page is not LEADS. Under Family: Achievement photos, Family broadcast, Portal PINs (Family), Dashboard Teleport (Family). WhatsApp, family messages (P), staff messages (S), Comms (C) and Announcements (A) are the buttons in the top bar. The title is on the left. Back sits on the right.",
             "The circle with i next to a page title opens what that page is for, plus the matching Office help steps. That text stays off the page.",
             "ACTIVE: on a place now. A cancelled place is not ACTIVE. ACTIVE stays under the name, with the date of birth.",
             "Support is the ratio, such as 1:1. Funding and Payment are separate columns. Funding is only one of three: Using Private funds (VAT 20%), Using LA funds (Exempt), or LA/NHS funded.",
