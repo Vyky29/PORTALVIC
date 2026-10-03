@@ -799,6 +799,12 @@
         columns: (C.FADI_ABSENT_DC_BOARD && C.FADI_ABSENT_DC_BOARD[dk]) || [],
       };
     }
+    if (typeof C.dcOverviewColumnsForIso === "function") {
+      var octCols = C.dcOverviewColumnsForIso(d);
+      if (octCols && octCols.length) {
+        return { phase: "oct_dc", columns: octCols };
+      }
+    }
     if (d >= "2026-09-20") {
       return {
         phase: "standing",

@@ -119,6 +119,8 @@
     if (n === "manager") return "Hub · Manager";
     if (n === "office") return "Hub · Office";
     if (n === "acat") return "Hub · ACAT";
+    if (n === "meeting") return "Hub · Meeting";
+    if (n === "acat") return "Hub · ACAT";
     if (n === "interview" || n === "interviews") return "Hub Room";
     return "Hub Room";
   }
@@ -139,9 +141,10 @@
     });
   }
 
-  /** From Mon 28 Sep Luliya leaves Mon / Wed / Fri Day Centre. Tue DC stays. */
+  /** From Mon 28 Sep Luliya leaves Monday and Friday Day Centre. Wednesday she is back from 7 Oct. Tue DC stays. */
   function luliyaDcColumnsFrom28(iso, dk, columns) {
     if (!iso || iso < "2026-09-28") return columns;
+    if (dk === "wednesday" && iso >= "2026-10-07") return columns;
     if (dk !== "monday" && dk !== "wednesday" && dk !== "friday") return columns;
     return (columns || []).filter(function (col) {
       return !/\bluliya\b/i.test(String((col && col.staff) || ""));

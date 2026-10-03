@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 143;
+  var SOURCE_VERSION = 144;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -4567,6 +4567,26 @@
     return out;
   }
 
+  /** Sessions Overview fallback when a Services seat is missing. Occupants still win when present. */
+  function dcOverviewColumnsForIso(iso) {
+    var d = normIso(iso);
+    if (!d) return null;
+    var dow = "";
+    try {
+      dow = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
+        new Date(d + "T12:00:00").getDay()
+      ];
+    } catch (_iso) {
+      return null;
+    }
+    if (d === "2026-10-05") return MONDAY_5_OCT_DC;
+    if (dow === "monday" && d >= MONDAY_DC_FROM_12) return MONDAY_FROM_12_OCT_DC;
+    if (dow === "tuesday" && d >= TUESDAY_DC_FROM) return TUESDAY_FROM_6_OCT_DC;
+    if (dow === "wednesday" && d >= WEDNESDAY_DC_FROM) return WEDNESDAY_FROM_7_OCT_DC;
+    if (dow === "friday" && d >= FRIDAY_DC_FROM) return FRIDAY_FROM_9_OCT_DC;
+    return null;
+  }
+
   /**
    * Canonical roster rows for STAFF_DASHBOARD_SOURCE.rows.
    * @param {{ skipDb?: boolean }} [opts]
@@ -5090,6 +5110,7 @@
     DAY_CENTRE_STANDING_ISO: DAY_CENTRE_STANDING_ISO,
     WEEKEND_STANDING_ISO: WEEKEND_STANDING_ISO,
     AUTUMN_DAY_CENTRE_BOARD: AUTUMN_DAY_CENTRE_BOARD,
+    dcOverviewColumnsForIso: dcOverviewColumnsForIso,
     AUTUMN_ACTON_TUESDAY_BOARD: AUTUMN_ACTON_TUESDAY_BOARD,
     AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD: AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD,
     AUTUMN_ACTON_WEDNESDAY_BOARD: AUTUMN_ACTON_WEDNESDAY_BOARD,
