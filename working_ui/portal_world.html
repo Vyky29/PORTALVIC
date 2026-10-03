@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>El mundo de los portales</title>
+    <script>
+      (function () {
+        var h = location.hostname;
+        if (h !== "localhost" && h !== "127.0.0.1") {
+          document.documentElement.classList.add("portal-world-locked");
+        }
+      })();
+    </script>
+  <style>
+    :root {
+      --ink: #173247;
+      --muted: #4d6478;
+      --sea-0: #08344c;
+      --sea-1: #0c4d6e;
+      --sea-2: #14658a;
+      --gold: #f4b740;
+      --paper: #f7f4ee;
+      --line: rgba(23, 50, 71, 0.12);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body {
+      min-height: 100%;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--sea-0);
+    }
+    html.portal-world-locked .app { visibility: hidden; }
+    .lock {
+      position: fixed; inset: 0; display: none;
+      align-items: center; justify-content: center;
+      color: #e8f4fb; font-weight: 650;
+      background: var(--sea-0);
+    }
+    html.portal-world-locked .lock { display: flex; }
+    .app {
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    header.top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px 8px;
+      color: #e7f3fa;
+    }
+    header.top > div:first-child { min-width: 0; flex: 1 1 280px; }
+    header.top h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: -0.02em;
+    }
+    header.top p {
+      margin: 4px 0 0;
+      max-width: 46rem;
+      color: rgba(231, 243, 250, 0.78);
+      font-size: 13.5px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+    .stories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
+    }
+    .stories button {
+      font: inherit;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.08);
+      color: #f4fbff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .stories button.is-on {
+      background: var(--gold);
+      color: #3a2a08;
+      border-color: var(--gold);
+    }
+    .stage {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      padding: 0 12px 12px;
+    }
+    .sea {
+      position: relative;
+      min-width: 0;
+      height: 100%;
+      min-height: 0;
+      border-radius: 28px;
+      overflow: auto;
+      display: grid;
+      grid-template-areas:
+        ". ceo ."
+        "booking admin staff"
+        ". parent .";
+      grid-template-columns: 1fr 1.08fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 8px 16px;
+      align-items: center;
+      justify-items: center;
+      padding: 8px 348px 8px 12px;
+      background:
+        radial-gradient(ellipse 28% 22% at 18% 40%, rgba(255,255,255,.16), transparent 70%),
+        radial-gradient(ellipse 34% 26% at 50% 48%, rgba(255,255,255,.14), transparent 70%),
+        radial-gradient(ellipse 26% 20% at 80% 42%, rgba(255,255,255,.12), transparent 70%),
+        radial-gradient(ellipse 24% 18% at 50% 18%, rgba(244,183,64,.16), transparent 70%),
+        radial-gradient(ellipse 30% 20% at 50% 80%, rgba(255,255,255,.12), transparent 70%),
+        linear-gradient(180deg, var(--sea-2), var(--sea-1) 42%, var(--sea-0));
+    }
+    .sea svg.routes {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .routes path {
+      fill: none;
+      stroke: rgba(255,255,255,.45);
+      stroke-width: 2;
+      stroke-dasharray: 1.2 1.1;
+      vector-effect: non-scaling-stroke;
+    }
+    .routes path.is-hot {
+      stroke: var(--gold);
+      stroke-width: 3.5;
+      stroke-dasharray: none;
+    }
+    #islands { display: contents; }
+    .island {
+      position: relative;
+      width: min(230px, 100%);
+      min-width: 0;
+      padding: 10px 12px 10px;
+      border: 0;
+      text-align: left;
+      color: inherit;
+      cursor: pointer;
+      border-radius: 46% 54% 50% 50% / 42% 46% 54% 58%;
+      box-shadow:
+        0 0 0 8px rgba(255,255,255,.14),
+        0 16px 0 rgba(0,0,0,.12),
+        0 22px 36px rgba(0,0,0,.22);
+      z-index: 2;
+    }
+    .island:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
+    .island.is-picked { box-shadow: 0 0 0 8px rgba(244,183,64,.55), 0 16px 0 rgba(0,0,0,.12), 0 22px 36px rgba(0,0,0,.22); }
+    .island.is-hot { animation: pulse 1.1s ease; }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+    .island--ceo { grid-area: ceo; }
+    .island--booking { grid-area: booking; }
+    .island--admin { grid-area: admin; width: min(260px, 100%); z-index: 3; background: linear-gradient(180deg, #1f8f7e, #14685c); color: #f3fffc; }
+    .island--staff { grid-area: staff; }
+    .island--parent { grid-area: parent; }
+    .island--staff { background: linear-gradient(180deg, #3f7ebf, #2a5f96); color: #f4f9ff; border-radius: 52% 48% 46% 54% / 48% 42% 58% 52%; }
+    .island--booking { background: linear-gradient(180deg, #f0d7a0, #e2b86a); color: #4a3412; border-radius: 48% 52% 58% 42% / 46% 54% 46% 54%; }
+    .island--parent { background: linear-gradient(180deg, #f6c7bc, #e7a294); color: #5c2c30; border-radius: 50% 50% 46% 54% / 44% 56% 44% 56%; }
+    .island--ceo { background: linear-gradient(180deg, #24344d, #172536); color: #f6edd4; border-radius: 42% 58% 48% 52% / 50% 42% 58% 50%; }
+    .kicker {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      opacity: .8;
+    }
+    .island strong.name {
+      display: block;
+      margin-top: 2px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+    .host {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      opacity: .8;
+      overflow-wrap: anywhere;
+    }
+    .chips, .people {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+      min-width: 0;
+    }
+    .chip, .person {
+      max-width: 100%;
+      border-radius: 999px;
+      padding: 3px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+    .chip { background: rgba(255,255,255,.2); }
+    .island--booking .chip, .island--parent .chip { background: rgba(255,255,255,.45); }
+    .person {
+      font: inherit;
+      font-size: 11px;
+      font-weight: 750;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+    }
+    .person--home { background: rgba(255,255,255,.92); color: var(--ink); }
+    .person--visit { background: transparent; color: inherit; border-color: currentColor; }
+    .person.is-on { outline: 2px solid var(--gold); }
+    .traveler {
+      position: absolute;
+      z-index: 4;
+      transform: translate(-50%, -130%);
+      min-width: 0;
+      max-width: 140px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 8px 18px rgba(0,0,0,.25);
+      pointer-events: none;
+      overflow-wrap: anywhere;
+    }
+    .traveler[hidden] { display: none; }
+    .traveler { transition: left .85s ease, top .85s ease; }
+    aside.panel {
+      position: absolute;
+      top: 0;
+      right: 12px;
+      bottom: 12px;
+      width: min(340px, 32vw);
+      min-width: 0;
+      background: var(--paper);
+      border-radius: 22px;
+      padding: 16px 16px 18px;
+      overflow: auto;
+      z-index: 6;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+    }
+    aside.panel h2 { margin: 0; font-size: 18px; }
+    .sub {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+    .block { margin-top: 14px; }
+    .block h3 {
+      margin: 0 0 6px;
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .row {
+      margin: 0 0 6px;
+      font-size: 14px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+    .row b { font-weight: 750; }
+    ol.steps { margin: 0; padding: 0; list-style: none; }
+    ol.steps li {
+      margin: 0 0 8px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      font-size: 13.5px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      cursor: pointer;
+    }
+    ol.steps li.is-now {
+      border-color: #e2b14a;
+      background: #fff8e8;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .swatch {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: -1px;
+    }
+    .swatch--home { background: var(--ink); }
+    .swatch--visit { background: transparent; border: 1.5px solid var(--ink); }
+    @media (prefers-reduced-motion: reduce) {
+      .island.is-hot { animation: none; }
+      .traveler { transition: none; }
+    }
+    @media (max-width: 980px) {
+      html, body, .app { height: auto; overflow: auto; }
+      .sea {
+        height: auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 22px;
+        padding: 18px 12px 20px;
+        overflow: visible;
+      }
+      .routes, .traveler { display: none !important; }
+      .island, .island--admin {
+        position: relative;
+        left: auto !important;
+        top: auto !important;
+        transform: none;
+        width: min(420px, 100%);
+        border-radius: 22px;
+      }
+      .island.is-hot { animation: none; }
+      aside.panel {
+        position: relative;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        width: auto;
+        margin: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="lock">Comprobando la sesion de oficina...</div>
+  <div class="app">
+    <header class="top">
+      <div>
+        <h1>El mundo de los portales</h1>
+        <p>Cinco islas. Nombre solido: vive ahi. Nombre con borde: puede entrar. Los caminos ensenan el mecanismo, no el parte de hoy.</p>
+      </div>
+      <div class="stories" id="stories" role="tablist" aria-label="Caminos"></div>
+    </header>
+    <div class="stage">
+      <div class="sea" id="sea">
+        <svg class="routes" id="routes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <div id="islands"></div>
+        <div class="traveler" id="traveler" hidden></div>
+      </div>
+      <aside class="panel" id="panel" aria-live="polite"></aside>
+    </div>
+  </div>
+  <script>
+(function () {
+  "use strict";
+
+  var ISLANDS = [
+    {
+      id: "ceo",
+      cls: "island--ceo",
+      kicker: "Direccion",
+      name: "CEO",
+      host: "portalvic.vercel.app/ceo_dashboard",
+      short: "portalvic / CEO",
+      x: 34, y: 15,
+      chips: ["Finance", "Insights", "Visitantes"],
+      home: [],
+      visit: [
+        { id: "victor", name: "Victor" },
+        { id: "javi", name: "Javi" },
+        { id: "raul", name: "Raul" }
+      ],
+      happens: [
+        "Snapshot, finance de todo el ano, e insights de la compania.",
+        "Pueden abrir Activity log, padres en el portal, portal activity, staff readiness y visitantes del Booking.",
+        "Desde aqui saltan a Admin o a Staff. El dia no se opera en esta isla."
+      ]
+    },
+    {
+      id: "booking",
+      cls: "island--booking",
+      kicker: "Puerta publica",
+      name: "Booking",
+      host: "www.clubsensational.org/bookingportal",
+      short: "clubsensational.org/booking",
+      x: 14, y: 44,
+      chips: ["Plazas 30 min", "OTP", "Registro"],
+      home: [
+        { id: "visitors", name: "Visitantes" },
+        { id: "leads", name: "LEADS" }
+      ],
+      visit: [
+        { id: "families", name: "Con cuenta" }
+      ],
+      happens: [
+        "La familia mira plazas. Natacion es siempre de 30 minutos.",
+        "Si pide el codigo y no termina el registro, se queda en LEADS.",
+        "Si termina el formulario, pasa a REGISTERED y sigue el pago en Parent.",
+        "Un enlace de pago sin cobrar deja la plaza en hold 30 minutos."
+      ]
+    },
+    {
+      id: "admin",
+      cls: "island--admin",
+      kicker: "Oficina del dia",
+      name: "Admin",
+      host: "portalvic.vercel.app",
+      short: "portalvic / Admin",
+      x: 34, y: 48,
+      chips: ["Overview", "Schedule", "Places"],
+      home: [
+        { id: "sevitha", name: "Sevitha" }
+      ],
+      visit: [
+        { id: "victor", name: "Victor" },
+        { id: "javi", name: "Javi" },
+        { id: "raul", name: "Raul" }
+      ],
+      happens: [
+        "Sessions Overview es el look-here del dia.",
+        "Schedule and Covers, day off y el pago de una plaza escriben el dia.",
+        "Places, Leads, CLIENT, REGISTERED y WAITING viven aqui.",
+        "La campana de oficina (tarde, cancel, incident) tambien."
+      ]
+    },
+    {
+      id: "staff",
+      cls: "island--staff",
+      kicker: "Equipo",
+      name: "Staff",
+      host: "clubsensational-staff.vercel.app",
+      short: "clubsensational-staff",
+      x: 56, y: 44,
+      chips: ["Today", "Feedback", "Timesheet"],
+      home: [
+        { id: "john", name: "John" },
+        { id: "berta", name: "Berta" },
+        { id: "michelle", name: "Michelle" },
+        { id: "team", name: "Equipo" }
+      ],
+      visit: [
+        { id: "victor", name: "Victor" },
+        { id: "javi", name: "Javi" },
+        { id: "raul", name: "Raul" },
+        { id: "sevitha", name: "Sevitha" }
+      ],
+      happens: [
+        "Today, feedback, timesheet y cancelaciones del trabajador.",
+        "John, Berta y Michelle son leads de programa en esta misma app.",
+        "Un cambio de horario se ve en el halo y en Quick menu, no como anuncio que bloquea.",
+        "Javier Marquez (natacion) esta en este equipo. No es Javi, el director."
+      ]
+    },
+    {
+      id: "parent",
+      cls: "island--parent",
+      kicker: "Familias",
+      name: "Parent",
+      host: "www.clubsensational.org/parent",
+      short: "clubsensational.org/parent",
+      x: 34, y: 82,
+      chips: ["Chips", "Team", "Facturas"],
+      home: [
+        { id: "clients", name: "CLIENT" }
+      ],
+      visit: [
+        { id: "registered", name: "REGISTERED" }
+      ],
+      happens: [
+        "CLIENT ve su chip del termino, Team, facturas y el PIN.",
+        "Si el club cancela, el chip sale cancelado.",
+        "Si hay cover con nombre, Team muestra ese nombre.",
+        "Day off del instructor y COVER NEEDED no se ven aqui."
+      ]
+    }
+  ];
+
+  var PEOPLE = {
+    victor: {
+      name: "Victor",
+      line: "Elige al entrar: CEO, Admin o Staff. No se queda forzado en Admin."
+    },
+    javi: {
+      name: "Javi",
+      line: "Director (Palankas Arranz). Mismas tres puertas que Victor. Javier Marquez es otro, el instructor, y vive en Staff."
+    },
+    raul: {
+      name: "Raul",
+      line: "Director. Elige CEO, Admin o Staff. No entra solo a mirar: puede operar el dia en Admin."
+    },
+    sevitha: {
+      name: "Sevitha",
+      line: "Vive en Admin. Es la ops del dia. Puede abrir Staff. No entra en CEO. info@ es el mismo acceso."
+    },
+    john: { name: "John", line: "Lead de programa. Su casa es Staff, con herramientas de lead. No es Admin." },
+    berta: { name: "Berta", line: "Lead de programa. Su casa es Staff, con herramientas de lead. No es Admin." },
+    michelle: { name: "Michelle", line: "Lead de programa. Su casa es Staff, con herramientas de lead. No es Admin." },
+    team: {
+      name: "Equipo",
+      line: "Instructores y support workers. Su casa es Staff: Today, feedback y timesheet. No ven el tablero de oficina."
+    },
+    visitors: { name: "Visitantes", line: "Entran al Booking sin cuenta y miran plazas." },
+    leads: { name: "LEADS", line: "Pidieron el codigo (OTP) y no terminaron el registro. Aun no son CLIENT." },
+    families: { name: "Con cuenta", line: "Una familia que ya tiene cuenta puede entrar al Booking y ver Connected as." },
+    clients: { name: "CLIENT", line: "Tienen plaza este termino. Viven en Parent y en Sessions." },
+    registered: { name: "REGISTERED", line: "Terminaron el formulario y nunca han tenido plaza. Pasan por Parent para pagar, y aun no son CLIENT." }
+  };
+
+  var LINKS = [
+    { id: "b-a", from: "booking", to: "admin", label: "Lead, plaza y pago" },
+    { id: "b-p", from: "booking", to: "parent", label: "Registro y finish-booking" },
+    { id: "a-s", from: "admin", to: "staff", label: "Horario, cover, sesion nueva" },
+    { id: "a-p", from: "admin", to: "parent", label: "Chip, factura, PIN" },
+    { id: "s-p", from: "staff", to: "parent", label: "Nota de la sesion" },
+    { id: "a-c", from: "admin", to: "ceo", label: "Cifras y actividad" }
+  ];
+
+  var STORIES = [
+    {
+      id: "lead",
+      label: "Lead a cliente",
+      actor: "Familia",
+      steps: [
+        { island: "booking", link: "", text: "Una familia entra al Booking y mira una plaza de 30 min." },
+        { island: "booking", link: "", text: "Pide el codigo y no termina. Se queda en LEADS. Si termina el formulario, pasa a REGISTERED." },
+        { island: "parent", link: "b-p", text: "El registro y el enlace de pago viven en el camino de Parent (finish-booking)." },
+        { island: "admin", link: "b-a", text: "Admin ve el lead y la plaza. El hold del pago dura 30 min si aun no han pagado." },
+        { island: "admin", link: "", text: "Al pagar ya es CLIENT: entra en Schedule, en Sessions Overview y en Places." },
+        { island: "staff", link: "a-s", text: "El instructor lo ve en Today. El aviso llega al staff, no como anuncio que bloquea la app." },
+        { island: "parent", link: "a-p", text: "La familia abre el hub: chip, Team y PIN. Ya no es un lead." },
+        { island: "ceo", link: "a-c", text: "CEO puede ver visitantes del Booking y padres en el portal. El dia sigue en Admin." }
+      ]
+    },
+    {
+      id: "feedback",
+      label: "Feedback del dia",
+      actor: "Feedback",
+      steps: [
+        { island: "staff", link: "", text: "Despues de la sesion el instructor escribe el feedback en Today." },
+        { island: "admin", link: "a-s", text: "Sessions Overview pasa a verde. Ese tablero es el look-here del dia." },
+        { island: "parent", link: "s-p", text: "La familia puede leer la nota de esa sesion." },
+        { island: "staff", link: "a-s", text: "Si falta feedback, el halo y Quick menu avisan en Staff, y la campana en Admin. No hay hoja de Sign and submit." }
+      ]
+    },
+    {
+      id: "cover",
+      label: "Un cover",
+      actor: "Cover",
+      steps: [
+        { island: "admin", link: "", text: "En Schedule and Covers se apunta el cover, o el day off si el instructor no viene." },
+        { island: "staff", link: "a-s", text: "Today del equipo muestra el cover, o COVER NEEDED si la plaza sigue sin nadie." },
+        { island: "parent", link: "a-p", text: "Si el cover tiene nombre, Team lo muestra. El day off y COVER NEEDED no salen en Parent." },
+        { island: "admin", link: "", text: "Overview sigue siendo el sitio donde la oficina mira ese dia." }
+      ]
+    },
+    {
+      id: "absence",
+      label: "Ausencia de familia",
+      actor: "Ausencia",
+      steps: [
+        { island: "parent", link: "", text: "La familia marca que el nino no viene." },
+        { island: "admin", link: "a-p", text: "Admin lo ve en Overview y en ausencias." },
+        { island: "staff", link: "a-s", text: "Today del instructor muestra esa ausencia." },
+        { island: "parent", link: "a-p", text: "El chip de esa sesion queda como ausencia. La plaza del termino no se borra sola." }
+      ]
+    }
+  ];
+
+  var byId = {};
+  ISLANDS.forEach(function (island) { byId[island.id] = island; });
+
+  var state = {
+    island: "admin",
+    person: "",
+    story: "lead",
+    step: 0,
+    playing: true,
+    timer: 0
+  };
+
+  var sea = document.getElementById("sea");
+  var routesEl = document.getElementById("routes");
+  var islandsEl = document.getElementById("islands");
+  var traveler = document.getElementById("traveler");
+  var panel = document.getElementById("panel");
+  var storiesEl = document.getElementById("stories");
+
+  function islandEl(id) {
+    return islandsEl.querySelector('[data-island="' + id + '"]');
+  }
+
+  var centers = {};
+
+  function measure() {
+    var seaR = sea.getBoundingClientRect();
+    if (!seaR.width || !seaR.height) return;
+    ISLANDS.forEach(function (island) {
+      var el = islandEl(island.id);
+      if (!el) return;
+      var r = el.getBoundingClientRect();
+      centers[island.id] = {
+        x: ((r.left + r.width / 2 - seaR.left) / seaR.width) * 100,
+        y: ((r.top + r.height / 2 - seaR.top) / seaR.height) * 100
+      };
+    });
+    routesEl.innerHTML = LINKS.map(function (link) {
+      var a = centers[link.from];
+      var b = centers[link.to];
+      if (!a || !b) return "";
+      var mx = (a.x + b.x) / 2;
+      var my = (a.y + b.y) / 2;
+      var d = "M " + a.x + " " + a.y + " Q " + mx + " " + (my - 4) + " " + b.x + " " + b.y;
+      return '<path data-link="' + link.id + '" d="' + d + '"></path>';
+    }).join("");
+  }
+
+  function renderIslands() {
+    islandsEl.innerHTML = ISLANDS.map(function (island) {
+      var people = island.home.map(function (p) {
+        return '<button type="button" class="person person--home" data-person="' + p.id + '">' + p.name + "</button>";
+      }).concat(island.visit.map(function (p) {
+        return '<button type="button" class="person person--visit" data-person="' + p.id + '">' + p.name + "</button>";
+      })).join("");
+      var chips = island.chips.map(function (c) {
+        return '<span class="chip">' + c + "</span>";
+      }).join("");
+      return '' +
+        '<article class="island ' + island.cls + '" data-island="' + island.id + '" tabindex="0" role="button" aria-label="' + island.name + '">' +
+          '<span class="kicker">' + island.kicker + "</span>" +
+          '<strong class="name">' + island.name + "</strong>" +
+          '<span class="host">' + island.short + "</span>" +
+          '<div class="chips">' + chips + "</div>" +
+          '<div class="people">' + people + "</div>" +
+        "</article>";
+    }).join("");
+  }
+
+  function renderStories() {
+    storiesEl.innerHTML = STORIES.map(function (story) {
+      var on = story.id === state.story ? " is-on" : "";
+      return '<button type="button" class="' + on.trim() + '" data-story="' + story.id + '" role="tab">' + story.label + "</button>";
+    }).join("");
+  }
+
+  function storyById(id) {
+    for (var i = 0; i < STORIES.length; i++) if (STORIES[i].id === id) return STORIES[i];
+    return STORIES[0];
+  }
+
+  function setHot() {
+    var story = storyById(state.story);
+    var step = story.steps[state.step] || story.steps[0];
+    Array.prototype.forEach.call(islandsEl.querySelectorAll(".island"), function (el) {
+      el.classList.toggle("is-picked", el.getAttribute("data-island") === state.island);
+      el.classList.toggle("is-hot", state.playing && el.getAttribute("data-island") === step.island);
+    });
+    Array.prototype.forEach.call(routesEl.querySelectorAll("path"), function (path) {
+      path.classList.toggle("is-hot", state.playing && path.getAttribute("data-link") === step.link);
+    });
+    Array.prototype.forEach.call(islandsEl.querySelectorAll(".person"), function (btn) {
+      btn.classList.toggle("is-on", btn.getAttribute("data-person") === state.person);
+    });
+    if (!state.playing) {
+      traveler.hidden = true;
+      return;
+    }
+    var spot = centers[step.island];
+    if (!spot) return;
+    traveler.hidden = false;
+    traveler.textContent = story.actor;
+    traveler.style.left = spot.x + "%";
+    traveler.style.top = spot.y + "%";
+  }
+
+  function personLine() {
+    var person = PEOPLE[state.person];
+    if (!person) return "";
+    return '<div class="block"><h3>Persona</h3><p class="row"><b>' + person.name + ".</b> " + person.line + "</p></div>";
+  }
+
+  function renderPanel() {
+    if (state.playing) {
+      var story = storyById(state.story);
+      var steps = story.steps.map(function (step, i) {
+        var island = byId[step.island];
+        return '<li data-step="' + i + '"' + (i === state.step ? ' class="is-now"' : "") + "><b>" + island.name + ".</b> " + step.text + "</li>";
+      }).join("");
+      panel.innerHTML =
+        "<h2>" + story.label + "</h2>" +
+        '<p class="sub">Paso ' + (state.step + 1) + " de " + story.steps.length + ". Pulsa una isla para parar y leer quien esta ahi.</p>" +
+        '<div class="block"><ol class="steps">' + steps + "</ol></div>";
+      return;
+    }
+    var island = byId[state.island];
+    var home = island.home.map(function (p) {
+      return '<p class="row"><b>' + p.name + "</b> vive aqui.</p>";
+    }).join("");
+    var visit = island.visit.map(function (p) {
+      return '<p class="row"><b>' + p.name + "</b> puede entrar.</p>";
+    }).join("");
+    var happens = island.happens.map(function (line) {
+      return '<p class="row">' + line + "</p>";
+    }).join("");
+    var links = LINKS.filter(function (link) {
+      return link.from === island.id || link.to === island.id;
+    }).map(function (link) {
+      var other = link.from === island.id ? byId[link.to] : byId[link.from];
+      return '<p class="row"><b>' + other.name + ".</b> " + link.label + ".</p>";
+    }).join("");
+    panel.innerHTML =
+      "<h2>" + island.name + "</h2>" +
+      '<p class="sub">' + island.host + "</p>" +
+      personLine() +
+      '<div class="block"><h3>Quien</h3>' + home + visit + "</div>" +
+      '<div class="block"><h3>Que pasa</h3>' + happens + "</div>" +
+      '<div class="block"><h3>Conectada con</h3>' + links + "</div>" +
+      '<div class="legend"><span><i class="swatch swatch--home"></i>Vive aqui</span><span><i class="swatch swatch--visit"></i>Puede entrar</span></div>';
+  }
+
+  function stop() {
+    state.playing = false;
+    if (state.timer) window.clearTimeout(state.timer);
+    state.timer = 0;
+  }
+
+  function tick() {
+    if (!state.playing) return;
+    var story = storyById(state.story);
+    state.timer = window.setTimeout(function () {
+      state.step = (state.step + 1) % story.steps.length;
+      paint();
+      tick();
+    }, 2600);
+  }
+
+  function play(id) {
+    state.story = id;
+    state.step = 0;
+    state.playing = true;
+    state.person = "";
+    if (state.timer) window.clearTimeout(state.timer);
+    paint();
+    tick();
+  }
+
+  function paint() {
+    renderStories();
+    setHot();
+    renderPanel();
+  }
+
+  islandsEl.addEventListener("click", function (ev) {
+    var personBtn = ev.target.closest("[data-person]");
+    var island = ev.target.closest("[data-island]");
+    if (!island) return;
+    stop();
+    state.island = island.getAttribute("data-island");
+    state.person = personBtn ? personBtn.getAttribute("data-person") : "";
+    paint();
+  });
+
+  islandsEl.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    var island = ev.target.closest("[data-island]");
+    if (!island || ev.target !== island) return;
+    ev.preventDefault();
+    stop();
+    state.island = island.getAttribute("data-island");
+    state.person = "";
+    paint();
+  });
+
+  storiesEl.addEventListener("click", function (ev) {
+    var btn = ev.target.closest("[data-story]");
+    if (!btn) return;
+    play(btn.getAttribute("data-story"));
+  });
+
+  panel.addEventListener("click", function (ev) {
+    var step = ev.target.closest("[data-step]");
+    if (!step || !state.playing) return;
+    if (state.timer) window.clearTimeout(state.timer);
+    state.step = Number(step.getAttribute("data-step")) || 0;
+    paint();
+    tick();
+  });
+
+  renderIslands();
+  play("lead");
+  window.requestAnimationFrame(function () {
+    measure();
+    setHot();
+  });
+
+  window.addEventListener("resize", function () {
+    measure();
+    setHot();
+  });
+})();
+  </script>
+  <script type="module">
+    var host = location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      document.documentElement.classList.add("portal-world-ready");
+    } else {
+      document.documentElement.classList.add("portal-world-locked");
+      try {
+        var auth = await import("/portal/auth-handler.js?v=20261003-world");
+        await auth.bootstrapDashboardSupabase({ page: "admin" });
+        document.documentElement.classList.remove("portal-world-locked");
+        document.documentElement.classList.add("portal-world-ready");
+      } catch (err) {
+        location.replace("/login.html");
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-02-v154",
+  "version": "2026-10-03-v155",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2324,7 +2324,7 @@
     {
       "id": "portals_map",
       "title": "Map of portals",
-      "blurb": "Which site is which — admin, staff, parent, booking.",
+      "blurb": "Which site is which - admin, CEO, staff, parent, booking - and the island map.",
       "priority": 2,
       "lessons": [
         {
@@ -2396,6 +2396,38 @@
           "tips": [
             "If the top bar shows another family, Sign out before booking. The slot link does not switch the account by itself.",
             "Fully booked with no payment usually means the 30-minute hold has not been cleared yet."
+          ]
+        },
+        {
+          "id": "portal_world",
+          "title": "Portal world - five islands",
+          "summary": "One screen shows Admin, CEO, Staff, Booking and Parent, who lives on each, and how a lead becomes a client.",
+          "where": "portalvic.vercel.app/portal_world.html",
+          "keywords": [
+            "islas",
+            "mundo",
+            "portales",
+            "portal world",
+            "booking",
+            "parent",
+            "staff",
+            "ceo",
+            "admin",
+            "lead",
+            "cliente",
+            "conectado"
+          ],
+          "steps": [
+            "Open portal_world.html on the admin host, signed in as Admin or CEO.",
+            "Each island is one portal. A solid name lives there. An outline name can open it.",
+            "Sevitha lives on Admin. Victor, Javi and Raul choose Admin, CEO or Staff. John, Berta and Michelle live on Staff as programme leads.",
+            "Press Lead a cliente. A family moves from Booking to registration, payment, Schedule, Sessions Overview, Staff Today and the parent hub.",
+            "The other paths are session feedback, a cover, and a family absence."
+          ],
+          "tips": [
+            "The paths show how the portals talk. They are not today's live log.",
+            "Parents do not see an instructor day off or COVER NEEDED.",
+            "Javi on CEO and Admin is the director. Javier Marquez is the swimming instructor on Staff."
           ]
         }
       ]
