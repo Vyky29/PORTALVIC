@@ -21528,7 +21528,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var out = [];
       for(var k = 0; k < wl.length; k++){
         if(paxContactsPortalHasPaxName(wl[k].pax)) continue;
-        out.push(paxContactsWaitlistRowToPax(wl[k], k));
+        var pax = paxContactsWaitlistRowToPax(wl[k], k);
+        pax.onWaitingList = false;
+        pax._waitlistOnly = false;
+        pax._waitSource = '';
+        pax.bookingStatus = '';
+        if(!paxContactsNamedOldClient(pax)){
+          pax._cfkContact = true;
+          pax._cfkVisitor = true;
+        }
+        out.push(pax);
       }
       return out;
     }
@@ -21751,7 +21760,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return st !== 'withdrawn' && st !== 'placed';
       });
     }
-    /** Same queue as the WAITING page: Booking Portal joins, then the workbook. */
+    /** Same queue as the WAITING page: Booking Portal joins only. */
     function paxContactsStampWaitSources(list){
       var live = paxContactsActiveLiveWaitRows();
       var wb = adminWaitingListPortalRows();
@@ -21778,14 +21787,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         for(i = 0; i < wb.length; i++){
           if(paxContactsNameIsWaitRow(p.name, wb[i].pax)){ hitWb = wb[i]; break; }
         }
-        if(hitWb || (p._cfkContact && (p.onWaitingList || p._listedWaiting || String(p.bookingStatus || '') === 'waiting_list'))){
-          p._waitSource = 'workbook';
-          if(hitWb){
-            paxContactsCopyWaitDetail(p, hitWb);
-            var since = paxContactsParseLooseDay(hitWb.since);
-            if(since) paxContactsSetWaitingJoined(p, since, 'recorded');
-          }
-        }
+        if(!hitWb) return;
+        if(paxContactsNamedOldClient(p)) return;
+        p._cfkContact = true;
+        p._cfkVisitor = true;
+        p.onWaitingList = false;
+        p._listedWaiting = false;
+        p._waitlistOnly = false;
+        p._waitSource = '';
+        if(String(p.bookingStatus || '') === 'waiting_list') p.bookingStatus = '';
       });
     }
     /** A current seat means they are no longer on the old workbook queue. */
@@ -21875,11 +21885,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(paxContactsNameIsWaitRow(out[i].name, name)) return;
         }
         var pax = paxContactsWaitlistRowToPax(w, 'wb-' + idx);
-        pax._waitSource = 'workbook';
-        pax._waitlistOnly = true;
-        pax.bookingStatus = 'waiting_list';
-        var since = paxContactsParseLooseDay(w.since);
-        if(since) paxContactsSetWaitingJoined(pax, since, 'recorded');
+        pax.onWaitingList = false;
+        pax._listedWaiting = false;
+        pax._waitlistOnly = false;
+        pax._waitSource = '';
+        if(paxContactsNamedOldClient(pax)){
+          pax.bookingStatus = '';
+        }else{
+          pax._cfkContact = true;
+          pax._cfkVisitor = true;
+          pax.bookingStatus = '';
+        }
         out.push(pax);
       });
       return out;
@@ -22882,6 +22898,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(n === 'eddie ritzema' || n === 'eddie ri') return true;
       if(n === 'yaqoub ismail' || n === 'yaqoub') return true;
       if(n === 'jad zerti' || n === 'jad') return true;
+      /* Mia Smoliar is not Mia Mesi. Mohamoud Hassan is not Mohamed Mohamud. */
+      if(n === 'mia smoliar') return true;
+      if(n === 'mohamoud hassan' || n === 'mohamoud') return true;
       return false;
     }
     /** Crash courses label on the service column. Summer Messing is OLD, not REGISTERED. */
@@ -22917,7 +22936,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
       if(live && live.in_class === true) return st === 'trial' ? 'trial' : 'programme_in';
       if(paxContactsWasSummer2026(p) || paxContactsStartedSeptember(p) || paxContactsNamedOldClient(p) || paxContactsHadAutumn25OrLaterBooking(p)) return 'booking_history';
-      if(paxContactsIsWaiting(p)) return 'waiting_list';
+      if(paxContactsIsWaiting(p)){
+        var waitKindNow = '';
+        try{ waitKindNow = paxContactsWaitingKind(p); }catch(_waitKindNow){ waitKindNow = ''; }
+        if(waitKindNow === 'portal_waiting') return 'registered';
+        return 'waiting_list';
+      }
       if(p && p._cfkContact) return 'cfk_leads';
       if(paxContactsIsPortalRegistration(p)) return 'registered';
       return 'registered';
@@ -23163,8 +23187,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return (
         opt('all', 'All')+
-        opt('portal_waiting', 'Portal (from 12 Aug 2026)')+
-        opt('old_waiting', 'Before the portal (CFK / workbook)')
+        opt('portal_waiting', 'Booking Portal')
       );
     }
     function paxContactsPlaceFlagOptionsHtml(selected){
@@ -24512,7 +24535,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var alsoWait = '';
         var waitKind = '';
         try{ waitKind = paxContactsWaitingKind(p); }catch(_waitChip){ waitKind = ''; }
-        if((waitKind === 'portal_waiting' || waitKind === 'old_waiting') && bucket !== 'waiting_list' && (bucket === 'programme_in' || bucket === 'booking_history' || bucket === 'trial')){
+        if((waitKind === 'portal_waiting' || waitKind === 'old_waiting') && bucket !== 'waiting_list' && (bucket === 'programme_in' || bucket === 'booking_history' || bucket === 'trial' || bucket === 'registered')){
           alsoWait = paxStatusChip(paxContactsBookingStatusMeta('waiting_list'));
         }
         var ratio = adminParticipantSupportRatio(p.name);
@@ -24637,13 +24660,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var listRows = paxContactsListRowsHtml();
       var n = paxContactsUnifiedList().length;
       var intro = bookingSelected === 'waiting'
-        ? 'WAITING LIST is only this screen. The chips split Portal (Booking Portal from 12 Aug 2026) from Before the portal (CFK and the workbook from before that). Before the portal drops anyone who already has a service. Someone who already has a service can still be on the Portal waiting list for another place.'
+        ? 'WAITING LIST is Booking Portal joins for a full service. Someone on this list with no place now is also REGISTERED. Someone who already has a service can still wait here for another place. The old CFK webhook export is not this list.'
         : (bookingSelected === 'registered'
-          ? 'REGISTERED finished the form and has never had a place. This screen is only that list. Outcome is why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay. Service and Time slot are what they asked for.'
+          ? 'REGISTERED finished the form and has never had a place. A Booking Portal wait with no place now is also on this list. Outcome is why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay. Service and Time slot are what they asked for.'
           : (bookingSelected === 'booking_history'
             ? 'OLD CLIENTS had a place and have no slots from September 2026. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen.'
             : (bookingSelected === 'cfk_leads'
-              ? 'CFK LEADS is only this screen. Search filters it. This is not the Leads page under Services.'
+              ? 'CFK LEADS is only this screen. Search filters it. This is not the Leads page under Services. The old webhook export was interested and was never a client. Those names are here.'
               : (bookingSelected === 'trial'
                 ? 'On Trial / Trialled is only this screen. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen. Service is the trial, not the place they have now.'
                 : 'ACTIVE is on a place now. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.'))));
@@ -24669,8 +24692,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           var waitChips = [
             ['all', 'All', 'All on the waiting list'],
-            ['portal_waiting', 'Portal', 'Portal (from 12 Aug 2026)'],
-            ['old_waiting', 'Before the portal', 'Before the portal (CFK / workbook)']
+            ['portal_waiting', 'Portal', 'Booking Portal joins']
           ].map(function(r){ return paxChipBtn('wait', r[0], r[1], r[2], waitSource === r[0]); }).join('');
           var placeChips = [
             ['all', 'All', 'All registered'],
