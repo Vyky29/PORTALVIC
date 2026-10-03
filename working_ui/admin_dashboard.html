@@ -183,7 +183,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-sess-jumps5" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-sess-jumps7" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -2517,7 +2517,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var infoBtn = '<button type="button" class="admin-page-info" data-admin-page-info="1" aria-label="About '+escAttr(plainTitle)+'" title="About this page"><span aria-hidden="true">i</span></button>';
       var titleEl = '<h1 class="page-title admin-page-head__title">'+esc(plainTitle)+'</h1>';
       var extraActions = String(opts.extraActions || '');
-      var actions = (backBtn || extraActions) ? '<div class="admin-page-head__actions">'+backBtn+extraActions+'</div>' : '';
+      var afterActions = String(opts.afterActions || '');
+      var actions = (backBtn || extraActions || afterActions)
+        ? '<div class="admin-page-head__actions">'+extraActions+backBtn+afterActions+'</div>'
+        : '';
       var titleBlock = titleIconId
         ? (
           '<div class="admin-page-head__title-stack">'+
@@ -2610,7 +2613,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v171')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v172')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -2824,10 +2827,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var intro = portalAdminExtractPageIntro(body);
       var stripped = portalAdminStripLegacyPageHeader(body);
       var backMode = viewId === 'portal_staff_comms' ? 'none' : 'auto';
-      var extraActions = '';
-      if(viewId === 'scheduling' || viewId === 'office_calendar'){
-        extraActions = sessionsHubJumpButtonsHtml(viewId === 'scheduling' ? 'scheduling' : '');
-      }
+      var extraActions = viewId === 'scheduling' ? sessionsHubJumpButtonsHtml('scheduling') : '';
       return portalAdminPageHeadRowHtml({ viewId: viewId, title: title, intro: intro, backMode: backMode, extraActions: extraActions }) + stripped;
     }
     function syncNavGroupsUi(){
@@ -27978,18 +27978,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       venue: 'Venue review',
       pickup: 'Pick up / drop off'
     };
+    var SESSIONS_HUB_JUMP_LABEL = {
+      overview: 'Overview',
+      scheduling: 'Schedules',
+      feedback: 'Register'
+    };
     function sessionsHubJumpButtonsHtml(activeTab){
       var html = C4K_SESSIONS_HUB_TABS.filter(function(t){
         return t.id !== activeTab;
       }).map(function(t){
         var ico = adminNavIconHtml(t.iconId || t.id);
+        var label = SESSIONS_HUB_JUMP_LABEL[t.id] || t.label;
         var attr = t.mode === 'view'
           ? (' data-view-target="' + esc(t.view) + '"')
           : (' data-dayops-act="' + esc(t.act) + '"');
         return (
-          '<button type="button" class="c4k-sessions-hub-tab"' + attr + '>' +
+          '<button type="button" class="btn btn--ghost btn--sm c4k-sessions-hub-tab"' + attr + '>' +
           '<span class="c4k-sessions-hub-tab__ico" aria-hidden="true">' + ico + '</span>' +
-          '<span class="c4k-sessions-hub-tab__label">' + esc(t.label) + '</span>' +
+          '<span class="c4k-sessions-hub-tab__label">' + esc(label) + '</span>' +
           '</button>'
         );
       }).join('');
@@ -28005,16 +28011,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function sessionsHubHeadHtml(tab){
       var meta = SESSIONS_HUB_HEAD_META[tab] || SESSIONS_HUB_HEAD_META.overview;
       var plainTitle = SESSIONS_HUB_HEAD_LABEL[tab] || String(meta.title || 'Sessions').replace(/<[^>]+>/g, '').trim();
-      var extra = sessionsHubJumpButtonsHtml(tab);
-      if(tab === 'lead' || tab === 'venue' || tab === 'pickup'){
-        extra += '<button type="button" class="btn btn--ghost btn--sm" id="c4kHubRefresh">Refresh</button>';
-      }
+      var jumps = (tab === 'overview' || tab === 'feedback' || !tab) ? sessionsHubJumpButtonsHtml(tab) : '';
+      var refresh = (tab === 'lead' || tab === 'venue' || tab === 'pickup')
+        ? '<button type="button" class="btn btn--ghost btn--sm" id="c4kHubRefresh">Refresh</button>'
+        : '';
       return portalAdminPageHeadRowHtml({
         viewId: 'c4k_sessions',
         title: plainTitle,
         intro: String(meta.sub || '').trim(),
         backMode: 'auto',
-        extraActions: extra,
+        extraActions: jumps,
+        afterActions: refresh,
         headClass: 'c4k-sessions-hub__head',
         lessonIds: (tab === 'overview' || !tab) ? ['sessions_overview'] : []
       });
