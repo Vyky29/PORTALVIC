@@ -271,26 +271,6 @@
     return '<div class="ob-export">' + jobBtn + healthBtn + "</div>";
   }
 
-  function metaText() {
-    var uc = state.uploadCounts || {};
-    var n = state.applicants.length;
-    var txt =
-      n + " registered applicant" + (n === 1 ? "" : "s") +
-      ". Total in storage: " +
-      (uc.passport || 0) + " passport, " +
-      (uc.righttowork || 0) + " right to work, " +
-      (uc.checklist || 0) + " checklist, " +
-      (uc.certificate || 0) + " certificate, " +
-      (uc.firstaid || 0) + " first aid, " +
-      (uc.safeguarding || 0) + " safeguarding.";
-    if (state.unlinked) {
-      txt += " " + state.unlinked + " file(s) uploaded before session linking — re-upload from staff portal after PIN login.";
-    } else {
-      txt += " Validate Job, Health, photo, passport and starter checklist, then issue a PIN.";
-    }
-    return txt;
-  }
-
   function rowsHtml() {
     if (state.error) {
       return '<tr><td colspan="8"><div class="ob-notice"><strong>Onboarding storage not linked.</strong> ' + esc(state.error) + "</div></td></tr>";
@@ -333,9 +313,6 @@
       '<div class="ob-toolbar"><button type="button" class="ob-refresh" data-ob-refresh>' +
       (state.loading ? "Refreshing…" : "↻ Refresh") +
       "</button></div>" +
-      '<p class="ob-meta" id="obMeta">' +
-      (state.loading ? "Loading applicant progress…" : esc(metaText())) +
-      "</p>" +
       '<div class="ob-table-wrap"><table class="ob-table"><thead><tr>' +
       "<th>Applicant</th><th>PIN</th><th>Job application</th><th>Health</th><th>Photo</th><th>Documents uploaded</th>" +
       "<th>Last online</th><th>Export</th>" +
