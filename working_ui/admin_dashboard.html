@@ -20793,10 +20793,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '<p class="muted">Scheduling module not loaded.</p>';
     }
     function viewScheduling(){
+      var jumps = sessionsHubToolbarHtml('scheduling');
       if(window.PortalAdminSchedulingModule && typeof window.PortalAdminSchedulingModule.viewHtml === 'function'){
-        return window.PortalAdminSchedulingModule.viewHtml();
+        return jumps + window.PortalAdminSchedulingModule.viewHtml();
       }
-      return '<p class="muted">Scheduling module not loaded.</p>';
+      return jumps + '<p class="muted">Scheduling module not loaded.</p>';
     }
     /** Programme payments: finance sheet mirror only — <code>bindBookingModule</code> / <code>refreshBookingModule</code> wire Refresh, export, and <code>#bookingFinanceSheetTable</code>. Date-scoped roster lives on <strong>Bookings</strong>. */
     function bookingPaymentsCollectionsBlockHtml(todayIso){
@@ -27031,12 +27032,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     var C4K_SESSIONS_HUB_TABS = [
-      { id:'overview', label:'Sessions overview', iconId:'c4k_sessions', mode:'panel' },
-      { id:'feedback', label:'Register', iconId:'c4k_registers', mode:'panel' },
-      { id:'incidents', label:'Incidents', iconId:'analytics', mode:'panel' },
-      { id:'lead', label:'Lead report', iconId:'portal_nav_lead', mode:'panelLead' },
-      { id:'venue', label:'Venue', iconId:'c4k_services', mode:'panelVenue' },
-      { id:'pickup', label:'Pick up', iconId:'scheduling', mode:'panelPickup' }
+      { id:'overview', label:'Sessions overview', iconId:'c4k_sessions', mode:'panel', act:'sessions_hub_overview' },
+      { id:'scheduling', label:'Schedule & Covers', iconId:'scheduling', mode:'view', view:'scheduling' },
+      { id:'feedback', label:'Register', iconId:'c4k_registers', mode:'panel', act:'sessions_hub_feedback' }
     ];
     var SESSIONS_HUB_HEAD_META = {
       overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Day truth you look at. Covers, trials and absents from Schedule & Covers / bookings land here. Decide absents / cancels under Absents & credits. The board is the capacity chain plus Schedule & Covers: who works and which seats today.' },
@@ -27055,9 +27053,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         adminNavIconHtml(iconId || 'c4k_sessions') + '</span>';
     }
     function sessionsHubDashJumpHtml(){
-      return '<button type="button" class="c4k-sessions-hub__dash-jump" data-view-target="dashboard" title="Back to Day operations hub">' +
-        adminNavIconHtml('dashboard') +
-        '<span class="c4k-sessions-hub__dash-jump-label">Dashboard</span></button>';
+      return '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-hub><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Back to dashboard</button>';
     }
     function sessionsHubEnsureState(){
       state.sessionsHub = state.sessionsHub || {};
@@ -27969,8 +27965,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var on = t.id === activeTab;
         var cls = 'c4k-sessions-hub-tab' + (on ? ' is-active' : '');
         var ico = adminNavIconHtml(t.iconId || t.id);
+        var attr = t.mode === 'view'
+          ? (' data-view-target="' + esc(t.view) + '"')
+          : (' data-dayops-act="' + esc(t.act) + '"');
         return (
-          '<button type="button" class="' + cls + '" data-sessions-hub-tab="' + esc(t.id) + '">' +
+          '<button type="button" class="' + cls + '"' + attr + '>' +
           '<span class="c4k-sessions-hub-tab__ico" aria-hidden="true">' + ico + '</span>' +
           '<span class="c4k-sessions-hub-tab__label">' + esc(t.label) + '</span>' +
           '</button>'
@@ -28290,7 +28289,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function sessionsHubToolbarHtml(tab){
       return (
         '<div class="c4k-sessions-hub__toolbar">' +
-        '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Day operations">' + sessionsHubTabsHtml(tab) + '</div>' +
+        '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Sessions">' + sessionsHubTabsHtml(tab) + '</div>' +
         '</div>'
       );
     }
@@ -34607,6 +34606,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var ws = $('workspace');
         var t = portalClickTargetElement(e);
         if(!t || !ws || !ws.contains(t)) return;
+        var backHub = t.closest('[data-admin-back-hub]');
+        if(backHub && ws.contains(backHub)){
+          if(e.type === 'click' && backHub.__portalDayopsDocUiAt && Date.now() - backHub.__portalDayopsDocUiAt < 900){
+            try{ e.preventDefault(); }catch(_bh){}
+            try{ e.stopPropagation(); }catch(_bh2){}
+            return;
+          }
+          if(e.type === 'pointerdown') backHub.__portalDayopsDocUiAt = Date.now();
+          try{ e.preventDefault(); }catch(_bh3){}
+          try{ e.stopPropagation(); }catch(_bh4){}
+          openNavHubIndex();
+          return;
+        }
         var dayTile = t.closest('[data-dayops-act]');
         if(dayTile && ws.contains(dayTile)){
           if(e.type === 'click' && dayTile.__portalDayopsDocUiAt && Date.now() - dayTile.__portalDayopsDocUiAt < 900){

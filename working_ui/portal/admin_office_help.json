@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v161",
+  "version": "2026-10-03-v162",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -78,6 +78,7 @@
             }
           ],
           "steps": [
+            "Back to dashboard returns to Operations Hub. Under the title, Sessions overview, Schedule and Covers, and Register jump between those three screens.",
             "Open Sessions Overview and pick the day you care about.",
             "Check booked kids, open seats, covers and day-off chrome on that date only. Each booked card shows that child's photo on the right.",
             "If something looks wrong, fix it in Schedule & Covers or Validate / HR day off — do not edit LOCAL for day-of checks.",
@@ -95,6 +96,7 @@
             "summary": "Overview es el unico tablero del dia en el que mirar. Las plazas fijas se repiten. Las excepciones vienen de Schedule & Covers y de los dias libres.",
             "where": "Today → Sessions overview",
             "steps": [
+              "Back to dashboard vuelve al Operations Hub. Debajo del titulo, Sessions overview, Schedule and Covers y Register saltan entre esas tres pantallas.",
               "Abre Sessions Overview y elige el dia.",
               "Mira ninos reservados, plazas libres, covers y el dia libre, solo en esa fecha. Cada tarjeta con nino lleva su foto a la derecha.",
               "Si algo esta mal, arreglalo en Schedule & Covers o en Validate / HR day off. No edites LOCAL para mirar el dia.",
