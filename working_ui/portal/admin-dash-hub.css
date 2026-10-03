@@ -4630,3 +4630,54 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   .ops-hub--flat .dash-hub__panel{padding:6px}
   .ops-hub--flat .dash-hub__panel-head{margin-bottom:4px}
 }
+
+/* Sessions box stays pink. The three buttons inside each get their own wash and outline. */
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile{
+  --sess-bg:#ecfdf5;
+  --sess-line:#5eead4;
+  --sess-ink:#0f766e;
+  background:linear-gradient(165deg, var(--sess-bg) 0%, #fff 68%);
+  border:1.5px solid var(--sess-line);
+  box-shadow:none;
+  color:var(--sess-ink);
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  padding:12px 8px;
+}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile[data-view-target="scheduling"]{
+  --sess-bg:#fff7ed;
+  --sess-line:#fdba74;
+  --sess-ink:#c2410c;
+}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile[data-dayops-act="sessions_hub_feedback"]{
+  --sess-bg:#f5f3ff;
+  --sess-line:#c4b5fd;
+  --sess-ink:#6d28d9;
+}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band,
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band .admin-nav-ico{
+  background:transparent;
+  color:var(--sess-ink);
+  flex:0 0 auto;
+  width:auto;
+  max-height:none;
+  min-height:0;
+  height:auto;
+  margin:0;
+  border-radius:0;
+  padding:0;
+}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-label{
+  background:transparent;
+  color:var(--sess-ink);
+  text-align:center;
+  width:100%;
+  margin:0;
+  padding:0 6px;
+  flex:0 0 auto;
+}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile:hover,
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile:focus-visible{
+  border-color:var(--sess-ink);
+}
