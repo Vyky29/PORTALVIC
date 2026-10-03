@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v196",
+  "version": "2026-10-03-v197",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1641,8 +1641,11 @@
             "sabado",
             "8pm",
             "6pm",
+            "3pm",
+            "15:00",
             "20:30",
-            "18:00"
+            "18:00",
+            "late feedback"
           ],
           "steps": [
             "Sunday, Monday, Tuesday, Wednesday, Thursday and Friday: first WhatsApp at 8:00pm, second at 8:30pm if feedback is still missing.",
@@ -1650,8 +1653,23 @@
             "The second message goes only to people who still owe feedback."
           ],
           "tips": [
-            "Sunday is not on the Saturday clock. Sunday uses 8:00 and 8:30, same as the week."
-          ]
+            "Saturday is 6:00pm then 6:30pm. It is not 3:00pm.",
+            "Sunday uses 8:00pm and 8:30pm with the weekdays. Sunday is not 6:00pm."
+          ],
+          "es": {
+            "title": "Reloj del WhatsApp de feedback",
+            "summary": "De domingo a viernes el aviso es a las 8:00 y a las 8:30. El sabado es a las 6:00 y a las 6:30.",
+            "where": "WhatsApp automatico al staff que aun debe el feedback de hoy",
+            "steps": [
+              "Domingo, lunes, martes, miercoles, jueves y viernes: primer WhatsApp a las 8:00, segundo a las 8:30 si el feedback sigue sin hacerse.",
+              "Solo el sabado: primer WhatsApp a las 6:00, segundo a las 6:30 si el feedback sigue sin hacerse.",
+              "El segundo mensaje solo sale a quien todavia debe feedback."
+            ],
+            "tips": [
+              "El sabado es a las 6:00 y a las 6:30. No es a las 3:00.",
+              "El domingo va con la semana: 8:00 y 8:30. El domingo no es a las 6:00."
+            ]
+          }
         },
         {
           "id": "incoming_call_name",
