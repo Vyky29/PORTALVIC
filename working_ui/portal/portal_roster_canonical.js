@@ -4637,6 +4637,138 @@
     });
     return best && bestScore >= 10 ? best.area : "";
   }
+
+  /**
+   * Original standing seat for a cover: area, service, venue.
+   * Staff-scoped Today often never sees the anchor instructor's row.
+   */
+  function coverOriginalSeatClientKey(name) {
+    return poolAreaClientKey(String(name || "").replace(/_/g, " "));
+  }
+  var _coverOriginalSeatRows = null;
+  function coverOriginalSeatRows() {
+    if (_coverOriginalSeatRows) return _coverOriginalSeatRows;
+    var out = [];
+    function pushRow(row) {
+      if (!row) return;
+      var name = String(row.client_name || "").trim();
+      if (!name || /^(no participant|closed|available)$/i.test(name)) return;
+      var area = String(row.area || "").trim();
+      if (!area) return;
+      out.push({
+        clientName: name,
+        clientKey: coverOriginalSeatClientKey(name),
+        day: String(row.day || "").trim().toLowerCase(),
+        venue: String(row.venue || "").trim().toLowerCase(),
+        venueLabel: String(row.venue || "").trim(),
+        staffKey: poolAreaStaffKey(row.instructors),
+        time: String(row.time_slot || "").trim(),
+        area: area,
+        service: String(row.service || "").trim(),
+        hub: /hub/i.test(area),
+      });
+    }
+    try {
+      autumnSundayStandingPoolRows().forEach(pushRow);
+    } catch (_pool) {}
+    try {
+      autumnSundayStandingHubRows().forEach(pushRow);
+    } catch (_hub) {}
+    try {
+      autumnSaturdayActonStandingRows().forEach(pushRow);
+    } catch (_sat) {}
+    standingPoolAreaIndex().forEach(function (e) {
+      if (!e || !e.area || !e.clientKey) return;
+      out.push({
+        clientName: e.clientKey,
+        clientKey: e.clientKey,
+        day: String(e.day || "").toLowerCase(),
+        venue: String(e.venue || "").toLowerCase(),
+        venueLabel: /northolt/.test(e.venue) ? "Northolt" : "Acton",
+        staffKey: e.staffKey,
+        time: e.time,
+        area: e.area,
+        service: "Aquatic Activity",
+        hub: false,
+      });
+    });
+    _coverOriginalSeatRows = out;
+    return out;
+  }
+  function lookupOriginalSeatForCover(opts) {
+    opts = opts || {};
+    var clientKey = coverOriginalSeatClientKey(opts.client_name || opts.clientId || opts.name || "");
+    if (!clientKey) return null;
+    var day = String(opts.day || "").trim().toLowerCase();
+    var venue = String(opts.venue || "").trim().toLowerCase();
+    var time = String(opts.time_slot || opts.time || "").trim();
+    var staffKey = poolAreaStaffKey(opts.instructors || opts.staff || "");
+    var iso = normIso(opts.session_date || "");
+    var best = null;
+    var bestScore = -1;
+    coverOriginalSeatRows().forEach(function (raw) {
+      var e = raw;
+      if (iso && e.day === "sunday" && /swimfarm/.test(e.venue)) {
+        var swapped = applySundayCyrusGabrielOrder({
+          client_name: e.clientName || e.clientKey,
+          day: "Sunday",
+          instructors: e.staffKey,
+          service: e.service,
+          area: e.area,
+          time_slot: e.time,
+          venue: e.venueLabel || "SwimFarm",
+          session_date: iso,
+        });
+        if (swapped) {
+          e = {
+            clientName: String(swapped.client_name || e.clientName || ""),
+            clientKey: coverOriginalSeatClientKey(swapped.client_name || e.clientKey),
+            day: e.day,
+            venue: e.venue,
+            venueLabel: e.venueLabel,
+            staffKey: e.staffKey,
+            time: String(swapped.time_slot || e.time).trim(),
+            area: String(swapped.area || e.area).trim(),
+            service: String(swapped.service || e.service).trim(),
+            hub: e.hub,
+          };
+        }
+      }
+      var sameClient = e.clientKey === clientKey;
+      if (!sameClient) {
+        var eParts = e.clientKey.split(" ");
+        var cParts = clientKey.split(" ");
+        if (eParts[0] && eParts[0] === cParts[0] && (eParts.length === 1 || cParts.length === 1)) {
+          sameClient = true;
+        }
+      }
+      if (!sameClient) return;
+      if (day && e.day && e.day.slice(0, 3) !== day.slice(0, 3)) return;
+      if (venue && e.venue && venue.indexOf(e.venue) < 0 && e.venue.indexOf(venue) < 0) return;
+      var score = e.clientKey === clientKey ? 20 : 12;
+      if (time && e.time) {
+        if (time.toLowerCase() === e.time.toLowerCase()) score += 10;
+        else if (poolAreaSlotsOverlap(time, e.time)) score += 6;
+        else return;
+      } else {
+        return;
+      }
+      if (staffKey && e.staffKey) {
+        if (staffKey === e.staffKey || staffKey.indexOf(e.staffKey) === 0 || e.staffKey.indexOf(staffKey) === 0) score += 8;
+        else score -= 6;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = e;
+      }
+    });
+    if (!best || bestScore < 24) return null;
+    return {
+      area: best.area,
+      service: best.service,
+      venue: best.venueLabel || "",
+    };
+  }
   function overlayStandingPoolAreasOntoRows(rows) {
     return (Array.isArray(rows) ? rows : []).map(function (r) {
       if (!r) return r;
@@ -4713,6 +4845,7 @@
     purgeSummerHistoryOutsideAutumnTemplates: purgeSummerHistoryOutsideAutumnTemplates,
     normIso: normIso,
     lookupStandingPoolArea: lookupStandingPoolArea,
+    lookupOriginalSeatForCover: lookupOriginalSeatForCover,
     overlayStandingPoolAreasOntoRows: overlayStandingPoolAreasOntoRows,
     scrubAdaamAydaanActonTueBeforeFirstSession: scrubAdaamAydaanActonTueBeforeFirstSession,
     scrubKareenaActonTueBeforeFirstSession: scrubKareenaActonTueBeforeFirstSession,

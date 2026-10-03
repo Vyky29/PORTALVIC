@@ -4583,6 +4583,31 @@
             base.activity = 'Physical Activity';
           }
         }
+        /* Cover keeps the original seat: area, service, venue. */
+        try{
+          const CanonSeat = window.PortalRosterCanonical;
+          if(CanonSeat && typeof CanonSeat.lookupOriginalSeatForCover === 'function'){
+            const seatTime = String(ov.anchor_time_slot_label || '').trim()
+              || (typeof rosterSlotTimeLabel === 'function' ? rosterSlotTimeLabel(base) : '');
+            const seatHit = CanonSeat.lookupOriginalSeatForCover({
+              client_name: base.clientId || coverCid || ov.anchor_client_id,
+              day: anchorDayWord,
+              venue: base.venue || ov.anchor_venue || '',
+              time_slot: seatTime,
+              instructors: ov.anchor_staff_id,
+              session_date: sessionDateKey
+            });
+            if(seatHit && seatHit.area){
+              base.rosterArea = seatHit.area;
+              base.area = seatHit.area;
+              if(seatHit.service){
+                base.rosterService = seatHit.service;
+                base.activity = seatHit.service;
+              }
+              if(seatHit.venue) base.venue = seatHit.venue;
+            }
+          }
+        }catch(_seat){}
         /* Sunday Hub book (Berta / Emmanuel / Godsway) covered by someone else.
            Staff-scoped roster often has no standing area, so the card was a dash. */
         if(!String(base.rosterArea || base.area || '').trim()){
