@@ -6512,6 +6512,7 @@ function rosterRowToSlot(isoDate, wd, r) {
     var short = !!opts.shortLabels;
     return (
       '<div class="ash-week-nav">' +
+      '<button type="button" class="ash-btn ash-btn--ghost" data-c4k-hub-refresh>Refresh</button>' +
       '<button type="button" class="ash-btn ash-btn--ghost" data-ash-week-prev>' +
       esc(short ? "\u2190 Prev" : "\u2190 Prev week") +
       "</button>" +
@@ -11342,6 +11343,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         } else if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
         else hub.render();
         hub.scrollToWeekPicker();
+        return;
+      }
+      if (t.closest("[data-c4k-hub-refresh]")) {
+        ev.preventDefault();
+        if (typeof global.portalAdminSessionsHubRefresh === "function") {
+          global.portalAdminSessionsHubRefresh();
+        }
         return;
       }
       if (t.closest("[data-ash-week-prev]")) {

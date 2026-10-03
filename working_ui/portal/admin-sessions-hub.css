@@ -2665,6 +2665,65 @@
       .ash-week-head {
         margin-bottom: 6px;
       }
+      .ash-week-head {
+        padding: 8px 10px;
+      }
+      .ash-week-head__row,
+      .ash-feedback-week__head {
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+      }
+      .ash-week-head__titles {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 6px;
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+      .ash-week-summary__label,
+      .ash-week-summary__range,
+      .ash-feedback-week__title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+      .ash-week-nav {
+        flex: 0 1 auto;
+        min-width: 0;
+        margin-left: auto;
+      }
+      .ash-week-block,
+      .ash-feedback-week {
+        margin-bottom: 8px;
+      }
+      .ash-feedback-week {
+        padding: 8px 10px;
+      }
+      .c4k-sessions-hub__head {
+        margin-bottom: 6px;
+      }
+      .c4k-sessions-hub__title-row {
+        align-items: center;
+        gap: 8px;
+      }
+      .c4k-sessions-hub__ico {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+      }
+      .c4k-sessions-hub__ico .admin-nav-ico,
+      .c4k-sessions-hub__ico .admin-nav-ico svg {
+        width: 16px;
+        height: 16px;
+      }
+      .c4k-sessions-hub__title {
+        font-size: 16px;
+      }
+      .c4k-sessions-hub__toolbar {
+        margin-bottom: 6px;
+      }
       .ash-day-board__group,
       .ash-day-board__group--climb,
       body.admin-touch-compact .ash-day-board__group,

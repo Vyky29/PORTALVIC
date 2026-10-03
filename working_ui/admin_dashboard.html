@@ -71,7 +71,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20261002-sessions-nav"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20261002-card-photo" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20261003-hub-head" />
   <script src="/portal/portal_staff_display_names.js?v=20260909-luliya-first"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
@@ -183,7 +183,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261002-phone-top" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-hub-head" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -27986,7 +27986,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function sessionsHubHeadHtml(tab){
       var meta = SESSIONS_HUB_HEAD_META[tab] || SESSIONS_HUB_HEAD_META.overview;
-      var showRefresh = sessionsHubTabShowsRefresh(tab);
       var plainTitle = String(meta.title || 'Sessions').replace(/<[^>]+>/g, '').trim();
       window.__ADMIN_PAGE_INFO = {
         viewId: 'c4k_sessions',
@@ -28003,10 +28002,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="c4k-sessions-hub__title-lead">' +
         '<h1 class="c4k-sessions-hub__title">' + esc(meta.title) + '</h1>' +
         '<button type="button" class="admin-page-info" data-admin-page-info="1" aria-label="About '+escAttr(plainTitle)+'" title="About this page"><span aria-hidden="true">i</span></button>' +
-        '</div>' +
-        '<div class="c4k-sessions-hub__title-actions" id="c4kHubToolbarActions">' +
-        '<button type="button" class="btn btn--ghost btn--sm" id="c4kHubRefresh"' + (showRefresh ? '' : ' hidden') + '>Refresh</button>' +
-        '<span class="c4k-sessions-hub__refresh-at" id="c4kHubRefreshAt" aria-live="polite"' + (showRefresh ? '' : ' hidden') + '></span>' +
         sessionsHubDashJumpHtml() +
         '</div>' +
         '</div>' +
@@ -28289,9 +28284,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminRenderPickupHandoverTables(result.rows);
     }
     function sessionsHubToolbarHtml(tab){
+      var loneRefresh = tab === 'lead' || tab === 'venue' || tab === 'pickup';
       return (
         '<div class="c4k-sessions-hub__toolbar">' +
         '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Sessions">' + sessionsHubTabsHtml(tab) + '</div>' +
+        (loneRefresh ? '<div class="c4k-sessions-hub__actions"><button type="button" class="btn btn--ghost btn--sm" id="c4kHubRefresh">Refresh</button></div>' : '') +
         '</div>'
       );
     }
@@ -28325,7 +28322,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20261002-client-swap';
+    var PORTAL_ADMIN_HUB_BUILD = '20261003-hub-head';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -28464,6 +28461,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           void refreshSessionFeedbackGrid();
         }
       }
+      window.portalAdminSessionsHubRefresh = function(){
+        adminInvalidateSessionsHubLiveCaches();
+        runHubRefresh(true);
+      };
       function runHubRefreshWhenReady(forceReload){
         var start = function(){
           var chain = Promise.resolve();
