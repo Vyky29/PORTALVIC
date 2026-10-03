@@ -2670,7 +2670,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v230')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v231')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -22990,7 +22990,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var slot = '';
       if(first && last && first !== last) slot = paxContactsFormatJoinedDay(first) + ' to ' + paxContactsFormatJoinedDay(last);
       else if(first || last) slot = paxContactsFormatJoinedDay(first || last);
-      return { services: services, svc: services.join(' | '), slot: slot, cancelled: paxContactsCancelledTheirService(p) };
+      return { services: services, svc: services.join(' | '), slot: slot, ended: last || first || '', cancelled: paxContactsCancelledTheirService(p) };
     }
     function paxContactsOldHistoryCells(p){
       var plain = paxContactsOldHistoryPlain(p);
@@ -24774,8 +24774,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var supportKey = ratio || '1:1';
         var svcKeys = paxContactsServiceFilterKeys(p, 'seat');
         var svcTrialKeys = paxContactsServiceFilterKeys(p, 'trial');
+        var endedIso = '';
+        if(bucket === 'booking_history'){
+          try{ endedIso = String((paxContactsOldHistoryPlain(p) || {}).ended || ''); }catch(_endedIso){ endedIso = ''; }
+        }
         return (
-          '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-registered="'+esc(p.registeredIso || '')+'" data-pax-trial="'+esc(paxContactsTrialLatestIso(p))+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-place="'+esc(placeFlag)+'" data-pax-wait="'+((waitKind === 'portal_waiting' || waitKind === 'old_waiting') ? '1' : '')+'" data-pax-support="'+esc(supportKey)+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'" data-pax-svc="'+esc(svcKeys)+'" data-pax-svc-trial="'+esc(svcTrialKeys)+'">'+
+          '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-ended="'+esc(endedIso)+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-registered="'+esc(p.registeredIso || '')+'" data-pax-trial="'+esc(paxContactsTrialLatestIso(p))+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-place="'+esc(placeFlag)+'" data-pax-wait="'+((waitKind === 'portal_waiting' || waitKind === 'old_waiting') ? '1' : '')+'" data-pax-support="'+esc(supportKey)+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'" data-pax-svc="'+esc(svcKeys)+'" data-pax-svc-trial="'+esc(svcTrialKeys)+'">'+
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
           '<td class="pax-contacts-name-td"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+paxContactsWaitExtraHtml(p)+'</div></div></td>'+
           '<td class="pax-contacts-meta">'+supportCell+'</td>'+
@@ -24840,7 +24844,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : (bookingSelected === 'registered'
           ? 'REGISTERED finished the form and has never had a place. A Booking Portal wait with no place now is also on this list. Outcome is why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay. Service and Time slot are what they asked for.'
           : (bookingSelected === 'booking_history'
-            ? 'OLD CLIENTS had a place and have no slots from September 2026. Service is the service they were on. Duration is when they started and when they finished. A Cancelled chip means they cancelled that service. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen.'
+            ? 'OLD CLIENTS had a place and have no slots from September 2026. Service is the service they were on. Duration is when they started and when they finished. The newest finish date is always at the top. A Cancelled chip means they cancelled that service. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen.'
             : (bookingSelected === 'cfk_leads'
               ? 'CFK LEADS is only this screen. Search filters it. This is not the Leads page under Services. The old webhook export was interested and was never a client. Those names are here.'
               : (bookingSelected === 'trial'
@@ -36049,6 +36053,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   if(!ta) return 1;
                   if(!tb) return -1;
                   return ta < tb ? 1 : -1;
+                }
+              }
+              if(bk === 'booking_history'){
+                var ea = a.getAttribute('data-pax-ended') || '';
+                var eb = b.getAttribute('data-pax-ended') || '';
+                if(ea !== eb){
+                  if(!ea) return 1;
+                  if(!eb) return -1;
+                  return ea < eb ? 1 : -1;
                 }
               }
               var na = a.getAttribute('data-pax-name') || '';
