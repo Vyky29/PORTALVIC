@@ -851,9 +851,11 @@
 
   function mergeTeamMember(base, patch) {
     var out = Object.assign({}, base || {}, patch || {});
-    /* Catalog is source of truth for photos / bio when present */
+    /* Catalog photo, unless the office has published a cleaned display photo. */
     if (base) {
-      if (base.avatar_url) out.avatar_url = base.avatar_url;
+      var published = String((patch && patch.avatar_url) || "");
+      if (/\/display\./i.test(published)) out.avatar_url = published;
+      else if (base.avatar_url) out.avatar_url = base.avatar_url;
       if (base.bio) out.bio = base.bio;
       if (base.name) out.name = base.name;
       if (base.staff_key) out.staff_key = base.staff_key;

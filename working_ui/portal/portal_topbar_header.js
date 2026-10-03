@@ -128,11 +128,18 @@
       }
     } catch (_) {}
     try {
-      if (global.__PORTAL_STAFF_SELF_AVATAR_URL__) pushRemote(global.__PORTAL_STAFF_SELF_AVATAR_URL__);
+      function published(raw) {
+        return /\/display\./i.test(String(raw || ""));
+      }
+      if (published(global.__PORTAL_STAFF_SELF_AVATAR_URL__)) {
+        pushRemote(global.__PORTAL_STAFF_SELF_AVATAR_URL__);
+      }
       var box = global.__PORTAL_SUPABASE__ || {};
       var user = box.session && box.session.user;
       var meta = user && user.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
-      if (meta.avatar_url) pushRemote(meta.avatar_url);
+      var profile = box.staff_profile || {};
+      if (published(profile.avatar_url)) pushRemote(profile.avatar_url);
+      if (published(meta.avatar_url)) pushRemote(meta.avatar_url);
     } catch (_) {}
     return rosterUrls.concat(remoteUrls);
   }
@@ -990,76 +997,8 @@
   global.portalSyncTopbarProfileCard = portalSyncTopbarProfileCard;
   global.resolveTopbarStaffKey = resolveTopbarStaffKey;
 
-  var STAFF_PHOTO_CHANGE_MSG =
-    "This photo is visible to participants and their families.\n\n" +
-    "Choose a professional photo you are happy to share.\n\nContinue to select a new photo?";
-
-  function setStaffPhotoEditBusy(busy) {
-    var btn = document.getElementById("topbarStaffPhotoEdit");
-    if (!btn) return;
-    btn.classList.toggle("is-busy", !!busy);
-    btn.setAttribute("aria-busy", busy ? "true" : "false");
-  }
-
-  function applyUploadedStaffPhotoUrl(publicUrl) {
-    var url = String(publicUrl || "").trim();
-    if (!url) return;
-    global.__PORTAL_STAFF_SELF_AVATAR_URL__ = url;
-    try {
-      if (typeof global.portalSyncTopbarStaffPhoto === "function") {
-        global.portalSyncTopbarStaffPhoto();
-      }
-    } catch (_) {}
-  }
-
   global.portalInitTopbarStaffPhotoChange = function portalInitTopbarStaffPhotoChange() {
-    if (document.body.getAttribute("data-portal-topbar-photo-change-bound") === "1") return;
-    var editBtn = document.getElementById("topbarStaffPhotoEdit");
-    var fileInput = document.getElementById("topbarStaffPhotoInput");
-    if (!editBtn || !fileInput) return;
-    document.body.setAttribute("data-portal-topbar-photo-change-bound", "1");
-
-    editBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!global.confirm(STAFF_PHOTO_CHANGE_MSG)) return;
-      fileInput.click();
-    });
-
-    fileInput.addEventListener("change", function () {
-      var file = fileInput.files && fileInput.files[0];
-      fileInput.value = "";
-      if (!file) return;
-      if (!String(file.type || "").startsWith("image/")) {
-        global.alert("Please choose an image file.");
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        global.alert("Photo must be 5 MB or smaller.");
-        return;
-      }
-      setStaffPhotoEditBusy(true);
-      import("/portal/auth-handler.js?v=20260614-avatar-uid")
-        .then(function (mod) {
-          if (!mod || typeof mod.uploadStaffAvatar !== "function") {
-            throw new Error("Photo upload is not available.");
-          }
-          return mod.uploadStaffAvatar(file);
-        })
-        .then(function (result) {
-          applyUploadedStaffPhotoUrl(result && result.publicUrl);
-        })
-        .catch(function (err) {
-          var msg =
-            err && err.message
-              ? String(err.message)
-              : "Could not upload photo. Try again or contact the office.";
-          global.alert(msg);
-        })
-        .finally(function () {
-          setStaffPhotoEditBusy(false);
-        });
-    });
+    /* Staff do not change the photo families see. Onboarding keeps the original. The office saves the display photo. */
   };
 
   global.portalInitTopbarToolsGrid = function portalInitTopbarToolsGrid(opts) {

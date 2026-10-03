@@ -304,6 +304,8 @@ type ApplicantProgress = {
   health_submitted: boolean;
   photo: boolean;
   photo_url: string | null;
+  photo_original_url: string | null;
+  photo_display_url: string | null;
   has_phone: boolean;
   pin_issued: boolean;
   pin: string | null;
@@ -329,6 +331,8 @@ function emptyApplicant(id: string, name = ""): ApplicantProgress {
     health_submitted: false,
     photo: false,
     photo_url: null,
+    photo_original_url: null,
+    photo_display_url: null,
     has_phone: false,
     pin_issued: false,
     pin: null,
@@ -622,7 +626,7 @@ async function loadApplicantProgress(
 
       const { data: profiles } = await portalAdmin
         .from("staff_profiles")
-        .select("id, username, full_name, avatar_url, phone_e164")
+        .select("id, username, full_name, avatar_url, avatar_original_url, phone_e164")
         .in("id", ids);
       const { data: pinRows } = await portalAdmin
         .from("portal_login_pins")
@@ -637,13 +641,18 @@ async function loadApplicantProgress(
         if (username) entry.login_username = username;
         if (fullName && !entry.display_name) entry.display_name = fullName;
         if (fullName && !entry.portal_staff_name) entry.portal_staff_name = fullName;
-        const photoUrl = await ensureStaffProfilePhoto(
-          portalAdmin,
-          id,
-          profile.avatar_url,
-        );
-        entry.photo = !!photoUrl;
-        entry.photo_url = photoUrl || null;
+        const rawAvatar = String(profile.avatar_url || "").trim();
+        const display = /\/display\./i.test(rawAvatar) ? rawAvatar : "";
+        let original = String(profile.avatar_original_url || "").trim();
+        if (!original && rawAvatar && !display) original = rawAvatar;
+        if (!original) {
+          const found = await ensureStaffProfilePhoto(portalAdmin, id, "");
+          if (found && !/\/display\./i.test(found)) original = found;
+        }
+        entry.photo = !!(original || display);
+        entry.photo_original_url = original || null;
+        entry.photo_display_url = display || null;
+        entry.photo_url = original || null;
         const phone = await ensureStaffPhoneFromJob(portalAdmin, id, {
           payload: jobPayloadById.get(id),
           currentPhone: profile.phone_e164 != null ? String(profile.phone_e164) : "",

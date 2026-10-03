@@ -187,7 +187,7 @@
       "/portal/portal_staff_lead_aquatic_slots.js?v=20260930-one-feedback",
     "/portal/portal_participant_general_hydrate.js?v=20260928-booking-general",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_staff_photos.js?v=20260922-live-avatar",
+    "/portal/portal_staff_photos.js?v=20261003-display-photo",
   ];
 
   function portalStaffStartDeferredDashboardScripts() {

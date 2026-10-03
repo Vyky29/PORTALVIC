@@ -203,6 +203,37 @@ function upsertTeamMember(
   delete (map.get(k) as Record<string, unknown>).force_standing;
 }
 
+async function applyPublishedDisplayPhotos(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  team: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  if (!team.length) return team;
+  const { data } = await supabase
+    .from("staff_profiles")
+    .select("username, full_name, avatar_url")
+    .not("avatar_url", "is", null);
+  const byKey = new Map<string, string>();
+  for (const row of data || []) {
+    const url = String(row.avatar_url || "").trim();
+    if (!/\/display\./i.test(url)) continue;
+    const keys = [
+      staffIdFromRaw(String(row.username || "")),
+      staffIdFromRaw(String(row.full_name || "").split(/\s+/)[0] || ""),
+      staffIdFromRaw(String(row.full_name || "")),
+    ];
+    for (const key of keys) {
+      if (key) byKey.set(key, url);
+    }
+  }
+  return team.map((member) => {
+    const key = staffIdFromRaw(String(member.staff_key || member.staff_id || ""));
+    const url = key ? byKey.get(key) : "";
+    if (!url) return member;
+    return { ...member, avatar_url: url };
+  });
+}
+
 function addStandingInstructorNames(
   map: Map<string, Record<string, unknown>>,
   raw: unknown,
@@ -2234,6 +2265,7 @@ Deno.serve(async (req) => {
       identityInput,
       lookupNames,
     );
+    teamOut = await applyPublishedDisplayPhotos(supabase, teamOut);
   }
 
   let weeklyNotes: Record<string, unknown>[] = [];

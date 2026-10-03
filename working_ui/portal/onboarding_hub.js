@@ -118,7 +118,13 @@
       var box = global.__PORTAL_SUPABASE__ || {};
       var meta =
         (box.session && box.session.user && box.session.user.user_metadata) || {};
-      var url = String(meta.avatar_url || (box.staff_profile && box.staff_profile.avatar_url) || "").trim();
+      var url = String(
+        (box.staff_profile && box.staff_profile.avatar_original_url) ||
+          meta.avatar_original_url ||
+          meta.avatar_url ||
+          (box.staff_profile && box.staff_profile.avatar_url) ||
+          ""
+      ).trim();
       if (url) {
         img.src = url;
         img.alt = "Your portal photo";
@@ -206,7 +212,7 @@
       }
       setStatus(status, "Uploading photo…");
       try {
-        var mod = await import("/portal/auth-handler.js?v=20260908-onboarding-hub");
+        var mod = await import("/portal/auth-handler.js?v=20261003-display-photo");
         var up = await mod.uploadStaffAvatar(file);
         var img = global.document.getElementById("obHubPhotoPreview");
         if (img && up && up.publicUrl) {
@@ -218,7 +224,7 @@
         try {
           var box = global.__PORTAL_SUPABASE__;
           if (box && box.client && up && up.publicUrl) {
-            await box.client.from("staff_profiles").update({ avatar_url: up.publicUrl }).eq(
+            await box.client.from("staff_profiles").update({ avatar_original_url: up.publicUrl }).eq(
               "id",
               box.session && box.session.user && box.session.user.id
             );
@@ -227,7 +233,7 @@
         try {
           await edgePost("portal-staff-onboarding-doc-upload", { action: "sync_photo" });
         } catch (_) {}
-        setStatus(status, "Photo saved. Admin can now see it for your PIN.");
+        setStatus(status, "Photo saved for the office. Families see it after the office prepares it.");
       } catch (e) {
         console.warn("[onboarding hub] photo", e);
         setStatus(status, "Photo upload failed. Try a smaller JPG/PNG.", true);

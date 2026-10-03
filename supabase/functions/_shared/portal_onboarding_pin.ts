@@ -188,8 +188,11 @@ export async function syncStaffPhonesFromJobDrafts(
   return out;
 }
 
-/** Photo for PIN/admin: profile row, else auth metadata / staff-avatars (late hub upload).
- * Returns the public URL when a photo is on file (empty string if missing). */
+function isDisplayStaffPhotoUrl(url: string): boolean {
+  return /\/display\./i.test(String(url || ""));
+}
+
+/** Original hire photo for the office. Does not replace a published display photo. */
 export async function ensureStaffProfilePhoto(
   portalAdmin: SupabaseClient,
   userId: string,
@@ -198,35 +201,44 @@ export async function ensureStaffProfilePhoto(
   const id = String(userId || "").trim();
   const existing = String(currentUrl || "").trim();
   if (!id) return "";
-  if (existing) return existing;
+  if (existing && !isDisplayStaffPhotoUrl(existing)) return existing;
   let url = "";
   try {
     const { data } = await portalAdmin.auth.admin.getUserById(id);
-    url = String(data?.user?.user_metadata?.avatar_url || "").trim();
+    const meta = data?.user?.user_metadata || {};
+    url = String(meta.avatar_original_url || "").trim();
+    if (!url) url = String(meta.avatar_url || "").trim();
+    if (isDisplayStaffPhotoUrl(url)) url = "";
   } catch {
     url = "";
   }
   if (!url) {
     try {
       const { data: files } = await portalAdmin.storage.from("staff-avatars").list(id, {
-        limit: 12,
+        limit: 20,
       });
-      const file = (files || []).find((f) => f && f.name && !String(f.name).startsWith("."));
-      if (file && file.name) {
+      const names = (files || [])
+        .map((f) => String(f?.name || ""))
+        .filter((name) => name && !name.startsWith(".") && !/^display\./i.test(name));
+      const pick = names.find((name) => /^original\./i.test(name)) ||
+        names.find((name) => /^avatar\./i.test(name)) ||
+        names[0] ||
+        "";
+      if (pick) {
         const { data: pub } = portalAdmin.storage
           .from("staff-avatars")
-          .getPublicUrl(`${id}/${file.name}`);
+          .getPublicUrl(`${id}/${pick}`);
         url = String(pub?.publicUrl || "").trim();
       }
     } catch {
       url = "";
     }
   }
-  if (!url) return "";
+  if (!url || isDisplayStaffPhotoUrl(url)) return "";
   try {
-    await portalAdmin.from("staff_profiles").update({ avatar_url: url }).eq("id", id);
+    await portalAdmin.from("staff_profiles").update({ avatar_original_url: url }).eq("id", id);
   } catch {
-    /* PIN/admin can still treat photo as present */
+    /* PIN/admin can still treat the original as present */
   }
   return url;
 }

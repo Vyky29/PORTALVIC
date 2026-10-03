@@ -114,10 +114,14 @@
       ".ob-pin-issue:disabled{opacity:.45;cursor:not-allowed}" +
       ".ob-pin-copy{font-size:11px;font-weight:700;color:#0f2747;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 10px;cursor:pointer}" +
       ".ob-pill--draft{background:#fef3c7;color:#92400e}" +
-      ".ob-photo-cell{display:flex;align-items:center;gap:8px;min-width:0}" +
+      ".ob-photo-cell{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}" +
       ".ob-photo-open{display:inline-flex;border-radius:999px;line-height:0;cursor:pointer}" +
       ".ob-photo-open:focus-visible{outline:2px solid #1d4f8a;outline-offset:2px}" +
       ".ob-photo-thumb{width:28px;height:28px;border-radius:999px;object-fit:cover;flex:0 0 auto;background:#e2e8f0}" +
+      ".ob-photo-edit-btn{font-size:11px;font-weight:700;color:#0f2747;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 8px;cursor:pointer;min-width:0}" +
+      ".ob-photo-edit-btn:hover{background:#e0e7ff}" +
+      ".ob-photo-edit-btn{font-size:11px;font-weight:700;color:#0f2747;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 8px;cursor:pointer;min-width:0}" +
+      ".ob-photo-edit-btn:hover{background:#e0e7ff}" +
       ".ob-modal{position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px}" +
       ".ob-modal-card{background:#fff;border-radius:14px;max-width:420px;width:100%;padding:18px 18px 16px;box-shadow:0 18px 50px rgba(15,23,42,.25);min-width:0}" +
       ".ob-modal-card h3{margin:0 0 8px;font-size:16px;color:#0f2747}" +
@@ -171,25 +175,56 @@
   }
 
   function photoCell(a) {
-    var url = String((a && (a.photo_url || a.photoUrl)) || "").trim();
-    if (url) {
-      if (typeof window.portalRememberStaffLiveAvatar === "function") {
-        window.portalRememberStaffLiveAvatar(a.login_username || a.display_name, url);
-      }
-      return (
-        '<span class="ob-photo-cell">' +
-        '<a class="ob-photo-open" href="' +
-        esc(url) +
-        '" target="_blank" rel="noopener noreferrer" title="Open photo">' +
-        '<img class="ob-photo-thumb" src="' +
-        esc(url) +
-        '" alt="" loading="lazy" decoding="async" onerror="this.remove()" />' +
-        "</a>" +
-        pill(true, false) +
-        "</span>"
-      );
-    }
-    return pill(!!(a && a.photo), false);
+    var original = String((a && (a.photo_original_url || a.photo_url || a.photoUrl)) || "").trim();
+    var display = String((a && a.photo_display_url) || "").trim();
+    var thumb = original || display;
+    if (!thumb) return pill(!!(a && a.photo), false);
+    var name = (a && (a.display_name || a.portal_staff_name)) || "";
+    var edit = original
+      ? '<button type="button" class="ob-photo-edit-btn" data-ob-photo-edit="' +
+        esc(a.applicant_session_id || "") +
+        '" data-ob-photo-url="' +
+        esc(original) +
+        '" data-ob-photo-name="' +
+        esc(name) +
+        '">Edit</button>'
+      : "";
+    return (
+      '<span class="ob-photo-cell">' +
+      '<a class="ob-photo-open" href="' +
+      esc(original || display) +
+      '" target="_blank" rel="noopener noreferrer" title="Open original photo">' +
+      '<img class="ob-photo-thumb" src="' +
+      esc(thumb) +
+      '" alt="" loading="lazy" decoding="async" onerror="this.remove()" />' +
+      "</a>" +
+      edit +
+      pill(true, false) +
+      (display ? '<span class="ob-pill ob-pill--yes">Display</span>' : "") +
+      "</span>"
+    );
+  }
+
+  function saveDisplayPhoto(staffId, dataUrl) {
+    return authToken().then(function (token) {
+      if (!token) throw new Error("Sign in to admin again.");
+      return fetch(supabaseUrl() + "/functions/v1/portal-admin-staff-display-photo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+          apikey: anonKey()
+        },
+        body: JSON.stringify({ staff_id: staffId, png_base64: dataUrl })
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          if (!res.ok || !body.ok) {
+            throw new Error(body.error || "Could not save the display photo.");
+          }
+          return body;
+        });
+      });
+    });
   }
 
   function pinCell(a) {
@@ -340,6 +375,21 @@
     root.querySelectorAll("[data-ob-copy-pin]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         copyText(btn.getAttribute("data-ob-copy-pin") || "", "PIN copied.");
+      });
+    });
+    root.querySelectorAll("[data-ob-photo-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (!window.PortalStaffPhotoEdit || typeof window.PortalStaffPhotoEdit.open !== "function") {
+          if (deps.toast) deps.toast("Photo editor is not loaded. Refresh the page.");
+          return;
+        }
+        window.PortalStaffPhotoEdit.open({
+          staffId: btn.getAttribute("data-ob-photo-edit") || "",
+          originalUrl: btn.getAttribute("data-ob-photo-url") || "",
+          name: btn.getAttribute("data-ob-photo-name") || "",
+          save: saveDisplayPhoto,
+          onSaved: function () { load(); }
+        });
       });
     });
   }

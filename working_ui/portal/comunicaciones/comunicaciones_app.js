@@ -291,30 +291,16 @@ function localStaffPhotoUrl(name) {
 }
 
 function resolveCommsAvatarUrl(url, name) {
-  const local = localStaffPhotoUrl(name);
   const raw = String(url || "").trim();
-  if (
-    local &&
-    /\/staff-avatars\/[a-z0-9]+\/avatar\./i.test(raw) &&
-    !/\/staff-avatars\/[0-9a-f]{8}-/i.test(raw)
-  ) {
-    return local;
-  }
-  if (!raw) return local;
+  if (/\/display\./i.test(raw)) return raw;
+  const local = localStaffPhotoUrl(name);
+  if (local) return local;
   const m = raw.match(/\/portal\/staff_photos\/([^/?#.]+)/i);
   if (m) {
     const stem = String(m[1] || "").toLowerCase();
-    if (
-      /^(ceo|ceos|all|allceos|group|team|admin|admins|director|directors|staff|leads|lead|ops)$/.test(
-        stem
-      )
-    ) {
-      return "";
-    }
     if (COMMS_PHOTO_FILES[stem]) return "/portal/staff_photos/" + stem + ".png";
-    return local;
   }
-  return raw;
+  return "";
 }
 
 function avatarHtml(url, name, cls) {

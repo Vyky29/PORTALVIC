@@ -143,7 +143,12 @@
     return k && LIVE_AVATARS[k] ? LIVE_AVATARS[k] : "";
   }
 
+  function isPublishedDisplayAvatar(url) {
+    return /\/display\./i.test(String(url || ""));
+  }
+
   function rememberStaffLiveAvatar(nameOrKey, url) {
+    if (!isPublishedDisplayAvatar(url)) return;
     var u = portalSanitizeRemoteAvatarUrl(url);
     if (!u) return;
     photoLookupKeys(nameOrKey, { username: nameOrKey }).forEach(function (k) {
@@ -216,28 +221,21 @@
 
     keys.forEach(function (key) {
       if (NO_STATIC_PHOTO[key] || looksLikeOpaquePhotoKey(key)) return;
-      var hadProfileFile = false;
+      var display = "";
       var live = liveAvatarForKey(key);
-      if (opts.avatarUrl) live = portalSanitizeRemoteAvatarUrl(opts.avatarUrl) || live;
-      if (live) {
-        pushCandidate(urls, live);
-        hadProfileFile = true;
+      if (opts.avatarUrl && isPublishedDisplayAvatar(opts.avatarUrl)) {
+        display = portalSanitizeRemoteAvatarUrl(opts.avatarUrl) || "";
+      } else if (isPublishedDisplayAvatar(live)) {
+        display = live;
       }
+      if (display) pushCandidate(urls, display);
       try {
         var src = global.STAFF_DASHBOARD_SOURCE;
         if (key && src && src.staffProfiles && src.staffProfiles[key]) {
           var af = String(src.staffProfiles[key].avatarFile || "").trim();
-          if (af) {
-            var afKey = canonicalStaffKey(key);
-            if (STAFF_PHOTO_FILES[afKey] || !/staff_photos\//i.test(af)) {
-              hadProfileFile = true;
-              pushCandidate(urls, swapPhotoExt(af, "png"));
-              pushCandidate(urls, af);
-            }
-          }
+          if (isPublishedDisplayAvatar(af)) pushCandidate(urls, af);
         }
       } catch (_) {}
-      if (hadProfileFile) return;
       if (!key) return;
       if (key === "lulia" || key === "luliya") {
         pushCandidate(urls, base + "luliya.png");

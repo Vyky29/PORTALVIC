@@ -2233,8 +2233,8 @@ export async function uploadStaffAvatar(file, opts = {}) {
   if (!session?.user?.id) throw new Error("No active session.");
 
   const bucket = String(opts.bucket || "staff-avatars").trim() || "staff-avatars";
-  const ext = String(file.name || "avatar.jpg").split(".").pop() || "jpg";
-  const path = `${session.user.id}/avatar.${ext}`;
+  const ext = String(file.name || "original.jpg").split(".").pop() || "jpg";
+  const path = `${session.user.id}/original.${ext}`;
 
   const { error: uploadErr } = await supabase.storage.from(bucket).upload(path, file, {
     upsert: true,
@@ -2246,21 +2246,13 @@ export async function uploadStaffAvatar(file, opts = {}) {
   const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
   const publicUrl = `${pub.publicUrl}?t=${Date.now()}`;
 
-  const { error: updateErr } = await supabase.auth.updateUser({
-    data: { avatar_url: publicUrl },
-  });
-  if (updateErr) throw updateErr;
-
   try {
-    if (window.__PORTAL_SUPABASE__?.session?.user) {
-      const oldMeta = window.__PORTAL_SUPABASE__.session.user.user_metadata || {};
-      window.__PORTAL_SUPABASE__.session.user.user_metadata = {
-        ...oldMeta,
-        avatar_url: publicUrl,
-      };
-    }
+    await supabase
+      .from("staff_profiles")
+      .update({ avatar_original_url: publicUrl })
+      .eq("id", session.user.id);
   } catch {
-    /* ignore */
+    /* office still reads the storage original */
   }
 
   return { publicUrl, path };

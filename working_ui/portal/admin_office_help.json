@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v181",
+  "version": "2026-10-03-v182",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2410,37 +2410,45 @@
         },
         {
           "id": "onboarding_open_photo",
-          "title": "Open a hire photo",
-          "summary": "The face in the Photo column is the photo. Click it to open the full picture.",
+          "title": "Hire photo: original and display",
+          "summary": "The hire uploads the original. The office cleans it. Families, staff and admin see only the cleaned photo.",
           "where": "Potential workers, Onboarding",
           "keywords": [
             "photo",
             "foto",
             "onboarding",
             "hire",
-            "applicant"
+            "applicant",
+            "background",
+            "fondo",
+            "display photo",
+            "original"
           ],
           "steps": [
             "Open Potential workers, then Onboarding.",
-            "Find the person. The Photo column is between Health and Documents.",
-            "If there is a face, click it. The full photo opens.",
-            "Done next to the face means the photo is saved. A dash means they have not uploaded one."
+            "The face in Photo is the original upload. Click it to open the full picture.",
+            "Press Edit. Clean background removes the background, puts the grey, and centers the face.",
+            "Nudge the face if needed, then Save display photo.",
+            "That saved photo is the one in admin, the staff portal and the parent portal. Staff cannot change it themselves."
           ],
           "tips": [
-            "Passport and the other files are the chips in Documents, not the Photo column."
+            "The upload and the photo parents see are two files. Do not send the original to families.",
+            "A dash means they have not uploaded one. Display next to the face means the cleaned photo is saved."
           ],
           "es": {
-            "title": "Abrir la foto de un hire",
-            "summary": "La cara en la columna Photo es la foto. Pulsala para abrirla entera.",
+            "title": "Foto del hire: original y la que se ensena",
+            "summary": "El hire sube la original. La oficina la limpia. Familias, staff y admin ven solo la foto limpia.",
             "where": "Potential workers, Onboarding",
             "steps": [
               "Abre Potential workers y luego Onboarding.",
-              "Busca a la persona. La columna Photo esta entre Health y Documents.",
-              "Si hay una cara, pulsala. Se abre la foto entera.",
-              "Done al lado de la cara quiere decir que la foto esta guardada. Una raya quiere decir que no la han subido."
+              "La cara en Photo es la original. Pulsala para abrirla entera.",
+              "Pulsa Edit. Clean background quita el fondo, pone el gris y centra la cara.",
+              "Mueve la cara si hace falta y pulsa Save display photo.",
+              "Esa foto guardada es la de admin, el staff portal y el parent portal. El staff no puede cambiarla."
             ],
             "tips": [
-              "El pasaporte y los otros archivos son los chips de Documents, no la columna Photo."
+              "La que suben y la que ven los padres son dos fotos. No ensenes la original a las familias.",
+              "Una raya quiere decir que no han subido foto. Display al lado de la cara quiere decir que la limpia ya esta guardada."
             ]
           }
         },
