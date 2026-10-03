@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v163",
+  "version": "2026-10-03-v164",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -429,7 +429,7 @@
           ],
           "tips": [
             "Cancelled services is a place removed for the rest of term. A one-day absence stays in Absents, credits and refunds.",
-            "On a wide screen the blocks fill the page and you do not scroll. On a phone the calendar sits above the buttons and the page scrolls.",
+            "On a wide screen the blocks fill the page and you do not scroll. On a phone the calendar is a short block, not the whole screen. Held upright, the buttons are full-width rows under it. Held sideways, the calendar sits on the right and the buttons stay beside it.",
             "On every admin page the title, the info circle and Back or Help sit in one row."
           ],
           "es": {
@@ -445,7 +445,7 @@
             ],
             "tips": [
               "Cancelled services es una plaza quitada el resto del term. Una falta de un dia sigue en Absents, credits and refunds.",
-              "En el telefono el calendario va encima y la pagina baja."
+              "En el telefono el calendario es un bloque corto. En vertical los botones van en filas debajo. En horizontal el calendario queda a la derecha."
             ]
           }
         }
