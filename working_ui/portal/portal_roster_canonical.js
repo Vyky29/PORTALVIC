@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 138;
+  var SOURCE_VERSION = 139;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -596,6 +596,7 @@
     if (n === "manager") return "Hub · Manager";
     if (n === "office") return "Hub · Office";
     if (n === "acat") return "Hub · ACAT";
+    if (n === "meeting") return "Hub · Meeting";
     if (n === "interview" || n === "interviews") return "Hub Room";
     return "Hub Room";
   }
@@ -4280,6 +4281,162 @@
   }
 
   /**
+   * Mon 5 Oct 2026 only, and every Tuesday from 6 Oct.
+   * Timi leaves Monday Day Centre from 5 Oct and sits on Tuesday.
+   * Victor Tuesday 3.30-5 stays the Cyrus Bespoke row.
+   */
+  var MONDAY_5_OCT_DC = [
+    {
+      staff: "Roberto",
+      clients: [
+        { name: "Emanuel", time: "11 to 1" },
+        { name: "Fadi", time: "1 to 3" },
+      ],
+    },
+    {
+      staff: "Youssef",
+      clients: [
+        { name: "Ikram", time: "11 to 12.30" },
+        { name: "Fadi", time: "12.30 to 3" },
+      ],
+    },
+    { staff: "Patience", clients: [{ name: "Ikram", time: "11 to 4" }] },
+    {
+      staff: "Michelle",
+      clients: [
+        { name: "Manager", time: "11 to 12.30" },
+        { name: "Ikram", time: "12.30 to 2" },
+        { name: "Meeting", time: "2 to 3" },
+        { name: "Ikram", time: "3 to 4" },
+      ],
+    },
+    {
+      staff: "Raul",
+      clients: [
+        { name: "Ibi", time: "11 to 1" },
+        { name: "Emanuel", time: "1 to 4" },
+      ],
+    },
+    {
+      staff: "Victor",
+      clients: [
+        { name: "Ibi", time: "11 to 1" },
+        { name: "Ikram", time: "1 to 4" },
+      ],
+    },
+  ];
+  var TUESDAY_FROM_6_OCT_DC = [
+    {
+      staff: "Roberto",
+      clients: [
+        { name: "ACAT", time: "11 to 12" },
+        { name: "Fadi", time: "12.30 to 3" },
+      ],
+    },
+    {
+      staff: "Victor",
+      clients: [
+        { name: "Timi", time: "11 to 1" },
+        { name: "Manager", time: "1 to 3" },
+      ],
+    },
+    {
+      staff: "Patience",
+      clients: [
+        { name: "Ikram", time: "11 to 12.30" },
+        { name: "Fadi", time: "12.30 to 3" },
+        { name: "Ikram", time: "3 to 4" },
+      ],
+    },
+    { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+    {
+      staff: "Michelle",
+      clients: [
+        { name: "Timi", time: "11 to 12.30" },
+        { name: "Ikram", time: "12.30 to 4" },
+      ],
+    },
+  ];
+  var TUESDAY_DC_FROM = "2026-10-06";
+
+  function dcDatedBoardRows(iso, day, board) {
+    var out = [];
+    (board || []).forEach(function (col) {
+      (col.clients || []).forEach(function (c) {
+        out.push({
+          client_name: c.name,
+          day: day,
+          instructors: String(col.staff || "").toUpperCase(),
+          service: "Day Centre",
+          area: areaForDcClient(c.name),
+          time_slot: c.time,
+          venue: "SwimFarm",
+          session_date: iso,
+        });
+      });
+    });
+    return out;
+  }
+
+  function applyOct5MondayAndTuesdayDcFrom6(rows) {
+    var tueStaff = {
+      roberto: 1,
+      victor: 1,
+      patience: 1,
+      luliya: 1,
+      michelle: 1,
+    };
+    var out = [];
+    function rowDow(r, iso) {
+      var dk = normalizeDowKey(r.day);
+      if (dk) return dk;
+      if (!iso) return "";
+      try {
+        return ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
+          new Date(iso + "T12:00:00").getDay()
+        ];
+      } catch (_dow) {
+        return "";
+      }
+    }
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var iso = normIso(r.session_date);
+      var dow = rowDow(r, iso);
+      if (iso === "2026-10-05" && isDayCentreService(r.service)) return;
+      if (
+        iso &&
+        iso >= "2026-10-05" &&
+        dow === "monday" &&
+        isDayCentreService(r.service) &&
+        /^timi\b/i.test(String(r.client_name || "").trim())
+      ) {
+        return;
+      }
+      if (
+        iso &&
+        iso >= TUESDAY_DC_FROM &&
+        dow === "tuesday" &&
+        isDayCentreService(r.service) &&
+        tueStaff[dcStandingStaffKey(r.instructors)]
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    dcDatedBoardRows("2026-10-05", "Monday", MONDAY_5_OCT_DC).forEach(function (row) {
+      out.push(row);
+    });
+    enumerateAutumnTermIsosForDow("tuesday").forEach(function (iso) {
+      if (iso < TUESDAY_DC_FROM) return;
+      dcDatedBoardRows(iso, "Tuesday", TUESDAY_FROM_6_OCT_DC).forEach(function (row) {
+        out.push(row);
+      });
+    });
+    return out;
+  }
+
+  /**
    * Canonical roster rows for STAFF_DASHBOARD_SOURCE.rows.
    * @param {{ skipDb?: boolean }} [opts]
    */
@@ -4317,6 +4474,7 @@
     merged = purgeSummerHistoryOutsideAutumnTemplates(merged);
     merged = applyLuliyaNewStandingFrom28(merged);
     merged = applyPatienceIkramFrom28(merged);
+    merged = applyOct5MondayAndTuesdayDcFrom6(merged);
     return dedupeRosterAdapterRows(merged);
   }
 

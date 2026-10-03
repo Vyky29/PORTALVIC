@@ -4400,12 +4400,13 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   height:100%;
   max-height:none;
   min-width:0;
-  padding:0;
-  gap:0;
+  padding:8px 6px;
+  gap:6px;
   overflow:hidden;
   background:#fff;
   color:#0f172a;
-  justify-content:flex-start;
+  justify-content:center;
+  align-items:center;
 }
 .ops-hub--flat .dash-hub__tile:hover,
 .ops-hub--flat .dash-hub__tile:focus-visible{
@@ -4417,7 +4418,8 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   min-width:0;
   max-width:100%;
   margin:0;
-  padding:6px 8px 8px;
+  padding:0 6px;
+  text-align:center;
   background:#fff;
   color:#0f172a;
   font-size:11px;
@@ -4434,16 +4436,16 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   -webkit-line-clamp:2;
 }
 .ops-hub--flat .dash-hub__tile-band{
-  flex:1 1 46%;
-  max-height:58%;
-  min-height:28px;
-  width:100%;
+  flex:0 0 auto;
+  max-height:none;
+  min-height:0;
+  width:auto;
   margin:0;
-  padding:8px 4px;
+  padding:0;
   display:flex;
   align-items:center;
   justify-content:center;
-  border-radius:13px 13px 0 0;
+  border-radius:0;
 }
 .ops-hub--flat .dash-hub__tile-band .admin-nav-ico{
   width:26px;
@@ -4722,8 +4724,8 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
     padding:8px 6px;
   }
   .ops-hub--flat .dash-hub__tile-band{
-    flex:1 1 auto;
-    width:100%;
+    flex:0 0 auto;
+    width:auto;
     max-height:none;
     min-height:0;
     height:auto;
