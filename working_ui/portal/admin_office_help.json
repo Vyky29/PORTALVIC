@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v160",
+  "version": "2026-10-03-v161",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -402,7 +402,7 @@
         {
           "id": "ops_hub_chips",
           "title": "Operations Hub: the buttons you use",
-          "summary": "Colour blocks fill the Operations Hub with no scroll. The calendar is the top-right block. WhatsApp, P, S, C and A stay in the top bar.",
+          "summary": "The top row is Sessions, Clients, Services and a wide calendar. Finance, H&R and Potential workers sit underneath. Each button has the icon on top and the name below.",
           "where": "Operations Hub (home)",
           "keywords": [
             "chips",
@@ -419,8 +419,8 @@
           ],
           "steps": [
             "Open Operations Hub. The title, the info circle and Office help sit together.",
-            "Every category is a colour block on the same screen, packed together. Sessions: Sessions overview, Schedule and Covers, Register. Services and places: Service roster, Places, Leads, Registered, Waiting list, Edit term slot. Clients and families: Active, Achievement photos, Parent consents. Finance: Re-enrolments and Bookings, Payments, Absents, credits and refunds, Cancelled services. H&R: Workers, Instructor timetable, Session disruptions, Late feedback, Documents, Finance. Potential workers: Interviews, Onboarding.",
-            "The calendar is the top-right block. A day with an open note is orange. Press the calendar to open Office calendar.",
+            "The top row, left to right, is Sessions, Clients and families, Services and places, then the calendar. Sessions is the large block on the left. Each button keeps the icon in the colour band and the name on white underneath.",
+            "Under that row: Finance, H&R, and Potential workers. A day with an open note is orange. Press the calendar to open Office calendar.",
             "The full menu is still in the sidebar. The hub only keeps the buttons used every day.",
             "WhatsApp, Parents API, Staff API, C (Comms) and A (Announcements) stay in the top bar.",
             "When that lane has unread messages, the button lights up and shows the number."
@@ -432,12 +432,12 @@
           ],
           "es": {
             "title": "Operations Hub: los botones que usas",
-            "summary": "Una pantalla muestra los botones usados de cada categoria, y el calendario se queda al lado. WhatsApp, P, S, C y A siguen en la barra.",
+            "summary": "La fila de arriba es Sessions, Clients, Services y el calendario a lo ancho. Finance, H&R y Potential workers van debajo. Cada boton lleva el icono arriba y el nombre abajo.",
             "where": "Operations Hub (inicio)",
             "steps": [
               "Abre Operations Hub. El titulo, el circulo de info y Office help van juntos.",
-              "Todas las categorias estan en la misma pantalla: Sessions, Services and places, Clients and families, Finance, H&R y Potential workers. Son los botones que se usan cada dia.",
-              "El calendario esta a la derecha. Un dia con nota abierta sale naranja. Pulsa el calendario para abrir Office calendar.",
+              "La fila de arriba, de izquierda a derecha: Sessions, Clients and families, Services and places, y el calendario. Sessions es el bloque grande de la izquierda. El icono va en la franja de color y el nombre en blanco debajo.",
+              "Debajo: Finance, H&R y Potential workers. Un dia con nota abierta sale naranja. Pulsa el calendario para abrir Office calendar.",
               "El menu completo sigue en la barra lateral. El hub solo deja los botones de cada dia.",
               "WhatsApp, Parents API, Staff API, C y A siguen en la barra de arriba."
             ],

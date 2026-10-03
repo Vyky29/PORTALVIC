@@ -4227,14 +4227,12 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   min-width:0;
   display:grid;
   overflow:hidden;
-  gap:4px;
-  grid-template-columns:minmax(128px,.85fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,.95fr) minmax(0,.95fr) minmax(200px,230px);
-  grid-template-rows:repeat(4,minmax(0,1fr));
+  gap:6px;
+  grid-template-columns:minmax(220px,1.75fr) minmax(168px,1.15fr) minmax(140px,1.05fr) minmax(150px,1.1fr) minmax(130px,.95fr) minmax(180px,1.5fr);
+  grid-template-rows:minmax(0,1.05fr) minmax(0,.95fr);
   grid-template-areas:
-    "sess serv serv serv hr hr cal"
-    "sess serv serv serv hr hr cal"
-    "fam  fin  fin  fin  hr hr pot"
-    "fam  fin  fin  fin  hr hr pot";
+    "sess fam serv serv cal cal"
+    "sess fin fin  hr   hr  pot";
 }
 .ops-hub--flat .ops-hub-panel--today{grid-area:sess}
 .ops-hub--flat .ops-hub-panel--services{grid-area:serv}
@@ -4259,28 +4257,40 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   height:100%;
   min-height:0;
   max-height:none;
-  display:flex;
-  flex-direction:column;
+  display:grid;
+  grid-template-columns:minmax(76px,96px) minmax(0,1fr);
+  grid-template-rows:minmax(0,1fr);
   align-items:stretch;
-  gap:6px;
-  grid-template-columns:none;
+  gap:8px;
+  padding:8px 10px;
   box-sizing:border-box;
 }
 .ops-hub-flat__cal .ops-hub-cal-glance__grid{
-  flex:1 1 auto;
   min-height:0;
+  min-width:0;
+  height:100%;
   display:flex;
 }
 .ops-hub-flat__cal .ops-hub-cal-month{
   flex:1 1 auto;
+  min-height:0;
 }
 .ops-hub-flat__cal .ops-hub-cal-glance__copy{
   display:flex;
-  flex-direction:row;
-  align-items:baseline;
-  gap:8px;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  gap:2px;
   min-width:0;
-  flex:0 0 auto;
+  align-self:center;
+}
+.ops-hub-flat__cal .ops-hub__today-k,
+.ops-hub-flat__cal .ops-hub__today-v,
+.ops-hub-flat__cal .ops-hub__today-s{
+  text-align:left;
+}
+.ops-hub-flat__cal .ops-hub__today-v{
+  font-size:22px;
 }
 .ops-hub-flat__cal .ops-hub__today-k,
 .ops-hub-flat__cal .ops-hub__today-v,
@@ -4332,7 +4342,10 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   gap:4px;
   align-content:stretch;
 }
-.ops-hub--flat .ops-hub-panel--today .ops-hub-flat__grid,
+.ops-hub--flat .ops-hub-panel--today .ops-hub-flat__grid{
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:repeat(3,minmax(0,1fr));
+}
 .ops-hub--flat .ops-hub-panel--families .ops-hub-flat__grid{
   grid-template-columns:minmax(0,1fr);
   grid-template-rows:repeat(3,minmax(0,1fr));
@@ -4346,21 +4359,24 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   grid-template-rows:repeat(2,minmax(0,1fr));
 }
 .ops-hub--flat .ops-hub-panel--formal .ops-hub-flat__grid{
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  grid-template-rows:repeat(3,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(0,1fr));
 }
 .ops-hub--flat .ops-hub-panel--potential .ops-hub-flat__grid{
-  grid-template-columns:minmax(0,1fr);
-  grid-template-rows:repeat(2,minmax(0,1fr));
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:minmax(0,1fr);
 }
 .ops-hub--flat .dash-hub__tile{
   min-height:0;
   height:100%;
   max-height:none;
   min-width:0;
-  padding:0 0 6px;
-  gap:2px;
+  padding:0;
+  gap:0;
   overflow:hidden;
+  background:#fff;
+  color:#0f172a;
+  justify-content:flex-start;
 }
 .ops-hub--flat .dash-hub__tile:hover,
 .ops-hub--flat .dash-hub__tile:focus-visible{
@@ -4368,21 +4384,57 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
 }
 .ops-hub--flat .dash-hub__tile-desc{display:none}
 .ops-hub--flat .dash-hub__tile-label{
+  flex:0 0 auto;
   min-width:0;
   max-width:100%;
-  padding:4px 6px 0;
+  margin:0;
+  padding:6px 8px 8px;
+  background:#fff;
+  color:#0f172a;
   font-size:11px;
   line-height:1.2;
-  overflow-wrap:anywhere;
+  overflow-wrap:break-word;
   display:-webkit-box;
   -webkit-line-clamp:3;
   -webkit-box-orient:vertical;
   overflow:hidden;
 }
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-label{
+  font-size:13px;
+  padding:8px 8px 10px;
+  -webkit-line-clamp:2;
+}
 .ops-hub--flat .dash-hub__tile-band{
-  min-height:0;
-  flex:0 0 auto;
-  padding:6px 4px 2px;
+  flex:1 1 46%;
+  max-height:58%;
+  min-height:28px;
+  width:100%;
+  margin:0;
+  padding:8px 4px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:13px 13px 0 0;
+}
+.ops-hub--flat .dash-hub__tile-band .admin-nav-ico{
+  width:26px;
+  height:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.ops-hub--flat .dash-hub__tile-band .admin-nav-ico svg{
+  width:22px;
+  height:22px;
+  display:block;
+}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band{
+  min-height:44px;
+}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band .admin-nav-ico,
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band .admin-nav-ico svg{
+  width:28px;
+  height:28px;
 }
 .ops-hub--flat .ops-hub-panel--today{background:#fce7f3;border-color:#f9a8d4}
 .ops-hub--flat .ops-hub-panel--services{background:#ffedd5;border-color:#fdba74}
@@ -4390,15 +4442,18 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
 .ops-hub--flat .ops-hub-panel--finance{background:#ccfbf1;border-color:#5eead4}
 .ops-hub--flat .ops-hub-panel--formal{background:#fee2e2;border-color:#fca5a5}
 .ops-hub--flat .ops-hub-panel--potential{background:#f1f5f9;border-color:#cbd5e1}
-.ops-hub--flat .ops-hub-panel--today .dash-hub__tile{background:#fff1f6;color:#9d174d}
-.ops-hub--flat .ops-hub-panel--services .dash-hub__tile{background:#fff7ed}
-.ops-hub--flat .ops-hub-panel--families .dash-hub__tile{background:#f5f3ff}
-.ops-hub--flat .ops-hub-panel--finance .dash-hub__tile{background:#f0fdfa;color:#115e59}
-.ops-hub--flat .ops-hub-panel--formal .dash-hub__tile{background:#fff5f5;color:#991b1b}
-.ops-hub--flat .ops-hub-panel--potential .dash-hub__tile{background:#f8fafc}
-.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band{background:rgba(244,114,182,.28);color:#be185d}
-.ops-hub--flat .ops-hub-panel--finance .dash-hub__tile-band{background:rgba(45,212,191,.32);color:#0f766e}
-.ops-hub--flat .ops-hub-panel--formal .dash-hub__tile-band{background:rgba(239,68,68,.2);color:#b91c1c}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile,
+.ops-hub--flat .ops-hub-panel--services .dash-hub__tile,
+.ops-hub--flat .ops-hub-panel--families .dash-hub__tile,
+.ops-hub--flat .ops-hub-panel--finance .dash-hub__tile,
+.ops-hub--flat .ops-hub-panel--formal .dash-hub__tile,
+.ops-hub--flat .ops-hub-panel--potential .dash-hub__tile{background:#fff;color:#0f172a}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band{background:#fbcfe8;color:#be185d}
+.ops-hub--flat .ops-hub-panel--services .dash-hub__tile-band{background:#ffedd5;color:#c2410c}
+.ops-hub--flat .ops-hub-panel--families .dash-hub__tile-band{background:#ede9fe;color:#6d28d9}
+.ops-hub--flat .ops-hub-panel--finance .dash-hub__tile-band{background:#ccfbf1;color:#0f766e}
+.ops-hub--flat .ops-hub-panel--formal .dash-hub__tile-band{background:#fecaca;color:#b91c1c}
+.ops-hub--flat .ops-hub-panel--potential .dash-hub__tile-band{background:#e2e8f0;color:#334155}
 .ops-hub--flat .ops-hub-panel--today .dash-hub__panel-title,
 .ops-hub--flat .ops-hub-panel--today .dash-hub__panel-ico{color:#be185d}
 .ops-hub--flat .ops-hub-panel--finance .dash-hub__panel-title,
