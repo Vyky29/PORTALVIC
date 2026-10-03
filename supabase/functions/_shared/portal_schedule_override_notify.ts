@@ -368,8 +368,8 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
   }
 
   if (kind === "time_change") {
-    const oldTime = clean(opts.oldTime, 40);
-    const newTime = clean(opts.newTime, 40) || sessionTime;
+    const oldTime = clean(opts.oldTime, 500);
+    const newTime = clean(opts.newTime, 500) || sessionTime;
     let timesPart = "";
     if (oldTime && newTime) {
       timesPart = `\n\nPrevious time: ${oldTime}\nNew time: ${newTime}`;

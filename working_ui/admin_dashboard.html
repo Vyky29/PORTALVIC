@@ -2660,7 +2660,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v190')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v191')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -16848,9 +16848,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         closeSchedDrawer();
         sched.lastMsg = srcChild.name + ' and ' + other.name + ' swapped ' + schedSlotSwapProgrammeLabel(sourceSlot) + ' for ' + String(sourceSlot.sessionDate || '') + '. Other services stay. Instructors stay.';
         try{ if(typeof portalAdminToast === 'function') portalAdminToast(sched.lastMsg); }catch(_toast){}
+        function schedParentSeatPlace(seat){
+          var area = String((seat && seat.rosterArea) || '').trim().toLowerCase();
+          var prog = String((seat && (seat.programme || seat.rosterService)) || '').trim().toLowerCase();
+          if(/hub/.test(area)) return 'Hub Room';
+          if(/pool|swim/.test(area) || /aquatic|swim/.test(prog)) return 'Swimming';
+          if(/wall|climb/.test(area) || /climb/.test(prog)) return 'Wall';
+          return String((seat && seat.rosterArea) || '').trim();
+        }
         function seatTimes(list){
-          return list.map(function(seat){
-            return seat.anchorTimeLabel || normTimeShort(seat.anchorStart) || '';
+          return list.slice().sort(function(a, b){
+            return String(a.anchorStart || '').localeCompare(String(b.anchorStart || ''));
+          }).map(function(seat){
+            var time = seat.anchorTimeLabel || normTimeShort(seat.anchorStart) || '';
+            var place = schedParentSeatPlace(seat);
+            return (time + (place ? ' ' + place : '')).trim();
           }).filter(Boolean).join(', ');
         }
         try{
