@@ -2660,7 +2660,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v186')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v187')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -5706,6 +5706,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         String(slot && slot.clientSlug || '').trim().toLowerCase()
       ].join('|');
     }
+    function schedSlotSwapProgrammeKey(slot){
+      var label = String((slot && (slot.programme || slot.rosterService)) || '').trim();
+      if(typeof adminServiceProgrammeNormKey === 'function'){
+        var key = adminServiceProgrammeNormKey(label);
+        if(key && key !== 'other') return key;
+      }
+      return label.toLowerCase() || 'session';
+    }
+    function schedSlotSwapProgrammeLabel(slot){
+      return String((slot && (slot.programme || slot.rosterService)) || '').trim() || 'this service';
+    }
     function schedSeatsForChildOnDate(slug, sessionDate, pool){
       var want = String(slug || '').trim().toLowerCase();
       var out = [];
@@ -5728,13 +5739,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedBuildSwapTargetOptions(sourceSlot, allSlots){
       var src = schedSlotEffectiveChild(sourceSlot);
       if(!src) return [];
+      var progKey = schedSlotSwapProgrammeKey(sourceSlot);
       var bySlug = Object.create(null);
       (allSlots || []).forEach(function(t){
         if(!t || !sourceSlot) return;
         if(String(t.sessionDate || '') !== String(sourceSlot.sessionDate || '')) return;
+        if(schedSlotSwapProgrammeKey(t) !== progKey) return;
         var child = schedSlotEffectiveChild(t);
         if(!child || child.slug === src.slug) return;
-        if(!bySlug[child.slug]) bySlug[child.slug] = { slug: child.slug, name: child.name, seats: [] };
+        if(!bySlug[child.slug]){
+          bySlug[child.slug] = {
+            slug: child.slug,
+            name: child.name,
+            serviceLabel: schedSlotSwapProgrammeLabel(sourceSlot),
+            seats: []
+          };
+        }
         var key = schedSeatAnchorKey(t);
         var seats = bySlug[child.slug].seats;
         var seen = false;
@@ -5766,7 +5786,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       sel.innerHTML = '<option value="" selected disabled>Select the other child</option>' +
         opts.map(function(row){
           var bits = row.seats.map(function(s){ return s.label; }).filter(Boolean).join(', ');
-          var label = row.name + (bits ? ' · ' + bits : '');
+          var label = row.name + (row.serviceLabel ? ' · ' + row.serviceLabel : '') + (bits ? ' · ' + bits : '');
           return '<option value="' + esc(row.slug) + '">' + esc(label) + '</option>';
         }).join('');
       return opts.length;
@@ -16378,7 +16398,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<select id="schedFormSwapTarget" class="sel" style="max-width:100%">'+
         '<option value="" selected disabled>Select the other child</option>'+
         '</select>'+
-        '<p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">They exchange every seat they have on this date. Instructors stay on their times. The rest of term does not change. Undo on either row removes the whole swap.</p>'+
+        '<p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">They exchange only the '+esc(String(slot.programme || slot.rosterService || 'this service').trim() || 'this service')+' seats on this date. Other services stay. Instructors stay on their times. The rest of term does not change. Undo on either of these rows removes this swap.</p>'+
         '</div>'+
         '<div id="schedWrapReplace" style="display:none">'+
         '<label class="muted" for="schedFormReplaceInput" style="display:block;margin-top:12px">Replacement participant</label>'+
@@ -16747,8 +16767,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(msgEl) msgEl.textContent = 'That child is not on this date. Refresh the day and try again.';
         return;
       }
-      var srcSeats = schedSeatsForChildOnDate(srcChild.slug, sourceSlot.sessionDate, pool);
-      var otherSeats = other.seats.map(function(s){ return s.slot; });
+      var progKey = schedSlotSwapProgrammeKey(sourceSlot);
+      var srcSeats = schedSeatsForChildOnDate(srcChild.slug, sourceSlot.sessionDate, pool).filter(function(seat){
+        return schedSlotSwapProgrammeKey(seat) === progKey;
+      });
+      var otherSeats = other.seats.map(function(s){ return s.slot; }).filter(function(seat){
+        return schedSlotSwapProgrammeKey(seat) === progKey;
+      });
       if(!srcSeats.length || !otherSeats.length){
         if(msgEl) msgEl.textContent = 'Both children need a booked seat on this date.';
         return;
@@ -16821,7 +16846,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(evRows.length) await client.from('schedule_override_events').insert(evRows);
         }catch(_ev){}
         closeSchedDrawer();
-        sched.lastMsg = srcChild.name + ' and ' + other.name + ' swapped for ' + String(sourceSlot.sessionDate || '') + '. Instructors stay.';
+        sched.lastMsg = srcChild.name + ' and ' + other.name + ' swapped ' + schedSlotSwapProgrammeLabel(sourceSlot) + ' for ' + String(sourceSlot.sessionDate || '') + '. Other services stay. Instructors stay.';
         try{ if(typeof portalAdminToast === 'function') portalAdminToast(sched.lastMsg); }catch(_toast){}
         function seatTimes(list){
           return list.map(function(seat){
