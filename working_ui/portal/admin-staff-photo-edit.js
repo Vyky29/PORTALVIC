@@ -12,8 +12,8 @@
   function injectStyle() {
     if (document.getElementById("obPhotoEditStyle")) return;
     var css =
-      ".ob-photo-edit{position:fixed;inset:0;z-index:90;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px}" +
-      ".ob-photo-edit__card{background:#fff;border-radius:14px;max-width:420px;width:100%;padding:16px;box-shadow:0 18px 50px rgba(15,23,42,.25);min-width:0;max-height:100%;overflow:auto}" +
+      ".ob-photo-edit{position:fixed;inset:0;z-index:21000;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:auto}" +
+      ".ob-photo-edit__card{background:#fff;border-radius:14px;max-width:420px;width:100%;padding:16px;box-shadow:0 18px 50px rgba(15,23,42,.25);min-width:0;max-height:100%;overflow:auto;pointer-events:auto}" +
       ".ob-photo-edit__card h3{margin:0 0 6px;font-size:16px;color:#0f2747;overflow-wrap:anywhere}" +
       ".ob-photo-edit__card p{margin:0 0 10px;font-size:13px;color:#334155;line-height:1.45;overflow-wrap:break-word}" +
       ".ob-photo-edit__stage{display:flex;justify-content:center;margin:0 0 10px}" +
