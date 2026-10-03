@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 140;
+  var SOURCE_VERSION = 141;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -4013,7 +4013,7 @@
   /**
    * Patience Day Centre with Ikram 11-4, Mon / Tue / Wed / Fri, from 5 Oct 2026
    * through 17 Dec. Before that she is shadowing. Half term 26-30 Oct is skipped.
-   * Michelle and Wednesday Luliya stay on Ikram.
+   * From Wed 7 Oct her Ikram 11-4 is the Wednesday board (Luliya moves to Ikram then Fadi).
    */
   var PATIENCE_IKRAM_FROM = "2026-10-05";
   var PATIENCE_IKRAM_UNTIL = "2026-12-17";
@@ -4066,7 +4066,7 @@
 
   /**
    * From Mon 28 Sep 2026 Luliya is off Mondays and Friday mornings.
-   * Mon Northolt book → JAVI. Wednesday Day Centre Ikram 11-3 stays all term.
+   * Mon Northolt book → JAVI. Wednesday Ikram 11-3 stays through 30 Sep; from 7 Oct she is Ikram 11-12.30 then Fadi.
    * Tue DC 11-3, Tue Acton 4-6.30 and Wed Northolt 4.30-6.30 stay.
    * Sun 4 Oct Aurora pool cover stays (resolveAutumnInstructorsForCalendarDate).
    */
@@ -4281,10 +4281,12 @@
   }
 
   /**
-   * Mon 5 Oct 2026 only, every Monday from 12 Oct, and every Tuesday from 6 Oct.
+   * Mon 5 Oct 2026 only, every Monday from 12 Oct, every Tuesday from 6 Oct,
+   * and every Wednesday from 7 Oct. September Wednesdays stay on the standing template.
    * Timi leaves Monday Day Centre from 5 Oct and sits on Tuesday.
    * Victor Tuesday 3.30-5 stays the Cyrus Bespoke row.
    * Victor is on Monday Day Centre only on 5 Oct.
+   * Raul is off Wednesday Day Centre from 7 Oct.
    */
   var MONDAY_5_OCT_DC = [
     {
@@ -4360,6 +4362,38 @@
   ];
   var TUESDAY_DC_FROM = "2026-10-06";
   var MONDAY_DC_FROM_12 = "2026-10-12";
+  var WEDNESDAY_DC_FROM = "2026-10-07";
+  var WEDNESDAY_FROM_7_OCT_DC = [
+    {
+      staff: "Roberto",
+      clients: [
+        { name: "Emanuel", time: "11 to 12.30" },
+        { name: "Fadi", time: "12.30 to 3" },
+      ],
+    },
+    {
+      staff: "Luliya",
+      clients: [
+        { name: "Ikram", time: "11 to 12.30" },
+        { name: "Fadi", time: "12.30 to 3" },
+      ],
+    },
+    { staff: "Patience", clients: [{ name: "Ikram", time: "11 to 4" }] },
+    {
+      staff: "Michelle",
+      clients: [
+        { name: "Manager", time: "11 to 12.30" },
+        { name: "Ikram", time: "12.30 to 4" },
+      ],
+    },
+    {
+      staff: "Victor",
+      clients: [
+        { name: "Office", time: "11 to 12.30" },
+        { name: "Emanuel", time: "12.30 to 4" },
+      ],
+    },
+  ];
   var MONDAY_FROM_12_OCT_DC = [
     {
       staff: "Roberto",
@@ -4438,6 +4472,7 @@
       var dow = rowDow(r, iso);
       if (iso === "2026-10-05" && isDayCentreService(r.service)) return;
       if (iso && iso >= MONDAY_DC_FROM_12 && dow === "monday" && isDayCentreService(r.service)) return;
+      if (iso && iso >= WEDNESDAY_DC_FROM && dow === "wednesday" && isDayCentreService(r.service)) return;
       if (
         iso &&
         iso >= "2026-10-05" &&
@@ -4470,6 +4505,12 @@
     enumerateAutumnTermIsosForDow("monday").forEach(function (iso) {
       if (iso < MONDAY_DC_FROM_12) return;
       dcDatedBoardRows(iso, "Monday", MONDAY_FROM_12_OCT_DC).forEach(function (row) {
+        out.push(row);
+      });
+    });
+    enumerateAutumnTermIsosForDow("wednesday").forEach(function (iso) {
+      if (iso < WEDNESDAY_DC_FROM) return;
+      dcDatedBoardRows(iso, "Wednesday", WEDNESDAY_FROM_7_OCT_DC).forEach(function (row) {
         out.push(row);
       });
     });
@@ -5071,7 +5112,7 @@
       try {
         out = scrubAndEnsureMonNortholtDan630LeilaSwap(out);
       } catch (_) {}
-      /* Mon 28 Sep: Luliya off Mondays and Fridays. Wednesday Ikram 11-3 stays. */
+      /* Mon 28 Sep: Luliya off Mondays and Fridays. Wednesday DC changes from 7 Oct. */
       try {
         out = applyLuliyaNewStandingFrom28(out);
       } catch (_) {}
