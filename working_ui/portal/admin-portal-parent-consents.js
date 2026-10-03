@@ -21,7 +21,55 @@
     }
   };
 
-  var state = { filter: 'pending', q: '', entries: [], meta: {} };
+  var state = { group: 'status', filter: 'pending', q: '', entries: [], roster: null, meta: {} };
+
+  var FILTER_GROUPS = [
+    {
+      id: 'status',
+      label: 'Status',
+      subs: [
+        { id: 'pending', label: 'Pending' },
+        { id: 'complete', label: 'Complete' },
+        { id: 'renewal', label: 'Annual renewal' },
+        { id: 'all', label: 'All' }
+      ]
+    },
+    {
+      id: 'photo',
+      label: 'Photo',
+      subs: [
+        { id: 'photo_pending', label: 'Pending' },
+        { id: 'photo_yes', label: 'Marketing OK' },
+        { id: 'photo_no', label: 'Family only' }
+      ]
+    },
+    {
+      id: 'meds',
+      label: 'Medication',
+      subs: [
+        { id: 'med_pending', label: 'Pending' },
+        { id: 'med_yes', label: 'Meds at centre' },
+        { id: 'med_no', label: 'No meds' }
+      ]
+    },
+    {
+      id: 'emergency',
+      label: 'Emergency',
+      subs: [
+        { id: 'emergency_pending', label: 'Pending' },
+        { id: 'emergency_yes', label: 'Treat OK' },
+        { id: 'emergency_no', label: 'Wait for carer' }
+      ]
+    },
+    {
+      id: 'travel',
+      label: 'Travel',
+      subs: [
+        { id: 'offsite_pending', label: 'Pending' },
+        { id: 'offsite_done', label: 'Signed' }
+      ]
+    }
+  ];
 
   function configure(options) {
     if (!options) return;
@@ -233,14 +281,35 @@
 
   function matchesFilter(e, filter) {
     if (filter === 'pending') return e.pending_count > 0;
+    if (filter === 'photo_pending') return !e.photo_done;
     if (filter === 'photo_yes') return e.photo_done && e.photo_consent === 'yes';
     if (filter === 'photo_no') return e.photo_done && e.photo_consent === 'no';
+    if (filter === 'med_pending') return !e.medication_done;
     if (filter === 'med_yes') return e.medication_done && e.medication_at_centre_needed === 'yes';
+    if (filter === 'med_no') return e.medication_done && e.medication_at_centre_needed !== 'yes';
     if (filter === 'emergency_pending') return !e.emergency_done;
+    if (filter === 'emergency_yes') return e.emergency_done && e.emergency_treatment_consent === 'yes';
+    if (filter === 'emergency_no') return e.emergency_done && e.emergency_treatment_consent !== 'yes';
     if (filter === 'offsite_pending') return !e.offsite_done;
+    if (filter === 'offsite_done') return !!e.offsite_done;
     if (filter === 'renewal') return !!e.renewal_needed;
     if (filter === 'complete') return e.pending_count === 0;
     return true;
+  }
+
+  function groupById(id) {
+    for (var i = 0; i < FILTER_GROUPS.length; i++) {
+      if (FILTER_GROUPS[i].id === id) return FILTER_GROUPS[i];
+    }
+    return FILTER_GROUPS[0];
+  }
+
+  function filterInGroup(groupId, filterId) {
+    var group = groupById(groupId);
+    for (var i = 0; i < group.subs.length; i++) {
+      if (group.subs[i].id === filterId) return true;
+    }
+    return false;
   }
 
   function countsFor(entries) {
@@ -282,25 +351,40 @@
   }
 
   function syncFilterButtons() {
+    global.document.querySelectorAll('[data-consents-group]').forEach(function (b) {
+      var on = b.getAttribute('data-consents-group') === state.group;
+      b.classList.toggle('btn--ghost', !on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    global.document.querySelectorAll('[data-consents-subs]').forEach(function (row) {
+      row.hidden = row.getAttribute('data-consents-subs') !== state.group;
+    });
     global.document.querySelectorAll('[data-consents-filter]').forEach(function (b) {
       var on = b.getAttribute('data-consents-filter') === state.filter;
       b.classList.toggle('btn--ghost', !on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
 
-  async function renderHost() {
+  function paintSubCounts(list) {
+    var rows = list || [];
+    global.document.querySelectorAll('[data-consents-count]').forEach(function (el) {
+      var id = el.getAttribute('data-consents-count');
+      var n = 0;
+      for (var i = 0; i < rows.length; i++) {
+        if (matchesFilter(rows[i], id)) n += 1;
+      }
+      el.textContent = String(n);
+    });
+  }
+
+  function applyList() {
     var hostEl = global.document.getElementById('portalParentConsentsHost');
     if (!hostEl) return;
-    hostEl.innerHTML = '<p class="muted">Loading…</p>';
-    var res = await api({ filter: 'all', q: '', limit: 500 });
-    if (res.error) {
-      hostEl.innerHTML = '<p class="muted">Could not load consents (' + esc(res.error) + ').</p>';
-      return;
-    }
-    var active = (res.entries || []).filter(isActiveClient);
-    state.meta = countsFor(active);
+    var roster = state.roster || [];
+    paintSubCounts(roster);
     var q = String(state.q || '').trim().toLowerCase();
-    state.entries = active.filter(function (e) {
+    state.entries = roster.filter(function (e) {
       if (!matchesFilter(e, state.filter)) return false;
       if (!q) return true;
       var hay = (
@@ -313,20 +397,25 @@
       return hay.indexOf(q) >= 0;
     });
     var metaEl = global.document.getElementById('portalParentConsentsMeta');
-    if (metaEl) {
-      metaEl.textContent =
-        String(state.meta.photo_pending || 0) +
-        ' photo · ' +
-        String(state.meta.medication_pending || 0) +
-        ' meds · ' +
-        String(state.meta.emergency_pending || 0) +
-        ' emergency · ' +
-        String(state.meta.offsite_pending || 0) +
-        ' travel pending · ' +
-        String(state.meta.renewal_needed || 0) +
-        ' renew';
-    }
+    if (metaEl) metaEl.textContent = String(state.entries.length) + ' showing';
     hostEl.innerHTML = tableHtml(state.entries);
+    syncFilterButtons();
+  }
+
+  async function renderHost(force) {
+    var hostEl = global.document.getElementById('portalParentConsentsHost');
+    if (!hostEl) return;
+    if (!state.roster || force) {
+      hostEl.innerHTML = '<p class="muted">Loading…</p>';
+      var res = await api({ filter: 'all', q: '', limit: 500 });
+      if (res.error) {
+        hostEl.innerHTML = '<p class="muted">Could not load consents (' + esc(res.error) + ').</p>';
+        return;
+      }
+      state.roster = (res.entries || []).filter(isActiveClient);
+      state.meta = countsFor(state.roster);
+    }
+    applyList();
   }
 
   function viewHtml() {
@@ -337,18 +426,59 @@
       '<div class="card-h"><h3>Consent status</h3>' +
       '<span class="chip chip--pend" id="portalParentConsentsMeta">…</span></div>' +
       '<div class="card-pad">' +
-      '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px;align-items:center">' +
-      '<input id="portalParentConsentsSearch" type="search" placeholder="Search name…" style="min-width:0;width:14rem;max-width:100%;flex:0 1 14rem;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit" />' +
-      '<button type="button" class="btn btn--sm" data-consents-filter="pending">Pending</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="renewal">Annual renewal</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="photo_yes">Marketing OK</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="photo_no">Family only</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="med_yes">Meds at centre</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="emergency_pending">Emergency pending</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="offsite_pending">Travel pending</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="complete">Complete</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="all">All</button>' +
-      '<button type="button" class="btn btn--sec btn--sm" id="portalParentConsentsRefresh" style="margin-left:auto">Refresh</button>' +
+      '<style>' +
+      '.pc-filters{display:flex;flex-direction:column;gap:8px;min-width:0;margin-bottom:12px}' +
+      '.pc-filters__tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0}' +
+      '.pc-filters__tools input{min-width:0;width:14rem;max-width:100%;flex:1 1 12rem;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit}' +
+      '.pc-filters__row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}' +
+      '.pc-filters__row--sub{padding:8px;border-radius:12px;background:#f8fafc;border:1px solid var(--line)}' +
+      '.pc-filters__row[hidden]{display:none !important}' +
+      '.pc-filters__row .btn{min-width:0;max-width:100%}' +
+      '.pc-filters__n{margin-left:6px;font-weight:800}' +
+      '</style>' +
+      '<div class="pc-filters">' +
+      '<div class="pc-filters__tools">' +
+      '<input id="portalParentConsentsSearch" type="search" placeholder="Search name…" />' +
+      '<button type="button" class="btn btn--sec btn--sm" id="portalParentConsentsRefresh">Refresh</button>' +
+      '</div>' +
+      '<div class="pc-filters__row" role="tablist" aria-label="Consent area">' +
+      FILTER_GROUPS.map(function (g) {
+        return (
+          '<button type="button" class="btn btn--sm' +
+          (g.id === 'status' ? '' : ' btn--ghost') +
+          '" data-consents-group="' +
+          g.id +
+          '">' +
+          esc(g.label) +
+          '</button>'
+        );
+      }).join('') +
+      '</div>' +
+      FILTER_GROUPS.map(function (g) {
+        return (
+          '<div class="pc-filters__row pc-filters__row--sub" data-consents-subs="' +
+          g.id +
+          '"' +
+          (g.id === 'status' ? '' : ' hidden') +
+          ' role="group" aria-label="' +
+          esc(g.label) +
+          ' filters">' +
+          g.subs
+            .map(function (s) {
+              return (
+                '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="' +
+                s.id +
+                '">' +
+                esc(s.label) +
+                ' <span class="pc-filters__n" data-consents-count="' +
+                s.id +
+                '">0</span></button>'
+              );
+            })
+            .join('') +
+          '</div>'
+        );
+      }).join('') +
       '</div>' +
       '<div id="portalParentConsentsHost"><p class="muted">Loading…</p></div>' +
       '</div></div>'
@@ -356,20 +486,34 @@
   }
 
   function bindModule() {
+    state.group = 'status';
     state.filter = 'pending';
     state.q = '';
+    state.roster = null;
     syncFilterButtons();
     var refresh = global.document.getElementById('portalParentConsentsRefresh');
     if (refresh) {
       refresh.addEventListener('click', function () {
-        void renderHost();
+        void renderHost(true);
       });
     }
+    global.document.querySelectorAll('[data-consents-group]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var next = btn.getAttribute('data-consents-group') || 'status';
+        state.group = next;
+        if (!filterInGroup(next, state.filter)) {
+          var group = groupById(next);
+          state.filter = group.subs[0].id;
+        }
+        syncFilterButtons();
+        applyList();
+      });
+    });
     global.document.querySelectorAll('[data-consents-filter]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         state.filter = btn.getAttribute('data-consents-filter') || 'pending';
         syncFilterButtons();
-        void renderHost();
+        applyList();
       });
     });
     var search = global.document.getElementById('portalParentConsentsSearch');
@@ -379,11 +523,11 @@
         if (t) global.clearTimeout(t);
         t = global.setTimeout(function () {
           state.q = String(search.value || '').trim();
-          void renderHost();
+          applyList();
         }, 220);
       });
     }
-    void renderHost();
+    void renderHost(true);
   }
 
   global.PortalParentConsents = {
