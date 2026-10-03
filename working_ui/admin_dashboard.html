@@ -2613,7 +2613,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v172')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v173')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -33106,11 +33106,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<h1 class="page-title">Employment contracts</h1>'+
         '<p class="page-intro">Create contracts and send them for signature, or open the 2026-27 issue checklist and NEST notices.</p>'+
-        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
-        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_training_records">Training records</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_uniform">Uniform stock</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" data-view-target="onboarding">Onboarding</button></div>'+
         '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Employment contracts">'+hrContractsHubTabsHtml(tab)+'</div>'+
         '<div id="hrContractsPanelCreate" class="hr-contracts-hub-panel"'+hide('create')+'>'+embed+'</div>'+
         '<div id="hrContractsPanelIssue" class="hr-contracts-hub-panel"'+hide('issue')+'>'+hrContractsIssuePanelHtml(issueDoc)+'</div>'

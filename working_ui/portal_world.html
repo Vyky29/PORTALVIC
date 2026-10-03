@@ -577,7 +577,7 @@
       home: [],
       visit: [],
       happens: [
-        "El codigo OTP sale por email a la familia. Dura unos 10 minutos.",
+        "La familia lo pide en Booking. El codigo OTP sale por email. Dura unos 10 minutos.",
         "Si el lead es nuevo, la oficina tambien recibe un email. Un codigo repetido no vuelve a avisar.",
         "Ese email no sale por WhatsApp."
       ]
@@ -1085,8 +1085,8 @@
       label: "Email",
       actor: "A la vez",
       steps: [
-        { islands: ["auto", "email"], links: ["auto-email"], text: "Automatizaciones manda el codigo OTP por email a la familia." },
-        { islands: ["email", "auto", "admin"], links: ["auto-email", "auto-a"], text: "Si el lead es nuevo, el aviso de la oficina tambien es un email. No sale por WhatsApp." }
+        { islands: ["booking", "auto", "email"], links: ["b-auto", "auto-email"], text: "La familia pide el codigo en Booking. Automatizaciones manda el OTP por email. Dura unos 10 minutos." },
+        { islands: ["booking", "email", "auto", "admin"], links: ["b-auto", "auto-email", "auto-a"], text: "Si el lead es nuevo, el aviso de la oficina tambien es un email. No sale por WhatsApp. Un codigo repetido no vuelve a avisar." }
       ]
     },
     {
