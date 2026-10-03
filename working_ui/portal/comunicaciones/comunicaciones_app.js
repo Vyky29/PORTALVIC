@@ -2128,7 +2128,14 @@ function bindUi() {
     renderThread();
     renderInbox();
   });
-  $("commsComposer").addEventListener("submit", sendMessage);
+  $("commsComposer").addEventListener("submit", function (ev) {
+    if ($("commsDraft").dataset.enterBlock === "1") {
+      $("commsDraft").dataset.enterBlock = "";
+      ev.preventDefault();
+      return;
+    }
+    sendMessage(ev);
+  });
   $("commsThread").addEventListener("click", function (ev) {
     const btn = ev.target.closest("[data-delete-msg]");
     if (!btn) return;
@@ -2138,10 +2145,12 @@ function bindUi() {
     });
   });
   $("commsDraft").addEventListener("keydown", function (ev) {
-    if (ev.key === "Enter" && !ev.shiftKey) {
-      ev.preventDefault();
-      sendMessage();
-    }
+    if (ev.key !== "Enter" || ev.isComposing) return;
+    var draft = $("commsDraft");
+    draft.dataset.enterBlock = "1";
+    window.setTimeout(function () {
+      if (draft.dataset.enterBlock === "1") draft.dataset.enterBlock = "";
+    }, 0);
   });
   $("commsDraft").addEventListener("input", function () {
     sendTypingPing();

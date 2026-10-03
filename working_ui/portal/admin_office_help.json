@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v173",
+  "version": "2026-10-03-v174",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2043,6 +2043,47 @@
               "La pagina explica los trabajos. No los enciende ni los apaga.",
               "Pay hold, ofertas de trial, el buffer de las 06:00 y el push de las 21:00 estan en el reloj guardado. El WhatsApp de feedback al staff esta encendido. El timesheet y las notas semanales estan hechos para esas horas.",
               "La suelta del 15 ago 2026 y el email de nomina del 26 jun 2026 ya terminaron. No se repiten."
+            ]
+          }
+        },
+        {
+          "id": "comms_write_send",
+          "title": "Write and send in Communications",
+          "summary": "The message box is a few lines tall. Enter starts a new line. Only the Send button sends.",
+          "where": "Communications, open conversation",
+          "keywords": [
+            "comms",
+            "comunicaciones",
+            "intro",
+            "enter",
+            "enviar",
+            "send",
+            "mensaje",
+            "mobile",
+            "movil",
+            "escribir"
+          ],
+          "steps": [
+            "Open Communications and the conversation.",
+            "Write in the box. It shows several lines, so you can see the text.",
+            "Press Enter or Intro for a new line. On the phone that does not send.",
+            "Press Send to send the message."
+          ],
+          "tips": [
+            "The same rule is on the computer and on the phone."
+          ],
+          "es": {
+            "title": "Escribir y enviar en Communications",
+            "summary": "La caja del mensaje tiene varias lineas. Intro hace una linea nueva. Solo el boton Send envia.",
+            "where": "Communications, conversacion abierta",
+            "steps": [
+              "Abre Communications y la conversacion.",
+              "Escribe en la caja. Muestra varias lineas para que se vea el texto.",
+              "Intro hace una linea nueva. En el movil no envia.",
+              "Pulsa Send para enviar el mensaje."
+            ],
+            "tips": [
+              "La misma regla vale en el ordenador y en el movil."
             ]
           }
         },
