@@ -1520,6 +1520,62 @@
             }
           }
         }
+        /* Near window is only 14 days back. A full-band absence older than that
+           (Adam Pi Mon 14 Sep) is missing on connect, the tile says feedback is
+           owed, then the later fetch clears it. Pull this worker's older
+           absences and cancels before the count is allowed to paint. */
+        if(!opts.termTail && window.__PORTAL_PAST_ABSENCE_OVERRIDES_READY__ !== true && viewerSid){
+          try{
+            var termFromPast = '2026-08-31';
+            try{
+              var tPast = window.PORTAL_TERM_FROM_TIMETABLE;
+              var tfPast = String((tPast && (tPast.termResumeDate || tPast.firstDate)) || '').slice(0, 10);
+              if(/^\d{4}-\d{2}-\d{2}$/.test(tfPast)) termFromPast = tfPast;
+            }catch(_tf){}
+            var nowPast = new Date();
+            var nearStartPast = new Date(nowPast.getFullYear(), nowPast.getMonth(), nowPast.getDate() - 14);
+            var nearIsoPast = portalIsoYmdFromDate(nearStartPast);
+            var pastKeys = typeof portalStaffOverrideMatchKeys === 'function'
+              ? portalStaffOverrideMatchKeys(viewerSid)
+              : [viewerSid];
+            var pastStaff = [];
+            var pastSeen = Object.create(null);
+            pastKeys.forEach(function(k){
+              k = String(k || '').trim().toLowerCase();
+              if(!k || pastSeen[k]) return;
+              if(!/^[a-z][a-z0-9_]{1,24}$/.test(k)) return;
+              if(/^[0-9a-f]{16,}$/.test(k)) return;
+              pastSeen[k] = true;
+              pastStaff.push(k);
+            });
+            if(pastStaff.length && nearIsoPast > termFromPast){
+              var pastRes = await box.client.from('schedule_overrides')
+                .select(selectCols)
+                .eq('status', 'active')
+                .in('override_type', ['client_absence_announced', 'slot_close', 'client_cancelled', 'slot_clear_client'])
+                .in('anchor_staff_id', pastStaff.slice(0, 8))
+                .gte('session_date', termFromPast)
+                .lt('session_date', nearIsoPast);
+              if(!pastRes.error && Array.isArray(pastRes.data)){
+                var havePast = Object.create(null);
+                merged.forEach(function(r){ if(r && r.id != null) havePast[String(r.id)] = true; });
+                var fetchedPast = window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ || Object.create(null);
+                pastRes.data.forEach(function(r){
+                  if(!r) return;
+                  if(r.id != null && havePast[String(r.id)]) return;
+                  merged.push(r);
+                  if(r.id != null) havePast[String(r.id)] = true;
+                  var dPast = String(r.session_date || '').trim().slice(0, 10);
+                  if(/^\d{4}-\d{2}-\d{2}$/.test(dPast)) fetchedPast[dPast] = true;
+                });
+                window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ = fetchedPast;
+              }
+            }
+          }catch(_pastAbs){
+            console.warn('[portal] past absence overrides', _pastAbs);
+          }
+          try{ window.__PORTAL_PAST_ABSENCE_OVERRIDES_READY__ = true; }catch(_){}
+        }
         if(scopeSelf && typeof portalStaffFilterOverrideRowsForSelf === 'function'){
           const scoped = portalStaffFilterOverrideRowsForSelf(merged, viewerSid);
           merged.length = 0;
@@ -2204,6 +2260,21 @@
         if(sameClient && sameStaff){
           const isSharedUnit = skL.indexOf('|day_centre') >= 0 || skL.indexOf('|bespoke_shared') >= 0;
           if(!isSharedUnit){
+            /* One absence for the whole swim hour (4 to 5.30) covers every 30' half
+               and the merged card. Matching only the start left the later halves Pending. */
+            const fullBand = p.aquatic_full_band_absent === true || p.aquatic_full_band_absent === 'true';
+            if(fullBand && typeof portalSessionTimeWindowsOverlap === 'function'
+              && portalSessionTimeWindowsOverlap(r.anchor_start, r.anchor_end, s.start, s.end)){
+              const bandStart = typeof portalHmToMinutes === 'function' ? portalHmToMinutes(typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(r.anchor_start) : r.anchor_start) : NaN;
+              const bandEnd = typeof portalHmToMinutes === 'function' ? portalHmToMinutes(typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(r.anchor_end) : r.anchor_end) : NaN;
+              const slotStart = typeof portalHmToMinutes === 'function' ? portalHmToMinutes(s.start) : NaN;
+              const slotEnd = typeof portalHmToMinutes === 'function' ? portalHmToMinutes(s.end || s.start) : NaN;
+              if(Number.isFinite(bandStart) && Number.isFinite(bandEnd)
+                && Number.isFinite(slotStart) && Number.isFinite(slotEnd)
+                && slotStart >= bandStart && slotEnd <= bandEnd){
+                return res;
+              }
+            }
             const timeOk = typeof portalTimeAnchorsMatch === 'function'
               ? portalTimeAnchorsMatch(r.anchor_start, s.start)
               : (function(){

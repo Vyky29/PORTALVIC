@@ -873,6 +873,9 @@
       try{
         if(window.__PORTAL_SCHEDULE_OVERRIDES_FETCH_SETTLED__ !== true) return false;
         if(window.__PORTAL_FEEDBACK_COUNT_OVERRIDES_READY__ !== true) return false;
+        /* Older absences (outside the 14-day window) must land before "1 left".
+           Otherwise login paints a pending day, then clears it, and the worker waits. */
+        if(window.__PORTAL_PAST_ABSENCE_OVERRIDES_READY__ !== true) return false;
       }catch(_){}
       return true;
     }

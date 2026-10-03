@@ -828,6 +828,24 @@
      * that froze Roberto's main thread on boot. Rebuild only when Term is open.
      */
     function portalDeferTermFeedbackRebuild(){
+      /* One walk, after older absences are in memory. A walk before that
+         paints a false "1 left", then a second walk clears it and freezes the phone. */
+      if(typeof window !== 'undefined' && window.__PORTAL_PAST_ABSENCE_OVERRIDES_READY__ !== true){
+        if(window.__PORTAL_TERM_REBUILD_WAIT_PAST__) return;
+        window.__PORTAL_TERM_REBUILD_WAIT_PAST__ = 1;
+        var pastTries = 0;
+        var waitPast = function(){
+          pastTries += 1;
+          if(window.__PORTAL_PAST_ABSENCE_OVERRIDES_READY__ === true || pastTries > 16){
+            window.__PORTAL_TERM_REBUILD_WAIT_PAST__ = 0;
+            portalDeferTermFeedbackRebuild();
+            return;
+          }
+          setTimeout(waitPast, 500);
+        };
+        setTimeout(waitPast, 500);
+        return;
+      }
       if(window.__PORTAL_TERM_REBUILD_DEFER__) return;
       window.__PORTAL_TERM_REBUILD_DEFER__ = 1;
       var go = function(){

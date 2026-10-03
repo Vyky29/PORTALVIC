@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v209",
+  "version": "2026-10-03-v210",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -375,9 +375,34 @@
             "Work the queue: approve / reject late forms; decide absents (none, credit, close).",
             "Return to Overview if the decision should change the day board."
           ],
+          "keywords": [
+            "pending",
+            "alerts",
+            "feedback",
+            "absent",
+            "login",
+            "falta",
+            "banda"
+          ],
           "tips": [
-            "Keep outstanding-feedback and alert lanes live unless Victor pauses them."
-          ]
+            "Keep outstanding-feedback and alert lanes live unless Victor pauses them.",
+            "A full swim band marked Absent (for example 4 to 5.30) is already done. The staff app must not ask for that feedback on login, and must not open that old day before Today is usable."
+          ],
+          "es": {
+            "title": "Pending y alertas",
+            "summary": "Franja del Operations Hub: formularios tarde, faltas por decidir, y el buzon de alertas.",
+            "where": "Operations Hub (franja de arriba) → Pending / Alerts",
+            "steps": [
+              "Desde Operations Hub, pulsa la campana para incidentes, cancelaciones, wellbeing y makeups que aun no han pasado.",
+              "Pulsa Pending para feedbacks tarde y faltas / creditos que esperan una decision.",
+              "Trabaja la cola: aprueba o rechaza formularios tarde; decide las faltas (none, credit, close).",
+              "Vuelve a Overview si la decision tiene que cambiar el dia."
+            ],
+            "tips": [
+              "Deja encendidos el feedback pendiente y las alertas salvo que Victor los pause.",
+              "Una banda entera de natacion marcada Absent (por ejemplo 4 a 5.30) ya esta hecha. La app del worker no debe pedir ese feedback al entrar, ni abrir ese dia viejo antes de que pueda usar Today."
+            ]
+          }
         },
         {
           "id": "office_calendar",

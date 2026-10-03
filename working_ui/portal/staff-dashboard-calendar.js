@@ -46,6 +46,35 @@
         const params = new URLSearchParams(window.location.search);
         const reviewDateRaw = params.get('portalReviewDate');
         const reviewDateParsed = portalParseIsoDateLocal(reviewDateRaw);
+        /* A leftover review URL (PWA restore of an old pending day) must not
+           trap the worker on that day every time they open the app. Feedback
+           return links still land on the day they just saved. */
+        const feedbackReturn = params.get('portalAfterFeedback') === '1'
+          || params.get('portalPostFeedback') === '1';
+        if(!feedbackReturn && (reviewDateParsed || params.get('portalReviewDay'))){
+          let dropStaleReview = !reviewDateParsed;
+          if(reviewDateParsed){
+            const todayNoon = new Date();
+            todayNoon.setHours(12, 0, 0, 0);
+            const reviewNoon = new Date(
+              reviewDateParsed.getFullYear(),
+              reviewDateParsed.getMonth(),
+              reviewDateParsed.getDate(),
+              12, 0, 0, 0
+            );
+            dropStaleReview = reviewNoon.getTime() < todayNoon.getTime();
+          }
+          if(dropStaleReview){
+            try{
+              const u = new URL(location.href.split('#')[0]);
+              u.searchParams.delete('portalReviewDate');
+              u.searchParams.delete('portalReviewDay');
+              const qs = u.searchParams.toString();
+              history.replaceState({}, '', u.pathname + (qs ? '?' + qs : '') + (location.hash || ''));
+            }catch(_drop){}
+            return;
+          }
+        }
         if(reviewDateParsed){
           const iso = `${reviewDateParsed.getFullYear()}-${String(reviewDateParsed.getMonth() + 1).padStart(2, '0')}-${String(reviewDateParsed.getDate()).padStart(2, '0')}`;
           portalSetReviewDateUrlLock(iso);
