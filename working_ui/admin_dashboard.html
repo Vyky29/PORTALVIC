@@ -184,7 +184,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-expense-n" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-pax-chips" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -2660,7 +2660,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v192')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v193')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -24431,10 +24431,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var listRows = paxContactsListRowsHtml();
       var n = paxContactsUnifiedList().length;
       var intro = bookingSelected === 'waiting'
-        ? 'WAITING LIST is one list. The Waiting list filter splits Portal (Booking Portal from 12 Aug 2026) from Before the portal (CFK and the workbook from before that). Before the portal drops anyone who already has a service. Someone who already has a service can still be on the Portal waiting list for another place.'
+        ? 'WAITING LIST is one list. Under the Status chip, the subchips split Portal (Booking Portal from 12 Aug 2026) from Before the portal (CFK and the workbook from before that). Before the portal drops anyone who already has a service. Someone who already has a service can still be on the Portal waiting list for another place.'
         : (bookingSelected === 'registered'
-          ? 'REGISTERED finished the form and has never had a place. The Place filter, next to Booking status, narrows that same list to Pay hold, Hold or Lost slot. Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released.'
-          : 'ACTIVE is on a place now. Booking status is the list: ACTIVE, WAITING LIST, OLD CLIENTS, REGISTERED, CFK LEADS, or On Trial / Trialled. WAITING LIST then uses the Waiting list filter for Portal or Before the portal. REGISTERED then uses the Place filter for Pay hold, Hold and Lost slot. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.');
+          ? 'REGISTERED finished the form and has never had a place. Under the Status chip, the Place subchips narrow that same list to Pay hold, Hold or Lost slot. Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released.'
+          : 'ACTIVE is on a place now. Status, Funding and Payment are chips. Pick one, then the row under it filters that area. Registration question stays the dropdown. Waiting list then shows Portal or Before the portal. Registered then shows Pay hold, Hold and Lost slot. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.');
       var focus = bookingSelected === 'waiting' ? (state.waitlistFocus || null) : null;
       var focusBanner = '';
       if(focus && (focus.prog || focus.venue)){
@@ -24451,18 +24451,80 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">'+intro+'</p>'+
         focusBanner+
-        '<div class="pax-contacts-filters">'+
+        (function(){
+          function paxChipBtn(group, value, label, title, on){
+            return '<button type="button" class="btn btn--sm'+(on ? '' : ' btn--ghost')+'" data-pax-chip="'+group+'" data-pax-value="'+value+'" aria-pressed="'+(on ? 'true' : 'false')+'" title="'+esc(title)+'">'+
+              esc(label)+' <span class="pax-chip-filters__n" data-pax-count="'+group+':'+value+'">0</span></button>';
+          }
+          var statusChips = [
+            ['all', 'All', 'All'],
+            ['programme_in', 'Active', 'ACTIVE'],
+            ['waiting', 'Waiting list', 'WAITING LIST'],
+            ['booking_history', 'Old', 'OLD CLIENTS'],
+            ['registered', 'Registered', 'REGISTERED'],
+            ['cfk_leads', 'Leads', 'CFK LEADS'],
+            ['trial', 'Trial', 'On Trial / Trialled']
+          ].map(function(r){ return paxChipBtn('status', r[0], r[1], r[2], bookingSelected === r[0]); }).join('');
+          var waitChips = [
+            ['all', 'All', 'All on the waiting list'],
+            ['portal_waiting', 'Portal', 'Portal (from 12 Aug 2026)'],
+            ['old_waiting', 'Before the portal', 'Before the portal (CFK / workbook)']
+          ].map(function(r){ return paxChipBtn('wait', r[0], r[1], r[2], waitSource === r[0]); }).join('');
+          var placeChips = [
+            ['all', 'All', 'All registered'],
+            ['pay_hold', 'Pay hold', 'Pay hold'],
+            ['hold', 'Hold', 'Hold'],
+            ['lost_slot', 'Lost slot', 'Lost slot']
+          ].map(function(r){ return paxChipBtn('place', r[0], r[1], r[2], placeFlag === r[0]); }).join('');
+          var fundChips = [
+            ['all', 'All', 'All funding'],
+            ['private', 'Private', 'Using Private funds (VAT 20%)'],
+            ['la_exempt', 'LA exempt', 'Using LA funds (Exempt)'],
+            ['la_nhs', 'LA/NHS', 'LA/NHS funded']
+          ].map(function(r){ return paxChipBtn('fund', r[0], r[1], r[2], r[0] === 'all'); }).join('');
+          var payChips = [
+            ['all', 'All', 'All payments'],
+            ['bank_1', 'Bank one off', 'Bank Transfer (One off-Manually)'],
+            ['bank_flexi', 'Bank flexi', 'Bank Transfer (Flexi-Manually)'],
+            ['apple_stripe', 'Apple Pay', 'Apple Pay/Stripe'],
+            ['gocardless', 'GoCardless', 'GoCardless'],
+            ['bacs_ealing', 'BACS Ealing', 'BACS (Ealing)'],
+            ['arrears_nhs', 'NHS arrears', 'Monthly Arrears (NHS)'],
+            ['arrears_nhs_ila', 'NHS/ILA', 'Monthly Arrears (NHS/ILA)'],
+            ['arrears_hf', 'H&F arrears', 'Monthly Arrears (H&F)'],
+            ['payment_link', 'Payment link', 'Payment Link']
+          ].map(function(r){ return paxChipBtn('pay', r[0], r[1], r[2], r[0] === 'all'); }).join('');
+          return (
+        '<div class="pax-chip-filters" data-pax-chip-area="status">'+
+        '<div class="pax-chip-filters__tools">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
-        '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml(bookingSelected)+'</select></div>'+
-        '<div class="pax-contacts-fld" id="paxContactsWaitSourceWrap"'+(bookingSelected === 'waiting' ? '' : ' hidden')+'><label for="paxContactsWaitSource">Waiting list</label><select class="sel" id="paxContactsWaitSource">'+paxContactsWaitSourceOptionsHtml(waitSource)+'</select></div>'+
-        '<div class="pax-contacts-fld" id="paxContactsPlaceFlagWrap"'+(bookingSelected === 'registered' ? '' : ' hidden')+'><label for="paxContactsPlaceFlag">Place</label><select class="sel" id="paxContactsPlaceFlag">'+paxContactsPlaceFlagOptionsHtml(placeFlag)+'</select></div>'+
-        '<div class="pax-contacts-fld pax-money-filter"><label for="paxContactsFunding">Funding</label><select class="sel" id="paxContactsFunding">'+
+        '<div class="pax-contacts-fld">'+
+        '<label class="muted" for="paxContactsRegQuestion" style="display:block;font-size:11px;font-weight:700;margin-bottom:6px;letter-spacing:.02em">Registration question</label>'+
+        '<select class="sel" id="paxContactsRegQuestion">'+paxContactsRegQuestionOptionsHtml()+'</select></div>'+
+        '</div>'+
+        '<div class="pax-chip-filters__row" role="tablist" aria-label="Filter area">'+
+        '<button type="button" class="btn btn--sm" data-pax-area="status" aria-pressed="true">Status</button>'+
+        '<button type="button" class="btn btn--sm btn--ghost pax-money-filter" data-pax-area="fund" aria-pressed="false">Funding</button>'+
+        '<button type="button" class="btn btn--sm btn--ghost pax-money-filter" data-pax-area="pay" aria-pressed="false">Payment</button>'+
+        '</div>'+
+        '<div class="pax-chip-filters__row pax-chip-filters__row--sub" data-pax-subs="status" role="group" aria-label="Status">'+
+        statusChips+
+        '<div class="pax-chip-filters__nest" id="paxContactsWaitSourceWrap"'+(bookingSelected === 'waiting' ? '' : ' hidden')+'>'+waitChips+'</div>'+
+        '<div class="pax-chip-filters__nest" id="paxContactsPlaceFlagWrap"'+(bookingSelected === 'registered' ? '' : ' hidden')+'>'+placeChips+'</div>'+
+        '</div>'+
+        '<div class="pax-chip-filters__row pax-chip-filters__row--sub" data-pax-subs="fund" hidden role="group" aria-label="Funding">'+fundChips+'</div>'+
+        '<div class="pax-chip-filters__row pax-chip-filters__row--sub" data-pax-subs="pay" hidden role="group" aria-label="Payment">'+payChips+'</div>'+
+        '<div class="pax-contacts-selects" hidden>'+
+        '<select id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml(bookingSelected)+'</select>'+
+        '<select id="paxContactsWaitSource">'+paxContactsWaitSourceOptionsHtml(waitSource)+'</select>'+
+        '<select id="paxContactsPlaceFlag">'+paxContactsPlaceFlagOptionsHtml(placeFlag)+'</select>'+
+        '<select id="paxContactsFunding">'+
         '<option value="all">All funding</option>'+
         '<option value="private">Using Private funds (VAT 20%)</option>'+
         '<option value="la_exempt">Using LA funds (Exempt)</option>'+
         '<option value="la_nhs">LA/NHS funded</option>'+
-        '</select></div>'+
-        '<div class="pax-contacts-fld pax-money-filter"><label for="paxContactsPayment">Payment</label><select class="sel" id="paxContactsPayment">'+
+        '</select>'+
+        '<select id="paxContactsPayment">'+
         '<option value="all">All payments</option>'+
         '<option value="bank_1">Bank Transfer (One off-Manually)</option>'+
         '<option value="bank_flexi">Bank Transfer (Flexi-Manually)</option>'+
@@ -24473,11 +24535,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<option value="arrears_nhs_ila">Monthly Arrears (NHS/ILA)</option>'+
         '<option value="arrears_hf">Monthly Arrears (H&amp;F)</option>'+
         '<option value="payment_link">Payment Link</option>'+
-        '</select></div>'+
-        '<div class="pax-contacts-fld">'+
-        '<label class="muted" for="paxContactsRegQuestion" style="display:block;font-size:11px;font-weight:700;margin-bottom:6px;letter-spacing:.02em">Registration question</label>'+
-        '<select class="sel" id="paxContactsRegQuestion">'+paxContactsRegQuestionOptionsHtml()+'</select></div>'+
+        '</select>'+
         '</div>'+
+        '</div>'
+          );
+        })()+
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 10px">'+
         '<p class="pax-contacts-count" id="paxContactsCount" style="margin:0">Showing '+String(n)+' contacts</p>'+
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
@@ -35366,6 +35428,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           var n = 0;
           var missed = [];
+          var statusKeys = ['programme_in', 'waiting', 'booking_history', 'registered', 'cfk_leads', 'trial'];
+          var payKeys = ['bank_1', 'bank_flexi', 'apple_stripe', 'gocardless', 'bacs_ealing', 'arrears_nhs', 'arrears_nhs_ila', 'arrears_hf', 'payment_link'];
+          var tallies = {
+            status: { all: 0, programme_in: 0, waiting: 0, booking_history: 0, registered: 0, cfk_leads: 0, trial: 0 },
+            wait: { all: 0, portal_waiting: 0, old_waiting: 0 },
+            place: { all: 0, pay_hold: 0, hold: 0, lost_slot: 0 },
+            fund: { all: 0, private: 0, la_exempt: 0, la_nhs: 0 },
+            pay: { all: 0, bank_1: 0, bank_flexi: 0, apple_stripe: 0, gocardless: 0, bacs_ealing: 0, arrears_nhs: 0, arrears_nhs_ila: 0, arrears_hf: 0, payment_link: 0 }
+          };
           root2.querySelectorAll('#paxContactsTbl tbody tr').forEach(function(tr){
             var id = tr.getAttribute('data-pax-id');
             var p = byId[String(id)];
@@ -35402,7 +35473,71 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
             tr.style.display = ok ? '' : 'none';
             if(ok) n++;
+            if(nameOk && regOk && focusOk && fundOk && payOk){
+              tallies.status.all++;
+              for(var si = 0; si < statusKeys.length; si++){
+                if(paxContactsMatchesBookingStatus(p, statusKeys[si])) tallies.status[statusKeys[si]]++;
+              }
+            }
+            if(nameOk && regOk && focusOk && fundOk && payOk && paxContactsMatchesBookingStatus(p, 'waiting')){
+              tallies.wait.all++;
+              var wk = paxContactsWaitingKind(p);
+              if(tallies.wait[wk] != null) tallies.wait[wk]++;
+            }
+            if(nameOk && regOk && focusOk && fundOk && payOk && paxContactsMatchesBookingStatus(p, 'registered')){
+              tallies.place.all++;
+              var placeKey = paxContactsPlaceFlag(p);
+              if(tallies.place[placeKey] != null) tallies.place[placeKey]++;
+            }
+            if(showMoney && nameOk && regOk && focusOk && statusOk && payOk){
+              tallies.fund.all++;
+              var fv = String(tr.getAttribute('data-pax-fund') || '');
+              if(tallies.fund[fv] != null) tallies.fund[fv]++;
+            }
+            if(showMoney && nameOk && regOk && focusOk && statusOk && fundOk){
+              tallies.pay.all++;
+              var payIdsAll = String(tr.getAttribute('data-pax-pay') || '').split(/\s+/);
+              var payObjsAll = payIdsAll.filter(Boolean).map(function(pid){ return { id: pid }; });
+              for(var payI = 0; payI < payKeys.length; payI++){
+                if(paxContactsPayFilterMatch(payObjsAll, payKeys[payI])) tallies.pay[payKeys[payI]]++;
+              }
+            }
           });
+          root2.querySelectorAll('[data-pax-count]').forEach(function(el){
+            var bits = String(el.getAttribute('data-pax-count') || '').split(':');
+            var bag = tallies[bits[0]];
+            var val = bits.slice(1).join(':');
+            el.textContent = bag && bag[val] != null ? String(bag[val]) : '0';
+          });
+          (function syncPaxChipArea(){
+            var box = root2.querySelector('.pax-chip-filters');
+            if(!box) return;
+            var area = box.getAttribute('data-pax-chip-area') || 'status';
+            if(!showMoney && (area === 'fund' || area === 'pay')){
+              area = 'status';
+              box.setAttribute('data-pax-chip-area', area);
+            }
+            root2.querySelectorAll('[data-pax-area]').forEach(function(btn){
+              var on = btn.getAttribute('data-pax-area') === area;
+              btn.classList.toggle('btn--ghost', !on);
+              btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            root2.querySelectorAll('[data-pax-subs]').forEach(function(row){
+              row.hidden = row.getAttribute('data-pax-subs') !== area;
+            });
+            function markChip(group, value){
+              root2.querySelectorAll('[data-pax-chip="'+group+'"]').forEach(function(btn){
+                var on = btn.getAttribute('data-pax-value') === value;
+                btn.classList.toggle('btn--ghost', !on);
+                btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+              });
+            }
+            markChip('status', bk);
+            markChip('wait', waitSrc);
+            markChip('place', placeF);
+            markChip('fund', fundF);
+            markChip('pay', payF);
+          })();
           var tbody = root2.querySelector('#paxContactsTbl tbody');
           if(tbody){
             var ordered = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
@@ -35699,6 +35834,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(ppay) ppay.addEventListener('change', paxContactsRefreshFilters);
           var pq = $('paxContactsRegQuestion');
           if(pq) pq.addEventListener('change', paxContactsRefreshFilters);
+          root2.querySelectorAll('[data-pax-area]').forEach(function(btn){
+            btn.addEventListener('click', function(){
+              var box = root2.querySelector('.pax-chip-filters');
+              if(box) box.setAttribute('data-pax-chip-area', btn.getAttribute('data-pax-area') || 'status');
+              paxContactsRefreshFilters();
+            });
+          });
+          root2.querySelectorAll('[data-pax-chip]').forEach(function(btn){
+            btn.addEventListener('click', function(){
+              var group = btn.getAttribute('data-pax-chip');
+              var value = btn.getAttribute('data-pax-value') || 'all';
+              var sel = group === 'status' ? $('paxContactsBookingStatus')
+                : group === 'wait' ? $('paxContactsWaitSource')
+                : group === 'place' ? $('paxContactsPlaceFlag')
+                : group === 'fund' ? $('paxContactsFunding')
+                : group === 'pay' ? $('paxContactsPayment')
+                : null;
+              if(!sel) return;
+              if(sel.value === value){
+                paxContactsRefreshFilters();
+                return;
+              }
+              sel.value = value;
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+          });
           var exB = $('paxContactsExportBtn');
           if(exB) exB.addEventListener('click', paxContactsExportVisibleCsv);
           var addB = $('paxContactsAddBtn');
