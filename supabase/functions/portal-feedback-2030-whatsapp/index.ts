@@ -120,20 +120,31 @@ function reminderHour(london) {
 }
 
 function waveClockLabel(wave, london) {
+  if (wave === "biz") return String(bizHour(london)).padStart(2, "0") + ":00";
   const hh = String(reminderHour(london)).padStart(2, "0");
   return wave === "2030" ? hh + ":30" : hh + ":00";
 }
 
+/** 30 minutes after the last API wave. Sat 16:00, Sun 19:00, Mon-Fri 21:00. */
+function bizHour(london) {
+  const wd = londonWeekday(london);
+  if (wd === "saturday") return 16;
+  if (wd === "sunday") return 19;
+  return 21;
+}
+
 function resolveWave(raw, london) {
   const w = String(raw || "").trim();
-  if (w === "2000" || w === "2030") return w;
+  if (w === "2000" || w === "2030" || w === "biz") return w;
   const hourWant = reminderHour(london);
   if (london.hour === hourWant && london.minute >= 25) return "2030";
   if (london.hour === hourWant) return "2000";
+  if (london.hour === bizHour(london)) return "biz";
   return "";
 }
 
 function inLondonWaveWindow(wave, london) {
+  if (wave === "biz") return london.hour === bizHour(london) && london.minute <= 12;
   const hourWant = reminderHour(london);
   if (london.hour !== hourWant) return false;
   if (wave === "2000") return london.minute <= 12;
@@ -202,6 +213,20 @@ function buildBody(first, pending, sample, wave, london) {
     `After 9:00pm today's hours stay on hold until the office releases them.\n\n` +
     `This message was sent automatically. Please do not reply to it.\n\n` +
     `Thank you,\nclubSENsational office`
+  );
+}
+
+/** Normal WhatsApp Business chat. Not an API template. The office sends it from this computer. */
+function buildBizBody(first, pending, sample) {
+  const n = Math.max(1, pending);
+  const list = (sample || []).slice(0, 3).join(", ");
+  const more = n > 3 ? ` (+${n - 3} more)` : "";
+  return (
+    `Hi ${first},\n\n` +
+    `Today's session feedback is still not in (${n} left${list ? ": " + list + more : ""}).\n\n` +
+    `Please send them in the Staff Portal (Today):\n` +
+    `${PORTAL_URL}\n\n` +
+    `Thank you`
   );
 }
 
@@ -446,6 +471,50 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (prior) {
       skipped.push({ username: t.username, reason: "already_sent" });
+      continue;
+    }
+    if (wave === "biz") {
+      const { data: apiWave } = await admin
+        .from(DEDUPE_TABLE)
+        .select("id")
+        .eq("session_date", iso)
+        .eq("staff_user_id", t.profileId)
+        .eq("wave", "2030")
+        .maybeSingle();
+      if (!apiWave && !force) {
+        skipped.push({ username: t.username, reason: "no_api_reminder" });
+        continue;
+      }
+      const body = buildBizBody(t.staffLabel, t.pending, t.sample);
+      await admin.from("portal_staff_notify_log").insert({
+        sent_by_user_id: null,
+        sent_by_email: "system@clubsensational.org",
+        kind: "feedback_biz_wa",
+        channel: "whatsapp_business",
+        staff_profile_id: t.profileId,
+        staff_username: t.username,
+        staff_display_name: t.staffLabel,
+        staff_phone: t.phone,
+        subject: `Feedback WhatsApp Business - ${iso}`,
+        body_text: body,
+        whatsapp_status: "business_pending",
+        whatsapp_message_id: null,
+        error_detail: null,
+        meta: {
+          campaign: "feedback_biz_wa",
+          session_date: iso,
+          pending: t.pending,
+          sample: t.sample,
+          used_template: false,
+        },
+      });
+      await admin.from(DEDUPE_TABLE).insert({
+        session_date: iso,
+        staff_user_id: t.profileId,
+        pending_count: t.pending,
+        wave: "biz",
+      });
+      sent.push({ username: t.username, pending: t.pending, business: true });
       continue;
     }
     const body = buildBody(t.staffLabel, t.pending, t.sample, wave, london);

@@ -147,6 +147,7 @@
   <script src="/portal/admin-parent-notify-log.js?v=20261002-family-badge"></script>
   <script src="/portal/admin-announcements-inbox.js?v=20261002-ann-inbox"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260922-job-phone"></script>
+  <script src="/portal/admin-feedback-biz-wa.js?v=20261003-biz-wa2"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
   <script src="/portal/admin-open-places-2627.js?v=20261002-places-split"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20261002-ann-inbox" />
@@ -2669,7 +2670,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v198')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v199')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -16134,6 +16135,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var box = window.__PORTAL_SUPABASE__;
       return box && box.client ? box.client : null;
     }
+    window.getSchedSupabaseClient = getSchedSupabaseClient;
     function adminDayOpsDebugEnabled(){
       try{
         if(/portalDebug=1/.test(String(location.search || ''))) return true;

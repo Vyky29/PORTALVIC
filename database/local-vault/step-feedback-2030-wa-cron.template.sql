@@ -6,6 +6,10 @@
 --   Sunday 18:30 London = 17:30 UTC (BST) / 18:30 UTC (GMT)
 --   Saturday 15:00 London = 14:00 UTC (BST) / 15:00 UTC (GMT)
 --   Saturday 15:30 London = 14:30 UTC (BST) / 15:30 UTC (GMT)
+--   Business WhatsApp (not API), 30 min after the last API wave:
+--   Mon-Fri 21:00 London = 20:00 UTC (BST) / 21:00 UTC (GMT)
+--   Sunday 19:00 London = 18:00 UTC (BST) / 19:00 UTC (GMT)
+--   Saturday 16:00 London = 15:00 UTC (BST) / 16:00 UTC (GMT)
 -- Replace __PORTAL_PUSH_WEBHOOK_SECRET__ before running (apply-feedback-2030-wa-cron.mjs).
 
 do $ext$
@@ -65,6 +69,24 @@ begin
 
   begin
     perform cron.unschedule('portal-feedback-2030-whatsapp-sunday');
+  exception
+    when others then null;
+  end;
+
+  begin
+    perform cron.unschedule('portal-feedback-biz-whatsapp');
+  exception
+    when others then null;
+  end;
+
+  begin
+    perform cron.unschedule('portal-feedback-biz-whatsapp-sunday');
+  exception
+    when others then null;
+  end;
+
+  begin
+    perform cron.unschedule('portal-feedback-biz-whatsapp-weekend');
   exception
     when others then null;
   end;
@@ -160,6 +182,54 @@ begin
         'x-portal-webhook-secret', '__PORTAL_PUSH_WEBHOOK_SECRET__'
       ),
       body := '{"wave":"2030"}'::jsonb,
+      timeout_milliseconds := 60000
+    ) as request_id;
+    $job$
+  );
+
+  perform cron.schedule(
+    'portal-feedback-biz-whatsapp',
+    '0 20,21 * * 1-5',
+    $job$
+    select net.http_post(
+      url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-feedback-2030-whatsapp',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'x-portal-webhook-secret', '__PORTAL_PUSH_WEBHOOK_SECRET__'
+      ),
+      body := '{"wave":"biz"}'::jsonb,
+      timeout_milliseconds := 60000
+    ) as request_id;
+    $job$
+  );
+
+  perform cron.schedule(
+    'portal-feedback-biz-whatsapp-sunday',
+    '0 18,19 * * 0',
+    $job$
+    select net.http_post(
+      url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-feedback-2030-whatsapp',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'x-portal-webhook-secret', '__PORTAL_PUSH_WEBHOOK_SECRET__'
+      ),
+      body := '{"wave":"biz"}'::jsonb,
+      timeout_milliseconds := 60000
+    ) as request_id;
+    $job$
+  );
+
+  perform cron.schedule(
+    'portal-feedback-biz-whatsapp-weekend',
+    '0 15,16 * * 6',
+    $job$
+    select net.http_post(
+      url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-feedback-2030-whatsapp',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'x-portal-webhook-secret', '__PORTAL_PUSH_WEBHOOK_SECRET__'
+      ),
+      body := '{"wave":"biz"}'::jsonb,
       timeout_milliseconds := 60000
     ) as request_id;
     $job$
