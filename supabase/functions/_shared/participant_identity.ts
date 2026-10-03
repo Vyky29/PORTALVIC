@@ -27,6 +27,10 @@ const ROSTER_SPELLING_ALIASES: Record<string, string> = {
   steven_ce: "steven",
   yusuf: "yusuf_ah",
   yusef: "yusuf_ah",
+  /* Anab's son. Board "Mohamed", old "Mohammed", contact "Mohamed Yusuf", list "Mohamed Mohamud". */
+  mohamed: "mohamed_mohamud",
+  mohammed: "mohamed_mohamud",
+  mohamed_yusuf: "mohamed_mohamud",
 };
 
 const CLIENT_INFO_SLUG_ALIASES: Record<string, string> = {

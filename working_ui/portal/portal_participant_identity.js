@@ -39,7 +39,9 @@
     /* Waiting-list initials. JA Atoui is Joelle Atoui. */
     ja_atoui: "joelle",
     j_a_atoui: "joelle",
-    /* Anab's son. The contact row says Mohamed Yusuf; the list name is Mohamed Mohamud. */
+    /* Anab's son. Board "Mohamed", old "Mohammed", contact "Mohamed Yusuf", list "Mohamed Mohamud". */
+    mohamed: "mohamed_mohamud",
+    mohammed: "mohamed_mohamud",
     mohamed_yusuf: "mohamed_mohamud",
   };
 
