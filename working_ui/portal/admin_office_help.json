@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v158",
+  "version": "2026-10-03-v159",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2396,8 +2396,8 @@
         },
         {
           "id": "portal_world",
-          "title": "Portal world - five islands",
-          "summary": "One screen shows what Admin, CEO, Staff, Booking and Parent do, and which islands light together.",
+          "title": "Portal world - six islands",
+          "summary": "One screen shows Admin, CEO, Staff, Onboarding, Booking and Parent, and which islands light together.",
           "where": "portalvic.vercel.app/portal_world.html",
           "keywords": [
             "islas",
@@ -2414,19 +2414,24 @@
             "otp",
             "registro",
             "today card",
-            "invoices"
+            "invoices",
+            "onboarding",
+            "timesheet",
+            "expense",
+            "alta"
           ],
           "steps": [
             "Open portal_world.html on the admin host, signed in as Admin.",
-            "Each island shows what that portal does. Booking shows OTP, Registro, Cuenta and Soft hold. Parent shows Today, Bookings and Invoices. Staff shows Today, Feedback and Timesheet.",
-            "Press Soft hold. After a paid trial the term seat stays taken on Booking until the end of the day. The 30 minute unpaid pay link is a different hold.",
-            "A step can light several islands at once: payment writes Admin, Staff Today and the parent Today card together.",
-            "The other paths are the account and registration, the session day, a cover, an absence, and an unpaid invoice."
+            "Each island shows what that portal does. Onboarding sits above Staff: Job, Health, Starter and Documents, on the staff host.",
+            "Press Onboarding. Admin starts it from Potential workers. The same login then opens Staff. Admin Workers reads the forms and Documents keeps the files.",
+            "Press Timesheet. Hours follow the Admin shift and the Staff feedback. A new submit replaces the downloaded file.",
+            "Press Expense. Staff sends it. Admin Documents keeps it Pending until Mark paid.",
+            "The other paths are the account, soft hold, the session day, a cover, an absence, and an unpaid invoice."
           ],
           "tips": [
             "The paths show how the portals talk. They are not today's live log.",
-            "Soft hold after a trial blocks that seat on Booking. The morning buffer job only soft-holds or clears an own-arrangement family. It does not cancel the place.",
-            "Parents do not see an instructor day off or COVER NEEDED."
+            "Onboarding and Staff share the staff host and the same account. Parents never open that host.",
+            "Soft hold after a trial blocks that seat on Booking. The morning buffer job only soft-holds or clears an own-arrangement family. It does not cancel the place."
           ]
         }
       ]

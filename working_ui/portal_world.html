@@ -105,7 +105,7 @@
       overflow: auto;
       display: grid;
       grid-template-areas:
-        ". ceo ."
+        ". ceo onb"
         "booking admin staff"
         ". parent .";
       grid-template-columns: 1fr 1.08fr 1fr;
@@ -173,8 +173,10 @@
     .island--booking { grid-area: booking; }
     .island--admin { grid-area: admin; width: min(260px, 100%); z-index: 3; background: linear-gradient(180deg, #1f8f7e, #14685c); color: #f3fffc; }
     .island--staff { grid-area: staff; }
+    .island--onb { grid-area: onb; }
     .island--parent { grid-area: parent; }
     .island--staff { background: linear-gradient(180deg, #3f7ebf, #2a5f96); color: #f4f9ff; border-radius: 52% 48% 46% 54% / 48% 42% 58% 52%; }
+    .island--onb { background: linear-gradient(180deg, #6d5bd0, #43358f); color: #f6f3ff; border-radius: 44% 56% 48% 52% / 52% 42% 58% 48%; }
     .island--booking { background: linear-gradient(180deg, #f0d7a0, #e2b86a); color: #4a3412; border-radius: 48% 52% 58% 42% / 46% 54% 46% 54%; }
     .island--parent { background: linear-gradient(180deg, #f6c7bc, #e7a294); color: #5c2c30; border-radius: 50% 50% 46% 54% / 44% 56% 44% 56%; }
     .island--ceo { background: linear-gradient(180deg, #24344d, #172536); color: #f6edd4; border-radius: 42% 58% 48% 52% / 50% 42% 58% 50%; }
@@ -358,7 +360,7 @@
     <header class="top">
       <div>
         <h1>El mundo de los portales</h1>
-        <p>Cinco islas, por lo que hace cada una. Un paso puede encender varias a la vez. No es el parte de hoy.</p>
+        <p>Seis islas, por lo que hace cada una. Un paso puede encender varias a la vez. No es el parte de hoy.</p>
       </div>
       <div class="stories" id="stories" role="tablist" aria-label="Caminos"></div>
     </header>
@@ -428,7 +430,8 @@
         "Places, Leads, CLIENT, REGISTERED y WAITING. Finance: re-enrolments, payments, absents y cancelled services.",
         "Al pagar un registro, a la vez entran Schedule, Overview y Places. Staff Today y Parent se enteran en el mismo paso.",
         "Soft hold de pago (buffer bajo o cobro fallido): la oficina puede recordar, retener una sesion, soltar o cortar. El cron de la manana solo pone o quita ese soft hold. No cancela la plaza solo.",
-        "La campana (tarde, cancel, incident) vive aqui."
+        "Potential workers abre el alta. Workers ve el job y el health cuando ya estan rellenos. Documents guarda archivos, timesheet y expenses.",
+        "La campana (tarde, cancel, incident, expense) vive aqui."
       ]
     },
     {
@@ -446,7 +449,8 @@
         "Today es su dia. Un cover, una sesion nueva o una ausencia que escribe Admin aparece aqui.",
         "Feedback cierra la sesion. A la vez: Overview en Admin pasa a verde y Parent lo lee en la Today card.",
         "Si falta feedback, el halo y Quick menu avisan en Staff y la campana en Admin. No bloquea la app.",
-        "Timesheet, expenses, disruption y policies son de este portal. No cambian Places ni el pago. Eso es Admin.",
+        "Timesheet cuenta el turno de Admin y el feedback de aqui. No se escriben las horas a mano. Expenses sale de aqui y queda Pending en Documents de Admin.",
+        "Onboarding es la puerta de entrada: misma cuenta, mismo host. Al terminar, el dia a dia es este portal.",
         "Una ausencia que marca la familia en Parent sale en Today. La plaza del termino no se borra."
       ]
     },
@@ -469,13 +473,34 @@
         "No ve el day off del instructor ni COVER NEEDED. Si el cover tiene nombre, Team muestra ese nombre.",
         "Marcar Absent avisa a la vez a Admin y a Staff Today. La plaza del termino sigue."
       ]
+    },
+    {
+      id: "onb",
+      cls: "island--onb",
+      kicker: "Alta",
+      name: "Onboarding",
+      host: "clubsensational-staff.vercel.app/onboarding_portal",
+      short: "staff / Onboarding",
+      x: 56, y: 15,
+      chips: ["Job", "Health", "Starter", "Documents"],
+      home: [],
+      visit: [],
+      happens: [
+        "Es el portal del alta, en el mismo host que Staff.",
+        "Job, Health, Starter checklist y Documents: foto, pasaporte y right to work.",
+        "Admin lo abre desde Potential workers, despues de la entrevista.",
+        "Cuando la persona entra en Staff, es la misma cuenta. Si falta algo del alta, Onboarding sigue en el menu de Staff.",
+        "Admin Workers lee el job y el health. Documents guarda los archivos."
+      ]
     }
   ];
 
   var LINKS = [
     { id: "b-a", from: "booking", to: "admin", label: "OTP, registro, soft hold y pago" },
     { id: "b-p", from: "booking", to: "parent", label: "Cuenta, finish-booking y Today card" },
-    { id: "a-s", from: "admin", to: "staff", label: "Today, cover, sesion nueva y feedback" },
+    { id: "a-s", from: "admin", to: "staff", label: "Today, cover, feedback, timesheet y expenses" },
+    { id: "a-o", from: "admin", to: "onb", label: "Entrevista y alta desde Potential workers" },
+    { id: "o-s", from: "onb", to: "staff", label: "Misma cuenta: al terminar el alta entra en Staff" },
     { id: "a-p", from: "admin", to: "parent", label: "Today card, Bookings, Invoices y Absent" },
     { id: "s-p", from: "staff", to: "parent", label: "Feedback que sale en la Today card" },
     { id: "a-c", from: "admin", to: "ceo", label: "Cifras, visitantes y padres en el portal" }
@@ -539,6 +564,37 @@
       steps: [
         { islands: ["parent", "admin"], links: ["a-p"], text: "A la vez: Invoices en Parent se marca si hay una sin pagar, y Finance en Admin lo ve." },
         { islands: ["admin", "booking"], links: ["b-a"], text: "Si el buffer de own arrangement baja del minimo, el cron pone soft hold. La plaza no sale al offer. Pagar lo quita." }
+      ]
+    },
+    {
+      id: "onboarding",
+      label: "Onboarding",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "La entrevista vive en Potential workers, en Admin. Desde ahi empieza el alta." },
+        { islands: ["onb"], links: ["a-o"], text: "Onboarding pide Job, Health, Starter checklist y Documents (foto, pasaporte, right to work)." },
+        { islands: ["onb", "admin"], links: ["a-o"], text: "A la vez: Admin Workers ve el job y el health ya rellenos, y Documents guarda los archivos." },
+        { islands: ["onb", "staff"], links: ["o-s"], text: "Misma cuenta y mismo host. En Staff ya estan Today, feedback, timesheet y expenses. Si el alta no esta cerrada, Onboarding sigue en el menu." }
+      ]
+    },
+    {
+      id: "timesheet",
+      label: "Timesheet",
+      actor: "A la vez",
+      steps: [
+        { islands: ["staff"], links: [], text: "El trabajador abre Timesheet. Las horas no se escriben a mano." },
+        { islands: ["admin", "staff"], links: ["a-s"], text: "A la vez: el turno sale del timetable y de Schedule en Admin, y cuenta el feedback de Staff. Sin feedback, el dia sigue pendiente." },
+        { islands: ["admin", "staff"], links: ["a-s"], text: "Admin lo descarga para payroll. Si lo envia otra vez, el nuevo sustituye al anterior. El dia 24 a las 23:00 WhatsApp avisa a quien no lo ha mandado." }
+      ]
+    },
+    {
+      id: "expense",
+      label: "Expense",
+      actor: "A la vez",
+      steps: [
+        { islands: ["staff"], links: [], text: "El trabajador manda el gasto desde Expenses." },
+        { islands: ["staff", "admin"], links: ["a-s"], text: "A la vez: Documents en Admin lo guarda con su nombre y el mes. Queda Pending, y la campana puede mostrar el gasto." },
+        { islands: ["admin"], links: [], text: "Mark paid cuando ya esta pagado. La fecha es el dia en que se pulsa, no el mes del gasto." }
       ]
     }
   ];
