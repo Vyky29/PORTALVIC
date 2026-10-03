@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v194",
+  "version": "2026-10-03-v195",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -142,7 +142,7 @@
             "Orange / red banners warn when a one-day action fights the standing roster.",
             "A new shadowing or training shift is + Add session card, Type Shadowing or Training — see that lesson.",
             "Move to another slot today is the one-day move, including into a seat that already has an admin absence. On Overview the original instructor still shows that child, with the chip Move in and change instructor, not No participant. The other instructor shows the absent child and, under that same time, the Moved in card. Edit term slot changes the standing weekday for the rest of term.",
-            "Swap with another child today exchanges only the seats of the service you opened (Multi-Activity with Multi-Activity). Climbing and other services that day stay. Instructors stay on their times. The parent message names each seat as Hub Room or Swimming, in time order. Overview shows Swapped. Undo on either of those rows removes this swap. The rest of term does not change.",
+            "Swap with another child today exchanges only the seats of the service you opened (Multi-Activity with Multi-Activity). Climbing and other services that day stay. Instructors stay on their times. Each worker card keeps that seat and shows the other child, with Swapped. Pool and Hub both update. The parent message names each seat as Hub Room or Swimming, in time order. Overview shows Swapped. Undo on either of those rows removes this swap. The rest of term does not change.",
             "A makeup on an open seat still shows that child when the instructor is off that day. The row name is the child, not No participant.",
             "If a child is absent and someone moves into that seat the same day, the row shows the absent child, then Free, then the move-in. No participant is a standing empty seat.",
             "From Sun 27 Sep, Gabriel and Cyrus swap the 11.00 and 11.45 halves. A cover saved on that seat follows the child who is in it now. It does not stay as COVER NEEDED on the new name."
@@ -162,7 +162,7 @@
               "Los avisos naranja o rojo saltan cuando una accion de un dia choca con el roster fijo.",
               "Un turno nuevo de shadowing o training es + Add session card, Type Shadowing o Training.",
               "Move to another slot today es el cambio de un dia, tambien a una plaza que ya tiene una falta de admin. En Overview el instructor original sigue viendo a ese nino, con el chip Move in and change instructor, no No participant. El otro instructor ve al nino ausente y, en la misma hora, la tarjeta Moved in. Edit term slot cambia el dia fijo el resto del term.",
-              "Swap with another child today cruza solo las plazas del servicio que abriste (Multi-Activity con Multi-Activity). Climbing y los otros servicios de ese dia se quedan. Los instructores se quedan en su hora. El mensaje al padre nombra cada plaza como Hub Room o Swimming, en orden de hora. Overview pone Swapped. Undo en cualquiera de esas filas quita este cruce. El resto del term no cambia.",
+              "Swap with another child today cruza solo las plazas del servicio que abriste (Multi-Activity con Multi-Activity). Climbing y los otros servicios de ese dia se quedan. Los instructores se quedan en su hora. La card del trabajador conserva esa plaza y muestra al otro nino, con Swapped. Piscina y Hub se actualizan. El mensaje al padre nombra cada plaza como Hub Room o Swimming, en orden de hora. Overview pone Swapped. Undo en cualquiera de esas filas quita este cruce. El resto del term no cambia.",
               "Un makeup en una plaza libre sigue ensenando a ese nino cuando el instructor esta libre ese dia. El nombre de la fila es el nino, no No participant.",
               "Si un nino falta y alguien entra en esa plaza el mismo dia, la fila ensena al nino ausente, luego Free, luego el que entra. No participant es una plaza fija vacia.",
               "Desde el domingo 27 Sep, Gabriel y Cyrus cambian las medias de las 11.00 y las 11.45. Un cover guardado en esa plaza sigue al nino que esta ahora. No se queda como COVER NEEDED en el nombre nuevo."

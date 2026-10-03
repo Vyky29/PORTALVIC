@@ -5076,11 +5076,13 @@
         /* Day reassign: keep Updated by admin — never force MakeUp (that also spawned fake Absent). */
         if(portalOverrideIsDayReassignReplace(ov)){
           const pill = String(it.portalOverrideAlertPill || '').trim().toUpperCase();
+          const swapPl = ov.payload || {};
+          const isClientSwap = swapPl.client_swap === true || swapPl.client_swap === 'true';
           return Object.assign({}, it, {
             portalOverrideMakeUpTag: false,
             portalOverrideTrialTag: false,
-            portalOverrideCardTone: (pill === 'UPDATED' || it.portalRosterTimeUpdated) ? 'blue' : (it.portalOverrideCardTone === 'pink' ? '' : it.portalOverrideCardTone),
-            portalOverrideSymbolText: '',
+            portalOverrideCardTone: isClientSwap ? 'blue' : ((pill === 'UPDATED' || it.portalRosterTimeUpdated) ? 'blue' : (it.portalOverrideCardTone === 'pink' ? '' : it.portalOverrideCardTone)),
+            portalOverrideSymbolText: isClientSwap ? 'Swapped' : '',
             scheduleAdminAdjusted: true,
             portalOverrideHideAdminBadge: false,
             portalOverrideAlertPill: pill === 'ABSENT' || pill === 'CANCELLED' ? '' : (it.portalOverrideAlertPill || ''),
@@ -5156,6 +5158,8 @@
         const ovAnchorId = String(ov.anchor_client_id || '').trim().toLowerCase();
         if(!repId || !ovAnchorId || repId === ovAnchorId || portalScheduleOverrideAnchorIsOpenSlot(ovAnchorId)) return;
         if(!portalRosterClientIdsMatch(ovAnchorId, anchorId)) return;
+        /* Same-day swap / seat move renames this card. It is not a MakeUp sitting on top of it. */
+        if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(ov)) return;
         if(portalNormKeyStr(ov.anchor_venue) !== venue) return;
         const lo = portalHmToMinutes(portalHmFromDbTime(ov.anchor_start));
         const hi = portalHmToMinutes(portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start));
@@ -5201,6 +5205,7 @@
           const repId = portalOverrideReplacementClientId(ov.payload);
           const anchorId = String(ov.anchor_client_id || '').trim().toLowerCase();
           if(!repId || !anchorId || repId === anchorId || portalScheduleOverrideAnchorIsOpenSlot(anchorId)) return;
+          if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(ov)) return;
           const start = portalCanonicalHmToken(portalHmFromDbTime(ov.anchor_start));
           const end = portalCanonicalHmToken(portalHmFromDbTime(ov.anchor_end));
           const venue = portalNormKeyStr(ov.anchor_venue);
@@ -5214,6 +5219,8 @@
         if(it.portalOverrideMakeUpTag) return true;
         if(it.portalOverrideMoveInTag) return true;
         if(it.portalOverrideMoveInstructorTag) return true;
+        if(it.__portalScheduleOverride && typeof portalOverrideIsDayReassignReplace === 'function'
+          && portalOverrideIsDayReassignReplace(it.__portalScheduleOverride)) return true;
         if(String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT') return true;
         const base = it.__portalBaseSession;
         if(!base) return true;
