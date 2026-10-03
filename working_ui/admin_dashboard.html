@@ -24580,7 +24580,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
           '<td class="pax-contacts-name-td"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+paxContactsWaitExtraHtml(p)+'</div></div></td>'+
           '<td class="pax-contacts-meta">'+supportCell+'</td>'+
-          '<td class="pax-contacts-meta pax-outcome-col" hidden style="min-width:0;white-space:normal">'+outcomeCell+'</td>'+
           '<td class="pax-contacts-meta pax-money-col">'+fundingCell+'</td>'+
           '<td class="pax-contacts-meta pax-money-col">'+paymentCell+'</td>'+
           '<td class="pax-contacts-age">'+ageCell+'</td>'+
@@ -24593,6 +24592,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td class="pax-trial-col" hidden>'+trialCells.session+'</td>'+
           '<td class="pax-contacts-who">'+whoHtml+'</td>'+
           '<td class="pax-reg-ans-col" data-pax-ans hidden style="min-width:0;max-width:26rem;white-space:normal;overflow-wrap:break-word"></td>'+
+          '<td class="pax-contacts-meta pax-outcome-col" hidden style="min-width:0;white-space:normal">'+outcomeCell+'</td>'+
           '</tr>'
         );
       }).join('');
@@ -24789,8 +24789,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
         '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th class="pax-outcome-col" hidden>Outcome</th><th class="pax-money-col">Funding</th><th class="pax-money-col">Payment</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th class="pax-source-col" hidden>Source</th><th class="pax-registered-col" hidden>Registered</th><th class="pax-trial-col" hidden>Booked</th><th class="pax-trial-col" hidden>Trial session</th><th>Contact</th>'+
+        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th class="pax-money-col">Funding</th><th class="pax-money-col">Payment</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th class="pax-source-col" hidden>Source</th><th class="pax-registered-col" hidden>Registered</th><th class="pax-trial-col" hidden>Booked</th><th class="pax-trial-col" hidden>Trial session</th><th>Contact</th>'+
         '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
+        '<th class="pax-outcome-col" hidden>Outcome</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
       );
@@ -35890,10 +35891,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var showAns = qv !== 'all';
           var bookingExportEarly = (($('paxContactsBookingStatus') && $('paxContactsBookingStatus').value) || '');
           var outcomeExport = bookingExportEarly === 'registered';
-          var headers = outcomeExport
-            ? ['Participant name', 'DOB', 'Support', 'Outcome', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Source', 'Registered', 'Booked', 'Trial session', 'Contact', 'Email', 'Phone']
-            : ['Participant name', 'DOB', 'Support', 'Funding', 'Payment', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Source', 'Registered', 'Booked', 'Trial session', 'Contact', 'Email', 'Phone'];
+          var headers = ['Participant name', 'DOB', 'Support', 'Funding', 'Payment', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Source', 'Registered', 'Booked', 'Trial session', 'Contact', 'Email', 'Phone'];
+          if(outcomeExport) headers.splice(3, 2);
           if(showAns) headers.push(paxContactsRegQuestionLabel(qv));
+          if(outcomeExport) headers.push('Outcome');
           function csvCell(v){
             var s = String(v == null ? '' : v).replace(/\u2014/g, '').replace(/\s+/g, ' ').trim();
             return '"' + s.replace(/"/g, '""') + '"';
@@ -35956,14 +35957,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 ? (outcomeHit.label + (outcomeHit.detail ? ' (' + outcomeHit.detail + ')' : ''))
                 : '';
             }
-            var moneyOrOutcome = outcomeExport
-              ? [outcomeCsv]
+            var moneyCols = outcomeExport
+              ? []
               : [hideMoneyExport ? '' : (moneyCsv.fundingLabel || ''), hideMoneyExport ? '' : payCsv];
             var row = [
               p.name || '',
               p.dobDisplay || r.dobDisplay || '',
               adminParticipantSupportRatio(p.name) || ''
-            ].concat(moneyOrOutcome, [
+            ].concat(moneyCols, [
               ageY != null ? String(ageY) : '',
               bt.svc,
               bt.slot,
@@ -35977,6 +35978,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               r.phone || ''
             ]);
             if(showAns) row.push(paxContactsRegAnswerText(p, qv) || '');
+            if(outcomeExport) row.push(outcomeCsv);
             lines.push(row.map(csvCell).join(','));
             count++;
           });
