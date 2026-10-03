@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v210",
+  "version": "2026-10-03-v211",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -507,6 +507,9 @@
             "waiting list",
             "lista de espera",
             "registered",
+            "outcome",
+            "lost slot",
+            "bloquear",
             "service roster",
             "new client",
             "edit term slot"
@@ -514,7 +517,7 @@
           "steps": [
             "Places (Booking Portal) is the offer: open seats and taken seats. Service roster is who is already booked and the standing instructor. New client puts a person into an open seat. Edit term slot changes that seat for the rest of term.",
             "Leads is a parent who asked for an OTP code. Read Outcome: only looked, started registration, registered, already a client, or waiting list.",
-            "REGISTERED finished the registration form and has never had a place. Service and Time slot show what they asked for. Pay hold and Lost slot are chips on that list. Pay hold means the seat is still held and payment is still due. If the time runs out and they have not paid, trial or term, it is Lost slot.",
+            "REGISTERED finished the registration form and has never had a place. Service and Time slot show what they asked for. Pay hold and Lost slot are chips on that list. Outcome says why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay.",
             "WAITING LIST is someone who registered and the service they want is full. They are waiting for a place. They are not Leads and they are not REGISTERED.",
             "A person with a place now is CLIENT. That list is Clients and Families, Active. They are not in these three lists."
           ],
@@ -528,7 +531,7 @@
             "steps": [
               "Places (Booking Portal) es la oferta: plazas libres y plazas cogidas. Service roster es quien ya esta reservado y el instructor de siempre. New client mete a una persona en una plaza libre. Edit term slot cambia esa plaza para el resto del term.",
               "Leads es un padre o una madre que pidio un codigo OTP. Lee Outcome: solo miro, empezo el formulario, se registro, ya era cliente, o lista de espera.",
-              "REGISTERED termino el formulario y nunca ha tenido plaza. Service y Time slot muestran lo que pidieron. Pay hold y Lost slot son chips en esa lista. Pay hold: la plaza sigue retenida y falta pagar. Si se acaba el tiempo y no pagan, trial o term, es Lost slot.",
+              "REGISTERED termino el formulario y nunca ha tenido plaza. Service y Time slot muestran lo que pidieron. Pay hold y Lost slot son chips en esa lista. Outcome dice por que es Lost slot. Blocked the space: entraron y la plaza quedo retenida, y se acabo el tiempo. Did not pay: se mando un enlace de pago y la plaza no quedo retenida. Office hold, not paid: la oficina la guardo y no pagaron.",
               "WAITING LIST es alguien que se registro y el servicio que quiere esta lleno. Esta esperando una plaza. No es Leads y no es REGISTERED.",
               "Quien ya tiene plaza es CLIENT. Esa lista esta en Clients & Families, Active. No esta en estas tres listas."
             ],
@@ -560,7 +563,7 @@
           "tips": [
             "Do not read Open bands, Free slots or Total rows as families to phone.",
             "Parents do not see an instructor day off on the Booking Portal.",
-            "Pay hold and Lost slot are chips on REGISTERED. They are not columns on this board. Pay hold means the seat is still held and payment is still due. Unpaid after the time, trial or term, is Lost slot.",
+            "Pay hold and Lost slot are chips on REGISTERED, not columns on this board. On REGISTERED, Outcome says why a Lost slot happened: they blocked the space, they did not pay a link, or the office held it and they did not pay.",
             "A cancelled place is not an open seat until Edit term slot or the release has cleared the child."
           ],
           "es": {
@@ -585,7 +588,7 @@
             "tips": [
               "No leas Open bands, Free slots ni Total rows como familias a las que llamar.",
               "Los padres no ven el dia libre de un instructor en el Booking Portal.",
-              "Pay hold y Lost slot son chips en REGISTERED. No son columnas de este tablero. Pay hold: la plaza sigue retenida y falta pagar. Si no pagan a tiempo, trial o term, es Lost slot.",
+              "Pay hold y Lost slot son chips en REGISTERED, no columnas de este tablero. En REGISTERED, Outcome dice por que es Lost slot: bloquearon la plaza, no pagaron un enlace, o la oficina la guardo y no pagaron.",
               "Una plaza cancelada no es un hueco hasta que Edit term slot o la baja hayan quitado al nino."
             ]
           }
@@ -791,11 +794,11 @@
           "where": "Nav people buckets / CLIENT filters",
           "steps": [
             "Five lists, one person in one list. LEADS asked for a code and did not finish the form. Only looked is a filter on Leads, not its own list.",
-            "REGISTERED finished the form and has never had a place. Pay hold and Lost slot are chips on that list. Pay hold means the seat is still held and payment is still due. If the time runs out and they have not paid, trial or term, it is Lost slot. They are not extra lists.",
+            "REGISTERED finished the form and has never had a place. Pay hold and Lost slot are chips on that list. Outcome says why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay. Funding and Payment are not on this screen.",
             "WAITING finished the form and the service they want is full.",
             "CLIENT (Active) has a place now. On Trial is a CLIENT sitting a trial seat, not a REGISTERED chip.",
             "OLD had a place and has none from September 2026.",
-            "Funding and payment live on the child row after the form, or on the pay choice they saved. Leads does not show them. On REGISTERED, Service and Time slot show what they asked for when the row is Pay hold or Lost slot. A payments sheet row that is only a first name stays with the client who already had that name. A row marked merged retired stays off these lists."
+            "Funding and payment live on Active, OLD and On Trial. Leads and REGISTERED do not show those columns. On REGISTERED, Service and Time slot show what they asked for. A payments sheet row that is only a first name stays with the client who already had that name. A row marked merged retired stays off these lists."
           ],
           "tips": [
             "Do not say former / alumni in office chat — say OLD.",
@@ -807,11 +810,11 @@
             "where": "Cubos de personas en el menu / filtros de CLIENT",
             "steps": [
               "Cinco listas, una persona en una sola. LEADS pidio un codigo y no termino el formulario. Only looked es un filtro de Leads, no una lista aparte.",
-              "REGISTERED termino el formulario y nunca ha tenido plaza. Pay hold y Lost slot son chips de esa lista. Pay hold: la plaza sigue retenida y falta pagar. Si se acaba el tiempo y no pagan, trial o term, es Lost slot. No son listas nuevas.",
+              "REGISTERED termino el formulario y nunca ha tenido plaza. Pay hold y Lost slot son chips de esa lista. Outcome dice por que es Lost slot. Blocked the space: entraron y la plaza quedo retenida, y se acabo el tiempo. Did not pay: se mando un enlace de pago y la plaza no quedo retenida. Office hold, not paid: la oficina la guardo y no pagaron. Funding y Payment no salen en esta pantalla.",
               "WAITING termino el formulario y el servicio que quiere esta lleno.",
               "CLIENT (Active) tiene plaza ahora. On Trial es un CLIENT sentado en un trial, no un chip de REGISTERED.",
               "OLD tuvo plaza y no tiene desde septiembre 2026.",
-              "Funding y payment viven en la fila del nino despues del formulario, o en la opcion de pago que guardo. Leads no los enseña. En REGISTERED, Service y Time slot muestran lo que pidieron cuando la fila es Pay hold o Lost slot. Una fila de payments que solo tiene el nombre de pila se queda con el cliente que ya tenia ese nombre. Una fila marcada merged retired no sale en estas listas."
+              "Funding y payment viven en Active, OLD y On Trial. Leads y REGISTERED no ensenan esas columnas. En REGISTERED, Service y Time slot muestran lo que pidieron. Una fila de payments que solo tiene el nombre de pila se queda con el cliente que ya tenia ese nombre. Una fila marcada merged retired no sale en estas listas."
             ],
             "tips": [
               "En la oficina no digas former ni alumni. Di OLD.",
@@ -1034,7 +1037,7 @@
           ],
           "steps": [
             "REGISTERED is Services & places → REGISTERED. That child finished the registration form and has no place now. Service and Time slot show the trial they asked for: service, day, time, and place. The date is the day they registered.",
-            "On that REGISTERED list the chips are only All, Pay hold or Lost slot. Pay hold means the seat is still held and payment is still due. If the time runs out and they have not paid, trial or term, it is Lost slot. Funding and Payment stay blank unless the form or an invoice stored them. The chip sits under the name. Active does not list this screen.",
+            "On that REGISTERED list the chips are only All, Pay hold or Lost slot. Outcome is the column that splits Lost slot. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay. Funding and Payment are not on this screen. The chip sits under the name. Active does not list this screen.",
             "Someone who already has a place stays ACTIVE. They do not get the Pay hold or Lost slot chip.",
             "CFK LEADS is a filter on the contacts table. It is the old Class for Kids file. It is not this Leads page.",
             "Lost slot on Finance is a family who re-enrolled and did not pay. That chip is on the invoice, not on Leads."
@@ -1048,7 +1051,7 @@
             "where": "Services & places → Leads",
             "steps": [
               "REGISTERED es Services & places → REGISTERED. Ese nino termino el formulario y no tiene plaza ahora. Service y Time slot muestran el trial que pidio: servicio, dia, hora y sitio. La fecha es el dia en que se registro.",
-              "En esa lista REGISTERED los chips son solo All, Pay hold o Lost slot. Pay hold: la plaza sigue retenida y falta pagar. Si se acaba el tiempo y no pagan, trial o term, es Lost slot. Funding y Payment quedan vacios si el formulario o una factura no los guardaron. El chip va bajo el nombre. Active no lista esta pantalla.",
+              "En esa lista REGISTERED los chips son solo All, Pay hold o Lost slot. Outcome es la columna que separa Lost slot. Blocked the space: entraron y la plaza quedo retenida, y se acabo el tiempo. Did not pay: se mando un enlace de pago y la plaza no quedo retenida. Office hold, not paid: la oficina la guardo y no pagaron. Funding y Payment no salen en esta pantalla. El chip va bajo el nombre. Active no lista esta pantalla.",
               "Quien ya tiene plaza se queda ACTIVE. No lleva el chip Pay hold ni Lost slot.",
               "CFK LEADS es un filtro de la tabla de contactos. Es el archivo viejo de Class for Kids. No es esta pagina de Leads.",
               "Lost slot en Finance es una familia que rehizo la inscripcion y no pago. Ese chip esta en la factura, no en Leads."

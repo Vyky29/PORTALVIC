@@ -23494,6 +23494,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(status === 'expired' || status === 'released') return 'lost_slot';
       return '';
     }
+    /** Why a REGISTERED row is Pay hold or Lost slot. Blocked the space is a seat they held. */
+    function paxContactsPlaceOutcome(row, flag){
+      var notes = String((row && row.notes) || '');
+      var status = String((row && row.status) || '').toLowerCase();
+      if(flag === 'pay_hold') return { id: 'pay_hold', label: 'Seat still held', detail: '' };
+      if(/released_lived_too_far/i.test(notes)) return { id: 'lived_too_far', label: 'Lived too far', detail: 'Office released the seat' };
+      if(/expired_unpaid_pay_hold|was_expired_unpaid|pay_hold_30m/i.test(notes) || (status === 'validated' && /pay_hold/i.test(notes))){
+        return {
+          id: 'blocked',
+          label: 'Blocked the space',
+          detail: /office_declined/i.test(notes) ? 'Then the office declined' : 'They went in and the seat was held'
+        };
+      }
+      if(/admin_hold|registered_trial_expired_admin_hold|contact_tomorrow_pay/i.test(notes)){
+        return { id: 'office_hold', label: 'Office hold, not paid', detail: 'The office kept it' };
+      }
+      if(/office_declined/i.test(notes)) return { id: 'declined', label: 'Office declined', detail: '' };
+      if(/awaiting_stripe_pay|auto_finish_link/i.test(notes)){
+        return { id: 'did_not_pay', label: 'Did not pay', detail: 'Pay link. The seat was not held' };
+      }
+      if(flag === 'lost_slot') return { id: 'lost', label: 'Lost slot', detail: '' };
+      return { id: '', label: '', detail: '' };
+    }
     async function paxContactsLoadPlaceFlags(){
       var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
       if(!client || typeof client.from !== 'function') return false;
@@ -23520,7 +23543,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             service: String(row.service_name || '').trim(),
             day: String(row.day_label || '').trim(),
             time: String(row.time_label || '').trim(),
-            venue: String(row.venue || '').trim()
+            venue: String(row.venue || '').trim(),
+            outcome: paxContactsPlaceOutcome(row, flag)
           });
         });
         window.PAX_CONTACTS_PLACE_FLAGS = rows;
@@ -24488,6 +24512,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var paymentCell = payChips
           ? '<div class="pax-contacts-chips pax-contacts-chips--stack">'+payChips+'</div>'
           : '<span class="muted">—</span>';
+        var outcome = null;
+        try{
+          var outcomeRow = paxContactsBestPlaceRow(p);
+          outcome = outcomeRow && outcomeRow.outcome;
+        }catch(_outcome){ outcome = null; }
+        var outcomeTone = {
+          blocked: { bg: '#fee2e2', fg: '#991b1b' },
+          pay_hold: { bg: '#fef3c7', fg: '#92400e' },
+          did_not_pay: { bg: '#e0e7ff', fg: '#3730a3' },
+          office_hold: { bg: '#ffedd5', fg: '#9a3412' },
+          lived_too_far: { bg: '#f1f5f9', fg: '#334155' },
+          declined: { bg: '#f1f5f9', fg: '#334155' },
+          lost: { bg: '#fee2e2', fg: '#991b1b' }
+        };
+        var outcomeToneHit = outcome && outcome.label ? (outcomeTone[outcome.id] || outcomeTone.lost) : null;
+        var outcomeCell = outcomeToneHit
+          ? '<span style="display:inline-block;max-width:100%;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;overflow-wrap:anywhere;background:'+outcomeToneHit.bg+';color:'+outcomeToneHit.fg+'">'+esc(outcome.label)+'</span>'+
+            (outcome.detail ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:anywhere;line-height:1.35">'+esc(outcome.detail)+'</div>' : '')
+          : '<span class="muted">—</span>';
         var payIds = (money.payments || []).map(function(pay){ return pay.id; }).join(' ');
         var supportKey = ratio || '1:1';
         var svcKeys = paxContactsServiceFilterKeys(p, 'seat');
@@ -24497,6 +24540,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
           '<td class="pax-contacts-name-td"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+paxContactsWaitExtraHtml(p)+'</div></div></td>'+
           '<td class="pax-contacts-meta">'+supportCell+'</td>'+
+          '<td class="pax-contacts-meta pax-outcome-col" hidden style="min-width:0;white-space:normal">'+outcomeCell+'</td>'+
           '<td class="pax-contacts-meta pax-money-col">'+fundingCell+'</td>'+
           '<td class="pax-contacts-meta pax-money-col">'+paymentCell+'</td>'+
           '<td class="pax-contacts-age">'+ageCell+'</td>'+
@@ -24555,7 +24599,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var intro = bookingSelected === 'waiting'
         ? 'WAITING LIST is only this screen. The chips split Portal (Booking Portal from 12 Aug 2026) from Before the portal (CFK and the workbook from before that). Before the portal drops anyone who already has a service. Someone who already has a service can still be on the Portal waiting list for another place.'
         : (bookingSelected === 'registered'
-          ? 'REGISTERED finished the form and has never had a place. This screen is only that list. The chips are Pay hold and Lost slot. Pay hold means the seat is still held and payment is still due. If the time runs out and they have not paid, trial or term, it is Lost slot. Service and Time slot are what they asked for: service, day, time, and place.'
+          ? 'REGISTERED finished the form and has never had a place. This screen is only that list. Outcome is why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay. Service and Time slot are what they asked for.'
           : (bookingSelected === 'booking_history'
             ? 'OLD CLIENTS had a place and have no slots from September 2026. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen.'
             : (bookingSelected === 'cfk_leads'
@@ -24705,7 +24749,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
         '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th class="pax-money-col">Funding</th><th class="pax-money-col">Payment</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th class="pax-source-col" hidden>Source</th><th class="pax-registered-col" hidden>Registered</th><th class="pax-trial-col" hidden>Booked</th><th class="pax-trial-col" hidden>Trial session</th><th>Contact</th>'+
+        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th class="pax-outcome-col" hidden>Outcome</th><th class="pax-money-col">Funding</th><th class="pax-money-col">Payment</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th class="pax-source-col" hidden>Source</th><th class="pax-registered-col" hidden>Registered</th><th class="pax-trial-col" hidden>Booked</th><th class="pax-trial-col" hidden>Trial session</th><th>Contact</th>'+
         '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
@@ -35555,7 +35599,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var showSource = showJoined;
           var showRegistered = bk === 'registered';
           var showTrial = bk === 'trial';
-          var showMoney = bk !== 'waiting' && bk !== 'cfk_leads';
+          var showOutcome = showRegistered;
+          var showMoney = bk !== 'waiting' && bk !== 'cfk_leads' && !showRegistered;
           var waitWrap = $('paxContactsWaitSourceWrap');
           if(waitWrap) waitWrap.hidden = !showJoined;
           var placeWrap = $('paxContactsPlaceFlagWrap');
@@ -35564,6 +35609,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           root2.querySelectorAll('.pax-joined-col').forEach(function(el){ el.hidden = !showJoined; });
           root2.querySelectorAll('.pax-source-col').forEach(function(el){ el.hidden = !showSource; });
           root2.querySelectorAll('.pax-registered-col').forEach(function(el){ el.hidden = !showRegistered; });
+          root2.querySelectorAll('.pax-outcome-col').forEach(function(el){ el.hidden = !showOutcome; });
           root2.querySelectorAll('.pax-trial-col').forEach(function(el){ el.hidden = !showTrial; });
           root2.querySelectorAll('.pax-seat-lines').forEach(function(el){
             var onWait = !!(el.closest && el.closest('tr') && el.closest('tr').getAttribute('data-pax-wait') === '1');
@@ -35802,7 +35848,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
-          var headers = ['Participant name', 'DOB', 'Support', 'Funding', 'Payment', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Source', 'Registered', 'Booked', 'Trial session', 'Contact', 'Email', 'Phone'];
+          var bookingExportEarly = (($('paxContactsBookingStatus') && $('paxContactsBookingStatus').value) || '');
+          var outcomeExport = bookingExportEarly === 'registered';
+          var headers = outcomeExport
+            ? ['Participant name', 'DOB', 'Support', 'Outcome', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Source', 'Registered', 'Booked', 'Trial session', 'Contact', 'Email', 'Phone']
+            : ['Participant name', 'DOB', 'Support', 'Funding', 'Payment', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Source', 'Registered', 'Booked', 'Trial session', 'Contact', 'Email', 'Phone'];
           if(showAns) headers.push(paxContactsRegQuestionLabel(qv));
           function csvCell(v){
             var s = String(v == null ? '' : v).replace(/\u2014/g, '').replace(/\s+/g, ' ').trim();
@@ -35856,13 +35906,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var trialPlain = paxContactsTrialServiceSlotPlain(p);
               bt = { svc: trialPlain.svc, slot: trialPlain.slot };
             }
-            var hideMoneyExport = bookingExport === 'waiting' || bookingExport === 'cfk_leads';
+            var hideMoneyExport = bookingExport === 'waiting' || bookingExport === 'cfk_leads' || bookingExport === 'registered';
+            var outcomeCsv = '';
+            if(outcomeExport){
+              var outcomeBest = null;
+              try{ outcomeBest = paxContactsBestPlaceRow(p); }catch(_oc){ outcomeBest = null; }
+              var outcomeHit = outcomeBest && outcomeBest.outcome;
+              outcomeCsv = outcomeHit && outcomeHit.label
+                ? (outcomeHit.label + (outcomeHit.detail ? ' (' + outcomeHit.detail + ')' : ''))
+                : '';
+            }
+            var moneyOrOutcome = outcomeExport
+              ? [outcomeCsv]
+              : [hideMoneyExport ? '' : (moneyCsv.fundingLabel || ''), hideMoneyExport ? '' : payCsv];
             var row = [
               p.name || '',
               p.dobDisplay || r.dobDisplay || '',
-              adminParticipantSupportRatio(p.name) || '',
-              hideMoneyExport ? '' : (moneyCsv.fundingLabel || ''),
-              hideMoneyExport ? '' : payCsv,
+              adminParticipantSupportRatio(p.name) || ''
+            ].concat(moneyOrOutcome, [
               ageY != null ? String(ageY) : '',
               bt.svc,
               bt.slot,
@@ -35874,7 +35935,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               p.parentDisplay || r.carer || '',
               r.email || '',
               r.phone || ''
-            ];
+            ]);
             if(showAns) row.push(paxContactsRegAnswerText(p, qv) || '');
             lines.push(row.map(csvCell).join(','));
             count++;
