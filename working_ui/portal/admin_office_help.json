@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v155",
+  "version": "2026-10-03-v156",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -401,8 +401,8 @@
         },
         {
           "id": "ops_hub_chips",
-          "title": "Operations Hub: Today, then a sheet",
-          "summary": "Today stays on the home. The other categories open in the sheet under it. WhatsApp, P, S, C and A stay in the top bar.",
+          "title": "Operations Hub: the buttons you use",
+          "summary": "One screen shows the used buttons in each category, and the calendar stays on the side. WhatsApp, P, S, C and A stay in the top bar.",
           "where": "Operations Hub (home)",
           "keywords": [
             "chips",
@@ -418,36 +418,32 @@
             "comms"
           ],
           "steps": [
-            "Open Operations Hub. The title, the info circle and Office help sit together. The Today strip (title and Open) sits under that.",
-            "Schedule and Covers, Sessions overview and the calendar are the next row. The two buttons match the calendar height. The Today tiles sit under that row: Register, Lead report, Incidents, Venue review, and Pick up / drop off. Those boxes use the same pastel as the day cards in Sessions Overview. The category chips are a step darker. Colour stays on the icon and the category title. Places is in Services and places. Absents and cancellations are in Finance.",
-            "Open another category is the sheet under Today. The chips are Services and places, Families, Finance, Formal workers and Potential workers. Today does not move when you change the sheet. On a phone the five chips sit on one row and the panel under them stays closed until you tap a chip. Tap the same chip again to close it. On a computer the panel stays open.",
-            "Click the category title (the Open label next to Today, Finance, Families and the rest) to open that whole section. Finance then shows Xero, Tide and Other, with every button in the category. Back to dashboard returns to the hub.",
-            "WhatsApp, Parents API, Staff API, C (Comms) and A (Announcements) stay in the top bar. Parents API and Staff API are the same shape as the profile button: the word on the first line, API smaller underneath. They are not cards on the board.",
-            "WhatsApp is green. Parents API keeps a dark green mark. C is yellow, the same yellow as the staff Comms button. Staff API keeps an orange mark. A is red.",
-            "When that lane has unread messages, the button lights up and shows the number. A number on Announcements is live notices from the last 7 days."
+            "Open Operations Hub. The title, the info circle and Office help sit together.",
+            "Every category is on the same screen. Sessions: Sessions overview, Schedule and Covers, Register. Services and places: Service roster, Places, Leads, Registered, Waiting list, Edit term slot. Clients and families: Active, Achievement photos, Parent consents. Finance: Re-enrolments and Bookings, Payments, Absents, credits and refunds, Cancelled services. H&R: Workers, Instructor timetable, Session disruptions, Late feedback, Documents, Finance. Potential workers: Interviews, Onboarding.",
+            "The calendar sits on the right. A day with an open note is orange. Press the calendar to open Office calendar.",
+            "The full menu is still in the sidebar. The hub only keeps the buttons used every day.",
+            "WhatsApp, Parents API, Staff API, C (Comms) and A (Announcements) stay in the top bar.",
+            "When that lane has unread messages, the button lights up and shows the number."
           ],
           "tips": [
-            "The sheet shows a short row. Open on the title shows every button in that category, including Create invoice and Xero products under Finance.",
-            "Phone: the first header line is the menu and search. The second line is WhatsApp, Communications, Announcements, Parents API, Staff API and the photo. Who is online sits under that. Only the category icons show until you tap one. The page scrolls so those icons sit at the top and the boxes open underneath, three across. Tap the same chip again to close.",
-            "On every admin page the title, the info circle and Back or Help sit in one row. They do not go to the far right."
+            "Cancelled services is a place removed for the rest of term. A one-day absence stays in Absents, credits and refunds.",
+            "On a phone the calendar sits above the buttons and the page scrolls.",
+            "On every admin page the title, the info circle and Back or Help sit in one row."
           ],
           "es": {
-            "title": "Operations Hub: Today y luego una hoja",
-            "summary": "Today se queda en el inicio. Las otras categorias se abren en la hoja de debajo. WhatsApp, P, S, C y A siguen en la barra.",
+            "title": "Operations Hub: los botones que usas",
+            "summary": "Una pantalla muestra los botones usados de cada categoria, y el calendario se queda al lado. WhatsApp, P, S, C y A siguen en la barra.",
             "where": "Operations Hub (inicio)",
             "steps": [
-              "Abre Operations Hub. El titulo, el circulo de info y Office help van juntos. La franja de Today (titulo y Open) va debajo.",
-              "Schedule and Covers, Sessions overview y el calendario son la fila siguiente. Los dos botones tienen la misma altura que el calendario. Las cajas de Today van debajo: Register, Lead report, Incidents, Venue review y Pick up / drop off. Esas cajas usan el mismo pastel que las tarjetas de los dias en Sessions Overview. Los chips de categoria van un poco mas oscuros. El color queda en el icono y en el titulo de la categoria. Places esta en Services and places. Absents y cancellations estan en Finance.",
-              "Open another category es la hoja bajo Today. Los chips son Services and places, Families, Finance, Formal workers y Potential workers. Today no se mueve al cambiar la hoja. En el telefono los cinco chips van en una fila y el panel de debajo sigue cerrado hasta que tocas un chip. Toca el mismo chip otra vez para cerrarlo. En el ordenador el panel sigue abierto.",
-              "Pulsa el titulo de la categoria (la palabra Open junto a Today, Finance, Families y el resto) para abrir la seccion entera. Finance muestra Xero, Tide y Other, con todos los botones. Back to dashboard vuelve al hub.",
-              "WhatsApp, Parents API, Staff API, C (Comms) y A (Announcements) siguen en la barra. Parents API y Staff API tienen la misma forma que el boton del perfil: la palabra en la primera linea y API mas pequeno debajo. No son tarjetas del tablero.",
-              "WhatsApp es verde. Parents API lleva la marca verde oscura. C es amarillo, el mismo amarillo que el boton Comms de staff. Staff API lleva la marca naranja. A es rojo.",
-              "Cuando ese canal tiene mensajes sin leer, el boton se ilumina y muestra el numero. Un numero en Announcements son avisos vivos de los ultimos 7 dias."
+              "Abre Operations Hub. El titulo, el circulo de info y Office help van juntos.",
+              "Todas las categorias estan en la misma pantalla: Sessions, Services and places, Clients and families, Finance, H&R y Potential workers. Son los botones que se usan cada dia.",
+              "El calendario esta a la derecha. Un dia con nota abierta sale naranja. Pulsa el calendario para abrir Office calendar.",
+              "El menu completo sigue en la barra lateral. El hub solo deja los botones de cada dia.",
+              "WhatsApp, Parents API, Staff API, C y A siguen en la barra de arriba."
             ],
             "tips": [
-              "La hoja muestra una fila corta. Open en el titulo abre todos los botones de esa categoria, incluidos Create invoice y Xero products en Finance.",
-              "Telefono: la primera linea de arriba es el menu y el buscador. La segunda es WhatsApp, Communications, Announcements, Parents API, Staff API y la foto. Quien esta conectado va debajo. Solo se ven los iconos de categoria hasta que tocas uno. La pagina baja sola para dejar esos iconos arriba y las cajas debajo, de tres en tres. Toca el mismo chip otra vez para cerrarlo.",
-            "En cada pagina de admin el titulo, el circulo de info y Back o Help van en la misma fila. No se van al borde derecho."
+              "Cancelled services es una plaza quitada el resto del term. Una falta de un dia sigue en Absents, credits and refunds.",
+              "En el telefono el calendario va encima y la pagina baja."
             ]
           }
         }

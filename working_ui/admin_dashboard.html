@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261002-hub-cal-notes" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261003-hub-flat" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -471,6 +471,7 @@
       { id:'term_roster_edit', label:'Edit term slot' },
       { id:'roster_spreadsheets', label:'Instructor timetable', hubLabel:'Instructor timetable' },
       { id:'absents_refunds', label:'Absent, credits & refunds', hubLabel:'Absent, credits & refunds' },
+      { id:'finance_cancelled_services', label:'Cancelled services', hubLabel:'Cancelled services' },
       { id:'receptionist', label:'Receptionist hub' },
       { id:'leads', label:'Leads' },
       { id:'c4k_services', label:'Services' },
@@ -569,7 +570,7 @@
       { id:'g_operator', label:'Sessions', children:['__h:Today','c4k_sessions','scheduling','sessions_register','__h:Other','sessions_lead','sessions_venue','sessions_pickup','sessions_incidents','office_calendar'] },
       { id:'g_services', label:'Services & places', children:['services_places','leads','c4k_waitlist','portal_participant_documents','services_roster','new_client','term_roster_edit'] },
       { id:'g_clients', label:'Clients & Families', children:['__h:Clients','clients','c4k_reviews','c4k_reports','__h:Family','participant_achievements','portal_parent_broadcast','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
-      { id:'g_xero', label:'Finance', children:['__h:Xero','finance_xero','finance_create','__h:Tide','finance_reenrolments','finance_payments','__h:Other','absents_refunds','commissioning_terms','family_terms'] },
+      { id:'g_xero', label:'Finance', children:['__h:Xero','finance_xero','finance_create','__h:Tide','finance_reenrolments','finance_payments','__h:Other','absents_refunds','finance_cancelled_services','commissioning_terms','family_terms'] },
       { id:'g_zoho', label:'H&R', children:['__h:Formal workers','c4k_late_submissions','session_disruptions','staffhr','roster_spreadsheets','staff_ghost_teleport','portal_docs_portalpin','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','__h:Files','portal_documents','hr_pay','hr_policies','day_centre_documents'] },
       { id:'g_potential', label:'Potential workers', children:['onboarding','interviews'] },
       { id:'g_settings_portal', label:'Settings', children:['settings','portal_push_devices','portal_device_notifications','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
@@ -697,6 +698,7 @@
       if(id === 'payroll_report') id = 'invoices';
       if(id === 'pay_rates') id = 'c4k_payments';
       if(id === 'hr_pay') id = 'g_xero';
+      if(id === 'finance_cancelled_services') id = 'absents_refunds';
       if(id === 'hr_policies') id = 'policies';
       var inner = NAV_ICON_SVGS[id];
       if(!inner) return '';
@@ -30282,6 +30284,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='term_roster_edit') html = viewTermRosterEdit();
       else if(id==='roster_spreadsheets') html = viewRosterSpreadsheets();
       else if(id==='absents_refunds') html = viewAbsentsRefundsCredits();
+      else if(id==='finance_cancelled_services') html = viewFinanceCancelledServices();
       else if(id==='portal_documents'){
         window.__portalDocsPresetFilter = 'all';
         html = viewPortalDocuments();
@@ -30787,6 +30790,66 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<summary style="cursor:pointer;font-weight:700;font-size:14px;padding:8px 0;overflow-wrap:break-word">Makeup grants &amp; family credits / refunds (after you decide above)</summary>'+
         '<div style="margin-top:8px">'+secondary+'</div>'+
         '</details>';
+    }
+    function viewFinanceCancelledServices(){
+      return '<h1 class="page-title">Cancelled services</h1>'+
+        '<p class="page-intro" style="max-width:46rem;min-width:0;overflow-wrap:break-word">A place removed for the rest of the term. A one-day absence stays in Absents, credits and refunds.</p>'+
+        '<div id="financeCancelledServicesRoot" class="card"><div class="card-pad">Loading...</div></div>';
+    }
+    function bindFinanceCancelledServices(){
+      var root = $('financeCancelledServicesRoot');
+      if(!root) return;
+      var client = getSchedSupabaseClient();
+      if(!client){
+        root.innerHTML = '<div class="card-pad">Sign in to load cancelled services.</div>';
+        return;
+      }
+      client.from('portal_roster_row_events')
+        .select('created_at,scope,anchor_session_date,before_snapshot,after_snapshot,client_context')
+        .eq('action','cancel')
+        .order('created_at', { ascending: false })
+        .limit(80)
+        .then(function(res){
+          if(!root.isConnected) return;
+          if(res.error){
+            root.innerHTML = '<div class="card-pad">Could not load cancelled services.</div>';
+            return;
+          }
+          var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          function niceDate(iso){
+            var s = String(iso || '').slice(0, 10);
+            var p = s.split('-');
+            if(p.length < 3) return s || '-';
+            return String(Number(p[2])) + ' ' + (months[Number(p[1]) - 1] || '') + ' ' + p[0];
+          }
+          function scopeLabel(scope){
+            if(scope === 'rest_of_term') return 'Rest of term';
+            if(scope === 'weekday_term') return 'Every weekday';
+            if(scope === 'single_day') return 'One day';
+            return scope ? String(scope).replace(/_/g, ' ') : '';
+          }
+          var rows = (res.data || []).filter(function(row){
+            var ctx = row.client_context || {};
+            var term = String(ctx.term_action || '').trim();
+            return !term || term === 'cancel_service';
+          });
+          if(!rows.length){
+            root.innerHTML = '<div class="card-pad">No cancelled services yet.</div>';
+            return;
+          }
+          var body = rows.map(function(row){
+            var snap = row.after_snapshot || row.before_snapshot || {};
+            var who = String(snap.client_name || '-');
+            var service = String(snap.service || '');
+            var when = [snap.day, snap.time_slot].filter(Boolean).join(' ');
+            var detail = [service, when, scopeLabel(row.scope)].filter(Boolean).join(' | ');
+            return '<tr><td>'+esc(niceDate(row.anchor_session_date || row.created_at))+'</td><td><strong>'+esc(who)+'</strong></td><td style="overflow-wrap:anywhere">'+esc(detail || '—')+'</td></tr>';
+          }).join('');
+          root.innerHTML = '<div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center tbl--dense"><thead><tr><th>From</th><th>Participant</th><th>Service</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+        })
+        .catch(function(){
+          if(root.isConnected) root.innerHTML = '<div class="card-pad">Could not load cancelled services.</div>';
+        });
     }
 
     /** KPI-style hub tile (Day operations / Operations admin / Operator). Same routing attrs as legacy dayops tiles. */
@@ -31531,9 +31594,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }).join('') +
         '</div></div>';
       return (
-        '<div class="ops-hub__today ops-hub__today--cal-focus ops-hub__today--cal-right" role="region" aria-label="Schedule, sessions and calendar">' +
-        portalDashTileHtml('scheduling', '', 'scheduling', 'Schedule & Covers', '', false, 'scheduling', '', 'ops-hub__feature') +
-        portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', '', false, 'sessions', 'sessions_hub_overview', 'ops-hub__feature') +
+        '<div class="ops-hub__today ops-hub__today--cal-focus" role="region" aria-label="Calendar">' +
         '<button type="button" class="ops-hub__today-item ops-hub__today-item--calendar" id="opsHubCalendarGlance" aria-label="Open office calendar">' +
         '<span class="ops-hub-cal-glance__copy">' +
         '<span class="ops-hub__today-k">Calendar</span>' +
@@ -31656,12 +31717,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     var OPS_HUB_CATS = [
-      { id:'today', label:'Today', groupId:'g_operator', tone:'sessions', panel:'dash-hub__panel--sessions', icon:'c4k_sessions', sub:'Register, lead, incidents, venue and pickup' },
-      { id:'services', label:'Services & places', groupId:'g_services', tone:'bookings', panel:'dash-hub__panel--bookings', icon:'services_places', sub:'Places, leads, waiting list, registered and the roster' },
-      { id:'families', label:'Families', groupId:'g_clients', tone:'participants', panel:'dash-hub__panel--clients', icon:'clients', sub:'Active clients, progress, reports and family tools' },
-      { id:'finance', label:'Finance', groupId:'g_xero', tone:'payments', panel:'dash-hub__panel--finance', icon:'finance_payments', sub:'Re-enrolments, payments, absents and credits' },
-      { id:'formal', label:'Formal workers', groupId:'g_zoho', tone:'scheduling', panel:'dash-hub__panel--team', icon:'staffhr', sub:'Late feedback, disruptions, workers and staff PINs' },
-      { id:'potential', label:'Potential workers', groupId:'g_potential', tone:'scheduling', panel:'dash-hub__panel--team', icon:'onboarding', sub:'Onboarding and interviews' }
+      { id:'today', label:'Sessions', groupId:'g_operator', tone:'sessions', panel:'dash-hub__panel--sessions', icon:'c4k_sessions', sub:'' },
+      { id:'services', label:'Services & places', groupId:'g_services', tone:'bookings', panel:'dash-hub__panel--bookings', icon:'services_places', sub:'' },
+      { id:'families', label:'Clients & families', groupId:'g_clients', tone:'participants', panel:'dash-hub__panel--clients', icon:'clients', sub:'' },
+      { id:'finance', label:'Finance', groupId:'g_xero', tone:'payments', panel:'dash-hub__panel--finance', icon:'finance_payments', sub:'' },
+      { id:'formal', label:'H&R', groupId:'g_zoho', tone:'scheduling', panel:'dash-hub__panel--team', icon:'staffhr', sub:'' },
+      { id:'potential', label:'Potential workers', groupId:'g_potential', tone:'scheduling', panel:'dash-hub__panel--team', icon:'onboarding', sub:'' }
     ];
     function opsHubCatById(id){
       for(var i = 0; i < OPS_HUB_CATS.length; i++){
@@ -31671,34 +31732,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function opsHubCatActions(id){
       if(id === 'services'){
-        return ['services_places','leads','c4k_waitlist','portal_participant_documents','services_roster','new_client','term_roster_edit'];
+        return [
+          'services_roster',
+          { id:'services_places', label:'Places' },
+          'leads',
+          'portal_participant_documents',
+          'c4k_waitlist',
+          'term_roster_edit'
+        ];
       }
       if(id === 'families'){
-        return ['clients','c4k_reviews','c4k_reports','participant_achievements','portal_parent_broadcast','portal_family_pins','portal_parent_teleport'];
+        return ['clients','participant_achievements','portal_parent_consents'];
       }
       if(id === 'finance'){
-        return ['finance_reenrolments','finance_payments','absents_refunds'];
+        return [
+          'finance_reenrolments',
+          'finance_payments',
+          { id:'absents_refunds', label:'Absents, credits & refunds' },
+          'finance_cancelled_services'
+        ];
       }
       if(id === 'formal'){
         return [
-          'c4k_late_submissions',
-          'session_disruptions',
           { id:'staffhr', label:'Workers' },
           'roster_spreadsheets',
-          { id:'staff_ghost_teleport', label:'Dashboard teleport' },
-          'portal_docs_portalpin'
+          'session_disruptions',
+          'c4k_late_submissions',
+          'portal_documents',
+          'hr_pay'
         ];
       }
       if(id === 'potential'){
-        return ['onboarding', { id:'interviews', label:'Interviews' }];
+        return [{ id:'interviews', label:'Interviews' }, 'onboarding'];
       }
-      return [
-        'sessions_register',
-        'sessions_lead',
-        'sessions_incidents',
-        'sessions_venue',
-        'sessions_pickup'
-      ];
+      return [{ id:'c4k_sessions', label:'Sessions overview' },'scheduling','sessions_register'];
     }
     function opsHubPhoneCatAccordion(){
       try{
@@ -31749,14 +31816,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function opsHubCatBoardHtml(id, opts){
       opts = opts || {};
       var cat = opsHubCatById(id);
+      var actions = opsHubCatActions(cat.id);
+      var n = actions.length;
+      var grid = 'ops-hub-flat__grid';
+      if(n >= 6) grid = 'dash-hub__grid--6 ops-hub-flat__grid';
+      else if(n === 4) grid = 'dash-hub__grid--4 ops-hub-flat__grid';
+      else if(n === 3) grid = 'dash-hub__grid--3 ops-hub-flat__grid';
       return portalDashPanel({
         title: cat.label,
-        subtitle: cat.sub,
+        subtitle: '',
         iconId: cat.icon,
-        openGroup: cat.groupId,
         panelClass: cat.panel+' ops-hub-panel--'+cat.id,
-        gridClass: 'dash-hub__grid--5',
-        tiles: opsHubDashTilesHtml(opsHubCatActions(cat.id), cat.tone),
+        gridClass: grid,
+        tiles: opsHubDashTilesHtml(actions, cat.tone),
         ariaLabel: cat.label,
         omitHead: !!opts.omitHead
       });
@@ -31780,12 +31852,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           );
         }
       }
-      var sheet = opsHubSheetCatId();
-      var phoneAcc = opsHubPhoneCatAccordion();
-      var sheetOpen = !phoneAcc || !!state.opsHubCatOpen;
       window.__ADMIN_PAGE_INFO = { viewId: 'nav_hub', title: 'Operations Hub', intro: '', lessonIds: ['ops_hub_chips'] };
+      var boards = OPS_HUB_CATS.filter(function(c){ return c.id !== 'today'; }).map(function(c){
+        return opsHubCatBoardHtml(c.id);
+      }).join('');
+      boards = opsHubCatBoardHtml('today') + boards;
       return (
-        '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub ops-hub--today-first">' +
+        '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub ops-hub--flat">' +
         '<header class="ops-hub__intro">' +
         '<div class="ops-hub__intro-row">' +
         '<h1 class="ops-hub__intro-title">Operations Hub</h1>' +
@@ -31793,14 +31866,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<a class="ops-hub__help-link" href="/admin_office_help.html">Office help</a>' +
         '</div>' +
         '</header>' +
-        opsHubTodayStripHtml() +
-        opsHubGlanceHtml() +
-        '<section class="ops-hub-fixed" aria-label="Today">'+opsHubCatBoardHtml('today', { omitHead: true })+'</section>' +
-        '<section class="ops-hub-sheet'+(sheetOpen ? ' is-cat-open' : '')+'" aria-label="Open another category">' +
-        '<h2 class="ops-hub-sheet__title">Open another category</h2>' +
-        '<div class="ops-hub-cats" id="opsHubCats" role="tablist" aria-label="Other categories">'+opsHubCatButtonsHtml(sheetOpen ? sheet : '')+'</div>' +
-        '<div class="dash-hub__stack ops-hub__body ops-hub__body--flat" id="opsHubCatBoard">'+opsHubCatBoardHtml(sheet)+'</div>' +
-        '</section>' +
+        '<div class="ops-hub-flat">' +
+        '<div class="ops-hub-flat__board">' + boards + '</div>' +
+        '<aside class="ops-hub-flat__cal" aria-label="Calendar">' + opsHubGlanceHtml() + '</aside>' +
+        '</div>' +
         '</div>'
       );
     }
@@ -35082,6 +35151,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       if(id==='office_calendar') bindOfficeCalendarModule();
+      if(id==='finance_cancelled_services') bindFinanceCancelledServices();
       if(id==='bookings' || id==='orders_all' || id==='c4k_payments'){
         portalLoadLivePaymentsSource(function(changed){ if(changed && state.view===id) setView(id); });
         bindBookingModule();

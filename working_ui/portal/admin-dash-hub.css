@@ -4204,3 +4204,108 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
     word-break:break-word;
   }
 }
+
+/* Operations Hub — all used buttons, calendar on the side */
+.ops-hub--flat{
+  overflow:hidden;
+}
+.ops-hub-flat{
+  flex:1 1 auto;
+  min-height:0;
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(220px,280px);
+  gap:12px;
+  align-items:stretch;
+}
+.ops-hub-flat__board{
+  min-width:0;
+  min-height:0;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding-bottom:8px;
+}
+.ops-hub-flat__cal{
+  min-width:0;
+  min-height:0;
+}
+.ops-hub-flat__cal .ops-hub__today{
+  display:block;
+  margin:0;
+}
+.ops-hub-flat__cal .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
+  width:100%;
+  height:auto;
+  min-height:260px;
+  max-height:none;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:8px;
+  grid-template-columns:none;
+}
+.ops-hub-flat__cal .ops-hub-cal-glance__copy{
+  display:flex;
+  flex-direction:row;
+  align-items:baseline;
+  gap:8px;
+  min-width:0;
+}
+.ops-hub-flat__cal .ops-hub__today-k,
+.ops-hub-flat__cal .ops-hub__today-v,
+.ops-hub-flat__cal .ops-hub__today-s{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+.ops-hub--flat .dash-hub__panel{
+  padding:10px 12px 12px;
+}
+.ops-hub--flat .dash-hub__panel-title{
+  font-size:13px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.ops-hub--flat .dash-hub__panel-desc{display:none}
+.ops-hub--flat .ops-hub-flat__grid{
+  grid-template-columns:repeat(auto-fill,minmax(132px,1fr));
+  gap:8px;
+}
+.ops-hub--flat .dash-hub__tile{
+  min-height:0;
+  height:auto;
+  min-width:0;
+  padding:0 0 8px;
+}
+.ops-hub--flat .dash-hub__tile-desc{display:none}
+.ops-hub--flat .dash-hub__tile-label{
+  min-width:0;
+  padding:8px 8px 0;
+  font-size:12.5px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.ops-hub--flat .dash-hub__tile-band{
+  min-height:40px;
+  padding:6px;
+}
+@media (max-width:980px){
+  body:has(#workspace .ops-hub--flat) .admin-workspace,
+  body:has(#workspace .ops-hub--flat) .admin-main,
+  .ops-hub--flat{
+    overflow:auto;
+    height:auto;
+  }
+  .ops-hub-flat{
+    display:flex;
+    flex-direction:column;
+    overflow:visible;
+    min-height:0;
+  }
+  .ops-hub-flat__cal{order:-1}
+  .ops-hub-flat__board{overflow:visible}
+  .ops-hub-flat__cal .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
+    min-height:0;
+  }
+}
