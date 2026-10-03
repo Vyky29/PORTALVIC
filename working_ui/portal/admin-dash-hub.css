@@ -1561,13 +1561,23 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
   min-width:0;
   flex:0 1 auto;
 }
+.admin-page-head__tools{
+  display:inline-flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  max-width:100%;
+  flex:0 1 auto;
+}
 .admin-page-head__actions{
   margin-left:0;
   display:flex;
-  flex-wrap:wrap;
+  flex-wrap:nowrap;
   justify-content:flex-start;
   gap:8px;
   flex:0 1 auto;
+  min-width:0;
 }
 .admin-page-info{
   width:28px;

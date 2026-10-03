@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v175",
+  "version": "2026-10-03-v176",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -78,7 +78,7 @@
             }
           ],
           "steps": [
-            "On Overview, Schedules and Register the i button comes first, then the other two screens (Overview, Schedules, Register). Back to Sessions is last. The page you are on is left out. Incidents, Venue, Pick up, Lead report and Office calendar only have Back to Sessions.",
+            "On Overview, Schedules and Register the i button stays on the same line as the other two screens (Overview, Schedules, Register). Back to Sessions is last on that line. The page you are on is left out. Incidents, Venue, Pick up, Lead report and Office calendar only have Back to Sessions.",
             "Open Sessions Overview and pick the day you care about.",
             "Check booked kids, open seats, covers and day-off chrome on that date only. Each booked card shows that child's photo on the right.",
             "If something looks wrong, fix it in Schedule & Covers or Validate / HR day off — do not edit LOCAL for day-of checks.",
@@ -96,7 +96,7 @@
             "summary": "Overview es el unico tablero del dia en el que mirar. Las plazas fijas se repiten. Las excepciones vienen de Schedule & Covers y de los dias libres.",
             "where": "Today → Sessions overview",
             "steps": [
-              "En Overview, Schedules y Register va primero la i, luego las otras dos pantallas (Overview, Schedules, Register). Back to Sessions va al final. La pagina en la que ya estas no sale. Incidents, Venue, Pick up, Lead report y Office calendar solo llevan Back to Sessions.",
+              "En Overview, Schedules y Register la i va en la misma linea que las otras dos pantallas (Overview, Schedules, Register). Back to Sessions cierra esa linea. La pagina en la que ya estas no sale. Incidents, Venue, Pick up, Lead report y Office calendar solo llevan Back to Sessions.",
               "Abre Sessions Overview y elige el dia.",
               "Mira ninos reservados, plazas libres, covers y el dia libre, solo en esa fecha. Cada tarjeta con nino lleva su foto a la derecha.",
               "Si algo esta mal, arreglalo en Schedule & Covers o en Validate / HR day off. No edites LOCAL para mirar el dia.",

@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261003-hub-equal-btns" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261003-head-line" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -183,7 +183,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-sess-jumps7" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-sess-jumps9" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -2521,14 +2521,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var actions = (backBtn || extraActions || afterActions)
         ? '<div class="admin-page-head__actions">'+extraActions+backBtn+afterActions+'</div>'
         : '';
+      var tools = '<div class="admin-page-head__tools">'+infoBtn+actions+'</div>';
       var titleBlock = titleIconId
         ? (
           '<div class="admin-page-head__title-stack">'+
           '<span class="admin-page-head__title-ico" aria-hidden="true">'+adminNavIconHtml(titleIconId)+'</span>'+
-          '<div class="admin-page-head__lead">'+titleEl+infoBtn+actions+'</div>'+
+          '<div class="admin-page-head__lead">'+titleEl+tools+'</div>'+
           '</div>'
         )
-        : ('<div class="admin-page-head__lead">'+titleEl+infoBtn+actions+'</div>');
+        : ('<div class="admin-page-head__lead">'+titleEl+tools+'</div>');
       return (
         '<header class="admin-page-head'+headExtraClass+'">'+
         '<div class="admin-page-head__main">'+
@@ -2613,7 +2614,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v175')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v176')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
