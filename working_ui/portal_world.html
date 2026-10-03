@@ -46,15 +46,11 @@
       flex-direction: column;
     }
     header.top {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 16px;
-      align-items: center;
-      justify-content: space-between;
+      display: block;
       padding: 10px 16px 8px;
       color: #e7f3fa;
     }
-    header.top > div:first-child { min-width: 0; flex: 1 1 280px; }
+    header.top > div:first-child { min-width: 0; }
     header.top h1 {
       margin: 0;
       font-size: 22px;
@@ -71,8 +67,9 @@
     .stories {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
       min-width: 0;
+      margin-top: 8px;
     }
     .stories button {
       font: inherit;
@@ -110,10 +107,10 @@
         ". parent .";
       grid-template-columns: 1fr 1.08fr 1fr;
       grid-template-rows: auto auto auto;
-      gap: 8px 16px;
+      gap: 14px 22px;
       align-items: center;
       justify-items: center;
-      padding: 8px 348px 8px 12px;
+      padding: 10px 360px 12px 14px;
       background:
         radial-gradient(ellipse 28% 22% at 18% 40%, rgba(255,255,255,.16), transparent 70%),
         radial-gradient(ellipse 34% 26% at 50% 48%, rgba(255,255,255,.14), transparent 70%),
@@ -144,8 +141,9 @@
     #islands { display: contents; }
     .island {
       position: relative;
-      width: min(230px, 100%);
+      width: min(240px, 100%);
       min-width: 0;
+      max-width: 100%;
       padding: 10px 12px 10px;
       border: 0;
       text-align: left;
@@ -300,6 +298,40 @@
       border-color: #e2b14a;
       background: #fff8e8;
     }
+    .now {
+      margin-top: 12px;
+      padding: 12px 12px 10px;
+      border-radius: 14px;
+      background: #fff8e8;
+      border: 1px solid #e2b14a;
+      min-width: 0;
+    }
+    .now b {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: #8a5a10;
+    }
+    .now p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .pause {
+      margin-top: 10px;
+      font: inherit;
+      font-weight: 750;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 6px 12px;
+    }
     .legend {
       display: flex;
       flex-wrap: wrap;
@@ -360,7 +392,7 @@
     <header class="top">
       <div>
         <h1>El mundo de los portales</h1>
-        <p>Seis islas, por lo que hace cada una. Un paso puede encender varias a la vez. No es el parte de hoy.</p>
+        <p>Seis islas. Cada camino se lee en el panel, paso a paso, sin montarse encima del mapa. No es el parte de hoy.</p>
       </div>
       <div class="stories" id="stories" role="tablist" aria-label="Caminos"></div>
     </header>
@@ -567,6 +599,66 @@
       ]
     },
     {
+      id: "from-parent",
+      label: "Desde Parent",
+      actor: "A la vez",
+      steps: [
+        { islands: ["parent"], links: [], text: "La familia ya esta dentro del Parent. Abre Booking desde ahi para mirar otro servicio. No pide codigo." },
+        { islands: ["admin", "parent"], links: ["a-p"], text: "En Leads sale Parent portal, no Booking OTP. No hay formulario nuevo. El registro de antes sigue en el archivo." },
+        { islands: ["booking", "admin"], links: ["b-a"], text: "Si la plaza esta libre, la pueden coger. Si esta llena, pasan a la lista de espera. Admin ve por que puerta entraron." }
+      ]
+    },
+    {
+      id: "waiting",
+      label: "Lista de espera",
+      actor: "A la vez",
+      steps: [
+        { islands: ["booking", "admin"], links: ["b-a"], text: "El servicio esta lleno. Quien ya se registro y quiere esa plaza va a Waiting. No ocupa un asiento en Overview." },
+        { islands: ["admin"], links: [], text: "Waiting list es la cola. No es CLIENT. No es LEAD: el LEAD pidio codigo y no termino el registro." },
+        { islands: ["admin", "parent"], links: ["a-p"], text: "Cuando se abre un hueco, la oficina ofrece la plaza. Hasta entonces Parent no ve esa sesion como reservada." }
+      ]
+    },
+    {
+      id: "dayoff",
+      label: "Dia libre",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "Validate day o HR Add day off escribe el dia libre. Si ese dia hay ninos reservados y nadie cubre, sale COVER NEEDED." },
+        { islands: ["staff", "admin"], links: ["a-s"], text: "Staff Today muestra el dia libre y el cover. Halo y Quick menu. Parent no ve el dia libre ni COVER NEEDED." },
+        { islands: ["parent"], links: ["a-p"], text: "Team solo cambia el nombre cuando el cover ya tiene una persona. Sin nombre, la familia sigue viendo a su instructor." }
+      ]
+    },
+    {
+      id: "cancel-service",
+      label: "Cancelar servicio",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "Cancelar el servicio quita la plaza el resto del termino. No es la ausencia de un solo dia." },
+        { islands: ["admin", "parent"], links: ["a-p"], text: "Finance, Cancelled services, lo guarda. En Parent, Bookings deja de mostrar ese servicio. Overview deja de pintar al nino desde esa fecha." },
+        { islands: ["admin"], links: [], text: "La falta de un dia se queda en Absents, credits and refunds. El asiento del termino sigue." }
+      ]
+    },
+    {
+      id: "consent",
+      label: "Consentimiento",
+      actor: "A la vez",
+      steps: [
+        { islands: ["parent"], links: [], text: "En Consents la familia dice si se pueden usar fotos de logro." },
+        { islands: ["admin"], links: ["a-p"], text: "Parent consents, en Admin, enseña lo que firmaron. Sin ese si, la foto no sale a la familia." },
+        { islands: ["staff", "parent", "admin"], links: ["s-p", "a-p"], text: "Despues del feedback se puede subir la foto de logro. Parent la ve si el consentimiento lo permite. Si no, se queda en la oficina." }
+      ]
+    },
+    {
+      id: "credit",
+      label: "Credito",
+      actor: "A la vez",
+      steps: [
+        { islands: ["parent", "admin"], links: ["a-p"], text: "Una sesion que no se hizo puede dejar credito o un makeup. La pantalla de oficina es Absents, credits and refunds." },
+        { islands: ["admin", "booking"], links: ["b-a"], text: "El makeup es otra sesion, no un registro nuevo. La plaza del termino sigue, salvo que el servicio se haya cancelado." },
+        { islands: ["staff", "admin"], links: ["a-s"], text: "El dia del makeup entra en Schedule y en Staff Today como cualquier sesion. El feedback de ese dia cuenta aparte." }
+      ]
+    },
+    {
       id: "onboarding",
       label: "Onboarding",
       actor: "A la vez",
@@ -608,6 +700,7 @@
     story: "lead",
     step: 0,
     playing: true,
+    paused: false,
     timer: 0
   };
 
@@ -640,9 +733,18 @@
       var a = centers[link.from];
       var b = centers[link.to];
       if (!a || !b) return "";
-      var mx = (a.x + b.x) / 2;
-      var my = (a.y + b.y) / 2;
-      var d = "M " + a.x + " " + a.y + " Q " + mx + " " + (my - 4) + " " + b.x + " " + b.y;
+      var dx = b.x - a.x;
+      var dy = b.y - a.y;
+      var len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var pad = 9;
+      var x1 = a.x + (dx / len) * pad;
+      var y1 = a.y + (dy / len) * pad;
+      var x2 = b.x - (dx / len) * pad;
+      var y2 = b.y - (dy / len) * pad;
+      var bow = 7;
+      var cx = (x1 + x2) / 2 + (-dy / len) * bow;
+      var cy = (y1 + y2) / 2 + (dx / len) * bow;
+      var d = "M " + x1 + " " + y1 + " Q " + cx + " " + cy + " " + x2 + " " + y2;
       return '<path data-link="' + link.id + '" d="' + d + '"></path>';
     }).join("");
   }
@@ -698,12 +800,12 @@
     Array.prototype.forEach.call(islandsEl.querySelectorAll(".island"), function (el) {
       var id = el.getAttribute("data-island");
       el.classList.toggle("is-picked", id === state.island);
-      el.classList.toggle("is-hot", state.playing && hotIslands.indexOf(id) !== -1);
+      el.classList.toggle("is-hot", (state.playing || state.paused) && hotIslands.indexOf(id) !== -1);
     });
     Array.prototype.forEach.call(routesEl.querySelectorAll("path"), function (path) {
-      path.classList.toggle("is-hot", state.playing && hotLinks.indexOf(path.getAttribute("data-link")) !== -1);
+      path.classList.toggle("is-hot", (state.playing || state.paused) && hotLinks.indexOf(path.getAttribute("data-link")) !== -1);
     });
-    if (!state.playing) {
+    if (!state.playing && !state.paused) {
       traveler.hidden = true;
       return;
     }
@@ -717,19 +819,29 @@
     if (!r || !seaR.width) return;
     traveler.hidden = false;
     traveler.textContent = "A la vez";
+    var roomBelow = seaR.bottom - r.bottom;
     traveler.style.left = ((r.left + r.width / 2 - seaR.left) / seaR.width) * 100 + "%";
-    traveler.style.top = ((r.top - seaR.top) / seaR.height) * 100 + "%";
+    if (roomBelow > 36) {
+      traveler.style.top = ((r.bottom - seaR.top) / seaR.height) * 100 + "%";
+      traveler.style.transform = "translate(-50%, 8px)";
+    } else {
+      traveler.style.top = ((r.top - seaR.top) / seaR.height) * 100 + "%";
+      traveler.style.transform = "translate(-50%, -120%)";
+    }
   }
 
   function renderPanel() {
-    if (state.playing) {
+    if (state.playing || state.paused) {
       var story = storyById(state.story);
-      var steps = story.steps.map(function (step, i) {
-        return '<li data-step="' + i + '"' + (i === state.step ? ' class="is-now"' : "") + "><b>" + stepTitle(step) + ".</b> " + step.text + "</li>";
+      var step = story.steps[state.step] || story.steps[0];
+      var steps = story.steps.map(function (item, i) {
+        return '<li data-step="' + i + '"' + (i === state.step ? ' class="is-now"' : "") + "><b>" + stepTitle(item) + ".</b> " + item.text + "</li>";
       }).join("");
       panel.innerHTML =
         "<h2>" + story.label + "</h2>" +
-        '<p class="sub">Paso ' + (state.step + 1) + " de " + story.steps.length + ". Si el paso nombra varias islas, se encienden juntas. Pulsa una isla para parar.</p>" +
+        '<p class="sub">Paso ' + (state.step + 1) + " de " + story.steps.length + ". Las islas en dorado son este paso. Pulsa una isla si quieres leer solo esa isla.</p>" +
+        '<div class="now"><b>' + stepTitle(step) + '</b><p>' + step.text + "</p></div>" +
+        '<button type="button" class="pause" data-pause="1">' + (state.paused ? "Seguir" : "Pausa") + "</button>" +
         '<div class="block"><ol class="steps">' + steps + "</ol></div>";
       return;
     }
@@ -752,24 +864,26 @@
 
   function stop() {
     state.playing = false;
+    state.paused = false;
     if (state.timer) window.clearTimeout(state.timer);
     state.timer = 0;
   }
 
   function tick() {
-    if (!state.playing) return;
+    if (!state.playing || state.paused) return;
     var story = storyById(state.story);
     state.timer = window.setTimeout(function () {
       state.step = (state.step + 1) % story.steps.length;
       paint();
       tick();
-    }, 2600);
+    }, 5200);
   }
 
   function play(id) {
     state.story = id;
     state.step = 0;
     state.playing = true;
+    state.paused = false;
     state.person = "";
     if (state.timer) window.clearTimeout(state.timer);
     paint();
@@ -810,12 +924,21 @@
   });
 
   panel.addEventListener("click", function (ev) {
+    var pauseBtn = ev.target.closest("[data-pause]");
+    if (pauseBtn && (state.playing || state.paused)) {
+      state.paused = !state.paused;
+      if (state.timer) window.clearTimeout(state.timer);
+      state.timer = 0;
+      if (!state.paused) tick();
+      paint();
+      return;
+    }
     var step = ev.target.closest("[data-step]");
-    if (!step || !state.playing) return;
+    if (!step || (!state.playing && !state.paused)) return;
     if (state.timer) window.clearTimeout(state.timer);
     state.step = Number(step.getAttribute("data-step")) || 0;
+    state.paused = true;
     paint();
-    tick();
   });
 
   renderIslands();

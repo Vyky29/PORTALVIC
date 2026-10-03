@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v162",
+  "version": "2026-10-03-v163",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2430,7 +2430,8 @@
             "Press Onboarding. Admin starts it from Potential workers. The same login then opens Staff. Admin Workers reads the forms and Documents keeps the files.",
             "Press Timesheet. Hours follow the Admin shift and the Staff feedback. A new submit replaces the downloaded file.",
             "Press Expense. Staff sends it. Admin Documents keeps it Pending until Mark paid.",
-            "The other paths are the account, soft hold, the session day, a cover, an absence, and an unpaid invoice."
+            "The other paths are the account, soft hold, the session day, a cover, an absence, and an unpaid invoice. Also: from Parent (no code), waiting list, day off, cancel a service, consent and photo, and credit or makeup.",
+            "Pausa leaves the step still. Click a step to read it. The gold islands are the ones in that step. The text sits in the side panel, not on top of the islands."
           ],
           "tips": [
             "The paths show how the portals talk. They are not today's live log.",
