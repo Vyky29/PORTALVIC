@@ -4631,53 +4631,83 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   .ops-hub--flat .dash-hub__panel-head{margin-bottom:4px}
 }
 
-/* Sessions box stays pink. The three buttons inside each get their own wash and outline. */
-.ops-hub--flat .ops-hub-panel--today .dash-hub__tile{
-  --sess-bg:#ecfdf5;
-  --sess-line:#5eead4;
-  --sess-ink:#0f766e;
-  background:linear-gradient(165deg, var(--sess-bg) 0%, #fff 68%);
-  border:1.5px solid var(--sess-line);
+/* Each button uses its category colour: pink Sessions, and the same idea for the rest. */
+.ops-hub--flat .ops-hub-panel--today{--hub-tile-bg:#fbcfe8;--hub-tile-line:#f472b6;--hub-tile-ink:#be185d}
+.ops-hub--flat .ops-hub-panel--families{--hub-tile-bg:#ddd6fe;--hub-tile-line:#a78bfa;--hub-tile-ink:#6d28d9}
+.ops-hub--flat .ops-hub-panel--services{--hub-tile-bg:#fed7aa;--hub-tile-line:#fb923c;--hub-tile-ink:#c2410c}
+.ops-hub--flat .ops-hub-panel--finance{--hub-tile-bg:#99f6e4;--hub-tile-line:#2dd4bf;--hub-tile-ink:#0f766e}
+.ops-hub--flat .ops-hub-panel--formal{--hub-tile-bg:#fecaca;--hub-tile-line:#f87171;--hub-tile-ink:#b91c1c}
+.ops-hub--flat .ops-hub-panel--potential{--hub-tile-bg:#e2e8f0;--hub-tile-line:#94a3b8;--hub-tile-ink:#334155}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile,
+.ops-hub--flat .ops-hub-panel--families .dash-hub__tile,
+.ops-hub--flat .ops-hub-panel--services .dash-hub__tile,
+.ops-hub--flat .ops-hub-panel--finance .dash-hub__tile,
+.ops-hub--flat .ops-hub-panel--formal .dash-hub__tile,
+.ops-hub--flat .ops-hub-panel--potential .dash-hub__tile{
+  background:var(--hub-tile-bg);
+  border:2px solid var(--hub-tile-line);
   box-shadow:none;
-  color:var(--sess-ink);
-  justify-content:center;
-  align-items:center;
-  gap:8px;
-  padding:12px 8px;
-}
-.ops-hub--flat .ops-hub-panel--today .dash-hub__tile[data-view-target="scheduling"]{
-  --sess-bg:#fff7ed;
-  --sess-line:#fdba74;
-  --sess-ink:#c2410c;
-}
-.ops-hub--flat .ops-hub-panel--today .dash-hub__tile[data-dayops-act="sessions_hub_feedback"]{
-  --sess-bg:#f5f3ff;
-  --sess-line:#c4b5fd;
-  --sess-ink:#6d28d9;
+  color:var(--hub-tile-ink);
 }
 .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band,
-.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band .admin-nav-ico{
+.ops-hub--flat .ops-hub-panel--families .dash-hub__tile-band,
+.ops-hub--flat .ops-hub-panel--services .dash-hub__tile-band,
+.ops-hub--flat .ops-hub-panel--finance .dash-hub__tile-band,
+.ops-hub--flat .ops-hub-panel--formal .dash-hub__tile-band,
+.ops-hub--flat .ops-hub-panel--potential .dash-hub__tile-band,
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-label,
+.ops-hub--flat .ops-hub-panel--families .dash-hub__tile-label,
+.ops-hub--flat .ops-hub-panel--services .dash-hub__tile-label,
+.ops-hub--flat .ops-hub-panel--finance .dash-hub__tile-label,
+.ops-hub--flat .ops-hub-panel--formal .dash-hub__tile-label,
+.ops-hub--flat .ops-hub-panel--potential .dash-hub__tile-label{
   background:transparent;
-  color:var(--sess-ink);
-  flex:0 0 auto;
-  width:auto;
-  max-height:none;
-  min-height:0;
-  height:auto;
-  margin:0;
-  border-radius:0;
-  padding:0;
+  color:var(--hub-tile-ink);
 }
-.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-label{
-  background:transparent;
-  color:var(--sess-ink);
-  text-align:center;
-  width:100%;
-  margin:0;
-  padding:0 6px;
-  flex:0 0 auto;
-}
-.ops-hub--flat .ops-hub-panel--today .dash-hub__tile:hover,
-.ops-hub--flat .ops-hub-panel--today .dash-hub__tile:focus-visible{
-  border-color:var(--sess-ink);
+@media (min-width:981px){
+  .ops-hub--flat .dash-hub__tile{
+    container-type:size;
+    justify-content:center;
+    align-items:center;
+    gap:4px;
+    padding:8px 6px;
+  }
+  .ops-hub--flat .dash-hub__tile-band{
+    flex:1 1 auto;
+    width:100%;
+    max-height:none;
+    min-height:0;
+    height:auto;
+    margin:0;
+    padding:0;
+    border-radius:0;
+    background:transparent;
+  }
+  .ops-hub--flat .dash-hub__tile-band .admin-nav-ico,
+  .ops-hub--flat .dash-hub__tile-band .admin-nav-ico svg,
+  .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band .admin-nav-ico,
+  .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band .admin-nav-ico svg{
+    width:clamp(22px, 52cqmin, 68px);
+    height:clamp(22px, 52cqmin, 68px);
+  }
+  .ops-hub--flat .dash-hub__tile-label,
+  .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-label{
+    flex:0 0 auto;
+    width:100%;
+    max-width:100%;
+    margin:0;
+    padding:0 2px;
+    font-size:clamp(11px, 20cqmin, 18px);
+    font-weight:800;
+    line-height:1.15;
+    letter-spacing:.01em;
+    text-align:center;
+    overflow-wrap:normal;
+    word-break:normal;
+    hyphens:manual;
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:3;
+    overflow:hidden;
+  }
 }
