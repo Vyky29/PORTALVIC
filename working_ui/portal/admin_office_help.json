@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v169",
+  "version": "2026-10-03-v170",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2480,7 +2480,8 @@
           "tips": [
             "The paths show how the portals talk. They are not today's live log.",
             "Onboarding and Staff share the staff host and the same account. Parents never open that host.",
-            "Soft hold after a trial blocks that seat on Booking until the end of that London day. The 30 minute hold is the unpaid pay link. They are not the same."
+            "Soft hold after a trial blocks that seat on Booking until the end of that London day. The 30 minute hold is the unpaid pay link. They are not the same.",
+            "Around the portals: Stripe is the card, GoCardless is the monthly charge, Xero keeps the invoice draft, email sends the OTP, WhatsApp is Business plus the Parents and Staff APIs, and Comms is the in-app call. Comms is not WhatsApp."
           ],
           "es": {
             "title": "CS World",
@@ -2498,7 +2499,8 @@
             "tips": [
               "Los caminos ensenan como se hablan los portales. No son el parte de hoy.",
               "Onboarding y Staff comparten el host de staff y la misma cuenta. Los padres no entran ahi.",
-              "El soft hold de un trial ocupa la plaza en Booking hasta el final de ese dia en Londres. El hold de 30 minutos es el enlace de pago sin cobrar. No son lo mismo."
+              "El soft hold de un trial ocupa la plaza en Booking hasta el final de ese dia en Londres. El hold de 30 minutos es el enlace de pago sin cobrar. No son lo mismo.",
+              "Alrededor: Stripe es la tarjeta, GoCardless es la cuota mensual, Xero guarda el borrador de la factura, el email manda el OTP, WhatsApp es Business mas las APIs de Parents y Staff, y Comms es la llamada dentro del portal. Comms no es WhatsApp."
             ]
           }
         }

@@ -112,15 +112,18 @@
       overflow: auto;
       display: grid;
       grid-template-areas:
-        "ceo auto onb"
-        "booking admin staff"
-        ". parent .";
-      grid-template-columns: minmax(0,1fr) minmax(0,1.05fr) minmax(0,1fr);
-      grid-template-rows: auto auto auto;
-      gap: 16px 26px;
+        "email . motor . wa"
+        "ceo . . . onb"
+        "booking . admin . staff"
+        "stripe . xero . comms"
+        "gc . parent . .";
+      grid-template-columns: minmax(132px, 188px) minmax(56px, 1.15fr) minmax(150px, 200px) minmax(56px, 1.15fr) minmax(132px, 188px);
+      grid-template-rows: auto auto auto auto auto;
+      gap: 18px 0;
       align-items: center;
       justify-items: center;
-      padding: 10px 360px 12px 14px;
+      align-content: center;
+      padding: 14px 348px 16px 16px;
       background:
         radial-gradient(ellipse 28% 22% at 18% 40%, rgba(255,255,255,.16), transparent 70%),
         radial-gradient(ellipse 34% 26% at 50% 48%, rgba(255,255,255,.14), transparent 70%),
@@ -156,7 +159,7 @@
     #islands { display: contents; }
     .island {
       position: relative;
-      width: 100%;
+      width: min(188px, 100%);
       min-width: 0;
       max-width: 100%;
       padding: 8px 10px 10px;
@@ -164,20 +167,31 @@
       text-align: left;
       color: inherit;
       cursor: pointer;
-      border-radius: 16px;
+      border-radius: 22px;
       box-shadow: 0 10px 22px rgba(0,0,0,.22);
       z-index: 2;
+    }
+    .island--sat {
+      width: min(142px, 100%);
+      padding: 7px 9px 8px;
+      border-radius: 18px;
     }
     .island:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
     .island.is-picked { box-shadow: 0 0 0 3px rgba(244,183,64,.7), 0 10px 22px rgba(0,0,0,.22); }
     .island.is-hot { box-shadow: 0 0 0 3px #f4b740, 0 10px 22px rgba(0,0,0,.22); }
     .island--ceo { grid-area: ceo; background: linear-gradient(180deg, #24344d, #172536); color: #f6edd4; }
-    .island--auto { grid-area: auto; background: linear-gradient(180deg, #e2a322, #b47410); color: #3a2804; }
+    .island--auto { grid-area: motor; background: linear-gradient(180deg, #e2a322, #b47410); color: #3a2804; }
     .island--booking { grid-area: booking; background: linear-gradient(180deg, #f0d7a0, #e2b86a); color: #4a3412; }
     .island--admin { grid-area: admin; z-index: 3; background: linear-gradient(180deg, #1f8f7e, #14685c); color: #f3fffc; }
     .island--staff { grid-area: staff; background: linear-gradient(180deg, #3f7ebf, #2a5f96); color: #f4f9ff; }
     .island--onb { grid-area: onb; background: linear-gradient(180deg, #6d5bd0, #43358f); color: #f6f3ff; }
     .island--parent { grid-area: parent; background: linear-gradient(180deg, #f6c7bc, #e7a294); color: #5c2c30; }
+    .island--email { grid-area: email; background: #e7eef6; color: #1e3a5f; }
+    .island--wa { grid-area: wa; background: #d9f5e5; color: #14532d; }
+    .island--stripe { grid-area: stripe; background: #e4e4ff; color: #312e81; }
+    .island--gc { grid-area: gc; background: #d7efe4; color: #064e3b; }
+    .island--xero { grid-area: xero; background: #d7f3fb; color: #0c4a6e; }
+    .island--comms { grid-area: comms; background: linear-gradient(180deg, #3d4f6f, #24344c); color: #f4f7fb; }
     .kicker {
       display: block;
       font-size: 10px;
@@ -189,9 +203,11 @@
     .island strong.name {
       display: block;
       margin-top: 2px;
-      font-size: 18px;
+      font-size: 16px;
       letter-spacing: -0.02em;
+      overflow-wrap: break-word;
     }
+    .island--sat strong.name { font-size: 14px; }
     .host {
       display: block;
       margin-top: 2px;
@@ -217,6 +233,7 @@
     }
     .chip { background: rgba(255,255,255,.2); }
     .island--booking .chip, .island--parent .chip, .island--auto .chip { background: rgba(255,255,255,.55); color: #3a2804; }
+    .island--sat .chip { background: rgba(255,255,255,.72); color: inherit; }
     #dots {
       position: absolute;
       inset: 0;
@@ -373,10 +390,10 @@
       html, body, .app { height: auto; overflow: auto; }
       .stage { display: flex; flex-direction: column; }
       .sea {
-        height: 640px;
-        min-height: 640px;
-        padding: 10px;
-        overflow: hidden;
+        height: auto;
+        min-height: 860px;
+        padding: 12px;
+        overflow: visible;
       }
       aside.panel {
         position: relative;
@@ -395,7 +412,7 @@
     <header class="top">
       <div>
         <h1>El mundo de los portales</h1>
-        <p>Elige un mundo y luego un camino. La linea dorada se enciende y el punto viaja hasta el portal que se entera. No es el parte de hoy.</p>
+        <p>Elige un mundo y luego un camino. Los portales quedan separados para que se vea la linea. Alrededor estan Stripe, GoCardless, Xero, el email, WhatsApp y Comms. No es el parte de hoy.</p>
       </div>
       <div class="worlds" id="worlds" role="tablist" aria-label="Mundos"></div>
       <div class="stories" id="stories" role="tablist" aria-label="Caminos"></div>
@@ -547,6 +564,107 @@
         "Cuando la persona entra en Staff, es la misma cuenta. Si falta algo del alta, Onboarding sigue en el menu de Staff.",
         "Admin Workers lee el job y el health. Documents guarda los archivos."
       ]
+    },
+    {
+      id: "email",
+      cls: "island--sat island--email",
+      kicker: "Fuera",
+      name: "Email",
+      host: "Correo",
+      short: "codigo y avisos",
+      x: 0, y: 0,
+      chips: ["OTP", "Oficina"],
+      home: [],
+      visit: [],
+      happens: [
+        "El codigo OTP sale por email a la familia. Dura unos 10 minutos.",
+        "Si el lead es nuevo, la oficina tambien recibe un email. Un codigo repetido no vuelve a avisar.",
+        "Ese email no sale por WhatsApp."
+      ]
+    },
+    {
+      id: "wa",
+      cls: "island--sat island--wa",
+      kicker: "Fuera",
+      name: "WhatsApp",
+      host: "Business y dos APIs",
+      short: "familias y staff",
+      x: 0, y: 0,
+      chips: ["Business", "Parents API", "Staff API"],
+      home: [],
+      visit: [],
+      happens: [
+        "Business manda plantillas. El chase del feedback a las 20:30 sale por aqui.",
+        "Parents API es el hilo con las familias.",
+        "Staff API es el hilo con los trabajadores.",
+        "No es Comms. Comms es la llamada y el mensaje dentro del portal."
+      ]
+    },
+    {
+      id: "stripe",
+      cls: "island--sat island--stripe",
+      kicker: "Cobro",
+      name: "Stripe",
+      host: "Tarjeta y Apple Pay",
+      short: "tarjeta",
+      x: 0, y: 0,
+      chips: ["Card", "Apple Pay"],
+      home: [],
+      visit: [],
+      happens: [
+        "La tarjeta del enlace de finish-booking entra por Stripe.",
+        "Cuando cobra, Automatizaciones escribe Admin, Staff y Parent.",
+        "La mensualidad del termino no es Stripe. Eso es GoCardless."
+      ]
+    },
+    {
+      id: "gc",
+      cls: "island--sat island--gc",
+      kicker: "Cobro",
+      name: "GoCardless",
+      host: "Domiciliacion",
+      short: "mensual",
+      x: 0, y: 0,
+      chips: ["Direct debit"],
+      home: [],
+      visit: [],
+      happens: [
+        "La cuota mensual del termino se cobra por GoCardless.",
+        "Si falla, Automatizaciones pone soft hold. La plaza sigue de esa familia.",
+        "No cancela la plaza solo."
+      ]
+    },
+    {
+      id: "xero",
+      cls: "island--sat island--xero",
+      kicker: "Cuentas",
+      name: "Xero",
+      host: "Facturas",
+      short: "borradores",
+      x: 0, y: 0,
+      chips: ["Invoices", "Products"],
+      home: [],
+      visit: [],
+      happens: [
+        "El cobro de una plaza y el re-enrolment dejan el borrador de la factura en Xero.",
+        "Admin Finance lo lee. Xero no mueve el tablero del dia."
+      ]
+    },
+    {
+      id: "comms",
+      cls: "island--comms",
+      kicker: "Llamadas",
+      name: "Comms",
+      host: "comunicaciones",
+      short: "llamada y chat",
+      x: 0, y: 0,
+      chips: ["Llamada", "Video", "Mensaje"],
+      home: [],
+      visit: [],
+      happens: [
+        "Es el portal de la oficina con los trabajadores: llamada, video y mensaje dentro de la app.",
+        "No es WhatsApp y no cambia la plaza ni el feedback."
+      ]
     }
   ];
 
@@ -565,7 +683,16 @@
     { id: "s-p", from: "staff", to: "parent", label: "Feedback que sale en la Today card" },
     { id: "a-c", from: "admin", to: "ceo", bow: -8, label: "Cifras, visitantes y padres en el portal" },
     { id: "b-c", from: "booking", to: "ceo", bow: -5, label: "Visitantes de Booking" },
-    { id: "p-c", from: "parent", to: "ceo", bow: -18, label: "Quien esta dentro de Parent" }
+    { id: "p-c", from: "parent", to: "ceo", bow: -18, label: "Quien esta dentro de Parent" },
+    { id: "b-stripe", from: "booking", to: "stripe", bow: 4, label: "Tarjeta y Apple Pay" },
+    { id: "b-gc", from: "booking", to: "gc", bow: -6, label: "Cuota mensual" },
+    { id: "a-xero", from: "admin", to: "xero", bow: 6, label: "Borrador de factura" },
+    { id: "auto-email", from: "auto", to: "email", bow: 5, label: "Codigo OTP y aviso de lead nuevo" },
+    { id: "auto-wa", from: "auto", to: "wa", bow: -5, label: "Plantillas, Parents API y Staff API" },
+    { id: "a-comms", from: "admin", to: "comms", bow: 8, label: "Llamada y mensaje con el equipo" },
+    { id: "s-comms", from: "staff", to: "comms", bow: -4, label: "La misma llamada, del lado del trabajador" },
+    { id: "s-wa", from: "staff", to: "wa", bow: 6, label: "Hilo Staff API" },
+    { id: "p-wa", from: "parent", to: "wa", bow: 10, label: "Hilo Parents API" }
   ];
 
   var STORIES = [
@@ -925,6 +1052,61 @@
         { islands: ["booking", "ceo"], links: ["b-c"], text: "Quien entra en Booking queda como visitante. CEO lo lee. No opera el dia." },
         { islands: ["parent", "ceo"], links: ["p-c"], text: "Quien esta dentro de Parent tambien se ve en CEO. El look-here del dia sigue siendo Admin Overview." }
       ]
+    },
+    {
+      id: "pay-card",
+      label: "Stripe",
+      actor: "A la vez",
+      steps: [
+        { islands: ["booking", "stripe"], links: ["b-stripe"], text: "La familia paga con tarjeta en el enlace. Entra por Stripe, tambien Apple Pay." },
+        { islands: ["stripe", "auto", "admin", "staff", "parent"], links: ["b-auto", "auto-a", "auto-s", "auto-p"], text: "Al cobrar, el punto pasa por Automatizaciones y llega a Admin, Staff y Parent. La mensualidad del termino no es esta caja." }
+      ]
+    },
+    {
+      id: "pay-gc",
+      label: "GoCardless",
+      actor: "A la vez",
+      steps: [
+        { islands: ["booking", "gc"], links: ["b-gc"], text: "La cuota mensual del termino se cobra por GoCardless. No es la tarjeta." },
+        { islands: ["gc", "auto", "booking", "admin"], links: ["auto-b", "auto-a"], text: "Si el cobro falla, Automatizaciones pone soft hold en Booking y avisa a Admin. La plaza sigue de esa familia." }
+      ]
+    },
+    {
+      id: "xero-draft",
+      label: "Xero",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin", "xero"], links: ["a-xero"], text: "Admin Finance deja el borrador de la factura en Xero. Tambien el re-enrolment." },
+        { islands: ["xero", "admin"], links: ["a-xero"], text: "Xero guarda la factura. No mueve Overview ni la plaza del dia." }
+      ]
+    },
+    {
+      id: "mail-out",
+      label: "Email",
+      actor: "A la vez",
+      steps: [
+        { islands: ["auto", "email"], links: ["auto-email"], text: "Automatizaciones manda el codigo OTP por email a la familia." },
+        { islands: ["email", "auto", "admin"], links: ["auto-email", "auto-a"], text: "Si el lead es nuevo, el aviso de la oficina tambien es un email. No sale por WhatsApp." }
+      ]
+    },
+    {
+      id: "wa-lanes",
+      label: "WhatsApp",
+      actor: "A la vez",
+      steps: [
+        { islands: ["auto", "wa"], links: ["auto-wa"], text: "WhatsApp tiene tres carriles: Business (plantillas), Parents API y Staff API." },
+        { islands: ["wa", "staff", "parent"], links: ["s-wa", "p-wa"], text: "El chase de las 20:30 es una plantilla. El hilo con la familia es Parents API. El hilo con el trabajador es Staff API." },
+        { islands: ["comms"], links: [], text: "La llamada y el chat de dentro del portal son Comms. No pasan por WhatsApp." }
+      ]
+    },
+    {
+      id: "comms-call",
+      label: "Llamadas",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin", "comms", "staff"], links: ["a-comms", "s-comms"], text: "Comms es el portal de llamada, video y mensaje entre la oficina y el trabajador." },
+        { islands: ["comms", "wa"], links: [], text: "No es el WhatsApp. No cambia la plaza ni el feedback." }
+      ]
     }
   ];
 
@@ -936,6 +1118,7 @@
     { id: "auto", label: "Automatizaciones" },
     { id: "admin", label: "Admin" },
     { id: "staff", label: "Staff" },
+    { id: "comms", label: "Comms" },
     { id: "parent", label: "Parent" },
     { id: "onb", label: "Onboarding" },
     { id: "ceo", label: "CEO" }
@@ -969,6 +1152,12 @@
     "staff-pin": "staff",
     payslip: "staff",
     annual: "staff",
+    "pay-card": "booking",
+    "pay-gc": "booking",
+    "xero-draft": "admin",
+    "mail-out": "auto",
+    "wa-lanes": "auto",
+    "comms-call": "comms",
     absence: "parent",
     invoice: "parent",
     "from-parent": "parent",
