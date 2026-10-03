@@ -817,7 +817,32 @@
     }
     .c4k-sessions-hub-tab__ico .admin-nav-ico{display:inline-flex;width:20px;height:20px}
     .c4k-sessions-hub-tab__ico .admin-nav-ico svg{width:16px;height:16px;display:block}
-    .c4k-sessions-hub-tab__label{min-width:0;line-height:1.25}
+    .c4k-sessions-hub-tab__label{min-width:0;line-height:1.25;overflow-wrap:break-word}
+    .admin-page-head__actions .c4k-sessions-hub-tabs--head{
+      display:flex;flex:0 1 auto;flex-wrap:wrap;align-items:center;gap:6px;
+      min-width:0;max-width:100%
+    }
+    .admin-page-head__actions .c4k-sessions-hub-tab{
+      padding:6px 10px;font-size:12.5px
+    }
+    @media (max-width:720px){
+      .admin-page-head:has(.c4k-sessions-hub-tabs--head) .admin-page-head__lead,
+      .admin-page-head:has(.c4k-sessions-hub-tabs--head) .admin-page-head__actions,
+      .admin-page-head:has(.c4k-sessions-hub-tabs--head) .c4k-sessions-hub-tabs--head{
+        flex-wrap:wrap
+      }
+      .admin-page-head:has(.c4k-sessions-hub-tabs--head) .admin-page-head__title{
+        flex:0 1 auto;max-width:100%;min-width:0;
+        overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+      }
+      .admin-page-head:has(.c4k-sessions-hub-tabs--head) .admin-page-head__actions{
+        display:contents
+      }
+      body.admin-touch-compact .admin-page-head .c4k-sessions-hub-tabs--head,
+      .admin-page-head:has(.c4k-sessions-hub-tabs--head) .c4k-sessions-hub-tabs--head{
+        display:contents
+      }
+    }
     .c4k-hub-week-host{margin-bottom:14px;min-width:0}
     .c4k-hub-day-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;min-width:0}
     @media (max-width:900px){
