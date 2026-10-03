@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v214",
+  "version": "2026-10-03-v215",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -839,7 +839,8 @@
           "steps": [
             "The page opens on Portal OTP only. Each row is a parent who asked for a code, or who opened Booking from the family hub.",
             "Lead is how they came in. OTP means they asked for a code on the booking page. Parent portal means they were already in the family hub. No code.",
-            "Type is who they were on that visit. New visitor, First time: we did not know them. Registered: we already knew them and they are not ACTIVE. The line under it is OLD CLIENT, TRIAL, WAITING LIST, or REGISTERED. An old client who comes back as a visitor is Registered (OLD CLIENT). ACTIVE already has a place.",
+            "Each row is one visit. The same parent can appear twice. Someone who is not ACTIVE has no parent-portal code, so they come in by OTP.",
+            "Type is who they were on that visit. New visitor, First time. Registered: they sent the form on that first visit. Did not register: they only asked for the code. Coming back by OTP, already registered and not ACTIVE, is Registered. ACTIVE already has a place and can open the parent portal.",
             "Outcome is what that visit did. Only looked stays on Leads. Waiting list also shows on WAITING. Trial also shows on TRIAL. Term also shows on Active. A first OTP visit that books a trial is Trial. Coming back later with OTP and booking the term is Term.",
             "Activity and Enquiry stay hidden when every row on screen is empty. They show on the office list, when you typed a note.",
             "Track status is not on the Portal OTP table. It stays on the office list. Booked takes that email off the marketing list. It does not change Outcome.",
@@ -857,7 +858,8 @@
             "steps": [
               "La pagina abre en Portal OTP. Cada fila es un padre que pidio un codigo, o que abrio Booking desde el hub de la familia.",
               "Lead es como entraron. OTP: pidieron un codigo en Booking. Parent portal: ya estaban en el hub. Sin codigo.",
-              "Type es quien eran en esa visita. New visitor, First time: no los conociamos. Registered: ya los conociamos y no son ACTIVE. Debajo sale OLD CLIENT, TRIAL, WAITING LIST o REGISTERED. Un OLD que vuelve como visitante es Registered (OLD CLIENT). ACTIVE ya tiene plaza.",
+              "Cada fila es una visita. El mismo padre puede salir dos veces. Quien no es ACTIVE no tiene codigo del parent portal, asi que entra por OTP.",
+              "Type es quien eran en esa visita. New visitor, First time. Registered: mandaron el formulario en esa primera visita. Did not register: solo pidieron el codigo. Si vuelven por OTP, ya registrados y no ACTIVE, es Registered. ACTIVE ya tiene plaza y puede abrir el parent portal.",
               "Outcome es lo que hizo esa visita. Only looked se queda en Leads. Waiting list tambien sale en WAITING. Trial tambien sale en TRIAL. Term tambien sale en Active. La primera vez con OTP que reserva un trial es Trial. Si vuelve despues con OTP y reserva el term, es Term.",
               "Activity y Enquiry no salen si todas las filas de la pantalla estan vacias. Salen en la lista de oficina, cuando escribiste una nota.",
               "Track status no esta en la tabla de Portal OTP. Se queda en la lista de oficina. Booked saca ese email de la lista de marketing. No cambia Outcome.",

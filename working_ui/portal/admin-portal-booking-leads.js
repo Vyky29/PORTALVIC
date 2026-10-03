@@ -167,13 +167,36 @@
     if (kind === "registered") {
       return { key: "registered", label: "Registered", note: bucket, tone: "info" };
     }
-    if (kind === "new") return { key: "new", label: "New visitor", note: "First time", tone: "pend" };
-    return { key: "new", label: "New visitor", note: "First time", tone: "pend" };
+    if (kind === "new") {
+      var registeredNow = r.registered_this_visit === true;
+      return {
+        key: "new",
+        label: "New visitor",
+        note: registeredNow ? "First time. Registered." : "First time. Did not register.",
+        tone: "pend",
+      };
+    }
+    return {
+      key: "new",
+      label: "New visitor",
+      note: "First time. Did not register.",
+      tone: "pend",
+    };
   }
 
   /** Parent hub opens Booking with no code. Booking OTP is a code asked on the booking page. */
   function entryWay(r) {
     r = r || {};
+    if (r.visit_entry === "otp") {
+      return { key: "otp", label: "OTP", note: "Asked for a code on Booking." };
+    }
+    if (r.visit_entry === "parent") {
+      return {
+        key: "parent",
+        label: "Parent portal",
+        note: "Opened Booking from the parent hub.",
+      };
+    }
     var source = String(r.source || "").toLowerCase();
     var client = String(r.client_status || "").toLowerCase();
     var existing =
@@ -458,7 +481,7 @@
         : "") +
       "</td>" +
       "<td>" +
-      esc(formatWhen(r.last_activity_at || r.created_at)) +
+      esc(formatWhen(r.visit_at || r.last_activity_at || r.created_at)) +
       "</td>" +
       "</tr>"
     );
@@ -661,12 +684,12 @@
       selectionBarHtml() +
       '<div class="grid-kpi" style="margin:0 0 14px">' +
       '<div class="kpi"><div class="kpi-l">' +
-      (state.origin === "portal" ? "OTP leads" : "Shown now") +
+      (state.origin === "portal" ? "Visits" : "Shown now") +
       '</div><div class="kpi-v">' +
       esc(rows.length) +
       '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">' +
       (state.origin === "portal"
-        ? "Only looked stays on Leads. Waiting list, Trial and Term also show on those lists. Term shows on Active. An old client who comes back is Registered (OLD CLIENT)."
+        ? "Each row is one visit. Someone who is not ACTIVE has no parent-portal code, so they come in by OTP. New visitor is the first time: Registered if they sent the form, Did not register if they did not. Coming back is Registered."
         : "This origin is the office list. Add / update potential client is only here.") +
       "</div></div></div>" +
       '<div class="card"><div class="card-pad" style="overflow:auto;padding:0;min-width:0">' +
@@ -677,7 +700,7 @@
       (cols.activity ? "<th>Activity</th>" : "") +
       (cols.enquiry ? "<th>Enquiry</th>" : "") +
       '<th title="OTP asked for a code on Booking. Parent portal opened Booking from the family hub.">Lead</th>' +
-      '<th title="New visitor is the first time. Registered is someone we already know who is not ACTIVE: OLD CLIENT, WAITING LIST, TRIAL, or REGISTERED. ACTIVE already has a place.">Type</th>' +
+      '<th title="New visitor is the first time. Registered means they sent the form. Did not register means they only asked for the code. Coming back by OTP, already registered and not ACTIVE, is Registered. ACTIVE already has a place and can open the parent portal.">Type</th>' +
       (cols.track
         ? '<th title="Office list only. Booked takes the email off the marketing list. It does not change Outcome.">Track status</th>'
         : "") +

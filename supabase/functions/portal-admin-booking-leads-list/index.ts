@@ -80,6 +80,7 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
   const standing = new Set<string>();
   const history = new Set<string>();
   const namesByEmail = new Map<string, string[]>();
+  const formsByEmail = new Map<string, number[]>();
   const emailSet = new Set(emails);
   if (emails.length) {
     const [peopleRes, rosterRes, docsRes] = await Promise.all([
@@ -89,7 +90,10 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
         .select("client_name, session_date, status")
         .eq("status", "active")
         .limit(2000),
-      admin.from("portal_participant_documents").select("parent_email, participant_name").limit(2000),
+      admin
+        .from("portal_participant_documents")
+        .select("parent_email, participant_name, form_type, submitted_at")
+        .limit(2000),
     ]);
     if (peopleRes.error) console.warn("[portal-admin-booking-leads-list] people", peopleRes.error.message);
     if (rosterRes.error) console.warn("[portal-admin-booking-leads-list] roster", rosterRes.error.message);
@@ -112,6 +116,13 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
       const list = namesByEmail.get(em) || [];
       if (!list.includes(n)) list.push(n);
       namesByEmail.set(em, list);
+      const formType = String(row.form_type || "").toLowerCase();
+      if (formType && formType !== "client_registration") continue;
+      const submitted = new Date(String(row.submitted_at || "")).getTime();
+      if (!Number.isFinite(submitted)) continue;
+      const times = formsByEmail.get(em) || [];
+      times.push(submitted);
+      formsByEmail.set(em, times);
     }
   }
   const isCurrentName = (n: string) =>
@@ -154,58 +165,88 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
     }
   }
 
-  return leads.map((lead) => {
+  const gapMs = 36 * 60 * 60 * 1000;
+  type VisitEvent = { at: number; kind: "trial" | "term" | "form" | "look"; notes: string };
+
+  function clusterEvents(events: VisitEvent[]): VisitEvent[][] {
+    const sorted = events.slice().sort((a, b) => a.at - b.at);
+    const groups: VisitEvent[][] = [];
+    for (const ev of sorted) {
+      const cur = groups[groups.length - 1];
+      const prev = cur && cur[cur.length - 1];
+      if (!cur || !prev || ev.at - prev.at > gapMs) groups.push([ev]);
+      else cur.push(ev);
+    }
+    return groups;
+  }
+
+  /* One row per visit. A parent who is not ACTIVE has no parent-portal code, so every visit is OTP. */
+  return leads.flatMap((lead) => {
     const em = String(lead.email || "").trim().toLowerCase();
-    const rows = (byEmail.get(em) || byName.get(nameKey(lead.parent_name)) || [])
-      .slice()
-      .sort((a, b) => a.at - b.at);
-    const visitAt = new Date(String(lead.last_activity_at || lead.created_at || "")).getTime();
-    const windowMs = 48 * 60 * 60 * 1000;
-    const inVisit = (at: number) =>
-      Number.isFinite(visitAt) && at >= visitAt - windowMs && at <= visitAt + 6 * 60 * 60 * 1000;
-    const latestVisit = rows.filter((r) => inVisit(r.at)).pop();
-    const prior = rows.filter((r) => !inVisit(r.at));
+    const bookings = (byEmail.get(em) || byName.get(nameKey(lead.parent_name)) || []).slice();
+    const formTimes = (formsByEmail.get(em) || []).slice();
+    const events: VisitEvent[] = [
+      ...bookings.map((r) => ({ at: r.at, kind: r.kind, notes: r.notes })),
+      ...formTimes.map((at) => ({ at, kind: "form" as const, notes: "" })),
+    ];
+    const leadAt = new Date(String(lead.last_activity_at || lead.created_at || "")).getTime();
+    if (Number.isFinite(leadAt) && !events.some((ev) => Math.abs(ev.at - leadAt) <= gapMs)) {
+      events.push({ at: leadAt, kind: "look", notes: "" });
+    }
+    const groups = clusterEvents(events);
     const book = String(lead.booking_status || "").toLowerCase();
     const client = String(lead.client_status || "").toLowerCase();
-    const source = String(lead.source || "").toLowerCase();
-    const parentPortal = source.includes("parent portal") && lead.asked_otp !== true;
-
-    let visit_outcome: "looked" | "waiting" | "trial" | "term" = "looked";
-    if (latestVisit?.kind === "trial") visit_outcome = "trial";
-    else if (latestVisit?.kind === "term") visit_outcome = "term";
-    else if (book === "waiting_list" || client === "waiting_list") visit_outcome = "waiting";
-
-    const priorTrial = prior.some((r) => r.kind === "trial");
-    const priorPlace = prior.some((r) => r.kind === "term" && /ops_synced|booking_paid/i.test(r.notes));
-    const formAt = new Date(String(lead.form_submitted_at || "")).getTime();
-    const formBefore = Number.isFinite(formAt) && Number.isFinite(visitAt) && formAt < visitAt - windowMs;
     const childNames = namesByEmail.get(em) || [];
     const anyCurrent = childNames.some((n) => isCurrentName(n));
     const anyOld = childNames.some((n) => isOldName(n));
+    const visits = groups.length ? groups : [[{ at: leadAt || Date.now(), kind: "look" as const, notes: "" }]];
 
-    let person_type: "new" | "registered" | "active" = "new";
-    let person_bucket = "";
-    if (priorPlace && anyCurrent) {
-      person_type = "active";
-    } else if (anyOld && !anyCurrent) {
-      person_type = "registered";
-      person_bucket = "OLD CLIENT";
-    } else if (priorPlace) {
-      person_type = "active";
-    } else if (priorTrial) {
-      person_type = "registered";
-      person_bucket = "TRIAL";
-    } else if ((book === "waiting_list" || client === "waiting_list") && (formBefore || prior.length)) {
-      person_type = "registered";
-      person_bucket = "WAITING LIST";
-    } else if (formBefore) {
-      person_type = "registered";
-      person_bucket = "REGISTERED";
-    } else if ((client === "active_client" || parentPortal) && visit_outcome === "looked" && !anyOld) {
-      person_type = "active";
-    }
+    return visits.slice().reverse().map((cluster, index) => {
+      const start = cluster[0].at;
+      const end = cluster[cluster.length - 1].at;
+      const before = (at: number) => at < start - 60 * 1000;
+      const formsBefore = formTimes.some(before);
+      const priorTrial = bookings.some((r) => r.kind === "trial" && before(r.at));
+      const priorPlace = bookings.some((r) =>
+        r.kind === "term" && before(r.at) && /ops_synced|booking_paid/i.test(r.notes)
+      );
+      const registeredThis = cluster.some((ev) => ev.kind === "form");
+      let visit_outcome: "looked" | "waiting" | "trial" | "term" = "looked";
+      if (cluster.some((ev) => ev.kind === "term")) visit_outcome = "term";
+      else if (cluster.some((ev) => ev.kind === "trial")) visit_outcome = "trial";
+      else if (book === "waiting_list" || client === "waiting_list") visit_outcome = "waiting";
 
-    return { ...lead, visit_outcome, person_type, person_bucket };
+      let person_type: "new" | "registered" | "active" = "new";
+      let person_bucket = "";
+      if (priorPlace && anyCurrent) {
+        person_type = "active";
+      } else if (anyOld && !anyCurrent && !formsBefore) {
+        person_type = "registered";
+        person_bucket = "OLD CLIENT";
+      } else if (formsBefore) {
+        person_type = "registered";
+        person_bucket = "REGISTERED";
+      } else if (priorTrial) {
+        person_type = "registered";
+        person_bucket = "TRIAL";
+      } else if ((book === "waiting_list" || client === "waiting_list") && bookings.some((r) => before(r.at))) {
+        person_type = "registered";
+        person_bucket = "WAITING LIST";
+      }
+
+      const wasActive = person_type === "active";
+      const visit_entry = wasActive && lead.asked_otp !== true ? "parent" : "otp";
+      return {
+        ...lead,
+        visit_outcome,
+        person_type,
+        person_bucket,
+        visit_entry,
+        registered_this_visit: registeredThis && person_type === "new",
+        visit_at: new Date(end).toISOString(),
+        visit_index: visits.length - index,
+      };
+    });
   });
 }
 
