@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v227",
+  "version": "2026-10-03-v228",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -438,7 +438,7 @@
         {
           "id": "ops_hub_chips",
           "title": "Operations Hub: the buttons you use",
-          "summary": "The top row is Sessions, Clients, Services and a wide calendar. Finance, H&R and Potential workers sit underneath. Each button has the icon on top and the name below.",
+          "summary": "Sessions stays on the left. The top row is Clients, Services and the calendar. Finance, H&R and Potential workers sit underneath. Each button has the icon on top and the name below.",
           "where": "Operations Hub (home)",
           "keywords": [
             "chips",
@@ -455,33 +455,33 @@
           ],
           "steps": [
             "Open Operations Hub. The title, the info circle and Office help sit together.",
-            "The top row, left to right, is Sessions, Clients and families, Services and places, then the calendar. Sessions is the large pink block on the left. Every button inside a block uses that block's colour for the fill and the outline.",
-            "Under that row: Finance, H&R, and Potential workers. A day with an open note is orange. Press the calendar to open Office calendar.",
-            "The full menu is still in the sidebar. The hub only keeps the buttons used every day.",
+            "Sessions is the large pink block on the left: Sessions overview, Schedule and Covers, Register. The top row is Clients and families (Active), then Services and places (Places, Leads, Edit term slot), then the calendar. Every button inside a block uses that block's colour for the fill and the outline.",
+            "Under that row: Finance (Re-enrolments and Bookings, Absents credits and refunds), H&R (Workers, Instructor timetable, Session disruptions), and Potential workers (Interviews, Onboarding). A day with an open note is orange. Press the calendar to open Office calendar.",
+            "The full menu is still in the sidebar. Photos/Videos, Parent consents, Service roster, REGISTERED, WAITING LIST, Payments, Cancelled services, Late feedback, Documents and Finance are not on the hub. Open them from the sidebar.",
             "WhatsApp, Parents API, Staff API, C (Comms) and A (Announcements) stay in the top bar.",
             "When that lane has unread messages, the button lights up and shows the number."
           ],
           "tips": [
-            "Cancelled services is a place removed for the rest of term. A one-day absence stays in Absents, credits and refunds.",
+            "Cancelled services stays in the Finance sidebar. It is a place removed for the rest of term. A one-day absence stays in Absents, credits and refunds.",
             "On a wide screen the blocks fill the page and you do not scroll. On a phone the calendar is a short block, not the whole screen. Held upright, the buttons are full-width rows under it. Held sideways, the calendar sits on the right and the buttons stay beside it.",
-            "On a phone every hub button is the same height. Sessions and Clients and families each have three, so those two blocks take the same space. The photos button is Photos/Videos.",
+            "On a phone every hub button is the same height. Sessions has three. Clients and families has one: Active.",
             "On every admin page the title, the info circle and Back or Help sit in one row."
           ],
           "es": {
             "title": "Operations Hub: los botones que usas",
-            "summary": "La fila de arriba es Sessions, Clients, Services y el calendario a lo ancho. Finance, H&R y Potential workers van debajo. Cada boton lleva el icono arriba y el nombre abajo.",
+            "summary": "Sessions queda a la izquierda. La fila de arriba es Clients, Services y el calendario. Finance, H&R y Potential workers van debajo. Cada boton lleva el icono arriba y el nombre abajo.",
             "where": "Operations Hub (inicio)",
             "steps": [
               "Abre Operations Hub. El titulo, el circulo de info y Office help van juntos.",
-              "La fila de arriba, de izquierda a derecha: Sessions, Clients and families, Services and places, y el calendario. Sessions es el bloque rosa de la izquierda. Cada boton de dentro usa el color de su bloque, en el fondo y en el borde.",
-              "Debajo: Finance, H&R y Potential workers. Un dia con nota abierta sale naranja. Pulsa el calendario para abrir Office calendar.",
-              "El menu completo sigue en la barra lateral. El hub solo deja los botones de cada dia.",
+              "Sessions es el bloque rosa de la izquierda: Sessions overview, Schedule and Covers, Register. La fila de arriba es Clients and families (Active), luego Services and places (Places, Leads, Edit term slot) y el calendario. Cada boton de dentro usa el color de su bloque, en el fondo y en el borde.",
+              "Debajo: Finance (Re-enrolments and Bookings, Absents credits and refunds), H&R (Workers, Instructor timetable, Session disruptions) y Potential workers (Interviews, Onboarding). Un dia con nota abierta sale naranja. Pulsa el calendario para abrir Office calendar.",
+              "El menu completo sigue en la barra lateral. Photos/Videos, Parent consents, Service roster, REGISTERED, WAITING LIST, Payments, Cancelled services, Late feedback, Documents y Finance no estan en el hub. Se abren desde la barra lateral.",
               "WhatsApp, Parents API, Staff API, C y A siguen en la barra de arriba."
             ],
             "tips": [
-              "Cancelled services es una plaza quitada el resto del term. Una falta de un dia sigue en Absents, credits and refunds.",
+              "Cancelled services sigue en la barra de Finance. Es una plaza quitada el resto del term. Una falta de un dia sigue en Absents, credits and refunds.",
               "En el telefono el calendario es un bloque corto. En vertical los botones van en filas debajo. En horizontal el calendario queda a la derecha.",
-              "En el telefono todos los botones del hub miden igual. Sessions y Clients and families tienen tres, asi que esos dos bloques ocupan el mismo espacio. El de fotos se llama Photos/Videos."
+              "En el telefono todos los botones del hub miden igual. Sessions tiene tres. Clients and families tiene uno: Active."
             ]
           }
         }
