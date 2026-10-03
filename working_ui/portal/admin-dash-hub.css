@@ -4465,12 +4465,12 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   width:28px;
   height:28px;
 }
-.ops-hub--flat .ops-hub-panel--today{background:#fce7f3;border-color:#f9a8d4}
-.ops-hub--flat .ops-hub-panel--services{background:#ffedd5;border-color:#fdba74}
-.ops-hub--flat .ops-hub-panel--families{background:#ede9fe;border-color:#ddd6fe}
-.ops-hub--flat .ops-hub-panel--finance{background:#ccfbf1;border-color:#5eead4}
-.ops-hub--flat .ops-hub-panel--formal{background:#fee2e2;border-color:#fca5a5}
-.ops-hub--flat .ops-hub-panel--potential{background:#f1f5f9;border-color:#cbd5e1}
+.ops-hub--flat .ops-hub-panel--today{background:#fbcfe8;border-color:#f472b6}
+.ops-hub--flat .ops-hub-panel--services{background:#fed7aa;border-color:#fb923c}
+.ops-hub--flat .ops-hub-panel--families{background:#ddd6fe;border-color:#a78bfa}
+.ops-hub--flat .ops-hub-panel--finance{background:#99f6e4;border-color:#2dd4bf}
+.ops-hub--flat .ops-hub-panel--formal{background:#fecaca;border-color:#f87171}
+.ops-hub--flat .ops-hub-panel--potential{background:#e2e8f0;border-color:#94a3b8}
 .ops-hub--flat .ops-hub-panel--today .dash-hub__tile,
 .ops-hub--flat .ops-hub-panel--services .dash-hub__tile,
 .ops-hub--flat .ops-hub-panel--families .dash-hub__tile,
@@ -4676,12 +4676,12 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
 }
 
 /* Each button uses its category colour: pink Sessions, and the same idea for the rest. */
-.ops-hub--flat .ops-hub-panel--today{--hub-tile-bg:#fbcfe8;--hub-tile-line:#f472b6;--hub-tile-ink:#be185d}
-.ops-hub--flat .ops-hub-panel--families{--hub-tile-bg:#ddd6fe;--hub-tile-line:#a78bfa;--hub-tile-ink:#6d28d9}
-.ops-hub--flat .ops-hub-panel--services{--hub-tile-bg:#fed7aa;--hub-tile-line:#fb923c;--hub-tile-ink:#c2410c}
-.ops-hub--flat .ops-hub-panel--finance{--hub-tile-bg:#99f6e4;--hub-tile-line:#2dd4bf;--hub-tile-ink:#0f766e}
-.ops-hub--flat .ops-hub-panel--formal{--hub-tile-bg:#fecaca;--hub-tile-line:#f87171;--hub-tile-ink:#b91c1c}
-.ops-hub--flat .ops-hub-panel--potential{--hub-tile-bg:#e2e8f0;--hub-tile-line:#94a3b8;--hub-tile-ink:#334155}
+.ops-hub--flat .ops-hub-panel--today{--hub-tile-bg:#fce7f3;--hub-tile-line:#f9a8d4;--hub-tile-ink:#be185d}
+.ops-hub--flat .ops-hub-panel--families{--hub-tile-bg:#ede9fe;--hub-tile-line:#ddd6fe;--hub-tile-ink:#6d28d9}
+.ops-hub--flat .ops-hub-panel--services{--hub-tile-bg:#ffedd5;--hub-tile-line:#fdba74;--hub-tile-ink:#c2410c}
+.ops-hub--flat .ops-hub-panel--finance{--hub-tile-bg:#ccfbf1;--hub-tile-line:#5eead4;--hub-tile-ink:#0f766e}
+.ops-hub--flat .ops-hub-panel--formal{--hub-tile-bg:#fee2e2;--hub-tile-line:#fca5a5;--hub-tile-ink:#b91c1c}
+.ops-hub--flat .ops-hub-panel--potential{--hub-tile-bg:#f1f5f9;--hub-tile-line:#cbd5e1;--hub-tile-ink:#334155}
 .ops-hub--flat .ops-hub-panel--today .dash-hub__tile,
 .ops-hub--flat .ops-hub-panel--families .dash-hub__tile,
 .ops-hub--flat .ops-hub-panel--services .dash-hub__tile,
