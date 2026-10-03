@@ -3649,6 +3649,71 @@
       if(!iso || !sid) return '';
       return 'cover-new-shift|' + sid + '|' + iso;
     }
+    function portalCoverAnchorMinutes(row, which){
+      const raw = which === 'end' ? (row && row.anchor_end) : (row && row.anchor_start);
+      const hm = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(raw) : String(raw || '').slice(0, 5);
+      const m = String(hm || '').match(/^(\d{1,2}):(\d{2})$/);
+      if(!m) return NaN;
+      return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+    }
+    function portalInstructorCoverSiblingRows(row){
+      const iso = normaliseIsoDate(row && row.session_date);
+      const cover = portalEffectiveCoverStaffKeyFromOverrideRow(row);
+      const venue = portalNormKeyStr(row && row.anchor_venue);
+      if(!iso || !cover) return [];
+      const list = typeof portalScheduleOverrideRowsForSessionIso === 'function'
+        ? portalScheduleOverrideRowsForSessionIso(iso)
+        : [];
+      const out = [];
+      for(let i = 0; i < list.length; i++){
+        const r = list[i];
+        if(!r || String(r.status || 'active') !== 'active') continue;
+        if(String(r.override_type || '').trim() !== 'instructor_reassign') continue;
+        if(portalEffectiveCoverStaffKeyFromOverrideRow(r) !== cover) continue;
+        if(venue && portalNormKeyStr(r.anchor_venue) !== venue) continue;
+        out.push(r);
+      }
+      return out;
+    }
+    function portalSundayHubBookAnchor(staffId){
+      const k = portalNormKeyStr(staffId);
+      return k === 'berta' || k === 'godsway' || k === 'emmanuel' || k === 'emanuel';
+    }
+    /** Whole Sunday Hub book (kids 9.30-2) pays 9.15-2.15. One slot stays that slot. */
+    function portalInstructorCoverMergedSlotLabel(row){
+      const siblings = portalInstructorCoverSiblingRows(row);
+      if(siblings.length < 2) return '';
+      let minS = Infinity;
+      let maxE = -Infinity;
+      let hubRows = 0;
+      for(let i = 0; i < siblings.length; i++){
+        const r = siblings[i];
+        const a = portalCoverAnchorMinutes(r, 'start');
+        const b = portalCoverAnchorMinutes(r, 'end');
+        if(!Number.isFinite(a) || !Number.isFinite(b)) continue;
+        if(a < minS) minS = a;
+        if(b > maxE) maxE = b;
+        if(portalSundayHubBookAnchor(r.anchor_staff_id) && /swimfarm/i.test(String(r.anchor_venue || ''))) hubRows++;
+      }
+      if(!Number.isFinite(minS) || !Number.isFinite(maxE) || maxE <= minS) return '';
+      const iso = normaliseIsoDate(row && row.session_date);
+      const parts = String(iso || '').split('-');
+      let sunday = false;
+      if(parts.length === 3){
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        if(!isNaN(d.getTime())){
+          try{ sunday = d.toLocaleDateString('en-GB', { weekday: 'long' }) === 'Sunday'; }catch(_){ sunday = false; }
+        }
+      }
+      const wholeHub = sunday && hubRows === siblings.length
+        && minS >= 9 * 60 && minS <= 9 * 60 + 45
+        && maxE >= 13 * 60 + 45 && maxE <= 14 * 60 + 20;
+      if(wholeHub) return portalFormatRosterBandLabel('09:15', '14:15');
+      function hm(mins){
+        return String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
+      }
+      return portalFormatRosterBandLabel(hm(minS), hm(maxE));
+    }
     function portalOverrideQuickMenuKind(row){
       const P = window.PortalParticipantsSheet;
       if(P && typeof P.overrideIsFinishBookingNewClient === 'function' && P.overrideIsFinishBookingNewClient(row)) return 'new_participant';
@@ -3814,12 +3879,20 @@
           // (portalCollapseNewShiftOverrideQuickMenuItems). The halo button navigates to
           // that day where the covered clients (e.g. Scott, Stephanie) are shown.
           title = 'NEW SHIFT' + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
-          // Show the time of the shift that was actually added (this override's own
-          // slot, e.g. 4.30 to 6.30) — NOT the whole day's merged payroll band, which
-          // widened a partial new shift to the full 11–6.30 window.
+          // One slot stays that slot. Several covers on the same day become one card:
+          // the span of those slots, or 9.15 to 2.15 when it is the whole Sunday Hub book.
+          const mergedCover = portalOverrideIsInstructorCoverForLoggedInStaff(row)
+            ? portalInstructorCoverMergedSlotLabel(row)
+            : '';
           sub = typeof portalOverrideQuickMenuDetailSub === 'function'
             ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
             : '';
+          if(mergedCover){
+            const svcOnly = typeof portalOverrideQuickMenuServiceLabel === 'function'
+              ? portalOverrideQuickMenuServiceLabel(row)
+              : '';
+            sub = svcOnly ? (svcOnly + ' · ' + mergedCover) : mergedCover;
+          }
         }else{
           title = 'Schedule change' + (datePart ? (' ' + datePart) : '');
           sub = typeof portalOverrideQuickMenuDetailSub === 'function'

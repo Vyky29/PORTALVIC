@@ -4583,6 +4583,26 @@
             base.activity = 'Physical Activity';
           }
         }
+        /* Sunday Hub book (Berta / Emmanuel / Godsway) covered by someone else.
+           Staff-scoped roster often has no standing area, so the card was a dash. */
+        if(!String(base.rosterArea || base.area || '').trim()){
+          const venHub = String(base.venue || ov.anchor_venue || '');
+          const anchorHub = typeof portalNormKeyStr === 'function'
+            ? portalNormKeyStr(ov.anchor_staff_id)
+            : String(ov.anchor_staff_id || '').trim().toLowerCase();
+          const hubBook = anchorHub === 'berta' || anchorHub === 'godsway'
+            || anchorHub === 'emmanuel' || anchorHub === 'emanuel';
+          const svcHub = /multi[\s-]*activity/i.test(String(inferredService || ''));
+          if((hubBook || svcHub) && (!venHub || /swimfarm/i.test(venHub))){
+            base.rosterArea = 'Hub Room';
+            base.area = 'Hub Room';
+            if(!base.venue || String(base.venue).toLowerCase().indexOf('swimfarm') < 0) base.venue = 'SwimFarm';
+            if(!base.rosterService || /swimming/i.test(String(base.rosterService))){
+              base.rosterService = 'Multi-Activity';
+              base.activity = 'Multi-Activity';
+            }
+          }
+        }
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
         /* Admin absence / cancellation on a covered slot can be anchored to EITHER the
@@ -4863,7 +4883,7 @@
         const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effCoverId);
         let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, c, viewDay);
         if(supportHidePoolNote) poolLocationLabel = null;
-        const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
+        const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote, viewDay);
         const poolTier = poolTierForAreaNoteRow(s, activity, c, viewDay, supportHidePoolNote);
         const showPoolSymbol = !!(poolLocationLabel || areaLabel);
         const showSpec = !isBespokeActivity(activity);
@@ -5145,6 +5165,10 @@
             pit.scheduleAdminAdjusted = true;
             if(!pit.portalOverrideHideAdminBadge) pit.portalOverrideHideAdminBadge = false;
             if(covOv && !pit.__portalScheduleOverride) pit.__portalScheduleOverride = covOv;
+            if(!String(pit.areaLabel || '').trim() && String(coverItem.areaLabel || '').trim()){
+              pit.areaLabel = coverItem.areaLabel;
+              pit.showPoolSymbol = true;
+            }
             return;
           }
         }
@@ -5165,6 +5189,10 @@
           pit2.scheduleAdminAdjusted = true;
           if(!pit2.portalOverrideHideAdminBadge) pit2.portalOverrideHideAdminBadge = false;
           if(covOv && !pit2.__portalScheduleOverride) pit2.__portalScheduleOverride = covOv;
+          if(!String(pit2.areaLabel || '').trim() && String(coverItem.areaLabel || '').trim()){
+            pit2.areaLabel = coverItem.areaLabel;
+            pit2.showPoolSymbol = true;
+          }
           return;
         }
       }

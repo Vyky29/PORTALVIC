@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v207",
+  "version": "2026-10-03-v208",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -123,7 +123,12 @@
             "un dia",
             "swap with another child",
             "multi-activity",
-            "climbing"
+            "climbing",
+            "hub room",
+            "new shift",
+            "9.15",
+            "servicio entero",
+            "cover hub"
           ],
           "demos": [
             {
@@ -145,7 +150,8 @@
             "Swap with another child today exchanges only the seats of the service you opened (Multi-Activity with Multi-Activity). Climbing and other services that day stay. Instructors stay on their times. Each worker card keeps that seat and shows the other child, with Swapped. Pool and Hub both update. The parent message names each seat as Hub Room or Swimming, in time order. Overview shows Swapped. Undo on either of those rows removes this swap. The rest of term does not change.",
             "A makeup on an open seat still shows that child when the instructor is off that day. The row name is the child, not No participant.",
             "If a child is absent and someone moves into that seat the same day, the row shows the absent child, then Free, then the move-in. No participant is a standing empty seat.",
-            "From Sun 27 Sep, Gabriel and Cyrus swap the 11.00 and 11.45 halves for the rest of term. The blue change card shows only that first Sunday. After that they are the regular clients at those times. A cover saved on that seat follows the child who is in it now."
+            "From Sun 27 Sep, Gabriel and Cyrus swap the 11.00 and 11.45 halves for the rest of term. The blue change card shows only that first Sunday. After that they are the regular clients at those times. A cover saved on that seat follows the child who is in it now.",
+            "Covering the Sunday Hub book (Berta, Emmanuel or Godsway at SwimFarm) shows Hub Room on each Today card. One NEW SHIFT card covers the whole book: 9.15 to 2.15. A single slot stays that slot."
           ],
           "es": {
             "title": "Schedule & Covers (un dia)",
@@ -165,7 +171,8 @@
               "Swap with another child today cruza solo las plazas del servicio que abriste (Multi-Activity con Multi-Activity). Climbing y los otros servicios de ese dia se quedan. Los instructores se quedan en su hora. La card del trabajador conserva esa plaza y muestra al otro nino, con Swapped. Piscina y Hub se actualizan. El mensaje al padre nombra cada plaza como Hub Room o Swimming, en orden de hora. Overview pone Swapped. Undo en cualquiera de esas filas quita este cruce. El resto del term no cambia.",
               "Un makeup en una plaza libre sigue ensenando a ese nino cuando el instructor esta libre ese dia. El nombre de la fila es el nino, no No participant.",
               "Si un nino falta y alguien entra en esa plaza el mismo dia, la fila ensena al nino ausente, luego Free, luego el que entra. No participant es una plaza fija vacia.",
-              "Desde el domingo 27 Sep, Gabriel y Cyrus cambian las medias de las 11.00 y las 11.45 el resto del term. La tarjeta azul de cambio sale solo ese primer domingo. Despues son los clientes de siempre a esa hora. Un cover guardado en esa plaza sigue al nino que esta ahora."
+              "Desde el domingo 27 Sep, Gabriel y Cyrus cambian las medias de las 11.00 y las 11.45 el resto del term. La tarjeta azul de cambio sale solo ese primer domingo. Despues son los clientes de siempre a esa hora. Un cover guardado en esa plaza sigue al nino que esta ahora.",
+              "Cubrir el Hub del domingo (Berta, Emmanuel o Godsway en SwimFarm) pone Hub Room en cada tarjeta de Today. Una sola tarjeta NEW SHIFT cubre el libro entero: 9.15 to 2.15. Una sola franja se queda en esa franja."
             ]
           }
         },
