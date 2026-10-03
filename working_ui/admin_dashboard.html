@@ -2448,8 +2448,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       operations: true,
       operations_admin: true,
       c4k_sessions: true,
-      c4k_registers: true,
-      c4k_late_submissions: true
+      c4k_registers: true
     };
     function portalAdminExtractPageTitle(html){
       var m = String(html || '').match(/<h[12]\s+class="page-title"[^>]*>([\s\S]*?)<\/h[12]>/i);
@@ -2550,7 +2549,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       services_roster: ['services_roster_screen','edit_term_slot','cancel_service','services_menu_kinds'],
       absents_refunds: ['refunds_credits'],
       reenrol_payments: ['create_invoice', 'validate_paid'],
-      office_calendar: ['office_calendar']
+      office_calendar: ['office_calendar'],
+      c4k_late_submissions: ['late_feedback']
     };
     var PORTAL_FINANCE_GUIDE_SECTIONS = {
       finance_create: ['manual', 'crash'],
@@ -2605,7 +2605,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261002-v154')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v166')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;

@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v165",
+  "version": "2026-10-03-v166",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1746,6 +1746,48 @@
       "blurb": "Formal workers, timetable, Documents, Finance and Policies. Onboarding and interviews are under Potential workers.",
       "priority": 2,
       "lessons": [
+        {
+          "id": "late_feedback",
+          "title": "Late feedback and timesheet pay",
+          "summary": "Staff can send late feedback without approval. This page holds the day for pay until you Release it.",
+          "where": "H&R, Late feedback",
+          "keywords": [
+            "late feedback",
+            "release",
+            "timesheet",
+            "21:00",
+            "tarde",
+            "pago",
+            "hold"
+          ],
+          "steps": [
+            "Open H&R, then Late feedback. The title row has the info button and Back to H&R.",
+            "Late means the feedback was completed after the session London day, or on the same day after 21:00.",
+            "Staff do not need approval to submit session feedback or a cancellation. The day stays on hold for timesheet pay until you press Release.",
+            "Release does not cut the pay. It only clears the hold. Release all clears every waiting day for that worker.",
+            "Last 60 days, Prev week, This week, Next week and Refresh change which days you see.",
+            "Incident late approvals, at the bottom, are only for past-session incidents."
+          ],
+          "tips": [
+            "A one-day absence is not this page. That stays in Absents, credits and refunds."
+          ],
+          "es": {
+            "title": "Late feedback y el pago del timesheet",
+            "summary": "El equipo puede enviar el feedback tarde sin aprobacion. Esta pagina retiene el dia para el pago hasta que pulses Release.",
+            "where": "H&R, Late feedback",
+            "steps": [
+              "Abre H&R y luego Late feedback. La fila del titulo lleva el boton de info y Back to H&R.",
+              "Late es un feedback cerrado despues del dia de la sesion en Londres, o el mismo dia despues de las 21:00.",
+              "No hace falta aprobacion para el feedback de la sesion ni para una cancelacion. El dia queda retenido para el pago del timesheet hasta que pulses Release.",
+              "Release no quita el pago. Solo suelta la retencion. Release all suelta todos los dias pendientes de ese trabajador.",
+              "Last 60 days, Prev week, This week, Next week y Refresh cambian los dias que ves.",
+              "Incident late approvals, abajo, es solo para incidentes de una sesion ya pasada."
+            ],
+            "tips": [
+              "La falta de un dia no es esta pagina. Eso sigue en Absents, credits and refunds."
+            ]
+          }
+        },
         {
           "id": "hr_files_menu",
           "title": "Documents, Finance and Policies",
