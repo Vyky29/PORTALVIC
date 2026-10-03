@@ -184,7 +184,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-pax-chips" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-add-contact-head" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -2884,6 +2884,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var stripped = portalAdminStripLegacyPageHeader(body);
       var backMode = viewId === 'portal_staff_comms' ? 'none' : 'auto';
       var extraActions = viewId === 'scheduling' ? sessionsHubJumpButtonsHtml('scheduling') : '';
+      if(viewId === 'clients' || viewId === 'clients_old' || viewId === 'clients_trial' || viewId === 'clients_cfk' || viewId === 'c4k_waitlist' || viewId === 'portal_participant_documents'){
+        extraActions = '<button type="button" class="btn btn--pri btn--sm admin-page-head__add" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button>';
+      }
       return portalAdminPageHeadRowHtml({ viewId: viewId, title: title, intro: intro, backMode: backMode, extraActions: extraActions }) + stripped;
     }
     function syncNavGroupsUi(){
@@ -24462,8 +24465,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '. <button type="button" class="btn btn--ghost btn--sm" id="c4kWaitlistClearFocus" style="vertical-align:baseline">Show all</button></p></div>';
       }
       return (
-        '<div class="pax-contacts-toolbar"><h1 class="page-title">'+esc(pageTitle)+'</h1>'+
-        '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
+        '<h1 class="page-title">'+esc(pageTitle)+'</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">'+intro+'</p>'+
         focusBanner+
         (function(){

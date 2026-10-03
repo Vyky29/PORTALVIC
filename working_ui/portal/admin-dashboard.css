@@ -846,9 +846,14 @@
       min-width:0;max-width:100%;margin:0
     }
     .admin-page-head__back,
-    .admin-page-head .c4k-sessions-hub-tab{
+    .admin-page-head .c4k-sessions-hub-tab,
+    .admin-page-head__add{
       box-sizing:border-box;height:32px;min-height:32px;padding:0 12px;
-      font-size:12px;font-weight:600;line-height:1;border-radius:9999px
+      font-size:12px;font-weight:600;line-height:1;border-radius:9999px;
+      white-space:nowrap;flex:0 0 auto
+    }
+    .admin-page-head__tools:has(.admin-page-head__add){
+      flex-wrap:wrap
     }
     .admin-page-head .c4k-sessions-hub-tab{
       box-shadow:none;gap:6px
