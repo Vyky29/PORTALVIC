@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v179",
+  "version": "2026-10-03-v180",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2381,6 +2381,42 @@
             "DBS is its own type. Do not file it as a generic Certificate.",
             "Safeguarding certificate is the training file, not the policy sign-off."
           ]
+        },
+        {
+          "id": "onboarding_open_photo",
+          "title": "Open a hire photo",
+          "summary": "The face in the Photo column is the photo. Click it to open the full picture.",
+          "where": "Potential workers, Onboarding",
+          "keywords": [
+            "photo",
+            "foto",
+            "onboarding",
+            "hire",
+            "applicant"
+          ],
+          "steps": [
+            "Open Potential workers, then Onboarding.",
+            "Find the person. The Photo column is between Health and Documents.",
+            "If there is a face, click it. The full photo opens.",
+            "Done next to the face means the photo is saved. A dash means they have not uploaded one."
+          ],
+          "tips": [
+            "Passport and the other files are the chips in Documents, not the Photo column."
+          ],
+          "es": {
+            "title": "Abrir la foto de un hire",
+            "summary": "La cara en la columna Photo es la foto. Pulsala para abrirla entera.",
+            "where": "Potential workers, Onboarding",
+            "steps": [
+              "Abre Potential workers y luego Onboarding.",
+              "Busca a la persona. La columna Photo esta entre Health y Documents.",
+              "Si hay una cara, pulsala. Se abre la foto entera.",
+              "Done al lado de la cara quiere decir que la foto esta guardada. Una raya quiere decir que no la han subido."
+            ],
+            "tips": [
+              "El pasaporte y los otros archivos son los chips de Documents, no la columna Photo."
+            ]
+          }
         },
         {
           "id": "staff_right_to_work",

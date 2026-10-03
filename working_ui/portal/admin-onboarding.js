@@ -115,6 +115,8 @@
       ".ob-pin-copy{font-size:11px;font-weight:700;color:#0f2747;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 10px;cursor:pointer}" +
       ".ob-pill--draft{background:#fef3c7;color:#92400e}" +
       ".ob-photo-cell{display:flex;align-items:center;gap:8px;min-width:0}" +
+      ".ob-photo-open{display:inline-flex;border-radius:999px;line-height:0;cursor:pointer}" +
+      ".ob-photo-open:focus-visible{outline:2px solid #1d4f8a;outline-offset:2px}" +
       ".ob-photo-thumb{width:28px;height:28px;border-radius:999px;object-fit:cover;flex:0 0 auto;background:#e2e8f0}" +
       ".ob-modal{position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px}" +
       ".ob-modal-card{background:#fff;border-radius:14px;max-width:420px;width:100%;padding:18px 18px 16px;box-shadow:0 18px 50px rgba(15,23,42,.25);min-width:0}" +
@@ -176,9 +178,13 @@
       }
       return (
         '<span class="ob-photo-cell">' +
+        '<a class="ob-photo-open" href="' +
+        esc(url) +
+        '" target="_blank" rel="noopener noreferrer" title="Open photo">' +
         '<img class="ob-photo-thumb" src="' +
         esc(url) +
         '" alt="" loading="lazy" decoding="async" onerror="this.remove()" />' +
+        "</a>" +
         pill(true, false) +
         "</span>"
       );

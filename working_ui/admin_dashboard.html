@@ -130,7 +130,7 @@
   <script src="/portal/admin-commissioning-terms.js?v=20260720-la-terms"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
   <script src="/portal/portal-admin-settings-hub.js?v=20260703-settings-timeout-fix"></script>
-  <script src="/portal/admin-onboarding.js?v=20261002-drop-tests"></script>
+  <script src="/portal/admin-onboarding.js?v=20261003-ob-photo"></script>
   <script src="/portal/admin-interviews.js?v=20260928-phase1-audio"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260908-onboarding-hub"></script>
@@ -2614,7 +2614,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v179')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v180')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
