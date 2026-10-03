@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v197",
+  "version": "2026-10-03-v198",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1631,7 +1631,7 @@
         {
           "id": "feedback_whatsapp_clock",
           "title": "Feedback WhatsApp clock",
-          "summary": "Sunday to Friday the reminder is 8:00pm then 8:30pm. Saturday is 6:00pm then 6:30pm.",
+          "summary": "Monday to Friday the reminder is 8:00pm then 8:30pm. Sunday is 6:00pm then 6:30pm. Saturday is 3:00pm then 3:30pm.",
           "where": "Automatic WhatsApp to staff who still owe Today's session feedback",
           "keywords": [
             "feedback clock",
@@ -1648,26 +1648,28 @@
             "late feedback"
           ],
           "steps": [
-            "Sunday, Monday, Tuesday, Wednesday, Thursday and Friday: first WhatsApp at 8:00pm, second at 8:30pm if feedback is still missing.",
-            "Saturday only: first WhatsApp at 6:00pm, second at 6:30pm if feedback is still missing.",
+            "Monday, Tuesday, Wednesday, Thursday and Friday: first WhatsApp at 8:00pm, second at 8:30pm if feedback is still missing.",
+            "Sunday: first WhatsApp at 6:00pm, second at 6:30pm if feedback is still missing.",
+            "Saturday: first WhatsApp at 3:00pm, second at 3:30pm if feedback is still missing.",
+            "The message is the staff WhatsApp template. It says the message was sent automatically and not to reply. The link is the staff portal at clubsensational-staff.",
             "The second message goes only to people who still owe feedback."
           ],
           "tips": [
-            "Saturday is 6:00pm then 6:30pm. It is not 3:00pm.",
-            "Sunday uses 8:00pm and 8:30pm with the weekdays. Sunday is not 6:00pm."
+            "Saturday is 3:00pm then 3:30pm. Sunday is 6:00pm then 6:30pm. Weekdays stay 8:00pm then 8:30pm."
           ],
           "es": {
             "title": "Reloj del WhatsApp de feedback",
-            "summary": "De domingo a viernes el aviso es a las 8:00 y a las 8:30. El sabado es a las 6:00 y a las 6:30.",
+            "summary": "De lunes a viernes el aviso es a las 8:00 y a las 8:30. El domingo es a las 6:00 y a las 6:30. El sabado es a las 3:00 y a las 3:30.",
             "where": "WhatsApp automatico al staff que aun debe el feedback de hoy",
             "steps": [
-              "Domingo, lunes, martes, miercoles, jueves y viernes: primer WhatsApp a las 8:00, segundo a las 8:30 si el feedback sigue sin hacerse.",
-              "Solo el sabado: primer WhatsApp a las 6:00, segundo a las 6:30 si el feedback sigue sin hacerse.",
+              "Lunes, martes, miercoles, jueves y viernes: primer WhatsApp a las 8:00, segundo a las 8:30 si el feedback sigue sin hacerse.",
+              "Domingo: primer WhatsApp a las 6:00, segundo a las 6:30 si el feedback sigue sin hacerse.",
+              "Sabado: primer WhatsApp a las 3:00, segundo a las 3:30 si el feedback sigue sin hacerse.",
+              "El mensaje sale por la plantilla de WhatsApp del staff. Dice que se envio automaticamente y que no contesten. El enlace es el portal de staff en clubsensational-staff.",
               "El segundo mensaje solo sale a quien todavia debe feedback."
             ],
             "tips": [
-              "El sabado es a las 6:00 y a las 6:30. No es a las 3:00.",
-              "El domingo va con la semana: 8:00 y 8:30. El domingo no es a las 6:00."
+              "Sabado a las 3:00 y a las 3:30. Domingo a las 6:00 y a las 6:30. Entre semana a las 8:00 y a las 8:30."
             ]
           }
         },
@@ -2092,7 +2094,7 @@
             "Open the CEO portal.",
             "Under Company insights, open What runs by itself.",
             "Read English and Spanish on the same page.",
-            "On a clock: pay hold every 2 minutes, trial offers every 10 minutes, own-arrangement buffer about 06:00, office missing-feedback push at 21:00, staff feedback WhatsApp at 20:00 and 20:30 (Saturday 18:00 and 18:30), timesheet WhatsApp at 23:00 on the 24th, parent weekly notes Tuesday evening and Saturday morning.",
+            "On a clock: pay hold every 2 minutes, trial offers every 10 minutes, own-arrangement buffer about 06:00, office missing-feedback push at 21:00, staff feedback WhatsApp at 20:00 and 20:30 on weekdays, 18:00 and 18:30 on Sunday, 15:00 and 15:30 on Saturday, timesheet WhatsApp at 23:00 on the 24th, parent weekly notes Tuesday evening and Saturday morning.",
             "When something happens: Stripe or GoCardless payment finishes the booking path. A saved cover or schedule change pushes staff. Outstanding feedback lights the halo. It does not lock the app.",
             "A new place, New client, a cover, a day off, an invoice, Xero products, an announcement and Family broadcast still need a person."
           ],
@@ -2109,7 +2111,7 @@
               "Abre el portal CEO.",
               "En Company insights, abre What runs by itself.",
               "Lee ingles y espanol en la misma pagina.",
-              "Con reloj: pay hold cada 2 minutos, ofertas de trial cada 10 minutos, buffer de own arrangement sobre las 06:00, push a la oficina del feedback que falta a las 21:00, WhatsApp de feedback al staff a las 20:00 y 20:30 (sabado 18:00 y 18:30), WhatsApp de timesheet a las 23:00 el dia 24, notas semanales de padres el martes por la tarde y el sabado por la manana.",
+              "Con reloj: pay hold cada 2 minutos, ofertas de trial cada 10 minutos, buffer de own arrangement sobre las 06:00, push a la oficina del feedback que falta a las 21:00, WhatsApp de feedback al staff a las 20:00 y 20:30 entre semana, 18:00 y 18:30 el domingo, 15:00 y 15:30 el sabado, WhatsApp de timesheet a las 23:00 el dia 24, notas semanales de padres el martes por la tarde y el sabado por la manana.",
               "Cuando pasa algo: un pago Stripe o GoCardless sigue el camino de cerrar la reserva. Un cover o cambio de horario guardado avisa al staff. El feedback pendiente enciende el halo. No bloquea la app.",
               "Una plaza nueva, New client, un cover, un day off, una factura, productos de Xero, un anuncio y Family broadcast siguen necesitando una persona."
             ],
