@@ -2670,7 +2670,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v205')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v206')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -23105,7 +23105,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(bk === 'portal_waiting') return paxContactsWaitingKind(p) === 'portal_waiting';
       if(bk === 'old_waiting') return paxContactsWaitingKind(p) === 'old_waiting';
-      if(bk === 'pay_hold' || bk === 'hold' || bk === 'lost_slot') return paxContactsPlaceFlag(p) === bk;
+      if(bk === 'hold') bk = 'lost_slot';
+      if(bk === 'pay_hold' || bk === 'lost_slot') return paxContactsPlaceFlag(p) === bk;
       return paxContactsBucket(p) === bk;
     }
     function paxContactsBookingStatusOptionsHtml(selected){
@@ -23144,7 +23145,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         opt('all', 'All')+
         opt('pay_hold', 'Pay hold')+
-        opt('hold', 'Hold')+
         opt('lost_slot', 'Lost slot')
       );
     }
@@ -23477,22 +23477,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.PAX_CONTACTS_TRIALS = Object.keys(groups).map(function(k){ return groups[k]; });
       return window.PAX_CONTACTS_TRIALS.length > 0;
     }
-    /** Pay hold, office hold, or lost slot from the booking reservation. Not the Finance invoice lost slot. */
+    /** Pay hold while the seat is still held. Unpaid after the time, trial or term, is Lost slot. */
     function paxContactsPlaceFlagFromReservation(row){
       var status = String((row && row.status) || '').toLowerCase();
       var notes = String((row && row.notes) || '');
       var office = '';
       var tag = notes.match(/office_place\s*=\s*([a-z0-9_]+)/i);
       if(tag && tag[1]) office = String(tag[1]).toLowerCase();
-      if(office === 'registered_trial_expired_slot_lost') return 'lost_slot';
-      if(office === 'registered_trial_expired_admin_hold') return 'hold';
+      if(office === 'registered_trial_expired_slot_lost' || office === 'registered_trial_expired_admin_hold') return 'lost_slot';
       if((status === 'pending' || status === 'awaiting_payment') && !/office_confirm_hold/i.test(notes)) return 'pay_hold';
       if(status === 'validated' && /pay_hold/i.test(notes)){
         var openUntil = Date.parse(String(row.hold_expires_at || ''));
         if(isFinite(openUntil) && openUntil > Date.now()) return 'pay_hold';
         return 'lost_slot';
       }
-      if(status === 'expired' && /admin_hold|accepted_by_admin/i.test(notes)) return 'hold';
       if(status === 'expired' || status === 'released') return 'lost_slot';
       return '';
     }
@@ -24435,11 +24433,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         try{ placeFlag = paxContactsPlaceFlag(p); }catch(_placeFlag){ placeFlag = ''; }
         var placeMeta = placeFlag === 'pay_hold'
           ? { label: 'Pay hold', bg: '#fef3c7', fg: '#92400e' }
-          : placeFlag === 'hold'
-            ? { label: 'Hold', bg: '#ffedd5', fg: '#9a3412' }
-            : placeFlag === 'lost_slot'
-              ? { label: 'Lost slot', bg: '#fee2e2', fg: '#991b1b' }
-              : null;
+          : placeFlag === 'lost_slot'
+            ? { label: 'Lost slot', bg: '#fee2e2', fg: '#991b1b' }
+            : null;
         if(placeMeta) bkChip += paxStatusChip(placeMeta);
         if(bucket === 'booking_history'){
           var oldTrials = [];
@@ -24552,13 +24548,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var waitSource = String(opts.waitSource || 'all');
       if(waitSource !== 'portal_waiting' && waitSource !== 'old_waiting') waitSource = 'all';
       var placeFlag = String(opts.placeFlag || 'all');
-      if(placeFlag !== 'pay_hold' && placeFlag !== 'hold' && placeFlag !== 'lost_slot') placeFlag = 'all';
+      if(placeFlag === 'hold') placeFlag = 'lost_slot';
+      if(placeFlag !== 'pay_hold' && placeFlag !== 'lost_slot') placeFlag = 'all';
       var listRows = paxContactsListRowsHtml();
       var n = paxContactsUnifiedList().length;
       var intro = bookingSelected === 'waiting'
         ? 'WAITING LIST is only this screen. The chips split Portal (Booking Portal from 12 Aug 2026) from Before the portal (CFK and the workbook from before that). Before the portal drops anyone who already has a service. Someone who already has a service can still be on the Portal waiting list for another place.'
         : (bookingSelected === 'registered'
-          ? 'REGISTERED finished the form and has never had a place. This screen is only that list. The chips narrow it to Pay hold, Hold or Lost slot. Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released. Service and Time slot are the trial they asked for: service, day, time, and place.'
+          ? 'REGISTERED finished the form and has never had a place. This screen is only that list. The chips are Pay hold and Lost slot. Pay hold means the seat is still held and payment is still due. If the time runs out and they have not paid, trial or term, it is Lost slot. Service and Time slot are what they asked for: service, day, time, and place.'
           : (bookingSelected === 'booking_history'
             ? 'OLD CLIENTS had a place and have no slots from September 2026. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen.'
             : (bookingSelected === 'cfk_leads'
@@ -24593,9 +24590,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ].map(function(r){ return paxChipBtn('wait', r[0], r[1], r[2], waitSource === r[0]); }).join('');
           var placeChips = [
             ['all', 'All', 'All registered'],
-            ['pay_hold', 'Pay hold', 'Pay hold'],
-            ['hold', 'Hold', 'Hold'],
-            ['lost_slot', 'Lost slot', 'Lost slot']
+            ['pay_hold', 'Pay hold', 'Seat still held, payment still due'],
+            ['lost_slot', 'Lost slot', 'Trial or term was not paid in time']
           ].map(function(r){ return paxChipBtn('place', r[0], r[1], r[2], placeFlag === r[0]); }).join('');
           var supportChips = [
             ['all', 'All', 'Everyone on this screen'],
@@ -29808,7 +29804,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var preset = state.paxPlacePreset || 'all';
       state.paxPlacePreset = '';
       state.paxBookingPreset = '';
-      var placeFlag = (preset === 'pay_hold' || preset === 'hold' || preset === 'lost_slot') ? preset : 'all';
+      var placeFlag = preset === 'hold' ? 'lost_slot' : ((preset === 'pay_hold' || preset === 'lost_slot') ? preset : 'all');
       return viewC4kParticipants({ title: 'REGISTERED', bookingStatus: 'registered', placeFlag: placeFlag });
     }
     function sessionFeedbackEnsureState(){
