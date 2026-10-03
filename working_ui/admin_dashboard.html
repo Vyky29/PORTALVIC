@@ -2670,7 +2670,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v232')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v233')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -22988,8 +22988,51 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }catch(_oldTrialDay){}
       }
       var ended = last || first || '';
+      var rosterLeft = '';
+      try{ rosterLeft = paxContactsRosterLeftIso(p); }catch(_rosterLeft){ rosterLeft = ''; }
+      if(rosterLeft && (!ended || rosterLeft > ended)) ended = rosterLeft;
       var slot = paxContactsTermLabelFromIso(ended);
       return { services: services, svc: services.join(' | '), slot: slot, ended: ended, cancelled: paxContactsCancelledTheirService(p) };
+    }
+    /** Latest day this child is still named on the roster: leave date, or a dated seat. */
+    function paxContactsRosterLeftIso(p){
+      var src = window.STAFF_DASHBOARD_SOURCE || {};
+      var rows = src.rows || [];
+      var gone = src.clientRosterGoneFromDates || {};
+      if(!rows.length && !Object.keys(gone).length) return '';
+      if(!window.__PAX_ROSTER_LAST_BY_NAME){
+        var map = Object.create(null);
+        function note(name, iso){
+          var key = typeof adminPortalNormalizedPersonName === 'function'
+            ? adminPortalNormalizedPersonName(name)
+            : String(name || '').trim().toLowerCase();
+          var day = paxContactsRealBookingIso(iso);
+          if(!key || !day) return;
+          if(!map[key] || day > map[key]) map[key] = day;
+        }
+        var gk;
+        for(gk in gone){
+          if(Object.prototype.hasOwnProperty.call(gone, gk)) note(gk, gone[gk]);
+        }
+        var ri;
+        for(ri = 0; ri < rows.length; ri++) note(rows[ri] && rows[ri].client_name, rows[ri] && rows[ri].session_date);
+        window.__PAX_ROSTER_LAST_BY_NAME = map;
+      }
+      var mapNow = window.__PAX_ROSTER_LAST_BY_NAME;
+      var norm = typeof adminPortalNormalizedPersonName === 'function'
+        ? adminPortalNormalizedPersonName(p && p.name)
+        : '';
+      if(norm && mapNow[norm]) return mapNow[norm];
+      var first = norm ? norm.split(' ')[0] : '';
+      if(!first) return '';
+      var hits = [];
+      var key;
+      for(key in mapNow){
+        if(!Object.prototype.hasOwnProperty.call(mapNow, key)) continue;
+        if(key === first || key.indexOf(first + ' ') === 0) hits.push(key);
+      }
+      if(hits.length !== 1) return '';
+      return mapNow[hits[0]] || '';
     }
     function paxContactsTermLabelFromIso(iso){
       var d = paxContactsRealBookingIso(iso);
