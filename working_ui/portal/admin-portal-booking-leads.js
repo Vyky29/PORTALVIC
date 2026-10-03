@@ -165,7 +165,8 @@
     var bucket = String(r.person_bucket || "").trim();
     if (kind === "active") return { key: "active", label: "ACTIVE", note: "", tone: "ok" };
     if (kind === "registered") {
-      return { key: "registered", label: "Registered", note: bucket, tone: "info" };
+      var note = bucket === "REGISTERED" ? "Not first time. Registered previously" : bucket;
+      return { key: "registered", label: "Known visitor", note: note, tone: "info" };
     }
     if (kind === "new") {
       var registeredNow = r.registered_this_visit === true;
@@ -240,14 +241,14 @@
 
   function personFilterMatch(r, key) {
     var person = leadType(r);
-    var note = String(person.note || "").toUpperCase();
+    var bucket = String((r && r.person_bucket) || "").trim().toUpperCase();
     if (key === "new") return person.key === "new";
     if (key === "active") return person.key === "active";
     if (key === "registered") return person.key === "registered";
-    if (key === "old") return person.key === "registered" && note === "OLD CLIENT";
-    if (key === "trial") return person.key === "registered" && note === "TRIAL";
-    if (key === "waiting") return person.key === "registered" && note === "WAITING LIST";
-    if (key === "reg") return person.key === "registered" && note === "REGISTERED";
+    if (key === "old") return person.key === "registered" && bucket === "OLD CLIENT";
+    if (key === "trial") return person.key === "registered" && bucket === "TRIAL";
+    if (key === "waiting") return person.key === "registered" && bucket === "WAITING LIST";
+    if (key === "reg") return person.key === "registered" && bucket === "REGISTERED";
     return true;
   }
 
@@ -639,11 +640,11 @@
     var personOpts = [
       { value: "all", label: "All types" },
       { value: "new", label: "New visitor" },
-      { value: "registered", label: "Registered" },
-      { value: "old", label: "Registered (OLD CLIENT)" },
-      { value: "trial", label: "Registered (TRIAL)" },
-      { value: "waiting", label: "Registered (WAITING LIST)" },
-      { value: "reg", label: "Registered (REGISTERED)" },
+      { value: "registered", label: "Known visitor" },
+      { value: "old", label: "Known visitor (OLD CLIENT)" },
+      { value: "trial", label: "Known visitor (TRIAL)" },
+      { value: "waiting", label: "Known visitor (WAITING LIST)" },
+      { value: "reg", label: "Known visitor (not first time)" },
       { value: "active", label: "ACTIVE" },
     ]
       .map(function (t) {
@@ -713,7 +714,7 @@
       esc(rows.length) +
       '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">' +
       (state.origin === "portal"
-        ? "Each row is one visit. Someone who is not ACTIVE has no parent-portal code, so they come in by OTP. New visitor is the first time: Registered if they sent the form, Did not register if they did not. Coming back is Registered."
+        ? "Each row is one visit. Someone who is not ACTIVE has no parent-portal code, so they come in by OTP. New visitor is the first time: Registered if they sent the form, Did not register if they did not. Coming back is Known visitor."
         : "This origin is the office list. Add / update potential client is only here.") +
       "</div></div></div>" +
       '<div class="card"><div class="card-pad" style="overflow:auto;padding:0;min-width:0">' +
@@ -723,7 +724,7 @@
       "<th>Parent / carer</th>" +
       (cols.enquiry ? "<th>Enquiry</th>" : "") +
       '<th title="OTP asked for a code on Booking. Parent portal opened Booking from the family hub.">Lead</th>' +
-      '<th title="New visitor is the first time. Registered means they sent the form. Did not register means they only asked for the code. Coming back by OTP, already registered and not ACTIVE, is Registered. ACTIVE already has a place and can open the parent portal.">Type</th>' +
+      '<th title="New visitor is the first time. Registered means they sent the form. Did not register means they only asked for the code. Coming back, already registered and not ACTIVE, is Known visitor. Not first time means they registered previously. ACTIVE already has a place and can open the parent portal.">Type</th>' +
       (cols.track
         ? '<th title="Office list only. Booked takes the email off the marketing list. It does not change Outcome.">Track status</th>'
         : "") +
