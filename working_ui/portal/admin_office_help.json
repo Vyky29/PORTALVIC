@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v215",
+  "version": "2026-10-03-v216",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -797,7 +797,7 @@
             "REGISTERED finished the form and has never had a place. Pay hold and Lost slot are chips on that list. Outcome says why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay. Funding and Payment are not on this screen.",
             "WAITING finished the form and the service they want is full.",
             "CLIENT (Active) has a place now. On Trial is a CLIENT sitting a trial seat, not a REGISTERED chip.",
-            "OLD had a place and has none from September 2026.",
+            "OLD had a place and has none from September 2026. A climbing trial or a crash course that already happened, with no place now, is OLD. A demo contact does not appear on these lists.",
             "Funding and payment live on Active, OLD and On Trial. Leads and REGISTERED do not show those columns. On REGISTERED, Service and Time slot show what they asked for. A payments sheet row that is only a first name stays with the client who already had that name. A row marked merged retired stays off these lists."
           ],
           "tips": [
@@ -813,7 +813,7 @@
               "REGISTERED termino el formulario y nunca ha tenido plaza. Pay hold y Lost slot son chips de esa lista. Outcome dice por que es Lost slot. Blocked the space: entraron y la plaza quedo retenida, y se acabo el tiempo. Did not pay: se mando un enlace de pago y la plaza no quedo retenida. Office hold, not paid: la oficina la guardo y no pagaron. Funding y Payment no salen en esta pantalla.",
               "WAITING termino el formulario y el servicio que quiere esta lleno.",
               "CLIENT (Active) tiene plaza ahora. On Trial es un CLIENT sentado en un trial, no un chip de REGISTERED.",
-              "OLD tuvo plaza y no tiene desde septiembre 2026.",
+              "OLD tuvo plaza y no tiene desde septiembre 2026. Un trial de climbing o un crash course que ya paso, sin plaza ahora, es OLD. Un contacto de prueba no sale en estas listas.",
               "Funding y payment viven en Active, OLD y On Trial. Leads y REGISTERED no ensenan esas columnas. En REGISTERED, Service y Time slot muestran lo que pidieron. Una fila de payments que solo tiene el nombre de pila se queda con el cliente que ya tenia ese nombre. Una fila marcada merged retired no sale en estas listas."
             ],
             "tips": [

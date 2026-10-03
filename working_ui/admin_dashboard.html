@@ -22135,14 +22135,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         op._cfkContact = true;
         out.push(op);
       }
-      out = out.filter(function(p){ return !paxContactsRetiredMergeName(p && p.name); });
+      out = out.filter(function(p){ return !paxContactsRetiredMergeName(p && p.name) && !paxContactsIsOfficeTestContact(p); });
       out = paxContactsDedupeByPerson(paxContactsAppendWorkbookWaitlist(paxContactsAppendLiveWaitlist(paxContactsAppendUnlistedParticipants(out))));
       out.forEach(paxContactsApplyLiveFacts);
       paxContactsStampWaitSources(out);
       paxContactsStampRegisteredDates(out);
       out = paxContactsAppendUnmatchedTrials(out);
       out = paxContactsAppendPlaceFlagPeople(out);
-      out = out.filter(function(p){ return !paxContactsRetiredMergeName(p && p.name); });
+      out = out.filter(function(p){ return !paxContactsRetiredMergeName(p && p.name) && !paxContactsIsOfficeTestContact(p); });
       out.sort(function(a, b){
         return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), undefined, { sensitivity: 'base' });
       });
@@ -22878,6 +22878,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(summerParent.indexOf('messing') >= 0) return true;
       }
       if(n === 'chaitanya' || n === 'chaitanya marasini') return true;
+      /* Eddie Ritzema (Eddie Ri) came for a climbing trial. Eddie Mckenzie stays ACTIVE. */
+      if(n === 'eddie ritzema' || n === 'eddie ri') return true;
+      if(n === 'yaqoub ismail' || n === 'yaqoub') return true;
+      if(n === 'jad zerti' || n === 'jad') return true;
       return false;
     }
     /** Crash courses label on the service column. Summer Messing is OLD, not REGISTERED. */
@@ -22886,13 +22890,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(n === 'summer messing') return true;
       var parent = String((p && (p.parentDisplay || (p.reg && p.reg.carer))) || '').trim().toLowerCase();
       if(n === 'summer' && parent.indexOf('messing') >= 0) return true;
+      /* Yaqoub and Jad only came to crash courses. Same list as Summer Messing. */
+      if(n === 'yaqoub ismail' || n === 'yaqoub') return true;
+      if(n === 'jad zerti' || n === 'jad') return true;
       return false;
+    }
+    /** Office test contacts. Elias Thomas is a real child and stays. */
+    function paxContactsIsOfficeTestContact(p){
+      var n = String((p && p.name) || '').trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
+      if(n === 'eliademo (demo)' || n === 'eliademo' || n === 'elia (test)' || n === 'elia test') return true;
+      var cid = String((p && (p.contactId || p.id)) || '').replace(/^pp-/i, '').trim().toLowerCase();
+      return cid === 'elia-matilla-demo' || cid === 'elia-test-broadcast';
+    }
+    /** Eddie Ritzema's visit was a climbing trial, 2 to 3. No Autumn place. */
+    function paxContactsKnownPastVisit(p){
+      var n = String((p && p.name) || '').trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
+      if(n === 'eddie ritzema' || n === 'eddie ri') return { svc: 'Climbing Activity', slot: '2 to 3' };
+      return null;
     }
     function paxContactsBucket(p){
       var st = String((p && p.bookingStatus) || '');
       var seats = 0;
       try{ seats = paxContactsCurrentSeatBands(p).length; }catch(_seats){ seats = 0; }
       var live = paxContactsLiveRow(p);
+      if(paxContactsNamedOldClient(p) || paxContactsCrashOnlyClient(p)) return 'booking_history';
       if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
       if(live && live.in_class === true) return st === 'trial' ? 'trial' : 'programme_in';
       if(paxContactsWasSummer2026(p) || paxContactsStartedSeptember(p) || paxContactsNamedOldClient(p) || paxContactsHadAutumn25OrLaterBooking(p)) return 'booking_history';
@@ -24195,6 +24216,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!bands.length && p._cfkContact) return paxContactsCfkHistoryCells(p);
       if(!bands.length && paxContactsNamedOldClient(p) && paxContactsTrialsForPerson(p).length){
         return paxContactsTrialServiceSlotCells(p);
+      }
+      if(!bands.length){
+        var knownVisit = null;
+        try{ knownVisit = paxContactsKnownPastVisit(p); }catch(_known){ knownVisit = null; }
+        if(knownVisit && knownVisit.svc){
+          return {
+            svc: '<div class="pax-svc-line">'+esc(knownVisit.svc)+'</div>',
+            slot: knownVisit.slot ? '<div class="pax-slot-line">'+esc(knownVisit.slot)+'</div>' : dash
+          };
+        }
       }
       if(!bands.length){
         var askedCells = null;
