@@ -713,9 +713,9 @@
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadRefresh">Refresh</button>' +
       "</div>" +
       trackChips +
-      chipRow("Lead", "Lead", entryChips) +
-      chipRow("Type", "Type", personChips) +
-      chipRow("Known visitor", "Known", knownChips) +
+      (portalList ? "" : chipRow("Lead", "Lead", entryChips)) +
+      (portalList ? "" : chipRow("Type", "Type", personChips)) +
+      (portalList ? "" : chipRow("Known visitor", "Known", knownChips)) +
       chipRow("Outcome", "Outcome", outcomeChips) +
       "</div>" +
       '<div class="card"><div class="card-pad" style="overflow:auto;padding:0;min-width:0">' +
@@ -773,7 +773,11 @@
     if (origin) {
       origin.addEventListener("change", function () {
         state.origin = String(origin.value || "portal");
-        if (state.origin === "portal") state.trackFilter = "all";
+        if (state.origin === "portal") {
+          state.trackFilter = "all";
+          state.entry = "all";
+          state.person = "all";
+        }
         void reload(host);
       });
     }
