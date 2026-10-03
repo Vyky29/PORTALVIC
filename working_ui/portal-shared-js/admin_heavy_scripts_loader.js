@@ -14,7 +14,7 @@
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
       "/portal/portal_roster_canonical.js?v=20261003-overview-dc",
-      "/portal/autumn_staff_hours_reference.js?v=20260928-patience-tue",
+      "/portal/autumn_staff_hours_reference.js?v=20261003-rota-silent",
       "/portal/portal_dc_services_local.js?v=20261003-oct-dc",
       "/portal/portal_capacity_chain_occupants.js?v=20261003-oct-dc",
       "/portal/portal_overview_capacity_chain.js?v=20261003-oct-dc",
@@ -35,7 +35,7 @@
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: [
       "/portal/spreadsheet_reference_data.js?v=20260911-autumn-labels",
-      "/portal/autumn_staff_hours_reference.js?v=20260928-patience-tue",
+      "/portal/autumn_staff_hours_reference.js?v=20261003-rota-silent",
     ],
   };
 
