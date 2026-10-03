@@ -9,12 +9,24 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import { isAcatGroupClientId, slugifyParticipantKey } from "../_shared/participant_identity.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
 }
 
 const CONSENT_VALID_MS = 365 * 24 * 60 * 60 * 1000;
+
+/** ACAT is the Monday group seat. Consents belong to each child's parent, not the group row. */
+function isAcatGroupParticipant(p: {
+  contact_id?: string;
+  display_name?: string;
+  first_name?: string;
+}): boolean {
+  const id = slugifyParticipantKey(clean(p.contact_id, 120));
+  if (id === "gap_acat_group" || id === "acat" || id === "acat_group") return true;
+  return isAcatGroupClientId(clean(p.display_name, 120)) || isAcatGroupClientId(clean(p.first_name, 80));
+}
 
 function isFresh(signedAt: string | null | undefined): boolean {
   if (!signedAt) return false;
@@ -141,7 +153,7 @@ Deno.serve(async (req) => {
   let offsitePending = 0;
   let renewalNeeded = 0;
 
-  const entries = (participants || []).map((p) => {
+  const entries = (participants || []).filter((p) => !isAcatGroupParticipant(p)).map((p) => {
     const contactId = clean(p.contact_id, 120);
     const c = byContact.get(contactId);
     const photo = clean(c?.photo_consent, 40) || "unknown";

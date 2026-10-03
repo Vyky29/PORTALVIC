@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v188",
+  "version": "2026-10-03-v189",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2391,7 +2391,10 @@
             "consentimiento",
             "annual renewal",
             "renovacion",
-            "active"
+            "active",
+            "acat",
+            "grupo",
+            "padres"
           ],
           "steps": [
             "Open Parent consents. The list is ACTIVE clients only.",
@@ -2399,7 +2402,9 @@
             "Annual renewal means they signed and that signature is older than 12 months. If nobody is there, nobody is due yet.",
             "REGISTERED, WAITING and people who are not clients do not see Consents in the parent portal until they are ACTIVE."
           ],
-          "tips": []
+          "tips": [
+            "ACAT is a group seat. It does not appear on Parent consents. Each child in that group appears with their own parent."
+          ]
         },
         {
           "id": "staff_dbs_safeguarding",

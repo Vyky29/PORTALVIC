@@ -220,8 +220,15 @@
     );
   }
 
+  function isAcatGroupEntry(e) {
+    var name = String((e && e.participant_display) || '').trim().toLowerCase();
+    var id = String((e && e.contact_id) || '').trim().toLowerCase();
+    if (name === 'acat' || name === 'acat group') return true;
+    return id === 'gap-acat-group' || id === 'acat' || id === 'acat_group';
+  }
+
   function isActiveClient(e) {
-    return !!(e && e.in_class === true);
+    return !!(e && e.in_class === true) && !isAcatGroupEntry(e);
   }
 
   function matchesFilter(e, filter) {
