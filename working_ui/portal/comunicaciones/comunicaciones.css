@@ -385,6 +385,27 @@ body.comms-embed .comms-shell {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.comms-icon-btn--call,
+.comms-icon-btn--video {
+  border-radius: 999px;
+}
+.comms-icon-btn--call {
+  background: #e7f6ee;
+  color: #0f7a45;
+  border-color: #8fd4ae;
+}
+.comms-icon-btn--video {
+  background: #e8f2fb;
+  color: #1d4f8a;
+  border-color: #b9d4f0;
+}
+.comms-icon-btn--call svg,
+.comms-icon-btn--video svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  stroke: none;
+}
 
 .comms-thread {
   flex: 1;
