@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v182",
+  "version": "2026-10-03-v183",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1909,28 +1909,29 @@
         },
         {
           "id": "interview_did_not_join",
-          "title": "Passed the interview, then did not join",
-          "summary": "Someone passed, got onboarding access, and then took another job. They are not called again, and they leave the Onboarding PIN list.",
+          "title": "Interviews: Successful and Unsuccessful",
+          "summary": "Interviews has two lists. Successful is passed, on hold, shadowing, or already staff. Unsuccessful is a failed interview or a cancelled offer.",
           "where": "Interviews",
           "keywords": [
-            "did not join",
-            "other job",
-            "otro trabajo",
-            "onboarding",
+            "successful",
+            "unsuccessful",
+            "shadowing",
             "entrevista",
             "interview",
-            "no completo",
-            "pin"
+            "cancelled",
+            "oferta",
+            "pay",
+            "staff"
           ],
           "steps": [
-            "Open Interviews. On the Onboarding bucket, use Did not join on that person.",
-            "They move to Did not join. The interview stays as passed. Call back later is only for people you still want to contact.",
-            "They leave Potential workers, Onboarding (the PIN list). Their staff login is switched off.",
-            "A test row on that Onboarding list is removed. It does not turn off a real staff login."
+            "Successful: they passed. The stage shows Staff with normal pay, Shadowing, or Successful while onboarding is still open.",
+            "Shadowing until a date means that date is when normal pay and normal shifts start.",
+            "Unsuccessful: the call or face interview failed, or they cancelled the offer. They are not called as a hire.",
+            "Did not join on a Successful row moves them to Unsuccessful and switches off the staff login."
           ],
           "tips": [
-            "Did not join means other job. Do not put them under Call back later.",
-            "Refresh Interviews after you mark them."
+            "On hold stays under Successful. The next step says when to call again.",
+            "Someone already working is Staff, not still on the onboarding checklist."
           ]
         },
         {

@@ -47,7 +47,10 @@
     var face = String(c.faceToFaceInterview.status || "");
     var call = String(c.callInterview.status || "");
     var ob = c.onboarding;
-    if (ob.didNotJoin) return "did_not_join";
+    if (ob.offerCancelled) return "cancelled";
+    if (ob.employment === "staff") return "staff";
+    if (ob.employment === "shadowing") return "shadowing";
+    if (ob.didNotJoin) return "cancelled";
     if (ob.readyToStart || ob.onboardingCompleted) return "ready";
     if (face === "successful-ready" || face === "successful") return "onboarding";
     if (face === "successful-hold") return "hold";
@@ -59,10 +62,21 @@
   }
 
   function bucketOf(phase) {
-    if (phase === "did_not_join") return "closed";
-    if (phase === "ready" || phase === "onboarding") return "onboarding";
-    if (phase === "hold" || phase === "face_unsuccessful" || phase === "call_unsuccessful") {
-      return "callback";
+    if (
+      phase === "cancelled" ||
+      phase === "face_unsuccessful" ||
+      phase === "call_unsuccessful"
+    ) {
+      return "unsuccessful";
+    }
+    if (
+      phase === "staff" ||
+      phase === "shadowing" ||
+      phase === "ready" ||
+      phase === "onboarding" ||
+      phase === "hold"
+    ) {
+      return "successful";
     }
     return "progress";
   }
@@ -70,12 +84,14 @@
   function stageLabel(phase) {
     return (
       {
-        did_not_join: "Did not join - other job",
-        ready: "Ready for onboarding",
-        onboarding: "Onboarding",
-        hold: "Successful — on hold (call later)",
-        face_unsuccessful: "Face unsuccessful — call later",
-        call_unsuccessful: "Call unsuccessful — call later",
+        staff: "Staff",
+        shadowing: "Shadowing",
+        cancelled: "Unsuccessful",
+        ready: "Successful",
+        onboarding: "Successful",
+        hold: "Successful",
+        face_unsuccessful: "Unsuccessful",
+        call_unsuccessful: "Unsuccessful",
         face_to_face: "Face to face",
         call: "Call interview",
         new: "New / in progress"
@@ -84,10 +100,12 @@
   }
 
   function stageTone(phase) {
-    if (phase === "did_not_join") return "#64748b";
-    if (phase === "ready" || phase === "onboarding") return "#15803d";
-    if (phase === "hold") return "#7c3aed";
-    if (phase === "face_unsuccessful" || phase === "call_unsuccessful") return "#b45309";
+    if (phase === "staff" || phase === "shadowing" || phase === "ready" || phase === "onboarding" || phase === "hold") {
+      return "#15803d";
+    }
+    if (phase === "cancelled" || phase === "face_unsuccessful" || phase === "call_unsuccessful") {
+      return "#b45309";
+    }
     if (phase === "face_to_face" || phase === "call") return "#2d84b3";
     return "#64748b";
   }
@@ -95,8 +113,13 @@
   function nextStep(c, phase) {
     var face = c.faceToFaceInterview || {};
     var ob = c.onboarding || {};
-    if (phase === "did_not_join") {
-      return (ob.didNotJoinReason || "Passed the interview, then did not join.").slice(0, 120);
+    if (phase === "staff") return "Normal pay";
+    if (phase === "shadowing") {
+      if (ob.normalFrom) return "Shadowing until " + fmtDay(ob.normalFrom) + ", then normal pay and shifts";
+      return "Shadowing";
+    }
+    if (phase === "cancelled") {
+      return (ob.didNotJoinReason || "Cancelled the offer").slice(0, 120);
     }
     if (phase === "ready") return "Start date / induction";
     if (phase === "onboarding") {
@@ -114,6 +137,13 @@
     if (phase === "face_to_face") return "Book / complete face to face";
     if (phase === "call") return "Finish call interview";
     return "Start interview";
+  }
+
+  function fmtDay(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+    if (!m) return "";
+    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return String(Number(m[3])) + " " + months[Number(m[2]) - 1];
   }
 
   function fmtWhen(iso) {
@@ -472,15 +502,13 @@
   function render() {
     if (!root) return;
     injectStyleOnce();
-    var onboarding = [];
-    var callback = [];
+    var successful = [];
+    var unsuccessful = [];
     var progress = [];
-    var closed = [];
     state.rows.forEach(function (row) {
       var b = bucketOf(row.phase);
-      if (b === "onboarding") onboarding.push(row);
-      else if (b === "callback") callback.push(row);
-      else if (b === "closed") closed.push(row);
+      if (b === "successful") successful.push(row);
+      else if (b === "unsuccessful") unsuccessful.push(row);
       else progress.push(row);
     });
 
@@ -495,22 +523,9 @@
       "Start a new interview</a>" +
       "</div>" +
       (state.error ? '<div class="ai-err">' + esc(state.error) + "</div>" : "") +
-      section(
-        "Onboarding",
-        "Face outcome Successful (Ready for onboarding). Open the record to continue the checklist. Did not join is for someone who passed, got access, then took another job.",
-        onboarding
-      ) +
-      section(
-        "Did not join",
-        "Passed the interview and received onboarding access, then did not finish. Other job. Not called again.",
-        closed
-      ) +
-      section(
-        "Call back later",
-        "Unsuccessful or Successful (on hold). Kept here to call again when a seat opens — not deleted.",
-        callback
-      ) +
-      section("In progress", "Call or face-to-face still open.", progress) +
+      section("Successful", "", successful) +
+      section("Unsuccessful", "", unsuccessful) +
+      (progress.length ? section("In progress", "", progress) : "") +
       "</div>";
 
     bindInterviewOpenLinks();
