@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v223",
+  "version": "2026-10-03-v224",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -844,7 +844,7 @@
             "Outcome is what that visit did. Only looked stays on Leads. Waiting list also shows on WAITING. Trial also shows on TRIAL. Term also shows on Active. A first OTP visit that books a trial is Trial. Coming back later with OTP and booking the term is Term.",
             "Parent / carer shows the name, then the email, then the phone. Activity sits next to Outcome. Only looked shows the service and the centres. If they opened one time, Activity shows that service, time, day and venue. Trial, Term and Waiting list show the same place line. Waiting list is the yellow chip. Enquiry stays hidden when every row on screen is empty.",
             "Track status is not on the Portal OTP table. It stays on the office list. Booked takes that email off the marketing list. It does not change Outcome.",
-            "On Portal OTP the filters are chips: Lead, Type and Outcome, plus Search. Each chip shows how many visits it matches. There is no Visits box. Track status is not on that screen. Writing to families is Family broadcast, under Clients and Families, Family. This page does not send a message.",
+            "On Portal OTP, Search and Origin sit on one line. Origin stays on Portal OTP. Lead, Type and Outcome are chips under that. A chip with no visits is hidden. Known visitor opens OLD CLIENT, TRIAL, WAITING LIST and Not first time. There is no Visits box. Track status is not on that screen. Writing to families is Family broadcast, under Clients and Families, Family.",
             "Email interest is an old office file. Open it from Origin only when you want a marketing send.",
             "Add / update potential client is not on the OTP screen. Open Origin: Office potential clients when you need to type a parent by hand. Save potential does not give them a place."
           ],
@@ -863,7 +863,7 @@
               "Outcome es lo que hizo esa visita. Only looked se queda en Leads. Waiting list tambien sale en WAITING. Trial tambien sale en TRIAL. Term tambien sale en Active. La primera vez con OTP que reserva un trial es Trial. Si vuelve despues con OTP y reserva el term, es Term.",
               "Parent / carer muestra el nombre, luego el email y luego el telefono. Activity va al lado de Outcome. Only looked muestra el servicio y los centros. Si abrieron una hora, Activity muestra ese servicio, la hora, el dia y el venue. Trial, Term y Waiting list usan la misma linea. Waiting list es el chip amarillo. Enquiry no sale si todas las filas de la pantalla estan vacias.",
               "Track status no esta en la tabla de Portal OTP. Se queda en la lista de oficina. Booked saca ese email de la lista de marketing. No cambia Outcome.",
-              "En Portal OTP los filtros son chips: Lead, Type y Outcome, mas Search. Cada chip muestra cuantas visitas coinciden. No hay caja de Visits. Track status no esta en esa pantalla. Escribir a familias es Family broadcast, en Clients and Families, Family. Esta pagina no manda un mensaje.",
+              "En Portal OTP, Search y Origin van en una linea. Origin se queda en Portal OTP. Lead, Type y Outcome son chips debajo. Un chip sin visitas no se muestra. Known visitor abre OLD CLIENT, TRIAL, WAITING LIST y Not first time. No hay caja de Visits. Track status no esta en esa pantalla. Escribir a familias es Family broadcast, en Clients and Families, Family.",
               "Email interest es un archivo viejo de oficina. Abrelo en Origin solo cuando quieras un envio de marketing.",
               "Add / update potential client no esta en la pantalla OTP. Abre Origin: Office potential clients cuando quieras escribir un padre a mano. Save potential no le da una plaza."
             ],
@@ -929,7 +929,7 @@
           "steps": [
             "Add / update potential client is not on Portal OTP. Set Origin to Office potential clients to type a parent by hand. Email is required. Save potential stores that parent on the office list.",
             "Track status is on the office origin only. Leave it on New. Booked takes that email off the marketing list. It does not change Outcome.",
-            "Lead, Type and Outcome are chips above the table. The number on each chip is how many visits match it. There is no Visits box.",
+            "Lead, Type and Outcome are chips above the table, on one flat band. A chip with no visits stays hidden. Known visitor opens the extra type chips. The number on each chip is how many visits match it. There is no Visits box.",
             "Search looks at name, email, phone, and the enquiry note. Origin stays on Portal OTP. Refresh reloads it. Writing to those people is Family broadcast, not this page.",
             "Each table row is one parent. Outcome says what they did after the code. Open PDF opens a form when one is linked. The date is the last activity."
           ],
@@ -943,7 +943,7 @@
             "steps": [
               "Add / update potential client no esta en Portal OTP. Pon Origin en Office potential clients para escribir un padre a mano. El email es obligatorio. Save potential lo guarda en la lista de oficina.",
               "Track status solo esta en el origen de oficina. Dejalo en New. Booked saca ese email de la lista de marketing. No cambia Outcome.",
-              "Lead, Type y Outcome son chips encima de la tabla. El numero de cada chip es cuantas visitas coinciden. No hay caja de Visits.",
+              "Lead, Type y Outcome son chips encima de la tabla, en una banda plana. Un chip sin visitas no se muestra. Known visitor abre los chips extra de tipo. El numero de cada chip es cuantas visitas coinciden. No hay caja de Visits.",
               "Search mira nombre, email, telefono y la nota. Origin se queda en Portal OTP. Refresh la recarga. Escribir a esa gente es Family broadcast, no esta pagina.",
               "Cada fila es un padre. Outcome dice que hizo despues del codigo. Open PDF abre un formulario cuando hay uno enlazado. La fecha es la ultima actividad."
             ],
