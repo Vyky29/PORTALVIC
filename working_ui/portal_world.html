@@ -64,7 +64,7 @@
       line-height: 1.4;
       overflow-wrap: anywhere;
     }
-    .stories {
+    .worlds, .stories {
       display: flex;
       flex-wrap: nowrap;
       gap: 6px;
@@ -73,7 +73,9 @@
       overflow-x: auto;
       padding-bottom: 4px;
     }
-    .stories button {
+    .worlds { margin-top: 10px; }
+    .stories { margin-top: 6px; }
+    .worlds button, .stories button {
       flex: 0 0 auto;
       font: inherit;
       cursor: pointer;
@@ -84,6 +86,11 @@
       padding: 8px 12px;
       font-weight: 700;
       font-size: 13px;
+    }
+    .worlds button.is-on {
+      background: transparent;
+      color: var(--gold);
+      border-color: var(--gold);
     }
     .stories button.is-on {
       background: var(--gold);
@@ -388,8 +395,9 @@
     <header class="top">
       <div>
         <h1>El mundo de los portales</h1>
-        <p>Siete cuadros. La linea dorada se enciende y el punto viaja hasta el portal que se entera. El texto se lee en el panel. No es el parte de hoy.</p>
+        <p>Elige un mundo y luego un camino. La linea dorada se enciende y el punto viaja hasta el portal que se entera. No es el parte de hoy.</p>
       </div>
+      <div class="worlds" id="worlds" role="tablist" aria-label="Mundos"></div>
       <div class="stories" id="stories" role="tablist" aria-label="Caminos"></div>
     </header>
     <div class="stage">
@@ -923,9 +931,60 @@
   var byId = {};
   ISLANDS.forEach(function (island) { byId[island.id] = island; });
 
+  var WORLDS = [
+    { id: "booking", label: "Booking" },
+    { id: "auto", label: "Automatizaciones" },
+    { id: "admin", label: "Admin" },
+    { id: "staff", label: "Staff" },
+    { id: "parent", label: "Parent" },
+    { id: "onb", label: "Onboarding" },
+    { id: "ceo", label: "CEO" }
+  ];
+  var STORY_WORLD = {
+    lead: "booking",
+    hold: "booking",
+    pay30: "booking",
+    "trial-term": "booking",
+    waiting: "booking",
+    "otp-mail": "auto",
+    "paid-sync": "auto",
+    "fail-pay": "auto",
+    feedback: "admin",
+    cover: "admin",
+    dayoff: "admin",
+    "cancel-service": "admin",
+    credit: "admin",
+    "seat-open": "admin",
+    reenrol: "admin",
+    disruption: "admin",
+    bells: "admin",
+    broadcast: "admin",
+    interview: "admin",
+    "late-mark": "staff",
+    incident: "staff",
+    chase: "staff",
+    timesheet: "staff",
+    expense: "staff",
+    contract: "staff",
+    "staff-pin": "staff",
+    payslip: "staff",
+    annual: "staff",
+    absence: "parent",
+    invoice: "parent",
+    "from-parent": "parent",
+    "bank-paid": "parent",
+    "family-pin": "parent",
+    notes: "parent",
+    consent: "parent",
+    onboarding: "onb",
+    "ceo-see": "ceo"
+  };
+  STORIES.forEach(function (story) { story.world = STORY_WORLD[story.id] || "admin"; });
+
   var state = {
     island: "admin",
     person: "",
+    world: "booking",
     story: "lead",
     step: 0,
     playing: true,
@@ -939,6 +998,7 @@
   var islandsEl = document.getElementById("islands");
   var traveler = document.getElementById("traveler");
   var panel = document.getElementById("panel");
+  var worldsEl = document.getElementById("worlds");
   var storiesEl = document.getElementById("stories");
 
   function islandEl(id) {
@@ -1133,9 +1193,19 @@
     }).join("");
   }
 
+  function storiesInWorld(id) {
+    return STORIES.filter(function (story) { return story.world === id; });
+  }
+
   function renderStories() {
-    storiesEl.innerHTML = STORIES.map(function (story) {
-      var on = story.id === state.story ? " is-on" : "";
+    var current = storyById(state.story);
+    if (current && current.world) state.world = current.world;
+    worldsEl.innerHTML = WORLDS.map(function (world) {
+      var on = world.id === state.world ? " is-on" : "";
+      return '<button type="button" class="' + on.trim() + '" data-world="' + world.id + '" role="tab">' + world.label + "</button>";
+    }).join("");
+    storiesEl.innerHTML = storiesInWorld(state.world).map(function (story) {
+      var on = story.id === state.story && (state.playing || state.paused) ? " is-on" : "";
       return '<button type="button" class="' + on.trim() + '" data-story="' + story.id + '" role="tab">' + story.label + "</button>";
     }).join("");
   }
@@ -1230,6 +1300,8 @@
 
   function play(id) {
     state.story = id;
+    var picked = storyById(id);
+    if (picked && picked.world) state.world = picked.world;
     state.step = 0;
     state.playing = true;
     state.paused = false;
@@ -1264,6 +1336,26 @@
     state.island = island.getAttribute("data-island");
     state.person = "";
     paint();
+  });
+
+  worldsEl.addEventListener("click", function (ev) {
+    var btn = ev.target.closest("[data-world]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-world");
+    var list = storiesInWorld(id);
+    state.world = id;
+    if (!list.length) {
+      stop();
+      state.island = id === "onb" ? "onb" : id;
+      paint();
+      return;
+    }
+    var still = list.some(function (story) { return story.id === state.story; });
+    if (still && (state.playing || state.paused)) {
+      paint();
+      return;
+    }
+    play(list[0].id);
   });
 
   storiesEl.addEventListener("click", function (ev) {
