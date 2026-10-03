@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v221",
+  "version": "2026-10-03-v222",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -844,7 +844,7 @@
             "Outcome is what that visit did. Only looked stays on Leads. Waiting list also shows on WAITING. Trial also shows on TRIAL. Term also shows on Active. A first OTP visit that books a trial is Trial. Coming back later with OTP and booking the term is Term.",
             "Parent / carer shows the name, then the email, then the phone. Activity sits next to Outcome. Only looked shows the service and the centres. If they opened one time, Activity shows that service, time, day and venue. Trial, Term and Waiting list show the same place line. Waiting list is the yellow chip. Enquiry stays hidden when every row on screen is empty.",
             "Track status is not on the Portal OTP table. It stays on the office list. Booked takes that email off the marketing list. It does not change Outcome.",
-            "On Portal OTP the filters are Search, Lead, Type and Outcome. Track status is not on that screen. Write to this filter sits under those filters. Tick a row only when you want to write to that parent. Send via Family broadcast, or Copy emails / Copy phones.",
+            "On Portal OTP the filters are Search, Lead, Type and Outcome. Track status is not on that screen. Writing to families is Family broadcast, under Clients and Families, Family. This page does not send a message.",
             "Email interest is an old office file. Open it from Origin only when you want a marketing send.",
             "Add / update potential client is not on the OTP screen. Open Origin: Office potential clients when you need to type a parent by hand. Save potential does not give them a place."
           ],
@@ -863,7 +863,7 @@
               "Outcome es lo que hizo esa visita. Only looked se queda en Leads. Waiting list tambien sale en WAITING. Trial tambien sale en TRIAL. Term tambien sale en Active. La primera vez con OTP que reserva un trial es Trial. Si vuelve despues con OTP y reserva el term, es Term.",
               "Parent / carer muestra el nombre, luego el email y luego el telefono. Activity va al lado de Outcome. Only looked muestra el servicio y los centros. Si abrieron una hora, Activity muestra ese servicio, la hora, el dia y el venue. Trial, Term y Waiting list usan la misma linea. Waiting list es el chip amarillo. Enquiry no sale si todas las filas de la pantalla estan vacias.",
               "Track status no esta en la tabla de Portal OTP. Se queda en la lista de oficina. Booked saca ese email de la lista de marketing. No cambia Outcome.",
-              "En Portal OTP los filtros son Search, Lead, Type y Outcome. Track status no esta en esa pantalla. Write to this filter va debajo de esos filtros. Marca una fila solo cuando quieras escribir a ese padre. Send via Family broadcast, o Copy emails / Copy phones.",
+              "En Portal OTP los filtros son Search, Lead, Type y Outcome. Track status no esta en esa pantalla. Escribir a familias es Family broadcast, en Clients and Families, Family. Esta pagina no manda un mensaje.",
               "Email interest es un archivo viejo de oficina. Abrelo en Origin solo cuando quieras un envio de marketing.",
               "Add / update potential client no esta en la pantalla OTP. Abre Origin: Office potential clients cuando quieras escribir un padre a mano. Save potential no le da una plaza."
             ],
@@ -929,10 +929,8 @@
           "steps": [
             "Add / update potential client is not on Portal OTP. Set Origin to Office potential clients to type a parent by hand. Email is required. Save potential stores that parent on the office list.",
             "Track status is on the office origin only. Leave it on New. Booked takes that email off the marketing list. It does not change Outcome.",
-            "OTP leads is the number of rows in the current filter. It is people, not visits.",
-            "Write to this filter sits under the filters. It is not a filter. The line says how many you ticked, how many viewed a service, and how many are already a client.",
-            "Select all shown ticks every row in the current filter. Select viewed services ticks people who opened a service. Select ACTIVE ticks parents who already have a place. Clear unticks. None of these book a place.",
-            "Search looks at name, email, phone, and the enquiry note. On Portal OTP the other filters are Lead, Type and Outcome. Origin stays on Portal OTP only. Refresh reloads it.",
+            "The count is the number of rows in the current filter. Each row is one visit.",
+            "Search looks at name, email, phone, and the enquiry note. On Portal OTP the other filters are Lead, Type and Outcome. Origin stays on Portal OTP only. Refresh reloads it. Writing to those people is Family broadcast, not this page.",
             "Each table row is one parent. Outcome says what they did after the code. Open PDF opens a form when one is linked. The date is the last activity."
           ],
           "tips": [
@@ -945,10 +943,8 @@
             "steps": [
               "Add / update potential client no esta en Portal OTP. Pon Origin en Office potential clients para escribir un padre a mano. El email es obligatorio. Save potential lo guarda en la lista de oficina.",
               "Track status solo esta en el origen de oficina. Dejalo en New. Booked saca ese email de la lista de marketing. No cambia Outcome.",
-              "OTP leads es el numero de filas del filtro actual. Son personas, no visitas.",
-              "Write to this filter va debajo de los filtros. No es un filtro. La linea dice cuantos marcaste, cuantos vieron un servicio y cuantos ya son cliente.",
-              "Select all shown marca todas las filas del filtro. Select viewed services marca quien abrio un servicio. Select ACTIVE marca padres que ya tienen plaza. Clear quita las marcas. Nada de esto reserva una plaza.",
-              "Search mira nombre, email, telefono y la nota. En Portal OTP los otros filtros son Lead, Type y Outcome. Origin se queda en Portal OTP only. Refresh la recarga.",
+              "El numero es la cantidad de filas del filtro actual. Cada fila es una visita.",
+              "Search mira nombre, email, telefono y la nota. En Portal OTP los otros filtros son Lead, Type y Outcome. Origin se queda en Portal OTP only. Refresh la recarga. Escribir a esa gente es Family broadcast, no esta pagina.",
               "Cada fila es un padre. Outcome dice que hizo despues del codigo. Open PDF abre un formulario cuando hay uno enlazado. La fecha es la ultima actividad."
             ],
             "tips": []
@@ -957,8 +953,8 @@
         {
           "id": "leads_message",
           "title": "How to email or WhatsApp people on Leads",
-          "summary": "Filter first, then tick rows and send. That writes to the parent. It does not reserve a place.",
-          "where": "Services & places → Leads → Write to this filter",
+          "summary": "Leads only shows the visits. The message is written on Family broadcast.",
+          "where": "Clients & Families → Family → Family broadcast",
           "keywords": [
             "broadcast",
             "copy emails",
@@ -967,28 +963,26 @@
             "select"
           ],
           "steps": [
-            "On Portal OTP use Search, Lead, Type and Outcome first, so the table is the group you want. Track status is on the office origin only. Write to this filter is under those filters.",
-            "Tick the rows, or use Select all shown, Select viewed services, or Select ACTIVE.",
-            "Copy emails puts the ticked addresses on the clipboard. Copy phones does the same for numbers.",
-            "Send via Family broadcast opens the family message with those people already chosen.",
+            "Leads filters are Search, Lead, Type and Outcome. They only change which visits you see.",
+            "Open Clients and Families, then Family, then Family broadcast to write the message.",
+            "Pick the audience there: in class, waiting list, OTP with no booking, or all.",
             "Sending a message does not book a place and does not move the child to REGISTERED or ACTIVE."
           ],
           "tips": [
-            "Family broadcast lives under Clients & Families → Family. Leads only chooses who receives it."
+            "Family broadcast does not have Only looked, Trial or Term. Those filters stay on Leads."
           ],
           "es": {
             "title": "Como escribir por email o WhatsApp a gente de Leads",
-            "summary": "Filtra primero, luego marca filas y envia. Eso escribe al padre. No reserva una plaza.",
-            "where": "Services & places → Leads → Write to this filter",
+            "summary": "Leads solo muestra las visitas. El mensaje se escribe en Family broadcast.",
+            "where": "Clients & Families → Family → Family broadcast",
             "steps": [
-              "En Portal OTP usa Search, Lead, Type y Outcome primero, para que la tabla sea el grupo que quieres. Track status solo esta en el origen de oficina. Write to this filter va debajo de esos filtros.",
-              "Marca las filas, o usa Select all shown, Select viewed services o Select ACTIVE.",
-              "Copy emails copia los emails marcados. Copy phones hace lo mismo con los telefonos.",
-              "Send via Family broadcast abre el mensaje a familias con esa gente ya elegida.",
+              "Los filtros de Leads son Search, Lead, Type y Outcome. Solo cambian las visitas que ves.",
+              "Abre Clients and Families, luego Family, luego Family broadcast para escribir el mensaje.",
+              "Ahi eliges la audiencia: en clase, lista de espera, OTP sin reserva, o todos.",
               "Enviar un mensaje no reserva una plaza y no mueve al nino a REGISTERED ni a ACTIVE."
             ],
             "tips": [
-              "Family broadcast esta en Clients & Families → Family. Leads solo elige quien lo recibe."
+              "Family broadcast no tiene Only looked, Trial ni Term. Esos filtros se quedan en Leads."
             ]
           }
         },
@@ -1085,7 +1079,7 @@
           "steps": [
             "Leads is not a second child list. It is parents who asked for an OTP code. The page opens on those people.",
             "OTP leads counts those parents. It is not visits. Email interest is an old file under Origin, only for a marketing send.",
-            "Add potential, Select all, Copy emails and Send via Family broadcast are for writing to those parents. They do not book a place.",
+            "The filters on this page are Search, Lead, Type and Outcome. Writing to those parents is Family broadcast. It does not book a place.",
             "Outcome Already a client means that parent already has a child in class. Already a client, registered again means they sent a new form.",
             "REGISTERED is the contacts table. The child finished the form and has no place now. Service and Time slot show the trial they asked for: service, day, time, and place. The date is the day they registered.",
             "On the REGISTERED screen the chips are only Pay hold or Lost slot, plus All. Pay hold means the seat is still held and payment is still due. If the time runs out and they have not paid, trial or term, it is Lost slot. Funding and Payment stay blank unless the form or an invoice stored them. The chip sits under the name. Someone who already has a place stays on Active and does not get that chip.",
@@ -1101,7 +1095,7 @@
             "steps": [
               "Leads no es una segunda lista de ninos. Son padres que pidieron un codigo OTP. La pagina abre con esa gente.",
               "OTP leads cuenta esos padres. No son visitas. Email interest es un archivo viejo dentro de Origin, solo para un envio de marketing.",
-              "Add potential, Select all, Copy emails y Send via Family broadcast sirven para escribir a esos padres. No reservan una plaza.",
+              "Los filtros de esta pagina son Search, Lead, Type y Outcome. Escribir a esos padres es Family broadcast. No reserva una plaza.",
               "Outcome Already a client quiere decir que ese padre ya tiene un nino en clase. Already a client, registered again quiere decir que mando un formulario nuevo.",
               "REGISTERED es la tabla de contactos. El nino termino el formulario y no tiene plaza ahora. Service y Time slot muestran el trial que pidio: servicio, dia, hora y sitio. La fecha es el dia en que se registro.",
               "En la pantalla REGISTERED los chips son solo Pay hold o Lost slot, mas All. Pay hold: la plaza sigue retenida y falta pagar. Si se acaba el tiempo y no pagan, trial o term, es Lost slot. Funding y Payment quedan vacios si el formulario o una factura no los guardaron. El chip va bajo el nombre. Quien ya tiene plaza se queda en Active y no lleva ese chip.",
