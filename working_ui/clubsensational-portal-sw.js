@@ -11,6 +11,7 @@
  * v20260906-comms-inapp-49 (always OS banner for incoming calls)
  * v20260910-sw-no-fetch (do not intercept JS/CSS — Cache API hangs on some iPhone PWAs)
  * v20260925-call-both (repeat the call banner so a locked phone keeps ringing)
+ * v20261003-feedback-ring (outstanding feedback uses the same locked-phone ring)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
@@ -394,12 +395,15 @@ self.addEventListener('push', function (event) {
     portalOpen === 'incoming_call' ||
     portalOpen === 'communications' ||
     portalOpen === 'communications_call' ||
-    portalOpen === 'family_messages'
+    portalOpen === 'family_messages' ||
+    portalOpen === 'outstanding_feedback'
   ) {
     requireInteraction = true;
     if (!vibrate) {
       vibrate =
-        portalOpen === 'incoming_call' || portalOpen === 'communications_call'
+        portalOpen === 'incoming_call' ||
+        portalOpen === 'communications_call' ||
+        portalOpen === 'outstanding_feedback'
           ? PORTAL_CALL_VIBRATE
           : PORTAL_ALERT_VIBRATE;
     }
@@ -417,6 +421,7 @@ self.addEventListener('push', function (event) {
   };
   if (vibrate) notifyOpts.vibrate = vibrate;
   var isCallPush = portalOpen === 'communications_call' || portalOpen === 'incoming_call';
+  var isFeedbackRing = portalOpen === 'outstanding_feedback';
   var isCommsMessagePush = portalOpen === 'communications';
   var isFamilyPush = portalOpen === 'family_messages';
   event.waitUntil(
@@ -445,6 +450,8 @@ self.addEventListener('push', function (event) {
       if (isCallPush) {
         tasks.unshift(portalRingLockedCall(title, notifyOpts));
         tasks.push(portalWritePendingInapp(pending));
+      } else if (isFeedbackRing) {
+        tasks.unshift(portalRingLockedAlert(title, notifyOpts));
       } else if ((isCommsMessagePush || isFamilyPush) && hasVisibleClient) {
         tasks.push(portalCloseCommsOsBanners());
         tasks.push(portalWritePendingInapp(pending));
@@ -517,8 +524,65 @@ function portalRingLockedCall(title, notifyOpts) {
   return step();
 }
 
+var portalFeedbackRingToken = 0;
+var portalFeedbackRingReplacing = false;
+function portalStopFeedbackRing() {
+  portalFeedbackRingToken += 1;
+  portalFeedbackRingReplacing = false;
+  return self.registration.getNotifications().then(function (list) {
+    (list || []).forEach(function (n) {
+      var open = String((n.data && n.data.portalOpen) || '');
+      var tag = String(n.tag || '');
+      if (open === 'outstanding_feedback' || tag === 'staff-outstanding-feedback' || tag.indexOf('staff-outstanding-feedback') === 0) {
+        try { n.close(); } catch (e) {}
+      }
+    });
+  });
+}
+function portalRingLockedAlert(title, notifyOpts) {
+  var token = ++portalFeedbackRingToken;
+  var baseTag = String((notifyOpts && notifyOpts.tag) || 'staff-outstanding-feedback');
+  var i = 0;
+  function step() {
+    if (token !== portalFeedbackRingToken || i >= 8) return;
+    i += 1;
+    var opts = {};
+    var k;
+    for (k in notifyOpts) {
+      if (Object.prototype.hasOwnProperty.call(notifyOpts, k)) opts[k] = notifyOpts[k];
+    }
+    opts.tag = baseTag;
+    opts.renotify = true;
+    opts.silent = false;
+    opts.requireInteraction = true;
+    portalFeedbackRingReplacing = true;
+    return self.registration.getNotifications({ tag: baseTag }).then(function (existing) {
+      (existing || []).forEach(function (n) {
+        try { n.close(); } catch (e) {}
+      });
+      return self.registration.showNotification(title, opts);
+    }).then(function () {
+      portalFeedbackRingReplacing = false;
+      return new Promise(function (resolve) {
+        setTimeout(resolve, 2800);
+      });
+    }).then(function () {
+      if (token !== portalFeedbackRingToken) return;
+      return self.registration.getNotifications({ tag: baseTag }).then(function (list) {
+        if (!list || !list.length) {
+          if (token === portalFeedbackRingToken) portalFeedbackRingToken += 1;
+          return;
+        }
+        return step();
+      });
+    });
+  }
+  return step();
+}
+
 self.addEventListener('notificationclick', function (event) {
   portalStopCallRing();
+  portalStopFeedbackRing();
   event.notification.close();
   var data = (event.notification && event.notification.data) || {};
   var portalOpen = String(data.portalOpen || '');
@@ -564,10 +628,15 @@ self.addEventListener('notificationclose', function (event) {
   var data = (event.notification && event.notification.data) || {};
   var open = String(data.portalOpen || '');
   if (open === 'communications_call' || open === 'incoming_call') portalStopCallRing();
+  if (!portalFeedbackRingReplacing && open === 'outstanding_feedback') portalStopFeedbackRing();
 });
 
 self.addEventListener('message', function (event) {
   var data = (event && event.data) || {};
+  if (data.type === 'portal-stop-feedback-ring') {
+    event.waitUntil(Promise.resolve(portalStopFeedbackRing()));
+    return;
+  }
   if (data.type !== 'portal-stop-call-ring') return;
   event.waitUntil(Promise.resolve(portalStopCallRing()));
 });

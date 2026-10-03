@@ -1858,6 +1858,7 @@
         const title = String(n.title || '');
         if(tag === PORTAL_REMINDER_NOTIFY_TAG) return true;
         if(tag === 'staff-outstanding-feedback' || tag.indexOf('staff-outstanding-feedback') === 0) return true;
+        if(/^Safeguarding: session feedback/i.test(title)) return true;
         if(/^Outstanding feedback/i.test(title)) return true;
         if(/^Urgent: same-day register/i.test(title)) return true;
         if(/^Action required: register/i.test(title)) return true;
@@ -1876,6 +1877,12 @@
               if(!shouldCloseReminderNotification(n)) return;
               try{ n.close(); }catch(_e){}
             });
+          }).catch(function(){});
+        }
+        if(navigator.serviceWorker && navigator.serviceWorker.ready){
+          navigator.serviceWorker.ready.then(function(reg){
+            var worker = reg && (reg.active || reg.waiting);
+            if(worker) worker.postMessage({ type: 'portal-stop-feedback-ring' });
           }).catch(function(){});
         }
       }catch(_e){}

@@ -13,12 +13,19 @@
 //   30 17,18 * * 0   body {wave:"2030"}  — Sunday 18:30 London
 //   0 14,15 * * 6    body {wave:"2000"}  — Saturday 15:00 London
 //   30 14,15 * * 6   body {wave:"2030"}  — Saturday 15:30 London
-// Manual: POST {"force":true,"wave":"2000"} or {"dryRun":true,"force":true,"wave":"2030"}
+//   Wave "biz" queues WhatsApp Business on the office computer. It does not call Meta.
+//   Wave "ring" is the locked-phone alert. Cron repeats it until the feedback is in,
+//   from the biz hour until 23:00 London (Sat 16:00, Sun 19:00, Mon-Fri 21:00).
+// Manual: POST {"force":true,"wave":"2000"} or {"dryRun":true,"force":true,"wave":"ring"}
 //
 // Deploy: supabase functions deploy portal-feedback-2030-whatsapp --no-verify-jwt
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import webpush from "npm:web-push@3.6.7";
 import {
+  clampPushBody,
+  expandPushSubscriptionUserIds,
+  initVapidFromEnv,
   jsonPushResponse,
   PORTAL_PUSH_CORS_HEADERS,
   verifyPortalPushWebhook,
@@ -135,7 +142,7 @@ function bizHour(london) {
 
 function resolveWave(raw, london) {
   const w = String(raw || "").trim();
-  if (w === "2000" || w === "2030" || w === "biz") return w;
+  if (w === "2000" || w === "2030" || w === "biz" || w === "ring") return w;
   const hourWant = reminderHour(london);
   if (london.hour === hourWant && london.minute >= 25) return "2030";
   if (london.hour === hourWant) return "2000";
@@ -143,7 +150,13 @@ function resolveWave(raw, london) {
   return "";
 }
 
+/** Locked-phone ring: from 30 minutes after the last API wave until 23:00 London. */
+function inRingWindow(london) {
+  return london.hour >= bizHour(london) && london.hour < 23;
+}
+
 function inLondonWaveWindow(wave, london) {
+  if (wave === "ring") return inRingWindow(london);
   if (wave === "biz") return london.hour === bizHour(london) && london.minute <= 12;
   const hourWant = reminderHour(london);
   if (london.hour !== hourWant) return false;
@@ -214,6 +227,82 @@ function buildBody(first, pending, sample, wave, london) {
     `This message was sent automatically. Please do not reply to it.\n\n` +
     `Thank you,\nclubSENsational office`
   );
+}
+
+function pickNewestPushSubs(rows) {
+  const byUser = new Map();
+  for (const row of rows || []) {
+    const uid = String(row.user_id || "").trim();
+    if (!uid) continue;
+    const list = byUser.get(uid) || [];
+    list.push(row);
+    byUser.set(uid, list);
+  }
+  const picked = [];
+  for (const userRows of byUser.values()) {
+    userRows.sort((a, b) => {
+      const ta = Date.parse(String(a.updated_at || "")) || 0;
+      const tb = Date.parse(String(b.updated_at || "")) || 0;
+      return tb - ta;
+    });
+    const apple = userRows.find((r) => String(r.endpoint || "").includes("web.push.apple.com"));
+    picked.push(apple || userRows[0]);
+  }
+  return picked.filter(Boolean);
+}
+
+/**
+ * Same locked-phone ring as an incoming call. Repeats from cron until pending is 0.
+ * Does not send WhatsApp.
+ */
+async function sendFeedbackRingPush(admin, profileId, pending, sample) {
+  if (!initVapidFromEnv()) return { sent: 0, subs: 0, error: "no_vapid" };
+  const expanded = await expandPushSubscriptionUserIds(admin, [profileId]);
+  const { data: subsRaw, error: subErr } = await admin
+    .from("portal_push_subscriptions")
+    .select("user_id, endpoint, subscription_json, updated_at")
+    .in("user_id", expanded)
+    .eq("register_app", "portal");
+  if (subErr) return { sent: 0, subs: 0, error: subErr.message };
+  const subs = pickNewestPushSubs(subsRaw || []);
+  if (!subs.length) return { sent: 0, subs: 0, error: "no_push" };
+  const n = Math.max(1, Number(pending) || 1);
+  const list = (sample || []).slice(0, 3).join(", ");
+  const title = "Safeguarding: session feedback still open";
+  const pushBody = clampPushBody(
+    `You still have ${n} to send${list ? ": " + list : ""}. This stays on until they are in the Staff Portal.`,
+  );
+  const payload = JSON.stringify({
+    title,
+    body: pushBody,
+    url: PORTAL_URL,
+    portalOpen: "outstanding_feedback",
+    tag: "staff-outstanding-feedback",
+    requireInteraction: true,
+    vibrate: [500, 180, 500, 180, 700, 180, 500],
+  });
+  let sent = 0;
+  let lastErr = "";
+  for (const row of subs) {
+    const raw = row.subscription_json;
+    if (!raw || typeof raw !== "object") continue;
+    try {
+      await webpush.sendNotification(raw, payload, { TTL: 1200, urgency: "high" });
+      sent++;
+    } catch (e) {
+      const st = e && e.statusCode;
+      lastErr = st ? String(st) : (e && e.message) || "push_failed";
+      if (st === 404 || st === 410) {
+        const ep = String(row.endpoint || raw.endpoint || "");
+        if (ep) {
+          await admin.from("portal_push_subscriptions").delete()
+            .eq("user_id", row.user_id)
+            .eq("endpoint", ep);
+        }
+      }
+    }
+  }
+  return { sent, subs: subs.length, error: sent ? "" : lastErr || "push_failed" };
 }
 
 /** Normal WhatsApp Business chat. Not an API template. The office sends it from this computer. */
@@ -458,6 +547,68 @@ Deno.serve(async (req) => {
   const sent = [];
   const skipped = [];
   for (const t of targets) {
+    if (wave === "ring") {
+      if (!t.profileId) {
+        skipped.push({ username: t.username, reason: "no_profile" });
+        continue;
+      }
+      const { data: apiWave } = await admin
+        .from(DEDUPE_TABLE)
+        .select("id")
+        .eq("session_date", iso)
+        .eq("staff_user_id", t.profileId)
+        .eq("wave", "2030")
+        .maybeSingle();
+      if (!apiWave && !force) {
+        skipped.push({ username: t.username, reason: "no_api_reminder" });
+        continue;
+      }
+      const since = new Date(Date.now() - 8 * 60 * 1000).toISOString();
+      const { data: recent } = await admin
+        .from("portal_staff_notify_log")
+        .select("id")
+        .eq("kind", "feedback_ring_push")
+        .eq("staff_profile_id", t.profileId)
+        .gte("created_at", since)
+        .limit(1);
+      if (recent && recent.length) {
+        skipped.push({ username: t.username, reason: "recent" });
+        continue;
+      }
+      const ring = await sendFeedbackRingPush(admin, t.profileId, t.pending, t.sample);
+      const ringBody = `Safeguarding ring. ${t.pending} feedback still open${
+        (t.sample || []).length ? ": " + (t.sample || []).slice(0, 3).join(", ") : ""
+      }.`;
+      await admin.from("portal_staff_notify_log").insert({
+        sent_by_user_id: null,
+        sent_by_email: "system@clubsensational.org",
+        kind: "feedback_ring_push",
+        channel: "web_push",
+        staff_profile_id: t.profileId,
+        staff_username: t.username,
+        staff_display_name: t.staffLabel,
+        staff_phone: t.phone || null,
+        subject: `Feedback ring - ${iso}`,
+        body_text: ringBody,
+        whatsapp_status: ring.sent > 0 ? "sent" : "failed",
+        whatsapp_message_id: null,
+        error_detail: ring.sent > 0 ? null : ring.error || "no_push",
+        meta: {
+          campaign: "feedback_ring_push",
+          session_date: iso,
+          pending: t.pending,
+          sample: t.sample,
+          subs: ring.subs,
+          sent: ring.sent,
+        },
+      });
+      if (ring.sent > 0) {
+        sent.push({ username: t.username, pending: t.pending, ring: true, devices: ring.sent });
+      } else {
+        skipped.push({ username: t.username, reason: ring.error || "no_push" });
+      }
+      continue;
+    }
     if (!t.phone || !t.profileId) {
       skipped.push({ username: t.username, reason: t.phone ? "no_profile" : "no_phone" });
       continue;

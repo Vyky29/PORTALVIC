@@ -85,7 +85,7 @@
   if ("serviceWorker" in global.navigator) {
     try {
       if (isStaffApp) {
-        var swUrl = "/clubsensational-portal-sw.js?v=20260925-call-both";
+        var swUrl = "/clubsensational-portal-sw.js?v=20261003-feedback-ring";
         var scopeBase = new URL("./", global.location.href).href;
         global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
       }

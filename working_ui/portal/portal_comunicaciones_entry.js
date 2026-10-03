@@ -1999,7 +1999,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260925-call-both", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20261003-feedback-ring", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function (reg) {
         try {
