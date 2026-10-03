@@ -487,7 +487,8 @@ body.comms-embed .comms-shell {
   padding: 10px 12px;
   font: inherit;
   line-height: 1.4;
-  min-height: 152px;
+  height: 160px;
+  min-height: 160px;
   max-height: 240px;
   min-width: 0;
   overflow-wrap: break-word;
