@@ -119,8 +119,8 @@
   function leadOutcome(r) {
     r = r || {};
     var key = String(r.visit_outcome || "").toLowerCase();
-    if (key === "trial") return { key: "trial", label: "Trial", tone: "lead-trial" };
-    if (key === "term") return { key: "term", label: "Term", tone: "ok" };
+    if (key === "trial") return { key: "trial", label: "Booked Trial", tone: "lead-trial" };
+    if (key === "term") return { key: "term", label: "Booked Term", tone: "ok" };
     if (key === "waiting") return { key: "waiting", label: "Waiting list", tone: "wait" };
     if (key === "looked") return { key: "looked", label: "Only looked", tone: "lead-looked" };
     var book = String(r.booking_status || "").toLowerCase();
@@ -411,6 +411,31 @@
     var activity = leadActivityText(r);
     var enquiry = leadEnquiryText(r);
     var dash = '<span class="muted">—</span>';
+    function placeLines(text) {
+      var raw = String(text || "").trim();
+      if (!raw) return "";
+      return raw
+        .split(" | ")
+        .map(function (line) {
+          return (
+            '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
+            esc(line) +
+            "</div>"
+          );
+        })
+        .join("");
+    }
+    var typeUnder =
+      person.key === "active"
+        ? placeLines(activity)
+        : person.note
+          ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
+            esc(person.note) +
+            "</div>"
+          : "";
+    var outcomeUnder =
+      outcome.key === "trial" || outcome.key === "term" ? placeLines(activity) : "";
+    var activityInColumn = outcome.key === "trial" || outcome.key === "term" ? "" : activity;
     return (
       "<tr>" +
       '<td style="min-width:0">' +
@@ -438,11 +463,7 @@
       "</td>" +
       '<td style="min-width:0;max-width:12rem;overflow-wrap:break-word">' +
       chip(person.label, person.tone) +
-      (person.note
-        ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
-          esc(person.note) +
-          "</div>"
-        : "") +
+      typeUnder +
       "</td>" +
       (cols.track
         ? '<td style="min-width:0">' + trackSelectHtml(r) + "</td>"
@@ -452,10 +473,12 @@
       esc(outcome.tone) +
       '" style="white-space:normal;overflow-wrap:anywhere;max-width:100%;display:inline-block">' +
       esc(outcome.label) +
-      "</span></td>" +
+      "</span>" +
+      outcomeUnder +
+      "</td>" +
       '<td style="min-width:0;max-width:16rem;overflow-wrap:break-word;font-size:12px">' +
-      (activity
-        ? activity
+      (activityInColumn
+        ? activityInColumn
             .split(" | ")
             .map(function (line) {
               return (

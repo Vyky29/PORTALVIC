@@ -2026,7 +2026,7 @@
     .chip--lead-known{background:#f3e8ff;color:#6d28d9;border:1px solid #d8b4fe}
     .chip--lead-looked{background:#ccfbf1;color:#0f766e;border:1px solid #99f6e4}
     .chip--lead-trial{background:#fce7f3;color:#be185d;border:1px solid #f9a8d4}
-    .chip--lead-active{background:#e2e8f0;color:#334155;border:1px solid #cbd5e1}
+    .chip--lead-active{background:#dcfce7;color:#166534;border:1px solid #86efac}
     /* Finance sheet: participant as pill → profile (tbody injected after bindView) */
     button.finance-pax-pill{
       display:inline-flex;align-items:center;max-width:100%;min-width:0;margin:0;
