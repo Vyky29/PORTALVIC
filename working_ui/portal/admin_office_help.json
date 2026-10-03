@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v204",
+  "version": "2026-10-03-v205",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -763,7 +763,7 @@
             "WAITING finished the form and the service they want is full.",
             "CLIENT (Active) has a place now. On Trial is a CLIENT sitting a trial seat, not a REGISTERED chip.",
             "OLD had a place and has none from September 2026.",
-            "Funding and payment live on the child row after the form. Leads does not show them. On REGISTERED, Service and Time slot show the trial they asked for when the row is Pay hold, Hold, or Lost slot."
+            "Funding and payment live on the child row after the form, or on the pay choice they saved. Leads does not show them. On REGISTERED, Service and Time slot show the trial they asked for when the row is Pay hold, Hold, or Lost slot. A payments sheet row that is only a first name stays with the client who already had that name. A row marked merged retired stays off these lists."
           ],
           "tips": [
             "Do not say former / alumni in office chat — say OLD.",
@@ -779,7 +779,7 @@
               "WAITING termino el formulario y el servicio que quiere esta lleno.",
               "CLIENT (Active) tiene plaza ahora. On Trial es un CLIENT sentado en un trial, no un chip de REGISTERED.",
               "OLD tuvo plaza y no tiene desde septiembre 2026.",
-              "Funding y payment viven en la fila del nino despues del formulario. Leads no los enseña. En REGISTERED, Service y Time slot muestran el trial que pidieron cuando la fila es Pay hold, Hold o Lost slot."
+              "Funding y payment viven en la fila del nino despues del formulario, o en la opcion de pago que guardo. Leads no los enseña. En REGISTERED, Service y Time slot muestran el trial que pidieron cuando la fila es Pay hold, Hold o Lost slot. Una fila de payments que solo tiene el nombre de pila se queda con el cliente que ya tenia ese nombre. Una fila marcada merged retired no sale en estas listas."
             ],
             "tips": [
               "En la oficina no digas former ni alumni. Di OLD.",

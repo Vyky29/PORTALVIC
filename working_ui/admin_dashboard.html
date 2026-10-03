@@ -2670,7 +2670,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v204')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v205')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -22094,6 +22094,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!paxContactsRealContactId(p) && live.contact_id) p.contactId = String(live.contact_id);
       return p;
     }
+    /** A merged-away contact (the surviving child is already on Active) does not sit on these lists. */
+    function paxContactsRetiredMergeName(name){
+      var n = String(name || '');
+      return /merged retired/i.test(n) || /\bwas yosiyas\b/i.test(n);
+    }
     function paxContactsUnifiedList(){
       var catalog = adminPortalParticipantsCatalogRows();
       var out = [];
@@ -22121,12 +22126,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         op._cfkContact = true;
         out.push(op);
       }
+      out = out.filter(function(p){ return !paxContactsRetiredMergeName(p && p.name); });
       out = paxContactsDedupeByPerson(paxContactsAppendWorkbookWaitlist(paxContactsAppendLiveWaitlist(paxContactsAppendUnlistedParticipants(out))));
       out.forEach(paxContactsApplyLiveFacts);
       paxContactsStampWaitSources(out);
       paxContactsStampRegisteredDates(out);
       out = paxContactsAppendUnmatchedTrials(out);
       out = paxContactsAppendPlaceFlagPeople(out);
+      out = out.filter(function(p){ return !paxContactsRetiredMergeName(p && p.name); });
       out.sort(function(a, b){
         return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), undefined, { sensitivity: 'base' });
       });
@@ -23635,6 +23642,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       if(!pool.length){
         pool = rows.filter(function(r){
+          var sheetBits = paxContactsNormName(r.client_name).split(' ').filter(Boolean);
+          var personBits = name.split(' ').filter(Boolean);
+          if(sheetBits.length === 1 && personBits.length > 1 && personBits[0] === sheetBits[0]){
+            var owner = paxContactsBareFirstOwner(personBits[0]);
+            if(!owner || paxContactsRealContactId(p) !== owner) return false;
+          }
           try{ return paxContactsSameChild(p.name, r.client_name); }catch(_e){ return false; }
         });
       }
@@ -23646,7 +23659,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           });
           var names = Object.create(null);
           tokenHits.forEach(function(r){ names[paxContactsNormName(r.client_name)] = true; });
-          if(Object.keys(names).length === 1) pool = tokenHits;
+          if(Object.keys(names).length === 1 && tokenHits.length){
+            var sheetOnly = paxContactsNormName(tokenHits[0].client_name).split(' ').filter(Boolean);
+            var personBits = name.split(' ').filter(Boolean);
+            var bareOwner = personBits[0] ? paxContactsBareFirstOwner(personBits[0]) : '';
+            var sameWords = sheetOnly.join(' ') === personBits.join(' ');
+            var ownsBare = sheetOnly.length === 1 && personBits.length > 1 && bareOwner && paxContactsRealContactId(p) === bareOwner;
+            if(sameWords || ownsBare || (sheetOnly.length > 1 && paxContactsPayRowIsThisChild(p, tokenHits[0]))) pool = tokenHits;
+          }
         }
       }
       if(!pool.length) return null;
