@@ -163,7 +163,7 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260919-youssef-namekey"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20261001-old-junaid-patrick-yassir"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20261003-cyrus-regular"></script>
   <script src="/portal/autumn_staff_hours_reference.js?v=20260928-patience-tue"></script>
   <script src="/portal/portal_dc_services_local.js?v=20260930-tue-fadi"></script>
   <script src="/portal/portal_capacity_chain_occupants.js?v=20261001-elias-wed-junaid-open"></script>
@@ -2670,7 +2670,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v206')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v207')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;

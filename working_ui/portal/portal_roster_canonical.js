@@ -1958,11 +1958,11 @@
   }
 
   /**
-   * From Sun 27 Sep: Cyrus goes to the pool first (Gabriel's swimming instructor,
-   * Roberto) and stays Small Pool. Arthur Ma, who was Small at 11, moves to Big.
-   * Gabriel takes Cyrus's support worker (Berta) for that first half.
-   * At 11.45 they swap back: Gabriel swims with Aurora (Cyrus's instructor, Small);
-   * Cyrus is in the Hub with Godsway (Gabriel's support worker). Arthur Mo stays.
+   * From Sun 27 Sep, for the rest of term: Cyrus swims first with Roberto
+   * (11-11.45, Small Pool). Gabriel takes Cyrus's Hub half with Berta.
+   * At 11.45 Gabriel swims with Aurora (Small) and Cyrus is in the Hub with Godsway.
+   * Arthur Ma at 11 moves to Big Pool. Arthur Mo stays.
+   * The blue "this changed" card is only Sun 27 Sep. Later Sundays they are the regular clients.
    */
   var SUNDAY_CYRUS_POOL_FIRST_FROM = "2026-09-27";
   function applySundayCyrusGabrielOrder(row) {
@@ -1974,38 +1974,25 @@
     var area = String(row.area || "");
     var hub = /hub/i.test(area);
     var next = Object.assign({}, row);
+    var remember = iso === SUNDAY_CYRUS_POOL_FIRST_FROM;
+    function placeChild(name, fromClient, areaName) {
+      next.client_name = name;
+      if (areaName) next.area = areaName;
+      next.portalSwapFromClient = fromClient;
+      if (remember) next.__portal_admin_client_swap = true;
+      return next;
+    }
     if (time === "11 to 11.45") {
-      if (client === "Gabriel" && !hub) {
-        next.client_name = "Cyrus";
-        next.area = "Small Pool";
-        next.__portal_admin_client_swap = true;
-        next.portalSwapFromClient = client;
-        return next;
-      }
+      if (client === "Gabriel" && !hub) return placeChild("Cyrus", client, "Small Pool");
       if (client === "Arthur Ma" && !hub) {
         next.area = "Big Pool";
         return next;
       }
-      if (client === "Cyrus" && hub) {
-        next.client_name = "Gabriel";
-        next.__portal_admin_client_swap = true;
-        next.portalSwapFromClient = client;
-        return next;
-      }
+      if (client === "Cyrus" && hub) return placeChild("Gabriel", client);
     }
     if (time === "11.45 to 12.30") {
-      if (client === "Cyrus" && !hub) {
-        next.client_name = "Gabriel";
-        next.__portal_admin_client_swap = true;
-        next.portalSwapFromClient = client;
-        return next;
-      }
-      if (client === "Gabriel" && hub) {
-        next.client_name = "Cyrus";
-        next.__portal_admin_client_swap = true;
-        next.portalSwapFromClient = client;
-        return next;
-      }
+      if (client === "Cyrus" && !hub) return placeChild("Gabriel", client);
+      if (client === "Gabriel" && hub) return placeChild("Cyrus", client);
     }
     return row;
   }
