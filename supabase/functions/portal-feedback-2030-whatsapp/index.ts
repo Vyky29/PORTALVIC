@@ -276,8 +276,9 @@ async function sendFeedbackRingPush(admin, profileId, pending, sample) {
     title,
     body: pushBody,
     url: PORTAL_URL,
-    portalOpen: "outstanding_feedback",
-    tag: "staff-outstanding-feedback",
+    /* Call ring already on the phone. It sounds when the feedback alerts are off. */
+    portalOpen: "incoming_call",
+    tag: "portal-incoming-call-feedback",
     requireInteraction: true,
     vibrate: [500, 180, 500, 180, 700, 180, 500],
   });
@@ -566,12 +567,14 @@ Deno.serve(async (req) => {
       const since = new Date(Date.now() - 8 * 60 * 1000).toISOString();
       const { data: recent } = await admin
         .from("portal_staff_notify_log")
-        .select("id")
+        .select("id, meta")
         .eq("kind", "feedback_ring_push")
         .eq("staff_profile_id", t.profileId)
         .gte("created_at", since)
         .limit(1);
-      if (recent && recent.length) {
+      const recentMeta = recent && recent[0] && recent[0].meta;
+      const recentWasCall = !!(recentMeta && recentMeta.call_ring);
+      if (recent && recent.length && recentWasCall) {
         skipped.push({ username: t.username, reason: "recent" });
         continue;
       }
@@ -600,6 +603,7 @@ Deno.serve(async (req) => {
           sample: t.sample,
           subs: ring.subs,
           sent: ring.sent,
+          call_ring: true,
         },
       });
       if (ring.sent > 0) {

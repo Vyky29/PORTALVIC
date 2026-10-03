@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v202",
+  "version": "2026-10-03-v203",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1655,7 +1655,7 @@
             "Saturday: first WhatsApp at 3:00pm, second at 3:30pm if feedback is still missing.",
             "The API messages use the staff WhatsApp template. They say the message was sent automatically and not to reply. The link is the staff portal at clubsensational-staff.",
             "The second API message goes only to people who still owe feedback.",
-            "30 minutes after that last API message, if the feedback is still missing, the staff phone gets the same locked-phone ring as a call. It comes back every 10 minutes until the feedback is in, and it stops at 11:00pm. Saturday that starts at 4:00pm. Sunday at 7:00pm. Monday to Friday at 9:00pm. The admin can still open WhatsApp Business on this computer. That chat does not send itself."
+            "30 minutes after that last API message, if the feedback is still missing, the staff phone gets the call ring, the one that still sounds when the feedback alerts in the app are off. It comes back every 10 minutes until the feedback is in, and it stops at 11:00pm. Saturday that starts at 4:00pm. Sunday at 7:00pm. Monday to Friday at 9:00pm. The admin can still open WhatsApp Business on this computer. That chat does not send itself."
           ],
           "tips": [
             "Saturday is 3:00pm then 3:30pm. Sunday is 6:00pm then 6:30pm. Weekdays stay 8:00pm then 8:30pm. The locked-phone ring starts 30 minutes after the second API message and repeats every 10 minutes until the feedback is in, or until 11:00pm."
@@ -1670,7 +1670,7 @@
               "Sabado: primer WhatsApp a las 3:00, segundo a las 3:30 si el feedback sigue sin hacerse.",
               "Los mensajes de API usan la plantilla de WhatsApp del staff. Dicen que se envio automaticamente y que no contesten. El enlace es el portal de staff en clubsensational-staff.",
               "El segundo mensaje de API solo sale a quien todavia debe feedback.",
-              "30 minutos despues de ese ultimo mensaje de API, si el feedback sigue sin hacerse, el movil del staff recibe el mismo aviso que una llamada, aunque este bloqueado. Vuelve cada 10 minutos hasta que el feedback esta dentro, y para a las 11:00. El sabado empieza a las 4:00. El domingo a las 7:00. De lunes a viernes a las 9:00. El admin puede abrir WhatsApp Business en este ordenador. Ese chat no se envia solo."
+              "30 minutos despues de ese ultimo mensaje de API, si el feedback sigue sin hacerse, el movil del staff recibe el timbre de llamada, el que sigue sonando aunque los avisos de feedback de la app esten apagados. Vuelve cada 10 minutos hasta que el feedback esta dentro, y para a las 11:00. El sabado empieza a las 4:00. El domingo a las 7:00. De lunes a viernes a las 9:00. El admin puede abrir WhatsApp Business en este ordenador. Ese chat no se envia solo."
             ],
             "tips": [
               "Sabado a las 3:00 y a las 3:30. Domingo a las 6:00 y a las 6:30. Entre semana a las 8:00 y a las 8:30. El aviso del movil bloqueado empieza 30 minutos despues del segundo mensaje de API y se repite cada 10 minutos hasta que el feedback esta dentro, o hasta las 11:00."
