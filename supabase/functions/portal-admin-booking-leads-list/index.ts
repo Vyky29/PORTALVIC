@@ -11,6 +11,120 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 
+type VisitKind = "trial" | "term";
+
+function bookingKindFrom(notes: string, mode: string | null): VisitKind | "" {
+  const n = String(notes || "");
+  const m = String(mode || "").toLowerCase();
+  if (/booking_kind\s*=\s*trial|\breleased_post_trial\b|\btrial_paid\b|\btrial_hold\b/i.test(n) || m === "trial") {
+    return "trial";
+  }
+  if (/booking_kind\s*=\s*term/i.test(n) || m === "term") return "term";
+  if (/ops_synced|booking_paid/i.test(n) && !/trial/i.test(n)) return "term";
+  return "";
+}
+
+function nameKey(raw: unknown): string {
+  return String(raw || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Outcome is what this visit did: Only looked, Waiting list, Trial, Term.
+ * Type is who they were: new visitor, known without the parent portal, or ACTIVE.
+ */
+async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Record<string, unknown>[]) {
+  const emails = [
+    ...new Set(
+      leads.map((r) => String(r.email || "").trim().toLowerCase()).filter(Boolean),
+    ),
+  ];
+  const byEmail = new Map<string, { at: number; kind: VisitKind; notes: string }[]>();
+  const byName = new Map<string, { at: number; kind: VisitKind; notes: string }[]>();
+  if (emails.length) {
+    const { data, error } = await admin
+      .from("portal_booking_slot_reservations")
+      .select("parent_email, parent_name, notes, booking_mode, created_at")
+      .gte("created_at", "2026-08-01")
+      .order("created_at", { ascending: true })
+      .limit(2000);
+    if (error) {
+      console.warn("[portal-admin-booking-leads-list] reservations", error.message);
+    } else {
+      const want = new Set(emails);
+      for (const row of data || []) {
+        const kind = bookingKindFrom(String(row.notes || ""), row.booking_mode || null);
+        if (!kind) continue;
+        const at = new Date(String(row.created_at || "")).getTime();
+        if (!Number.isFinite(at)) continue;
+        const hit = { at, kind, notes: String(row.notes || "") };
+        const em = String(row.parent_email || "").trim().toLowerCase();
+        if (em && want.has(em)) {
+          const list = byEmail.get(em) || [];
+          list.push(hit);
+          byEmail.set(em, list);
+        }
+        const nk = nameKey(row.parent_name);
+        if (nk) {
+          const list = byName.get(nk) || [];
+          list.push(hit);
+          byName.set(nk, list);
+        }
+      }
+    }
+  }
+
+  return leads.map((lead) => {
+    const em = String(lead.email || "").trim().toLowerCase();
+    const rows = (byEmail.get(em) || byName.get(nameKey(lead.parent_name)) || [])
+      .slice()
+      .sort((a, b) => a.at - b.at);
+    const visitAt = new Date(String(lead.last_activity_at || lead.created_at || "")).getTime();
+    const windowMs = 48 * 60 * 60 * 1000;
+    const inVisit = (at: number) =>
+      Number.isFinite(visitAt) && at >= visitAt - windowMs && at <= visitAt + 6 * 60 * 60 * 1000;
+    const latestVisit = rows.filter((r) => inVisit(r.at)).pop();
+    const prior = rows.filter((r) => !inVisit(r.at));
+    const book = String(lead.booking_status || "").toLowerCase();
+    const client = String(lead.client_status || "").toLowerCase();
+    const source = String(lead.source || "").toLowerCase();
+    const parentPortal = source.includes("parent portal") && lead.asked_otp !== true;
+
+    let visit_outcome: "looked" | "waiting" | "trial" | "term" = "looked";
+    if (latestVisit?.kind === "trial") visit_outcome = "trial";
+    else if (latestVisit?.kind === "term") visit_outcome = "term";
+    else if (book === "waiting_list" || client === "waiting_list") visit_outcome = "waiting";
+
+    const priorTrial = prior.some((r) => r.kind === "trial");
+    const priorPlace = prior.some((r) => r.kind === "term" && /ops_synced|booking_paid/i.test(r.notes));
+    const formAt = new Date(String(lead.form_submitted_at || "")).getTime();
+    const formBefore = Number.isFinite(formAt) && Number.isFinite(visitAt) && formAt < visitAt - windowMs;
+
+    let person_type: "new" | "registered" | "active" = "new";
+    let person_bucket = "";
+    if (priorPlace) {
+      person_type = "active";
+    } else if (priorTrial) {
+      person_type = "registered";
+      person_bucket = "TRIAL";
+    } else if ((book === "waiting_list" || client === "waiting_list") && (formBefore || prior.length)) {
+      person_type = "registered";
+      person_bucket = "WAITING LIST";
+    } else if (formBefore) {
+      person_type = "registered";
+      person_bucket = "REGISTERED";
+    } else if (client === "active_client" && visit_outcome === "looked") {
+      person_type = "active";
+    } else if (parentPortal && visit_outcome === "looked") {
+      person_type = "active";
+    }
+
+    return { ...lead, visit_outcome, person_type, person_bucket };
+  });
+}
+
 function isEmailInterestImport(row: {
   source?: unknown;
   privacy_notice_version?: unknown;
@@ -244,6 +358,8 @@ Deno.serve(async (req) => {
       form_type: doc?.form_type || null,
     };
   });
+
+  leads = await attachLeadVisit(admin, leads);
 
   const since24 = Date.now() - 24 * 60 * 60 * 1000;
   const new24h = leads.filter((r) => {

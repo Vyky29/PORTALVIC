@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v212",
+  "version": "2026-10-03-v213",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -825,7 +825,7 @@
         {
           "id": "leads_do",
           "title": "What you do with the people on Leads",
-          "summary": "Lead is OTP or Parent portal. Outcome says what they did next. The form is not on this screen.",
+          "summary": "Lead is OTP or Parent portal. Type is who they were. Outcome is Only looked, Waiting list, Trial, or Term.",
           "where": "Services & places → Leads",
           "keywords": [
             "what to do",
@@ -839,7 +839,8 @@
           "steps": [
             "The page opens on Portal OTP only. Each row is a parent who asked for a code, or who opened Booking from the family hub.",
             "Lead is how they came in. OTP means they asked for a code on the booking page. Parent portal means they were already in the family hub. No code.",
-            "Outcome is what they did next. Already a client, only looked means they did not send a new form. Already a client, registered again means they sent a new registration. That form is not a column here. Once they are REGISTERED or ACTIVE, the form is the person in the portal.",
+            "Type is who they were on that visit. New visitor, First time: we did not know them. Registered: we already knew them and they are not ACTIVE. The line under it is TRIAL, WAITING LIST, or REGISTERED. ACTIVE already has a place.",
+            "Outcome is what that visit did. Only looked, Waiting list, Trial, or Term. A first OTP visit that books a trial is Trial. Coming back later with OTP and booking the term is Term.",
             "Activity and Enquiry stay hidden when every row on screen is empty. They show on the office list, when you typed a note.",
             "Track status is not on the Portal OTP table. It stays on the office list. Booked takes that email off the marketing list. It does not change Outcome.",
             "Filter first with Search, Origin, Track status and Outcome. Write to this filter sits under those filters. Tick a row only when you want to write to that parent. Send via Family broadcast, or Copy emails / Copy phones.",
@@ -851,12 +852,13 @@
           ],
           "es": {
             "title": "Que hacer con la gente de Leads",
-            "summary": "Leads son personas que pidieron un codigo OTP. Outcome dice que hicieron despues.",
+            "summary": "Lead es OTP o Parent portal. Type es quien eran. Outcome es Only looked, Waiting list, Trial o Term.",
             "where": "Services & places → Leads",
             "steps": [
               "La pagina abre en Portal OTP. Cada fila es un padre que pidio un codigo, o que abrio Booking desde el hub de la familia.",
               "Lead es como entraron. OTP: pidieron un codigo en Booking. Parent portal: ya estaban en el hub. Sin codigo.",
-              "Outcome es lo que hicieron despues. Already a client, only looked: no mandaron un formulario nuevo. Already a client, registered again: si mandaron un registro nuevo. El formulario no es una columna aqui. Cuando estan REGISTERED o ACTIVE, el formulario ya es la persona en el portal.",
+              "Type es quien eran en esa visita. New visitor, First time: no los conociamos. Registered: ya los conociamos y no son ACTIVE. Debajo sale TRIAL, WAITING LIST o REGISTERED. ACTIVE ya tiene plaza.",
+              "Outcome es lo que hizo esa visita. Only looked, Waiting list, Trial o Term. La primera vez con OTP que reserva un trial es Trial. Si vuelve despues con OTP y reserva el term, es Term.",
               "Activity y Enquiry no salen si todas las filas de la pantalla estan vacias. Salen en la lista de oficina, cuando escribiste una nota.",
               "Track status no esta en la tabla de Portal OTP. Se queda en la lista de oficina. Booked saca ese email de la lista de marketing. No cambia Outcome.",
               "Filtra primero con Search, Origin, Track status y Outcome. Write to this filter va debajo de esos filtros. Marca una fila solo cuando quieras escribir a ese padre. Send via Family broadcast, o Copy emails / Copy phones.",

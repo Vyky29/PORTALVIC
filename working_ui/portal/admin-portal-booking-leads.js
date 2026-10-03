@@ -141,35 +141,33 @@
     return String(raw || "—").replace(/_/g, " ");
   }
 
-  /** What this OTP lead did after asking for the code. */
+  /** What this visit did. Only looked, Waiting list, Trial, or Term. */
   function leadOutcome(r) {
     r = r || {};
-    var client = String(r.client_status || "").toLowerCase();
+    var key = String(r.visit_outcome || "").toLowerCase();
+    if (key === "trial") return { key: "trial", label: "Trial", tone: "pend" };
+    if (key === "term") return { key: "term", label: "Term", tone: "ok" };
+    if (key === "waiting") return { key: "waiting", label: "Waiting list", tone: "info" };
+    if (key === "looked") return { key: "looked", label: "Only looked", tone: "info" };
     var book = String(r.booking_status || "").toLowerCase();
-    var reg = String(r.registration_status || "").toLowerCase();
-    var source = String(r.source || "").toLowerCase();
-    var existing = client === "active_client" || source.indexOf("existing client") >= 0;
-    var regSubmitted = reg === "submitted" || book === "registration_submitted";
-    var booked = book === "booking_completed";
-    var started = reg === "started" || book === "booking_started";
-    var waiting = client === "waiting_list" || book === "waiting_list";
-    if (existing && regSubmitted && !booked) {
-      return { key: "client_again", label: "Already a client, registered again", tone: "ok" };
+    var client = String(r.client_status || "").toLowerCase();
+    if (book === "waiting_list" || client === "waiting_list") {
+      return { key: "waiting", label: "Waiting list", tone: "info" };
     }
-    if (existing && booked) {
-      return { key: "client", label: "Already a client", tone: "ok" };
-    }
-    if (existing) {
-      return { key: "client_looked", label: "Already a client, only looked", tone: "info" };
-    }
-    if (waiting) return { key: "waiting", label: "Waiting list", tone: "info" };
-    if (booked) return { key: "booked", label: "Registered, place booked", tone: "ok" };
-    if (regSubmitted || client === "registered") {
-      return { key: "registered", label: "Registered", tone: "ok" };
-    }
-    if (started) return { key: "started", label: "Started registration", tone: "pend" };
-    if (!r.email_verified_at) return { key: "code", label: "Asked for a code", tone: "pend" };
     return { key: "looked", label: "Only looked", tone: "info" };
+  }
+
+  /** Who they were. New visitor, known without the parent portal, or ACTIVE. */
+  function leadType(r) {
+    r = r || {};
+    var kind = String(r.person_type || "").toLowerCase();
+    var bucket = String(r.person_bucket || "").trim();
+    if (kind === "active") return { key: "active", label: "ACTIVE", note: "", tone: "ok" };
+    if (kind === "registered") {
+      return { key: "registered", label: "Registered", note: bucket, tone: "info" };
+    }
+    if (kind === "new") return { key: "new", label: "New visitor", note: "First time", tone: "pend" };
+    return { key: "new", label: "New visitor", note: "First time", tone: "pend" };
   }
 
   /** Parent hub opens Booking with no code. Booking OTP is a code asked on the booking page. */
@@ -181,36 +179,25 @@
       client === "active_client" ||
       source.indexOf("existing client") >= 0 ||
       source.indexOf("parent portal") >= 0;
-    var sent =
-      String(r.registration_status || "").toLowerCase() === "submitted" ||
-      String(r.booking_status || "").toLowerCase() === "registration_submitted";
     if (source.indexOf("parent portal") >= 0 && r.asked_otp !== true) {
       return {
         key: "parent",
         label: "Parent portal",
-        note: sent
-          ? "Opened Booking from the parent hub and sent a new registration."
-          : "Opened Booking from the parent hub. No code, and no new registration.",
+        note: "Opened Booking from the parent hub.",
       };
     }
     if (source.indexOf("booking otp") >= 0 || r.asked_otp === true) {
       return {
         key: "otp",
-        label: "Booking OTP",
-        note: existing
-          ? sent
-            ? "Asked for a code on Booking and sent a new registration."
-            : "Asked for a code on Booking. Already a client. No new registration."
-          : "Asked for a code on Booking.",
+        label: "OTP",
+        note: "Asked for a code on Booking.",
       };
     }
     if (existing && r.asked_otp === false) {
       return {
         key: "parent",
         label: "Parent portal",
-        note: sent
-          ? "Opened Booking from the parent hub and sent a new registration."
-          : "Opened Booking from the parent hub. No code, and no new registration.",
+        note: "Opened Booking from the parent hub.",
       };
     }
     if (existing) {
@@ -369,7 +356,7 @@
   }
 
   function leadColspan(cols) {
-    return 6 + (cols.activity ? 1 : 0) + (cols.enquiry ? 1 : 0) + (cols.track ? 1 : 0);
+    return 7 + (cols.activity ? 1 : 0) + (cols.enquiry ? 1 : 0) + (cols.track ? 1 : 0);
   }
 
   function rowHtml(r, cols) {
@@ -378,13 +365,13 @@
     var imported = isImportRow(r);
     var checked = em && state.selected[em] ? " checked" : "";
     var outcome = leadOutcome(r);
+    var person = leadType(r);
     var lookedAt =
       Array.isArray(r.services_viewed) && r.services_viewed.length
         ? r.services_viewed.slice(0, 2).join(", ")
         : "";
     var entry = entryWay(r);
-    var leadLabel =
-      entry.key === "otp" ? "OTP" : entry.key === "parent" ? "Parent portal" : entry.label;
+    var leadLabel = entry.label;
     var leadTone = entry.key === "parent" ? "info" : entry.key === "otp" ? "pend" : "warn";
     var leadNote = imported
       ? "Office list. Not someone who opened Booking Portal."
@@ -434,6 +421,14 @@
       (cols.track
         ? '<td style="min-width:0">' + trackSelectHtml(r) + "</td>"
         : "") +
+      '<td style="min-width:0;max-width:12rem;overflow-wrap:break-word">' +
+      chip(person.label, person.tone) +
+      (person.note
+        ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
+          esc(person.note) +
+          "</div>"
+        : "") +
+      "</td>" +
       '<td style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
       '<span class="chip chip--' +
       esc(outcome.tone) +
@@ -490,8 +485,7 @@
     var n = selectedCount();
     var withSvc = (state.leads || []).filter(hasServices).length;
     var existing = (state.leads || []).filter(function (r) {
-      var key = leadOutcome(r).key;
-      return key === "client" || key === "client_looked" || key === "client_again";
+      return leadType(r).key === "active";
     }).length;
     return (
       '<div class="card" style="margin:0 0 14px">' +
@@ -505,12 +499,12 @@
       esc(withSvc) +
       " viewed a service · " +
       esc(existing) +
-      " already a client. Nothing here books a place." +
+      " ACTIVE. Nothing here books a place." +
       "</p>" +
       '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelAll">Select all shown</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelServices">Select viewed services</button>' +
-      '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelExisting">Select existing clients</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelExisting">Select ACTIVE</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelClear">Clear</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" id="bkLeadCopyEmails">Copy emails</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" id="bkLeadCopyPhones">Copy phones</button>' +
@@ -561,15 +555,10 @@
 
     var outcomeOpts = [
       { value: "all", label: "All outcomes" },
-      { value: "code", label: "Asked for a code" },
       { value: "looked", label: "Only looked" },
-      { value: "started", label: "Started registration" },
-      { value: "registered", label: "Registered" },
-      { value: "booked", label: "Registered, place booked" },
-      { value: "client_looked", label: "Already a client, only looked" },
-      { value: "client_again", label: "Already a client, registered again" },
-      { value: "client", label: "Already a client" },
       { value: "waiting", label: "Waiting list" },
+      { value: "trial", label: "Trial" },
+      { value: "term", label: "Term" },
     ]
       .map(function (t) {
         return (
@@ -646,6 +635,7 @@
       (cols.activity ? "<th>Activity</th>" : "") +
       (cols.enquiry ? "<th>Enquiry</th>" : "") +
       '<th title="OTP asked for a code on Booking. Parent portal opened Booking from the family hub.">Lead</th>' +
+      '<th title="New visitor is the first time. Registered is someone we already know who is not ACTIVE: OLD, waiting list, or trial. ACTIVE already has a place.">Type</th>' +
       (cols.track
         ? '<th title="Office list only. Booked takes the email off the marketing list. It does not change Outcome.">Track status</th>'
         : "") +
@@ -927,14 +917,13 @@
       selEx.addEventListener("click", function () {
         state.selected = {};
         visibleLeads().forEach(function (r) {
-          var key = leadOutcome(r).key;
-          if (key !== "client" && key !== "client_looked" && key !== "client_again") return;
+          if (leadType(r).key !== "active") return;
           var em = emailKey(r);
           if (em) state.selected[em] = true;
         });
         renderHost(host);
         wire(host);
-        cfg.toast(selectedCount() + " existing clients");
+        cfg.toast(selectedCount() + " ACTIVE");
       });
     }
     var selClear = host.querySelector("#bkLeadSelClear");
