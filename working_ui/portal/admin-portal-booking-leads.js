@@ -518,127 +518,137 @@
           ").</td></tr>"
         : rows.length
           ? rows.map(function (r) { return rowHtml(r, cols); }).join("")
-          : '<tr><td colspan="' + span + '" class="muted">No leads with this outcome.</td></tr>';
+          : '<tr><td colspan="' + span + '" class="muted">No visits with these filters.</td></tr>';
 
-    var trackFilterOpts = [
-      { value: "all", label: "All track statuses" },
-      { value: "outreach", label: "On marketing outreach" },
-    ]
-      .concat(TRACK_STATUSES)
-      .map(function (t) {
-        var v = t.value;
-        var lab = t.label || trackStatusLabel(v);
-        return (
-          '<option value="' +
-          esc(v) +
-          '"' +
-          (state.trackFilter === v ? " selected" : "") +
-          ">" +
-          esc(lab) +
-          "</option>"
-        );
-      })
-      .join("");
-
-    var outcomeOpts = [
-      { value: "all", label: "All outcomes" },
-      { value: "looked", label: "Only looked" },
-      { value: "waiting", label: "Waiting list" },
-      { value: "trial", label: "Trial" },
-      { value: "term", label: "Term" },
-    ]
-      .map(function (t) {
-        return (
-          '<option value="' +
-          esc(t.value) +
-          '"' +
-          (state.outcome === t.value ? " selected" : "") +
-          ">" +
-          esc(t.label) +
-          "</option>"
-        );
-      })
-      .join("");
+    function chipCount(entry, person, outcome) {
+      var n = 0;
+      (state.leads || []).forEach(function (r) {
+        if (entry !== "all" && entryWay(r).key !== entry) return;
+        if (person !== "all" && !personFilterMatch(r, person)) return;
+        if (outcome !== "all" && leadOutcome(r).key !== outcome) return;
+        n += 1;
+      });
+      return n;
+    }
+    function chipBtn(group, value, label, on, n) {
+      return (
+        '<button type="button" class="btn btn--sm' +
+        (on ? "" : " btn--ghost") +
+        '" data-bk-chip="' +
+        esc(group) +
+        '" data-bk-value="' +
+        esc(value) +
+        '" aria-pressed="' +
+        (on ? "true" : "false") +
+        '">' +
+        esc(label) +
+        (n == null ? "" : ' <span class="pax-chip-filters__n">' + esc(String(n)) + "</span>") +
+        "</button>"
+      );
+    }
+    function chipRow(aria, label, buttons) {
+      return (
+        '<div class="pax-chip-filters__row pax-chip-filters__row--sub" role="group" aria-label="' +
+        esc(aria) +
+        '"><span class="muted" style="font-size:11px;font-weight:700;letter-spacing:.02em;flex:0 0 auto">' +
+        esc(label) +
+        "</span>" +
+        buttons +
+        "</div>"
+      );
+    }
     var portalList = state.origin === "portal";
-    var personOpts = [
-      { value: "all", label: "All types" },
-      { value: "new", label: "New visitor" },
-      { value: "registered", label: "Known visitor" },
-      { value: "old", label: "Known visitor (OLD CLIENT)" },
-      { value: "trial", label: "Known visitor (TRIAL)" },
-      { value: "waiting", label: "Known visitor (WAITING LIST)" },
-      { value: "reg", label: "Known visitor (not first time)" },
-      { value: "active", label: "ACTIVE" },
+    var originChips = [
+      ["all", "All"],
+      ["portal", "Portal OTP"],
+      ["potential", "Office potential"],
+      ["outreach", "Marketing outreach"],
+      ["email_interest", "Email interest"],
     ]
       .map(function (t) {
-        return (
-          '<option value="' +
-          esc(t.value) +
-          '"' +
-          (state.person === t.value ? " selected" : "") +
-          ">" +
-          esc(t.label) +
-          "</option>"
+        return chipBtn("origin", t[0], t[1], state.origin === t[0], null);
+      })
+      .join("");
+    var trackChips = portalList
+      ? ""
+      : chipRow(
+          "Track status",
+          "Track",
+          [{ value: "all", label: "All" }, { value: "outreach", label: "Outreach" }]
+            .concat(TRACK_STATUSES)
+            .map(function (t) {
+              return chipBtn("track", t.value, t.label, state.trackFilter === t.value, null);
+            })
+            .join("")
+        );
+    var entryChips = [
+      ["all", "All"],
+      ["otp", "OTP"],
+      ["parent", "Parent portal"],
+    ]
+      .map(function (t) {
+        return chipBtn(
+          "entry",
+          t[0],
+          t[1],
+          state.entry === t[0],
+          chipCount(t[0], state.person, state.outcome)
+        );
+      })
+      .join("");
+    var personChips = [
+      ["all", "All"],
+      ["new", "New visitor"],
+      ["registered", "Known visitor"],
+      ["old", "OLD CLIENT"],
+      ["trial", "TRIAL"],
+      ["waiting", "WAITING LIST"],
+      ["reg", "Not first time"],
+      ["active", "ACTIVE"],
+    ]
+      .map(function (t) {
+        return chipBtn(
+          "person",
+          t[0],
+          t[1],
+          state.person === t[0],
+          chipCount(state.entry, t[0], state.outcome)
+        );
+      })
+      .join("");
+    var outcomeChips = [
+      ["all", "All"],
+      ["looked", "Only looked"],
+      ["waiting", "Waiting list"],
+      ["trial", "Trial"],
+      ["term", "Term"],
+    ]
+      .map(function (t) {
+        return chipBtn(
+          "outcome",
+          t[0],
+          t[1],
+          state.outcome === t[0],
+          chipCount(state.entry, state.person, t[0])
         );
       })
       .join("");
     host.innerHTML =
       (state.origin === "potential" ? potentialFormHtml() : "") +
-      '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px">' +
-      '<input class="inp" id="bkLeadSearch" type="search" placeholder="Search name, email, phone, enquiry…" value="' +
+      '<div class="pax-chip-filters">' +
+      '<div class="pax-chip-filters__tools">' +
+      '<div class="pax-contacts-fld"><label for="bkLeadSearch">Search</label>' +
+      '<input class="inp" id="bkLeadSearch" type="search" placeholder="Search name, email, phone, enquiry" value="' +
       esc(state.q) +
-      '" style="max-width:260px;min-width:0" />' +
-      '<select class="inp" id="bkLeadOrigin" style="max-width:260px;min-width:0" title="Portal visits vs email interest import">' +
-      '<option value="all"' +
-      (state.origin === "all" ? " selected" : "") +
-      ">Origin: All</option>" +
-      '<option value="potential"' +
-      (state.origin === "potential" ? " selected" : "") +
-      ">Origin: Office potential clients</option>" +
-      '<option value="outreach"' +
-      (state.origin === "outreach" ? " selected" : "") +
-      ">Origin: Marketing outreach list</option>" +
-      '<option value="portal"' +
-      (state.origin === "portal" ? " selected" : "") +
-      ">Origin: Portal OTP only</option>" +
-      '<option value="email_interest"' +
-      (state.origin === "email_interest" ? " selected" : "") +
-      ">Origin: Email interest + outreach</option>" +
-      "</select>" +
-      (portalList
-        ? ""
-        : '<select class="inp" id="bkLeadTrackFilter" style="max-width:220px;min-width:0">' +
-          trackFilterOpts +
-          "</select>") +
-      '<select class="inp" id="bkLeadEntry" style="max-width:200px;min-width:0" title="OTP asked for a code. Parent portal opened Booking from the family hub.">' +
-      '<option value="all"' +
-      (state.entry === "all" ? " selected" : "") +
-      ">Lead: All</option>" +
-      '<option value="parent"' +
-      (state.entry === "parent" ? " selected" : "") +
-      ">Lead: Parent portal</option>" +
-      '<option value="otp"' +
-      (state.entry === "otp" ? " selected" : "") +
-      ">Lead: OTP</option>" +
-      "</select>" +
-      '<select class="inp" id="bkLeadPerson" style="max-width:240px;min-width:0" title="Who they were on this visit">' +
-      personOpts +
-      "</select>" +
-      '<select class="inp" id="bkLeadFilter" style="max-width:200px;min-width:0" title="What this visit did. That is the other list they then appear on.">' +
-      outcomeOpts +
-      "</select>" +
+      '" autocomplete="off" /></div>' +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadRefresh">Refresh</button>' +
       "</div>" +
-      '<div class="grid-kpi" style="margin:0 0 14px">' +
-      '<div class="kpi"><div class="kpi-l">' +
-      (state.origin === "portal" ? "Visits" : "Shown now") +
-      '</div><div class="kpi-v">' +
-      esc(rows.length) +
-      '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">' +
-      (state.origin === "portal"
-        ? "Each row is one visit. Someone who is not ACTIVE has no parent-portal code, so they come in by OTP. New visitor is the first time: Registered if they sent the form, Did not register if they did not. Coming back is Known visitor."
-        : "This origin is the office list. Add / update potential client is only here.") +
-      "</div></div></div>" +
+      chipRow("Origin", "Origin", originChips) +
+      trackChips +
+      chipRow("Lead", "Lead", entryChips) +
+      chipRow("Type", "Type", personChips) +
+      chipRow("Outcome", "Outcome", outcomeChips) +
+      "</div>" +
       '<div class="card"><div class="card-pad" style="overflow:auto;padding:0;min-width:0">' +
       '<table class="tbl tbl--center tbl--dense" id="bkLeadTable">' +
       "<thead><tr>" +
@@ -676,9 +686,6 @@
   function wire(host) {
     if (!host) return;
     var search = host.querySelector("#bkLeadSearch");
-    var filter = host.querySelector("#bkLeadFilter");
-    var origin = host.querySelector("#bkLeadOrigin");
-    var trackFilter = host.querySelector("#bkLeadTrackFilter");
     var refresh = host.querySelector("#bkLeadRefresh");
     var potSave = host.querySelector("#bkPotSave");
     if (search) {
@@ -693,42 +700,31 @@
         void reload(host);
       });
     }
-    if (origin) {
-      origin.addEventListener("change", function () {
-        state.origin = String(origin.value || "all");
-        if (state.origin === "portal") state.trackFilter = "all";
-        void reload(host);
-      });
-    }
-    var person = host.querySelector("#bkLeadPerson");
-    if (person) {
-      person.addEventListener("change", function () {
-        state.person = String(person.value || "all");
+    host.querySelectorAll("[data-bk-chip]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var group = String(btn.getAttribute("data-bk-chip") || "");
+        var value = String(btn.getAttribute("data-bk-value") || "all");
+        if (group === "origin") {
+          if (state.origin === value) return;
+          state.origin = value;
+          if (state.origin === "portal") state.trackFilter = "all";
+          void reload(host);
+          return;
+        }
+        if (group === "track") {
+          if (state.trackFilter === value) return;
+          state.trackFilter = value;
+          void reload(host);
+          return;
+        }
+        if (group === "entry") state.entry = value;
+        else if (group === "person") state.person = value;
+        else if (group === "outcome") state.outcome = value;
+        else return;
         renderHost(host);
         wire(host);
       });
-    }
-    if (trackFilter) {
-      trackFilter.addEventListener("change", function () {
-        state.trackFilter = String(trackFilter.value || "all");
-        void reload(host);
-      });
-    }
-    var entry = host.querySelector("#bkLeadEntry");
-    if (entry) {
-      entry.addEventListener("change", function () {
-        state.entry = String(entry.value || "all");
-        renderHost(host);
-        wire(host);
-      });
-    }
-    if (filter) {
-      filter.addEventListener("change", function () {
-        state.outcome = String(filter.value || "all");
-        renderHost(host);
-        wire(host);
-      });
-    }
+    });
     if (refresh) {
       refresh.addEventListener("click", function () {
         void reload(host);
