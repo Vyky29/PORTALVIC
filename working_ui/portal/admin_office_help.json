@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v201",
+  "version": "2026-10-03-v202",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -758,11 +758,12 @@
           "summary": "Office language: CLIENT, REGISTERED, LEADS, WAITING, OLD — use only these labels.",
           "where": "Nav people buckets / CLIENT filters",
           "steps": [
-            "CLIENT — on services now (Autumn seats).",
-            "REGISTERED — finished registration, never been a seated client.",
-            "LEADS — OTP / enquiry, registration not finished.",
-            "WAITING — want a full service; on the wait list.",
-            "OLD — were clients but no slots from September 2026 (e.g. unpaid Aug release)."
+            "Five lists, one person in one list. LEADS asked for a code and did not finish the form. Only looked is a filter on Leads, not its own list.",
+            "REGISTERED finished the form and has never had a place. Pay hold, Hold and Lost slot are chips on that list. They say what happened to the trial they asked for. They are not extra lists.",
+            "WAITING finished the form and the service they want is full.",
+            "CLIENT (Active) has a place now. On Trial is a CLIENT sitting a trial seat, not a REGISTERED chip.",
+            "OLD had a place and has none from September 2026.",
+            "Funding and payment live on the child row after the form. Leads does not show them. Service and Time slot stay empty until they have a real place."
           ],
           "tips": [
             "Do not say former / alumni in office chat — say OLD.",
@@ -773,11 +774,12 @@
             "summary": "Lenguaje de oficina: CLIENT, REGISTERED, LEADS, WAITING, OLD. Usa solo estas etiquetas.",
             "where": "Cubos de personas en el menu / filtros de CLIENT",
             "steps": [
-              "CLIENT: tiene servicio ahora (plazas de Autumn).",
-              "REGISTERED: termino el registro y nunca ha tenido plaza.",
-              "LEADS: pidio OTP o pregunto, y no termino el registro.",
-              "WAITING: quiere un servicio que esta lleno; esta en lista de espera.",
-              "OLD: fueron clientes pero no tienen plaza desde septiembre 2026 (por ejemplo la baja impagada de agosto)."
+              "Cinco listas, una persona en una sola. LEADS pidio un codigo y no termino el formulario. Only looked es un filtro de Leads, no una lista aparte.",
+              "REGISTERED termino el formulario y nunca ha tenido plaza. Pay hold, Hold y Lost slot son chips de esa lista. Dicen que paso con el trial que pidieron. No son listas nuevas.",
+              "WAITING termino el formulario y el servicio que quiere esta lleno.",
+              "CLIENT (Active) tiene plaza ahora. On Trial es un CLIENT sentado en un trial, no un chip de REGISTERED.",
+              "OLD tuvo plaza y no tiene desde septiembre 2026.",
+              "Funding y payment viven en la fila del nino despues del formulario. Leads no los enseña. Service y Time slot siguen vacios hasta que tienen plaza de verdad."
             ],
             "tips": [
               "En la oficina no digas former ni alumni. Di OLD.",
