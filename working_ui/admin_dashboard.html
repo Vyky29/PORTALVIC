@@ -184,7 +184,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-add-contact-head" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-pax-four" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -2669,7 +2669,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v195')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v196')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -24274,6 +24274,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if((window.PAX_CONTACTS_PAYMENT_LINK_IDS || {})[labelCid]) addPay('payment_link', 'Payment Link');
       return { funding: funding, fundingLabel: fundingLabel, payments: payments };
     }
+    function paxContactsServiceFilterKey(label){
+      var s = String(label || '').trim().toLowerCase();
+      if(!s || s === '-' || s === '\u2014') return '';
+      if(/bespoke|fitfun/.test(s)) return 'bespoke';
+      if(/multi/.test(s)) return 'multi';
+      if(/climb/.test(s)) return 'climbing';
+      if(/day\s*centre/.test(s)) return 'day_centre';
+      if(/aquatic|swim|pool/.test(s)) return 'aquatic';
+      if(/physical|fitness/.test(s)) return 'physical';
+      if(/crash/.test(s)) return 'crash';
+      return '';
+    }
+    function paxContactsServiceFilterKeys(p, which){
+      var keys = [];
+      function add(label){
+        var k = paxContactsServiceFilterKey(label);
+        if(k && keys.indexOf(k) < 0) keys.push(k);
+      }
+      if(which === 'trial'){
+        try{
+          paxContactsTrialsForPerson(p).forEach(function(t){
+            add(typeof paxContactsTrialProgramme === 'function' ? paxContactsTrialProgramme(t.service) : t.service);
+          });
+        }catch(_trialKeys){}
+        return keys.join(' ');
+      }
+      try{
+        if(typeof paxContactsCrashOnlyClient === 'function' && paxContactsCrashOnlyClient(p)) add('Crash courses');
+      }catch(_crashKeys){}
+      try{
+        (paxContactsListBands(p) || []).forEach(function(b){ add(b.programme); });
+      }catch(_bandKeys){}
+      return keys.join(' ');
+    }
     function paxContactsPayFilterMatch(payments, filterId){
       if(!filterId || filterId === 'all') return true;
       var list = payments || [];
@@ -24383,8 +24417,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ? '<div class="pax-contacts-chips pax-contacts-chips--stack">'+payChips+'</div>'
           : '<span class="muted">—</span>';
         var payIds = (money.payments || []).map(function(pay){ return pay.id; }).join(' ');
+        var supportKey = ratio || '1:1';
+        var svcKeys = paxContactsServiceFilterKeys(p, 'seat');
+        var svcTrialKeys = paxContactsServiceFilterKeys(p, 'trial');
         return (
-          '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-registered="'+esc(p.registeredIso || '')+'" data-pax-trial="'+esc(paxContactsTrialLatestIso(p))+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-place="'+esc(placeFlag)+'" data-pax-wait="'+((waitKind === 'portal_waiting' || waitKind === 'old_waiting') ? '1' : '')+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'">'+
+          '<tr data-pax-id="'+esc(p.id)+'" data-pax-name="'+esc(p.name || '')+'" data-pax-joined="'+esc(p.waitingJoinedIso || '')+'" data-pax-registered="'+esc(p.registeredIso || '')+'" data-pax-trial="'+esc(paxContactsTrialLatestIso(p))+'" data-pax-bk="'+esc(p.bookingStatus || '')+'" data-pax-place="'+esc(placeFlag)+'" data-pax-wait="'+((waitKind === 'portal_waiting' || waitKind === 'old_waiting') ? '1' : '')+'" data-pax-support="'+esc(supportKey)+'" data-pax-fund="'+esc(money.funding)+'" data-pax-pay="'+esc(payIds)+'" data-pax-svc="'+esc(svcKeys)+'" data-pax-svc-trial="'+esc(svcTrialKeys)+'">'+
           '<td class="pax-contacts-photo-cell">'+photoHtml+'</td>'+
           '<td class="pax-contacts-name-td"><div class="pax-contacts-namecell"><div class="pax-contacts-namecell__body"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+statusRow+paxContactsWaitExtraHtml(p)+'</div></div></td>'+
           '<td class="pax-contacts-meta">'+supportCell+'</td>'+
@@ -24447,12 +24484,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : (bookingSelected === 'registered'
           ? 'REGISTERED finished the form and has never had a place. This screen is only that list. The chips narrow it to Pay hold, Hold or Lost slot. Pay hold means the seat is still held for payment. Hold is an office hold. Lost slot means the hold ended or the place was released.'
           : (bookingSelected === 'booking_history'
-            ? 'OLD CLIENTS had a place and have no slots from September 2026. This screen is only that list. Funding and Payment chips narrow it. Registration question stays the dropdown.'
+            ? 'OLD CLIENTS had a place and have no slots from September 2026. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen.'
             : (bookingSelected === 'cfk_leads'
-              ? 'CFK LEADS is only this screen. Search and Registration question filter it. This is not the Leads page under Services.'
+              ? 'CFK LEADS is only this screen. Search filters it. This is not the Leads page under Services.'
               : (bookingSelected === 'trial'
-                ? 'On Trial / Trialled is only this screen. Funding and Payment chips narrow it. Registration question stays the dropdown.'
-                : 'ACTIVE is on a place now. This screen is only that list. Funding and Payment chips narrow it. Registration question stays the dropdown. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.'))));
+                ? 'On Trial / Trialled is only this screen. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen. Service is the trial, not the place they have now.'
+                : 'ACTIVE is on a place now. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.'))));
       var focus = bookingSelected === 'waiting' ? (state.waitlistFocus || null) : null;
       var focusBanner = '';
       if(focus && (focus.prog || focus.venue)){
@@ -24484,14 +24521,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ['hold', 'Hold', 'Hold'],
             ['lost_slot', 'Lost slot', 'Lost slot']
           ].map(function(r){ return paxChipBtn('place', r[0], r[1], r[2], placeFlag === r[0]); }).join('');
+          var supportChips = [
+            ['all', 'All', 'Everyone on this screen'],
+            ['1:1', '1:1', 'Support 1:1'],
+            ['2:1', '2:1', 'Support 2:1'],
+            ['3:1', '3:1', 'Support 3:1']
+          ].map(function(r){ return paxChipBtn('support', r[0], r[1], r[2], r[0] === 'all'); }).join('');
           var fundChips = [
-            ['all', 'All', 'All funding'],
+            ['all', 'All', 'Everyone on this screen'],
             ['private', 'Private', 'Using Private funds (VAT 20%)'],
             ['la_exempt', 'LA exempt', 'Using LA funds (Exempt)'],
-            ['la_nhs', 'LA/NHS', 'LA/NHS funded']
+            ['la_nhs', 'LA/NHS', 'LA/NHS funded'],
+            ['not_set', 'Not set', 'No funding on file']
           ].map(function(r){ return paxChipBtn('fund', r[0], r[1], r[2], r[0] === 'all'); }).join('');
           var payChips = [
-            ['all', 'All', 'All payments'],
+            ['all', 'All', 'Everyone on this screen'],
             ['bank_1', 'Bank one off', 'Bank Transfer (One off-Manually)'],
             ['bank_flexi', 'Bank flexi', 'Bank Transfer (Flexi-Manually)'],
             ['apple_stripe', 'Apple Pay', 'Apple Pay/Stripe'],
@@ -24502,12 +24546,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ['arrears_hf', 'H&F arrears', 'Monthly Arrears (H&F)'],
             ['payment_link', 'Payment link', 'Payment Link']
           ].map(function(r){ return paxChipBtn('pay', r[0], r[1], r[2], r[0] === 'all'); }).join('');
+          var svcChips = [
+            ['all', 'All', 'Everyone on this screen'],
+            ['aquatic', 'Aquatic', 'Aquatic Activity'],
+            ['multi', 'Multi-Activity', 'Multi-Activity'],
+            ['climbing', 'Climbing', 'Climbing Activity'],
+            ['bespoke', 'Bespoke', 'Bespoke Programme'],
+            ['day_centre', 'Day centre', 'Day centre'],
+            ['physical', 'Physical', 'Physical Activity'],
+            ['crash', 'Crash', 'Crash courses']
+          ].map(function(r){ return paxChipBtn('svc', r[0], r[1], r[2], r[0] === 'all'); }).join('');
           var moneyScreen = bookingSelected === 'programme_in' || bookingSelected === 'booking_history' || bookingSelected === 'trial';
-          var chipArea = bookingSelected === 'waiting' ? 'wait' : (bookingSelected === 'registered' ? 'place' : (moneyScreen ? 'fund' : ''));
+          var chipArea = bookingSelected === 'waiting' ? 'wait' : (bookingSelected === 'registered' ? 'place' : (moneyScreen ? 'support' : ''));
           var areaRow = moneyScreen
-            ? '<div class="pax-chip-filters__row" role="tablist" aria-label="Filter area">'+
-              '<button type="button" class="btn btn--sm" data-pax-area="fund" aria-pressed="true">Funding</button>'+
+            ? '<div class="pax-chip-filters__row" role="tablist" aria-label="Filter">'+
+              '<button type="button" class="btn btn--sm" data-pax-area="support" aria-pressed="true">Support</button>'+
+              '<button type="button" class="btn btn--sm btn--ghost" data-pax-area="fund" aria-pressed="false">Funding</button>'+
               '<button type="button" class="btn btn--sm btn--ghost" data-pax-area="pay" aria-pressed="false">Payment</button>'+
+              '<button type="button" class="btn btn--sm btn--ghost" data-pax-area="svc" aria-pressed="false">Service</button>'+
               '</div>'
             : '';
           var subRows = '';
@@ -24517,28 +24573,44 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             subRows = '<div class="pax-chip-filters__row pax-chip-filters__row--sub" id="paxContactsPlaceFlagWrap" data-pax-subs="place" role="group" aria-label="Registered">'+placeChips+'</div>';
           }else if(moneyScreen){
             subRows =
-              '<div class="pax-chip-filters__row pax-chip-filters__row--sub" data-pax-subs="fund" role="group" aria-label="Funding">'+fundChips+'</div>'+
-              '<div class="pax-chip-filters__row pax-chip-filters__row--sub" data-pax-subs="pay" hidden role="group" aria-label="Payment">'+payChips+'</div>';
+              '<div class="pax-chip-filters__row pax-chip-filters__row--sub" data-pax-subs="support" role="group" aria-label="Support">'+supportChips+'</div>'+
+              '<div class="pax-chip-filters__row pax-chip-filters__row--sub" data-pax-subs="fund" hidden role="group" aria-label="Funding">'+fundChips+'</div>'+
+              '<div class="pax-chip-filters__row pax-chip-filters__row--sub" data-pax-subs="pay" hidden role="group" aria-label="Payment">'+payChips+'</div>'+
+              '<div class="pax-chip-filters__row pax-chip-filters__row--sub" data-pax-subs="svc" hidden role="group" aria-label="Service">'+svcChips+'</div>';
           }
           return (
         '<div class="pax-chip-filters" data-pax-chip-area="'+chipArea+'">'+
         '<div class="pax-chip-filters__tools">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
-        '<div class="pax-contacts-fld">'+
-        '<label class="muted" for="paxContactsRegQuestion" style="display:block;font-size:11px;font-weight:700;margin-bottom:6px;letter-spacing:.02em">Registration question</label>'+
-        '<select class="sel" id="paxContactsRegQuestion">'+paxContactsRegQuestionOptionsHtml()+'</select></div>'+
-        '</div>'+
         areaRow+
+        '</div>'+
         subRows+
         '<div class="pax-contacts-selects" hidden>'+
         '<select id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml(bookingSelected)+'</select>'+
         '<select id="paxContactsWaitSource">'+paxContactsWaitSourceOptionsHtml(waitSource)+'</select>'+
         '<select id="paxContactsPlaceFlag">'+paxContactsPlaceFlagOptionsHtml(placeFlag)+'</select>'+
+        '<select id="paxContactsSupport">'+
+        '<option value="all">All support</option>'+
+        '<option value="1:1">1:1</option>'+
+        '<option value="2:1">2:1</option>'+
+        '<option value="3:1">3:1</option>'+
+        '</select>'+
         '<select id="paxContactsFunding">'+
         '<option value="all">All funding</option>'+
         '<option value="private">Using Private funds (VAT 20%)</option>'+
         '<option value="la_exempt">Using LA funds (Exempt)</option>'+
         '<option value="la_nhs">LA/NHS funded</option>'+
+        '<option value="not_set">Not set</option>'+
+        '</select>'+
+        '<select id="paxContactsService">'+
+        '<option value="all">All services</option>'+
+        '<option value="aquatic">Aquatic Activity</option>'+
+        '<option value="multi">Multi-Activity</option>'+
+        '<option value="climbing">Climbing Activity</option>'+
+        '<option value="bespoke">Bespoke Programme</option>'+
+        '<option value="day_centre">Day centre</option>'+
+        '<option value="physical">Physical Activity</option>'+
+        '<option value="crash">Crash courses</option>'+
         '</select>'+
         '<select id="paxContactsPayment">'+
         '<option value="all">All payments</option>'+
@@ -35398,8 +35470,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var bk = ($('paxContactsBookingStatus') && $('paxContactsBookingStatus').value) || 'all';
           var waitSrc = ($('paxContactsWaitSource') && $('paxContactsWaitSource').value) || 'all';
           var placeF = ($('paxContactsPlaceFlag') && $('paxContactsPlaceFlag').value) || 'all';
+          var supportF = ($('paxContactsSupport') && $('paxContactsSupport').value) || 'all';
           var fundF = ($('paxContactsFunding') && $('paxContactsFunding').value) || 'all';
           var payF = ($('paxContactsPayment') && $('paxContactsPayment').value) || 'all';
+          var svcF = ($('paxContactsService') && $('paxContactsService').value) || 'all';
+          var chipBox = root2.querySelector('.pax-chip-filters');
+          var activeArea = chipBox ? (chipBox.getAttribute('data-pax-chip-area') || 'support') : 'support';
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
@@ -35455,12 +35531,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var missed = [];
           var statusKeys = ['programme_in', 'waiting', 'booking_history', 'registered', 'cfk_leads', 'trial'];
           var payKeys = ['bank_1', 'bank_flexi', 'apple_stripe', 'gocardless', 'bacs_ealing', 'arrears_nhs', 'arrears_nhs_ila', 'arrears_hf', 'payment_link'];
+          var svcKeys = ['aquatic', 'multi', 'climbing', 'bespoke', 'day_centre', 'physical', 'crash'];
           var tallies = {
             status: { all: 0, programme_in: 0, waiting: 0, booking_history: 0, registered: 0, cfk_leads: 0, trial: 0 },
             wait: { all: 0, portal_waiting: 0, old_waiting: 0 },
             place: { all: 0, pay_hold: 0, hold: 0, lost_slot: 0 },
-            fund: { all: 0, private: 0, la_exempt: 0, la_nhs: 0 },
-            pay: { all: 0, bank_1: 0, bank_flexi: 0, apple_stripe: 0, gocardless: 0, bacs_ealing: 0, arrears_nhs: 0, arrears_nhs_ila: 0, arrears_hf: 0, payment_link: 0 }
+            support: { all: 0, '1:1': 0, '2:1': 0, '3:1': 0 },
+            fund: { all: 0, private: 0, la_exempt: 0, la_nhs: 0, not_set: 0 },
+            pay: { all: 0, bank_1: 0, bank_flexi: 0, apple_stripe: 0, gocardless: 0, bacs_ealing: 0, arrears_nhs: 0, arrears_nhs_ila: 0, arrears_hf: 0, payment_link: 0 },
+            svc: { all: 0, aquatic: 0, multi: 0, climbing: 0, bespoke: 0, day_centre: 0, physical: 0, crash: 0 }
           };
           root2.querySelectorAll('#paxContactsTbl tbody tr').forEach(function(tr){
             var id = tr.getAttribute('data-pax-id');
@@ -35469,15 +35548,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var statusOk = bk === 'all' || paxContactsMatchesBookingStatus(p, bk);
             if(statusOk && showJoined && waitSrc !== 'all' && paxContactsWaitingKind(p) !== waitSrc) statusOk = false;
             if(statusOk && showRegistered && placeF !== 'all' && paxContactsPlaceFlag(p) !== placeF) statusOk = false;
-            var fundOk = true;
-            var payOk = true;
+            var dimOk = true;
             var regOk = true;
             var nameOk = true;
-            if(showMoney && fundF !== 'all' && String(tr.getAttribute('data-pax-fund') || '') !== fundF) fundOk = false;
-            if(showMoney && payF !== 'all'){
+            if(showMoney && activeArea === 'support' && supportF !== 'all' && String(tr.getAttribute('data-pax-support') || '') !== supportF) dimOk = false;
+            if(showMoney && activeArea === 'fund' && fundF !== 'all'){
+              var fundOnRow = String(tr.getAttribute('data-pax-fund') || '');
+              var fundMatch = fundF === 'not_set' ? !fundOnRow : fundOnRow === fundF;
+              if(!fundMatch) dimOk = false;
+            }
+            if(showMoney && activeArea === 'pay' && payF !== 'all'){
               var payIds = String(tr.getAttribute('data-pax-pay') || '').split(/\s+/);
               var payObjs = payIds.filter(Boolean).map(function(pid){ return { id: pid }; });
-              if(!paxContactsPayFilterMatch(payObjs, payF)) payOk = false;
+              if(!paxContactsPayFilterMatch(payObjs, payF)) dimOk = false;
+            }
+            if(showMoney && activeArea === 'svc' && svcF !== 'all'){
+              var svcAttr = showTrial ? 'data-pax-svc-trial' : 'data-pax-svc';
+              var svcIds = String(tr.getAttribute(svcAttr) || '').split(/\s+/);
+              if(svcIds.indexOf(svcF) < 0) dimOk = false;
             }
             if(qv !== 'all' && !paxContactsRegQuestionHasAnswer(p, qv)) regOk = false;
             if(q){
@@ -35489,8 +35577,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
             var focusOk = true;
             if(focusNames && !focusNames[adminPortalNormalizedPersonName(p.name)]) focusOk = false;
-            var ok = statusOk && fundOk && payOk && regOk && nameOk && focusOk;
-            if(!ok && q && nameOk && fundOk && payOk && regOk && focusOk && !statusOk) missed.push({ tr: tr, p: p });
+            var ok = statusOk && dimOk && regOk && nameOk && focusOk;
+            if(!ok && q && nameOk && dimOk && regOk && focusOk && !statusOk) missed.push({ tr: tr, p: p });
             var ansCell = tr.querySelector('[data-pax-ans]');
             if(ansCell){
               ansCell.hidden = !showAns;
@@ -35498,33 +35586,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
             tr.style.display = ok ? '' : 'none';
             if(ok) n++;
-            if(nameOk && regOk && focusOk && fundOk && payOk){
+            if(nameOk && regOk && focusOk){
               tallies.status.all++;
               for(var si = 0; si < statusKeys.length; si++){
                 if(paxContactsMatchesBookingStatus(p, statusKeys[si])) tallies.status[statusKeys[si]]++;
               }
             }
-            if(nameOk && regOk && focusOk && fundOk && payOk && paxContactsMatchesBookingStatus(p, 'waiting')){
+            if(nameOk && regOk && focusOk && paxContactsMatchesBookingStatus(p, 'waiting')){
               tallies.wait.all++;
               var wk = paxContactsWaitingKind(p);
               if(tallies.wait[wk] != null) tallies.wait[wk]++;
             }
-            if(nameOk && regOk && focusOk && fundOk && payOk && paxContactsMatchesBookingStatus(p, 'registered')){
+            if(nameOk && regOk && focusOk && paxContactsMatchesBookingStatus(p, 'registered')){
               tallies.place.all++;
               var placeKey = paxContactsPlaceFlag(p);
               if(tallies.place[placeKey] != null) tallies.place[placeKey]++;
             }
-            if(showMoney && nameOk && regOk && focusOk && statusOk && payOk){
+            if(showMoney && nameOk && regOk && focusOk && statusOk){
+              tallies.support.all++;
+              var ratioOnRow = String(tr.getAttribute('data-pax-support') || '1:1');
+              if(tallies.support[ratioOnRow] != null) tallies.support[ratioOnRow]++;
               tallies.fund.all++;
-              var fv = String(tr.getAttribute('data-pax-fund') || '');
+              var fv = String(tr.getAttribute('data-pax-fund') || '') || 'not_set';
               if(tallies.fund[fv] != null) tallies.fund[fv]++;
-            }
-            if(showMoney && nameOk && regOk && focusOk && statusOk && fundOk){
               tallies.pay.all++;
               var payIdsAll = String(tr.getAttribute('data-pax-pay') || '').split(/\s+/);
               var payObjsAll = payIdsAll.filter(Boolean).map(function(pid){ return { id: pid }; });
               for(var payI = 0; payI < payKeys.length; payI++){
                 if(paxContactsPayFilterMatch(payObjsAll, payKeys[payI])) tallies.pay[payKeys[payI]]++;
+              }
+              tallies.svc.all++;
+              var svcAttrAll = showTrial ? 'data-pax-svc-trial' : 'data-pax-svc';
+              var svcIdsAll = String(tr.getAttribute(svcAttrAll) || '').split(/\s+/);
+              for(var svcI = 0; svcI < svcKeys.length; svcI++){
+                if(svcIdsAll.indexOf(svcKeys[svcI]) >= 0) tallies.svc[svcKeys[svcI]]++;
               }
             }
           });
@@ -35538,7 +35633,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var box = root2.querySelector('.pax-chip-filters');
             if(!box) return;
             var area = box.getAttribute('data-pax-chip-area') || 'status';
-            if(!showMoney && (area === 'fund' || area === 'pay')){
+            if(!showMoney && (area === 'support' || area === 'fund' || area === 'pay' || area === 'svc')){
               area = 'status';
               box.setAttribute('data-pax-chip-area', area);
             }
@@ -35560,8 +35655,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             markChip('status', bk);
             markChip('wait', waitSrc);
             markChip('place', placeF);
+            markChip('support', supportF);
             markChip('fund', fundF);
             markChip('pay', payF);
+            markChip('svc', svcF);
+            ['support', 'svc', 'fund', 'pay'].forEach(function(group){
+              root2.querySelectorAll('[data-pax-chip="'+group+'"]').forEach(function(btn){
+                var value = btn.getAttribute('data-pax-value') || '';
+                if(value === 'all'){
+                  btn.hidden = false;
+                  return;
+                }
+                var n = tallies[group] && tallies[group][value];
+                btn.hidden = !(n > 0);
+              });
+            });
           })();
           var tbody = root2.querySelector('#paxContactsTbl tbody');
           if(tbody){
@@ -35853,16 +35961,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(pwait) pwait.addEventListener('change', paxContactsRefreshFilters);
           var pplace = $('paxContactsPlaceFlag');
           if(pplace) pplace.addEventListener('change', paxContactsRefreshFilters);
+          var psup = $('paxContactsSupport');
+          if(psup) psup.addEventListener('change', paxContactsRefreshFilters);
           var pf = $('paxContactsFunding');
           if(pf) pf.addEventListener('change', paxContactsRefreshFilters);
           var ppay = $('paxContactsPayment');
           if(ppay) ppay.addEventListener('change', paxContactsRefreshFilters);
+          var psvc = $('paxContactsService');
+          if(psvc) psvc.addEventListener('change', paxContactsRefreshFilters);
           var pq = $('paxContactsRegQuestion');
           if(pq) pq.addEventListener('change', paxContactsRefreshFilters);
           root2.querySelectorAll('[data-pax-area]').forEach(function(btn){
             btn.addEventListener('click', function(){
               var box = root2.querySelector('.pax-chip-filters');
-              if(box) box.setAttribute('data-pax-chip-area', btn.getAttribute('data-pax-area') || 'status');
+              if(box) box.setAttribute('data-pax-chip-area', btn.getAttribute('data-pax-area') || 'support');
+              ['paxContactsSupport', 'paxContactsFunding', 'paxContactsPayment', 'paxContactsService'].forEach(function(id){
+                var sel = $(id);
+                if(sel) sel.value = 'all';
+              });
               paxContactsRefreshFilters();
             });
           });
@@ -35873,8 +35989,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var sel = group === 'status' ? $('paxContactsBookingStatus')
                 : group === 'wait' ? $('paxContactsWaitSource')
                 : group === 'place' ? $('paxContactsPlaceFlag')
+                : group === 'support' ? $('paxContactsSupport')
                 : group === 'fund' ? $('paxContactsFunding')
                 : group === 'pay' ? $('paxContactsPayment')
+                : group === 'svc' ? $('paxContactsService')
                 : null;
               if(!sel) return;
               if(sel.value === value){

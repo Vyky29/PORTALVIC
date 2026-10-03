@@ -412,7 +412,8 @@
     .pax-contacts-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:12px;margin:0 0 14px;align-items:end;min-width:0}
     .pax-chip-filters{display:flex;flex-direction:column;gap:8px;min-width:0;margin:0 0 14px}
     .pax-chip-filters__tools{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;min-width:0}
-    .pax-chip-filters__tools .pax-contacts-fld{flex:1 1 16rem;max-width:28rem}
+    .pax-chip-filters__tools .pax-contacts-fld{flex:1 1 16rem;max-width:22rem}
+    .pax-chip-filters__tools > .pax-chip-filters__row{flex:1 1 18rem;min-width:0;margin:0}
     .pax-chip-filters__row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
     .pax-chip-filters__row--sub{padding:8px;border-radius:12px;background:#f8fafc;border:1px solid var(--line)}
     .pax-chip-filters [hidden]{display:none !important}
