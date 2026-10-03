@@ -185,7 +185,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-booked-chips" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-old-duration" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -22888,6 +22888,142 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         slot: plain.slot ? '<div class="pax-slot-line">'+esc(plain.slot)+'</div>' : dash
       };
     }
+    /** Programme names inside a payments "Services" line. "Class for Kids" is the old file, not a service. */
+    function paxContactsProgrammesInText(raw){
+      var t = String(raw || '');
+      if(!t.trim()) return [];
+      var found = [];
+      function add(label){
+        if(label && found.indexOf(label) < 0) found.push(label);
+      }
+      if(/aquatic|swimming|\bswim\b|\bpool\b/i.test(t)) add('Aquatic Activity');
+      if(/climb/i.test(t)) add('Climbing Activity');
+      if(/multi[\s-]*activity|splash/i.test(t)) add('Multi-Activity');
+      if(/day\s*centre|daycentre|\bdc\b/i.test(t)) add('Day centre');
+      if(/physical activity|\bfitness\b/i.test(t)) add('Physical Activity');
+      if(/bespoke|fitfun/i.test(t)) add('Bespoke Programme');
+      if(/crash/i.test(t)) add('Crash courses');
+      return found;
+    }
+    function paxContactsCancelEventsFor(p){
+      var rows = window.PAX_CONTACTS_CANCELLED_SERVICES || [];
+      if(!p || !rows.length) return [];
+      var out = [];
+      rows.forEach(function(row){
+        var snap = row.after_snapshot || row.before_snapshot || {};
+        var who = String(snap.client_name || '').trim();
+        if(!who) return;
+        try{
+          if(!paxContactsSameChild(p.name, who) || paxContactsKeepSeparate(p, { name: who })) return;
+        }catch(_cancelMatch){
+          if(paxContactsNormName(p.name) !== paxContactsNormName(who)) return;
+        }
+        out.push(row);
+      });
+      return out;
+    }
+    /** Rest-of-term cancel. A one-day absence is not this. */
+    function paxContactsCancelledTheirService(p){
+      return paxContactsCancelEventsFor(p).length > 0;
+    }
+    /**
+     * OLD CLIENTS: the service they were on, and when that run started and finished.
+     * A weekly clock time is not the duration.
+     */
+    function paxContactsOldHistoryPlain(p){
+      var services = [];
+      function addSvc(label){
+        var s = String(label || '').trim();
+        if(!s || s === 'Session' || /^class for kids$/i.test(s) || s === '—' || s === '-') return;
+        if(services.indexOf(s) < 0) services.push(s);
+      }
+      (window.PAX_CONTACTS_CLIENT_PAYMENTS || []).forEach(function(row){
+        try{ if(!paxContactsPayRowIsThisChild(p, row)) return; }catch(_oldPay){ return; }
+        var d = (row && row.data) || {};
+        paxContactsProgrammesInText(d.Services || d.Service || '').forEach(addSvc);
+      });
+      paxContactsRosterMoveRows().forEach(function(r){
+        if(String(r.status || '') !== 'cancelled') return;
+        var cn = paxContactsSeatClientName(r && r.client_name);
+        if(!cn) return;
+        try{
+          if(!paxContactsSameChild(p.name, cn) || paxContactsKeepSeparate(p, { name: cn })) return;
+        }catch(_oldRoster){ return; }
+        var prog = typeof portalDisplayProgrammeFromSheet === 'function'
+          ? portalDisplayProgrammeFromSheet(r.service)
+          : String(r.service || '');
+        addSvc(prog);
+      });
+      paxContactsCancelEventsFor(p).forEach(function(row){
+        var snap = row.after_snapshot || row.before_snapshot || {};
+        var prog = typeof portalDisplayProgrammeFromSheet === 'function'
+          ? portalDisplayProgrammeFromSheet(snap.service)
+          : String(snap.service || '');
+        addSvc(prog);
+      });
+      if(!services.length && paxContactsCrashOnlyClient(p)) addSvc('Crash courses');
+      if(!services.length){
+        var known = null;
+        try{ known = paxContactsKnownPastVisit(p); }catch(_oldKnown){ known = null; }
+        if(known && known.svc) addSvc(known.svc);
+      }
+      if(!services.length){
+        try{
+          var trials = paxContactsTrialsForPerson(p);
+          if(trials.length){
+            addSvc(typeof paxContactsTrialProgramme === 'function' ? paxContactsTrialProgramme(trials[0].service) : trials[0].service);
+          }
+        }catch(_oldTrialSvc){}
+      }
+      var first = paxContactsRealBookingIso(p && p.firstBookingIso);
+      var last = paxContactsRealBookingIso(p && p.lastBookingIso);
+      paxContactsCancelEventsFor(p).forEach(function(row){
+        var end = paxContactsRealBookingIso(row.anchor_session_date) || paxContactsRealBookingIso(row.created_at);
+        if(end && (!last || end > last)) last = end;
+      });
+      if(!first && !last){
+        try{
+          var trialRows = paxContactsTrialsForPerson(p);
+          if(trialRows.length && trialRows[0].sessionIso) first = last = paxContactsRealBookingIso(trialRows[0].sessionIso);
+        }catch(_oldTrialDay){}
+      }
+      var slot = '';
+      if(first && last && first !== last) slot = paxContactsFormatJoinedDay(first) + ' to ' + paxContactsFormatJoinedDay(last);
+      else if(first || last) slot = paxContactsFormatJoinedDay(first || last);
+      return { services: services, svc: services.join(' | '), slot: slot, cancelled: paxContactsCancelledTheirService(p) };
+    }
+    function paxContactsOldHistoryCells(p){
+      var plain = paxContactsOldHistoryPlain(p);
+      var dash = '<span class="muted">—</span>';
+      return {
+        svc: plain.services.length
+          ? plain.services.map(function(s){ return '<div class="pax-svc-line">'+esc(s)+'</div>'; }).join('')
+          : dash,
+        slot: plain.slot ? '<div class="pax-slot-line pax-slot-line--duration">'+esc(plain.slot)+'</div>' : dash
+      };
+    }
+    async function paxContactsLoadCancelledServices(){
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(!client || typeof client.from !== 'function') return false;
+      try{
+        var res = await client.from('portal_roster_row_events')
+          .select('created_at,scope,anchor_session_date,before_snapshot,after_snapshot,client_context,action')
+          .eq('action', 'cancel')
+          .order('created_at', { ascending: false })
+          .limit(200);
+        if(res.error || !res.data) return false;
+        window.PAX_CONTACTS_CANCELLED_SERVICES = res.data.filter(function(row){
+          var ctx = row.client_context || {};
+          var term = String(ctx.term_action || '').trim();
+          if(term && term !== 'cancel_service') return false;
+          var scope = String(row.scope || '');
+          return scope === 'rest_of_term' || scope === 'weekday_term';
+        });
+        return true;
+      }catch(_cancelLoad){
+        return false;
+      }
+    }
     /** Had a service and left before this term. No Autumn seat, so not ACTIVE. */
     function paxContactsNamedOldClient(p){
       var n = String((p && p.name) || '').trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
@@ -22949,7 +23085,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(paxContactsNamedOldClient(p) || paxContactsCrashOnlyClient(p)) return 'booking_history';
       if(seats > 0) return st === 'trial' ? 'trial' : 'programme_in';
       if(live && live.in_class === true) return st === 'trial' ? 'trial' : 'programme_in';
-      if(paxContactsWasSummer2026(p) || paxContactsStartedSeptember(p) || paxContactsNamedOldClient(p) || paxContactsHadAutumn25OrLaterBooking(p)) return 'booking_history';
+      if(paxContactsWasSummer2026(p) || paxContactsStartedSeptember(p) || paxContactsNamedOldClient(p) || paxContactsHadAutumn25OrLaterBooking(p) || paxContactsCancelledTheirService(p)) return 'booking_history';
       if(paxContactsIsWaiting(p)){
         var waitKindNow = '';
         try{ waitKindNow = paxContactsWaitingKind(p); }catch(_waitKindNow){ waitKindNow = ''; }
@@ -24496,6 +24632,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof paxContactsCrashOnlyClient === 'function' && paxContactsCrashOnlyClient(p)) add('Crash courses');
       }catch(_crashKeys){}
       try{
+        if(paxContactsBucket(p) === 'booking_history' && typeof paxContactsOldHistoryPlain === 'function'){
+          paxContactsOldHistoryPlain(p).services.forEach(add);
+        }
+      }catch(_oldKeys){}
+      try{
         (paxContactsListBands(p) || []).forEach(function(b){ add(b.programme); });
       }catch(_bandKeys){}
       return keys.join(' ');
@@ -24541,6 +24682,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ? portalParticipantAvatarInnerHtml(photoName, photoCid, { esc: esc, className: 'portal-roster-avatar pax-contacts-avatar' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
           : '';
         var bucket = paxContactsBucket(p);
+        if(bucket === 'booking_history') cells = paxContactsOldHistoryCells(p);
         var bkMeta = paxContactsBookingStatusMeta(bucket);
         function paxStatusChip(meta){
           if(!meta) return '';
@@ -24561,6 +24703,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(oldTrials.length && paxContactsNamedOldClient(p) && /^chaitanya\b/i.test(String(p.name || '').trim())){
             var trialLab = paxContactsTrialStateLabel(oldTrials[0].sessionIso) || 'Trialled';
             bkChip += paxStatusChip({ label: trialLab, bg: '#ede9fe', fg: '#5b21b6' });
+          }
+          if(paxContactsCancelledTheirService(p)){
+            bkChip += paxStatusChip({ label: 'Cancelled', bg: '#fee2e2', fg: '#991b1b' });
           }
         }
         var alsoWait = '';
@@ -24695,7 +24840,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : (bookingSelected === 'registered'
           ? 'REGISTERED finished the form and has never had a place. A Booking Portal wait with no place now is also on this list. Outcome is why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay. Service and Time slot are what they asked for.'
           : (bookingSelected === 'booking_history'
-            ? 'OLD CLIENTS had a place and have no slots from September 2026. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen.'
+            ? 'OLD CLIENTS had a place and have no slots from September 2026. Service is the service they were on. Duration is when they started and when they finished. A Cancelled chip means they cancelled that service. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen.'
             : (bookingSelected === 'cfk_leads'
               ? 'CFK LEADS is only this screen. Search filters it. This is not the Leads page under Services. The old webhook export was interested and was never a client. Those names are here.'
               : (bookingSelected === 'trial'
@@ -24842,7 +24987,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
         '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th class="pax-money-col">Funding</th><th class="pax-money-col">Payment</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th class="pax-joined-col" hidden>Joined waiting</th><th class="pax-source-col" hidden>Source</th><th class="pax-registered-col" hidden>Registered</th><th class="pax-trial-col" hidden>Booked</th><th class="pax-trial-col" hidden>Trial session</th><th>Contact</th>'+
+        '<th class="pax-contacts-photo-th">Photo</th><th>Participant name</th><th>Support</th><th class="pax-money-col">Funding</th><th class="pax-money-col">Payment</th><th>Age</th><th>Service/s</th><th>'+(bookingSelected === 'booking_history' ? 'Duration' : 'Time slot/s')+'</th><th class="pax-joined-col" hidden>Joined waiting</th><th class="pax-source-col" hidden>Source</th><th class="pax-registered-col" hidden>Registered</th><th class="pax-trial-col" hidden>Booked</th><th class="pax-trial-col" hidden>Trial session</th><th>Contact</th>'+
         '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
         '<th class="pax-outcome-col" hidden>Outcome</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
@@ -35936,7 +36081,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var showAns = qv !== 'all';
           var bookingExportEarly = (($('paxContactsBookingStatus') && $('paxContactsBookingStatus').value) || '');
           var outcomeExport = bookingExportEarly === 'registered';
-          var headers = ['Participant name', 'DOB', 'Support', 'Funding', 'Payment', 'Age', 'Service/s', 'Time slot/s', 'Joined waiting', 'Source', 'Registered', 'Booked', 'Trial session', 'Contact', 'Email', 'Phone'];
+          var headers = ['Participant name', 'DOB', 'Support', 'Funding', 'Payment', 'Age', 'Service/s', bookingExportEarly === 'booking_history' ? 'Duration' : 'Time slot/s', 'Joined waiting', 'Source', 'Registered', 'Booked', 'Trial session', 'Contact', 'Email', 'Phone'];
           if(outcomeExport) headers.splice(3, 2);
           if(showAns) headers.push(paxContactsRegQuestionLabel(qv));
           if(outcomeExport) headers.push('Outcome');
@@ -35991,6 +36136,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(bookingExport === 'trial'){
               var trialPlain = paxContactsTrialServiceSlotPlain(p);
               bt = { svc: trialPlain.svc, slot: trialPlain.slot };
+            }
+            if(bookingExport === 'booking_history'){
+              var oldPlain = paxContactsOldHistoryPlain(p);
+              bt = { svc: oldPlain.svc, slot: oldPlain.slot };
             }
             var hideMoneyExport = bookingExport === 'waiting' || bookingExport === 'cfk_leads' || bookingExport === 'registered';
             var outcomeCsv = '';
@@ -36144,7 +36293,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             paxContactsLoadReenrolChoices(),
             paxContactsLoadClientPayments(),
             paxContactsLoadTrials(),
-            paxContactsLoadPlaceFlags()
+            paxContactsLoadPlaceFlags(),
+            paxContactsLoadCancelledServices()
           ]).then(function(results){
             if(!(results && (results[0] || results[1] || results[2] || results[3] || results[4] || results[5] || results[6] || results[7] || results[8]))) return;
             if(typeof state.rebuildPaxContactsList === 'function'){
