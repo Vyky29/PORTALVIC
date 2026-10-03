@@ -13,6 +13,46 @@ import {
 
 type VisitKind = "trial" | "term";
 
+function asciiTime(raw: string): string {
+  return String(raw || "").replace(/\u2013|\u2014/g, "-").replace(/\s+/g, " ").trim();
+}
+
+function prettyService(raw: unknown): string {
+  const key = String(raw || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const map: Record<string, string> = {
+    multi: "Multi-Activity",
+    multi_activity: "Multi-Activity",
+    day_centre: "Day Centre",
+    daycentre: "Day Centre",
+    intensive: "Intensive",
+    climbing: "Climbing",
+    climbing_activity: "Climbing",
+    aquatic: "Aquatic",
+    aquatic_activity: "Aquatic",
+    physical: "Physical",
+    physical_activity: "Physical",
+  };
+  if (map[key]) return map[key];
+  const label = String(raw || "").replace(/\s+/g, " ").trim();
+  return label;
+}
+
+/** Service, time, day, venue. */
+function placeLine(parts: {
+  service?: unknown;
+  time?: unknown;
+  day?: unknown;
+  venue?: unknown;
+}): string {
+  const bits = [
+    prettyService(parts.service),
+    asciiTime(String(parts.time || "")),
+    String(parts.day || "").replace(/\s+/g, " ").trim(),
+    String(parts.venue || "").replace(/\s+/g, " ").trim(),
+  ].filter(Boolean);
+  return bits.join(", ");
+}
+
 function bookingKindFrom(notes: string, mode: string | null): VisitKind | "" {
   const n = String(notes || "");
   const m = String(mode || "").toLowerCase();
@@ -130,12 +170,13 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
   const isOldName = (n: string) =>
     !standing.has(n) && (OLD_CLIENT_NAMES.has(n) || (history.has(n) && !inClass.has(n)));
 
-  const byEmail = new Map<string, { at: number; kind: VisitKind; notes: string }[]>();
-  const byName = new Map<string, { at: number; kind: VisitKind; notes: string }[]>();
+  const byEmail = new Map<string, { at: number; kind: VisitKind; notes: string; place: string }[]>();
+  const byName = new Map<string, { at: number; kind: VisitKind; notes: string; place: string }[]>();
+  const waitsByEmail = new Map<string, string[]>();
   if (emails.length) {
     const { data, error } = await admin
       .from("portal_booking_slot_reservations")
-      .select("parent_email, parent_name, notes, booking_mode, created_at")
+      .select("parent_email, parent_name, notes, booking_mode, created_at, service_name, venue, day_label, time_label, activity")
       .gte("created_at", "2026-08-01")
       .order("created_at", { ascending: true })
       .limit(2000);
@@ -148,7 +189,17 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
         if (!kind) continue;
         const at = new Date(String(row.created_at || "")).getTime();
         if (!Number.isFinite(at)) continue;
-        const hit = { at, kind, notes: String(row.notes || "") };
+        const hit = {
+          at,
+          kind,
+          notes: String(row.notes || ""),
+          place: placeLine({
+            service: row.service_name || row.activity,
+            time: row.time_label,
+            day: row.day_label,
+            venue: row.venue,
+          }),
+        };
         const em = String(row.parent_email || "").trim().toLowerCase();
         if (em && want.has(em)) {
           const list = byEmail.get(em) || [];
@@ -163,10 +214,34 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
         }
       }
     }
+    const waitRes = await admin
+      .from("portal_waitlist_entries")
+      .select("parent_email, service_label, service_key, venue, day_name, time_label, status")
+      .limit(2000);
+    if (waitRes.error) {
+      console.warn("[portal-admin-booking-leads-list] waitlist", waitRes.error.message);
+    } else {
+      for (const row of waitRes.data || []) {
+        const st = String(row.status || "active");
+        if (st === "withdrawn" || st === "placed") continue;
+        const em = String(row.parent_email || "").trim().toLowerCase();
+        if (!em || !emailSet.has(em)) continue;
+        const place = placeLine({
+          service: row.service_label || row.service_key,
+          time: row.time_label,
+          day: row.day_name,
+          venue: row.venue,
+        });
+        if (!place) continue;
+        const list = waitsByEmail.get(em) || [];
+        if (!list.includes(place)) list.push(place);
+        waitsByEmail.set(em, list);
+      }
+    }
   }
 
   const gapMs = 36 * 60 * 60 * 1000;
-  type VisitEvent = { at: number; kind: "trial" | "term" | "form" | "look"; notes: string };
+  type VisitEvent = { at: number; kind: "trial" | "term" | "form" | "look"; notes: string; place: string };
 
   function clusterEvents(events: VisitEvent[]): VisitEvent[][] {
     const sorted = events.slice().sort((a, b) => a.at - b.at);
@@ -186,12 +261,12 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
     const bookings = (byEmail.get(em) || byName.get(nameKey(lead.parent_name)) || []).slice();
     const formTimes = (formsByEmail.get(em) || []).slice();
     const events: VisitEvent[] = [
-      ...bookings.map((r) => ({ at: r.at, kind: r.kind, notes: r.notes })),
-      ...formTimes.map((at) => ({ at, kind: "form" as const, notes: "" })),
+      ...bookings.map((r) => ({ at: r.at, kind: r.kind, notes: r.notes, place: r.place })),
+      ...formTimes.map((at) => ({ at, kind: "form" as const, notes: "", place: "" })),
     ];
     const leadAt = new Date(String(lead.last_activity_at || lead.created_at || "")).getTime();
     if (Number.isFinite(leadAt) && !events.some((ev) => Math.abs(ev.at - leadAt) <= gapMs)) {
-      events.push({ at: leadAt, kind: "look", notes: "" });
+      events.push({ at: leadAt, kind: "look", notes: "", place: "" });
     }
     const groups = clusterEvents(events);
     const book = String(lead.booking_status || "").toLowerCase();
@@ -199,7 +274,9 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
     const childNames = namesByEmail.get(em) || [];
     const anyCurrent = childNames.some((n) => isCurrentName(n));
     const anyOld = childNames.some((n) => isOldName(n));
-    const visits = groups.length ? groups : [[{ at: leadAt || Date.now(), kind: "look" as const, notes: "" }]];
+    const visits = groups.length
+      ? groups
+      : [[{ at: leadAt || Date.now(), kind: "look" as const, notes: "", place: "" }]];
 
     return visits.slice().reverse().map((cluster, index) => {
       const start = cluster[0].at;
@@ -236,8 +313,27 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
 
       const wasActive = person_type === "active";
       const visit_entry = wasActive && lead.asked_otp !== true ? "parent" : "otp";
+      const placeLines: string[] = [];
+      if (visit_outcome === "term" || visit_outcome === "trial") {
+        for (const ev of cluster) {
+          if (ev.kind === visit_outcome && ev.place && !placeLines.includes(ev.place)) placeLines.push(ev.place);
+        }
+      } else if (visit_outcome === "waiting") {
+        for (const place of waitsByEmail.get(em) || []) {
+          if (place && !placeLines.includes(place)) placeLines.push(place);
+        }
+      }
+      let visit_place = placeLines.join(" | ");
+      if (!visit_place && visit_outcome === "looked") {
+        const viewed = Array.isArray(lead.services_viewed) ? lead.services_viewed : [];
+        const names = viewed.map((item) => prettyService(item)).filter(Boolean);
+        visit_place = names.length
+          ? [...new Set(names)].join(", ")
+          : String(lead.activity_interest || "").trim();
+      }
       return {
         ...lead,
+        visit_place,
         visit_outcome,
         person_type,
         person_bucket,

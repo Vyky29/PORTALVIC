@@ -367,13 +367,38 @@
     return { leads: j.leads || [], meta: j.meta || {} };
   }
 
+  function prettyService(raw) {
+    var key = String(raw || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+    var map = {
+      multi: "Multi-Activity",
+      multi_activity: "Multi-Activity",
+      day_centre: "Day Centre",
+      daycentre: "Day Centre",
+      intensive: "Intensive",
+      climbing: "Climbing",
+      climbing_activity: "Climbing",
+      aquatic: "Aquatic",
+      aquatic_activity: "Aquatic",
+      physical: "Physical",
+      physical_activity: "Physical",
+    };
+    return map[key] || String(raw || "").replace(/\s+/g, " ").trim();
+  }
+
+  /** Only looked: services they opened. Trial or Term: service, time, day, venue. */
   function leadActivityText(r) {
-    return (
-      String((r && r.activity_interest) || "").trim() ||
-      (Array.isArray(r && r.services_viewed) && r.services_viewed.length
-        ? r.services_viewed.slice(0, 3).join(", ")
-        : "")
-    );
+    var place = String((r && r.visit_place) || "").trim();
+    if (place) return place;
+    var outcome = leadOutcome(r).key;
+    if (outcome !== "looked") return String((r && r.activity_interest) || "").trim();
+    var viewed = Array.isArray(r && r.services_viewed) ? r.services_viewed : [];
+    var names = [];
+    viewed.forEach(function (item) {
+      var label = prettyService(item);
+      if (label && names.indexOf(label) < 0) names.push(label);
+    });
+    if (names.length) return names.join(", ");
+    return String((r && r.activity_interest) || "").trim();
   }
 
   function leadEnquiryText(r) {
@@ -395,7 +420,7 @@
   }
 
   function leadColspan(cols) {
-    return 7 + (cols.activity ? 1 : 0) + (cols.enquiry ? 1 : 0) + (cols.track ? 1 : 0);
+    return 7 + (cols.enquiry ? 1 : 0) + (cols.track ? 1 : 0);
   }
 
   function rowHtml(r, cols) {
@@ -405,10 +430,6 @@
     var checked = em && state.selected[em] ? " checked" : "";
     var outcome = leadOutcome(r);
     var person = leadType(r);
-    var lookedAt =
-      Array.isArray(r.services_viewed) && r.services_viewed.length
-        ? r.services_viewed.slice(0, 2).join(", ")
-        : "";
     var entry = entryWay(r);
     var leadLabel = entry.label;
     var leadTone = entry.key === "parent" ? "info" : entry.key === "otp" ? "pend" : "warn";
@@ -431,19 +452,16 @@
           '" />'
         : "") +
       "</td>" +
-      '<td style="min-width:0"><strong style="overflow-wrap:break-word">' +
+      '<td style="min-width:0">' +
+      '<strong style="overflow-wrap:break-word">' +
       esc(r.parent_name || "—") +
-      "</strong></td>" +
-      '<td style="overflow-wrap:anywhere;min-width:0">' +
+      "</strong>" +
+      '<div class="muted" style="font-size:12px;margin-top:2px;overflow-wrap:anywhere">' +
       esc(r.email || "—") +
-      '<div class="muted" style="font-size:11px;margin-top:2px">' +
+      "</div>" +
+      '<div class="muted" style="font-size:12px;margin-top:2px;overflow-wrap:anywhere">' +
       esc(r.mobile || "—") +
       "</div></td>" +
-      (cols.activity
-        ? '<td style="min-width:0;max-width:10rem;overflow-wrap:break-word;font-size:12px">' +
-          (activity ? esc(activity) : dash) +
-          "</td>"
-        : "") +
       (cols.enquiry
         ? '<td style="min-width:0;max-width:12rem;overflow-wrap:break-word;font-size:12px">' +
           (enquiry ? esc(enquiry.slice(0, 160)) : dash) +
@@ -457,9 +475,6 @@
           "</div>"
         : "") +
       "</td>" +
-      (cols.track
-        ? '<td style="min-width:0">' + trackSelectHtml(r) + "</td>"
-        : "") +
       '<td style="min-width:0;max-width:12rem;overflow-wrap:break-word">' +
       chip(person.label, person.tone) +
       (person.note
@@ -468,17 +483,26 @@
           "</div>"
         : "") +
       "</td>" +
+      (cols.track
+        ? '<td style="min-width:0">' + trackSelectHtml(r) + "</td>"
+        : "") +
       '<td style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
       '<span class="chip chip--' +
       esc(outcome.tone) +
       '" style="white-space:normal;overflow-wrap:anywhere;max-width:100%;display:inline-block">' +
       esc(outcome.label) +
-      "</span>" +
-      (lookedAt
-        ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">Looked at ' +
-          esc(lookedAt) +
-          "</div>"
-        : "") +
+      "</span></td>" +
+      '<td style="min-width:0;max-width:16rem;overflow-wrap:break-word;font-size:12px">' +
+      (activity
+        ? activity
+            .split(" | ")
+            .map(function (line) {
+              return (
+                '<div style="overflow-wrap:break-word">' + esc(line) + "</div>"
+              );
+            })
+            .join("")
+        : dash) +
       "</td>" +
       "<td>" +
       esc(formatWhen(r.visit_at || r.last_activity_at || r.created_at)) +
@@ -696,15 +720,14 @@
       '<table class="tbl tbl--center tbl--dense" id="bkLeadTable">' +
       "<thead><tr>" +
       '<th style="width:2.2rem" title="Select"></th>' +
-      "<th>Parent / carer</th><th>Email / phone</th>" +
-      (cols.activity ? "<th>Activity</th>" : "") +
+      "<th>Parent / carer</th>" +
       (cols.enquiry ? "<th>Enquiry</th>" : "") +
       '<th title="OTP asked for a code on Booking. Parent portal opened Booking from the family hub.">Lead</th>' +
       '<th title="New visitor is the first time. Registered means they sent the form. Did not register means they only asked for the code. Coming back by OTP, already registered and not ACTIVE, is Registered. ACTIVE already has a place and can open the parent portal.">Type</th>' +
       (cols.track
         ? '<th title="Office list only. Booked takes the email off the marketing list. It does not change Outcome.">Track status</th>'
         : "") +
-      "<th>Outcome</th><th>Updated</th>" +
+      '<th>Outcome</th><th title="Only looked: the services they opened. Trial or Term: service, time, day and venue.">Activity</th><th>Updated</th>' +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div></div>";
