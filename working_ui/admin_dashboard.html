@@ -23126,6 +23126,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var n = String((p && p.name) || '').trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
       if(n === 'eddie ritzema' || n === 'eddie ri') return { svc: 'Climbing Activity', slot: '2 to 3' };
       if(n === 'tala abdelhadi') return { svc: 'Aquatic Activity', day: 'Thursday', venue: 'Acton' };
+      if(n === 'haider ali' || n === 'haider') return { svc: 'Aquatic Activity', funding: 'Using Own money (private family funds)', payment: 'GoCardless' };
+      if(n === 'jake haynes') return { svc: 'Climbing Activity', funding: 'Using Own money (private family funds)', payment: 'Bank Transfer (One payment)' };
       return null;
     }
     function paxContactsBucket(p){
@@ -24602,6 +24604,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           meth = fromInv.meth;
         }else if(fromInv && src && !meth){
           meth = fromInv.meth;
+        }
+      }
+      if(!src || !meth){
+        var officeVisit = null;
+        try{ officeVisit = paxContactsKnownPastVisit(p); }catch(_officeVisit){ officeVisit = null; }
+        if(officeVisit){
+          if(!src && officeVisit.funding) src = officeVisit.funding;
+          if((!meth || !paxContactsPayTextIsMethod(meth)) && officeVisit.payment) meth = officeVisit.payment;
         }
       }
       var blob = (src + ' ' + meth).toLowerCase();
