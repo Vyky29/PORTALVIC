@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 141;
+  var SOURCE_VERSION = 142;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -4282,7 +4282,8 @@
 
   /**
    * Mon 5 Oct 2026 only, every Monday from 12 Oct, every Tuesday from 6 Oct,
-   * and every Wednesday from 7 Oct. September Wednesdays stay on the standing template.
+   * every Wednesday from 7 Oct, and every Friday from 9 Oct.
+   * September Wednesdays and Fridays stay on the standing template.
    * Timi leaves Monday Day Centre from 5 Oct and sits on Tuesday.
    * Victor Tuesday 3.30-5 stays the Cyrus Bespoke row.
    * Victor is on Monday Day Centre only on 5 Oct.
@@ -4363,6 +4364,53 @@
   var TUESDAY_DC_FROM = "2026-10-06";
   var MONDAY_DC_FROM_12 = "2026-10-12";
   var WEDNESDAY_DC_FROM = "2026-10-07";
+  var FRIDAY_DC_FROM = "2026-10-09";
+  var FRIDAY_FROM_9_OCT_DC = [
+    {
+      staff: "Roberto",
+      clients: [
+        { name: "Emanuel", time: "11 to 1" },
+        { name: "Fadi", time: "1 to 3" },
+      ],
+    },
+    {
+      staff: "Youssef",
+      clients: [
+        { name: "Ikram", time: "11 to 1" },
+        { name: "Emanuel", time: "1 to 3" },
+      ],
+    },
+    {
+      staff: "Patience",
+      clients: [
+        { name: "Ikram", time: "11 to 12.30" },
+        { name: "Fadi", time: "12.30 to 3" },
+        { name: "Ikram", time: "3 to 4" },
+      ],
+    },
+    {
+      staff: "Michelle",
+      clients: [
+        { name: "Manager", time: "11 to 12.30" },
+        { name: "Ikram", time: "12.30 to 4" },
+      ],
+    },
+    {
+      staff: "Raul",
+      clients: [
+        { name: "Timi", time: "11 to 12.30" },
+        { name: "Fadi", time: "12.30 to 1" },
+      ],
+    },
+    {
+      staff: "Victor",
+      clients: [
+        { name: "Timi", time: "11 to 1" },
+        { name: "Ikram", time: "1 to 3" },
+        { name: "Emanuel", time: "3 to 4" },
+      ],
+    },
+  ];
   var WEDNESDAY_FROM_7_OCT_DC = [
     {
       staff: "Roberto",
@@ -4473,6 +4521,7 @@
       if (iso === "2026-10-05" && isDayCentreService(r.service)) return;
       if (iso && iso >= MONDAY_DC_FROM_12 && dow === "monday" && isDayCentreService(r.service)) return;
       if (iso && iso >= WEDNESDAY_DC_FROM && dow === "wednesday" && isDayCentreService(r.service)) return;
+      if (iso && iso >= FRIDAY_DC_FROM && dow === "friday" && isDayCentreService(r.service)) return;
       if (
         iso &&
         iso >= "2026-10-05" &&
@@ -4511,6 +4560,12 @@
     enumerateAutumnTermIsosForDow("wednesday").forEach(function (iso) {
       if (iso < WEDNESDAY_DC_FROM) return;
       dcDatedBoardRows(iso, "Wednesday", WEDNESDAY_FROM_7_OCT_DC).forEach(function (row) {
+        out.push(row);
+      });
+    });
+    enumerateAutumnTermIsosForDow("friday").forEach(function (iso) {
+      if (iso < FRIDAY_DC_FROM) return;
+      dcDatedBoardRows(iso, "Friday", FRIDAY_FROM_9_OCT_DC).forEach(function (row) {
         out.push(row);
       });
     });
