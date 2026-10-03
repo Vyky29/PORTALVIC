@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v211",
+  "version": "2026-10-03-v212",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -825,7 +825,7 @@
         {
           "id": "leads_do",
           "title": "What you do with the people on Leads",
-          "summary": "Entry shows Parent portal or Booking OTP. Outcome says what they did next. No new form means they did not register again.",
+          "summary": "Lead is OTP or Parent portal. Outcome says what they did next. The form is not on this screen.",
           "where": "Services & places → Leads",
           "keywords": [
             "what to do",
@@ -837,11 +837,11 @@
             "clientes"
           ],
           "steps": [
-            "The page opens on Portal OTP only. Each row is a parent who asked for a code.",
-            "Entry says how they opened Booking. Parent portal means they were already in the family hub and looked at other services. No code, and no new registration. Booking OTP means they asked for a code on the booking page.",
-            "Outcome is what they did next. Already a client, only looked means they did not send a new form. Forms says No new form, or On file with the old registration date. Already a client, registered again means they sent a new registration.",
-            "Filter Outcome to see one of those results. OTP leads is how many rows that filter is showing.",
-            "Track status is optional. Leave New. You do not work through those rows. Booked takes that email off the marketing list. It does not change Outcome.",
+            "The page opens on Portal OTP only. Each row is a parent who asked for a code, or who opened Booking from the family hub.",
+            "Lead is how they came in. OTP means they asked for a code on the booking page. Parent portal means they were already in the family hub. No code.",
+            "Outcome is what they did next. Already a client, only looked means they did not send a new form. Already a client, registered again means they sent a new registration. That form is not a column here. Once they are REGISTERED or ACTIVE, the form is the person in the portal.",
+            "Activity and Enquiry stay hidden when every row on screen is empty. They show on the office list, when you typed a note.",
+            "Track status is not on the Portal OTP table. It stays on the office list. Booked takes that email off the marketing list. It does not change Outcome.",
             "Filter first with Search, Origin, Track status and Outcome. Write to this filter sits under those filters. Tick a row only when you want to write to that parent. Send via Family broadcast, or Copy emails / Copy phones.",
             "Email interest is an old office file. Open it from Origin only when you want a marketing send.",
             "Add / update potential client is only for a parent you type in by hand. Save potential does not give them a place."
@@ -854,10 +854,11 @@
             "summary": "Leads son personas que pidieron un codigo OTP. Outcome dice que hicieron despues.",
             "where": "Services & places → Leads",
             "steps": [
-              "La pagina abre solo en Portal OTP. Entry dice como entraron. Parent portal: ya estaban en el hub de la familia y miraron otros servicios. Sin codigo y sin registro nuevo. Booking OTP: pidieron un codigo en Booking.",
-              "Outcome es lo que hicieron despues. Already a client, only looked: no mandaron un formulario nuevo. Forms dice No new form, o On file con la fecha del registro viejo. Already a client, registered again: si mandaron un registro nuevo.",
-              "Filtra Outcome para ver uno de esos resultados. OTP leads es cuantas filas ensena ese filtro.",
-              "Track status es opcional. Dejalo en New. No tienes que pasar fila por fila. Booked saca ese email de la lista de marketing. No cambia Outcome.",
+              "La pagina abre en Portal OTP. Cada fila es un padre que pidio un codigo, o que abrio Booking desde el hub de la familia.",
+              "Lead es como entraron. OTP: pidieron un codigo en Booking. Parent portal: ya estaban en el hub. Sin codigo.",
+              "Outcome es lo que hicieron despues. Already a client, only looked: no mandaron un formulario nuevo. Already a client, registered again: si mandaron un registro nuevo. El formulario no es una columna aqui. Cuando estan REGISTERED o ACTIVE, el formulario ya es la persona en el portal.",
+              "Activity y Enquiry no salen si todas las filas de la pantalla estan vacias. Salen en la lista de oficina, cuando escribiste una nota.",
+              "Track status no esta en la tabla de Portal OTP. Se queda en la lista de oficina. Booked saca ese email de la lista de marketing. No cambia Outcome.",
               "Filtra primero con Search, Origin, Track status y Outcome. Write to this filter va debajo de esos filtros. Marca una fila solo cuando quieras escribir a ese padre. Send via Family broadcast, o Copy emails / Copy phones.",
               "Email interest es un archivo viejo de oficina. Abrelo en Origin solo cuando quieras un envio de marketing.",
               "Add / update potential client es solo para un padre que escribes a mano. Save potential no le da una plaza."
@@ -1261,10 +1262,12 @@
             "A child who already has a service can also be on portal waiting list for another place.",
             "old waiting list drops anyone who already has a service. They stay on ACTIVE.",
             "OTP with no finished registration stays in LEADS. Do not add a separate OTP-only filter on this list.",
+            "On Booking, a full time sends a new visitor to registration first, then onto this list. Someone who is already REGISTERED or ACTIVE joins with the short form. The old name-only join did not collect the registration.",
             "When a place opens (Services / Edit term slot / finish-booking), move them through your usual offer flow."
           ],
           "tips": [
-            "Keep both waiting lists separate from LEADS and REGISTERED."
+            "Keep both waiting lists separate from LEADS and REGISTERED.",
+            "A full seat does not get held by the waiting list."
           ],
           "es": {
             "title": "Una lista de espera, luego Portal o antes",
@@ -1280,10 +1283,12 @@
               "Un nino que ya tiene un servicio puede estar tambien en portal waiting list para otra plaza.",
               "old waiting list quita a quien ya tiene un servicio. Esos se quedan en ACTIVE.",
               "OTP sin registro terminado se queda en LEADS. No anadas un filtro solo de OTP en esta lista.",
+              "En Booking, una hora llena manda a un visitante nuevo al registro primero, y luego a esta lista. Quien ya es REGISTERED o ACTIVE entra con el formulario corto. El alta antigua solo con el nombre no recibia el registro.",
               "Cuando se abre una plaza (Services / Edit term slot / finish-booking), pasalos por el camino de oferta de siempre."
             ],
             "tips": [
-              "Deja las dos listas de espera separadas de LEADS y de REGISTERED."
+              "Deja las dos listas de espera separadas de LEADS y de REGISTERED.",
+              "Una plaza llena no queda retenida por la lista de espera."
             ]
           }
         },

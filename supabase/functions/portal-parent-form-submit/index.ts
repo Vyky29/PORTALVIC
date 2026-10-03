@@ -397,9 +397,13 @@ Deno.serve(async (req) => {
     payload = { ...payload, booking_request: bookingRequest };
   }
 
+  const waitingListRequest =
+    String(bookingRequest?.booking_mode || "").toLowerCase() === "waiting_list";
+
   // Hard gate: never accept a registration onto a band with no free open seat
   // (active pay holds keep the instructor until status is released/expired).
-  if (bookingRequest && formType === "client_registration") {
+  // A full band joined as waiting list does not take a seat.
+  if (bookingRequest && formType === "client_registration" && !waitingListRequest) {
     const ratioEarly = sanitizePart(
       String(payload.support_regulated || bookingRequest.support_regulated || ""),
       20,
@@ -610,7 +614,62 @@ Deno.serve(async (req) => {
   }
 
   let reservationId: string | null = null;
-  if (bookingRequest && formType === "client_registration") {
+  let joinedWaitingList = false;
+  if (waitingListRequest && bookingRequest && formType === "client_registration") {
+    try {
+      const nowIso = new Date().toISOString();
+      const email = String(parentEmail || "").trim().toLowerCase();
+      let already = false;
+      if (email) {
+        const { data: existingWl } = await admin
+          .from("portal_waitlist_entries")
+          .select("id")
+          .eq("slot_id", bookingRequest.slot_id)
+          .eq("status", "active")
+          .ilike("email", email)
+          .maybeSingle();
+        already = !!existingWl?.id;
+      }
+      if (!already) {
+        const { error: wlErr } = await admin.from("portal_waitlist_entries").insert({
+          lead_id: primaryLeadId,
+          participant_name: participantName,
+          parent_name: parentName || "",
+          email: email,
+          mobile: String(parentPhone || ""),
+          service_key: bookingRequest.service_id || "",
+          service_label: bookingRequest.service_name || "",
+          venue: bookingRequest.venue || "",
+          day_name: bookingRequest.day || "",
+          time_label: bookingRequest.time || "",
+          slot_id: bookingRequest.slot_id,
+          note: "registration_then_waiting_list",
+          source: "booking_portal",
+          status: "active",
+          updated_at: nowIso,
+        });
+        if (wlErr && String(wlErr.code || "") !== "23505") {
+          console.warn("[portal-parent-form-submit] waitlist", wlErr.message);
+        } else {
+          joinedWaitingList = true;
+        }
+      } else {
+        joinedWaitingList = true;
+      }
+      if (joinedWaitingList && primaryLeadId) {
+        await admin
+          .from("portal_booking_leads")
+          .update({
+            booking_status: "waiting_list",
+            last_activity_at: nowIso,
+            updated_at: nowIso,
+          })
+          .eq("id", primaryLeadId);
+      }
+    } catch (wlCatch) {
+      console.warn("[portal-parent-form-submit] waitlist", wlCatch);
+    }
+  } else if (bookingRequest && formType === "client_registration") {
     try {
       const holdExpires = bookingPayHoldExpiresAt();
       const tokenHash = bookingSessionToken ? await sha256Hex(bookingSessionToken) : null;
@@ -772,6 +831,7 @@ Deno.serve(async (req) => {
    * Office is notified above; suitability / form review is post-payment. */
   if (
     bookingRequest &&
+    !waitingListRequest &&
     (formType === "client_registration" || formType === "climbing_registration")
   ) {
     try {
@@ -802,6 +862,7 @@ Deno.serve(async (req) => {
     submitted_at: row.submitted_at,
     reservation_id: reservationId,
     slot_held: !!reservationId,
+    waiting_list: joinedWaitingList,
     finish_url: finishBooking?.finish_url || null,
     finish_url_sent: finishBooking?.finish_url_sent || false,
   });

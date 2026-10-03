@@ -341,7 +341,39 @@
     return { leads: j.leads || [], meta: j.meta || {} };
   }
 
-  function rowHtml(r) {
+  function leadActivityText(r) {
+    return (
+      String((r && r.activity_interest) || "").trim() ||
+      (Array.isArray(r && r.services_viewed) && r.services_viewed.length
+        ? r.services_viewed.slice(0, 3).join(", ")
+        : "")
+    );
+  }
+
+  function leadEnquiryText(r) {
+    return String((r && r.enquiry_notes) || "").trim();
+  }
+
+  /** Activity and Enquiry only when a row has them. Track status only on the office lists. */
+  function leadTableCols(rows) {
+    var list = rows || [];
+    return {
+      activity: list.some(function (r) {
+        return !!leadActivityText(r);
+      }),
+      enquiry: list.some(function (r) {
+        return !!leadEnquiryText(r);
+      }),
+      track: state.origin !== "portal",
+    };
+  }
+
+  function leadColspan(cols) {
+    return 6 + (cols.activity ? 1 : 0) + (cols.enquiry ? 1 : 0) + (cols.track ? 1 : 0);
+  }
+
+  function rowHtml(r, cols) {
+    cols = cols || { activity: false, enquiry: false, track: false };
     var em = emailKey(r);
     var imported = isImportRow(r);
     var checked = em && state.selected[em] ? " checked" : "";
@@ -350,75 +382,16 @@
       Array.isArray(r.services_viewed) && r.services_viewed.length
         ? r.services_viewed.slice(0, 2).join(", ")
         : "";
-    var reg = String(r.registration_status || "").toLowerCase();
-    var book = String(r.booking_status || "").toLowerCase();
-    var sentForm = reg === "submitted" || book === "registration_submitted";
-    var formBits = [];
-    var formNote = "";
-    if (sentForm && r.form_pdf_url) {
-      formBits.push(
-        '<button type="button" class="btn btn--pri btn--sm bk-lead-open-doc" data-url="' +
-          esc(r.form_pdf_url) +
-          '">New registration</button>'
-      );
-    }
-    if (sentForm && r.form_photo_url) {
-      formBits.push(
-        '<button type="button" class="btn btn--ghost btn--sm bk-lead-open-doc" data-url="' +
-          esc(r.form_photo_url) +
-          '">Photo</button>'
-      );
-    }
-    if (!sentForm && (r.form_pdf_url || r.form_photo_url)) {
-      if (r.form_pdf_url) {
-        formBits.push(
-          '<button type="button" class="btn btn--ghost btn--sm bk-lead-open-doc" data-url="' +
-            esc(r.form_pdf_url) +
-            '">On file</button>'
-        );
-      }
-      if (r.form_photo_url) {
-        formBits.push(
-          '<button type="button" class="btn btn--ghost btn--sm bk-lead-open-doc" data-url="' +
-            esc(r.form_photo_url) +
-            '">Photo</button>'
-        );
-      }
-      formNote =
-        "Already on file" +
-        (r.form_submitted_at ? " · " + formatWhen(r.form_submitted_at) : "") +
-        ". Not a new form.";
-    }
-    if (!formBits.length) {
-      formBits.push('<span class="muted" style="font-size:12px">No new form</span>');
-    }
-    var formSub = formNote
-      ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
-        esc(formNote) +
-        "</div>"
-      : r.form_participant_name
-        ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
-          esc(r.form_participant_name) +
-          (r.form_type ? " · " + esc(String(r.form_type).replace(/_/g, " ")) : "") +
-          (sentForm && r.form_submitted_at ? " · " + esc(formatWhen(r.form_submitted_at)) : "") +
-          "</div>"
-        : "";
     var entry = entryWay(r);
-    var sourceLine = imported
-      ? chip("Email interest list", "warn") +
-        '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
-        esc(r.source || "Email interest import") +
-        " — office outreach list, not someone who opened Booking Portal</div>"
-      : chip(entry.label, entry.key === "parent" ? "info" : "pend") +
-        '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
-        esc(entry.note) +
-        "</div>";
-    var activity =
-      String(r.activity_interest || "").trim() ||
-      (Array.isArray(r.services_viewed) && r.services_viewed.length
-        ? r.services_viewed.slice(0, 3).join(", ")
-        : "");
-    var enquiry = String(r.enquiry_notes || "").trim();
+    var leadLabel =
+      entry.key === "otp" ? "OTP" : entry.key === "parent" ? "Parent portal" : entry.label;
+    var leadTone = entry.key === "parent" ? "info" : entry.key === "otp" ? "pend" : "warn";
+    var leadNote = imported
+      ? "Office list. Not someone who opened Booking Portal."
+      : entry.note;
+    var activity = leadActivityText(r);
+    var enquiry = leadEnquiryText(r);
+    var dash = '<span class="muted">—</span>';
     return (
       "<tr>" +
       '<td style="width:2.2rem;vertical-align:middle">' +
@@ -434,23 +407,33 @@
       "</td>" +
       '<td style="min-width:0"><strong style="overflow-wrap:break-word">' +
       esc(r.parent_name || "—") +
-      "</strong>" +
-      sourceLine +
-      "</td>" +
+      "</strong></td>" +
       '<td style="overflow-wrap:anywhere;min-width:0">' +
       esc(r.email || "—") +
       '<div class="muted" style="font-size:11px;margin-top:2px">' +
       esc(r.mobile || "—") +
       "</div></td>" +
-      '<td style="min-width:0;max-width:10rem;overflow-wrap:break-word;font-size:12px">' +
-      (activity ? esc(activity) : '<span class="muted">—</span>') +
+      (cols.activity
+        ? '<td style="min-width:0;max-width:10rem;overflow-wrap:break-word;font-size:12px">' +
+          (activity ? esc(activity) : dash) +
+          "</td>"
+        : "") +
+      (cols.enquiry
+        ? '<td style="min-width:0;max-width:12rem;overflow-wrap:break-word;font-size:12px">' +
+          (enquiry ? esc(enquiry.slice(0, 160)) : dash) +
+          "</td>"
+        : "") +
+      '<td style="min-width:0;max-width:16rem;overflow-wrap:break-word">' +
+      chip(leadLabel, leadTone) +
+      (leadNote
+        ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
+          esc(leadNote) +
+          "</div>"
+        : "") +
       "</td>" +
-      '<td style="min-width:0;max-width:12rem;overflow-wrap:break-word;font-size:12px">' +
-      (enquiry ? esc(enquiry.slice(0, 160)) : '<span class="muted">—</span>') +
-      "</td>" +
-      '<td style="min-width:0">' +
-      trackSelectHtml(r) +
-      "</td>" +
+      (cols.track
+        ? '<td style="min-width:0">' + trackSelectHtml(r) + "</td>"
+        : "") +
       '<td style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
       '<span class="chip chip--' +
       esc(outcome.tone) +
@@ -462,12 +445,6 @@
           esc(lookedAt) +
           "</div>"
         : "") +
-      "</td>" +
-      '<td style="min-width:7rem">' +
-      '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
-      formBits.join("") +
-      "</div>" +
-      formSub +
       "</td>" +
       "<td>" +
       esc(formatWhen(r.last_activity_at || r.created_at)) +
@@ -550,15 +527,17 @@
   function renderHost(host) {
     if (!host) return;
     var rows = visibleLeads();
+    var cols = leadTableCols(rows);
+    var span = String(leadColspan(cols));
     var body = state.loading
-      ? '<tr><td colspan="9" class="muted">Loading OTP leads…</td></tr>'
+      ? '<tr><td colspan="' + span + '" class="muted">Loading leads…</td></tr>'
       : state.error
-        ? '<tr><td colspan="9" class="muted">Could not load leads (' +
+        ? '<tr><td colspan="' + span + '" class="muted">Could not load leads (' +
           esc(state.error) +
           ").</td></tr>"
         : rows.length
-          ? rows.map(rowHtml).join("")
-          : '<tr><td colspan="9" class="muted">No OTP leads with this outcome.</td></tr>';
+          ? rows.map(function (r) { return rowHtml(r, cols); }).join("")
+          : '<tr><td colspan="' + span + '" class="muted">No leads with this outcome.</td></tr>';
 
     var trackFilterOpts = [
       { value: "all", label: "All track statuses" },
@@ -663,9 +642,14 @@
       '<table class="tbl tbl--center tbl--dense" id="bkLeadTable">' +
       "<thead><tr>" +
       '<th style="width:2.2rem" title="Select"></th>' +
-      "<th>Parent / carer</th><th>Email / phone</th><th>Activity</th><th>Enquiry</th>" +
-      '<th title="Optional. Leave New. Booked takes the email off the marketing list. It does not change Outcome.">Track status</th>' +
-      "<th>Outcome</th><th>Forms</th><th>Updated</th>" +
+      "<th>Parent / carer</th><th>Email / phone</th>" +
+      (cols.activity ? "<th>Activity</th>" : "") +
+      (cols.enquiry ? "<th>Enquiry</th>" : "") +
+      '<th title="OTP asked for a code on Booking. Parent portal opened Booking from the family hub.">Lead</th>' +
+      (cols.track
+        ? '<th title="Office list only. Booked takes the email off the marketing list. It does not change Outcome.">Track status</th>'
+        : "") +
+      "<th>Outcome</th><th>Updated</th>" +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div></div>";

@@ -2360,7 +2360,9 @@
         if (slot.day) q.set("day", slot.day);
         if (slot.timeLabel) q.set("time", slot.timeLabel);
         if (slot.packLabel) q.set("pack", slot.packLabel);
-        if (slot.bookingMode) q.set("booking_mode", slot.bookingMode);
+        var waitingList = opts.waitingList === true;
+        if (waitingList) q.set("booking_mode", "waiting_list");
+        else if (slot.bookingMode) q.set("booking_mode", slot.bookingMode);
         if (slot.weekId) q.set("week_id", slot.weekId);
         if (slot.blockId) q.set("block_id", slot.blockId);
         var dateIso = resolveBookableSessionDateIso(slot.day, slot.dateIso || "", {
@@ -2488,6 +2490,35 @@
           return;
         }
         var svc = api.serviceById(slot.serviceId);
+        if (!isExistingClientBookingSession()) {
+          var actionNew = document.getElementById("actionSheet");
+          var titleNew = document.getElementById("sheetTitle");
+          var bodyNew = document.getElementById("sheetBody");
+          var mailNew = document.getElementById("sheetMail");
+          var choicesNew = document.getElementById("sheetChoices");
+          titleNew.textContent = "Registration first";
+          bodyNew.textContent =
+            ((svc && svc.name) || "Session") +
+            " · " +
+            slot.day +
+            " · " +
+            slot.timeLabel +
+            " is full. We do not have this child's registration yet, so the form comes first. After that you join the waiting list. It does not hold a seat.";
+          if (mailNew) mailNew.hidden = true;
+          if (choicesNew) {
+            choicesNew.hidden = false;
+            choicesNew.innerHTML =
+              '<button type="button" class="btn sheet__choice--pri" id="wlRegFirst" style="margin-top:8px;width:100%">Continue to registration</button>';
+          }
+          actionNew.hidden = false;
+          var regBtn = document.getElementById("wlRegFirst");
+          if (regBtn) {
+            regBtn.onclick = function () {
+              goToRegistration(slot, { waitingList: true });
+            };
+          }
+          return;
+        }
         var action = document.getElementById("actionSheet");
         var title = document.getElementById("sheetTitle");
         var body = document.getElementById("sheetBody");
