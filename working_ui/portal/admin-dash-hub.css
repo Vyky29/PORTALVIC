@@ -4384,18 +4384,27 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   flex:0 0 auto;
   padding:6px 4px 2px;
 }
-.ops-hub--flat .ops-hub-panel--today{background:#ede9fe;border-color:#ddd6fe}
+.ops-hub--flat .ops-hub-panel--today{background:#fce7f3;border-color:#f9a8d4}
 .ops-hub--flat .ops-hub-panel--services{background:#ffedd5;border-color:#fdba74}
-.ops-hub--flat .ops-hub-panel--families{background:#e0e7ff;border-color:#c7d2fe}
-.ops-hub--flat .ops-hub-panel--finance{background:#fce7f3;border-color:#f9a8d4}
-.ops-hub--flat .ops-hub-panel--formal{background:#e0f2fe;border-color:#bae6fd}
-.ops-hub--flat .ops-hub-panel--potential{background:#ccfbf1;border-color:#99f6e4}
-.ops-hub--flat .ops-hub-panel--today .dash-hub__tile{background:#f5f3ff}
+.ops-hub--flat .ops-hub-panel--families{background:#ede9fe;border-color:#ddd6fe}
+.ops-hub--flat .ops-hub-panel--finance{background:#ccfbf1;border-color:#5eead4}
+.ops-hub--flat .ops-hub-panel--formal{background:#fee2e2;border-color:#fca5a5}
+.ops-hub--flat .ops-hub-panel--potential{background:#f1f5f9;border-color:#cbd5e1}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile{background:#fff1f6;color:#9d174d}
 .ops-hub--flat .ops-hub-panel--services .dash-hub__tile{background:#fff7ed}
-.ops-hub--flat .ops-hub-panel--families .dash-hub__tile{background:#eef2ff}
-.ops-hub--flat .ops-hub-panel--finance .dash-hub__tile{background:#fdf2f8}
-.ops-hub--flat .ops-hub-panel--formal .dash-hub__tile{background:#f0f9ff}
-.ops-hub--flat .ops-hub-panel--potential .dash-hub__tile{background:#f0fdfa}
+.ops-hub--flat .ops-hub-panel--families .dash-hub__tile{background:#f5f3ff}
+.ops-hub--flat .ops-hub-panel--finance .dash-hub__tile{background:#f0fdfa;color:#115e59}
+.ops-hub--flat .ops-hub-panel--formal .dash-hub__tile{background:#fff5f5;color:#991b1b}
+.ops-hub--flat .ops-hub-panel--potential .dash-hub__tile{background:#f8fafc}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band{background:rgba(244,114,182,.28);color:#be185d}
+.ops-hub--flat .ops-hub-panel--finance .dash-hub__tile-band{background:rgba(45,212,191,.32);color:#0f766e}
+.ops-hub--flat .ops-hub-panel--formal .dash-hub__tile-band{background:rgba(239,68,68,.2);color:#b91c1c}
+.ops-hub--flat .ops-hub-panel--today .dash-hub__panel-title,
+.ops-hub--flat .ops-hub-panel--today .dash-hub__panel-ico{color:#be185d}
+.ops-hub--flat .ops-hub-panel--finance .dash-hub__panel-title,
+.ops-hub--flat .ops-hub-panel--finance .dash-hub__panel-ico{color:#0f766e}
+.ops-hub--flat .ops-hub-panel--formal .dash-hub__panel-title,
+.ops-hub--flat .ops-hub-panel--formal .dash-hub__panel-ico{color:#b91c1c}
 @media (max-width:980px){
   body:has(#workspace .ops-hub--flat) .admin-workspace,
   body:has(#workspace .ops-hub--flat) .admin-main,
