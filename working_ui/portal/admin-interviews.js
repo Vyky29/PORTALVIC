@@ -523,7 +523,11 @@
       "Start a new interview</a>" +
       "</div>" +
       (state.error ? '<div class="ai-err">' + esc(state.error) + "</div>" : "") +
-      section("Successful", "", successful) +
+      section(
+        "Successful",
+        "Shadowing days and the normal rate are set in H&R, Finance, Pay rates. Save days there.",
+        successful
+      ) +
       section("Unsuccessful", "", unsuccessful) +
       (progress.length ? section("In progress", "", progress) : "") +
       "</div>";

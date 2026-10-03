@@ -59,6 +59,8 @@
     .note--warn{background:var(--warnSoft);border:1px solid #fde68a;color:var(--warn)}
     .note--ok{background:var(--successSoft);border:1px solid #bbf7d0;color:var(--success)}
     .note--err{background:var(--dangerSoft);border:1px solid #fecaca;color:#991b1b}
+    .paymode{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--line);background:#fff;min-width:0}
+    .paymode p{margin:0;flex:1 1 220px;min-width:0;font-size:12px;color:var(--muted);overflow-wrap:break-word}
     .gate{max-width:480px;margin:40px auto;text-align:center}
     .hidden{display:none!important}
     .spin{display:inline-block;width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--blue);
@@ -84,6 +86,7 @@
             Each worker can hold several roles (e.g. Support Worker <em>and</em> Climbing Instructor) with different rates.
             The payroll report picks the rate that matches the role of each session (detected from the roster service).
             Rates default to the contract scale table but you can override them here.
+            Shadowing days are £13.50. Choose Normal pay, or Shadowing until a date, on each person. From that date the £/h above is used. Leave the date empty to keep every day at £13.50.
           </p>
           <div class="row">
             <input type="search" id="search" placeholder="Search staff…" style="flex:1 1 220px" />
@@ -121,6 +124,7 @@
 
     let staff = [];      // [{id, full_name, username, app_role}]
     let ratesByUser = {}; // { user_id: [ {id, role, scale, hourly_rate, is_primary} ] }
+    let payModeByUser = {}; // { user_id: { pay_mode, normal_pay_from } }
 
     function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
     function money(n){ const v = Number(n); return Number.isFinite(v) ? v.toFixed(2) : "—"; }
@@ -131,16 +135,22 @@
 
     async function loadAll(){
       clearNote();
-      const [profRes, rateRes] = await Promise.all([
+      const [profRes, rateRes, modeRes] = await Promise.all([
         supabase.from("staff_profiles").select("id, full_name, username, app_role, is_active").order("full_name", { ascending: true }),
         supabase.from("staff_role_rates").select("id, user_id, role, scale, hourly_rate, is_primary"),
+        supabase.from("staff_pay_mode").select("user_id, pay_mode, normal_pay_from"),
       ]);
       if (profRes.error) throw profRes.error;
       if (rateRes.error) throw rateRes.error;
+      if (modeRes.error) throw modeRes.error;
       staff = (profRes.data || []).filter((s) => s.is_active !== false);
       ratesByUser = {};
       for (const r of rateRes.data || []) {
         (ratesByUser[r.user_id] = ratesByUser[r.user_id] || []).push(r);
+      }
+      payModeByUser = {};
+      for (const m of modeRes.data || []) {
+        payModeByUser[m.user_id] = m;
       }
       render();
     }
@@ -168,11 +178,29 @@
       const scaleOpts = '<option value="">N/A</option>' + SCALES.map((sc) => `<option value="${esc(sc)}">${esc(sc)}</option>`).join("");
       const subtitle = [s.username ? "@" + s.username : "", s.app_role ? s.app_role : ""].filter(Boolean).join(" · ");
       const hasRoles = rates.length > 0;
+      const mode = payModeByUser[s.id] || { pay_mode: "normal", normal_pay_from: "" };
+      const shadow = mode.pay_mode === "shadowing";
+      const from = mode.normal_pay_from ? String(mode.normal_pay_from).slice(0, 10) : "";
       return `
-        <div class="staff" data-uid="${esc(s.id)}">
+        <div class="staff" data-uid="${esc(s.id)}" data-name="${esc(s.full_name || "")}">
           <div class="staff__h">
             <div class="staff__name">${esc(s.full_name || s.username || "Staff")}<small>${esc(subtitle)}</small></div>
             ${hasRoles ? '<button type="button" class="btn btn--sec btn--sm" data-act="toggle-add">+ Add role</button>' : ""}
+          </div>
+          <div class="paymode">
+            <label class="fld">Days
+              <select data-pay="mode">
+                <option value="normal"${shadow ? "" : " selected"}>Normal pay</option>
+                <option value="shadowing"${shadow ? " selected" : ""}>Shadowing</option>
+              </select>
+            </label>
+            <label class="fld">Normal pay from
+              <input type="date" data-pay="from" value="${esc(from)}" />
+            </label>
+            <button type="button" class="btn btn--sec btn--sm" data-act="save-pay">Save days</button>
+            <p>${shadow
+              ? (from ? "£13.50 until the day before that date. From that date, the rate above." : "Every day stays at £13.50 until you set the date.")
+              : "Every day uses the rate above. A Shadowing card on the schedule still pays £13.50."}</p>
           </div>
           <div class="staff__body">
             ${rateRows}
@@ -233,6 +261,7 @@
         addScale.addEventListener("change", syncAdd);
         syncAdd();
         card.querySelector('[data-act="add"]').addEventListener("click", () => addRole2(uid, card));
+        card.querySelector('[data-act="save-pay"]').addEventListener("click", () => savePayMode(uid, card));
 
         // Add-role bar is hidden by default once a worker has roles; reveal on demand.
         const addbar = card.querySelector(".addbar");
@@ -330,6 +359,47 @@
         showNote("ok", "Role removed.");
         await loadAll();
       } catch (e) { showNote("err", e?.message || String(e)); }
+    }
+
+    async function syncCandidatePay(name, mode, from){
+      const q = String(name || "").trim().toLowerCase();
+      if (!q) return;
+      const res = await supabase.from("onboarding_candidates").select("id, data");
+      if (res.error || !res.data) return;
+      const row = res.data.find((r) => String((r.data && r.data.name) || "").trim().toLowerCase() === q);
+      if (!row) return;
+      const data = Object.assign({}, row.data || {});
+      data.onboarding = Object.assign({}, data.onboarding || {});
+      if (mode === "shadowing") {
+        data.onboarding.employment = "shadowing";
+        data.onboarding.normalFrom = from || "";
+        delete data.onboarding.pay;
+      } else {
+        data.onboarding.employment = "staff";
+        data.onboarding.pay = "normal";
+        data.onboarding.normalFrom = "";
+      }
+      const saved = await supabase.from("onboarding_candidates").update({ data: data }).eq("id", row.id);
+      if (saved.error) throw saved.error;
+    }
+
+    async function savePayMode(uid, card){
+      const mode = card.querySelector('[data-pay="mode"]').value === "shadowing" ? "shadowing" : "normal";
+      const fromRaw = String(card.querySelector('[data-pay="from"]').value || "");
+      const from = mode === "shadowing" && /^\d{4}-\d{2}-\d{2}$/.test(fromRaw) ? fromRaw : null;
+      try {
+        const up = await supabase.from("staff_pay_mode").upsert({
+          user_id: uid,
+          pay_mode: mode,
+          normal_pay_from: from,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" }).select();
+        if (up.error) throw up.error;
+        if (!up.data || !up.data.length) { showNote("err", "Days not saved. Sign in as admin or CEO."); return; }
+        try { await syncCandidatePay(card.getAttribute("data-name"), mode, from); } catch (_) {}
+        showNote("ok", "Days saved.");
+        await loadAll();
+      } catch (e) { showNote("err", writeErr(e)); }
     }
 
     async function boot(){

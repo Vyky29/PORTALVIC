@@ -671,6 +671,21 @@
       e.rate = 13.5;
       return e;
     }
+    /**
+     * Pay rates page: Shadowing pays £13.50 until normal_pay_from.
+     * That date itself uses the normal role rate. No date keeps every day at £13.50.
+     */
+    function applyPayModeShadowingEntry(e) {
+      if (!e || e.dayOff) return e;
+      if (String(state.payMode || "") !== "shadowing") return e;
+      const iso = String(e.date || "").slice(0, 10);
+      const from = String(state.normalPayFrom || "").slice(0, 10);
+      if (from && iso >= from) return e;
+      e.role = "Shadowing";
+      e.roleLabel = "Shadowing";
+      e.rate = 13.5;
+      return e;
+    }
     function fixedMonthlySalaryForRosterKey(key) {
       const k = String(key || "").trim().toLowerCase();
       if (k === "roberto" && robertoHybridPayActive(k)) return ROBERTO_PT_MONTHLY;
@@ -784,6 +799,9 @@
       berta: { hourly_rate: 30, role_label: "Service Lead" },
       /* Emmanuel Amoakohene: £18 from 13 Sep 2026 (Wed 9 + Fri 11 shadowing @ £13.50). */
       emmanuel: { hourly_rate: 18, role_label: "Support Worker 1" },
+      ann: { hourly_rate: 18, role_label: "Support Worker 1" },
+      patience: { hourly_rate: 18, role_label: "Support Worker 1" },
+      daniel: { hourly_rate: 22, role_label: "Swimming Instructor 1" },
       luliya: {
         roleRates: { "Support Worker": 18, "Swimming Instructor": 22 },
         roleScales: { "Support Worker": "Scale 1", "Swimming Instructor": "Scale 1" },
@@ -806,6 +824,8 @@
       roleLabel: "",
       staffRosterKey: "",
       hourlyRate: 0,
+      payMode: "normal",
+      normalPayFrom: "",
       periodStart: "",
       periodEnd: "",
       manual: false,
@@ -2703,6 +2723,7 @@
           e.rate = flat != null ? flat : rateForRole(e.role);
         }
         if (isEmmanuelHireRosterKey()) applyEmmanuelHireShadowingEntry(e);
+        applyPayModeShadowingEntry(e);
         const iso = String(e.date || "").slice(0, 10);
         const todayIso = isoDate(londonPayrollAnchor(new Date()));
         if (timesheetDutyPaysToday(e)) {
@@ -5847,11 +5868,12 @@
       let rateRow = {};
       try {
         if (!supabase) throw new Error("local_preview_no_supabase");
-        const [profileRes, rateRes, roleRatesRes] = await withTimeout(
+        const [profileRes, rateRes, roleRatesRes, modeRes] = await withTimeout(
           Promise.all([
             supabase.from("staff_profiles").select("full_name, username, app_role, staff_role").eq("id", state.userId).maybeSingle(),
             supabase.from("staff_pay_rates").select("hourly_rate, role_label").eq("user_id", state.userId).maybeSingle(),
-            supabase.from("staff_role_rates").select("role, scale, hourly_rate, is_primary").eq("user_id", state.userId)
+            supabase.from("staff_role_rates").select("role, scale, hourly_rate, is_primary").eq("user_id", state.userId),
+            supabase.from("staff_pay_mode").select("pay_mode, normal_pay_from").eq("user_id", state.userId).maybeSingle()
           ]),
           12000,
           "staff_profile_rates"
@@ -5859,6 +5881,9 @@
         profile = (profileRes && profileRes.data) || {};
         rateRow = (rateRes && rateRes.data) || {};
         buildRoleRateMap(roleRatesRes && roleRatesRes.data ? roleRatesRes.data : []);
+        const modeRow = modeRes && modeRes.data ? modeRes.data : null;
+        state.payMode = modeRow && modeRow.pay_mode === "shadowing" ? "shadowing" : "normal";
+        state.normalPayFrom = modeRow && modeRow.normal_pay_from ? String(modeRow.normal_pay_from).slice(0, 10) : "";
       } catch (profileErr) {
         console.warn("[timesheet] profile/rates load failed", profileErr);
       }

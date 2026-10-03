@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v184",
+  "version": "2026-10-03-v185",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1923,11 +1923,14 @@
             "cancelled",
             "oferta",
             "pay",
+            "pay rates",
+            "salario",
             "staff"
           ],
           "steps": [
             "Successful: they passed. The stage shows Staff with normal pay, Shadowing, or Successful while onboarding is still open.",
-            "Shadowing until a date means that date is when normal pay and normal shifts start.",
+            "The days and the rate are not chosen on this list. Open H&R, Finance, Pay rates.",
+            "On that person choose Normal pay, or Shadowing. Shadowing is £13.50. Set Normal pay from for the first day at the rate on the card. Leave the date empty to keep every day at £13.50.",
             "Unsuccessful: the call or face interview failed, or they cancelled the offer. They are not called as a hire.",
             "Did not join on a Successful row moves them to Unsuccessful and switches off the staff login."
           ],
