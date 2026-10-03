@@ -21760,12 +21760,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return st !== 'withdrawn' && st !== 'placed';
       });
     }
+    /** Joelle is in class. The old "JA Atoui" wait row must not put her back on WAITING. */
+    function paxContactsJoelleNotWaiting(p){
+      var n = String((p && p.name) || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+      return n === 'joelle' || n === 'joelle atoui' || n === 'ja atoui' || n === 'j a atoui';
+    }
     /** Same queue as the WAITING page: Booking Portal joins only. */
     function paxContactsStampWaitSources(list){
       var live = paxContactsActiveLiveWaitRows();
       var wb = adminWaitingListPortalRows();
       (list || []).forEach(function(p){
         if(!p) return;
+        if(paxContactsJoelleNotWaiting(p)){
+          p.onWaitingList = false;
+          p._listedWaiting = false;
+          p._waitlistOnly = false;
+          p._waitSource = '';
+          if(String(p.bookingStatus || '') === 'waiting_list') p.bookingStatus = 'programme_in';
+          return;
+        }
         var i;
         var hitLive = null;
         for(i = 0; i < live.length; i++){
@@ -24188,6 +24201,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       if(!lines.length && p && p._waitDetail) add(p._waitDetail.service, p._waitDetail.slot, p._waitDetail.loc);
+      if(!lines.length){
+        var knownWait = null;
+        try{ knownWait = paxContactsKnownPastVisit(p); }catch(_knownWait){ knownWait = null; }
+        if(knownWait && knownWait.svc){
+          add(knownWait.svc, [knownWait.day, knownWait.slot].filter(Boolean).join(', '), knownWait.venue || '');
+        }
+      }
       return lines;
     }
     function paxContactsWaitSeatCells(p){
