@@ -359,6 +359,19 @@
     return map[key] || String(raw || "").replace(/\s+/g, " ").trim();
   }
 
+  /** Standing seat they already have. Looks and interest stay off this line. */
+  function heldServiceText(r) {
+    return String((r && r.held_place) || "").trim();
+  }
+
+  /** Only looked: form or an information edit, when that is what the visit was. */
+  function lookedActionText(r) {
+    var action = String((r && r.visit_action) || "");
+    if (action === "filled") return "Filled the form";
+    if (action === "edited") return "Edited information";
+    return "";
+  }
+
   /** Only looked: services they opened. Trial or Term: service, time, day, venue. */
   function leadActivityText(r) {
     var place = String((r && r.visit_place) || "").trim();
@@ -425,16 +438,21 @@
         })
         .join("");
     }
+    var lookedAction = lookedActionText(r);
     var typeUnder =
       person.key === "active"
-        ? placeLines(activity)
+        ? placeLines(heldServiceText(r))
         : person.note
           ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
             esc(person.note) +
             "</div>"
           : "";
     var outcomeUnder =
-      outcome.key === "trial" || outcome.key === "term" ? placeLines(activity) : "";
+      outcome.key === "trial" || outcome.key === "term"
+        ? placeLines(activity)
+        : outcome.key === "looked" && lookedAction
+          ? placeLines(lookedAction)
+          : "";
     var activityInColumn = outcome.key === "trial" || outcome.key === "term" ? "" : activity;
     return (
       "<tr>" +

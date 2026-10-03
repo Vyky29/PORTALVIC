@@ -14,7 +14,11 @@ import {
 type VisitKind = "trial" | "term";
 
 function asciiTime(raw: string): string {
-  return String(raw || "").replace(/\u2013|\u2014/g, "-").replace(/\s+/g, " ").trim();
+  return String(raw || "")
+    .replace(/\u2013|\u2014/g, "-")
+    .replace(/\s+to\s+/gi, " - ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** Centres on the standing roster for a service they only opened. */
@@ -152,6 +156,7 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
   const inClass = new Set<string>();
   const standing = new Set<string>();
   const history = new Set<string>();
+  const heldByName = new Map<string, string[]>();
   const namesByEmail = new Map<string, string[]>();
   const formsByEmail = new Map<string, number[]>();
   const emailSet = new Set(emails);
@@ -160,7 +165,7 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
       admin.from("portal_participants").select("display_name, in_class").limit(2000),
       admin
         .from("portal_roster_rows")
-        .select("client_name, session_date, status")
+        .select("client_name, session_date, status, service, day, time_slot, venue")
         .eq("status", "active")
         .limit(2000),
       admin
@@ -179,8 +184,20 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
       const n = nameKey(row.client_name);
       if (isBlankSeat(n)) continue;
       const day = String(row.session_date || "").slice(0, 10);
-      if (!day) standing.add(n);
-      else if (day < "2026-09-01") history.add(n);
+      if (!day) {
+        standing.add(n);
+        const place = placeLine({
+          service: row.service,
+          time: row.time_slot,
+          day: row.day,
+          venue: row.venue,
+        });
+        if (place) {
+          const list = heldByName.get(n) || [];
+          if (!list.includes(place)) list.push(place);
+          heldByName.set(n, list);
+        }
+      } else if (day < "2026-09-01") history.add(n);
     }
     for (const row of docsRes.data || []) {
       const em = String(row.parent_email || "").trim().toLowerCase();
@@ -374,6 +391,7 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
         }
       }
       let visit_place = placeLines.join(" | ");
+      let lookedSomewhere = false;
       if (!visit_place && visit_outcome === "looked") {
         const windowPlaces: string[] = [];
         for (const row of anyPlaceByEmail.get(em) || []) {
@@ -382,6 +400,7 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
         }
         if (windowPlaces.length) {
           visit_place = windowPlaces.join(" | ");
+          lookedSomewhere = true;
         } else {
           const viewed = Array.isArray(lead.services_viewed) ? lead.services_viewed : [];
           const specific: string[] = [];
@@ -395,13 +414,34 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
             const where = serviceWhere(item);
             if (where && !broad.includes(where)) broad.push(where);
           }
-          visit_place = (specific.length ? specific : broad).join(" | ")
-            || String(lead.activity_interest || "").trim();
+          visit_place = (specific.length ? specific : broad).join(" | ");
+          lookedSomewhere = !!(specific.length || broad.length);
+        }
+      }
+      const heldLines: string[] = [];
+      for (const child of childNames) {
+        if (!isCurrentName(child)) continue;
+        for (const place of heldByName.get(child) || []) {
+          if (place && !heldLines.includes(place)) heldLines.push(place);
+        }
+      }
+      let visit_action = "";
+      if (visit_outcome === "looked") {
+        if (registeredThis && formsBefore) visit_action = "edited";
+        else if (registeredThis) visit_action = "filled";
+        else if (
+          !lookedSomewhere &&
+          String(lead.registration_status || "").toLowerCase() === "submitted" &&
+          (wasActive || client === "active_client")
+        ) {
+          visit_action = "edited";
         }
       }
       return {
         ...lead,
         visit_place,
+        held_place: heldLines.join(" | "),
+        visit_action,
         visit_outcome,
         person_type,
         person_bucket,
