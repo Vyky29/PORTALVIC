@@ -3504,6 +3504,8 @@
         starterChecklistCompleted: false,
         onboardingCompleted: false,
         readyToStart: false,
+        didNotJoin: false,
+        didNotJoinReason: "",
         onboardingNotes: "",
         portalUserId: "",
         inviteSentAt: ""
@@ -3641,6 +3643,7 @@
     function getCurrentPhase(candidate) {
       ensureCandidateShape(candidate);
 
+      if (candidate.onboarding.didNotJoin) return "did-not-join";
       if (candidate.onboarding.readyToStart || candidate.onboarding.onboardingCompleted) return "ready";
       if (candidate.faceToFaceInterview.status === "successful-ready" || candidate.faceToFaceInterview.status === "successful") return "onboarding";
       if (candidate.faceToFaceInterview.status === "successful-hold") return "face-successful-hold";
@@ -3662,6 +3665,7 @@
 
     function getPhaseLabel(phase) {
       switch (phase) {
+        case "did-not-join": return "Did not join - other job";
         case "ready": return "Ready for onboarding";
         case "onboarding": return "Onboarding";
         case "face-to-face": return "Face to Face";
@@ -3674,6 +3678,7 @@
 
     function getStatusLabel(candidate) {
       const phase = getCurrentPhase(candidate);
+      if (phase === "did-not-join") return { text: "Did not join - other job", cls: "status-unsuccess" };
       if (phase === "ready") return { text: "Ready for onboarding", cls: "status-ready" };
       if (phase === "onboarding") return { text: "Onboarding", cls: isOnboardingStarted(candidate.onboarding) ? "status-onboarding-in-progress" : "status-onboarding" };
       if (phase === "face-successful-hold") return { text: "Successful (On hold)", cls: "status-onboarding" };

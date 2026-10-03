@@ -59,14 +59,30 @@ Deno.serve(async (req) => {
     body = {};
   }
 
+  const { data: profile } = await portalAdmin
+    .from("staff_profiles")
+    .select("full_name, username, is_active, app_role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!profile || profile.is_active === false) {
+    return json(403, { ok: false, error: "not_applicant" });
+  }
+  if (String(profile.app_role || "") === "ceo") {
+    return json(200, { ok: true, applicant_session_id: userId, skipped: true });
+  }
+  const { data: closed } = await portalAdmin
+    .from("onboarding_candidates")
+    .select("id")
+    .eq("data->onboarding->>portalUserId", userId)
+    .eq("data->onboarding->>didNotJoin", "true")
+    .limit(1);
+  if (closed && closed.length) {
+    return json(403, { ok: false, error: "not_applicant" });
+  }
+
   let staffName = String(body.portal_staff_name ?? "").trim().slice(0, 200);
   if (!staffName) {
-    const { data: profile } = await portalAdmin
-      .from("staff_profiles")
-      .select("full_name, username")
-      .eq("id", userId)
-      .maybeSingle();
-    staffName = String(profile?.full_name || profile?.username || "").trim().slice(0, 200);
+    staffName = String(profile.full_name || profile.username || "").trim().slice(0, 200);
   }
 
   const now = new Date().toISOString();

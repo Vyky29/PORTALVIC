@@ -60,6 +60,27 @@ Deno.serve(async (req) => {
     return json(400, { ok: false, error: "invalid_user" });
   }
 
+  const { data: applicantProfile } = await portalAdmin
+    .from("staff_profiles")
+    .select("is_active, app_role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!applicantProfile || applicantProfile.is_active === false) {
+    return json(403, { ok: false, error: "not_applicant" });
+  }
+  if (String(applicantProfile.app_role || "") === "ceo") {
+    return json(200, { ok: true, skipped: true });
+  }
+  const { data: closedApplicant } = await portalAdmin
+    .from("onboarding_candidates")
+    .select("id")
+    .eq("data->onboarding->>portalUserId", userId)
+    .eq("data->onboarding->>didNotJoin", "true")
+    .limit(1);
+  if (closedApplicant && closedApplicant.length) {
+    return json(403, { ok: false, error: "not_applicant" });
+  }
+
   let body: {
     form_type?: string;
     payload?: Record<string, unknown>;

@@ -464,6 +464,24 @@ function perApplicantUploadPaths(
   return paths;
 }
 
+async function didNotJoinApplicantIds(db: SupabaseClient): Promise<Set<string>> {
+  const ids = new Set<string>();
+  const { data, error } = await db
+    .from("onboarding_candidates")
+    .select("data")
+    .eq("data->onboarding->>didNotJoin", "true");
+  if (error) {
+    console.warn("[portal-admin-onboarding-documents-list] did not join", error.message);
+    return ids;
+  }
+  for (const row of data ?? []) {
+    const raw = (row as { data?: { onboarding?: { portalUserId?: string } } }).data;
+    const sid = String(raw?.onboarding?.portalUserId ?? "").trim();
+    if (sid) ids.add(sid);
+  }
+  return ids;
+}
+
 async function loadRegisteredSessions(
   obAdmin: SupabaseClient,
 ): Promise<Map<string, SessionRow>> {
@@ -636,6 +654,24 @@ async function loadApplicantProgress(
           entry.pin_issued = true;
           entry.pin = pinHit.pin;
           entry.pin_name = pinHit.name;
+        }
+      }
+    }
+  }
+
+  const closedIds = await didNotJoinApplicantIds(draftsDb);
+  for (const id of closedIds) byId.delete(id);
+  if (portalAdmin) {
+    const liveIds = Array.from(byId.keys());
+    if (liveIds.length) {
+      const { data: flags } = await portalAdmin
+        .from("staff_profiles")
+        .select("id, is_active, app_role")
+        .in("id", liveIds);
+      for (const row of flags ?? []) {
+        const id = String(row.id || "").trim();
+        if (row.is_active === false || String(row.app_role || "") === "ceo") {
+          byId.delete(id);
         }
       }
     }

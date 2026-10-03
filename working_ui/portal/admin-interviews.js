@@ -47,6 +47,7 @@
     var face = String(c.faceToFaceInterview.status || "");
     var call = String(c.callInterview.status || "");
     var ob = c.onboarding;
+    if (ob.didNotJoin) return "did_not_join";
     if (ob.readyToStart || ob.onboardingCompleted) return "ready";
     if (face === "successful-ready" || face === "successful") return "onboarding";
     if (face === "successful-hold") return "hold";
@@ -58,6 +59,7 @@
   }
 
   function bucketOf(phase) {
+    if (phase === "did_not_join") return "closed";
     if (phase === "ready" || phase === "onboarding") return "onboarding";
     if (phase === "hold" || phase === "face_unsuccessful" || phase === "call_unsuccessful") {
       return "callback";
@@ -68,6 +70,7 @@
   function stageLabel(phase) {
     return (
       {
+        did_not_join: "Did not join - other job",
         ready: "Ready for onboarding",
         onboarding: "Onboarding",
         hold: "Successful — on hold (call later)",
@@ -81,6 +84,7 @@
   }
 
   function stageTone(phase) {
+    if (phase === "did_not_join") return "#64748b";
     if (phase === "ready" || phase === "onboarding") return "#15803d";
     if (phase === "hold") return "#7c3aed";
     if (phase === "face_unsuccessful" || phase === "call_unsuccessful") return "#b45309";
@@ -91,6 +95,9 @@
   function nextStep(c, phase) {
     var face = c.faceToFaceInterview || {};
     var ob = c.onboarding || {};
+    if (phase === "did_not_join") {
+      return (ob.didNotJoinReason || "Passed the interview, then did not join.").slice(0, 120);
+    }
     if (phase === "ready") return "Start date / induction";
     if (phase === "onboarding") {
       return ob.role ? "Continue " + ob.role + " checklist" : "Open onboarding checklist";
@@ -304,6 +311,52 @@
     });
   }
 
+  function bindDidNotJoin() {
+    if (!root) return;
+    root.querySelectorAll("[data-did-not-join]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var id = el.getAttribute("data-did-not-join") || "";
+        if (id) markDidNotJoin(id);
+      });
+    });
+  }
+
+  async function markDidNotJoin(id) {
+    var ok = global.confirm(
+      "Did not join - other job?\n\nThey passed the interview and got onboarding access, then did not finish. They leave the Onboarding PIN list and are not called again. Their staff login is switched off."
+    );
+    if (!ok) return;
+    var sb = client();
+    if (!sb) return;
+    var res = await sb.from("onboarding_candidates").select("data").eq("id", id).maybeSingle();
+    if (res.error || !res.data) {
+      if (deps.toast) deps.toast("Could not update this interview.", "err");
+      return;
+    }
+    var data = res.data.data || {};
+    data.onboarding = data.onboarding && typeof data.onboarding === "object" ? data.onboarding : {};
+    data.onboarding.didNotJoin = true;
+    data.onboarding.didNotJoinReason = "Other job";
+    var upd = await sb
+      .from("onboarding_candidates")
+      .update({ data: data, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (upd.error) {
+      if (deps.toast) deps.toast(upd.error.message || "Could not save.", "err");
+      return;
+    }
+    var sid = String(data.onboarding.portalUserId || "").trim();
+    if (sid) {
+      await sb.from("onboarding_applicant_sessions").delete().eq("applicant_session_id", sid);
+      await sb
+        .from("staff_profiles")
+        .update({ is_active: false, onboarding_applicant: false })
+        .eq("id", sid);
+    }
+    if (deps.toast) deps.toast("Moved to Did not join.", "ok");
+    load();
+  }
+
   function parseDobParts(raw) {
     var s = String(raw || "").trim();
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
@@ -378,7 +431,13 @@
           esc(openHref(c.name || "")) +
           '" data-interview-open="' +
           esc(openHref(c.name || "")) +
-          '">Open</a></td>' +
+          '">Open</a>' +
+          (phase === "onboarding" || phase === "ready"
+            ? ' <button type="button" class="btn btn--ghost btn--sm" data-did-not-join="' +
+              esc(row.id) +
+              '">Did not join</button>'
+            : "") +
+          "</td>" +
           "</tr>"
         );
       })
@@ -416,10 +475,12 @@
     var onboarding = [];
     var callback = [];
     var progress = [];
+    var closed = [];
     state.rows.forEach(function (row) {
       var b = bucketOf(row.phase);
       if (b === "onboarding") onboarding.push(row);
       else if (b === "callback") callback.push(row);
+      else if (b === "closed") closed.push(row);
       else progress.push(row);
     });
 
@@ -439,11 +500,16 @@
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">Staff &amp; HR</button>' +
       "</div>" +
       (state.error ? '<div class="ai-err">' + esc(state.error) + "</div>" : "") +
-      '<p class="ai-meta">Live from interview portal (<code>onboarding_candidates</code>). Successful → Onboarding. Unsuccessful / on hold → Call back later so you can contact them again.</p>' +
+      '<p class="ai-meta">Live from interview portal (<code>onboarding_candidates</code>). Successful → Onboarding. Unsuccessful / on hold → Call back later so you can contact them again. Did not join stays on the record and is not called again.</p>' +
       section(
         "Onboarding",
-        "Face outcome Successful (Ready for onboarding). Open the record to continue the checklist.",
+        "Face outcome Successful (Ready for onboarding). Open the record to continue the checklist. Did not join is for someone who passed, got access, then took another job.",
         onboarding
+      ) +
+      section(
+        "Did not join",
+        "Passed the interview and received onboarding access, then did not finish. Other job. Not called again.",
+        closed
       ) +
       section(
         "Call back later",
@@ -460,6 +526,7 @@
       });
     }
     bindInterviewOpenLinks();
+    bindDidNotJoin();
   }
 
   async function load() {
