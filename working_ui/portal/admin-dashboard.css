@@ -818,6 +818,13 @@
     .c4k-sessions-hub-tab__ico .admin-nav-ico{display:inline-flex;width:20px;height:20px}
     .c4k-sessions-hub-tab__ico .admin-nav-ico svg{width:16px;height:16px;display:block}
     .c4k-sessions-hub-tab__label{min-width:0;line-height:1.25;overflow-wrap:break-word}
+    .portal-expense-tab-badge{
+      display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+      min-width:16px;height:16px;padding:0 4px;border-radius:99px;
+      background:#b42318;color:#fff;font-size:10px;font-weight:800;line-height:16px;
+      box-sizing:border-box
+    }
+    .c4k-sessions-hub-tab.is-active .portal-expense-tab-badge{background:#fff;color:#b42318}
     .admin-page-head__tools{
       display:inline-flex;flex-wrap:nowrap;align-items:center;gap:8px;
       min-width:0;max-width:100%;flex:0 1 auto

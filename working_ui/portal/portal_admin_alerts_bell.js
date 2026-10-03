@@ -1,5 +1,10 @@
 /**
- * Admin topbar bell — incidents, cancellations, expenses, wellbeing, late approvals.
+ * Admin topbar bell — open work only.
+ * Incidents, cancellations, wellbeing still pending, late incident approvals,
+ * session disruptions, general-info updates, and makeup accepts whose session
+ * is today or later.
+ * A makeup whose session date has passed drops off. Unpaid expenses stay off
+ * this bell; their count sits on the Finance and Expenses buttons.
  * Chat unread uses the Chat button badge in the header only (never this bell).
  * Absent quick marks are excluded from this bell.
  */
@@ -43,6 +48,77 @@
     global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list.filter(function (a) {
       return a && isAllowedKind(a.kind);
     });
+  }
+
+  function londonTodayIso() {
+    try {
+      var parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(new Date());
+      var y = "";
+      var m = "";
+      var d = "";
+      parts.forEach(function (p) {
+        if (p.type === "year") y = p.value;
+        if (p.type === "month") m = p.value;
+        if (p.type === "day") d = p.value;
+      });
+      if (y && m && d) return y + "-" + m + "-" + d;
+    } catch (_) {}
+    var n = new Date();
+    return (
+      n.getFullYear() +
+      "-" +
+      String(n.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(n.getDate()).padStart(2, "0")
+    );
+  }
+
+  function isoDay(value) {
+    var d = String(value || "").trim().slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
+  }
+
+  /** Makeup stays on the bell only while the session day has not passed. */
+  function makeupStillUpcoming(item) {
+    var d = isoDay(item && item.sessionDate);
+    if (!d) return false;
+    return d >= londonTodayIso();
+  }
+
+  function prunePassedMakeups() {
+    var list = listRef();
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list.filter(function (a) {
+      if (!a || a.kind !== "makeup_accepted") return true;
+      return makeupStillUpcoming(a);
+    });
+  }
+
+  function bellShows(item) {
+    if (!item || !isAllowedKind(item.kind)) return false;
+    if (item.kind === "chat" || item.kind === "expense_unpaid") return false;
+    if (item.kind === "makeup_accepted") return makeupStillUpcoming(item);
+    return true;
+  }
+
+  function unpaidExpenseCount() {
+    var n = 0;
+    listRef().forEach(function (a) {
+      if (a && a.kind === "expense_unpaid") n++;
+    });
+    return n;
+  }
+
+  function notifyExpenseBadges() {
+    if (typeof global.portalPaintUnpaidExpenseBadges === "function") {
+      try {
+        global.portalPaintUnpaidExpenseBadges();
+      } catch (_) {}
+    }
   }
 
   function sortNewestFirst() {
@@ -255,6 +331,8 @@
     }
     rows.forEach(function (r) {
       if (!r || !r.id) return;
+      var sessionDay = isoDay(r.session_date);
+      if (!sessionDay || sessionDay < londonTodayIso()) return;
       var who = nameByGrant[String(r.grant_id || "")] || "Participant";
       var when = [r.session_date, r.session_time, r.venue, r.instructor_name]
         .map(function (x) { return String(x || "").trim(); })
@@ -275,6 +353,7 @@
         { silent: opts.silent || bootstrapSilent },
       );
     });
+    prunePassedMakeups();
     sortNewestFirst();
     if (typeof global.__portalAdminRenderAlerts === "function") {
       global.__portalAdminRenderAlerts();
@@ -708,6 +787,7 @@
       }
     });
     sortNewestFirst();
+    notifyExpenseBadges();
     if (typeof global.__portalAdminRenderAlerts === "function") {
       global.__portalAdminRenderAlerts();
     }
@@ -906,12 +986,10 @@
 
   function prepareForRender() {
     pruneDisallowed();
-    var list = listRef().filter(function (a) {
-      return a && a.kind !== "chat";
-    });
-    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list;
+    prunePassedMakeups();
     sortNewestFirst();
-    return listRef().slice();
+    notifyExpenseBadges();
+    return listRef().filter(bellShows);
   }
 
   function badgeCount() {
@@ -927,6 +1005,7 @@
   };
   global.portalAdminBellPrepareForRender = prepareForRender;
   global.portalAdminBellBadgeCount = badgeCount;
+  global.portalAdminUnpaidExpenseCount = unpaidExpenseCount;
   global.portalAdminActivityFromLateRequest = activityFromLateRequest;
   global.portalAdminActivityFromWellbeingNotification = activityFromWellbeingNotification;
   global.portalAdminActivityFromGeneralInfoLog = activityFromGeneralInfoLog;

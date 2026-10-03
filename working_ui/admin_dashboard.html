@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261003-head-line" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261003-expense-n" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -184,7 +184,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-sess-jumps9" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261003-expense-n" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -434,7 +434,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20261001-old-junaid-patrick-yassir"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260924-makeup-accept-bell"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20261003-bell-live"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20261002-no-guide";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -2180,6 +2180,50 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return true;
     }
 
+    function portalUnpaidExpenseCount(){
+      if(typeof window.portalAdminUnpaidExpenseCount === 'function'){
+        var n = Number(window.portalAdminUnpaidExpenseCount());
+        return isNaN(n) || n < 0 ? 0 : n;
+      }
+      return 0;
+    }
+    function portalPaintUnpaidExpenseBadges(){
+      var n = portalUnpaidExpenseCount();
+      var text = n > 99 ? '99+' : String(n);
+      function put(el, className){
+        if(!el) return;
+        var badge = null;
+        var kids = el.children || [];
+        for(var i = 0; i < kids.length; i++){
+          if(kids[i].classList && kids[i].classList.contains(className)){
+            badge = kids[i];
+            break;
+          }
+        }
+        if(n < 1){
+          if(badge) badge.remove();
+          return;
+        }
+        if(!badge){
+          badge = document.createElement('span');
+          badge.className = className;
+          el.appendChild(badge);
+        }
+        badge.textContent = text;
+        badge.setAttribute('aria-label', text + ' expenses pending payment');
+      }
+      document.querySelectorAll('[data-view-target="hr_pay"]').forEach(function(el){
+        put(el, 'portal-expense-pending-badge');
+      });
+      document.querySelectorAll('#adminNav [data-view="hr_pay"], #adminNav [data-view="portal_docs_expense"], #adminBottomNav [data-view="hr_pay"]').forEach(function(el){
+        put(el, 'admin-nav-pending-badge');
+      });
+      document.querySelectorAll('[data-hr-pay-tab="expense"]').forEach(function(el){
+        put(el, 'portal-expense-tab-badge');
+      });
+    }
+    window.portalPaintUnpaidExpenseBadges = portalPaintUnpaidExpenseBadges;
+
     function portalAdminDeferDayOpsBadgesRefresh(){
       if(typeof window.portalAdminDayOpsBadgesRefresh !== 'function') return;
       var fn = window.portalAdminDayOpsBadgesRefresh;
@@ -2401,6 +2445,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           window.portalAdminDayOpsBadgesMarkSeenView(id);
         }
         portalAdminDeferDayOpsBadgesRefresh();
+        portalPaintUnpaidExpenseBadges();
       }catch(_badgeView){}
       syncNavGroupsUi();
       if(_hadRegisterPeek){
@@ -2615,7 +2660,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v183')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v184')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -38190,6 +38235,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.portalAdminRefreshStaffWaBadge === 'function') window.portalAdminRefreshStaffWaBadge();
         if(typeof window.portalCommsRefreshUnread === 'function') window.portalCommsRefreshUnread();
       }catch(_navBadge){}
+      try{ portalPaintUnpaidExpenseBadges(); }catch(_expBadge){}
     }
 
     function adminTouchCompactLayoutActive(){
@@ -39238,7 +39284,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>';
       }).join('');
       var emptyHtml = !activityHtml
-        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, expenses, wellbeing, or general-info updates right now.</p>'
+        ? '<p class="muted" style="margin:12px 16px">Nothing open. The bell keeps incidents, cancellations, wellbeing, disruptions, and makeups that have not happened yet.</p>'
         : '';
       var clearWellbeingBtn = wellbeingN > 0
         ? '<button type="button" class="btn btn--ghost btn--sm" id="portalAdminClearWellbeingAlerts" style="margin-left:auto;font-size:12px">Clear wellbeing ('+wellbeingN+')</button>'
@@ -39257,6 +39303,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(btnAlerts) btnAlerts.classList.toggle('admin-icon-btn--has-alerts', n > 0);
       try{
         portalAdminDeferDayOpsBadgesRefresh();
+        portalPaintUnpaidExpenseBadges();
       }catch(_badgeBell){}
       try{ opsHubPatchLiveAside(); }catch(_opsHubBell){}
       try{ portalAdminPatchSessionDisruptionHubBadge(); }catch(_sdHub){}

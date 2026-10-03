@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v183",
+  "version": "2026-10-03-v184",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -361,7 +361,7 @@
             }
           ],
           "steps": [
-            "From Operations Hub, tap Alerts for incidents, cancellations, expenses and wellbeing.",
+            "From Operations Hub, tap the bell for incidents, cancellations, wellbeing, and makeups that have not happened yet.",
             "Tap Pending for late feedback forms and absents / credits waiting for a decision.",
             "Work the queue: approve / reject late forms; decide absents (none, credit, close).",
             "Return to Overview if the decision should change the day board."
@@ -1815,6 +1815,7 @@
             "Open H&R. Under Files you see Documents, Finance, Policies, and Day Centre documents.",
             "Documents is the worker files. The buttons on that page switch Timesheets, Expenses, Checklists, Passports, Certificates, First aid and the rest.",
             "Finance is pay. The buttons switch Timesheets, Payslips, Expenses, Pay rates and Payroll.",
+            "If an expense is still pending payment, a number sits on the Finance button and on Expenses. It stays until you mark it paid.",
             "Policies switches between the Policies portal and Policy sign-offs."
           ],
           "tips": [
@@ -1828,6 +1829,7 @@
               "Abre H&R. En Files estan Documents, Finance, Policies y Day Centre documents.",
               "Documents son los archivos del trabajador. Los botones cambian Timesheets, Expenses, Checklists, Passports, Certificates, First aid y el resto.",
               "Finance es el pago. Los botones cambian Timesheets, Payslips, Expenses, Pay rates y Payroll.",
+              "Si un gasto sigue pendiente de pago, sale un numero en el boton Finance y en Expenses. Se queda hasta que lo marcas pagado.",
               "Policies cambia entre Policies portal y Policy sign-offs."
             ],
             "tips": [
@@ -2219,7 +2221,9 @@
             "Tap the dim area, or the bell again, to close the popup."
           ],
           "tips": [
-            "The number on the bell is how many alerts are in the popup."
+            "The number on the bell is how many alerts are in the popup.",
+            "The bell keeps incidents, cancellations, wellbeing still open, same-day disruptions, late incident approvals, general-info updates, and a makeup only when that session is today or later.",
+            "A makeup whose session day has passed leaves the bell. Unpaid expenses are not in the bell. Their number is on Finance and on Expenses until you mark them paid."
           ],
           "es": {
             "title": "La campana es un popup",
@@ -2232,7 +2236,9 @@
               "Pulsa la zona oscura, o la campana otra vez, para cerrar el popup."
             ],
             "tips": [
-              "El numero de la campana es cuantas alertas hay en el popup."
+              "El numero de la campana es cuantas alertas hay en el popup.",
+              "La campana guarda incidentes, cancelaciones, wellbeing abierto, disruptions del dia, aprobaciones de incidentes tarde, cambios de general info, y un makeup solo si esa sesion es hoy o despues.",
+              "Un makeup de un dia que ya paso sale de la campana. Los gastos pendientes no van a la campana. El numero esta en Finance y en Expenses hasta que los marcas pagados."
             ]
           }
         },
