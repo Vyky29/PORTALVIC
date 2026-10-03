@@ -159,16 +159,16 @@
       ".op2627-tbl-wrap{overflow-x:auto;min-width:0;width:100%}" +
       ".op2627-tbl{table-layout:fixed;width:100%;min-width:0}" +
       ".op2627-tbl th.op2627-th,.op2627-tbl td.op2627-td{" +
-      "text-align:center;vertical-align:top;min-width:0;" +
+      "text-align:center;vertical-align:middle;min-width:0;" +
       "overflow-wrap:break-word;word-break:break-word}" +
       ".op2627-tbl .op2627-td--svc{width:18%}" +
       ".op2627-tbl .op2627-td--venue{width:12%}" +
       ".op2627-tbl .op2627-td--time{width:14%}" +
-      ".op2627-tbl .op2627-td--seats{width:38%;text-align:left}" +
+      ".op2627-tbl .op2627-td--seats{width:38%}" +
       ".op2627-tbl .op2627-td--place{width:18%}" +
-      ".op2627-seat-summary{font-size:12px;font-weight:700;color:#0f172a;margin:0 0 6px;line-height:1.35;overflow-wrap:break-word}" +
-      ".op2627-seat-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;min-width:0}" +
-      ".op2627-seat-list li{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 10px;font-size:12px;line-height:1.35;min-width:0;padding:4px 8px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0}" +
+      ".op2627-seat-summary{font-size:12px;font-weight:700;color:#0f172a;margin:0 0 6px;line-height:1.35;overflow-wrap:break-word;text-align:center}" +
+      ".op2627-seat-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}" +
+      ".op2627-seat-list li{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;text-align:center;gap:6px 10px;font-size:12px;line-height:1.35;min-width:0;width:100%;box-sizing:border-box;padding:4px 8px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0}" +
       ".op2627-seat-list li.is-open{background:#f0fdf4;border-color:#bbf7d0;color:#166534}" +
       ".op2627-seat-list li.is-hold{background:#fff7ed;border-color:#fed7aa;color:#9a3412}" +
       ".op2627-seat-list .op2627-seat-name{font-weight:700;color:#0f172a;min-width:0;overflow-wrap:break-word}" +
