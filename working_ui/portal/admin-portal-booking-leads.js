@@ -119,16 +119,16 @@
   function leadOutcome(r) {
     r = r || {};
     var key = String(r.visit_outcome || "").toLowerCase();
-    if (key === "trial") return { key: "trial", label: "Trial", tone: "pend" };
+    if (key === "trial") return { key: "trial", label: "Trial", tone: "lead-trial" };
     if (key === "term") return { key: "term", label: "Term", tone: "ok" };
     if (key === "waiting") return { key: "waiting", label: "Waiting list", tone: "wait" };
-    if (key === "looked") return { key: "looked", label: "Only looked", tone: "info" };
+    if (key === "looked") return { key: "looked", label: "Only looked", tone: "lead-looked" };
     var book = String(r.booking_status || "").toLowerCase();
     var client = String(r.client_status || "").toLowerCase();
     if (book === "waiting_list" || client === "waiting_list") {
       return { key: "waiting", label: "Waiting list", tone: "wait" };
     }
-    return { key: "looked", label: "Only looked", tone: "info" };
+    return { key: "looked", label: "Only looked", tone: "lead-looked" };
   }
 
   /** Who they were. New visitor, known without the parent portal, or ACTIVE. */
@@ -136,10 +136,10 @@
     r = r || {};
     var kind = String(r.person_type || "").toLowerCase();
     var bucket = String(r.person_bucket || "").trim();
-    if (kind === "active") return { key: "active", label: "ACTIVE", note: "", tone: "ok" };
+    if (kind === "active") return { key: "active", label: "ACTIVE", note: "", tone: "lead-active" };
     if (kind === "registered") {
       var note = bucket === "REGISTERED" ? "Not first time. Registered previously" : bucket;
-      return { key: "registered", label: "Known visitor", note: note, tone: "info" };
+      return { key: "registered", label: "Known visitor", note: note, tone: "lead-known" };
     }
     if (kind === "new") {
       var registeredNow = r.registered_this_visit === true;
@@ -147,14 +147,14 @@
         key: "new",
         label: "New visitor",
         note: registeredNow ? "First time. Registered." : "First time. Did not register.",
-        tone: "pend",
+        tone: "lead-new",
       };
     }
     return {
       key: "new",
       label: "New visitor",
       note: "First time. Did not register.",
-      tone: "pend",
+      tone: "lead-new",
     };
   }
 
