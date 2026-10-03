@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "server_misconfigured" });
   }
 
-  let body: { status?: string; kind?: string; limit?: number } = {};
+  let body: { status?: string; kind?: string; limit?: number; participant?: string; source?: string } = {};
   try {
     body = await req.json();
   } catch {
@@ -41,6 +41,8 @@ Deno.serve(async (req) => {
   const status = clean(body.status, 20).toLowerCase() || "open";
   const kind = clean(body.kind, 20).toLowerCase();
   const limit = Math.min(Math.max(Number(body.limit) || 100, 1), 200);
+  const participantFirst = clean(body.participant, 80).split(" ")[0] || "";
+  const source = clean(body.source, 40).toLowerCase();
 
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -56,6 +58,10 @@ Deno.serve(async (req) => {
 
   if (status !== "all") q = q.eq("status", status);
   if (kind === "credit" || kind === "refund") q = q.eq("kind", kind);
+  if (participantFirst.length >= 3) q = q.ilike("participant_display", participantFirst + "%");
+  if (source === "club_cancellation" || source === "excused_absence" || source === "admin") {
+    q = q.eq("source", source);
+  }
 
   const { data, error } = await q;
   if (error) {

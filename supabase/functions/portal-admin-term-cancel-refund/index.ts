@@ -23,6 +23,70 @@ function clean(v: unknown, max = 500): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+function gbp(n: unknown): string {
+  const v = Math.round((Number(n) || 0) * 100) / 100;
+  if (Math.abs(v - Math.round(v)) < 0.001) return "£" + String(Math.round(v));
+  return "£" + v.toFixed(2);
+}
+
+/** The amount told to the parent must land on the family ledger so office can mark it paid. */
+async function ensureCancelRefundLedger(
+  admin: ReturnType<typeof createClient>,
+  quote: Record<string, unknown>,
+  userId: string | null,
+) {
+  const refund = Math.round((Number(quote.refund_gbp) || 0) * 100) / 100;
+  if (refund <= 0 || !quote.confident) return;
+  const contactId = clean(quote.contact_id, 120);
+  const anchor = clean(quote.anchor_date, 12);
+  if (!contactId || !/^\d{4}-\d{2}-\d{2}$/.test(anchor)) return;
+  const { data: existing } = await admin
+    .from("portal_parent_family_credits")
+    .select("id")
+    .eq("contact_id", contactId)
+    .eq("kind", "refund")
+    .eq("source", "club_cancellation")
+    .eq("session_date", anchor)
+    .neq("status", "cancelled")
+    .limit(1);
+  if (existing && existing.length) return;
+  const { data: pax } = await admin
+    .from("portal_participants")
+    .select("parent_person_id, display_name")
+    .eq("contact_id", contactId)
+    .limit(1)
+    .maybeSingle();
+  const parentPersonId = clean(pax?.parent_person_id, 120);
+  if (!parentPersonId) return;
+  const bits = [
+    "Told when the place was cancelled.",
+    "Paid " + gbp(quote.paid_gbp) + ".",
+    "Sessions already done " + gbp(quote.delivered_gbp) +
+      (quote.delivered_label ? " (" + clean(quote.delivered_label, 120) + ")" : "") + ".",
+    "Unused " + gbp(quote.unused_gbp) + ".",
+  ];
+  if (Number(quote.fee_gbp) > 0) bits.push("Admin charge " + gbp(quote.fee_gbp) + ".");
+  bits.push("Refund due " + gbp(refund) + ".");
+  if (quote.invoice_number) bits.push("Invoice " + clean(quote.invoice_number, 40) + ".");
+  const { error } = await admin.from("portal_parent_family_credits").insert({
+    parent_person_id: parentPersonId,
+    contact_id: contactId,
+    participant_display: clean(pax?.display_name || quote.client_name, 120),
+    kind: "refund",
+    status: "open",
+    amount_gbp: refund,
+    service_label: clean(
+      [quote.weekday, quote.service_short || quote.service, quote.venue].filter(Boolean).join(" "),
+      120,
+    ),
+    session_date: anchor,
+    notes: bits.join(" ").slice(0, 800),
+    source: "club_cancellation",
+    created_by: userId,
+  });
+  if (error) console.warn("[term-cancel-refund] ledger", error.message);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: portalAdminCorsHeaders() });
   if (req.method !== "POST") return portalAdminJson(405, { ok: false, error: "method_not_allowed" });
@@ -99,6 +163,7 @@ Deno.serve(async (req) => {
       .gte("created_at", since)
       .limit(1);
     if (prior && prior.length) {
+      await ensureCancelRefundLedger(admin, quote, verified.userId || null);
       return portalAdminJson(200, { ...quote, sent: false, already_sent: true });
     }
   }
@@ -202,6 +267,10 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.warn("[term-cancel-refund] log", err);
+  }
+
+  if (emailOk || waOk) {
+    await ensureCancelRefundLedger(admin, quote, verified.userId || null);
   }
 
   return portalAdminJson(200, {

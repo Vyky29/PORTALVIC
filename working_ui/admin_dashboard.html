@@ -93,7 +93,7 @@
   <script src="/portal/admin-portal-booking-leads.js?v=20261003-lead-entry"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
   <script src="/portal/admin-office-calendar.js?v=20260917-title-raul-sev"></script>
-  <script src="/portal/admin-portal-parent-credits.js?v=20260919-chip-center"></script>
+  <script src="/portal/admin-portal-parent-credits.js?v=20261003-cancel-refund"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20261002-xero-ui"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20261002-invoice-ui"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260928-makeup-date-desc"></script>
@@ -2660,7 +2660,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v191')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261003-v192')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -22498,6 +22498,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="card"><div class="card-h"><h3 style="margin:0">Programme payments</h3><span class="chip chip--info">this participant</span></div>'+
         '<div class="card-pad" style="overflow:auto;padding:0;border-top:1px solid var(--line)"><table class="tbl" id="paxBookingFinanceSheetTable" style="min-width:1020px"><thead><tr><th>Participant</th><th>Pay method</th><th>Services</th><th>Cost</th><th>Sessions</th><th>Total</th><th>VAT</th><th>Invoice</th><th>Rec</th><th>Paid</th><th>Out</th><th>Funding</th><th>Next</th><th>Period</th><th>CFK vs sheet</th><th>Actions</th></tr></thead><tbody>'+paxPayTbody+'</tbody></table></div></div>'+
         '<div class="toolbar" style="margin-top:10px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" data-view-target="c4k_payments">Open programme payments</button></div>'+
+        '<div class="card" style="margin-top:12px"><div class="card-h"><h3 style="margin:0">Cancel refund</h3><span class="chip chip--info">owed back</span></div>'+
+        '<div class="card-pad" id="paxCancelRefundHost" data-pax-refund-for="'+esc(pname)+'" style="min-width:0"><p class="muted" style="margin:0">Loading cancel refund…</p></div></div>'+
         '</div>';
       var paxDocsPanel = (window.PortalParticipantDocuments && typeof window.PortalParticipantDocuments.workspacePanelHtml === 'function')
         ? window.PortalParticipantDocuments.workspacePanelHtml(P.name || '')
@@ -35561,6 +35563,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<div class="pax-contacts-detail__bar"><button type="button" class="btn btn--ghost btn--sm" id="paxContactsBack">\u2190 Back to list</button></div>' +
             paxContactsDetailInnerHtml(p);
           box.scrollTop = 0;
+          try{
+            if(typeof portalParentCreditsConfigureOnce === 'function') portalParentCreditsConfigureOnce();
+            var refundHost = document.getElementById('paxCancelRefundHost');
+            if(refundHost && window.PortalParentCredits && typeof window.PortalParentCredits.mountParticipantCancelRefunds === 'function'){
+              void window.PortalParentCredits.mountParticipantCancelRefunds(refundHost, refundHost.getAttribute('data-pax-refund-for') || (p && p.name) || '');
+            }
+          }catch(_refundMount){}
           try{ financeSheetBindParticipantLinks(); }catch(_fin){}
           try{
             if(!box._portalOrdersClickBound){

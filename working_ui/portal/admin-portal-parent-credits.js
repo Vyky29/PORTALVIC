@@ -524,10 +524,105 @@
     void renderHost(host);
   }
 
+  function firstToken(name) {
+    return String(name || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0] || '';
+  }
+
+  /**
+   * Participant Payments: the refund told when the standing place was cancelled.
+   * Mark paid back writes the same ledger row as Absents, refunds and credits.
+   */
+  async function mountParticipantCancelRefunds(hostEl, participantName) {
+    if (!hostEl) return;
+    var name = String(participantName || '').trim();
+    hostEl.innerHTML = '<p class="muted" style="margin:0">Loading cancel refund…</p>';
+    if (!name) {
+      hostEl.innerHTML = '';
+      return;
+    }
+    var res = await api('portal-admin-parent-credits-list', {
+      status: 'all',
+      kind: 'refund',
+      source: 'club_cancellation',
+      participant: name,
+      limit: 20
+    });
+    if (res.error) {
+      hostEl.innerHTML =
+        '<p class="muted" style="margin:0">Could not load the cancel refund (' + esc(res.error) + ').</p>';
+      return;
+    }
+    var want = firstToken(name);
+    var rows = (res.entries || []).filter(function (e) {
+      return firstToken(e.participant_display) === want && String(e.source || '') === 'club_cancellation';
+    });
+    if (!rows.length) {
+      hostEl.innerHTML =
+        '<p class="muted" style="margin:0;min-width:0;overflow-wrap:break-word">No refund was recorded when a service was cancelled.</p>';
+      return;
+    }
+    hostEl.innerHTML = rows
+      .map(function (e) {
+        var open = String(e.status || '') === 'open';
+        var when = open
+          ? 'Not paid back yet.'
+          : 'Paid back' + (e.closed_at ? ' · ' + formatDate(e.closed_at) : '') + '.';
+        var btn = open
+          ? '<button type="button" class="btn btn--pri btn--sm" data-pax-refund-paid="' +
+            esc(e.id) +
+            '" data-pax-refund-amt="' +
+            esc(e.amount_gbp) +
+            '">Mark paid back</button>'
+          : '';
+        return (
+          '<div style="min-width:0;overflow-wrap:break-word;padding:8px 0;border-top:1px solid var(--line)">' +
+          '<strong>' +
+          esc(formatMoney(e.amount_gbp)) +
+          '</strong> · ' +
+          statusChip(e.status, 'refund') +
+          ' · <span class="muted">' +
+          esc(when) +
+          '</span>' +
+          '<p class="muted" style="margin:6px 0 0;min-width:0;overflow-wrap:break-word">' +
+          esc(e.notes || e.service_label || '') +
+          '</p>' +
+          (btn ? '<div style="margin-top:8px">' + btn + '</div>' : '') +
+          '</div>'
+        );
+      })
+      .join('');
+    hostEl.querySelectorAll('[data-pax-refund-paid]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-pax-refund-paid');
+        var amt = btn.getAttribute('data-pax-refund-amt');
+        var label = formatMoney(amt);
+        if (!global.confirm('Mark ' + label + ' as paid back to the family?')) return;
+        btn.disabled = true;
+        void api('portal-admin-parent-credits-update', {
+          action: 'mark_refunded',
+          entry_id: id,
+          notes: 'Paid back from participant Payments'
+        }).then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Update failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast('Marked paid back', 'ok');
+          void mountParticipantCancelRefunds(hostEl, name);
+        });
+      });
+    });
+  }
+
   global.PortalParentCredits = {
     configure: configure,
     embedHtml: embedHtml,
     bindEmbed: bindEmbed,
-    openCreateModal: openCreateModal
+    openCreateModal: openCreateModal,
+    mountParticipantCancelRefunds: mountParticipantCancelRefunds
   };
 })(typeof window !== 'undefined' ? window : globalThis);
