@@ -493,14 +493,8 @@
       '<a class="btn btn--pri" href="/Working_interview.html" data-interview-open="/Working_interview.html">' +
       playIco +
       "Start a new interview</a>" +
-      '<button type="button" class="ai-refresh" id="aiRefreshBtn">' +
-      (state.loading ? "Loading…" : "Refresh") +
-      "</button>" +
-      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="onboarding">Onboarding docs</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">Staff &amp; HR</button>' +
       "</div>" +
       (state.error ? '<div class="ai-err">' + esc(state.error) + "</div>" : "") +
-      '<p class="ai-meta">Live from interview portal (<code>onboarding_candidates</code>). Successful → Onboarding. Unsuccessful / on hold → Call back later so you can contact them again. Did not join stays on the record and is not called again.</p>' +
       section(
         "Onboarding",
         "Face outcome Successful (Ready for onboarding). Open the record to continue the checklist. Did not join is for someone who passed, got access, then took another job.",
@@ -519,12 +513,6 @@
       section("In progress", "Call or face-to-face still open.", progress) +
       "</div>";
 
-    var btn = document.getElementById("aiRefreshBtn");
-    if (btn) {
-      btn.addEventListener("click", function () {
-        load();
-      });
-    }
     bindInterviewOpenLinks();
     bindDidNotJoin();
   }
