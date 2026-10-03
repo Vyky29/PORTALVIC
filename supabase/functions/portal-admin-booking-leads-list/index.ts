@@ -17,6 +17,39 @@ function asciiTime(raw: string): string {
   return String(raw || "").replace(/\u2013|\u2014/g, "-").replace(/\s+/g, " ").trim();
 }
 
+/** Centres on the standing roster for a service they only opened. */
+const SERVICE_VENUES: Record<string, string> = {
+  aquatic: "Acton, Northolt, SwimFarm",
+  climbing: "Westway",
+  multi: "SwimFarm",
+  day_centre: "SwimFarm",
+  physical: "Westway",
+  intensive: "Westway, Acton",
+};
+
+function serviceKey(raw: unknown): string {
+  return String(raw || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+}
+
+/** aquatic|SwimFarm|Sunday|2.30-3.00 → Aquatic, 2.30-3.00, Sunday, SwimFarm */
+function parseStoredPlace(raw: unknown): string {
+  const text = String(raw || "").trim();
+  if (!text.includes("|")) return "";
+  const bits = text.split("|").map((part) => part.trim()).filter(Boolean);
+  if (bits.length < 2) return "";
+  const svc = prettyService(bits[0]);
+  const venue = bits[1] || "";
+  const day = bits[2] || "";
+  const time = asciiTime(bits[3] || "");
+  return [svc, time, day, venue].filter(Boolean).join(", ");
+}
+
+function serviceWhere(raw: unknown): string {
+  const label = prettyService(raw);
+  const venues = SERVICE_VENUES[serviceKey(raw)] || SERVICE_VENUES[serviceKey(label)];
+  return venues ? label + " · " + venues : label;
+}
+
 function prettyService(raw: unknown): string {
   const key = String(raw || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
   const map: Record<string, string> = {
@@ -173,6 +206,8 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
   const byEmail = new Map<string, { at: number; kind: VisitKind; notes: string; place: string }[]>();
   const byName = new Map<string, { at: number; kind: VisitKind; notes: string; place: string }[]>();
   const waitsByEmail = new Map<string, string[]>();
+  const waitsByName = new Map<string, string[]>();
+  const anyPlaceByEmail = new Map<string, { at: number; place: string }[]>();
   if (emails.length) {
     const { data, error } = await admin
       .from("portal_booking_slot_reservations")
@@ -185,20 +220,27 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
     } else {
       const want = new Set(emails);
       for (const row of data || []) {
-        const kind = bookingKindFrom(String(row.notes || ""), row.booking_mode || null);
-        if (!kind) continue;
         const at = new Date(String(row.created_at || "")).getTime();
         if (!Number.isFinite(at)) continue;
+        const place = placeLine({
+          service: row.service_name || row.activity,
+          time: row.time_label,
+          day: row.day_label,
+          venue: row.venue,
+        });
+        const emEarly = String(row.parent_email || "").trim().toLowerCase();
+        if (emEarly && place) {
+          const seen = anyPlaceByEmail.get(emEarly) || [];
+          seen.push({ at, place });
+          anyPlaceByEmail.set(emEarly, seen);
+        }
+        const kind = bookingKindFrom(String(row.notes || ""), row.booking_mode || null);
+        if (!kind) continue;
         const hit = {
           at,
           kind,
           notes: String(row.notes || ""),
-          place: placeLine({
-            service: row.service_name || row.activity,
-            time: row.time_label,
-            day: row.day_label,
-            venue: row.venue,
-          }),
+          place,
         };
         const em = String(row.parent_email || "").trim().toLowerCase();
         if (em && want.has(em)) {
@@ -216,7 +258,7 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
     }
     const waitRes = await admin
       .from("portal_waitlist_entries")
-      .select("parent_email, service_label, service_key, venue, day_name, time_label, status")
+      .select("email, parent_name, service_label, service_key, venue, day_name, time_label, status")
       .limit(2000);
     if (waitRes.error) {
       console.warn("[portal-admin-booking-leads-list] waitlist", waitRes.error.message);
@@ -224,8 +266,7 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
       for (const row of waitRes.data || []) {
         const st = String(row.status || "active");
         if (st === "withdrawn" || st === "placed") continue;
-        const em = String(row.parent_email || "").trim().toLowerCase();
-        if (!em || !emailSet.has(em)) continue;
+        const em = String(row.email || "").trim().toLowerCase();
         const place = placeLine({
           service: row.service_label || row.service_key,
           time: row.time_label,
@@ -233,9 +274,17 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
           venue: row.venue,
         });
         if (!place) continue;
-        const list = waitsByEmail.get(em) || [];
-        if (!list.includes(place)) list.push(place);
-        waitsByEmail.set(em, list);
+        if (em && emailSet.has(em)) {
+          const list = waitsByEmail.get(em) || [];
+          if (!list.includes(place)) list.push(place);
+          waitsByEmail.set(em, list);
+        }
+        const nk = nameKey(row.parent_name);
+        if (nk) {
+          const list = waitsByName.get(nk) || [];
+          if (!list.includes(place)) list.push(place);
+          waitsByName.set(nk, list);
+        }
       }
     }
   }
@@ -319,17 +368,36 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
           if (ev.kind === visit_outcome && ev.place && !placeLines.includes(ev.place)) placeLines.push(ev.place);
         }
       } else if (visit_outcome === "waiting") {
-        for (const place of waitsByEmail.get(em) || []) {
+        const waitPlaces = waitsByEmail.get(em) || waitsByName.get(nameKey(lead.parent_name)) || [];
+        for (const place of waitPlaces) {
           if (place && !placeLines.includes(place)) placeLines.push(place);
         }
       }
       let visit_place = placeLines.join(" | ");
       if (!visit_place && visit_outcome === "looked") {
-        const viewed = Array.isArray(lead.services_viewed) ? lead.services_viewed : [];
-        const names = viewed.map((item) => prettyService(item)).filter(Boolean);
-        visit_place = names.length
-          ? [...new Set(names)].join(", ")
-          : String(lead.activity_interest || "").trim();
+        const windowPlaces: string[] = [];
+        for (const row of anyPlaceByEmail.get(em) || []) {
+          if (row.at < start - gapMs || row.at > end + 2 * 60 * 60 * 1000) continue;
+          if (row.place && !windowPlaces.includes(row.place)) windowPlaces.push(row.place);
+        }
+        if (windowPlaces.length) {
+          visit_place = windowPlaces.join(" | ");
+        } else {
+          const viewed = Array.isArray(lead.services_viewed) ? lead.services_viewed : [];
+          const specific: string[] = [];
+          const broad: string[] = [];
+          for (const item of viewed) {
+            const exact = parseStoredPlace(item);
+            if (exact) {
+              if (!specific.includes(exact)) specific.push(exact);
+              continue;
+            }
+            const where = serviceWhere(item);
+            if (where && !broad.includes(where)) broad.push(where);
+          }
+          visit_place = (specific.length ? specific : broad).join(" | ")
+            || String(lead.activity_interest || "").trim();
+        }
       }
       return {
         ...lead,

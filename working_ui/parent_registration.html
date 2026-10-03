@@ -1221,9 +1221,19 @@
           var lead = gate.getLeadForPrefill && gate.getLeadForPrefill();
           if (lead) lockFields(lead);
           try {
+            var looked = '';
+            if (bookingRequest && bookingRequest.slot_id) {
+              var lookedTime = String(bookingRequest.time || '').replace(/\u2013|\u2014/g, '-').trim();
+              looked = [bookingRequest.service, bookingRequest.venue, bookingRequest.day, lookedTime]
+                .filter(Boolean)
+                .join('|')
+                .slice(0, 80);
+            }
             void gate.pingActivity({
               booking_status: 'registration_started',
-              registration_status: 'started'
+              registration_status: 'started',
+              service_viewed: looked || undefined,
+              pending_booking: bookingRequest || undefined
             });
           } catch (_e2) {}
         })

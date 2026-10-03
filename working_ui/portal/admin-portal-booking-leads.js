@@ -148,12 +148,12 @@
     var key = String(r.visit_outcome || "").toLowerCase();
     if (key === "trial") return { key: "trial", label: "Trial", tone: "pend" };
     if (key === "term") return { key: "term", label: "Term", tone: "ok" };
-    if (key === "waiting") return { key: "waiting", label: "Waiting list", tone: "info" };
+    if (key === "waiting") return { key: "waiting", label: "Waiting list", tone: "wait" };
     if (key === "looked") return { key: "looked", label: "Only looked", tone: "info" };
     var book = String(r.booking_status || "").toLowerCase();
     var client = String(r.client_status || "").toLowerCase();
     if (book === "waiting_list" || client === "waiting_list") {
-      return { key: "waiting", label: "Waiting list", tone: "info" };
+      return { key: "waiting", label: "Waiting list", tone: "wait" };
     }
     return { key: "looked", label: "Only looked", tone: "info" };
   }

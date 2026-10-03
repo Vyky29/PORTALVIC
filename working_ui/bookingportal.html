@@ -2624,11 +2624,27 @@
         else goToRegistration(slot, pending.opts || {});
       }
 
+      function noteLookedPlace(serviceId, slot) {
+        var gate = window.PortalBookingLeadGate;
+        if (!gate || typeof gate.pingActivity !== "function") return;
+        var token = String(serviceId || "").trim();
+        if (slot) {
+          var time = String(slot.timeLabel || "").replace(/\u2013|\u2014/g, "-").trim();
+          token = [slot.serviceId || serviceId, slot.venue, slot.day, time].filter(Boolean).join("|").slice(0, 80);
+        }
+        if (!token) return;
+        void gate.pingActivity({
+          booking_status: "exploring_services",
+          service_viewed: token,
+        });
+      }
+
       function handleSlotClick(slotId) {
         var slot = (api.MOCK_SLOTS || []).find(function (s) {
           return String(s.id) === String(slotId);
         });
         if (!slot) return;
+        noteLookedPlace(slot.serviceId, slot);
         if (slotIsFull(slot)) {
           openWaitlistSheet(slot);
           return;
@@ -2653,6 +2669,7 @@
         var svc = api && api.serviceById ? api.serviceById(id) : null;
         if (!svc) return;
         activeServiceId = id;
+        noteLookedPlace(id, null);
         var info = (infoApi && infoApi.pack && infoApi.pack(svc)) || {};
         setSheetHero(id);
         sheetTitle.textContent = svc.name;
