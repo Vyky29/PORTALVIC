@@ -80,6 +80,20 @@ function commsStaffLabel(name) {
   return n;
 }
 
+function commsFirstName(name) {
+  const label = commsStaffLabel(name);
+  if (!label || label === "ADMIN") return label;
+  return label.split(/\s+/)[0] || label;
+}
+
+function commsIsGina(name) {
+  const n = String(name || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return /\bgina\b/.test(n) || n.indexOf("gouvinhas") >= 0;
+}
+
 function client() {
   return window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
 }
@@ -195,41 +209,85 @@ function staffPhotoKeyFromLabel(name) {
   return first;
 }
 
+var COMMS_PHOTO_FILES = {
+  alex: 1,
+  andres: 1,
+  angel: 1,
+  aurora: 1,
+  berta: 1,
+  bismark: 1,
+  carlos: 1,
+  dan: 1,
+  emmanuel: 1,
+  giuseppe: 1,
+  godsway: 1,
+  javi: 1,
+  javier: 1,
+  john: 1,
+  luliya: 1,
+  michelle: 1,
+  raul: 1,
+  roberto: 1,
+  sandra: 1,
+  sevitha: 1,
+  simon: 1,
+  teflon: 1,
+  victor: 1,
+  youssef: 1,
+};
+
+function localStaffPhotoUrl(name) {
+  const key = staffPhotoKeyFromLabel(name);
+  if (!key || !COMMS_PHOTO_FILES[key]) return "";
+  return "/portal/staff_photos/" + key + ".png";
+}
+
 function resolveCommsAvatarUrl(url, name) {
+  const local = localStaffPhotoUrl(name);
   const raw = String(url || "").trim();
-  if (raw) {
-    const m = raw.match(/\/portal\/staff_photos\/([^/?#.]+)/i);
+  if (
+    local &&
+    /\/staff-avatars\/[a-z0-9]+\/avatar\./i.test(raw) &&
+    !/\/staff-avatars\/[0-9a-f]{8}-/i.test(raw)
+  ) {
+    return local;
+  }
+  if (!raw) return local;
+  const m = raw.match(/\/portal\/staff_photos\/([^/?#.]+)/i);
+  if (m) {
+    const stem = String(m[1] || "").toLowerCase();
     if (
-      m &&
-      /^(ceo|ceos|all|allceos|group|team|admin|admins|director|directors|staff|leads|lead|ops)$/i.test(
-        m[1]
+      /^(ceo|ceos|all|allceos|group|team|admin|admins|director|directors|staff|leads|lead|ops)$/.test(
+        stem
       )
     ) {
       return "";
     }
-    return raw;
+    if (COMMS_PHOTO_FILES[stem]) return "/portal/staff_photos/" + stem + ".png";
+    return local;
   }
-  const key = staffPhotoKeyFromLabel(name);
-  if (!key) return "";
-  return "/portal/staff_photos/" + key + ".png";
+  return raw;
 }
 
 function avatarHtml(url, name, cls) {
   const klass = cls || "comms-item-av";
   const resolved = resolveCommsAvatarUrl(url, name);
-  const ini = esc(initials(name));
-  if (resolved) {
-    return (
-      '<span class="' +
-      klass +
-      '" data-initials="' +
-      ini +
-      '"><img src="' +
-      esc(resolved) +
-      '" alt="" loading="lazy" onerror="var p=this.parentNode;if(p){p.textContent=p.getAttribute(\'data-initials\')||\'?\';}" /></span>'
-    );
-  }
-  return '<span class="' + klass + '">' + ini + "</span>";
+  const local = localStaffPhotoUrl(name);
+  const ini = esc(initials(commsFirstName(name) || name));
+  const src = resolved || local;
+  const fallback = local && src && src !== local ? local : "";
+  if (!src) return '<span class="' + klass + '">' + ini + "</span>";
+  return (
+    '<span class="' +
+    klass +
+    '" data-initials="' +
+    ini +
+    '" data-fallback="' +
+    esc(fallback) +
+    '"><img src="' +
+    esc(src) +
+    '" alt="" loading="lazy" onerror="var p=this.parentNode;if(!p)return;var fb=p.getAttribute(\'data-fallback\');if(fb){p.removeAttribute(\'data-fallback\');this.src=fb;return;}p.textContent=p.getAttribute(\'data-initials\')||\'?\';" /></span>'
+  );
 }
 
 async function rpc(name, args) {
@@ -357,6 +415,8 @@ function applyModeButtons() {
     }
   });
   persistUnreadForPortal();
+  const search = $("commsSearchWrap");
+  if (search) search.hidden = state.mode !== "administration";
 }
 
 function persistUnreadForPortal() {
@@ -439,7 +499,10 @@ function renderInbox() {
   const groups = $("commsListGroups");
   if (!direct || !groups) return;
   const items = state.inbox.items || [];
-  const d = items.filter((it) => it.kind === "admin_staff" || it.kind === "ceo_peer").slice().sort(byRecentThenName);
+  const d = items
+    .filter((it) => (it.kind === "admin_staff" || it.kind === "ceo_peer") && !commsIsGina(it.display_name))
+    .slice()
+    .sort(byRecentThenName);
   const g = items.filter((it) => it.kind === "group").slice().sort(byRecentThenName);
   $("commsKickerDirect").textContent = state.mode === "administration" ? "Workers" : "My messages";
   direct.innerHTML = d.length
@@ -466,7 +529,7 @@ function inboxRow(it) {
     presenceDot(presenceOfItem(it)) +
     "</span>" +
     '<span class="comms-item-text"><strong>' +
-    esc(commsStaffLabel(it.display_name)) +
+    esc(it.kind === "group" ? commsStaffLabel(it.display_name) : commsFirstName(it.display_name)) +
     closed +
     "</strong><span>" +
     esc(last) +
@@ -1382,6 +1445,7 @@ async function openSearch(q) {
     showModal(
       "<h2>Search</h2>" +
         people
+          .filter((p) => !commsIsGina(p.full_name))
           .map(
             (p) =>
               '<button type="button" class="comms-item" data-search-person="' +
@@ -2402,7 +2466,6 @@ async function boot() {
     }
     $("commsMeName").textContent = state.me.full_name;
     $("commsContextSwitch").hidden = !state.me.can_act_as_administration;
-    $("commsSearchWrap").hidden = true;
     $("commsNewGroupBtn").hidden = !state.me.can_manage_groups;
     $("commsAuditBtn").hidden = !state.me.can_act_as_administration;
     applyModeButtons();

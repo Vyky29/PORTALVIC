@@ -231,7 +231,7 @@ body.comms-embed .comms-shell {
 .comms-list { display: flex; flex-direction: column; gap: 4px; }
 .comms-item {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   padding: 8px 10px;
@@ -247,9 +247,9 @@ body.comms-embed .comms-shell {
 }
 .comms-item-av-wrap {
   position: relative;
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
 }
 .comms-presence {
   position: absolute;
@@ -284,6 +284,7 @@ body.comms-embed .comms-shell {
   overflow: hidden;
   flex: 0 0 auto;
 }
+.comms-item-av { width: 56px; height: 56px; }
 .comms-item-av img, .comms-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .comms-item-text { min-width: 0; }
 .comms-item-text strong {

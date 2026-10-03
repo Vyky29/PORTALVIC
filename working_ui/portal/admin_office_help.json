@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v177",
+  "version": "2026-10-03-v178",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2126,6 +2126,45 @@
             ],
             "tips": [
               "Un aviso de mensaje nuevo de Comms en admin tambien se abre dentro de admin."
+            ]
+          }
+        },
+        {
+          "id": "comms_workers_list",
+          "title": "Workers list in Communications",
+          "summary": "On ADMIN, the search box sits above Workers. Each row shows the first name and a larger photo.",
+          "where": "Communications, ADMIN, Workers",
+          "keywords": [
+            "workers",
+            "buscador",
+            "search",
+            "nombre",
+            "apellido",
+            "foto",
+            "comms",
+            "comunicaciones"
+          ],
+          "steps": [
+            "Open Communications and choose ADMIN.",
+            "The search box is above the Workers heading. Type at least two letters and press Enter.",
+            "Each worker row shows the first name only, with a larger photo.",
+            "Groups under that list keep their full name."
+          ],
+          "tips": [
+            "My account does not show this Workers search. It is the ADMIN list."
+          ],
+          "es": {
+            "title": "Lista de workers en Communications",
+            "summary": "En ADMIN, el buscador esta encima de Workers. Cada fila muestra el nombre y una foto mas grande.",
+            "where": "Communications, ADMIN, Workers",
+            "steps": [
+              "Abre Communications y elige ADMIN.",
+              "El buscador esta encima de Workers. Escribe al menos dos letras y pulsa Enter.",
+              "Cada worker sale con el nombre, sin apellido, y con la foto mas grande.",
+              "Los grupos de debajo conservan el nombre completo."
+            ],
+            "tips": [
+              "My account no lleva este buscador de Workers. Es la lista de ADMIN."
             ]
           }
         },
