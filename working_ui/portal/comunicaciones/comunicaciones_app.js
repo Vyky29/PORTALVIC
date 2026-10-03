@@ -2386,7 +2386,7 @@ async function boot() {
     }
     $("commsMeName").textContent = state.me.full_name;
     $("commsContextSwitch").hidden = !state.me.can_act_as_administration;
-    $("commsSearchWrap").hidden = !state.me.can_act_as_administration;
+    $("commsSearchWrap").hidden = true;
     $("commsNewGroupBtn").hidden = !state.me.can_manage_groups;
     $("commsAuditBtn").hidden = !state.me.can_act_as_administration;
     applyModeButtons();
