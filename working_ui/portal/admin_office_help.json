@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v229",
+  "version": "2026-10-03-v230",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -173,6 +173,63 @@
               "Si un nino falta y alguien entra en esa plaza el mismo dia, la fila ensena al nino ausente, luego Free, luego el que entra. No participant es una plaza fija vacia.",
               "Desde el domingo 27 Sep, Gabriel y Cyrus cambian las medias de las 11.00 y las 11.45 el resto del term. La tarjeta azul de cambio sale solo ese primer domingo. Despues son los clientes de siempre a esa hora. Un cover guardado en esa plaza sigue al nino que esta ahora.",
               "Un cover conserva la plaza original. Today ensena esa area: Hub Room, Big Pool, Small Pool o Teaching Pool. No se queda en una raya. Cubrir el Hub entero del domingo es una sola NEW SHIFT, 9.15 to 2.15. Una sola franja se queda en esa franja."
+            ]
+          }
+        },
+        {
+          "id": "roster_which_screen",
+          "title": "Which screen changes the roster",
+          "summary": "Three stores merge into the day. Edit term slot changes the standing seat. Schedule & Covers changes one date.",
+          "where": "Edit term slot, or Operator → Schedule & Covers",
+          "keywords": [
+            "roster guide",
+            "capas",
+            "layers",
+            "portal_roster_rows",
+            "schedule_overrides",
+            "which tool",
+            "que pantalla",
+            "edit term or covers",
+            "un dia o el term",
+            "antes de guardar",
+            "staff and admin disagree",
+            "banner naranja"
+          ],
+          "steps": [
+            "Standing seats for the term are the baseline. A whole-term replan is for the technical owner. A normal day change does not need a deploy.",
+            "Edit term slot writes the live term roster. Use it to change who is booked, the time, the instructor, the venue, or the pool / area for the rest of term or that weekday. Staff see it after a refresh.",
+            "Schedule & Covers writes a one-day override. Use it for absent, cancel that day, a makeup, an instructor cover, or a move today. That is also live after a refresh.",
+            "Sessions Overview is where you check the day. It merges the standing seats, the live roster, and the one-day overrides."
+          ],
+          "tips": [
+            "One change, one screen. Rest of term goes through Edit term slot. One date goes through Schedule & Covers.",
+            "A new family on an open seat is Places. It is not a one-day cover.",
+            "Who works which hours is Instructor timetable (H&R), not Edit term slot.",
+            "Do not use Schedule & Covers to swap someone for the whole term. An orange or red banner means that one-day action fights the standing roster. Open Edit term slot from the drawer.",
+            "Joel to Anas every Monday is Edit term slot. Joel absent today and back next week is Schedule & Covers. One instructor covering another this Sunday only is Schedule & Covers, Instructor cover.",
+            "Before you save: is it one day or every week? Check the name, the anchor date, the time, the service, the pool / area, and the instructor. Then open Staff for that instructor on the same date.",
+            "If Staff still shows the old name after a term swap, only a one-day override was saved, or the standing name is still the old one. Use Edit term slot with the weekday scope. Do not cancel the old name in Schedule & Covers.",
+            "If the whole term is wrong on every week, that is the baseline. Ask the technical owner. Do not fix it with one-day cancels. Sessions Overview is the day look-here."
+          ],
+          "es": {
+            "title": "Que pantalla cambia el roster",
+            "summary": "Tres sitios se juntan en el dia. Edit term slot cambia la plaza fija. Schedule & Covers cambia una fecha.",
+            "where": "Edit term slot, o Today → Schedule & Covers",
+            "steps": [
+              "Las plazas fijas del term son la base. Rehacer el term entero es del dueno tecnico. Un cambio normal del dia no necesita un deploy.",
+              "Edit term slot escribe el roster vivo del term. Usalo para cambiar quien esta reservado, la hora, el instructor, la sede o la piscina / zona el resto del term o ese dia de la semana. El staff lo ve al refrescar.",
+              "Schedule & Covers escribe un cambio de un dia. Usalo para una falta, cancelar ese dia, un makeup, un cover de instructor, o un move de hoy. Tambien se ve al refrescar.",
+              "Sessions Overview es donde se mira el dia. Junta las plazas fijas, el roster vivo y los cambios de un dia."
+            ],
+            "tips": [
+              "Un cambio, una pantalla. El resto del term va por Edit term slot. Una fecha va por Schedule & Covers.",
+              "Una familia nueva en una plaza libre es Places. No es un cover de un dia.",
+              "Quien trabaja que horas es Instructor timetable (H&R), no Edit term slot.",
+              "No uses Schedule & Covers para cambiar a alguien el term entero. Un aviso naranja o rojo quiere decir que esa accion de un dia choca con el roster fijo. Abre Edit term slot desde el cajon.",
+              "Joel a Anas todos los lunes es Edit term slot. Joel falta hoy y vuelve la semana que viene es Schedule & Covers. Un instructor que cubre a otro solo este domingo es Schedule & Covers, Instructor cover.",
+              "Antes de guardar: es un dia o todas las semanas? Revisa el nombre, la fecha ancla, la hora, el servicio, la piscina / zona y el instructor. Luego abre Staff de ese instructor en la misma fecha.",
+              "Si Staff sigue con el nombre viejo despues de un cambio de term, solo se guardo un cambio de un dia, o el nombre fijo sigue siendo el viejo. Usa Edit term slot con el alcance del dia de la semana. No canceles el nombre viejo en Schedule & Covers.",
+              "Si el term entero esta mal todas las semanas, eso es la base. Pregunta al dueno tecnico. No lo arregles con cancelaciones de un dia. El dia se mira en Sessions Overview."
             ]
           }
         },
