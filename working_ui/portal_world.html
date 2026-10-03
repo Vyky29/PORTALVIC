@@ -66,12 +66,15 @@
     }
     .stories {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 6px;
       min-width: 0;
       margin-top: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
     }
     .stories button {
+      flex: 0 0 auto;
       font: inherit;
       cursor: pointer;
       border: 1px solid rgba(255,255,255,.22);
@@ -102,12 +105,12 @@
       overflow: auto;
       display: grid;
       grid-template-areas:
-        ". ceo onb"
+        "ceo auto onb"
         "booking admin staff"
         ". parent .";
-      grid-template-columns: 1fr 1.08fr 1fr;
+      grid-template-columns: minmax(0,1fr) minmax(0,1.05fr) minmax(0,1fr);
       grid-template-rows: auto auto auto;
-      gap: 14px 22px;
+      gap: 16px 26px;
       align-items: center;
       justify-items: center;
       padding: 10px 360px 12px 14px;
@@ -138,46 +141,36 @@
       stroke-width: 3.5;
       stroke-dasharray: none;
     }
+    .routes circle.run {
+      fill: #fff;
+      stroke: #f4b740;
+      stroke-width: .35;
+    }
     #islands { display: contents; }
     .island {
       position: relative;
-      width: min(240px, 100%);
+      width: 100%;
       min-width: 0;
       max-width: 100%;
-      padding: 10px 12px 10px;
+      padding: 8px 10px 10px;
       border: 0;
       text-align: left;
       color: inherit;
       cursor: pointer;
-      border-radius: 46% 54% 50% 50% / 42% 46% 54% 58%;
-      box-shadow:
-        0 0 0 8px rgba(255,255,255,.14),
-        0 16px 0 rgba(0,0,0,.12),
-        0 22px 36px rgba(0,0,0,.22);
+      border-radius: 16px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.22);
       z-index: 2;
     }
-    .island:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
-    .island.is-picked { box-shadow: 0 0 0 8px rgba(244,183,64,.55), 0 16px 0 rgba(0,0,0,.12), 0 22px 36px rgba(0,0,0,.22); }
-    .island.is-hot {
-      box-shadow: 0 0 0 8px rgba(244,183,64,.9), 0 16px 0 rgba(0,0,0,.12), 0 22px 36px rgba(0,0,0,.22);
-      animation: pulse 1.1s ease;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      40% { transform: scale(1.03); }
-      100% { transform: scale(1); }
-    }
-    .island--ceo { grid-area: ceo; }
-    .island--booking { grid-area: booking; }
-    .island--admin { grid-area: admin; width: min(260px, 100%); z-index: 3; background: linear-gradient(180deg, #1f8f7e, #14685c); color: #f3fffc; }
-    .island--staff { grid-area: staff; }
-    .island--onb { grid-area: onb; }
-    .island--parent { grid-area: parent; }
-    .island--staff { background: linear-gradient(180deg, #3f7ebf, #2a5f96); color: #f4f9ff; border-radius: 52% 48% 46% 54% / 48% 42% 58% 52%; }
-    .island--onb { background: linear-gradient(180deg, #6d5bd0, #43358f); color: #f6f3ff; border-radius: 44% 56% 48% 52% / 52% 42% 58% 48%; }
-    .island--booking { background: linear-gradient(180deg, #f0d7a0, #e2b86a); color: #4a3412; border-radius: 48% 52% 58% 42% / 46% 54% 46% 54%; }
-    .island--parent { background: linear-gradient(180deg, #f6c7bc, #e7a294); color: #5c2c30; border-radius: 50% 50% 46% 54% / 44% 56% 44% 56%; }
-    .island--ceo { background: linear-gradient(180deg, #24344d, #172536); color: #f6edd4; border-radius: 42% 58% 48% 52% / 50% 42% 58% 50%; }
+    .island:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+    .island.is-picked { box-shadow: 0 0 0 3px rgba(244,183,64,.7), 0 10px 22px rgba(0,0,0,.22); }
+    .island.is-hot { box-shadow: 0 0 0 3px #f4b740, 0 10px 22px rgba(0,0,0,.22); }
+    .island--ceo { grid-area: ceo; background: linear-gradient(180deg, #24344d, #172536); color: #f6edd4; }
+    .island--auto { grid-area: auto; background: linear-gradient(180deg, #e2a322, #b47410); color: #3a2804; }
+    .island--booking { grid-area: booking; background: linear-gradient(180deg, #f0d7a0, #e2b86a); color: #4a3412; }
+    .island--admin { grid-area: admin; z-index: 3; background: linear-gradient(180deg, #1f8f7e, #14685c); color: #f3fffc; }
+    .island--staff { grid-area: staff; background: linear-gradient(180deg, #3f7ebf, #2a5f96); color: #f4f9ff; }
+    .island--onb { grid-area: onb; background: linear-gradient(180deg, #6d5bd0, #43358f); color: #f6f3ff; }
+    .island--parent { grid-area: parent; background: linear-gradient(180deg, #f6c7bc, #e7a294); color: #5c2c30; }
     .kicker {
       display: block;
       font-size: 10px;
@@ -216,7 +209,23 @@
       overflow-wrap: anywhere;
     }
     .chip { background: rgba(255,255,255,.2); }
-    .island--booking .chip, .island--parent .chip { background: rgba(255,255,255,.45); }
+    .island--booking .chip, .island--parent .chip, .island--auto .chip { background: rgba(255,255,255,.55); color: #3a2804; }
+    #dots {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+    }
+    .dot-run {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid #f4b740;
+      box-shadow: 0 0 0 5px rgba(244,183,64,.35);
+      transform: translate(-50%, -50%);
+    }
     .person {
       font: inherit;
       font-size: 11px;
@@ -355,26 +364,13 @@
     }
     @media (max-width: 980px) {
       html, body, .app { height: auto; overflow: auto; }
+      .stage { display: flex; flex-direction: column; }
       .sea {
-        height: auto;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 22px;
-        padding: 18px 12px 20px;
-        overflow: visible;
+        height: 640px;
+        min-height: 640px;
+        padding: 10px;
+        overflow: hidden;
       }
-      .routes, .traveler { display: none !important; }
-      .island, .island--admin {
-        position: relative;
-        left: auto !important;
-        top: auto !important;
-        transform: none;
-        width: min(420px, 100%);
-        border-radius: 22px;
-      }
-      .island.is-hot { animation: none; }
       aside.panel {
         position: relative;
         top: auto;
@@ -392,13 +388,14 @@
     <header class="top">
       <div>
         <h1>El mundo de los portales</h1>
-        <p>Seis islas. Cada camino se lee en el panel, paso a paso, sin montarse encima del mapa. No es el parte de hoy.</p>
+        <p>Siete cuadros. La linea dorada se enciende y el punto viaja hasta el portal que se entera. El texto se lee en el panel. No es el parte de hoy.</p>
       </div>
       <div class="stories" id="stories" role="tablist" aria-label="Caminos"></div>
     </header>
     <div class="stage">
       <div class="sea" id="sea">
         <svg class="routes" id="routes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <div id="dots"></div>
         <div id="islands"></div>
         <div class="traveler" id="traveler" hidden></div>
       </div>
@@ -425,6 +422,24 @@
         "Mira finance, visitantes del Booking y quien esta dentro del Parent.",
         "Activity log, portal activity y staff readiness salen de aqui.",
         "No opera el dia. El dia es Admin."
+      ]
+    },
+    {
+      id: "auto",
+      cls: "island--auto",
+      kicker: "Motor",
+      name: "Automatizaciones",
+      host: "Supabase, correo y cron",
+      short: "email, sync, avisos",
+      x: 50, y: 15,
+      chips: ["Email", "Sync", "Avisos", "Holds"],
+      home: [],
+      visit: [],
+      happens: [
+        "OTP: el codigo sale por email a la familia. Si el lead es nuevo, Admin recibe un aviso. No reescribe Staff ni Parent.",
+        "Booking pagado: esta caja escribe a la vez Admin (Overview, Schedule, Places, Finance), Staff Today y Parent (Today card, Bookings, Invoices).",
+        "Un trial pagado deja ademas el soft hold en Booking hasta el final del dia.",
+        "Un cobro fallido y el trabajo de la manana tambien salen de aqui. Solo ponen o quitan soft hold. No cancelan la plaza."
       ]
     },
     {
@@ -528,14 +543,21 @@
   ];
 
   var LINKS = [
-    { id: "b-a", from: "booking", to: "admin", label: "OTP, registro, soft hold y pago" },
-    { id: "b-p", from: "booking", to: "parent", label: "Cuenta, finish-booking y Today card" },
+    { id: "b-auto", from: "booking", to: "auto", bow: 8, label: "OTP, pago y holds" },
+    { id: "auto-a", from: "auto", to: "admin", bow: -6, label: "Aviso, Overview, Schedule, Places y Finance" },
+    { id: "auto-s", from: "auto", to: "staff", bow: 6, label: "Today, halo y feedback pendiente" },
+    { id: "auto-p", from: "auto", to: "parent", bow: 22, label: "Today card, Bookings, Invoices y avisos" },
+    { id: "auto-b", from: "auto", to: "booking", bow: -8, label: "Soft hold y suelta de plaza" },
+    { id: "b-a", from: "booking", to: "admin", bow: 5, label: "OTP, registro, soft hold y pago" },
+    { id: "b-p", from: "booking", to: "parent", bow: -14, label: "Cuenta, finish-booking y Today card" },
     { id: "a-s", from: "admin", to: "staff", label: "Today, cover, feedback, timesheet y expenses" },
     { id: "a-o", from: "admin", to: "onb", label: "Entrevista y alta desde Potential workers" },
     { id: "o-s", from: "onb", to: "staff", label: "Misma cuenta: al terminar el alta entra en Staff" },
     { id: "a-p", from: "admin", to: "parent", label: "Today card, Bookings, Invoices y Absent" },
     { id: "s-p", from: "staff", to: "parent", label: "Feedback que sale en la Today card" },
-    { id: "a-c", from: "admin", to: "ceo", label: "Cifras, visitantes y padres en el portal" }
+    { id: "a-c", from: "admin", to: "ceo", bow: -8, label: "Cifras, visitantes y padres en el portal" },
+    { id: "b-c", from: "booking", to: "ceo", bow: -5, label: "Visitantes de Booking" },
+    { id: "p-c", from: "parent", to: "ceo", bow: -18, label: "Quien esta dentro de Parent" }
   ];
 
   var STORIES = [
@@ -545,9 +567,9 @@
       actor: "A la vez",
       steps: [
         { islands: ["booking"], links: [], text: "Entra sin cuenta, o Connected as su cuenta (PIN o codigo por email)." },
-        { islands: ["booking"], links: [], text: "OTP. Si no termina el registro, se queda en LEADS. Si lo termina, pasa a REGISTERED." },
+        { islands: ["booking", "auto"], links: ["b-auto"], text: "OTP. El codigo sale por email a la familia. Si el lead es nuevo, el punto llega a Admin como aviso. No reescribe Staff ni Parent." },
         { islands: ["booking", "parent", "admin"], links: ["b-p", "b-a"], text: "A la vez: Parent abre finish-booking, Admin ve el lead, y el enlace sin pagar hace hold de 30 min en Booking. Eso no es el soft hold." },
-        { islands: ["admin", "staff", "parent"], links: ["a-s", "a-p", "b-a"], text: "Al pagar, a la vez: CLIENT en Schedule, Overview y Places; Staff lo tiene en Today; Parent abre Today card, Bookings e Invoices." }
+        { islands: ["booking", "auto", "admin", "staff", "parent"], links: ["b-auto", "auto-a", "auto-s", "auto-p"], text: "Al pagar, el punto sale de Booking, pasa por Automatizaciones y llega a la vez a Admin, Staff y Parent. CLIENT en Schedule, Overview y Places. Today, Today card, Bookings e Invoices." }
       ]
     },
     {
@@ -688,6 +710,213 @@
         { islands: ["staff", "admin"], links: ["a-s"], text: "A la vez: Documents en Admin lo guarda con su nombre y el mes. Queda Pending, y la campana puede mostrar el gasto." },
         { islands: ["admin"], links: [], text: "Mark paid cuando ya esta pagado. La fecha es el dia en que se pulsa, no el mes del gasto." }
       ]
+    },
+    {
+      id: "otp-mail",
+      label: "OTP email",
+      actor: "A la vez",
+      steps: [
+        { islands: ["booking"], links: [], text: "La familia pide el codigo en Booking. Todavia no hay plaza." },
+        { islands: ["booking", "auto"], links: ["b-auto"], text: "Automatizaciones manda solo el email con el codigo. Dura unos 10 minutos." },
+        { islands: ["auto", "admin"], links: ["auto-a"], text: "Si ese lead no existia, el aviso llega a Admin. Un codigo repetido no vuelve a avisar. Staff y Parent no cambian." }
+      ]
+    },
+    {
+      id: "paid-sync",
+      label: "Booking pagado",
+      actor: "A la vez",
+      steps: [
+        { islands: ["booking", "auto"], links: ["b-auto"], text: "El pago entra. Booking no escribe los portales a mano. Se lo pasa a Automatizaciones." },
+        { islands: ["auto", "admin", "staff", "parent"], links: ["auto-a", "auto-s", "auto-p"], text: "A la vez el punto llega a Admin (Overview, Schedule, Places, Finance), a Staff Today y a Parent (Today card, Bookings, Invoices)." },
+        { islands: ["auto", "booking"], links: ["auto-b"], text: "Si era un trial, Automatizaciones deja el soft hold en Booking hasta el final de ese dia." }
+      ]
+    },
+    {
+      id: "pay30",
+      label: "Hold 30 min",
+      actor: "A la vez",
+      steps: [
+        { islands: ["parent", "booking"], links: ["b-p"], text: "El enlace de finish-booking sin cobrar ocupa la plaza 30 minutos. No es el soft hold." },
+        { islands: ["booking", "admin"], links: ["b-a"], text: "Admin ve la plaza en espera de pago. Si no cobran, la plaza vuelve. El reloj solo no la suelta si sigue en awaiting payment." }
+      ]
+    },
+    {
+      id: "trial-term",
+      label: "Trial y termino",
+      actor: "A la vez",
+      steps: [
+        { islands: ["booking", "auto"], links: ["b-auto"], text: "El trial se paga. Automatizaciones crea la oferta del termino." },
+        { islands: ["auto", "parent", "booking"], links: ["auto-p", "auto-b"], text: "El enlace de Parent queda en TERM. Booking pinta la plaza ocupada con soft hold hasta las 23:59 de Londres." },
+        { islands: ["auto", "admin", "booking"], links: ["auto-a", "auto-b"], text: "Si el dia acaba y no cogen el termino, el hold se suelta y Admin recibe el aviso. La plaza vuelve al offer." }
+      ]
+    },
+    {
+      id: "fail-pay",
+      label: "Cobro fallido",
+      actor: "A la vez",
+      steps: [
+        { islands: ["auto"], links: [], text: "GoCardless falla. Hay un margen. Automatizaciones pone soft hold. La plaza sigue siendo de esa familia." },
+        { islands: ["auto", "booking", "admin"], links: ["auto-b", "auto-a"], text: "Booking deja de ofrecerla. Admin puede recordar, retener una sesion, soltar o cortar." },
+        { islands: ["auto", "booking"], links: ["auto-b"], text: "El trabajo de la manana solo pone o quita ese soft hold. No cancela la plaza solo." }
+      ]
+    },
+    {
+      id: "bank-paid",
+      label: "Ya pague",
+      actor: "A la vez",
+      steps: [
+        { islands: ["parent"], links: [], text: "La familia marca que ya pago por banco." },
+        { islands: ["parent", "auto", "admin"], links: ["a-p", "auto-a"], text: "Automatizaciones avisa a la oficina. La plaza sigue hasta que Admin confirma el pago." },
+        { islands: ["auto", "admin", "parent"], links: ["auto-a", "auto-p"], text: "Cuando se confirma, Finance pasa a pagado y Parent deja de marcarlo como pendiente." }
+      ]
+    },
+    {
+      id: "reenrol",
+      label: "Re-enrolment",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "Empieza el termino nuevo. Finance, Re-enrolments, prepara el cobro." },
+        { islands: ["admin", "auto", "parent"], links: ["auto-p", "a-p"], text: "Parent recibe la factura. Bookings sigue ensenando la plaza del termino." },
+        { islands: ["auto", "admin", "booking"], links: ["auto-a", "auto-b"], text: "Al cobrar, Places y Booking quedan al dia. Si no cobra y el buffer baja, entra el soft hold." }
+      ]
+    },
+    {
+      id: "late-mark",
+      label: "Tarde",
+      actor: "A la vez",
+      steps: [
+        { islands: ["staff"], links: [], text: "Staff marca que el nino llega tarde." },
+        { islands: ["staff", "admin", "parent"], links: ["a-s", "s-p"], text: "A la vez: la campana de Admin, y la Today card de Parent. La plaza del termino no se borra." }
+      ]
+    },
+    {
+      id: "incident",
+      label: "Incidente",
+      actor: "A la vez",
+      steps: [
+        { islands: ["staff", "admin"], links: ["a-s"], text: "Un incidente o un wellbeing se escribe ese dia. La campana de Admin se enciende." },
+        { islands: ["admin"], links: [], text: "Un incidente de una sesion ya pasada puede pedir aprobacion en Late feedback. El feedback normal no." },
+        { islands: ["parent"], links: [], text: "Parent no cambia la reserva por esto. No es una ausencia ni un cover." }
+      ]
+    },
+    {
+      id: "disruption",
+      label: "Disruption",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "Session disruption es el parte de una sesion que se rompe. No es un cover." },
+        { islands: ["admin", "staff"], links: ["a-s"], text: "Staff Today lo ve. La campana puede avisarlo. Parent no ve COVER NEEDED." }
+      ]
+    },
+    {
+      id: "chase",
+      label: "Feedback 20:30",
+      actor: "A la vez",
+      steps: [
+        { islands: ["staff"], links: [], text: "Si el feedback del dia sigue abierto, a las 20:30 sale el WhatsApp." },
+        { islands: ["staff", "admin"], links: ["a-s"], text: "El halo y Quick menu lo recuerdan en Staff. La campana lo ve Admin. No bloquea la app con un anuncio." }
+      ]
+    },
+    {
+      id: "bells",
+      label: "Campana",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "La campana de Admin junta tarde, cancel, incidente, wellbeing y gastos." },
+        { islands: ["staff"], links: ["a-s"], text: "Staff tiene halo y Quick menu para un cover y para el feedback que falta." },
+        { islands: ["parent"], links: ["a-p"], text: "Parent tiene su propio aviso. No ve el dia libre del instructor ni COVER NEEDED." }
+      ]
+    },
+    {
+      id: "family-pin",
+      label: "PIN familia",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "Admin guarda el PIN de la familia." },
+        { islands: ["admin", "parent"], links: ["a-p"], text: "Con ese PIN, o con el codigo por email, Parent abre Connected as. No es el OTP de un lead nuevo." }
+      ]
+    },
+    {
+      id: "notes",
+      label: "Notas",
+      actor: "A la vez",
+      steps: [
+        { islands: ["parent"], links: [], text: "La familia escribe una nota en Parent." },
+        { islands: ["parent", "admin", "staff"], links: ["a-p", "s-p"], text: "Admin y Staff la leen. No cambia la plaza ni el feedback." }
+      ]
+    },
+    {
+      id: "broadcast",
+      label: "Mensaje familias",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "Admin escribe un mensaje para varias familias." },
+        { islands: ["admin", "parent"], links: ["a-p"], text: "Llega a Parent. No es un cambio de horario y no abre la hoja de Sign and submit." }
+      ]
+    },
+    {
+      id: "seat-open",
+      label: "Hueco libre",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin", "booking"], links: ["b-a"], text: "Se libera una plaza. Places y Booking la ensenan libre." },
+        { islands: ["admin", "parent"], links: ["a-p"], text: "La oficina se la ofrece a quien esta en Waiting. Hasta entonces Parent no la ve reservada." }
+      ]
+    },
+    {
+      id: "interview",
+      label: "Entrevista",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "La entrevista vive en Potential workers." },
+        { islands: ["admin", "onb"], links: ["a-o"], text: "Si sigue, Admin abre Onboarding. Job, Health, Starter y Documents." },
+        { islands: ["onb", "staff"], links: ["o-s"], text: "La misma cuenta entra en Staff. Si el alta no esta cerrada, Onboarding sigue en el menu." }
+      ]
+    },
+    {
+      id: "contract",
+      label: "Contrato",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin", "staff"], links: ["a-s"], text: "El contrato y las policies salen de Admin hacia el trabajador." },
+        { islands: ["staff", "admin"], links: ["a-s"], text: "Cuando firma, Documents en Admin guarda el archivo. No es el formulario de Onboarding." }
+      ]
+    },
+    {
+      id: "staff-pin",
+      label: "PIN staff",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "Admin guarda el PIN del trabajador en Documents." },
+        { islands: ["admin", "staff"], links: ["a-s"], text: "Con ese PIN entra en Staff. Es la misma cuenta que Onboarding." }
+      ]
+    },
+    {
+      id: "payslip",
+      label: "Nomina",
+      actor: "A la vez",
+      steps: [
+        { islands: ["admin"], links: [], text: "H&R, Finance, deja el payslip." },
+        { islands: ["admin", "staff"], links: ["a-s"], text: "El trabajador lo abre en Staff. El PDF no cambia el horario." }
+      ]
+    },
+    {
+      id: "annual",
+      label: "Perfil anual",
+      actor: "A la vez",
+      steps: [
+        { islands: ["staff"], links: [], text: "Una vez al ano el trabajador abre su perfil y confirma los datos." },
+        { islands: ["staff", "admin"], links: ["a-s"], text: "Solo se guardan los cambios. Admin ve el registro. No es el alta de Onboarding." }
+      ]
+    },
+    {
+      id: "ceo-see",
+      label: "Visitantes",
+      actor: "A la vez",
+      steps: [
+        { islands: ["booking", "ceo"], links: ["b-c"], text: "Quien entra en Booking queda como visitante. CEO lo lee. No opera el dia." },
+        { islands: ["parent", "ceo"], links: ["p-c"], text: "Quien esta dentro de Parent tambien se ve en CEO. El look-here del dia sigue siendo Admin Overview." }
+      ]
     }
   ];
 
@@ -706,6 +935,7 @@
 
   var sea = document.getElementById("sea");
   var routesEl = document.getElementById("routes");
+  var dotsEl = document.getElementById("dots");
   var islandsEl = document.getElementById("islands");
   var traveler = document.getElementById("traveler");
   var panel = document.getElementById("panel");
@@ -717,36 +947,175 @@
 
   var centers = {};
 
+  function boxOf(id) {
+    var el = islandEl(id);
+    var seaR = sea.getBoundingClientRect();
+    if (!el || !seaR.width || !seaR.height) return null;
+    var r = el.getBoundingClientRect();
+    return {
+      cx: ((r.left + r.width / 2 - seaR.left) / seaR.width) * 100,
+      cy: ((r.top + r.height / 2 - seaR.top) / seaR.height) * 100,
+      hw: (r.width / seaR.width) * 50,
+      hh: (r.height / seaR.height) * 50
+    };
+  }
+
+  function rimPoint(box, toward, out) {
+    var dx = toward.cx - box.cx;
+    var dy = toward.cy - box.cy;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var sx = Math.abs(dx) < 0.01 ? 999 : box.hw / Math.abs(dx);
+    var sy = Math.abs(dy) < 0.01 ? 999 : box.hh / Math.abs(dy);
+    var s = Math.min(sx, sy);
+    return {
+      x: box.cx + dx * s + (dx / len) * out,
+      y: box.cy + dy * s + (dy / len) * out
+    };
+  }
+
+  function hitsBox(x, y, boxes, skip) {
+    for (var i = 0; i < boxes.length; i++) {
+      var box = boxes[i];
+      if (skip[box.id]) continue;
+      if (x > box.l + 0.3 && x < box.r - 0.3 && y > box.t + 0.3 && y < box.b - 0.3) return true;
+    }
+    return false;
+  }
+
+  function curveHits(p1, c, p2, boxes, skip) {
+    for (var s = 1; s < 14; s++) {
+      var t = s / 14;
+      var m = 1 - t;
+      var x = m * m * p1.x + 2 * m * t * c.x + t * t * p2.x;
+      var y = m * m * p1.y + 2 * m * t * c.y + t * t * p2.y;
+      if (hitsBox(x, y, boxes, skip)) return true;
+    }
+    return false;
+  }
+
+  function polyHits(pts, boxes, skip) {
+    for (var i = 0; i < pts.length - 1; i++) {
+      var a = pts[i];
+      var b = pts[i + 1];
+      for (var s = 1; s < 12; s++) {
+        var u = s / 12;
+        if (hitsBox(a.x + (b.x - a.x) * u, a.y + (b.y - a.y) * u, boxes, skip)) return true;
+      }
+    }
+    return false;
+  }
+
+  function gapMids(marks) {
+    marks.sort(function (a, b) { return a - b; });
+    var out = [];
+    var prev = marks[0];
+    for (var i = 1; i < marks.length; i++) {
+      if (marks[i] - prev > 1.15) out.push((prev + marks[i]) / 2);
+      prev = marks[i];
+    }
+    return out;
+  }
+
+  function routeLink(link, byBox, boxes) {
+    var a = byBox[link.from];
+    var b = byBox[link.to];
+    if (!a || !b) return "";
+    var p1 = rimPoint(a, b, 0.8);
+    var p2 = rimPoint(b, a, 0.8);
+    var skip = {};
+    skip[link.from] = true;
+    skip[link.to] = true;
+    var dx = p2.x - p1.x;
+    var dy = p2.y - p1.y;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var bows = [4, -4, 8, -8, 14, -14, 22, -22];
+    if (typeof link.bow === "number") bows.unshift(link.bow, -link.bow);
+    for (var i = 0; i < bows.length; i++) {
+      var bow = bows[i];
+      var c = {
+        x: (p1.x + p2.x) / 2 + (-dy / len) * bow,
+        y: (p1.y + p2.y) / 2 + (dx / len) * bow
+      };
+      if (!curveHits(p1, c, p2, boxes, skip)) {
+        return "M " + p1.x + " " + p1.y + " Q " + c.x + " " + c.y + " " + p2.x + " " + p2.y;
+      }
+    }
+    var xs = gapMids([0, 100].concat(boxes.map(function (box) { return box.l; }), boxes.map(function (box) { return box.r; })));
+    var best = null;
+    xs.forEach(function (gx) {
+      var pts = [p1, { x: gx, y: p1.y }, { x: gx, y: p2.y }, p2];
+      if (polyHits(pts, boxes, skip)) return;
+      var cost = Math.abs(gx - p1.x) + Math.abs(gx - p2.x);
+      if (!best || cost < best.cost) best = { cost: cost, pts: pts };
+    });
+    if (!best) {
+      var ys = gapMids([0, 100].concat(boxes.map(function (box) { return box.t; }), boxes.map(function (box) { return box.b; })));
+      ys.forEach(function (gy) {
+        var pts = [p1, { x: p1.x, y: gy }, { x: p2.x, y: gy }, p2];
+        if (polyHits(pts, boxes, skip)) return;
+        var cost = Math.abs(gy - p1.y) + Math.abs(gy - p2.y);
+        if (!best || cost < best.cost) best = { cost: cost, pts: pts };
+      });
+    }
+    if (!best) return "M " + p1.x + " " + p1.y + " L " + p2.x + " " + p2.y;
+    return "M " + best.pts.map(function (p) { return p.x + " " + p.y; }).join(" L ");
+  }
+
   function measure() {
     var seaR = sea.getBoundingClientRect();
     if (!seaR.width || !seaR.height) return;
+    var byBox = {};
+    var boxes = [];
     ISLANDS.forEach(function (island) {
-      var el = islandEl(island.id);
-      if (!el) return;
-      var r = el.getBoundingClientRect();
-      centers[island.id] = {
-        x: ((r.left + r.width / 2 - seaR.left) / seaR.width) * 100,
-        y: ((r.top + r.height / 2 - seaR.top) / seaR.height) * 100
-      };
+      var box = boxOf(island.id);
+      if (!box) return;
+      box.id = island.id;
+      box.l = box.cx - box.hw;
+      box.t = box.cy - box.hh;
+      box.r = box.cx + box.hw;
+      box.b = box.cy + box.hh;
+      byBox[island.id] = box;
+      boxes.push(box);
     });
+    centers = byBox;
     routesEl.innerHTML = LINKS.map(function (link) {
-      var a = centers[link.from];
-      var b = centers[link.to];
-      if (!a || !b) return "";
-      var dx = b.x - a.x;
-      var dy = b.y - a.y;
-      var len = Math.sqrt(dx * dx + dy * dy) || 1;
-      var pad = 9;
-      var x1 = a.x + (dx / len) * pad;
-      var y1 = a.y + (dy / len) * pad;
-      var x2 = b.x - (dx / len) * pad;
-      var y2 = b.y - (dy / len) * pad;
-      var bow = 7;
-      var cx = (x1 + x2) / 2 + (-dy / len) * bow;
-      var cy = (y1 + y2) / 2 + (dx / len) * bow;
-      var d = "M " + x1 + " " + y1 + " Q " + cx + " " + cy + " " + x2 + " " + y2;
+      var d = routeLink(link, byBox, boxes);
+      if (!d) return "";
       return '<path data-link="' + link.id + '" d="' + d + '"></path>';
     }).join("");
+  }
+
+  function stopDots() {
+    if (state.dotFrame) window.cancelAnimationFrame(state.dotFrame);
+    state.dotFrame = 0;
+    dotsEl.innerHTML = "";
+  }
+
+  function runDots() {
+    stopDots();
+    if (!state.playing && !state.paused) return;
+    var reduce = false;
+    try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (err) { reduce = false; }
+    if (reduce) return;
+    var paths = routesEl.querySelectorAll("path.is-hot");
+    if (!paths.length) return;
+    var dots = [];
+    Array.prototype.forEach.call(paths, function (path) {
+      var dot = document.createElement("div");
+      dot.className = "dot-run";
+      dotsEl.appendChild(dot);
+      dots.push({ el: dot, path: path, len: path.getTotalLength() || 1, t0: performance.now() });
+    });
+    function frame(now) {
+      dots.forEach(function (dot) {
+        var u = ((now - dot.t0) % 1600) / 1600;
+        var pt = dot.path.getPointAtLength(u * dot.len);
+        dot.el.style.left = pt.x + "%";
+        dot.el.style.top = pt.y + "%";
+      });
+      state.dotFrame = window.requestAnimationFrame(frame);
+    }
+    state.dotFrame = window.requestAnimationFrame(frame);
   }
 
   function renderIslands() {
@@ -805,29 +1174,8 @@
     Array.prototype.forEach.call(routesEl.querySelectorAll("path"), function (path) {
       path.classList.toggle("is-hot", (state.playing || state.paused) && hotLinks.indexOf(path.getAttribute("data-link")) !== -1);
     });
-    if (!state.playing && !state.paused) {
-      traveler.hidden = true;
-      return;
-    }
-    if (hotIslands.length < 2) {
-      traveler.hidden = true;
-      return;
-    }
-    var el = islandEl(hotIslands[0]);
-    var seaR = sea.getBoundingClientRect();
-    var r = el ? el.getBoundingClientRect() : null;
-    if (!r || !seaR.width) return;
-    traveler.hidden = false;
-    traveler.textContent = "A la vez";
-    var roomBelow = seaR.bottom - r.bottom;
-    traveler.style.left = ((r.left + r.width / 2 - seaR.left) / seaR.width) * 100 + "%";
-    if (roomBelow > 36) {
-      traveler.style.top = ((r.bottom - seaR.top) / seaR.height) * 100 + "%";
-      traveler.style.transform = "translate(-50%, 8px)";
-    } else {
-      traveler.style.top = ((r.top - seaR.top) / seaR.height) * 100 + "%";
-      traveler.style.transform = "translate(-50%, -120%)";
-    }
+    traveler.hidden = true;
+    runDots();
   }
 
   function renderPanel() {
@@ -839,7 +1187,7 @@
       }).join("");
       panel.innerHTML =
         "<h2>" + story.label + "</h2>" +
-        '<p class="sub">Paso ' + (state.step + 1) + " de " + story.steps.length + ". Las islas en dorado son este paso. Pulsa una isla si quieres leer solo esa isla.</p>" +
+        '<p class="sub">Paso ' + (state.step + 1) + " de " + story.steps.length + ". La linea dorada se enciende y el punto viaja hasta quien se entera. Pulsa una caja para leer solo esa.</p>" +
         '<div class="now"><b>' + stepTitle(step) + '</b><p>' + step.text + "</p></div>" +
         '<button type="button" class="pause" data-pause="1">' + (state.paused ? "Seguir" : "Pausa") + "</button>" +
         '<div class="block"><ol class="steps">' + steps + "</ol></div>";
@@ -867,6 +1215,7 @@
     state.paused = false;
     if (state.timer) window.clearTimeout(state.timer);
     state.timer = 0;
+    stopDots();
   }
 
   function tick() {
@@ -943,15 +1292,20 @@
 
   renderIslands();
   play("lead");
-  window.requestAnimationFrame(function () {
-    measure();
-    setHot();
-  });
 
-  window.addEventListener("resize", function () {
+  var lastSeaSize = "";
+  function layoutRoutes() {
+    var rect = sea.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    var key = Math.round(rect.width) + "x" + Math.round(rect.height);
+    if (key === lastSeaSize && routesEl.querySelector("path")) return;
+    lastSeaSize = key;
     measure();
     setHot();
-  });
+  }
+  window.requestAnimationFrame(layoutRoutes);
+  window.addEventListener("resize", layoutRoutes);
+  if (window.ResizeObserver) new ResizeObserver(layoutRoutes).observe(sea);
 })();
   </script>
   <script type="module">

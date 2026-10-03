@@ -74,6 +74,7 @@
     portal_device_notifications: "Notificaciones del dispositivo",
     logs: "Registro de actividad",
     portal_nav_alerts: "Bandeja de alertas",
+    cs_world: "CS World",
     portal_nav_staff: "Dashboard Staff",
     portal_nav_ceo: "Dashboard CEO",
     portal_nav_admin: "Admin de operaciones",
