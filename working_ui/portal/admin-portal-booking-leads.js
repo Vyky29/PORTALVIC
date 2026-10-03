@@ -29,6 +29,7 @@
     outcome: "all",
     origin: "portal",
     entry: "all",
+    person: "all",
     trackFilter: "all",
     q: "",
     leads: [],
@@ -214,13 +215,28 @@
     };
   }
 
+  function personFilterMatch(r, key) {
+    var person = leadType(r);
+    var note = String(person.note || "").toUpperCase();
+    if (key === "new") return person.key === "new";
+    if (key === "active") return person.key === "active";
+    if (key === "registered") return person.key === "registered";
+    if (key === "old") return person.key === "registered" && note === "OLD CLIENT";
+    if (key === "trial") return person.key === "registered" && note === "TRIAL";
+    if (key === "waiting") return person.key === "registered" && note === "WAITING LIST";
+    if (key === "reg") return person.key === "registered" && note === "REGISTERED";
+    return true;
+  }
+
   function visibleLeads() {
     var rows = state.leads || [];
     var key = state.outcome || "all";
     var entry = state.entry || "all";
+    var person = state.person || "all";
     return rows.filter(function (r) {
       if (key !== "all" && leadOutcome(r).key !== key) return false;
       if (entry !== "all" && entryWay(r).key !== entry) return false;
+      if (person !== "all" && !personFilterMatch(r, person)) return false;
       return true;
     });
   }
@@ -492,7 +508,7 @@
       '<div class="card-pad" style="min-width:0">' +
       '<p style="margin:0 0 8px;font-weight:600;overflow-wrap:break-word">Write to this filter</p>' +
       '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;overflow-wrap:break-word">' +
-      "This is not a filter. Use Search, Origin, Track status and Outcome above first. Then tick rows, or use these buttons, to copy emails, copy phones, or open Family broadcast. " +
+      "This is not a filter. Use Search, Lead, Type and Outcome above first. Then tick rows, or use these buttons, to copy emails, copy phones, or open Family broadcast. " +
       '<strong id="bkLeadSelCount">' +
       esc(n) +
       "</strong> ticked · " +
@@ -572,8 +588,31 @@
         );
       })
       .join("");
+    var portalList = state.origin === "portal";
+    var personOpts = [
+      { value: "all", label: "All types" },
+      { value: "new", label: "New visitor" },
+      { value: "registered", label: "Registered" },
+      { value: "old", label: "Registered (OLD CLIENT)" },
+      { value: "trial", label: "Registered (TRIAL)" },
+      { value: "waiting", label: "Registered (WAITING LIST)" },
+      { value: "reg", label: "Registered (REGISTERED)" },
+      { value: "active", label: "ACTIVE" },
+    ]
+      .map(function (t) {
+        return (
+          '<option value="' +
+          esc(t.value) +
+          '"' +
+          (state.person === t.value ? " selected" : "") +
+          ">" +
+          esc(t.label) +
+          "</option>"
+        );
+      })
+      .join("");
     host.innerHTML =
-      potentialFormHtml() +
+      (state.origin === "potential" ? potentialFormHtml() : "") +
       '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px">' +
       '<input class="inp" id="bkLeadSearch" type="search" placeholder="Search name, email, phone, enquiry…" value="' +
       esc(state.q) +
@@ -595,22 +634,27 @@
       (state.origin === "email_interest" ? " selected" : "") +
       ">Origin: Email interest + outreach</option>" +
       "</select>" +
-      '<select class="inp" id="bkLeadTrackFilter" style="max-width:220px;min-width:0">' +
-      trackFilterOpts +
-      "</select>" +
-      '<select class="inp" id="bkLeadFilter" style="max-width:280px;min-width:0" title="What the lead did after the code">' +
-      outcomeOpts +
-      "</select>" +
-      '<select class="inp" id="bkLeadEntry" style="max-width:220px;min-width:0" title="Parent portal or Booking OTP">' +
+      (portalList
+        ? ""
+        : '<select class="inp" id="bkLeadTrackFilter" style="max-width:220px;min-width:0">' +
+          trackFilterOpts +
+          "</select>") +
+      '<select class="inp" id="bkLeadEntry" style="max-width:200px;min-width:0" title="OTP asked for a code. Parent portal opened Booking from the family hub.">' +
       '<option value="all"' +
       (state.entry === "all" ? " selected" : "") +
-      ">Entry: All</option>" +
+      ">Lead: All</option>" +
       '<option value="parent"' +
       (state.entry === "parent" ? " selected" : "") +
-      ">Entry: Parent portal</option>" +
+      ">Lead: Parent portal</option>" +
       '<option value="otp"' +
       (state.entry === "otp" ? " selected" : "") +
-      ">Entry: Booking OTP</option>" +
+      ">Lead: OTP</option>" +
+      "</select>" +
+      '<select class="inp" id="bkLeadPerson" style="max-width:240px;min-width:0" title="Who they were on this visit">' +
+      personOpts +
+      "</select>" +
+      '<select class="inp" id="bkLeadFilter" style="max-width:200px;min-width:0" title="What this visit did. That is the other list they then appear on.">' +
+      outcomeOpts +
       "</select>" +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadRefresh">Refresh</button>' +
       "</div>" +
@@ -622,10 +666,8 @@
       esc(rows.length) +
       '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">' +
       (state.origin === "portal"
-        ? state.outcome === "all"
-          ? "Booking OTP asked for a code. Parent portal opened Booking from the family hub and did not."
-          : "Rows with this outcome and entry."
-        : "This origin is not the OTP list.") +
+        ? "Only looked stays on Leads. Waiting list, Trial and Term also show on those lists. Term shows on Active. An old client who comes back is Registered (OLD CLIENT)."
+        : "This origin is the office list. Add / update potential client is only here.") +
       "</div></div></div>" +
       '<div class="card"><div class="card-pad" style="overflow:auto;padding:0;min-width:0">' +
       '<table class="tbl tbl--center tbl--dense" id="bkLeadTable">' +
@@ -635,7 +677,7 @@
       (cols.activity ? "<th>Activity</th>" : "") +
       (cols.enquiry ? "<th>Enquiry</th>" : "") +
       '<th title="OTP asked for a code on Booking. Parent portal opened Booking from the family hub.">Lead</th>' +
-      '<th title="New visitor is the first time. Registered is someone we already know who is not ACTIVE: OLD, waiting list, or trial. ACTIVE already has a place.">Type</th>' +
+      '<th title="New visitor is the first time. Registered is someone we already know who is not ACTIVE: OLD CLIENT, WAITING LIST, TRIAL, or REGISTERED. ACTIVE already has a place.">Type</th>' +
       (cols.track
         ? '<th title="Office list only. Booked takes the email off the marketing list. It does not change Outcome.">Track status</th>'
         : "") +
@@ -763,8 +805,17 @@
     if (origin) {
       origin.addEventListener("change", function () {
         state.origin = String(origin.value || "all");
+        if (state.origin === "portal") state.trackFilter = "all";
         state.selected = {};
         void reload(host);
+      });
+    }
+    var person = host.querySelector("#bkLeadPerson");
+    if (person) {
+      person.addEventListener("change", function () {
+        state.person = String(person.value || "all");
+        renderHost(host);
+        wire(host);
       });
     }
     if (trackFilter) {

@@ -31,9 +31,44 @@ function nameKey(raw: unknown): string {
     .trim();
 }
 
+/** Had a place and left. A first name stays here only when that roster name is one child. */
+const OLD_CLIENT_NAMES = new Set([
+  "aboodi patel",
+  "abodi pa",
+  "abodi",
+  "amir kais",
+  "bediako mensah",
+  "bediako",
+  "cayra mensah",
+  "cayra",
+  "kareena",
+  "kareena al hassani",
+  "junaid",
+  "junaid fussaini",
+  "patrick dhennin",
+  "thushyan",
+  "yassir",
+  "yassir boujettif",
+  "summer messing",
+  "chaitanya",
+  "chaitanya marasini",
+  "eddie ritzema",
+  "eddie ri",
+  "yaqoub ismail",
+  "yaqoub",
+  "jad",
+  "jad zerti",
+]);
+
+function isBlankSeat(name: string): boolean {
+  return !name || /^(no participant|no client|closed|available|home|manager|open|open slot)$/.test(name);
+}
+
 /**
  * Outcome is what this visit did: Only looked, Waiting list, Trial, Term.
- * Type is who they were: new visitor, known without the parent portal, or ACTIVE.
+ * Type is who they were on that visit: new, Registered (OLD CLIENT, TRIAL,
+ * WAITING LIST, REGISTERED), or ACTIVE. An old client who comes back is
+ * Registered (OLD CLIENT), even when this visit then books a trial or a term.
  */
 async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Record<string, unknown>[]) {
   const emails = [
@@ -41,6 +76,49 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
       leads.map((r) => String(r.email || "").trim().toLowerCase()).filter(Boolean),
     ),
   ];
+  const inClass = new Set<string>();
+  const standing = new Set<string>();
+  const history = new Set<string>();
+  const namesByEmail = new Map<string, string[]>();
+  const emailSet = new Set(emails);
+  if (emails.length) {
+    const [peopleRes, rosterRes, docsRes] = await Promise.all([
+      admin.from("portal_participants").select("display_name, in_class").limit(2000),
+      admin
+        .from("portal_roster_rows")
+        .select("client_name, session_date, status")
+        .eq("status", "active")
+        .limit(2000),
+      admin.from("portal_participant_documents").select("parent_email, participant_name").limit(2000),
+    ]);
+    if (peopleRes.error) console.warn("[portal-admin-booking-leads-list] people", peopleRes.error.message);
+    if (rosterRes.error) console.warn("[portal-admin-booking-leads-list] roster", rosterRes.error.message);
+    if (docsRes.error) console.warn("[portal-admin-booking-leads-list] child docs", docsRes.error.message);
+    for (const row of peopleRes.data || []) {
+      const n = nameKey(row.display_name);
+      if (n && row.in_class === true) inClass.add(n);
+    }
+    for (const row of rosterRes.data || []) {
+      const n = nameKey(row.client_name);
+      if (isBlankSeat(n)) continue;
+      const day = String(row.session_date || "").slice(0, 10);
+      if (!day) standing.add(n);
+      else if (day < "2026-09-01") history.add(n);
+    }
+    for (const row of docsRes.data || []) {
+      const em = String(row.parent_email || "").trim().toLowerCase();
+      const n = nameKey(row.participant_name);
+      if (!em || !n || !emailSet.has(em)) continue;
+      const list = namesByEmail.get(em) || [];
+      if (!list.includes(n)) list.push(n);
+      namesByEmail.set(em, list);
+    }
+  }
+  const isCurrentName = (n: string) =>
+    standing.has(n) || (inClass.has(n) && !OLD_CLIENT_NAMES.has(n));
+  const isOldName = (n: string) =>
+    !standing.has(n) && (OLD_CLIENT_NAMES.has(n) || (history.has(n) && !inClass.has(n)));
+
   const byEmail = new Map<string, { at: number; kind: VisitKind; notes: string }[]>();
   const byName = new Map<string, { at: number; kind: VisitKind; notes: string }[]>();
   if (emails.length) {
@@ -101,10 +179,18 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
     const priorPlace = prior.some((r) => r.kind === "term" && /ops_synced|booking_paid/i.test(r.notes));
     const formAt = new Date(String(lead.form_submitted_at || "")).getTime();
     const formBefore = Number.isFinite(formAt) && Number.isFinite(visitAt) && formAt < visitAt - windowMs;
+    const childNames = namesByEmail.get(em) || [];
+    const anyCurrent = childNames.some((n) => isCurrentName(n));
+    const anyOld = childNames.some((n) => isOldName(n));
 
     let person_type: "new" | "registered" | "active" = "new";
     let person_bucket = "";
-    if (priorPlace) {
+    if (priorPlace && anyCurrent) {
+      person_type = "active";
+    } else if (anyOld && !anyCurrent) {
+      person_type = "registered";
+      person_bucket = "OLD CLIENT";
+    } else if (priorPlace) {
       person_type = "active";
     } else if (priorTrial) {
       person_type = "registered";
@@ -115,9 +201,7 @@ async function attachLeadVisit(admin: ReturnType<typeof createClient>, leads: Re
     } else if (formBefore) {
       person_type = "registered";
       person_bucket = "REGISTERED";
-    } else if (client === "active_client" && visit_outcome === "looked") {
-      person_type = "active";
-    } else if (parentPortal && visit_outcome === "looked") {
+    } else if ((client === "active_client" || parentPortal) && visit_outcome === "looked" && !anyOld) {
       person_type = "active";
     }
 

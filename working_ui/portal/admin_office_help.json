@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v213",
+  "version": "2026-10-03-v214",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -839,13 +839,13 @@
           "steps": [
             "The page opens on Portal OTP only. Each row is a parent who asked for a code, or who opened Booking from the family hub.",
             "Lead is how they came in. OTP means they asked for a code on the booking page. Parent portal means they were already in the family hub. No code.",
-            "Type is who they were on that visit. New visitor, First time: we did not know them. Registered: we already knew them and they are not ACTIVE. The line under it is TRIAL, WAITING LIST, or REGISTERED. ACTIVE already has a place.",
-            "Outcome is what that visit did. Only looked, Waiting list, Trial, or Term. A first OTP visit that books a trial is Trial. Coming back later with OTP and booking the term is Term.",
+            "Type is who they were on that visit. New visitor, First time: we did not know them. Registered: we already knew them and they are not ACTIVE. The line under it is OLD CLIENT, TRIAL, WAITING LIST, or REGISTERED. An old client who comes back as a visitor is Registered (OLD CLIENT). ACTIVE already has a place.",
+            "Outcome is what that visit did. Only looked stays on Leads. Waiting list also shows on WAITING. Trial also shows on TRIAL. Term also shows on Active. A first OTP visit that books a trial is Trial. Coming back later with OTP and booking the term is Term.",
             "Activity and Enquiry stay hidden when every row on screen is empty. They show on the office list, when you typed a note.",
             "Track status is not on the Portal OTP table. It stays on the office list. Booked takes that email off the marketing list. It does not change Outcome.",
-            "Filter first with Search, Origin, Track status and Outcome. Write to this filter sits under those filters. Tick a row only when you want to write to that parent. Send via Family broadcast, or Copy emails / Copy phones.",
+            "On Portal OTP the filters are Search, Lead, Type and Outcome. Track status is not on that screen. Write to this filter sits under those filters. Tick a row only when you want to write to that parent. Send via Family broadcast, or Copy emails / Copy phones.",
             "Email interest is an old office file. Open it from Origin only when you want a marketing send.",
-            "Add / update potential client is only for a parent you type in by hand. Save potential does not give them a place."
+            "Add / update potential client is not on the OTP screen. Open Origin: Office potential clients when you need to type a parent by hand. Save potential does not give them a place."
           ],
           "tips": [
             "Visits to the Booking Portal are not on this page. A visit is not a lead."
@@ -857,13 +857,13 @@
             "steps": [
               "La pagina abre en Portal OTP. Cada fila es un padre que pidio un codigo, o que abrio Booking desde el hub de la familia.",
               "Lead es como entraron. OTP: pidieron un codigo en Booking. Parent portal: ya estaban en el hub. Sin codigo.",
-              "Type es quien eran en esa visita. New visitor, First time: no los conociamos. Registered: ya los conociamos y no son ACTIVE. Debajo sale TRIAL, WAITING LIST o REGISTERED. ACTIVE ya tiene plaza.",
-              "Outcome es lo que hizo esa visita. Only looked, Waiting list, Trial o Term. La primera vez con OTP que reserva un trial es Trial. Si vuelve despues con OTP y reserva el term, es Term.",
+              "Type es quien eran en esa visita. New visitor, First time: no los conociamos. Registered: ya los conociamos y no son ACTIVE. Debajo sale OLD CLIENT, TRIAL, WAITING LIST o REGISTERED. Un OLD que vuelve como visitante es Registered (OLD CLIENT). ACTIVE ya tiene plaza.",
+              "Outcome es lo que hizo esa visita. Only looked se queda en Leads. Waiting list tambien sale en WAITING. Trial tambien sale en TRIAL. Term tambien sale en Active. La primera vez con OTP que reserva un trial es Trial. Si vuelve despues con OTP y reserva el term, es Term.",
               "Activity y Enquiry no salen si todas las filas de la pantalla estan vacias. Salen en la lista de oficina, cuando escribiste una nota.",
               "Track status no esta en la tabla de Portal OTP. Se queda en la lista de oficina. Booked saca ese email de la lista de marketing. No cambia Outcome.",
-              "Filtra primero con Search, Origin, Track status y Outcome. Write to this filter va debajo de esos filtros. Marca una fila solo cuando quieras escribir a ese padre. Send via Family broadcast, o Copy emails / Copy phones.",
+              "En Portal OTP los filtros son Search, Lead, Type y Outcome. Track status no esta en esa pantalla. Write to this filter va debajo de esos filtros. Marca una fila solo cuando quieras escribir a ese padre. Send via Family broadcast, o Copy emails / Copy phones.",
               "Email interest es un archivo viejo de oficina. Abrelo en Origin solo cuando quieras un envio de marketing.",
-              "Add / update potential client es solo para un padre que escribes a mano. Save potential no le da una plaza."
+              "Add / update potential client no esta en la pantalla OTP. Abre Origin: Office potential clients cuando quieras escribir un padre a mano. Save potential no le da una plaza."
             ],
             "tips": [
               "Las visitas al Booking Portal no estan en esta pagina. Una visita no es un lead."
@@ -873,7 +873,7 @@
         {
           "id": "leads_what",
           "title": "What Leads is",
-          "summary": "A lead opened Booking. Entry is Parent portal (no code) or Booking OTP (asked for a code).",
+          "summary": "A lead opened Booking. Lead is OTP or Parent portal. Outcome is what that visit did.",
           "where": "Services & places → Leads",
           "keywords": [
             "leads",
@@ -884,11 +884,10 @@
             "potential"
           ],
           "steps": [
-            "This page is not the child list. Entry Parent portal means they opened Booking from the family hub. Entry Booking OTP means they asked for a code.",
-            "Outcome Only looked: they used the code and did not finish the form.",
-            "Outcome Registered: they finished the registration form and have no place yet.",
-            "Outcome Already a client, only looked: they already have a child in class and came back without a new form.",
-            "Outcome Already a client, registered again: they already have a child here and sent a new registration.",
+            "This page is not the child list. Lead Parent portal means they opened Booking from the family hub. Lead OTP means they asked for a code.",
+            "Outcome Only looked: they stay on Leads. They did not join another list.",
+            "Outcome Waiting list: they also show on WAITING. Outcome Trial: they also show on TRIAL. Outcome Term: they also show on Active.",
+            "Type is who they were. New visitor is the first time. Registered (OLD CLIENT) is an old client who came back as a visitor. ACTIVE already has a place.",
             "Email interest is an old office file under Origin. It is not the lead list."
           ],
           "tips": [
@@ -896,14 +895,13 @@
           ],
           "es": {
             "title": "Que es Leads",
-            "summary": "Un lead abrio Booking. Entry es Parent portal (sin codigo) o Booking OTP (pidio un codigo).",
+            "summary": "Un lead abrio Booking. Lead es OTP o Parent portal. Outcome es lo que hizo esa visita.",
             "where": "Services & places → Leads",
             "steps": [
-              "Esta pagina no es la lista de ninos. Entry Parent portal: abrieron Booking desde el hub de la familia. Entry Booking OTP: pidieron un codigo.",
-              "Outcome Only looked: uso el codigo y no termino el formulario.",
-              "Outcome Registered: termino el formulario de registro y todavia no tiene plaza.",
-              "Outcome Already a client, only looked: ya tiene un nino en clase y volvio sin un formulario nuevo.",
-              "Outcome Already a client, registered again: ya tiene un nino aqui y mando un registro nuevo.",
+              "Esta pagina no es la lista de ninos. Lead Parent portal: abrieron Booking desde el hub. Lead OTP: pidieron un codigo.",
+              "Outcome Only looked: se quedan en Leads. No pasan a otra lista.",
+              "Outcome Waiting list: tambien salen en WAITING. Outcome Trial: tambien salen en TRIAL. Outcome Term: tambien salen en Active.",
+              "Type es quien eran. New visitor es la primera vez. Registered (OLD CLIENT) es un cliente OLD que volvio como visitante. ACTIVE ya tiene plaza.",
               "Email interest es un archivo viejo de oficina, dentro de Origin. No es la lista de leads."
             ],
             "tips": [
@@ -925,12 +923,12 @@
             "otp"
           ],
           "steps": [
-            "Add / update potential client is a form. You type a parent by hand: name, email, phone, activity, track status, and a note. Email is required. Save potential stores that parent.",
-            "Track status is optional. Leave it on New. Booked takes that email off the marketing list. Following up, Waiting, Not booking and Closed are only if you want your own mark. It does not change Outcome.",
+            "Add / update potential client is not on Portal OTP. Set Origin to Office potential clients to type a parent by hand. Email is required. Save potential stores that parent on the office list.",
+            "Track status is on the office origin only. Leave it on New. Booked takes that email off the marketing list. It does not change Outcome.",
             "OTP leads is the number of rows in the current filter. It is people, not visits.",
             "Write to this filter sits under the filters. It is not a filter. The line says how many you ticked, how many viewed a service, and how many are already a client.",
-            "Select all shown ticks every row in the current filter. Select viewed services ticks people who opened a service. Select existing clients ticks parents who already have a child here. Clear unticks. None of these book a place.",
-            "Search looks at name, email, phone, and the enquiry note. Origin stays on Portal OTP only. The other origins are the old email file and people the office typed in. Outcome narrows the table. Refresh reloads it.",
+            "Select all shown ticks every row in the current filter. Select viewed services ticks people who opened a service. Select ACTIVE ticks parents who already have a place. Clear unticks. None of these book a place.",
+            "Search looks at name, email, phone, and the enquiry note. On Portal OTP the other filters are Lead, Type and Outcome. Origin stays on Portal OTP only. Refresh reloads it.",
             "Each table row is one parent. Outcome says what they did after the code. Open PDF opens a form when one is linked. The date is the last activity."
           ],
           "tips": [
@@ -941,12 +939,12 @@
             "summary": "La pagina abre en OTP leads. Outcome filtra la tabla. El numero son esas filas.",
             "where": "Services & places → Leads",
             "steps": [
-              "Add / update potential client es un formulario. Escribes a mano nombre, email, telefono, actividad, track status y una nota. El email es obligatorio. Save potential guarda a ese padre.",
-              "Track status es opcional. Dejalo en New. Booked saca ese email de la lista de marketing. Following up, Waiting, Not booking y Closed son solo si quieres tu propia marca. No cambia Outcome.",
+              "Add / update potential client no esta en Portal OTP. Pon Origin en Office potential clients para escribir un padre a mano. El email es obligatorio. Save potential lo guarda en la lista de oficina.",
+              "Track status solo esta en el origen de oficina. Dejalo en New. Booked saca ese email de la lista de marketing. No cambia Outcome.",
               "OTP leads es el numero de filas del filtro actual. Son personas, no visitas.",
               "Write to this filter va debajo de los filtros. No es un filtro. La linea dice cuantos marcaste, cuantos vieron un servicio y cuantos ya son cliente.",
-              "Select all shown marca todas las filas del filtro. Select viewed services marca quien abrio un servicio. Select existing clients marca padres que ya tienen un nino aqui. Clear quita las marcas. Nada de esto reserva una plaza.",
-              "Search mira nombre, email, telefono y la nota. Origin se queda en Portal OTP only. Los otros origenes son el archivo viejo de emails y la gente que escribio la oficina. Outcome estrecha la tabla. Refresh la recarga.",
+              "Select all shown marca todas las filas del filtro. Select viewed services marca quien abrio un servicio. Select ACTIVE marca padres que ya tienen plaza. Clear quita las marcas. Nada de esto reserva una plaza.",
+              "Search mira nombre, email, telefono y la nota. En Portal OTP los otros filtros son Lead, Type y Outcome. Origin se queda en Portal OTP only. Refresh la recarga.",
               "Cada fila es un padre. Outcome dice que hizo despues del codigo. Open PDF abre un formulario cuando hay uno enlazado. La fecha es la ultima actividad."
             ],
             "tips": []
@@ -965,8 +963,8 @@
             "select"
           ],
           "steps": [
-            "Use Search, Origin, Track status and Outcome first, so the table is the group you want. Write to this filter is under those filters.",
-            "Tick the rows, or use Select all shown, Select viewed services, or Select existing clients.",
+            "On Portal OTP use Search, Lead, Type and Outcome first, so the table is the group you want. Track status is on the office origin only. Write to this filter is under those filters.",
+            "Tick the rows, or use Select all shown, Select viewed services, or Select ACTIVE.",
             "Copy emails puts the ticked addresses on the clipboard. Copy phones does the same for numbers.",
             "Send via Family broadcast opens the family message with those people already chosen.",
             "Sending a message does not book a place and does not move the child to REGISTERED or ACTIVE."
@@ -979,8 +977,8 @@
             "summary": "Filtra primero, luego marca filas y envia. Eso escribe al padre. No reserva una plaza.",
             "where": "Services & places → Leads → Write to this filter",
             "steps": [
-              "Usa Search, Origin, Track status y Outcome primero, para que la tabla sea el grupo que quieres. Write to this filter va debajo de esos filtros.",
-              "Marca las filas, o usa Select all shown, Select viewed services o Select existing clients.",
+              "En Portal OTP usa Search, Lead, Type y Outcome primero, para que la tabla sea el grupo que quieres. Track status solo esta en el origen de oficina. Write to this filter va debajo de esos filtros.",
+              "Marca las filas, o usa Select all shown, Select viewed services o Select ACTIVE.",
               "Copy emails copia los emails marcados. Copy phones hace lo mismo con los telefonos.",
               "Send via Family broadcast abre el mensaje a familias con esa gente ya elegida.",
               "Enviar un mensaje no reserva una plaza y no mueve al nino a REGISTERED ni a ACTIVE."
@@ -994,7 +992,7 @@
           "id": "leads_add",
           "title": "How to add a parent who never opened the portal",
           "summary": "Use Add / update potential client. They join the outreach list unless you mark them Booked.",
-          "where": "Services & places → Leads → Add / update potential client",
+          "where": "Services & places → Leads → Origin: Office potential clients",
           "keywords": [
             "save potential",
             "new lead",
@@ -1004,8 +1002,8 @@
             "Type the parent name, email, and phone. Email is required.",
             "Activity is a note such as Aquatic Wed. Enquiry / notes is whatever they asked.",
             "Leave track status as New unless you already know they will not book, or they are Booked.",
-            "Save potential. The row appears in the table.",
-            "To see only people the office typed in, set Origin to Office potential clients."
+            "Set Origin to Office potential clients. The form is on that list, not on Portal OTP.",
+            "Save potential. The row appears in that office list."
           ],
           "tips": [
             "Booked takes them off the automatic marketing list. Every other track status keeps them on it."
@@ -1013,13 +1011,13 @@
           "es": {
             "title": "Como anadir un padre que nunca abrio el portal",
             "summary": "Usa Add / update potential client. Entra en la lista de contacto salvo que lo marques Booked.",
-            "where": "Services & places → Leads → Add / update potential client",
+            "where": "Services & places → Leads → Origin: Office potential clients",
             "steps": [
               "Escribe nombre del padre, email y telefono. El email es obligatorio.",
               "Activity es una nota, por ejemplo Aquatic Wed. Enquiry / notes es lo que preguntaron.",
               "Deja track status en New salvo que ya sepas que no van a reservar, o que estan Booked.",
-              "Save potential. La fila sale en la tabla.",
-              "Para ver solo gente que escribio la oficina, pon Origin en Office potential clients."
+              "Pon Origin en Office potential clients. El formulario esta en esa lista, no en Portal OTP.",
+              "Save potential. La fila sale en esa lista de oficina."
             ],
             "tips": [
               "Booked les saca de la lista automatica de marketing. Cualquier otro track status les deja dentro."
