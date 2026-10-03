@@ -465,7 +465,7 @@ body.comms-embed .comms-shell {
 .comms-receipt { font-weight: 800; margin-left: 4px; }
 .comms-receipt.is-sent { color: var(--muted); }
 .comms-receipt.is-delivered { color: var(--text); }
-.comms-receipt.is-read { color: var(--blueDeep); }
+.comms-receipt.is-read { color: var(--ok); }
 .comms-file {
   display: inline-flex;
   gap: 8px;

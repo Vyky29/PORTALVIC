@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v176",
+  "version": "2026-10-03-v177",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1700,6 +1700,8 @@
             "read",
             "delivered",
             "leido",
+            "hora",
+            "verde",
             "entregado",
             "presence",
             "communications"
@@ -1708,10 +1710,12 @@
             "STAFF on the admin bar lists people who have the staff app open. Communications alone does not put them there.",
             "The green dot next to a name in Communications means that person has the Communications page open right now.",
             "Delivered means their Communications page received the message.",
-            "Read means they opened this conversation with the screen in front. Opening another chat, or leaving this one in the background, stays on delivered."
+            "Read means they opened this conversation with the screen in front. Opening another chat, or leaving this one in the background, stays on delivered.",
+            "Read is green. The time beside it is when they opened this conversation."
           ],
           "tips": [
-            "A green dot with delivered, not read, means the chat app is open and this conversation has not been opened."
+            "A green dot with delivered, not read, means the chat app is open and this conversation has not been opened.",
+            "On the same day the read time is only the clock, for example read 11:20. Another day also shows the date."
           ]
         },
         {

@@ -146,6 +146,21 @@ function fmtTime(iso) {
   return d.toLocaleString("en-GB", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" });
 }
 
+function fmtReadAt(iso, sentIso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const sent = sentIso ? new Date(sentIso) : null;
+  const sameDay =
+    sent &&
+    !Number.isNaN(sent.getTime()) &&
+    d.getFullYear() === sent.getFullYear() &&
+    d.getMonth() === sent.getMonth() &&
+    d.getDate() === sent.getDate();
+  if (sameDay) return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return fmtTime(iso);
+}
+
 function staffPhotoKeyFromLabel(name) {
   const n = String(name || "")
     .toLowerCase()
@@ -489,7 +504,8 @@ function receiptMeta(m, show) {
   let text = "sent";
   if (read) {
     cls = "is-read";
-    text = "read";
+    const when = fmtReadAt(m.read_at, m.created_at);
+    text = when ? "read " + when : "read";
   } else if (delivered) {
     cls = "is-delivered";
     text = "delivered";
