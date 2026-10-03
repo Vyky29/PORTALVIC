@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261003-hub-flat" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261003-hub-mosaic2" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -31817,17 +31817,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       opts = opts || {};
       var cat = opsHubCatById(id);
       var actions = opsHubCatActions(cat.id);
-      var n = actions.length;
-      var grid = 'ops-hub-flat__grid';
-      if(n >= 6) grid = 'dash-hub__grid--6 ops-hub-flat__grid';
-      else if(n === 4) grid = 'dash-hub__grid--4 ops-hub-flat__grid';
-      else if(n === 3) grid = 'dash-hub__grid--3 ops-hub-flat__grid';
       return portalDashPanel({
         title: cat.label,
         subtitle: '',
         iconId: cat.icon,
         panelClass: cat.panel+' ops-hub-panel--'+cat.id,
-        gridClass: grid,
+        gridClass: 'ops-hub-flat__grid',
         tiles: opsHubDashTilesHtml(actions, cat.tone),
         ariaLabel: cat.label,
         omitHead: !!opts.omitHead
@@ -31853,10 +31848,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       window.__ADMIN_PAGE_INFO = { viewId: 'nav_hub', title: 'Operations Hub', intro: '', lessonIds: ['ops_hub_chips'] };
-      var boards = OPS_HUB_CATS.filter(function(c){ return c.id !== 'today'; }).map(function(c){
+      var boards = OPS_HUB_CATS.map(function(c){
         return opsHubCatBoardHtml(c.id);
       }).join('');
-      boards = opsHubCatBoardHtml('today') + boards;
       return (
         '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub ops-hub--flat">' +
         '<header class="ops-hub__intro">' +
@@ -31867,7 +31861,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>' +
         '</header>' +
         '<div class="ops-hub-flat">' +
-        '<div class="ops-hub-flat__board">' + boards + '</div>' +
+        boards +
         '<aside class="ops-hub-flat__cal" aria-label="Calendar">' + opsHubGlanceHtml() + '</aside>' +
         '</div>' +
         '</div>'
