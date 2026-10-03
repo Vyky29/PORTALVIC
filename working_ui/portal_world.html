@@ -160,7 +160,10 @@
     }
     .island:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
     .island.is-picked { box-shadow: 0 0 0 8px rgba(244,183,64,.55), 0 16px 0 rgba(0,0,0,.12), 0 22px 36px rgba(0,0,0,.22); }
-    .island.is-hot { animation: pulse 1.1s ease; }
+    .island.is-hot {
+      box-shadow: 0 0 0 8px rgba(244,183,64,.9), 0 16px 0 rgba(0,0,0,.12), 0 22px 36px rgba(0,0,0,.22);
+      animation: pulse 1.1s ease;
+    }
     @keyframes pulse {
       0% { transform: scale(1); }
       40% { transform: scale(1.03); }
@@ -227,7 +230,7 @@
     .traveler {
       position: absolute;
       z-index: 4;
-      transform: translate(-50%, -130%);
+      transform: translate(-50%, -115%);
       min-width: 0;
       max-width: 140px;
       padding: 4px 8px;
@@ -355,7 +358,7 @@
     <header class="top">
       <div>
         <h1>El mundo de los portales</h1>
-        <p>Cinco islas. Nombre solido: vive ahi. Nombre con borde: puede entrar. Los caminos ensenan el mecanismo, no el parte de hoy.</p>
+        <p>Cinco islas, por lo que hace cada una. Un paso puede encender varias a la vez. No es el parte de hoy.</p>
       </div>
       <div class="stories" id="stories" role="tablist" aria-label="Caminos"></div>
     </header>
@@ -381,17 +384,13 @@
       host: "portalvic.vercel.app/ceo_dashboard",
       short: "portalvic / CEO",
       x: 34, y: 15,
-      chips: ["Finance", "Insights", "Visitantes"],
+      chips: ["Finance", "Visitantes", "Padres"],
       home: [],
-      visit: [
-        { id: "victor", name: "Victor" },
-        { id: "javi", name: "Javi" },
-        { id: "raul", name: "Raul" }
-      ],
+      visit: [],
       happens: [
-        "Snapshot, finance de todo el ano, e insights de la compania.",
-        "Pueden abrir Activity log, padres en el portal, portal activity, staff readiness y visitantes del Booking.",
-        "Desde aqui saltan a Admin o a Staff. El dia no se opera en esta isla."
+        "Mira finance, visitantes del Booking y quien esta dentro del Parent.",
+        "Activity log, portal activity y staff readiness salen de aqui.",
+        "No opera el dia. El dia es Admin."
       ]
     },
     {
@@ -402,19 +401,15 @@
       host: "www.clubsensational.org/bookingportal",
       short: "clubsensational.org/booking",
       x: 14, y: 44,
-      chips: ["Plazas 30 min", "OTP", "Registro"],
-      home: [
-        { id: "visitors", name: "Visitantes" },
-        { id: "leads", name: "LEADS" }
-      ],
-      visit: [
-        { id: "families", name: "Con cuenta" }
-      ],
+      chips: ["OTP", "Registro", "Cuenta", "Soft hold"],
+      home: [],
+      visit: [],
       happens: [
-        "La familia mira plazas. Natacion es siempre de 30 minutos.",
-        "Si pide el codigo y no termina el registro, se queda en LEADS.",
-        "Si termina el formulario, pasa a REGISTERED y sigue el pago en Parent.",
-        "Un enlace de pago sin cobrar deja la plaza en hold 30 minutos."
+        "Quien entra: sin cuenta, con OTP sin terminar el registro (LEAD), o Connected as su cuenta (PIN o codigo por email).",
+        "OTP pide el codigo. Si no acaba el formulario, se queda en LEADS.",
+        "Registro terminado pasa a REGISTERED. Aun no es CLIENT. El pago sigue en Parent.",
+        "Soft hold: un trial pagado reserva la plaza del termino en el offer. Booking la enseña ocupada. Nadie mas la coge. Si el dia acaba sin cerrar el termino, el hold se suelta y la plaza vuelve.",
+        "El hold de 30 minutos es otro: el enlace de pago sin cobrar ocupa la plaza media hora. Si no pagan, queda libre. No es el soft hold."
       ]
     },
     {
@@ -425,20 +420,15 @@
       host: "portalvic.vercel.app",
       short: "portalvic / Admin",
       x: 34, y: 48,
-      chips: ["Overview", "Schedule", "Places"],
-      home: [
-        { id: "sevitha", name: "Sevitha" }
-      ],
-      visit: [
-        { id: "victor", name: "Victor" },
-        { id: "javi", name: "Javi" },
-        { id: "raul", name: "Raul" }
-      ],
+      chips: ["Overview", "Schedule", "Places", "Leads", "Finance", "Holds"],
+      home: [],
+      visit: [],
       happens: [
-        "Sessions Overview es el look-here del dia.",
-        "Schedule and Covers, day off y el pago de una plaza escriben el dia.",
-        "Places, Leads, CLIENT, REGISTERED y WAITING viven aqui.",
-        "La campana de oficina (tarde, cancel, incident) tambien."
+        "Sessions Overview es el look-here del dia. Schedule and Covers escribe el cover, la ausencia de un dia y el day off.",
+        "Places, Leads, CLIENT, REGISTERED y WAITING. Finance: re-enrolments, payments, absents y cancelled services.",
+        "Al pagar un registro, a la vez entran Schedule, Overview y Places. Staff Today y Parent se enteran en el mismo paso.",
+        "Soft hold de pago (buffer bajo o cobro fallido): la oficina puede recordar, retener una sesion, soltar o cortar. El cron de la manana solo pone o quita ese soft hold. No cancela la plaza solo.",
+        "La campana (tarde, cancel, incident) vive aqui."
       ]
     },
     {
@@ -449,24 +439,15 @@
       host: "clubsensational-staff.vercel.app",
       short: "clubsensational-staff",
       x: 56, y: 44,
-      chips: ["Today", "Feedback", "Timesheet"],
-      home: [
-        { id: "john", name: "John" },
-        { id: "berta", name: "Berta" },
-        { id: "michelle", name: "Michelle" },
-        { id: "team", name: "Equipo" }
-      ],
-      visit: [
-        { id: "victor", name: "Victor" },
-        { id: "javi", name: "Javi" },
-        { id: "raul", name: "Raul" },
-        { id: "sevitha", name: "Sevitha" }
-      ],
+      chips: ["Today", "Feedback", "Timesheet", "Expenses"],
+      home: [],
+      visit: [],
       happens: [
-        "Today, feedback, timesheet y cancelaciones del trabajador.",
-        "John, Berta y Michelle son leads de programa en esta misma app.",
-        "Un cambio de horario se ve en el halo y en Quick menu, no como anuncio que bloquea.",
-        "Javier Marquez (natacion) esta en este equipo. No es Javi, el director."
+        "Today es su dia. Un cover, una sesion nueva o una ausencia que escribe Admin aparece aqui.",
+        "Feedback cierra la sesion. A la vez: Overview en Admin pasa a verde y Parent lo lee en la Today card.",
+        "Si falta feedback, el halo y Quick menu avisan en Staff y la campana en Admin. No bloquea la app.",
+        "Timesheet, expenses, disruption y policies son de este portal. No cambian Places ni el pago. Eso es Admin.",
+        "Una ausencia que marca la familia en Parent sale en Today. La plaza del termino no se borra."
       ]
     },
     {
@@ -477,109 +458,87 @@
       host: "www.clubsensational.org/parent",
       short: "clubsensational.org/parent",
       x: 34, y: 82,
-      chips: ["Chips", "Team", "Facturas"],
-      home: [
-        { id: "clients", name: "CLIENT" }
-      ],
-      visit: [
-        { id: "registered", name: "REGISTERED" }
-      ],
+      chips: ["Today", "Bookings", "Invoices", "Absent", "Team", "Notes"],
+      home: [],
+      visit: [],
       happens: [
-        "CLIENT ve su chip del termino, Team, facturas y el PIN.",
-        "Si el club cancela, el chip sale cancelado.",
-        "Si hay cover con nombre, Team muestra ese nombre.",
-        "Day off del instructor y COVER NEEDED no se ven aqui."
+        "Today card: la sesion de hoy, o la siguiente si hoy no hay.",
+        "Bookings: lo que ese nino tiene reservado. Desde aqui tambien se abre Booking para una plaza nueva.",
+        "Invoices: facturas de la familia. Si hay una sin pagar, ese acceso se marca.",
+        "Tambien estan Sessions, Absent, Team, Consents y Notes.",
+        "No ve el day off del instructor ni COVER NEEDED. Si el cover tiene nombre, Team muestra ese nombre.",
+        "Marcar Absent avisa a la vez a Admin y a Staff Today. La plaza del termino sigue."
       ]
     }
   ];
 
-  var PEOPLE = {
-    victor: {
-      name: "Victor",
-      line: "Elige al entrar: CEO, Admin o Staff. No se queda forzado en Admin."
-    },
-    javi: {
-      name: "Javi",
-      line: "Director (Palankas Arranz). Mismas tres puertas que Victor. Javier Marquez es otro, el instructor, y vive en Staff."
-    },
-    raul: {
-      name: "Raul",
-      line: "Director. Elige CEO, Admin o Staff. No entra solo a mirar: puede operar el dia en Admin."
-    },
-    sevitha: {
-      name: "Sevitha",
-      line: "Vive en Admin. Es la ops del dia. Puede abrir Staff. No entra en CEO. info@ es el mismo acceso."
-    },
-    john: { name: "John", line: "Lead de programa. Su casa es Staff, con herramientas de lead. No es Admin." },
-    berta: { name: "Berta", line: "Lead de programa. Su casa es Staff, con herramientas de lead. No es Admin." },
-    michelle: { name: "Michelle", line: "Lead de programa. Su casa es Staff, con herramientas de lead. No es Admin." },
-    team: {
-      name: "Equipo",
-      line: "Instructores y support workers. Su casa es Staff: Today, feedback y timesheet. No ven el tablero de oficina."
-    },
-    visitors: { name: "Visitantes", line: "Entran al Booking sin cuenta y miran plazas." },
-    leads: { name: "LEADS", line: "Pidieron el codigo (OTP) y no terminaron el registro. Aun no son CLIENT." },
-    families: { name: "Con cuenta", line: "Una familia que ya tiene cuenta puede entrar al Booking y ver Connected as." },
-    clients: { name: "CLIENT", line: "Tienen plaza este termino. Viven en Parent y en Sessions." },
-    registered: { name: "REGISTERED", line: "Terminaron el formulario y nunca han tenido plaza. Pasan por Parent para pagar, y aun no son CLIENT." }
-  };
-
   var LINKS = [
-    { id: "b-a", from: "booking", to: "admin", label: "Lead, plaza y pago" },
-    { id: "b-p", from: "booking", to: "parent", label: "Registro y finish-booking" },
-    { id: "a-s", from: "admin", to: "staff", label: "Horario, cover, sesion nueva" },
-    { id: "a-p", from: "admin", to: "parent", label: "Chip, factura, PIN" },
-    { id: "s-p", from: "staff", to: "parent", label: "Nota de la sesion" },
-    { id: "a-c", from: "admin", to: "ceo", label: "Cifras y actividad" }
+    { id: "b-a", from: "booking", to: "admin", label: "OTP, registro, soft hold y pago" },
+    { id: "b-p", from: "booking", to: "parent", label: "Cuenta, finish-booking y Today card" },
+    { id: "a-s", from: "admin", to: "staff", label: "Today, cover, sesion nueva y feedback" },
+    { id: "a-p", from: "admin", to: "parent", label: "Today card, Bookings, Invoices y Absent" },
+    { id: "s-p", from: "staff", to: "parent", label: "Feedback que sale en la Today card" },
+    { id: "a-c", from: "admin", to: "ceo", label: "Cifras, visitantes y padres en el portal" }
   ];
 
   var STORIES = [
     {
       id: "lead",
-      label: "Lead a cliente",
-      actor: "Familia",
+      label: "Cuenta y registro",
+      actor: "A la vez",
       steps: [
-        { island: "booking", link: "", text: "Una familia entra al Booking y mira una plaza de 30 min." },
-        { island: "booking", link: "", text: "Pide el codigo y no termina. Se queda en LEADS. Si termina el formulario, pasa a REGISTERED." },
-        { island: "parent", link: "b-p", text: "El registro y el enlace de pago viven en el camino de Parent (finish-booking)." },
-        { island: "admin", link: "b-a", text: "Admin ve el lead y la plaza. El hold del pago dura 30 min si aun no han pagado." },
-        { island: "admin", link: "", text: "Al pagar ya es CLIENT: entra en Schedule, en Sessions Overview y en Places." },
-        { island: "staff", link: "a-s", text: "El instructor lo ve en Today. El aviso llega al staff, no como anuncio que bloquea la app." },
-        { island: "parent", link: "a-p", text: "La familia abre el hub: chip, Team y PIN. Ya no es un lead." },
-        { island: "ceo", link: "a-c", text: "CEO puede ver visitantes del Booking y padres en el portal. El dia sigue en Admin." }
+        { islands: ["booking"], links: [], text: "Entra sin cuenta, o Connected as su cuenta (PIN o codigo por email)." },
+        { islands: ["booking"], links: [], text: "OTP. Si no termina el registro, se queda en LEADS. Si lo termina, pasa a REGISTERED." },
+        { islands: ["booking", "parent", "admin"], links: ["b-p", "b-a"], text: "A la vez: Parent abre finish-booking, Admin ve el lead, y el enlace sin pagar hace hold de 30 min en Booking. Eso no es el soft hold." },
+        { islands: ["admin", "staff", "parent"], links: ["a-s", "a-p", "b-a"], text: "Al pagar, a la vez: CLIENT en Schedule, Overview y Places; Staff lo tiene en Today; Parent abre Today card, Bookings e Invoices." }
+      ]
+    },
+    {
+      id: "hold",
+      label: "Soft hold",
+      actor: "A la vez",
+      steps: [
+        { islands: ["booking"], links: [], text: "Trial pagado. El soft hold reserva la plaza del termino. Booking la pinta ocupada. Otra familia no la puede coger." },
+        { islands: ["booking", "admin", "parent"], links: ["b-a", "b-p", "a-p"], text: "A la vez: Admin ve el hold, Parent tiene el enlace del termino, y Booking sigue bloqueando esa plaza." },
+        { islands: ["booking", "admin"], links: ["b-a"], text: "Si el dia acaba y no cierran el termino, el soft hold se suelta. La plaza vuelve al offer y Admin recibe el aviso." },
+        { islands: ["admin"], links: [], text: "Otro soft hold, el de pago: buffer bajo o cobro fallido. El cron de la manana lo pone o lo quita. La plaza sigue siendo de esa familia. Admin puede recordar, retener una sesion, soltar o cortar." }
       ]
     },
     {
       id: "feedback",
-      label: "Feedback del dia",
-      actor: "Feedback",
+      label: "Sesion del dia",
+      actor: "A la vez",
       steps: [
-        { island: "staff", link: "", text: "Despues de la sesion el instructor escribe el feedback en Today." },
-        { island: "admin", link: "a-s", text: "Sessions Overview pasa a verde. Ese tablero es el look-here del dia." },
-        { island: "parent", link: "s-p", text: "La familia puede leer la nota de esa sesion." },
-        { island: "staff", link: "a-s", text: "Si falta feedback, el halo y Quick menu avisan en Staff, y la campana en Admin. No hay hoja de Sign and submit." }
+        { islands: ["staff", "admin", "parent"], links: ["a-s", "a-p", "s-p"], text: "Empieza la sesion. A la vez: Staff Today, Admin Overview y la Today card de Parent." },
+        { islands: ["staff"], links: [], text: "Staff escribe el feedback." },
+        { islands: ["admin", "parent", "staff"], links: ["a-s", "s-p"], text: "A la vez: Overview pasa a verde, Parent lo lee en la Today card, y si falta el feedback el halo avisa en Staff y la campana en Admin." }
       ]
     },
     {
       id: "cover",
       label: "Un cover",
-      actor: "Cover",
+      actor: "A la vez",
       steps: [
-        { island: "admin", link: "", text: "En Schedule and Covers se apunta el cover, o el day off si el instructor no viene." },
-        { island: "staff", link: "a-s", text: "Today del equipo muestra el cover, o COVER NEEDED si la plaza sigue sin nadie." },
-        { island: "parent", link: "a-p", text: "Si el cover tiene nombre, Team lo muestra. El day off y COVER NEEDED no salen en Parent." },
-        { island: "admin", link: "", text: "Overview sigue siendo el sitio donde la oficina mira ese dia." }
+        { islands: ["admin"], links: [], text: "Schedule and Covers asigna el cover, o deja COVER NEEDED." },
+        { islands: ["staff", "parent"], links: ["a-s", "a-p"], text: "A la vez: Staff Today cambia (halo y Quick menu). Parent solo ve el nombre en Team si el cover ya tiene persona. El day off no sale en Parent." }
       ]
     },
     {
       id: "absence",
-      label: "Ausencia de familia",
-      actor: "Ausencia",
+      label: "Ausencia",
+      actor: "A la vez",
       steps: [
-        { island: "parent", link: "", text: "La familia marca que el nino no viene." },
-        { island: "admin", link: "a-p", text: "Admin lo ve en Overview y en ausencias." },
-        { island: "staff", link: "a-s", text: "Today del instructor muestra esa ausencia." },
-        { island: "parent", link: "a-p", text: "El chip de esa sesion queda como ausencia. La plaza del termino no se borra sola." }
+        { islands: ["parent"], links: [], text: "La familia marca Absent en Parent. Es un dia, no el termino." },
+        { islands: ["admin", "staff", "parent"], links: ["a-p", "a-s"], text: "A la vez: Admin (Overview y Absents), Staff Today, y la Today card. Bookings del termino siguen." }
+      ]
+    },
+    {
+      id: "invoice",
+      label: "Factura",
+      actor: "A la vez",
+      steps: [
+        { islands: ["parent", "admin"], links: ["a-p"], text: "A la vez: Invoices en Parent se marca si hay una sin pagar, y Finance en Admin lo ve." },
+        { islands: ["admin", "booking"], links: ["b-a"], text: "Si el buffer de own arrangement baja del minimo, el cron pone soft hold. La plaza no sale al offer. Pagar lo quita." }
       ]
     }
   ];
@@ -634,11 +593,6 @@
 
   function renderIslands() {
     islandsEl.innerHTML = ISLANDS.map(function (island) {
-      var people = island.home.map(function (p) {
-        return '<button type="button" class="person person--home" data-person="' + p.id + '">' + p.name + "</button>";
-      }).concat(island.visit.map(function (p) {
-        return '<button type="button" class="person person--visit" data-person="' + p.id + '">' + p.name + "</button>";
-      })).join("");
       var chips = island.chips.map(function (c) {
         return '<span class="chip">' + c + "</span>";
       }).join("");
@@ -648,7 +602,6 @@
           '<strong class="name">' + island.name + "</strong>" +
           '<span class="host">' + island.short + "</span>" +
           '<div class="chips">' + chips + "</div>" +
-          '<div class="people">' + people + "</div>" +
         "</article>";
     }).join("");
   }
@@ -665,57 +618,66 @@
     return STORIES[0];
   }
 
+  function stepIslands(step) {
+    if (step.islands && step.islands.length) return step.islands;
+    return step.island ? [step.island] : [];
+  }
+
+  function stepLinks(step) {
+    if (step.links && step.links.length) return step.links;
+    return step.link ? [step.link] : [];
+  }
+
+  function stepTitle(step) {
+    return stepIslands(step).map(function (id) {
+      return byId[id] ? byId[id].name : id;
+    }).join(" + ");
+  }
+
   function setHot() {
     var story = storyById(state.story);
     var step = story.steps[state.step] || story.steps[0];
+    var hotIslands = stepIslands(step);
+    var hotLinks = stepLinks(step);
     Array.prototype.forEach.call(islandsEl.querySelectorAll(".island"), function (el) {
-      el.classList.toggle("is-picked", el.getAttribute("data-island") === state.island);
-      el.classList.toggle("is-hot", state.playing && el.getAttribute("data-island") === step.island);
+      var id = el.getAttribute("data-island");
+      el.classList.toggle("is-picked", id === state.island);
+      el.classList.toggle("is-hot", state.playing && hotIslands.indexOf(id) !== -1);
     });
     Array.prototype.forEach.call(routesEl.querySelectorAll("path"), function (path) {
-      path.classList.toggle("is-hot", state.playing && path.getAttribute("data-link") === step.link);
-    });
-    Array.prototype.forEach.call(islandsEl.querySelectorAll(".person"), function (btn) {
-      btn.classList.toggle("is-on", btn.getAttribute("data-person") === state.person);
+      path.classList.toggle("is-hot", state.playing && hotLinks.indexOf(path.getAttribute("data-link")) !== -1);
     });
     if (!state.playing) {
       traveler.hidden = true;
       return;
     }
-    var spot = centers[step.island];
-    if (!spot) return;
+    if (hotIslands.length < 2) {
+      traveler.hidden = true;
+      return;
+    }
+    var el = islandEl(hotIslands[0]);
+    var seaR = sea.getBoundingClientRect();
+    var r = el ? el.getBoundingClientRect() : null;
+    if (!r || !seaR.width) return;
     traveler.hidden = false;
-    traveler.textContent = story.actor;
-    traveler.style.left = spot.x + "%";
-    traveler.style.top = spot.y + "%";
-  }
-
-  function personLine() {
-    var person = PEOPLE[state.person];
-    if (!person) return "";
-    return '<div class="block"><h3>Persona</h3><p class="row"><b>' + person.name + ".</b> " + person.line + "</p></div>";
+    traveler.textContent = "A la vez";
+    traveler.style.left = ((r.left + r.width / 2 - seaR.left) / seaR.width) * 100 + "%";
+    traveler.style.top = ((r.top - seaR.top) / seaR.height) * 100 + "%";
   }
 
   function renderPanel() {
     if (state.playing) {
       var story = storyById(state.story);
       var steps = story.steps.map(function (step, i) {
-        var island = byId[step.island];
-        return '<li data-step="' + i + '"' + (i === state.step ? ' class="is-now"' : "") + "><b>" + island.name + ".</b> " + step.text + "</li>";
+        return '<li data-step="' + i + '"' + (i === state.step ? ' class="is-now"' : "") + "><b>" + stepTitle(step) + ".</b> " + step.text + "</li>";
       }).join("");
       panel.innerHTML =
         "<h2>" + story.label + "</h2>" +
-        '<p class="sub">Paso ' + (state.step + 1) + " de " + story.steps.length + ". Pulsa una isla para parar y leer quien esta ahi.</p>" +
+        '<p class="sub">Paso ' + (state.step + 1) + " de " + story.steps.length + ". Si el paso nombra varias islas, se encienden juntas. Pulsa una isla para parar.</p>" +
         '<div class="block"><ol class="steps">' + steps + "</ol></div>";
       return;
     }
     var island = byId[state.island];
-    var home = island.home.map(function (p) {
-      return '<p class="row"><b>' + p.name + "</b> vive aqui.</p>";
-    }).join("");
-    var visit = island.visit.map(function (p) {
-      return '<p class="row"><b>' + p.name + "</b> puede entrar.</p>";
-    }).join("");
     var happens = island.happens.map(function (line) {
       return '<p class="row">' + line + "</p>";
     }).join("");
@@ -728,11 +690,8 @@
     panel.innerHTML =
       "<h2>" + island.name + "</h2>" +
       '<p class="sub">' + island.host + "</p>" +
-      personLine() +
-      '<div class="block"><h3>Quien</h3>' + home + visit + "</div>" +
       '<div class="block"><h3>Que pasa</h3>' + happens + "</div>" +
-      '<div class="block"><h3>Conectada con</h3>' + links + "</div>" +
-      '<div class="legend"><span><i class="swatch swatch--home"></i>Vive aqui</span><span><i class="swatch swatch--visit"></i>Puede entrar</span></div>';
+      '<div class="block"><h3>Como se habla con las otras</h3>' + links + "</div>";
   }
 
   function stop() {

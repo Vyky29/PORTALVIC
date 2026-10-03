@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v156",
+  "version": "2026-10-03-v157",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2397,7 +2397,7 @@
         {
           "id": "portal_world",
           "title": "Portal world - five islands",
-          "summary": "One screen shows Admin, CEO, Staff, Booking and Parent, who lives on each, and how a lead becomes a client.",
+          "summary": "One screen shows what Admin, CEO, Staff, Booking and Parent do, and which islands light together.",
           "where": "portalvic.vercel.app/portal_world.html",
           "keywords": [
             "islas",
@@ -2410,20 +2410,23 @@
             "ceo",
             "admin",
             "lead",
-            "cliente",
-            "conectado"
+            "soft hold",
+            "otp",
+            "registro",
+            "today card",
+            "invoices"
           ],
           "steps": [
-            "Open portal_world.html on the admin host, signed in as Admin or CEO.",
-            "Each island is one portal. A solid name lives there. An outline name can open it.",
-            "Sevitha lives on Admin. Victor, Javi and Raul choose Admin, CEO or Staff. John, Berta and Michelle live on Staff as programme leads.",
-            "Press Lead a cliente. A family moves from Booking to registration, payment, Schedule, Sessions Overview, Staff Today and the parent hub.",
-            "The other paths are session feedback, a cover, and a family absence."
+            "Open portal_world.html on the admin host, signed in as Admin.",
+            "Each island shows what that portal does. Booking shows OTP, Registro, Cuenta and Soft hold. Parent shows Today, Bookings and Invoices. Staff shows Today, Feedback and Timesheet.",
+            "Press Soft hold. After a paid trial the term seat stays taken on Booking until the end of the day. The 30 minute unpaid pay link is a different hold.",
+            "A step can light several islands at once: payment writes Admin, Staff Today and the parent Today card together.",
+            "The other paths are the account and registration, the session day, a cover, an absence, and an unpaid invoice."
           ],
           "tips": [
             "The paths show how the portals talk. They are not today's live log.",
-            "Parents do not see an instructor day off or COVER NEEDED.",
-            "Javi on CEO and Admin is the director. Javier Marquez is the swimming instructor on Staff."
+            "Soft hold after a trial blocks that seat on Booking. The morning buffer job only soft-holds or clears an own-arrangement family. It does not cancel the place.",
+            "Parents do not see an instructor day off or COVER NEEDED."
           ]
         }
       ]
