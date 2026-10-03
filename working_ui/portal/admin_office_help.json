@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v159",
+  "version": "2026-10-03-v160",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -782,11 +782,12 @@
         {
           "id": "leads_do",
           "title": "What you do with the people on Leads",
-          "summary": "Leads are people who asked for an OTP code. Outcome says what they did next.",
+          "summary": "Entry shows Parent portal or Booking OTP. Outcome says what they did next. No new form means they did not register again.",
           "where": "Services & places → Leads",
           "keywords": [
             "what to do",
             "existing client",
+            "parent portal",
             "otp",
             "outcome",
             "que hacer",
@@ -794,7 +795,8 @@
           ],
           "steps": [
             "The page opens on Portal OTP only. Each row is a parent who asked for a code.",
-            "Outcome is the result of that lead. Only looked means they used the code and did not register. Registered means they finished the form. Already a client, only looked means they already had a place and came back. Already a client, registered again means they sent a new registration. Asked for a code means the code is not used yet.",
+            "Entry says how they opened Booking. Parent portal means they were already in the family hub and looked at other services. No code, and no new registration. Booking OTP means they asked for a code on the booking page.",
+            "Outcome is what they did next. Already a client, only looked means they did not send a new form. Forms says No new form, or On file with the old registration date. Already a client, registered again means they sent a new registration.",
             "Filter Outcome to see one of those results. OTP leads is how many rows that filter is showing.",
             "Track status is optional. Leave New. You do not work through those rows. Booked takes that email off the marketing list. It does not change Outcome.",
             "Filter first with Search, Origin, Track status and Outcome. Write to this filter sits under those filters. Tick a row only when you want to write to that parent. Send via Family broadcast, or Copy emails / Copy phones.",
@@ -809,8 +811,8 @@
             "summary": "Leads son personas que pidieron un codigo OTP. Outcome dice que hicieron despues.",
             "where": "Services & places → Leads",
             "steps": [
-              "La pagina abre solo en Portal OTP. Cada fila es un padre o una madre que pidio un codigo.",
-              "Outcome es el resultado de ese lead. Only looked: uso el codigo y no se registro. Registered: termino el formulario. Already a client, only looked: ya tenia plaza y volvio. Already a client, registered again: mando un registro nuevo. Asked for a code: el codigo todavia no se ha usado.",
+              "La pagina abre solo en Portal OTP. Entry dice como entraron. Parent portal: ya estaban en el hub de la familia y miraron otros servicios. Sin codigo y sin registro nuevo. Booking OTP: pidieron un codigo en Booking.",
+              "Outcome es lo que hicieron despues. Already a client, only looked: no mandaron un formulario nuevo. Forms dice No new form, o On file con la fecha del registro viejo. Already a client, registered again: si mandaron un registro nuevo.",
               "Filtra Outcome para ver uno de esos resultados. OTP leads es cuantas filas ensena ese filtro.",
               "Track status es opcional. Dejalo en New. No tienes que pasar fila por fila. Booked saca ese email de la lista de marketing. No cambia Outcome.",
               "Filtra primero con Search, Origin, Track status y Outcome. Write to this filter va debajo de esos filtros. Marca una fila solo cuando quieras escribir a ese padre. Send via Family broadcast, o Copy emails / Copy phones.",
@@ -825,7 +827,7 @@
         {
           "id": "leads_what",
           "title": "What Leads is",
-          "summary": "A lead is a parent who asked for an OTP code. Outcome is what happened next.",
+          "summary": "A lead opened Booking. Entry is Parent portal (no code) or Booking OTP (asked for a code).",
           "where": "Services & places → Leads",
           "keywords": [
             "leads",
@@ -836,7 +838,7 @@
             "potential"
           ],
           "steps": [
-            "This page is not the child list. A row is a parent who asked for a code.",
+            "This page is not the child list. Entry Parent portal means they opened Booking from the family hub. Entry Booking OTP means they asked for a code.",
             "Outcome Only looked: they used the code and did not finish the form.",
             "Outcome Registered: they finished the registration form and have no place yet.",
             "Outcome Already a client, only looked: they already have a child in class and came back without a new form.",
@@ -848,10 +850,10 @@
           ],
           "es": {
             "title": "Que es Leads",
-            "summary": "Un lead es un padre o una madre que pidio un codigo OTP. Outcome es lo que paso despues.",
+            "summary": "Un lead abrio Booking. Entry es Parent portal (sin codigo) o Booking OTP (pidio un codigo).",
             "where": "Services & places → Leads",
             "steps": [
-              "Esta pagina no es la lista de ninos. Una fila es un padre que pidio un codigo.",
+              "Esta pagina no es la lista de ninos. Entry Parent portal: abrieron Booking desde el hub de la familia. Entry Booking OTP: pidieron un codigo.",
               "Outcome Only looked: uso el codigo y no termino el formulario.",
               "Outcome Registered: termino el formulario de registro y todavia no tiene plaza.",
               "Outcome Already a client, only looked: ya tiene un nino en clase y volvio sin un formulario nuevo.",

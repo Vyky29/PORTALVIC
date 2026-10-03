@@ -28,6 +28,7 @@
     /* Leads are people who asked for an OTP code. Email interest stays behind Origin. */
     outcome: "all",
     origin: "portal",
+    entry: "all",
     trackFilter: "all",
     q: "",
     leads: [],
@@ -171,12 +172,69 @@
     return { key: "looked", label: "Only looked", tone: "info" };
   }
 
+  /** Parent hub opens Booking with no code. Booking OTP is a code asked on the booking page. */
+  function entryWay(r) {
+    r = r || {};
+    var source = String(r.source || "").toLowerCase();
+    var client = String(r.client_status || "").toLowerCase();
+    var existing =
+      client === "active_client" ||
+      source.indexOf("existing client") >= 0 ||
+      source.indexOf("parent portal") >= 0;
+    var sent =
+      String(r.registration_status || "").toLowerCase() === "submitted" ||
+      String(r.booking_status || "").toLowerCase() === "registration_submitted";
+    if (source.indexOf("parent portal") >= 0 && r.asked_otp !== true) {
+      return {
+        key: "parent",
+        label: "Parent portal",
+        note: sent
+          ? "Opened Booking from the parent hub and sent a new registration."
+          : "Opened Booking from the parent hub. No code, and no new registration.",
+      };
+    }
+    if (source.indexOf("booking otp") >= 0 || r.asked_otp === true) {
+      return {
+        key: "otp",
+        label: "Booking OTP",
+        note: existing
+          ? sent
+            ? "Asked for a code on Booking and sent a new registration."
+            : "Asked for a code on Booking. Already a client. No new registration."
+          : "Asked for a code on Booking.",
+      };
+    }
+    if (existing && r.asked_otp === false) {
+      return {
+        key: "parent",
+        label: "Parent portal",
+        note: sent
+          ? "Opened Booking from the parent hub and sent a new registration."
+          : "Opened Booking from the parent hub. No code, and no new registration.",
+      };
+    }
+    if (existing) {
+      return {
+        key: "client",
+        label: "Already a client",
+        note: "Matched to a family already on file.",
+      };
+    }
+    return {
+      key: "booking",
+      label: "Booking page",
+      note: "Came in through Booking.",
+    };
+  }
+
   function visibleLeads() {
     var rows = state.leads || [];
     var key = state.outcome || "all";
-    if (key === "all") return rows;
+    var entry = state.entry || "all";
     return rows.filter(function (r) {
-      return leadOutcome(r).key === key;
+      if (key !== "all" && leadOutcome(r).key !== key) return false;
+      if (entry !== "all" && entryWay(r).key !== entry) return false;
+      return true;
     });
   }
 
@@ -292,39 +350,68 @@
       Array.isArray(r.services_viewed) && r.services_viewed.length
         ? r.services_viewed.slice(0, 2).join(", ")
         : "";
+    var reg = String(r.registration_status || "").toLowerCase();
+    var book = String(r.booking_status || "").toLowerCase();
+    var sentForm = reg === "submitted" || book === "registration_submitted";
     var formBits = [];
-    if (r.form_pdf_url) {
+    var formNote = "";
+    if (sentForm && r.form_pdf_url) {
       formBits.push(
         '<button type="button" class="btn btn--pri btn--sm bk-lead-open-doc" data-url="' +
           esc(r.form_pdf_url) +
-          '">Open PDF</button>'
+          '">New registration</button>'
       );
     }
-    if (r.form_photo_url) {
+    if (sentForm && r.form_photo_url) {
       formBits.push(
         '<button type="button" class="btn btn--ghost btn--sm bk-lead-open-doc" data-url="' +
           esc(r.form_photo_url) +
           '">Photo</button>'
       );
     }
-    if (!formBits.length) {
-      formBits.push(
-        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_participant_documents">Registration forms</button>'
-      );
+    if (!sentForm && (r.form_pdf_url || r.form_photo_url)) {
+      if (r.form_pdf_url) {
+        formBits.push(
+          '<button type="button" class="btn btn--ghost btn--sm bk-lead-open-doc" data-url="' +
+            esc(r.form_pdf_url) +
+            '">On file</button>'
+        );
+      }
+      if (r.form_photo_url) {
+        formBits.push(
+          '<button type="button" class="btn btn--ghost btn--sm bk-lead-open-doc" data-url="' +
+            esc(r.form_photo_url) +
+            '">Photo</button>'
+        );
+      }
+      formNote =
+        "Already on file" +
+        (r.form_submitted_at ? " · " + formatWhen(r.form_submitted_at) : "") +
+        ". Not a new form.";
     }
-    var formSub = r.form_participant_name
+    if (!formBits.length) {
+      formBits.push('<span class="muted" style="font-size:12px">No new form</span>');
+    }
+    var formSub = formNote
       ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
-        esc(r.form_participant_name) +
-        (r.form_type ? " · " + esc(String(r.form_type).replace(/_/g, " ")) : "") +
+        esc(formNote) +
         "</div>"
-      : "";
+      : r.form_participant_name
+        ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
+          esc(r.form_participant_name) +
+          (r.form_type ? " · " + esc(String(r.form_type).replace(/_/g, " ")) : "") +
+          (sentForm && r.form_submitted_at ? " · " + esc(formatWhen(r.form_submitted_at)) : "") +
+          "</div>"
+        : "";
+    var entry = entryWay(r);
     var sourceLine = imported
       ? chip("Email interest list", "warn") +
         '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
         esc(r.source || "Email interest import") +
         " — office outreach list, not someone who opened Booking Portal</div>"
-      : '<div class="muted" style="font-size:11px;margin-top:2px;overflow-wrap:break-word">' +
-        esc(r.source || "Booking Page") +
+      : chip(entry.label, entry.key === "parent" ? "info" : "pend") +
+        '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
+        esc(entry.note) +
         "</div>";
     var activity =
       String(r.activity_interest || "").trim() ||
@@ -546,6 +633,17 @@
       '<select class="inp" id="bkLeadFilter" style="max-width:280px;min-width:0" title="What the lead did after the code">' +
       outcomeOpts +
       "</select>" +
+      '<select class="inp" id="bkLeadEntry" style="max-width:220px;min-width:0" title="Parent portal or Booking OTP">' +
+      '<option value="all"' +
+      (state.entry === "all" ? " selected" : "") +
+      ">Entry: All</option>" +
+      '<option value="parent"' +
+      (state.entry === "parent" ? " selected" : "") +
+      ">Entry: Parent portal</option>" +
+      '<option value="otp"' +
+      (state.entry === "otp" ? " selected" : "") +
+      ">Entry: Booking OTP</option>" +
+      "</select>" +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadRefresh">Refresh</button>' +
       "</div>" +
       selectionBarHtml() +
@@ -557,8 +655,8 @@
       '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">' +
       (state.origin === "portal"
         ? state.outcome === "all"
-          ? "People who asked for a code. Outcome is in the table."
-          : "OTP leads with this outcome."
+          ? "Booking OTP asked for a code. Parent portal opened Booking from the family hub and did not."
+          : "Rows with this outcome and entry."
         : "This origin is not the OTP list.") +
       "</div></div></div>" +
       '<div class="card"><div class="card-pad" style="overflow:auto;padding:0;min-width:0">' +
@@ -700,6 +798,14 @@
         state.trackFilter = String(trackFilter.value || "all");
         state.selected = {};
         void reload(host);
+      });
+    }
+    var entry = host.querySelector("#bkLeadEntry");
+    if (entry) {
+      entry.addEventListener("change", function () {
+        state.entry = String(entry.value || "all");
+        renderHost(host);
+        wire(host);
       });
     }
     if (filter) {

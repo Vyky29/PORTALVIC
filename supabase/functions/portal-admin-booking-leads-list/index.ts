@@ -214,11 +214,29 @@ Deno.serve(async (req) => {
     }
   }
 
+  const leadIds = leads.map((r) => String(r.id || "")).filter(Boolean);
+  const askedOtp = new Set<string>();
+  if (leadIds.length) {
+    const { data: otps, error: otpErr } = await admin
+      .from("portal_booking_lead_otps")
+      .select("lead_id")
+      .in("lead_id", leadIds);
+    if (otpErr) {
+      console.warn("[portal-admin-booking-leads-list] otps", otpErr.message);
+    } else {
+      for (const otp of otps || []) {
+        const id = String(otp.lead_id || "");
+        if (id) askedOtp.add(id);
+      }
+    }
+  }
+
   leads = leads.map((row) => {
     const em = String(row.email || "").trim().toLowerCase();
     const doc = em ? docsByEmail[em] : null;
     return {
       ...row,
+      asked_otp: askedOtp.has(String(row.id || "")),
       form_pdf_url: doc?.pdf_signed_url || null,
       form_photo_url: doc?.photo_signed_url || null,
       form_participant_name: doc?.participant_name || null,

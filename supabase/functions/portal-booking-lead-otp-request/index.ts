@@ -289,7 +289,7 @@ Deno.serve(async (req) => {
         marketing_consent: marketingConsent,
         privacy_notice_version: privacyVersion,
         privacy_accepted_at: nowIso,
-        source: recognition === "existing_client" ? "Existing Client" : "Booking Page",
+        source: "Booking OTP",
         first_page_visited: firstPage || "/bookingportal",
         booking_status: "new_lead",
         registration_status: "not_started",
@@ -309,7 +309,7 @@ Deno.serve(async (req) => {
       parentName,
       email,
       mobile,
-      source: recognition === "existing_client" ? "Existing Client" : "Booking Page",
+      source: "Booking OTP",
       clientStatus,
       event: "created",
     }    ).catch((e) =>
