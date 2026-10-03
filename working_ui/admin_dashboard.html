@@ -22925,6 +22925,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function paxContactsKnownPastVisit(p){
       var n = String((p && p.name) || '').trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
       if(n === 'eddie ritzema' || n === 'eddie ri') return { svc: 'Climbing Activity', slot: '2 to 3' };
+      if(n === 'tala abdelhadi') return { svc: 'Aquatic Activity', day: 'Thursday', venue: 'Acton' };
       return null;
     }
     function paxContactsBucket(p){
@@ -24244,6 +24245,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var knownVisit = null;
         try{ knownVisit = paxContactsKnownPastVisit(p); }catch(_known){ knownVisit = null; }
         if(knownVisit && knownVisit.svc){
+          if(knownVisit.day || knownVisit.venue){
+            var knownBits = [];
+            if(knownVisit.day) knownBits.push('<span class="pax-asked-bit">'+esc(knownVisit.day)+'</span>');
+            if(knownVisit.slot) knownBits.push('<span class="pax-asked-bit pax-asked-bit--time">'+esc(knownVisit.slot)+'</span>');
+            if(knownVisit.venue) knownBits.push('<span class="pax-asked-bit">'+esc(knownVisit.venue)+'</span>');
+            return {
+              svc: '<div class="pax-svc-line pax-svc-line--asked">'+esc(knownVisit.svc)+'</div>',
+              slot: knownBits.length ? '<div class="pax-slot-line pax-slot-line--asked">'+knownBits.join('')+'</div>' : dash
+            };
+          }
           return {
             svc: '<div class="pax-svc-line">'+esc(knownVisit.svc)+'</div>',
             slot: knownVisit.slot ? '<div class="pax-slot-line">'+esc(knownVisit.slot)+'</div>' : dash
@@ -35682,7 +35693,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var onWait = !!(el.closest && el.closest('tr') && el.closest('tr').getAttribute('data-pax-wait') === '1');
             el.hidden = !(showJoined && onWait);
           });
-          root2.querySelectorAll('.pax-also-waiting').forEach(function(el){ el.hidden = !showJoined; });
+          root2.querySelectorAll('.pax-also-waiting').forEach(function(el){ el.hidden = !(showJoined || showRegistered); });
           root2.querySelectorAll('.pax-trial-seat').forEach(function(el){ el.hidden = !showTrial; });
           root2.querySelectorAll('.pax-money-col, .pax-money-filter').forEach(function(el){ el.hidden = !showMoney; });
           var ansTh = $('paxRegAnsTh');
@@ -36456,6 +36467,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
        aliases and full names all resolve to the same participant. */
     var ADMIN_PARTICIPANT_SUPPORT_RATIO_RAW = {
       'Tinashe Nekati': '3:1',
+      'Tala Abdelhadi': '2:1',
       'Timi Dairo': '2:1',
       'Fadi Abu daud': '2:1',
       'Ikram Omar': '2:1'

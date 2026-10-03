@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v220",
+  "version": "2026-10-03-v221",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -794,7 +794,7 @@
           "where": "Nav people buckets / CLIENT filters",
           "steps": [
             "Five lists, one person in one list. LEADS asked for a code and did not finish the form. Only looked is a filter on Leads, not its own list.",
-            "REGISTERED finished the form and has never had a place. Pay hold and Lost slot are chips on that list. Outcome says why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay. Funding and Payment are not on this screen.",
+            "REGISTERED finished the form and has never had a place. If they are also on the waiting list, the WAITING chip shows on this row. Pay hold and Lost slot are chips on that list. Outcome says why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay. Funding and Payment are not on this screen.",
             "WAITING is a Booking Portal join for a full service. If they have no place now, they are also REGISTERED. The old CFK webhook export is not this list. Those people were interested and were never clients. They sit on CFK LEADS.",
             "CLIENT (Active) has a place now. On Trial is a CLIENT sitting a trial seat, not a REGISTERED chip.",
             "OLD had a place and has none from September 2026. A climbing trial or a crash course that already happened, with no place now, is OLD. A demo contact does not appear on these lists.",
@@ -810,7 +810,7 @@
             "where": "Cubos de personas en el menu / filtros de CLIENT",
             "steps": [
               "Cinco listas, una persona en una sola. LEADS pidio un codigo y no termino el formulario. Only looked es un filtro de Leads, no una lista aparte.",
-              "REGISTERED termino el formulario y nunca ha tenido plaza. Pay hold y Lost slot son chips de esa lista. Outcome dice por que es Lost slot. Blocked the space: entraron y la plaza quedo retenida, y se acabo el tiempo. Did not pay: se mando un enlace de pago y la plaza no quedo retenida. Office hold, not paid: la oficina la guardo y no pagaron. Funding y Payment no salen en esta pantalla.",
+              "REGISTERED termino el formulario y nunca ha tenido plaza. Si tambien estan en la lista de espera, el chip WAITING sale en esta fila. Pay hold y Lost slot son chips de esa lista. Outcome dice por que es Lost slot. Blocked the space: entraron y la plaza quedo retenida, y se acabo el tiempo. Did not pay: se mando un enlace de pago y la plaza no quedo retenida. Office hold, not paid: la oficina la guardo y no pagaron. Funding y Payment no salen en esta pantalla.",
               "WAITING es una entrada de Booking Portal para un servicio lleno. Si no tienen plaza ahora, tambien son REGISTERED. El export viejo del webhook de CFK no es esta lista. Estaban interesados y nunca fueron clientes. Estan en CFK LEADS.",
               "CLIENT (Active) tiene plaza ahora. On Trial es un CLIENT sentado en un trial, no un chip de REGISTERED.",
               "OLD tuvo plaza y no tiene desde septiembre 2026. Un trial de climbing o un crash course que ya paso, sin plaza ahora, es OLD. Un contacto de prueba no sale en estas listas.",
