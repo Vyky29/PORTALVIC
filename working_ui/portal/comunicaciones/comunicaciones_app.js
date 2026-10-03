@@ -94,6 +94,54 @@ function commsIsGina(name) {
   return /\bgina\b/.test(n) || n.indexOf("gouvinhas") >= 0;
 }
 
+var COMMS_WORKER_ROLES = {
+  luliya: ["Swimming", "Support DC"],
+  alex: ["Climbing"],
+  andres: ["Climbing", "Bank"],
+  angel: ["Climbing", "Bank"],
+  ann: ["Support A&W"],
+  aurora: ["Swimming"],
+  berta: ["Support A&W"],
+  bismark: ["Support A&W"],
+  carlos: ["Climbing"],
+  dan: ["Swimming"],
+  daniel: ["Swimming"],
+  emmanuel: ["Support A&W"],
+  godsway: ["Support A&W"],
+  javier: ["Swimming"],
+  john: ["Support A&W"],
+  michelle: ["Support DC"],
+  javi: ["Admin"],
+  patience: ["Support DC"],
+  raul: ["Admin"],
+  roberto: ["Swimming", "Support DC"],
+  sandra: ["Fitness"],
+  sevitha: ["Admin"],
+  simon: ["Swimming"],
+  teflon: ["Swimming"],
+  victor: ["Admin"],
+  youssef: ["Swimming", "Support DC"],
+};
+
+function commsRoleChipHtml(name) {
+  const key = staffPhotoKeyFromLabel(name);
+  const roles = (key && COMMS_WORKER_ROLES[key]) || [];
+  if (!roles.length) return "";
+  return (
+    '<span class="comms-role-chips">' +
+    roles
+      .map(function (role) {
+        const slug = String(role)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
+        return '<span class="comms-role-chip comms-role-chip--' + slug + '">' + esc(role) + "</span>";
+      })
+      .join("") +
+    "</span>"
+  );
+}
+
 function client() {
   return window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
 }
@@ -531,7 +579,9 @@ function inboxRow(it) {
     '<span class="comms-item-text"><strong>' +
     esc(it.kind === "group" ? commsStaffLabel(it.display_name) : commsFirstName(it.display_name)) +
     closed +
-    "</strong><span>" +
+    "</strong>" +
+    (it.kind === "group" ? "" : commsRoleChipHtml(it.display_name)) +
+    '<span class="comms-item-preview">' +
     esc(last) +
     "</span></span>" +
     (unread ? '<span class="comms-badge">' + (unread > 9 ? "9+" : unread) + "</span>" : "") +

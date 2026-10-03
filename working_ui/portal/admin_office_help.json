@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v178",
+  "version": "2026-10-03-v179",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2141,6 +2141,9 @@
             "nombre",
             "apellido",
             "foto",
+            "rol",
+            "role",
+            "chip",
             "comms",
             "comunicaciones"
           ],
@@ -2148,6 +2151,7 @@
             "Open Communications and choose ADMIN.",
             "The search box is above the Workers heading. Type at least two letters and press Enter.",
             "Each worker row shows the first name only, with a larger photo.",
+            "Under the name, a chip shows the role: Swimming, Climbing, Support A&W, Support DC, Fitness, Admin, or Bank.",
             "Groups under that list keep their full name."
           ],
           "tips": [
@@ -2161,6 +2165,7 @@
               "Abre Communications y elige ADMIN.",
               "El buscador esta encima de Workers. Escribe al menos dos letras y pulsa Enter.",
               "Cada worker sale con el nombre, sin apellido, y con la foto mas grande.",
+              "Debajo del nombre hay un chip con el rol: Swimming, Climbing, Support A&W, Support DC, Fitness, Admin o Bank.",
               "Los grupos de debajo conservan el nombre completo."
             ],
             "tips": [

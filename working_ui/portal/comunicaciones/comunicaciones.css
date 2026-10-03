@@ -294,7 +294,7 @@ body.comms-embed .comms-shell {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.comms-item-text span {
+.comms-item-text span.comms-item-preview {
   display: block;
   font-size: 12px;
   color: var(--muted);
@@ -302,6 +302,35 @@ body.comms-embed .comms-shell {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.comms-role-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 3px 0 2px;
+  min-width: 0;
+  max-width: 100%;
+}
+.comms-role-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+.comms-role-chip--swimming { background: #e7f1fb; color: #1d4f8a; border-color: #c5d9f0; }
+.comms-role-chip--climbing { background: #f3eee6; color: #6b4f2a; border-color: #e2d3bc; }
+.comms-role-chip--support-a-w { background: #e7f6f4; color: #0f6b62; border-color: #b7e0db; }
+.comms-role-chip--support-dc { background: #fff4e2; color: #8a5a12; border-color: #f0ddb4; }
+.comms-role-chip--fitness { background: #e7f6ee; color: #0f7a45; border-color: #b7e4cb; }
+.comms-role-chip--admin { background: #eef0f6; color: #243056; border-color: #d5d9e8; }
+.comms-role-chip--bank { background: #fde8ef; color: #9d174d; border-color: #f5c2d2; }
 .comms-badge {
   min-width: 20px;
   height: 20px;
