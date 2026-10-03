@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v185",
+  "version": "2026-10-03-v186",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1925,6 +1925,9 @@
             "pay",
             "pay rates",
             "salario",
+            "did not join",
+            "other job",
+            "otro trabajo",
             "staff"
           ],
           "steps": [
@@ -1932,11 +1935,12 @@
             "The days and the rate are not chosen on this list. Open H&R, Finance, Pay rates.",
             "On that person choose Normal pay, or Shadowing. Shadowing is £13.50. Set Normal pay from for the first day at the rate on the card. Leave the date empty to keep every day at £13.50.",
             "Unsuccessful: the call or face interview failed, or they cancelled the offer. They are not called as a hire.",
-            "Did not join on a Successful row moves them to Unsuccessful and switches off the staff login."
+            "Did not join is its own list, under Successful. It is for someone who passed and then did not continue, or never finished onboarding. The review is Other job. It is not Unsuccessful."
           ],
           "tips": [
             "On hold stays under Successful. The next step says when to call again.",
-            "Someone already working is Staff, not still on the onboarding checklist."
+            "Someone already working is Staff, not still on the onboarding checklist.",
+            "Did not join switches off the staff login and takes them off the Onboarding PIN list."
           ]
         },
         {

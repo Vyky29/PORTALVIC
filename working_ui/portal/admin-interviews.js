@@ -3,8 +3,9 @@
  * (same records as Working_interview.html).
  *
  * Buckets:
- *   - Onboarding: face successful-ready / ready to start
- *   - Call back later: unsuccessful or successful-hold (contact again later)
+ *   - Successful: passed, shadowing, staff, or still on hold
+ *   - Did not join: passed, then did not continue or never finished onboarding. Review is Other job
+ *   - Unsuccessful: failed interview or cancelled offer
  *   - In progress: call / face still open
  */
 (function (global) {
@@ -47,10 +48,10 @@
     var face = String(c.faceToFaceInterview.status || "");
     var call = String(c.callInterview.status || "");
     var ob = c.onboarding;
+    if (ob.didNotJoin) return "did_not_join";
     if (ob.offerCancelled) return "cancelled";
     if (ob.employment === "staff") return "staff";
     if (ob.employment === "shadowing") return "shadowing";
-    if (ob.didNotJoin) return "cancelled";
     if (ob.readyToStart || ob.onboardingCompleted) return "ready";
     if (face === "successful-ready" || face === "successful") return "onboarding";
     if (face === "successful-hold") return "hold";
@@ -62,6 +63,7 @@
   }
 
   function bucketOf(phase) {
+    if (phase === "did_not_join") return "didnotjoin";
     if (
       phase === "cancelled" ||
       phase === "face_unsuccessful" ||
@@ -86,6 +88,7 @@
       {
         staff: "Staff",
         shadowing: "Shadowing",
+        did_not_join: "Did not join",
         cancelled: "Unsuccessful",
         ready: "Successful",
         onboarding: "Successful",
@@ -103,6 +106,7 @@
     if (phase === "staff" || phase === "shadowing" || phase === "ready" || phase === "onboarding" || phase === "hold") {
       return "#15803d";
     }
+    if (phase === "did_not_join") return "#334155";
     if (phase === "cancelled" || phase === "face_unsuccessful" || phase === "call_unsuccessful") {
       return "#b45309";
     }
@@ -117,6 +121,9 @@
     if (phase === "shadowing") {
       if (ob.normalFrom) return "Shadowing until " + fmtDay(ob.normalFrom) + ", then normal pay and shifts";
       return "Shadowing";
+    }
+    if (phase === "did_not_join") {
+      return (ob.didNotJoinReason || "Other job").slice(0, 120);
     }
     if (phase === "cancelled") {
       return (ob.didNotJoinReason || "Cancelled the offer").slice(0, 120);
@@ -503,11 +510,13 @@
     if (!root) return;
     injectStyleOnce();
     var successful = [];
+    var didNotJoin = [];
     var unsuccessful = [];
     var progress = [];
     state.rows.forEach(function (row) {
       var b = bucketOf(row.phase);
       if (b === "successful") successful.push(row);
+      else if (b === "didnotjoin") didNotJoin.push(row);
       else if (b === "unsuccessful") unsuccessful.push(row);
       else progress.push(row);
     });
@@ -527,6 +536,11 @@
         "Successful",
         "Shadowing days and the normal rate are set in H&R, Finance, Pay rates. Save days there.",
         successful
+      ) +
+      section(
+        "Did not join",
+        "Passed, then did not continue or never finished onboarding. Review is Other job.",
+        didNotJoin
       ) +
       section("Unsuccessful", "", unsuccessful) +
       (progress.length ? section("In progress", "", progress) : "") +
