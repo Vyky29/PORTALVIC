@@ -307,7 +307,7 @@ async function resolveParentContact(
 
 function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, child: string): string {
   const greet = `Hi ${parentFirstName(parentDisplay)},\n\nThis is ClubSENsational.\n\n`;
-  const signOff = `\n\nIf you have any questions, just reply to this message.\n\nThank you,\nClubSENsational`;
+  const signOff = `\n\nThis message was sent automatically. Please do not reply to it.\n\nThank you,\nClubSENsational`;
   const venue = clean(opts.venue, 80);
   const sessionDate = clean(opts.sessionDate, 12);
   const sessionTime = clockPart(clean(opts.sessionTime, 40));
@@ -362,7 +362,8 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
         `We are writing about ${child}'s session${whenPart}${venuePart}.\n\n` +
         changeLine +
         photoLine +
-        `\nSorry for the extra change - if you have any questions, just reply to this message.\n\nThank you,\nClubSENsational`,
+        `\nSorry for the extra change.` +
+        signOff,
     );
   }
 

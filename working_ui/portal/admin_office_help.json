@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v187",
+  "version": "2026-10-03-v188",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1413,14 +1413,14 @@
           ],
           "steps": [
             "One day with no instructor: Schedule and Covers, that date, Change on the child's card, then Cancelled. Do not use Absent. Absent is the family missing the session.",
-            "In Reason write that there is no instructor and ask the parent to reply refund or credit. Save. That day only is cancelled. The standing service stays.",
-            "The parent gets a WhatsApp that the session is cancelled, including that note. The row lands in Absents, refunds and credits.",
-            "When the parent replies, open that row. Choose Credit or Refund, then Approve. For a refund enter the session amount. For a credit enter the same amount, or leave the amount blank for a session credit with no cash figure.",
+            "In Reason write that there is no instructor. Do not ask them to reply on this message. Save. That day only is cancelled. The standing service stays.",
+            "The parent gets an automatic WhatsApp that the session is cancelled, including that note. It says the message was sent automatically. The row lands in Absents, refunds and credits.",
+            "When the family tells the office refund or credit another way, open that row. Choose Credit or Refund, then Approve. For a refund enter the session amount. For a credit enter the same amount, or leave the amount blank for a session credit with no cash figure.",
             "Approve writes the family ledger and sends the outcome message. Makeup is only if they ask for another day."
           ],
           "tips": [
             "Sep+ absents and cancellations share one decide queue.",
-            "The automatic cancel WhatsApp does not choose refund or credit. Put the question in Reason so the parent can reply.",
+            "Automatic API messages (instructor change, time change, cancel, makeup confirm) say they were sent automatically. Do not ask the parent to reply on them.",
             "Private pay-in-advance cancellation: unused prepaid can be refunded with a fee of 10% of the unused amount (minimum £25, maximum £100). Sessions already delivered, including a summer crash course, stay paid. LA / NHS do not use this fee.",
             "Cancelling the standing place is Edit term slot. Set the anchor to a date on that weekday, then Rest of term from the anchor."
           ],
@@ -1430,14 +1430,14 @@
             "where": "Finance → Absents, refunds & credits",
             "steps": [
               "Un dia sin instructor: Schedule & Covers, esa fecha, Change en la tarjeta del nino, y luego Cancelled. No uses Absent. Absent es la familia que falta a la sesion.",
-              "En Reason escribe que no hay instructor y pide al padre que conteste refund o credit. Guarda. Solo ese dia se cancela. El servicio fijo se queda.",
-              "El padre recibe un WhatsApp de que la sesion esta cancelada, con esa nota. La fila cae en Absents, refunds and credits.",
-              "Cuando el padre contesta, abre esa fila. Elige Credit o Refund, y luego Approve. En un refund pon el importe de la sesion. En un credit pon el mismo importe, o dejalo en blanco para un credito de sesion sin cifra.",
+              "En Reason escribe que no hay instructor. No pidas que contesten en ese mensaje. Guarda. Solo ese dia se cancela. El servicio fijo se queda.",
+              "El padre recibe un WhatsApp automatico de que la sesion esta cancelada, con esa nota. Dice que el mensaje salio solo. La fila cae en Absents, refunds and credits.",
+              "Cuando la familia diga a la oficina refund o credit por otro lado, abre esa fila. Elige Credit o Refund, y luego Approve. En un refund pon el importe de la sesion. En un credit pon el mismo importe, o dejalo en blanco para un credito de sesion sin cifra.",
               "Approve escribe el libro de la familia y manda el mensaje del resultado. Makeup solo si piden otro dia."
             ],
             "tips": [
               "Las faltas y cancelaciones de septiembre en adelante comparten una sola cola de decision.",
-              "El WhatsApp automatico de cancelacion no elige refund ni credit. Pon la pregunta en Reason para que el padre pueda contestar.",
+              "Los mensajes automaticos de la API (cambio de instructor, cambio de hora, cancelacion, makeup confirmado) dicen que salieron solos. No pidas al padre que conteste ahi.",
               "Cancelacion de pago privado por adelantado: lo no usado se puede devolver con una tasa del 10% de lo no usado (minimo 25 libras, maximo 100). Las sesiones ya dadas, incluido un crash de verano, siguen pagadas. LA / NHS no usan esta tasa.",
               "Cancelar la plaza fija es Edit term slot. Pon el ancla en una fecha de ese dia de la semana, y luego Rest of term from the anchor."
             ]

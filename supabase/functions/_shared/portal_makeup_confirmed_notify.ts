@@ -137,7 +137,8 @@ export async function notifyMakeupConfirmed(
       `We are confirming a make-up session for ${childName} on ${whenLine}` +
       (instructorName ? ` with instructor ${instructorName}` : "") +
       `.\n\n` +
-      `This session is now on the club roster. Please reply if this time does not work.\n\n` +
+      `This session is now on the club roster.\n\n` +
+      `This message was sent automatically. Please do not reply to it.\n\n` +
       `Portal: ${portalHint}\n\n— clubSENsational`;
     const subject = `Make-up confirmed · ${childName}`;
 

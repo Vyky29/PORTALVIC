@@ -14,6 +14,11 @@
     return "\n\nThank you,\nClubSENsational";
   }
 
+  /** Automated API copy. Parents must not be asked to answer on this channel. */
+  function machineOnlyLine() {
+    return "This message was sent automatically. Please do not reply to it.";
+  }
+
   /** Public HTTPS URL for a portal static asset (staff dashboard photos). */
   function absolutePortalAssetUrl(relativeOrAbsolute) {
     var u = String(relativeOrAbsolute || "").trim();
@@ -294,7 +299,7 @@
           client +
           " the photo above so they know who to expect.\n\n"
         : "\n") +
-      "If you have any questions, just reply to this message." +
+      machineOnlyLine() +
       signOff()
     );
   }
@@ -342,7 +347,8 @@
           client +
           " the photo above so they know who to expect.\n\n"
         : "\n") +
-      "Sorry for the extra change - if you have any questions, just reply to this message." +
+      "Sorry for the extra change.\n\n" +
+      machineOnlyLine() +
       signOff()
     );
   }
@@ -471,7 +477,7 @@
       "There has been a change of time for today only." +
       timesPart +
       "\n\n" +
-      "If you have any questions, just reply to this message." +
+      machineOnlyLine() +
       signOff()
     );
   }
@@ -513,7 +519,7 @@
           replacement +
           " the photo above so they know who to expect.\n\n"
         : "\n") +
-      "Please reply if this time does not work for you, or if you need directions or parking details again." +
+      machineOnlyLine() +
       signOff()
     );
   }
