@@ -21,10 +21,11 @@
   };
 
   var TYPE_META = {
-    meeting: { label: "Meeting", color: "#1d4ed8", bg: "#dbeafe" },
-    note: { label: "Note", color: "#b45309", bg: "#ffedd5" },
-    event: { label: "Event", color: "#15803d", bg: "#dcfce7" },
+    meeting: { label: "Meeting", color: "#1d4ed8", bg: "#dbeafe", border: "#93c5fd" },
+    note: { label: "Note", color: "#a16207", bg: "#fef3c7", border: "#fcd34d" },
+    event: { label: "Event", color: "#6d28d9", bg: "#ede9fe", border: "#c4b5fd" },
   };
+  var DONE_META = { label: "Done", color: "#15803d", bg: "#dcfce7", border: "#86efac" };
 
   /** Quick title picks for office notes (who the note is about / for). */
   var TITLE_SUGGESTIONS = ["Victor", "Javi", "Raul", "Sevitha"];
@@ -186,6 +187,24 @@
     void loadMonth();
   }
 
+  function isDoneStatus(entry) {
+    return String((entry && entry.status) || "open").toLowerCase() === "done";
+  }
+
+  /** Open day uses the legend colour of the first open item. All done turns the box green. */
+  function dayToneClass(list) {
+    if (!list || !list.length) return "";
+    var i;
+    for (i = 0; i < list.length; i++) {
+      if (!isDoneStatus(list[i])) {
+        var type = String(list[i].entry_type || "note").toLowerCase();
+        if (!TYPE_META[type]) type = "note";
+        return " is-type-" + type;
+      }
+    }
+    return " is-done";
+  }
+
   function buildMonthGridHtml() {
     ensureMonth();
     var first = new Date(state.year, state.month, 1);
@@ -207,13 +226,12 @@
         .map(function (e) {
           var meta = TYPE_META[e.entry_type] || TYPE_META.note;
           var isDone = String(e.status || "open").toLowerCase() === "done";
+          var chip = isDone ? DONE_META : meta;
           return (
             '<span class="poc-chip' +
             (isDone ? " poc-chip--done" : "") +
-            '" style="background:' +
-            meta.bg +
-            ";color:" +
-            meta.color +
+            '" style="background:#fff;color:' +
+            chip.color +
             '" title="' +
             esc(e.title) +
             (isDone ? " (done)" : "") +
@@ -226,15 +244,12 @@
       if (list.length > 3) {
         chips += '<span class="poc-chip poc-chip--more">+' + (list.length - 3) + "</span>";
       }
-      var openCount = list.filter(function (e) {
-        return String(e.status || "open").toLowerCase() !== "done";
-      }).length;
       cells.push(
         '<button type="button" class="poc-cell' +
           (isSel ? " is-selected" : "") +
           (isToday ? " is-today" : "") +
           (list.length ? " has-items" : "") +
-          (openCount ? " has-open" : "") +
+          dayToneClass(list) +
           '" data-poc-day="' +
           esc(iso) +
           '" aria-pressed="' +
@@ -444,7 +459,12 @@
       "#portalOfficeCalRoot .poc-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}" +
       "#portalOfficeCalRoot .poc-cell{min-width:0;min-height:84px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:#fff;padding:6px;display:flex;flex-direction:column;gap:4px;align-items:stretch;text-align:left;cursor:pointer;font:inherit}" +
       "#portalOfficeCalRoot .poc-cell--empty{visibility:hidden;pointer:0;min-height:0}" +
-      "#portalOfficeCalRoot .poc-cell:hover{border-color:#93c5fd;background:#f8fbff}" +
+      "#portalOfficeCalRoot .poc-cell:hover{border-color:#93c5fd}" +
+      "#portalOfficeCalRoot .poc-cell:not(.is-type-meeting):not(.is-type-note):not(.is-type-event):not(.is-done):hover{background:#f8fbff}" +
+      "#portalOfficeCalRoot .poc-cell.is-type-meeting{background:" + TYPE_META.meeting.bg + ";border-color:" + TYPE_META.meeting.border + "}" +
+      "#portalOfficeCalRoot .poc-cell.is-type-note{background:" + TYPE_META.note.bg + ";border-color:" + TYPE_META.note.border + "}" +
+      "#portalOfficeCalRoot .poc-cell.is-type-event{background:" + TYPE_META.event.bg + ";border-color:" + TYPE_META.event.border + "}" +
+      "#portalOfficeCalRoot .poc-cell.is-done{background:" + DONE_META.bg + ";border-color:" + DONE_META.border + "}" +
       "#portalOfficeCalRoot .poc-cell.is-selected{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.18)}" +
       "#portalOfficeCalRoot .poc-cell.is-today .poc-cell__num{background:#0f172a;color:#fff;border-radius:999px;width:1.6em;height:1.6em;display:inline-flex;align-items:center;justify-content:center}" +
       "#portalOfficeCalRoot .poc-cell__num{font-size:12px;font-weight:800;color:var(--ink,#0f172a)}" +
@@ -460,7 +480,11 @@
       "#portalOfficeCalRoot .poc-type{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:3px 7px;border-radius:999px}" +
       "#portalOfficeCalRoot .poc-entry__title{margin:0 0 4px;font-size:14px;overflow-wrap:break-word}" +
       "#portalOfficeCalRoot .poc-entry__body{margin:0;font-size:13px;color:#334155;overflow-wrap:break-word;white-space:pre-wrap}" +
-      "#portalOfficeCalRoot .poc-cell.has-open{background:#fff7ed;border-color:#fdba74}" +
+      "#portalOfficeCalRoot .poc-cell.is-type-meeting .poc-cell__num{color:" + TYPE_META.meeting.color + "}" +
+      "#portalOfficeCalRoot .poc-cell.is-type-note .poc-cell__num{color:" + TYPE_META.note.color + "}" +
+      "#portalOfficeCalRoot .poc-cell.is-type-event .poc-cell__num{color:" + TYPE_META.event.color + "}" +
+      "#portalOfficeCalRoot .poc-cell.is-done .poc-cell__num{color:" + DONE_META.color + "}" +
+      "#portalOfficeCalRoot .poc-cell.is-today .poc-cell__num{color:#fff}" +
       "#portalOfficeCalRoot .poc-chip--done{opacity:.55;text-decoration:line-through}" +
       "#portalOfficeCalRoot .poc-entry--done{opacity:.72;background:#f8fafc}" +
       "#portalOfficeCalRoot .poc-entry--done .poc-entry__title{text-decoration:line-through;color:#64748b}" +
@@ -498,9 +522,23 @@
       "</div>" +
       "</div>" +
       '<div class="poc-legend">' +
-      '<span><i class="poc-dot" style="background:#1d4ed8"></i> Meeting</span>' +
-      '<span><i class="poc-dot" style="background:#b45309"></i> Note</span>' +
-      '<span><i class="poc-dot" style="background:#15803d"></i> Event</span>' +
+      ["meeting", "note", "event"]
+        .map(function (key) {
+          var meta = TYPE_META[key];
+          return (
+            '<span><i class="poc-dot" style="background:' +
+            meta.color +
+            '"></i> ' +
+            meta.label +
+            "</span>"
+          );
+        })
+        .join("") +
+      '<span><i class="poc-dot" style="background:' +
+      DONE_META.color +
+      '"></i> ' +
+      DONE_META.label +
+      "</span>" +
       "</div>" +
       '<div class="poc-layout">' +
       '<div class="poc-cal">' +
@@ -690,7 +728,7 @@
       days.push(
         '<span class="ops-hub-cal-day' +
           (iso === today ? " is-today" : "") +
-          (openN ? " has-notes" : list.length ? " has-done" : "") +
+          dayToneClass(list) +
           '" title="' +
           esc(iso) +
           (openN ? " · " + openN + " open" : list.length ? " · done" : "") +
@@ -748,7 +786,7 @@
         '<span class="ops-hub-cal-day' +
           (inMonth ? "" : " is-outside") +
           (iso === today ? " is-today" : "") +
-          (openN ? " has-notes" : list.length ? " has-done" : "") +
+          dayToneClass(list) +
           '" title="' +
           esc(iso) +
           (openN ? " · " + openN + " open" : list.length ? " · done" : "") +

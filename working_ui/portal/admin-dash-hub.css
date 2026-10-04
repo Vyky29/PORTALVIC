@@ -2262,13 +2262,21 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   color:#cbd5e1;
   font-weight:600;
 }
-.ops-hub-cal-day.has-notes{
-  background:#ffedd5;
-  border-color:#fdba74;
+.ops-hub-cal-day.is-type-meeting{
+  background:#dbeafe;
+  border-color:#93c5fd;
 }
-.ops-hub-cal-day.has-done{
-  background:#f1f5f9;
-  border-color:#cbd5e1;
+.ops-hub-cal-day.is-type-note{
+  background:#fef3c7;
+  border-color:#fcd34d;
+}
+.ops-hub-cal-day.is-type-event{
+  background:#ede9fe;
+  border-color:#c4b5fd;
+}
+.ops-hub-cal-day.is-done{
+  background:#dcfce7;
+  border-color:#86efac;
 }
 .ops-hub-cal-day.is-today .ops-hub-cal-day__n{
   background:#0f172a;
@@ -2938,9 +2946,21 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 .ops-hub-cal-day{
   border-radius:3px;
 }
-.ops-hub-cal-day.has-notes{
-  background:#fff7ed;
-  border-color:#f0b27a;
+.ops-hub-cal-day.is-type-meeting{
+  background:#dbeafe;
+  border-color:#93c5fd;
+}
+.ops-hub-cal-day.is-type-note{
+  background:#fef3c7;
+  border-color:#fcd34d;
+}
+.ops-hub-cal-day.is-type-event{
+  background:#ede9fe;
+  border-color:#c4b5fd;
+}
+.ops-hub-cal-day.is-done{
+  background:#dcfce7;
+  border-color:#86efac;
 }
 .ops-hub-cal-day.is-today .ops-hub-cal-day__n{
   border-radius:4px;
@@ -3821,17 +3841,26 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   background:#f8fafc;
   border-color:#e2e8f0;
 }
-.ops-hub--today-first .ops-hub-cal-day.has-notes{
-  background:#ffedd5;
-  border-color:#f97316;
+.ops-hub--today-first .ops-hub-cal-day.is-type-meeting{
+  background:#dbeafe;
+  border-color:#93c5fd;
 }
-.ops-hub--today-first .ops-hub-cal-day.has-notes .ops-hub-cal-day__n{
-  color:#9a3412;
+.ops-hub--today-first .ops-hub-cal-day.is-type-note{
+  background:#fef3c7;
+  border-color:#fcd34d;
 }
-.ops-hub--today-first .ops-hub-cal-day.has-done{
-  background:#e2e8f0;
-  border-color:#94a3b8;
+.ops-hub--today-first .ops-hub-cal-day.is-type-event{
+  background:#ede9fe;
+  border-color:#c4b5fd;
 }
+.ops-hub--today-first .ops-hub-cal-day.is-done{
+  background:#dcfce7;
+  border-color:#86efac;
+}
+.ops-hub--today-first .ops-hub-cal-day.is-type-meeting:not(.is-today) .ops-hub-cal-day__n{color:#1d4ed8}
+.ops-hub--today-first .ops-hub-cal-day.is-type-note:not(.is-today) .ops-hub-cal-day__n{color:#a16207}
+.ops-hub--today-first .ops-hub-cal-day.is-type-event:not(.is-today) .ops-hub-cal-day__n{color:#6d28d9}
+.ops-hub--today-first .ops-hub-cal-day.is-done:not(.is-today) .ops-hub-cal-day__n{color:#15803d}
 .ops-hub--today-first .dash-hub__panel-jump{
   width:auto;
   max-width:100%;

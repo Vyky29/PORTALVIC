@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-04-v238",
+  "version": "2026-10-04-v239",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -483,7 +483,7 @@
             "Anyone with portal admin access sees the same calendar."
           ],
           "tips": [
-            "On the hub calendar, a day with an open note is orange. A day whose notes are all Done is grey. Days with nothing stay white."
+            "A day that is all Done is green. A day still open uses the legend: Meeting blue, Note gold, Event violet. Days with nothing stay white."
           ],
           "es": {
             "title": "Calendario de oficina (notas y reuniones)",
@@ -498,7 +498,7 @@
             ],
             "tips": [
               "Las notas del calendario no cambian plazas ni covers. Un cambio de dia se hace en Schedule & Covers.",
-              "En el calendario del hub, un dia con nota abierta sale naranja. Si todas estan en Done, el dia sale gris. Sin nada, blanco."
+              "Un dia que esta todo en Done sale verde. Si sigue abierto usa la leyenda: Meeting azul, Note dorado, Event violeta. Sin nada, blanco."
             ]
           }
         },
@@ -523,7 +523,7 @@
           "steps": [
             "Open Operations Hub. The title, the info circle and Office help sit together.",
             "Sessions is the large pink block on the left: Sessions overview, Schedule and Covers, Register. The top row is Clients and families (Active), then Services and places (Places, Leads, Edit term slot), then the calendar. Every button inside a block uses that block's colour for the fill and the outline.",
-            "Under that row: Finance (Re-enrolments and Bookings, Absents credits and refunds), H&R (Workers, Instructor timetable, Session disruptions), and Potential workers (Interviews, Onboarding). A day with an open note is orange. Press the calendar to open Office calendar.",
+            "Under that row: Finance (Re-enrolments and Bookings, Absents credits and refunds), H&R (Workers, Instructor timetable, Session disruptions), and Potential workers (Interviews, Onboarding). A Done day is green. An open day uses the legend colour. Press the calendar to open Office calendar.",
             "The full menu is still in the sidebar. Photos/Videos, Parent consents, Service roster, REGISTERED, WAITING LIST, Payments, Cancelled services, Late feedback, Documents and Finance are not on the hub. Open them from the sidebar.",
             "WhatsApp, Parents API, Staff API, C (Comms) and A (Announcements) stay in the top bar.",
             "When that lane has unread messages, the button lights up and shows the number."
@@ -541,7 +541,7 @@
             "steps": [
               "Abre Operations Hub. El titulo, el circulo de info y Office help van juntos.",
               "Sessions es el bloque rosa de la izquierda: Sessions overview, Schedule and Covers, Register. La fila de arriba es Clients and families (Active), luego Services and places (Places, Leads, Edit term slot) y el calendario. Cada boton de dentro usa el color de su bloque, en el fondo y en el borde.",
-              "Debajo: Finance (Re-enrolments and Bookings, Absents credits and refunds), H&R (Workers, Instructor timetable, Session disruptions) y Potential workers (Interviews, Onboarding). Un dia con nota abierta sale naranja. Pulsa el calendario para abrir Office calendar.",
+              "Debajo: Finance (Re-enrolments and Bookings, Absents credits and refunds), H&R (Workers, Instructor timetable, Session disruptions) y Potential workers (Interviews, Onboarding). Un dia en Done sale verde. Si sigue abierto usa el color de la leyenda. Pulsa el calendario para abrir Office calendar.",
               "El menu completo sigue en la barra lateral. Photos/Videos, Parent consents, Service roster, REGISTERED, WAITING LIST, Payments, Cancelled services, Late feedback, Documents y Finance no estan en el hub. Se abren desde la barra lateral.",
               "WhatsApp, Parents API, Staff API, C y A siguen en la barra de arriba."
             ],
