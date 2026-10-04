@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
   <script src="/portal/portal_participant_identity.js?v=20261003-mohamed-mohamud"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20261001-sessions-quiet"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20261004-venue-video"></script>
   <script src="/portal/admin-portal-documents.js?v=20261002-hr-files"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20261001-reg-form"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260923-auto-makeup"></script>
@@ -28463,8 +28463,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return [];
       }
     }
-    async function adminFetchVenueReviewsForHub(){
-      if(Array.isArray(window.__PORTAL_VENUE_REVIEWS__) && window.__PORTAL_VENUE_REVIEWS__.length){
+    async function adminFetchVenueReviewsForHub(opts){
+      var force = !!(opts && opts.force);
+      if(!force && Array.isArray(window.__PORTAL_VENUE_REVIEWS__) && window.__PORTAL_VENUE_REVIEWS__.length){
         return window.__PORTAL_VENUE_REVIEWS__;
       }
       var auth = await adminEnsureAuthedSupabaseClient();
@@ -29134,7 +29135,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20261004-reg-filters';
+    var PORTAL_ADMIN_HUB_BUILD = '20261004-fb-filter';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

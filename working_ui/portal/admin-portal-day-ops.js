@@ -1761,10 +1761,12 @@
     return [];
   }
   function venueReviewVideoCellHtml(r) {
-    if (!venueReviewDayFinished(r)) return '—';
     var reviewId = String((r && r.id) || '').trim();
     var videoPath = String((r && r.video_storage_path) || '').trim();
     var photoPaths = venueReviewPhotoPaths(r);
+    var dayDone = venueReviewDayFinished(r);
+    /* A walkthrough saved this morning must show before the day is over. */
+    if (!dayDone && !videoPath && !photoPaths.length) return '—';
     var uploading = !!(reviewId && venueAdminVideoUploading[reviewId]);
     var playBtn = videoPath
       ? '<button type="button" class="portal-forms-view-btn" data-venue-video-path="' +
@@ -1785,7 +1787,7 @@
       })
       .join('');
     var uploadLabel = uploading ? 'Uploading...' : videoPath ? 'Replace video' : 'Upload video';
-    var uploadBtn = reviewId
+    var uploadBtn = dayDone && reviewId
       ? '<button type="button" class="portal-forms-view-btn" data-venue-video-upload="' +
         esc(reviewId) +
         '" aria-label="' +
@@ -2320,7 +2322,7 @@
               }
             } catch (_deferVenue) {}
             try {
-              var liveVenue = (await cfg.fetchVenueReviews()) || [];
+              var liveVenue = (await cfg.fetchVenueReviews({ force: true })) || [];
               if (liveVenue.length) payload.venue_reviews = liveVenue;
               mergePortalVenueIntoPayload();
             } catch (eVenueTab) {

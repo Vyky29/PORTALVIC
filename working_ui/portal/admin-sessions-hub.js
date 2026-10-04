@@ -4930,10 +4930,23 @@ function rosterRowToSlot(isoDate, wd, r) {
     return slotInstructors(slot);
   }
 
+  /** Awaiting rows use the same on-duty names as the Reviewed by column. */
+  function awaitingSlotMatchesInstructorFilter(hub, slot, inst) {
+    if (!inst) return true;
+    if (!slot) return false;
+    var names = feedbackWhoOwesInstructors(hub, slot);
+    if (slot.portalShadowingObserverName) names = names.concat([slot.portalShadowingObserverName]);
+    for (var i = 0; i < names.length; i++) {
+      if (completedByMatchesInstructor(names[i], inst)) return true;
+    }
+    return false;
+  }
+
   /** Shared units (e.g. Tinashe John+Bismark+Giuseppe): peer submitter still visible for co-instructors. */
   function submittedFeedbackMatchesInstructorFilter(hub, fb, inst) {
     if (!inst) return true;
-    if (!fb || fb._ashAwaitingSlot) return true;
+    if (!fb) return false;
+    if (fb._ashAwaitingSlot) return awaitingSlotMatchesInstructorFilter(hub, fb.slot, inst);
     if (completedByMatchesInstructor(fb.completed_by_name, inst)) return true;
     var day = feedbackSessionDate(fb);
     if (!day || !hub || typeof hub.expandSlotsForDate !== "function") return false;
@@ -8955,14 +8968,25 @@ function rosterRowToSlot(isoDate, wd, r) {
 
   AdminSessionsHub.prototype.refreshClientFilterView = function () {
     var hub = this;
-    hub.invalidateComputeCaches();
     if (hub.opts && typeof hub.opts.onViewFiltersChange === "function") {
       hub.opts.onViewFiltersChange(hub);
     }
     if (hub.tab === "tracking" && typeof hub.softRefreshOverview === "function" && hub.overviewSurfaceReady()) {
+      hub._dayStatsByIso = null;
       hub.softRefreshOverview();
       return;
     }
+    /* Keep the roster cache. A full rebuild flashes "Loading register" and recomputes every day. */
+    if (
+      (hub.tab === "feedback" || hub.mode === "feedback") &&
+      typeof hub.feedbackSurfaceReady === "function" &&
+      hub.feedbackSurfaceReady()
+    ) {
+      hub._dayStatsByIso = null;
+      hub.softPaintFeedbackFilter();
+      return;
+    }
+    hub.invalidateComputeCaches();
     if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
     else hub.render();
   };
@@ -14346,9 +14370,47 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       );
     }
     if (!tableRows) {
+      if (clean(this.clientSearch) || clean(this.instructorFilter)) {
+        return '<tr><td colspan="7"><div class="ash-empty">Nothing matches this filter.</div></td></tr>';
+      }
       return '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
     }
     return tableRows;
+  };
+
+  /** Instructor / participant change: repaint the table first, then the week counts. */
+  AdminSessionsHub.prototype.softPaintFeedbackFilter = function () {
+    if (!this.hubIsLive()) return;
+    var hub = this;
+    var root = this.root;
+    var tbody = root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
+    if (tbody) {
+      try {
+        tbody.innerHTML = this.htmlFeedbackRegisterTableBody();
+      } catch (err) {
+        console.warn("[AdminSessionsHub] filter paint", err);
+        tbody.innerHTML =
+          '<tr><td colspan="7"><div class="ash-empty">Could not paint this filter.</div></td></tr>';
+      }
+    }
+    if (hub._filterStripTimer) clearTimeout(hub._filterStripTimer);
+    hub._filterStripTimer = setTimeout(function () {
+      hub._filterStripTimer = 0;
+      if (!hub.hubIsLive()) return;
+      var metrics = hub.root && hub.root.querySelector(".ash-metrics-dashboard");
+      if (metrics) {
+        try {
+          var sum = hub.engagementSummary(hub.feedbackRowsForMetrics());
+          var wrap = document.createElement("div");
+          wrap.innerHTML = hub.htmlFeedbackMetricStrip(sum);
+          var next = wrap.firstElementChild;
+          if (next && metrics.parentNode) metrics.parentNode.replaceChild(next, metrics);
+        } catch (_m) {}
+      }
+      try {
+        hub.syncRegisterWeekStripCounts();
+      } catch (_s) {}
+    }, 0);
   };
 
   /**
