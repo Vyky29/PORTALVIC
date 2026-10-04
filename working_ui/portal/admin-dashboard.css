@@ -5982,3 +5982,114 @@
         gap:0;
       }
     }
+    /* Phone on its side: every control on line 1. Line 2 is only who is online.
+       Announcements, Parents and Staff are the same small A, P, S squares as upright. */
+    @media (orientation:landscape) and (max-height:540px){
+      body.admin-touch-compact .admin-topbar,
+      .admin-topbar{
+        flex-wrap:wrap;
+        align-items:center;
+        height:auto;
+        row-gap:6px;
+        column-gap:6px;
+      }
+      .admin-topbar-meta,
+      .admin-topbar-msgs{display:contents}
+      body.admin-touch-compact .admin-menu-mob,
+      .admin-topbar .admin-menu-mob{
+        order:1;
+        flex:0 0 36px;
+        width:36px;
+        height:36px;
+      }
+      body.admin-touch-compact .admin-topbar .admin-search-wrap,
+      .admin-topbar .admin-search-wrap{
+        display:block !important;
+        order:2;
+        flex:1 1 0;
+        width:auto;
+        max-width:none;
+        min-width:0;
+      }
+      .admin-search-wrap input{min-width:0}
+      .admin-topbar-help{
+        order:2;
+        flex:0 0 auto;
+        height:36px;
+        margin:0;
+        padding:0 8px;
+      }
+      body.admin-touch-compact .admin-topbar #btnAlerts,
+      #btnAlerts,
+      #btnOpenWhatsapp,
+      #btnComunicaciones,
+      #btnAnnouncements,
+      #btnFamilyMsgs,
+      #btnStaffWa,
+      .admin-profile{
+        order:3;
+      }
+      body.admin-touch-compact .admin-topbar #btnAlerts,
+      #btnAlerts{
+        display:inline-flex !important;
+        width:36px;
+        height:36px;
+        min-width:36px;
+        flex:0 0 36px;
+      }
+      .admin-profile{
+        flex:0 0 36px;
+        margin:0;
+        width:36px;
+        height:36px;
+        padding:2px;
+        justify-content:center;
+      }
+      .admin-profile span#miniName{display:none}
+      .admin-topbar-presence{
+        display:flex !important;
+        order:10;
+        flex:1 0 100%;
+        width:100%;
+        max-width:none;
+        min-width:0;
+        margin:0;
+        border:none;
+        border-top:1px solid var(--line, #e2e8f0);
+        overflow:visible;
+      }
+      .admin-topbar-presence .sf-status-bar{
+        width:100%;
+        min-width:0;
+        overflow-x:auto;
+      }
+      .admin-topbar-meta .admin-api-chip__name{display:none}
+      .admin-topbar-meta .admin-api-chip__mark{
+        display:flex;
+        width:auto;
+        height:auto;
+        flex:none;
+        background:transparent;
+        border-radius:0;
+        font-size:16px;
+        font-weight:800;
+        color:#fff;
+      }
+      .admin-topbar-meta .admin-icon-btn--p .admin-api-chip__mark{background:transparent;color:#173247}
+      .admin-topbar-meta .admin-icon-btn--s .admin-api-chip__mark{background:transparent;color:#fff}
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--p,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--s,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--a,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--p:hover,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--s:hover,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--a:hover{
+        width:36px;
+        height:36px;
+        min-width:36px;
+        min-height:36px;
+        max-width:36px;
+        padding:0;
+        flex:0 0 36px;
+        gap:0;
+      }
+    }
