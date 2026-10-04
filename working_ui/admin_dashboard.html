@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261004-hub-swap" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261004-hub-phrases" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -32395,28 +32395,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     var OPS_HUB_TILE_DESC = {
-      c4k_sessions: 'Live grid &amp; feedback',
-      scheduling: 'Weekly anchors &amp; swap cover',
-      sessions_register: 'Session feedback — filter or notes on click',
+      c4k_sessions: 'The day board',
+      scheduling: 'One-day covers',
+      sessions_register: 'Session feedback',
       sessions_feedback: 'Session feedback — filter or notes on click',
       sessions_notes: 'Session feedback — filter or notes on click',
       c4k_late_submissions: 'Outstanding after the session day',
       roster_spreadsheets: 'Who works which hours',
       portal_docs_portalpin: 'Staff portal login PINs',
       sessions_incidents: 'Safeguarding &amp; logs',
-      session_disruptions: 'Same-day disruption reports',
-      absents_refunds: 'Absents, cancels, refunds, makeup',
+      session_disruptions: 'Same-day disruption',
+      absents_refunds: 'Credits, refunds, makeup',
       reenrol_payments: 'Invoices, payments &amp; shares',
       clients: 'On a place now',
       clients_old: 'No slots from September 2026',
       clients_trial: 'Trial booked',
       clients_cfk: 'Class for Kids file',
       new_client: 'Name, age and an open seat',
-      services_places: 'Booking Portal seats and who is taken',
+      services_places: 'Seats in Booking Portal',
       services_roster: 'Who is booked and the standing instructor',
-      leads: 'OTP leads and what happened next',
-      term_roster_edit: 'Change a standing seat for the rest of term',
-      finance_reenrolments: 'Re-enrolments and bookings',
+      leads: 'Enquired, form not done',
+      term_roster_edit: 'Rest of term',
+      finance_reenrolments: 'Invoices and bookings',
       finance_payments: 'Payments in and shares',
       portal_family_pins: 'Family portal login PINs',
       c4k_waitlist: 'Waiting for a full place',
@@ -32434,13 +32434,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portal_parent_broadcast: 'One message to many families',
       staff_ghost_teleport: 'Read-only view of a worker app',
       portal_parent_teleport: 'Read-only view of a family portal',
-      interviews: 'Call and face-to-face stages',
+      interviews: 'Call and face to face',
       portal_documents: 'Staff timesheets, expenses &amp; files',
       portal_participant_documents: 'Form done, never a CLIENT',
       portal_registration_form: 'Booking Portal forms and pay links',
-      staffhr: 'Staff, contracts &amp; training',
+      staffhr: 'Staff and contracts',
       c4k_services: 'Places, capacity &amp; standing seats',
-      onboarding: 'New staff hub'
+      onboarding: 'New staff start',
     };
     function opsHubTileDesc(item){
       if(!item) return '';
@@ -32524,7 +32524,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id === 'potential'){
         return [{ id:'interviews', label:'Interviews' }, 'onboarding'];
       }
-      return [{ id:'c4k_sessions', label:'Sessions overview' },'scheduling','sessions_register'];
+      return [
+        { id:'c4k_sessions', label:'Overview' },
+        'scheduling',
+        { id:'sessions_register', label:'Feedbacks' }
+      ];
     }
     function opsHubPhoneCatAccordion(){
       try{
