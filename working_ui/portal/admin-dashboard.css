@@ -5879,11 +5879,8 @@
     @media (max-width:900px) and (orientation:portrait){
       body.admin-touch-compact .admin-topbar,
       .admin-topbar{
-        display:grid !important;
-        grid-template-columns:28px minmax(0,1fr) auto 28px 28px 28px;
-        grid-template-areas:
-          "menu search help wa chat photo"
-          "online online bell ann parents staff";
+        display:flex !important;
+        flex-flow:row wrap;
         align-items:center;
         height:auto;
         min-height:0;
@@ -5891,24 +5888,26 @@
         column-gap:4px;
       }
       .admin-topbar-meta,
-      .admin-topbar-msgs{display:contents}
-      .admin-topbar-portrait-break{display:none}
-      .admin-menu-mob{grid-area:menu}
+      .admin-topbar-msgs{
+        display:contents;
+      }
+      .admin-topbar-meta{
+        flex-direction:row;
+        flex-wrap:nowrap;
+      }
       body.admin-touch-compact .admin-topbar .admin-search-wrap,
       .admin-search-wrap{
         display:block !important;
-        grid-area:search;
-        width:auto;
+        order:1;
+        flex:1 1 0;
+        width:0;
         max-width:none;
         min-width:0;
         overflow:hidden;
       }
       .admin-search-wrap input{min-width:0;width:100%}
-      .admin-topbar-help{grid-area:help}
-      #btnOpenWhatsapp{grid-area:wa}
-      #btnComunicaciones{grid-area:chat}
       .admin-profile{
-        grid-area:photo;
+        order:5;
         flex:0 0 28px;
         margin:0;
         width:28px;
@@ -5917,9 +5916,21 @@
         justify-content:center;
       }
       .admin-profile span#miniName{display:none}
-      #btnAnnouncements{grid-area:ann}
-      #btnFamilyMsgs{grid-area:parents}
-      #btnStaffWa{grid-area:staff}
+      #btnOpenWhatsapp{order:3}
+      #btnComunicaciones{order:4}
+      #btnAnnouncements{order:12}
+      #btnFamilyMsgs{order:13}
+      #btnStaffWa{order:14}
+      .admin-topbar-portrait-break{
+        display:block;
+        order:6;
+        flex:0 0 100%;
+        width:100%;
+        height:0;
+        margin:0;
+        padding:0;
+        overflow:hidden;
+      }
       body.admin-touch-compact .admin-menu-mob,
       .admin-topbar .admin-menu-mob,
       .admin-menu-mob{
@@ -5932,14 +5943,14 @@
       body.admin-touch-compact .admin-topbar #btnAlerts,
       #btnAlerts{
         display:inline-flex !important;
-        grid-area:bell;
+        order:11;
         width:28px;
         height:28px;
         min-width:28px;
         flex:0 0 28px;
       }
       .admin-topbar-help{
-        grid-area:help;
+        order:2;
         flex:0 0 auto;
         height:28px;
         margin:0;
@@ -5947,8 +5958,10 @@
         font-size:12px;
       }
       .admin-topbar-presence{
-        grid-area:online;
+        order:10;
         display:flex !important;
+        flex:1 1 0;
+        flex-direction:row;
         width:auto;
         max-width:100%;
         min-width:0;
