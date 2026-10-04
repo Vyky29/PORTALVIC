@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v246",
+  "version": "2026-10-05-v247",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2424,8 +2424,8 @@
         {
           "id": "staff_feedback_voice_vs_admin_ai",
           "title": "Staff feedback voice is not the family rewrite",
-          "summary": "Staff type or dictate the session narrative. The office rewrites it for a family or for the Day Centre weekly note only when you ask.",
-          "where": "Staff app, session feedback. Admin, when you prepare a family message or a Day Centre weekly note.",
+          "summary": "Staff dictate or type the session in their own words. Admin can filter one family message when you want. Day Centre weekly notes filter themselves.",
+          "where": "Staff app, session feedback. Admin filter for one family. Day Centre weekly note on the parent portal.",
           "keywords": [
             "feedback",
             "voice",
@@ -2442,27 +2442,27 @@
           ],
           "steps": [
             "Staff choose Voice or Written and fill the session narrative. Notes is a separate box. That box is Relevant information.",
-            "Voice turns speech into text and leaves those words in the narrative. Staff read them and Submit.",
-            "The bell lists a feedback only when Notes / Relevant information has text from the last 7 days.",
-            "A family message, or a Day Centre weekly note, is prepared in admin. That is the only place the rewrite runs."
+            "Voice writes down what was said. Staff read it and type over any wrong words, then Submit.",
+            "To send one family a cleaned message, filter that note in admin. That step is only when you want it.",
+            "Day Centre weekly notes run on their own at the end of the week. That filter uses parent language and skips lines already used in an earlier week."
           ],
           "tips": [
-            "Spanish or Italian on the mic is translated into English, so it is not word for word. English stays a transcript.",
-            "The session narrative is not a bell alert. Empty Engagement or Emotions are not an alert."
+            "The mic does not polish the words. Spanish or Italian stays in that language so the words match what was said.",
+            "The session narrative is not a bell alert. The bell lists Notes only when Relevant information has text."
           ],
           "es": {
             "title": "La voz del feedback no es el texto para la familia",
-            "summary": "El staff escribe o dicta la narrativa. La oficina la reescribe para una familia o para la nota semanal del Day Centre solo cuando tu lo pides.",
-            "where": "App de staff, session feedback. Admin, cuando preparas un mensaje a una familia o la nota semanal del Day Centre.",
+            "summary": "El staff dicta o escribe la sesion con sus palabras. Admin puede filtrar un mensaje a una familia cuando tu quieres. La nota semanal del Day Centre se filtra sola.",
+            "where": "App de staff, session feedback. Filtro de admin para una familia. Nota semanal del Day Centre en el portal de padres.",
             "steps": [
               "El staff elige Voice o Written y rellena la narrativa. Notes es otra caja. Esa caja es Relevant information.",
-              "La voz pasa el habla a texto y deja esas palabras en la narrativa. El staff las lee y pulsa Submit.",
-              "La campana lista un feedback solo si Notes / Relevant information tiene texto en los ultimos 7 dias.",
-              "Un mensaje a una familia, o la nota semanal del Day Centre, se prepara en admin. Ahi es el unico sitio donde corre la reescritura."
+              "La voz escribe lo que se ha dicho. El staff lo lee, escribe encima lo que este mal, y pulsa Submit.",
+              "Para mandar a una familia un texto limpio, filtra esa nota en admin. Ese paso es solo cuando tu quieres.",
+              "La nota semanal del Day Centre sale sola al cerrar la semana. Ese filtro usa lenguaje para padres y no repite frases de una semana anterior."
             ],
             "tips": [
-              "Espanol o italiano en el micro se traduce a ingles, asi que no es palabra por palabra. Ingles se queda en transcripcion.",
-              "La narrativa de la sesion no es una alerta. Engagement o Emotions vacios tampoco."
+              "El micro no arregla las palabras. Espanol o italiano se queda en ese idioma para que coincida con lo dicho.",
+              "La narrativa de la sesion no es una alerta. La campana lista Notes solo si Relevant information tiene texto."
             ]
           }
         },

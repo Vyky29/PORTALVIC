@@ -700,7 +700,8 @@ async function callOpenAiWeeklyNote(
     "If a day is marked ABSENT, that paragraph must say only that the child was absent that day. Do not invent activities for an absent day.",
     "No bullet lists. No title heading.",
     "Each week's note must feel fresh: vary the opening line and structure. Do not reuse stock openers like \"What a wonderful week…\", \"had a fantastic week…\", or the same closing sentence as earlier notes.",
-    "Focus on what was distinctive this week (specific activities, moments, or progress from the day notes). Skip generic praise that could belong to any week.",
+    "Do not repeat an activity, achievement, or sentence that already appears in an earlier weekly note unless this week's day notes show it happened again. If it happened again, say what was different this week.",
+    "Use warm, clear parent language. Skip generic praise that could belong to any week.",
     "Output plain text only — no JSON, no markdown.",
   ].join("\n");
 
