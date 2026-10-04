@@ -448,7 +448,9 @@
       "#portalOfficeCalRoot{min-width:0}" +
       "#portalOfficeCalRoot .poc-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px;min-width:0}" +
       "#portalOfficeCalRoot .poc-toolbar__nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0}" +
+      "#portalOfficeCalRoot .poc-toolbar__today{display:inline-flex;flex:0 0 auto;flex-wrap:nowrap;gap:8px;align-items:center}" +
       "#portalOfficeCalRoot .poc-toolbar h2{margin:0;font-size:18px;min-width:0;overflow-wrap:break-word;flex:0 1 auto}" +
+      "@media (max-width:480px) and (orientation:portrait){#portalOfficeCalRoot .poc-toolbar__nav{gap:6px}#portalOfficeCalRoot .poc-toolbar h2{font-size:16px;white-space:nowrap}#portalOfficeCalRoot .poc-toolbar__today{gap:6px}#portalOfficeCalRoot .poc-toolbar__today .btn--sm{padding:6px 8px}}" +
       "#portalOfficeCalRoot .poc-legend{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}" +
       "#portalOfficeCalRoot .poc-legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--muted,#64748b)}" +
       "#portalOfficeCalRoot .poc-dot{width:10px;height:10px;border-radius:999px;flex:0 0 auto}" +
@@ -517,8 +519,10 @@
       esc(monthLabel()) +
       "</h2>" +
       '<button type="button" class="btn btn--sec btn--sm" id="pocNext" aria-label="Next month">→</button>' +
+      '<span class="poc-toolbar__today">' +
       '<button type="button" class="btn btn--ghost btn--sm" id="pocToday">Today</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pocRefresh">Refresh</button>' +
+      "</span>" +
       "</div>" +
       "</div>" +
       '<div class="poc-legend">' +
