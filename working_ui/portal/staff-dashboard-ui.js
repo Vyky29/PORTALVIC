@@ -815,11 +815,11 @@
       grid.style.setProperty('--today-row-gap', gapPx + 'px');
       grid.style.setProperty('--today-row-pad-y', padY + 'px');
       var face = portalTodayFaceSizes(grid, n);
-      grid.style.setProperty('--today-photo', (n <= 4 ? face.above : face.side) + 'px');
+      grid.style.setProperty('--today-photo', (n <= 6 ? face.above : face.side) + 'px');
       grid.style.setProperty('--today-photo-special', face.special + 'px');
     }
-    /** Photo diameter from the real row. Above-name faces (4 or fewer, and special cards)
-     *  can be large. Side faces stay inside the row so time, name and area stay intact. */
+    /** Photo diameter from the real row. 1-6 cards and special cards stack the face
+     *  above the name. More than 6 keep it on the left, between the old 72px and 32px. */
     function portalTodayFaceSizes(grid, n){
       var row = 140;
       var width = 360;
@@ -833,14 +833,18 @@
         if(h > 80) row = Math.floor((h - Math.max(0, n - 1) * gap) / Math.max(1, n));
         if(w > 120) width = w;
       }catch(_){}
-      var above = Math.round(Math.min(88, Math.max(52, row * 0.46)));
-      if(row < 110) above = Math.round(Math.min(above, Math.max(40, row * 0.40)));
+      var above = Math.round(Math.min(68, Math.max(46, row * 0.58)));
+      if(row < 100){
+        var fit = Math.max(42, row - 36);
+        above = Math.round(Math.min(above, fit));
+      }
       var nameCol = Math.floor(width * 0.36);
-      var special = Math.round(Math.min(96, nameCol, Math.max(above + 10, row * 0.54)));
-      if(row < 110) special = Math.round(Math.min(special, Math.max(44, row * 0.46)));
-      var side = Math.round(Math.min(32, Math.max(26, row * 0.36)));
+      var special = Math.round(Math.min(80, nameCol, Math.max(above + 8, row * 0.52)));
+      if(row < 110) special = Math.round(Math.min(special, Math.max(above, row - 32)));
+      var side = Math.round(Math.min(52, Math.max(40, row - 14)));
       var mid = width - 78 - 72;
-      if(mid > 40) side = Math.min(side, Math.max(26, mid - 80));
+      if(mid > 40) side = Math.min(side, Math.max(40, mid - 80));
+      if(row < 58) side = Math.round(Math.min(side, Math.max(36, row - 12)));
       return { above: above, special: special, side: side };
     }
 

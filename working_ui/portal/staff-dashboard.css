@@ -5956,8 +5956,8 @@
       flex:1 1 auto;
       gap:3px;
     }
-    /* Photo sits with the name. Side by side when the day has more than 4 cards.
-       Stacked above the name when there are 4 or fewer, and always on special cards. */
+    /* Photo sits with the name. Side by side when the day has more than 6 cards.
+       Stacked above the name when there are 6 or fewer, and always on special cards. */
     .section-card--today .session-name-photo-row{
       display:inline-flex;
       flex-direction:row;
@@ -5981,6 +5981,8 @@
     .section-card--today .today-grid[data-session-count="2"] .session-card-body .session-name-photo-row,
     .section-card--today .today-grid[data-session-count="3"] .session-card-body .session-name-photo-row,
     .section-card--today .today-grid[data-session-count="4"] .session-card-body .session-name-photo-row,
+    .section-card--today .today-grid[data-session-count="5"] .session-card-body .session-name-photo-row,
+    .section-card--today .today-grid[data-session-count="6"] .session-card-body .session-name-photo-row,
     .section-card--today .session-card-body .session-name-photo-row--above{
       flex-direction:column;
       align-items:center;
@@ -5993,6 +5995,8 @@
     .section-card--today .today-grid[data-session-count="2"] .session-name-photo-row .session-meta-name,
     .section-card--today .today-grid[data-session-count="3"] .session-name-photo-row .session-meta-name,
     .section-card--today .today-grid[data-session-count="4"] .session-name-photo-row .session-meta-name,
+    .section-card--today .today-grid[data-session-count="5"] .session-name-photo-row .session-meta-name,
+    .section-card--today .today-grid[data-session-count="6"] .session-name-photo-row .session-meta-name,
     .section-card--today .session-name-photo-row--above .session-meta-name{
       width:100%;
       max-width:100%;
@@ -6014,8 +6018,8 @@
       align-items:center;
       justify-content:center;
       flex:0 1 auto;
-      width:var(--today-photo, 32px);
-      min-width:28px;
+      width:var(--today-photo, 48px);
+      min-width:36px;
       height:auto;
       aspect-ratio:1;
       max-width:100%;
@@ -6034,9 +6038,11 @@
     .section-card--today .today-grid[data-session-count="2"] .session-card-body .session-name-photo,
     .section-card--today .today-grid[data-session-count="3"] .session-card-body .session-name-photo,
     .section-card--today .today-grid[data-session-count="4"] .session-card-body .session-name-photo,
+    .section-card--today .today-grid[data-session-count="5"] .session-card-body .session-name-photo,
+    .section-card--today .today-grid[data-session-count="6"] .session-card-body .session-name-photo,
     .section-card--today .session-card-body .session-name-photo-row--above .session-name-photo{
       flex:0 0 auto;
-      width:min(var(--today-photo, 64px), 100%);
+      width:min(var(--today-photo, 56px), 100%);
       max-width:100%;
       min-width:0;
     }
