@@ -815,6 +815,45 @@
       return String(raw || '').split(/[,;|/]+/).map(function(p){ return p.trim(); }).filter(Boolean);
     }
     /**
+     * Staff Today only expands the logged-in worker's seats, so a 2:1 partner
+     * (Michelle on Timi, Raul on Ibrahim) is missing unless we read the full day.
+     */
+    var portalShareClubDayRowsCache = Object.create(null);
+    function portalShareClubDayRows(iso){
+      const key = String(iso || '').slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key)){
+        try{
+          const src = window.STAFF_DASHBOARD_SOURCE;
+          return (src && Array.isArray(src.rows)) ? src.rows : [];
+        }catch(_){ return []; }
+      }
+      if(portalShareClubDayRowsCache[key]) return portalShareClubDayRowsCache[key];
+      const rows = [];
+      function push(list){
+        if(!Array.isArray(list)) return;
+        for(let i = 0; i < list.length; i++){
+          if(list[i]) rows.push(list[i]);
+        }
+      }
+      try{
+        const src = window.STAFF_DASHBOARD_SOURCE;
+        if(src && Array.isArray(src.rows)) push(src.rows);
+      }catch(_){}
+      try{
+        const Chain = window.PortalOverviewCapacityChain;
+        if(Chain && typeof Chain.resolve === 'function'){
+          const full = Chain.resolve({
+            forSessionsOverview: true,
+            windowFrom: key,
+            windowThrough: key
+          });
+          if(full && Array.isArray(full.rows)) push(full.rows);
+        }
+      }catch(_){}
+      portalShareClubDayRowsCache[key] = rows;
+      return rows;
+    }
+    /**
      * Shared seat line under the client name, e.g. "(2:1 with Raul)" / "(3:1 with Bismark & Godsway)".
      * N = named staff on that client+service that calendar day (viewer included); names omit self.
      */
@@ -898,8 +937,7 @@
         portalShareStaffTokens(row).forEach(function(tok){ addStaff(tok, mins, endMins); });
       }
       try{
-        const src = window.STAFF_DASHBOARD_SOURCE;
-        if(src && Array.isArray(src.rows)) src.rows.forEach(considerRow);
+        portalShareClubDayRows(iso).forEach(considerRow);
       }catch(_){}
       try{
         const sm = window.sessionsModel;

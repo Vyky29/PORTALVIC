@@ -250,7 +250,7 @@
       /* Exact only for Emanuel/Emmanuel — prefix match falsely caught Emmanuel Abate
          and wiped his aquatic sessionKey (stuck New Participant, Feedback dead). */
       if(slug === 'emanuel' || slug === 'emmanuel') return true;
-      const DC = ['ikram', 'fadi', 'timi', 'acat'];
+      const DC = ['ikram', 'fadi', 'timi', 'ibrahim', 'acat'];
       for(let i = 0; i < DC.length; i++){
         const d = DC[i];
         if(slug === d || slug.indexOf(d + '_') === 0 || raw.indexOf(d) === 0) return true;
