@@ -2225,6 +2225,36 @@
         + `<div class="session-seg-list">${todaySessionSegmentRowsHtml(item)}</div>`
         + `</div>`;
     }
+    /** Face to the left of the name on the normal Today cards. Day Centre special cards stay name-only. */
+    function todaySessionNamePhotoHtml(item){
+      if(!item) return '';
+      const kind = String(item.kind || '').toLowerCase();
+      if(kind === 'closed' || kind === 'home' || kind === 'manager' || kind === 'admin' || kind === 'available') return '';
+      const name = String(item.name || '').trim();
+      if(!name || /^no participant/i.test(name) || name === '—' || name === '-') return '';
+      const clientId = String(item.clientId || '').trim();
+      const candidates = typeof portalParticipantPhotoPathCandidates === 'function'
+        ? portalParticipantPhotoPathCandidates(name, item.avatarFile || '', clientId)
+        : [];
+      const src = candidates.length ? String(candidates[0] || '') : '';
+      const rest = candidates.slice(1).join('|');
+      const initials = typeof portalParticipantInitials === 'function'
+        ? escapeHtml(portalParticipantInitials(name))
+        : '';
+      const gCls = typeof portalParticipantGenderClass === 'function'
+        ? portalParticipantGenderClass(name, ' session-name-photo--')
+        : '';
+      const loadAttr = typeof portalParticipantPhotoLoadingAttr === 'function'
+        ? portalParticipantPhotoLoadingAttr()
+        : ' loading="eager" fetchpriority="low"';
+      const img = src
+        ? '<img class="portal-screenshot-protected" src="' + escapeHtml(src) + '" alt=""' + loadAttr +
+          ' decoding="async" draggable="false"' +
+          (rest ? ' data-photo-fallbacks="' + escapeHtml(rest) + '"' : '') +
+          ' onerror="var rest=(this.getAttribute(\'data-photo-fallbacks\')||\'\').split(\'|\').filter(Boolean);if(rest.length){this.setAttribute(\'data-photo-fallbacks\',rest.slice(1).join(\'|\'));this.src=rest[0];return;}this.remove();var p=this.parentElement;if(p)p.classList.remove(\'session-name-photo--has-photo\');" />'
+        : '';
+      return '<span class="session-name-photo' + (src ? ' session-name-photo--has-photo' : '') + gCls + '" aria-hidden="true">' + initials + img + '</span>';
+    }
     function todaySessionCardInnerHtml(item){
       if(item && Array.isArray(item.segments) && item.segments.length){
         return todaySessionSegmentedCardInnerHtml(item);
@@ -2251,7 +2281,11 @@
       const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
       const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
       const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
-      const namePart = `<span class="session-name-stack">${nameCore}${supportLine}${chipsRow}</span>`;
+      const photoHtml = dcBlock ? '' : todaySessionNamePhotoHtml(item);
+      const nameIdentity = photoHtml
+        ? '<span class="session-name-photo-row">' + photoHtml + nameCore + '</span>'
+        : nameCore;
+      const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}${chipsRow}</span>`;
       const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
       if(dcBlock){
         return `<div class="session-card-body session-card-body--dc-turns"><div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}<span class="session-slot-time">${time}</span>${dcBlock}</div></div>`;
