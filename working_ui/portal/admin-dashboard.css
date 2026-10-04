@@ -5862,8 +5862,8 @@
       }
     }
     /* Phone held upright.
-       Line 1: search, photo, WhatsApp, Chat (both green).
-       Line 2: menu, bell, Help, A, P, S, and who is online. */
+       Line 1: menu, search, WhatsApp, Chat, photo.
+       Line 2: who is online, then bell, Help, A, P, S. */
     @media (max-width:720px) and (orientation:portrait){
       body.admin-touch-compact .admin-topbar,
       .admin-topbar{
@@ -5888,7 +5888,7 @@
       }
       .admin-search-wrap input{min-width:0}
       .admin-profile{
-        order:2;
+        order:4;
         flex:0 0 36px;
         margin:0;
         width:36px;
@@ -5897,8 +5897,8 @@
         justify-content:center;
       }
       .admin-profile span#miniName{display:none}
-      #btnOpenWhatsapp{order:3}
-      #btnComunicaciones{order:4}
+      #btnOpenWhatsapp{order:2}
+      #btnComunicaciones{order:3}
       .admin-topbar-portrait-break{
         display:block;
         order:5;
@@ -5937,7 +5937,7 @@
       #btnFamilyMsgs{order:14}
       #btnStaffWa{order:15}
       .admin-topbar-presence{
-        order:16;
+        order:10;
         display:flex !important;
         flex:1 1 0;
         width:auto;
@@ -5982,8 +5982,9 @@
         gap:0;
       }
     }
-    /* Phone on its side: every control on line 1. Line 2 is only who is online.
-       Announcements, Parents and Staff are the same small A, P, S squares as upright. */
+    /* Phone on its side.
+       Line 1: menu, search, WhatsApp, Chat, alerts, then Help, A, P, S and the photo.
+       Line 2 is only who is online. A, P, S stay the small squares. */
     @media (orientation:landscape) and (max-height:540px){
       body.admin-touch-compact .admin-topbar,
       .admin-topbar{
@@ -6013,25 +6014,22 @@
       }
       .admin-search-wrap input{min-width:0}
       .admin-topbar-help{
-        order:2;
+        order:6;
         flex:0 0 auto;
         height:36px;
         margin:0;
         padding:0 8px;
       }
-      body.admin-touch-compact .admin-topbar #btnAlerts,
-      #btnAlerts,
-      #btnOpenWhatsapp,
-      #btnComunicaciones,
-      #btnAnnouncements,
-      #btnFamilyMsgs,
-      #btnStaffWa,
-      .admin-profile{
-        order:3;
-      }
+      #btnOpenWhatsapp{order:3}
+      #btnComunicaciones{order:4}
+      #btnAnnouncements{order:7}
+      #btnFamilyMsgs{order:8}
+      #btnStaffWa{order:9}
+      .admin-profile{order:10}
       body.admin-touch-compact .admin-topbar #btnAlerts,
       #btnAlerts{
         display:inline-flex !important;
+        order:5;
         width:36px;
         height:36px;
         min-width:36px;
@@ -6048,7 +6046,7 @@
       .admin-profile span#miniName{display:none}
       .admin-topbar-presence{
         display:flex !important;
-        order:10;
+        order:20;
         flex:1 0 100%;
         width:100%;
         max-width:none;
