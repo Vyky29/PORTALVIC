@@ -582,8 +582,16 @@
       return ' session-card--dc-pax-default';
     }
     try{ window.portalDayCentreSpecialCardAccentClass = portalDayCentreSpecialCardAccentClass; }catch(_){}
+    function portalTodayItemLaterTermSeat(item){
+      const ov = item && item.__portalScheduleOverride;
+      if(!ov || String(ov.override_type || '').trim() !== 'slot_update') return false;
+      const iso = String(item.sessionDateKey || item.sessionKey || '').split('|')[0];
+      return typeof portalTermSlotUpdateIsFirstWeek === 'function'
+        && !portalTermSlotUpdateIsFirstWeek(ov, iso);
+    }
     function portalTodayItemShowsAdminShiftBadge(item){
       if(portalTodayItemIsSpecialSegmentedCard(item)) return false;
+      if(portalTodayItemLaterTermSeat(item)) return false;
       return !!(item && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge);
     }
     function portalTodayItemShowsShadowingHostAlert(item){
@@ -2198,6 +2206,7 @@
         !isNewClientItem &&
         item.scheduleAdminAdjusted &&
         !item.portalOverrideHideAdminBadge &&
+        !portalTodayItemLaterTermSeat(item) &&
         !portalTodayItemIsSpecialSegmentedCard(item)
       ){
         const alreadyUpdated = chips.some(function(h){ return String(h || '').indexOf('portal-session-slot-chip--updated') >= 0; });

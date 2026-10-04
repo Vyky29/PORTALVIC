@@ -3861,10 +3861,13 @@
           const manualOv = String(s && s.override || '').trim().toUpperCase();
           const replaceNotSameCalendarDay = !!(ov && ov.override_type === 'client_replace_in_slot' && typeof portalCalendarDateIsSelectedDashboardDay === 'function' && !portalCalendarDateIsSelectedDashboardDay(sessionDateKey));
           const sessionVenue = String(s.venue || '').trim() || '—';
+          const laterTermSeat = !!(ov && String(ov.override_type || '').trim() === 'slot_update'
+            && typeof portalTermSlotUpdateIsFirstWeek === 'function'
+            && !portalTermSlotUpdateIsFirstWeek(ov, sessionDateKey));
           const meta = {
             __portalBaseSession: s,
             sessionVenue,
-            scheduleAdminAdjusted: !!(ov && !replaceNotSameCalendarDay),
+            scheduleAdminAdjusted: !!(ov && !replaceNotSameCalendarDay && !laterTermSeat),
             __portalScheduleOverride: replaceNotSameCalendarDay ? null : (ov || null)
           };
           if(portalSpreadsheetSlotClosedLike(s) && !portalSessionHasSlotOpenOverride(s, sessionDateKey) && !portalSessionHasReplaceMakeupOverride(s, sessionDateKey)) return null;
