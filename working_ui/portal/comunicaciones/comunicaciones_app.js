@@ -1074,6 +1074,14 @@ function fmtVoiceClock(ms) {
   return mm + ":" + ss;
 }
 
+function paintAttachButton() {
+  const btn = $("commsAttachBtn");
+  if (!btn) return;
+  const on = !!state.pendingFile;
+  btn.classList.toggle("has-file", on);
+  btn.setAttribute("aria-label", on ? "File ready to send" : "Attach");
+}
+
 function setRecordUi(on) {
   const btn = $("commsRecordBtn");
   const status = $("commsRecordStatus");
@@ -1257,7 +1265,7 @@ async function sendMessage(ev) {
     });
     $("commsDraft").value = "";
     state.pendingFile = null;
-    $("commsAttachBtn").textContent = "📎";
+    paintAttachButton();
     await openConversation(state.open.conversation_id, state.open, { silent: true });
   } catch (err) {
     window.alert(err.message || "Could not send.");
@@ -2327,7 +2335,7 @@ function bindUi() {
     $("commsFile").value = "";
     if (!f) return;
     state.pendingFile = f;
-    $("commsAttachBtn").textContent = "✓";
+    paintAttachButton();
   });
   function armCallAudio() {
     if (window.PortalCommsCalls && typeof window.PortalCommsCalls.unlockCallAudio === "function") {

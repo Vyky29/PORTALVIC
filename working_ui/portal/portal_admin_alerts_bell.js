@@ -1,12 +1,12 @@
 /**
  * Admin topbar bell — open work only.
- * Incidents, cancellations, wellbeing still pending, late incident approvals,
- * session disruptions, general-info updates, and makeup accepts whose session
- * is today or later.
- * A makeup whose session date has passed drops off. Unpaid expenses stay off
- * this bell; their count sits on the Finance and Expenses buttons.
+ * Incidents, cancellations still to decide, absents still to decide,
+ * service-cancel refunds not paid back, unpaid expenses, wellbeing still
+ * pending, late incident approvals, session disruptions, general-info
+ * updates, and makeup accepts whose session is today or later.
+ * A makeup whose session date has passed drops off.
  * Chat unread uses the Chat button badge in the header only (never this bell).
- * Absent quick marks are excluded from this bell.
+ * Absent quick marks from the session board stay off this bell.
  */
 (function (global) {
   "use strict";
@@ -19,6 +19,8 @@
     late_approval: true,
     wellbeing: true,
     expense_unpaid: true,
+    absent_decision: true,
+    cancel_refund: true,
     staff_support: false,
     general_info: true,
     session_disruption: true,
@@ -100,7 +102,7 @@
 
   function bellShows(item) {
     if (!item || !isAllowedKind(item.kind)) return false;
-    if (item.kind === "chat" || item.kind === "expense_unpaid") return false;
+    if (item.kind === "chat") return false;
     if (item.kind === "makeup_accepted") return makeupStillUpcoming(item);
     return true;
   }
@@ -794,6 +796,115 @@
     return unpaid.length;
   }
 
+  function moneyLabel(n) {
+    var v = Math.round(Number(n) * 100) / 100;
+    if (!isFinite(v)) return "";
+    if (Math.abs(v - Math.round(v)) < 0.001) return "£" + String(Math.round(v));
+    return "£" + v.toFixed(2);
+  }
+
+  function absenceStillToDecide(row) {
+    if (!row || !row.id) return false;
+    var st = String(row.status || "");
+    if (st === "pending_review") return true;
+    if (st === "missed" && (row.proof_storage_path || row.schedule_override_id)) return true;
+    return false;
+  }
+
+  function dropDecideQueueAlerts() {
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = listRef().filter(function (a) {
+      var id = String((a && a.id) || "");
+      return id.indexOf("absdec-") !== 0 && id.indexOf("cxdec-") !== 0 && id.indexOf("cxpay-") !== 0;
+    });
+  }
+
+  /**
+   * Absents still waiting for a decision, one-day cancellations in that same
+   * queue, and standing-service refunds that have not been marked paid back.
+   * @param {(path: string, body: object) => Promise<{ error?: string, data?: object }>} edgePost
+   */
+  async function syncDecideQueuesFromServer(edgePost, opts) {
+    opts = opts || {};
+    if (typeof edgePost !== "function") return 0;
+    dropDecideQueueAlerts();
+    var n = 0;
+    var absRes = await edgePost("portal-admin-parent-absence-list", {
+      status: "needs_decision",
+      since: "2026-09-01",
+      limit: 120,
+    });
+    if (absRes.error) {
+      console.warn("[admin-bell] absents to decide", absRes.error);
+    } else {
+      var reports = (absRes.data && absRes.data.reports) || [];
+      reports.forEach(function (r) {
+        if (!absenceStillToDecide(r)) return;
+        var isCancel = String(r.case_kind || "") === "cancellation";
+        var who = String(r.participant_display || "Participant").trim() || "Participant";
+        var when = String(r.session_date || "").slice(0, 10);
+        var service = String(r.service_label || "").trim();
+        var bits = [];
+        if (service) bits.push(service);
+        if (when) bits.push(when);
+        bits.push(isCancel ? "Decide credit, refund, makeup or none" : "Still to decide");
+        pushActivityAlert(
+          {
+            id: (isCancel ? "cxdec-" : "absdec-") + r.id,
+            title: (isCancel ? "Cancellation · " : "Absent · ") + who,
+            sub: bits.join(" · "),
+            created_at: r.created_at || new Date().toISOString(),
+            kind: isCancel ? "cancellation" : "absent_decision",
+            view: "absents_refunds",
+            recordId: String(r.id || ""),
+            clientName: who,
+            sessionDate: when,
+          },
+          { silent: true }
+        );
+        n++;
+      });
+    }
+    var refRes = await edgePost("portal-admin-parent-credits-list", {
+      status: "open",
+      kind: "refund",
+      source: "club_cancellation",
+      limit: 40,
+    });
+    if (refRes.error) {
+      console.warn("[admin-bell] cancel refunds", refRes.error);
+    } else {
+      var entries = (refRes.data && refRes.data.entries) || [];
+      entries.forEach(function (e) {
+        if (!e || !e.id) return;
+        if (String(e.status || "") !== "open") return;
+        if (String(e.source || "") !== "club_cancellation") return;
+        var who = String(e.participant_display || "Family").trim() || "Family";
+        var amt = moneyLabel(e.amount_gbp);
+        var when = String(e.session_date || e.created_at || "").slice(0, 10);
+        pushActivityAlert(
+          {
+            id: "cxpay-" + e.id,
+            title: "Cancel refund · " + who,
+            sub: (amt ? amt + " · " : "") + "Not paid back yet",
+            created_at: e.created_at || new Date().toISOString(),
+            kind: "cancel_refund",
+            view: "absents_refunds",
+            recordId: String(e.id || ""),
+            clientName: who,
+            sessionDate: when,
+          },
+          { silent: true }
+        );
+        n++;
+      });
+    }
+    sortNewestFirst();
+    if (!opts.silent && typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    return n;
+  }
+
   function removeLateRequestAlert(requestId) {
     var id = "late-" + String(requestId || "").trim();
     if (!id || id === "late-") return false;
@@ -1028,6 +1139,7 @@
   global.portalAdminActivityFromSupportDm = activityFromSupportDm;
   global.portalAdminBellRemoveExpenseUnpaid = removeExpenseUnpaidAlert;
   global.portalAdminBellSyncUnpaidExpensesFromServer = syncUnpaidExpensesFromServer;
+  global.portalAdminBellSyncDecideQueuesFromServer = syncDecideQueuesFromServer;
   global.portalAdminActivityFromUnpaidExpense = activityFromUnpaidExpense;
   unlockBellAudioOnGesture();
 })(typeof window !== "undefined" ? window : globalThis);

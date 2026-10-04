@@ -530,26 +530,40 @@ body.comms-embed .comms-shell {
 
 .comms-composer {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 96px;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
   background: #fff;
-  align-items: end;
+  align-items: stretch;
 }
 .comms-composer textarea {
+  grid-column: 1;
+  grid-row: 1;
   width: 100%;
   resize: none;
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   font: inherit;
   line-height: 1.4;
-  height: 160px;
-  min-height: 160px;
+  height: auto;
+  min-height: 148px;
   max-height: 240px;
   min-width: 0;
+  box-sizing: border-box;
   overflow-wrap: break-word;
+}
+.comms-composer__tools {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
 }
 .comms-attach, .comms-send, .comms-record {
   border: 0;
@@ -557,19 +571,58 @@ body.comms-embed .comms-shell {
   cursor: pointer;
   font-weight: 800;
 }
+.comms-composer__tools .comms-attach,
+.comms-composer__tools .comms-record,
+.comms-composer__tools .comms-send {
+  flex: 1 1 0;
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
 .comms-attach, .comms-record {
-  width: 44px;
-  height: 44px;
-  background: var(--blueSoft);
-  flex: 0 0 auto;
+  position: relative;
+  background: #e8f2fb;
+  color: #1d4f8a;
+}
+.comms-attach svg,
+.comms-record svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.comms-attach.has-file {
+  background: #dcfce7;
+  color: #166534;
+}
+.comms-attach.has-file::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: #16a34a;
+  box-shadow: 0 0 0 2px #dcfce7;
 }
 .comms-record.is-on {
   background: var(--danger);
   color: #fff;
 }
-.comms-send { padding: 0 16px; height: 44px; background: var(--ink); color: #fff; }
+.comms-send { background: var(--ink); color: #fff; letter-spacing: .01em; }
 .comms-record-status {
   grid-column: 1 / -1;
+  grid-row: 2;
   margin: 0;
   min-width: 0;
   font-size: 13px;
@@ -848,6 +901,9 @@ body.comms-embed .comms-shell {
   .comms-shell:not(.is-chat) .comms-main { display: none; }
   .comms-mob-back { display: inline-flex; }
   .comms-bubble { max-width: 86%; }
-  .comms-attach, .comms-record { width: 40px; height: 40px; }
-  .comms-send { height: 40px; }
+  .comms-composer { grid-template-columns: minmax(0, 1fr) 84px; }
+  .comms-composer textarea { min-height: 132px; }
+  .comms-composer__tools .comms-attach,
+  .comms-composer__tools .comms-record,
+  .comms-composer__tools .comms-send { min-height: 40px; }
 }
