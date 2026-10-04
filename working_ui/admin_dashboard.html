@@ -185,7 +185,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-comms-green" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-mobile-initials" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -307,12 +307,14 @@
           <span class="admin-topbar-split" aria-hidden="true"></span>
           <span class="admin-topbar-msgs">
           <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--a admin-api-chip" id="btnAnnouncements" aria-label="Announcements" title="Announcements">
+            <span class="admin-api-chip__mark" aria-hidden="true">A</span>
             <span class="admin-api-chip__name">
               <span class="admin-api-chip__who">Announcements</span>
             </span>
             <span class="admin-badge is-empty" id="announceBadge">0</span>
           </button>
           <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--p admin-api-chip" id="btnFamilyMsgs" aria-label="Parents API" title="Parents API">
+            <span class="admin-api-chip__mark" aria-hidden="true">P</span>
             <span class="admin-api-chip__name">
               <span class="admin-api-chip__who">Parents</span>
               <span class="admin-api-chip__api">API</span>
@@ -320,6 +322,7 @@
             <span class="admin-badge is-empty" id="familyMsgBadge">0</span>
           </button>
           <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--s admin-api-chip" id="btnStaffWa" aria-label="Staff API" title="Staff API">
+            <span class="admin-api-chip__mark" aria-hidden="true">S</span>
             <span class="admin-api-chip__name">
               <span class="admin-api-chip__who">Staff</span>
               <span class="admin-api-chip__api">API</span>

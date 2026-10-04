@@ -1366,7 +1366,7 @@
       width:32px;
       height:32px;
       border-radius:8px;
-      display:flex;
+      display:none;
       align-items:center;
       justify-content:center;
       flex:0 0 32px;
@@ -5858,5 +5858,41 @@
         text-overflow:clip;
         font-size:12px;
         padding:3px 8px;
+      }
+    }
+    /* Phone held upright: one row of squares. Announcements, Parents and Staff keep only A, P, S. */
+    @media (max-width:720px) and (orientation:portrait){
+      .admin-topbar-meta{
+        flex-wrap:nowrap;
+        overflow-x:auto;
+      }
+      .admin-topbar-meta .admin-api-chip__name{display:none}
+      .admin-topbar-meta .admin-api-chip__mark{
+        display:flex;
+        width:auto;
+        height:auto;
+        flex:none;
+        background:transparent;
+        border-radius:0;
+        font-size:16px;
+        font-weight:800;
+        color:#fff;
+      }
+      .admin-topbar-meta .admin-icon-btn--p .admin-api-chip__mark{background:transparent;color:#173247}
+      .admin-topbar-meta .admin-icon-btn--s .admin-api-chip__mark{background:transparent;color:#fff}
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--p,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--s,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--a,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--p:hover,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--s:hover,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--a:hover{
+        width:36px;
+        height:36px;
+        min-width:36px;
+        min-height:36px;
+        max-width:36px;
+        padding:0;
+        flex:0 0 36px;
+        gap:0;
       }
     }
