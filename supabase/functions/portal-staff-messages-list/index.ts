@@ -342,7 +342,8 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   }
 
   const phone10 = phoneLast10(leader.phone_e164 || "");
-  const limit = Math.min(200, Math.max(20, Number(payload.limit) || 100));
+  // Newest window, then the client paints oldest-of-window first so the last bubble is the latest.
+  const limit = Math.min(500, Math.max(20, Number(payload.limit) || 200));
 
   const { data: outboundRows } = await admin
     .from("portal_staff_notify_log")
@@ -350,7 +351,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
       "id, created_at, body_text, kind, meta, whatsapp_status, error_detail, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, staff_profile_id, staff_phone, message_type, media_path, media_mime",
     )
     .eq("staff_profile_id", leader.id)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(limit);
 
   let inboundQuery = admin
@@ -358,7 +359,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
     .select(
       "id, created_at, body_text, message_type, media_path, media_mime, wa_message_id, from_phone, staff_profile_id, meta",
     )
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(limit);
 
   const { data: inboundByStaff } = await inboundQuery.eq("staff_profile_id", leader.id);
@@ -371,7 +372,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
         "id, created_at, body_text, message_type, media_path, media_mime, wa_message_id, from_phone, staff_profile_id, meta",
       )
       .ilike("from_phone", `%${phone10}`)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(limit);
     const seen = new Set(inboundRows.map((r) => String(r.id)));
     (inboundByPhone || []).forEach((r) => {

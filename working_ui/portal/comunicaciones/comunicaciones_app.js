@@ -31,6 +31,7 @@ const state = {
   messages: [],
   loadingOlder: false,
   oldestAt: null,
+  stickToEnd: true,
   channels: [],
   pc: null,
   localStream: null,
@@ -721,7 +722,27 @@ function renderThread() {
     el.innerHTML = state.messages.map(bubbleHtml).join("");
     hydrateFiles(el);
   }
+  if (state.stickToEnd !== false) scrollCommsThreadToEnd();
+}
+
+let commsScrollingToEnd = false;
+
+function scrollCommsThreadToEnd() {
+  const el = $("commsThread");
+  if (!el || state.stickToEnd === false) return;
+  commsScrollingToEnd = true;
   el.scrollTop = el.scrollHeight;
+  requestAnimationFrame(function () {
+    const box = $("commsThread");
+    if (!box || state.stickToEnd === false) {
+      commsScrollingToEnd = false;
+      return;
+    }
+    box.scrollTop = box.scrollHeight;
+    requestAnimationFrame(function () {
+      commsScrollingToEnd = false;
+    });
+  });
 }
 
 async function hydrateFiles(root) {
@@ -967,9 +988,18 @@ function shouldMarkConversationRead(conversationId, silent) {
   return chatPaneOnScreen();
 }
 
+function commsThreadNearEnd() {
+  const el = $("commsThread");
+  if (!el) return true;
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+}
+
 async function openConversation(id, extra, opts) {
   const silent = !!(opts && opts.silent);
   if (!silent && state.recording) await stopVoice(false);
+  const same =
+    state.open && String(state.open.conversation_id) === String(id);
+  state.stickToEnd = !silent || !same || commsThreadNearEnd();
   const it = itemByConversation(id) || extra || { conversation_id: id };
   state.open = it;
   state.messages = [];
@@ -2369,6 +2399,7 @@ function bindUi() {
     });
   });
   $("commsThread").addEventListener("scroll", async function () {
+    if (!commsScrollingToEnd) state.stickToEnd = commsThreadNearEnd();
     if ($("commsThread").scrollTop > 40 || state.loadingOlder || !state.open || !state.oldestAt) return;
     state.loadingOlder = true;
     try {

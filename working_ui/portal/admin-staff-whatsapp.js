@@ -673,6 +673,17 @@
     }
   }
 
+  function scrollStaffThreadToEnd() {
+    var host = document.getElementById("portalStaffWaMsgs");
+    if (!host) return;
+    host.scrollTop = host.scrollHeight;
+    global.requestAnimationFrame(function () {
+      var el = document.getElementById("portalStaffWaMsgs");
+      if (!el) return;
+      el.scrollTop = el.scrollHeight;
+    });
+  }
+
   function openStaffThread(username) {
     var key = staffUsernameKey(username);
     if (!key) return;
@@ -681,16 +692,7 @@
     state.mobileShowThread = true;
     syncMobileLayout();
     void loadThread(key).then(function () {
-      if (!isMobileWaLayout()) {
-        var chat = document.querySelector(".portal-staff-wa-admin__chat");
-        if (chat && typeof chat.scrollIntoView === "function") {
-          try {
-            chat.scrollIntoView({ behavior: "smooth", block: "nearest" });
-          } catch (_e) {
-            chat.scrollIntoView(true);
-          }
-        }
-      }
+      scrollStaffThreadToEnd();
     });
   }
 
@@ -914,7 +916,7 @@
       });
     }
     if (updated) {
-      if (!fromRefresh || nearBottom) host.scrollTop = host.scrollHeight;
+      if (!fromRefresh || nearBottom) scrollStaffThreadToEnd();
       else host.scrollTop = savedScroll;
     } else host.scrollTop = savedScroll;
     if (!fromRefresh || !isComposerFocused()) {

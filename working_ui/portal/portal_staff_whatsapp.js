@@ -654,6 +654,10 @@
       })
       .join("");
     host.scrollTop = host.scrollHeight;
+    global.requestAnimationFrame(function () {
+      var el = document.getElementById("portalStaffWaThread");
+      if (el) el.scrollTop = el.scrollHeight;
+    });
   }
 
   async function loadThread() {

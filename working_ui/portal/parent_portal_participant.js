@@ -8249,6 +8249,15 @@
       }
     }
 
+    function scrollParentMsgsToEnd(threadHost) {
+      var scroller = threadHost.querySelector(".pp-pax-msgs-thread") || threadHost;
+      scroller.scrollTop = scroller.scrollHeight;
+      global.requestAnimationFrame(function () {
+        var box = threadHost.querySelector(".pp-pax-msgs-thread") || threadHost;
+        box.scrollTop = box.scrollHeight;
+      });
+    }
+
     function renderThread(keepScroll) {
       var threadHost = host.querySelector("#ppMsgsThreadHost");
       if (!threadHost) return;
@@ -8256,7 +8265,7 @@
         return messageMatchesChannelFilter(m, state.filter);
       });
       threadHost.innerHTML = messagesThreadHtml(filtered, state.waBiz);
-      if (keepScroll !== false) threadHost.scrollTop = threadHost.scrollHeight;
+      if (keepScroll !== false) scrollParentMsgsToEnd(threadHost);
     }
 
     function updateWaNote() {
@@ -8351,7 +8360,8 @@
             payload.messages,
             payload.whatsapp_business || null,
           );
-          threadHost.scrollTop = threadHost.scrollHeight;
+          var scroller = threadHost.querySelector(".pp-pax-msgs-thread") || threadHost;
+          scroller.scrollTop = scroller.scrollHeight;
         })
         .catch(function () {
           if (notice) {
