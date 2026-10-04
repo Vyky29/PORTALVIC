@@ -2670,7 +2670,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261004-v235')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261004-v236')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -15136,6 +15136,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<option value="Aquatic Activity">Aquatic Activity</option>'+
           '<option value="Multi-Activity">Multi-Activity</option>'+
           '<option value="Climbing">Climbing</option>'+
+          '<option value="Fitness">Fitness</option>'+
           '<option value="Bespoke Programme">Bespoke Programme</option>'+
           '<option value="Office">Office</option>'+
           '</select></label>'+
@@ -15402,6 +15403,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return found;
     }
+    function schedStaffLabelForSlug(slug){
+      var want = normalizeSchedAnchorStaffId(slug);
+      if(!want) return '';
+      var list = [];
+      try{ list = schedBuildInstructorPickList(); }catch(_list){ list = []; }
+      var i;
+      for(i = 0; i < list.length; i++){
+        if(normalizeSchedAnchorStaffId(list[i].slug) === want) return String(list[i].display || '').trim();
+      }
+      var rows = (sched && sched.staffProfileRows) || [];
+      for(i = 0; i < rows.length; i++){
+        var name = String(rows[i].full_name || rows[i].username || '').trim();
+        if(normalizeSchedAnchorStaffId(rows[i].username || name) === want) return name;
+      }
+      return '';
+    }
     async function saveSchedAddSession(){
       var msg = $('schedAddMsg');
       function showMsg(t, tone){ if(msg){ msg.textContent = t; msg.style.color = tone === 'err' ? 'var(--danger)' : (tone === 'ok' ? 'var(--success)' : ''); } }
@@ -15467,14 +15484,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           spreadsheet_revision: kind === 'session' ? 'admin-dashboard:session-card' : 'admin-dashboard:training-shadowing'
         };
         var editId = sched.addEditingId;
+        var savedId = '';
         if(editId){
           var upd = await client.from('schedule_overrides').update(row).eq('id', editId).select('id');
           if(upd.error) throw upd.error;
+          savedId = editId;
           showMsg(label + ' updated.', 'ok');
           schedAddSessionFormReset();
         }else{
           var ins = await client.from('schedule_overrides').insert([row]).select('id,created_at');
           if(ins.error) throw ins.error;
+          savedId = ins.data && ins.data[0] && ins.data[0].id ? ins.data[0].id : '';
           showMsg(label + ' added for ' + dateIso + '.', 'ok');
           var noteEl = $('schedAddNote'); if(noteEl) noteEl.value = '';
           try{
@@ -15491,6 +15511,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               });
             }
           }catch(_lgA){}
+        }
+        if(kind === 'session' && savedId && !schedPaxSkipsParentWhatsapp(paxSlug) && !schedServiceSkipsParentWhatsapp(service)){
+          var addedTime = start + ' to ' + end;
+          var addedStaff = schedStaffLabelForSlug(staffSlug);
+          try{
+            var addedNote = await schedNotifyOverrideParent(client, {
+              clientDisplay: paxName,
+              clientSlug: paxSlug,
+              programme: service,
+              venue: venue,
+              sessionDate: dateIso,
+              whenLabel: addedTime,
+              anchorTimeLabel: addedTime,
+              anchorStart: toPgTime(start),
+              anchorEnd: toPgTime(end),
+              staffName: addedStaff
+            }, savedId, {
+              kind: 'session_added',
+              participantDisplay: paxName,
+              contactId: paxSlug,
+              venue: venue,
+              sessionDate: dateIso,
+              sessionTime: addedTime,
+              serviceLabel: service,
+              coveringStaffName: addedStaff,
+              coveringStaffKey: staffSlug
+            });
+            if(addedNote && addedNote.queued){
+              var addedBase = editId ? (label + ' updated.') : (label + ' added for ' + dateIso + '.');
+              showMsg(addedBase + ' Parent WhatsApp goes out in about a minute.', 'ok');
+            }
+          }catch(_addN){
+            console.warn('[portal] session card parent notify failed', _addN);
+          }
         }
         if(String(((($('schedDate')||{}).value)) || '') === dateIso){ void refreshSchedulingModule(); }
         else { renderSchedAddedSessions(); }
@@ -17522,6 +17576,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var p = prog.toLowerCase();
       return p.indexOf('day centre') >= 0 || p.indexOf('daycentre') >= 0 || /(^|\b)dc(\b|$)/.test(p);
     }
+    /** Day Centre and Bespoke cards move often. Do not WhatsApp those parents. */
+    function schedServiceSkipsParentWhatsapp(label){
+      var p = String(label || '').toLowerCase();
+      if(!p.trim()) return false;
+      if(p.indexOf('day centre') >= 0 || p.indexOf('daycentre') >= 0 || /(^|\b)dc(\b|$)/.test(p)) return true;
+      if(p.indexOf('bespoke') >= 0) return true;
+      if(p.trim() === 'office') return true;
+      return false;
+    }
+    function schedPaxSkipsParentWhatsapp(slug){
+      var s = String(slug || '').trim().toLowerCase();
+      return !s || s === 'office' || s === 'no_participant' || s === 'noparticipant' || s === 'no participant' || s === 'available' || s === 'closed';
+    }
+    function schedSlotSkipsParentWhatsapp(slot){
+      if(slot && schedSlotIsDayCentre(slot)) return true;
+      var prog = String((slot && (slot.programme || slot.rosterService || slot.activity || slot.service)) || '');
+      return schedServiceSkipsParentWhatsapp(prog);
+    }
     async function schedEnqueueCancelDecisionQueue(client, slot, overrideId, ovType, reason){
       var pax = await schedResolveParticipantForDecisionQueue(client, slot);
       if(!pax){
@@ -17686,7 +17758,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /**
      * Auto parent WhatsApp after instructor / cancel / move save (silent, like Absents decide).
-     * opts.kind: instructor_change | instructor_change_update | session_cancelled | time_change
+     * opts.kind: instructor_change | instructor_change_update | session_cancelled | session_added | time_change
      */
     function schedContinuingWithPhrase(slot, absentName, coverName){
       var list = slot && slot.allInstructors;
@@ -17806,7 +17878,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       opts = opts || {};
       var kind = String(opts.kind || '').trim();
       if(!kind) return null;
-      if(!opts._flush && (kind === 'instructor_change' || kind === 'instructor_change_update' || kind === 'session_cancelled')){
+      var skipSvc = String(opts.serviceLabel || (slot && (slot.programme || slot.rosterService || slot.service)) || '');
+      if(schedServiceSkipsParentWhatsapp(skipSvc) || (slot && schedSlotSkipsParentWhatsapp(slot))){
+        if(sched){
+          var skipWhy = /bespoke/i.test(skipSvc) ? 'Bespoke' : 'Day Centre';
+          sched.lastMsg = String(sched.lastMsg || 'Override saved.') + ' ' + skipWhy + ' stays with staff (no parent WhatsApp).';
+        }
+        return { skipped: true, reason: 'fluid_card' };
+      }
+      if(!opts._flush && (kind === 'instructor_change' || kind === 'instructor_change_update' || kind === 'session_cancelled' || kind === 'session_added')){
         return schedQueueParentNotify(client, slot, overrideId, opts);
       }
       var display = String(opts.participantDisplay || slot.clientDisplay || '').trim();
@@ -18185,10 +18265,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(ovType === 'instructor_reassign' && covering_staff_id && covering_staff_id !== 'cover_needed'){
         var coverNm = String(payload.covering_staff_name || '').trim().toLowerCase();
         if(coverNm && coverNm !== 'cover needed'){
-          if(schedSlotIsDayCentre(slot)){
+          if(schedSlotSkipsParentWhatsapp(slot)){
             autoNotifyKind = '';
             try{
-              sched.lastMsg = 'Override saved. Day Centre cover is in Team only (no parent WhatsApp).';
+              sched.lastMsg = schedSlotIsDayCentre(slot)
+                ? 'Override saved. Day Centre cover is in Team only (no parent WhatsApp).'
+                : 'Override saved. Bespoke change stays with staff (no parent WhatsApp).';
             }catch(_dcMsg){}
           }else{
             autoNotifyKind = String(payload.prior_covering_staff_name || '').trim()
@@ -18213,6 +18295,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }else if(schedSlotIsDayCentre(slot)){
             /* Day Centre override cancels stay on the staff board. Parents are not notified. */
             sched.lastMsg = 'Override saved. Day Centre change stays with staff (no parent notification).';
+          }else if(schedSlotSkipsParentWhatsapp(slot)){
+            sched.lastMsg = 'Override saved. Bespoke change stays with staff (no parent WhatsApp).';
+            try{
+              await schedEnqueueCancelDecisionQueue(client, slot, ins0.id, ovType, reason);
+            }catch(_enqB){
+              console.warn('[portal] bespoke cancel decision queue enqueue failed', _enqB);
+            }
           }else{
             autoNotifyKind = 'session_cancelled';
             try{

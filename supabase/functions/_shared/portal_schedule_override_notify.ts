@@ -176,6 +176,7 @@ export type ScheduleOverrideNotifyKind =
   | "instructor_change"
   | "instructor_change_update"
   | "session_cancelled"
+  | "session_added"
   | "time_change";
 
 export type ScheduleOverrideNotifyInput = {
@@ -367,6 +368,25 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
     );
   }
 
+  if (kind === "session_added") {
+    const withWho = cover ? ` with ${cover}` : "";
+    const timeBit = sessionTime ? `: ${sessionTime}${withWho}` : withWho ? ` ${withWho.trim()}` : "";
+    const wherePart =
+      friendly && venue
+        ? ` on ${friendly} at ${venue}`
+        : friendly
+        ? ` on ${friendly}`
+        : venue
+        ? ` at ${venue}`
+        : "";
+    return asciiBody(
+      greet +
+        `We are writing about ${child}'s session${wherePart}.\n\n` +
+        `A session has been added for today only${timeBit}.` +
+        signOff,
+    );
+  }
+
   if (kind === "time_change") {
     const oldTime = clean(opts.oldTime, 500);
     const newTime = clean(opts.newTime, 500) || sessionTime;
@@ -414,22 +434,52 @@ function labelIsDayCentre(raw: string): boolean {
   );
 }
 
-/** True when this override is a Day Centre seat, or the child only has Day Centre seats. */
-async function dayCentreParentNotifyBlocked(
+/** Day Centre and Bespoke cards move often. Parents of those services are not WhatsApped. */
+function labelSkipsParentNotify(raw: string): boolean {
+  const svc = raw.toLowerCase();
+  return labelIsDayCentre(raw) || svc.indexOf("bespoke") >= 0;
+}
+
+/** Aquatic, Multi-Activity, Climbing and Fitness. These parents are told about the card. */
+function labelIsFixedParentService(raw: string): boolean {
+  const svc = raw.toLowerCase();
+  return (
+    svc.indexOf("aquatic") >= 0 ||
+    svc.indexOf("multi") >= 0 ||
+    svc.indexOf("climb") >= 0 ||
+    svc.indexOf("fitness") >= 0 ||
+    svc.indexOf("physical") >= 0
+  );
+}
+
+/**
+ * Skip parent WhatsApp when this seat is Day Centre or Bespoke,
+ * or when every active roster row for that child is one of those two.
+ */
+async function fluidCardParentNotifyBlockReason(
   admin: SupabaseClient,
   opts: ScheduleOverrideNotifyInput,
-): Promise<boolean> {
-  if (labelIsDayCentre(clean(opts.serviceLabel, 160))) return true;
+): Promise<string | null> {
+  const label = clean(opts.serviceLabel, 160);
+  if (labelIsDayCentre(label)) return "day_centre_no_parent_notify";
+  if (label.toLowerCase().indexOf("bespoke") >= 0) return "bespoke_no_parent_notify";
+  if (labelIsFixedParentService(label)) return null;
   const first = clean(opts.participantDisplay, 120).split(/\s+/)[0] || "";
-  if (first.length < 3) return false;
+  if (first.length < 3) return null;
   const { data } = await admin
     .from("portal_roster_rows")
     .select("service")
     .ilike("client_name", first)
     .eq("status", "active")
     .limit(40);
-  if (!data?.length) return false;
-  return data.every((row) => labelIsDayCentre(String(row.service || "")));
+  if (!data?.length) return null;
+  if (data.every((row) => labelIsDayCentre(String(row.service || "")))) {
+    return "day_centre_no_parent_notify";
+  }
+  if (data.every((row) => labelSkipsParentNotify(String(row.service || "")))) {
+    return "bespoke_no_parent_notify";
+  }
+  return null;
 }
 
 function subjectForKind(kind: ScheduleOverrideNotifyKind, child: string): string {
@@ -437,6 +487,7 @@ function subjectForKind(kind: ScheduleOverrideNotifyKind, child: string): string
     return `Instructor update · ${child}`;
   }
   if (kind === "time_change") return `Time change · ${child}`;
+  if (kind === "session_added") return `Session added · ${child}`;
   return `Session cancelled · ${child}`;
 }
 
@@ -452,6 +503,7 @@ export async function notifyScheduleOverrideParent(
     kind !== "instructor_change" &&
     kind !== "instructor_change_update" &&
     kind !== "session_cancelled" &&
+    kind !== "session_added" &&
     kind !== "time_change"
   ) {
     return { ok: false, skipped: true, reason: "bad_kind" };
@@ -465,9 +517,10 @@ export async function notifyScheduleOverrideParent(
     return { ok: false, skipped: true, reason: "no_named_cover", kind };
   }
 
-  /* Day Centre overrides (cover, cancel, time) stay on the staff board. Parents are not notified. */
-  if (await dayCentreParentNotifyBlocked(admin, opts)) {
-    return { ok: true, skipped: true, reason: "day_centre_no_parent_notify", kind };
+  /* Day Centre and Bespoke stay on the staff board. Aquatic, Multi-Activity, Climbing and Fitness still notify. */
+  const fluidReason = await fluidCardParentNotifyBlockReason(admin, opts);
+  if (fluidReason) {
+    return { ok: true, skipped: true, reason: fluidReason, kind };
   }
 
   const overrideId = clean(opts.overrideId, 60);
