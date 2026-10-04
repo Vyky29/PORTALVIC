@@ -4986,6 +4986,15 @@
     try {
       autumnSaturdayActonStandingRows().forEach(pushRow);
     } catch (_sat) {}
+    try {
+      autumnSundayClimbingStandingRows().forEach(pushRow);
+    } catch (_climbSun) {}
+    try {
+      autumnWeekdayClimbingStandingRows().forEach(pushRow);
+    } catch (_climbWd) {}
+    try {
+      autumnWestwayPhysicalStandingRows().forEach(pushRow);
+    } catch (_phys) {}
     standingPoolAreaIndex().forEach(function (e) {
       if (!e || !e.area || !e.clientKey) return;
       out.push({
