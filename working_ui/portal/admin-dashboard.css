@@ -1317,7 +1317,10 @@
     .admin-api-chip.admin-icon-btn--p:focus-visible,
     .admin-api-chip.admin-icon-btn--s,
     .admin-api-chip.admin-icon-btn--s:hover,
-    .admin-api-chip.admin-icon-btn--s:focus-visible{
+    .admin-api-chip.admin-icon-btn--s:focus-visible,
+    .admin-api-chip.admin-icon-btn--a,
+    .admin-api-chip.admin-icon-btn--a:hover,
+    .admin-api-chip.admin-icon-btn--a:focus-visible{
       width:auto;
       height:40px;
       min-height:40px;
@@ -5784,8 +5787,10 @@
       }
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--p,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--s,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--a,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--p:hover,
-      .admin-topbar-meta .admin-api-chip.admin-icon-btn--s:hover{
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--s:hover,
+      .admin-topbar-meta .admin-api-chip.admin-icon-btn--a:hover{
         flex:0 0 auto;
         width:auto;
         max-width:none;
