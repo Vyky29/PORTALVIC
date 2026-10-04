@@ -185,7 +185,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-land-fill" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-sessions-head" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -2584,14 +2584,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ? '<div class="admin-page-head__actions">'+extraActions+backBtn+afterActions+'</div>'
         : '';
       var tools = '<div class="admin-page-head__tools">'+infoBtn+actions+'</div>';
+      var sessionsSplit = String(opts.headClass || '').indexOf('c4k-sessions-hub__head') >= 0;
+      var leadInner = sessionsSplit
+        ? (titleEl + infoBtn + extraActions + backBtn + afterActions)
+        : (titleEl + tools);
+      if(sessionsSplit) headExtraClass += ' admin-page-head--sessions-split';
       var titleBlock = titleIconId
         ? (
           '<div class="admin-page-head__title-stack">'+
           '<span class="admin-page-head__title-ico" aria-hidden="true">'+adminNavIconHtml(titleIconId)+'</span>'+
-          '<div class="admin-page-head__lead">'+titleEl+tools+'</div>'+
+          '<div class="admin-page-head__lead'+(sessionsSplit ? ' admin-page-head__lead--split' : '')+'">'+leadInner+'</div>'+
           '</div>'
         )
-        : ('<div class="admin-page-head__lead">'+titleEl+tools+'</div>');
+        : ('<div class="admin-page-head__lead'+(sessionsSplit ? ' admin-page-head__lead--split' : '')+'">'+leadInner+'</div>');
       return (
         '<header class="admin-page-head'+headExtraClass+'">'+
         '<div class="admin-page-head__main">'+

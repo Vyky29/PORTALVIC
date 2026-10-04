@@ -6180,3 +6180,60 @@
         overflow:hidden !important;
       }
     }
+
+    /* Upright phone: Sessions title, info and Back on line 1. Schedules and Register on line 2. */
+    @media (max-width:900px) and (orientation:portrait){
+      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .admin-page-head__lead--split{
+        display:flex;
+        flex-wrap:wrap;
+        align-items:center;
+        gap:6px 8px;
+        width:100%;
+      }
+      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .admin-page-head__title{
+        order:1;
+        flex:1 1 auto;
+        min-width:0;
+        margin:0 !important;
+        font-size:15px !important;
+        line-height:1.15 !important;
+        letter-spacing:0;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .admin-page-info{
+        order:2;
+        flex:0 0 auto;
+      }
+      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .admin-page-head__back{
+        order:3;
+        flex:0 0 auto;
+        height:28px;
+        min-height:28px;
+        padding:0 10px;
+        font-size:12px;
+      }
+      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .c4k-sessions-hub-tabs--head{
+        order:4;
+        flex:1 0 100%;
+        width:100%;
+        max-width:100%;
+        display:flex;
+        flex-wrap:nowrap;
+        gap:8px;
+        margin:0;
+      }
+      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .c4k-sessions-hub-tab{
+        flex:1 1 0;
+        justify-content:center;
+        min-width:0;
+        height:32px;
+        padding:0 8px;
+      }
+      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .c4k-sessions-hub-tab__label{
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+    }
