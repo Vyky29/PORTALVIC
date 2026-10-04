@@ -342,8 +342,29 @@
       } else if (row.day) templates[templateKey(row)] = row;
     });
 
+    function earlierDatedSameSeat(row) {
+      if (!row) return false;
+      var iso = normIso(row.session_date);
+      var client = canonicalClientSlug(row.client_name);
+      if (!iso || !client) return false;
+      var keys = Object.keys(dated);
+      for (var i = 0; i < keys.length; i++) {
+        var prev = dated[keys[i]];
+        if (!prev || prev === row) continue;
+        if (canonicalClientSlug(prev.client_name) !== client) continue;
+        var prevIso = normIso(prev.session_date);
+        if (!prevIso || prevIso >= iso) continue;
+        if (!slotsSameBounds(prev.time_slot, row.time_slot, row.day)) continue;
+        if (!instructorSetsOverlap(prev.instructors, row.instructors)) continue;
+        return true;
+      }
+      return false;
+    }
+
     function markRosterTimeUpdated(target, baseRow) {
       if (!target || !baseRow) return target;
+      /* A for-good move repeats the new time every week. Updated is the first week only. */
+      if (earlierDatedSameSeat(target)) return target;
       var day = String(target.day || baseRow.day || "").trim();
       if (!slotsSameBounds(target.time_slot, baseRow.time_slot, day)) {
         target.__portal_roster_time_updated = true;

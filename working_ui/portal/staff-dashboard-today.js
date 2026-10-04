@@ -1307,6 +1307,7 @@
       });
     }
     window.portalRefreshScheduleOverridesCache = function portalRefreshScheduleOverridesCache(opts){
+      opts = opts || {};
       /* A refresh already running must not swallow a newer override. Chain one more
          fetch when this one finishes, so a move/absent that lands mid-load is not lost. */
       if(window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__){

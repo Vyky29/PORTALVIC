@@ -5791,6 +5791,38 @@
       }catch(_){}
       return { start: '09:00', end: '10:00' };
     }
+    /** True when this child already sat this time with this instructor on an earlier date. */
+    function portalRosterSeatAlreadySettled(s, iso){
+      if(!s || !iso) return false;
+      const cid = portalClientSlugFromName(s.clientId || s.clientName || s.name);
+      if(!cid) return false;
+      const sid = portalNormKeyStr(s.staffId);
+      const slot = portalNormTimeSlotLabel(s.timeSlotLabel || '');
+      const lists = [];
+      try{
+        if(window.PORTAL_ROSTER_ROWS_CACHE) lists.push(window.PORTAL_ROSTER_ROWS_CACHE);
+        if(window.STAFF_DASHBOARD_SOURCE && Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)){
+          lists.push(window.STAFF_DASHBOARD_SOURCE.rows);
+        }
+      }catch(_){}
+      for(let L = 0; L < lists.length; L++){
+        const rows = lists[L];
+        if(!Array.isArray(rows)) continue;
+        for(let i = 0; i < rows.length; i++){
+          const r = rows[i];
+          if(!r) continue;
+          const rIso = normaliseIsoDate(r.session_date);
+          if(!rIso || rIso >= iso) continue;
+          if(portalClientSlugFromName(r.client_name) !== cid) continue;
+          const inst = portalNormKeyStr(r.instructors);
+          if(sid && inst && inst.indexOf(sid) < 0) continue;
+          const rSlot = portalNormTimeSlotLabel(r.time_slot || '');
+          if(!slot || !rSlot || rSlot !== slot) continue;
+          return true;
+        }
+      }
+      return false;
+    }
     /** Term edits copy the same seat onto later weeks. Those weeks are the normal seat. */
     function portalTermSlotUpdateIsFirstWeek(ov, iso){
       const pl = portalOverridePayloadObject(ov);
@@ -5825,6 +5857,8 @@
     function portalSessionRosterTimeWasUpdated(s, sessionDateIso){
       if(!s) return false;
       const iso = normaliseIsoDate(sessionDateIso);
+      /* Later weeks of a for-good seat are the normal card, even if a slot_update was copied forward. */
+      if(portalRosterSeatAlreadySettled(s, iso)) return false;
       const ov = typeof portalTodayScheduleOverrideForSession === 'function'
         ? portalTodayScheduleOverrideForSession(s, iso)
         : null;
@@ -5839,6 +5873,7 @@
         return true;
       }
       if(s.portalRosterTimeUpdated){
+        if(portalRosterSeatAlreadySettled(s, iso)) return false;
         const cid = portalClientSlugFromName(s.clientId || s.clientName || s.name);
         const dayRows = typeof portalScheduleOverrideRowsForSessionIso === 'function'
           ? portalScheduleOverrideRowsForSessionIso(iso)
