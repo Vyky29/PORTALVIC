@@ -1306,6 +1306,12 @@
     .admin-av img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
     .admin-av.admin-av--photo,#miniAv.admin-av--photo{background:transparent;color:transparent}
     .admin-profile span#miniName{font-size:12px;font-weight:600;color:var(--ink);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .admin-topbar-msgs{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      flex:0 0 auto;
+    }
     .admin-api-chip.admin-icon-btn--p,
     .admin-api-chip.admin-icon-btn--p:hover,
     .admin-api-chip.admin-icon-btn--p:focus-visible,
@@ -1313,11 +1319,11 @@
     .admin-api-chip.admin-icon-btn--s:hover,
     .admin-api-chip.admin-icon-btn--s:focus-visible{
       width:auto;
-      height:32px;
-      min-height:32px;
+      height:40px;
+      min-height:40px;
       max-width:none;
-      padding:2px 8px;
-      border-radius:9999px;
+      padding:4px 12px;
+      border-radius:10px;
       gap:0;
       color:#fff;
       box-shadow:none;
@@ -1373,18 +1379,18 @@
       text-align:left;
     }
     .admin-api-chip__who{
-      font-size:10px;
-      font-weight:700;
+      font-size:12px;
+      font-weight:800;
       letter-spacing:.03em;
       text-transform:uppercase;
       color:#fff;
       white-space:nowrap;
     }
     .admin-api-chip__api{
-      font-size:8px;
-      font-weight:700;
-      letter-spacing:.06em;
-      color:rgba(255,255,255,.88);
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.04em;
+      color:#fff;
       white-space:nowrap;
     }
     .admin-portal-switch{display:flex;align-items:center;gap:4px;flex-shrink:0;padding:2px;border-radius:12px;border:1px solid var(--line);background:#f8fafc}
@@ -5784,9 +5790,9 @@
         width:auto;
         max-width:none;
         min-width:max-content;
-        height:30px;
-        min-height:30px;
-        padding:1px 7px;
+        height:40px;
+        min-height:40px;
+        padding:4px 12px;
         gap:0;
       }
       .admin-topbar-meta .admin-api-chip__who,
@@ -5796,8 +5802,8 @@
         max-width:none;
         color:#fff;
       }
-      .admin-topbar-meta .admin-api-chip__who{font-size:9px;letter-spacing:0}
-      .admin-topbar-meta .admin-api-chip__api{font-size:8px;letter-spacing:0}
+      .admin-topbar-meta .admin-api-chip__who{font-size:12px;letter-spacing:.02em}
+      .admin-topbar-meta .admin-api-chip__api{font-size:11px;letter-spacing:.02em}
       .admin-topbar-meta .admin-profile{
         margin-left:auto;
         flex:0 0 auto;
