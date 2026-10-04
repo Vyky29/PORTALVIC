@@ -700,23 +700,24 @@
     }
     .portal-live-presence[hidden]{display:none!important}
     .admin-topbar-presence{
-      flex:1 1 auto;min-width:0;max-width:min(72vw,980px);align-self:stretch;
+      flex:2 1 480px;min-width:0;max-width:none;align-self:stretch;
       display:flex;align-items:stretch;border-left:1px solid var(--line);border-right:1px solid var(--line);
       margin:0 4px
     }
     .admin-topbar-presence .sf-status-bar{
-      display:flex;align-items:stretch;gap:0;min-width:0;width:100%;min-height:0
+      display:flex;align-items:stretch;gap:0;min-width:0;width:100%;min-height:0;
+      overflow-x:auto;overflow-y:hidden;scrollbar-width:thin
     }
     .admin-topbar-presence .sf-status-bar__main,
     .admin-topbar-presence .sf-status-bar__lane{
-      flex:1 1 auto;display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;padding:0 8px
+      flex:1 0 auto;display:flex;align-items:center;gap:8px;min-width:max-content;overflow:visible;padding:0 10px
     }
-    .admin-topbar-presence .sf-status-bar__lane--staff{flex:1 1 30%}
+    .admin-topbar-presence .sf-status-bar__lane--staff{flex:1.4 0 auto}
     .admin-topbar-presence .sf-status-bar__lane--parent{
-      flex:1 1 38%;border-left:1px solid #e2e8f0
+      flex:1.2 0 auto;border-left:1px solid #e2e8f0
     }
     .admin-topbar-presence .sf-status-bar__lane--booking{
-      flex:0 1 auto;border-left:1px solid #e2e8f0;padding-right:4px
+      flex:0 0 auto;border-left:1px solid #e2e8f0;padding-right:8px
     }
     .admin-topbar-presence .sf-status-bar__tag{
       flex-shrink:0;margin:0;padding:3px 8px;border-radius:9999px;
@@ -731,14 +732,14 @@
       background:#fff7ed;border-color:#fed7aa;color:#c2410c
     }
     .admin-topbar-presence .sf-status-bar__values{
-      display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;align-items:center;
-      flex:1 1 auto;min-width:0;max-height:52px;overflow-y:auto;overflow-x:hidden;
-      scrollbar-width:thin
+      display:flex;flex-wrap:nowrap;gap:6px;align-content:center;align-items:center;
+      flex:0 0 auto;min-width:max-content;max-height:none;overflow:visible
     }
     .admin-topbar-presence .sf-status-bar__chip{
-      display:inline-block;flex-shrink:0;padding:3px 8px;border-radius:9999px;
+      display:inline-block;flex:0 0 auto;padding:3px 10px;border-radius:9999px;
       background:#fff;border:1px solid #e2e8f0;color:#0f172a;
-      font-size:11px;font-weight:600;line-height:1.2;white-space:nowrap
+      font-size:12px;font-weight:600;line-height:1.2;white-space:nowrap;
+      max-width:none;overflow:visible;text-overflow:clip
     }
     .admin-topbar-presence .sf-status-bar__chip--muted{
       color:#94a3b8;font-weight:600;border-style:dashed;background:#fafafa;font-size:10px
@@ -5776,30 +5777,30 @@
         align-self:stretch;
       }
       .admin-topbar-presence .sf-status-bar__lane{
-        flex:1 1 0;
-        min-width:0;
-        gap:4px;
-        padding:4px 4px;
-        overflow:hidden;
+        flex:1 0 auto;
+        min-width:max-content;
+        gap:6px;
+        padding:4px 8px;
+        overflow:visible;
       }
       .admin-topbar-presence .sf-status-bar__lane--booking{flex:0 0 auto}
       .admin-topbar-presence .sf-status-bar__tag{
-        font-size:8px;
-        padding:2px 5px;
-        letter-spacing:0;
+        font-size:9px;
+        padding:3px 8px;
+        letter-spacing:.02em;
       }
       .admin-topbar-presence .sf-status-bar__values{
         flex-wrap:nowrap;
         max-height:none;
-        overflow:hidden;
-        min-width:0;
+        overflow:visible;
+        min-width:max-content;
       }
       .admin-topbar-presence .sf-status-bar__chip{
-        max-width:100%;
-        min-width:0;
-        overflow:hidden;
-        text-overflow:ellipsis;
-        font-size:10px;
-        padding:2px 6px;
+        max-width:none;
+        min-width:max-content;
+        overflow:visible;
+        text-overflow:clip;
+        font-size:12px;
+        padding:3px 8px;
       }
     }
