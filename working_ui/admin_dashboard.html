@@ -31706,7 +31706,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var badgeAttr = badgeKey ? (' data-portal-badge-key="'+esc(badgeKey)+'"') : '';
       var inner =
         '<span class="dash-hub__tile-band" aria-hidden="true">'+adminNavIconHtml(id)+'</span>'+
-        '<span class="dash-hub__tile-label">'+esc(eyebrow)+'</span>'+
+        '<span class="dash-hub__tile-label">'+esc(eyebrow).replace(/\n/g, '<br>')+'</span>'+
         '<span class="dash-hub__tile-desc">'+titleHtml+'</span>';
       if(ext){
         return (
@@ -32594,7 +32594,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ];
       }
       if(id === 'families'){
-        return [{ id:'clients', label:'Clients Info' }];
+        return [{ id:'clients', label:'Clients\nInfo' }];
       }
       if(id === 'finance'){
         return [
@@ -32604,7 +32604,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(id === 'formal'){
         return [
-          { id:'staffhr', label:'Worker Info' },
+          { id:'staffhr', label:'Workers\nInfo' },
           { id:'roster_spreadsheets', label:'Workers Timetable' },
           'session_disruptions'
         ];
