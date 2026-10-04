@@ -4564,12 +4564,12 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   width:28px;
   height:28px;
 }
-.ops-hub--flat .ops-hub-panel--today{background:rgba(255,248,251,.94);border-color:#f4e7ee}
-.ops-hub--flat .ops-hub-panel--services{background:rgba(255,250,246,.94);border-color:#f3e8dc}
-.ops-hub--flat .ops-hub-panel--families{background:rgba(250,249,254,.94);border-color:#e8e5f3}
-.ops-hub--flat .ops-hub-panel--finance{background:rgba(247,254,251,.94);border-color:#dceee6}
-.ops-hub--flat .ops-hub-panel--formal{background:rgba(255,248,248,.94);border-color:#f3e4e4}
-.ops-hub--flat .ops-hub-panel--potential{background:rgba(251,252,253,.94);border-color:#e7ecf1}
+.ops-hub--flat .ops-hub-panel--today{background:#fbcfe8;border-color:#f472b6}
+.ops-hub--flat .ops-hub-panel--services{background:#fed7aa;border-color:#fb923c}
+.ops-hub--flat .ops-hub-panel--families{background:#ddd6fe;border-color:#a78bfa}
+.ops-hub--flat .ops-hub-panel--finance{background:#99f6e4;border-color:#2dd4bf}
+.ops-hub--flat .ops-hub-panel--formal{background:#fecaca;border-color:#f87171}
+.ops-hub--flat .ops-hub-panel--potential{background:#e2e8f0;border-color:#94a3b8}
 .ops-hub--flat .ops-hub-panel--today .dash-hub__tile,
 .ops-hub--flat .ops-hub-panel--services .dash-hub__tile,
 .ops-hub--flat .ops-hub-panel--families .dash-hub__tile,
@@ -4924,12 +4924,12 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
 }
 
 /* Each button uses its category colour: pink Sessions, and the same idea for the rest. */
-.ops-hub--flat .ops-hub-panel--today{--hub-tile-bg:#fff;--hub-tile-line:#f3d7e6;--hub-tile-ink:#be185d}
-.ops-hub--flat .ops-hub-panel--families{--hub-tile-bg:#fff;--hub-tile-line:#e4dff6;--hub-tile-ink:#6d28d9}
-.ops-hub--flat .ops-hub-panel--services{--hub-tile-bg:#fff;--hub-tile-line:#f3e0cc;--hub-tile-ink:#c2410c}
-.ops-hub--flat .ops-hub-panel--finance{--hub-tile-bg:#fff;--hub-tile-line:#d5f0e6;--hub-tile-ink:#0f766e}
-.ops-hub--flat .ops-hub-panel--formal{--hub-tile-bg:#fff;--hub-tile-line:#f3d6d6;--hub-tile-ink:#b91c1c}
-.ops-hub--flat .ops-hub-panel--potential{--hub-tile-bg:#fff;--hub-tile-line:#e4e9ef;--hub-tile-ink:#334155}
+.ops-hub--flat .ops-hub-panel--today{--hub-tile-bg:#fce7f3;--hub-tile-line:#f9a8d4;--hub-tile-ink:#be185d}
+.ops-hub--flat .ops-hub-panel--families{--hub-tile-bg:#ede9fe;--hub-tile-line:#ddd6fe;--hub-tile-ink:#6d28d9}
+.ops-hub--flat .ops-hub-panel--services{--hub-tile-bg:#ffedd5;--hub-tile-line:#fdba74;--hub-tile-ink:#c2410c}
+.ops-hub--flat .ops-hub-panel--finance{--hub-tile-bg:#ccfbf1;--hub-tile-line:#5eead4;--hub-tile-ink:#0f766e}
+.ops-hub--flat .ops-hub-panel--formal{--hub-tile-bg:#fee2e2;--hub-tile-line:#fca5a5;--hub-tile-ink:#b91c1c}
+.ops-hub--flat .ops-hub-panel--potential{--hub-tile-bg:#f1f5f9;--hub-tile-line:#cbd5e1;--hub-tile-ink:#334155}
 .ops-hub--flat .ops-hub-panel--today .dash-hub__tile,
 .ops-hub--flat .ops-hub-panel--families .dash-hub__tile,
 .ops-hub--flat .ops-hub-panel--services .dash-hub__tile,
