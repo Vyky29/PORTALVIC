@@ -2059,7 +2059,7 @@
   /**
    * The main load keeps only the newest 800 messages across every family.
    * That window is now September, so July and August replies never reach the thread.
-   * Opening a chat loads that phone's own history.
+   * Opening a chat loads that phone's newest messages and scrolls to the last one.
    */
   async function hydrateOpenThreadHistory() {
     var key = state.selectedKey;
@@ -2078,23 +2078,25 @@
       .from("portal_parent_whatsapp_inbound")
       .select(inboundSel)
       .or(phoneHistoryOr("from_phone", tail))
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(500);
     var out = await client
       .from("portal_parent_notify_log")
       .select(outboundSel)
       .or(phoneHistoryOr("parent_phone", tail))
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(500);
     if ((inn && inn.error) || (out && out.error)) return;
-    await resolveMediaSignedUrls(client, (inn && inn.data) || []);
-    var outboundRows = ((out && out.data) || []).filter(notifyRowHasWhatsapp);
+    var inboundRows = ((inn && inn.data) || []).slice().reverse();
+    var outboundRaw = ((out && out.data) || []).slice().reverse();
+    await resolveMediaSignedUrls(client, inboundRows);
+    var outboundRows = outboundRaw.filter(notifyRowHasWhatsapp);
     await resolveMediaSignedUrls(client, outboundRows);
     var items = [];
     outboundRows.forEach(function (row) {
       items.push({ direction: "out", created_at: row.created_at, row: row });
     });
-    ((inn && inn.data) || []).forEach(function (row) {
+    inboundRows.forEach(function (row) {
       items.push({ direction: "in", created_at: row.created_at, row: row });
     });
     if (!items.length) return;
@@ -2149,7 +2151,11 @@
     renderChat(opts.fromRefresh);
     if (next) {
       void hydrateOpenThreadHistory().then(function () {
-        if (state.selectedKey === next) renderChat(true);
+        if (state.selectedKey !== next) return;
+        renderChat(true, { forceBottom: true });
+        global.requestAnimationFrame(function () {
+          scrollThreadToBottom(true);
+        });
       });
     }
     if (next) {
@@ -2373,7 +2379,7 @@
     );
   }
 
-  function renderChat(fromRefresh) {
+  function renderChat(fromRefresh, renderOpts) {
     var host = document.getElementById("portalParentNotifyLogList");
     var countEl = document.getElementById("portalParentNotifyLogCount");
     if (!host) return;
@@ -2388,7 +2394,9 @@
       document.activeElement && document.activeElement.id === "portalPnlogComposerInput";
     var selStart = wasComposing ? document.activeElement.selectionStart : null;
     var selEnd = wasComposing ? document.activeElement.selectionEnd : null;
-    if (fromRefresh && prevThreadScroll) {
+    var forceBottom = !!(renderOpts && renderOpts.forceBottom);
+    if (forceBottom) state.stickToBottom = true;
+    else if (fromRefresh && prevThreadScroll) {
       state.stickToBottom = isNearBottom(prevThreadScroll);
     }
 
