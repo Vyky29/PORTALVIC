@@ -2927,3 +2927,61 @@
     white-space:nowrap;
   }
 }
+
+/* Phone on its side: Register reads in columns, left to right. */
+@media (orientation:landscape) and (max-height:540px){
+  .ash-table-wrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .ash-table--register{
+    display:table !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100%;
+    table-layout:fixed;
+  }
+  .ash-table--register thead{display:table-header-group !important}
+  .ash-table--register tbody{display:table-row-group !important}
+  .ash-table--register tr{
+    display:table-row !important;
+    margin:0 !important;
+    padding:0 !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+  }
+  .ash-table--register th,
+  .ash-table--register td{
+    display:table-cell !important;
+    width:auto !important;
+    min-width:0 !important;
+    max-width:none !important;
+    padding:6px 4px !important;
+    border:0 !important;
+    border-bottom:1px solid #f1f5f9 !important;
+    white-space:normal !important;
+    text-align:center;
+    vertical-align:middle;
+    font-size:11px;
+    line-height:1.25;
+  }
+  .ash-table--register th{
+    font-size:9px;
+    line-height:1.15;
+    background:#f8fafc;
+    color:var(--muted,#64748b);
+  }
+  .ash-table--register td::before,
+  .ash-table--register th::before{
+    content:none !important;
+    display:none !important;
+  }
+  .ash-table--register col.ash-reg-col-who{width:18%}
+  .ash-table--register col.ash-reg-col-star{width:8%}
+  .ash-table--register col.ash-reg-col-reg{width:12%}
+  .ash-table--register col.ash-reg-col-ind{width:14%}
+  .ash-table--register col.ash-reg-col-fb,
+  .ash-table--register col.ash-reg-col-notes{width:18%}
+  .ash-table--register col.ash-reg-col-by{width:12%}
+}
