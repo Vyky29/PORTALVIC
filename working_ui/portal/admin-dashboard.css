@@ -5874,8 +5874,8 @@
       }
     }
     /* Phone held upright.
-       Line 1: menu, search, Help, then every icon and the photo, small enough to fit.
-       Line 2: who is online. */
+       Line 1: menu, search, Help, the two green icons, and the photo.
+       Line 2: who is online, then the bell, A, P and S. */
     @media (max-width:720px) and (orientation:portrait){
       body.admin-touch-compact .admin-topbar,
       .admin-topbar{
@@ -5894,13 +5894,14 @@
         display:block !important;
         order:1;
         flex:1 1 0;
-        width:auto;
+        width:0;
         max-width:none;
         min-width:0;
+        overflow:hidden;
       }
-      .admin-search-wrap input{min-width:0}
+      .admin-search-wrap input{min-width:0;width:100%}
       .admin-profile{
-        order:9;
+        order:5;
         flex:0 0 28px;
         margin:0;
         width:28px;
@@ -5911,13 +5912,12 @@
       .admin-profile span#miniName{display:none}
       #btnOpenWhatsapp{order:3}
       #btnComunicaciones{order:4}
-      #btnAlerts{order:5}
-      #btnAnnouncements{order:6}
-      #btnFamilyMsgs{order:7}
-      #btnStaffWa{order:8}
+      #btnAnnouncements{order:12}
+      #btnFamilyMsgs{order:13}
+      #btnStaffWa{order:14}
       .admin-topbar-portrait-break{
         display:block;
-        order:10;
+        order:6;
         flex:0 0 100%;
         height:0;
         margin:-6px 0;
@@ -5936,7 +5936,7 @@
       body.admin-touch-compact .admin-topbar #btnAlerts,
       #btnAlerts{
         display:inline-flex !important;
-        order:5;
+        order:11;
         width:28px;
         height:28px;
         min-width:28px;
@@ -5951,15 +5951,15 @@
         font-size:12px;
       }
       .admin-topbar-presence{
-        order:20;
+        order:10;
         display:flex !important;
-        flex:1 0 100%;
-        width:100%;
-        max-width:none;
+        flex:1 1 0;
+        width:auto;
+        max-width:100%;
         min-width:0;
         margin:0;
         border:none;
-        overflow:visible;
+        overflow:hidden;
       }
       .admin-topbar-presence .sf-status-bar{
         width:100%;
