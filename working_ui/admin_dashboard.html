@@ -33827,10 +33827,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewStaffHR(){
       // Live staff roster / H&R (powered by public.hr_records). Rendered by
       // /portal/admin-hr.js into #hrModuleRoot (see bindView 'staffhr').
-      return '<h1 class="page-title">Workers</h1><p class="page-intro">Staff roster — filter by active, tap a person to open and edit every detail. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button>.</p>'+
-        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
-        '<button type="button" class="btn btn--pri" data-view-target="staffhr_contracts">+ New employment contract</button>'+
-        '<button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">Compose announcement</button></div>'+
+      return '<h1 class="page-title">Workers</h1>'+
         '<div id="hrModuleRoot"></div>'+
         (window.PortalWellbeingAdminActions ? window.PortalWellbeingAdminActions.viewHtml() : '');
     }
