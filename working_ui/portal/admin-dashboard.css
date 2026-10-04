@@ -1036,11 +1036,11 @@
     .admin-menu-mob:hover,.admin-menu-mob:focus-visible{background:#f1f5f9;border-color:#8eb4d0;outline:none}
     .admin-search-wrap{flex:1 1 280px;max-width:420px;min-width:220px;position:relative}
     .admin-topbar-portrait-break{display:none}
-    .admin-topbar-greens{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;order:6}
+    .admin-topbar-greens{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;order:7}
     .admin-topbar-presence{order:4}
-    #btnAlerts{order:5}
-    #btnProfileMini{order:8}
-    .admin-topbar-meta{order:7}
+    .admin-topbar-meta{order:5}
+    #btnAlerts{order:6}
+    #btnProfileMini,.admin-profile{order:8}
     .admin-topbar-help{
       flex:0 0 auto;
       display:inline-flex;

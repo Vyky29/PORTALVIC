@@ -185,8 +185,8 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-header-fat" />
-  <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-header-order" />
+  <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20261004-header-order" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
     /* Closed full-screen layers must not sit in the hit tree (iOS eats taps). */
@@ -32563,12 +32563,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ];
       }
       if(id === 'families'){
-        return ['clients'];
+        return [{ id:'clients', label:'Clients Info' }];
       }
       if(id === 'finance'){
         return [
-          'finance_reenrolments',
-          { id:'absents_refunds', label:'Absents, credits & refunds' }
+          { id:'finance_reenrolments', label:'Booking & Payments' },
+          { id:'absents_refunds', label:'Refunds & Credits' }
         ];
       }
       if(id === 'formal'){

@@ -120,6 +120,17 @@
   justify-content: flex-end;
 }
 
+/* Wide screen: who's online stays with the buttons, flush right.
+   Order is Announcements, Parents API, Staff API, bell, WhatsApp, chat, photo. */
+@media (min-width: 901px) and (min-height: 541px) {
+  .admin-shell.admin-shell--layout .admin-topbar .admin-topbar-presence {
+    margin-left: auto;
+  }
+  .admin-shell.admin-shell--layout .admin-topbar .admin-topbar-meta {
+    margin-left: 0;
+  }
+}
+
 @media (min-width: 1024px) and (max-width: 1360px) {
   body:not(.admin-touch-compact) .admin-shell.admin-shell--layout .admin-topbar .admin-date {
     display: none;
