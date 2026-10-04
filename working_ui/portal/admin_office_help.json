@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-03-v233",
+  "version": "2026-10-04-v234",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -128,7 +128,11 @@
             "new shift",
             "9.15",
             "servicio entero",
-            "cover hub"
+            "cover hub",
+            "change time",
+            "cambiar hora",
+            "nueva hora",
+            "cancel and add"
           ],
           "demos": [
             {
@@ -151,7 +155,8 @@
             "A makeup on an open seat still shows that child when the instructor is off that day. The row name is the child, not No participant.",
             "If a child is absent and someone moves into that seat the same day, the row shows the absent child, then Free, then the move-in. No participant is a standing empty seat.",
             "From Sun 27 Sep, Gabriel and Cyrus swap the 11.00 and 11.45 halves for the rest of term. The blue change card shows only that first Sunday. After that they are the regular clients at those times. A cover saved on that seat follows the child who is in it now.",
-            "A cover keeps the original seat. Today shows that area: Hub Room, Big Pool, Small Pool or Teaching Pool. It does not drop to a dash. Covering the whole Sunday Hub book is one NEW SHIFT, 9.15 to 2.15. A single slot stays that slot."
+            "A cover keeps the original seat. Today shows that area: Hub Room, Big Pool, Small Pool or Teaching Pool. It does not drop to a dash. Covering the whole Sunday Hub book is one NEW SHIFT, 9.15 to 2.15. A single slot stays that slot.",
+            "There is no clock editor on an existing row. Move to another slot today only lands on a band that already exists that day. To use a new time, Change, Cancelled, Save override on the old row, then + Add session card, Type Session, with the new Start and End. That is one day. Edit term slot is only if that weekday should keep the new time for the rest of term."
           ],
           "es": {
             "title": "Schedule & Covers (un dia)",
@@ -172,7 +177,8 @@
               "Un makeup en una plaza libre sigue ensenando a ese nino cuando el instructor esta libre ese dia. El nombre de la fila es el nino, no No participant.",
               "Si un nino falta y alguien entra en esa plaza el mismo dia, la fila ensena al nino ausente, luego Free, luego el que entra. No participant es una plaza fija vacia.",
               "Desde el domingo 27 Sep, Gabriel y Cyrus cambian las medias de las 11.00 y las 11.45 el resto del term. La tarjeta azul de cambio sale solo ese primer domingo. Despues son los clientes de siempre a esa hora. Un cover guardado en esa plaza sigue al nino que esta ahora.",
-              "Un cover conserva la plaza original. Today ensena esa area: Hub Room, Big Pool, Small Pool o Teaching Pool. No se queda en una raya. Cubrir el Hub entero del domingo es una sola NEW SHIFT, 9.15 to 2.15. Una sola franja se queda en esa franja."
+              "Un cover conserva la plaza original. Today ensena esa area: Hub Room, Big Pool, Small Pool o Teaching Pool. No se queda en una raya. Cubrir el Hub entero del domingo es una sola NEW SHIFT, 9.15 to 2.15. Una sola franja se queda en esa franja.",
+              "En una fila que ya existe no hay campo para cambiar la hora. Move to another slot today solo cae en una franja que ya existe ese dia. Para una hora nueva: Change, Cancelled, Save override en la fila vieja, y luego + Add session card, Type Session, con el Start y el End nuevos. Es un dia. Edit term slot solo si ese dia de la semana debe quedarse con la hora nueva el resto del term."
             ]
           }
         },
