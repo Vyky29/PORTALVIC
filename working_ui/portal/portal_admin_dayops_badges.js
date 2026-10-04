@@ -198,13 +198,14 @@
     return out;
   }
 
-  /** Overlay on the icon chip only — no tile layout changes (same idea as medical X on avatars). */
+  /** Hub buttons: the count sits on the button, in the top-right corner. Other tiles keep the icon chip. */
   function badgeHost(el) {
     if (!el) return null;
+    if (el.classList && el.classList.contains("dash-hub__tile")) return el;
     return (
-      el.querySelector(".dash-hub__tile-band .admin-nav-ico") ||
       el.querySelector(".dayops-screen-nav__ico-wrap .admin-nav-ico") ||
       el.querySelector(".dayops-screen-nav__ico-wrap") ||
+      el.querySelector(".dash-hub__tile-band .admin-nav-ico") ||
       el.querySelector(".dash-hub__tile-band")
     );
   }
