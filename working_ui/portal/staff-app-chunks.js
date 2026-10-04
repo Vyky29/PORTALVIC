@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-    var VER = "20261004-same-col";
+    var VER = "20261004-no-updated";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260928-patience-tue",
@@ -15,7 +15,7 @@
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20261001-hold-not-a-card",
     "/portal/portal_staff_feedback_data_loader.js?v=20261001-no-global",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
-      "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
+      "/portal/portal-roster-rows-merge.js?v=20261004-no-updated",
       "/portal/portal_roster_canonical.js?v=20261004-serine-climb",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",

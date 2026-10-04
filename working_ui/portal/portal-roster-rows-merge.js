@@ -479,10 +479,24 @@
         seenDated[sk] = true;
         return;
       }
+      /* A term move writes a dated row every week. Updated is the first week only. */
+      var earlierSameSeat = false;
+      var rowClient = canonicalClientSlug(row.client_name);
+      Object.keys(dated).forEach(function (prevKey) {
+        if (earlierSameSeat || prevKey === sk) return;
+        var prev = dated[prevKey];
+        if (!prev) return;
+        if (canonicalClientSlug(prev.client_name) !== rowClient) return;
+        var prevIso = normIso(prev.session_date);
+        if (!prevIso || !isoAdd || prevIso >= isoAdd) return;
+        if (!slotsSameBounds(prev.time_slot, row.time_slot, row.day)) return;
+        if (!instructorSetsOverlap(prev.instructors, row.instructors)) return;
+        earlierSameSeat = true;
+      });
       out.push(
         Object.assign({}, row, {
           client_name: officeShortClientName(row.client_name) || row.client_name,
-          __portal_roster_time_updated: true,
+          __portal_roster_time_updated: !earlierSameSeat,
         })
       );
       seenDated[sk] = true;

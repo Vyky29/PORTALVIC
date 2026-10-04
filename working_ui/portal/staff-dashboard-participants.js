@@ -862,9 +862,14 @@
     }
     function portalSessionItemRosterTimeUpdated(item){
       if(!item) return false;
+      const ov = item.__portalScheduleOverride;
+      const ovType = ov ? String(ov.override_type || '').trim() : '';
+      if(ovType === 'slot_update'){
+        const iso = String(item.sessionDateKey || item.session_date || item.sessionKey || '').split('|')[0];
+        if(!portalTermSlotUpdateIsFirstWeek(ov, iso)) return false;
+        return true;
+      }
       if(!!item.portalRosterTimeUpdated) return true;
-      const ovType = item && item.__portalScheduleOverride ? String(item.__portalScheduleOverride.override_type || '').trim() : '';
-      if(ovType === 'slot_update') return true;
       return String(item.portalOverrideAlertPill || '').trim().toUpperCase() === 'UPDATED';
     }
 
@@ -5722,6 +5727,32 @@
       }catch(_){}
       return { start: '09:00', end: '10:00' };
     }
+    /** Term edits copy the same seat onto later weeks. Those weeks are the normal seat. */
+    function portalTermSlotUpdateIsFirstWeek(ov, iso){
+      const pl = portalOverridePayloadObject(ov);
+      const scope = String(pl.scope || '').trim();
+      if(scope !== 'rest_of_term' && scope !== 'weekday_term') return true;
+      const staff = portalNormKeyStr(ov.anchor_staff_id);
+      const client = portalClientSlugFromName(pl.to_client_name || pl.to_client_id || ov.anchor_client_id);
+      const slot = portalNormTimeSlotLabel(ov.anchor_time_slot_label || '');
+      let first = normaliseIsoDate(ov.session_date);
+      portalScheduleOverrideRowsAll().forEach(function(r){
+        if(!r || String(r.status || 'active') !== 'active') return;
+        if(String(r.override_type || '').trim() !== 'slot_update') return;
+        if(portalNormKeyStr(r.anchor_staff_id) !== staff) return;
+        const rp = portalOverridePayloadObject(r);
+        const rs = String(rp.scope || '').trim();
+        if(rs !== 'rest_of_term' && rs !== 'weekday_term') return;
+        const rc = portalClientSlugFromName(rp.to_client_name || rp.to_client_id || r.anchor_client_id);
+        if(!client || rc !== client) return;
+        const rslot = portalNormTimeSlotLabel(r.anchor_time_slot_label || '');
+        if(slot && rslot && rslot !== slot) return;
+        const d = normaliseIsoDate(r.session_date);
+        if(d && (!first || d < first)) first = d;
+      });
+      if(first && iso && iso !== first) return false;
+      return true;
+    }
     /** True when this session time differs from the machine roster (term slot update or slot_update override). */
     function portalSessionRosterTimeWasUpdated(s, sessionDateIso){
       if(!s) return false;
@@ -5735,6 +5766,8 @@
           && typeof P.overrideShouldShowOnCalendarDate === 'function' && !P.overrideShouldShowOnCalendarDate(ov, iso)){
           return false;
         }
+        /* rest_of_term / weekday_term repeats the same seat. Updated is the first week only. */
+        if(!portalTermSlotUpdateIsFirstWeek(ov, iso)) return false;
         return true;
       }
       if(s.portalRosterTimeUpdated) return true;
