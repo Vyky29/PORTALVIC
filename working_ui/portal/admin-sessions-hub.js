@@ -4328,7 +4328,9 @@ function rosterRowToSlot(isoDate, wd, r) {
   }
 
   function isMultiActivityService(service) {
-    return serviceKey(service).indexOf("multi-activity") !== -1;
+    var k = serviceKey(service);
+    /* Roster label is "Multi-Activity". The feedback form saves "Multi Activity (Splash & Connect)". */
+    return k.indexOf("multi-activity") !== -1 || k.indexOf("multi activity") !== -1;
   }
 
   function isAquaticService(service) {
@@ -5256,6 +5258,7 @@ function rosterRowToSlot(isoDate, wd, r) {
     var fbSvc = serviceKey(clean(fb.service));
     var slotSvc = serviceKey(clean(slot.service));
     if (!fbSvc || !slotSvc || fbSvc === slotSvc) return true;
+    if (isMultiActivityService(fb.service) && isMultiActivityService(slot.service)) return true;
     if (isDayCentreService(slot.service) || isDayCentreService(fb.service)) {
       return dayCentreFeedbackServiceCompatible(fb, slot);
     }
