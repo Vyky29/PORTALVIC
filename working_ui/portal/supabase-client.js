@@ -571,7 +571,9 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
        * Day Centre / Bespoke shared: keep the exact unit key so every co-worker
        * (Michelle submits → Raul/Luliya green) resolves even before roster fan-out.
        */
-      if (portalRosterKeyIsSharedFeedbackUnit(pk)) {
+      /* Untimed date|client|aquatic is one instructor's swim, not a shared unit.
+         A climb saved as Swimming must not land in every co-worker's green set. */
+      if (portalRosterKeyIsSharedFeedbackUnit(pk) && !portalSubmittedKeyIsLeadAquaticUnit(pk)) {
         if (isAbs) {
           if (!seenA.has(pk)) {
             seenA.add(pk);
@@ -1561,19 +1563,9 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
     if (!portalSessionKeyClientSlugsMatch(s, r)) return false;
     const rLow = String(r || "").toLowerCase();
     if (/\|aquatic(?:\||$)/.test(rLow)) return true;
-    const rArea = portalSessionKeyAreaToken(r);
-    if (
-      rArea === "big_pool" ||
-      rArea === "small_pool" ||
-      rArea === "teaching_pool" ||
-      rArea.indexOf("hub") >= 0 ||
-      rArea.indexOf("climb") >= 0 ||
-      rArea === "wall" ||
-      rArea === "climbing_wall"
-    ) {
-      return false;
-    }
-    return true;
+    /* No area on the roster key (date|HH:mm|client) is still that child's own slot.
+       An untimed swim must not close it. */
+    return false;
   }
   const sharedUnit =
     portalRosterKeyIsSharedFeedbackUnit(r) || portalRosterKeyIsSharedFeedbackUnit(s);
@@ -1590,6 +1582,11 @@ function portalSubmittedSharedUnitCoversRosterKey(submittedKey, rosterKey, opts)
   const fk = String(submittedKey || "").trim();
   const rk = String(rosterKey || "").trim();
   if (!fk || !rk || !portalRosterKeyIsSharedFeedbackUnit(fk)) return false;
+  /* Lead aquatic must not skip per-staff ownership on Multi, Hub or Climb. */
+  if (portalSubmittedKeyIsLeadAquaticUnit(fk)) {
+    const rLow = rk.toLowerCase();
+    if (!/\|aquatic(?:\||$)/.test(rLow)) return false;
+  }
   return portalFeedbackSubmittedKeyMatchesRosterKey(fk, rk, opts || {});
 }
 
