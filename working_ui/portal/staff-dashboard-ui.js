@@ -1452,7 +1452,9 @@
           return;
         }
         const t = String(ov.override_type || '').trim();
-        if(t === 'slot_update' || t === 'slot_close' || t === 'instructor_reassign' || t === 'client_cancelled' || t === 'session_add') found = true;
+        if(t === 'slot_update'){
+          if(typeof portalTermSlotUpdateIsFirstWeek !== 'function' || portalTermSlotUpdateIsFirstWeek(ov, iso)) found = true;
+        }else if(t === 'slot_close' || t === 'instructor_reassign' || t === 'client_cancelled' || t === 'session_add') found = true;
         if(t === 'slot_clear_client' && !(ov.payload && ov.payload.cancelled_by_admin)) found = true;
       });
       return found;
@@ -1508,10 +1510,12 @@
             pack.hasUpdated = true;
           }
         }else if(t === 'slot_update'){
-          if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)){
+          const changeWeek = typeof portalTermSlotUpdateIsFirstWeek !== 'function'
+            || portalTermSlotUpdateIsFirstWeek(row, row.session_date);
+          if(changeWeek && P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)){
             pack.hasNewShift = true;
             pack.hasUpdated = true;
-          }else{
+          }else if(changeWeek){
             pack.hasUpdated = true;
           }
         }else if(t === 'instructor_reassign'){
@@ -1838,12 +1842,14 @@
           }
           if(t === 'slot_close') out.hasUpdated = true;
           if(t === 'slot_update'){
+            const changeWeek = typeof portalTermSlotUpdateIsFirstWeek !== 'function'
+              || portalTermSlotUpdateIsFirstWeek(ov, iso);
             const P = window.PortalParticipantsSheet;
-            if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(ov)){
+            if(changeWeek && P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(ov)){
               out.hasNewShift = true;
               out.hasUpdated = true;
-            }else if(!P || typeof P.overrideIsTermNewParticipant !== 'function' || !P.overrideIsTermNewParticipant(ov)
-              || (typeof P.overrideShouldShowOnCalendarDate === 'function' && P.overrideShouldShowOnCalendarDate(ov, iso))){
+            }else if(changeWeek && (!P || typeof P.overrideIsTermNewParticipant !== 'function' || !P.overrideIsTermNewParticipant(ov)
+              || (typeof P.overrideShouldShowOnCalendarDate === 'function' && P.overrideShouldShowOnCalendarDate(ov, iso)))){
               out.hasUpdated = true;
             }
           }
@@ -1857,7 +1863,8 @@
           if(String(ov.anchor_staff_id || '').trim().toLowerCase() !== sid) return;
           const t = String(ov.override_type || '').trim();
           if(t === 'client_absence_announced') out.hasAbsentAnnounced = true;
-          if(t === 'slot_update' || t === 'slot_close') out.hasUpdated = true;
+          if(t === 'slot_close') out.hasUpdated = true;
+          if(t === 'slot_update' && (typeof portalTermSlotUpdateIsFirstWeek !== 'function' || portalTermSlotUpdateIsFirstWeek(ov, iso))) out.hasUpdated = true;
           if(t === 'instructor_reassign'){
             if(portalStaffIsProgrammeLead()){
               if(typeof portalOverrideIsInstructorCoverForLoggedInStaff === 'function'
@@ -1874,7 +1881,7 @@
           }
           if(t === 'slot_clear_client' && !(ov.payload && ov.payload.cancelled_by_admin)) out.hasUpdated = true;
           const P = window.PortalParticipantsSheet;
-          if(t === 'slot_update' && P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(ov)){
+          if(t === 'slot_update' && P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(ov) && (typeof portalTermSlotUpdateIsFirstWeek !== 'function' || portalTermSlotUpdateIsFirstWeek(ov, iso))){
             out.hasNewShift = true;
             out.hasUpdated = true;
           }

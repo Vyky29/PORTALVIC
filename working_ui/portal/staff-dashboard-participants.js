@@ -5796,6 +5796,10 @@
       const pl = portalOverridePayloadObject(ov);
       const scope = String(pl.scope || '').trim();
       if(scope !== 'rest_of_term' && scope !== 'weekday_term') return true;
+      /* For good: Updated only on the session the change starts. Later copies are the normal seat. */
+      const anchor = normaliseIsoDate(pl.anchor_date);
+      const viewed = normaliseIsoDate(iso) || normaliseIsoDate(ov && ov.session_date);
+      if(anchor) return !!viewed && viewed === anchor;
       const staff = portalNormKeyStr(ov.anchor_staff_id);
       const client = portalClientSlugFromName(pl.to_client_name || pl.to_client_id || ov.anchor_client_id);
       const slot = portalNormTimeSlotLabel(ov.anchor_time_slot_label || '');
@@ -5834,7 +5838,22 @@
         if(!portalTermSlotUpdateIsFirstWeek(ov, iso)) return false;
         return true;
       }
-      if(s.portalRosterTimeUpdated) return true;
+      if(s.portalRosterTimeUpdated){
+        const cid = portalClientSlugFromName(s.clientId || s.clientName || s.name);
+        const dayRows = typeof portalScheduleOverrideRowsForSessionIso === 'function'
+          ? portalScheduleOverrideRowsForSessionIso(iso)
+          : [];
+        for(let ri = 0; ri < dayRows.length; ri++){
+          const r = dayRows[ri];
+          if(!r || String(r.status || 'active') !== 'active') continue;
+          if(String(r.override_type || '').trim() !== 'slot_update') continue;
+          const rp = portalOverridePayloadObject(r);
+          const rc = portalClientSlugFromName(rp.to_client_name || rp.to_client_id || r.anchor_client_id);
+          if(cid && rc && rc !== cid) continue;
+          if(!portalTermSlotUpdateIsFirstWeek(r, iso)) return false;
+        }
+        return true;
+      }
       const machine = (typeof window !== 'undefined' && window.__STAFF_DASHBOARD_MACHINE_ROWS__) || [];
       if(!machine.length || !iso) return false;
       const cid = String(s.clientId || '').trim().toLowerCase();
