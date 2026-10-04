@@ -6144,3 +6144,25 @@
         gap:0;
       }
     }
+
+    /* Phone Comms: drop the Comms title and the info button so the chat fills the screen. */
+    @media (max-width:900px) and (orientation:portrait),
+           (orientation:landscape) and (max-height:540px){
+      body:has(#workspace .admin-comms-embed) .admin-page-head{
+        display:none !important;
+      }
+      body:has(#workspace .admin-comms-embed) .admin-workspace{
+        display:flex !important;
+        flex-direction:column;
+        min-height:0;
+        overflow:hidden !important;
+        padding:4px !important;
+      }
+      body:has(#workspace .admin-comms-embed) .admin-comms-embed{
+        flex:1 1 auto;
+        height:auto;
+        min-height:0;
+        max-height:none;
+        border-radius:12px;
+      }
+    }
