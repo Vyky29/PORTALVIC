@@ -455,7 +455,9 @@
 
   function itemIsAquaticClientCard(it) {
     if (!it || it.kind !== "client") return false;
-    if (it.noSessionFeedbackRequired) return false;
+    /* Absent / cancelled still join the hour so two halves of the same slot
+       become one card. A mix (one half cancelled, one still on) stays split. */
+    if (it.noSessionFeedbackRequired && !itemLooksCancelledOrCleared(it)) return false;
     return isAquaticActivity(it.activity);
   }
 
