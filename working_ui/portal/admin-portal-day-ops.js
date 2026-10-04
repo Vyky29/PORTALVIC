@@ -1826,29 +1826,49 @@
       var head = kind + ' check' + (time ? ' at ' + time : '') + '.';
       return note ? head + ' The team reported: ' + note : head + ' The team reported an issue.';
     });
-    var mediaBits = [];
-    visits.forEach(function (r) {
-      if (String((r && r.video_storage_path) || '').trim()) mediaBits.push('video');
-      if (venueReviewPhotoPaths(r).length) mediaBits.push('photos');
-    });
-    var mediaLine = 'The walkthrough is attached.';
-    if (mediaBits.indexOf('video') >= 0 && mediaBits.indexOf('photos') >= 0) {
-      mediaLine = 'The walkthrough video and photos are attached.';
-    } else if (mediaBits.indexOf('photos') >= 0) {
-      mediaLine = 'The photos are attached.';
-    } else if (mediaBits.indexOf('video') >= 0) {
-      mediaLine = 'The walkthrough video is attached.';
+    var mediaItems = venueVisitMediaItems(row);
+    var hasOpeningMedia = mediaItems.some(function (item) { return item.side === 'Opening'; });
+    var hasClosingMedia = mediaItems.some(function (item) { return item.side === 'Closing'; });
+    var mediaLine = 'The photos and video follow this message.';
+    if (hasOpeningMedia && hasClosingMedia) {
+      mediaLine = 'The opening and closing photos and videos follow this message.';
+    } else if (!mediaItems.length) {
+      mediaLine = '';
     }
     return (
       'Hi Pilar,\n\n' +
       'This is ClubSENsational.\n\n' +
       'We are writing about ' + venue + ' on ' + when + '.\n\n' +
-      lines.join('\n\n') + '\n\n' +
-      mediaLine + '\n\n' +
+      lines.join('\n\n') +
+      (mediaLine ? '\n\n' + mediaLine : '') + '\n\n' +
       'This message was sent automatically. Please do not reply to it.\n\n' +
       'Thank you,\n' +
       'ClubSENsational'
     );
+  }
+  function venueVisitMediaItems(row) {
+    var visits = venueReviewsSameVisit(row).slice();
+    visits.sort(function (a, b) {
+      var ka = venueReviewKindKey(a) === 'Closing' ? 1 : 0;
+      var kb = venueReviewKindKey(b) === 'Closing' ? 1 : 0;
+      if (ka !== kb) return ka - kb;
+      return String((a && a.review_time) || '').localeCompare(String((b && b.review_time) || ''));
+    });
+    var items = [];
+    visits.forEach(function (r) {
+      var side = venueReviewKindKey(r) === 'Closing' ? 'Closing' : 'Opening';
+      var video = String((r && r.video_storage_path) || '').trim();
+      if (video) items.push({ path: video, kind: 'video', side: side, label: side + ' video' });
+      venueReviewPhotoPaths(r).forEach(function (p, i) {
+        var path = String(p || '').trim();
+        if (!path) return;
+        items.push({ path: path, kind: 'photo', side: side, label: side + ' photo ' + (i + 1) });
+      });
+    });
+    return items;
+  }
+  function venueMediaIsVideo(path, kind) {
+    return kind === 'video' || /\.(mp4|mov|webm|ogg)(\?|$)/i.test(String(path || ''));
   }
   function ensureVenueViewer() {
     var el = document.getElementById('portalVenueViewer');
@@ -1859,13 +1879,15 @@
     el.hidden = true;
     el.innerHTML =
       '<div class="portal-venue-viewer__sheet" role="dialog" aria-modal="true" aria-label="Venue photo or video">' +
+      '<pre class="portal-venue-viewer__msg" id="portalVenueViewerMsg" hidden></pre>' +
+      '<p class="portal-venue-viewer__then" id="portalVenueViewerThen" hidden>Then the media</p>' +
+      '<div id="portalVenueViewerGallery" class="portal-venue-viewer__gallery"></div>' +
       '<div id="portalVenueViewerStage"></div>' +
       '<div class="portal-venue-viewer__actions">' +
       '<a id="portalVenueViewerDownload" class="portal-forms-view-btn" href="#" download>Download</a>' +
       '<button type="button" class="portal-forms-view-btn" id="portalVenueViewerClose">Close</button>' +
       '</div>' +
       '<p id="portalVenueViewerNote" style="margin:12px 0 0;font-size:13px;color:#64748b"></p>' +
-      '<pre class="portal-venue-viewer__msg" id="portalVenueViewerMsg" hidden></pre>' +
       '</div>';
     document.body.appendChild(el);
     el.addEventListener('click', function (ev) {
@@ -1878,40 +1900,93 @@
   function openVenueMediaViewer(row, path, kind) {
     var box = ensureVenueViewer();
     var stage = document.getElementById('portalVenueViewerStage');
+    var gallery = document.getElementById('portalVenueViewerGallery');
+    var thenLine = document.getElementById('portalVenueViewerThen');
     var note = document.getElementById('portalVenueViewerNote');
     var msg = document.getElementById('portalVenueViewerMsg');
     var dl = document.getElementById('portalVenueViewerDownload');
-    stage.innerHTML = '<p style="margin:0">Opening...</p>';
+    stage.innerHTML = '';
+    stage.hidden = false;
+    if (gallery) gallery.innerHTML = '';
+    if (thenLine) thenLine.hidden = true;
     note.textContent = '';
     msg.hidden = true;
     msg.textContent = '';
+    dl.hidden = false;
     box.hidden = false;
     var text = venueOwnerMessage(row);
+    var sendItems = text ? venueVisitMediaItems(row) : [];
     if (text) {
-      note.textContent = 'Preview for Pilar at SwimFarm. Not sent. The group is not created yet.';
+      var bothSides = sendItems.some(function (item) { return item.side === 'Opening'; }) &&
+        sendItems.some(function (item) { return item.side === 'Closing'; });
+      note.textContent = bothSides
+        ? 'Preview for Pilar at SwimFarm. The message goes first, then all the opening and closing photos and video. Not sent. The group is not created yet.'
+        : 'Preview for Pilar at SwimFarm. The message goes first, then the photos and video. Not sent. The group is not created yet.';
       msg.hidden = false;
       msg.textContent = text;
-    } else {
-      note.textContent = 'No issues on this visit, so nothing is sent to Pilar.';
+      dl.hidden = true;
+      stage.hidden = true;
+      if (thenLine) thenLine.hidden = !sendItems.length;
+      if (gallery) {
+        gallery.innerHTML = sendItems.length
+          ? sendItems.map(function (item, i) {
+            return (
+              '<figure class="portal-venue-viewer__item" data-venue-gallery-i="' + i + '">' +
+              '<figcaption>' + esc(item.label) + '</figcaption>' +
+              '<div class="portal-venue-viewer__slot">Opening...</div>' +
+              '<a class="portal-forms-view-btn" data-venue-gallery-dl="' + i + '" href="#" download>Download</a>' +
+              '</figure>'
+            );
+          }).join('')
+          : '<p class="portal-venue-viewer__empty">No photo or video saved on this visit.</p>';
+      }
+      void fillVenueViewerMedia(sendItems, gallery, null, null);
+      return;
     }
-    void (async function () {
+    note.textContent = 'No issues on this visit, so nothing is sent to Pilar.';
+    stage.innerHTML = '<p style="margin:0">Opening...</p>';
+    void fillVenueViewerMedia([{ path: path, kind: kind, label: '' }], null, stage, dl);
+  }
+  function fillVenueViewerMedia(items, gallery, stage, dl) {
+    return (async function () {
+      if (!items || !items.length) return;
+      var client = null;
       try {
-        var client = venueReviewAdminClient();
-        if (!client || !client.storage) throw new Error('Sign in required.');
-        var signed = await client.storage.from('venue-review-videos').createSignedUrl(path, 3600);
-        if (signed.error || !(signed.data && signed.data.signedUrl)) {
-          throw signed.error || new Error('Could not open the file');
+        client = venueReviewAdminClient();
+      } catch (_client) {}
+      if (!client || !client.storage) {
+        var fail = '<p style="margin:0">Sign in required.</p>';
+        if (stage) stage.innerHTML = fail;
+        if (gallery) {
+          gallery.querySelectorAll('.portal-venue-viewer__slot').forEach(function (slot) {
+            slot.innerHTML = fail;
+          });
         }
-        var url = signed.data.signedUrl;
-        dl.href = url;
-        if (kind === 'video' || /\.(mp4|mov|webm|ogg)(\?|$)/i.test(path)) {
-          stage.innerHTML = '<video class="portal-venue-viewer__media" controls src="' + esc(url) + '"></video>';
-        } else {
-          stage.innerHTML = '<img class="portal-venue-viewer__media" alt="Venue photo" src="' + esc(url) + '">';
+        return;
+      }
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        var slot = gallery
+          ? gallery.querySelector('[data-venue-gallery-i="' + i + '"] .portal-venue-viewer__slot')
+          : stage;
+        var link = gallery
+          ? gallery.querySelector('[data-venue-gallery-dl="' + i + '"]')
+          : dl;
+        try {
+          var signed = await client.storage.from('venue-review-videos').createSignedUrl(item.path, 3600);
+          if (signed.error || !(signed.data && signed.data.signedUrl)) {
+            throw signed.error || new Error('Could not open the file');
+          }
+          var url = signed.data.signedUrl;
+          if (link) link.href = url;
+          var media = venueMediaIsVideo(item.path, item.kind)
+            ? '<video class="portal-venue-viewer__media" controls src="' + esc(url) + '"></video>'
+            : '<img class="portal-venue-viewer__media" alt="' + esc(item.label || 'Venue photo') + '" src="' + esc(url) + '">';
+          if (slot) slot.innerHTML = media;
+        } catch (errOpen) {
+          console.error(errOpen);
+          if (slot) slot.innerHTML = '<p style="margin:0">Could not open this file.</p>';
         }
-      } catch (errOpen) {
-        console.error(errOpen);
-        stage.innerHTML = '<p style="margin:0">Could not open this file.</p>';
       }
     })();
   }

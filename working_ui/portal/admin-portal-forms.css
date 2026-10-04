@@ -178,7 +178,7 @@
   text-decoration: none;
 }
 .portal-venue-viewer__msg {
-  margin-top: 14px;
+  margin: 0;
   padding: 12px 14px;
   border-radius: 12px;
   background: #f8fafc;
@@ -186,6 +186,50 @@
   white-space: pre-wrap;
   font-size: 14px;
   line-height: 1.45;
+  font-family: inherit;
+}
+.portal-venue-viewer__then {
+  margin: 14px 0 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #16325c;
+}
+.portal-venue-viewer__gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 10px;
+  min-width: 0;
+}
+.portal-venue-viewer__item {
+  margin: 0;
+  min-width: 0;
+}
+.portal-venue-viewer__item figcaption {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #16325c;
+}
+.portal-venue-viewer__item .portal-forms-view-btn {
+  display: inline-block;
+  margin-top: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #16325c;
+  text-decoration: none;
+}
+.portal-venue-viewer__empty {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 13px;
 }
 .portal-day-ops-embed .portal-forms-table .col-submitted-by,
 .portal-day-ops-embed .portal-forms-table td.col-submitted-by {
