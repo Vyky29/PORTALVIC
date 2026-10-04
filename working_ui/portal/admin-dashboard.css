@@ -6313,9 +6313,9 @@
     }
 
     /* Phone on its side: three Register stat cards in one row, small enough to not collide. */
-    @media (orientation:landscape) and (max-height:540px){
+    @media (orientation:landscape) and (max-width:1100px){
       .sf-kpi-grid{
-        grid-template-columns:minmax(0,0.86fr) minmax(0,1.62fr) minmax(0,1.08fr);
+        grid-template-columns:minmax(0,0.78fr) minmax(0,1.9fr) minmax(0,0.9fr);
         gap:6px;
         margin:0 0 8px;
         max-width:100%;
@@ -6345,37 +6345,49 @@
       .sf-kpi-card--eng .c4k-reg-eng-gauge__avg{font-size:10px}
       .sf-kpi-card--eng .c4k-reg-eng-gauge__foot{font-size:9px;margin-top:2px;line-height:1.25}
       .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row{
-        gap:2px;
+        display:grid !important;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        gap:6px;
         padding:0;
         overflow:hidden;
-        justify-content:space-between;
-        align-items:flex-start;
+        justify-content:stretch;
+        align-items:start;
+        width:100%;
       }
       .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-circ__item{
-        flex:1 1 0;
+        flex:none;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
         min-width:0;
-        max-width:25%;
-        padding:0 1px;
+        max-width:none;
+        width:100%;
+        padding:0;
+        overflow:hidden;
       }
       .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-donut-wrap{
-        width:52px;
-        height:52px;
-        max-width:100%;
-        margin:0 auto 2px;
+        width:48px !important;
+        height:48px !important;
+        max-width:100% !important;
+        margin:2px auto;
+        flex-shrink:1;
+        box-shadow:none !important;
       }
       .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-donut__inner{
-        width:34px;
-        height:34px;
-        font-size:8px;
+        width:30px !important;
+        height:30px !important;
+        font-size:7px !important;
         line-height:1;
+        overflow:hidden;
       }
       .sf-kpi-card--emo .c4k-reg-emo-circ__ico svg{width:14px;height:14px}
       .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-circ__lbl{
         font-size:8px;
         line-height:1.15;
-        max-width:100%;
+        max-width:100% !important;
         margin-top:2px;
         white-space:normal;
+        overflow:hidden;
       }
       .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-circ__sub{font-size:8px;margin-top:1px}
       .sf-kpi-card--ind .c4k-reg-ind-bars{
