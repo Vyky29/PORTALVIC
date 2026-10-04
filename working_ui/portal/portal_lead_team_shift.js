@@ -1568,7 +1568,8 @@ function renderTodayStrip(team) {
     );
   });
   const isoDay = weekdayFromIso(team.iso);
-  const twoLines = isoDay === "Sunday" && chipHtml.length > 1;
+  /* Two rows only on Sunday when the team is bigger than three. Two or three stay on one line. */
+  const twoLines = isoDay === "Sunday" && chipHtml.length > 3;
   const rowSplit = twoLines ? Math.ceil(chipHtml.length / 2) : chipHtml.length;
   const chipRows = [chipHtml.slice(0, rowSplit), chipHtml.slice(rowSplit)].filter(function (row) {
     return row.length;
