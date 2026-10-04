@@ -1035,6 +1035,7 @@
     .admin-menu-mob{display:none;width:40px;height:40px;border:1px solid var(--btnSecBorder);border-radius:10px;background:var(--btnSecBg);cursor:pointer;align-items:center;justify-content:center;color:var(--ink);transition:background .15s,border-color .15s}
     .admin-menu-mob:hover,.admin-menu-mob:focus-visible{background:#f1f5f9;border-color:#8eb4d0;outline:none}
     .admin-search-wrap{flex:1 1 280px;max-width:420px;min-width:220px;position:relative}
+    .admin-topbar-portrait-break{display:none}
     .admin-topbar-help{
       flex:0 0 auto;
       display:inline-flex;
@@ -5860,10 +5861,95 @@
         padding:3px 8px;
       }
     }
-    /* Phone held upright: one row of squares. Announcements, Parents and Staff keep only A, P, S. */
+    /* Phone held upright.
+       Line 1: search, photo, WhatsApp, Chat (both green).
+       Line 2: menu, bell, Help, A, P, S, and who is online. */
     @media (max-width:720px) and (orientation:portrait){
-      .admin-topbar-meta{
-        flex-wrap:nowrap;
+      body.admin-touch-compact .admin-topbar,
+      .admin-topbar{
+        display:flex !important;
+        flex-wrap:wrap;
+        align-items:center;
+        height:auto;
+        min-height:0;
+        row-gap:6px;
+        column-gap:4px;
+      }
+      .admin-topbar-meta,
+      .admin-topbar-msgs{display:contents}
+      body.admin-touch-compact .admin-topbar .admin-search-wrap,
+      .admin-search-wrap{
+        display:block !important;
+        order:1;
+        flex:1 1 0;
+        width:auto;
+        max-width:none;
+        min-width:0;
+      }
+      .admin-search-wrap input{min-width:0}
+      .admin-profile{
+        order:2;
+        flex:0 0 36px;
+        margin:0;
+        width:36px;
+        height:36px;
+        padding:2px;
+        justify-content:center;
+      }
+      .admin-profile span#miniName{display:none}
+      #btnOpenWhatsapp{order:3}
+      #btnComunicaciones{order:4}
+      .admin-topbar-portrait-break{
+        display:block;
+        order:5;
+        flex:0 0 100%;
+        height:0;
+        margin:-6px 0;
+        padding:0;
+        overflow:hidden;
+      }
+      body.admin-touch-compact .admin-menu-mob,
+      .admin-topbar .admin-menu-mob,
+      .admin-menu-mob{
+        display:inline-flex !important;
+        order:0;
+        width:36px;
+        height:36px;
+        flex:0 0 36px;
+      }
+      body.admin-touch-compact .admin-topbar #btnAlerts,
+      #btnAlerts{
+        display:inline-flex !important;
+        order:11;
+        width:36px;
+        height:36px;
+        min-width:36px;
+        flex:0 0 36px;
+      }
+      .admin-topbar-help{
+        order:12;
+        flex:0 0 auto;
+        height:36px;
+        margin:0;
+        padding:0 8px;
+      }
+      #btnAnnouncements{order:13}
+      #btnFamilyMsgs{order:14}
+      #btnStaffWa{order:15}
+      .admin-topbar-presence{
+        order:16;
+        display:flex !important;
+        flex:1 1 0;
+        width:auto;
+        max-width:100%;
+        min-width:0;
+        margin:0;
+        border:none;
+        overflow:hidden;
+      }
+      .admin-topbar-presence .sf-status-bar{
+        width:100%;
+        min-width:0;
         overflow-x:auto;
       }
       .admin-topbar-meta .admin-api-chip__name{display:none}
