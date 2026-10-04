@@ -77,6 +77,47 @@ function skipStaffFeedbackNag(username: string, iso: string): boolean {
   return false;
 }
 
+/** Club labels: 4 to 4.30 is 16:00-16:30. A 11.00-4.00 block is the whole Day Centre window. */
+function clockToMinutes(raw: string): number | null {
+  const s = String(raw || "").trim().toLowerCase().replace(".", ":");
+  const m = s.match(/^(\d{1,2})(?::(\d{2}))?/);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const min = Number(m[2] || 0);
+  if (h <= 7) h += 12;
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
+
+function slotMinutes(time: string): number | null {
+  const parts = String(time || "").split(/\s+to\s+/i);
+  if (parts.length < 2) return null;
+  const a = clockToMinutes(parts[0]);
+  const b = clockToMinutes(parts[1]);
+  if (a == null || b == null) return null;
+  const end = b <= a ? b + 12 * 60 : b;
+  return end - a;
+}
+
+/** Past-day carry skips a collapsed Day Centre window (11.00 to 4.00), not a real 30' seat. */
+function slotIsCollapsedWindow(slot: { time?: string }): boolean {
+  const mins = slotMinutes(String(slot.time || ""));
+  return mins != null && mins >= 180;
+}
+
+function addIsoDays(iso: string, n: number): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function shortDayLabel(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()];
+  const mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getUTCMonth()];
+  return `${wd} ${d.getUTCDate()} ${mon}`;
+}
+
 function previousSundayIso(iso: string): string {
   const d = new Date(`${iso}T12:00:00Z`);
   if (Number.isNaN(d.getTime())) return "";
@@ -150,9 +191,9 @@ function resolveWave(raw, london) {
   return "";
 }
 
-/** Locked-phone ring: from 30 minutes after the last API wave until 23:00 London. */
+/** Locked-phone ring: from 30 minutes after the last API wave until midnight London. */
 function inRingWindow(london) {
-  return london.hour >= bizHour(london) && london.hour < 23;
+  return london.hour >= bizHour(london) && london.hour <= 23;
 }
 
 function inLondonWaveWindow(wave, london) {
@@ -209,6 +250,7 @@ function buildBody(first, pending, sample, wave, london) {
   const n = Math.max(1, pending);
   const list = sample.slice(0, 3).join(", ");
   const more = n > 3 ? ` (+${n - 3} more)` : "";
+  const carriesOlder = (sample || []).some((s) => /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d/.test(String(s || "")));
   const weekday = londonWeekday(london) !== "saturday" && londonWeekday(london) !== "sunday";
   const timeLine =
     wave === "2030"
@@ -218,9 +260,12 @@ function buildBody(first, pending, sample, wave, london) {
       : weekday
         ? "You have one hour - the day closes at 9:00pm."
         : "Please send today's feedback.";
+  const opener = carriesOlder
+    ? `Session feedback is still open (${n} left${list ? ": " + list + more : ""}).`
+    : `Today's session feedback is not complete yet (${n} left${list ? ": " + list + more : ""}).`;
   return (
     `Hi ${first},\n\n` +
-    `Today's session feedback is not complete yet (${n} left${list ? ": " + list + more : ""}).\n\n` +
+    `${opener}\n\n` +
     `${timeLine} Please send them now in the Staff Portal (Today):\n` +
     `${PORTAL_URL}\n\n` +
     `After 9:00pm today's hours stay on hold until the office releases them.\n\n` +
@@ -336,14 +381,22 @@ Deno.serve(async (req) => {
 
   let force = false;
   let dryRun = false;
+  let resend = false;
   let sessionDate = "";
   let bodyWave = "";
+  let onlyUsers: Set<string> | null = null;
   try {
     const body = await req.json();
     force = body?.force === true;
     dryRun = body?.dryRun === true;
+    resend = body?.resend === true;
     sessionDate = String(body?.sessionDate || "").trim().slice(0, 10);
     bodyWave = String(body?.wave || "").trim();
+    if (Array.isArray(body?.usernames)) {
+      onlyUsers = new Set(
+        body.usernames.map((u: string) => String(u || "").trim().toLowerCase()).filter(Boolean),
+      );
+    }
   } catch {
     /* cron empty body */
   }
@@ -380,7 +433,7 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
-  async function outstandingDebtsForIso(dayIso: string) {
+  async function outstandingDebtsForIso(dayIso: string, opts?: { dropLongWindows?: boolean }) {
     const { data: datedRoster } = await admin
       .from("portal_roster_rows")
       .select("client_name, time_slot, service, instructors, session_date, day, area")
@@ -449,6 +502,9 @@ Deno.serve(async (req) => {
       slots,
       (offRows || []) as Feedback2030UnavailabilityRow[],
     );
+    if (opts?.dropLongWindows) {
+      slots = slots.filter((s) => !slotIsCollapsedWindow(s));
+    }
 
     const { data: feedbackRows } = await admin
       .from("session_feedback")
@@ -488,29 +544,47 @@ Deno.serve(async (req) => {
   }
 
   const todayPack = await outstandingDebtsForIso(iso);
-  let debts = todayPack.debts;
   let slots = todayPack.slots;
   let madreTermKey = todayPack.madreTermKey;
   const profiles = todayPack.profiles;
   const debtDays = [iso];
+  const debtLists = [todayPack.debts];
 
-  /* Monday 20:00 also nags open Sunday books (e.g. Javier pool + Luliya cover). */
-  const wd = new Date(`${iso}T12:00:00`).toLocaleDateString("en-GB", { weekday: "long" });
-  if (wd === "Monday") {
-    const sunIso = previousSundayIso(iso);
-    if (sunIso && sunIso !== iso) {
-      const sunPack = await outstandingDebtsForIso(sunIso);
-      debts = mergeStaffDebts([todayPack.debts, sunPack.debts]);
-      slots = todayPack.slots.concat(sunPack.slots);
-      debtDays.push(sunIso);
-    }
+  /* Open feedback from earlier days stays in the nag until it is sent.
+     Floor skips week-1 ghosts. A 5-hour Day Centre window is not a real seat. */
+  const CARRY_FLOOR = "2026-09-24";
+  const pastIsos: string[] = [];
+  for (let back = 1; back <= 21; back++) {
+    const day = addIsoDays(iso, -back);
+    if (day < CARRY_FLOOR) break;
+    pastIsos.push(day);
   }
+  const pastPacks = [];
+  for (let i = 0; i < pastIsos.length; i += 5) {
+    const chunk = pastIsos.slice(i, i + 5);
+    const packs = await Promise.all(
+      chunk.map((day) => outstandingDebtsForIso(day, { dropLongWindows: true })),
+    );
+    pastPacks.push(...packs);
+  }
+  pastPacks.forEach((pack, i) => {
+    if (!pack.debts.length) return;
+    const label = shortDayLabel(pastIsos[i]);
+    debtDays.push(pastIsos[i]);
+    slots = slots.concat(pack.slots);
+    debtLists.push(pack.debts.map((d) => ({
+      ...d,
+      sample: (d.sample || []).map((s) => `${label} ${s}`),
+    })));
+  });
+  const debts = mergeStaffDebts(debtLists);
 
   const targets = [];
   for (const debt of debts) {
     const profile = resolveProfileForStaffKey(profiles || [], debt.staffKey);
     const username = String(profile?.username || debt.staffKey).toLowerCase();
     if (skipStaffFeedbackNag(username, iso)) continue;
+    if (onlyUsers && !onlyUsers.has(username)) continue;
     const phone = profile?.phone_e164
       ? normalizeParentPhoneE164(String(profile.phone_e164))
       : null;
@@ -624,7 +698,7 @@ Deno.serve(async (req) => {
       .eq("staff_user_id", t.profileId)
       .eq("wave", wave)
       .maybeSingle();
-    if (prior) {
+    if (prior && !resend) {
       skipped.push({ username: t.username, reason: "already_sent" });
       continue;
     }
@@ -701,12 +775,14 @@ Deno.serve(async (req) => {
       },
     });
     if (result.ok) {
-      await admin.from(DEDUPE_TABLE).insert({
-        session_date: iso,
-        staff_user_id: t.profileId,
-        pending_count: t.pending,
-        wave,
-      });
+      if (!prior) {
+        await admin.from(DEDUPE_TABLE).insert({
+          session_date: iso,
+          staff_user_id: t.profileId,
+          pending_count: t.pending,
+          wave,
+        });
+      }
       sent.push({ username: t.username, pending: t.pending, id: result.id });
     } else {
       skipped.push({ username: t.username, reason: result.error || "send_failed" });

@@ -259,7 +259,7 @@ begin
 
   perform cron.schedule(
     'portal-feedback-ring-whatsapp',
-    '*/10 20-22 * * 1-5',
+    '*/10 20-23 * * 1-5',
     $job$
     select net.http_post(
       url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-feedback-2030-whatsapp',
@@ -275,7 +275,7 @@ begin
 
   perform cron.schedule(
     'portal-feedback-ring-whatsapp-sunday',
-    '*/10 18-22 * * 0',
+    '*/10 18-23 * * 0',
     $job$
     select net.http_post(
       url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-feedback-2030-whatsapp',
@@ -291,7 +291,7 @@ begin
 
   perform cron.schedule(
     'portal-feedback-ring-whatsapp-weekend',
-    '*/10 15-22 * * 6',
+    '*/10 15-23 * * 6',
     $job$
     select net.http_post(
       url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-feedback-2030-whatsapp',
