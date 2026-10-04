@@ -27,6 +27,8 @@ const state = {
   me: null,
   mode: "personal",
   inbox: { items: [] },
+  searchQ: "",
+  searchPeople: [],
   open: null,
   messages: [],
   loadingOlder: false,
@@ -529,20 +531,139 @@ function inboxPreview(it) {
   return last.body || "No messages";
 }
 
+function commsFold(value) {
+  const text = String(value || "").trim().toLowerCase();
+  try {
+    return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  } catch (_e) {
+    return text;
+  }
+}
+
+function commsSearchRank(name, q) {
+  const n = commsFold(name);
+  const query = commsFold(q);
+  if (query.length < 2 || !n) return 9;
+  if (n === query) return 0;
+  const first = n.split(/\s+/)[0] || "";
+  if (first === query || n.indexOf(query) === 0 || first.indexOf(query) === 0) return 1;
+  if (n.indexOf(query) >= 0) return 2;
+  return 9;
+}
+
+function inboxHasPerson(items, person) {
+  const id = String((person && person.id) || "");
+  const name = String((person && person.full_name) || "");
+  return items.some(function (it) {
+    if (id && String(it.employee_id || "") === id) return true;
+    return namesLikelyMatch(it.display_name, name);
+  });
+}
+
+function searchPersonRow(p) {
+  return (
+    '<button type="button" class="comms-item" data-search-person="' +
+    esc(p.id) +
+    '">' +
+    '<span class="comms-item-av-wrap">' +
+    avatarHtml(p.avatar_url, commsStaffLabel(p.full_name)) +
+    "</span>" +
+    '<span class="comms-item-text"><strong>' +
+    esc(commsFirstName(p.full_name)) +
+    "</strong>" +
+    commsRoleChipHtml(p.full_name) +
+    "</span></button>"
+  );
+}
+
+let commsSearchSeq = 0;
+let commsSearchTimer = 0;
+
+function queueWorkerSearch() {
+  const input = $("commsSearch");
+  const q = String((input && input.value) || "").trim();
+  state.searchQ = q;
+  if (q.length < 2) state.searchPeople = [];
+  else {
+    state.searchPeople = (state.searchPeople || []).filter(function (p) {
+      return p && commsSearchRank(p.full_name, q) < 9;
+    });
+  }
+  renderInbox();
+  window.clearTimeout(commsSearchTimer);
+  if (q.length < 2 || !state.me || !state.me.can_act_as_administration) {
+    state.searchPeople = [];
+    renderInbox();
+    return;
+  }
+  const seq = ++commsSearchSeq;
+  commsSearchTimer = window.setTimeout(async function () {
+    try {
+      const data = await rpc("communication_search", { p_q: q, p_limit: 20 });
+      if (seq !== commsSearchSeq) return;
+      const live = $("commsSearch");
+      if (commsFold(live && live.value) !== commsFold(q)) return;
+      state.searchPeople = (data && data.people) || [];
+      renderInbox();
+    } catch (_err) {}
+  }, 200);
+}
+
+function openStaffFromSearch(employeeId) {
+  if (!employeeId) return;
+  rpc("communication_open_staff_thread", { p_employee_id: employeeId })
+    .then(async function (out) {
+      await loadInbox();
+      await openConversation(out.conversation_id, {
+        conversation_id: out.conversation_id,
+        kind: "admin_staff",
+        employee_id: out.employee_id,
+        display_name: out.display_name,
+      });
+    })
+    .catch(function (err) {
+      window.alert(err.message || "Could not open.");
+    });
+}
+
 function renderInbox() {
   const direct = $("commsListDirect");
   const groups = $("commsListGroups");
   if (!direct || !groups) return;
   const items = state.inbox.items || [];
+  const q = String(($("commsSearch") && $("commsSearch").value) || state.searchQ || "").trim();
   const d = items
     .filter((it) => (it.kind === "admin_staff" || it.kind === "ceo_peer") && !commsIsGina(it.display_name))
     .slice()
     .sort(byRecentThenName);
+  const hits = [];
+  const rest = [];
+  d.forEach(function (it) {
+    if (commsSearchRank(it.display_name, q) < 9) hits.push(it);
+    else rest.push(it);
+  });
+  hits.sort(function (a, b) {
+    return commsSearchRank(a.display_name, q) - commsSearchRank(b.display_name, q) || byRecentThenName(a, b);
+  });
+  const extras = (state.searchPeople || []).filter(function (p) {
+    if (!p || commsIsGina(p.full_name)) return false;
+    if (commsSearchRank(p.full_name, q) >= 9) return false;
+    return !inboxHasPerson(d, p);
+  });
+  extras.sort(function (a, b) {
+    return commsSearchRank(a.full_name, q) - commsSearchRank(b.full_name, q);
+  });
   const g = items.filter((it) => it.kind === "group").slice().sort(byRecentThenName);
   $("commsKickerDirect").textContent = state.mode === "administration" ? "Workers" : "My messages";
-  direct.innerHTML = d.length
-    ? d.map((it) => inboxRow(it)).join("")
-    : '<p class="comms-empty">No conversations.</p>';
+  const html =
+    extras.map(searchPersonRow).join("") +
+    hits.map((it) => inboxRow(it)).join("") +
+    rest.map((it) => inboxRow(it)).join("");
+  direct.innerHTML = html || '<p class="comms-empty">No conversations.</p>';
+  if (q.length >= 2) {
+    const side = direct.closest(".comms-side-body");
+    if (side) side.scrollTop = 0;
+  }
   groups.innerHTML = g.length
     ? g.map((it) => inboxRow(it)).join("")
     : '<p class="comms-empty">No groups.</p>';
@@ -2287,6 +2408,11 @@ function bindUi() {
     });
   });
   $("commsSidebar").addEventListener("click", function (ev) {
+    const person = ev.target.closest("[data-search-person]");
+    if (person && state.me && state.me.can_act_as_administration) {
+      openStaffFromSearch(person.getAttribute("data-search-person"));
+      return;
+    }
     const btn = ev.target.closest("[data-open-conv]");
     if (!btn) return;
     openConversation(btn.getAttribute("data-open-conv"));
@@ -2367,6 +2493,9 @@ function bindUi() {
   $("commsGroupManage").addEventListener("click", openGroupManage);
   $("commsNewGroupBtn").addEventListener("click", openNewGroup);
   $("commsAuditBtn").addEventListener("click", openAudit);
+  $("commsSearch").addEventListener("input", function () {
+    queueWorkerSearch();
+  });
   $("commsSearch").addEventListener("keydown", function (ev) {
     if (ev.key === "Enter") {
       ev.preventDefault();
@@ -2378,19 +2507,7 @@ function bindUi() {
     const person = ev.target.closest("[data-search-person]");
     if (person && state.me.can_act_as_administration) {
       hideModal();
-      rpc("communication_open_staff_thread", { p_employee_id: person.getAttribute("data-search-person") })
-        .then(async function (out) {
-          await loadInbox();
-          await openConversation(out.conversation_id, {
-            conversation_id: out.conversation_id,
-            kind: "admin_staff",
-            employee_id: out.employee_id,
-            display_name: out.display_name,
-          });
-        })
-        .catch(function (err) {
-          window.alert(err.message || "Could not open.");
-        });
+      openStaffFromSearch(person.getAttribute("data-search-person"));
     }
     const msg = ev.target.closest("[data-search-msg]");
     if (msg) {
