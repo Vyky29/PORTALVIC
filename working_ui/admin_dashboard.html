@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-submit-col" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261004-hub-phrases" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261004-hub-cal" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -32227,9 +32227,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return {
         html:
           '<div class="ops-hub-cal-month" aria-hidden="true">' +
-          '<div class="ops-hub-cal-month__label">'+esc(monthLabel)+'</div>' +
           '<div class="ops-hub-cal-month__head">'+head+'</div>' +
           '<div class="ops-hub-cal-month__grid">'+cells.join('')+'</div></div>',
+        monthLabel: monthLabel,
         openCount: openMonth
       };
     }
@@ -32258,12 +32258,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var entries = (res && res.entries) || [];
         var glance = opsHubBuildMonthGlanceHtml(entries, y, m);
         stripHost.innerHTML = glance.html || '';
+        var monthEl = $('opsHubCalendarGlanceMonth');
+        if(monthEl && glance.monthLabel) monthEl.textContent = glance.monthLabel;
         var openN = Number(glance.openCount || 0);
-        if(countEl) countEl.textContent = openN > 0 ? String(openN) : 'Notes';
-        if(countEl) countEl.className = 'ops-hub__today-v' + (openN > 0 ? ' ops-hub__today-v--cal' : '');
-        if(subEl) subEl.textContent = openN > 0
-          ? (openN === 1 ? '1 open' : openN + ' open')
-          : 'Notes & meetings';
+        if(countEl) countEl.textContent = openN > 0 ? String(openN) : '';
+        if(countEl) countEl.className = 'ops-hub-cal-glance__n' + (openN > 0 ? ' is-open' : '');
+        if(subEl) subEl.textContent = openN > 0 ? 'open' : 'Notes';
         if(btn){
           if(openN > 0) btn.classList.add('ops-hub__today-item--calendar-hot');
           else btn.classList.remove('ops-hub__today-item--calendar-hot');
@@ -32378,8 +32378,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function opsHubGlanceHtml(){
       refreshKpisFromDemo();
+      var monthNow = new Date().toLocaleString('en-GB', { month:'long', year:'numeric' });
       var calStrip = '<div class="ops-hub-cal-month ops-hub-cal-month--placeholder" aria-hidden="true">' +
-        '<div class="ops-hub-cal-month__label">…</div>' +
         '<div class="ops-hub-cal-month__head">' +
         ['M','T','W','T','F','S','S'].map(function(l){
           return '<span class="ops-hub-cal-month__wd">'+l+'</span>';
@@ -32393,10 +32393,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="ops-hub__today ops-hub__today--cal-focus" role="region" aria-label="Calendar">' +
         '<button type="button" class="ops-hub__today-item ops-hub__today-item--calendar" id="opsHubCalendarGlance" aria-label="Open office calendar">' +
-        '<span class="ops-hub-cal-glance__copy">' +
-        '<span class="ops-hub__today-k">Calendar</span>' +
-        '<span class="ops-hub__today-v" id="opsHubCalendarGlanceCount">Notes</span>' +
-        '<span class="ops-hub__today-s" id="opsHubCalendarGlanceSub">Notes &amp; meetings</span>' +
+        '<span class="ops-hub-cal-glance__head">' +
+        '<span class="ops-hub-cal-glance__month" id="opsHubCalendarGlanceMonth">'+esc(monthNow)+'</span>' +
+        '<span class="ops-hub-cal-glance__count">' +
+        '<span class="ops-hub-cal-glance__n" id="opsHubCalendarGlanceCount"></span>' +
+        '<span class="ops-hub-cal-glance__sub" id="opsHubCalendarGlanceSub">Notes</span>' +
+        '</span>' +
         '</span>' +
         '<span class="ops-hub-cal-glance__grid" id="opsHubCalendarGlanceStrip">'+calStrip+'</span>' +
         '</button>' +

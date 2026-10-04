@@ -4286,46 +4286,96 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   height:100%;
   min-height:0;
   max-height:none;
-  display:grid;
-  grid-template-columns:minmax(76px,96px) minmax(0,1fr);
-  grid-template-rows:minmax(0,1fr);
+  display:flex;
+  flex-direction:column;
   align-items:stretch;
+  justify-content:flex-start;
   gap:8px;
-  padding:8px 10px;
+  padding:12px 14px 10px;
   box-sizing:border-box;
+  text-align:left;
+}
+.ops-hub-flat__cal .ops-hub-cal-glance__head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+  flex:0 0 auto;
+}
+.ops-hub-flat__cal .ops-hub-cal-glance__month{
+  min-width:0;
+  flex:1 1 auto;
+  font-size:18px;
+  font-weight:800;
+  letter-spacing:0;
+  text-transform:none;
+  line-height:1.2;
+  color:#173247;
+  text-align:left;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.ops-hub-flat__cal .ops-hub-cal-glance__count{
+  display:inline-flex;
+  align-items:baseline;
+  gap:4px;
+  flex:0 0 auto;
+  max-width:46%;
+  min-width:0;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#f8fafc;
+  color:#64748b;
+  font-size:12px;
+  font-weight:800;
+  line-height:1.2;
+}
+.ops-hub-flat__cal .ops-hub__today-item--calendar-hot .ops-hub-cal-glance__count{
+  background:#fff7ed;
+  color:#c2410c;
+}
+.ops-hub-flat__cal .ops-hub-cal-glance__n:empty{display:none}
+.ops-hub-flat__cal .ops-hub-cal-glance__sub{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 .ops-hub-flat__cal .ops-hub-cal-glance__grid{
   min-height:0;
   min-width:0;
-  height:100%;
+  height:auto;
+  flex:1 1 auto;
   display:flex;
 }
 .ops-hub-flat__cal .ops-hub-cal-month{
   flex:1 1 auto;
   min-height:0;
+  gap:6px;
 }
-.ops-hub-flat__cal .ops-hub-cal-glance__copy{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:flex-start;
-  gap:2px;
-  min-width:0;
-  align-self:center;
+.ops-hub-flat__cal .ops-hub-cal-month__head,
+.ops-hub-flat__cal .ops-hub-cal-month__grid{
+  gap:3px;
 }
-.ops-hub-flat__cal .ops-hub__today-k,
-.ops-hub-flat__cal .ops-hub__today-v,
-.ops-hub-flat__cal .ops-hub__today-s{
-  text-align:left;
+.ops-hub-flat__cal .ops-hub-cal-month__label{display:none}
+.ops-hub-flat__cal .ops-hub-cal-month__wd{
+  font-size:11px;
+  padding:0;
 }
-.ops-hub-flat__cal .ops-hub__today-v{
-  font-size:22px;
+.ops-hub-flat__cal .ops-hub-cal-day{
+  border-radius:8px;
 }
-.ops-hub-flat__cal .ops-hub__today-k,
-.ops-hub-flat__cal .ops-hub__today-v,
-.ops-hub-flat__cal .ops-hub__today-s{
-  min-width:0;
-  overflow-wrap:anywhere;
+.ops-hub-flat__cal .ops-hub-cal-day__n{
+  font-size:14px;
+}
+.ops-hub-flat__cal .ops-hub-cal-day.is-today .ops-hub-cal-day__n{
+  width:1.7em;
+  height:1.7em;
+  border-radius:999px;
+  background:#0f172a;
+  color:#fff;
 }
 .ops-hub--flat .dash-hub__panel{
   min-width:0;
@@ -4553,22 +4603,10 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
     height:auto;
     min-height:0;
     max-height:none;
-    display:flex;
-    flex-direction:column;
-    align-items:stretch;
-    gap:4px;
-    padding:6px 8px 8px;
+    gap:6px;
+    padding:10px 12px 8px;
   }
-  .ops-hub-flat__cal .ops-hub-cal-glance__copy{
-    flex-direction:row;
-    flex-wrap:wrap;
-    align-items:baseline;
-    justify-content:flex-start;
-    align-self:auto;
-    gap:6px 8px;
-  }
-  .ops-hub-flat__cal .ops-hub__today-v{font-size:14px}
-  .ops-hub-flat__cal .ops-hub__today-s{display:none}
+  .ops-hub-flat__cal .ops-hub-cal-glance__month{font-size:16px}
   .ops-hub-flat__cal .ops-hub-cal-glance__grid{
     height:auto;
     flex:none;
@@ -4576,23 +4614,20 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
   .ops-hub-flat__cal .ops-hub-cal-month{
     height:auto;
     flex:none;
-    gap:2px;
+    gap:4px;
   }
-  .ops-hub-flat__cal .ops-hub-cal-month__label,
-  .ops-hub-flat__cal .ops-hub-cal-month__wd{
-    font-size:8px;
-  }
+  .ops-hub-flat__cal .ops-hub-cal-month__wd{font-size:10px}
   .ops-hub-flat__cal .ops-hub-cal-month__grid{
     flex:none;
     height:auto;
-    grid-template-rows:repeat(6,13px);
+    grid-template-rows:repeat(6,22px);
   }
   .ops-hub-flat__cal .ops-hub-cal-day{
-    height:13px;
+    height:22px;
     padding:0;
   }
   .ops-hub-flat__cal .ops-hub-cal-day__n{
-    font-size:9px;
+    font-size:12px;
     line-height:1;
   }
   .ops-hub--flat .dash-hub__panel{
@@ -4674,9 +4709,9 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
       "hr pot cal";
   }
   .ops-hub-flat__cal .ops-hub-cal-month__grid{
-    grid-template-rows:repeat(6,11px);
+    grid-template-rows:repeat(6,18px);
   }
-  .ops-hub-flat__cal .ops-hub-cal-day{height:11px}
+  .ops-hub-flat__cal .ops-hub-cal-day{height:18px}
   .ops-hub--flat .ops-hub-panel--services .ops-hub-flat__grid,
   .ops-hub--flat .ops-hub-panel--formal .ops-hub-flat__grid,
   .ops-hub--flat .ops-hub-panel--finance .ops-hub-flat__grid,
