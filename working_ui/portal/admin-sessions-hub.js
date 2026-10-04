@@ -5309,6 +5309,33 @@ function rosterRowToSlot(isoDate, wd, r) {
     return !!(fb && fb._ashCancellationMark);
   }
 
+  /** A cancel at one clock must not close the child's other seats that day. No clock = the whole day. */
+  function cancellationClockMatchesSlot(row, slot) {
+    if (!row || !slot) return false;
+    var raw = clean(row.session_time);
+    if (!raw) return true;
+    var day = slot.day || weekdayLongFromIso(slot.session_date);
+    var ct = normTimeKey(raw, day) || normTimeShort(raw);
+    var st = normTimeShort(slot.time_start) || normTimeKey(slot.time_slot, day);
+    if (!ct || !st) return true;
+    return ct === st;
+  }
+
+  function cancellationClockMatchesRow(can, fb) {
+    if (!can || !fb) return false;
+    var raw = clean(can.session_time);
+    if (!raw) return true;
+    var day = weekdayLongFromIso(can.session_date || fb.session_date);
+    var ct = normTimeKey(raw, day) || normTimeShort(raw);
+    var ft = normTimeKey(fb.session_time, day) || normTimeShort(fb.session_time);
+    if (!ft) {
+      var pk = parsePortalSessionKeyFields(fb.portal_session_key);
+      if (pk && pk.time) ft = normTimeKey(pk.time, day) || normTimeShort(pk.time);
+    }
+    if (!ct || !ft) return true;
+    return ct === ft;
+  }
+
   function isTerminalFeedbackRow(fb) {
     return isAbsentFeedbackRow(fb) || isCancellationFeedbackRow(fb);
   }
@@ -8034,7 +8061,8 @@ function rosterRowToSlot(isoDate, wd, r) {
     var ovCan = this.overrideForSlotByType(slot, overrideIsCancelledType);
     if (ovCan) return true;
     var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
-    return !!(this._cancelByDateClient && this._cancelByDateClient[k]);
+    var metaHit = this._cancelByDateClient && this._cancelByDateClient[k];
+    return !!(metaHit && cancellationClockMatchesSlot(metaHit.row, slot));
   };
 
   /** Cancelled (before-start or during) counts as Feedback Submitted; Absent already does via slotIsAbsent. */
@@ -8053,7 +8081,7 @@ function rosterRowToSlot(isoDate, wd, r) {
     if (ovCan) return true;
     var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
     var meta = this._cancelByDateClient && this._cancelByDateClient[k];
-    if (meta) return true;
+    if (meta && cancellationClockMatchesSlot(meta.row, slot)) return true;
     return false;
   };
 
@@ -8367,7 +8395,7 @@ function rosterRowToSlot(isoDate, wd, r) {
       client_name: slot.client_name,
       service: slot.service || "\u2014",
       session_date: slot.session_date,
-      session_time: slot.time_start || slot.time_slot || "",
+      session_time: clean(slot.time_slot) || slot.time_start || "",
       attendance: "No",
       completed_by_name: (slotInstructors(slot) || []).join(", ") || "\u2014",
       created_at: null,
@@ -10008,14 +10036,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var cslug = canonicalClientSlug(cn);
       for (var rm = out.length - 1; rm >= 0; rm--) {
-        if (
-          canonicalClientSlug(out[rm].client_name) === cslug &&
-          !isAbsentFeedbackRow(out[rm]) &&
-          !isCancellationFeedbackRow(out[rm])
-        ) {
-          delete byKey[feedbackLogDedupeKey(out[rm])];
-          out.splice(rm, 1);
-        }
+        if (canonicalClientSlug(out[rm].client_name) !== cslug) continue;
+        if (isAbsentFeedbackRow(out[rm]) || isCancellationFeedbackRow(out[rm])) continue;
+        if (!cancellationClockMatchesRow(can, out[rm])) continue;
+        delete byKey[feedbackLogDedupeKey(out[rm])];
+        out.splice(rm, 1);
       }
       var reason = clean(can.reason_category) || "\u2014";
       var timing = timingRaw;
@@ -10563,16 +10588,24 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (displaySlot && clean(displaySlot.service)) ||
       hub.feedbackDisplayService(fb) ||
       "\u2014";
-    var clockSlot = null;
-    if (clean(fb.session_time)) {
-      clockSlot = {
-        time_slot: clean(fb.session_time),
+    /* A bare "13:00" is not a range. parseTimeSlot used to turn that into 4 to 4.30. */
+    var rawSessionTime = clean(fb.session_time);
+    var sessionTimeIsRange = /\bto\b|-/i.test(rawSessionTime);
+    var clockLabel = "";
+    if (sessionTimeIsRange) {
+      clockLabel = rosterTimeDisplay({
+        time_slot: rawSessionTime,
         session_date: fb.session_date,
         day: weekdayLongFromIso(fb.session_date),
-      };
+      });
     }
-    if (!clockSlot || !rosterTimeDisplay(clockSlot)) clockSlot = displaySlot;
-    var clockLabel = clockSlot ? rosterTimeDisplay(clockSlot) : "";
+    if (!clockLabel && displaySlot) clockLabel = rosterTimeDisplay(displaySlot);
+    if (!clockLabel && rawSessionTime) {
+      var singleHm = normTimeKey(rawSessionTime, weekdayLongFromIso(fb.session_date));
+      clockLabel = singleHm
+        ? rosterHmTokenFrom24(singleHm, weekdayLongFromIso(fb.session_date)) || rawSessionTime
+        : rawSessionTime;
+    }
     var svcTimeSub = clockLabel
       ? '<div class="ash-cell-sub">' + esc(clockLabel) + "</div>"
       : "";

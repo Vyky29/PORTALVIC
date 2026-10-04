@@ -6241,16 +6241,24 @@
         order:2;
         flex:0 0 auto;
       }
-      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .admin-page-head__back{
+      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .admin-page-head__dash{
         order:3;
+        flex:0 0 auto;
+        width:28px;
+        height:28px;
+        min-width:28px;
+      }
+      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .admin-page-head__back{
+        order:4;
         flex:0 0 auto;
         height:28px;
         min-height:28px;
         padding:0 10px;
         font-size:12px;
       }
+      body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .admin-page-head__sub,
       body.admin-touch-compact .admin-page-head.c4k-sessions-hub__head .c4k-sessions-hub-tabs--head{
-        order:4;
+        order:5;
         flex:1 0 100%;
         width:100%;
         max-width:100%;
