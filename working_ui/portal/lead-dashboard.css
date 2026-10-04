@@ -4590,7 +4590,7 @@
     }
     .section-card--today .today-grid[data-session-count="5"] .session-card-body,
     .section-card--today .today-grid[data-session-count="6"] .session-card-body{
-      grid-template-columns:minmax(100px, 116px) minmax(0,1fr) minmax(48px, var(--today-symbol-col-max, 62px));
+      grid-template-columns:minmax(58px, 72px) minmax(0,1fr) minmax(48px, var(--today-symbol-col-max, 62px));
     }
     .section-card--today .session-line--name .session-meta-name{
       /* Auto-size: grows with available width but stays consistent. */

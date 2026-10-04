@@ -5223,6 +5223,24 @@
       if(found) return found;
       return portalSyntheticSessionFromOverride(ov, viewDay);
     }
+    /** Finish-booking new client is a seat for the term. The New Participant chip is only the first session. */
+    function portalOverrideIsNewClientSeat(ov){
+      if(!ov) return false;
+      const P = window.PortalParticipantsSheet;
+      if(!P) return false;
+      return !!((typeof P.overrideIsFinishBookingNewClient === 'function' && P.overrideIsFinishBookingNewClient(ov))
+        || (typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(ov)));
+    }
+    function portalNewClientMarkVisibleOnDate(ov, iso){
+      if(!portalOverrideIsNewClientSeat(ov)) return false;
+      const P = window.PortalParticipantsSheet;
+      if(P && typeof P.overrideShouldShowOnCalendarDate === 'function'){
+        return !!P.overrideShouldShowOnCalendarDate(ov, iso);
+      }
+      return true;
+    }
+    try{ window.portalOverrideIsNewClientSeat = portalOverrideIsNewClientSeat; }catch(_){}
+    try{ window.portalNewClientMarkVisibleOnDate = portalNewClientMarkVisibleOnDate; }catch(_){}
     /** Ensure MakeUp replace cards stay pink with anchor pool/area even when loose matching missed flags. */
     function portalUpgradeTodayMakeupReplacePresentation(items, sessionDateKey, viewDay, supportHidePoolNote){
       if(!Array.isArray(items) || !items.length) return items || [];
@@ -5264,16 +5282,30 @@
         if(!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot') return it;
         if(portalOverrideIsTrial(ov)) return it;
         const Psheet = window.PortalParticipantsSheet;
-        if(Psheet && typeof Psheet.overrideIsFinishBookingNewClient === 'function' && Psheet.overrideIsFinishBookingNewClient(ov)){
+        if(portalOverrideIsNewClientSeat(ov)){
+          if(portalNewClientMarkVisibleOnDate(ov, iso)){
+            return Object.assign({}, it, {
+              portalOverrideMakeUpTag: false,
+              portalOverrideTrialTag: false,
+              portalOverrideNewClientTag: true,
+              portalOverrideCardTone: it.portalOverrideCardTone === 'pink' ? 'blue' : (it.portalOverrideCardTone || 'blue'),
+              portalOverrideSymbolText: 'New Participant',
+              portalOverrideAlertPill: String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'MAKE UP' ? '' : it.portalOverrideAlertPill,
+              scheduleAdminAdjusted: true,
+              portalOverrideHideAdminBadge: false,
+              __portalScheduleOverride: ov
+            });
+          }
+          const pillNc = String(it.portalOverrideAlertPill || '').trim().toUpperCase();
           return Object.assign({}, it, {
             portalOverrideMakeUpTag: false,
             portalOverrideTrialTag: false,
-            portalOverrideNewClientTag: true,
-            portalOverrideCardTone: it.portalOverrideCardTone === 'pink' ? 'blue' : (it.portalOverrideCardTone || 'blue'),
-            portalOverrideSymbolText: 'New Participant',
-            portalOverrideAlertPill: String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'MAKE UP' ? '' : it.portalOverrideAlertPill,
-            scheduleAdminAdjusted: true,
-            portalOverrideHideAdminBadge: false,
+            portalOverrideNewClientTag: false,
+            portalOverrideCardTone: (it.portalOverrideCardTone === 'blue' || it.portalOverrideCardTone === 'pink') ? '' : it.portalOverrideCardTone,
+            portalOverrideSymbolText: '',
+            portalOverrideAlertPill: (pillNc === 'MAKE UP' || pillNc === 'UPDATED' || pillNc === 'NEW PARTICIPANT') ? '' : it.portalOverrideAlertPill,
+            scheduleAdminAdjusted: false,
+            portalOverrideHideAdminBadge: true,
             __portalScheduleOverride: ov
           });
         }
@@ -5489,13 +5521,11 @@
       const rowTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
       const isTrial = portalOverrideIsTrial(ov);
       const PsheetNc = window.PortalParticipantsSheet;
-      const isNewClient = !!(PsheetNc && (
-        (typeof PsheetNc.overrideIsFinishBookingNewClient === 'function' && PsheetNc.overrideIsFinishBookingNewClient(ov))
-        || (typeof PsheetNc.overrideIsTermNewParticipant === 'function' && PsheetNc.overrideIsTermNewParticipant(ov))
-      ));
+      const isNewClientSeat = portalOverrideIsNewClientSeat(ov);
+      const isNewClient = isNewClientSeat && portalNewClientMarkVisibleOnDate(ov, sessionDateKey);
       const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
         && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
-      const isMakeUpCard = !isTrial && !isNewClient;
+      const isMakeUpCard = !isTrial && !isNewClientSeat;
       return {
         time,
         kind: 'client',

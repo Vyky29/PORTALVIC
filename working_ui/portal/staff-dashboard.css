@@ -5802,10 +5802,7 @@
       overflow:visible;
       white-space:normal;
     }
-    /* Status chip is the third line: time, venue, then the chip. */
-    .section-card--today .session-card-body:has(.session-line--time-stack .session-chips-below-name){
-      grid-template-columns:minmax(100px, 116px) minmax(0, 1fr) minmax(44px, var(--today-symbol-col-max, 56px));
-    }
+    /* Status chip is the third line. The time cell stays the same width with or without a chip. */
     .section-card--today .session-line--time-stack .session-chips-below-name{
       display:flex;
       flex-direction:row;
@@ -5883,7 +5880,7 @@
     }
     .section-card--today .today-grid[data-session-count="5"] .session-card-body,
     .section-card--today .today-grid[data-session-count="6"] .session-card-body{
-      grid-template-columns:minmax(100px, 116px) minmax(0,1fr) minmax(48px, var(--today-symbol-col-max, 62px));
+      grid-template-columns:minmax(58px, 72px) minmax(0,1fr) minmax(48px, var(--today-symbol-col-max, 62px));
     }
     .section-card--today .today-grid[data-session-count="5"] .session-line--name .session-meta-name,
     .section-card--today .today-grid[data-session-count="6"] .session-line--name .session-meta-name{

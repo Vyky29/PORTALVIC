@@ -4458,17 +4458,16 @@
             && portalOverrideIsDayReassignReplace(ov);
           const isClientMoveIn = hasReplaceOv && typeof portalOverrideIsClientMoveInReplace === 'function'
             && portalOverrideIsClientMoveInReplace(ov);
+          let isNewClientSeat = false;
           let isNewClientOv = false;
           try{
-            const Pnc = window.PortalParticipantsSheet;
-            if(hasReplaceOv && Pnc){
-              isNewClientOv = !!(
-                (typeof Pnc.overrideIsFinishBookingNewClient === 'function' && Pnc.overrideIsFinishBookingNewClient(ov))
-                || (typeof Pnc.overrideIsTermNewParticipant === 'function' && Pnc.overrideIsTermNewParticipant(ov))
-              );
+            if(hasReplaceOv && typeof portalOverrideIsNewClientSeat === 'function'){
+              isNewClientSeat = portalOverrideIsNewClientSeat(ov);
+              isNewClientOv = isNewClientSeat && typeof portalNewClientMarkVisibleOnDate === 'function'
+                && portalNewClientMarkVisibleOnDate(ov, sessionDateKey);
             }
           }catch(_){}
-          const isMakeUpCard = !isTrialOv && !isDayReassignReplace && !isNewClientOv && !isClientMoveIn && (hasReplaceOv || replacedVisual);
+          const isMakeUpCard = !isTrialOv && !isDayReassignReplace && !isNewClientSeat && !isClientMoveIn && (hasReplaceOv || replacedVisual);
           const makeUpPink = isMakeUpCard;
           const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
             && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
@@ -6292,10 +6291,13 @@
     function portalTodayRowIsNewClientChip(r){
       const ov = r && r.__portalScheduleOverride;
       if(!ov) return false;
+      if(r && r.portalOverrideNewClientTag === true) return true;
+      const iso = String((r && (r.sessionDateKey || r.session_date)) || '').trim().slice(0, 10)
+        || String((r && r.sessionKey) || '').split('|')[0];
       try{
-        const P = typeof window !== 'undefined' ? window.PortalParticipantsSheet : null;
-        if(P && typeof P.overrideIsFinishBookingNewClient === 'function' && P.overrideIsFinishBookingNewClient(ov)) return true;
-        if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(ov)) return true;
+        if(typeof portalNewClientMarkVisibleOnDate === 'function'){
+          return portalNewClientMarkVisibleOnDate(ov, iso);
+        }
       }catch(_){}
       return false;
     }
