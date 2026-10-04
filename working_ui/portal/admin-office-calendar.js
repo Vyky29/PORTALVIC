@@ -503,6 +503,7 @@
       "#portalOfficeCalRoot .poc-form-grid .inp, #portalOfficeCalRoot .poc-form-grid select, #portalOfficeCalRoot .poc-form-grid textarea{width:100%;min-width:0;box-sizing:border-box;font:inherit;padding:9px 11px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:#fff;color:var(--ink,#0f172a);text-transform:none;letter-spacing:0;font-weight:500}" +
       "#portalOfficeCalRoot .poc-form-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}" +
       "@media(max-width:900px){#portalOfficeCalRoot .poc-layout{grid-template-columns:1fr}#portalOfficeCalRoot .poc-cell{min-height:68px}}" +
+      "@media (orientation:landscape) and (max-height:540px) and (max-width:980px){#portalOfficeCalHost{display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;row-gap:8px}#portalOfficeCalRoot .poc-toolbar{width:auto;flex:0 1 auto;margin:0}#portalOfficeCalRoot .poc-toolbar__nav{flex-wrap:nowrap}#portalOfficeCalRoot .poc-legend{flex:0 1 auto;margin:0}#portalOfficeCalRoot .poc-layout{flex:1 0 100%;min-width:0}}" +
       "</style>"
     );
   }
