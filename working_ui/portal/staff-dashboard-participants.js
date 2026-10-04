@@ -2306,9 +2306,15 @@
       const time = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(timeRaw) : timeRaw);
       const hideDutyVenue = item && (item.kind === 'home' || item.kind === 'manager' || item.kind === 'admin');
       const venueLine = hideDutyVenue ? '' : escapeHtml(portalTodaySessionVenueLabel(item));
+      const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
+      const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);
+      const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
+      const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
+      const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
+      const slotChip = meetingChipsRow ? '' : chipsRow;
       const timeStack = hideDutyVenue
-        ? `<div class="session-line session-line--time session-line--time-stack session-line--time-duty"><span class="session-slot-time">${time}</span></div>`
-        : `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
+        ? `<div class="session-line session-line--time session-line--time-stack session-line--time-duty"><span class="session-slot-time">${time}</span>${slotChip}</div>`
+        : `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span>${slotChip}</div>`;
       const nameCore = item.kind === 'closed'
         ? '<span class="session-meta-name">Closed</span>'
         : (item.kind === 'home'
@@ -2319,16 +2325,11 @@
       const supportLine = !dcBlock && supportSub
         ? '<span class="session-meta-support">' + escapeHtml(supportSub) + '</span>'
         : '';
-      const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
-      const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);
-      const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
-      const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
-      const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
       const photoHtml = todaySessionNamePhotoHtml(item);
       const nameIdentity = photoHtml
         ? '<span class="session-name-photo-row' + (dcBlock ? ' session-name-photo-row--above' : '') + '">' + photoHtml + nameCore + '</span>'
         : nameCore;
-      const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}${chipsRow}</span>`;
+      const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}${dcBlock ? chipsRow : (meetingChipsRow || '')}</span>`;
       const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
       if(dcBlock){
         return `<div class="session-card-body session-card-body--dc-turns"><div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}<span class="session-slot-time">${time}</span>${dcBlock}</div></div>`;

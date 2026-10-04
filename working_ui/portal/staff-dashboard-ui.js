@@ -838,9 +838,9 @@
       var nameCol = Math.floor(width * 0.36);
       var special = Math.round(Math.min(96, nameCol, Math.max(above + 10, row * 0.54)));
       if(row < 110) special = Math.round(Math.min(special, Math.max(44, row * 0.46)));
-      var side = Math.round(Math.min(72, Math.max(36, row * 0.78)));
+      var side = Math.round(Math.min(32, Math.max(26, row * 0.36)));
       var mid = width - 78 - 72;
-      if(mid > 40) side = Math.min(side, Math.max(36, mid - 80));
+      if(mid > 40) side = Math.min(side, Math.max(26, mid - 80));
       return { above: above, special: special, side: side };
     }
 

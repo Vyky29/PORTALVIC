@@ -5800,6 +5800,42 @@
       min-width:0;
       container-type:inline-size;
       overflow:visible;
+      white-space:normal;
+    }
+    /* Status chip is the third line: time, venue, then the chip. */
+    .section-card--today .session-card-body:has(.session-line--time-stack .session-chips-below-name){
+      grid-template-columns:minmax(100px, 116px) minmax(0, 1fr) minmax(44px, var(--today-symbol-col-max, 56px));
+    }
+    .section-card--today .session-line--time-stack .session-chips-below-name{
+      display:flex;
+      flex-direction:row;
+      flex-wrap:nowrap;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      margin-top:0;
+    }
+    .section-card--today .session-line--time-stack .session-chips-below-name .portal-session-slot-chip,
+    .section-card--today .session-line--time-stack .session-chips-below-name .portal-sched-ov-badge{
+      max-width:100%;
+      min-width:0;
+      box-sizing:border-box;
+      padding:1px 5px;
+      font-size:9px;
+      line-height:1.15;
+    }
+    .section-card--today .session-line--time-stack .portal-session-slot-chip--submitted-late > span,
+    .section-card--today .session-line--time-stack .portal-session-slot-chip > span{
+      display:block;
+      max-width:100%;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      overflow-wrap:normal;
+      text-align:center;
     }
     .section-card--today .session-line--time-stack .session-slot-time{
       display:block;
@@ -5978,7 +6014,7 @@
       align-items:center;
       justify-content:center;
       flex:0 1 auto;
-      width:var(--today-photo, 40px);
+      width:var(--today-photo, 32px);
       min-width:28px;
       height:auto;
       aspect-ratio:1;
