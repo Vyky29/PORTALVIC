@@ -4734,33 +4734,44 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
     min-height:0;
     overflow:hidden;
   }
-  body:has(#workspace .ops-hub--flat) .admin-workspace{
+  body:has(#workspace .ops-hub--flat) .admin-workspace,
+  body.admin-touch-compact:has(#workspace .ops-hub--flat) .admin-workspace{
+    display:flex !important;
+    flex-direction:column !important;
     flex:1 1 auto !important;
+    height:auto !important;
     min-height:0 !important;
     overflow:hidden !important;
     padding:4px !important;
   }
-  body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
+  body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat,
+  body.admin-touch-compact:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
+    display:flex !important;
+    flex-direction:column !important;
     flex:1 1 auto !important;
-    height:auto !important;
+    height:100% !important;
     max-height:none !important;
     min-height:0 !important;
     overflow:hidden !important;
     padding:0 !important;
   }
   .ops-hub--flat{
+    display:flex !important;
+    flex-direction:column !important;
+    flex:1 1 auto !important;
+    height:100% !important;
     min-height:0;
     overflow:hidden;
   }
   .ops-hub-flat{
-    flex:1 1 0% !important;
-    height:auto !important;
+    flex:1 1 auto !important;
+    height:100% !important;
     min-height:0 !important;
     overflow:hidden !important;
     align-content:stretch;
     gap:4px;
-    grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(108px,124px);
-    grid-template-rows:repeat(3,minmax(0,1fr));
+    grid-template-columns:minmax(0,1.28fr) minmax(0,.92fr) minmax(150px,.95fr);
+    grid-template-rows:minmax(0,1.7fr) minmax(0,1fr) minmax(0,1fr);
     grid-template-areas:
       "sess fam cal"
       "serv fin cal"
@@ -4844,35 +4855,72 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
     min-width:0;
     margin:0;
     padding:0 2px;
-    font-size:10px;
-    line-height:1.1;
+    font-size:9px;
+    line-height:1.15;
     text-align:center;
     white-space:normal;
-    overflow-wrap:anywhere;
-    word-break:break-word;
+    overflow-wrap:normal;
+    word-break:normal;
+    hyphens:manual;
     display:-webkit-box;
     -webkit-box-orient:vertical;
     -webkit-line-clamp:3;
     overflow:hidden;
     text-overflow:clip;
   }
-  .ops-hub-flat__cal .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
-    padding:6px 6px 4px;
-    gap:2px;
+  .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-label{
+    font-size:11px;
+    line-height:1.15;
+    font-weight:800;
   }
-  .ops-hub-flat__cal .ops-hub-cal-glance__month{font-size:13px}
-  .ops-hub-flat__cal .ops-hub-cal-glance__count{display:none}
-  .ops-hub-flat__cal .ops-hub-cal-month{gap:2px}
-  .ops-hub-flat__cal .ops-hub-cal-month__wd{font-size:9px}
+  .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band .admin-nav-ico,
+  .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band .admin-nav-ico svg{
+    width:22px;
+    height:22px;
+  }
+  .ops-hub-flat__cal{
+    height:100% !important;
+    align-self:stretch !important;
+  }
+  .ops-hub-flat__cal .ops-hub__today,
+  .ops-hub-flat__cal .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
+    height:100% !important;
+    min-height:0 !important;
+    display:flex !important;
+    flex-direction:column !important;
+  }
+  .ops-hub-flat__cal .ops-hub__today--cal-focus .ops-hub__today-item--calendar > .ops-hub-cal-glance__grid{
+    display:flex !important;
+    flex-direction:column !important;
+    flex:1 1 auto !important;
+    height:auto !important;
+    min-height:0 !important;
+    align-self:stretch !important;
+  }
+  .ops-hub-flat__cal .ops-hub-cal-month{
+    flex:1 1 auto !important;
+    height:100% !important;
+    min-height:0 !important;
+    gap:4px;
+  }
   .ops-hub-flat__cal .ops-hub-cal-month__grid{
-    grid-template-rows:repeat(6,minmax(0,1fr));
-    height:100%;
+    grid-template-rows:repeat(6,minmax(0,1fr)) !important;
+    flex:1 1 auto !important;
+    height:100% !important;
+    min-height:0 !important;
   }
   .ops-hub-flat__cal .ops-hub-cal-day{
-    height:auto;
-    min-height:0;
+    height:100% !important;
+    min-height:0 !important;
   }
-  .ops-hub-flat__cal .ops-hub-cal-day__n{font-size:10px}
+  .ops-hub-flat__cal .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
+    padding:8px 8px 6px;
+    gap:4px;
+  }
+  .ops-hub-flat__cal .ops-hub-cal-glance__month{font-size:15px}
+  .ops-hub-flat__cal .ops-hub-cal-glance__count{display:none}
+  .ops-hub-flat__cal .ops-hub-cal-month__wd{font-size:10px}
+  .ops-hub-flat__cal .ops-hub-cal-day__n{font-size:12px}
 }
 
 /* Each button uses its category colour: pink Sessions, and the same idea for the rest. */
