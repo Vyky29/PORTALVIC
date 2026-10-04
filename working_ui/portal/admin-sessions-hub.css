@@ -1541,6 +1541,13 @@
     }
     .ash-input--grow { flex: 1; min-width: 200px; max-width: 440px; }
     .ash-filter-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .ash-filter-dates {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 8px;
+      min-width: 0;
+    }
     .ash-filter-date-end {
       display: inline-flex;
       align-items: flex-end;
@@ -2837,5 +2844,86 @@
     align-items:center;
     gap:0;
     margin:0;
+  }
+  .ash-week-head__row,
+  .ash-feedback-week__head{
+    flex-wrap:wrap !important;
+    align-items:center;
+    gap:8px;
+  }
+  .ash-week-head__titles{
+    flex-direction:row !important;
+    align-items:center;
+    gap:8px;
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .ash-week-summary__label{
+    flex:0 0 auto;
+    white-space:nowrap;
+  }
+  .ash-week-summary__range,
+  .ash-feedback-week__title{
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .ash-week-refresh{
+    flex:0 0 auto;
+    margin-left:auto;
+    height:32px;
+    padding:0 12px;
+  }
+  .ash-week-nav{
+    flex:1 0 100%;
+    width:100%;
+    margin-left:0 !important;
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+    overflow:visible;
+  }
+  .ash-week-nav .ash-btn{
+    width:100%;
+    min-width:0;
+    padding:6px 4px;
+    font-size:12px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .ash-filter-row--feedback{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:8px;
+    align-items:end;
+    width:100%;
+  }
+  .ash-filter-row--feedback > .ash-filter-label{
+    min-width:0 !important;
+    width:100%;
+    font-size:12px !important;
+    overflow:hidden;
+  }
+  .ash-filter-row--feedback .ash-filter-dates{
+    grid-column:1 / -1;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+    gap:8px;
+    align-items:end;
+    min-width:0;
+  }
+  .ash-filter-row--feedback .ash-input,
+  .ash-filter-row--feedback .ash-input--filter-select{
+    height:36px !important;
+    min-width:0 !important;
+    width:100% !important;
+    max-width:none !important;
+    font-size:13px !important;
+    padding:4px 8px !important;
+  }
+  .ash-filter-row--feedback .ash-filter-apply-btn{
+    height:36px;
+    padding:0 12px;
+    white-space:nowrap;
   }
 }

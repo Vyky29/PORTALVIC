@@ -6538,7 +6538,6 @@ function rosterRowToSlot(isoDate, wd, r) {
     var short = !!opts.shortLabels;
     return (
       '<div class="ash-week-nav">' +
-      '<button type="button" class="ash-btn ash-btn--ghost" data-c4k-hub-refresh>Refresh</button>' +
       '<button type="button" class="ash-btn ash-btn--ghost" data-ash-week-prev>' +
       esc(short ? "\u2190 Prev" : "\u2190 Prev week") +
       "</button>" +
@@ -8942,15 +8941,15 @@ function rosterRowToSlot(isoDate, wd, r) {
         options: this.instructorFilterOptionsForDay(this.selectedDay),
         placeholder: "All instructors",
       }) +
+      '<div class="ash-filter-dates">' +
       '<label class="ash-filter-label">From<input type="date" id="ashRangeFrom" class="ash-input" value="' +
       esc(this.rangeFrom) +
       '"></label>' +
-      '<span class="ash-filter-date-end">' +
       '<label class="ash-filter-label">To<input type="date" id="ashRangeTo" class="ash-input" value="' +
       esc(this.rangeTo) +
       '"></label>' +
-      '<button type="button" class="ash-btn ash-btn--secondary ash-filter-apply-btn" data-ash-feedback-apply>Apply dates</button>' +
-      "</span></div>"
+      '<button type="button" class="ash-btn ash-btn--secondary ash-filter-apply-btn" data-ash-feedback-apply>Apply</button>' +
+      "</div></div>"
     );
   };
 
@@ -11626,6 +11625,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<span class="ash-week-summary__range">' +
       esc(weekRange) +
       "</span></div>" +
+      '<button type="button" class="ash-btn ash-btn--ghost ash-week-refresh" data-c4k-hub-refresh>Refresh</button>' +
       htmlWeekNavButtons(this) +
       "</div></div>" +
       '<div class="ash-day-row ash-day-row--week">' +
@@ -15154,6 +15154,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       ' <span class="ash-metric-term">(' +
       esc(weekLabel) +
       ")</span></h4>" +
+      '<button type="button" class="ash-btn ash-btn--ghost ash-week-refresh" data-c4k-hub-refresh>Refresh</button>' +
       htmlWeekNavButtons(this, { shortLabels: true }) +
       "</div>" +
       '<div class="ash-day-row ash-day-row--feedback">' +
