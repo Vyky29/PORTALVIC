@@ -95,7 +95,7 @@
   <script src="/portal/admin-office-calendar.js?v=20261004-cal-notes"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20261003-cancel-refund"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20261002-xero-ui"></script>
-  <script src="/portal/admin-portal-parent-invoices.js?v=20261002-invoice-ui"></script>
+  <script src="/portal/admin-portal-parent-invoices.js?v=20261004-bookings"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260928-makeup-date-desc"></script>
   <script src="/portal/admin-portal-parent-consents.js?v=20261003-consent-chips2"></script>
   <script src="/portal/admin-payslips.js?v=20261001-payslip-amount"></script>
@@ -185,7 +185,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-portrait-hub" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-stats-fit" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -504,7 +504,7 @@
       { id:'c4k_payments', label:'Programme payments (operations)', hubLabel:'Ops payments' },
       { id:'reenrol_payments', label:'Finance', hubLabel:'Finance' },
       { id:'finance_create', label:'Create invoice', hubLabel:'Create invoice' },
-      { id:'finance_reenrolments', label:'Re-enrolments & Bookings', hubLabel:'Re-enrolments & Bookings' },
+      { id:'finance_reenrolments', label:'Bookings', hubLabel:'Bookings' },
       { id:'finance_xero', label:'Xero products', hubLabel:'Xero products' },
       { id:'finance_payments', label:'Payments', hubLabel:'Payments' },
       { id:'commissioning_terms', label:'LA / Commissioning Terms', hubLabel:'LA Terms' },
@@ -2901,6 +2901,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var extraActions = viewId === 'scheduling' ? sessionsHubJumpButtonsHtml('scheduling') : '';
       if(viewId === 'clients' || viewId === 'clients_old' || viewId === 'clients_trial' || viewId === 'clients_cfk' || viewId === 'c4k_waitlist' || viewId === 'portal_participant_documents'){
         extraActions = '<button type="button" class="btn btn--pri btn--sm admin-page-head__add" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button>';
+      }
+      if(viewId === 'finance_reenrolments' || viewId === 'reenrol_payments'){
+        extraActions = '<button type="button" class="btn btn--ghost btn--sm" data-view-target="finance_payments">Payments</button>';
+      }else if(viewId === 'finance_payments'){
+        extraActions = '<button type="button" class="btn btn--ghost btn--sm" data-view-target="finance_reenrolments">Bookings</button>';
       }
       return portalAdminPageHeadRowHtml({ viewId: viewId, title: title, intro: intro, backMode: backMode, extraActions: extraActions }) + stripped;
     }
@@ -31592,7 +31597,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         secondary += window.PortalParentCredits.embedHtml();
       }
       return '<h1 class="page-title">Absents, refunds &amp; credits</h1>'+
-        '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Finance">'+financeHubTabsHtml('absents')+'</div>'+
         parentQueue+
         '<details style="margin:0 0 14px;min-width:0">'+
         '<summary style="cursor:pointer;font-weight:700;font-size:14px;padding:8px 0;overflow-wrap:break-word">Makeup grants &amp; family credits / refunds (after you decide above)</summary>'+
@@ -33666,27 +33670,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
 
-    function financeHubTabsHtml(active){
-      var tabs = [
-        { id:'reenrolments', label:'Re-enrolments & Bookings', iconId:'clients' },
-        { id:'payments', label:'Payments', iconId:'c4k_payments' },
-        { id:'absents', label:'Absents, refunds & credits', iconId:'absents_refunds', view:'absents_refunds' }
-      ];
-      return tabs.map(function(t){
-        var on = t.id === active;
-        var ico = adminNavIconHtml(t.iconId || t.id);
-        var attr = t.view
-          ? (' data-view-target="'+esc(t.view)+'"')
-          : (' data-finance-tab="'+esc(t.id)+'"');
-        return '<button type="button" class="c4k-sessions-hub-tab'+(on?' is-active':'')+'" role="tab"'+attr+' aria-selected="'+(on?'true':'false')+'">'+
-          (ico ? '<span class="c4k-sessions-hub-tab__ico" aria-hidden="true">'+ico+'</span>' : '')+
-          '<span class="c4k-sessions-hub-tab__label">'+esc(t.label)+'</span></button>';
-      }).join('');
-    }
     function financeScreenTitle(tab){
       if(tab === 'create') return 'Create invoice';
       if(tab === 'xero_products') return 'Xero products';
-      if(tab === 'reenrolments') return 'Re-enrolments & Bookings';
+      if(tab === 'reenrolments') return 'Bookings';
       if(tab === 'payments') return 'Payments';
       return 'Finance';
     }
@@ -33699,10 +33686,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var reenrolHtml = typeof inv.reenrolmentsEmbedHtml === 'function' ? inv.reenrolmentsEmbedHtml() : '';
       var xeroProductsHtml = typeof xeroProd.mountHtml === 'function' ? xeroProd.mountHtml() : '';
       var hide = function(id){ return tab === id ? '' : ' hidden'; };
-      var ownScreen = tab === 'create' || tab === 'xero_products';
-      var tabs = ownScreen ? '' : ('<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Finance">'+financeHubTabsHtml(tab)+'</div>');
       return '<h1 class="page-title">'+esc(financeScreenTitle(tab))+'</h1>'+
-        tabs+
         '<div id="financePanelCreate" class="finance-hub-panel"'+hide('create')+'>'+createHtml+'</div>'+
         '<div id="financePanelReenrolments" class="finance-hub-panel"'+hide('reenrolments')+'>'+reenrolHtml+'</div>'+
         '<div id="financePanelXeroProducts" class="finance-hub-panel"'+hide('xero_products')+'>'+xeroProductsHtml+'</div>'+

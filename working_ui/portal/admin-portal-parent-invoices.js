@@ -24,6 +24,7 @@
     filter: 'all',
     methodFilter: 'all',
     amountPeriod: 'autumn',
+    billingYear: '2627',
     clientQuery: '',
     invoices: [],
     meta: {},
@@ -1694,6 +1695,13 @@
     }, 0);
   }
 
+  function effectiveAmountPeriod() {
+    if (state.billingYear === '2526') return 'year_2526';
+    var p = String(state.amountPeriod || 'autumn').toLowerCase();
+    if (p !== 'autumn' && p !== 'spring' && p !== 'summer') return 'autumn';
+    return p;
+  }
+
   function amountPeriodLabel(period) {
     var p = String(period || 'autumn').toLowerCase();
     if (p === 'year_2526' || p === '2526') return 'Year 25/26';
@@ -1726,7 +1734,7 @@
 
   /** TERM · term £ · Year £ — separate spans for the summary row order. */
   function groupBookedAmountsHtml(group) {
-    var period = String(state.amountPeriod || 'autumn').toLowerCase();
+    var period = effectiveAmountPeriod();
     var selected = groupAmountForPeriod(group, period);
     var annual = Number(group.booked_annual_gbp);
     var invTotal = groupTotalGbp(group.invoices || []);
@@ -2093,7 +2101,7 @@
           '</div>'
         : '';
     }
-    var period = String(state.amountPeriod || inv.billing_term || 'autumn').toLowerCase();
+    var period = effectiveAmountPeriod();
     var periodLabel = amountPeriodLabel(period);
     var rows = slots
       .map(function (s) {
@@ -2596,7 +2604,7 @@
       if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced' || state.filter === 'la_auto' || state.filter === 'lost_slot') {
         body.filter = state.filter;
       }
-      body.billing_amount = state.amountPeriod || 'autumn';
+      body.billing_amount = effectiveAmountPeriod();
       var r = await api('portal-admin-parent-invoices-list', body);
       if (r.error) {
         host.innerHTML =
@@ -2647,9 +2655,10 @@
 
   function setInvoiceFilter(filter) {
     state.filter = filter || 'all';
-    global.document.querySelectorAll('.toolbar [data-inv-filter]').forEach(function (b) {
+    global.document.querySelectorAll('[data-inv-filter]').forEach(function (b) {
       var on = b.getAttribute('data-inv-filter') === state.filter;
-      b.classList.toggle('btn--ghost', !on);
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
 
@@ -2662,13 +2671,23 @@
     });
   }
 
+  function setBillingYear(year) {
+    state.billingYear = year === '2526' ? '2526' : '2627';
+    global.document.querySelectorAll('[data-inv-year]').forEach(function (b) {
+      var on = b.getAttribute('data-inv-year') === state.billingYear;
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
   function setAmountPeriod(period) {
     var p = String(period || 'autumn').toLowerCase();
-    if (p !== 'year' && p !== 'autumn' && p !== 'spring' && p !== 'summer') p = 'autumn';
+    if (p !== 'autumn' && p !== 'spring' && p !== 'summer') p = 'autumn';
     state.amountPeriod = p;
-    global.document.querySelectorAll('.toolbar [data-inv-amount]').forEach(function (b) {
+    global.document.querySelectorAll('[data-inv-amount]').forEach(function (b) {
       var on = b.getAttribute('data-inv-amount') === state.amountPeriod;
-      b.classList.toggle('btn--ghost', !on);
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
 
@@ -3510,34 +3529,44 @@
 
   function reenrolmentsEmbedHtml() {
     return (
-      '<div class="card" style="margin-bottom:14px">' +
-      '<div class="card-h"><h3>Re-enrolments &amp; Bookings</h3>' +
+      '<div class="card pp-inv-bookings" style="margin-bottom:14px">' +
+      '<style>' +
+      '.pp-inv-pick{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin:0 0 10px;min-width:0;overflow-x:auto}' +
+      '.pp-inv-pick__lab{flex:0 0 auto;font-size:13px;font-weight:800;color:#334155}' +
+      '.pp-inv-pick__chip{flex:0 0 auto;height:32px;padding:0 12px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#0f172a;font:inherit;font-size:13px;font-weight:700;cursor:pointer}' +
+      '.pp-inv-pick__chip.is-on{background:#0f172a;border-color:#0f172a;color:#fff}' +
+      '.pp-inv-pick__gap{flex:0 0 10px}' +
+      '.pp-inv-status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}' +
+      '.pp-inv-status__acts{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}' +
+      '</style>' +
+      '<div class="card-h"><h3>Bookings</h3>' +
       '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;align-items:center">' +
-      '<span class="muted" style="font-size:12px;font-weight:700">Amount</span>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year_2526">Year 25/26</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year">Year 26/27</button>' +
-      '<button type="button" class="btn btn--sm" data-inv-amount="autumn">Autumn</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="spring">Spring</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="summer">Summer</button>' +
+      '<div class="pp-inv-pick" role="group" aria-label="Year and term">' +
+      '<span class="pp-inv-pick__lab">Year</span>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-year="2526" aria-pressed="false">2025/26</button>' +
+      '<button type="button" class="pp-inv-pick__chip is-on" data-inv-year="2627" aria-pressed="true">2026/27</button>' +
+      '<span class="pp-inv-pick__gap" aria-hidden="true"></span>' +
+      '<span class="pp-inv-pick__lab">Term</span>' +
+      '<button type="button" class="pp-inv-pick__chip is-on" data-inv-amount="autumn" aria-pressed="true">Autumn</button>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-amount="spring" aria-pressed="false">Spring</button>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-amount="summer" aria-pressed="false">Summer</button>' +
       '</div>' +
-      '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" class="btn btn--sm" data-inv-filter="all">All</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="la_auto">Auto re-enrolled</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Outstanding</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="partial">Partially paid</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="lost_slot" title="Re-enrolled but never paid — place released">Lost slot</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="buffer_low">Buffer low</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Not in Xero yet</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="hidden">Hidden</button>' +
+      '<div class="pp-inv-status" role="group" aria-label="Booking filters">' +
+      '<button type="button" class="pp-inv-pick__chip is-on" data-inv-filter="all" aria-pressed="true">All</button>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-filter="la_auto" aria-pressed="false">Auto re-enrolled</button>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-filter="unpaid" aria-pressed="false">Outstanding</button>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-filter="partial" aria-pressed="false">Partially paid</button>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-filter="paid" aria-pressed="false">Paid</button>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-filter="pending" aria-pressed="false">Pending confirmation</button>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-filter="lost_slot" aria-pressed="false" title="Re-enrolled but never paid. Place released">Lost slot</button>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-filter="xero_unsynced" aria-pressed="false">Not in Xero yet</button>' +
+      '<button type="button" class="pp-inv-pick__chip" data-inv-filter="hidden" aria-pressed="false">Hidden</button>' +
+      '<span class="pp-inv-status__acts">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentInvoicesRefreshEmbed">Refresh</button>' +
-      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates full ACCREC in Xero for paid or partial Portal invoices (awaiting payment; reconcile halves in Xero)">Push to Xero</button>' +
+      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates full ACCREC in Xero for paid or partial Portal invoices">Push to Xero</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentInvoicesExportXero">Export to Xero CSV</button>' +
-      '</div>' +
+      '</span></div>' +
       '<div class="pp-inv-client-search" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;min-width:0;margin:0 0 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;box-sizing:border-box">' +
       '<label for="portalParentInvoicesClientSearch" class="pp-inv-method-row__lab" style="margin:0">Client</label>' +
       '<input class="inp" id="portalParentInvoicesClientSearch" type="search" autocomplete="off" placeholder="Search name, parent, invoice #… (then Mark paid)" style="flex:1 1 14rem;min-width:0;max-width:28rem" />' +
@@ -3577,6 +3606,7 @@
     state.filter = 'all';
     state.methodFilter = 'all';
     state.amountPeriod = 'autumn';
+    state.billingYear = '2627';
     state.clientQuery = '';
     bindTideMatchPanel();
     var host = global.document.getElementById('portalParentInvoicesHost');
@@ -3639,7 +3669,7 @@
         if (searchEl) searchEl.focus();
       });
     }
-    global.document.querySelectorAll('.toolbar [data-inv-filter]').forEach(function (btn) {
+    global.document.querySelectorAll('[data-inv-filter]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         setInvoiceFilter(btn.getAttribute('data-inv-filter') || 'all');
         void renderHost(global.document.getElementById('portalParentInvoicesHost'));
@@ -3651,12 +3681,19 @@
         void renderHost(global.document.getElementById('portalParentInvoicesHost'));
       });
     });
-    global.document.querySelectorAll('.toolbar [data-inv-amount]').forEach(function (btn) {
+    global.document.querySelectorAll('[data-inv-amount]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         setAmountPeriod(btn.getAttribute('data-inv-amount') || 'autumn');
         void renderHost(global.document.getElementById('portalParentInvoicesHost'));
       });
     });
+    global.document.querySelectorAll('[data-inv-year]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setBillingYear(btn.getAttribute('data-inv-year') || '2627');
+        void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+      });
+    });
+    setBillingYear(state.billingYear);
     setAmountPeriod(state.amountPeriod);
     setMethodFilter(state.methodFilter);
     void renderHost(host);

@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-04-v240",
+  "version": "2026-10-04-v241",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -523,7 +523,7 @@
           "steps": [
             "Open Operations Hub. The title, the info circle and Office help sit together.",
             "Sessions is the large pink block on the left: Sessions overview, Schedule and Covers, Register. The top row is Clients and families (Active), then Services and places (Places, Leads, Edit term slot), then the calendar. Every button inside a block uses that block's colour for the fill and the outline.",
-            "Under that row: Finance (Re-enrolments and Bookings, Absents credits and refunds), H&R (Workers, Instructor timetable, Session disruptions), and Potential workers (Interviews, Onboarding). A Done day is green. An open day uses the legend colour. Press the calendar to open Office calendar.",
+            "Under that row: Finance (Bookings, Payments, Absents credits and refunds), H&R (Workers, Instructor timetable, Session disruptions), and Potential workers (Interviews, Onboarding). A Done day is green. An open day uses the legend colour. Press the calendar to open Office calendar.",
             "The full menu is still in the sidebar. Photos/Videos, Parent consents, Service roster, REGISTERED, WAITING LIST, Payments, Cancelled services, Late feedback, Documents and Finance are not on the hub. Open them from the sidebar.",
             "WhatsApp, Parents API, Staff API, C (Comms) and A (Announcements) stay in the top bar.",
             "When that lane has unread messages, the button lights up and shows the number."
@@ -541,7 +541,7 @@
             "steps": [
               "Abre Operations Hub. El titulo, el circulo de info y Office help van juntos.",
               "Sessions es el bloque rosa de la izquierda: Sessions overview, Schedule and Covers, Register. La fila de arriba es Clients and families (Active), luego Services and places (Places, Leads, Edit term slot) y el calendario. Cada boton de dentro usa el color de su bloque, en el fondo y en el borde.",
-              "Debajo: Finance (Re-enrolments and Bookings, Absents credits and refunds), H&R (Workers, Instructor timetable, Session disruptions) y Potential workers (Interviews, Onboarding). Un dia en Done sale verde. Si sigue abierto usa el color de la leyenda. Pulsa el calendario para abrir Office calendar.",
+              "Debajo: Finance (Bookings, Payments, Absents credits and refunds), H&R (Workers, Instructor timetable, Session disruptions) y Potential workers (Interviews, Onboarding). Un dia en Done sale verde. Si sigue abierto usa el color de la leyenda. Pulsa el calendario para abrir Office calendar.",
               "El menu completo sigue en la barra lateral. Photos/Videos, Parent consents, Service roster, REGISTERED, WAITING LIST, Payments, Cancelled services, Late feedback, Documents y Finance no estan en el hub. Se abren desde la barra lateral.",
               "WhatsApp, Parents API, Staff API, C y A siguen en la barra de arriba."
             ],
@@ -1463,7 +1463,7 @@
             ],
             "tips": [
               "En el texto del enlace de finish-booking no pongas frases de suitability.",
-              "Create invoice y Xero products no son los tres botones de la fila de Finance. Esos tres son Re-enrolments, Payments y Absents."
+              "Create invoice y Xero products no son los botones de la fila de Finance. Esos son Bookings y Payments."
             ]
           }
         },
@@ -2490,7 +2490,7 @@
             "Place is live only: REGISTERED only, WAITING, Pay hold, Awaiting Tide, In class, or Did not finish.",
             "The chosen slot is not on this table. It arrives in the pay-hold alert and the I have paid office alert.",
             "After a bank transfer the parent must WhatsApp or email the office. A tap alone does not change admin.",
-            "Then check Tide, Mark paid in Re-enrolments and Bookings, and send the PIN.",
+            "Then check Tide, Mark paid in Bookings, and send the PIN.",
             "Mark reviewed means you opened the PDF. Resend finish link if they lost it.",
             "Climbing forms and Parent consents are under Clients & Families, Documents. Registration Form is there too.",
             "Do not show them as booked kids on Sessions until they are a CLIENT."
@@ -2508,7 +2508,7 @@
               "Place es solo el estado vivo: REGISTERED only, WAITING, Pay hold, Awaiting Tide, In class, o Did not finish.",
               "La franja elegida no esta en esta tabla. Llega en el aviso de pay-hold y en el aviso de oficina I have paid.",
               "Despues de una transferencia el padre tiene que escribir por WhatsApp o email a la oficina. Un toque solo no cambia el admin.",
-              "Luego mira Tide, Mark paid en Re-enrolments and Bookings, y manda el PIN.",
+              "Luego mira Tide, Mark paid en Bookings, y manda el PIN.",
               "Mark reviewed quiere decir que abriste el PDF. Resend finish link si lo perdieron.",
               "Climbing forms y Parent consents estan en Clients & Families, Documents. Registration Form tambien esta ahi.",
               "No los pongas como ninos reservados en Sessions hasta que sean CLIENT."

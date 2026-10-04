@@ -6254,3 +6254,58 @@
         padding:4px !important;
       }
     }
+
+    /* Upright phone: Register stat cards stay inside the screen. */
+    @media (max-width:900px) and (orientation:portrait){
+      .sf-kpi-grid{
+        gap:8px;
+        margin:0 0 10px;
+        max-width:100%;
+        min-width:0;
+      }
+      .sf-kpi-card{
+        max-width:100%;
+        min-width:0;
+      }
+      .sf-kpi-card__head{padding:8px 8px 6px}
+      .sf-kpi-card__title{font-size:14px}
+      .sf-kpi-card__sub{font-size:11px}
+      .sf-kpi-card__body{
+        min-height:0;
+        padding:4px 6px 8px;
+      }
+      .sf-kpi-card--eng .c4k-reg-eng-gauge{max-width:150px}
+      .sf-kpi-card--eng .c4k-reg-eng-gauge__chart{overflow:hidden}
+      .sf-kpi-card--eng .c4k-reg-eng-gauge__svg{max-width:118px;overflow:hidden}
+      .sf-kpi-card--eng .c4k-reg-eng-gauge__pct{font-size:1.15rem}
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row{
+        gap:2px;
+        padding:0;
+        overflow:hidden;
+        justify-content:space-between;
+      }
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-circ__item{
+        flex:1 1 0;
+        min-width:0;
+        max-width:25%;
+        padding:0 1px;
+      }
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-donut-wrap{
+        width:54px;
+        height:54px;
+        max-width:54px;
+        margin:0 auto 2px;
+      }
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-donut__inner{
+        width:34px;
+        height:34px;
+        font-size:10px;
+      }
+      .sf-kpi-card--emo .c4k-reg-emo-circ__ico svg{width:16px;height:16px}
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-circ__lbl{
+        font-size:8px;
+        max-width:100%;
+      }
+      .sf-kpi-card--ind .c4k-reg-ind-bar__track{height:48px;max-width:28px}
+      .sf-kpi-card--ind .c4k-reg-ind-bar__item{max-width:56px}
+    }
