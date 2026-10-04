@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-04-v234",
+  "version": "2026-10-04-v235",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -156,7 +156,8 @@
             "If a child is absent and someone moves into that seat the same day, the row shows the absent child, then Free, then the move-in. No participant is a standing empty seat.",
             "From Sun 27 Sep, Gabriel and Cyrus swap the 11.00 and 11.45 halves for the rest of term. The blue change card shows only that first Sunday. After that they are the regular clients at those times. A cover saved on that seat follows the child who is in it now.",
             "A cover keeps the original seat. Today shows that area: Hub Room, Big Pool, Small Pool or Teaching Pool. It does not drop to a dash. Covering the whole Sunday Hub book is one NEW SHIFT, 9.15 to 2.15. A single slot stays that slot.",
-            "There is no clock editor on an existing row. Move to another slot today only lands on a band that already exists that day. To use a new time, Change, Cancelled, Save override on the old row, then + Add session card, Type Session, with the new Start and End. That is one day. Edit term slot is only if that weekday should keep the new time for the rest of term."
+            "There is no clock editor on an existing row. Move to another slot today only lands on a band that already exists that day. To use a new time, Change, Cancelled, Save override on the old row, then + Add session card, Type Session, with the new Start and End. That is one day. Edit term slot is only if that weekday should keep the new time for the rest of term.",
+            "Cancelled on a weekend or after-school seat sends one parent WhatsApp: the old session is cancelled. It also opens Absents. Add session card does not message the parent about the new time. Move sends one time-change WhatsApp, old time and new time, only when the target band already exists. Day Centre cancels do not WhatsApp parents."
           ],
           "es": {
             "title": "Schedule & Covers (un dia)",
@@ -178,7 +179,8 @@
               "Si un nino falta y alguien entra en esa plaza el mismo dia, la fila ensena al nino ausente, luego Free, luego el que entra. No participant es una plaza fija vacia.",
               "Desde el domingo 27 Sep, Gabriel y Cyrus cambian las medias de las 11.00 y las 11.45 el resto del term. La tarjeta azul de cambio sale solo ese primer domingo. Despues son los clientes de siempre a esa hora. Un cover guardado en esa plaza sigue al nino que esta ahora.",
               "Un cover conserva la plaza original. Today ensena esa area: Hub Room, Big Pool, Small Pool o Teaching Pool. No se queda en una raya. Cubrir el Hub entero del domingo es una sola NEW SHIFT, 9.15 to 2.15. Una sola franja se queda en esa franja.",
-              "En una fila que ya existe no hay campo para cambiar la hora. Move to another slot today solo cae en una franja que ya existe ese dia. Para una hora nueva: Change, Cancelled, Save override en la fila vieja, y luego + Add session card, Type Session, con el Start y el End nuevos. Es un dia. Edit term slot solo si ese dia de la semana debe quedarse con la hora nueva el resto del term."
+              "En una fila que ya existe no hay campo para cambiar la hora. Move to another slot today solo cae en una franja que ya existe ese dia. Para una hora nueva: Change, Cancelled, Save override en la fila vieja, y luego + Add session card, Type Session, con el Start y el End nuevos. Es un dia. Edit term slot solo si ese dia de la semana debe quedarse con la hora nueva el resto del term.",
+              "Cancelled en un fin de semana o after-school manda un solo WhatsApp al padre: la sesion vieja esta cancelada. Tambien abre Absents. Add session card no avisa al padre de la hora nueva. Move manda un solo WhatsApp de cambio de hora, hora vieja y hora nueva, solo si la franja de destino ya existe. Las cancelaciones de Day Centre no mandan WhatsApp a los padres."
             ]
           }
         },
