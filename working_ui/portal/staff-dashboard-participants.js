@@ -874,19 +874,27 @@
         if(sd && /^\d{4}-\d{2}-\d{2}$/.test(sd)) return sd === iso;
         return String(row.day || '').trim() === weekday;
       }
+      function portalShareSpansOverlapViewer(startMins, endMins){
+        const a0 = portalShareStartMins(sessionRow);
+        let a1 = portalShareEndMins(sessionRow);
+        if(!Number.isFinite(a0) || a0 >= 24 * 60) return false;
+        if(!Number.isFinite(a1) || a1 <= a0) a1 = a0 + 60;
+        const b0 = Number(startMins);
+        let b1 = Number(endMins);
+        if(!Number.isFinite(b0) || b0 >= 24 * 60) return false;
+        if(!Number.isFinite(b1) || b1 <= b0) b1 = b0 + 30;
+        return a0 < b1 && b0 < a1;
+      }
       function considerRow(row){
         if(!row || !rowOnDay(row)) return;
         const stem = portalShareClientStem(row.clientId || row.client_name || row.clientName || row.client || row.name);
         if(stem !== clientStem) return;
         const fam = portalShareServiceFamily(row, stem);
         if(fam !== family) return;
-        if(family === 'aquatic'){
-          const want = portalShareStartMins(sessionRow);
-          const got = portalShareStartMins(row);
-          if(Number.isFinite(want) && Number.isFinite(got) && Math.abs(want - got) > 5) return;
-        }
         const mins = portalShareStartMins(row);
         const endMins = portalShareEndMins(row);
+        /* Same child later in the day is not 2:1. Only staff who share this slot. */
+        if(!portalShareSpansOverlapViewer(mins, endMins)) return;
         portalShareStaffTokens(row).forEach(function(tok){ addStaff(tok, mins, endMins); });
       }
       try{
@@ -916,11 +924,10 @@
             if(famOv !== family) return;
             const st = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_start) : ov.anchor_start;
             const en = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_end) : ov.anchor_end;
-            addStaff(
-              ov.anchor_staff_id,
-              portalShareStartMins({ start: st, time_slot: ov.anchor_time_slot_label }),
-              portalShareEndMins({ end: en, time_slot: ov.anchor_time_slot_label })
-            );
+            const stMins = portalShareStartMins({ start: st, time_slot: ov.anchor_time_slot_label });
+            const enMins = portalShareEndMins({ end: en, time_slot: ov.anchor_time_slot_label });
+            if(!portalShareSpansOverlapViewer(stMins, enMins)) return;
+            addStaff(ov.anchor_staff_id, stMins, enMins);
             return;
           }
           if(t === 'instructor_reassign'){
@@ -936,7 +943,10 @@
             }
             const st = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_start) : ov.anchor_start;
             const en = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_end) : ov.anchor_end;
-            addStaff(cover, portalShareStartMins({ start: st }), portalShareEndMins({ end: en }));
+            const stMins = portalShareStartMins({ start: st });
+            const enMins = portalShareEndMins({ end: en });
+            if(!portalShareSpansOverlapViewer(stMins, enMins)) return;
+            addStaff(cover, stMins, enMins);
             const origKey = portalShareCanonStaff(orig);
             if(origKey && origKey !== portalShareCanonStaff(cover) && byStaff[origKey]) delete byStaff[origKey];
           }
