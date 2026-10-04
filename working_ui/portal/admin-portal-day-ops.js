@@ -1915,6 +1915,23 @@
       }
     })();
   }
+  function venueReviewStackHtml(main, sub) {
+    return (
+      '<span class="portal-venue-stack">' +
+      '<span class="portal-venue-stack__main">' +
+      esc(main || '—') +
+      '</span><span class="portal-venue-stack__sub">' +
+      esc(sub || '—') +
+      '</span></span>'
+    );
+  }
+  function venueReviewTimeLabel(raw) {
+    var s = String(raw || '').trim();
+    var m = s.match(/^(\d{1,2}):(\d{2})/);
+    if (!m) return s || '—';
+    var hh = m[1].length === 1 ? '0' + m[1] : m[1];
+    return hh + ':' + m[2];
+  }
   function venueReviewVideoCellHtml(r) {
     var reviewId = String((r && r.id) || '').trim();
     var videoPath = String((r && r.video_storage_path) || '').trim();
@@ -2164,10 +2181,10 @@
       }
       if (!venue.length) {
         venueTbody.innerHTML =
-          '<tr><td colspan="8"><div class="submission-state">No venue reviews yet.</div></td></tr>';
+          '<tr><td colspan="6"><div class="submission-state">No venue reviews yet.</div></td></tr>';
       } else if (!filteredVenue.length) {
         venueTbody.innerHTML =
-          '<tr><td colspan="8"><div class="submission-state">No reviews match these filters.</div></td></tr>';
+          '<tr><td colspan="6"><div class="submission-state">No reviews match these filters.</div></td></tr>';
       } else {
         venueTbody.innerHTML = filteredVenue
           .map(function (r) {
@@ -2175,30 +2192,24 @@
             var kind = venueReviewKindKey(r) || '—';
             return (
               '<tr class="portal-forms-static-row">' +
-              '<td class="cell-wrap col-venue-name">' +
-              esc(cellText(r.venue)) +
+              '<td class="col-venue-when">' +
+              venueReviewStackHtml(cellText(r.review_date), cellText(r.venue)) +
               '</td>' +
-              '<td>' +
-              esc(cellText(r.review_date)) +
+              '<td class="col-venue-kind">' +
+              venueReviewStackHtml(kind, venueReviewTimeLabel(r.review_time)) +
               '</td>' +
-              '<td class="cell-wrap col-submitted-by"><div class="portal-forms-cell-main">' +
-              esc(cellText(r.submitted_by_name)) +
-              '</div></td>' +
-              '<td>' +
-              esc(kind) +
-              '</td>' +
-              '<td>' +
-              esc(cellText(r.review_time)) +
-              '</td>' +
-              '<td>' +
+              '<td class="col-venue-issues">' +
               yesNoPill(r.has_issues) +
               '</td>' +
               '<td class="cell-wrap col-issues-detail"><span class="col-issues-detail__text">' +
               esc(cellText(r.issues_reported)) +
               '</span></td>' +
-              '<td>' +
+              '<td class="col-venue-media">' +
               videoCell +
               '</td>' +
+              '<td class="cell-wrap col-submitted-by"><div class="portal-forms-cell-main">' +
+              esc(cellText(r.submitted_by_name)) +
+              '</div></td>' +
               '</tr>'
             );
           })

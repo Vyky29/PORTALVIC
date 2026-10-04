@@ -86,9 +86,30 @@
   overflow: hidden;
   overflow-wrap: break-word;
 }
+.portal-day-ops-embed .portal-venue-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1.25;
+}
+.portal-day-ops-embed .portal-venue-stack__main {
+  font-weight: 700;
+  color: var(--navy, #16325c);
+  overflow-wrap: anywhere;
+}
+.portal-day-ops-embed .portal-venue-stack__sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  overflow-wrap: anywhere;
+}
+.portal-day-ops-embed .portal-forms-table .col-venue-when { width: 14%; }
+.portal-day-ops-embed .portal-forms-table .col-venue-kind { width: 11%; }
+.portal-day-ops-embed .portal-forms-table .col-venue-issues { width: 8%; white-space: nowrap; }
 .portal-day-ops-embed .portal-forms-table .col-venue-media {
-  width: 36%;
-  min-width: 260px;
+  width: 34%;
+  min-width: 180px;
 }
 .portal-day-ops-embed .portal-venue-media-btn {
   min-width: 96px;
