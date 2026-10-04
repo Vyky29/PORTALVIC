@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-04-v241",
+  "version": "2026-10-04-v242",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -402,6 +402,33 @@
           ],
           "tips": [
             "SwimFarm uses the same opening and closing rows as the other venues."
+          ]
+        },
+        {
+          "id": "venue_issue_who_gets_it",
+          "title": "Who gets a venue issue",
+          "summary": "SwimFarm issues go to the pool owner on WhatsApp and to the admin bell. Hub room stays with admin.",
+          "where": "Staff app → Venue review. Admin bell and Venue review.",
+          "keywords": [
+            "pilar",
+            "swimfarm",
+            "piscina",
+            "hub room",
+            "hubroom",
+            "issues",
+            "whatsapp",
+            "opening",
+            "closing"
+          ],
+          "steps": [
+            "Staff pick the venue. SwimFarm is the pool. Hub room is the Thursday hub check.",
+            "If Issues is Yes and there is a note, the admin bell gets the alert.",
+            "SwimFarm also sends WhatsApp to the pool owner: the message first, then the photos and video. If opening and closing both have issues and neither has been sent, they go in one message.",
+            "Hub room, Acton, Northolt and Westway do not message the pool owner. They stay on the admin bell and the Venue review list."
+          ],
+          "tips": [
+            "A check with Issues No does not message anyone. It still shows on the Venue review list.",
+            "Thursday Hub room open and close is admin only, even when Roberto files it."
           ]
         },
         {

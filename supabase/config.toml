@@ -770,3 +770,7 @@ verify_jwt = false
 # Office Operator phase 1 (admin JWT checked inside; read + confirm PIN).
 [functions.portal-admin-office-operator]
 verify_jwt = false
+
+# Venue issue notify: staff JWT or webhook secret checked inside. Pool WhatsApp + admin push.
+[functions.portal-venue-review-issue-notify]
+verify_jwt = false

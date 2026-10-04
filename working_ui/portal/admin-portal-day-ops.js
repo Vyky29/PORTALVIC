@@ -1800,6 +1800,12 @@
       return day;
     }
   }
+  function venueNotifyLane(row) {
+    var v = String((row && row.venue) || '').toLowerCase();
+    if (v.indexOf('hub') >= 0) return 'hub';
+    if (v.indexOf('swimfarm') >= 0 || v.indexOf('swim farm') >= 0 || v.indexOf('piscina') >= 0) return 'pool';
+    return 'other';
+  }
   function venueReviewsSameVisit(row) {
     var day = venueReviewIso(row);
     var venue = String((row && row.venue) || '').trim().toLowerCase();
@@ -1914,14 +1920,14 @@
     msg.textContent = '';
     dl.hidden = false;
     box.hidden = false;
-    var text = venueOwnerMessage(row);
+    var text = venueNotifyLane(row) === 'pool' ? venueOwnerMessage(row) : '';
     var sendItems = text ? venueVisitMediaItems(row) : [];
     if (text) {
       var bothSides = sendItems.some(function (item) { return item.side === 'Opening'; }) &&
         sendItems.some(function (item) { return item.side === 'Closing'; });
       note.textContent = bothSides
-        ? 'Preview for Pilar at SwimFarm. The message goes first, then all the opening and closing photos and video. Not sent. The group is not created yet.'
-        : 'Preview for Pilar at SwimFarm. The message goes first, then the photos and video. Not sent. The group is not created yet.';
+        ? 'SwimFarm issues: Pilar gets this message first, then all the opening and closing photos and video. Admin gets the alert too.'
+        : 'SwimFarm issues: Pilar gets this message first, then the photos and video. Admin gets the alert too.';
       msg.hidden = false;
       msg.textContent = text;
       dl.hidden = true;
@@ -1943,7 +1949,16 @@
       void fillVenueViewerMedia(sendItems, gallery, null, null);
       return;
     }
-    note.textContent = 'No issues on this visit, so nothing is sent to Pilar.';
+    var lane = venueNotifyLane(row);
+    if (lane === 'hub') {
+      note.textContent = venueIssueIsYes(row && row.has_issues)
+        ? 'Hub room stays with admin. Nothing is sent to Pilar.'
+        : 'No issues on this Hub room check. Nothing is sent to Pilar.';
+    } else if (venueIssueIsYes(row && row.has_issues)) {
+      note.textContent = 'This venue stays with admin. Nothing is sent to Pilar.';
+    } else {
+      note.textContent = 'No issues on this visit, so nothing is sent to Pilar.';
+    }
     stage.innerHTML = '<p style="margin:0">Opening...</p>';
     void fillVenueViewerMedia([{ path: path, kind: kind, label: '' }], null, stage, dl);
   }

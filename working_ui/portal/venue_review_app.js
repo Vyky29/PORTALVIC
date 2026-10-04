@@ -1010,8 +1010,21 @@ async function uploadVenuePhotos(supabase, submission, ctx, photoFiles) {
 }
 
 async function submitVenueReviewToSupabase(supabase, row) {
-  const { error } = await supabase.from("venue_reviews").insert([row]);
+  const { data, error } = await supabase.from("venue_reviews").insert([row]).select("id").single();
   if (error) throw error;
+  return data && data.id ? String(data.id) : "";
+}
+
+async function notifyVenueReviewSaved(supabase, reviewId) {
+  if (!reviewId || !supabase || !supabase.functions || typeof supabase.functions.invoke !== "function") return;
+  try {
+    const res = await supabase.functions.invoke("portal-venue-review-issue-notify", {
+      body: { review_id: reviewId }
+    });
+    if (res && res.error) console.warn("[venue-review] notify", res.error);
+  } catch (err) {
+    console.warn("[venue-review] notify", err);
+  }
 }
 
 // --- Front-end
@@ -1026,6 +1039,18 @@ const PLACEHOLDER_NO =
 
 const HINT_YES =
   "Required: describe issues, damages or incidents. Admin is notified when you submit.";
+
+function issueHintForVenue() {
+  const venueSel = document.getElementById("venueSelect");
+  const low = clean(venueSel && venueSel.value).toLowerCase();
+  if (low.indexOf("hub") >= 0) {
+    return "Required: describe the issue. Hub room goes to admin only.";
+  }
+  if (low.indexOf("swimfarm") >= 0 || low.indexOf("swim farm") >= 0) {
+    return "Required: describe the issue. Admin is notified, and the pool owner gets the message, then the photos and video.";
+  }
+  return HINT_YES;
+}
 const HINT_NO =
   "Optional: add anything you want on record. You can leave this empty.";
 
@@ -1231,6 +1256,7 @@ function initVenueReviewPage() {
   if (venueSel) {
     venueSel.addEventListener("change", function () {
       syncVenueMediaPanels();
+      if (getIssueMode() === "yes" && venueNotesHint) venueNotesHint.textContent = issueHintForVenue();
       if (walkthrough && typeof walkthrough.updateCopy === "function") walkthrough.updateCopy();
     });
   }
@@ -1282,7 +1308,7 @@ function initVenueReviewPage() {
       venueNotesPanel.setAttribute("aria-hidden", "false");
     }
     if (venueNotesHint) {
-      venueNotesHint.textContent = HINT_YES;
+      venueNotesHint.textContent = issueHintForVenue();
       venueNotesHint.hidden = false;
     }
     try {
@@ -1418,7 +1444,8 @@ function initVenueReviewPage() {
         );
       }
       const row = buildVenueReviewRow(ctxNow, formState, submission);
-      await submitVenueReviewToSupabase(submission.supabase, row);
+      const reviewId = await submitVenueReviewToSupabase(submission.supabase, row);
+      await notifyVenueReviewSaved(submission.supabase, reviewId);
       successSubmitted = true;
       try {
         walkthrough.stopAll();
