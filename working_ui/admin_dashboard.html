@@ -185,7 +185,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-presence-room" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-topbar-help" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -290,6 +290,7 @@
           <span class="admin-search-ico" aria-hidden="true">⌕</span>
           <input type="search" id="globalSearch" placeholder="Search the portal and press Enter" autocomplete="off" aria-label="Search the portal" aria-controls="adminSearchResults" aria-expanded="false" />
         </div>
+        <a class="admin-topbar-help" href="/admin_office_help.html">Help</a>
         <div id="portalLivePresenceBar" class="portal-live-presence admin-topbar-presence" hidden aria-live="polite"></div>
         <div class="admin-topbar-meta">
           <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
@@ -303,13 +304,12 @@
             <span class="admin-icon-btn__svg" id="btnComunicacionesIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="commsBadge" data-comms-unread>0</span>
           </button>
+          <span class="admin-topbar-split" aria-hidden="true"></span>
           <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--a" id="btnAnnouncements" aria-label="Announcements" title="Announcements">
             <span class="admin-icon-btn__svg" id="btnAnnouncementsIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="announceBadge">0</span>
           </button>
-          <span class="admin-topbar-split" aria-hidden="true"></span>
           <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--p admin-api-chip" id="btnFamilyMsgs" aria-label="Parents API" title="Parents API">
-            <span class="admin-api-chip__mark" aria-hidden="true">P</span>
             <span class="admin-api-chip__name">
               <span class="admin-api-chip__who">Parents</span>
               <span class="admin-api-chip__api">API</span>
@@ -317,7 +317,6 @@
             <span class="admin-badge is-empty" id="familyMsgBadge">0</span>
           </button>
           <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--s admin-api-chip" id="btnStaffWa" aria-label="Staff API" title="Staff API">
-            <span class="admin-api-chip__mark" aria-hidden="true">S</span>
             <span class="admin-api-chip__name">
               <span class="admin-api-chip__who">Staff</span>
               <span class="admin-api-chip__api">API</span>
@@ -32651,13 +32650,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       return (
         '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub ops-hub--flat">' +
-        '<header class="ops-hub__intro">' +
-        '<div class="ops-hub__intro-row">' +
-        '<h1 class="ops-hub__intro-title">Operations Hub</h1>' +
-        '<button type="button" class="admin-page-info" data-admin-page-info="1" aria-label="About Operations Hub" title="About this page"><span aria-hidden="true">i</span></button>' +
-        '<a class="ops-hub__help-link" href="/admin_office_help.html">Office help</a>' +
-        '</div>' +
-        '</header>' +
         '<div class="ops-hub-flat">' +
         boards +
         '<aside class="ops-hub-flat__cal" aria-label="Calendar">' + opsHubGlanceHtml() + '</aside>' +

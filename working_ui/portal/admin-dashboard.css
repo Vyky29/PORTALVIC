@@ -1034,7 +1034,31 @@
     }
     .admin-menu-mob{display:none;width:40px;height:40px;border:1px solid var(--btnSecBorder);border-radius:10px;background:var(--btnSecBg);cursor:pointer;align-items:center;justify-content:center;color:var(--ink);transition:background .15s,border-color .15s}
     .admin-menu-mob:hover,.admin-menu-mob:focus-visible{background:#f1f5f9;border-color:#8eb4d0;outline:none}
-    .admin-search-wrap{flex:1;max-width:420px;min-width:0;position:relative}
+    .admin-search-wrap{flex:1 1 280px;max-width:420px;min-width:220px;position:relative}
+    .admin-topbar-help{
+      flex:0 0 auto;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:36px;
+      padding:0 12px;
+      margin-left:-4px;
+      border-radius:10px;
+      border:1px solid #d7e3ec;
+      background:#fff;
+      color:#173247;
+      font-size:13px;
+      font-weight:700;
+      line-height:1;
+      text-decoration:none;
+      white-space:nowrap;
+    }
+    .admin-topbar-help:hover,
+    .admin-topbar-help:focus-visible{
+      border-color:#9fc6db;
+      background:#eaf5fb;
+      outline:none;
+    }
     .admin-search-wrap input{
       width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 14px 9px 38px;font:inherit;font-size:13px;background:#f8fafc;
     }
@@ -1289,17 +1313,30 @@
     .admin-api-chip.admin-icon-btn--s:hover,
     .admin-api-chip.admin-icon-btn--s:focus-visible{
       width:auto;
-      height:auto;
-      min-height:40px;
-      max-width:148px;
-      padding:4px 12px 4px 4px;
+      height:32px;
+      min-height:32px;
+      max-width:none;
+      padding:2px 8px;
       border-radius:9999px;
-      gap:8px;
-      background:var(--btnSecBg);
-      border-color:var(--btnSecBorder);
-      color:var(--ink);
+      gap:0;
+      color:#fff;
       box-shadow:none;
     }
+    .admin-api-chip.admin-icon-btn--p,
+    .admin-api-chip.admin-icon-btn--p:hover,
+    .admin-api-chip.admin-icon-btn--p:focus-visible{
+      background:#0b5c3b;
+      border-color:#084830;
+    }
+    .admin-api-chip.admin-icon-btn--s,
+    .admin-api-chip.admin-icon-btn--s:hover,
+    .admin-api-chip.admin-icon-btn--s:focus-visible{
+      background:#ea580c;
+      border-color:#c2410c;
+    }
+    .admin-api-chip__mark{display:none}
+    .admin-api-chip .admin-api-chip__who,
+    .admin-api-chip .admin-api-chip__api{color:#fff}
     .admin-api-chip.admin-icon-btn--p.is-current,
     .admin-api-chip.admin-icon-btn--p[aria-current="page"],
     .admin-api-chip.admin-icon-btn--s.is-current,
@@ -1336,18 +1373,18 @@
       text-align:left;
     }
     .admin-api-chip__who{
-      font-size:12px;
+      font-size:10px;
       font-weight:700;
-      letter-spacing:.04em;
+      letter-spacing:.03em;
       text-transform:uppercase;
-      color:var(--ink);
+      color:#fff;
       white-space:nowrap;
     }
     .admin-api-chip__api{
-      font-size:9px;
+      font-size:8px;
       font-weight:700;
-      letter-spacing:.08em;
-      color:#64748b;
+      letter-spacing:.06em;
+      color:rgba(255,255,255,.88);
       white-space:nowrap;
     }
     .admin-portal-switch{display:flex;align-items:center;gap:4px;flex-shrink:0;padding:2px;border-radius:12px;border:1px solid var(--line);background:#f8fafc}
@@ -5701,6 +5738,12 @@
         max-width:none;
         min-width:0;
       }
+      .admin-topbar-help{
+        order:2;
+        height:32px;
+        padding:0 10px;
+        margin-left:0;
+      }
       .admin-topbar .admin-search-wrap input{
         padding:8px 10px 8px 32px;
         font-size:13px;
@@ -5737,26 +5780,21 @@
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--s,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--p:hover,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--s:hover{
-        flex:1 1 0;
+        flex:0 0 auto;
         width:auto;
         max-width:none;
-        min-width:0;
-        height:36px;
-        min-height:36px;
-        padding:2px 6px 2px 2px;
-        gap:4px;
-      }
-      .admin-topbar-meta .admin-api-chip__mark{
-        width:26px;
-        height:26px;
-        flex-basis:26px;
-        font-size:12px;
+        min-width:max-content;
+        height:30px;
+        min-height:30px;
+        padding:1px 7px;
+        gap:0;
       }
       .admin-topbar-meta .admin-api-chip__who,
       .admin-topbar-meta .admin-api-chip__api{
-        overflow:hidden;
-        text-overflow:ellipsis;
-        max-width:100%;
+        overflow:visible;
+        text-overflow:clip;
+        max-width:none;
+        color:#fff;
       }
       .admin-topbar-meta .admin-api-chip__who{font-size:9px;letter-spacing:0}
       .admin-topbar-meta .admin-api-chip__api{font-size:8px;letter-spacing:0}
