@@ -114,7 +114,7 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20261001-old-section" />
 <script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
 <script src="/portal/portal_admin_topbar.js?v=20261002-photo-only"></script>
-  <script src="/portal/portal_admin_surface_map.js?v=20260704-login-map-fix"></script>
+  <script src="/portal/portal_admin_surface_map.js?v=20261004-login-hub"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260911-teleport-iso" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260920-no-live-map"></script>
   <script src="/portal/admin-portal-parent-ghost.js?v=20261001-clients-families"></script>
@@ -40890,17 +40890,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var hash = hashRaw;
       if(hashRaw.indexOf('view=') === 0) hash = hashRaw.slice(5).trim();
       var godModeAdmin = params.get('portalGodAdmin') === '1' || params.get('portalGodAdmin') === 'true';
-      var initial = 'dashboard';
-      if(qp === 'operations') qp = 'dashboard';
-      if(hash === 'operations') hash = 'dashboard';
-      if(qp === 'novo_dashboard') qp = 'dashboard';
+      var initial = 'nav_hub';
+      if(qp === 'operations' || qp === 'dashboard') qp = 'nav_hub';
+      if(hash === 'operations' || hash === 'dashboard') hash = 'nav_hub';
+      if(qp === 'novo_dashboard') qp = 'nav_hub';
       if(qp === 'novo_schedule') qp = 'c4k_services';
       if(qp === 'novo_orders') qp = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
       if(qp === 'bookings') qp = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
       if(qp === 'communications') qp = 'comms_ops';
       if(qp === 'c4k_home') qp = 'c4k_services';
       if(qp === 'c4k_service_register') qp = 'c4k_services';
-      if(hash === 'novo_dashboard') hash = 'dashboard';
+      if(hash === 'novo_dashboard') hash = 'nav_hub';
       if(hash === 'novo_schedule') hash = 'c4k_services';
       if(hash === 'novo_orders') hash = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
       if(hash === 'bookings') hash = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
@@ -40916,7 +40916,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(qp && (navIdIsRoutableView(qp) || qp === 'reports')) initial = qp;
       else if(hash && (navIdIsRoutableView(hash) || hash === 'reports')) initial = hash;
       if(initial === 'staff_live_map' || qp === 'staff_live_map' || hash === 'staff_live_map') initial = 'nav_hub';
-      if(qp === 'ceo' || hash === 'ceo') initial = 'dashboard';
+      if(qp === 'ceo' || hash === 'ceo') initial = 'nav_hub';
       var pathLower = String(location.pathname || '').toLowerCase();
       if(pathLower.indexOf('/adminportal') >= 0 || pathLower.indexOf('/operations-admin') >= 0){
         initial = 'c4k_sessions';

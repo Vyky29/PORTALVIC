@@ -111,8 +111,8 @@
     var mobile = isMobileLayout();
     var cohort = ceo ? "ceo_exec" : ops ? "ops_admin" : "other_admin";
 
-    var mobileDefaultView = ceo || ops ? "nav_hub" : "dashboard";
-    var desktopDefaultView = ceo ? "nav_hub" : ops ? "operations_admin" : "dashboard";
+    var mobileDefaultView = "nav_hub";
+    var desktopDefaultView = ceo ? "nav_hub" : ops ? "operations_admin" : "nav_hub";
     var mobileBottomNav =
       ceo || ops
         ? ["nav_hub", "dashboard", "operations_admin", "nav_all_menu"]
