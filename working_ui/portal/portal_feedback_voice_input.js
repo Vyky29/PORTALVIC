@@ -886,7 +886,7 @@
  cleanupSessionUi(s);
  if (s.textarea) notifyVoiceTranscriptDone(s.textarea);
  if (s.statusEl) {
- s.statusEl.textContent = "Done - filtering for parent-friendly text…";
+ s.statusEl.textContent = "Done. Read the text before you continue.";
  }
  return;
  }

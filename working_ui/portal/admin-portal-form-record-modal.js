@@ -326,26 +326,29 @@
     );
   }
 
+  function feedbackAnswer(label, value, block) {
+    var text = clean(value);
+    if (!text || text === "-" || text === "\u2014" || /^none$/i.test(text)) return "";
+    return qaRow(label, value, block);
+  }
+
   function feedbackFields(r) {
-    var out =
-      qaRow("Participant", r.client_name) +
-      qaRow("Session date", formatDateOnly(r.session_date)) +
-      qaRow("Service", r.service) +
-      qaRow("Instructor", r.completed_by_name) +
-      qaRow("Attendance", r.attendance) +
-      qaRow("Engagement", r.engagement || r.engagement_rating) +
-      qaRow("Emotions / regulation", r.client_emotions) +
-      qaRow("Independence", r.independence || r.independence_level);
-    if (clean(r.session_narrative)) {
-      out += qaRow("Session narrative (staff)", r.session_narrative, true);
-    }
-    out +=
-      qaRow("Positive feedback", r.positive_feedback, true) +
-      qaRow("Relevant information", r.relevant_information, true) +
-      qaRow("Exceptional challenges", r.exceptional_challenges, true) +
-      qaRow("Incidents", r.incidents, true) +
-      qaRow("Recorded", formatWhen(r.created_at));
-    return out;
+    return (
+      feedbackAnswer("Participant", r.client_name) +
+      feedbackAnswer("Session date", formatDateOnly(r.session_date)) +
+      feedbackAnswer("Service", r.service) +
+      feedbackAnswer("Instructor", r.completed_by_name) +
+      feedbackAnswer("Attendance", r.attendance) +
+      feedbackAnswer("Engagement", r.engagement || r.engagement_rating) +
+      feedbackAnswer("Emotions / regulation", r.client_emotions) +
+      feedbackAnswer("Independence", r.independence || r.independence_level) +
+      feedbackAnswer("Session narrative (staff)", r.session_narrative, true) +
+      feedbackAnswer("Positive feedback", r.positive_feedback, true) +
+      feedbackAnswer("Relevant information", r.relevant_information, true) +
+      feedbackAnswer("Exceptional challenges", r.exceptional_challenges, true) +
+      feedbackAnswer("Incidents", r.incidents, true) +
+      feedbackAnswer("Recorded", formatWhen(r.created_at))
+    );
   }
 
   function buildModalHtml(kind, row) {
@@ -499,12 +502,6 @@
       if (fu && typeof fu.mountIntoModal === "function") {
         void fu.mountIntoModal(backdropEl, row);
       }
-    }
-    if (kind === "feedback" && !clean(row.session_narrative)) {
-      injectRecoveredNarrativeAudit(row);
-    }
-    if (kind === "feedback") {
-      injectNarrativeAuditTimeline(row);
     }
   }
 

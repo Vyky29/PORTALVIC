@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v245",
+  "version": "2026-10-05-v246",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2401,8 +2401,8 @@
           ],
           "tips": [
             "The number on the bell is how many alerts are in the popup.",
-            "The bell keeps a message sent to Pilar when SwimFarm has issues, venue issues that stay with admin, feedback notes from the last 7 days, incidents, absents still to decide, one-day cancellations still to decide, service cancel refunds not paid back, unpaid expenses, wellbeing still open, same-day disruptions, late incident approvals, general-info updates, and a makeup only when that session is today or later.",
-            "On a venue row, View opens the review and Close removes it from your bell only. Another admin still has it until they Close it. Unpaid expenses, cancellations, and refunds stay until that flow is finished. Tap Feedback notes or an incident to open that record. A makeup whose session day has passed leaves the bell. A feedback note leaves the bell after you open it."
+            "The bell keeps a message sent to Pilar when SwimFarm has issues, venue issues that stay with admin, Notes from the last 7 days (Relevant information only), incidents, absents still to decide, one-day cancellations still to decide, service cancel refunds not paid back, unpaid expenses, wellbeing still open, same-day disruptions, late incident approvals, general-info updates, and a makeup only when that session is today or later.",
+            "On a venue row, View opens the review and Close removes it from your bell only. Another admin still has it until they Close it. Unpaid expenses, cancellations, and refunds stay until that flow is finished. A Notes row is only Relevant information. The session narrative, Positive, and empty scores do not open the bell. Tap a Notes row or an incident to open that record. A makeup whose session day has passed leaves the bell. A note leaves the bell after you open it."
           ],
           "es": {
             "title": "La campana es un popup",
@@ -2416,8 +2416,53 @@
             ],
             "tips": [
               "El numero de la campana es cuantas alertas hay en el popup.",
-              "La campana guarda el mensaje enviado a Pilar cuando SwimFarm tiene issues, los issues de venue que se quedan en admin, las notas de feedback de los ultimos 7 dias, incidentes, faltas por decidir, cancelaciones de un dia por decidir, reembolsos de cancelar servicio que no se han devuelto, gastos sin pagar, wellbeing abierto, disruptions del dia, aprobaciones de incidentes tarde, cambios de general info, y un makeup solo si esa sesion es hoy o despues.",
-              "En un venue, View abre el parte y Close lo quita solo de tu campana. El otro admin lo sigue viendo hasta que el pulse Close. Los gastos sin pagar, las cancelaciones y los refunds se quedan hasta que el flujo termine. Pulsa Feedback notes o un incidente para abrir ese registro. Un makeup de un dia que ya paso sale de la campana. Una nota de feedback sale de la campana despues de abrirla."
+              "La campana guarda el mensaje enviado a Pilar cuando SwimFarm tiene issues, los issues de venue que se quedan en admin, las Notes de los ultimos 7 dias (solo Relevant information), incidentes, faltas por decidir, cancelaciones de un dia por decidir, reembolsos de cancelar servicio que no se han devuelto, gastos sin pagar, wellbeing abierto, disruptions del dia, aprobaciones de incidentes tarde, cambios de general info, y un makeup solo si esa sesion es hoy o despues.",
+              "En un venue, View abre el parte y Close lo quita solo de tu campana. El otro admin lo sigue viendo hasta que el pulse Close. Los gastos sin pagar, las cancelaciones y los refunds se quedan hasta que el flujo termine. Una fila Notes es solo Relevant information. La narrativa de la sesion, Positive y las puntuaciones vacias no abren la campana. Pulsa Notes o un incidente para abrir ese registro. Un makeup de un dia que ya paso sale de la campana. Una nota sale de la campana despues de abrirla."
+            ]
+          }
+        },
+        {
+          "id": "staff_feedback_voice_vs_admin_ai",
+          "title": "Staff feedback voice is not the family rewrite",
+          "summary": "Staff type or dictate the session narrative. The office rewrites it for a family or for the Day Centre weekly note only when you ask.",
+          "where": "Staff app, session feedback. Admin, when you prepare a family message or a Day Centre weekly note.",
+          "keywords": [
+            "feedback",
+            "voice",
+            "mic",
+            "transcriber",
+            "transcript",
+            "notes",
+            "relevant information",
+            "ai",
+            "filter",
+            "day centre",
+            "weekly note",
+            "narrativa"
+          ],
+          "steps": [
+            "Staff choose Voice or Written and fill the session narrative. Notes is a separate box. That box is Relevant information.",
+            "Voice turns speech into text and leaves those words in the narrative. Staff read them and Submit.",
+            "The bell lists a feedback only when Notes / Relevant information has text from the last 7 days.",
+            "A family message, or a Day Centre weekly note, is prepared in admin. That is the only place the rewrite runs."
+          ],
+          "tips": [
+            "Spanish or Italian on the mic is translated into English, so it is not word for word. English stays a transcript.",
+            "The session narrative is not a bell alert. Empty Engagement or Emotions are not an alert."
+          ],
+          "es": {
+            "title": "La voz del feedback no es el texto para la familia",
+            "summary": "El staff escribe o dicta la narrativa. La oficina la reescribe para una familia o para la nota semanal del Day Centre solo cuando tu lo pides.",
+            "where": "App de staff, session feedback. Admin, cuando preparas un mensaje a una familia o la nota semanal del Day Centre.",
+            "steps": [
+              "El staff elige Voice o Written y rellena la narrativa. Notes es otra caja. Esa caja es Relevant information.",
+              "La voz pasa el habla a texto y deja esas palabras en la narrativa. El staff las lee y pulsa Submit.",
+              "La campana lista un feedback solo si Notes / Relevant information tiene texto en los ultimos 7 dias.",
+              "Un mensaje a una familia, o la nota semanal del Day Centre, se prepara en admin. Ahi es el unico sitio donde corre la reescritura."
+            ],
+            "tips": [
+              "Espanol o italiano en el micro se traduce a ingles, asi que no es palabra por palabra. Ingles se queda en transcripcion.",
+              "La narrativa de la sesion no es una alerta. Engagement o Emotions vacios tampoco."
             ]
           }
         },

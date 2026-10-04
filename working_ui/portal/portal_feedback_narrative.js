@@ -788,6 +788,12 @@
 
   function onVoiceTranscriptDone() {
     state.inputMode = "voice";
+    if (state.adminFilters) {
+      syncModeNote();
+      syncSubmitGate();
+      setStatus("Transcribed. Read it, then Submit. The office prepares the family summary.");
+      return;
+    }
     state.voiceAutoFilterPending = true;
     syncModeNote();
     syncValidateButton();
