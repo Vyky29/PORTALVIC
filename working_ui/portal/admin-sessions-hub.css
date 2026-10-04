@@ -2755,3 +2755,87 @@
         font-size: 10px;
       }
     }
+
+.ash-day-card__wd-initial,
+.ash-day-card__num{display:none}
+
+/* Upright phone: seven days on one line. Initial, then the date number. Feedback adds 12/12. */
+@media (max-width:900px) and (orientation:portrait){
+  .ash-week-block,
+  .ash-feedback-week{
+    overflow-x:hidden !important;
+    max-width:100%;
+  }
+  .ash-day-row--feedback,
+  .ash-day-row--week,
+  body.admin-touch-compact .ash-day-row--feedback,
+  body.admin-touch-compact .ash-day-row--week{
+    grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    gap:4px;
+  }
+  .ash-day-card--week,
+  .ash-day-card--feedback,
+  body.admin-touch-compact .ash-day-card--week,
+  body.admin-touch-compact .ash-day-card--feedback{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:1px;
+    min-width:0;
+    max-width:100%;
+    padding:4px 1px 5px;
+    overflow:hidden;
+  }
+  .ash-day-card__wd-full,
+  .ash-day-card__wd-short,
+  .ash-day-card__dt,
+  .ash-day-card__bar,
+  .ash-day-card__sessions,
+  .ash-day-card__flags,
+  .ash-day-card__count,
+  body.admin-touch-compact .ash-day-card--feedback .ash-day-card__dt,
+  body.admin-touch-compact .ash-day-card--day-picker .ash-day-card__dt{
+    display:none !important;
+  }
+  .ash-day-card__wd{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .ash-day-card__wd-initial,
+  .ash-day-card__num{
+    display:block !important;
+    text-align:center;
+    font-weight:800;
+    line-height:1.05;
+    letter-spacing:0;
+  }
+  .ash-day-card__wd-initial{font-size:11px}
+  .ash-day-card__num{font-size:13px}
+  .ash-day-card--feedback:not(.ash-day-card--day-picker) .ash-day-card__count{
+    display:block !important;
+    margin:0;
+    padding:0;
+    font-size:9px;
+    font-weight:800;
+    line-height:1.05;
+    text-align:center;
+  }
+  .ash-day-card--feedback:not(.ash-day-card--day-picker) .ash-day-card__count-full{
+    display:block !important;
+  }
+  .ash-day-card--feedback:not(.ash-day-card--day-picker) .ash-day-card__count-short{
+    display:none !important;
+  }
+  .ash-day-card__top{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:0;
+    margin:0;
+  }
+}

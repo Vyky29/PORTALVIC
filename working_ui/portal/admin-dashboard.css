@@ -6237,3 +6237,20 @@
         white-space:nowrap;
       }
     }
+
+    /* Upright phone dashboard fills the screen under the top bar. */
+    @media (max-width:900px) and (orientation:portrait){
+      body.admin-touch-compact:has(#workspace .ops-hub--flat) .admin-main{
+        display:flex;
+        flex-direction:column;
+        min-height:0;
+        overflow:hidden;
+      }
+      body.admin-touch-compact:has(#workspace .dash-hub--nav-index.ops-hub--flat) .admin-workspace{
+        flex:1 1 auto !important;
+        min-height:0 !important;
+        height:auto !important;
+        overflow:hidden !important;
+        padding:4px !important;
+      }
+    }

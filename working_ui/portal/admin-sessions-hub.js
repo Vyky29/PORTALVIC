@@ -1070,6 +1070,16 @@
     return d.toLocaleDateString("en-GB", { weekday: "short" });
   }
 
+  function weekdayInitialFromIso(iso) {
+    var name = weekdayLongFromIso(iso);
+    return name ? name.charAt(0) : "";
+  }
+
+  function dayOfMonthFromIso(iso) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+    return String(Number(iso.slice(8, 10)));
+  }
+
   function htmlWeekdayLabel(iso, esc) {
     return (
       '<span class="ash-day-card__wd">' +
@@ -1077,7 +1087,12 @@
       esc(weekdayLongFromIso(iso)) +
       '</span><span class="ash-day-card__wd-short" aria-hidden="true">' +
       esc(weekdayShortFromIso(iso)) +
-      "</span></span>"
+      '</span><span class="ash-day-card__wd-initial" aria-hidden="true">' +
+      esc(weekdayInitialFromIso(iso)) +
+      "</span></span>" +
+      '<span class="ash-day-card__num" aria-hidden="true">' +
+      esc(dayOfMonthFromIso(iso)) +
+      "</span>"
     );
   }
 
@@ -15058,10 +15073,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (opts.overviewPicker && !opts.computeOverviewDayStats) {
           ds = { total: 0, done: 0 };
         } else if (hub.mode === "feedback" && !opts.overviewPicker) {
-          var lightN = hub.feedbackCountForDateLight
-            ? hub.feedbackCountForDateLight(iso)
-            : 0;
-          ds = { total: 0, done: lightN, light: true };
+          var ratio = typeof hub.staffingSessionStats === "function" ? hub.staffingSessionStats(iso) : null;
+          if (ratio && ratio.total) {
+            ds = { total: ratio.total, done: ratio.done, light: false };
+          } else {
+            var lightN = hub.feedbackCountForDateLight
+              ? hub.feedbackCountForDateLight(iso)
+              : 0;
+            ds = { total: 0, done: lightN, light: true };
+          }
         } else {
           ds = hub.dayStats(iso);
         }
