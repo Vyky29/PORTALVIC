@@ -21815,6 +21815,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               if(name && paxContactsSurnameLen(name) < paxContactsSurnameLen(out[i].name)) out[i].name = name;
             }
           }
+          /* Adam Memy is the old account of Adam Mahmmoud. Show the real name and the live contact. */
+          if(out[i] && name){
+            try{
+              var idnFold = window.PortalParticipantIdentity;
+              if(idnFold && typeof idnFold.canonicalClientId === 'function' && typeof idnFold.slugify === 'function'){
+                var canonFold = idnFold.canonicalClientId(name);
+                if(canonFold && canonFold === idnFold.canonicalClientId(out[i].name) && idnFold.slugify(name) === canonFold && idnFold.slugify(out[i].name) !== canonFold){
+                  out[i].name = name;
+                  out[i].contactId = cid;
+                  out[i].id = 'pp-' + cid;
+                }
+              }
+            }catch(_foldName){}
+          }
           if(r.on_waiting_list === true && out[i]){
             out[i].onWaitingList = true;
             out[i]._listedWaiting = true;

@@ -730,37 +730,101 @@
       if(parts.length < 2) return '';
       return parts[parts.length - 1].slice(0, 2);
     }
-    /** Today card title: first name. Two surname letters only when that first name is shared. */
+    /** Club-wide card labels when the first name is shared. Adam Memy is Adam Mahmmoud. */
+    var PORTAL_TODAY_SHARED_CARD_LABEL = {
+      adam_mahmmoud: 'Adam Ma',
+      adam_ma: 'Adam Ma',
+      adam_ab: 'Adam Ab',
+      adam_abed: 'Adam Ab',
+      adam_a: 'Adam Ab',
+      adam_p: 'Adam Pi',
+      adam_pi: 'Adam Pi',
+      adam_pilcher: 'Adam Pi',
+      arthur_manners: 'Arthur Ma',
+      arthur_ma: 'Arthur Ma',
+      arthur_morrissey: 'Arthur Mo',
+      arthur_mo: 'Arthur Mo',
+      jack_stratton: 'Jack St',
+      jack_s: 'Jack St',
+      jack_walker: 'Jack Wa',
+      jack_w: 'Jack Wa'
+    };
+    function portalTodayNameCanon(full){
+      var raw = String(full || '').trim();
+      if(!raw) return '';
+      try{
+        var idn = window.PortalParticipantIdentity;
+        if(idn && typeof idn.canonicalClientId === 'function'){
+          return String(idn.canonicalClientId(raw) || '').trim();
+        }
+      }catch(_){}
+      return raw.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    }
+    function portalTodayNameSlug(full){
+      return String(full || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    }
+    /** First names that belong to more than one child in the club, not only on this day. */
+    function portalTodaySharedGivenNames(){
+      var people = Object.create(null);
+      function add(name){
+        var raw = String(name || '').trim();
+        if(!raw || /^no participant/i.test(raw)) return;
+        var given = portalTodayGivenToken(raw);
+        if(!given) return;
+        var canon = portalTodayNameCanon(raw) || portalTodayNameSlug(raw);
+        if(!canon || people[canon]) return;
+        people[canon] = given.toLowerCase();
+      }
+      try{
+        var src = window.STAFF_DASHBOARD_SOURCE;
+        var rows = src && Array.isArray(src.rows) ? src.rows : [];
+        rows.forEach(function(r){ add(r && (r.client_name || r.clientName)); });
+      }catch(_){}
+      try{
+        if(typeof clientNotesById !== 'undefined' && clientNotesById){
+          Object.keys(clientNotesById).forEach(function(id){
+            add(clientNotesById[id] && clientNotesById[id].name);
+          });
+        }
+      }catch(_){}
+      var counts = Object.create(null);
+      Object.keys(people).forEach(function(canon){
+        var g = people[canon];
+        counts[g] = (counts[g] || 0) + 1;
+      });
+      var shared = Object.create(null);
+      Object.keys(counts).forEach(function(g){
+        if(counts[g] > 1) shared[g] = true;
+      });
+      /* These first names are shared even if the roster has not loaded yet. */
+      shared.adam = true;
+      shared.arthur = true;
+      shared.jack = true;
+      return shared;
+    }
+    function portalTodayClubCardLabel(full, shared){
+      var given = portalTodayGivenToken(full);
+      if(!given) return '';
+      var key = given.toLowerCase();
+      if(!shared[key]) return given;
+      var slug = portalTodayNameSlug(full);
+      var canon = portalTodayNameCanon(full);
+      var fixed = PORTAL_TODAY_SHARED_CARD_LABEL[slug] || PORTAL_TODAY_SHARED_CARD_LABEL[canon];
+      if(fixed) return fixed;
+      var tail = portalTodaySurnameTwo(full);
+      return tail ? (given + ' ' + tail) : given;
+    }
+    /** Today card title: first name. Two surname letters when that first name is shared in the club. */
     function portalAssignTodayCardShortNames(items){
       var list = Array.isArray(items) ? items : [];
-      var buckets = Object.create(null);
-      list.forEach(function(it){
-        if(!portalTodayNameShouldShorten(it)) return;
-        var given = portalTodayGivenToken(it.name);
-        if(!given) return;
-        var key = given.toLowerCase();
-        if(!buckets[key]) buckets[key] = [];
-        buckets[key].push(it);
-      });
+      var shared = portalTodaySharedGivenNames();
       list.forEach(function(it){
         if(!it) return;
         if(!portalTodayNameShouldShorten(it)){
           it.portalTodayCardLabel = '';
           return;
         }
-        var full = String(it.name || '').trim();
-        var given = portalTodayGivenToken(full);
-        var group = buckets[given.toLowerCase()] || [];
-        var distinct = Object.create(null);
-        group.forEach(function(other){
-          distinct[String(other.name || '').trim().toLowerCase()] = true;
-        });
-        if(Object.keys(distinct).length > 1){
-          var tail = portalTodaySurnameTwo(full);
-          it.portalTodayCardLabel = tail ? (given + ' ' + tail) : given;
-        } else {
-          it.portalTodayCardLabel = given;
-        }
+        it.portalTodayCardLabel = portalTodayClubCardLabel(String(it.name || '').trim(), shared);
       });
     }
     function portalTodayVisibleName(item){
