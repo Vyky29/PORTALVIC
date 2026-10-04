@@ -5072,21 +5072,24 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
     min-height:0 !important;
     overflow:hidden !important;
     align-content:stretch;
-    gap:4px;
-    grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
-    grid-template-rows:minmax(0,1fr) minmax(0,.34fr) minmax(0,.33fr) minmax(0,.33fr);
+    gap:6px;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-template-rows:minmax(136px,.62fr) minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,.9fr);
     grid-template-areas:
-      "cal cal"
-      "sess fam"
-      "serv fin"
-      "hr pot";
+      "cal cal cal"
+      "sess sess sess"
+      "serv serv serv"
+      "fin fin fam"
+      "hr hr hr"
+      "pot pot pot";
   }
   .ops-hub--flat .dash-hub__panel{
     height:100% !important;
     min-height:0 !important;
     overflow:hidden;
     align-self:stretch;
-    padding:4px !important;
+    padding:5px !important;
+    border-radius:14px;
   }
   .ops-hub--flat .dash-hub__panel-head{display:none !important}
   .ops-hub--flat .ops-hub-flat__grid,
@@ -5099,6 +5102,7 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
     height:100% !important;
     min-height:0 !important;
     align-items:stretch;
+    gap:6px !important;
   }
   .ops-hub--flat .ops-hub-panel--today .ops-hub-flat__grid,
   .ops-hub--flat .ops-hub-panel--services .ops-hub-flat__grid,
@@ -5122,8 +5126,8 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
     flex-direction:column !important;
     justify-content:center;
     align-items:center;
-    gap:2px;
-    padding:3px 2px !important;
+    gap:3px;
+    padding:6px 4px !important;
   }
   .ops-hub--flat .dash-hub__tile-desc{display:none !important}
   .ops-hub--flat .dash-hub__tile-band,
@@ -5144,16 +5148,21 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
     width:16px;
     height:16px;
   }
+  .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band .admin-nav-ico,
+  .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-band .admin-nav-ico svg{
+    width:20px;
+    height:20px;
+  }
   .ops-hub--flat .dash-hub__tile-label,
   .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-label{
     flex:0 1 auto;
     width:100%;
     min-width:0;
     margin:0;
-    padding:0 1px;
-    font-size:9px !important;
+    padding:0 2px;
+    font-size:10px !important;
     font-weight:800;
-    line-height:1.1;
+    line-height:1.15;
     text-align:center;
     white-space:normal !important;
     text-overflow:clip !important;
@@ -5165,7 +5174,7 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
     -webkit-line-clamp:3;
     overflow:hidden;
   }
-  .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-label{font-size:10px !important}
+  .ops-hub--flat .ops-hub-panel--today .dash-hub__tile-label{font-size:12px !important}
   .ops-hub-flat__cal{
     height:100% !important;
     min-height:0 !important;
@@ -5178,7 +5187,10 @@ body:has(#workspace .ops-hub--flat) .dash-hub.ops-hub--flat{
     max-height:none !important;
     display:flex !important;
     flex-direction:column !important;
+    padding:6px 8px 4px !important;
+    gap:2px !important;
   }
+  .ops-hub-flat__cal .ops-hub-cal-glance__month{font-size:15px !important}
   .ops-hub-flat__cal .ops-hub__today--cal-focus .ops-hub__today-item--calendar > .ops-hub-cal-glance__grid{
     display:flex !important;
     flex-direction:column !important;
