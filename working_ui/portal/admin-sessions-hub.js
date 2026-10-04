@@ -4335,6 +4335,17 @@ function rosterRowToSlot(isoDate, wd, r) {
     );
   }
 
+  /** After-school and weekend seats. Day Centre and Bespoke cards stay as they are. */
+  function overviewIsAfterschoolWeekendService(service) {
+    if (isDayCentreService(service) || isBespokeService(service)) return false;
+    return (
+      isAquaticService(service) ||
+      isClimbingService(service) ||
+      isMultiActivityService(service) ||
+      isPhysicalActivityService(service)
+    );
+  }
+
   /** Monday SwimFarm ACAT block \u2013 group feedback covers these roster names (slug keys). */
   var ACAT_MEMBER_SLUGS = { jack_w: true, jack_s: true, kamy: true, kate: true };
 
@@ -12838,6 +12849,39 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return false;
   }
 
+  /**
+   * Admin Cancelled on the original instructor, even when the visible card
+   * was remapped onto the cover. After-school and weekend only.
+   */
+  function overviewAdminCancelForFixedSeat(hub, slot) {
+    if (!hub || !slot || slot.portalCreatedSession) return null;
+    if (!overviewIsAfterschoolWeekendService(slot.service)) return null;
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    var sCid = canonicalClientSlug(slot.client_name);
+    var bounds = dayBoardSlotBounds(slot);
+    var sStart = bounds.start || normTimeShort(slot.time_start || slot.anchor_start);
+    var sVen = clean(slot.venue).toLowerCase();
+    var iso = clean(slot.session_date);
+    if (!sCid || !iso || !sStart) return null;
+    var best = null;
+    for (var i = 0; i < ovs.length; i++) {
+      var ov = ovs[i];
+      if (!overrideIsCancelledType(ov)) continue;
+      if (clean(ov.session_date) !== iso) continue;
+      if (canonicalClientSlug(ov.anchor_client_id) !== sCid) continue;
+      var oVen = clean(ov.anchor_venue).toLowerCase();
+      if (oVen && sVen && oVen !== sVen) continue;
+      if (normTimeShort(ov.anchor_start) !== sStart) continue;
+      if (
+        !best ||
+        (ov.created_at && (!best.created_at || String(ov.created_at) > String(best.created_at)))
+      ) {
+        best = ov;
+      }
+    }
+    return best;
+  }
+
   function overviewSlotBoardIsCancelled(hub, slot, slotOv) {
     if (hubSlotIsFadiDcCancelled(slot)) return true;
     if (overrideIsCancelledType(slotOv) || overrideFeedbackResolution(slotOv) === "cancelled") {
@@ -12859,7 +12903,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     /* Staffing guide only — no feedback matching (that froze Overview on 1000+ rows). */
     var slotOv = hub.overrideForSlot(slot);
     if (slot.__portalShadowingOverride) slotOv = slot.__portalShadowingOverride;
-    var isCancelled = overviewSlotBoardIsCancelled(hub, slot, slotOv);
+    var adminCancelOv = overviewAdminCancelForFixedSeat(hub, slot);
+    var isCancelled = overviewSlotBoardIsCancelled(hub, slot, slotOv) || !!adminCancelOv;
+    var adminCancelledFixed = !!adminCancelOv;
     var isAbsent =
       !isCancelled && overviewSlotBoardIsAbsent(hub, slot, slotOv);
     var isUpdated = !isAbsent && !isCancelled && hubSlotShowsUpdatedChip(slot, slotOv);
@@ -12919,6 +12965,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       fbDone: false,
       isAbsent: isAbsent,
       isCancelled: isCancelled,
+      adminCancelledFixed: adminCancelledFixed,
       slotOv: slotOv,
       isUpdated: isUpdated,
       isShadowing: isShadowing,
@@ -13088,7 +13135,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       chips.push('<span class="override-chip override--instructor">' + esc(moveLab) + "</span>");
     }
     if (st.isCancelled) {
-      chips.push('<span class="override-chip override--cancelled">Cancelled</span>');
+      chips.push(
+        '<span class="override-chip override--cancelled">' +
+          esc(st.adminCancelledFixed ? "Cancelled by admin" : "Cancelled") +
+          "</span>"
+      );
     } else if (st.isAbsent) {
       chips.push('<span class="override-chip override--absent">Absent</span>');
     } else if (st.makeupDisp) {
@@ -13124,7 +13175,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     if (st.boardPlace === "mirror" || (st.isCoverNeeded && st.boardPlace !== "away" && st.boardPlace !== "cover")) {
       chips.push('<span class="override-chip override--cover-needed">COVER NEEDED</span>');
-    } else if (st.boardPlace === "cover" || (st.isRealCover && st.boardPlace === "cover")) {
+    } else if (
+      !st.adminCancelledFixed &&
+      (st.boardPlace === "cover" || (st.isRealCover && st.boardPlace === "cover"))
+    ) {
       chips.push(
         '<span class="override-chip override--instructor">' +
           esc(dayBoardCoverChipLabel(st)) +
@@ -13140,7 +13194,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       } else {
         chips.push('<span class="override-chip override--cover-needed">COVER NEEDED</span>');
       }
-    } else if (st.isInstructorReassign && !st.isCoverNeeded) {
+    } else if (st.isInstructorReassign && !st.isCoverNeeded && !st.adminCancelledFixed) {
       chips.push(
         '<span class="override-chip override--instructor">' +
           esc(dayBoardCoverChipLabel(st) || (st.slotOv ? hubOverrideLabel(st.slotOv) : "Cover")) +
@@ -13172,6 +13226,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Updated") +
           "</span>"
       );
+    }
+    if (
+      slot &&
+      slot.portalCreatedSession &&
+      !st.isCancelled &&
+      !st.isAbsent &&
+      overviewIsAfterschoolWeekendService(slot.service)
+    ) {
+      chips.push('<span class="override-chip override--updated">Added by admin</span>');
     }
     return chips;
   }
@@ -13297,7 +13360,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var timeLabel = rosterTimeDisplay(slot) || clean(slot.time_slot) || "";
     if (st.boardPlace === "mirror" && st.coverFromLabel) {
       timeLabel = (timeLabel ? timeLabel + " · " : "") + "from " + st.coverFromLabel;
-    } else if (st.boardPlace === "cover" && st.coverForLabel) {
+    } else if (st.boardPlace === "cover" && st.coverForLabel && !st.adminCancelledFixed) {
       timeLabel = (timeLabel ? timeLabel + " · " : "") + "covering " + st.coverForLabel;
     }
     var whenHtml = "";
