@@ -711,6 +711,63 @@
       }
       return stripped || s;
     }
+    function portalTodayNameShouldShorten(item){
+      if(!item) return false;
+      var kind = String(item.kind || '').toLowerCase();
+      if(kind === 'closed' || kind === 'home' || kind === 'manager' || kind === 'admin' || kind === 'available') return false;
+      var cid = String(item.clientId || '').trim().toLowerCase();
+      if(cid === 'meeting' || cid === 'training' || cid === 'shadowing') return false;
+      var name = String(item.name || '').trim();
+      if(!name || /^no participant/i.test(name) || name === '—' || name === '-') return false;
+      return true;
+    }
+    function portalTodayGivenToken(full){
+      var parts = String(full || '').trim().split(/\s+/).filter(Boolean);
+      return parts[0] || '';
+    }
+    function portalTodaySurnameTwo(full){
+      var parts = String(full || '').trim().split(/\s+/).filter(Boolean);
+      if(parts.length < 2) return '';
+      return parts[parts.length - 1].slice(0, 2);
+    }
+    /** Today card title: first name. Two surname letters only when that first name is shared. */
+    function portalAssignTodayCardShortNames(items){
+      var list = Array.isArray(items) ? items : [];
+      var buckets = Object.create(null);
+      list.forEach(function(it){
+        if(!portalTodayNameShouldShorten(it)) return;
+        var given = portalTodayGivenToken(it.name);
+        if(!given) return;
+        var key = given.toLowerCase();
+        if(!buckets[key]) buckets[key] = [];
+        buckets[key].push(it);
+      });
+      list.forEach(function(it){
+        if(!it) return;
+        if(!portalTodayNameShouldShorten(it)){
+          it.portalTodayCardLabel = '';
+          return;
+        }
+        var full = String(it.name || '').trim();
+        var given = portalTodayGivenToken(full);
+        var group = buckets[given.toLowerCase()] || [];
+        var distinct = Object.create(null);
+        group.forEach(function(other){
+          distinct[String(other.name || '').trim().toLowerCase()] = true;
+        });
+        if(Object.keys(distinct).length > 1){
+          var tail = portalTodaySurnameTwo(full);
+          it.portalTodayCardLabel = tail ? (given + ' ' + tail) : given;
+        } else {
+          it.portalTodayCardLabel = given;
+        }
+      });
+    }
+    function portalTodayVisibleName(item){
+      var label = item && item.portalTodayCardLabel ? String(item.portalTodayCardLabel).trim() : '';
+      return label || String(item && item.name || '');
+    }
+    try{ window.portalAssignTodayCardShortNames = portalAssignTodayCardShortNames; }catch(_){}
     function portalTodayClientNotesForSession(s){
       const cid = String(s && s.clientId || '').trim();
       const low = cid.toLowerCase();
@@ -2246,7 +2303,7 @@
     /** Combined card: participant name on the far left, then a time / note mini-table
      *  (e.g. Emanuel — 11 to 12 Day Centre / 12 to 1 Big Pool). One session for feedback. */
     function todaySessionSegmentedCardInnerHtml(item){
-      const nameCore = `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
+      const nameCore = `<span class="session-meta-name">${escapeHtml(portalTodayVisibleName(item))}</span>`;
       const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
       const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);
       const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
@@ -2268,7 +2325,7 @@
         + `</div>`;
     }
     /** Face on the Today card. Special cards always stack it above the name.
-     *  Normal cards stack it above when the day has 4 or fewer cards; otherwise it stays left of the name. */
+     *  Normal cards stack it above when the day has 6 or fewer cards; otherwise it stays left of the name. */
     function todaySessionNamePhotoHtml(item){
       if(!item) return '';
       const kind = String(item.kind || '').toLowerCase();
@@ -2319,7 +2376,7 @@
         ? '<span class="session-meta-name">Closed</span>'
         : (item.kind === 'home'
           ? `<span class="session-meta-name session-meta-name--home"><span>${escapeHtml(item.name)}</span></span>`
-          : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`);
+          : `<span class="session-meta-name">${escapeHtml(portalTodayVisibleName(item))}</span>`);
       const supportSub = String(item.portalTwoToOneSupportLabel || '').trim();
       const dcBlock = portalDcSupportBlockHtml(item);
       const supportLine = !dcBlock && supportSub

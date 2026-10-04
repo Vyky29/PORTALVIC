@@ -1177,6 +1177,7 @@
       grid.classList.remove('today-grid--day-off');
       applyTodayGridSizing(grid, count);
       grid.setAttribute('data-today-cards-sig', todaySig || '');
+      if(typeof portalAssignTodayCardShortNames === 'function') portalAssignTodayCardShortNames(list);
       const rowsWrap = document.createElement('div');
       rowsWrap.className = 'today-grid-rows';
       rowsWrap.setAttribute('role', 'list');

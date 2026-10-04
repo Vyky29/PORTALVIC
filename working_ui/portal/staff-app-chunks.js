@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-    var VER = "20261004-photo-six";
+    var VER = "20261004-short-name";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260928-patience-tue",
