@@ -32573,8 +32573,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(id === 'formal'){
         return [
-          { id:'staffhr', label:'Workers' },
-          'roster_spreadsheets',
+          { id:'staffhr', label:'Worker Info' },
+          { id:'roster_spreadsheets', label:'Workers Timetable' },
           'session_disruptions'
         ];
       }
@@ -32582,9 +32582,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return [{ id:'interviews', label:'Interviews' }, 'onboarding'];
       }
       return [
-        { id:'c4k_sessions', label:'Overview' },
+        { id:'c4k_sessions', label:'Sessions Overview' },
         'scheduling',
-        { id:'sessions_register', label:'Feedbacks' }
+        { id:'sessions_register', label:'Session Feedback' }
       ];
     }
     function opsHubPhoneCatAccordion(){
