@@ -4974,9 +4974,11 @@ function rosterRowToSlot(isoDate, wd, r) {
     var val = clean(cfg.value);
     var opts = cfg.options || [];
     var ph = cfg.placeholder || "All " + String(label || "").toLowerCase() + "s";
+    var shownText = ph;
     var html =
       '<label class="ash-filter-label">' +
       esc(label) +
+      '<span class="ash-filter-pick">' +
       '<select id="' +
       id +
       '" class="ash-input ash-input--filter-select" aria-label="' +
@@ -5004,6 +5006,7 @@ function rosterRowToSlot(isoDate, wd, r) {
           selected = true;
         }
       }
+      if (selected) shownText = n;
       html +=
         '<option value="' +
         esc(n) +
@@ -5015,11 +5018,133 @@ function rosterRowToSlot(isoDate, wd, r) {
     }
     if (val && !seen[String(val).toLowerCase()]) {
       /* Keep a stale filter visible until cleared. */
+      shownText = val;
       html +=
         '<option value="' + esc(val) + '" selected>' + esc(val) + "</option>";
     }
-    html += "</select></label>";
+    html +=
+      "</select>" +
+      '<button type="button" class="ash-filter-pick__btn" data-ash-filter-sheet aria-haspopup="dialog" aria-label="' +
+      esc(label) +
+      '">' +
+      esc(shownText) +
+      "</button></span></label>";
     return html;
+  }
+
+  var ashFilterSheetEl = null;
+
+  function ashPhoneFilterViewport() {
+    try {
+      return !!(
+        window.matchMedia("(max-width: 900px) and (orientation: portrait)").matches ||
+        window.matchMedia("(orientation: landscape) and (max-height: 540px)").matches
+      );
+    } catch (_mq) {
+      return false;
+    }
+  }
+
+  function closeAshPhoneFilterSheet() {
+    if (ashFilterSheetEl && ashFilterSheetEl.parentNode) {
+      ashFilterSheetEl.parentNode.removeChild(ashFilterSheetEl);
+    }
+    ashFilterSheetEl = null;
+    if (document.documentElement) {
+      document.documentElement.classList.remove("ash-filter-sheet-open");
+    }
+  }
+
+  function syncAshFilterPickButton(selectEl) {
+    if (!selectEl || !selectEl.parentNode) return;
+    var btn = selectEl.parentNode.querySelector(".ash-filter-pick__btn");
+    if (!btn) return;
+    var opt = selectEl.options && selectEl.selectedIndex >= 0 ? selectEl.options[selectEl.selectedIndex] : null;
+    btn.textContent = (opt && (opt.textContent || opt.value)) || "";
+  }
+
+  /** Phone only: long filter lists open in a screen popup, not the native menu behind the cards. */
+  function openAshPhoneFilterSheet(selectEl) {
+    if (!selectEl || !ashPhoneFilterViewport()) return;
+    closeAshPhoneFilterSheet();
+    var label = clean(selectEl.getAttribute("aria-label")) || "Filter";
+    var current = clean(selectEl.value);
+    var overlay = document.createElement("div");
+    overlay.className = "ash-filter-sheet";
+    overlay.setAttribute("role", "presentation");
+    var panel = document.createElement("div");
+    panel.className = "ash-filter-sheet__panel";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.setAttribute("aria-label", label);
+    var head = document.createElement("div");
+    head.className = "ash-filter-sheet__head";
+    var title = document.createElement("p");
+    title.className = "ash-filter-sheet__title";
+    title.textContent = label;
+    var closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "ash-filter-sheet__close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.textContent = "Close";
+    head.appendChild(title);
+    head.appendChild(closeBtn);
+    var list = document.createElement("div");
+    list.className = "ash-filter-sheet__list";
+    var opts = selectEl.options || [];
+    for (var i = 0; i < opts.length; i++) {
+      var opt = opts[i];
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ash-filter-sheet__opt";
+      var optVal = clean(opt.value);
+      if (optVal === current) {
+        btn.className += " ash-filter-sheet__opt--on";
+        btn.setAttribute("aria-current", "true");
+      }
+      btn.textContent = opt.textContent || opt.value || "";
+      btn.setAttribute("data-value", opt.value || "");
+      list.appendChild(btn);
+    }
+    panel.appendChild(head);
+    panel.appendChild(list);
+    overlay.appendChild(panel);
+    overlay.addEventListener("click", function (ev) {
+      if (ev.target === overlay) closeAshPhoneFilterSheet();
+    });
+    closeBtn.addEventListener("click", function () {
+      closeAshPhoneFilterSheet();
+      var back = selectEl.parentNode && selectEl.parentNode.querySelector(".ash-filter-pick__btn");
+      if (back && back.focus) back.focus();
+    });
+    list.addEventListener("click", function (ev) {
+      var picked = ev.target && ev.target.closest && ev.target.closest(".ash-filter-sheet__opt");
+      if (!picked) return;
+      selectEl.value = picked.getAttribute("data-value") || "";
+      syncAshFilterPickButton(selectEl);
+      closeAshPhoneFilterSheet();
+      try {
+        selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+      } catch (_ev) {
+        var evt = document.createEvent("HTMLEvents");
+        evt.initEvent("change", true, false);
+        selectEl.dispatchEvent(evt);
+      }
+    });
+    document.body.appendChild(overlay);
+    ashFilterSheetEl = overlay;
+    document.documentElement.classList.add("ash-filter-sheet-open");
+    if (!global.__ashFilterSheetKeys) {
+      global.__ashFilterSheetKeys = true;
+      document.addEventListener("keydown", function (ev) {
+        if (!ashFilterSheetEl || ev.key !== "Escape") return;
+        ev.preventDefault();
+        closeAshPhoneFilterSheet();
+      });
+    }
+    var on = list.querySelector(".ash-filter-sheet__opt--on");
+    if (on && on.focus) on.focus();
+    else if (closeBtn.focus) closeBtn.focus();
   }
 
   /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks when instructors differ. */
@@ -11062,6 +11187,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     root.addEventListener("click", function (ev) {
       var t = ev.target;
       if (!t || !t.closest) return;
+      var filterPick = t.closest("[data-ash-filter-sheet]");
+      if (filterPick && root.contains(filterPick)) {
+        if (!ashPhoneFilterViewport()) return;
+        var pickSel = filterPick.parentNode && filterPick.parentNode.querySelector("select.ash-input--filter-select");
+        if (!pickSel) return;
+        ev.preventDefault();
+        openAshPhoneFilterSheet(pickSel);
+        return;
+      }
       if (t.closest("[data-ash-modal-close]") || t.closest(".ash-modal-backdrop") === t) {
         hub.closeModal();
         return;
@@ -11602,8 +11736,34 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     });
   };
 
+  function syncAshFilterSelectPhoneFocus() {
+    var phone = ashPhoneFilterViewport();
+    var sels = document.querySelectorAll("select.ash-input--filter-select");
+    for (var i = 0; i < sels.length; i++) {
+      if (phone) {
+        sels[i].setAttribute("tabindex", "-1");
+        sels[i].setAttribute("aria-hidden", "true");
+      } else {
+        sels[i].removeAttribute("tabindex");
+        sels[i].removeAttribute("aria-hidden");
+      }
+    }
+  }
+
   AdminSessionsHub.prototype.bindAshFilterCombos = function () {
     var hub = this;
+    syncAshFilterSelectPhoneFocus();
+    if (!global.__ashFilterSheetViewport) {
+      global.__ashFilterSheetViewport = true;
+      try {
+        var mqA = window.matchMedia("(max-width: 900px) and (orientation: portrait)");
+        var mqB = window.matchMedia("(orientation: landscape) and (max-height: 540px)");
+        if (mqA.addEventListener) {
+          mqA.addEventListener("change", syncAshFilterSelectPhoneFocus);
+          mqB.addEventListener("change", syncAshFilterSelectPhoneFocus);
+        }
+      } catch (_mq) {}
+    }
     ["ashClientFilter", "ashInstructorFilter", "ashServiceFilter"].forEach(function (baseId) {
       var sel = document.getElementById(baseId);
       if (!sel || String(sel.tagName || "").toLowerCase() !== "select") return;
@@ -14336,6 +14496,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       keep.selected = true;
       selectEl.appendChild(keep);
     }
+    syncAshFilterPickButton(selectEl);
   }
 
   /** Day change soft-paints the table but used to leave Monday's instructor menu in place. */
