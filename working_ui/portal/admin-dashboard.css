@@ -5748,7 +5748,7 @@
       .admin-topbar .admin-search-wrap{
         display:block !important;
         order:2;
-        flex:1 1 auto;
+        flex:1 1 0;
         width:auto;
         max-width:none;
         min-width:0;
@@ -5762,64 +5762,76 @@
       .admin-topbar .admin-search-wrap input{
         padding:8px 10px 8px 32px;
         font-size:13px;
-      }
-      body.admin-touch-compact .admin-topbar-meta,
-      .admin-topbar-meta{
-        order:3;
-        flex:1 0 100%;
-        width:100%;
-        max-width:100%;
-        margin-left:0;
         min-width:0;
-        justify-content:flex-start;
-        gap:6px;
-        flex-wrap:nowrap;
       }
+      .admin-topbar-meta,
+      .admin-topbar-msgs{display:contents}
       .admin-topbar-meta .admin-topbar-split{display:none}
+      body.admin-touch-compact .admin-topbar #btnAlerts,
+      #btnAlerts{
+        display:inline-flex !important;
+      }
+      body.admin-touch-compact .admin-topbar #btnAlerts,
+      #btnAlerts,
+      #btnOpenWhatsapp,
+      #btnComunicaciones,
+      #btnAnnouncements,
+      #btnFamilyMsgs,
+      #btnStaffWa,
+      .admin-profile{
+        order:3;
+      }
       .admin-topbar-meta .admin-icon-btn--wa,
-      .admin-topbar-meta .admin-icon-btn--chat{
-        width:36px;
-        height:36px;
-        min-width:36px;
-        flex:0 0 36px;
+      .admin-topbar-meta .admin-icon-btn--chat,
+      #btnAlerts,
+      .admin-profile{
+        width:28px;
+        height:28px;
+        min-width:28px;
+        min-height:28px;
+        flex:0 0 28px;
       }
       .admin-topbar-meta .admin-icon-btn--wa svg{
-        width:20px;
-        height:20px;
+        width:16px;
+        height:16px;
       }
       .admin-topbar-meta .admin-icon-btn--chat .admin-icon-btn__svg svg{
-        width:20px !important;
-        height:20px !important;
+        width:16px !important;
+        height:16px !important;
       }
+      .admin-topbar-meta .admin-api-chip__name{display:none}
+      .admin-topbar-meta .admin-api-chip__mark{
+        display:flex;
+        width:auto;
+        height:auto;
+        flex:none;
+        background:transparent;
+        border-radius:0;
+        font-size:13px;
+        font-weight:800;
+        color:#fff;
+      }
+      .admin-topbar-meta .admin-icon-btn--p .admin-api-chip__mark{background:transparent;color:#173247}
+      .admin-topbar-meta .admin-icon-btn--s .admin-api-chip__mark{background:transparent;color:#fff}
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--p,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--s,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--a,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--p:hover,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--s:hover,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--a:hover{
-        flex:0 0 auto;
-        width:auto;
-        max-width:none;
-        min-width:max-content;
-        height:40px;
-        min-height:40px;
-        padding:4px 12px;
+        width:28px;
+        height:28px;
+        min-width:28px;
+        min-height:28px;
+        max-width:28px;
+        padding:0;
+        flex:0 0 28px;
         gap:0;
       }
-      .admin-topbar-meta .admin-api-chip__who,
-      .admin-topbar-meta .admin-api-chip__api{
-        overflow:visible;
-        text-overflow:clip;
-        max-width:none;
-        color:#fff;
-      }
-      .admin-topbar-meta .admin-api-chip__who{font-size:12px;letter-spacing:.02em}
-      .admin-topbar-meta .admin-api-chip__api{font-size:11px;letter-spacing:.02em}
-      .admin-topbar-meta .admin-api-chip.admin-icon-btn--p .admin-api-chip__who,
-      .admin-topbar-meta .admin-api-chip.admin-icon-btn--p .admin-api-chip__api{color:#173247}
-      .admin-topbar-meta .admin-profile{
-        margin-left:auto;
-        flex:0 0 auto;
+      .admin-profile{
+        margin:0;
+        padding:1px;
+        justify-content:center;
       }
       .admin-topbar-presence{
         display:flex !important;
@@ -5862,8 +5874,8 @@
       }
     }
     /* Phone held upright.
-       Line 1: menu, search, Help, WhatsApp, Chat, photo.
-       Line 2: who is online, then bell, A, P, S. */
+       Line 1: menu, search, Help, then every icon and the photo, small enough to fit.
+       Line 2: who is online. */
     @media (max-width:720px) and (orientation:portrait){
       body.admin-touch-compact .admin-topbar,
       .admin-topbar{
@@ -5888,20 +5900,24 @@
       }
       .admin-search-wrap input{min-width:0}
       .admin-profile{
-        order:5;
-        flex:0 0 36px;
+        order:9;
+        flex:0 0 28px;
         margin:0;
-        width:36px;
-        height:36px;
-        padding:2px;
+        width:28px;
+        height:28px;
+        padding:1px;
         justify-content:center;
       }
       .admin-profile span#miniName{display:none}
       #btnOpenWhatsapp{order:3}
       #btnComunicaciones{order:4}
+      #btnAlerts{order:5}
+      #btnAnnouncements{order:6}
+      #btnFamilyMsgs{order:7}
+      #btnStaffWa{order:8}
       .admin-topbar-portrait-break{
         display:block;
-        order:6;
+        order:10;
         flex:0 0 100%;
         height:0;
         margin:-6px 0;
@@ -5913,39 +5929,37 @@
       .admin-menu-mob{
         display:inline-flex !important;
         order:0;
-        width:36px;
-        height:36px;
-        flex:0 0 36px;
+        width:28px;
+        height:28px;
+        flex:0 0 28px;
       }
       body.admin-touch-compact .admin-topbar #btnAlerts,
       #btnAlerts{
         display:inline-flex !important;
-        order:11;
-        width:36px;
-        height:36px;
-        min-width:36px;
-        flex:0 0 36px;
+        order:5;
+        width:28px;
+        height:28px;
+        min-width:28px;
+        flex:0 0 28px;
       }
       .admin-topbar-help{
         order:2;
         flex:0 0 auto;
-        height:36px;
+        height:28px;
         margin:0;
         padding:0 8px;
+        font-size:12px;
       }
-      #btnAnnouncements{order:13}
-      #btnFamilyMsgs{order:14}
-      #btnStaffWa{order:15}
       .admin-topbar-presence{
-        order:10;
+        order:20;
         display:flex !important;
-        flex:1 1 0;
-        width:auto;
-        max-width:100%;
+        flex:1 0 100%;
+        width:100%;
+        max-width:none;
         min-width:0;
         margin:0;
         border:none;
-        overflow:hidden;
+        overflow:visible;
       }
       .admin-topbar-presence .sf-status-bar{
         width:100%;
@@ -5972,13 +5986,13 @@
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--p:hover,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--s:hover,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--a:hover{
-        width:36px;
-        height:36px;
-        min-width:36px;
-        min-height:36px;
-        max-width:36px;
+        width:28px;
+        height:28px;
+        min-width:28px;
+        min-height:28px;
+        max-width:28px;
         padding:0;
-        flex:0 0 36px;
+        flex:0 0 28px;
         gap:0;
       }
     }
@@ -5999,9 +6013,9 @@
       body.admin-touch-compact .admin-menu-mob,
       .admin-topbar .admin-menu-mob{
         order:1;
-        flex:0 0 36px;
-        width:36px;
-        height:36px;
+        flex:0 0 28px;
+        width:28px;
+        height:28px;
       }
       body.admin-touch-compact .admin-topbar .admin-search-wrap,
       .admin-topbar .admin-search-wrap{
@@ -6016,9 +6030,10 @@
       .admin-topbar-help{
         order:3;
         flex:0 0 auto;
-        height:36px;
+        height:28px;
         margin:0;
-        padding:0 8px;
+        padding:0 6px;
+        font-size:12px;
       }
       #btnOpenWhatsapp{order:4}
       #btnComunicaciones{order:5}
@@ -6031,16 +6046,16 @@
       #btnAlerts{
         display:inline-flex !important;
         order:6;
-        width:36px;
-        height:36px;
-        min-width:36px;
-        flex:0 0 36px;
+        width:28px;
+        height:28px;
+        min-width:28px;
+        flex:0 0 28px;
       }
       .admin-profile{
-        flex:0 0 36px;
+        flex:0 0 28px;
         margin:0;
-        width:36px;
-        height:36px;
+        width:28px;
+        height:28px;
         padding:2px;
         justify-content:center;
       }
@@ -6082,13 +6097,13 @@
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--p:hover,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--s:hover,
       .admin-topbar-meta .admin-api-chip.admin-icon-btn--a:hover{
-        width:36px;
-        height:36px;
-        min-width:36px;
-        min-height:36px;
-        max-width:36px;
+        width:28px;
+        height:28px;
+        min-width:28px;
+        min-height:28px;
+        max-width:28px;
         padding:0;
-        flex:0 0 36px;
+        flex:0 0 28px;
         gap:0;
       }
     }
