@@ -5734,6 +5734,13 @@
       white-space:nowrap;
       text-align:center;
     }
+    .section-card--today .session-card--segments .session-seg-row .session-dc-with{
+      width:auto;
+      max-width:100%;
+      margin:0;
+      padding:0;
+      text-align:center;
+    }
     .section-card--today .session-card--segments .session-seg-note{
       font-weight:600;
       color:#334155;

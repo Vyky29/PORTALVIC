@@ -2185,7 +2185,9 @@
       return '<div class="session-dc-with">' + lines.join('<br>') + '</div>';
     }
     function todaySessionSegmentRowsHtml(item){
-      return (item.segments || []).map(function(seg){
+      const segs = item.segments || [];
+      const dcBlock = portalDcSupportBlockHtml(item);
+      return segs.map(function(seg, i){
         const tRaw = String((seg && (seg.time_slot || seg.time)) || '').trim();
         const t = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(tRaw) : tRaw);
         const noteRaw = String((seg && (seg.label || seg.note || seg.area)) || '').trim();
@@ -2199,7 +2201,8 @@
         if(!noteHtml){
           noteHtml = '<span class="session-seg-note-text">' + escapeHtml(noteRaw) + '</span>';
         }
-        return '<div class="session-seg-row"><span class="session-seg-note">' + noteHtml + '</span><span class="session-seg-time">' + t + '</span></div>';
+        const underTime = (dcBlock && i === segs.length - 1) ? dcBlock : '';
+        return '<div class="session-seg-row"><span class="session-seg-note">' + noteHtml + '</span><span class="session-seg-time">' + t + '</span>' + underTime + '</div>';
       }).join('');
     }
     /** Combined card: participant name on the far left, then a time / note mini-table
@@ -2220,7 +2223,7 @@
       return `<div class="session-card-body session-card-body--segments">`
         + `<div class="session-line session-line--name session-line--name-lead">${namePart}</div>`
         + `<div class="session-seg-list">${todaySessionSegmentRowsHtml(item)}</div>`
-        + `</div>` + dcBlock;
+        + `</div>`;
     }
     function todaySessionCardInnerHtml(item){
       if(item && Array.isArray(item.segments) && item.segments.length){
