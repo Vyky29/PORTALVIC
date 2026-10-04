@@ -773,6 +773,8 @@
         grid.style.removeProperty('--today-area-label-fs');
         grid.style.removeProperty('--today-symbol-col-max');
         grid.style.removeProperty('--today-row-gap');
+        grid.style.removeProperty('--today-photo');
+        grid.style.removeProperty('--today-photo-special');
         return;
       }
       const n = Math.min(9, count);
@@ -812,6 +814,34 @@
       grid.style.setProperty('--today-symbol-col-max', (n >= 5 ? Math.min(areaM.symbolColMax, 58) : areaM.symbolColMax) + 'px');
       grid.style.setProperty('--today-row-gap', gapPx + 'px');
       grid.style.setProperty('--today-row-pad-y', padY + 'px');
+      var face = portalTodayFaceSizes(grid, n);
+      grid.style.setProperty('--today-photo', (n <= 4 ? face.above : face.side) + 'px');
+      grid.style.setProperty('--today-photo-special', face.special + 'px');
+    }
+    /** Photo diameter from the real row. Above-name faces (4 or fewer, and special cards)
+     *  can be large. Side faces stay inside the row so time, name and area stay intact. */
+    function portalTodayFaceSizes(grid, n){
+      var row = 140;
+      var width = 360;
+      try{
+        var box = grid;
+        var rowsEl = grid && grid.querySelector ? grid.querySelector('.today-grid-rows') : null;
+        if(rowsEl && rowsEl.clientHeight > 80) box = rowsEl;
+        var h = box && box.clientHeight ? box.clientHeight : 0;
+        var w = box && box.clientWidth ? box.clientWidth : 0;
+        var gap = 4;
+        if(h > 80) row = Math.floor((h - Math.max(0, n - 1) * gap) / Math.max(1, n));
+        if(w > 120) width = w;
+      }catch(_){}
+      var above = Math.round(Math.min(88, Math.max(52, row * 0.46)));
+      if(row < 110) above = Math.round(Math.min(above, Math.max(40, row * 0.40)));
+      var nameCol = Math.floor(width * 0.36);
+      var special = Math.round(Math.min(96, nameCol, Math.max(above + 10, row * 0.54)));
+      if(row < 110) special = Math.round(Math.min(special, Math.max(44, row * 0.46)));
+      var side = Math.round(Math.min(72, Math.max(36, row * 0.78)));
+      var mid = width - 78 - 72;
+      if(mid > 40) side = Math.min(side, Math.max(36, mid - 80));
+      return { above: above, special: special, side: side };
     }
 
     function portalDeferReminderChromeFromPaint(){

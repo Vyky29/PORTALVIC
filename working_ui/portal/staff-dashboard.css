@@ -5920,40 +5920,94 @@
       flex:1 1 auto;
       gap:3px;
     }
-    /* Photo sits with the name. The chip stays under that pair. Day Centre special cards have no photo row. */
-    .section-card--today .session-card-body:not(.session-card-body--dc-turns):not(.session-card-body--segments) .session-name-photo-row{
+    /* Photo sits with the name. Side by side when the day has more than 4 cards.
+       Stacked above the name when there are 4 or fewer, and always on special cards. */
+    .section-card--today .session-name-photo-row{
       display:inline-flex;
       flex-direction:row;
       align-items:center;
       justify-content:center;
       gap:6px;
+      width:100%;
       max-width:100%;
       min-width:0;
       flex:0 1 auto;
     }
     .section-card--today .session-name-photo-row .session-meta-name{
       width:auto;
-      flex:0 1 auto;
-      min-width:0;
+      flex:0 0 auto;
+      min-width:min-content;
       text-align:left;
+      word-break:normal;
+      overflow-wrap:normal;
+    }
+    .section-card--today .today-grid[data-session-count="1"] .session-card-body .session-name-photo-row,
+    .section-card--today .today-grid[data-session-count="2"] .session-card-body .session-name-photo-row,
+    .section-card--today .today-grid[data-session-count="3"] .session-card-body .session-name-photo-row,
+    .section-card--today .today-grid[data-session-count="4"] .session-card-body .session-name-photo-row,
+    .section-card--today .session-card-body .session-name-photo-row--above{
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:5px;
+      width:100%;
+      max-width:100%;
+    }
+    .section-card--today .today-grid[data-session-count="1"] .session-name-photo-row .session-meta-name,
+    .section-card--today .today-grid[data-session-count="2"] .session-name-photo-row .session-meta-name,
+    .section-card--today .today-grid[data-session-count="3"] .session-name-photo-row .session-meta-name,
+    .section-card--today .today-grid[data-session-count="4"] .session-name-photo-row .session-meta-name,
+    .section-card--today .session-name-photo-row--above .session-meta-name{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      flex:0 1 auto;
+      text-align:center;
+      word-break:break-word;
+      overflow-wrap:break-word;
+    }
+    .section-card--today .session-card--segments .session-line--name-lead .session-name-stack:has(.session-name-photo),
+    .section-card--today .session-card-body--dc-turns .session-name-stack:has(.session-name-photo){
+      align-items:center;
+      text-align:center;
+      width:100%;
     }
     .section-card--today .session-name-photo{
       position:relative;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      flex:0 0 28px;
-      width:28px;
-      height:28px;
+      flex:0 1 auto;
+      width:var(--today-photo, 40px);
+      min-width:28px;
+      height:auto;
+      aspect-ratio:1;
+      max-width:100%;
       border-radius:50%;
       overflow:hidden;
       background:#cfe8f7;
       border:1px solid rgba(45,132,179,.28);
       color:#1a5f8a;
-      font-size:10px;
+      font-size:max(9px, calc(var(--today-photo, 40px) * 0.34));
       font-weight:800;
       line-height:1;
       letter-spacing:0;
+      box-sizing:border-box;
+    }
+    .section-card--today .today-grid[data-session-count="1"] .session-card-body .session-name-photo,
+    .section-card--today .today-grid[data-session-count="2"] .session-card-body .session-name-photo,
+    .section-card--today .today-grid[data-session-count="3"] .session-card-body .session-name-photo,
+    .section-card--today .today-grid[data-session-count="4"] .session-card-body .session-name-photo,
+    .section-card--today .session-card-body .session-name-photo-row--above .session-name-photo{
+      flex:0 0 auto;
+      width:min(var(--today-photo, 64px), 100%);
+      max-width:100%;
+      min-width:0;
+    }
+    .section-card--today .today-grid .session-card-body .session-name-photo-row--above .session-name-photo{
+      width:min(var(--today-photo-special, 76px), 100%);
+      max-width:100%;
+      font-size:max(12px, calc(var(--today-photo-special, 76px) * 0.32));
     }
     .section-card--today .session-name-photo--f{
       color:#8f3560;
@@ -5974,13 +6028,6 @@
       object-position:center center;
       border-radius:50%;
       display:block;
-    }
-    .section-card--today .today-grid[data-session-count="8"] .session-name-photo,
-    .section-card--today .today-grid[data-session-count="9"] .session-name-photo{
-      flex-basis:22px;
-      width:22px;
-      height:22px;
-      font-size:8px;
     }
     .section-card--today .session-name-stack:has(.session-name-photo-row) .session-chips-below-name{
       margin-top:2px;

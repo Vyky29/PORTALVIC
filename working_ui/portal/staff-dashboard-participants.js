@@ -2257,13 +2257,18 @@
       const supportLine = !dcBlock && supportSub
         ? '<span class="session-meta-support">' + escapeHtml(supportSub) + '</span>'
         : '';
-      const namePart = `<span class="session-name-stack">${nameCore}${supportLine}${chipsRow}</span>`;
+      const photoHtml = todaySessionNamePhotoHtml(item);
+      const nameIdentity = photoHtml
+        ? '<span class="session-name-photo-row session-name-photo-row--above">' + photoHtml + nameCore + '</span>'
+        : nameCore;
+      const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}${chipsRow}</span>`;
       return `<div class="session-card-body session-card-body--segments">`
         + `<div class="session-line session-line--name session-line--name-lead">${namePart}</div>`
         + `<div class="session-seg-list">${todaySessionSegmentRowsHtml(item)}</div>`
         + `</div>`;
     }
-    /** Face to the left of the name on the normal Today cards. Day Centre special cards stay name-only. */
+    /** Face on the Today card. Special cards always stack it above the name.
+     *  Normal cards stack it above when the day has 4 or fewer cards; otherwise it stays left of the name. */
     function todaySessionNamePhotoHtml(item){
       if(!item) return '';
       const kind = String(item.kind || '').toLowerCase();
@@ -2319,9 +2324,9 @@
       const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
       const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
       const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
-      const photoHtml = dcBlock ? '' : todaySessionNamePhotoHtml(item);
+      const photoHtml = todaySessionNamePhotoHtml(item);
       const nameIdentity = photoHtml
-        ? '<span class="session-name-photo-row">' + photoHtml + nameCore + '</span>'
+        ? '<span class="session-name-photo-row' + (dcBlock ? ' session-name-photo-row--above' : '') + '">' + photoHtml + nameCore + '</span>'
         : nameCore;
       const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}${chipsRow}</span>`;
       const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
