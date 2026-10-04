@@ -80,7 +80,7 @@
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
-  <script src="/portal/admin-portal-form-record-modal.js?v=20260710-incident-followup"></script>
+  <script src="/portal/admin-portal-form-record-modal.js?v=20261005-bell-open"></script>
   <script src="/portal/admin-portal-incident-followup.js?v=20260916-isp-admin-only"></script>
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
@@ -2693,7 +2693,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261004-v243')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261005-v244')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -39784,6 +39784,64 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return nameByStaff;
     }
 
+    function portalAdminBellClient(){
+      return window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+    }
+    function portalAdminOpenVenueFromBell(meta){
+      meta = meta || {};
+      var reviewId = String(meta.recordId || '').trim();
+      var noteId = String(meta.notificationId || '').trim();
+      var client = portalAdminBellClient();
+      function dropNote(){
+        if(!noteId) return;
+        var list = window.__PORTAL_VENUE_REVIEW_ALERTS__ || [];
+        window.__PORTAL_VENUE_REVIEW_ALERTS__ = list.filter(function(a){ return a && String(a.id) !== noteId; });
+        if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+        if(!client || !client.from) return;
+        client.from('venue_review_admin_notifications').update({ read_at: new Date().toISOString() }).eq('id', noteId).then(function(res){
+          if(res && res.error) console.warn('[admin] venue alert read', res.error);
+        });
+      }
+      openSessionsHubTab('venue');
+      dropNote();
+      if(!client || !client.from || !reviewId) return;
+      client.from('venue_reviews').select('*').eq('id', reviewId).maybeSingle().then(function(res){
+        if(res && res.data) portalAdminOpenFormRecord('venue', res.data);
+      });
+    }
+    function portalAdminOpenFeedbackNoteFromBell(meta){
+      meta = meta || {};
+      var id = String(meta.recordId || '').trim();
+      var list = window.__PORTAL_FEEDBACK_NOTE_ALERTS__ || [];
+      var hit = null;
+      for(var i = 0; i < list.length; i++){
+        if(list[i] && String(list[i].id) === id){ hit = list[i]; break; }
+      }
+      var dateIso = String((hit && hit.sessionDate) || meta.sessionDate || '').trim().slice(0, 10);
+      var clientName = String((hit && hit.clientName) || meta.clientName || '').trim();
+      if(dateIso && /^\d{4}-\d{2}-\d{2}$/.test(dateIso)){
+        var h = sessionsHubEnsureState();
+        h.tab = 'feedback';
+        h.selectedIso = dateIso;
+        var week = bookingWeekIsoRangeMonSun(dateIso);
+        if(week && week[0]) h.weekAnchorIso = week[0];
+        state.sessionOverview.iso = dateIso;
+        if(clientName) h.clientQ = clientName;
+      }
+      openSessionsHubTab('feedback');
+      if(hit && hit.row) portalAdminOpenFormRecord('feedback', hit.row);
+      portalAdminBellMarkNoteSeen(id);
+      if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+    }
+    function portalAdminOpenIncidentFromBell(meta){
+      meta = meta || {};
+      var id = String(meta.recordId || '').trim();
+      var client = portalAdminBellClient();
+      if(!client || !client.from || !id) return;
+      client.from('incident_reports').select('*').eq('id', id).maybeSingle().then(function(res){
+        if(res && res.data) portalAdminOpenFormRecord('incident', res.data);
+      });
+    }
     function portalAdminOpenActivityAlert(meta){
       meta = meta || {};
       try{
@@ -39795,6 +39853,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tab === 'chat' || tab === 'cs_cliq'){
         setView('comms_ops');
         return;
+      }
+      if(tab === 'venue_review'){
+        portalAdminOpenVenueFromBell(meta);
+        return;
+      }
+      if(tab === 'feedback_notes'){
+        portalAdminOpenFeedbackNoteFromBell(meta);
+        return;
+      }
+      if(tab === 'incidents'){
+        portalAdminOpenIncidentFromBell(meta);
       }
       if(tab === 'wellbeing'){
         var wcid = String(meta.recordId || meta.checkinId || '').trim();
@@ -40257,21 +40326,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       var venueList = window.__PORTAL_VENUE_REVIEW_ALERTS__ || [];
       var venueHtml = (venueList || []).map(function(a){
+        var copy = portalAdminVenueBellCopy(a);
         var t = '';
         try{
           if(a.created_at) t = new Date(a.created_at).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
         }catch(_vt){}
-        return '<div class="line-item" style="padding:12px 16px"><div><strong>'+esc(a.headline || 'Venue review')+'</strong><div class="muted" style="white-space:pre-wrap;margin-top:6px;font-size:12px;line-height:1.45">'+esc(a.body || '')+'</div></div><span class="chip chip--urg">'+(t ? esc(t) : 'New')+'</span></div>';
+        return '<div class="portal-admin-activity-row">'+
+          '<button type="button" class="line-item portal-admin-activity-alert" data-alert-view="venue_review" data-alert-record-id="'+esc(a.venue_review_id || '')+'" data-alert-notification-id="'+esc(a.id || '')+'" style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit"><div><strong>'+esc(copy.title)+'</strong><div class="muted">'+esc(copy.sub)+'</div></div><span class="chip chip--urg">'+(t ? esc(t) : 'Open')+'</span></button>'+
+        '</div>';
       }).join('');
-      var emptyHtml = !activityHtml && !venueHtml
-        ? '<p class="muted" style="margin:12px 16px">Nothing open. The bell lists incidents, absents still to decide, service cancel refunds not paid back, unpaid expenses, wellbeing, disruptions, and makeups that have not happened yet.</p>'
+      var noteList = window.__PORTAL_FEEDBACK_NOTE_ALERTS__ || [];
+      var noteHtml = (noteList || []).map(function(a){
+        var t = '';
+        try{
+          if(a.created_at) t = new Date(a.created_at).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+        }catch(_nt){}
+        return '<div class="portal-admin-activity-row">'+
+          '<button type="button" class="line-item portal-admin-activity-alert" data-alert-view="feedback_notes" data-alert-record-id="'+esc(a.id || '')+'" data-alert-client="'+esc(a.clientName || '')+'" data-alert-date="'+esc(a.sessionDate || '')+'" style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+(t ? esc(t) : 'Notes')+'</span></button>'+
+        '</div>';
+      }).join('');
+      var emptyHtml = !activityHtml && !venueHtml && !noteHtml
+        ? '<p class="muted" style="margin:12px 16px">Nothing open. The bell lists a message sent to Pilar when there are venue issues, feedback notes, incidents, absents still to decide, refunds, unpaid expenses, wellbeing, disruptions, and makeups that have not happened yet.</p>'
         : '';
       var clearWellbeingBtn = wellbeingN > 0
         ? '<button type="button" class="btn btn--ghost btn--sm" id="portalAdminClearWellbeingAlerts" style="margin-left:auto;font-size:12px">Clear wellbeing ('+wellbeingN+')</button>'
         : '';
-      pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0;display:flex;align-items:center;gap:8px;padding-right:12px"><h3 style="margin:0;font-size:14px">Alerts</h3>'+clearWellbeingBtn+'</div>'+venueHtml+activityHtml+emptyHtml;
+      pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0;display:flex;align-items:center;gap:8px;padding-right:12px"><h3 style="margin:0;font-size:14px">Alerts</h3>'+clearWellbeingBtn+'</div>'+venueHtml+noteHtml+activityHtml+emptyHtml;
       var bd = $('alertBadge');
-      var n = (activityList || []).length + (venueList || []).length;
+      var n = (activityList || []).length + (venueList || []).length + (noteList || []).length;
       if(bd){
         bd.textContent = String(n);
         bd.classList.toggle('is-empty', n < 1);
@@ -40303,13 +40385,57 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(state.view==='settings') portalAdminRefreshSettingsView();
       }, true);
     });
+    function portalAdminVenueBellCopy(row){
+      var body = String(row && row.body || '');
+      var venue = '';
+      var vm = body.match(/venue:\s*([^·\n]+)/i);
+      if(vm) venue = String(vm[1] || '').replace(/\s+/g, ' ').trim();
+      var side = '';
+      var sm = body.match(/·\s*(Opening|Closing)\s*·/i);
+      if(sm) side = sm[1];
+      var pool = /swimfarm|swim farm|piscina/i.test(venue);
+      var title = pool ? 'Message sent to Pilar' : (/hub/i.test(venue) ? 'Hub room issues' : 'Venue issues');
+      var sub = pool
+        ? ('Because there are issues' + (venue ? ' at ' + venue : '') + (side ? ' · ' + side : ''))
+        : ((venue || 'Venue review') + (side ? ' · ' + side : '') + ' · open the review');
+      return { title: title, sub: sub };
+    }
+    function portalAdminBellSeenNoteIds(){
+      try{
+        var raw = localStorage.getItem('portalAdminBellSeenNoteIds');
+        var arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      }catch(_){ return []; }
+    }
+    function portalAdminBellMarkNoteSeen(id){
+      id = String(id || '').trim();
+      if(!id) return;
+      var ids = portalAdminBellSeenNoteIds();
+      if(ids.indexOf(id) < 0) ids.push(id);
+      if(ids.length > 240) ids = ids.slice(ids.length - 240);
+      try{ localStorage.setItem('portalAdminBellSeenNoteIds', JSON.stringify(ids)); }catch(_){}
+      var list = window.__PORTAL_FEEDBACK_NOTE_ALERTS__ || [];
+      window.__PORTAL_FEEDBACK_NOTE_ALERTS__ = list.filter(function(a){ return a && String(a.id) !== id; });
+    }
+    function portalAdminFeedbackNoteKinds(row){
+      var kinds = [];
+      if(String(row && row.positive_feedback || '').trim()) kinds.push('Positive');
+      if(String(row && row.relevant_information || '').trim()) kinds.push('Relevant');
+      if(String(row && row.exceptional_challenges || '').trim()) kinds.push('Challenges');
+      if(String(row && row.session_narrative || '').trim()) kinds.push('Session note');
+      return kinds;
+    }
+    function portalAdminOpenFormRecord(kind, row){
+      if(!row || !window.PortalFormRecordModal || typeof window.PortalFormRecordModal.openWithRow !== 'function') return;
+      window.PortalFormRecordModal.openWithRow(kind, row);
+    }
     function portalAdminVenueReviewAlertsTableMissing(err){
       var msg = String((err && err.message) || err || '');
       return /does not exist|could not find|schema cache|PGRST205|404/i.test(msg);
     }
     function portalAdminFetchVenueReviewAlerts(client){
       if(!client || !client.from || window.__PORTAL_VENUE_REVIEW_ALERTS_TABLE_MISSING__) return;
-      client.from('venue_review_admin_notifications').select('id,created_at,headline,body').is('read_at',null).order('created_at',{ascending:false}).limit(40).then(function(res){
+      client.from('venue_review_admin_notifications').select('id,created_at,headline,body,venue_review_id').is('read_at',null).order('created_at',{ascending:false}).limit(40).then(function(res){
         if(res.error){
           if(portalAdminVenueReviewAlertsTableMissing(res.error)){
             window.__PORTAL_VENUE_REVIEW_ALERTS_TABLE_MISSING__ = true;
@@ -40321,6 +40447,45 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_VENUE_REVIEW_ALERTS__ = res.data || [];
         if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
       });
+    }
+    function portalAdminFetchFeedbackNoteAlerts(client){
+      if(!client || !client.from) return;
+      var since = new Date();
+      since.setDate(since.getDate() - 7);
+      client.from('session_feedback')
+        .select('id,created_at,client_name,session_date,completed_by_name,service,positive_feedback,relevant_information,exceptional_challenges,session_narrative,incidents,attendance')
+        .gte('created_at', since.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(80)
+        .then(function(res){
+          if(res.error){
+            console.warn('[admin] feedback note alerts', res.error);
+            return;
+          }
+          var seen = portalAdminBellSeenNoteIds();
+          var out = [];
+          (res.data || []).forEach(function(row){
+            if(!row || !row.id) return;
+            var id = String(row.id);
+            if(seen.indexOf(id) >= 0) return;
+            var kinds = portalAdminFeedbackNoteKinds(row);
+            if(!kinds.length) return;
+            var clientName = String(row.client_name || 'Participant').trim() || 'Participant';
+            var dateIso = String(row.session_date || '').trim().slice(0, 10);
+            var who = String(row.completed_by_name || '').trim();
+            out.push({
+              id: id,
+              title: 'Feedback notes · ' + clientName,
+              sub: (dateIso ? dateIso + ' · ' : '') + (who ? who + ' · ' : '') + kinds.join(', '),
+              created_at: row.created_at,
+              clientName: clientName,
+              sessionDate: dateIso,
+              row: row
+            });
+          });
+          window.__PORTAL_FEEDBACK_NOTE_ALERTS__ = out.slice(0, 25);
+          if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+        });
     }
     function portalAdminWellbeingAlertsTableMissing(err){
       var msg = String((err && err.message) || err || '');
@@ -40378,6 +40543,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             void window.PortalDayOps.refreshSessionFeedback();
           }
           portalAdminFetchVenueReviewAlerts(client);
+          portalAdminFetchFeedbackNoteAlerts(client);
           void portalAdminBootstrapActivityAlerts();
           portalAdminEnsureActivityRealtime();
           void portalLateAdminRefreshNavBadge({ allowSound: false });
@@ -40388,6 +40554,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               if(typeof window.portalAdminBellSyncWellbeingFromServer === 'function'){
                 void window.portalAdminBellSyncWellbeingFromServer(client, { silent: true });
               }
+              portalAdminFetchVenueReviewAlerts(client);
+              portalAdminFetchFeedbackNoteAlerts(client);
             }, 90000);
           }
         });
@@ -41266,7 +41434,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             sessionDate: String(btn.getAttribute('data-alert-date') || '').trim(),
             chatHintIdx: btn.hasAttribute('data-alert-chat-hint')
               ? btn.getAttribute('data-alert-chat-hint')
-              : ''
+              : '',
+            notificationId: String(btn.getAttribute('data-alert-notification-id') || '').trim()
           });
         });
       }

@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-04-v243",
+  "version": "2026-10-05-v244",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -422,9 +422,9 @@
           ],
           "steps": [
             "Staff pick the venue. SwimFarm is the pool. Hub room is the Thursday hub check.",
-            "If Issues is Yes and there is a note, the admin bell gets the alert.",
-            "SwimFarm also sends WhatsApp to the pool owner: the message first, then the photos and video. If opening and closing both have issues and neither has been sent, they go in one message.",
-            "Hub room, Acton, Northolt and Westway do not message the pool owner. They stay on the admin bell and the Venue review list."
+            "If Issues is Yes and there is a note, SwimFarm sends WhatsApp to Pilar: the message first, then the photos and video. If opening and closing both have issues and neither has been sent, they go in one message.",
+            "The admin bell then says Message sent to Pilar, because there are issues. Tap that row to open the venue review.",
+            "Hub room, Acton, Northolt and Westway do not message Pilar. The bell says Venue issues or Hub room issues. Tap the row to open that review."
           ],
           "tips": [
             "A check with Issues No does not message anyone. It still shows on the Venue review list.",
@@ -2387,7 +2387,10 @@
             "campana",
             "alerts",
             "alertas",
-            "popup"
+            "popup",
+            "pilar",
+            "feedback notes",
+            "notas"
           ],
           "steps": [
             "Tap the bell in the admin header.",
@@ -2397,8 +2400,8 @@
           ],
           "tips": [
             "The number on the bell is how many alerts are in the popup.",
-            "The bell keeps incidents, absents still to decide, one-day cancellations still to decide, service cancel refunds not paid back, unpaid expenses, wellbeing still open, same-day disruptions, late incident approvals, general-info updates, and a makeup only when that session is today or later.",
-            "A makeup whose session day has passed leaves the bell. Tap an unpaid expense to open Expenses. Tap a cancel refund or an absent to open Absents, refunds and credits."
+            "The bell keeps a message sent to Pilar when SwimFarm has issues, venue issues that stay with admin, feedback notes from the last 7 days, incidents, absents still to decide, one-day cancellations still to decide, service cancel refunds not paid back, unpaid expenses, wellbeing still open, same-day disruptions, late incident approvals, general-info updates, and a makeup only when that session is today or later.",
+            "Tap Message sent to Pilar, Venue issues, Feedback notes, or an incident to open that record. A makeup whose session day has passed leaves the bell. Tap an unpaid expense to open Expenses. Tap a cancel refund or an absent to open Absents, refunds and credits. A feedback note leaves the bell after you open it."
           ],
           "es": {
             "title": "La campana es un popup",
@@ -2412,8 +2415,8 @@
             ],
             "tips": [
               "El numero de la campana es cuantas alertas hay en el popup.",
-              "La campana guarda incidentes, faltas por decidir, cancelaciones de un dia por decidir, reembolsos de cancelar servicio que no se han devuelto, gastos sin pagar, wellbeing abierto, disruptions del dia, aprobaciones de incidentes tarde, cambios de general info, y un makeup solo si esa sesion es hoy o despues.",
-              "Un makeup de un dia que ya paso sale de la campana. Un gasto sin pagar abre Expenses. Un reembolso de cancelacion o una falta abre Absents, refunds and credits."
+              "La campana guarda el mensaje enviado a Pilar cuando SwimFarm tiene issues, los issues de venue que se quedan en admin, las notas de feedback de los ultimos 7 dias, incidentes, faltas por decidir, cancelaciones de un dia por decidir, reembolsos de cancelar servicio que no se han devuelto, gastos sin pagar, wellbeing abierto, disruptions del dia, aprobaciones de incidentes tarde, cambios de general info, y un makeup solo si esa sesion es hoy o despues.",
+              "Pulsa Message sent to Pilar, Venue issues, Feedback notes o un incidente para abrir ese registro. Un makeup de un dia que ya paso sale de la campana. Un gasto sin pagar abre Expenses. Un reembolso de cancelacion o una falta abre Absents, refunds and credits. Una nota de feedback sale de la campana despues de abrirla."
             ]
           }
         },

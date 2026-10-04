@@ -226,8 +226,8 @@
       qaRow("Venue", r.venue) +
       qaRow("Review date", formatDateOnly(r.review_date)) +
       qaRow("Time", r.review_time) +
-      qaRow("Opening / closing", r.opening_closing) +
-      qaRow("Issues to report", r.has_issues ? "Yes" : "No") +
+      qaRow("Opening / closing", r.opening_or_closing || r.opening_closing) +
+      qaRow("Issues to report", r.has_issues || "—") +
       qaRow("Issue details", r.issues_reported || "—", true) +
       qaRow("Submitted by", r.submitted_by_name) +
       qaRow("Recorded", formatWhen(r.created_at))
@@ -342,6 +342,7 @@
     out +=
       qaRow("Positive feedback", r.positive_feedback, true) +
       qaRow("Relevant information", r.relevant_information, true) +
+      qaRow("Exceptional challenges", r.exceptional_challenges, true) +
       qaRow("Incidents", r.incidents, true) +
       qaRow("Recorded", formatWhen(r.created_at));
     return out;
