@@ -1887,6 +1887,7 @@
       font-size:10px;font-weight:800;color:#5b21b6;text-align:center;
       line-height:1.15;min-width:0;overflow-wrap:break-word;max-width:100%;
     }
+    .c4k-reg-ind-bar__lbl-short{display:none}
     .booking-capacity--sf-days-only .booking-capacity-bars{padding:8px 10px 10px}
     .booking-capacity--sf-days-only{margin-bottom:10px}
     .c4k-reg-rel-donut-wrap{
@@ -6309,4 +6310,91 @@
       }
       .sf-kpi-card--ind .c4k-reg-ind-bar__track{height:48px;max-width:28px}
       .sf-kpi-card--ind .c4k-reg-ind-bar__item{max-width:56px}
+    }
+
+    /* Phone on its side: three Register stat cards in one row, small enough to not collide. */
+    @media (orientation:landscape) and (max-height:540px){
+      .sf-kpi-grid{
+        grid-template-columns:minmax(0,0.86fr) minmax(0,1.62fr) minmax(0,1.08fr);
+        gap:6px;
+        margin:0 0 8px;
+        max-width:100%;
+        min-width:0;
+      }
+      .sf-kpi-card{
+        min-width:0;
+        max-width:100%;
+        overflow:hidden;
+      }
+      .sf-kpi-card__head{padding:5px 4px 4px}
+      .sf-kpi-card__title{font-size:12px;line-height:1.15}
+      .sf-kpi-card__sub{font-size:10px;margin-top:1px;line-height:1.2}
+      .sf-kpi-card__body{
+        min-height:0;
+        padding:4px 4px 6px;
+        overflow:hidden;
+      }
+      .sf-kpi-card--eng .c4k-reg-eng-gauge{max-width:100%}
+      .sf-kpi-card--eng .c4k-reg-eng-gauge__chart{
+        padding:0 8px;
+        overflow:hidden;
+      }
+      .sf-kpi-card--eng .c4k-reg-eng-gauge__svg{max-width:118px}
+      .sf-kpi-card--eng .c4k-reg-eng-gauge__stats{padding:2px 2px 0}
+      .sf-kpi-card--eng .c4k-reg-eng-gauge__pct{font-size:1.15rem}
+      .sf-kpi-card--eng .c4k-reg-eng-gauge__avg{font-size:10px}
+      .sf-kpi-card--eng .c4k-reg-eng-gauge__foot{font-size:9px;margin-top:2px;line-height:1.25}
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row{
+        gap:2px;
+        padding:0;
+        overflow:hidden;
+        justify-content:space-between;
+        align-items:flex-start;
+      }
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-circ__item{
+        flex:1 1 0;
+        min-width:0;
+        max-width:25%;
+        padding:0 1px;
+      }
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-donut-wrap{
+        width:52px;
+        height:52px;
+        max-width:100%;
+        margin:0 auto 2px;
+      }
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-donut__inner{
+        width:34px;
+        height:34px;
+        font-size:8px;
+        line-height:1;
+      }
+      .sf-kpi-card--emo .c4k-reg-emo-circ__ico svg{width:14px;height:14px}
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-circ__lbl{
+        font-size:8px;
+        line-height:1.15;
+        max-width:100%;
+        margin-top:2px;
+        white-space:normal;
+      }
+      .sf-kpi-card--emo .c4k-reg-emo-circ--sf-row .c4k-reg-emo-circ__sub{font-size:8px;margin-top:1px}
+      .sf-kpi-card--ind .c4k-reg-ind-bars{
+        width:100%;
+        gap:2px;
+        padding:0;
+        justify-content:space-between;
+        align-items:flex-end;
+      }
+      .sf-kpi-card--ind .c4k-reg-ind-bar__item{
+        flex:1 1 0;
+        max-width:none;
+        min-width:0;
+        overflow:hidden;
+        gap:2px;
+      }
+      .sf-kpi-card--ind .c4k-reg-ind-bar__pct{font-size:9px}
+      .sf-kpi-card--ind .c4k-reg-ind-bar__track{height:40px;max-width:22px}
+      .sf-kpi-card--ind .c4k-reg-ind-bar__lbl{font-size:8px;line-height:1.1;white-space:normal}
+      .sf-kpi-card--ind .c4k-reg-ind-bar__lbl-full{display:none}
+      .sf-kpi-card--ind .c4k-reg-ind-bar__lbl-short{display:inline}
     }

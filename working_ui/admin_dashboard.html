@@ -185,7 +185,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-bar-h" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-land-stats" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -4565,10 +4565,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<p class="muted c4k-reg-kpi-cap" style="margin:0;text-align:center">No independence labels for this scope.</p>';
       }
       var order = [
-        { key: 'independent', label: 'Independent', color: '#ddd6fe' },
-        { key: 'prompts', label: 'With prompts', color: '#c4b5fd' },
-        { key: 'regular', label: 'Regular support', color: '#a78bfa' },
-        { key: 'full', label: 'Full support', color: '#7c3aed' }
+        { key: 'independent', label: 'Independent', short: 'Indep.', color: '#ddd6fe' },
+        { key: 'prompts', label: 'With prompts', short: 'Prompts', color: '#c4b5fd' },
+        { key: 'regular', label: 'Regular support', short: 'Regular', color: '#a78bfa' },
+        { key: 'full', label: 'Full support', short: 'Full', color: '#7c3aed' }
       ];
       var bars = order
         .map(function(o){
@@ -4580,7 +4580,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<span class="c4k-reg-ind-bar__pct">' + esc(adminC4kPctLabelUk(pct)) + '</span>' +
             '<div class="c4k-reg-ind-bar__track" title="' + esc(o.label + ': ' + String(n)) + '">' +
             '<div class="c4k-reg-ind-bar__fill" style="height:' + String(hPct) + '%;background:' + o.color + '"></div></div>' +
-            '<span class="c4k-reg-ind-bar__lbl">' + esc(o.label) + '</span></div>'
+            '<span class="c4k-reg-ind-bar__lbl">' +
+            '<span class="c4k-reg-ind-bar__lbl-full">' + esc(o.label) + '</span>' +
+            '<span class="c4k-reg-ind-bar__lbl-short">' + esc(o.short) + '</span>' +
+            '</span></div>'
           );
         })
         .join('');
