@@ -1036,6 +1036,11 @@
     .admin-menu-mob:hover,.admin-menu-mob:focus-visible{background:#f1f5f9;border-color:#8eb4d0;outline:none}
     .admin-search-wrap{flex:1 1 280px;max-width:420px;min-width:220px;position:relative}
     .admin-topbar-portrait-break{display:none}
+    .admin-topbar-greens{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;order:6}
+    .admin-topbar-presence{order:4}
+    #btnAlerts{order:5}
+    #btnProfileMini{order:8}
+    .admin-topbar-meta{order:7}
     .admin-topbar-help{
       flex:0 0 auto;
       display:inline-flex;
@@ -5782,7 +5787,9 @@
         order:3;
       }
       .admin-topbar-meta .admin-icon-btn--wa,
+      .admin-topbar-greens .admin-icon-btn--wa,
       .admin-topbar-meta .admin-icon-btn--chat,
+      .admin-topbar-greens .admin-icon-btn--chat,
       #btnAlerts,
       .admin-profile{
         width:28px;
@@ -5791,11 +5798,13 @@
         min-height:28px;
         flex:0 0 28px;
       }
-      .admin-topbar-meta .admin-icon-btn--wa svg{
+      .admin-topbar-meta .admin-icon-btn--wa svg,
+      .admin-topbar-greens .admin-icon-btn--wa svg{
         width:16px;
         height:16px;
       }
-      .admin-topbar-meta .admin-icon-btn--chat .admin-icon-btn__svg svg{
+      .admin-topbar-meta .admin-icon-btn--chat .admin-icon-btn__svg svg,
+      .admin-topbar-greens .admin-icon-btn--chat .admin-icon-btn__svg svg{
         width:16px !important;
         height:16px !important;
       }
@@ -5887,28 +5896,51 @@
         row-gap:6px;
         column-gap:4px;
       }
+      .admin-topbar-greens{
+        display:inline-flex !important;
+        flex-flow:row nowrap;
+        align-items:center;
+        gap:4px;
+        order:3;
+        flex:0 0 auto;
+      }
+      #btnOpenWhatsapp,
+      #btnComunicaciones{
+        width:28px;
+        height:28px;
+        min-width:28px;
+        flex:0 0 28px;
+      }
+      body.admin-touch-compact .admin-topbar-meta,
       .admin-topbar-meta,
       .admin-topbar-msgs{
-        display:contents;
-      }
-      .admin-topbar-meta{
-        flex-direction:row;
-        flex-wrap:nowrap;
+        display:flex !important;
+        flex-flow:row nowrap;
+        align-items:center;
+        gap:4px;
+        order:12 !important;
+        margin-left:0 !important;
+        flex:0 0 auto;
+        width:auto;
       }
       body.admin-touch-compact .admin-topbar .admin-search-wrap,
       .admin-search-wrap{
         display:block !important;
         order:1;
-        flex:1 1 0;
-        width:0;
-        max-width:none;
-        min-width:0;
-        overflow:hidden;
+        flex:1 1 0% !important;
+        width:auto !important;
+        max-width:calc(100vw - 230px) !important;
+        min-width:0 !important;
+        overflow:hidden !important;
       }
-      .admin-search-wrap input{min-width:0;width:100%}
+      .admin-search-wrap input{
+        min-width:0 !important;
+        width:100% !important;
+      }
+      #btnProfileMini,
       .admin-profile{
-        order:5;
-        flex:0 0 28px;
+        order:4 !important;
+        flex:0 0 28px !important;
         margin:0;
         width:28px;
         height:28px;
@@ -5916,16 +5948,11 @@
         justify-content:center;
       }
       .admin-profile span#miniName{display:none}
-      #btnOpenWhatsapp{order:3}
-      #btnComunicaciones{order:4}
-      #btnAnnouncements{order:12}
-      #btnFamilyMsgs{order:13}
-      #btnStaffWa{order:14}
       .admin-topbar-portrait-break{
-        display:block;
-        order:6;
-        flex:0 0 100%;
-        width:100%;
+        display:block !important;
+        order:5;
+        flex:0 0 100% !important;
+        width:100% !important;
         height:0;
         margin:0;
         padding:0;
@@ -5958,13 +5985,13 @@
         font-size:12px;
       }
       .admin-topbar-presence{
-        order:10;
+        order:10 !important;
         display:flex !important;
-        flex:1 1 0;
+        flex:1 1 0% !important;
         flex-direction:row;
-        width:auto;
-        max-width:100%;
-        min-width:0;
+        width:auto !important;
+        max-width:calc(100% - 140px) !important;
+        min-width:0 !important;
         margin:0;
         border:none;
         overflow:hidden;
@@ -6016,6 +6043,7 @@
         row-gap:6px;
         column-gap:6px;
       }
+      .admin-topbar-greens,
       .admin-topbar-meta,
       .admin-topbar-msgs{display:contents}
       body.admin-touch-compact .admin-menu-mob,
@@ -6049,7 +6077,8 @@
       #btnAnnouncements{order:7}
       #btnFamilyMsgs{order:8}
       #btnStaffWa{order:9}
-      .admin-profile{order:10}
+      #btnProfileMini,
+      .admin-profile{order:10 !important}
       body.admin-touch-compact .admin-topbar #btnAlerts,
       #btnAlerts{
         display:inline-flex !important;

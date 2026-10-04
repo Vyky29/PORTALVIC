@@ -185,7 +185,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-portrait-row" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-portrait-greens" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -291,13 +291,7 @@
           <input type="search" id="globalSearch" placeholder="Search the portal and press Enter" autocomplete="off" aria-label="Search the portal" aria-controls="adminSearchResults" aria-expanded="false" />
         </div>
         <a class="admin-topbar-help" href="/admin_office_help.html">Help</a>
-        <div id="portalLivePresenceBar" class="portal-live-presence admin-topbar-presence" hidden aria-live="polite"></div>
-        <span class="admin-topbar-portrait-break" aria-hidden="true"></span>
-        <div class="admin-topbar-meta">
-          <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
-            🔔
-            <span class="admin-badge" id="alertBadge">0</span>
-          </button>
+        <span class="admin-topbar-greens">
           <a class="admin-icon-btn admin-icon-btn--wa" id="btnOpenWhatsapp" href="https://web.whatsapp.com" target="_blank" rel="noopener noreferrer" aria-label="Open WhatsApp on this computer" title="WhatsApp on this computer (07592 558671)">
             <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.04 2C6.58 2 2.15 6.4 2.15 11.83c0 1.74.46 3.44 1.34 4.94L2 22l5.39-1.41a10.1 10.1 0 0 0 4.65 1.12h.01c5.46 0 9.89-4.4 9.89-9.83C21.94 6.4 17.5 2 12.04 2zm0 17.95h-.01a8.4 8.4 0 0 1-4.28-1.17l-.31-.18-3.2.84.85-3.11-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.72-8.23 8.3-8.23 2.22 0 4.3.86 5.87 2.42a8.18 8.18 0 0 1 2.43 5.81c0 4.54-3.72 8.23-8.29 8.23zm4.55-6.16c-.25-.12-1.47-.72-1.7-.8-.23-.08-.39-.12-.56.13-.17.24-.64.8-.78.96-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.77-1.84-.2-.48-.41-.42-.56-.42h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.01 2.56c.13.17 1.75 2.67 4.24 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.1-.23-.17-.48-.29z"/></svg>
           </a>
@@ -305,6 +299,21 @@
             <span class="admin-icon-btn__svg" id="btnComunicacionesIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="commsBadge" data-comms-unread>0</span>
           </button>
+        </span>
+        <button type="button" class="admin-profile" id="btnProfileMini">
+            <span class="admin-av" id="miniAv">
+              <img id="miniAvImg" alt="" hidden decoding="async" />
+              <span id="miniAvInitials">·</span>
+            </span>
+            <span id="miniName"></span>
+          </button>
+        <div id="portalLivePresenceBar" class="portal-live-presence admin-topbar-presence" hidden aria-live="polite"></div>
+        <span class="admin-topbar-portrait-break" aria-hidden="true"></span>
+        <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
+          🔔
+          <span class="admin-badge" id="alertBadge">0</span>
+        </button>
+        <div class="admin-topbar-meta">
           <span class="admin-topbar-split" aria-hidden="true"></span>
           <span class="admin-topbar-msgs">
           <button type="button" class="admin-icon-btn admin-icon-btn--chat admin-icon-btn--a admin-api-chip" id="btnAnnouncements" aria-label="Announcements" title="Announcements">
@@ -332,13 +341,6 @@
           </button>
           </span>
           <nav class="admin-portal-switch" id="adminPortalSwitch" aria-label="Switch portal" hidden></nav>
-<button type="button" class="admin-profile" id="btnProfileMini">
-            <span class="admin-av" id="miniAv">
-              <img id="miniAvImg" alt="" hidden decoding="async" />
-              <span id="miniAvInitials">·</span>
-            </span>
-            <span id="miniName"></span>
-          </button>
         </div>
       </header>
       <div id="adminSearchResults" class="admin-search-pop" hidden>
