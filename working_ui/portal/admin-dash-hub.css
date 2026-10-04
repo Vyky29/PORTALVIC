@@ -1599,6 +1599,21 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
   align-items:center;
   justify-content:center;
   flex:0 0 auto;
+  border-radius:10px;
+  border:1.5px solid #7c3aed;
+  background:#ddd6fe;
+  color:#5b21b6;
+  cursor:pointer;
+  box-shadow:none;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.admin-page-head__dash:hover,
+.admin-page-head__dash:focus-visible{
+  background:#c4b5fd;
+  border-color:#6d28d9;
+  color:#4c1d95;
+  outline:none;
 }
 .admin-page-head__dash .admin-nav-ico,
 .admin-page-head__dash .admin-nav-ico svg{

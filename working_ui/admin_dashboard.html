@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20261004-venue-send" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261004-dash-icon" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261004-dash-lilac" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
@@ -2514,10 +2514,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       c4k_sessions: true,
       c4k_registers: true
     };
+    function portalAdminDecodeEntities(s){
+      return String(s || '')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#0?39;/g, "'")
+        .replace(/&nbsp;/gi, ' ');
+    }
     function portalAdminExtractPageTitle(html){
       var m = String(html || '').match(/<h[12]\s+class="page-title"[^>]*>([\s\S]*?)<\/h[12]>/i);
       if(!m) return '';
-      return String(m[1] || '').replace(/<[^>]+>/g, '').trim();
+      return portalAdminDecodeEntities(String(m[1] || '').replace(/<[^>]+>/g, '')).trim();
     }
     function portalAdminExtractPageIntro(html){
       var m = String(html || '').match(/<p class="page-intro"([^>]*)>([\s\S]*?)<\/p>/i);
@@ -2568,7 +2577,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var titleIconId = String(opts.titleIconId || '').trim();
       var headExtraClass = opts.headStacked ? ' admin-page-head--stacked' : '';
       if(opts.headClass) headExtraClass += ' ' + String(opts.headClass).replace(/[^a-z0-9_\- ]/gi, '').trim();
-      var plainTitle = title.replace(/<[^>]+>/g, '').trim();
+      var plainTitle = portalAdminDecodeEntities(title.replace(/<[^>]+>/g, '')).trim();
       var infoTitle = plainTitle;
       if(PORTAL_FINANCE_GUIDE_SECTIONS[viewId]){
         var finItem = navGetItem(viewId);
@@ -2580,7 +2589,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var titleEl = '<h1 class="page-title admin-page-head__title">'+esc(plainTitle)+'</h1>';
       var extraActions = String(opts.extraActions || '');
       var afterActions = String(opts.afterActions || '');
-      var dashBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__dash" data-admin-back-hub aria-label="Dashboard" title="Dashboard">'+adminNavIconHtml('nav_hub')+'</button>';
+      var dashBtn = '<button type="button" class="admin-page-head__dash" data-admin-back-hub aria-label="Dashboard" title="Dashboard">'+adminNavIconHtml('nav_hub')+'</button>';
       var actions = '<div class="admin-page-head__actions">'+dashBtn+backBtn+afterActions+'</div>';
       var tools = '<div class="admin-page-head__tools">'+infoBtn+actions+'</div>';
       var subRow = extraActions ? '<div class="admin-page-head__sub">'+extraActions+'</div>' : '';
@@ -32318,6 +32327,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(calGlance && !calGlance.dataset.bound){
         calGlance.dataset.bound = '1';
         calGlance.addEventListener('click', function(ev){
+          if(window.__portalDashGhostUntil && Date.now() < window.__portalDashGhostUntil){
+            window.__portalDashGhostUntil = 0;
+            if(ev){
+              ev.preventDefault();
+              ev.stopPropagation();
+            }
+            return;
+          }
           if(ev) ev.preventDefault();
           setView('office_calendar');
         });
@@ -35385,6 +35402,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalBindWorkspaceDayopsComposeCapture(){
       if(window.__portalDayopsComposeDocCap) return;
       window.__portalDayopsComposeDocCap = true;
+      document.addEventListener('click', function(ev){
+        if(!window.__portalDashGhostUntil || Date.now() >= window.__portalDashGhostUntil) return;
+        window.__portalDashGhostUntil = 0;
+        try{ ev.preventDefault(); }catch(_g){}
+        try{ ev.stopImmediatePropagation(); }catch(_g2){}
+      }, true);
       function runDelegatedDayopsCompose(e){
         if(e.type === 'pointerdown'){
           if(e.pointerType === 'mouse' && e.button !== 0) return;
@@ -35399,7 +35422,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             try{ e.stopPropagation(); }catch(_bh2){}
             return;
           }
-          if(e.type === 'pointerdown') backHub.__portalDayopsDocUiAt = Date.now();
+          if(e.type === 'pointerdown'){
+            backHub.__portalDayopsDocUiAt = Date.now();
+            /* The hub replaces this button before click. That click would land on
+               whatever is now under the finger (the calendar on the phone hub). */
+            window.__portalDashGhostUntil = Date.now() + 800;
+          }
           try{ e.preventDefault(); }catch(_bh3){}
           try{ e.stopPropagation(); }catch(_bh4){}
           openNavHubIndex();
