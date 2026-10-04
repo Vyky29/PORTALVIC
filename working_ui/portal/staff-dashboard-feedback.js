@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260930-abate-aquatic-feedback';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20261004-hazem-own';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1097,7 +1097,19 @@
       const stTime = portalReviewKeyTimeTokenFromSessionKey(s);
       const ttTime = portalReviewKeyTimeTokenFromSessionKey(t);
       if(stTime && ttTime) return stTime === ttTime;
-      if(!stTime && ttTime) return portalReviewStoredAbsentKeyIsSharedDayUnit(s);
+      if(!stTime && ttTime){
+        if(!portalReviewStoredAbsentKeyIsSharedDayUnit(s)) return false;
+        /* date|client|aquatic is one swim, not every Hazem card that day. */
+        const sLow = String(s || '').toLowerCase();
+        const tLow = String(t || '').toLowerCase();
+        if(/\|aquatic$/.test(sLow)){
+          if(/\|aquatic(?:\||$)/.test(tLow)) return true;
+          if(/\|(big_pool|small_pool|teaching_pool|hub_room|wall|climbing_wall|climbing)(?:\||$)/.test(tLow)){
+            return false;
+          }
+        }
+        return true;
+      }
       return true;
     }
     function portalReviewAbsentInMemoryForAliases(aliases){

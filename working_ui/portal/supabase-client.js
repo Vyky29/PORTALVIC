@@ -1549,14 +1549,31 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
     if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
     return portalSessionKeyClientSlugsMatch(s, r);
   }
-  /* Lead aquatic absent without clock token → timed roster row for same participant. */
+  /* Untimed aquatic (date|client|aquatic) covers that child's aquatic cards only.
+     It must not mark another instructor's Multi, Hub or Climb slot done
+     (Javi's Hazem swim must not close Javier's Hazem Multi). */
   if (
     portalSubmittedKeyIsLeadAquaticUnit(s) &&
     rTime &&
     !sTime &&
     !portalRosterKeyIsSharedFeedbackUnit(r)
   ) {
-    return portalSessionKeyClientSlugsMatch(s, r);
+    if (!portalSessionKeyClientSlugsMatch(s, r)) return false;
+    const rLow = String(r || "").toLowerCase();
+    if (/\|aquatic(?:\||$)/.test(rLow)) return true;
+    const rArea = portalSessionKeyAreaToken(r);
+    if (
+      rArea === "big_pool" ||
+      rArea === "small_pool" ||
+      rArea === "teaching_pool" ||
+      rArea.indexOf("hub") >= 0 ||
+      rArea.indexOf("climb") >= 0 ||
+      rArea === "wall" ||
+      rArea === "climbing_wall"
+    ) {
+      return false;
+    }
+    return true;
   }
   const sharedUnit =
     portalRosterKeyIsSharedFeedbackUnit(r) || portalRosterKeyIsSharedFeedbackUnit(s);

@@ -5793,21 +5793,21 @@
       .admin-topbar-greens .admin-icon-btn--chat,
       #btnAlerts,
       .admin-profile{
-        width:28px;
-        height:28px;
-        min-width:28px;
-        min-height:28px;
-        flex:0 0 28px;
+        width:40px;
+        height:40px;
+        min-width:40px;
+        min-height:40px;
+        flex:0 0 40px;
       }
       .admin-topbar-meta .admin-icon-btn--wa svg,
       .admin-topbar-greens .admin-icon-btn--wa svg{
-        width:16px;
-        height:16px;
+        width:22px;
+        height:22px;
       }
       .admin-topbar-meta .admin-icon-btn--chat .admin-icon-btn__svg svg,
       .admin-topbar-greens .admin-icon-btn--chat .admin-icon-btn__svg svg{
-        width:16px !important;
-        height:16px !important;
+        width:22px !important;
+        height:22px !important;
       }
       .admin-topbar-meta .admin-api-chip__name{display:none}
       .admin-topbar-meta .admin-api-chip__mark{
@@ -5907,10 +5907,11 @@
       }
       #btnOpenWhatsapp,
       #btnComunicaciones{
-        width:28px;
-        height:28px;
-        min-width:28px;
-        flex:0 0 28px;
+        width:40px;
+        height:40px;
+        min-width:40px;
+        min-height:40px;
+        flex:0 0 40px;
       }
       body.admin-touch-compact .admin-topbar-meta,
       .admin-topbar-meta,
@@ -5941,12 +5942,20 @@
       #btnProfileMini,
       .admin-profile{
         order:4 !important;
-        flex:0 0 28px !important;
+        flex:0 0 40px !important;
         margin:0;
-        width:28px;
-        height:28px;
-        padding:1px;
+        width:40px;
+        height:40px;
+        min-width:40px;
+        min-height:40px;
+        padding:0;
         justify-content:center;
+        border-radius:12px;
+      }
+      .admin-profile .admin-av{
+        width:100%;
+        height:100%;
+        border-radius:inherit;
       }
       .admin-profile span#miniName{display:none}
       .admin-topbar-portrait-break{
@@ -5964,18 +5973,22 @@
       .admin-menu-mob{
         display:inline-flex !important;
         order:0;
-        width:28px;
-        height:28px;
-        flex:0 0 28px;
+        width:40px;
+        height:40px;
+        min-width:40px;
+        min-height:40px;
+        flex:0 0 40px;
+        border-radius:12px;
       }
       body.admin-touch-compact .admin-topbar #btnAlerts,
       #btnAlerts{
         display:inline-flex !important;
         order:11;
-        width:28px;
-        height:28px;
-        min-width:28px;
-        flex:0 0 28px;
+        width:40px;
+        height:40px;
+        min-width:40px;
+        min-height:40px;
+        flex:0 0 40px;
       }
       .admin-topbar-help{
         order:2;
@@ -6050,9 +6063,12 @@
       body.admin-touch-compact .admin-menu-mob,
       .admin-topbar .admin-menu-mob{
         order:1;
-        flex:0 0 28px;
-        width:28px;
-        height:28px;
+        flex:0 0 40px;
+        width:40px;
+        height:40px;
+        min-width:40px;
+        min-height:40px;
+        border-radius:12px;
       }
       body.admin-touch-compact .admin-topbar .admin-search-wrap,
       .admin-topbar .admin-search-wrap{
@@ -6085,18 +6101,35 @@
       #btnAlerts{
         display:inline-flex !important;
         order:4;
-        width:28px;
-        height:28px;
-        min-width:28px;
-        flex:0 0 28px;
+        width:40px;
+        height:40px;
+        min-width:40px;
+        min-height:40px;
+        flex:0 0 40px;
+      }
+      #btnOpenWhatsapp,
+      #btnComunicaciones{
+        width:40px;
+        height:40px;
+        min-width:40px;
+        min-height:40px;
+        flex:0 0 40px;
       }
       .admin-profile{
-        flex:0 0 28px;
+        flex:0 0 40px;
         margin:0;
-        width:28px;
-        height:28px;
-        padding:2px;
+        width:40px;
+        height:40px;
+        min-width:40px;
+        min-height:40px;
+        padding:0;
         justify-content:center;
+        border-radius:12px;
+      }
+      .admin-profile .admin-av{
+        width:100%;
+        height:100%;
+        border-radius:inherit;
       }
       .admin-profile span#miniName{display:none}
       .admin-topbar-presence{
