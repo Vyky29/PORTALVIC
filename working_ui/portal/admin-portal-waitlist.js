@@ -95,16 +95,36 @@
       parentLine: String(e.parent_name || "").trim(),
       sourceTag: "Booking Portal",
       source: "Booking Portal",
+      leadId: String(e.lead_id || ""),
+      registrationStatus: String(e.registration_status || ""),
       liveStatus: String(e.status || "active"),
       _live: true,
       created_at: e.created_at,
     };
   }
 
-  function publishRows(entries) {
+  function publishLeadRegistration(rows) {
+    var byLead = Object.create(null);
+    var byParent = Object.create(null);
+    (rows || []).forEach(function (lead) {
+      var id = String((lead && lead.id) || "").trim();
+      var status = String((lead && lead.registration_status) || "").trim();
+      var parent = String((lead && lead.parent_name) || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (id) byLead[id] = status;
+      if (parent) byParent[parent] = status;
+    });
+    global.__PORTAL_WAIT_LEAD_REG__ = { byLead: byLead, byParent: byParent };
+  }
+
+  function publishRows(entries, leadRegistration) {
     var rows = (entries || []).map(mapEntry);
     global.__PORTAL_WAITLIST_LIVE_ROWS__ = rows;
     global.__PORTAL_WAITLIST_LIVE_META__ = state.meta || {};
+    publishLeadRegistration(leadRegistration);
     return rows;
   }
 
@@ -115,14 +135,14 @@
       var token = await accessToken();
       if (!token) {
         state.error = "Sign in required";
-        publishRows([]);
+        publishRows([], []);
         return { ok: false, error: state.error, rows: [] };
       }
       var base = supabaseBase();
       var anon = String(cfg.getAnonKey() || "").trim();
       if (!base || !anon) {
         state.error = "Missing Supabase config";
-        publishRows([]);
+        publishRows([], []);
         return { ok: false, error: state.error, rows: [] };
       }
       var res = await fetch(base + "/functions/v1/portal-admin-waitlist-list", {
@@ -139,16 +159,16 @@
       });
       if (!res.ok || !data.ok) {
         state.error = (data && data.error) || "load_failed";
-        publishRows([]);
+        publishRows([], []);
         return { ok: false, error: state.error, rows: [] };
       }
       state.entries = data.entries || [];
       state.meta = data.meta || {};
-      var rows = publishRows(state.entries);
+      var rows = publishRows(state.entries, data.lead_registration || []);
       return { ok: true, rows: rows, meta: state.meta };
     } catch (err) {
       state.error = (err && err.message) || "network_error";
-      publishRows([]);
+      publishRows([], []);
       return { ok: false, error: state.error, rows: [] };
     } finally {
       state.loading = false;

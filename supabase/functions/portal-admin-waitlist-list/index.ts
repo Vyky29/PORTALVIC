@@ -73,12 +73,52 @@ Deno.serve(async (req) => {
   }
 
   const entries = data || [];
-  const activeN = entries.filter((r) => r.status === "active").length;
-  const offeredN = entries.filter((r) => r.status === "offered").length;
+  const leadIds = Array.from(
+    new Set(entries.map((r) => String(r.lead_id || "").trim()).filter(Boolean)),
+  );
+  const leadById = new Map<string, { registration_status: string; parent_name: string }>();
+  if (leadIds.length) {
+    const { data: linkedLeads } = await admin
+      .from("portal_booking_leads")
+      .select("id, parent_name, registration_status")
+      .in("id", leadIds);
+    (linkedLeads || []).forEach((lead) => {
+      leadById.set(String(lead.id), {
+        registration_status: String(lead.registration_status || ""),
+        parent_name: String(lead.parent_name || ""),
+      });
+    });
+  }
+  const { data: waitingLeads } = await admin
+    .from("portal_booking_leads")
+    .select("id, parent_name, registration_status")
+    .eq("booking_status", "waiting_list");
+  (waitingLeads || []).forEach((lead) => {
+    const id = String(lead.id || "");
+    if (!id || leadById.has(id)) return;
+    leadById.set(id, {
+      registration_status: String(lead.registration_status || ""),
+      parent_name: String(lead.parent_name || ""),
+    });
+  });
+  const withForm = entries.map((row) => {
+    const lead = leadById.get(String(row.lead_id || ""));
+    return Object.assign({}, row, {
+      registration_status: lead ? lead.registration_status : "",
+    });
+  });
+  const leadRegistration = Array.from(leadById.entries()).map(([id, lead]) => ({
+    id,
+    parent_name: lead.parent_name,
+    registration_status: lead.registration_status,
+  }));
+  const activeN = withForm.filter((r) => r.status === "active").length;
+  const offeredN = withForm.filter((r) => r.status === "offered").length;
 
   return portalAdminJson(200, {
     ok: true,
-    entries,
+    entries: withForm,
+    lead_registration: leadRegistration,
     meta: {
       total: entries.length,
       active: activeN,

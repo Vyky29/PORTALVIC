@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-04-v237",
+  "version": "2026-10-04-v238",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -585,7 +585,7 @@
             "Places (Booking Portal) is the offer: open seats and taken seats. Service roster is who is already booked and the standing instructor. New client puts a person into an open seat. Edit term slot changes that seat for the rest of term.",
             "Leads is a parent who asked for an OTP code. Read Outcome: only looked, started registration, registered, already a client, or waiting list.",
             "REGISTERED finished the registration form and has never had a place. Service and Time slot show what they asked for. Pay hold and Lost slot are chips on that list. Outcome says why a Lost slot happened. Blocked the space: they went in and the seat was held, then the time ran out. Did not pay: a pay link was sent and the seat was not held. Office hold, not paid: the office kept it and they did not pay.",
-            "WAITING LIST is someone who registered and the service they want is full. They are waiting for a place. They are not Leads and they are not REGISTERED.",
+            "WAITING LIST is someone waiting for a full service. From now on they register first, so the form done also shows REGISTERED. A join from before the form was required stays WAITING only, with no REGISTERED chip, until the form is submitted.",
             "A person with a place now is CLIENT. That list is Clients and Families, Active. They are not in these three lists."
           ],
           "tips": [
@@ -599,7 +599,7 @@
               "Places (Booking Portal) es la oferta: plazas libres y plazas cogidas. Service roster es quien ya esta reservado y el instructor de siempre. New client mete a una persona en una plaza libre. Edit term slot cambia esa plaza para el resto del term.",
               "Leads es un padre o una madre que pidio un codigo OTP. Lee Outcome: solo miro, empezo el formulario, se registro, ya era cliente, o lista de espera.",
               "REGISTERED termino el formulario y nunca ha tenido plaza. Service y Time slot muestran lo que pidieron. Pay hold y Lost slot son chips en esa lista. Outcome dice por que es Lost slot. Blocked the space: entraron y la plaza quedo retenida, y se acabo el tiempo. Did not pay: se mando un enlace de pago y la plaza no quedo retenida. Office hold, not paid: la oficina la guardo y no pagaron.",
-              "WAITING LIST es alguien que se registro y el servicio que quiere esta lleno. Esta esperando una plaza. No es Leads y no es REGISTERED.",
+              "WAITING LIST es alguien que espera un servicio lleno. A partir de ahora se registran primero, asi que el formulario hecho tambien muestra REGISTERED. Quien entro antes de exigir el formulario se queda solo en WAITING, sin chip REGISTERED, hasta que envie el formulario.",
               "Quien ya tiene plaza es CLIENT. Esa lista esta en Clients & Families, Active. No esta en estas tres listas."
             ],
             "tips": [
