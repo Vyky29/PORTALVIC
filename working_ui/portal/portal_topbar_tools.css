@@ -1760,3 +1760,23 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   font-weight:800 !important;
   line-height:20px !important;
 }
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread),
+#topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread){
+  background:#25D366 !important;
+  border-color:#128C7E !important;
+  color:#fff !important;
+  box-shadow:0 1px 3px rgba(18,140,126,.28) !important;
+}
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-tool-btn__ico,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-tool-btn__ico svg,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-tool-label,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-staff-wa-btn__label,
+.topbar-lead--halo-flanks.topbar-lead--flank-pair #topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-tool-btn__ico,
+.topbar-lead--halo-flanks.topbar-lead--flank-pair #topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-tool-btn__ico svg,
+.topbar-lead--halo-flanks.topbar-lead--flank-pair #topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-tool-label,
+#topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-tool-btn__ico,
+#topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-tool-btn__ico svg,
+#topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-tool-label,
+#topbarStaffWaBtn:not(.topbar-staff-wa-btn--unread):not(.topbar-tool-btn--staff-wa-unread) .topbar-staff-wa-btn__label{
+  color:#fff !important;
+}

@@ -91,7 +91,7 @@
   var unreadChannel = null;
   var commsUiActive = true;
   var COMMS_ICO =
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>';
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.15 6.4 2.15 11.83c0 1.74.46 3.44 1.34 4.94L2 22l5.39-1.41a10.1 10.1 0 0 0 4.65 1.12h.01c5.46 0 9.89-4.4 9.89-9.83C21.94 6.4 17.5 2 12.04 2zm0 17.95h-.01a8.4 8.4 0 0 1-4.28-1.17l-.31-.18-3.2.84.85-3.11-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.72-8.23 8.3-8.23 2.22 0 4.3.86 5.87 2.42a8.18 8.18 0 0 1 2.43 5.81c0 4.54-3.72 8.23-8.29 8.23zm4.55-6.16c-.25-.12-1.47-.72-1.7-.8-.23-.08-.39-.12-.56.13-.17.24-.64.8-.78.96-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.77-1.84-.2-.48-.41-.42-.56-.42h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.01 2.56c.13.17 1.75 2.67 4.24 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.1-.23-.17-.48-.29z"/></svg>';
 
   function detectFromPortal() {
     try {
@@ -151,7 +151,7 @@
   }
 
   function commsButtonLabel(_count) {
-    return "COMMS";
+    return "Chat";
   }
 
   function unreadStorageKey() {
@@ -438,10 +438,10 @@
       paintCornerBadge(btn, lastUnreadCount);
       btn.setAttribute(
         "aria-label",
-        lastUnreadCount > 0 ? "Communications (" + lastUnreadCount + ")" : "Communications"
+        lastUnreadCount > 0 ? "Chat (" + lastUnreadCount + ")" : "Chat"
       );
       var labelEl = btn.querySelector(".topbar-staff-wa-btn__label, .topbar-tool-label");
-      if (labelEl) labelEl.textContent = "COMMS";
+      if (labelEl) labelEl.textContent = "Chat";
     }
     var adminBtn = document.getElementById("btnComunicaciones");
     if (adminBtn) {
@@ -2225,7 +2225,7 @@
     }
     var existing = document.getElementById("topbarStaffWaBtn");
     if (existing) {
-      existing.setAttribute("aria-label", "Communications");
+      existing.setAttribute("aria-label", "Chat");
       if (!existing.getAttribute("href") || existing.getAttribute("href").indexOf("comunicaciones") >= 0) {
         existing.setAttribute("href", commsUrl());
       }
@@ -2237,12 +2237,12 @@
     btn.type = "button";
     btn.id = "topbarStaffWaBtn";
     btn.className = "topbar-staff-wa-btn";
-    btn.setAttribute("aria-label", "Communications");
+    btn.setAttribute("aria-label", "Chat");
     btn.innerHTML =
       '<span class="topbar-staff-wa-btn__ico" aria-hidden="true">' +
       COMMS_ICO +
       "</span>" +
-      '<span class="topbar-staff-wa-btn__label">COMMS</span>' +
+      '<span class="topbar-staff-wa-btn__label">Chat</span>' +
       '<span class="topbar-staff-wa-btn__badge is-empty" data-comms-unread aria-hidden="true">0</span>';
     btn.addEventListener("click", function (ev) {
       ev.preventDefault();
