@@ -613,6 +613,19 @@ function receiptMeta(m, show) {
   return ' <span class="comms-receipt ' + cls + '">' + text + "</span>";
 }
 
+function attachmentCaptionHtml(m) {
+  const text = String((m && m.body) || "").trim();
+  if (!text) return "";
+  const name = String((m && m.file_name) || "").trim();
+  if (name && text === name) return "";
+  if (String(m.message_type || "") === "audio" && text === "Voice note") return "";
+  return (
+    '<div class="comms-bubble-caption">' +
+    esc(text).replace(/\n/g, "<br>") +
+    "</div>"
+  );
+}
+
 function bubbleHtml(m) {
   const mine = bubbleIsMine(m);
   const admin = isAdminContext(m);
@@ -628,7 +641,8 @@ function bubbleHtml(m) {
       esc(m.storage_path) +
       '" href="#"><img alt="" data-file-img="' +
       esc(m.storage_path) +
-      '" /></a>';
+      '" /></a>' +
+      attachmentCaptionHtml(m);
   } else if (m.message_type === "audio" && m.storage_path) {
     body =
       '<audio class="comms-audio" controls preload="metadata" data-file="' +
@@ -640,7 +654,8 @@ function bubbleHtml(m) {
       esc(m.storage_path) +
       '" href="#">' +
       esc(m.file_name || "File") +
-      "</a>";
+      "</a>" +
+      attachmentCaptionHtml(m);
   } else if (m.message_type === "call") {
     klass = "comms-bubble is-call";
     who = "";

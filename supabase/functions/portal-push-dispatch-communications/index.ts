@@ -165,9 +165,11 @@ Deno.serve(async (req) => {
     recipientIds = ((ids as string[]) || []).map(String).filter(Boolean);
     const ctx = String(record.sender_context || "").toUpperCase();
     const preview = clampPushBody(String(record.body || record.file_name || ""), 120);
+    const fileName = String(record.file_name || "").trim();
+    const caption = preview && preview !== fileName ? preview : "";
     if (msgType === "audio") body = "Voice note";
-    else if (msgType === "image") body = "Photo";
-    else if (msgType === "file") body = String(record.file_name || "File");
+    else if (msgType === "image") body = caption || "Photo";
+    else if (msgType === "file") body = caption || fileName || "File";
     else body = preview || "New message";
     title = ctx === "ADMINISTRATION" ? "ADMIN" : "Communications";
     const conv = String(record.conversation_id || "").trim();
