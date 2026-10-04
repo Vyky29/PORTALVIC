@@ -823,6 +823,7 @@ function renderThread() {
     $("commsClosedBanner").hidden = true;
     $("commsPeerName").textContent = "Select a conversation";
     $("commsPeerMeta").textContent = "";
+    $("commsPeerMeta").hidden = true;
     $("commsPeerAvatar").innerHTML = "";
     return;
   }
@@ -840,16 +841,20 @@ function renderThread() {
   $("commsCallAudio").disabled = closed;
   $("commsCallVideo").disabled = closed;
   if (it.kind === "group") {
+    $("commsPeerMeta").hidden = false;
     $("commsPeerMeta").textContent = closed ? "Closed group" : "Group";
     $("commsDraft").placeholder = "Write in the group...";
   } else if (it.kind === "ceo_peer") {
-    $("commsPeerMeta").textContent = "Direct";
+    $("commsPeerMeta").hidden = true;
+    $("commsPeerMeta").textContent = "";
     $("commsDraft").placeholder = "Write to " + (commsStaffLabel(it.display_name) || "them") + "...";
   } else if (state.mode === "administration") {
-    $("commsPeerMeta").textContent = "Conversation with ADMIN";
+    $("commsPeerMeta").hidden = true;
+    $("commsPeerMeta").textContent = "";
     $("commsDraft").placeholder = "Write as ADMIN...";
   } else {
-    $("commsPeerMeta").textContent = "ADMIN";
+    $("commsPeerMeta").hidden = true;
+    $("commsPeerMeta").textContent = "";
     $("commsDraft").placeholder = "Write to ADMIN...";
   }
   if (!state.messages.length) {
