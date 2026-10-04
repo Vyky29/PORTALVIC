@@ -1678,7 +1678,7 @@
         const shadowerKey = portalStaffNormRosterKey(ov.anchor_staff_id);
         if(!shadowerKey || seen[shadowerKey]) return;
         seen[shadowerKey] = true;
-        const label = portalStaffProfileFirstName(ov.anchor_staff_id) + ' shadowing you';
+        const label = portalStaffProfileFirstName(ov.anchor_staff_id) + ' shadowing';
         out.push(label);
       });
       return out;
@@ -2090,9 +2090,9 @@
       } else if(String(item.clientId || '').trim().toLowerCase() !== 'meeting' && Array.isArray(item.portalSessionAddChips) && item.portalSessionAddChips.length){
         push(portalPlainSessionSlotChipsHtml(item.portalSessionAddChips, item.portalOverrideCardTone));
       } else if(!!item.portalOverrideTrialTag || isTrialSym){
-        push('<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial/New Participant"><span>Trial/New Participant</span></span>');
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial"><span>Trial</span></span>');
       } else if(!!item.portalOverrideMoveInstructorTag || symNorm === 'move in and change instructor'){
-        push('<span class="portal-session-slot-chip portal-session-slot-chip--move-in" aria-label="Move in and change instructor"><span>Move in and change instructor</span></span>');
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--move-in" aria-label="Change instructor"><span>Change instructor</span></span>');
       } else if(!!item.portalOverrideMoveInTag || symNorm === 'move in' || symNorm === 'moved in'){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--move-in" aria-label="Move in"><span>Move in</span></span>');
       } else if(isMakeUpSym || !!item.portalOverrideMakeUpTag){

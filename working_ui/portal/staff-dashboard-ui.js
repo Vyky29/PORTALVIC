@@ -2585,7 +2585,7 @@
         && portalTermStaffRemovedFromBaselineShiftOnDate(iso, sid);
     }
     function portalSessionUpdatedChipHtml(){
-      return '<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Updated by admin"><span>Updated by admin</span></span>';
+      return '<span class="portal-session-slot-chip portal-session-slot-chip--updated" aria-label="Updated"><span>Updated</span></span>';
     }
     function portalTermCalendarToIso(){
       const ptd = window.PortalTermCalendarDashboard;
