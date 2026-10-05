@@ -1182,7 +1182,15 @@
       } catch (_invMadre) {}
       try {
         global.PORTAL_ROSTER_ROWS_CACHE = null;
+        global.__PORTAL_ROSTER_LIVE_AT__ = 0;
       } catch (_invRows) {}
+    } else {
+      var liveAt = Number(global.__PORTAL_ROSTER_LIVE_AT__ || 0);
+      var cachedRows = global.PORTAL_ROSTER_ROWS_CACHE;
+      if (liveAt && Date.now() - liveAt < 45000 && Array.isArray(cachedRows) && cachedRows.length) {
+        refreshHubRosterFromLiveSource();
+        return;
+      }
     }
     var client = cfg.getClient && cfg.getClient();
     if (!client && cfg.waitForSupabaseClient) {
@@ -1199,6 +1207,7 @@
       refreshHubRosterFromLiveSource();
       try {
         global.__PORTAL_STAFF_ROSTER_LIVE_READY__ = true;
+        global.__PORTAL_ROSTER_LIVE_AT__ = Date.now();
       } catch (_ready) {}
       console.log('[PortalDayOps] live MADRE + portal_roster_rows refreshed');
     } catch (eRoster) {
@@ -2483,8 +2492,10 @@
             cfg.invalidateLiveCaches();
           } catch (_inv) {}
         }
-        await global.PortalDayOps.ensurePayload({ force: !!(options && options.force) });
-        await ensureLiveRosterForHub(!!(options && options.force));
+        await Promise.all([
+          global.PortalDayOps.ensurePayload({ force: !!(options && options.force) }),
+          ensureLiveRosterForHub(!!(options && options.force))
+        ]);
         if (tabId === 'overview' || tabId === 'incidents' || tabId === 'absents' || tabId === 'cancellations') {
           pendingOverviewTab = overviewTabForC4k(tabId);
           var th = await initTrackingHub();

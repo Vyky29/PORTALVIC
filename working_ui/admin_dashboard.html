@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
   <script src="/portal/portal_participant_identity.js?v=20261003-mohamed-mohamud"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20261004-venue-notify"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20261005-feedback-open"></script>
   <script src="/portal/admin-portal-documents.js?v=20261002-hr-files"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20261001-reg-form"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260923-auto-makeup"></script>
@@ -510,7 +510,7 @@
       { id:'commissioning_terms', label:'LA / Commissioning Terms', hubLabel:'LA Terms' },
       { id:'family_terms', label:'Terms and Conditions', hubLabel:'Terms and Conditions', externalUrl:'/parent/terms', skipBottomNav:true },
       { id:'invoices', label:'Finance', hubLabel:'Finance' },
-      { id:'c4k_sessions', label:'Sessions overview', hubLabel:'Overview' },
+      { id:'c4k_sessions', label:'Sessions overview', hubLabel:'Overview', dayOpsAct:'sessions_hub_overview' },
       { id:'sessions_register', label:'Register', dayOpsAct:'sessions_hub_feedback' },
       { id:'sessions_feedback', label:'Register', hubLabel:'Register', dayOpsAct:'sessions_hub_feedback' },
       { id:'sessions_absents', label:'Day absents', hubLabel:'Absents (day)', dayOpsAct:'sessions_hub_absents' },
@@ -29312,14 +29312,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         runHubRefresh(true);
       };
       function runHubRefreshWhenReady(forceReload){
+        /* refreshTab loads the roster once. Waiting here as well made Feedback open twice as slow. */
         var start = function(){
-          var chain = Promise.resolve();
-          if(window.PortalDayOps && typeof window.PortalDayOps.ensureLiveRoster === 'function'){
-            chain = window.PortalDayOps.ensureLiveRoster(!!forceReload);
-          }
-          chain.finally(function(){
-            runHubRefresh(forceReload);
-          });
+          runHubRefresh(forceReload);
         };
         if(getSchedSupabaseClient()){
           start();
@@ -32131,7 +32126,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(action && action.id){
         var item = navGetItem(action.id);
         if(!item) return null;
-        return { id:item.id, label:action.label || item.hubLabel || item.label, externalUrl:item.externalUrl, navAction:item.navAction, dayOpsAct:item.dayOpsAct };
+        return { id:item.id, label:action.label || item.hubLabel || item.label, externalUrl:item.externalUrl, navAction:item.navAction, dayOpsAct:action.dayOpsAct || item.dayOpsAct };
       }
       return null;
     }
@@ -39247,6 +39242,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var label = esc(portalAdminNavDisplayLabel(item));
             if(item.navAction === 'fullnav'){
               return '<button type="button" class="'+active.trim()+'" data-admin-nav-action="fullnav" aria-label="'+label+'">'+label+'</button>';
+            }
+            if(item.dayOpsAct){
+              return '<button type="button" class="'+active.trim()+'" data-dayops-act="'+esc(String(item.dayOpsAct))+'" aria-label="'+label+'">'+label+'</button>';
             }
             return '<button type="button" class="'+active.trim()+'" data-view="'+esc(nid)+'" aria-label="'+label+'">'+label+'</button>';
           }).join('');
