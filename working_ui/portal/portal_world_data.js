@@ -325,8 +325,11 @@
       label: "Un cover",
       actor: "A la vez",
       steps: [
-        { islands: ["admin"], links: [], text: "Schedule and Covers asigna el cover, o deja COVER NEEDED." },
-        { islands: ["staff", "parent"], links: ["a-s", "a-p"], text: "A la vez: Staff Today cambia (halo y Quick menu). Parent solo ve el nombre en Team si el cover ya tiene persona. El day off no sale en Parent." }
+        { islands: ["admin"], links: [], cats: { admin: "Schedule" }, text: "Schedule and Covers guarda el override con una persona real. COVER NEEDED no es este paso y no avisa a la familia." },
+        { islands: ["admin", "auto"], links: ["auto-a"], cats: { admin: "Schedule", auto: "Aviso" }, edge: "Override", text: "El override sale de Schedule y entra en Automatizaciones." },
+        { islands: ["auto", "email", "wa"], links: ["auto-email", "auto-wa"], cats: { auto: "Aviso", email: "Email", wa: "WhatsApp" }, edge: "Mensaje", text: "Automatizaciones manda el mismo aviso por email y por WhatsApp." },
+        { islands: ["auto", "parent"], links: ["auto-p"], cats: { auto: "Aviso", parent: ["Team", "Today card"] }, edge: "Portal", text: "A la vez en Parent cambian Team y la tarjeta de hoy: sale el nombre del cover. En Day Centre el nombre se queda solo en Team. El day off no sale." },
+        { islands: ["admin", "staff"], links: ["a-s"], cats: { admin: "Schedule", staff: "Today" }, edge: "Today", text: "A la vez Staff Today cambia de persona. Halo y Quick menu. Eso no es el mensaje a la familia." }
       ]
     },
     {
@@ -531,8 +534,10 @@
       label: "Disruption",
       actor: "A la vez",
       steps: [
-        { islands: ["admin"], links: [], text: "Session disruption es el parte de una sesion que se rompe. No es un cover." },
-        { islands: ["admin", "staff"], links: ["a-s"], text: "Staff Today lo ve. La campana puede avisarlo. Parent no ve COVER NEEDED." }
+        { islands: ["staff"], links: [], cats: { staff: "Disruption" }, text: "Sale de Staff. Quick menu, Session disruption report. No es un cover y no pasa por Parent." },
+        { islands: ["staff", "admin"], links: ["a-s"], cats: { staff: "Disruption", admin: "Session disruptions" }, edge: "Parte", text: "Llega a Admin: campana y Session disruptions. Parent no entra." },
+        { islands: ["admin"], links: [], cats: { admin: ["Session disruptions", "Validate day"] }, text: "Admin valida el dia. Schedule pinta day off y COVER NEEDED. Sigue sin padres. El nombre nuevo aun no existe." },
+        { islands: ["admin", "staff"], links: ["a-s"], cats: { admin: "Validate day", staff: "Today" }, edge: "Day off", text: "Eso vuelve a Staff Today. Parent sigue fuera." }
       ]
     },
     {

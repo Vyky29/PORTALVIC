@@ -567,7 +567,7 @@
         "<h3>Que mirar</h3>" +
         "<p><b>Booking.</b> Quien entra, el trial, el hold y el pago (Stripe o Tide).</p>" +
         "<p><b>Admin.</b> El dia: Overview, covers, campana, Finance y el banco.</p>" +
-        "<p><b>Staff.</b> Today, feedback, timesheet, contrato. Los stats salen de aqui a Parent, sin pasar por Admin.</p>" +
+        "<p><b>Staff.</b> Today, feedback, timesheet, contrato. Los stats salen de aqui a Parent, sin pasar por Admin. Disruption sale de aqui y llega a Admin. No pasa por padres.</p>" +
         "<p><b>Parent.</b> Today card, reservas, notas y ausencias. Una nota avisa a la campana de Admin.</p>" +
         "<p><b>Onboarding.</b> El alta. La misma cuenta entra luego en Staff.</p>" +
         "<p><b>Comms.</b> Llamada y chat de dentro. No es WhatsApp.</p>" +
@@ -865,8 +865,23 @@
       if (!canvas) return;
       canvas.style.transform = "translate(" + state.subX + "px," + state.subY + "px) scale(" + state.subZ + ")";
     }
+    function pinSub() {
+      if (!sub || !vw) return;
+      sub.style.left = vw.scrollLeft + "px";
+      sub.style.top = vw.scrollTop + "px";
+      sub.style.width = vw.clientWidth + "px";
+      sub.style.height = vw.clientHeight + "px";
+    }
+    function unpinSub() {
+      if (!sub) return;
+      sub.style.left = "";
+      sub.style.top = "";
+      sub.style.width = "";
+      sub.style.height = "";
+    }
     function fitSub() {
       if (!state.subModel) return;
+      pinSub();
       var rect = vw.getBoundingClientRect();
       var padX = 36;
       var padY = 28;
@@ -975,6 +990,7 @@
       if (!sub) return;
       sub.hidden = true;
       sub.innerHTML = "";
+      unpinSub();
       nodes.style.visibility = "";
       var svg = root.querySelector("#pwWires");
       if (svg) svg.style.visibility = "";
