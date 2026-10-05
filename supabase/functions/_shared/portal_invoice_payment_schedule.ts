@@ -288,6 +288,41 @@ export type ApplyInstalmentPaymentResult = {
  * Mark the next pending instalment paid when amount matches (±1p).
  * Admin full-pay: pass markAll=true to clear the whole schedule.
  */
+const INSTALMENT_MONTHS = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+];
+
+/** Month name shared by a GoCardless description and a schedule label. */
+export function instalmentMonthKey(text: unknown): string {
+  const s = String(text || "").toLowerCase();
+  for (const month of INSTALMENT_MONTHS) {
+    if (s.includes(month)) return month;
+  }
+  return "";
+}
+
+export function scheduleRowHasPaymentId(
+  row: { paid_via?: string | null; gocardless_payment_id?: string | null },
+  paymentId: string,
+): boolean {
+  const id = String(paymentId || "").trim();
+  if (!id) return false;
+  const via = String(row.paid_via || "");
+  const gc = String(row.gocardless_payment_id || "");
+  return via.includes(id) || gc === id;
+}
+
 export function applyInstalmentPayment(
   rawSchedule: unknown,
   opts: {
@@ -295,6 +330,8 @@ export function applyInstalmentPayment(
     paidAt: string;
     paidVia: string;
     markAll?: boolean;
+    /** Mark this seq instead of the next pending row (GoCardless month match). */
+    targetSeq?: number | null;
   },
 ): ApplyInstalmentPaymentResult {
   const schedule = normalizePaymentSchedule(rawSchedule).map((r) => ({ ...r }));
@@ -311,7 +348,9 @@ export function applyInstalmentPayment(
       }
     }
   } else {
-    const next = schedule.find((r) => r.status !== "paid");
+    const next = opts.targetSeq != null
+      ? schedule.find((r) => r.seq === opts.targetSeq && r.status !== "paid")
+      : schedule.find((r) => r.status !== "paid");
     if (next && payAmt > 0) {
       const diff = Math.abs(payAmt - next.amount_gbp);
       if (diff <= 0.02 || payAmt + 1e-9 >= next.amount_gbp) {

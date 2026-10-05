@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v274",
+  "version": "2026-10-05-v275",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1499,6 +1499,52 @@
             "If they do not see the button: refresh; confirm the path is Direct Payment (GoCardless), not bank transfer / Flexi only; office can resend parent portal access / PIN.",
             "Use this when they already chose Direct Payment but never finished bank authorisation."
           ]
+        },
+        {
+          "id": "gocardless_instalments",
+          "title": "GoCardless months on an invoice",
+          "summary": "Autumn monthly GoCardless is 4 instalments (Sep, Oct, Nov, Dec). The chip counts those instalments. A green month is a collection GoCardless has already paid out.",
+          "where": "Finance → Bookings → the family invoice",
+          "keywords": [
+            "gocardless",
+            "go cardless",
+            "instalment",
+            "installment",
+            "cuota",
+            "partially paid",
+            "2 of 4",
+            "of 4 paid",
+            "septiembre",
+            "octubre",
+            "noviembre"
+          ],
+          "steps": [
+            "Open the family. The chip on the name is instalments already collected, for example 2 of 4 paid.",
+            "Inside the invoice, each month is its own row. Paid is green and shows the GoCardless payment. Scheduled is the next month, not due yet. Hidden is a later month.",
+            "Two collections so far (early September and 2 October) means September and October Paid, November Scheduled, December Hidden.",
+            "1 of 3 paid is a plan that starts in October (3 months left), not the second collection of a 4-month plan."
+          ],
+          "tips": [
+            "The old chip 1 partially paid meant one invoice still open. It did not mean one instalment.",
+            "GoCardless creates the later months in advance. Pending in GoCardless is not Paid on the invoice until that collection pays out.",
+            "A month goes green only when that collection has paid out. The October collection must not paint November."
+          ],
+          "es": {
+            "title": "Meses de GoCardless en la factura",
+            "summary": "GoCardless mensual de Autumn son 4 cuotas (sep, oct, nov, dic). El chip cuenta esas cuotas. Un mes en verde es un cobro que GoCardless ya ha pagado.",
+            "where": "Finance → Bookings → la factura de la familia",
+            "steps": [
+              "Abre la familia. El chip del nombre son las cuotas ya cobradas, por ejemplo 2 of 4 paid.",
+              "Dentro de la factura, cada mes es una fila. Paid en verde es el cobro de GoCardless. Scheduled es el mes siguiente, aun no toca. Hidden es un mes posterior.",
+              "Dos cobros hasta ahora (principios de septiembre y el 2 de octubre) = septiembre y octubre Paid, noviembre Scheduled, diciembre Hidden.",
+              "1 of 3 paid es un plan que empieza en octubre (quedan 3 meses), no el segundo cobro de un plan de 4."
+            ],
+            "tips": [
+              "El chip viejo 1 partially paid era una factura aun abierta. No era una cuota.",
+              "GoCardless crea los meses siguientes por adelantado. Pending en GoCardless no es Paid en la factura hasta que ese cobro sale.",
+              "Un mes se pone verde solo cuando ese cobro ha salido. El cobro de octubre no debe pintar noviembre."
+            ]
+          }
         },
         {
           "id": "create_invoice",

@@ -1229,6 +1229,7 @@ export async function recordInvoiceInstalmentPayment(
     amountGbp: number;
     paidVia: string;
     markAll?: boolean;
+    targetSeq?: number | null;
     stripeCheckoutSessionId?: string | null;
     stripePaymentIntentId?: string | null;
   },
@@ -1261,6 +1262,7 @@ export async function recordInvoiceInstalmentPayment(
       paidAt: now,
       paidVia: opts.paidVia,
       markAll: !!opts.markAll,
+      targetSeq: opts.targetSeq,
     });
     payment_schedule = applied.schedule;
     amount_paid_gbp = applied.amount_paid_gbp;

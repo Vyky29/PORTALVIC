@@ -17,7 +17,11 @@ import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
-import { normalizePaymentSchedule } from "../_shared/portal_invoice_payment_schedule.ts";
+import {
+  instalmentMonthKey,
+  normalizePaymentSchedule,
+  scheduleRowHasPaymentId,
+} from "../_shared/portal_invoice_payment_schedule.ts";
 import {
   tryCompleteBookingAfterGocardlessMandateSetup,
   tryCompleteBookingAfterInvoicePayment,
@@ -40,6 +44,58 @@ function consolidatedTargetId(notes: unknown): string {
     /Consolidated payment tracker:\s*([0-9a-f-]{20,80})/i,
   );
   return m ? m[1] : "";
+}
+
+type GcInstalmentPlan =
+  | { kind: "already" }
+  | { kind: "stamp"; schedule: Array<Record<string, unknown>> }
+  | { kind: "apply"; amountGbp: number; targetSeq: number | null };
+
+/**
+ * One GoCardless payment marks the month named on that payment.
+ * A second event for the same payment must not paint the next month Paid.
+ */
+async function planGcInstalment(
+  schedule: Array<Record<string, unknown>>,
+  paymentRef: string,
+  paidViaRef: string,
+  fallbackAmount: number,
+): Promise<GcInstalmentPlan> {
+  if (paymentRef && schedule.some((row) => scheduleRowHasPaymentId(row, paymentRef))) {
+    return { kind: "already" };
+  }
+  let amountGbp = 0;
+  let description = "";
+  if (paymentRef) {
+    const pay = await gocardlessGetPayment(paymentRef);
+    if (pay.ok) {
+      if (pay.data.amount_pence > 0) amountGbp = Math.round(pay.data.amount_pence) / 100;
+      description = String(pay.data.description || "");
+    }
+  }
+  const month = instalmentMonthKey(description);
+  if (month) {
+    const matched = schedule.find((row) => instalmentMonthKey(row.label) === month);
+    if (matched && String(matched.status || "pending").toLowerCase() === "paid") {
+      const next = schedule.map((row) => ({ ...row }));
+      const hit = next.find((row) => row.seq === matched.seq);
+      if (hit && !scheduleRowHasPaymentId(hit, paymentRef)) hit.paid_via = paidViaRef;
+      return { kind: "stamp", schedule: next };
+    }
+    if (matched && String(matched.status || "pending").toLowerCase() !== "paid") {
+      const rowAmt = Number(matched.amount_gbp) || 0;
+      return {
+        kind: "apply",
+        amountGbp: amountGbp > 0 ? amountGbp : rowAmt || fallbackAmount,
+        targetSeq: Number(matched.seq) || null,
+      };
+    }
+  }
+  return {
+    kind: "apply",
+    amountGbp: amountGbp > 0 ? amountGbp : fallbackAmount,
+    targetSeq: null,
+  };
 }
 
 async function markInvoicePaid(
@@ -90,16 +146,32 @@ async function markInvoicePaid(
     const targetSchedule = Array.isArray(target.payment_schedule)
       ? target.payment_schedule as Array<Record<string, unknown>>
       : [];
-    if (
-      targetSchedule.some((row) =>
-        String(row?.paid_via || "") === paidViaRef
+    const fallbackAmount = String(before.id) === String(targetId)
+      ? Number(
+        targetSchedule.find((row) => String(row?.status || "pending").toLowerCase() !== "paid")
+          ?.amount_gbp || 0,
       )
-    ) {
+      : Number(before.amount_gbp || 0);
+    const plan = await planGcInstalment(targetSchedule, paymentRef, paidViaRef, fallbackAmount);
+    if (plan.kind === "already") {
       return {
         ok: true as const,
         invoice_id: target.id,
         tracker_invoice_id: before.id,
         already_applied: true,
+      };
+    }
+    if (plan.kind === "stamp") {
+      await supabase
+        .from("portal_parent_invoice_share")
+        .update({ payment_schedule: plan.schedule, updated_at: now })
+        .eq("id", targetId);
+      return {
+        ok: true as const,
+        invoice_id: target.id,
+        tracker_invoice_id: before.id,
+        already_applied: true,
+        stamped_payment_id: true,
       };
     }
 
@@ -118,19 +190,14 @@ async function markInvoicePaid(
         .eq("id", before.id);
     }
 
-    const nextPending = targetSchedule.find((row) =>
-      String(row?.status || "pending").toLowerCase() !== "paid"
-    );
-    const instalmentAmount =
-      String(before.id) === String(targetId)
-        ? Number(nextPending?.amount_gbp || 0)
-        : Number(before.amount_gbp || 0);
+    const instalmentAmount = plan.amountGbp > 0 ? plan.amountGbp : fallbackAmount;
     if (!Number.isFinite(instalmentAmount) || instalmentAmount <= 0) {
       return { ok: false as const, reason: "consolidated_instalment_amount_missing" };
     }
     const rolled = await recordInvoiceInstalmentPayment(supabase, targetId, {
       amountGbp: instalmentAmount,
       paidVia: paidViaRef,
+      targetSeq: plan.targetSeq,
     });
     if (!rolled.ok) return { ok: false as const, reason: rolled.error };
 
@@ -176,28 +243,31 @@ async function markInvoicePaid(
   const paidViaRef = clean(`gocardless:${paymentRef || before.id}`, 40);
 
   if (schedule.length) {
-    if (
-      schedule.some((row) => String(row?.paid_via || "") === paidViaRef)
-    ) {
+    const nextPending = schedule.find((row) => row.status !== "paid");
+    const plan = await planGcInstalment(
+      schedule as unknown as Array<Record<string, unknown>>,
+      paymentRef,
+      paidViaRef,
+      Number(nextPending?.amount_gbp || 0),
+    );
+    if (plan.kind === "already") {
       return { ok: true as const, invoice_id: before.id, already_applied: true };
     }
-    let amountGbp = 0;
-    if (paymentRef) {
-      const pay = await gocardlessGetPayment(paymentRef);
-      if (pay.ok && pay.data.amount_pence > 0) {
-        amountGbp = Math.round(pay.data.amount_pence) / 100;
-      }
+    if (plan.kind === "stamp") {
+      await supabase
+        .from("portal_parent_invoice_share")
+        .update({ payment_schedule: plan.schedule, updated_at: now })
+        .eq("id", before.id);
+      return { ok: true as const, invoice_id: before.id, already_applied: true, stamped_payment_id: true };
     }
-    if (!(amountGbp > 0)) {
-      const nextPending = schedule.find((row) => row.status !== "paid");
-      amountGbp = Number(nextPending?.amount_gbp || 0);
-    }
+    const amountGbp = plan.amountGbp;
     if (!(amountGbp > 0)) {
       return { ok: false as const, reason: "instalment_amount_missing" };
     }
     const rolled = await recordInvoiceInstalmentPayment(supabase, String(before.id), {
       amountGbp,
       paidVia: paidViaRef,
+      targetSeq: plan.targetSeq,
     });
     if (!rolled.ok) return { ok: false as const, reason: rolled.error };
 

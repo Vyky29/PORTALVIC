@@ -258,6 +258,7 @@ export async function gocardlessGetPayment(
     amount_pence: number;
     status?: string;
     charge_date?: string | null;
+    description?: string | null;
     metadata: Record<string, unknown>;
   }>
 > {
@@ -269,6 +270,7 @@ export async function gocardlessGetPayment(
       amount?: number;
       status?: string;
       charge_date?: string;
+      description?: string;
       metadata?: Record<string, unknown>;
     };
   }>("GET", `/payments/${encodeURIComponent(id)}`);
@@ -282,6 +284,7 @@ export async function gocardlessGetPayment(
       amount_pence: Math.round(Number(pay.amount) || 0),
       status: pay.status,
       charge_date: pay.charge_date || null,
+      description: pay.description || null,
       metadata: pay.metadata && typeof pay.metadata === "object" ? pay.metadata : {},
     },
   };

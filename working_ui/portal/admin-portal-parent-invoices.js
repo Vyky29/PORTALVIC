@@ -1583,6 +1583,43 @@
     );
   }
 
+  /**
+   * One family's GoCardless / flexi plan: "2 of 4 paid" is instalments on that
+   * invoice. "1 partially paid" is only the fallback when there is no schedule.
+   * A day with many families keeps the invoice count.
+   */
+  function instalmentOfLabel(invoices) {
+    var contacts = Object.create(null);
+    var contactN = 0;
+    (invoices || []).forEach(function (inv) {
+      var id = String((inv && inv.contact_id) || '');
+      if (!id || contacts[id]) return;
+      contacts[id] = true;
+      contactN += 1;
+    });
+    if (contactN !== 1) return '';
+    var paidN = 0;
+    var totalN = 0;
+    var scheduled = 0;
+    var bare = 0;
+    canonicalInvoices(invoices).forEach(function (inv) {
+      if (inv.created_via === 'la_office_auto' || isLostSlotInvoice(inv)) return;
+      if (String(inv.payment_status || '').toLowerCase() !== 'partial') return;
+      var rows = scheduleRows(inv);
+      if (rows.length < 2) {
+        bare += 1;
+        return;
+      }
+      scheduled += 1;
+      rows.forEach(function (r) {
+        totalN += 1;
+        if (String(r.status || '').toLowerCase() === 'paid') paidN += 1;
+      });
+    });
+    if (!scheduled || bare || !totalN) return '';
+    return paidN + ' of ' + totalN + ' paid';
+  }
+
   function groupStatusSummary(invoices) {
     var unpaid = 0;
     var partial = 0;
@@ -1653,10 +1690,11 @@
       );
     }
     if (partial) {
+      var ofLabel = instalmentOfLabel(invoices);
       chips.push(
         summaryFilterChip(
           'partial',
-          partial === 1 ? '1 partially paid' : partial + ' partially paid',
+          ofLabel || (partial === 1 ? '1 partially paid' : partial + ' partially paid'),
           'partial',
         ),
       );
