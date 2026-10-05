@@ -396,7 +396,7 @@
         <img class="cover__logo" src="/portal/F-02-1.png" width="88" height="88" alt="clubSENsational" />
         <p class="cover__kicker">Staff film</p>
         <h1 class="cover__title">Finish feedback before you leave</h1>
-        <p class="cover__text">The note is the record of the day. Same day, before 9pm.</p>
+        <p class="cover__text">The note is the record of the day. Finish it the same day, before you leave.</p>
         <button type="button" class="cover__play" id="playBtn">Play</button>
       </div>
       <p class="caption" id="caption">Session feedback is the record of the day.</p>
@@ -406,23 +406,23 @@
   </div>
   <script>
     (function () {
-      var DURATION = 49;
+      var DURATION = 41;
       var BEATS = [
         { t: 0, tone: "good", caption: "Session feedback is the record of the day.", view: "consent" },
-        { t: 2.60, tone: "good", caption: "It is a safeguarding consent, and part of the shift.", view: "consent", now: "consent" },
-        { t: 6.70, tone: "good", caption: "The clear way is to finish it before you leave.", view: "shift" },
-        { t: 9.22, tone: "good", caption: "Same day, before 9pm.", view: "shift", now: "nine" },
-        { t: 12.50, tone: "parent", caption: "The family sees Pending.", view: "parent" },
-        { t: 16.49, tone: "parent", caption: "They do not see that it has not been sent.", view: "parent", now: "hidden" },
-        { t: 18.87, tone: "parent", caption: "They only see that the session is still waiting.", view: "image" },
-        { t: 21.92, tone: "good", caption: "It helps when they can read the day.", view: "image", now: "help" },
-        { t: 24.14, tone: "parent", caption: "On your timesheet, a late note waits.", view: "timesheet" },
-        { t: 27.90, tone: "good", caption: "The shift stays held. The pay is still there.", view: "timesheet", now: "held" },
-        { t: 32.89, tone: "parent", caption: "It just needs admin to release it.", view: "admin" },
-        { t: 35.69, tone: "good", caption: "On time, admin does not need that extra step.", view: "admin", now: "time" },
-        { t: 40.11, tone: "good", caption: "The time stays with your shift.", view: "duty" },
-        { t: 42.09, tone: "good", caption: "Send it before you leave.", view: "sent" },
-        { t: 43.75, tone: "good", caption: "The family sees the session. Your shift counts.", view: "sent", now: "done" }
+        { t: 2.03, tone: "good", caption: "It is a safeguarding consent, and part of the shift.", view: "consent", now: "consent" },
+        { t: 5.51, tone: "good", caption: "The clear way is to finish it before you leave.", view: "shift" },
+        { t: 7.92, tone: "good", caption: "Finish it the same day.", view: "shift", now: "sameday" },
+        { t: 9.27, tone: "parent", caption: "The family sees Pending.", view: "parent" },
+        { t: 12.50, tone: "parent", caption: "They do not see that it has not been sent.", view: "parent", now: "hidden" },
+        { t: 14.46, tone: "parent", caption: "They only see that the session is still waiting.", view: "image" },
+        { t: 16.84, tone: "good", caption: "It helps when they can read the day.", view: "image", now: "help" },
+        { t: 18.63, tone: "parent", caption: "On your timesheet, a late note waits.", view: "timesheet" },
+        { t: 20.68, tone: "good", caption: "The shift stays held. The pay is still there.", view: "timesheet", now: "held" },
+        { t: 24.86, tone: "parent", caption: "It just needs admin to release it.", view: "admin" },
+        { t: 26.84, tone: "good", caption: "On time, admin does not need that extra step.", view: "admin", now: "time" },
+        { t: 31.08, tone: "good", caption: "The time stays with your shift.", view: "duty" },
+        { t: 33.19, tone: "good", caption: "Send it before you leave.", view: "sent" },
+        { t: 34.84, tone: "good", caption: "The family sees the session. Your shift counts.", view: "sent", now: "done" }
       ];
 
       var captionEl = document.getElementById("caption");
@@ -435,7 +435,7 @@
       var tapEl = document.getElementById("tapStart");
       var coverEl = document.getElementById("cover");
       var playBtn = document.getElementById("playBtn");
-      var audio = new Audio("/portal/help-audio/feedback-finish-before-you-leave.mp3?v=20261005e");
+      var audio = new Audio("/portal/help-audio/feedback-finish-before-you-leave.mp3?v=20261005h");
       audio.preload = "auto";
 
       var held = 0;
@@ -459,7 +459,7 @@
           '</div>' +
           '<div class="card">' +
             '<p class="who">Part of the shift</p>' +
-            '<p class="meta">Same day, before 9pm, so the day is complete.</p>' +
+            '<p class="meta">Same day, before you leave, so the day is complete.</p>' +
           '</div>'
         );
       }
@@ -470,7 +470,7 @@
           sessionBits() +
           '<div class="card is-now">' +
             '<p class="who">Finish it before you leave</p>' +
-            '<p class="meta">' + (now === "nine" ? "Same day. Before 9pm." : "The clear way is to send it while the session is still fresh.") + '</p>' +
+            '<p class="meta">' + (now === "sameday" ? "Same day. Before you leave." : "The clear way is to send it while the session is still fresh.") + '</p>' +
             '<span class="chip chip--open">NOT SENT YET</span>' +
           '</div>'
         );
@@ -550,7 +550,7 @@
           '<p class="kicker">Before you leave</p><h1>Send it on time.</h1>' +
           sessionBits() +
           '<div class="card card--ok">' +
-            '<p class="who">Sent before 9pm</p>' +
+            '<p class="who">Sent before you leave</p>' +
             '<span class="chip chip--done">SENT</span>' +
           '</div>' +
           '<div class="parent">' +
@@ -563,7 +563,7 @@
       }
 
       function endedHtml() {
-        return '<p class="kicker">Done</p><h1>You can close this.</h1><p class="ended">Session feedback is the record of the day, and a safeguarding consent. The clear way is the same day, before 9pm. Then the family can read the session, your shift counts, and admin does not need the extra release.</p><button type="button" class="replay" id="replayBtn">Watch again</button>';
+        return '<p class="kicker">Done</p><h1>You can close this.</h1><p class="ended">Session feedback is the record of the day, and a safeguarding consent. The clear way is the same day, before you leave. Then the family can read the session, your shift counts, and admin does not need the extra release.</p><button type="button" class="replay" id="replayBtn">Watch again</button>';
       }
 
       function beatAt(t) {

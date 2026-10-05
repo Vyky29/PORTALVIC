@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v269",
+  "version": "2026-10-05-v270",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1837,7 +1837,7 @@
             "Choose one person, or a group.",
             "Send. Their phone gets an alert.",
             "When they open the staff app, the video fills the screen. Close stays off until the video ends.",
-            "The film explains it calmly: session feedback is the record of the day, and a safeguarding consent. Same day, before 9pm. If it is late, the family sees Pending, the shift stays held on the timesheet until admin presses Release, and the pay is still there."
+            "The film explains it calmly: session feedback is the record of the day, and a safeguarding consent. Same day, before they leave. It does not name a clock, because the reminder hour changes by day. If it is late, the family sees Pending, the shift stays held on the timesheet until admin presses Release, and the pay is still there."
           ],
           "tips": [
             "Use this when someone needs the why-on-time reminder. Use Send feedback watch when the writing is wrong.",
@@ -1854,7 +1854,7 @@
               "Elige una persona, o un grupo.",
               "Envia. Al movil le llega un aviso.",
               "Al abrir la app, el video ocupa la pantalla. Close no se puede pulsar hasta que acaba.",
-              "El video lo explica con calma: el feedback es el registro del dia, y un safeguarding consent. El mismo dia, antes de las 9pm. Si llega tarde, la familia ve Pending, el turno queda retenido en el timesheet hasta que admin pulse Release, y el pago sigue ahi."
+              "El video lo explica con calma: el feedback es el registro del dia, y un safeguarding consent. El mismo dia, antes de irse. No dice una hora, porque el aviso cambia segun el dia. Si llega tarde, la familia ve Pending, el turno queda retenido en el timesheet hasta que admin pulse Release, y el pago sigue ahi."
             ],
             "tips": [
               "Este es el de por que hay que darlo a tiempo. Send feedback watch es el de como se escribe.",
