@@ -952,14 +952,17 @@
 
       var voiceReady =
         typeof window.PortalFeedbackVoiceInput !== "undefined" &&
-        typeof window.PortalFeedbackVoiceInput.rescan === "function" &&
-        window.PortalFeedbackVoiceInput.captureVersion === "voice-status-clear";
+        typeof window.PortalFeedbackVoiceInput.rescan === "function";
       if (voiceReady) {
         startPortalVoice();
       } else {
+        var namesScript = document.createElement("script");
+        namesScript.src = "/portal/portal_feedback_voice_names.js?v=20261005-voice-names";
+        namesScript.onerror = function () {};
+        (document.head || document.documentElement).appendChild(namesScript);
         var voiceScript = document.createElement("script");
         voiceScript.src =
-          "/portal/portal_feedback_voice_input.js?v=20260702-record-120s-warn-90s";
+          "/portal/portal_feedback_voice_input.js?v=20261005-voice-names";
         voiceScript.onload = startPortalVoice;
         voiceScript.onerror = function () {};
         (document.head || document.documentElement).appendChild(voiceScript);

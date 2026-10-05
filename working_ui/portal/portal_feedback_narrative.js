@@ -337,7 +337,7 @@
     if (state.adminFilters) {
       els.modeNote.textContent =
         state.inputMode === "voice"
-          ? "Voice: tap the mic and speak the session (Reception, Session, Handover). The text comes out in English. Type over anything that is wrong, then Submit. The office prepares the family summary."
+          ? "Voice: tap the mic and speak the session (Reception, Session, Handover). The text comes out in English, with this client's name and he/she. Type over anything that is wrong, then Submit. The office prepares the family summary."
           : "Written: type the session (Reception · Session · Handover) in English, then Submit. The office prepares the family summary.";
       return;
     }
@@ -791,7 +791,7 @@
     if (state.adminFilters) {
       syncModeNote();
       syncSubmitGate();
-      setStatus("Transcribed in English. Read it and type over anything that is wrong, then Submit.");
+      setStatus("Transcribed in English. The client name and he/she follow the record. Type over anything that is wrong, then Submit.");
       return;
     }
     state.voiceAutoFilterPending = true;

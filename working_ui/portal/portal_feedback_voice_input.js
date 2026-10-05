@@ -377,12 +377,50 @@
  return tryImport(0);
  }
 
+ function sessionParticipantHint() {
+ var name = "";
+ try {
+ var el = document.getElementById("fbClientName");
+ if (el && el.value) name = String(el.value).trim();
+ } catch (_) {}
+ if (!name) {
+ try {
+ var qs = new URLSearchParams(location.search);
+ name = String(qs.get("clientName") || qs.get("client") || "").trim();
+ } catch (_) {}
+ }
+ var gender = "";
+ try {
+ if (
+ name &&
+ window.PortalFeedbackNarrative &&
+ typeof window.PortalFeedbackNarrative.participantGender === "function"
+ ) {
+ gender = window.PortalFeedbackNarrative.participantGender(name) || "";
+ }
+ } catch (_) {}
+ return { name: name, gender: gender };
+ }
+
+ function applyVoiceClientFixes(text) {
+ var raw = String(text || "");
+ if (!raw) return raw;
+ var api = window.PortalFeedbackVoiceNames;
+ if (!api || typeof api.apply !== "function") return raw;
+ var hint = sessionParticipantHint();
+ if (!hint.name) return raw;
+ return api.apply(raw, hint.name, hint.gender);
+ }
+
  function whisperTranscribe(blob, mime, whisperCode) {
  return getAuthHeaders().then(function (headers) {
  if (!headers) throw new Error("not_signed_in");
  var fd = new FormData();
  fd.append("file", blob, blobFilenameForMime(mime));
  fd.append("language", whisperCode || "en");
+ var hint = sessionParticipantHint();
+ if (hint.name) fd.append("participant_name", hint.name);
+ if (hint.gender) fd.append("participant_gender", hint.gender);
  return fetch(supabaseFnUrl(), {
  method: "POST",
  headers: headers,
@@ -637,7 +675,9 @@
 
  function setLiveTextarea(s, liveEnglish) {
  if (!s || !s.textarea) return;
- s.textarea.value = composePrefix(s.prefix, liveEnglish);
+ var live = liveEnglish;
+ if (isLongNarrativeField(s.textarea)) live = applyVoiceClientFixes(liveEnglish);
+ s.textarea.value = composePrefix(s.prefix, live);
  dispatchInput(s.textarea);
  }
 
@@ -886,7 +926,7 @@
  cleanupSessionUi(s);
  if (s.textarea) notifyVoiceTranscriptDone(s.textarea);
  if (s.statusEl) {
- s.statusEl.textContent = "Done. The text is in English. Read it and type over anything that is wrong.";
+ s.statusEl.textContent = "Done. The text is in English. Check the name and he/she, then type over anything that is wrong.";
  }
  return;
  }
