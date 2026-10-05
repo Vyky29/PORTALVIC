@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v254",
+  "version": "2026-10-05-v256",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1805,6 +1805,51 @@
           }
         },
         {
+          "id": "feedback_on_time_send",
+          "title": "Send the end of shift watch",
+          "summary": "A short video that blocks the staff app until they finish watching why feedback goes in before they leave.",
+          "where": "Admin → Communications → Send end of shift watch",
+          "keywords": [
+            "end of shift",
+            "final del turno",
+            "feedback a tiempo",
+            "awaiting feedback",
+            "pending",
+            "outstanding feedbacks",
+            "bloqueo",
+            "video"
+          ],
+          "steps": [
+            "Open Communications.",
+            "Press Send end of shift watch.",
+            "Choose one person, or a group.",
+            "Send. Their phone gets an alert.",
+            "When they open the staff app, the video fills the screen. Close stays off until the video ends.",
+            "The rule: finish the feedback before they leave. If it stays open, the alerts start. The family only sees Awaiting feedback. They do not see that it was not sent."
+          ],
+          "tips": [
+            "Use this when someone needs the why-on-time reminder. Use Send feedback watch when the writing is wrong.",
+            "After they watch it once, it does not block them again."
+          ],
+          "es": {
+            "title": "Mandar el video del final de turno",
+            "summary": "Un video corto que bloquea la app hasta que acaba, para que el feedback se mande antes de irse.",
+            "where": "Admin → Communications → Send end of shift watch",
+            "steps": [
+              "Abre Communications.",
+              "Pulsa Send end of shift watch.",
+              "Elige una persona, o un grupo.",
+              "Envia. Al movil le llega un aviso.",
+              "Al abrir la app, el video ocupa la pantalla. Close no se puede pulsar hasta que acaba.",
+              "La regla: el feedback se acaba antes de irse. Si se deja, saltan las alertas. La familia solo ve Awaiting feedback. No ve que no se ha mandado."
+            ],
+            "tips": [
+              "Este es el de por que hay que darlo a tiempo. Send feedback watch es el de como se escribe.",
+              "Cuando lo han visto, no les vuelve a bloquear."
+            ]
+          }
+        },
+        {
           "id": "feedback_whatsapp_clock",
           "title": "Feedback WhatsApp clock",
           "summary": "Monday to Friday the reminder is 8:00pm then 8:30pm. Sunday is 6:00pm then 6:30pm. Saturday is 3:00pm then 3:30pm.",
@@ -2915,7 +2960,7 @@
             "Open Settings, then CS World.",
             "Drag the map. Zoom with the wheel, trackpad, pinch, or the plus and minus buttons. Ver todo fits every portal. The minimap moves the view.",
             "Zoom out: worlds and the main lines. Zoom in: categories, then that world's functions.",
-            "Pick a function to see only that path. Volver al mapa puts you back at the same place and zoom.",
+            "Pick a function to see only that path. The text box sits under the map and says which category it leaves, for example Contrato leaves Admin, H&R / Contracts. Ver todo el mapa puts you back at the same place and zoom.",
             "Reproducir, Pausa, Repetir and the steps are a simulation. They do not send payments, messages, or change a booking.",
             "A condition step waits until you advance it. An aviso is not the same as a data update on a card.",
             "Feedback notes are filtered inside Admin and land in Parent Notes. Stats go straight to Parent Session Feedback. Comms connects Admin and Staff."
@@ -2934,7 +2979,7 @@
               "Abre Settings y luego CS World.",
               "Arrastra el mapa. El zoom es con la rueda, el trackpad, el pellizco o los botones mas y menos. Ver todo encuadra todos los portales. El minimapa mueve la vista.",
               "Alejado: mundos y lineas principales. Acercado: categorias y despues las funciones de ese mundo.",
-              "Elige una funcion para ver solo ese recorrido. Volver al mapa te deja en el mismo sitio y zoom.",
+              "Elige una funcion para ver solo ese recorrido. El cuadro de abajo dice de que categoria sale, por ejemplo Contrato sale de Admin, H&R / Contracts. Ver todo el mapa te deja en el mismo sitio y zoom.",
               "Reproducir, Pausa, Repetir y los pasos son una simulacion. No envian pagos, mensajes ni cambian una reserva.",
               "Un paso con condicion espera a que avances. Un aviso no es lo mismo que actualizar una tarjeta.",
               "Las notas del feedback se filtran dentro de Admin y llegan a Notas del Parent. Los stats van directos a Session Feedback del Parent. Comms une Admin y Staff."

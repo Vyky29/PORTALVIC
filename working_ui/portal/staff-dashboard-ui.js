@@ -6515,7 +6515,7 @@
       var data = e.data;
       if(!data || data.type !== 'portal-feedback-watch-done') return;
       var pendingWatch = typeof portalAnnouncementPendingItem === 'function' ? portalAnnouncementPendingItem() : null;
-      if(!pendingWatch || !pendingWatch.feedbackWatch) return;
+      if(!pendingWatch || (!pendingWatch.feedbackWatch && !pendingWatch.feedbackOnTime)) return;
       var frame = document.querySelector('.feedback-watch-frame');
       if(frame && frame.contentWindow && e.source !== frame.contentWindow) return;
       var watchBtn = document.getElementById('announcementSignBtn');

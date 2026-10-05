@@ -7576,7 +7576,7 @@
              MUST be in the live set or portalPruneStaleSignedAnnouncementAcks deletes
              the local ack (id not in liveSet) and the notice re-prompts on the next
              hydrate / PWA resume reload / realtime event. */
-          if(rowTyp === 'announcement' || rowTyp === 'feedback_watch' || rowTyp === 'contract_signing' || rowTyp === 'incident_team' || rowTyp === 'incident_encounter'){
+          if(rowTyp === 'announcement' || rowTyp === 'feedback_watch' || rowTyp === 'feedback_on_time' || rowTyp === 'contract_signing' || rowTyp === 'incident_team' || rowTyp === 'incident_encounter'){
             liveAnnouncementIdSet[String(row.id)] = true;
           }
         });
@@ -7875,6 +7875,7 @@
             href: '#portal-ann-' + id,
             portalAnnouncementId: id,
             feedbackWatch: typ === 'feedback_watch',
+            feedbackOnTime: typ === 'feedback_on_time',
             hideAfterAckAmount: row.hide_after_ack_amount,
             hideAfterAckUnit: row.hide_after_ack_unit,
             onAckAction: String(row.on_ack_action || '').trim(),
@@ -7900,7 +7901,7 @@
             /* Include incident notices so their acks are merged back from Supabase
                (cross-device / after cache purge). Without this the server copy is
                ignored and the notice re-prompts. */
-            return rowTyp === 'announcement' || rowTyp === 'feedback_watch' || rowTyp === 'contract_signing' || rowTyp === 'incident_team' || rowTyp === 'incident_encounter';
+            return rowTyp === 'announcement' || rowTyp === 'feedback_watch' || rowTyp === 'feedback_on_time' || rowTyp === 'contract_signing' || rowTyp === 'incident_team' || rowTyp === 'incident_encounter';
           })
           .map(function(row){ return String(row.id || ''); })
           .filter(Boolean);
@@ -8669,11 +8670,17 @@
                 '<button type="button" class="announcement-sign-btn" id="annualProfileAnnOpenBtn">Open annual profile and finish update</button>' +
               '</div>' +
             '</article>';
-        }else if(pending.feedbackWatch){
+        }else if(pending.feedbackWatch || pending.feedbackOnTime){
+          var watchSrc = pending.feedbackOnTime
+            ? '/feedback_finish_before_you_leave_watch.html?embed=1'
+            : '/feedback_how_we_write_watch.html?embed=1';
+          var watchTitle = pending.feedbackOnTime
+            ? 'Finish feedback before you leave'
+            : 'How we write session feedback';
           hostPending.innerHTML =
             '<article class="announcement-lock-card announcement-lock-card--gate announcement-lock-card--feedback-watch">' +
               progressHtml +
-              '<iframe class="feedback-watch-frame" src="/feedback_how_we_write_watch.html?embed=1" title="How we write session feedback" allow="autoplay"></iframe>' +
+              '<iframe class="feedback-watch-frame" src="' + watchSrc + '" title="' + escapeHtml(watchTitle) + '" allow="autoplay"></iframe>' +
               '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" hidden data-feedback-watch-ready="0" data-announcement-sign-key="' + escapeHtml(signKey) + '">Close</button>' +
             '</article>';
         }else{
