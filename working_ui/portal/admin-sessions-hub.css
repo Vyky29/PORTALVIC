@@ -1660,45 +1660,57 @@
       min-width: 0;
     }
     .ash-table--feedback .ash-cell-sub { text-align: center; }
-    .ash-table--register col.ash-reg-col-who { width: 11%; }
-    .ash-table--register col.ash-reg-col-star { width: 4%; }
-    .ash-table--register col.ash-reg-col-reg { width: 8%; }
-    .ash-table--register col.ash-reg-col-ind { width: 16%; }
+    .ash-table--register col.ash-reg-col-who { width: 5.6rem; }
+    .ash-table--register col.ash-reg-col-star { width: 1.7rem; }
+    .ash-table--register col.ash-reg-col-reg { width: 5.4rem; }
+    .ash-table--register col.ash-reg-col-ind { width: 14%; }
     .ash-table--register col.ash-reg-col-fb,
-    .ash-table--register col.ash-reg-col-notes { width: 27%; }
-    .ash-table--register col.ash-reg-col-by { width: 7%; }
+    .ash-table--register col.ash-reg-col-notes { width: auto; }
+    .ash-table--register col.ash-reg-col-by { width: 6.2rem; }
+    .ash-table--register .ash-th-who__line {
+      display: block;
+      line-height: 1.15;
+    }
     .ash-table--register .ash-cell-participant-service {
       min-width: 0;
-      max-width: none;
+      max-width: 5.6rem;
       overflow-wrap: break-word;
+      line-height: 1.25;
     }
     .ash-table--register .ash-cell-service {
-      margin-top: 4px;
-      line-height: 1.3;
+      display: block;
+      margin-top: 2px;
+      line-height: 1.25;
       overflow-wrap: break-word;
     }
     .ash-table--register th:nth-child(1),
     .ash-table--register td:nth-child(1) {
-      width: 11%;
+      width: 5.6rem;
+      max-width: 5.6rem;
       min-width: 0;
+      padding-left: 3px;
+      padding-right: 3px;
     }
     .ash-table--register th:nth-child(2),
     .ash-table--register td:nth-child(2) {
-      width: 4%;
-      padding-left: 2px;
-      padding-right: 2px;
+      width: 1.7rem;
+      max-width: 1.7rem;
+      padding-left: 0;
+      padding-right: 0;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
     }
     .ash-table--register th:nth-child(3),
     .ash-table--register td:nth-child(3) {
-      width: 8%;
-      padding-left: 4px;
-      padding-right: 4px;
+      width: 5.4rem;
+      max-width: 5.4rem;
+      padding-left: 2px;
+      padding-right: 2px;
       overflow-wrap: normal;
       word-break: normal;
     }
     .ash-table--register th:nth-child(4),
     .ash-table--register td:nth-child(4) {
-      width: 16%;
       min-width: 0;
       text-align: center;
       vertical-align: middle;
@@ -1707,14 +1719,12 @@
     .ash-table--register td:nth-child(5),
     .ash-table--register th:nth-child(6),
     .ash-table--register td:nth-child(6) {
-      width: 27%;
       min-width: 0;
       overflow-wrap: break-word;
       text-align: center;
       vertical-align: middle;
     }
     .ash-table--register td:nth-child(7) {
-      width: 7%;
       padding-left: 4px;
       padding-right: 4px;
       font-size: 11px;
@@ -1722,7 +1732,6 @@
       overflow-wrap: break-word;
     }
     .ash-table--register th:nth-child(7) {
-      width: 7%;
       padding-left: 4px;
       padding-right: 4px;
       font-size: 10px;
@@ -1730,13 +1739,29 @@
       overflow-wrap: break-word;
     }
     .ash-table--register .ash-regulation-group {
+      display: inline-flex;
+      flex-wrap: nowrap;
       justify-content: center;
+      gap: 2px;
       max-width: 100%;
     }
     .ash-table--register .ash-regulation-face,
     .ash-table--register .ash-regulation-face svg {
-      width: 22px;
-      height: 22px;
+      width: 18px;
+      height: 18px;
+    }
+    .ash-table--register .ash-th-star__ico svg {
+      width: 14px;
+      height: 14px;
+    }
+    .ash-table--register .ash-status--absent {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      max-width: 100%;
+      font-size: 10px;
+      line-height: 1.1;
     }
     .ash-indep-lines {
       display: flex;
@@ -3095,11 +3120,17 @@
     content:none !important;
     display:none !important;
   }
-  .ash-table--register col.ash-reg-col-who{width:18%}
-  .ash-table--register col.ash-reg-col-star{width:8%}
-  .ash-table--register col.ash-reg-col-reg{width:12%}
+  .ash-table--register col.ash-reg-col-who{width:5.6rem}
+  .ash-table--register col.ash-reg-col-star{width:1.7rem}
+  .ash-table--register col.ash-reg-col-reg{width:5.4rem}
   .ash-table--register col.ash-reg-col-ind{width:14%}
   .ash-table--register col.ash-reg-col-fb,
-  .ash-table--register col.ash-reg-col-notes{width:18%}
-  .ash-table--register col.ash-reg-col-by{width:12%}
+  .ash-table--register col.ash-reg-col-notes{width:auto}
+  .ash-table--register col.ash-reg-col-by{width:6.2rem}
+  .ash-table--register th:nth-child(1),
+  .ash-table--register td:nth-child(1){width:5.6rem !important;max-width:5.6rem !important}
+  .ash-table--register th:nth-child(2),
+  .ash-table--register td:nth-child(2){width:1.7rem !important;max-width:1.7rem !important;padding-left:0 !important;padding-right:0 !important}
+  .ash-table--register th:nth-child(3),
+  .ash-table--register td:nth-child(3){width:5.4rem !important;max-width:5.4rem !important}
 }

@@ -285,7 +285,7 @@
 
   function rosterFeedbackStatusHtml(isAbsent, fbDone, titleExtra) {
     if (isAbsent) {
-      return '<span class="ash-status ash-status--absent">Submitted (Absent)</span>';
+      return '<span class="ash-status ash-status--absent"><span>Submitted</span><span>Absent</span></span>';
     }
     if (fbDone) {
       return '<span class="ash-status ash-status--done">Feedback submitted</span>';
@@ -9827,9 +9827,24 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   AdminSessionsHub.ENGAGEMENT_STAR_HEADER =
     '<span class="ash-th-star__ico" role="img" aria-label="Engagement score, 1 to 5">' +
-    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">' +
+    '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">' +
     '<path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' +
     "</svg></span>";
+
+  AdminSessionsHub.REGULATION_FACES_HEADER =
+    '<span class="ash-regulation-group ash-regulation-group--head" role="img" aria-label="Regulation">' +
+    '<span class="ash-regulation-face ash-regulation-face--happy" style="color:#16a34a">' +
+    ASH_EMOTION_FACE_SVG.happy +
+    "</span>" +
+    '<span class="ash-regulation-face ash-regulation-face--anxious" style="color:#ca8a04">' +
+    ASH_EMOTION_FACE_SVG.anxious +
+    "</span>" +
+    '<span class="ash-regulation-face ash-regulation-face--withdrawn" style="color:#2563eb">' +
+    ASH_EMOTION_FACE_SVG.withdrawn +
+    "</span>" +
+    '<span class="ash-regulation-face ash-regulation-face--out_of_control" style="color:#dc2626">' +
+    ASH_EMOTION_FACE_SVG.out_of_control +
+    "</span></span>";
 
   AdminSessionsHub.FEEDBACK_TABLE_HEAD =
     '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement (1–5)">' +
@@ -9837,12 +9852,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     "</th><th>Regulation</th><th>Independence</th>" +
     "<th>Session feedback</th><th>Filtered feedback</th><th>Notes</th><th>Reviewed by:</th>";
 
-  // Register tab: raw session feedback as staff submitted it. Filter / notes
-  // actions open from the Session feedback and Notes cells (no extra screens).
+  /* Register: notes stay on the row. The bell is the only place to act on them. */
   AdminSessionsHub.REGISTER_TABLE_HEAD =
-    '<th>Participant / service</th><th class="ash-th-star" title="Engagement (1–5)">' +
+    '<th class="ash-th-who"><span class="ash-th-who__line">Participant</span><span class="ash-th-who__line">service</span></th>' +
+    '<th class="ash-th-star" title="Engagement (1-5)">' +
     AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
-    "</th><th>Regulation</th><th>Independence</th>" +
+    '</th><th class="ash-th-regulation" title="Regulation">' +
+    AdminSessionsHub.REGULATION_FACES_HEADER +
+    "</th><th>Independence</th>" +
     "<th>Session feedback</th><th>Notes</th><th>Reviewed by:</th>";
 
   // Feedback (filtered) tab: only the raw narrative next to the parent-safe
@@ -10767,7 +10784,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (cancelled
         ? '<div class="ash-cell-sub"><span class="ash-status ash-status--cancelled">Submitted (Cancelled)</span></div>'
         : absent
-          ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent">Submitted (Absent)</span></div>'
+          ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent"><span>Submitted</span><span>Absent</span></span></div>'
           : "") +
       "</td>";
     var serviceCell =
@@ -10792,7 +10809,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (cancelled
         ? '<div class="ash-cell-sub"><span class="ash-status ash-status--cancelled">Submitted (Cancelled)</span></div>'
         : absent
-          ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent">Submitted (Absent)</span></div>'
+          ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent"><span>Submitted</span><span>Absent</span></span></div>'
           : "") +
       (variant !== "register" &&
       global.PortalSwimSessionAxes &&
@@ -10819,10 +10836,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
       "</td>";
     var fbId = String((fb && (fb.id || fb.session_feedback_id)) || "").trim();
-    var canFilter = variant === "register" && !terminal && !!fbId;
-    var canNoteAct = variant === "register" && !terminal && !!fbId;
+    /* Filter and act live on the bell. The register only shows the note. */
+    var canFilter = false;
+    var canNoteAct = false;
     // Raw "Session feedback" exactly as the instructor submitted it.
-    // On Register, click opens Filter with AI / Save & release (on demand).
     var rawFeedbackCell =
       '<td class="ash-cell-note ash-cell-raw-feedback' +
       (canFilter ? " ash-cell--action" : "") +
@@ -14133,7 +14150,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           var mkAbsentDisp = mkSlotDisp ? hub.slotIsAbsent(mkSlotDisp) : false;
           var mkDoneDisp = mkSlotDisp ? hub.slotFeedbackComplete(mkSlotDisp) : false;
           fbCell = mkAbsentDisp
-            ? '<span class="ash-status ash-status--absent">Submitted (Absent)</span>'
+            ? '<span class="ash-status ash-status--absent"><span>Submitted</span><span>Absent</span></span>'
             : rosterFeedbackStatusHtml(false, mkDoneDisp);
         } else if (st.isOpenSlot) {
           fbCell = '<span class="ash-muted">N/A</span>';
