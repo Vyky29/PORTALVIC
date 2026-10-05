@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var Z_FUNCS = 0.62;
+  var Z_FUNCS = 0.28;
   var WORLD_W = 2800;
   var WORLD_H = 1500;
   var FRAME = {};
@@ -25,23 +25,24 @@
     function height(n, cols) {
       return 58 + Math.ceil(n / cols) * 46 + 14;
     }
-    var gap = 28;
+    var gapX = 200;
+    var gapY = 180;
     var y = 20;
     var booking = { x: 20, y: y, w: 520, h: height(count("booking"), 2) };
-    var admin = { x: booking.x + booking.w + gap, y: y, w: 640, h: height(count("admin"), 2) };
-    var staff = { x: admin.x + admin.w + gap, y: y, w: 520, h: height(count("staff"), 2) };
-    var row2 = y + Math.max(booking.h, admin.h, staff.h) + gap;
+    var admin = { x: booking.x + booking.w + gapX, y: y, w: 640, h: height(count("admin"), 2) };
+    var staff = { x: admin.x + admin.w + gapX, y: y, w: 520, h: height(count("staff"), 2) };
+    var row2 = y + Math.max(booking.h, admin.h, staff.h) + gapY;
     var auto = { x: 20, y: row2, w: 500, h: height(count("auto"), 2) };
-    var parent = { x: auto.x + auto.w + gap, y: row2, w: 540, h: height(count("parent"), 2) };
-    var onb = { x: parent.x + parent.w + gap, y: row2, w: 400, h: height(count("onb"), 2) };
-    var row3 = row2 + Math.max(auto.h, parent.h, onb.h) + gap;
+    var parent = { x: auto.x + auto.w + gapX, y: row2, w: 540, h: height(count("parent"), 2) };
+    var onb = { x: parent.x + parent.w + gapX, y: row2, w: 400, h: height(count("onb"), 2) };
+    var row3 = row2 + Math.max(auto.h, parent.h, onb.h) + gapY;
     var ceo = { x: 20, y: row3, w: 280, h: height(count("ceo"), 1) };
-    var comms = { x: ceo.x + ceo.w + gap, y: row3, w: 320, h: height(count("comms"), 1) };
-    var email = { x: comms.x + comms.w + gap, y: row3, w: 260, h: height(count("email"), 1) };
-    var wa = { x: email.x + email.w + gap, y: row3, w: 280, h: height(count("wa"), 1) };
-    var stripe = { x: wa.x + wa.w + gap, y: row3, w: 250, h: height(count("stripe"), 1) };
-    var gc = { x: stripe.x + stripe.w + gap, y: row3, w: 230, h: height(count("gc"), 1) };
-    var xero = { x: gc.x + gc.w + gap, y: row3, w: 250, h: height(count("xero"), 1) };
+    var comms = { x: ceo.x + ceo.w + gapX, y: row3, w: 320, h: height(count("comms"), 1) };
+    var email = { x: comms.x + comms.w + gapX, y: row3, w: 260, h: height(count("email"), 1) };
+    var wa = { x: email.x + email.w + gapX, y: row3, w: 280, h: height(count("wa"), 1) };
+    var stripe = { x: wa.x + wa.w + gapX, y: row3, w: 250, h: height(count("stripe"), 1) };
+    var gc = { x: stripe.x + stripe.w + gapX, y: row3, w: 230, h: height(count("gc"), 1) };
+    var xero = { x: gc.x + gc.w + gapX, y: row3, w: 250, h: height(count("xero"), 1) };
     FRAME = { booking: booking, admin: admin, staff: staff, auto: auto, parent: parent, onb: onb, ceo: ceo, comms: comms, email: email, wa: wa, stripe: stripe, gc: gc, xero: xero };
     var maxX = 0;
     var maxY = 0;
@@ -308,7 +309,7 @@
         var dx = b.x - a.x;
         var dy = b.y - a.y;
         var len = Math.hypot(dx, dy) || 1;
-        var bow = typeof link.bow === "number" ? link.bow * 6 : 28;
+        var bow = typeof link.bow === "number" ? link.bow * 14 : 90;
         var cx = (a.x + b.x) / 2 + (-dy / len) * bow;
         var cy = (a.y + b.y) / 2 + (dx / len) * bow;
         var cls = link.reply ? " is-reply" : "";
