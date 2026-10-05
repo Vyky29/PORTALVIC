@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v249",
+  "version": "2026-10-05-v250",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2396,13 +2396,13 @@
           "steps": [
             "Tap the bell in the admin header.",
             "The alerts open in a popup over the page. The page behind goes dim.",
-            "Read the title and the detail on each row. Tap a row to open that screen. On a venue row, View opens the review and Close means you have seen it.",
+            "Read the title and the detail on each row. On a venue row, View opens the review and Close means you have seen it. On a Notes row, View opens the record, Escalate uses the same Register actions (email CEOs, announce to staff, or Comms), and Close means you have seen it.",
             "Tap the dim area, or the bell again, to close the popup."
           ],
           "tips": [
             "The number on the bell is how many alerts are in the popup.",
             "The bell keeps a message sent to Pilar when SwimFarm has issues, venue issues that stay with admin, Notes from the last 7 days (Relevant information only), incidents, absents still to decide, one-day cancellations still to decide, service cancel refunds not paid back, unpaid expenses, wellbeing still open, same-day disruptions, late incident approvals, general-info updates, and a makeup only when that session is today or later.",
-            "On a venue row, View opens the review and Close removes it from your bell only. Another admin still has it until they Close it. Unpaid expenses, cancellations, and refunds stay until that flow is finished. A Notes row is only Relevant information. The session narrative, Positive, and empty scores do not open the bell. Tap a Notes row or an incident to open that record. A makeup whose session day has passed leaves the bell. A note leaves the bell after you open it."
+            "On a venue row, View opens the review and Close removes it from your bell only. Another admin still has it until they Close it. Unpaid expenses, cancellations, and refunds stay until that flow is finished. A Notes row is only Relevant information with more than two words. N/A, nothing, No, and a dash do not open the bell. Close removes that note from your bell only. Escalate opens the same Register actions and does not clear it for anyone. The session narrative and Positive do not open the bell. A makeup whose session day has passed leaves the bell."
           ],
           "es": {
             "title": "La campana es un popup",
@@ -2411,13 +2411,13 @@
             "steps": [
               "Pulsa la campana del header de admin.",
               "Las alertas se abren en un popup encima de la pagina. El fondo se oscurece.",
-              "Lee el titulo y el detalle de cada fila. Pulsa una fila para abrir esa pantalla. En un venue, View abre el parte y Close quiere decir que ya lo has visto.",
+              "Lee el titulo y el detalle de cada fila. En un venue, View abre el parte y Close quiere decir que ya lo has visto. En Notes, View abre el registro, Escalate usa las mismas acciones que Register (email a los CEO, anuncio al staff, o Comms), y Close quiere decir que ya lo has visto.",
               "Pulsa la zona oscura, o la campana otra vez, para cerrar el popup."
             ],
             "tips": [
               "El numero de la campana es cuantas alertas hay en el popup.",
               "La campana guarda el mensaje enviado a Pilar cuando SwimFarm tiene issues, los issues de venue que se quedan en admin, las Notes de los ultimos 7 dias (solo Relevant information), incidentes, faltas por decidir, cancelaciones de un dia por decidir, reembolsos de cancelar servicio que no se han devuelto, gastos sin pagar, wellbeing abierto, disruptions del dia, aprobaciones de incidentes tarde, cambios de general info, y un makeup solo si esa sesion es hoy o despues.",
-              "En un venue, View abre el parte y Close lo quita solo de tu campana. El otro admin lo sigue viendo hasta que el pulse Close. Los gastos sin pagar, las cancelaciones y los refunds se quedan hasta que el flujo termine. Una fila Notes es solo Relevant information. La narrativa de la sesion, Positive y las puntuaciones vacias no abren la campana. Pulsa Notes o un incidente para abrir ese registro. Un makeup de un dia que ya paso sale de la campana. Una nota sale de la campana despues de abrirla."
+              "En un venue, View abre el parte y Close lo quita solo de tu campana. El otro admin lo sigue viendo hasta que el pulse Close. Los gastos sin pagar, las cancelaciones y los refunds se quedan hasta que el flujo termine. Una fila Notes es solo Relevant information con mas de dos palabras. N/A, nothing, No y un guion no abren la campana. Close la quita solo de tu campana. Escalate abre las mismas acciones que Register y no la quita para nadie. La narrativa de la sesion y Positive tampoco abren la campana. Un makeup de un dia que ya paso sale de la campana."
             ]
           }
         },
