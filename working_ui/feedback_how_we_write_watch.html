@@ -426,15 +426,21 @@
   </div>
   <script>
     (function () {
-      var DURATION = 25;
+      var DURATION = 30;
       var SESSION = "He swam four lengths of backstroke kick and finished proud. He needed prompts to keep his legs straight and got tired, so the set ended early.";
       var RELEVANT = "Dad was angry about the changing room. They asked to change next week's booking.";
       var BEATS = [
         { t: 0, tone: "good", caption: "Feedback is the session.", view: "session" },
-        { t: 6.61, tone: "good", caption: "Prompts and finishing early stay in Feedback.", view: "session", now: "feedback" },
-        { t: 11.91, tone: "neutral", caption: "Relevant information is not the session.", view: "split" },
-        { t: 15.27, tone: "good", caption: "A booking, or a parent angry about the changing room.", view: "split", now: "relevant" },
-        { t: 19.95, tone: "parent", caption: "The family only reads Feedback.", view: "parent" }
+        { t: 1.60, tone: "good", caption: "What they did, what went well, and what was hard.", view: "session" },
+        { t: 5.43, tone: "good", caption: "Prompts stay in Feedback.", view: "session", now: "feedback" },
+        { t: 8.44, tone: "good", caption: "Getting tired and finishing early stays in Feedback too.", view: "session", now: "feedback" },
+        { t: 12.53, tone: "neutral", caption: "Relevant information is a different box.", view: "split" },
+        { t: 15.31, tone: "neutral", caption: "It is not the session.", view: "split" },
+        { t: 16.85, tone: "good", caption: "A booking goes there.", view: "split", now: "relevant" },
+        { t: 18.29, tone: "good", caption: "A parent angry about the changing room goes there too.", view: "split", now: "relevant" },
+        { t: 21.57, tone: "parent", caption: "The family only reads Feedback.", view: "parent" },
+        { t: 23.48, tone: "parent", caption: "Relevant information stays with the office.", view: "parent" },
+        { t: 26.12, tone: "good", caption: "The family reads the session. The office keeps the other note.", view: "parent" }
       ];
 
       var captionEl = document.getElementById("caption");
@@ -446,7 +452,7 @@
       var phoneEl = document.getElementById("phone");
 
       var tapEl = document.getElementById("tapStart");
-      var audio = new Audio("/portal/help-audio/feedback-session-vs-relevant.mp3?v=20261005b");
+      var audio = new Audio("/portal/help-audio/feedback-session-vs-relevant.mp3?v=20261005f");
       audio.preload = "auto";
 
       var held = 0;
@@ -473,25 +479,28 @@
       function formHtml(beat) {
         var feedbackExtra = beat.now === "feedback" ? "is-now" : "";
         if (beat.view === "session") {
-          return head() + slot("celebrate", "Feedback", "The session, including what was difficult.", SESSION, feedbackExtra);
+          return head() + slot("celebrate", "Feedback", "The session. What they did, what went well, and what was hard.", SESSION, feedbackExtra);
         }
         var relExtra = beat.now === "relevant" ? "is-now" : "";
         var relevantBody = beat.now === "relevant" ? RELEVANT : '<span class="ghost">Not written yet.</span>';
+        var relevantSub = beat.now === "relevant"
+          ? "A booking, or a parent angry about the changing room."
+          : "A different box. Not the session.";
         return head() +
-          slot("celebrate", "Feedback", "The session, including what was difficult.", SESSION) +
-          slot("relevant", "Relevant information", "Not the session.", relevantBody, relExtra);
+          slot("celebrate", "Feedback", "The session. What they did, what went well, and what was hard.", SESSION) +
+          slot("relevant", "Relevant information", relevantSub, relevantBody, relExtra);
       }
 
       function parentHtml() {
         return (
           '<p class="kicker">Family app</p>' +
           '<div class="parent"><p class="who">Session note · Alex</p><h2>What the family reads</h2><p>' + SESSION + '</p></div>' +
-          slot("relevant", "Relevant information", "Stays with the office. The family does not read this.", RELEVANT, "is-dim")
+          slot("relevant", "Relevant information", "Stays with the office, so the family can read the session.", RELEVANT, "is-dim")
         );
       }
 
       function endedHtml() {
-        return '<p class="kicker">Done</p><h1>You can close this.</h1><p class="ended">Feedback is the session, including prompts and finishing early. Relevant information is a booking, or a parent angry about the changing room.</p><button type="button" class="replay" id="replayBtn">Watch again</button>';
+        return '<p class="kicker">Done</p><h1>You can close this.</h1><p class="ended">Feedback is the session, including prompts and finishing early. Relevant information is a different box: a booking, or a parent angry about the changing room. The family only reads Feedback.</p><button type="button" class="replay" id="replayBtn">Watch again</button>';
       }
 
       function beatAt(t) {
@@ -514,7 +523,7 @@
         lastKey = key;
         captionEl.className = "caption" + (beat ? " is-" + beat.tone : " is-good");
         if (!beat) {
-          captionEl.textContent = "Keep them apart.";
+          captionEl.textContent = "The family reads the session.";
           sheetEl.innerHTML = endedHtml();
           var replay = document.getElementById("replayBtn");
           if (replay) replay.addEventListener("click", replayFilm);

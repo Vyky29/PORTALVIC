@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v259",
+  "version": "2026-10-05-v260",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1783,7 +1783,7 @@
             "Feedback is the session, including prompts and finishing early. Relevant information is a booking, or a parent angry about the changing room."
           ],
           "tips": [
-            "The voice explains the rule. It does not read the example text.",
+            "The voice explains it calmly, in short sentences. It does not read the example text.",
             "After they watch it once, it does not block them again."
           ],
           "es": {
