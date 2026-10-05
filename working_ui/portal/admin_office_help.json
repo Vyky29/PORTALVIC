@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v265",
+  "version": "2026-10-05-v266",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1768,7 +1768,7 @@
           "id": "feedback_watch_send",
           "title": "Send the feedback watch",
           "summary": "A short video that blocks the staff app until they finish watching how Feedback and Relevant information are different.",
-          "where": "Admin → Communications → Send feedback watch",
+          "where": "Top bar → A (Announcements) → Send feedback watch",
           "keywords": [
             "feedback watch",
             "video",
@@ -1777,10 +1777,11 @@
             "announcement",
             "como se escribe el feedback",
             "changing room",
-            "booking"
+            "booking",
+            "staff shift notices"
           ],
           "steps": [
-            "Open Communications.",
+            "Press A in the top bar. That opens Announcements.",
             "Press Send feedback watch.",
             "Choose one person, or a group.",
             "Send. Their phone gets an alert.",
@@ -1794,9 +1795,9 @@
           "es": {
             "title": "Mandar el video de feedback",
             "summary": "Un video corto que bloquea la app del worker hasta que acaba, para separar Feedback y Relevant information.",
-            "where": "Admin → Communications → Send feedback watch",
+            "where": "Barra de arriba → A (Announcements) → Send feedback watch",
             "steps": [
-              "Abre Communications.",
+              "Pulsa A en la barra de arriba. Eso abre Announcements.",
               "Pulsa Send feedback watch.",
               "Elige una persona, o un grupo.",
               "Envia. Al movil le llega un aviso.",
@@ -1813,7 +1814,7 @@
           "id": "feedback_on_time_send",
           "title": "Send the end of shift watch",
           "summary": "A short video that blocks the staff app until they finish watching why feedback goes in before they leave.",
-          "where": "Admin → Communications → Send end of shift watch",
+          "where": "Top bar → A (Announcements) → Send end of shift watch",
           "keywords": [
             "end of shift",
             "final del turno",
@@ -1823,10 +1824,11 @@
             "profesionales",
             "mandatory",
             "bloqueo",
-            "video"
+            "video",
+            "staff shift notices"
           ],
           "steps": [
-            "Open Communications.",
+            "Press A in the top bar. That opens Announcements.",
             "Press Send end of shift watch.",
             "Choose one person, or a group.",
             "Send. Their phone gets an alert.",
@@ -1840,9 +1842,9 @@
           "es": {
             "title": "Mandar el video del final de turno",
             "summary": "Un video corto que bloquea la app hasta que acaba, para que el feedback se mande antes de irse.",
-            "where": "Admin → Communications → Send end of shift watch",
+            "where": "Barra de arriba → A (Announcements) → Send end of shift watch",
             "steps": [
-              "Abre Communications.",
+              "Pulsa A en la barra de arriba. Eso abre Announcements.",
               "Pulsa Send end of shift watch.",
               "Elige una persona, o un grupo.",
               "Envia. Al movil le llega un aviso.",

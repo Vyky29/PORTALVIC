@@ -357,6 +357,8 @@
       "</select>" +
       '<button type="button" class="btn btn--pri btn--sm" id="adminAnnInboxNewAnn">Announcement</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="adminAnnInboxNewRem">Reminder</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" data-open-compose data-preset="feedback_watch">Send feedback watch</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" data-open-compose data-preset="feedback_on_time">Send end of shift watch</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" id="adminAnnInboxRefresh">Refresh</button>' +
       "</div>" +
       '<div class="portal-pnlog-chat' +
