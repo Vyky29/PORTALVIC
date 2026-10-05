@@ -144,6 +144,7 @@
         try{
           document.getElementById('portalTodaySection')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }catch(_){}
+        portalConsumeOpenFirstPendingFeedbackCard();
       };
       var defer = typeof portalDeferHeavyDashboardRefresh === 'function'
         ? portalDeferHeavyDashboardRefresh
@@ -213,6 +214,9 @@
                   const grid = document.getElementById('todayGrid');
                   if(grid) grid.removeAttribute('data-today-cards-sig');
                   renderToday();
+                }
+                if(typeof portalConsumeOpenFirstPendingFeedbackCard === 'function'){
+                  portalConsumeOpenFirstPendingFeedbackCard();
                 }
                 if(typeof renderMiniCounts === 'function') renderMiniCounts();
               }catch(_soft){}
@@ -339,6 +343,19 @@
       const sep = base.indexOf('?') >= 0 ? '&' : '?';
       return portalAppendFromPortalQuery(base.split('#')[0] + sep + parts.join('&'));
     }
+    /** Outstanding feedbacks: land on the owed card, including a past day. */
+    function portalConsumeOpenFirstPendingFeedbackCard(){
+      if(!window.__PORTAL_OPEN_FIRST_PENDING_FEEDBACK__) return false;
+      var stats = typeof collectSessionReviewPendingStats === 'function'
+        ? collectSessionReviewPendingStats()
+        : null;
+      var first = stats && stats.pending && stats.pending[0];
+      if(!first || typeof openClient !== 'function') return false;
+      window.__PORTAL_OPEN_FIRST_PENDING_FEEDBACK__ = false;
+      openClient(first);
+      return true;
+    }
+    try{ window.portalConsumeOpenFirstPendingFeedbackCard = portalConsumeOpenFirstPendingFeedbackCard; }catch(_){}
     function portalOpenPendingFeedbackReviewFlow(opts){
       const openFirst = !opts || opts.openFirstClient !== false;
       const stats = collectSessionReviewPendingStats();

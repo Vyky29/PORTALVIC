@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v272",
+  "version": "2026-10-05-v273",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1888,7 +1888,11 @@
             "15:00",
             "20:30",
             "18:00",
-            "late feedback"
+            "late feedback",
+            "moved",
+            "se movio",
+            "cover needed",
+            "submitted"
           ],
           "steps": [
             "Monday, Tuesday, Wednesday, Thursday and Friday: first WhatsApp at 8:00pm, second at 8:30pm if feedback is still missing.",
@@ -1896,7 +1900,9 @@
             "Saturday: first WhatsApp at 3:00pm, second at 3:30pm if feedback is still missing.",
             "The API messages use the staff WhatsApp template. They say the message was sent automatically and not to reply. The link is the staff portal at clubsensational-staff.",
             "The second API message goes only to people who still owe feedback.",
-            "Feedback still open from an earlier day in the last 3 weeks stays in that reminder until it is sent. It does not drop off after the session day.",
+            "Feedback still open from an earlier day in the last 3 weeks stays in that reminder until it is sent. It does not drop off after the session day. Week 1 (1 to 4 Sep) stays out.",
+            "A same-day move clears the old half. That half counts as already done, because the feedback sits on the time they moved to. It does not stay Awaiting and it does not text anyone.",
+            "Staff tap Outstanding feedbacks. That opens the owed day and the client card, including a past date, so they can write the feedback there.",
             "30 minutes after that last API message, if the feedback is still missing, the staff phone gets the call ring, the one that still sounds when the feedback alerts in the app are off. It comes back every 10 minutes until the feedback is in, and it stops at 11:00pm. Saturday that starts at 4:00pm. Sunday at 7:00pm. Monday to Friday at 9:00pm. The admin can still open WhatsApp Business on this computer. That chat does not send itself."
           ],
           "tips": [
@@ -1912,7 +1918,9 @@
               "Sabado: primer WhatsApp a las 3:00, segundo a las 3:30 si el feedback sigue sin hacerse.",
               "Los mensajes de API usan la plantilla de WhatsApp del staff. Dicen que se envio automaticamente y que no contesten. El enlace es el portal de staff en clubsensational-staff.",
               "El segundo mensaje de API solo sale a quien todavia debe feedback.",
-              "Si un feedback de un dia anterior de las ultimas 3 semanas sigue sin enviarse, entra en ese aviso hasta que se manda. No se cae al pasar el dia de la sesion.",
+              "Si un feedback de un dia anterior de las ultimas 3 semanas sigue sin enviarse, entra en ese aviso hasta que se manda. No se cae al pasar el dia de la sesion. La semana 1 (1 al 4 Sep) queda fuera.",
+              "Si el nino se movio el mismo dia, el hueco viejo cuenta como hecho: el feedback esta en la hora nueva. No sigue en Awaiting y no manda WhatsApp.",
+              "El staff pulsa Outstanding feedbacks. Abre el dia que debe y la card del nino, tambien si es un dia pasado, para escribir el feedback ahi.",
               "30 minutos despues de ese ultimo mensaje de API, si el feedback sigue sin hacerse, el movil del staff recibe el timbre de llamada, el que sigue sonando aunque los avisos de feedback de la app esten apagados. Vuelve cada 10 minutos hasta que el feedback esta dentro, y para a las 11:00. El sabado empieza a las 4:00. El domingo a las 7:00. De lunes a viernes a las 9:00. El admin puede abrir WhatsApp Business en este ordenador. Ese chat no se envia solo."
             ],
             "tips": [

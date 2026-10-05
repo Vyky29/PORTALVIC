@@ -3698,6 +3698,13 @@
       /* Jump straight to the outstanding day board (same as tapping the Term cell).
          Opening Term first + sync rebuild left Halo stuck for seconds. */
       if(iso && /^\d{4}-\d{2}-\d{2}$/.test(iso)){
+        try{ window.__PORTAL_OPEN_FIRST_PENDING_FEEDBACK__ = true; }catch(_){}
+        try{
+          clearTimeout(window.__PORTAL_OPEN_FIRST_PENDING_FEEDBACK_TIMER__);
+          window.__PORTAL_OPEN_FIRST_PENDING_FEEDBACK_TIMER__ = setTimeout(function(){
+            window.__PORTAL_OPEN_FIRST_PENDING_FEEDBACK__ = false;
+          }, 4000);
+        }catch(_){}
         var dayWord = '';
         try{
           dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });

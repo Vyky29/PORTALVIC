@@ -903,8 +903,13 @@ export function applyScheduleOverridesToFeedback2030Slots(
     }
 
     if (ot === "slot_clear_client") {
+      const moveClear =
+        pl.client_move === true || pl.client_move === "true" ||
+        pl.day_reassign === true || pl.not_makeup === true;
       dropMatching((s) => {
-        if (anchorStaff && !staffKeysMatch(s.staff, anchorStaff)) return false;
+        const staffOk = !anchorStaff || staffKeysMatch(s.staff, anchorStaff);
+        /* COVER NEEDED has no name. A moved half still leaves with the child. */
+        if (!staffOk && !(moveClear && !isUsableCoverStaff(s.staff))) return false;
         if (!clientMatchesOverride(s.client, anchorClient, pl)) return false;
         /* Named Day Centre client is one unit that day — clearing 12-3 also drops 11-3. */
         if (isDayCentreService(s.service) || isDayCentreService(String(pl.service || ""))) {

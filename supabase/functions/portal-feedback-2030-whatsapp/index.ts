@@ -559,8 +559,10 @@ Deno.serve(async (req) => {
   const debtLists = [todayPack.debts];
 
   /* Open feedback from earlier days stays in the nag until it is sent.
-     Floor skips week-1 ghosts. A 5-hour Day Centre window is not a real seat. */
-  const CARRY_FLOOR = "2026-09-24";
+     Floor skips week-1 (Tue 1 - Fri 4 Sep). Standing starts Mon 7 Sep.
+     A same-day move drops the vacated half; a real cover (Raul / Emmanuel) stays.
+     A 5-hour Day Centre window is not a real seat. */
+  const CARRY_FLOOR = "2026-09-07";
   const pastIsos: string[] = [];
   for (let back = 1; back <= 21; back++) {
     const day = addIsoDays(iso, -back);

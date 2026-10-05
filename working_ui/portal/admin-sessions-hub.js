@@ -2218,6 +2218,47 @@ function rosterRowToSlot(isoDate, wd, r) {
     return kind === "day_reassign" || kind === "instructor_day_cover" || kind === "slot_move";
   }
 
+  function clockMinutesAreSameHalf12h(a, b) {
+    function mins(hm) {
+      var p = String(hm || "").match(/(\d{1,2}):(\d{2})/);
+      if (!p) return NaN;
+      return (parseInt(p[1], 10) || 0) * 60 + (parseInt(p[2], 10) || 0);
+    }
+    var ma = mins(a);
+    var mb = mins(b);
+    if (!Number.isFinite(ma) || !Number.isFinite(mb)) return false;
+    if (ma === mb) return true;
+    return Math.abs(ma - mb) === 12 * 60;
+  }
+
+  function slotInstructorsAreCoverNeededOrEmpty(slot) {
+    var names = slotInstructors(slot);
+    if (!names.length) return true;
+    for (var i = 0; i < names.length; i++) {
+      var n = clean(names[i]);
+      if (!n) continue;
+      if (/^cover[\s_]*needed$/i.test(n)) continue;
+      if (canonicalStaffMatchKey(n) === "coverneeded") continue;
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * The child left this half (same-day move). Feedback lives on the seat they
+   * moved to. This half is not a second debt.
+   */
+  function slotVacatedByClientMove(hub, slot) {
+    if (!slot) return false;
+    if (slot.portalClientMovedOut) return true;
+    try {
+      if (hub && typeof hub.overrideForSlotByType === "function") {
+        if (hub.overrideForSlotByType(slot, overrideIsClientMoveClear)) return true;
+      }
+    } catch (_move) {}
+    return false;
+  }
+
   /** Source seat of a same-day move — clear standing client so Feedbacks does not ghost them. */
   function overrideIsClientMoveClear(ov) {
     if (String(ov && ov.override_type || "").trim() !== "slot_clear_client") return false;
@@ -7849,6 +7890,8 @@ function rosterRowToSlot(isoDate, wd, r) {
       }
       if (hub.slotCancellationCountsAsSubmitted(slot)) return "cancelled";
       if (hub.slotIsAbsent(slot)) return "absent";
+      /* Moved half: the feedback is on the new time. Do not count this seat as missing. */
+      if (slotVacatedByClientMove(hub, slot)) return "feedback";
       return "awaiting";
     }
     if (isCancellationFeedbackRow(fb)) return "cancelled";
@@ -9309,7 +9352,14 @@ function rosterRowToSlot(isoDate, wd, r) {
        * is anchored to one instructor. Do not paint the other column moved-out.
        */
       if (overrideIsClientMoveClear(ov) && clean(ov.anchor_staff_id)) {
-        if (!staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)) {
+        /*
+         * COVER NEEDED has no worker name. The clear still owns this child
+         * at this time (Yamik / Vithura left the half).
+         */
+        if (
+          !staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors) &&
+          !slotInstructorsAreCoverNeededOrEmpty(slot)
+        ) {
           return false;
         }
       }
@@ -9365,6 +9415,10 @@ function rosterRowToSlot(isoDate, wd, r) {
       return false;
     }
     if (oStart && sStart && oStart !== sStart) {
+      /* 6.30 and 18:30 are the same aquatic half. */
+      if (overrideIsClientMoveClear(ov) && clockMinutesAreSameHalf12h(oStart, sStart)) {
+        return true;
+      }
       var oLabel2 = clean(ov.anchor_time_slot_label).toLowerCase();
       var sLabel2 = clean(slot.time_slot).toLowerCase();
       if (oLabel2 && sLabel2 && oLabel2 === sLabel2) return true;
@@ -10315,7 +10369,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           typeof pickOverviewRepresentativeSlot === "function"
             ? pickOverviewRepresentativeSlot(hub, { key: unit.key, slots: slots })
             : pickRepresentativeSlotForUnit({ key: unit.key, slots: slots });
-        out.push({ _ashAwaitingSlot: true, slot: awaitRep || rep });
+        var awaitSlot = awaitRep || rep;
+        if (slotVacatedByClientMove(hub, awaitSlot)) continue;
+        out.push({ _ashAwaitingSlot: true, slot: awaitSlot });
       }
     }
 
@@ -10449,6 +10505,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         continue;
       }
+      /* Vacated half after a same-day move. The new seat holds the feedback. */
+      if (slotVacatedByClientMove(hub, slot)) continue;
       if (hub.slotFeedbackComplete(slot) || (isDayCentreService(slot.service) && unitComplete[ukey])) {
         var fb = hub.findFeedbackForSlot(slot);
         if (fb && !isUsed(fb)) {
