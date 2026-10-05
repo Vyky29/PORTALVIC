@@ -3609,6 +3609,7 @@ function rosterRowToSlot(isoDate, wd, r) {
       cancellation_timing: "Office",
       reason_category: reason,
       submitted_by_name: by,
+      venue: clean(ov.anchor_venue),
       portal_session_key: normTimeShort(ov.anchor_start)
         ? sd + "||" + normTimeShort(ov.anchor_start) + "||" + slug
         : sd + "||" + slug,
@@ -15934,50 +15935,120 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     });
   };
 
+  function cancellationRowVenue(hub, row) {
+    if (!row) return "";
+    var direct = clean(row.venue || row.anchor_venue);
+    if (direct) return direct;
+    var iso = clean(row.session_date).slice(0, 10);
+    var cid = canonicalClientSlug(row.client_name);
+    if (!hub || !iso || !cid || typeof hub.expandSlotsForDate !== "function") return "";
+    if (!hub._cancelVenueByIso) hub._cancelVenueByIso = Object.create(null);
+    if (!hub._cancelVenueByIso[iso]) {
+      var byClient = Object.create(null);
+      var slots = [];
+      try {
+        slots = hub.expandSlotsForDate(iso) || [];
+      } catch (_slots) {
+        slots = [];
+      }
+      for (var i = 0; i < slots.length; i++) {
+        var s = slots[i];
+        if (!s || isOpenRosterSlot(s.client_name)) continue;
+        var scid = canonicalClientSlug(s.client_name);
+        var ven = clean(s.venue);
+        if (!scid || !ven) continue;
+        var st = normTimeShort(s.time_start) || normTimeKey(s.time_slot, s.day);
+        if (!byClient[scid]) byClient[scid] = [];
+        byClient[scid].push({ t: st, venue: ven });
+      }
+      hub._cancelVenueByIso[iso] = byClient;
+    }
+    var hits = hub._cancelVenueByIso[iso][cid] || [];
+    if (!hits.length) return "";
+    var t = normTimeShort(row.session_time) || normTimeKey(row.session_time);
+    if (t) {
+      for (var j = 0; j < hits.length; j++) {
+        if (clockMinutesAreSameHalf12h(t, hits[j].t)) return hits[j].venue;
+      }
+    }
+    var only = hits[0].venue;
+    for (var k = 1; k < hits.length; k++) {
+      if (hits[k].venue !== only) return "";
+    }
+    return only;
+  }
+
   AdminSessionsHub.prototype.htmlCancellations = function () {
     var esc = this.escapeHtml;
     var hub = this;
     var iso = this.selectedDay;
+    hub._cancelVenueByIso = null;
     var items = this.cancellationsForDate(iso);
-    var rows = items
-      .map(function (item) {
-        var r = item.row;
-        var i = item.idx;
-        var who = clean(r.submitted_by_name || r.instructor_name) || "\u2014";
+    var groups = Object.create(null);
+    items.forEach(function (item) {
+      var venue = cancellationRowVenue(hub, item.row) || "No venue on the seat";
+      if (!groups[venue]) groups[venue] = [];
+      groups[venue].push(item);
+    });
+    var venueNames = Object.keys(groups).sort(function (a, b) {
+      if (a === "No venue on the seat") return 1;
+      if (b === "No venue on the seat") return -1;
+      return a.localeCompare(b, "en", { sensitivity: "base" });
+    });
+    function rowHtml(item) {
+      var r = item.row;
+      var i = item.idx;
+      var who = clean(r.submitted_by_name || r.instructor_name) || "\u2014";
+      return (
+        '<tr class="portal-forms-data-row" data-portal-forms-kind="cancellation" data-portal-forms-idx="' +
+        i +
+        '" title="Double-click to view full report">' +
+        '<td class="ash-td-center col-date">' +
+        esc(formatFbDate(r.created_at)) +
+        "</td>" +
+        '<td class="ash-td-center"><div class="portal-forms-cell-main">' +
+        esc(who) +
+        "</div></td>" +
+        '<td class="ash-td-center">' +
+        esc(clean(r.client_name) || "\u2014") +
+        "</td>" +
+        '<td class="ash-td-center">' +
+        esc(clean(r.session_date) || "\u2014") +
+        "</td>" +
+        '<td class="ash-td-center">' +
+        esc(clean(r.session_time) || "\u2014") +
+        "</td>" +
+        '<td class="ash-td-center cell-wrap">' +
+        esc(clean(r.service) || "\u2014") +
+        "</td>" +
+        '<td class="ash-td-center">' +
+        esc(clean(r.cancellation_timing) || "\u2014") +
+        "</td>" +
+        '<td class="ash-td-center cell-wrap col-reason">' +
+        esc(clean(r.reason_category) || "\u2014") +
+        "</td></tr>"
+      );
+    }
+    var body = venueNames
+      .map(function (venue) {
+        var list = groups[venue];
         return (
-          '<tr class="portal-forms-data-row" data-portal-forms-kind="cancellation" data-portal-forms-idx="' +
-          i +
-          '" title="Double-click to view full report">' +
-          '<td class="ash-td-center col-date">' +
-          esc(formatFbDate(r.created_at)) +
-          "</td>" +
-          '<td class="ash-td-center"><div class="portal-forms-cell-main">' +
-          esc(who) +
-          "</div></td>" +
-          '<td class="ash-td-center">' +
-          esc(clean(r.client_name) || "\u2014") +
-          "</td>" +
-          '<td class="ash-td-center">' +
-          esc(clean(r.session_date) || "\u2014") +
-          "</td>" +
-          '<td class="ash-td-center">' +
-          esc(clean(r.session_time) || "\u2014") +
-          "</td>" +
-          '<td class="ash-td-center cell-wrap">' +
-          esc(clean(r.service) || "\u2014") +
-          "</td>" +
-          '<td class="ash-td-center">' +
-          esc(clean(r.cancellation_timing) || "\u2014") +
-          "</td>" +
-          '<td class="ash-td-center cell-wrap col-reason">' +
-          esc(clean(r.reason_category) || "\u2014") +
-          "</td></tr>"
+          '<h4 class="ash-table-title" style="margin-top:14px">' +
+          esc(venue) +
+          ' <span class="ash-badge ash-badge--booked">' +
+          esc(String(list.length)) +
+          "</span></h4>" +
+          '<div class="ash-table-wrap" style="min-width:0"><table class="ash-table ash-table--overview portal-forms-table portal-forms-table--full-detail"><thead><tr>' +
+          '<th class="ash-td-center col-date">Recorded</th><th class="ash-td-center">Submitted by</th><th class="ash-td-center">Client</th><th class="ash-td-center">Session date</th><th class="ash-td-center">Session time</th><th class="ash-td-center">Service</th><th class="ash-td-center">Timing</th><th class="ash-td-center col-reason">Reason</th>' +
+          "</tr></thead><tbody>" +
+          list.map(rowHtml).join("") +
+          "</tbody></table></div>"
         );
       })
       .join("");
-    if (!rows) {
-      rows =
-        '<tr><td colspan="8"><div class="ash-empty">No cancellation reports for this day.</div></td></tr>';
+    if (!body) {
+      body =
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="8"><div class="ash-empty">No cancellation reports for this day.</div></td></tr></tbody></table></div>';
     }
     return (
       this.htmlWeekHeader() +
@@ -15988,11 +16059,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       esc(String(items.length)) +
       (items.length === 1 ? " report" : " reports") +
       "</span></h3>" +
-      '<div class="ash-table-wrap"><table class="ash-table ash-table--overview portal-forms-table portal-forms-table--full-detail"><thead><tr>' +
-      '<th class="ash-td-center col-date">Recorded</th><th class="ash-td-center">Submitted by</th><th class="ash-td-center">Client</th><th class="ash-td-center">Session date</th><th class="ash-td-center">Session time</th><th class="ash-td-center">Service</th><th class="ash-td-center">Timing</th><th class="ash-td-center col-reason">Reason</th>' +
-      "</tr></thead><tbody>" +
-      rows +
-      "</tbody></table></div>" +
+      '<p class="ash-feedback-filter-hint" style="margin-top:0">Staff form and admin cancel, grouped by venue. Credits and makeup stay under Absents &amp; credits.</p>' +
+      body +
       this.htmlCancellationsTermWeekLog()
     );
   };
@@ -16001,20 +16069,27 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var esc = this.escapeHtml;
     var hub = this;
     var ctx = this.logOpenContext();
+    var rows = (this.payload.cancellation_reports || []).slice();
+    var ovs = this.payload.schedule_overrides || [];
+    for (var oi = 0; oi < ovs.length; oi++) {
+      var ovRow = overrideToCancellationRow(ovs[oi]);
+      if (ovRow) rows.push(ovRow);
+    }
     return renderTermWeekLogHtml({
       escapeHtml: esc,
       title: "Cancellations log",
       emptyMsg: "No cancellations in loaded data.",
-      rows: this.payload.cancellation_reports || [],
+      rows: rows,
       getDateIso: function (r) {
         return hub.portalReportDateIso(r);
       },
       openTermLabel: ctx.openTermLabel,
       openWeekStart: ctx.openWeekStart,
       headHtml:
-        "<th>Session date</th><th>Recorded</th><th>By</th><th>Client</th><th>Service</th><th>Reason</th>",
+        "<th>Session date</th><th>Recorded</th><th>By</th><th>Venue</th><th>Client</th><th>Service</th><th>Reason</th>",
       rowHtml: function (r, escFn) {
         var sd = hub.portalReportDateIso(r);
+        var ven = cancellationRowVenue(hub, r) || "No venue on the seat";
         return (
           "<tr><td>" +
           escFn(formatFbDate(sd || r.session_date)) +
@@ -16022,6 +16097,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           escFn(formatFbDate(r.created_at)) +
           "</td><td>" +
           escFn(clean(r.submitted_by_name || r.instructor_name) || "\u2014") +
+          "</td><td>" +
+          escFn(truncateCellText(ven, 28)) +
           "</td><td>" +
           escFn(clean(r.client_name) || "\u2014") +
           "</td><td>" +

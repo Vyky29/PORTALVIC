@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v273",
+  "version": "2026-10-05-v274",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -501,6 +501,49 @@
             "tips": [
               "Deja encendidos el feedback pendiente y las alertas salvo que Victor los pause.",
               "Una banda entera de natacion marcada Absent (por ejemplo 4 a 5.30) ya esta hecha. La app del worker no debe pedir ese feedback al entrar, ni abrir ese dia viejo antes de que pueda usar Today."
+            ]
+          }
+        },
+        {
+          "id": "cancellations_by_venue",
+          "title": "Cancellations by venue",
+          "summary": "Staff cancellation forms and admin session cancels, grouped by venue. This is the log. Absents and credits stay on their own screen.",
+          "where": "Sessions → Other → Cancellations",
+          "keywords": [
+            "cancellations",
+            "cancelaciones",
+            "cancelacion",
+            "venue",
+            "sede",
+            "staff cancel",
+            "admin cancel",
+            "por venue"
+          ],
+          "steps": [
+            "Open Sessions, then Other, then Cancellations.",
+            "The week cards work like Incidents. Open the day.",
+            "That day is grouped by venue. Each row is who sent it, the client, the time, the service, and the reason.",
+            "A staff row is the cancellation form from the staff app. An Office row is an admin cancel from Schedule and Covers.",
+            "The log under the day lists the same reports across the loaded weeks, with the venue on each row."
+          ],
+          "tips": [
+            "Absents and credits is the decide queue (credit, refund, makeup, none). It is not this cancellations log.",
+            "A parent absence does not appear here. This screen is the staff form and the admin cancel."
+          ],
+          "es": {
+            "title": "Cancelaciones por sede",
+            "summary": "Formularios de cancelacion del staff y cancelaciones de admin, agrupadas por sede. Es el registro. Faltas y creditos siguen en su pantalla.",
+            "where": "Sessions → Other → Cancellations",
+            "steps": [
+              "Abre Sessions, luego Other, luego Cancellations.",
+              "Las tarjetas de la semana funcionan como Incidents. Abre el dia.",
+              "Ese dia va agrupado por sede. Cada fila dice quien lo mando, el cliente, la hora, el servicio y el motivo.",
+              "Una fila de staff es el formulario de la app. Una fila Office es una cancelacion de admin desde Schedule and Covers.",
+              "El log debajo del dia lista los mismos informes en las semanas cargadas, con la sede en cada fila."
+            ],
+            "tips": [
+              "Absents and credits es la cola de decision (credit, refund, makeup, none). No es este registro.",
+              "Una falta del padre no sale aqui. Esta pantalla es el formulario del staff y la cancelacion de admin."
             ]
           }
         },
