@@ -419,6 +419,7 @@
     function islandCat(story, step, id) {
       var name = byId[id] ? byId[id].name : id;
       var cat = step.cats && step.cats[id];
+      if (Array.isArray(cat)) cat = cat.join(" / ");
       if (!cat && story.world === id) cat = story.label;
       return cat ? name + " - " + cat : name;
     }
@@ -444,6 +445,25 @@
       }).join("");
       var lessons = guideLessons(GUIDE_IDS[story.world] || []).slice(0, 2).map(lessonBlock).join("");
       var playLabel = state.playing ? "Pausa" : "Reproducir";
+      var canAdvance = gate && state.step < story.steps.length - 1;
+      if (state.mode === "flow") {
+        panel.classList.add("is-slim");
+        panel.innerHTML =
+          '<button type="button" class="pw-panel-x" data-act="close">Cerrar</button>' +
+          "<h2>" + story.label + "</h2>" +
+          '<p class="pw-from">' + route + "</p>" +
+          "<p>" + (state.step + 1) + " / " + story.steps.length + ". " + step.text + "</p>" +
+          (canAdvance ? '<p class="pw-gate">EN ESPERA. Pulsa el nodo iluminado para seguir.</p>' : "") +
+          '<div class="pw-controls">' +
+            '<button type="button" data-act="play">' + playLabel + "</button>" +
+            '<button type="button" data-act="repeat">Repetir</button>' +
+            '<button type="button" data-act="prev">Paso anterior</button>' +
+            '<button type="button" data-act="next">Paso siguiente</button>' +
+          "</div>";
+        sim.textContent = state.cruise ? "Pausar movimiento" : "Reanudar movimiento";
+        return;
+      }
+      panel.classList.remove("is-slim");
       panel.innerHTML =
         '<button type="button" class="pw-panel-x" data-act="close">Cerrar</button>' +
         "<h2>" + story.label + "</h2>" +
@@ -612,73 +632,215 @@
       });
       return out;
     }
+    function esc(s) {
+      return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    }
+    function nodeTitles(story, step, id) {
+      var cat = step.cats && step.cats[id];
+      if (Array.isArray(cat)) return cat;
+      if (cat) return [cat];
+      if (stepIslands(step).length === 1 || story.world === id) return [story.label];
+      return [byId[id] ? byId[id].name : id];
+    }
+    function subGraph(story) {
+      var nodesG = [];
+      var edges = [];
+      var index = {};
+      function ensure(id, title, stepIndex) {
+        var key = id + "|" + title;
+        var node = index[key];
+        if (!node) {
+          node = { key: key, id: id, title: title, sub: byId[id] ? byId[id].name : id, steps: [] };
+          index[key] = node;
+          nodesG.push(node);
+        }
+        if (node.steps.indexOf(stepIndex) < 0) node.steps.push(stepIndex);
+        return node;
+      }
+      function addEdge(from, to, stepIndex, label) {
+        if (!from || !to || from.key === to.key) return;
+        var i;
+        for (i = 0; i < edges.length; i++) {
+          if (edges[i].from === from.key && edges[i].to === to.key) return;
+        }
+        edges.push({
+          from: from.key,
+          to: to.key,
+          step: stepIndex,
+          label: label || "",
+          color: COLOR[from.id] || "#f4b740"
+        });
+      }
+      story.steps.forEach(function (step, si) {
+        var ids = stepIslands(step);
+        var made = {};
+        ids.forEach(function (id) {
+          made[id] = nodeTitles(story, step, id).map(function (title) { return ensure(id, title, si); });
+        });
+        var outside = [];
+        stepLinks(step).forEach(function (lid) {
+          var link = linkById[lid];
+          if (!link) return;
+          if (ids.indexOf(link.from) < 0 || ids.indexOf(link.to) < 0) outside.push(link);
+        });
+        var label = step.edge || "";
+        if (outside.length) {
+          outside.forEach(function (link) {
+            var sources = made[link.from] || nodesG.filter(function (n) { return n.id === link.from; });
+            var targets = made[link.to] || nodesG.filter(function (n) { return n.id === link.to; });
+            sources.forEach(function (src) {
+              targets.forEach(function (dst) { addEdge(src, dst, si, label); });
+            });
+          });
+          return;
+        }
+        var fan = ids.length > 1 && (stepLinks(step).length > 1 || /a la vez/i.test(step.text));
+        if (fan) {
+          var srcs = made[ids[0]] || [];
+          ids.slice(1).forEach(function (id) {
+            (made[id] || []).forEach(function (dst) {
+              srcs.forEach(function (src) { addEdge(src, dst, si, label); });
+            });
+          });
+          return;
+        }
+        var prev = null;
+        ids.forEach(function (id) {
+          (made[id] || []).forEach(function (node) {
+            addEdge(prev, node, si, label);
+            prev = node;
+          });
+        });
+      });
+      if (nodesG.length) {
+        var origin = nodesG[0];
+        nodesG.forEach(function (node) {
+          if (node === origin) return;
+          var incoming = edges.some(function (e) { return e.to === node.key; });
+          if (!incoming) addEdge(origin, node, node.steps[0], "");
+        });
+      }
+      var depth = {};
+      nodesG.forEach(function (n) { depth[n.key] = 0; });
+      var pass;
+      for (pass = 0; pass < nodesG.length; pass++) {
+        edges.forEach(function (e) {
+          depth[e.to] = Math.max(depth[e.to] || 0, (depth[e.from] || 0) + 1);
+        });
+      }
+      var columns = [];
+      nodesG.forEach(function (n) {
+        n.depth = depth[n.key] || 0;
+        columns[n.depth] = columns[n.depth] || [];
+        columns[n.depth].push(n);
+      });
+      var nodeW = 200;
+      var nodeH = 70;
+      var colGap = 150;
+      var rowGap = 26;
+      var maxRows = 1;
+      columns.forEach(function (col) { if (col) maxRows = Math.max(maxRows, col.length); });
+      var colCount = 0;
+      columns.forEach(function (col, ci) {
+        if (!col) return;
+        colCount = Math.max(colCount, ci + 1);
+        var total = col.length * nodeH + (col.length - 1) * rowGap;
+        var y0 = (maxRows * (nodeH + rowGap) - rowGap - total) / 2 + 20;
+        col.forEach(function (n, ri) {
+          n.x = 24 + ci * (nodeW + colGap);
+          n.y = y0 + ri * (nodeH + rowGap);
+          n.w = nodeW;
+          n.h = nodeH;
+        });
+      });
+      return {
+        nodes: nodesG,
+        edges: edges,
+        w: Math.max(280, 48 + colCount * (nodeW + colGap)),
+        h: Math.max(160, 40 + maxRows * (nodeH + rowGap))
+      };
+    }
+    function applySub() {
+      var canvas = sub.querySelector("#pwSubCanvas");
+      if (!canvas) return;
+      canvas.style.transform = "translate(" + state.subX + "px," + state.subY + "px) scale(" + state.subZ + ")";
+    }
+    function fitSub() {
+      if (!state.subModel) return;
+      var rect = vw.getBoundingClientRect();
+      var padX = 36;
+      var padY = 28;
+      var z = Math.min((rect.width - padX * 2) / state.subModel.w, (rect.height - 72) / state.subModel.h);
+      state.subZ = Math.min(1.15, Math.max(0.35, z));
+      state.subX = (rect.width - state.subModel.w * state.subZ) / 2;
+      state.subY = Math.max(18, (rect.height - 56 - state.subModel.h * state.subZ) / 2);
+      applySub();
+    }
+    function zoomSub(factor, mx, my) {
+      var next = Math.min(1.8, Math.max(0.35, (state.subZ || 1) * factor));
+      var ratio = next / (state.subZ || 1);
+      state.subX = mx - (mx - state.subX) * ratio;
+      state.subY = my - (my - state.subY) * ratio;
+      state.subZ = next;
+      applySub();
+    }
     function buildSub(story) {
       stopSubParticles();
-      var ids = storyIslands(story);
-      var links = storyLinks(story);
-      var rect = vw.getBoundingClientRect();
-      var n = Math.max(ids.length, 1);
-      var gap = 64;
-      var boxW = Math.max(180, Math.min(260, (rect.width - 40 - gap * (n - 1)) / n));
-      var boxH = Math.max(160, Math.min(240, rect.height - 160));
-      var total = n * boxW + (n - 1) * gap;
-      var x0 = Math.max(24, (rect.width - total) / 2);
-      var y0 = Math.max(88, (rect.height - boxH) / 2);
-      var box = {};
-      ids.forEach(function (id, i) {
-        box[id] = { x: x0 + i * (boxW + gap), y: y0, w: boxW, h: boxH };
-      });
-      var paths = links.map(function (link, i) {
-        var a = box[link.from];
-        var b = box[link.to];
+      stopParticles();
+      var graph = subGraph(story);
+      var byKey = {};
+      graph.nodes.forEach(function (n) { byKey[n.key] = n; });
+      var paths = graph.edges.map(function (edge, i) {
+        var a = byKey[edge.from];
+        var b = byKey[edge.to];
         if (!a || !b) return "";
-        var forward = a.x <= b.x;
-        var x1 = forward ? a.x + a.w : a.x;
-        var x2 = forward ? b.x : b.x + b.w;
-        var y1 = a.y + 70 + (i % 3) * 28;
-        var y2 = b.y + 70 + (i % 3) * 28;
-        var bow = 36 + (i % 2) * 28;
-        var cx = (x1 + x2) / 2;
-        var cy = Math.min(y1, y2) - bow;
-        var color = link.color || COLOR[link.from] || "#f4b740";
-        return '<path data-sub="' + link.id + '" stroke="' + color + '" marker-end="url(#pwSubArrow)" d="M ' + x1 + " " + y1 + " Q " + cx + " " + cy + " " + x2 + " " + y2 + '"/>';
+        var x1 = a.x + a.w;
+        var y1 = a.y + a.h / 2;
+        var x2 = b.x;
+        var y2 = b.y + b.h / 2;
+        if (b.x < a.x + 8) {
+          x1 = a.x;
+          x2 = b.x + b.w;
+        }
+        var mx = (x1 + x2) / 2;
+        var lx = (x1 + x2) / 2;
+        var ly = (y1 + y2) / 2 - 8;
+        var text = edge.label ? '<text x="' + lx + '" y="' + ly + '" text-anchor="middle">' + esc(edge.label) + "</text>" : "";
+        return '<path data-sub="' + i + '" data-step="' + edge.step + '" stroke="' + edge.color + '" d="M ' + x1 + " " + y1 + " C " + mx + " " + y1 + ", " + mx + " " + y2 + ", " + x2 + " " + y2 + '"/>' + text;
       }).join("");
-      var boxes = ids.map(function (id) {
-        var island = byId[id];
-        var b = box[id];
-        var home = id === (story.world || id);
-        var bits = story.steps.filter(function (step) {
-          if (home) return stepIslands(step).indexOf(id) !== -1 && stepLinks(step).every(function (linkId) {
-            return !linkById[linkId] || linkById[linkId].from === id;
-          });
-          return stepLinks(step).some(function (linkId) {
-            return linkById[linkId] && linkById[linkId].to === id;
-          });
-        }).map(function (step) {
-          return '<p class="pw-sub-step">' + step.text + "</p>";
-        }).join("");
-        return '<section class="pw-frame pw-sub-box ' + island.cls + '" style="left:' + b.x + "px;top:" + b.y + "px;width:" + b.w + "px;height:" + b.h + 'px">' +
-          '<span class="pw-kicker">' + island.kicker + "</span>" +
-          "<h2>" + island.name + "</h2>" +
-          (home ? '<p class="pw-sub-fn is-hot">' + story.label + "</p>" : "") +
-          bits +
-        "</section>";
+      var boxes = graph.nodes.map(function (n) {
+        return '<button type="button" class="pw-sub-node" data-subnode="1" data-steps="' + n.steps.join(",") + '" style="left:' + n.x + "px;top:" + n.y + "px;width:" + n.w + 'px;border-color:' + (COLOR[n.id] || "#f4b740") + '">' +
+          "<b>" + esc(n.title) + "</b><span>" + esc(n.sub) + "</span></button>";
       }).join("");
-      sub.innerHTML = '<h2 class="pw-sub-title">' + story.label + "</h2>" +
-        '<svg class="pw-sub-svg" viewBox="0 0 ' + rect.width + " " + rect.height + '"><defs><marker id="pwSubArrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8 z" fill="#f4b740"></path></marker></defs>' + paths + "</svg>" +
-        boxes;
+      sub.innerHTML =
+        '<p class="pw-sub-kicker">' + esc(story.label) + "</p>" +
+        '<div id="pwSubCanvas">' +
+          '<svg class="pw-sub-svg" viewBox="0 0 ' + graph.w + " " + graph.h + '" width="' + graph.w + '" height="' + graph.h + '">' + paths + "</svg>" +
+          boxes +
+        "</div>";
       sub.hidden = false;
       nodes.style.visibility = "hidden";
       root.querySelector("#pwWires").style.visibility = "hidden";
-      stopParticles();
+      if (mini) mini.hidden = true;
+      state.subModel = { id: story.id, w: graph.w, h: graph.h };
+      fitSub();
+    }
+    function runSubParticles() {
+      stopSubParticles();
+      if (!state.cruise && !state.playing) return;
+      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      var canvas = sub.querySelector("#pwSubCanvas");
+      if (!canvas) return;
+      var paths = sub.querySelectorAll("path.is-hot");
+      if (!paths.length) paths = sub.querySelectorAll("path[data-sub]");
       var dots = [];
-      sub.querySelectorAll("path[data-sub]").forEach(function (path) {
+      Array.prototype.forEach.call(paths, function (path) {
         var k;
         for (k = 0; k < 2; k++) {
           var dot = document.createElement("i");
-          dot.className = "pw-dot" + (path.getAttribute("data-sub") === "auto-b" ? " is-reply" : "");
+          dot.className = "pw-dot";
           dot.style.background = path.getAttribute("stroke") || "#f4b740";
-          sub.appendChild(dot);
+          canvas.appendChild(dot);
           dots.push({ el: dot, path: path, len: path.getTotalLength() || 1, t0: performance.now() - k * 1100 });
         }
       });
@@ -693,14 +855,31 @@
       }
       if (dots.length) subFrame = requestAnimationFrame(tick);
     }
+    function paintSub() {
+      var story = storyById(state.story);
+      sub.querySelectorAll("[data-subnode]").forEach(function (el) {
+        var steps = el.getAttribute("data-steps").split(",").map(Number);
+        el.classList.toggle("is-now", steps.indexOf(state.step) >= 0);
+      });
+      sub.querySelectorAll("path[data-sub]").forEach(function (path) {
+        path.classList.toggle("is-hot", Number(path.getAttribute("data-step")) === state.step);
+      });
+      backBtn.hidden = false;
+      panel.classList.add("is-open");
+      renderPanel();
+      runSubParticles();
+    }
     function clearSub() {
       stopSubParticles();
+      state.subModel = null;
       if (!sub) return;
       sub.hidden = true;
       sub.innerHTML = "";
       nodes.style.visibility = "";
       var svg = root.querySelector("#pwWires");
       if (svg) svg.style.visibility = "";
+      if (mini) mini.hidden = false;
+      panel.classList.remove("is-slim");
     }
 
     function openFlow(storyId, keepStep) {
@@ -709,17 +888,15 @@
       state.world = story.world || state.world;
       state.focusLink = null;
       state.panelOpen = true;
-      state.playing = false;
-      if (state.timer) clearTimeout(state.timer);
+      if (!keepStep) state.playing = false;
+      if (state.timer && !keepStep) clearTimeout(state.timer);
       if (state.mode !== "flow") state.saved = { x: state.x, y: state.y, z: state.z };
       state.mode = "flow";
       if (!keepStep) state.step = 0;
-      clearSub();
       world.hidden = false;
       flow.hidden = true;
-      backBtn.hidden = false;
-      paintMap();
-      if (!keepStep) focusFrames(story);
+      if (!state.subModel || state.subModel.id !== story.id) buildSub(story);
+      paintSub();
     }
 
     function focusFrames(story) {
@@ -776,7 +953,7 @@
         state.step = (state.step + 1) % story.steps.length;
         var next = story.steps[state.step];
         if (next && isGate(next.text)) state.playing = false;
-        if (state.mode === "flow") openFlow(story.id, true);
+        if (state.mode === "flow") paintSub();
         else paintMap();
         armTimer();
       }, 4200);
@@ -789,8 +966,8 @@
       if (story.world) state.world = story.world;
       state.step = 0;
       state.playing = true;
-      if (state.mode === "flow") openFlow(id, true);
-      else paintMap();
+      if (state.mode !== "flow") openFlow(id, true);
+      else paintSub();
       armTimer();
     }
 
@@ -798,6 +975,10 @@
       ev.preventDefault();
       var rect = vw.getBoundingClientRect();
       var factor = Math.exp(-ev.deltaY * 0.0015);
+      if (state.mode === "flow") {
+        zoomSub(factor, ev.clientX - rect.left, ev.clientY - rect.top);
+        return;
+      }
       zoomAt(ev.clientX - rect.left, ev.clientY - rect.top, factor);
     }, { passive: false });
 
@@ -806,7 +987,11 @@
       vw.setPointerCapture(ev.pointerId);
       state.pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
       var ids = Object.keys(state.pointers);
-      if (ids.length === 1) state.drag = { x: ev.clientX, y: ev.clientY, ox: state.x, oy: state.y };
+      if (ids.length === 1) {
+        state.drag = state.mode === "flow"
+          ? { x: ev.clientX, y: ev.clientY, ox: state.subX, oy: state.subY, sub: true }
+          : { x: ev.clientX, y: ev.clientY, ox: state.x, oy: state.y };
+      }
       if (ids.length === 2) {
         var a = state.pointers[ids[0]];
         var b = state.pointers[ids[1]];
@@ -823,11 +1008,19 @@
         var b = state.pointers[ids[1]];
         var dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
         var rect = vw.getBoundingClientRect();
-        zoomAt((a.x + b.x) / 2 - rect.left, (a.y + b.y) / 2 - rect.top, dist / state.pinch.dist);
+        var factor = dist / state.pinch.dist;
+        if (state.mode === "flow") zoomSub(factor, (a.x + b.x) / 2 - rect.left, (a.y + b.y) / 2 - rect.top);
+        else zoomAt((a.x + b.x) / 2 - rect.left, (a.y + b.y) / 2 - rect.top, factor);
         state.pinch.dist = dist;
         return;
       }
       if (!state.drag) return;
+      if (state.drag.sub) {
+        state.subX = state.drag.ox + (ev.clientX - state.drag.x);
+        state.subY = state.drag.oy + (ev.clientY - state.drag.y);
+        applySub();
+        return;
+      }
       state.x = state.drag.ox + (ev.clientX - state.drag.x);
       state.y = state.drag.oy + (ev.clientY - state.drag.y);
       applyTransform();
@@ -905,7 +1098,7 @@
         state.step = Number(stepBtn.getAttribute("data-step")) || 0;
         state.playing = false;
         if (state.timer) clearTimeout(state.timer);
-        if (state.mode === "flow") openFlow(state.story, true);
+        if (state.mode === "flow") paintSub();
         else paintMap();
         return;
       }
@@ -923,12 +1116,12 @@
         if (onGate) {
           state.playing = false;
           if (state.timer) clearTimeout(state.timer);
-          if (state.mode === "flow") openFlow(story.id, true);
+          if (state.mode === "flow") paintSub();
           else paintMap();
           return;
         }
         state.playing = !state.playing;
-        if (state.mode === "flow") openFlow(story.id, true);
+        if (state.mode === "flow") paintSub();
         else paintMap();
         armTimer();
         return;
@@ -942,28 +1135,51 @@
         state.step = (state.step + dir + story.steps.length) % story.steps.length;
         state.playing = false;
         if (state.timer) clearTimeout(state.timer);
-        if (state.mode === "flow") openFlow(story.id, true);
+        if (state.mode === "flow") paintSub();
         else paintMap();
       }
+    });
+    sub.addEventListener("click", function (ev) {
+      var el = ev.target.closest("[data-subnode]");
+      if (!el || state.mode !== "flow") return;
+      var story = storyById(state.story);
+      var steps = el.getAttribute("data-steps").split(",").map(Number);
+      var cur = story.steps[state.step];
+      var wait = cur && isGate(cur.text) && state.step < story.steps.length - 1 && steps.indexOf(state.step) >= 0;
+      state.playing = false;
+      if (state.timer) clearTimeout(state.timer);
+      if (wait) state.step += 1;
+      else state.step = steps[0];
+      paintSub();
     });
 
     root.querySelector("#pwSim").addEventListener("click", function () {
       state.cruise = !state.cruise;
       sim.textContent = state.cruise ? "Pausar movimiento" : "Reanudar movimiento";
+      if (state.mode === "flow") {
+        if (state.cruise || state.playing) runSubParticles();
+        else stopSubParticles();
+        return;
+      }
       if (state.cruise || state.playing) runParticles();
       else stopParticles();
     });
     root.querySelector("#pwZoomIn").addEventListener("click", function () {
       var rect = vw.getBoundingClientRect();
-      zoomAt(rect.width / 2, rect.height / 2, 1.15);
+      if (state.mode === "flow") zoomSub(1.15, rect.width / 2, rect.height / 2);
+      else zoomAt(rect.width / 2, rect.height / 2, 1.15);
     });
     root.querySelector("#pwZoomOut").addEventListener("click", function () {
       var rect = vw.getBoundingClientRect();
-      zoomAt(rect.width / 2, rect.height / 2, 1 / 1.15);
+      if (state.mode === "flow") zoomSub(1 / 1.15, rect.width / 2, rect.height / 2);
+      else zoomAt(rect.width / 2, rect.height / 2, 1 / 1.15);
     });
     root.querySelector("#pwFit").addEventListener("click", function () {
       state.focusLink = null;
-      if (state.mode === "flow") closeFlow();
+      if (state.mode === "flow") {
+        fitSub();
+        return;
+      }
       fit();
       if (state.mode === "map") renderWires();
     });

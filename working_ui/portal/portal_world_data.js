@@ -293,12 +293,12 @@
       label: "Sesion del dia",
       actor: "A la vez",
       steps: [
-        { islands: ["staff"], links: [], text: "Staff escribe el feedback. Relevant information se queda en Staff y no sale a la familia." },
-        { islands: ["staff", "parent"], links: ["s-p"], text: "Los stats (engagement, regulation, independence) van directos a Session Feedback del Parent. No pasan por Admin." },
-        { islands: ["admin"], links: [], text: "El texto escrito se filtra dentro de Admin. Hasta que ese filtro no esta, la nota no sigue." },
-        { islands: ["admin", "parent"], links: ["a-p"], text: "La nota filtrada llega a Notas del Parent. No sale en la tarjeta de hoy." },
-        { islands: ["admin"], links: [], text: "Overview pasa a verde con el feedback escrito. Eso actualiza el tablero de Admin. No escribe la nota ni los stats." },
-        { islands: ["admin", "staff"], links: ["a-s"], text: "Si falta, el aviso es otro efecto: halo en Staff y campana en Admin. No rellena la nota de la familia ni los stats." }
+        { islands: ["staff"], links: [], cats: { staff: "Feedback" }, text: "Staff escribe el feedback. Relevant information se queda en Staff y no sale a la familia." },
+        { islands: ["staff", "parent"], links: ["s-p"], cats: { staff: "Feedback", parent: "Session Feedback" }, edge: "Stats, directo", text: "Los stats (engagement, regulation, independence) van directos a Session Feedback del Parent. No pasan por Admin." },
+        { islands: ["admin"], links: [], cats: { admin: "Filtro de notas" }, text: "El texto escrito se filtra dentro de Admin. Hasta que ese filtro no esta, la nota no sigue." },
+        { islands: ["admin", "parent"], links: ["a-p"], cats: { admin: "Filtro de notas", parent: "Notas" }, edge: "Filtradas", text: "La nota filtrada llega a Notas del Parent. No sale en la tarjeta de hoy." },
+        { islands: ["admin"], links: [], cats: { admin: "Overview" }, text: "Overview pasa a verde con el feedback escrito. Eso actualiza el tablero de Admin. No escribe la nota ni los stats." },
+        { islands: ["admin", "staff"], links: ["a-s"], cats: { admin: "Campana", staff: "Halo" }, text: "Si falta, el aviso es otro efecto: halo en Staff y campana en Admin. No rellena la nota de la familia ni los stats." }
       ]
     },
     {
@@ -434,9 +434,9 @@
       label: "Booking pagado",
       actor: "A la vez",
       steps: [
-        { islands: ["booking", "auto"], links: ["b-auto"], text: "El pago entra. Booking no escribe los portales a mano. Se lo pasa a Automatizaciones." },
-        { islands: ["auto", "admin", "staff", "parent"], links: ["auto-a", "auto-s", "auto-p"], text: "A la vez el punto llega a Admin (Overview, Schedule, Places, Finance), a Staff Today y a Parent (Today card, Bookings, Invoices)." },
-        { islands: ["auto", "booking"], links: ["auto-b"], text: "Si era un trial, Automatizaciones deja el soft hold en Booking hasta el final de ese dia." }
+        { islands: ["booking", "auto"], links: ["b-auto"], cats: { booking: "Pago", auto: "Sync" }, text: "El pago entra. Booking no escribe los portales a mano. Se lo pasa a Automatizaciones." },
+        { islands: ["auto", "admin", "staff", "parent"], links: ["auto-a", "auto-s", "auto-p"], cats: { auto: "Sync", admin: ["Overview", "Schedule", "Places", "Finance"], staff: ["Today"], parent: ["Today card", "Bookings", "Invoices"] }, text: "A la vez el punto llega a Admin (Overview, Schedule, Places, Finance), a Staff Today y a Parent (Today card, Bookings, Invoices)." },
+        { islands: ["auto", "booking"], links: ["auto-b"], cats: { auto: "Sync", booking: "Soft hold" }, edge: "Soft hold", text: "Si era un trial, Automatizaciones deja el soft hold en Booking hasta el final de ese dia." }
       ]
     },
     {

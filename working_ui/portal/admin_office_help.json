@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v260",
+  "version": "2026-10-05-v261",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2961,7 +2961,7 @@
             "Open Settings, then CS World.",
             "Drag the map. Zoom with the wheel, trackpad, pinch, or the plus and minus buttons. Ver todo fits every portal. The minimap moves the view.",
             "Zoom out: worlds and the main lines. Zoom in: categories, then that world's functions.",
-            "Pick a function to see only that path. The text box sits under the map and says which category it leaves, for example Contrato leaves Admin, H&R / Contracts. Ver todo el mapa puts you back at the same place and zoom.",
+            "Pick a function to open its subworld: small nodes and coloured lines. The text under the map says which category it leaves, for example Contrato leaves Admin, H&R / Contracts. Mundos returns to the full map.",
             "Reproducir, Pausa, Repetir and the steps are a simulation. They do not send payments, messages, or change a booking.",
             "A condition step waits until you advance it. An aviso is not the same as a data update on a card.",
             "Feedback notes are filtered inside Admin and land in Parent Notes. Stats go straight to Parent Session Feedback. Comms connects Admin and Staff."
@@ -2980,7 +2980,7 @@
               "Abre Settings y luego CS World.",
               "Arrastra el mapa. El zoom es con la rueda, el trackpad, el pellizco o los botones mas y menos. Ver todo encuadra todos los portales. El minimapa mueve la vista.",
               "Alejado: mundos y lineas principales. Acercado: categorias y despues las funciones de ese mundo.",
-              "Elige una funcion para ver solo ese recorrido. El cuadro de abajo dice de que categoria sale, por ejemplo Contrato sale de Admin, H&R / Contracts. Ver todo el mapa te deja en el mismo sitio y zoom.",
+              "Elige una funcion para abrir su submundo: nodos pequenos y lineas de color. El cuadro de abajo dice de que categoria sale, por ejemplo Contrato sale de Admin, H&R / Contracts. Mundos vuelve al mapa.",
               "Reproducir, Pausa, Repetir y los pasos son una simulacion. No envian pagos, mensajes ni cambian una reserva.",
               "Un paso con condicion espera a que avances. Un aviso no es lo mismo que actualizar una tarjeta.",
               "Las notas del feedback se filtran dentro de Admin y llegan a Notas del Parent. Los stats van directos a Session Feedback del Parent. Comms une Admin y Staff."

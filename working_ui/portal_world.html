@@ -79,24 +79,34 @@
     #pwFlow { display: none !important; }
     #pwSub[hidden] { display: none !important; }
     #pwSub {
-      position: absolute; inset: 0; z-index: 4;
+      position: absolute; inset: 0; z-index: 4; overflow: hidden;
       background-color: #071422;
       background-image: radial-gradient(rgba(180,210,230,.35) 1.15px, transparent 1.25px);
       background-size: 22px 22px;
     }
-    .pw-sub-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; z-index: 2; }
-    .pw-sub-svg path { fill: none; stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 0 5px currentColor); }
-    .pw-sub-title { position: absolute; left: 16px; top: 52px; margin: 0; font-size: 22px; z-index: 5; }
-    .pw-sub-box { z-index: 3; overflow: hidden; }
-    .pw-sub-fn { margin: 8px 12px 0; padding: 8px 10px; border-radius: 9px; border: 1px solid rgba(255,255,255,.16); background: rgba(16,28,44,.95); font-weight: 750; }
-    .pw-sub-fn.is-hot { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
-    .pw-sub-step { margin: 8px 12px; font-size: 13px; line-height: 1.35; color: #d5e4f0; overflow-wrap: anywhere; }
+    #pwSubCanvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    .pw-sub-kicker { position: absolute; left: 118px; top: 16px; margin: 0; z-index: 5; font-weight: 750; pointer-events: none; }
+    .pw-sub-svg { position: absolute; left: 0; top: 0; overflow: visible; z-index: 2; }
+    .pw-sub-svg path { fill: none; stroke-width: 2.4; stroke-linecap: round; opacity: .55; }
+    .pw-sub-svg path.is-hot { stroke-width: 3.4; opacity: 1; }
+    .pw-sub-svg text { fill: #d5e6f2; font: 700 12px "Segoe UI", system-ui, sans-serif; }
+    .pw-sub-node {
+      position: absolute; z-index: 3; min-height: 64px; border-radius: 12px; border: 1px solid rgba(255,255,255,.22);
+      background: rgba(8, 18, 32, .94); color: #f4fbff; text-align: left; padding: 10px 12px; cursor: pointer;
+    }
+    .pw-sub-node b, .pw-sub-node span { display: block; min-width: 0; overflow-wrap: anywhere; }
+    .pw-sub-node b { font-size: 14px; }
+    .pw-sub-node span { margin-top: 3px; font-size: 12px; color: #9fb4c6; font-weight: 650; }
+    .pw-sub-node.is-now { box-shadow: 0 0 0 2px var(--gold), 0 0 18px rgba(244,183,64,.45); background: rgba(244,183,64,.12); }
     aside.panel {
       display: none; flex: 0 0 auto; z-index: 7; max-height: 32vh; margin: 0 12px 12px; overflow: auto;
       background: #101a28; color: #e7f2fb; border: 1px solid rgba(255,255,255,.14); border-radius: 16px; padding: 12px 14px 14px;
     }
     .pw-from { margin: 0 0 8px; font-weight: 750; color: #f4fbff; overflow-wrap: anywhere; }
     aside.panel.is-open { display: block; }
+    aside.panel.is-slim { max-height: 132px; }
+    aside.panel.is-slim h2 { font-size: 16px; }
+    aside.panel.is-slim .pw-from, aside.panel.is-slim p { margin: 2px 0; }
     aside.panel h2 { margin: 0 0 4px; font-size: 18px; }
     aside.panel h3 { margin: 12px 0 4px; font-size: 13px; }
     .pw-sub, .pw-fx, .pw-gate { margin: 4px 0; color: #b7c9d8; font-size: 13px; overflow-wrap: anywhere; }
@@ -123,7 +133,7 @@
     </header>
     <div class="stage">
       <div class="pw-viewport" id="pwViewport">
-        <button type="button" id="pwBack" hidden>Ver todo el mapa</button>
+        <button type="button" id="pwBack" hidden>Mundos</button>
         <div class="pw-world" id="pwWorld" data-detail="worlds">
           <svg id="pwWires" viewBox="0 0 2800 2100" aria-hidden="true">
             <defs>
@@ -135,8 +145,8 @@
           </svg>
         <div id="pwNodes"></div>
         <div id="pwParticles"></div>
-        <div id="pwSub" hidden></div>
         </div>
+        <div id="pwSub" hidden></div>
         <div id="pwFlow" hidden></div>
         <div class="pw-tools">
           <button type="button" id="pwZoomOut" aria-label="Alejar">-</button>
@@ -150,8 +160,8 @@
       <aside class="panel" id="pwPanel" aria-live="polite"></aside>
     </div>
   </div>
-  <script src="/portal/portal_world_data.js?v=20261005-world-from"></script>
-  <script src="/portal/portal_world_canvas.js?v=20261005-world-bottom"></script>
+  <script src="/portal/portal_world_data.js?v=20261005-world-sub"></script>
+  <script src="/portal/portal_world_canvas.js?v=20261005-world-sub"></script>
   <script>
     if (window.PortalWorldCanvasBoot) window.PortalWorldCanvasBoot(document);
   </script>
