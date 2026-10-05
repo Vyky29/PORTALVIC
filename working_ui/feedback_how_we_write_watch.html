@@ -522,6 +522,8 @@
       var held = 0;
       var raf = 0;
       var playing = false;
+      var playOrigin = 0;
+      var playAnchor = 0;
       var unlocked = false;
       var lastKey = "";
       var wantsPlay = false;
@@ -545,7 +547,11 @@
       function formHtml(beat) {
         var feedbackExtra = beat.now === "feedback" ? "is-now" : "";
         if (beat.view === "session") {
-          return head() + slot("celebrate", "Feedback", "The session. What they did, what went well, and what was hard.", SESSION, feedbackExtra);
+          var sub = beat.t >= 1.6
+            ? "The session. What they did, what went well, and what was hard."
+            : "The session.";
+          var body = beat.t >= 5.43 ? SESSION : '<span class="ghost">Not written yet.</span>';
+          return head() + slot("celebrate", "Feedback", sub, body, feedbackExtra);
         }
         var relExtra = beat.now === "relevant" ? "is-now" : "";
         var relevantBody = beat.now === "relevant" ? RELEVANT : '<span class="ghost">Not written yet.</span>';
@@ -623,8 +629,14 @@
 
       function clock() {
         if (audio.duration && isFinite(audio.duration)) DURATION = audio.duration;
-        if (playing && !audio.paused) return audio.currentTime || 0;
-        return held;
+        if (!(playing && !audio.paused)) return held;
+        var visual = playOrigin + (performance.now() - playAnchor) / 1000;
+        if (visual < 0) visual = 0;
+        var heard = audio.currentTime || 0;
+        if (heard > visual + 0.35) {
+          try { audio.currentTime = visual; } catch (eHear) {}
+        }
+        return visual;
       }
 
       function frame() {
@@ -640,6 +652,8 @@
       }
 
       function armPlayback() {
+        playOrigin = held;
+        playAnchor = performance.now();
         playing = true;
         wantsPlay = false;
         tapEl.hidden = true;
@@ -674,25 +688,46 @@
         }
         function go() {
           if (gen !== playGen) return;
-          try { audio.currentTime = held; } catch (e) {}
           if (document.hidden) {
             showTap();
             return;
           }
-          var pending = audio.play();
-          if (pending && typeof pending.then === "function") {
-            pending.then(function () {
-              if (gen !== playGen) {
-                audio.pause();
-                return;
-              }
-              armPlayback();
-            }).catch(function () {
-              if (gen === playGen) showTap();
-            });
-          } else if (gen === playGen) {
+          var launch = function () {
+            if (gen !== playGen) return;
+            paint(held);
+            coverEl.hidden = true;
+            var pending = audio.play();
             armPlayback();
+            if (pending && typeof pending.then === "function") {
+              pending.then(function () {
+                if (gen !== playGen) {
+                  audio.pause();
+                  return;
+                }
+                if ((audio.currentTime || 0) > held + 0.35) {
+                  try { audio.currentTime = held; } catch (eJump) {}
+                  playOrigin = held;
+                  playAnchor = performance.now();
+                }
+              }).catch(function () {
+                if (gen === playGen) showTap();
+              });
+            }
+          };
+          if (Math.abs((audio.currentTime || 0) - held) <= 0.05) {
+            launch();
+            return;
           }
+          var launched = false;
+          var finish = function () {
+            if (launched || gen !== playGen) return;
+            launched = true;
+            audio.removeEventListener("seeked", finish);
+            launch();
+          };
+          audio.addEventListener("seeked", finish);
+          try { audio.currentTime = held; } catch (eSeek) { finish(); return; }
+          setTimeout(finish, 250);
         }
         if (audio.readyState >= 1) go();
         else audio.addEventListener("loadedmetadata", go, { once: true });
@@ -753,7 +788,6 @@
 
       playBtn.addEventListener("click", function () {
         started = true;
-        coverEl.hidden = true;
         playFrom(0);
       });
 

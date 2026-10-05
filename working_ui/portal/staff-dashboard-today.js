@@ -8672,8 +8672,8 @@
             '</article>';
         }else if(pending.feedbackWatch || pending.feedbackOnTime){
           var watchSrc = pending.feedbackOnTime
-            ? '/feedback_finish_before_you_leave_watch.html?embed=1&v=20261005h'
-            : '/feedback_how_we_write_watch.html?embed=1&v=20261005g';
+            ? '/feedback_finish_before_you_leave_watch.html?embed=1&v=20261005i'
+            : '/feedback_how_we_write_watch.html?embed=1&v=20261005i';
           var watchTitle = pending.feedbackOnTime
             ? 'Finish feedback before you leave'
             : 'How we write session feedback';
