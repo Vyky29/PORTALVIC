@@ -169,13 +169,16 @@ function buildMessages(body: Record<string, unknown>, strictRetry = false) {
 
   const namingBlock = [
     "Naming and pronouns (strict):",
-    "- Use the participant's FIRST NAME throughout — never write \"the participant\", \"the client\", or \"the child\".",
+    "- Never write \"the participant\", \"the client\", or \"the child\".",
     participantFirst
       ? `- Spell the first name EXACTLY as in context: "${participantFirst}" — same letters, same order.`
       : "",
+    "- Do not start every short sentence with the first name. That sounds repetitive.",
+    "- Use the name to open the note, or when a new activity starts and the reader could lose who it is. Then use he or she for the following short sentences.",
+    "- Alternate. A paragraph may start with he or she once the name is already clear.",
     "- If gender is male: he, him, his only — never they/them/their.",
     "- If gender is female: she, her, hers only — never they/them/their.",
-    "- If gender is unknown: repeat the first name instead of singular they.",
+    "- If gender is unknown: use the first name instead of singular they.",
   ].filter(Boolean);
 
   const fidelityBlock = [
@@ -188,11 +191,13 @@ function buildMessages(body: Record<string, unknown>, strictRetry = false) {
   ];
 
   const vocabBlock = [
-    "clubSENsational vocabulary (use when it fits what staff described — do not force unused terms):",
-    "- engagement, regulation / emotional regulation, sensory regulation, preferred interests, motivators",
-    "- following the client's lead, calm and predictable structure, routines, First-Then / visual supports, Intensive Interaction",
-    "- confidence, independence, participation, co-regulation, smooth transition / handover",
-    "- Warm, constructive, strengths-based tone suitable for families — clear plain English parents understand, with autism/SEN practice language from inductions and training.",
+    "Parent language (induction ideas, said so a parent understands them):",
+    "- Use the idea only when the staff narrative shows it. Do not decorate a thin note with training words.",
+    "- Joined in, settled, followed what he or she chose, a calm familiar routine, confident, did it on his or her own.",
+    "- In the pool: steady and confident in the water. On a climb: focused, planning the next move, in control of his or her body. In Splash and Connect: playing and joining in.",
+    "- Say visual timetable only if staff wrote about the schedule or the plan of the day.",
+    "- Do not write the jargon on its own: co-regulation, motor planning, AAC, sensory regulation, Intensive Interaction, preferred interests. If you need the idea, say it in the plain words above.",
+    "- Warm and specific. Parents should recognise their child, not a training handout.",
   ];
 
   let system: string;
@@ -222,7 +227,7 @@ function buildMessages(body: Record<string, unknown>, strictRetry = false) {
       "- Do NOT invent internal notes. Staff optional Notes are a separate field outside this filter.",
       "",
       strictRetry
-        ? "RETRY: Previous output was wrong (template, invented opposite meaning, over-summarised, or invented relevant notes). Rewrite again using ONLY facts from the narrative. Keep high engagement if staff said high engagement. Keep concrete details. Put EVERYTHING parent-facing into positive_feedback. Set relevant_information to None. Start with the participant's first name."
+        ? "RETRY: Previous output was wrong (template, invented opposite meaning, over-summarised, or invented relevant notes). Rewrite again using ONLY facts from the narrative. Keep high engagement if staff said high engagement. Keep concrete details. Put EVERYTHING parent-facing into positive_feedback. Set relevant_information to None. Do not start every sentence with the first name."
         : "",
       "",
       "Always output valid JSON with keys positive_feedback and relevant_information only.",
@@ -255,7 +260,7 @@ function buildMessages(body: Record<string, unknown>, strictRetry = false) {
       "- Do NOT invent \"low engagement\" here when the narrative says high engagement.",
       "",
       strictRetry
-        ? "RETRY: Previous output was wrong (template, invented opposite meaning, or over-summarised). Rewrite again using ONLY facts from the narrative. Keep high engagement if staff said high engagement. Keep concrete details. Start with the participant's first name. Make positive_feedback detailed — not a short summary."
+        ? "RETRY: Previous output was wrong (template, invented opposite meaning, or over-summarised). Rewrite again using ONLY facts from the narrative. Keep high engagement if staff said high engagement. Keep concrete details. Do not start every sentence with the first name. Make positive_feedback detailed — not a short summary."
         : "",
       "",
       "Always output valid JSON with keys positive_feedback and relevant_information only.",
