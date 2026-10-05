@@ -13,7 +13,7 @@
     })();
   </script>
   <style>
-    :root { --ink: #173247; --gold: #f4b740; --sea-0: #08344c; --sea-1: #0c4d6e; }
+    :root { --ink: #e7f2fb; --gold: #f4b740; --sea-0: #07111c; }
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; overflow: hidden; }
     body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); background: var(--sea-0); }
@@ -21,98 +21,77 @@
     .lock { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; color: #e8f4fb; font-weight: 650; background: var(--sea-0); }
     html.portal-world-locked .lock { display: flex; }
     .app { height: 100%; min-height: 0; display: flex; flex-direction: column; }
-    header.top { padding: 8px 12px 6px; color: #e7f3fa; }
-    header.top h1 { margin: 0; font-size: 20px; }
-    header.top p { margin: 3px 0 0; max-width: 62rem; color: rgba(231,243,250,.78); font-size: 13px; line-height: 1.35; }
-    .pw-bars, .pw-bars button { display: flex; gap: 6px; }
-    .pw-bars { margin-top: 6px; overflow-x: auto; }
-    .pw-bars button, .pw-tools button, .pw-controls button, .pw-storypicks button, .pw-func, .pw-flow-person {
-      font: inherit; cursor: pointer; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.08); color: #f4fbff; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 13px;
+    header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 12px; color: #e7f3fa; min-width: 0; }
+    .pw-legend { flex: 1 1 100%; }
+    header.top h1 { margin: 0; font-size: 16px; white-space: nowrap; }
+    header.top p { display: none; }
+    #pwStories { display: none; }
+    .pw-bars { display: flex; gap: 6px; overflow-x: auto; min-width: 0; }
+    .pw-bars button, .pw-tools button, .pw-controls button, .pw-storypicks button, #pwSim, #pwBack {
+      font: inherit; cursor: pointer; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #f4fbff; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 13px;
     }
     .pw-bars button.is-on { background: var(--gold); color: #3a2a08; border-color: var(--gold); }
-    .stage { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 380px); gap: 8px; padding: 0 8px 8px; }
-    .pw-viewport { position: relative; min-width: 0; min-height: 0; border-radius: 18px; overflow: hidden; touch-action: none; background-color: #0a3e5c; background-image: radial-gradient(rgba(255,255,255,.28) 1.1px, transparent 1.2px); background-size: 18px 18px; }
-    .pw-world { position: absolute; left: 0; top: 0; width: 2800px; height: 2100px; transform-origin: 0 0; }
-    #pwWires { position: absolute; inset: 0; width: 2800px; height: 2100px; overflow: visible; }
-    #pwWires path { fill: none; stroke-width: 2.5; stroke-linecap: round; }
-    #pwWires path.is-dim { stroke-opacity: .18; }
-    #pwWires path.is-hot { stroke-width: 4; }
-    #pwWires path.is-reply { stroke-dasharray: 8 7; animation: pw-dash 1.1s linear infinite; }
+    .stage { position: relative; flex: 1; min-height: 0; }
+    .pw-viewport { position: absolute; inset: 0; overflow: hidden; touch-action: none; background-color: #071422; background-image: radial-gradient(rgba(180,210,230,.35) 1.15px, transparent 1.25px); background-size: 22px 22px; }
+    .pw-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    #pwWires { position: absolute; inset: 0; overflow: visible; }
+    #pwWires path { fill: none; stroke-width: 2.2; stroke-linecap: round; opacity: .9; }
+    #pwWires path.is-dim { stroke-opacity: .12; opacity: .35; }
+    #pwWires path.is-hot { stroke-width: 3.4; }
+    #pwWires path.is-reply { stroke-dasharray: 7 8; animation: pw-dash 1.1s linear infinite; }
     @keyframes pw-dash { to { stroke-dashoffset: -30; } }
-    .pw-node {
-      position: absolute; width: 210px; transform: translate(-50%, -50%);
-      padding: 8px 10px; border-radius: 16px; z-index: 2; cursor: pointer;
-      box-shadow: 0 10px 22px rgba(0,0,0,.22); min-width: 0;
+    .pw-frame {
+      position: absolute; border-radius: 16px; z-index: 2; min-width: 0;
+      background: rgba(8, 16, 28, .88); color: #e7f2fb;
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28);
     }
-    .pw-node strong, .pw-kicker, .pw-host, .pw-chip, .pw-func {
-      font-size: calc(13px / var(--pwz, 1));
-      line-height: 1.25;
+    .pw-frame h2 { margin: 12px 14px 0; font-size: 15px; font-weight: 750; }
+    .pw-kicker { display: block; margin: 10px 14px 0; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .62; }
+    .pw-world[data-detail="worlds"] .pw-fn,
+    .pw-world[data-detail="worlds"] .pw-kicker { display: none; }
+    .pw-fn {
+      position: absolute; height: 36px; border-radius: 9px; z-index: 3;
+      border: 1px solid rgba(255,255,255,.16); background: rgba(16, 28, 44, .95); color: #f4fbff;
+      font: 700 13px/36px "Segoe UI", system-ui, sans-serif; text-align: left; padding: 0 10px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
     }
-    .pw-kicker { display: none; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
-    .pw-host { display: none; opacity: .85; overflow-wrap: anywhere; }
-    .pw-world[data-detail="chips"] .pw-kicker,
-    .pw-world[data-detail="funcs"] .pw-kicker,
-    .pw-world[data-detail="funcs"] .pw-host { display: block; }
-    .pw-chips, .pw-funcs { display: none; flex-wrap: wrap; gap: 4px; margin-top: 6px; min-width: 0; }
-    .pw-world[data-detail="chips"] .pw-chips,
-    .pw-world[data-detail="funcs"] .pw-chips,
-    .pw-world[data-detail="funcs"] .pw-funcs { display: flex; }
-    .pw-chip, .pw-func { border-radius: 999px; padding: 2px 6px; background: rgba(255,255,255,.2); overflow-wrap: anywhere; }
-    .pw-func { border: 0; color: inherit; cursor: pointer; font-weight: 700; }
-    .pw-node.is-dim { opacity: .28; }
-    .pw-node.is-hot { outline: 3px solid var(--gold); }
-    .island--ceo { background: linear-gradient(180deg, #24344d, #172536); color: #f6edd4; }
-    .island--auto { background: linear-gradient(180deg, #e2a322, #b47410); color: #3a2804; }
-    .island--booking { background: linear-gradient(180deg, #f0d7a0, #e2b86a); color: #4a3412; }
-    .island--admin { background: linear-gradient(180deg, #1f8f7e, #14685c); color: #f3fffc; }
-    .island--staff { background: linear-gradient(180deg, #3f7ebf, #2a5f96); color: #f4f9ff; }
-    .island--onb { background: linear-gradient(180deg, #6d5bd0, #43358f); color: #f6f3ff; }
-    .island--parent { background: linear-gradient(180deg, #f6c7bc, #e7a294); color: #5c2c30; }
-    .island--email { background: #e7eef6; color: #1e3a5f; }
-    .island--wa { background: #d9f5e5; color: #14532d; }
-    .island--stripe { background: #e4e4ff; color: #312e81; }
-    .island--gc { background: #d7efe4; color: #064e3b; }
-    .island--xero { background: #d7f3fb; color: #0c4a6e; }
-    .island--comms { background: linear-gradient(180deg, #3d4f6f, #24344c); color: #f4f7fb; }
-    .pw-dot { position: absolute; width: 10px; height: 10px; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 0 2px #fff; pointer-events: none; z-index: 4; }
+    .pw-fn.is-hot { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+    .pw-fn.is-dim, .pw-frame.is-dim { opacity: .28; }
+    .pw-frame.is-hot { box-shadow: inset 0 0 0 1px var(--gold), 0 16px 40px rgba(0,0,0,.28); }
+    .pw-frame.island--booking { box-shadow: inset 0 0 0 1px rgba(226,184,106,.55); }
+    .pw-frame.island--admin { box-shadow: inset 0 0 0 1px rgba(31,143,126,.7); }
+    .pw-frame.island--staff { box-shadow: inset 0 0 0 1px rgba(63,126,191,.7); }
+    .pw-frame.island--auto { box-shadow: inset 0 0 0 1px rgba(226,163,34,.7); }
+    .pw-frame.island--parent { box-shadow: inset 0 0 0 1px rgba(231,162,148,.7); }
+    .pw-frame.island--comms { box-shadow: inset 0 0 0 1px rgba(142,160,190,.7); }
+    .pw-dot { position: absolute; width: 9px; height: 9px; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 0 2px rgba(7,20,34,.85); pointer-events: none; z-index: 4; }
     .pw-dot.is-reply { animation: pw-blink 0.7s ease-in-out infinite; }
-    @keyframes pw-blink { 50% { opacity: .25; } }
-    .pw-tools { position: absolute; left: 10px; bottom: 10px; z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; max-width: calc(100% - 150px); }
-    .pw-legend { position: absolute; left: 10px; top: 10px; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px 10px; max-width: min(640px, calc(100% - 20px)); color: #f4fbff; font-size: 12px; background: rgba(8,32,48,.55); border-radius: 12px; padding: 6px 8px; }
-    .pw-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+    @keyframes pw-blink { 50% { opacity: .2; } }
+    .pw-tools { position: absolute; left: 12px; bottom: 12px; z-index: 5; display: flex; gap: 6px; align-items: center; }
+    .pw-legend { display: flex; flex-wrap: wrap; gap: 8px 12px; color: #d5e6f2; font-size: 12px; min-width: 0; }
+    .pw-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
     .pw-legend i.pw-blink { animation: pw-blink 0.7s ease-in-out infinite; }
-    .pw-mini { position: absolute; right: 10px; bottom: 10px; z-index: 5; width: 168px; height: 120px; border-radius: 10px; border: 1px solid rgba(255,255,255,.4); background: #08344c; cursor: pointer; }
-    #pwSim { color: #f4fbff; background: rgba(8,32,48,.72); border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700; }
-    #pwBack { position: absolute; left: 10px; top: 10px; z-index: 6; }
-    #pwFlow { position: absolute; inset: 0; overflow: auto; padding: 54px 16px 16px; color: #f4fbff; background: #08344c; }
-    .pw-viewport.is-flow .pw-legend,
-    .pw-viewport.is-flow .pw-mini,
-    .pw-viewport.is-flow .pw-tools { visibility: hidden; }
-    #pwFlow { z-index: 4; }
-    .pw-flow-row { display: flex; align-items: flex-start; gap: 8px; min-width: min-content; }
-    .pw-flow-step { flex: 0 0 260px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 16px; padding: 12px; min-width: 0; }
-    .pw-flow-step.is-now { outline: 2px solid var(--gold); }
-    .pw-flow-step.is-gate { border-color: var(--gold); }
-    .pw-flow-step h3 { margin: 0 0 6px; font-size: 14px; }
-    .pw-flow-step p, .pw-flow-people { overflow-wrap: anywhere; }
-    .pw-flow-arrow { align-self: flex-start; margin-top: 64px; font-size: 22px; color: var(--gold); }
-    .pw-flow-people { display: flex; flex-wrap: wrap; gap: 6px; }
-    aside.panel { min-width: 0; min-height: 0; overflow: auto; background: #f7f4ee; border-radius: 18px; padding: 12px 14px 18px; }
-    aside.panel h2 { margin: 0 0 4px; font-size: 20px; }
+    .pw-mini { position: absolute; right: 12px; bottom: 12px; z-index: 5; width: 168px; height: 96px; border-radius: 10px; border: 1px solid rgba(255,255,255,.28); background: #071422; cursor: pointer; }
+    #pwSim { margin-left: 0; background: #f4fbff; color: #102033; border: 0; }
+    #pwBack { position: absolute; left: 12px; top: 12px; z-index: 6; background: #f4fbff; color: #102033; }
+    #pwFlow { display: none !important; }
+    aside.panel {
+      display: none; position: absolute; top: 12px; right: 12px; z-index: 7; width: min(360px, calc(100% - 24px));
+      max-height: calc(100% - 120px); overflow: auto; background: #101a28; color: #e7f2fb;
+      border: 1px solid rgba(255,255,255,.14); border-radius: 16px; padding: 12px 14px 16px;
+    }
+    aside.panel.is-open { display: block; }
+    aside.panel h2 { margin: 0 0 4px; font-size: 18px; }
     aside.panel h3 { margin: 12px 0 4px; font-size: 13px; }
-    .pw-sub, .pw-fx, .pw-gate { margin: 4px 0; color: #4d6478; font-size: 13px; overflow-wrap: anywhere; }
-    .pw-gate { color: #8a5a00; font-weight: 700; }
-    .pw-now, .pw-rule, .pw-card, .pw-guide { margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: #fff; border: 1px solid rgba(23,50,71,.12); overflow-wrap: anywhere; }
-    .pw-rule { border-color: #e2a322; }
-    .pw-card__kicker, .pw-card__tag { font-size: 12px; font-weight: 700; }
+    .pw-sub, .pw-fx, .pw-gate { margin: 4px 0; color: #b7c9d8; font-size: 13px; overflow-wrap: anywhere; }
+    .pw-gate { color: #f4b740; font-weight: 700; }
+    .pw-now, .pw-card, .pw-guide { margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); overflow-wrap: anywhere; }
     .pw-steps { margin: 8px 0 0; padding-left: 18px; }
     .pw-steps li { margin: 6px 0; cursor: pointer; overflow-wrap: anywhere; }
-    .pw-steps li.is-now { background: rgba(244,183,64,.35); border-radius: 8px; }
+    .pw-steps li.is-now { background: rgba(244,183,64,.22); border-radius: 8px; }
     .pw-controls, .pw-storypicks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .pw-controls button, .pw-storypicks button { background: #173247; color: #fff; border: 0; }
-    @media (max-width: 900px) {
-      .stage { grid-template-columns: 1fr; grid-template-rows: minmax(420px, 58vh) minmax(220px, 1fr); }
-    }
+    .pw-panel-x { float: right; }
     @media (prefers-reduced-motion: reduce) {
       #pwWires path.is-reply, .pw-dot.is-reply, .pw-legend i.pw-blink { animation: none; }
     }
@@ -123,14 +102,13 @@
   <div class="app">
     <header class="top">
       <h1>El mundo de los portales</h1>
-      <p>Mapa de los portales que ya existen. Aleja para ver mundos y acerca para categorias y funciones. Reproducir es una simulacion: no es el parte de hoy y no envia pagos ni mensajes.</p>
       <div class="pw-bars" id="pwWorlds" role="tablist" aria-label="Mundos"></div>
-      <div class="pw-bars" id="pwStories" role="tablist" aria-label="Funciones"></div>
+      <div class="pw-legend" id="pwLegend"></div>
+      <div id="pwStories" hidden></div>
     </header>
     <div class="stage">
       <div class="pw-viewport" id="pwViewport">
-        <div class="pw-legend" id="pwLegend"></div>
-        <button type="button" id="pwBack" hidden>Volver al mapa</button>
+        <button type="button" id="pwBack" hidden>Ver todo el mapa</button>
         <div class="pw-world" id="pwWorld" data-detail="worlds">
           <svg id="pwWires" viewBox="0 0 2800 2100" aria-hidden="true">
             <defs>
@@ -148,15 +126,16 @@
           <button type="button" id="pwZoomOut" aria-label="Alejar">-</button>
           <button type="button" id="pwZoomIn" aria-label="Acercar">+</button>
           <button type="button" id="pwFit">Ver todo</button>
-          <span id="pwSim">Simulacion en pausa</span>
+          <button type="button" id="pwSim">Pausar movimiento</button>
+          <span id="pwZoomLabel"></span>
         </div>
         <canvas class="pw-mini" id="pwMini" width="168" height="120" aria-label="Minimapa"></canvas>
       </div>
       <aside class="panel" id="pwPanel" aria-live="polite"></aside>
     </div>
   </div>
-  <script src="/portal/portal_world_data.js?v=20261005-world-canvas4"></script>
-  <script src="/portal/portal_world_canvas.js?v=20261005-world-canvas4"></script>
+  <script src="/portal/portal_world_data.js?v=20261005-world-visual"></script>
+  <script src="/portal/portal_world_canvas.js?v=20261005-world-visual"></script>
   <script>
     if (window.PortalWorldCanvasBoot) window.PortalWorldCanvasBoot(document);
   </script>
