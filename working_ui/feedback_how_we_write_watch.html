@@ -91,6 +91,61 @@
       flex-direction: column;
       overflow: hidden;
     }
+    .cover {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 28px 22px;
+      background: var(--cream);
+      text-align: center;
+      min-width: 0;
+    }
+    .cover__logo {
+      width: 88px;
+      height: 88px;
+      object-fit: contain;
+    }
+    .cover__kicker {
+      margin: 6px 0 0;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .cover__title {
+      margin: 0;
+      max-width: 18rem;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      overflow-wrap: anywhere;
+    }
+    .cover__text {
+      margin: 0;
+      max-width: 22rem;
+      font-size: 15px;
+      line-height: 1.45;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .cover__play {
+      appearance: none;
+      margin-top: 8px;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 28px;
+      font-size: 16px;
+      font-weight: 800;
+      background: var(--ink);
+      color: #fff;
+      cursor: pointer;
+    }
     .tap {
       position: absolute;
       inset: 0;
@@ -412,13 +467,20 @@
   <div class="stage">
     <div class="lockbar">
       <div class="lockbar__copy">
-        <p class="lockbar__title" id="lockTitle">Watch to the end</p>
+        <p class="lockbar__title" id="lockTitle">Press play</p>
         <p class="lockbar__sub" id="lockSub">How we write session feedback</p>
       </div>
       <button type="button" class="close" id="closeBtn" disabled>Close</button>
     </div>
     <div class="progress" aria-hidden="true"><div class="progress__fill" id="progressFill"></div></div>
     <div class="phone" id="phone">
+      <div class="cover" id="cover">
+        <img class="cover__logo" src="/portal/F-02-1.png" width="88" height="88" alt="clubSENsational" />
+        <p class="cover__kicker">Staff film</p>
+        <h1 class="cover__title">How we write session feedback</h1>
+        <p class="cover__text">Feedback is the session. Relevant information is a different box.</p>
+        <button type="button" class="cover__play" id="playBtn">Play</button>
+      </div>
       <p class="caption" id="caption">Feedback is the session.</p>
       <div class="sheet" id="sheet"></div>
       <button type="button" class="tap" id="tapStart" hidden>Tap to listen</button>
@@ -452,6 +514,8 @@
       var phoneEl = document.getElementById("phone");
 
       var tapEl = document.getElementById("tapStart");
+      var coverEl = document.getElementById("cover");
+      var playBtn = document.getElementById("playBtn");
       var audio = new Audio("/portal/help-audio/feedback-session-vs-relevant.mp3?v=20261005f");
       audio.preload = "auto";
 
@@ -461,6 +525,8 @@
       var unlocked = false;
       var lastKey = "";
       var wantsPlay = false;
+      var playGen = 0;
+      var started = false;
 
       function slot(kind, title, sub, body, extra) {
         return (
@@ -589,6 +655,7 @@
       }
 
       function playFrom(seconds) {
+        var gen = ++playGen;
         cancelAnimationFrame(raf);
         audio.pause();
         unlocked = false;
@@ -606,16 +673,24 @@
           return;
         }
         function go() {
+          if (gen !== playGen) return;
           try { audio.currentTime = held; } catch (e) {}
           if (document.hidden) {
-            playing = false;
-            wantsPlay = true;
+            showTap();
             return;
           }
           var pending = audio.play();
           if (pending && typeof pending.then === "function") {
-            pending.then(armPlayback).catch(showTap);
-          } else {
+            pending.then(function () {
+              if (gen !== playGen) {
+                audio.pause();
+                return;
+              }
+              armPlayback();
+            }).catch(function () {
+              if (gen === playGen) showTap();
+            });
+          } else if (gen === playGen) {
             armPlayback();
           }
         }
@@ -637,8 +712,13 @@
       }
 
       function resume() {
-        if (unlocked || playing) return;
-        playFrom(held);
+        if (!started || unlocked || playing || document.hidden) return;
+        var pending = audio.play();
+        if (pending && typeof pending.then === "function") {
+          pending.then(armPlayback).catch(showTap);
+        } else {
+          armPlayback();
+        }
       }
 
       var embedWatch = false;
@@ -667,7 +747,14 @@
       });
 
       tapEl.addEventListener("click", function () {
-        playFrom(held);
+        if (!started) return;
+        resume();
+      });
+
+      playBtn.addEventListener("click", function () {
+        started = true;
+        coverEl.hidden = true;
+        playFrom(0);
       });
 
       audio.addEventListener("ended", function () {
@@ -698,6 +785,7 @@
       };
 
       window.__filmStill = function (seconds) {
+        playGen += 1;
         cancelAnimationFrame(raf);
         audio.pause();
         playing = false;
@@ -708,7 +796,6 @@
         paint(held);
       };
 
-      playFrom(0);
     })();
   </script>
 </body>

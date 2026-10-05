@@ -8672,17 +8672,23 @@
             '</article>';
         }else if(pending.feedbackWatch || pending.feedbackOnTime){
           var watchSrc = pending.feedbackOnTime
-            ? '/feedback_finish_before_you_leave_watch.html?embed=1&v=20261005e'
-            : '/feedback_how_we_write_watch.html?embed=1&v=20261005f';
+            ? '/feedback_finish_before_you_leave_watch.html?embed=1&v=20261005g'
+            : '/feedback_how_we_write_watch.html?embed=1&v=20261005g';
           var watchTitle = pending.feedbackOnTime
             ? 'Finish feedback before you leave'
             : 'How we write session feedback';
-          hostPending.innerHTML =
-            '<article class="announcement-lock-card announcement-lock-card--gate announcement-lock-card--feedback-watch">' +
-              progressHtml +
-              '<iframe class="feedback-watch-frame" src="' + watchSrc + '" title="' + escapeHtml(watchTitle) + '" allow="autoplay"></iframe>' +
-              '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" hidden data-feedback-watch-ready="0" data-announcement-sign-key="' + escapeHtml(signKey) + '">Close</button>' +
-            '</article>';
+          portalAnnouncementLockRequired = true;
+          var liveFrame = hostPending.querySelector('iframe.feedback-watch-frame');
+          var liveSrc = liveFrame ? String(liveFrame.getAttribute('src') || '') : '';
+          /* Rebuilding the sheet was reloading the film and replaying the opening. */
+          if(liveSrc !== watchSrc){
+            hostPending.innerHTML =
+              '<article class="announcement-lock-card announcement-lock-card--gate announcement-lock-card--feedback-watch">' +
+                progressHtml +
+                '<iframe class="feedback-watch-frame" src="' + watchSrc + '" title="' + escapeHtml(watchTitle) + '" allow="autoplay"></iframe>' +
+                '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" hidden data-feedback-watch-ready="0" data-announcement-sign-key="' + escapeHtml(signKey) + '">Close</button>' +
+              '</article>';
+          }
         }else{
         hostPending.innerHTML =
           '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + ' announcement-lock-card--gate">' +

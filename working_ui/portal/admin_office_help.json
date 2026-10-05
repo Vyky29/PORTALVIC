@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v267",
+  "version": "2026-10-05-v268",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1792,6 +1792,7 @@
           ],
           "tips": [
             "The voice explains it calmly, in short sentences. It does not read the example text.",
+            "They see the logo and what the film is, then press Play. It does not start by itself.",
             "After they watch it once, it does not block them again."
           ],
           "es": {
@@ -1808,6 +1809,7 @@
             ],
             "tips": [
               "La voz explica la regla. No lee el ejemplo.",
+              "Ven el logo y de que va el video, y pulsan Play. No arranca solo.",
               "Cuando lo han visto, no les vuelve a bloquear."
             ]
           }
@@ -1839,6 +1841,7 @@
           ],
           "tips": [
             "Use this when someone needs the why-on-time reminder. Use Send feedback watch when the writing is wrong.",
+            "They see the logo and what the film is, then press Play. It does not start by itself.",
             "After they watch it once, it does not block them again."
           ],
           "es": {
@@ -1855,6 +1858,7 @@
             ],
             "tips": [
               "Este es el de por que hay que darlo a tiempo. Send feedback watch es el de como se escribe.",
+              "Ven el logo y de que va el video, y pulsan Play. No arranca solo.",
               "Cuando lo han visto, no les vuelve a bloquear."
             ]
           }
