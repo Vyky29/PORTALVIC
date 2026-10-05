@@ -466,7 +466,7 @@
     if(document.documentElement.classList.contains("portal-auth-ready")) bootPresence();
     window.addEventListener("portal:supabase-ready", bootPresence);
   </script>
-  <script src="/portal/portal_admin_dayops_badges.js?v=20261004-badge-corner"></script>
+  <script src="/portal/portal_admin_dayops_badges.js?v=20261005-disruption-corner"></script>
 <script>
   (function(){
     'use strict';
@@ -39743,8 +39743,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var n = Number(state.portalDisruptionPendingCount || 0);
       var root = $('workspace');
       if(!root) return;
+      try{
+        if(typeof window.portalAdminDayOpsBadgesRefresh === 'function') window.portalAdminDayOpsBadgesRefresh();
+      }catch(_badge){}
       var btns = root.querySelectorAll('.ops-hub-button[data-view-target="session_disruptions"]');
-      if(!btns || !btns.length) return;
       for(var i = 0; i < btns.length; i++){
         var btn = btns[i];
         var badge = btn.querySelector('.ops-hub-button__badge');

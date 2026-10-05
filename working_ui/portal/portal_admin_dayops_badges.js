@@ -187,6 +187,14 @@
     ) {
       return countAlertsByKind(key);
     }
+    /* Same open disruptions as the bell. Stays until the day is validated. */
+    if (key === "session_disruption") {
+      var open = 0;
+      activityAlerts().forEach(function (a) {
+        if (a && String(a.kind || "") === "session_disruption") open++;
+      });
+      return open;
+    }
     return 0;
   }
 
@@ -211,7 +219,7 @@
   }
 
   function applyBadges(root) {
-    root = root || document;
+    if (!root || !root.querySelectorAll) root = document;
     if (!root || !root.querySelectorAll) return;
     root.querySelectorAll("[data-portal-badge-key]").forEach(function (el) {
       var key = String(el.getAttribute("data-portal-badge-key") || "").trim();
