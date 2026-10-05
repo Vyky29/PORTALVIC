@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v252",
+  "version": "2026-10-05-v253",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2841,7 +2841,7 @@
         {
           "id": "portal_world",
           "title": "CS World",
-          "summary": "Settings, CS World. Seven squares and the lines that light when one portal tells another.",
+          "summary": "Settings, CS World. Mapa de mundos. Acerca para ver categorias y funciones. Reproducir es una simulacion.",
           "where": "Settings, CS World",
           "keywords": [
             "islas",
@@ -2867,13 +2867,13 @@
             "alta"
           ],
           "steps": [
-            "Open Settings, then CS World. The page is portal_world.html on the admin host.",
-            "Seven squares: CEO, Automatizaciones, Onboarding, Booking, Admin, Staff and Parent.",
-            "Pick a world first (Booking, Automatizaciones, Admin, Staff, Parent, Onboarding, CEO). Then pick a path in that world. The gold line lights and a point travels to the portal that gets told.",
-            "Booking pagado: the point leaves Booking, passes Automatizaciones, and arrives at Admin, Staff and Parent together.",
-            "OTP email starts in Booking, where the family asks for the code. Automatizaciones sends that email. A brand new lead also alerts Admin. It does not rewrite Staff or Parent.",
-            "Pausa holds the step. Click a step to read it. Click a square to leave the path and read only that square.",
-            "The side panel holds the words. The squares stay clear."
+            "Open Settings, then CS World.",
+            "Drag the map. Zoom with the wheel, trackpad, pinch, or the plus and minus buttons. Ver todo fits every portal. The minimap moves the view.",
+            "Zoom out: worlds and the main lines. Zoom in: categories, then that world's functions.",
+            "Pick a function to see only that path. Volver al mapa puts you back at the same place and zoom.",
+            "Reproducir, Pausa, Repetir and the steps are a simulation. They do not send payments, messages, or change a booking.",
+            "A condition step waits until you advance it. An aviso is not the same as a data update on a card.",
+            "Feedback notes are filtered inside Admin and land in Parent Notes. Stats go straight to Parent Session Feedback. Comms connects Admin and Staff."
           ],
           "tips": [
             "The paths show how the portals talk. They are not today's live log.",
@@ -2883,16 +2883,16 @@
           ],
           "es": {
             "title": "CS World",
-            "summary": "Settings, CS World. Siete cuadros y las lineas que se encienden cuando un portal avisa a otro.",
+            "summary": "Settings, CS World. Mapa de mundos. Acerca para ver categorias y funciones. Reproducir es una simulacion.",
             "where": "Settings, CS World",
             "steps": [
-              "Abre Settings y luego CS World. La pagina es portal_world.html en el host de admin.",
-              "Siete cuadros: CEO, Automatizaciones, Onboarding, Booking, Admin, Staff y Parent.",
-              "Elige primero un mundo (Booking, Automatizaciones, Admin, Staff, Parent, Onboarding, CEO). Luego un camino de ese mundo. La linea dorada se enciende y el punto viaja hasta el portal que se entera.",
-              "Booking pagado: el punto sale de Booking, pasa por Automatizaciones y llega a la vez a Admin, Staff y Parent.",
-              "El email de OTP empieza en Booking, donde la familia pide el codigo. Automatizaciones manda ese email. Si el lead es nuevo, Admin recibe un aviso. No reescribe Staff ni Parent.",
-              "Pausa deja el paso quieto. Pulsa un paso para leerlo. Pulsa un cuadro para salir del camino y leer solo ese cuadro.",
-              "El texto va en el panel. Los cuadros se quedan libres."
+              "Abre Settings y luego CS World.",
+              "Arrastra el mapa. El zoom es con la rueda, el trackpad, el pellizco o los botones mas y menos. Ver todo encuadra todos los portales. El minimapa mueve la vista.",
+              "Alejado: mundos y lineas principales. Acercado: categorias y despues las funciones de ese mundo.",
+              "Elige una funcion para ver solo ese recorrido. Volver al mapa te deja en el mismo sitio y zoom.",
+              "Reproducir, Pausa, Repetir y los pasos son una simulacion. No envian pagos, mensajes ni cambian una reserva.",
+              "Un paso con condicion espera a que avances. Un aviso no es lo mismo que actualizar una tarjeta.",
+              "Las notas del feedback se filtran dentro de Admin y llegan a Notas del Parent. Los stats van directos a Session Feedback del Parent. Comms une Admin y Staff."
             ],
             "tips": [
               "Los caminos ensenan como se hablan los portales. No son el parte de hoy.",
