@@ -2082,7 +2082,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return acts.slice(0, 8).map(function(a, idx){
         return (
           '<button type="button" class="line-item portal-operator-activity-row" data-operator-activity-idx="'+idx+'" style="width:100%;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit">'+
-            '<div style="min-width:0"><strong>'+esc(a.title || 'Portal activity')+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(a.sub || '')+'</div></div>'+
+            '<div style="min-width:0"><strong>'+esc(portalAdminShowDateText(a.title || 'Portal activity'))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub || ''))+'</div></div>'+
             '<span class="chip chip--info">'+esc(a.t || 'New')+'</span>'+
           '</button>'
         );
@@ -40404,6 +40404,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!html) return '';
       return '<span class="portal-admin-alert-face-slot">'+html+'</span>';
     }
+    function portalAdminShowDateText(text){
+      return String(text || '').replace(/(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)/g, function(_m, y, mo, d){
+        return d + '/' + mo + '/' + y;
+      });
+    }
     function renderAlerts(){
       var pop = $('alertsPop');
       if(!pop) return;
@@ -40425,7 +40430,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           dismiss = '<button type="button" class="portal-admin-wellbeing-dismiss" data-wellbeing-dismiss="'+esc(a.recordId)+'" title="Dismiss alert" aria-label="Dismiss">×</button>';
         }
         return '<div class="portal-admin-activity-row">'+
-          '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit">'+portalAdminAlertFaceHtml(a)+'<div style="min-width:0;flex:1"><strong>'+esc(a.title)+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>'+
+          '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit">'+portalAdminAlertFaceHtml(a)+'<div style="min-width:0;flex:1"><strong>'+esc(portalAdminShowDateText(a.title))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub))+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>'+
           dismiss+
         '</div>';
       }).join('');
@@ -40455,7 +40460,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<div class="portal-admin-activity-row">'+
           portalAdminAlertFaceHtml({ kind: 'feedback_note', clientName: a.clientName })+
           '<div style="flex:1;min-width:0;padding:12px 16px">'+
-          '<div style="min-width:0"><strong>'+esc(a.title)+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(a.sub)+'</div></div>'+
+          '<div style="min-width:0"><strong>'+esc(portalAdminShowDateText(a.title))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub))+'</div></div>'+
           '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'+
           '<button type="button" class="btn btn--ghost btn--sm" data-note-bell-act="view" data-alert-record-id="'+esc(a.id || '')+'">View</button>'+
           '<button type="button" class="btn btn--ghost btn--sm" data-note-bell-act="close" data-alert-record-id="'+esc(a.id || '')+'">Close</button>'+

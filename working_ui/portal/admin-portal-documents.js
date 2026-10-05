@@ -825,7 +825,7 @@
       var ex = it.details;
       var bits = [];
       if (ex.category) bits.push('Category: ' + esc(ex.category));
-      if (ex.related_date) bits.push('Date: ' + esc(ex.related_date));
+      if (ex.related_date) bits.push('Date: ' + esc(String(ex.related_date).replace(/(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)/g, function(_m, y, mo, d){ return d + '/' + mo + '/' + y; })));
       return bits.join(' · ');
     }
     return it.path ? esc(it.path) : '';
