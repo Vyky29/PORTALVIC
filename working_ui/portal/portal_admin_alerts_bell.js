@@ -734,10 +734,14 @@
     if (!row || !row.id) return null;
     var title = String(row.title || row.name || "Expense").trim() || "Expense";
     var d = String(row.related_date || row.created_at || "").trim().slice(0, 10);
+    var amt = moneyLabel(row.expense_amount);
+    var bits = [title];
+    if (d) bits.push(d);
+    if (amt) bits.push(amt);
     return {
       id: "expense-" + row.id,
       title: "Expense · pending payment",
-      sub: title + (d ? " · " + d : "") + " — include in payroll",
+      sub: bits.join(" · "),
       created_at: row.created_at || new Date().toISOString(),
       kind: "expense_unpaid",
       view: "portal_docs_expense",

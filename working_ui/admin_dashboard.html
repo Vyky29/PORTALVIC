@@ -108,7 +108,7 @@
   <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos-ceo"></script>
   <script src="/portal/portal_participant_photos.js?v=20261001-office-photo-until-parent"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
-  <script src="/portal/portal_staff_photos.js?v=20261003-display-photo"></script>
+  <script src="/portal/portal_staff_photos.js?v=20261005-expense-face"></script>
   <script src="/portal/admin-portal-achievements.js?v=20261001-old-section"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20261001-old-section" />
@@ -444,7 +444,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20261001-old-junaid-patrick-yassir"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20261004-bell-queues"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20261005-expense-face"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20261002-no-guide";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -2693,7 +2693,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261005-v251')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261005-v252')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -40489,6 +40489,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{ portalAdminPatchSessionDisruptionHubBadge(); }catch(_sdHub){}
     }
     try{ window.__portalAdminRenderAlerts = renderAlerts; }catch(e){}
+    if(!window.__portalAdminAlertFaceRefresh){
+      window.__portalAdminAlertFaceRefresh = true;
+      window.addEventListener('portal:staff-avatars', function(){
+        if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+      });
+    }
 
     window.addEventListener('portal:supabase-ready', function portalLivePaymentsPrime(){
       portalLoadLivePaymentsSource(function(changed){

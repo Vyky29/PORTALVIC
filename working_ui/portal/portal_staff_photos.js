@@ -148,8 +148,9 @@
   }
 
   function rememberStaffLiveAvatar(nameOrKey, url) {
-    if (!isPublishedDisplayAvatar(url)) return;
-    var u = portalSanitizeRemoteAvatarUrl(url);
+    var raw = String(url || "");
+    if (!isPublishedDisplayAvatar(raw) && !/\/staff-avatars\//i.test(raw)) return;
+    var u = portalSanitizeRemoteAvatarUrl(raw);
     if (!u) return;
     photoLookupKeys(nameOrKey, { username: nameOrKey }).forEach(function (k) {
       if (k) LIVE_AVATARS[k] = u;
@@ -237,6 +238,10 @@
         }
       } catch (_) {}
       if (!key) return;
+      if (!STAFF_PHOTO_FILES[key]) {
+        if (live && /\/staff-avatars\//i.test(live)) pushCandidate(urls, live);
+        return;
+      }
       if (key === "lulia" || key === "luliya") {
         pushCandidate(urls, base + "luliya.png");
         return;

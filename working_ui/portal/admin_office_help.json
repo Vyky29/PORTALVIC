@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v251",
+  "version": "2026-10-05-v252",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2738,7 +2738,7 @@
         {
           "id": "expense_mark_paid_date",
           "title": "Mark an expense paid",
-          "summary": "Paid keeps the date you validated it, so payroll can be tracked later.",
+          "summary": "Paid keeps the date you validated the expense.",
           "where": "Documents → Expenses → Pay column",
           "keywords": [
             "paid",
@@ -2750,7 +2750,7 @@
           ],
           "steps": [
             "Open Documents and filter Expenses.",
-            "Pending means it is not in payroll yet.",
+            "Pending means the expense is not paid yet. It is not a payroll line.",
             "Press Mark paid when you have paid and validated it.",
             "The Pay column then shows Paid and the date of that day."
           ],
