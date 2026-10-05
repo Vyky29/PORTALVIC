@@ -114,6 +114,8 @@
       pointers: {},
       pinch: null,
       focusLink: null,
+      focusPortal: null,
+      guideOpen: false,
       cruise: true
     };
     var funcPos = {};
@@ -296,6 +298,11 @@
           stepLinks(step).forEach(function (id) { hot[id] = true; });
         });
         dim = true;
+      } else if (state.focusPortal) {
+        data.LINKS.forEach(function (link) {
+          if (link.from === state.focusPortal || link.to === state.focusPortal) hot[link.id] = true;
+        });
+        dim = true;
       } else if (state.focusLink) {
         hot[state.focusLink] = true;
         dim = true;
@@ -461,7 +468,7 @@
         sim.textContent = state.cruise ? "Pausar movimiento" : "Reanudar movimiento";
         return;
       }
-      panel.classList.remove("is-slim");
+      panel.classList.remove("is-slim", "is-portal");
       panel.innerHTML =
         '<button type="button" class="pw-panel-x" data-act="close">Cerrar</button>' +
         "<h2>" + story.label + "</h2>" +
@@ -480,6 +487,92 @@
         '<ol class="pw-steps">' + steps + "</ol>" +
         lessons;
       sim.textContent = state.cruise ? "Pausar movimiento" : "Reanudar movimiento";
+    }
+
+    var ISLA = { email: 1, wa: 1, stripe: 1, gc: 1, xero: 1, tide: 1 };
+    function kindOf(id) {
+      if (ISLA[id]) return "Isla";
+      if (id === "auto") return "Motor";
+      return "Portal";
+    }
+    function portalNeighbours(id) {
+      var ids = {};
+      ids[id] = true;
+      data.LINKS.forEach(function (link) {
+        if (link.from === id) ids[link.to] = true;
+        if (link.to === id) ids[link.from] = true;
+      });
+      return ids;
+    }
+    function clearFocus() {
+      state.focusPortal = null;
+      state.focusLink = null;
+      state.guideOpen = false;
+      state.panelOpen = false;
+      panel.classList.remove("is-open", "is-portal", "is-slim");
+      paintMap();
+    }
+    function focusPortal(id) {
+      if (!byId[id]) return;
+      if (state.mode === "flow") closeFlow();
+      if (state.focusPortal === id) {
+        clearFocus();
+        return;
+      }
+      state.guideOpen = false;
+      state.focusLink = null;
+      state.focusPortal = id;
+      state.panelOpen = true;
+      state.playing = false;
+      if (state.timer) clearTimeout(state.timer);
+      if (data.WORLDS.some(function (world) { return world.id === id; })) state.world = id;
+      paintMap();
+      var pos = POS[id];
+      if (!pos) return;
+      var rect = vw.getBoundingClientRect();
+      state.x = rect.width / 2 - pos.x * state.z;
+      state.y = rect.height / 2 - pos.y * state.z;
+      applyTransform();
+    }
+    function renderPortalPanel(id) {
+      var island = byId[id];
+      if (!island) return;
+      var lines = data.LINKS.filter(function (link) {
+        return link.from === id || link.to === id;
+      }).map(function (link) {
+        var other = link.from === id ? byId[link.to] : byId[link.from];
+        var way = link.from === id ? "Sale hacia" : "Llega desde";
+        return "<p><b>" + way + " " + (other ? other.name : "") + ".</b> " + link.label + ".</p>";
+      }).join("");
+      panel.classList.add("is-portal");
+      panel.classList.remove("is-slim");
+      panel.innerHTML =
+        '<button type="button" class="pw-panel-x" data-act="close">Cerrar</button>' +
+        "<h2>" + island.name + "</h2>" +
+        '<p class="pw-from">' + kindOf(id) + ". Solo sus conexiones. Lo demas esta apagado.</p>" +
+        lines +
+        '<p class="pw-sub">Toca una funcion dentro para ver ese recorrido. Toca otra vez el cuadro para encender el mapa.</p>';
+    }
+    function renderGuide() {
+      panel.classList.add("is-portal");
+      panel.classList.remove("is-slim");
+      panel.innerHTML =
+        '<button type="button" class="pw-panel-x" data-act="close">Cerrar</button>' +
+        "<h2>Como se usa</h2>" +
+        "<p><b>Portal</b> es Booking, Admin, Staff, Parent, Onboarding, Comms o CEO. Toca el cuadro, no una funcion: se encienden solo sus lineas.</p>" +
+        "<p><b>Motor</b> es Automatizaciones. No es un portal de personas. Reparte OTP, pagos y avisos.</p>" +
+        "<p><b>Isla</b> es una cosa integrada: Email, WhatsApp, Stripe, GoCardless, Tide y Xero. Toca la isla para ver que portales la usan.</p>" +
+        "<p><b>Funcion</b> es un boton de dentro. Abre el recorrido de esa funcion, paso a paso. Una condicion espera a que pulses el nodo.</p>" +
+        "<p>Ver todo enciende otra vez el mapa entero.</p>" +
+        "<h3>Que mirar</h3>" +
+        "<p><b>Booking.</b> Quien entra, el trial, el hold y el pago (Stripe o Tide).</p>" +
+        "<p><b>Admin.</b> El dia: Overview, covers, campana, Finance y el banco.</p>" +
+        "<p><b>Staff.</b> Today, feedback, timesheet, contrato. Los stats salen de aqui a Parent, sin pasar por Admin.</p>" +
+        "<p><b>Parent.</b> Today card, reservas, notas y ausencias. Una nota avisa a la campana de Admin.</p>" +
+        "<p><b>Onboarding.</b> El alta. La misma cuenta entra luego en Staff.</p>" +
+        "<p><b>Comms.</b> Llamada y chat de dentro. No es WhatsApp.</p>" +
+        "<p><b>CEO.</b> Cifras y visitantes. No opera el dia.</p>" +
+        "<p>El aviso push no es una isla: es el halo de Staff y la campana de Admin. Policies viven en Admin y en Staff. La entrevista vive en Admin.</p>";
     }
 
     function renderIslandPanel(id) {
@@ -537,7 +630,7 @@
       stopParticles();
       if (!state.cruise && !state.playing) return;
       if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      var paths = (state.mode === "flow" || state.focusLink)
+      var paths = (state.mode === "flow" || state.focusLink || state.focusPortal)
         ? wires.querySelectorAll("path.is-hot")
         : wires.querySelectorAll("path");
       if (!paths.length) return;
@@ -567,6 +660,7 @@
     function paintMap() {
       renderTabs();
       renderWires();
+      var portalSet = state.focusPortal ? portalNeighbours(state.focusPortal) : null;
       nodes.querySelectorAll(".pw-frame").forEach(function (el) {
         var id = el.getAttribute("data-island");
         var story = storyById(state.story);
@@ -575,9 +669,12 @@
           storyIslands(story).forEach(function (islandId) { involved[islandId] = true; });
         }
         var hot = state.mode === "flow" && !!involved[id];
-        el.classList.toggle("is-lit", hot);
-        el.classList.toggle("is-dim", state.mode === "flow" && !hot);
-        if (hot) el.style.setProperty("--lit", COLOR[id] || "#f4b740");
+        var touch = !!(portalSet && portalSet[id] && id !== state.focusPortal);
+        var dimmed = (state.mode === "flow" && !hot) || (!!portalSet && !portalSet[id]);
+        el.classList.toggle("is-lit", hot || id === state.focusPortal);
+        el.classList.toggle("is-touch", touch);
+        el.classList.toggle("is-dim", dimmed);
+        if (hot || touch || id === state.focusPortal) el.style.setProperty("--lit", COLOR[id] || "#f4b740");
       });
       nodes.querySelectorAll(".pw-fn").forEach(function (el) {
         var sid = el.getAttribute("data-func");
@@ -586,16 +683,21 @@
         var frameLit = el.closest(".pw-frame") && el.closest(".pw-frame").classList.contains("is-lit");
         var service = home === "stripe" || home === "gc" || home === "email" || home === "wa" || home === "xero" || home === "comms" || home === "tide";
         var on = state.mode === "flow" && sid === story.id;
+        var portalDim = !!(portalSet && home !== state.focusPortal);
         el.classList.toggle("is-hot", on);
         el.classList.toggle("is-lit", on || (state.mode === "flow" && frameLit && service));
-        el.classList.toggle("is-dim", state.mode === "flow" && !on && !(frameLit && service));
+        el.classList.toggle("is-dim", portalDim || (state.mode === "flow" && !on && !(frameLit && service)));
       });
-      renderPanel();
+      if (state.guideOpen) renderGuide();
+      else if (state.focusPortal) renderPortalPanel(state.focusPortal);
+      else renderPanel();
       runParticles();
       flow.hidden = true;
       world.hidden = false;
-      backBtn.hidden = state.mode !== "flow";
-      panel.classList.toggle("is-open", state.mode === "flow" || !!state.panelOpen);
+      backBtn.hidden = state.mode !== "flow" && !state.focusPortal;
+      if (state.focusPortal) backBtn.textContent = "Ver todo";
+      else backBtn.textContent = "Mundos";
+      panel.classList.toggle("is-open", state.mode === "flow" || !!state.panelOpen || !!state.focusPortal || !!state.guideOpen);
     }
 
     var subFrame = 0;
@@ -885,6 +987,7 @@
       state.story = story.id;
       state.world = story.world || state.world;
       state.focusLink = null;
+      state.guideOpen = false;
       state.panelOpen = true;
       if (!keepStep) state.playing = false;
       if (state.timer && !keepStep) clearTimeout(state.timer);
@@ -1040,12 +1143,7 @@
       }
       var island = ev.target.closest("[data-island]");
       if (!island) return;
-      state.focusLink = null;
-      state.playing = false;
-      state.panelOpen = true;
-      if (state.timer) clearTimeout(state.timer);
-      renderWires();
-      renderIslandPanel(island.getAttribute("data-island"));
+      focusPortal(island.getAttribute("data-island"));
     });
 
     wires.addEventListener("click", function (ev) {
@@ -1061,21 +1159,7 @@
     worldsEl.addEventListener("click", function (ev) {
       var btn = ev.target.closest("[data-world]");
       if (!btn) return;
-      state.world = btn.getAttribute("data-world");
-      state.mode = "map";
-      state.playing = false;
-      if (state.timer) clearTimeout(state.timer);
-      renderTabs();
-      var pos = POS[state.world];
-      if (pos) {
-        var rect = vw.getBoundingClientRect();
-        var z = Math.max(state.z, 0.72);
-        state.z = z;
-        state.x = rect.width / 2 - pos.x * z;
-        state.y = rect.height / 2 - pos.y * z;
-        applyTransform();
-      }
-      renderWires();
+      focusPortal(btn.getAttribute("data-world"));
     });
 
     storiesEl.addEventListener("click", function (ev) {
@@ -1104,9 +1188,8 @@
       var name = act.getAttribute("data-act");
       var story = storyById(state.story);
       if (name === "close") {
-        state.panelOpen = false;
         if (state.mode === "flow") closeFlow();
-        else panel.classList.remove("is-open");
+        else clearFocus();
         return;
       }
       if (name === "play") {
@@ -1174,14 +1257,28 @@
     });
     root.querySelector("#pwFit").addEventListener("click", function () {
       state.focusLink = null;
+      state.focusPortal = null;
+      state.guideOpen = false;
       if (state.mode === "flow") {
         fitSub();
         return;
       }
+      state.panelOpen = false;
       fit();
-      if (state.mode === "map") renderWires();
+      paintMap();
     });
-    backBtn.addEventListener("click", closeFlow);
+    root.querySelector("#pwGuide").addEventListener("click", function () {
+      if (state.mode === "flow") closeFlow();
+      state.focusPortal = null;
+      state.focusLink = null;
+      state.guideOpen = true;
+      state.panelOpen = true;
+      paintMap();
+    });
+    backBtn.addEventListener("click", function () {
+      if (state.mode === "flow") closeFlow();
+      else clearFocus();
+    });
     mini.addEventListener("click", function (ev) {
       var rect = mini.getBoundingClientRect();
       var wx = ((ev.clientX - rect.left) / rect.width) * WORLD_W;

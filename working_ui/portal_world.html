@@ -27,7 +27,7 @@
     header.top p { display: none; }
     #pwStories { display: none; }
     .pw-bars { display: flex; gap: 6px; overflow-x: auto; min-width: 0; }
-    .pw-bars button, .pw-tools button, .pw-controls button, .pw-storypicks button, #pwSim, #pwBack {
+    .pw-bars button, .pw-tools button, .pw-controls button, .pw-storypicks button, #pwSim, #pwBack, #pwGuide {
       font: inherit; cursor: pointer; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #f4fbff; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 13px;
     }
     .pw-bars button.is-on { background: var(--gold); color: #3a2a08; border-color: var(--gold); }
@@ -57,7 +57,8 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
     }
     .pw-frame.is-lit { opacity: 1; z-index: 3; box-shadow: 0 0 0 2px var(--lit, #f4b740), 0 0 28px var(--lit, #f4b740); }
-    .pw-frame.is-dim, .pw-fn.is-dim { opacity: 0.2; }
+    .pw-frame.is-touch { opacity: 1; z-index: 3; box-shadow: 0 0 0 2px var(--lit, #9fb4c6); }
+    .pw-frame.is-dim, .pw-fn.is-dim { opacity: 0.16; }
     .pw-fn.is-lit, .pw-fn.is-hot { border-color: var(--gold); box-shadow: 0 0 14px var(--gold); background: rgba(244,183,64,.16); }
     #pwWires path.is-hot { stroke-width: 5; filter: drop-shadow(0 0 5px currentColor); }
     .pw-frame.island--booking { box-shadow: inset 0 0 0 1px rgba(226,184,106,.55); }
@@ -105,6 +106,7 @@
     .pw-from { margin: 0 0 8px; font-weight: 750; color: #f4fbff; overflow-wrap: anywhere; }
     aside.panel.is-open { display: block; }
     aside.panel.is-slim { max-height: 132px; }
+    aside.panel.is-portal { max-height: 34vh; }
     aside.panel.is-slim h2 { font-size: 16px; }
     aside.panel.is-slim .pw-from, aside.panel.is-slim p { margin: 2px 0; }
     aside.panel h2 { margin: 0 0 4px; font-size: 18px; }
@@ -127,6 +129,7 @@
   <div class="app">
     <header class="top">
       <h1>El mundo de los portales</h1>
+      <button type="button" id="pwGuide">Guia</button>
       <div class="pw-bars" id="pwWorlds" role="tablist" aria-label="Mundos"></div>
       <div class="pw-legend" id="pwLegend"></div>
       <div id="pwStories" hidden></div>
@@ -161,7 +164,7 @@
     </div>
   </div>
   <script src="/portal/portal_world_data.js?v=20261005-world-orbit"></script>
-  <script src="/portal/portal_world_canvas.js?v=20261005-world-orbit"></script>
+  <script src="/portal/portal_world_canvas.js?v=20261005-world-focus"></script>
   <script>
     if (window.PortalWorldCanvasBoot) window.PortalWorldCanvasBoot(document);
   </script>
