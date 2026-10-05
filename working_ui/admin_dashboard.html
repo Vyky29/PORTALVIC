@@ -185,7 +185,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261004-dash-icon" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261005-alert-face" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20261004-header-order" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -40367,6 +40367,43 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(err){ console.warn('[admin] activity alerts realtime', err); }
     }
 
+    function portalAdminAlertNameOk(name){
+      var s = String(name || '').replace(/\s+/g, ' ').trim();
+      if(!s || s.length > 48) return '';
+      if(/^(participant|family|staff|staff member|someone|contact)$/i.test(s)) return '';
+      if(/expense|payroll|payment|session/i.test(s)) return '';
+      if(!/[A-Za-z]/.test(s)) return '';
+      if(s.split(/\s+/).length > 4) return '';
+      return s;
+    }
+    function portalAdminAlertFaceTarget(a){
+      if(!a) return null;
+      var kind = String(a.kind || '');
+      var staffKinds = { expense_unpaid: 1, wellbeing: 1, staff_support: 1, chat: 1 };
+      if(staffKinds[kind]){
+        var staff = '';
+        if(kind === 'expense_unpaid') staff = String(a.sub || '').split('·')[0].trim();
+        else if(kind === 'chat') staff = String(a.title || '').split('·').slice(1).join('·').trim();
+        else staff = String(a.clientName || '').trim();
+        staff = portalAdminAlertNameOk(staff);
+        return staff ? { who: 'staff', name: staff } : null;
+      }
+      var client = portalAdminAlertNameOk(a.clientName);
+      return client ? { who: 'client', name: client } : null;
+    }
+    function portalAdminAlertFaceHtml(a){
+      var target = portalAdminAlertFaceTarget(a);
+      if(!target) return '';
+      var cls = 'portal-roster-avatar portal-admin-alert-face';
+      var html = '';
+      if(target.who === 'staff' && typeof portalStaffAvatarInnerHtml === 'function'){
+        html = portalStaffAvatarInnerHtml(target.name, { esc: esc, displayName: target.name, className: cls + ' portal-roster-avatar--staff' });
+      }else if(typeof portalParticipantAvatarInnerHtml === 'function'){
+        html = portalParticipantAvatarInnerHtml(target.name, '', { esc: esc, className: cls });
+      }
+      if(!html) return '';
+      return '<span class="portal-admin-alert-face-slot">'+html+'</span>';
+    }
     function renderAlerts(){
       var pop = $('alertsPop');
       if(!pop) return;
@@ -40388,7 +40425,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           dismiss = '<button type="button" class="portal-admin-wellbeing-dismiss" data-wellbeing-dismiss="'+esc(a.recordId)+'" title="Dismiss alert" aria-label="Dismiss">×</button>';
         }
         return '<div class="portal-admin-activity-row">'+
-          '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>'+
+          '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit">'+portalAdminAlertFaceHtml(a)+'<div style="min-width:0;flex:1"><strong>'+esc(a.title)+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>'+
           dismiss+
         '</div>';
       }).join('');
@@ -40416,6 +40453,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(a.created_at) t = new Date(a.created_at).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
         }catch(_nt){}
         return '<div class="portal-admin-activity-row">'+
+          portalAdminAlertFaceHtml({ kind: 'feedback_note', clientName: a.clientName })+
           '<div style="flex:1;min-width:0;padding:12px 16px">'+
           '<div style="min-width:0"><strong>'+esc(a.title)+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(a.sub)+'</div></div>'+
           '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'+
