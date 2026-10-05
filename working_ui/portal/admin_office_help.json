@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v253",
+  "version": "2026-10-05-v254",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1758,6 +1758,51 @@
             "Audience is admin/staff — not parents.",
             "Schedule changes and outstanding feedback use the logo halo and Quick menu. They are not a blocking Sign and submit sheet."
           ]
+        },
+        {
+          "id": "feedback_watch_send",
+          "title": "Send the feedback watch",
+          "summary": "A short video that blocks the staff app until they finish watching how Feedback and Relevant information are different.",
+          "where": "Admin → Communications → Send feedback watch",
+          "keywords": [
+            "feedback watch",
+            "video",
+            "relevant information",
+            "bloqueo",
+            "announcement",
+            "como se escribe el feedback",
+            "changing room",
+            "booking"
+          ],
+          "steps": [
+            "Open Communications.",
+            "Press Send feedback watch.",
+            "Choose one person, or a group.",
+            "Send. Their phone gets an alert.",
+            "When they open the staff app, the video fills the screen. Close stays off until the video ends.",
+            "Feedback is the session, including prompts and finishing early. Relevant information is a booking, or a parent angry about the changing room."
+          ],
+          "tips": [
+            "The voice explains the rule. It does not read the example text.",
+            "After they watch it once, it does not block them again."
+          ],
+          "es": {
+            "title": "Mandar el video de feedback",
+            "summary": "Un video corto que bloquea la app del worker hasta que acaba, para separar Feedback y Relevant information.",
+            "where": "Admin → Communications → Send feedback watch",
+            "steps": [
+              "Abre Communications.",
+              "Pulsa Send feedback watch.",
+              "Elige una persona, o un grupo.",
+              "Envia. Al movil le llega un aviso.",
+              "Al abrir la app, el video ocupa la pantalla. Close no se puede pulsar hasta que acaba.",
+              "Feedback es la sesion, tambien los prompts y acabar antes. Relevant information es un booking, o un padre enfadado por el changing room."
+            ],
+            "tips": [
+              "La voz explica la regla. No lee el ejemplo.",
+              "Cuando lo han visto, no les vuelve a bloquear."
+            ]
+          }
         },
         {
           "id": "feedback_whatsapp_clock",

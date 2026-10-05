@@ -6510,6 +6510,19 @@
         openSheet('setupReminderSheet');
       }
     }, true);
+    window.addEventListener('message', function(e){
+      if(!e || e.origin !== window.location.origin) return;
+      var data = e.data;
+      if(!data || data.type !== 'portal-feedback-watch-done') return;
+      var pendingWatch = typeof portalAnnouncementPendingItem === 'function' ? portalAnnouncementPendingItem() : null;
+      if(!pendingWatch || !pendingWatch.feedbackWatch) return;
+      var frame = document.querySelector('.feedback-watch-frame');
+      if(frame && frame.contentWindow && e.source !== frame.contentWindow) return;
+      var watchBtn = document.getElementById('announcementSignBtn');
+      if(!watchBtn || !watchBtn.hasAttribute('data-feedback-watch-ready')) return;
+      watchBtn.setAttribute('data-feedback-watch-ready', '1');
+      watchBtn.click();
+    });
     document.addEventListener('change', function(e){
       const chk = e.target && e.target.id === 'announcementReadConfirm' ? e.target : null;
       if(!chk) return;
@@ -6585,8 +6598,10 @@
       }
       if(signBtn){
         e.preventDefault();
+        const watchReady = signBtn.getAttribute('data-feedback-watch-ready') === '1';
         const chk = document.getElementById('announcementReadConfirm');
-        if(chk && !chk.checked) return;
+        if(chk && !chk.checked && !watchReady) return;
+        if(!watchReady && signBtn.hasAttribute('data-feedback-watch-ready')) return;
         const key = String(signBtn.getAttribute('data-announcement-sign-key') || '').trim();
         if(!key) return;
         const pending = portalAnnouncementPendingItem();

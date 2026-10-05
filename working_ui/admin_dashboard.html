@@ -34068,7 +34068,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('') : '<p class="muted" style="margin:0">No roster-linked lines in the mock queue.</p>';
       return '<h1 class="page-title">Staff &amp; shift notices</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Roster-linked notices: announcements, shift changes, and session moves. Parent-facing mail sits under <button type="button" class="btn btn--ghost btn--sm" data-view-target="comms_ops">Ops comms &amp; log</button>.</p>'+
-        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri" data-open-compose>New staff notification</button> <button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">New announcement</button> <button type="button" class="btn btn--sec" data-open-compose data-preset="shift">Shift change notice</button>'+(portalAdminBookingsHidden() ? ' <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>' : ' <button type="button" class="btn btn--ghost btn--sm" data-view-target="orders_all">Orders</button>')+'</div>'+
+        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri" data-open-compose>New staff notification</button> <button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">New announcement</button> <button type="button" class="btn btn--sec" data-open-compose data-preset="feedback_watch">Send feedback watch</button> <button type="button" class="btn btn--sec" data-open-compose data-preset="shift">Shift change notice</button>'+(portalAdminBookingsHidden() ? ' <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>' : ' <button type="button" class="btn btn--ghost btn--sm" data-view-target="orders_all">Orders</button>')+'</div>'+
         '<div class="grid-2" style="align-items:start;min-width:0">'+
         '<div class="stack"><div class="card"><div class="card-h"><h3>Shift &amp; session changes</h3></div><div class="card-pad row-lines">'+shifts+'</div></div></div>'+
         '<div class="stack"><div class="card"><div class="card-h"><h3>Outbox (sessions &amp; slots)</h3></div><div class="card-pad row-lines">'+feed+'</div></div></div></div>';
@@ -38723,7 +38723,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         target_staff_role:tgt.target_staff_role,
         target_user_id:tgt.target_user_id
       };
-      if(composeKind === 'announcement' || composeKind === 'reminder'){
+      if(composeKind === 'feedback_watch'){
+        title = 'How we write session feedback';
+        typ = 'feedback_watch';
+        pri = 'high';
+      }else if(composeKind === 'announcement' || composeKind === 'reminder'){
         title = String($('cmpTitle') && $('cmpTitle').value || '').trim();
         if(!title) return Promise.resolve({ ok:false, skip:false, message:'Title required' });
         title = title.length > 200 ? title.slice(0, 197) + '…' : title;
@@ -38963,8 +38967,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     // Exposed so other modules (e.g. the sessions hub "Notes" tab) can prefill a
     // staff dashboard announcement from a relevant-information note.
     window.openComposeModalAnnouncementOrReminder = openComposeModalAnnouncementOrReminder;
+    function openFeedbackWatchCompose(){
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle">Send feedback watch</h2></div><div class="modal-b" style="min-width:0">'+
+        '<input type="hidden" id="cmpComposeKind" value="feedback_watch"/>'+
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;min-width:0;overflow-wrap:break-word">They get a phone alert. When they open the app, the video blocks the screen until it finishes. Close stays off until the end.</p>'+
+        '<label class="muted">Phone alert</label>'+
+        '<textarea class="txa" id="cmpBody" style="max-width:100%;min-width:0;box-sizing:border-box;min-height:88px">Watch how Feedback and Relevant information are different. It stays on screen until the video finishes.</textarea>'+
+        '<label class="muted" style="display:block;margin-top:12px">To</label>'+
+        portalComposeToSelectHtml()+
+        '</div>'+
+        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="btnCmpX">Cancel</button><button type="button" class="btn btn--pri" id="btnCmpSend">Send</button></div>'
+      );
+      var cmpTo = $('cmpTo');
+      if(cmpTo){
+        cmpTo.value = 'single_user';
+        cmpTo.addEventListener('change', portalOnComposeToChange);
+      }
+      portalOnComposeToChange();
+      portalBindComposeSendHandler({ needTitle:false, typ:'feedback_watch', pri:'high' });
+    }
     function openComposeModal(preset){
       var p0 = String(preset || '').trim().toLowerCase();
+      if(p0 === 'feedback_watch'){
+        openFeedbackWatchCompose();
+        return;
+      }
       if(p0 === 'announcement' || p0 === 'reminder'){
         openComposeModalAnnouncementOrReminder(p0 === 'reminder');
         return;

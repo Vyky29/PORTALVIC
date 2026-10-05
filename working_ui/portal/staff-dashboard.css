@@ -8533,6 +8533,19 @@
     body.announcement-gate-active .announcement-lock-card--gate .announcement-lock-check{
       color:var(--ink,#173247) !important;
     }
+    .feedback-watch-frame{
+      display:block;
+      width:100%;
+      height:min(720px, calc(100dvh - 140px));
+      min-height:420px;
+      border:0;
+      border-radius:18px;
+      background:#ebe6dc;
+    }
+    .announcement-lock-card--feedback-watch{
+      padding:8px;
+      min-width:0;
+    }
     .announcement-gate-progress{
       margin:0 0 10px;
       font-size:12px;
