@@ -536,22 +536,23 @@
         var story = storyById(state.story);
         var involved = {};
         if (state.mode === "flow") {
-          story.steps.forEach(function (step) {
-            stepIslands(step).forEach(function (islandId) { involved[islandId] = true; });
-          });
-          involved[story.world] = true;
+          storyIslands(story).forEach(function (islandId) { involved[islandId] = true; });
         }
         var hot = state.mode === "flow" && !!involved[id];
-        el.classList.toggle("is-hot", hot);
+        el.classList.toggle("is-lit", hot);
         el.classList.toggle("is-dim", state.mode === "flow" && !hot);
+        if (hot) el.style.setProperty("--lit", COLOR[id] || "#f4b740");
       });
       nodes.querySelectorAll(".pw-fn").forEach(function (el) {
         var sid = el.getAttribute("data-func");
         var home = el.getAttribute("data-home");
         var story = storyById(state.story);
+        var frameLit = el.closest(".pw-frame") && el.closest(".pw-frame").classList.contains("is-lit");
+        var service = home === "stripe" || home === "gc" || home === "email" || home === "wa" || home === "xero" || home === "comms";
         var on = state.mode === "flow" && sid === story.id;
         el.classList.toggle("is-hot", on);
-        el.classList.toggle("is-dim", state.mode === "flow" && home && !el.closest(".pw-frame").classList.contains("is-hot") && !on);
+        el.classList.toggle("is-lit", on || (state.mode === "flow" && frameLit && service));
+        el.classList.toggle("is-dim", state.mode === "flow" && !on && !(frameLit && service));
       });
       renderPanel();
       runParticles();
@@ -689,26 +690,23 @@
       state.story = story.id;
       state.world = story.world || state.world;
       state.focusLink = null;
-      state.panelOpen = false;
+      state.panelOpen = true;
       state.playing = false;
       if (state.timer) clearTimeout(state.timer);
       if (state.mode !== "flow") state.saved = { x: state.x, y: state.y, z: state.z };
       state.mode = "flow";
       if (!keepStep) state.step = 0;
-      panel.classList.remove("is-open");
+      clearSub();
       world.hidden = false;
       flow.hidden = true;
       backBtn.hidden = false;
-      buildSub(story);
-      renderTabs();
+      paintMap();
+      if (!keepStep) focusFrames(story);
     }
 
     function focusFrames(story) {
       var ids = {};
-      ids[story.world] = true;
-      story.steps.forEach(function (step) {
-        stepIslands(step).forEach(function (id) { ids[id] = true; });
-      });
+      storyIslands(story).forEach(function (id) { ids[id] = true; });
       var minX = WORLD_W;
       var minY = WORLD_H;
       var maxX = 0;

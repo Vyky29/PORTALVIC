@@ -56,9 +56,10 @@
       font: 700 13px/36px "Segoe UI", system-ui, sans-serif; text-align: left; padding: 0 10px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
     }
-    .pw-fn.is-hot { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
-    .pw-fn.is-dim, .pw-frame.is-dim { opacity: .28; }
-    .pw-frame.is-hot { box-shadow: inset 0 0 0 1px var(--gold), 0 16px 40px rgba(0,0,0,.28); }
+    .pw-frame.is-lit { opacity: 1; z-index: 3; box-shadow: 0 0 0 2px var(--lit, #f4b740), 0 0 28px var(--lit, #f4b740); }
+    .pw-frame.is-dim, .pw-fn.is-dim { opacity: 0.2; }
+    .pw-fn.is-lit, .pw-fn.is-hot { border-color: var(--gold); box-shadow: 0 0 14px var(--gold); background: rgba(244,183,64,.16); }
+    #pwWires path.is-hot { stroke-width: 5; filter: drop-shadow(0 0 5px currentColor); }
     .pw-frame.island--booking { box-shadow: inset 0 0 0 1px rgba(226,184,106,.55); }
     .pw-frame.island--admin { box-shadow: inset 0 0 0 1px rgba(31,143,126,.7); }
     .pw-frame.island--staff { box-shadow: inset 0 0 0 1px rgba(63,126,191,.7); }
@@ -150,7 +151,7 @@
     </div>
   </div>
   <script src="/portal/portal_world_data.js?v=20261005-world-visual"></script>
-  <script src="/portal/portal_world_canvas.js?v=20261005-world-sub"></script>
+  <script src="/portal/portal_world_canvas.js?v=20261005-world-lit"></script>
   <script>
     if (window.PortalWorldCanvasBoot) window.PortalWorldCanvasBoot(document);
   </script>
