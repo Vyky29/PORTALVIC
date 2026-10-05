@@ -782,7 +782,7 @@ function bubbleHtml(m) {
     who = "";
     body = esc(m.body || "Call");
   } else {
-    body = esc(m.body || "");
+    body = '<div class="comms-bubble-text">' + esc(m.body || "") + "</div>";
   }
   const read = receiptMeta(m, mine);
   const del = bubbleCanDelete(m)
