@@ -336,7 +336,7 @@
     </div>
     <div class="progress" aria-hidden="true"><div class="progress__fill" id="progressFill"></div></div>
     <div class="phone" id="phone">
-      <p class="caption" id="caption">Finish the feedback before you leave.</p>
+      <p class="caption" id="caption">Session feedback is a safeguarding consent.</p>
       <div class="sheet" id="sheet"></div>
       <button type="button" class="tap" id="tapStart" hidden>Tap to listen</button>
     </div>
@@ -345,14 +345,15 @@
     (function () {
       var DURATION = 21;
       var BEATS = [
-        { t: 0, tone: "good", caption: "Finish the feedback before you leave.", view: "shift" },
-        { t: 2.69, tone: "good", caption: "The note goes in before you go.", view: "shift", now: "note" },
-        { t: 5.88, tone: "bad", caption: "Do not leave it until the end of the day.", view: "later" },
-        { t: 8.19, tone: "bad", caption: "If it stays open, the alerts start.", view: "alerts" },
-        { t: 10.54, tone: "bad", caption: "Outstanding feedbacks lights up.", view: "alerts", now: "reminder" },
-        { t: 14.76, tone: "parent", caption: "The family only sees Awaiting feedback.", view: "parent" },
-        { t: 17.08, tone: "parent", caption: "They do not see that you have not sent it.", view: "parent", now: "hidden" },
-        { t: 19.27, tone: "good", caption: "Send it before you leave.", view: "sent" }
+        { t: 0, tone: "good", caption: "Session feedback is a safeguarding consent.", view: "consent" },
+        { t: 2.88, tone: "good", caption: "It is mandatory, and it is part of the shift.", view: "consent", now: "mandatory" },
+        { t: 5.75, tone: "good", caption: "Finish it before you leave.", view: "shift" },
+        { t: 6.94, tone: "bad", caption: "Do not leave it until the end of the day.", view: "later" },
+        { t: 8.64, tone: "parent", caption: "The family sees Pending.", view: "parent" },
+        { t: 11.57, tone: "parent", caption: "They do not see that you have not sent it.", view: "parent", now: "hidden" },
+        { t: 14.06, tone: "bad", caption: "Leaving it gives a bad image.", view: "image" },
+        { t: 17.09, tone: "good", caption: "Admin should not have to remind you.", view: "duty" },
+        { t: 18.82, tone: "good", caption: "Send it before you leave.", view: "sent" }
       ];
 
       var captionEl = document.getElementById("caption");
@@ -363,7 +364,7 @@
       var closeBtn = document.getElementById("closeBtn");
       var phoneEl = document.getElementById("phone");
       var tapEl = document.getElementById("tapStart");
-      var audio = new Audio("/portal/help-audio/feedback-finish-before-you-leave.mp3?v=20261005a");
+      var audio = new Audio("/portal/help-audio/feedback-finish-before-you-leave.mp3?v=20261005c");
       audio.preload = "auto";
 
       var held = 0;
@@ -377,13 +378,27 @@
         return '<div class="context"><span>Alex</span><span>Aquatic</span><span>5.00-5.30</span><span>Acton</span></div>';
       }
 
-      function shiftHtml(now) {
+      function consentHtml(now) {
+        return (
+          '<p class="kicker">Safeguarding</p><h1>Session feedback</h1>' +
+          '<div class="card' + (now === "mandatory" ? "" : " is-now") + '">' +
+            '<p class="who">Safeguarding consent</p>' +
+            '<p class="meta">The feedback is that consent. It is not an optional note.</p>' +
+          '</div>' +
+          '<div class="card' + (now === "mandatory" ? " is-now" : "") + '">' +
+            '<p class="who">Mandatory</p>' +
+            '<p class="meta">It is part of the shift. You cannot skip it.</p>' +
+          '</div>'
+        );
+      }
+
+      function shiftHtml() {
         return (
           '<p class="kicker">End of shift</p><h1>5.30</h1>' +
           sessionBits() +
-          '<div class="card' + (now === "note" ? " is-now" : "") + '">' +
+          '<div class="card is-now">' +
             '<p class="who">Session feedback</p>' +
-            '<p class="meta">The session is over. Send the note before you go.</p>' +
+            '<p class="meta">The session is over. Send it before you go.</p>' +
             '<span class="chip chip--open">NOT SENT</span>' +
           '</div>'
         );
@@ -401,32 +416,43 @@
         );
       }
 
-      function alertsHtml(now) {
-        return (
-          '<p class="kicker">Alerts</p><h1>They start if it stays open</h1>' +
-          '<div class="row">' +
-            '<span class="dot" aria-hidden="true"></span>' +
-            '<div><strong>Outstanding feedbacks x1</strong><span>The orange light stays on until the note is in.</span></div>' +
-          '</div>' +
-          '<div class="row' + (now === "reminder" ? " is-now" : "") + '">' +
-            '<span class="dot" aria-hidden="true"></span>' +
-            '<div><strong>A reminder still goes out later</strong><span>Leaving it does not hide it.</span></div>' +
-          '</div>'
-        );
-      }
-
       function parentHtml(now) {
         var hidden = now === "hidden"
           ? '<div class="hidden-note"><p>You have not sent the feedback.</p><small>The family never sees this.</small></div>'
           : '';
         return (
-          '<p class="kicker">Family app</p>' +
+          '<p class="kicker">Family portal</p>' +
           '<div class="parent">' +
             '<p class="who">Alex · Aquatic · Acton · 5.00-5.30</p>' +
             '<h2>What the family sees</h2>' +
-            '<span class="chip chip--await">AWAITING FEEDBACK</span>' +
+            '<span class="chip chip--await">PENDING</span>' +
           '</div>' +
           hidden
+        );
+      }
+
+      function imageHtml() {
+        return (
+          '<p class="kicker">Professionals</p><h1>You cannot leave it.</h1>' +
+          '<div class="parent">' +
+            '<p class="who">Family portal</p>' +
+            '<h2>What they still see</h2>' +
+            '<span class="chip chip--await">PENDING</span>' +
+          '</div>' +
+          '<div class="card card--bad">' +
+            '<p class="who">A bad image</p>' +
+            '<p class="meta">You are a professional. Pending on their portal is what they remember.</p>' +
+          '</div>'
+        );
+      }
+
+      function dutyHtml() {
+        return (
+          '<p class="kicker">Part of the shift</p><h1>Admin should not remind you.</h1>' +
+          '<div class="card is-now">' +
+            '<p class="who">You already know</p>' +
+            '<p class="meta">Completing the feedback is the shift. It is not a reminder from admin.</p>' +
+          '</div>'
         );
       }
 
@@ -447,7 +473,7 @@
       }
 
       function endedHtml() {
-        return '<p class="kicker">Done</p><h1>You can close this.</h1><p class="ended">Finish the feedback before you leave the shift. If it stays open, the alerts start, and the family only sees Awaiting feedback.</p><button type="button" class="replay" id="replayBtn">Watch again</button>';
+        return '<p class="kicker">Done</p><h1>You can close this.</h1><p class="ended">Session feedback is a safeguarding consent. It is mandatory, and it is part of the shift. If it stays open, the family sees Pending. Admin should not have to remind you.</p><button type="button" class="replay" id="replayBtn">Watch again</button>';
       }
 
       function beatAt(t) {
@@ -478,11 +504,13 @@
           return;
         }
         captionEl.textContent = beat.caption;
-        if (beat.view === "later") sheetEl.innerHTML = laterHtml();
-        else if (beat.view === "alerts") sheetEl.innerHTML = alertsHtml(beat.now);
+        if (beat.view === "consent") sheetEl.innerHTML = consentHtml(beat.now);
+        else if (beat.view === "later") sheetEl.innerHTML = laterHtml();
         else if (beat.view === "parent") sheetEl.innerHTML = parentHtml(beat.now);
+        else if (beat.view === "image") sheetEl.innerHTML = imageHtml();
+        else if (beat.view === "duty") sheetEl.innerHTML = dutyHtml();
         else if (beat.view === "sent") sheetEl.innerHTML = sentHtml();
-        else sheetEl.innerHTML = shiftHtml(beat.now);
+        else sheetEl.innerHTML = shiftHtml();
         sheetEl.scrollTop = 0;
       }
 
