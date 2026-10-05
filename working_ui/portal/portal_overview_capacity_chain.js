@@ -923,6 +923,23 @@
       });
   }
 
+  /**
+   * Staff Today filters occupants before the date rewrite.
+   * Mon Northolt 4.30-6.30 is still stored as Luliya, then becomes Javi
+   * from Mon 28 Sep inside occupantsPhasesToRosterRows. Keep that book
+   * for both people here; the row pass drops the dates that are not theirs.
+   */
+  function lineKeptForStaffBeforeDateRewrite(line, slot, staffId) {
+    var raw = String((line && line.instructor) || "").trim();
+    if (instructorMentionsStaff(raw, staffId)) return true;
+    if (!/\bluliya\b/i.test(raw)) return false;
+    var day = normDow(slot && slot.day);
+    var venue = String((slot && slot.venue) || "").toLowerCase();
+    if (day !== "monday" || venue.indexOf("northolt") < 0) return false;
+    var want = canonStaffTok(staffId);
+    return want === "javi" || want === "luliya";
+  }
+
   /** Keep only seats that name this worker — expand fewer term dates on Staff Today. */
   function filterOccupantsByStaff(bySlotId, staffId) {
     var want = normStaffTok(staffId);
@@ -933,7 +950,7 @@
       if (!slot) return;
       var lines = Array.isArray(slot.seatLines) ? slot.seatLines : [];
       var keepLines = lines.filter(function (line) {
-        return instructorMentionsStaff(line && line.instructor, want);
+        return lineKeptForStaffBeforeDateRewrite(line, slot, want);
       });
       if (keepLines.length) {
         out[slotId] = Object.assign({}, slot, {
@@ -1165,6 +1182,10 @@
             slim.rows || [],
             staffId,
           );
+          /* Date rewrite (Luliya → Javi from 28 Sep) has already run. */
+          teachingRows = teachingRows.filter(function (r) {
+            return instructorMentionsStaff(r && r.instructors, staffId);
+          });
           slim = Object.assign({}, slim, {
             rows: teachingRows,
             capacityChainStaffScoped: true,
