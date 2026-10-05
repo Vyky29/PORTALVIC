@@ -137,7 +137,7 @@
     {
       id: "email",
       cls: "island--sat island--email",
-      kicker: "Fuera",
+      kicker: "Booking",
       name: "Email",
       host: "Correo",
       short: "codigo y avisos",
@@ -154,7 +154,7 @@
     {
       id: "wa",
       cls: "island--sat island--wa",
-      kicker: "Fuera",
+      kicker: "Staff",
       name: "WhatsApp",
       host: "Business y dos APIs",
       short: "familias y staff",
@@ -172,7 +172,7 @@
     {
       id: "stripe",
       cls: "island--sat island--stripe",
-      kicker: "Cobro",
+      kicker: "Booking",
       name: "Stripe",
       host: "Tarjeta y Apple Pay",
       short: "tarjeta",
@@ -189,7 +189,7 @@
     {
       id: "gc",
       cls: "island--sat island--gc",
-      kicker: "Cobro",
+      kicker: "Admin",
       name: "GoCardless",
       host: "Domiciliacion",
       short: "mensual",
@@ -206,7 +206,7 @@
     {
       id: "xero",
       cls: "island--sat island--xero",
-      kicker: "Cuentas",
+      kicker: "Admin",
       name: "Xero",
       host: "Facturas",
       short: "borradores",
@@ -217,6 +217,23 @@
       happens: [
         "El cobro de una plaza y el re-enrolment dejan el borrador de la factura en Xero.",
         "Admin Finance lo lee. Xero no mueve el tablero del dia."
+      ]
+    },
+    {
+      id: "tide",
+      cls: "island--sat island--tide",
+      kicker: "Banco",
+      name: "Tide",
+      host: "Transferencia",
+      short: "banco",
+      x: 0, y: 0,
+      chips: ["Transferencia", "CSV"],
+      home: [],
+      visit: [],
+      happens: [
+        "La familia paga el trial por transferencia a Tide desde Booking.",
+        "Admin lo confirma en Finance, Bookings. Sessions Overview y Client quedan al dia.",
+        "Staff lo ve en Today. La plaza del termino entra en su dia."
       ]
     },
     {
@@ -257,6 +274,8 @@
     { id: "b-stripe", from: "booking", to: "stripe", bow: 4, label: "Tarjeta y Apple Pay" },
     { id: "b-gc", from: "booking", to: "gc", bow: -6, label: "Cuota mensual" },
     { id: "a-xero", from: "admin", to: "xero", bow: 6, label: "Borrador de factura" },
+    { id: "b-tide", from: "booking", to: "tide", bow: 4, label: "Trial pagado por transferencia" },
+    { id: "a-tide", from: "admin", to: "tide", bow: -4, label: "Finance confirma el banco" },
     { id: "auto-email", from: "auto", to: "email", bow: 5, label: "Codigo OTP y aviso de lead nuevo" },
     { id: "auto-wa", from: "auto", to: "wa", bow: -5, label: "Plantillas, Parents API y Staff API" },
     { id: "a-comms", from: "admin", to: "comms", bow: 8, label: "Llamada y mensaje con el equipo" },
@@ -628,6 +647,16 @@
       ]
     },
     {
+      id: "pay-tide",
+      label: "Tide",
+      actor: "A la vez",
+      steps: [
+        { islands: ["booking", "tide"], links: ["b-tide"], cats: { booking: "Trial", tide: "Tide" }, text: "El trial se paga por transferencia a Tide desde Booking." },
+        { islands: ["tide", "admin"], links: ["a-tide"], cats: { tide: "Tide", admin: ["Tide", "Finance", "Bookings", "Sessions Overview", "Client"] }, text: "A la vez Admin confirma ese banco: Tide, Finance, Bookings, Sessions Overview y Client." },
+        { islands: ["admin", "staff"], links: ["a-s"], cats: { admin: "Finance", staff: ["Today", "Term"] }, text: "Staff lo ve en Today. La plaza del termino entra en su dia." }
+      ]
+    },
+    {
       id: "pay-card",
       label: "Stripe",
       actor: "A la vez",
@@ -723,6 +752,7 @@
     "staff-pin": "staff",
     payslip: "staff",
     annual: "staff",
+    "pay-tide": "booking",
     "pay-card": "booking",
     "pay-gc": "booking",
     "xero-draft": "admin",

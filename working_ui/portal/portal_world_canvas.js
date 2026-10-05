@@ -25,25 +25,22 @@
     function height(n, cols) {
       return 58 + Math.ceil(n / cols) * 46 + 14;
     }
-    var gapX = 200;
-    var gapY = 180;
-    var y = 20;
-    var booking = { x: 20, y: y, w: 520, h: height(count("booking"), 2) };
-    var admin = { x: booking.x + booking.w + gapX, y: y, w: 640, h: height(count("admin"), 2) };
-    var staff = { x: admin.x + admin.w + gapX, y: y, w: 520, h: height(count("staff"), 2) };
-    var row2 = y + Math.max(booking.h, admin.h, staff.h) + gapY;
-    var auto = { x: 20, y: row2, w: 500, h: height(count("auto"), 2) };
-    var parent = { x: auto.x + auto.w + gapX, y: row2, w: 540, h: height(count("parent"), 2) };
-    var onb = { x: parent.x + parent.w + gapX, y: row2, w: 400, h: height(count("onb"), 2) };
-    var row3 = row2 + Math.max(auto.h, parent.h, onb.h) + gapY;
-    var ceo = { x: 20, y: row3, w: 280, h: height(count("ceo"), 1) };
-    var comms = { x: ceo.x + ceo.w + gapX, y: row3, w: 320, h: height(count("comms"), 1) };
-    var email = { x: comms.x + comms.w + gapX, y: row3, w: 260, h: height(count("email"), 1) };
-    var wa = { x: email.x + email.w + gapX, y: row3, w: 280, h: height(count("wa"), 1) };
-    var stripe = { x: wa.x + wa.w + gapX, y: row3, w: 250, h: height(count("stripe"), 1) };
-    var gc = { x: stripe.x + stripe.w + gapX, y: row3, w: 230, h: height(count("gc"), 1) };
-    var xero = { x: gc.x + gc.w + gapX, y: row3, w: 250, h: height(count("xero"), 1) };
-    FRAME = { booking: booking, admin: admin, staff: staff, auto: auto, parent: parent, onb: onb, ceo: ceo, comms: comms, email: email, wa: wa, stripe: stripe, gc: gc, xero: xero };
+    var y = 24;
+    var email = { x: 16, y: 56, w: 220, h: height(count("email"), 1) };
+    var booking = { x: email.x + email.w + 36, y: y, w: 520, h: height(count("booking"), 2) };
+    var tide = { x: booking.x + booking.w + 28, y: y + 90, w: 220, h: height(count("tide"), 1) };
+    var admin = { x: tide.x + tide.w + 28, y: y, w: 660, h: height(count("admin"), 2) };
+    var comms = { x: admin.x + admin.w + 28, y: y + 36, w: 210, h: height(count("comms"), 1) };
+    var staff = { x: comms.x + comms.w + 28, y: y, w: 500, h: height(count("staff"), 2) };
+    var stripe = { x: booking.x + booking.w - 250, y: booking.y + booking.h + 28, w: 250, h: height(count("stripe"), 1) };
+    var xero = { x: admin.x, y: admin.y + admin.h + 28, w: 250, h: height(count("xero"), 1) };
+    var gc = { x: xero.x + xero.w + 28, y: xero.y, w: 230, h: height(count("gc"), 1) };
+    var auto = { x: booking.x, y: Math.max(stripe.y + stripe.h, email.y + email.h) + 56, w: 500, h: height(count("auto"), 2) };
+    var ceo = { x: email.x, y: auto.y, w: 220, h: height(count("ceo"), 1) };
+    var parent = { x: admin.x, y: xero.y + Math.max(xero.h, gc.h) + 56, w: 540, h: height(count("parent"), 2) };
+    var onb = { x: staff.x, y: staff.y + staff.h + 28, w: 360, h: height(count("onb"), 1) };
+    var wa = { x: staff.x, y: onb.y + onb.h + 28, w: 280, h: height(count("wa"), 1) };
+    FRAME = { booking: booking, admin: admin, staff: staff, auto: auto, parent: parent, onb: onb, ceo: ceo, comms: comms, email: email, wa: wa, stripe: stripe, gc: gc, xero: xero, tide: tide };
     var maxX = 0;
     var maxY = 0;
     Object.keys(FRAME).forEach(function (id) {
@@ -69,7 +66,8 @@
     wa: "#3dae6a",
     stripe: "#635bff",
     gc: "#1f8a70",
-    xero: "#13b5ea"
+    xero: "#13b5ea",
+    tide: "#2f6fed"
   };
 
   var GUIDE_IDS = {
@@ -586,7 +584,7 @@
         var home = el.getAttribute("data-home");
         var story = storyById(state.story);
         var frameLit = el.closest(".pw-frame") && el.closest(".pw-frame").classList.contains("is-lit");
-        var service = home === "stripe" || home === "gc" || home === "email" || home === "wa" || home === "xero" || home === "comms";
+        var service = home === "stripe" || home === "gc" || home === "email" || home === "wa" || home === "xero" || home === "comms" || home === "tide";
         var on = state.mode === "flow" && sid === story.id;
         el.classList.toggle("is-hot", on);
         el.classList.toggle("is-lit", on || (state.mode === "flow" && frameLit && service));
