@@ -277,7 +277,7 @@
       font-size: 14px;
       line-height: 1.4;
       text-decoration: line-through;
-      color: var(--bad);
+      color: var(--muted);
       overflow-wrap: anywhere;
     }
     .hidden-note small {
@@ -344,23 +344,23 @@
   </div>
   <script>
     (function () {
-      var DURATION = 43;
+      var DURATION = 49;
       var BEATS = [
         { t: 0, tone: "good", caption: "Session feedback is the record of the day.", view: "consent" },
-        { t: 2.48, tone: "good", caption: "It is a safeguarding consent, and part of the shift.", view: "consent", now: "consent" },
-        { t: 6.32, tone: "good", caption: "It is mandatory.", view: "consent", now: "mandatory" },
-        { t: 7.72, tone: "good", caption: "Finish it before you leave, same day, before 9pm.", view: "shift" },
-        { t: 12.34, tone: "parent", caption: "The family sees Pending.", view: "parent" },
-        { t: 14.28, tone: "parent", caption: "They do not see that you have not sent it.", view: "parent", now: "hidden" },
-        { t: 16.78, tone: "bad", caption: "Leaving that Pending gives a bad image.", view: "image" },
-        { t: 18.89, tone: "bad", caption: "A late feedback does not count as the shift.", view: "timesheet" },
-        { t: 22.35, tone: "bad", caption: "The day stays held until admin releases it.", view: "timesheet", now: "held" },
-        { t: 25.94, tone: "bad", caption: "Admin has to open your day and release it.", view: "admin" },
-        { t: 28.91, tone: "bad", caption: "Those sessions were yours.", view: "admin", now: "yours" },
-        { t: 30.39, tone: "good", caption: "That time belongs to your shift, not to admin.", view: "admin", now: "time" },
-        { t: 33.24, tone: "good", caption: "Admin should not have to remind you.", view: "duty" },
-        { t: 35.60, tone: "good", caption: "Send the feedback before you leave.", view: "sent" },
-        { t: 37.57, tone: "good", caption: "The family sees the session. Your shift counts.", view: "sent", now: "done" }
+        { t: 2.60, tone: "good", caption: "It is a safeguarding consent, and part of the shift.", view: "consent", now: "consent" },
+        { t: 6.70, tone: "good", caption: "The clear way is to finish it before you leave.", view: "shift" },
+        { t: 9.22, tone: "good", caption: "Same day, before 9pm.", view: "shift", now: "nine" },
+        { t: 12.50, tone: "parent", caption: "The family sees Pending.", view: "parent" },
+        { t: 16.49, tone: "parent", caption: "They do not see that it has not been sent.", view: "parent", now: "hidden" },
+        { t: 18.87, tone: "parent", caption: "They only see that the session is still waiting.", view: "image" },
+        { t: 21.92, tone: "good", caption: "It helps when they can read the day.", view: "image", now: "help" },
+        { t: 24.14, tone: "parent", caption: "On your timesheet, a late note waits.", view: "timesheet" },
+        { t: 27.90, tone: "good", caption: "The shift stays held. The pay is still there.", view: "timesheet", now: "held" },
+        { t: 32.89, tone: "parent", caption: "It just needs admin to release it.", view: "admin" },
+        { t: 35.69, tone: "good", caption: "On time, admin does not need that extra step.", view: "admin", now: "time" },
+        { t: 40.11, tone: "good", caption: "The time stays with your shift.", view: "duty" },
+        { t: 42.09, tone: "good", caption: "Send it before you leave.", view: "sent" },
+        { t: 43.75, tone: "good", caption: "The family sees the session. Your shift counts.", view: "sent", now: "done" }
       ];
 
       var captionEl = document.getElementById("caption");
@@ -371,7 +371,7 @@
       var closeBtn = document.getElementById("closeBtn");
       var phoneEl = document.getElementById("phone");
       var tapEl = document.getElementById("tapStart");
-      var audio = new Audio("/portal/help-audio/feedback-finish-before-you-leave.mp3?v=20261005d");
+      var audio = new Audio("/portal/help-audio/feedback-finish-before-you-leave.mp3?v=20261005e");
       audio.preload = "auto";
 
       var held = 0;
@@ -392,28 +392,28 @@
             '<p class="who">Safeguarding consent</p>' +
             '<p class="meta">The feedback is that consent. It is part of the shift.</p>' +
           '</div>' +
-          '<div class="card' + (now === "mandatory" ? " is-now" : "") + '">' +
-            '<p class="who">Mandatory</p>' +
-            '<p class="meta">Same day, before 9pm. You cannot skip it.</p>' +
+          '<div class="card">' +
+            '<p class="who">Part of the shift</p>' +
+            '<p class="meta">Same day, before 9pm, so the day is complete.</p>' +
           '</div>'
         );
       }
 
-      function shiftHtml() {
+      function shiftHtml(now) {
         return (
           '<p class="kicker">End of shift</p><h1>5.30</h1>' +
           sessionBits() +
           '<div class="card is-now">' +
-            '<p class="who">Send it before you leave</p>' +
-            '<p class="meta">Same day. Before 9pm. Then it is the record of the day.</p>' +
-            '<span class="chip chip--open">NOT SENT</span>' +
+            '<p class="who">Finish it before you leave</p>' +
+            '<p class="meta">' + (now === "nine" ? "Same day. Before 9pm." : "The clear way is to send it while the session is still fresh.") + '</p>' +
+            '<span class="chip chip--open">NOT SENT YET</span>' +
           '</div>'
         );
       }
 
       function parentHtml(now) {
         var hidden = now === "hidden"
-          ? '<div class="hidden-note"><p>You have not sent the feedback.</p><small>The family never sees this.</small></div>'
+          ? '<div class="hidden-note"><p>Not sent yet.</p><small>The family does not see this line.</small></div>'
           : '';
         return (
           '<p class="kicker">Family portal</p>' +
@@ -426,60 +426,60 @@
         );
       }
 
-      function imageHtml() {
+      function imageHtml(now) {
         return (
-          '<p class="kicker">Professionals</p><h1>You cannot leave it.</h1>' +
+          '<p class="kicker">Family portal</p><h1>Still waiting</h1>' +
           '<div class="parent">' +
-            '<p class="who">Family portal</p>' +
-            '<h2>What they still see</h2>' +
+            '<p class="who">What they see</p>' +
+            '<h2>The session is waiting</h2>' +
             '<span class="chip chip--await">PENDING</span>' +
           '</div>' +
-          '<div class="card card--bad">' +
-            '<p class="who">A bad image</p>' +
-            '<p class="meta">You are a professional. Pending on their portal is what they remember.</p>' +
+          '<div class="card' + (now === "help" ? " is-now card--ok" : "") + '">' +
+            '<p class="who">It helps to send it</p>' +
+            '<p class="meta">Then they can read the day, instead of a session that is still waiting.</p>' +
           '</div>'
         );
       }
 
       function timesheetHtml(now) {
         return (
-          '<p class="kicker">Your timesheet</p><h1>Late feedback</h1>' +
+          '<p class="kicker">Your timesheet</p><h1>A late note waits</h1>' +
           sessionBits() +
-          '<div class="card card--bad' + (now === "held" ? " is-now" : "") + '">' +
-            '<p class="who">This shift does not count</p>' +
-            '<p class="meta">The day stays held. It does not become pay until admin releases it.</p>' +
-            '<span class="chip chip--open">HELD</span>' +
+          '<div class="card' + (now === "held" ? " is-now" : "") + '">' +
+            '<p class="who">The shift stays held</p>' +
+            '<p class="meta">The pay is still there. It waits until admin releases it.</p>' +
+            '<span class="chip chip--await">HELD</span>' +
           '</div>'
         );
       }
 
       function adminHtml(now) {
         return (
-          '<p class="kicker">Admin</p><h1>The same work twice</h1>' +
-          '<div class="card card--bad' + (now === "yours" ? " is-now" : "") + '">' +
-            '<p class="who">Release this day</p>' +
-            '<p class="meta">Admin opens your day and releases it. Those sessions were yours.</p>' +
+          '<p class="kicker">Admin</p><h1>One extra step</h1>' +
+          '<div class="card' + (now === "time" ? "" : " is-now") + '">' +
+            '<p class="who">Release</p>' +
+            '<p class="meta">Admin opens the day and releases the hold.</p>' +
           '</div>' +
-          '<div class="card' + (now === "time" ? " is-now" : "") + '">' +
-            '<p class="who">Your shift, not admin</p>' +
-            '<p class="meta">That time belongs to the worker who delivered the sessions.</p>' +
+          '<div class="card' + (now === "time" ? " is-now card--ok" : "") + '">' +
+            '<p class="who">On time, that step is not needed</p>' +
+            '<p class="meta">The time stays with your shift.</p>' +
           '</div>'
         );
       }
 
       function dutyHtml() {
         return (
-          '<p class="kicker">Part of the shift</p><h1>Admin should not remind you.</h1>' +
+          '<p class="kicker">Your shift</p><h1>The time stays with you.</h1>' +
           '<div class="card is-now">' +
-            '<p class="who">You already know</p>' +
-            '<p class="meta">The record, the family portal, and the timesheet are your sessions.</p>' +
+            '<p class="who">The record, the family, the timesheet</p>' +
+            '<p class="meta">When the note goes in before you leave, the day is already complete.</p>' +
           '</div>'
         );
       }
 
       function sentHtml(now) {
         var done = now === "done"
-          ? '<div class="card card--ok"><p class="who">Your shift counts</p><p class="meta">Admin does not have to touch it.</p><span class="chip chip--done">COUNTS</span></div>'
+          ? '<div class="card card--ok"><p class="who">Your shift counts</p><p class="meta">The day is complete. Admin can leave it with you.</p><span class="chip chip--done">COUNTS</span></div>'
           : '';
         return (
           '<p class="kicker">Before you leave</p><h1>Send it on time.</h1>' +
@@ -498,7 +498,7 @@
       }
 
       function endedHtml() {
-        return '<p class="kicker">Done</p><h1>You can close this.</h1><p class="ended">Session feedback is the record of the day, and a safeguarding consent. Send it the same day, before 9pm. Late feedback stays Pending for the family, and held on your timesheet until admin releases it.</p><button type="button" class="replay" id="replayBtn">Watch again</button>';
+        return '<p class="kicker">Done</p><h1>You can close this.</h1><p class="ended">Session feedback is the record of the day, and a safeguarding consent. The clear way is the same day, before 9pm. Then the family can read the session, your shift counts, and admin does not need the extra release.</p><button type="button" class="replay" id="replayBtn">Watch again</button>';
       }
 
       function beatAt(t) {
@@ -531,12 +531,12 @@
         captionEl.textContent = beat.caption;
         if (beat.view === "consent") sheetEl.innerHTML = consentHtml(beat.now);
         else if (beat.view === "parent") sheetEl.innerHTML = parentHtml(beat.now);
-        else if (beat.view === "image") sheetEl.innerHTML = imageHtml();
+        else if (beat.view === "image") sheetEl.innerHTML = imageHtml(beat.now);
         else if (beat.view === "timesheet") sheetEl.innerHTML = timesheetHtml(beat.now);
         else if (beat.view === "admin") sheetEl.innerHTML = adminHtml(beat.now);
         else if (beat.view === "duty") sheetEl.innerHTML = dutyHtml();
         else if (beat.view === "sent") sheetEl.innerHTML = sentHtml(beat.now);
-        else sheetEl.innerHTML = shiftHtml();
+        else sheetEl.innerHTML = shiftHtml(beat.now);
         sheetEl.scrollTop = 0;
       }
 
