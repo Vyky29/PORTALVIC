@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v264",
+  "version": "2026-10-05-v265",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -117,6 +117,9 @@
           "summary": "One-day exceptions: cancel a slot, assign cover, client absence, replace for that date only.",
           "where": "Operator → Schedule & Covers",
           "keywords": [
+            "free",
+            "makeup",
+            "move in",
             "swap",
             "intercambiar",
             "cruzar",
@@ -153,7 +156,8 @@
             "Move to another slot today is the one-day move, including into a seat that already has an admin absence. On Overview the original instructor still shows that child, with the chip Move in and change instructor, not No participant. The other instructor shows the absent child and, under that same time, the Moved in card. Edit term slot changes the standing weekday for the rest of term.",
             "Swap with another child today exchanges only the seats of the service you opened (Multi-Activity with Multi-Activity). Climbing and other services that day stay. Instructors stay on their times. Each worker card keeps that seat and shows the other child, with Swapped. Pool and Hub both update. The parent message names each seat as Hub Room or Swimming, in time order. Overview shows Swapped. Undo on either of those rows removes this swap. The rest of term does not change.",
             "A makeup on an open seat still shows that child when the instructor is off that day. The row name is the child, not No participant.",
-            "If a child is absent and someone moves into that seat the same day, the row shows the absent child, then Free, then the move-in. No participant is a standing empty seat.",
+            "If a child is Absent and the seat is still empty, the row shows their name / Free. That day the seat can take a makeup or a move-in. No participant is a standing empty seat.",
+            "If a child is absent and someone moves into that seat the same day, the row shows the absent child, then Free, then the move-in.",
             "From Sun 27 Sep, Gabriel and Cyrus swap the 11.00 and 11.45 halves for the rest of term. The blue change card shows only that first Sunday. After that they are the regular clients at those times. A cover saved on that seat follows the child who is in it now.",
             "A cover keeps the original seat. Today shows that area: Hub Room, Big Pool, Small Pool or Teaching Pool. It does not drop to a dash. Covering the whole Sunday Hub book is one NEW SHIFT, 9.15 to 2.15. A single slot stays that slot.",
             "There is no clock editor on an existing row. Move to another slot today only lands on a band that already exists that day. To use a new time, Change, Cancelled, Save override on the old row, then + Add session card, Type Session, with the new Start and End. That is one day. Edit term slot is only if that weekday should keep the new time for the rest of term.",
@@ -177,7 +181,8 @@
               "Move to another slot today es el cambio de un dia, tambien a una plaza que ya tiene una falta de admin. En Overview el instructor original sigue viendo a ese nino, con el chip Move in and change instructor, no No participant. El otro instructor ve al nino ausente y, en la misma hora, la tarjeta Moved in. Edit term slot cambia el dia fijo el resto del term.",
               "Swap with another child today cruza solo las plazas del servicio que abriste (Multi-Activity con Multi-Activity). Climbing y los otros servicios de ese dia se quedan. Los instructores se quedan en su hora. La card del trabajador conserva esa plaza y muestra al otro nino, con Swapped. Piscina y Hub se actualizan. El mensaje al padre nombra cada plaza como Hub Room o Swimming, en orden de hora. Overview pone Swapped. Undo en cualquiera de esas filas quita este cruce. El resto del term no cambia.",
               "Un makeup en una plaza libre sigue ensenando a ese nino cuando el instructor esta libre ese dia. El nombre de la fila es el nino, no No participant.",
-              "Si un nino falta y alguien entra en esa plaza el mismo dia, la fila ensena al nino ausente, luego Free, luego el que entra. No participant es una plaza fija vacia.",
+              "Si un nino esta Absent y la plaza sigue vacia, la fila sale con su nombre / Free. Ese dia la plaza puede recibir un makeup o un move-in. No participant es una plaza fija vacia.",
+              "Si un nino falta y alguien entra en esa plaza el mismo dia, la fila ensena al nino ausente, luego Free, luego el que entra.",
               "Desde el domingo 27 Sep, Gabriel y Cyrus cambian las medias de las 11.00 y las 11.45 el resto del term. La tarjeta azul de cambio sale solo ese primer domingo. Despues son los clientes de siempre a esa hora. Un cover guardado en esa plaza sigue al nino que esta ahora.",
               "Un cover conserva la plaza original. Today ensena esa area: Hub Room, Big Pool, Small Pool o Teaching Pool. No se queda en una raya. Cubrir el Hub entero del domingo es una sola NEW SHIFT, 9.15 to 2.15. Una sola franja se queda en esa franja.",
               "En una fila que ya existe no hay campo para cambiar la hora. Move to another slot today solo cae en una franja que ya existe ese dia. Para una hora nueva: Change, Cancelled, Save override en la fila vieja, y luego + Add session card, Type Session, con el Start y el End nuevos. Es un dia. Edit term slot solo si ese dia de la semana debe quedarse con la hora nueva el resto del term.",

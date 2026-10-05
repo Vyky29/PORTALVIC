@@ -20154,6 +20154,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return schedParticipantPillHtml(mgrLab, slot.demoId, mgrTone, 'demo');
       }
       var lab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
+      /* Absent frees this day only. Name / Free can take a makeup or a move-in. */
+      if(lab && findOverrideForSlotOfTypes(slot, ['client_absence_announced'])){
+        return (
+          '<div class="sched-pax-pill-row">' +
+          schedParticipantPillHtml(lab, slot.demoId, 'out', 'demo') +
+          '<span class="sched-pax-pill-sep">/</span>' +
+          schedParticipantPillHtml('Free', '', 'open', 'demo') +
+          '</div>'
+        );
+      }
       return schedParticipantPillHtml(lab, slot.demoId, 'booked', 'demo');
     }
     function renderSchedBaseRows(slots){
