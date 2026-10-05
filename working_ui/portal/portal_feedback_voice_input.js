@@ -886,7 +886,7 @@
  cleanupSessionUi(s);
  if (s.textarea) notifyVoiceTranscriptDone(s.textarea);
  if (s.statusEl) {
- s.statusEl.textContent = "Done. Read the text before you continue.";
+ s.statusEl.textContent = "Done. The text is in English. Read it and type over anything that is wrong.";
  }
  return;
  }

@@ -2,9 +2,9 @@
 //
 // portal-feedback-voice-transcribe
 // --------------------------------
-// Session feedback voice → verbatim transcript (Whisper transcriptions).
-// Spoken language is kept. Staff edit by typing. Parent wording is a later admin
-// or Day Centre weekly-note step, not this function.
+// Session feedback voice → English transcript (Whisper translations).
+// Spanish, Italian, and English speech all come out in English. Staff edit by
+// typing. Parent wording is a later admin or Day Centre weekly-note step.
 //
 // GET  → { ok: true, whisper: boolean }
 // POST multipart/form-data:
@@ -73,13 +73,12 @@ function normalizeLang(raw: string): string {
   return "en";
 }
 
-async function whisperVerbatim(
+async function whisperToEnglish(
   apiKey: string,
   bytes: Uint8Array,
   mime: string,
-  language: string,
 ): Promise<string> {
-  const endpoint = "https://api.openai.com/v1/audio/transcriptions";
+  const endpoint = "https://api.openai.com/v1/audio/translations";
 
   const ext =
     mime.indexOf("ogg") >= 0
@@ -99,7 +98,6 @@ async function whisperVerbatim(
     `feedback.${ext}`,
   );
   form.append("model", "whisper-1");
-  form.append("language", language === "es" || language === "it" ? language : "en");
   form.append("temperature", "0");
   form.append("response_format", "text");
 
@@ -164,7 +162,7 @@ Deno.serve(async (req) => {
   const bytes = new Uint8Array(await file.arrayBuffer());
 
   try {
-    const english = await whisperVerbatim(apiKey, bytes, mime, language);
+    const english = await whisperToEnglish(apiKey, bytes, mime);
     if (!english) {
       return json({ ok: false, error: "empty_transcript", fallback: "webspeech" }, 422);
     }

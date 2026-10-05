@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v247",
+  "version": "2026-10-05-v248",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2442,12 +2442,12 @@
           ],
           "steps": [
             "Staff choose Voice or Written and fill the session narrative. Notes is a separate box. That box is Relevant information.",
-            "Voice writes down what was said. Staff read it and type over any wrong words, then Submit.",
+            "Voice writes the session in English, whether they spoke English, Spanish, or Italian. Staff read it and type over any wrong words, then Submit.",
             "To send one family a cleaned message, filter that note in admin. That step is only when you want it.",
             "Day Centre weekly notes run on their own at the end of the week. That filter uses parent language and skips lines already used in an earlier week."
           ],
           "tips": [
-            "The mic does not polish the words. Spanish or Italian stays in that language so the words match what was said.",
+            "The mic puts every recording into English. It does not rewrite it into a family message. Staff correct the English by typing over it.",
             "The session narrative is not a bell alert. The bell lists Notes only when Relevant information has text."
           ],
           "es": {
@@ -2456,12 +2456,12 @@
             "where": "App de staff, session feedback. Filtro de admin para una familia. Nota semanal del Day Centre en el portal de padres.",
             "steps": [
               "El staff elige Voice o Written y rellena la narrativa. Notes es otra caja. Esa caja es Relevant information.",
-              "La voz escribe lo que se ha dicho. El staff lo lee, escribe encima lo que este mal, y pulsa Submit.",
+              "La voz deja la sesion en ingles, hablen ingles, espanol o italiano. El staff lo lee, escribe encima lo que este mal, y pulsa Submit.",
               "Para mandar a una familia un texto limpio, filtra esa nota en admin. Ese paso es solo cuando tu quieres.",
               "La nota semanal del Day Centre sale sola al cerrar la semana. Ese filtro usa lenguaje para padres y no repite frases de una semana anterior."
             ],
             "tips": [
-              "El micro no arregla las palabras. Espanol o italiano se queda en ese idioma para que coincida con lo dicho.",
+              "El micro pasa cada grabacion a ingles. No la reescribe como mensaje para la familia. El staff corrige ese ingles escribiendo encima.",
               "La narrativa de la sesion no es una alerta. La campana lista Notes solo si Relevant information tiene texto."
             ]
           }
