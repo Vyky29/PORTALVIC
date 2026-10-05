@@ -19,6 +19,7 @@
 
   var state = {
     rows: [],
+    films: [],
     acks: [],
     staff: [],
     filter: "all",
@@ -26,6 +27,11 @@
     groupKey: "",
     openId: "",
   };
+
+  var FILM_KINDS = [
+    { kind: "feedback_watch", label: "How we write session feedback" },
+    { kind: "feedback_on_time", label: "Finish feedback before you leave" },
+  ];
 
   function esc(s) {
     return cfg.esc(s);
@@ -39,6 +45,8 @@
     var k = kindOf(row);
     if (k === "reminder") return "Reminder";
     if (k === "schedule") return "Schedule notice";
+    if (k === "feedback_watch") return "How we write session feedback";
+    if (k === "feedback_on_time") return "Finish feedback before you leave";
     return "Announcement";
   }
 
@@ -149,6 +157,93 @@
     return { signed: signed, missing: missing };
   }
 
+  function filmSends(kind) {
+    return (state.films || []).filter(function (row) {
+      return kindOf(row) === kind;
+    });
+  }
+
+  function ackForSend(row, staffId) {
+    var id = String(row && row.id || "");
+    var who = String(staffId || "");
+    var hit = null;
+    state.acks.forEach(function (a) {
+      if (String(a.announcement_id || "") !== id) return;
+      if (String(a.staff_id || "") !== who) return;
+      if (!hit || String(a.signed_at || "") > String(hit.signed_at || "")) hit = a;
+    });
+    return hit;
+  }
+
+  function filmPeople(kind) {
+    var map = {};
+    filmSends(kind).forEach(function (row) {
+      recipientsFor(row).forEach(function (p) {
+        var id = String(p.id || "");
+        if (!id) return;
+        if (!map[id]) map[id] = { id: id, name: personName(p) || "Staff", events: [] };
+        var ack = ackForSend(row, id);
+        map[id].events.push({
+          sentAt: row.created_at || "",
+          watchedAt: ack && ack.signed_at ? ack.signed_at : "",
+        });
+      });
+    });
+    return Object.keys(map)
+      .map(function (id) {
+        var person = map[id];
+        person.events.sort(function (a, b) {
+          return String(b.sentAt).localeCompare(String(a.sentAt));
+        });
+        person.sentCount = person.events.length;
+        person.watchedCount = person.events.filter(function (event) {
+          return !!event.watchedAt;
+        }).length;
+        return person;
+      })
+      .sort(function (a, b) {
+        var aOpen = a.watchedCount < a.sentCount;
+        var bOpen = b.watchedCount < b.sentCount;
+        if (aOpen !== bOpen) return aOpen ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+  }
+
+  function filmGroups() {
+    var q = String(state.q || "").trim().toLowerCase();
+    return FILM_KINDS.map(function (film) {
+      var people = filmPeople(film.kind);
+      var sendCount = 0;
+      var waitingCount = 0;
+      var latestAt = "";
+      people.forEach(function (person) {
+        sendCount += person.sentCount;
+        waitingCount += person.sentCount - person.watchedCount;
+        person.events.forEach(function (event) {
+          if (String(event.sentAt) > latestAt) latestAt = String(event.sentAt);
+        });
+      });
+      return {
+        key: "film:" + film.kind,
+        film: true,
+        kind: film.kind,
+        label: film.label,
+        people: people,
+        sendCount: sendCount,
+        waitingCount: waitingCount,
+        latestAt: latestAt,
+      };
+    }).filter(function (g) {
+      if (state.filter === "films") return true;
+      if (!g.sendCount) return false;
+      if (!q) return true;
+      if (g.label.toLowerCase().indexOf(q) !== -1) return true;
+      return g.people.some(function (person) {
+        return person.name.toLowerCase().indexOf(q) !== -1;
+      });
+    });
+  }
+
   function groups() {
     var want = state.filter;
     var q = String(state.q || "").trim().toLowerCase();
@@ -198,7 +293,61 @@
     );
   }
 
+  function filmPaneHtml(g) {
+    var q = String(state.q || "").trim().toLowerCase();
+    var people = (g.people || []).filter(function (person) {
+      if (!q) return true;
+      if (g.label.toLowerCase().indexOf(q) !== -1) return true;
+      return person.name.toLowerCase().indexOf(q) !== -1;
+    });
+    var body = people.length
+      ? people
+          .map(function (person) {
+            var lines = person.events
+              .map(function (event) {
+                var watched = event.watchedAt
+                  ? '<span class="admin-ann-film__ok">Watched ' + esc(whenLabel(event.watchedAt)) + "</span>"
+                  : '<span class="admin-ann-film__wait">Not watched yet</span>';
+                return (
+                  "<li><span>Sent " +
+                  esc(whenLabel(event.sentAt) || "-") +
+                  "</span>" +
+                  watched +
+                  "</li>"
+                );
+              })
+              .join("");
+            return (
+              '<article class="admin-ann-film__person"><h3>' +
+              esc(person.name) +
+              '</h3><p class="admin-ann-film__count">Sent ' +
+              esc(String(person.sentCount)) +
+              " · watched " +
+              esc(String(person.watchedCount)) +
+              '</p><ul class="admin-ann-film__events">' +
+              lines +
+              "</ul></article>"
+            );
+          })
+          .join("")
+      : '<p class="muted" style="margin:0">This film has not been sent yet.</p>';
+    return (
+      '<div class="portal-pnlog-pane-active">' +
+      '<header class="portal-pnlog-pane-head">' +
+      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" data-ann-back>Back</button>' +
+      '<div class="portal-pnlog-pane-head__text">' +
+      '<div class="portal-pnlog-pane-head__who">' +
+      esc(g.label) +
+      "</div>" +
+      '<div class="portal-pnlog-pane-head__sub muted">Each line is one send. Watched is when they finished the film.</div></div></header>' +
+      '<div class="portal-pnlog-thread-scroll"><div class="admin-ann-film">' +
+      body +
+      "</div></div></div>"
+    );
+  }
+
   function paneHtml(g) {
+    if (g && g.film) return filmPaneHtml(g);
     if (!g) {
       return (
         '<div class="portal-pnlog-pane-empty"><p class="muted" style="margin:0">Choose a group. Each group is one conversation.</p></div>'
@@ -293,7 +442,7 @@
   function render() {
     var root = document.getElementById("adminAnnInboxRoot");
     if (!root) return;
-    var list = groups();
+    var list = state.filter === "films" ? filmGroups() : filmGroups().concat(groups());
     if (state.groupKey && !list.some(function (g) { return g.key === state.groupKey; })) {
       state.groupKey = list[0] ? list[0].key : "";
     }
@@ -302,42 +451,48 @@
     list.forEach(function (g) {
       if (g.key === state.groupKey) current = g;
     });
-    if (current && !state.openId) state.openId = String(current.rows[0].id);
-    if (current && !current.rows.some(function (r) { return String(r.id) === String(state.openId); })) {
+    if (current && !current.film && !state.openId) state.openId = String(current.rows[0].id);
+    if (current && !current.film && !current.rows.some(function (r) { return String(r.id) === String(state.openId); })) {
       state.openId = String(current.rows[0].id);
     }
     var convs = list.length
       ? list
           .map(function (g) {
             var latest = g.latest || {};
-            var preview = String(latest.title || kindLabel(latest));
-            var miss = g.missingCount
+            var preview = g.film
+              ? (g.sendCount ? g.sendCount + " sends" : "Not sent yet")
+              : String(latest.title || kindLabel(latest));
+            var miss = g.film
+              ? (g.waitingCount ? g.waitingCount + " not watched" : (g.sendCount ? "All watched" : "No sends"))
+              : (g.missingCount
               ? g.missingCount + (g.latestIsReminder ? " not marked" : " not signed")
-              : "All signed";
+              : "All signed");
             return (
               '<button type="button" class="portal-pnlog-conv' +
               (g.key === state.groupKey ? " is-selected" : "") +
-              (g.missingCount ? " portal-pnlog-conv--unread" : "") +
+              ((g.film ? g.waitingCount : g.missingCount) ? " portal-pnlog-conv--unread" : "") +
               '" data-ann-group="' +
               esc(g.key) +
               '">' +
               '<span class="portal-pnlog-conv__top"><span class="portal-pnlog-conv__who">' +
               esc(g.label) +
               '</span><span class="portal-pnlog-conv__when muted">' +
-              esc(whenLabel(latest.created_at)) +
+              esc(whenLabel(g.film ? g.latestAt : latest.created_at)) +
               "</span></span>" +
               '<span class="portal-pnlog-conv__preview muted">' +
               esc(preview) +
               "</span>" +
               '<span class="portal-pnlog-conv__sub muted">' +
-              esc(String(g.rows.length)) +
+              esc(String(g.film ? g.people.length : g.rows.length)) +
               " · " +
               esc(miss) +
               "</span></button>"
             );
           })
           .join("")
-      : '<p class="muted" style="margin:14px">No announcements or reminders yet.</p>';
+      : '<p class="muted" style="margin:14px">' +
+        (state.filter === "films" ? "No films sent yet." : "No announcements or reminders yet.") +
+        "</p>";
     var narrow = window.innerWidth <= 780 && !!state.groupKey;
     root.innerHTML =
       '<div class="portal-pnlog-toolbar">' +
@@ -351,6 +506,9 @@
       '<option value="announcement"' +
       (state.filter === "announcement" ? " selected" : "") +
       ">Announcements</option>" +
+      '<option value="films"' +
+      (state.filter === "films" ? " selected" : "") +
+      ">Films</option>" +
       '<option value="reminder"' +
       (state.filter === "reminder" ? " selected" : "") +
       ">Reminders</option>" +
@@ -433,6 +591,26 @@
     }
   }
 
+  function loadFilmAcks(client, ids) {
+    var chunks = [];
+    var i;
+    for (i = 0; i < ids.length; i += 80) chunks.push(ids.slice(i, i + 80));
+    if (!chunks.length) return Promise.resolve([]);
+    return Promise.all(chunks.map(function (chunk) {
+      return client
+        .from("portal_staff_announcement_acks")
+        .select("announcement_id,staff_id,signed_at,staff_full_name,staff_username")
+        .in("announcement_id", chunk);
+    })).then(function (parts) {
+      var out = [];
+      parts.forEach(function (res) {
+        if (res.error) throw res.error;
+        out = out.concat(res.data || []);
+      });
+      return out;
+    });
+  }
+
   function load() {
     var root = document.getElementById("adminAnnInboxRoot");
     var client = cfg.getClient();
@@ -441,13 +619,20 @@
       root.innerHTML = '<p class="page-intro">Sign in as admin to see announcements.</p>';
       return Promise.resolve();
     }
+    var annSelect = "id,title,body,message_type,created_at,ends_at,reminder_category,audience_scope,delivery_scope,target_staff_role,target_user_id";
     return Promise.all([
       client
         .from("portal_staff_announcements")
-        .select("id,title,body,message_type,created_at,ends_at,reminder_category,audience_scope,delivery_scope,target_staff_role,target_user_id")
+        .select(annSelect)
         .in("message_type", ["announcement", "reminder", "schedule"])
         .order("created_at", { ascending: false })
         .limit(80),
+      client
+        .from("portal_staff_announcements")
+        .select(annSelect)
+        .in("message_type", ["feedback_watch", "feedback_on_time"])
+        .order("created_at", { ascending: false })
+        .limit(500),
       client
         .from("portal_staff_announcement_acks")
         .select("announcement_id,staff_id,signed_at,staff_full_name,staff_username")
@@ -459,14 +644,26 @@
         .limit(500),
     ]).then(function (results) {
       var ann = results[0];
-      var ack = results[1];
-      var staff = results[2];
+      var films = results[1];
+      var ack = results[2];
+      var staff = results[3];
       if (ann.error) throw ann.error;
+      if (films.error) throw films.error;
       if (ack.error) throw ack.error;
       state.rows = ann.data || [];
-      state.acks = ack.data || [];
+      state.films = films.data || [];
       state.staff = staff.error ? [] : staff.data || [];
-      render();
+      var ids = state.films.map(function (row) { return row.id; }).filter(Boolean);
+      return loadFilmAcks(client, ids).then(function (filmAcks) {
+        var merged = {};
+        (ack.data || []).concat(filmAcks || []).forEach(function (row) {
+          var key = String(row.announcement_id || "") + "|" + String(row.staff_id || "");
+          var prev = merged[key];
+          if (!prev || String(row.signed_at || "") > String(prev.signed_at || "")) merged[key] = row;
+        });
+        state.acks = Object.keys(merged).map(function (key) { return merged[key]; });
+        render();
+      });
     }).catch(function (err) {
       if (!document.getElementById("adminAnnInboxRoot")) return;
       root.innerHTML =
