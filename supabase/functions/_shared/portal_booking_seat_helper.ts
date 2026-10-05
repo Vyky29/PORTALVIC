@@ -922,6 +922,8 @@ export type CapacityChainPlacesOccupantSlot = {
   day?: string;
   venue?: string;
   timeLabel?: string;
+  validFrom?: string | null;
+  validTo?: string | null;
   capacity?: number;
   taken?: number;
   openSeats?: number;
@@ -971,6 +973,13 @@ export function buildWeeklyOfferFromOccupants(
     const day = normalizeWeekday(slot.day);
     const venue = normalizeVenue(slot.venue);
     if (!day || !venue) continue;
+    const todayIso = String(opts?.todayIso || "").slice(0, 10);
+    const slotFrom = String(slot.validFrom || "").slice(0, 10);
+    const slotTo = String(slot.validTo || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(todayIso)) {
+      if (slotFrom && todayIso < slotFrom) continue;
+      if (slotTo && todayIso > slotTo) continue;
+    }
     const lines = Array.isArray(slot.seatLines) ? slot.seatLines : [];
     rowCount += Math.max(1, lines.length);
     let openSeats = 0;
@@ -980,7 +989,6 @@ export function buildWeeklyOfferFromOccupants(
     const bookedKeys = new Set<string>();
     const bookedNames = new Map<string, string>();
     const ignoreHoldKeys = new Set<string>();
-    const todayIso = String(opts?.todayIso || "").slice(0, 10);
 
     for (const line of lines) {
       const kind = String(line?.kind || "").trim().toLowerCase();

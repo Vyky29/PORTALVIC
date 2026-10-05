@@ -25,6 +25,8 @@ export type CapacityChainStandingSlot = {
   day?: string | null;
   venue?: string | null;
   timeLabel?: string | null;
+  validFrom?: string | null;
+  validTo?: string | null;
   seatLines?: CapacityChainStandingSeatLine[] | null;
 };
 
@@ -136,6 +138,8 @@ export function standingSessionsForParticipantFromOccupants(
 
   for (const [slotId, slot] of Object.entries(root)) {
     if (!slot || isPastBoardOverlay(slotId)) continue;
+    const slotTo = clean(slot.validTo, 10);
+    if (slotTo && slotTo < "2026-09-28") continue;
     const day = clean(slot.day, 20);
     const venue = clean(slot.venue, 80);
     const blockTime = normalizeTimeSlot(slot.timeLabel);

@@ -28,6 +28,15 @@ def _load_occupants() -> dict:
     return json.loads(t[idx + len(marker) :].strip().rstrip(";"))
 
 
+def _phase_fields(slot: dict) -> dict:
+    out = {}
+    for key in ("validFrom", "validTo", "phase"):
+        val = slot.get(key)
+        if val:
+            out[key] = val
+    return out
+
+
 def _seat_line(line: dict, *, places: bool) -> dict:
     out = {
         "kind": line.get("kind"),
@@ -52,6 +61,7 @@ def main() -> None:
             "day": s.get("day"),
             "venue": s.get("venue"),
             "timeLabel": s.get("timeLabel"),
+            **_phase_fields(s),
             "seatLines": lines_standing,
         }
         if str(s.get("serviceId") or "").lower() not in PLACES:
@@ -61,6 +71,7 @@ def main() -> None:
             "day": s.get("day"),
             "venue": s.get("venue"),
             "timeLabel": s.get("timeLabel"),
+            **_phase_fields(s),
             "capacity": s.get("capacity"),
             "taken": s.get("taken"),
             "openSeats": s.get("openSeats"),

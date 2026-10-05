@@ -506,6 +506,8 @@ export type Feedback2030OccupantSlot = {
   day?: string | null;
   venue?: string | null;
   timeLabel?: string | null;
+  validFrom?: string | null;
+  validTo?: string | null;
   seatLines?: Feedback2030OccupantSeatLine[] | null;
 };
 
@@ -592,6 +594,10 @@ export function slotsFromCapacityChainOccupants(
   for (const [slotId, slot] of Object.entries(bySlotId)) {
     if (!slot) continue;
     if (!occupantsPhaseSlotApplies(slotId, iso, datedIsoSet)) continue;
+    const slotFrom = String(slot.validFrom || "").slice(0, 10);
+    const slotTo = String(slot.validTo || "").slice(0, 10);
+    if (slotFrom && iso < slotFrom) continue;
+    if (slotTo && iso > slotTo) continue;
     if (String(slot.day || "").trim().toLowerCase() !== wd.toLowerCase()) continue;
     const service = occupantsServiceLabel(slot.serviceId);
     if (/crash|intensiv/i.test(service)) continue;
