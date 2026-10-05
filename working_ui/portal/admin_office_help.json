@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v271",
+  "version": "2026-10-05-v272",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1794,7 +1794,8 @@
           "tips": [
             "The voice explains it calmly, in short sentences. It does not read the example text.",
             "They see the logo and what the film is, then press Play. It does not start by itself.",
-            "After they watch it once, it does not block them again."
+            "After they watch it once, it does not block them again.",
+            "Watched shows the IP of the computer that finished the film. A watch from before this change says no IP."
           ],
           "es": {
             "title": "Mandar el video de feedback",
@@ -1812,7 +1813,8 @@
             "tips": [
               "La voz explica la regla. No lee el ejemplo.",
               "Ven el logo y de que va el video, y pulsan Play. No arranca solo.",
-              "Cuando lo han visto, no les vuelve a bloquear."
+              "Cuando lo han visto, no les vuelve a bloquear.",
+              "Watched muestra la IP del ordenador que termino el video. Un visto de antes de este cambio pone no IP."
             ]
           }
         },
@@ -1845,7 +1847,8 @@
           "tips": [
             "Use this when someone needs the why-on-time reminder. Use Send feedback watch when the writing is wrong.",
             "They see the logo and what the film is, then press Play. It does not start by itself.",
-            "After they watch it once, it does not block them again."
+            "After they watch it once, it does not block them again.",
+            "Watched shows the IP of the computer that finished the film. A watch from before this change says no IP."
           ],
           "es": {
             "title": "Mandar el video del final de turno",
@@ -1863,7 +1866,8 @@
             "tips": [
               "Este es el de por que hay que darlo a tiempo. Send feedback watch es el de como se escribe.",
               "Ven el logo y de que va el video, y pulsan Play. No arranca solo.",
-              "Cuando lo han visto, no les vuelve a bloquear."
+              "Cuando lo han visto, no les vuelve a bloquear.",
+              "Watched muestra la IP del ordenador que termino el video. Un visto de antes de este cambio pone no IP."
             ]
           }
         },

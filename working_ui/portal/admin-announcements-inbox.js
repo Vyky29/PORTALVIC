@@ -186,6 +186,7 @@
         map[id].events.push({
           sentAt: row.created_at || "",
           watchedAt: ack && ack.signed_at ? ack.signed_at : "",
+          watchedIp: ack && ack.client_ip ? String(ack.client_ip).trim() : "",
         });
       });
     });
@@ -306,7 +307,10 @@
             var lines = person.events
               .map(function (event) {
                 var watched = event.watchedAt
-                  ? '<span class="admin-ann-film__ok">Watched ' + esc(whenLabel(event.watchedAt)) + "</span>"
+                  ? '<span class="admin-ann-film__ok">Watched ' +
+                    esc(whenLabel(event.watchedAt)) +
+                    (event.watchedIp ? " · " + esc(event.watchedIp) : " · no IP") +
+                    "</span>"
                   : '<span class="admin-ann-film__wait">Not watched yet</span>';
                 return (
                   "<li><span>Sent " +
@@ -599,7 +603,7 @@
     return Promise.all(chunks.map(function (chunk) {
       return client
         .from("portal_staff_announcement_acks")
-        .select("announcement_id,staff_id,signed_at,staff_full_name,staff_username")
+        .select("announcement_id,staff_id,signed_at,staff_full_name,staff_username,client_ip")
         .in("announcement_id", chunk);
     })).then(function (parts) {
       var out = [];
@@ -635,7 +639,7 @@
         .limit(500),
       client
         .from("portal_staff_announcement_acks")
-        .select("announcement_id,staff_id,signed_at,staff_full_name,staff_username")
+        .select("announcement_id,staff_id,signed_at,staff_full_name,staff_username,client_ip")
         .order("signed_at", { ascending: false })
         .limit(1000),
       client
