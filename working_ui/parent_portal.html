@@ -4188,6 +4188,38 @@
     .pp-week-note[open] .pp-week-note__teaser {
       display: none;
     }
+    .pp-note-thread { margin-top: 8px; min-width: 0; }
+    .pp-note-thread .pp-week-notes-folder__body { overflow-wrap: anywhere; }
+    .pp-note-write {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 12px;
+      min-width: 0;
+    }
+    .pp-note-write__label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink, #0f172a);
+    }
+    .pp-note-write textarea {
+      width: 100%;
+      min-width: 0;
+      min-height: 72px;
+      box-sizing: border-box;
+      border: 1px solid var(--line, #e2e8f0);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      resize: vertical;
+    }
+    .pp-note-write__status {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted, #64748b);
+      overflow-wrap: anywhere;
+    }
     .pp-former-dl-bar {
       display: flex;
       flex-wrap: wrap;
@@ -5756,8 +5788,9 @@
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/parent_portal_team.js?v=20261003-display-photo"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260928-makeup-day"></script>
-  <script src="/portal/parent_portal_participant.js?v=20261004-thread-end"></script>
-  <script src="/portal/parent_portal_app.js?v=20261001-parent-ghost"></script>
+  <script src="/portal/portal_parent_session_notes.js?v=20261005-session-notes"></script>
+  <script src="/portal/parent_portal_participant.js?v=20261005-session-notes"></script>
+  <script src="/portal/parent_portal_app.js?v=20261005-session-notes"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

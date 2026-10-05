@@ -93,6 +93,9 @@
     if (sectionsLoaded.indexOf("weekly_notes") >= 0 && Array.isArray(patch.weekly_notes)) {
       base.weekly_notes = patch.weekly_notes;
     }
+    if (sectionsLoaded.indexOf("weekly_notes") >= 0 && Array.isArray(patch.note_messages)) {
+      base.note_messages = patch.note_messages;
+    }
     if (patch.weekly_note_latest !== undefined) base.weekly_note_latest = patch.weekly_note_latest;
     if (patch.feedback_year != null) base.feedback_year = patch.feedback_year;
     if (patch.feedback_year_label != null) base.feedback_year_label = patch.feedback_year_label;
@@ -369,6 +372,30 @@
         return unreadCountForContact(cid);
       },
       unreadBadgeHtml: unreadBadgeHtml,
+      sendNoteMessage: function (payload) {
+        payload = payload || {};
+        return fetch(fn("parent-portal-note-message"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({
+            contact_id: contactId,
+            note_key: payload.note_key || "",
+            session_date: payload.session_date || "",
+            service_label: payload.service_label || "",
+            message: payload.message || "",
+          }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("note_message_failed");
+            return j;
+          });
+        });
+      },
       sendMessage: function (message) {
         return fetch(fn("parent-portal-message-send"), {
           method: "POST",

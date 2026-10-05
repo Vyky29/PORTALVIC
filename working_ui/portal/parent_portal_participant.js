@@ -834,8 +834,6 @@
       "Regulation: " + String((row && row.client_emotions) || "").trim(),
       "Independence: " + String((row && (row.independence || row.engagement_patterns)) || "").trim(),
       "",
-      String((row && (row.comment || row.parent_message)) || "").trim(),
-      "",
     ];
     return bits
       .filter(function (line, i, arr) {
@@ -2268,7 +2266,7 @@
     return a + " – " + b;
   }
 
-  var WEEKLY_NOTES_SEEN_KEY = "portal_weekly_notes_seen_v1";
+  var PARENT_NOTES_SEEN_KEY = "portal_parent_notes_seen_v2";
 
   function weeklyNotesContactId(data, opts) {
     return String(
@@ -2278,50 +2276,48 @@
     );
   }
 
-  function readWeeklyNotesSeenMap() {
+  function parentNotesList(data) {
+    var api = global.PortalParentSessionNotes;
+    if (!api || typeof api.buildParentNotes !== "function") return [];
+    return api.buildParentNotes(data);
+  }
+
+  function readParentNotesSeen(contactId) {
+    var id = String(contactId || "");
+    if (!id) return {};
     try {
-      var raw = global.localStorage && global.localStorage.getItem(WEEKLY_NOTES_SEEN_KEY);
+      var raw = global.localStorage && global.localStorage.getItem(PARENT_NOTES_SEEN_KEY);
       var parsed = raw ? JSON.parse(raw) : {};
-      return parsed && typeof parsed === "object" ? parsed : {};
+      var bag = parsed && parsed[id];
+      return bag && typeof bag === "object" ? bag : {};
     } catch (_e) {
       return {};
     }
   }
 
-  function weeklyNotesSeenWeekStart(contactId) {
-    var id = String(contactId || "");
-    if (!id) return "";
-    return String(readWeeklyNotesSeenMap()[id] || "");
-  }
-
   function markWeeklyNotesSeen(data, opts) {
     var id = weeklyNotesContactId(data, opts);
     if (!id) return;
-    var notes = Array.isArray(data && data.weekly_notes) ? data.weekly_notes : [];
-    var newest = "";
-    notes.forEach(function (n) {
-      var w = String((n && n.week_start) || "");
-      if (w && w > newest) newest = w;
+    var api = global.PortalParentSessionNotes;
+    if (!api || typeof api.unreadCount !== "function") return;
+    var seen = readParentNotesSeen(id);
+    parentNotesList(data).forEach(function (note) {
+      if (note && note.counts_for_badge && note.id) seen[note.id] = 1;
     });
-    if (!newest) return;
     try {
-      var map = readWeeklyNotesSeenMap();
-      map[id] = newest;
-      global.localStorage.setItem(WEEKLY_NOTES_SEEN_KEY, JSON.stringify(map));
+      var raw = global.localStorage && global.localStorage.getItem(PARENT_NOTES_SEEN_KEY);
+      var map = raw ? JSON.parse(raw) : {};
+      if (!map || typeof map !== "object") map = {};
+      map[id] = seen;
+      global.localStorage.setItem(PARENT_NOTES_SEEN_KEY, JSON.stringify(map));
     } catch (_e) {}
   }
 
   function unreadWeeklyNotesCount(data, opts) {
     if (!weeklyNotesEnabled(data)) return 0;
-    var notes = Array.isArray(data && data.weekly_notes) ? data.weekly_notes : [];
-    if (!notes.length) return 0;
-    var seen = weeklyNotesSeenWeekStart(weeklyNotesContactId(data, opts));
-    if (!seen) return notes.length;
-    var n = 0;
-    notes.forEach(function (row) {
-      if (String((row && row.week_start) || "") > seen) n += 1;
-    });
-    return n;
+    var api = global.PortalParentSessionNotes;
+    if (!api || typeof api.unreadCount !== "function") return 0;
+    return api.unreadCount(parentNotesList(data), readParentNotesSeen(weeklyNotesContactId(data, opts)));
   }
 
   function hubShortcutBtn(view, caption, iconSvg, opts) {
@@ -2359,7 +2355,7 @@
       var notesUnreadF = unreadWeeklyNotesCount(data, opts);
       var notesBadgeF =
         opts && typeof opts.unreadBadgeHtml === "function" && notesUnreadF > 0
-          ? opts.unreadBadgeHtml(notesUnreadF, "New weekly notes")
+          ? opts.unreadBadgeHtml(notesUnreadF, "New notes")
           : "";
       var icoF = function (paths) {
         return (
@@ -2412,7 +2408,7 @@
     var notesUnread = unreadWeeklyNotesCount(data, opts);
     var notesBadge =
       opts && typeof opts.unreadBadgeHtml === "function" && notesUnread > 0
-        ? opts.unreadBadgeHtml(notesUnread, "New weekly notes")
+        ? opts.unreadBadgeHtml(notesUnread, "New notes")
         : "";
     var hasServices = !!(
       data &&
@@ -2675,7 +2671,7 @@
     var notesUnread = unreadWeeklyNotesCount(data, opts);
     var notesBadge =
       opts && typeof opts.unreadBadgeHtml === "function" && notesUnread > 0
-        ? opts.unreadBadgeHtml(notesUnread, "New weekly notes")
+        ? opts.unreadBadgeHtml(notesUnread, "New notes")
         : "";
     var announceCount = Array.isArray(data && data.club_announcements)
       ? data.club_announcements.length
@@ -6463,11 +6459,9 @@
     return !(data && data.session_progress) || data.session_progress.enabled !== false;
   }
 
-  /** Weekly notes folder — Day Centre only (Sep 2026 office policy). */
+  /** Notes folder: written session feedback for every child, plus Day Centre weekly notes. */
   function weeklyNotesEnabled(data) {
-    if (!sessionProgressEnabled(data)) return false;
-    if (data && data.session_progress && data.session_progress.weekly_notes === false) return false;
-    return true;
+    return sessionProgressEnabled(data);
   }
 
   function renderFeedbackYearPicker(host, data, opts, targetView) {
@@ -7518,79 +7512,187 @@
     bindBack(host, data, opts);
   }
 
+  function noteThreadHtml(data, noteKey) {
+    var rows = Array.isArray(data && data.note_messages) ? data.note_messages : [];
+    var mine = rows.filter(function (row) {
+      return row && String(row.note_key || "") === String(noteKey || "");
+    });
+    if (!mine.length) return "";
+    return (
+      '<div class="pp-note-thread">' +
+      mine
+        .map(function (row) {
+          var bits =
+            '<p class="pp-week-notes-folder__body"><strong>You</strong><br />' +
+            esc(row.parent_body || "") +
+            "</p>";
+          if (row.admin_reply) {
+            bits +=
+              '<p class="pp-week-notes-folder__body"><strong>Office</strong><br />' +
+              esc(row.admin_reply) +
+              "</p>";
+          }
+          return bits;
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function noteWriteHtml(note) {
+    return (
+      '<form class="pp-note-write" data-pp-note-write="' +
+      esc(note.note_key || "") +
+      '" data-pp-note-date="' +
+      esc(note.session_date || "") +
+      '" data-pp-note-title="' +
+      esc(note.title || "") +
+      '">' +
+      '<label class="pp-note-write__label" for="ppNoteWrite-' +
+      esc(note.id || "") +
+      '">Write on this note</label>' +
+      '<textarea id="ppNoteWrite-' +
+      esc(note.id || "") +
+      '" name="message" maxlength="2000" placeholder="Write to the office"></textarea>' +
+      '<button type="submit" class="pp-btn pp-btn--primary pp-btn--sm">Send</button>' +
+      '<p class="pp-note-write__status" role="status" hidden></p>' +
+      "</form>"
+    );
+  }
+
+  function bindParentNoteWrites(host, data, opts) {
+    if (!host) return;
+    host.querySelectorAll("[data-pp-note-write]").forEach(function (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var box = form.querySelector("textarea");
+        var status = form.querySelector(".pp-note-write__status");
+        var btn = form.querySelector("button");
+        var text = String((box && box.value) || "").replace(/\s+/g, " ").trim();
+        if (text.length < 2) {
+          if (status) {
+            status.hidden = false;
+            status.textContent = "Write a little more before sending.";
+          }
+          return;
+        }
+        if (!opts || typeof opts.sendNoteMessage !== "function") {
+          if (status) {
+            status.hidden = false;
+            status.textContent = "Could not send. Try again in a moment.";
+          }
+          return;
+        }
+        if (btn) btn.disabled = true;
+        opts
+          .sendNoteMessage({
+            note_key: form.getAttribute("data-pp-note-write") || "",
+            session_date: form.getAttribute("data-pp-note-date") || "",
+            service_label: form.getAttribute("data-pp-note-title") || "",
+            message: text,
+          })
+          .then(function (saved) {
+            if (!Array.isArray(data.note_messages)) data.note_messages = [];
+            data.note_messages.push(
+              (saved && saved.message) || {
+                note_key: form.getAttribute("data-pp-note-write") || "",
+                parent_body: text,
+                admin_reply: "",
+              },
+            );
+            if (box) box.value = "";
+            if (status) {
+              status.hidden = false;
+              status.textContent = "Sent to the office.";
+            }
+            var thread = form.parentElement && form.parentElement.querySelector(".pp-note-thread");
+            var line =
+              '<p class="pp-week-notes-folder__body"><strong>You</strong><br />' + esc(text) + "</p>";
+            if (thread) thread.insertAdjacentHTML("beforeend", line);
+            else form.insertAdjacentHTML("beforebegin", '<div class="pp-note-thread">' + line + "</div>");
+          })
+          .catch(function () {
+            if (status) {
+              status.hidden = false;
+              status.textContent = "Could not send. Try again in a moment.";
+            }
+          })
+          .finally(function () {
+            if (btn) btn.disabled = false;
+          });
+      });
+    });
+  }
+
   function renderWeeklyNotes(host, data, opts, viewOpts) {
     viewOpts = viewOpts || {};
     if (!weeklyNotesEnabled(data)) {
       host.innerHTML = subviewShell(
         data,
         "weekly_notes",
-        '<h3 class="pp-pax-subview-title">Weekly notes</h3>' +
-          '<p class="pp-muted">Weekly notes are for Day Centre places only.</p>',
+        '<h3 class="pp-pax-subview-title">Notes</h3>' +
+          '<p class="pp-muted">Notes are not shown for this participant.</p>',
       );
       bindBack(host, data, opts);
       return;
     }
     markWeeklyNotesSeen(data, opts);
     var raw = Array.isArray(data.weekly_notes) ? data.weekly_notes : [];
-    // Newest first; one card per week_start (never dump duplicate weeks).
     var seenWeek = Object.create(null);
-    var notes = [];
+    var weeklyRaw = [];
     raw.forEach(function (n) {
       var w = String((n && n.week_start) || "");
       if (!w || seenWeek[w]) return;
       seenWeek[w] = true;
-      notes.push(n);
+      weeklyRaw.push(n);
     });
-    notes.sort(function (a, b) {
-      return String(b.week_start || "").localeCompare(String(a.week_start || ""));
-    });
-    data._ppDownloadWeeklyNotes = notes;
+    data._ppDownloadWeeklyNotes = weeklyRaw;
+    var notes = parentNotesList(data);
     var former = isFormerClient(data);
     var body;
     if (!notes.length) {
       body =
-        '<p class="pp-muted">Weekly notes will collect here once session feedbacks for a Saturday–Friday week are ready. Each note is a short, warm summary of the week.</p>';
+        '<p class="pp-muted">Notes collect here once the written feedback for a session is ready. If a day has more than one activity, the note waits until each part is in. Nothing is sent to you when a note is added.</p>';
     } else {
       body =
-        (former
+        (former && weeklyRaw.length
           ? '<div class="pp-former-dl-bar"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-all-week-notes>Download all notes (PDF)</button></div>'
           : "") +
-        '<ul class="pp-week-notes-folder" aria-label="Weekly notes by week">' +
+        '<ul class="pp-week-notes-folder" aria-label="Notes">' +
         notes
           .map(function (n, idx) {
-            var range = weekRangeLabel(n.week_start, n.week_end);
-            var full = String(n.body || "").trim();
-            var paras = full
-              .split(/\n\s*\n/)
-              .map(function (p) {
-                return p.replace(/\s+/g, " ").trim();
-              })
-              .filter(Boolean);
-            var teaser = (paras[0] || "").replace(/\s+/g, " ");
-            if (teaser.length > 100) {
-              teaser = teaser.slice(0, 98).replace(/\s+\S*$/, "") + "…";
+            var paras = Array.isArray(n.paragraphs) ? n.paragraphs : [];
+            var teaser = String(paras[0] || "").replace(/\s+/g, " ");
+            if (teaser.length > 100) teaser = teaser.slice(0, 98).replace(/\s+\S*$/, "") + "...";
+            var weeklyIdx = -1;
+            if (n.kind === "weekly") {
+              weeklyRaw.forEach(function (row, i) {
+                if (weeklyIdx < 0 && String(row.week_start || "") === String(n.note_key || "").replace(/^week:/, "")) {
+                  weeklyIdx = i;
+                }
+              });
             }
             return (
               '<li class="pp-week-notes-folder__item">' +
               '<details class="pp-week-note"' +
               (idx === 0 ? " open" : "") +
               ">" +
-              "<summary class=\"pp-week-note__sum\">" +
+              '<summary class="pp-week-note__sum">' +
               '<span class="pp-week-note__range">' +
-              esc(range || "Week") +
+              esc(n.title || "Note") +
               "</span>" +
-              (teaser
-                ? '<span class="pp-week-note__teaser">' + esc(teaser) + "</span>"
-                : "") +
+              (teaser ? '<span class="pp-week-note__teaser">' + esc(teaser) + "</span>" : "") +
               "</summary>" +
-              (paras.length ? paras : [full])
+              paras
                 .map(function (para) {
                   return '<p class="pp-week-notes-folder__body">' + esc(para) + "</p>";
                 })
                 .join("") +
-              (former
+              noteThreadHtml(data, n.note_key) +
+              noteWriteHtml(n) +
+              (former && weeklyIdx >= 0
                 ? '<div class="pp-former-dl-row"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-week-note="' +
-                  idx +
+                  weeklyIdx +
                   '">Download PDF</button></div>'
                 : "") +
               "</details></li>"
@@ -7602,21 +7704,18 @@
     host.innerHTML = subviewShell(
       data,
       "weekly_notes",
-      '<h3 class="pp-pax-subview-title">Weekly notes</h3>' +
+      '<h3 class="pp-pax-subview-title">Notes</h3>' +
         (viewOpts.feedbackYear
           ? '<p class="pp-feedback-year-badge" aria-label="Selected year">' +
             esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
             "</p>"
           : "") +
-        '<p class="pp-muted pp-pax-subview-note">' +
-        (former
-          ? "One short note per week. Open a week to read it, or download branded PDFs to keep on your device."
-          : "One short note per week. Open a week to read it — older notes stay collapsed so the list stays easy to scroll.") +
-        "</p>" +
+        '<p class="pp-muted pp-pax-subview-note">Written feedback for each session. Engagement, regulation and independence stay in Sessions Overview. You can write on a note and the office can reply here.</p>' +
         body,
     );
     bindBack(host, data, opts);
     bindFormerHistoryDownloads(host, data);
+    bindParentNoteWrites(host, data, opts);
   }
 
   function renderAnnouncements(host, data, opts) {

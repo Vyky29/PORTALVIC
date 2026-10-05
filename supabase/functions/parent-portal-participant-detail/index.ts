@@ -2307,6 +2307,21 @@ Deno.serve(async (req) => {
     }
   }
 
+  let noteMessages: Record<string, unknown>[] = [];
+  if (wantWeeklyNotes && !suppressSessionProgress) {
+    const { data: threadRows, error: threadErr } = await supabase
+      .from("portal_parent_note_messages")
+      .select("id, note_key, session_date, service_label, parent_body, admin_reply, created_at")
+      .eq("contact_id", contactId)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    if (threadErr) {
+      console.error("[parent-portal-participant-detail] note_messages", threadErr.code || threadErr.message);
+    } else {
+      noteMessages = threadRows || [];
+    }
+  }
+
   /* True wins if either table was restored (office often updates contacts first). */
   const inClassFlag =
     participant.in_class === true || contactRow?.in_class === true
@@ -2644,6 +2659,7 @@ Deno.serve(async (req) => {
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
       weekly_notes: weeklyNotes,
       weekly_note_latest: weeklyNoteLatest,
+      note_messages: noteMessages,
       // Wireframe slot — club noticeboard (not wired yet).
       club_announcements: [],
       session_progress: {

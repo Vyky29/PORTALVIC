@@ -40412,6 +40412,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function renderAlerts(){
       var pop = $('alertsPop');
       if(!pop) return;
+      document.body.classList.toggle('alerts-pop-is-open', pop.classList.contains('open'));
       var activityList = typeof window.portalAdminBellPrepareForRender === 'function'
         ? window.portalAdminBellPrepareForRender()
         : (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []);
@@ -40468,15 +40469,43 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           (t ? '<span class="chip chip--info" style="align-self:center;margin-right:12px">'+esc(t)+'</span>' : '')+
         '</div>';
       }).join('');
-      var emptyHtml = !activityHtml && !venueHtml && !noteHtml
-        ? '<p class="muted" style="margin:12px 16px">Nothing open. The bell lists a message sent to Pilar when there are venue issues, feedback notes, incidents, absents still to decide, refunds, unpaid expenses, wellbeing, disruptions, and makeups that have not happened yet.</p>'
+      var photoList = window.__PORTAL_PHOTO_DOWNLOAD_ALERTS__ || [];
+      var photoHtml = (photoList || []).map(function(a){
+        return '<div class="portal-admin-activity-row">'+
+          portalAdminAlertFaceHtml({ kind: 'photo_download', clientName: a.clientName })+
+          '<div style="flex:1;min-width:0;padding:12px 16px">'+
+          '<div style="min-width:0"><strong>'+esc(portalAdminShowDateText(a.title))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub))+'</div></div>'+
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'+
+          '<button type="button" class="btn btn--ghost btn--sm" data-photo-bell-act="close" data-alert-record-id="'+esc(a.id || '')+'">Close</button>'+
+          '</div></div></div>';
+      }).join('');
+      var parentNoteList = window.__PORTAL_PARENT_NOTE_ALERTS__ || [];
+      var parentNoteHtml = (parentNoteList || []).map(function(a){
+        var rid = esc(a.id || '');
+        return '<div class="portal-admin-activity-row">'+
+          portalAdminAlertFaceHtml({ kind: 'parent_note', clientName: a.clientName })+
+          '<div style="flex:1;min-width:0;padding:12px 16px">'+
+          '<div style="min-width:0"><strong>'+esc(portalAdminShowDateText(a.title))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub))+'</div></div>'+
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'+
+          '<button type="button" class="btn btn--ghost btn--sm" data-parent-bell-act="reply" data-alert-record-id="'+rid+'">Reply</button>'+
+          '<button type="button" class="btn btn--ghost btn--sm" data-parent-bell-act="close" data-alert-record-id="'+rid+'">Close</button>'+
+          '</div>'+
+          '<div data-parent-note-reply="'+rid+'" hidden style="margin-top:8px;min-width:0">'+
+          '<textarea data-parent-note-text="'+rid+'" maxlength="2000" placeholder="Reply to the parent" style="width:100%;min-height:72px;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit"></textarea>'+
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center">'+
+          '<button type="button" class="btn btn--primary btn--sm" data-parent-bell-act="send" data-alert-record-id="'+rid+'">Send reply</button>'+
+          '<span class="muted" data-parent-bell-status="'+rid+'" style="overflow-wrap:anywhere"></span>'+
+          '</div></div></div></div>';
+      }).join('');
+      var emptyHtml = !activityHtml && !venueHtml && !noteHtml && !photoHtml && !parentNoteHtml
+        ? '<p class="muted" style="margin:12px 16px">Nothing open. The bell lists a message sent to Pilar when there are venue issues, feedback notes, incidents, absents still to decide, refunds, unpaid expenses, wellbeing, disruptions, makeups that have not happened yet, a downloaded photo, and a message a parent wrote on a note.</p>'
         : '';
       var clearWellbeingBtn = wellbeingN > 0
         ? '<button type="button" class="btn btn--ghost btn--sm" id="portalAdminClearWellbeingAlerts" style="margin-left:auto;font-size:12px">Clear wellbeing ('+wellbeingN+')</button>'
         : '';
-      pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0;display:flex;align-items:center;gap:8px;padding-right:12px"><h3 style="margin:0;font-size:14px">Alerts</h3>'+clearWellbeingBtn+'</div>'+venueHtml+noteHtml+activityHtml+emptyHtml;
+      pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0;display:flex;align-items:center;gap:8px;padding-right:12px"><h3 style="margin:0;font-size:14px">Alerts</h3>'+clearWellbeingBtn+'</div>'+photoHtml+parentNoteHtml+venueHtml+noteHtml+activityHtml+emptyHtml;
       var bd = $('alertBadge');
-      var n = (activityList || []).length + (venueList || []).length + (noteList || []).length;
+      var n = (activityList || []).length + (venueList || []).length + (noteList || []).length + (photoList || []).length + (parentNoteList || []).length;
       if(bd){
         bd.textContent = String(n);
         bd.classList.toggle('is-empty', n < 1);
@@ -40601,6 +40630,188 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       });
     }
+    var PORTAL_FAMILY_BELL_FROM = '2026-10-06T00:00:00+01:00';
+    function portalAdminBellFamilySeenMap(){
+      try{
+        var raw = localStorage.getItem('portalAdminBellFamilySeenV1');
+        var parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      }catch(_){ return {}; }
+    }
+    function portalAdminBellFamilyMarkSeen(kind, id){
+      kind = String(kind || '').trim();
+      id = String(id || '').trim();
+      if(!kind || !id) return;
+      var map = portalAdminBellFamilySeenMap();
+      map[kind + ':' + id] = 1;
+      var keys = Object.keys(map);
+      if(keys.length > 400){
+        keys.slice(0, keys.length - 400).forEach(function(k){ delete map[k]; });
+      }
+      try{ localStorage.setItem('portalAdminBellFamilySeenV1', JSON.stringify(map)); }catch(_){}
+    }
+    function portalAdminBellFamilySeen(kind, id){
+      return !!portalAdminBellFamilySeenMap()[String(kind || '') + ':' + String(id || '')];
+    }
+    function portalAdminDropFamilyBellItem(kind, id){
+      id = String(id || '').trim();
+      portalAdminBellFamilyMarkSeen(kind, id);
+      if(kind === 'photo_download'){
+        var photos = window.__PORTAL_PHOTO_DOWNLOAD_ALERTS__ || [];
+        window.__PORTAL_PHOTO_DOWNLOAD_ALERTS__ = photos.filter(function(a){ return a && String(a.id) !== id; });
+      }else{
+        var parentNotes = window.__PORTAL_PARENT_NOTE_ALERTS__ || [];
+        window.__PORTAL_PARENT_NOTE_ALERTS__ = parentNotes.filter(function(a){ return a && String(a.id) !== id; });
+      }
+      if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+    }
+    function portalAdminAckFamilyBell(kind, id){
+      kind = String(kind || '').trim();
+      id = String(id || '').trim();
+      if(!kind || !id) return;
+      portalAdminDropFamilyBellItem(kind, id);
+      var client = portalAdminBellClient();
+      if(!client || !client.auth || !client.from) return;
+      client.auth.getSession().then(function(sess){
+        var uid = sess && sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
+        if(!uid) return;
+        client.from('portal_admin_bell_item_reads').insert({
+          item_kind: kind,
+          item_id: id,
+          user_id: uid
+        }).then(function(res){
+          var code = res && res.error && String(res.error.code || '');
+          if(res && res.error && code !== '23505') console.warn('[admin] family bell ack', code || res.error);
+        });
+      });
+    }
+    function portalAdminReplyParentNote(id, text, statusEl, done){
+      id = String(id || '').trim();
+      text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 2000);
+      if(!id || text.length < 2){
+        if(statusEl) statusEl.textContent = 'Write a reply before sending.';
+        if(typeof done === 'function') done();
+        return;
+      }
+      var client = portalAdminBellClient();
+      if(!client || !client.auth || !client.from){
+        if(statusEl) statusEl.textContent = 'Could not send. Try again.';
+        if(typeof done === 'function') done();
+        return;
+      }
+      client.auth.getSession().then(function(sess){
+        var uid = sess && sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
+        if(!uid){
+          if(statusEl) statusEl.textContent = 'Could not send. Try again.';
+          if(typeof done === 'function') done();
+          return;
+        }
+        client.from('portal_parent_note_messages').update({
+          admin_reply: text,
+          admin_replied_at: new Date().toISOString(),
+          admin_replied_by: uid
+        }).eq('id', id).then(function(res){
+          if(res && res.error){
+            console.warn('[admin] parent note reply', res.error.code || res.error);
+            if(statusEl) statusEl.textContent = 'Could not send. Close still clears it for you.';
+            if(typeof done === 'function') done();
+            return;
+          }
+          portalAdminAckFamilyBell('parent_note', id);
+          if(typeof done === 'function') done();
+        });
+      }).catch(function(){
+        if(statusEl) statusEl.textContent = 'Could not send. Try again.';
+        if(typeof done === 'function') done();
+      });
+    }
+    function portalAdminFetchFamilyBells(client){
+      if(!client || !client.from) return;
+      var since = PORTAL_FAMILY_BELL_FROM;
+      var photosP = client.from('portal_participant_achievement_photos')
+        .select('id, client_name, session_date, parent_downloaded_at')
+        .gte('parent_downloaded_at', since)
+        .order('parent_downloaded_at', { ascending: false })
+        .limit(30);
+      var notesP = client.from('portal_parent_note_messages')
+        .select('id, child_name, session_date, service_label, parent_body, created_at')
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(30);
+      var sessP = client.auth && client.auth.getSession ? client.auth.getSession() : Promise.resolve(null);
+      Promise.all([photosP, notesP, sessP]).then(function(pair){
+        var photosRes = pair[0];
+        var notesRes = pair[1];
+        var sess = pair[2];
+        var uid = sess && sess.data && sess.data.session && sess.data.session.user && sess.data.session.user.id;
+        function publish(readMap){
+          readMap = readMap || {};
+          var writing = document.activeElement && document.activeElement.closest && document.activeElement.closest('[data-parent-note-reply]');
+          var photos = [];
+          if(photosRes && !photosRes.error){
+            (photosRes.data || []).forEach(function(row){
+              if(!row || !row.id) return;
+              var id = String(row.id);
+              if(readMap['photo_download:' + id] || portalAdminBellFamilySeen('photo_download', id)) return;
+              var who = String(row.client_name || 'Participant').trim() || 'Participant';
+              var dateIso = String(row.session_date || '').slice(0, 10);
+              photos.push({
+                id: id,
+                title: 'Photo downloaded · ' + who,
+                sub: dateIso || 'Achievement photo',
+                clientName: who,
+                sessionDate: dateIso
+              });
+            });
+          }else if(photosRes && photosRes.error){
+            console.warn('[admin] photo download alerts', photosRes.error.code || photosRes.error);
+          }
+          var familyNotes = [];
+          if(notesRes && !notesRes.error){
+            (notesRes.data || []).forEach(function(row){
+              if(!row || !row.id) return;
+              var id = String(row.id);
+              if(readMap['parent_note:' + id] || portalAdminBellFamilySeen('parent_note', id)) return;
+              var who = String(row.child_name || 'Participant').trim() || 'Participant';
+              var dateIso = String(row.session_date || '').slice(0, 10);
+              var label = String(row.service_label || '').trim();
+              var snippet = String(row.parent_body || '').replace(/\s+/g, ' ').trim();
+              if(snippet.length > 90) snippet = snippet.slice(0, 88) + '...';
+              familyNotes.push({
+                id: id,
+                title: 'Note from parent · ' + who,
+                sub: [label, dateIso, snippet].filter(Boolean).join(' · '),
+                clientName: who,
+                sessionDate: dateIso
+              });
+            });
+          }else if(notesRes && notesRes.error){
+            console.warn('[admin] parent note alerts', notesRes.error.code || notesRes.error);
+          }
+          window.__PORTAL_PHOTO_DOWNLOAD_ALERTS__ = photos;
+          if(!writing) window.__PORTAL_PARENT_NOTE_ALERTS__ = familyNotes;
+          if(writing) return;
+          if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+        }
+        if(!uid){
+          publish({});
+          return;
+        }
+        client.from('portal_admin_bell_item_reads').select('item_kind, item_id').eq('user_id', uid).then(function(reads){
+          var mine = {};
+          if(reads && !reads.error){
+            (reads.data || []).forEach(function(r){
+              if(r && r.item_kind && r.item_id) mine[String(r.item_kind) + ':' + String(r.item_id)] = true;
+            });
+          }else if(reads && reads.error){
+            console.warn('[admin] family bell reads', reads.error.code || reads.error);
+          }
+          publish(mine);
+        });
+      }).catch(function(err){
+        console.warn('[admin] family bells', err);
+      });
+    }
     function portalAdminFetchFeedbackNoteAlerts(client){
       if(!client || !client.from) return;
       var since = new Date();
@@ -40716,6 +40927,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           portalAdminFetchVenueReviewAlerts(client);
           portalAdminFetchFeedbackNoteAlerts(client);
+          portalAdminFetchFamilyBells(client);
           void portalAdminBootstrapActivityAlerts();
           portalAdminEnsureActivityRealtime();
           void portalLateAdminRefreshNavBadge({ allowSound: false });
@@ -40728,6 +40940,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               }
               portalAdminFetchVenueReviewAlerts(client);
               portalAdminFetchFeedbackNoteAlerts(client);
+              portalAdminFetchFamilyBells(client);
             }, 90000);
           }
         });
@@ -40737,8 +40950,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function portalAdminSetAlertsPopOpen(open){
       var p = $('alertsPop');
-      if(p) p.classList.toggle('open', !!open);
-      document.body.classList.toggle('alerts-pop-is-open', !!open);
+      var on = !!(open && p);
+      if(p) p.classList.toggle('open', on);
+      document.body.classList.toggle('alerts-pop-is-open', !!(p && p.classList.contains('open')));
     }
     function toggleAlerts(){
       var p = $('alertsPop');
@@ -41569,6 +41783,44 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(alertsPopEl && !alertsPopEl.dataset.activityJumpBound){
         alertsPopEl.dataset.activityJumpBound = '1';
         alertsPopEl.addEventListener('click', function(ev){
+          var photoAct = ev.target && ev.target.closest ? ev.target.closest('[data-photo-bell-act]') : null;
+          if(photoAct && alertsPopEl.contains(photoAct)){
+            ev.preventDefault();
+            ev.stopPropagation();
+            portalAdminAckFamilyBell('photo_download', String(photoAct.getAttribute('data-alert-record-id') || '').trim());
+            return;
+          }
+          var parentAct = ev.target && ev.target.closest ? ev.target.closest('[data-parent-bell-act]') : null;
+          if(parentAct && alertsPopEl.contains(parentAct)){
+            ev.preventDefault();
+            ev.stopPropagation();
+            var parentBellAct = String(parentAct.getAttribute('data-parent-bell-act') || '').trim();
+            var parentId = String(parentAct.getAttribute('data-alert-record-id') || '').trim();
+            if(parentBellAct === 'close'){
+              portalAdminAckFamilyBell('parent_note', parentId);
+              return;
+            }
+            if(parentBellAct === 'reply'){
+              var replyBox = alertsPopEl.querySelector('[data-parent-note-reply="'+parentId+'"]');
+              if(replyBox){
+                replyBox.hidden = false;
+                var replyTa = replyBox.querySelector('textarea');
+                if(replyTa) replyTa.focus();
+              }
+              return;
+            }
+            if(parentBellAct === 'send'){
+              if(parentAct.dataset.sending === '1') return;
+              parentAct.dataset.sending = '1';
+              var sendBox = alertsPopEl.querySelector('[data-parent-note-reply="'+parentId+'"]');
+              var sendTa = sendBox && sendBox.querySelector('textarea');
+              var sendStatus = sendBox && sendBox.querySelector('[data-parent-bell-status]');
+              portalAdminReplyParentNote(parentId, sendTa ? sendTa.value : '', sendStatus, function(){
+                if(parentAct.isConnected) parentAct.dataset.sending = '';
+              });
+              return;
+            }
+          }
           var noteAct = ev.target && ev.target.closest ? ev.target.closest('[data-note-bell-act]') : null;
           if(noteAct && alertsPopEl.contains(noteAct)){
             ev.preventDefault();
