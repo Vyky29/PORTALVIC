@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05-v257",
+  "version": "2026-10-05-v258",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1826,7 +1826,7 @@
             "Choose one person, or a group.",
             "Send. Their phone gets an alert.",
             "When they open the staff app, the video fills the screen. Close stays off until the video ends.",
-            "The rule: session feedback is a safeguarding consent. It is mandatory and part of the shift. If it stays open, the family sees Pending. They do not see that it was not sent. Leaving it gives a bad image. Admin should not have to remind them."
+            "The rule: session feedback is the record of the day, and a safeguarding consent. Same day, before 9pm. If it is late, the family sees Pending, the shift stays held on the timesheet until admin presses Release, and admin spends time on sessions that were the worker's."
           ],
           "tips": [
             "Use this when someone needs the why-on-time reminder. Use Send feedback watch when the writing is wrong.",
@@ -1842,7 +1842,7 @@
               "Elige una persona, o un grupo.",
               "Envia. Al movil le llega un aviso.",
               "Al abrir la app, el video ocupa la pantalla. Close no se puede pulsar hasta que acaba.",
-              "La regla: el feedback es un safeguarding consent. Es obligatorio y parte del turno. Si se deja, la familia ve Pending. No ve que no se ha mandado. Da mala imagen. Admin no deberia tener que recordarlo."
+              "La regla: el feedback es el registro del dia, y un safeguarding consent. El mismo dia, antes de las 9pm. Si llega tarde, la familia ve Pending, el turno queda retenido en el timesheet hasta que admin pulse Release, y admin pierde tiempo en sesiones que eran del trabajador."
             ],
             "tips": [
               "Este es el de por que hay que darlo a tiempo. Send feedback watch es el de como se escribe.",

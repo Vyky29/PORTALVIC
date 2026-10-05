@@ -164,6 +164,7 @@
       background: #fff;
     }
     .card.is-now { box-shadow: inset 0 0 0 2px rgba(6, 118, 71, 0.4); }
+    .card--bad.is-now { box-shadow: inset 0 0 0 2px rgba(180, 35, 24, 0.45); }
     .card--bad {
       border-color: rgba(180, 35, 24, 0.4);
       background: var(--bad-bg);
@@ -336,24 +337,30 @@
     </div>
     <div class="progress" aria-hidden="true"><div class="progress__fill" id="progressFill"></div></div>
     <div class="phone" id="phone">
-      <p class="caption" id="caption">Session feedback is a safeguarding consent.</p>
+      <p class="caption" id="caption">Session feedback is the record of the day.</p>
       <div class="sheet" id="sheet"></div>
       <button type="button" class="tap" id="tapStart" hidden>Tap to listen</button>
     </div>
   </div>
   <script>
     (function () {
-      var DURATION = 21;
+      var DURATION = 43;
       var BEATS = [
-        { t: 0, tone: "good", caption: "Session feedback is a safeguarding consent.", view: "consent" },
-        { t: 2.88, tone: "good", caption: "It is mandatory, and it is part of the shift.", view: "consent", now: "mandatory" },
-        { t: 5.75, tone: "good", caption: "Finish it before you leave.", view: "shift" },
-        { t: 6.94, tone: "bad", caption: "Do not leave it until the end of the day.", view: "later" },
-        { t: 8.64, tone: "parent", caption: "The family sees Pending.", view: "parent" },
-        { t: 11.57, tone: "parent", caption: "They do not see that you have not sent it.", view: "parent", now: "hidden" },
-        { t: 14.06, tone: "bad", caption: "Leaving it gives a bad image.", view: "image" },
-        { t: 17.09, tone: "good", caption: "Admin should not have to remind you.", view: "duty" },
-        { t: 18.82, tone: "good", caption: "Send it before you leave.", view: "sent" }
+        { t: 0, tone: "good", caption: "Session feedback is the record of the day.", view: "consent" },
+        { t: 2.48, tone: "good", caption: "It is a safeguarding consent, and part of the shift.", view: "consent", now: "consent" },
+        { t: 6.32, tone: "good", caption: "It is mandatory.", view: "consent", now: "mandatory" },
+        { t: 7.72, tone: "good", caption: "Finish it before you leave, same day, before 9pm.", view: "shift" },
+        { t: 12.34, tone: "parent", caption: "The family sees Pending.", view: "parent" },
+        { t: 14.28, tone: "parent", caption: "They do not see that you have not sent it.", view: "parent", now: "hidden" },
+        { t: 16.78, tone: "bad", caption: "Leaving that Pending gives a bad image.", view: "image" },
+        { t: 18.89, tone: "bad", caption: "A late feedback does not count as the shift.", view: "timesheet" },
+        { t: 22.35, tone: "bad", caption: "The day stays held until admin releases it.", view: "timesheet", now: "held" },
+        { t: 25.94, tone: "bad", caption: "Admin has to open your day and release it.", view: "admin" },
+        { t: 28.91, tone: "bad", caption: "Those sessions were yours.", view: "admin", now: "yours" },
+        { t: 30.39, tone: "good", caption: "That time belongs to your shift, not to admin.", view: "admin", now: "time" },
+        { t: 33.24, tone: "good", caption: "Admin should not have to remind you.", view: "duty" },
+        { t: 35.60, tone: "good", caption: "Send the feedback before you leave.", view: "sent" },
+        { t: 37.57, tone: "good", caption: "The family sees the session. Your shift counts.", view: "sent", now: "done" }
       ];
 
       var captionEl = document.getElementById("caption");
@@ -364,7 +371,7 @@
       var closeBtn = document.getElementById("closeBtn");
       var phoneEl = document.getElementById("phone");
       var tapEl = document.getElementById("tapStart");
-      var audio = new Audio("/portal/help-audio/feedback-finish-before-you-leave.mp3?v=20261005c");
+      var audio = new Audio("/portal/help-audio/feedback-finish-before-you-leave.mp3?v=20261005d");
       audio.preload = "auto";
 
       var held = 0;
@@ -380,14 +387,14 @@
 
       function consentHtml(now) {
         return (
-          '<p class="kicker">Safeguarding</p><h1>Session feedback</h1>' +
-          '<div class="card' + (now === "mandatory" ? "" : " is-now") + '">' +
+          '<p class="kicker">The record of the day</p><h1>Session feedback</h1>' +
+          '<div class="card' + (now === "consent" ? " is-now" : "") + '">' +
             '<p class="who">Safeguarding consent</p>' +
-            '<p class="meta">The feedback is that consent. It is not an optional note.</p>' +
+            '<p class="meta">The feedback is that consent. It is part of the shift.</p>' +
           '</div>' +
           '<div class="card' + (now === "mandatory" ? " is-now" : "") + '">' +
             '<p class="who">Mandatory</p>' +
-            '<p class="meta">It is part of the shift. You cannot skip it.</p>' +
+            '<p class="meta">Same day, before 9pm. You cannot skip it.</p>' +
           '</div>'
         );
       }
@@ -397,20 +404,8 @@
           '<p class="kicker">End of shift</p><h1>5.30</h1>' +
           sessionBits() +
           '<div class="card is-now">' +
-            '<p class="who">Session feedback</p>' +
-            '<p class="meta">The session is over. Send it before you go.</p>' +
-            '<span class="chip chip--open">NOT SENT</span>' +
-          '</div>'
-        );
-      }
-
-      function laterHtml() {
-        return (
-          '<p class="kicker">Still open</p><p class="clock is-late">8.00pm</p>' +
-          sessionBits() +
-          '<div class="card card--bad">' +
-            '<p class="who">Left until the end of the day</p>' +
-            '<p class="meta">The shift finished hours ago. The note is still missing.</p>' +
+            '<p class="who">Send it before you leave</p>' +
+            '<p class="meta">Same day. Before 9pm. Then it is the record of the day.</p>' +
             '<span class="chip chip--open">NOT SENT</span>' +
           '</div>'
         );
@@ -446,34 +441,64 @@
         );
       }
 
+      function timesheetHtml(now) {
+        return (
+          '<p class="kicker">Your timesheet</p><h1>Late feedback</h1>' +
+          sessionBits() +
+          '<div class="card card--bad' + (now === "held" ? " is-now" : "") + '">' +
+            '<p class="who">This shift does not count</p>' +
+            '<p class="meta">The day stays held. It does not become pay until admin releases it.</p>' +
+            '<span class="chip chip--open">HELD</span>' +
+          '</div>'
+        );
+      }
+
+      function adminHtml(now) {
+        return (
+          '<p class="kicker">Admin</p><h1>The same work twice</h1>' +
+          '<div class="card card--bad' + (now === "yours" ? " is-now" : "") + '">' +
+            '<p class="who">Release this day</p>' +
+            '<p class="meta">Admin opens your day and releases it. Those sessions were yours.</p>' +
+          '</div>' +
+          '<div class="card' + (now === "time" ? " is-now" : "") + '">' +
+            '<p class="who">Your shift, not admin</p>' +
+            '<p class="meta">That time belongs to the worker who delivered the sessions.</p>' +
+          '</div>'
+        );
+      }
+
       function dutyHtml() {
         return (
           '<p class="kicker">Part of the shift</p><h1>Admin should not remind you.</h1>' +
           '<div class="card is-now">' +
             '<p class="who">You already know</p>' +
-            '<p class="meta">Completing the feedback is the shift. It is not a reminder from admin.</p>' +
+            '<p class="meta">The record, the family portal, and the timesheet are your sessions.</p>' +
           '</div>'
         );
       }
 
-      function sentHtml() {
+      function sentHtml(now) {
+        var done = now === "done"
+          ? '<div class="card card--ok"><p class="who">Your shift counts</p><p class="meta">Admin does not have to touch it.</p><span class="chip chip--done">COUNTS</span></div>'
+          : '';
         return (
-          '<p class="kicker">Before you leave</p><h1>The note is in.</h1>' +
+          '<p class="kicker">Before you leave</p><h1>Send it on time.</h1>' +
           sessionBits() +
           '<div class="card card--ok">' +
-            '<p class="who">Sent at the end of the shift</p>' +
+            '<p class="who">Sent before 9pm</p>' +
             '<span class="chip chip--done">SENT</span>' +
           '</div>' +
           '<div class="parent">' +
-            '<p class="who">Family app</p>' +
+            '<p class="who">Family portal</p>' +
             '<h2>What the family sees</h2>' +
             '<span class="chip chip--done">SESSION COMPLETED</span>' +
-          '</div>'
+          '</div>' +
+          done
         );
       }
 
       function endedHtml() {
-        return '<p class="kicker">Done</p><h1>You can close this.</h1><p class="ended">Session feedback is a safeguarding consent. It is mandatory, and it is part of the shift. If it stays open, the family sees Pending. Admin should not have to remind you.</p><button type="button" class="replay" id="replayBtn">Watch again</button>';
+        return '<p class="kicker">Done</p><h1>You can close this.</h1><p class="ended">Session feedback is the record of the day, and a safeguarding consent. Send it the same day, before 9pm. Late feedback stays Pending for the family, and held on your timesheet until admin releases it.</p><button type="button" class="replay" id="replayBtn">Watch again</button>';
       }
 
       function beatAt(t) {
@@ -505,11 +530,12 @@
         }
         captionEl.textContent = beat.caption;
         if (beat.view === "consent") sheetEl.innerHTML = consentHtml(beat.now);
-        else if (beat.view === "later") sheetEl.innerHTML = laterHtml();
         else if (beat.view === "parent") sheetEl.innerHTML = parentHtml(beat.now);
         else if (beat.view === "image") sheetEl.innerHTML = imageHtml();
+        else if (beat.view === "timesheet") sheetEl.innerHTML = timesheetHtml(beat.now);
+        else if (beat.view === "admin") sheetEl.innerHTML = adminHtml(beat.now);
         else if (beat.view === "duty") sheetEl.innerHTML = dutyHtml();
-        else if (beat.view === "sent") sheetEl.innerHTML = sentHtml();
+        else if (beat.view === "sent") sheetEl.innerHTML = sentHtml(beat.now);
         else sheetEl.innerHTML = shiftHtml();
         sheetEl.scrollTop = 0;
       }
