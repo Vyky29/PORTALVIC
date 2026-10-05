@@ -416,12 +416,28 @@
       return '<div class="pw-card"><p class="pw-card__kicker">Simulacion de la tarjeta ' + kind + "</p><p>" + t + "</p><p class=\"pw-card__tag\">" + tag + "</p></div>";
     }
 
+    function islandCat(story, step, id) {
+      var name = byId[id] ? byId[id].name : id;
+      var cat = step.cats && step.cats[id];
+      if (!cat && story.world === id) cat = story.label;
+      return cat ? name + " - " + cat : name;
+    }
+
+    function routeLine(story, step) {
+      var ids = stepIslands(step);
+      if (!ids.length) return "";
+      var from = islandCat(story, step, ids[0]);
+      if (ids.length === 1) return "Sale de " + from + ".";
+      var rest = ids.slice(1).map(function (id) { return islandCat(story, step, id); });
+      return "Sale de " + from + ". Llega a " + rest.join(", ") + ".";
+    }
+
     function renderPanel() {
       var story = storyById(state.story);
       var step = story.steps[state.step] || story.steps[0];
       var gate = isGate(step.text);
       var fx = effectKinds(step.text);
-      var names = stepIslands(step).map(function (id) { return byId[id] ? byId[id].name : id; }).join(" + ");
+      var route = routeLine(story, step);
       var steps = story.steps.map(function (item, i) {
         var mark = isGate(item.text) ? " Condicion." : "";
         return '<li data-step="' + i + '"' + (i === state.step ? ' class="is-now"' : "") + "><b>" + (i + 1) + "." + mark + "</b> " + item.text + "</li>";
@@ -431,8 +447,9 @@
       panel.innerHTML =
         '<button type="button" class="pw-panel-x" data-act="close">Cerrar</button>' +
         "<h2>" + story.label + "</h2>" +
+        '<p class="pw-from">' + route + "</p>" +
         '<p class="pw-sub">Simulacion. Paso ' + (state.step + 1) + " de " + story.steps.length + ". No envia pagos, mensajes ni cambia reservas.</p>" +
-        '<div class="pw-now"><b>' + names + "</b><p>" + step.text + "</p>" +
+        '<div class="pw-now"><p>' + step.text + "</p>" +
           (gate ? '<p class="pw-gate">Condicion pendiente. La animacion se queda aqui hasta que avances el paso.</p>' : "") +
           '<p class="pw-fx">' + (fx.notify ? "Aviso. " : "") + (fx.data ? "Actualizacion de datos." : "") + "</p></div>" +
         cardPreview(step.text) +

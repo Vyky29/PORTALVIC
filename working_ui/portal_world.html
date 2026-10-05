@@ -31,8 +31,8 @@
       font: inherit; cursor: pointer; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #f4fbff; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 13px;
     }
     .pw-bars button.is-on { background: var(--gold); color: #3a2a08; border-color: var(--gold); }
-    .stage { position: relative; flex: 1; min-height: 0; }
-    .pw-viewport { position: absolute; inset: 0; overflow: hidden; touch-action: none; background-color: #071422; background-image: radial-gradient(rgba(180,210,230,.35) 1.15px, transparent 1.25px); background-size: 22px 22px; }
+    .stage { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .pw-viewport { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; background-color: #071422; background-image: radial-gradient(rgba(180,210,230,.35) 1.15px, transparent 1.25px); background-size: 22px 22px; }
     .pw-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
     #pwWires { position: absolute; inset: 0; overflow: visible; }
     #pwWires path { fill: none; stroke-width: 2.2; stroke-linecap: round; opacity: .9; }
@@ -92,10 +92,10 @@
     .pw-sub-fn.is-hot { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
     .pw-sub-step { margin: 8px 12px; font-size: 13px; line-height: 1.35; color: #d5e4f0; overflow-wrap: anywhere; }
     aside.panel {
-      display: none; position: absolute; top: 12px; right: 12px; z-index: 7; width: min(360px, calc(100% - 24px));
-      max-height: calc(100% - 120px); overflow: auto; background: #101a28; color: #e7f2fb;
-      border: 1px solid rgba(255,255,255,.14); border-radius: 16px; padding: 12px 14px 16px;
+      display: none; flex: 0 0 auto; z-index: 7; max-height: 32vh; margin: 0 12px 12px; overflow: auto;
+      background: #101a28; color: #e7f2fb; border: 1px solid rgba(255,255,255,.14); border-radius: 16px; padding: 12px 14px 14px;
     }
+    .pw-from { margin: 0 0 8px; font-weight: 750; color: #f4fbff; overflow-wrap: anywhere; }
     aside.panel.is-open { display: block; }
     aside.panel h2 { margin: 0 0 4px; font-size: 18px; }
     aside.panel h3 { margin: 12px 0 4px; font-size: 13px; }
@@ -150,8 +150,8 @@
       <aside class="panel" id="pwPanel" aria-live="polite"></aside>
     </div>
   </div>
-  <script src="/portal/portal_world_data.js?v=20261005-world-visual"></script>
-  <script src="/portal/portal_world_canvas.js?v=20261005-world-space"></script>
+  <script src="/portal/portal_world_data.js?v=20261005-world-from"></script>
+  <script src="/portal/portal_world_canvas.js?v=20261005-world-bottom"></script>
   <script>
     if (window.PortalWorldCanvasBoot) window.PortalWorldCanvasBoot(document);
   </script>

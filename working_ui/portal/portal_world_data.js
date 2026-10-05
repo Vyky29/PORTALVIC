@@ -415,7 +415,7 @@
       actor: "A la vez",
       steps: [
         { islands: ["staff"], links: [], text: "El trabajador manda el gasto desde Expenses." },
-        { islands: ["staff", "admin"], links: ["a-s"], text: "A la vez: Documents en Admin lo guarda con su nombre y el mes. Queda Pending, y la campana puede mostrar el gasto." },
+        { islands: ["staff", "admin"], links: ["a-s"], cats: { admin: "H&R / Documents" }, text: "A la vez: H&R / Documents en Admin lo guarda con su nombre y el mes. Queda Pending, y la campana puede mostrar el gasto." },
         { islands: ["admin"], links: [], text: "Mark paid cuando ya esta pagado. La fecha es el dia en que se pulsa, no el mes del gasto." }
       ]
     },
@@ -550,7 +550,7 @@
       actor: "A la vez",
       steps: [
         { islands: ["parent"], links: [], text: "La familia escribe en una nota de Parent." },
-        { islands: ["parent", "admin"], links: ["p-a"], text: "La campana de Admin recibe ese mensaje. Reply o Close. Staff no lo lee y no lo reescribe. No cambia la plaza ni el feedback." },
+        { islands: ["parent", "admin"], links: ["p-a"], cats: { admin: "Campana" }, text: "La campana de Admin recibe ese mensaje. Reply o Close. Staff no lo lee y no lo reescribe. No cambia la plaza ni el feedback." },
         { islands: ["parent", "admin"], links: ["p-a"], text: "Si descarga una foto, la campana de Admin es solo Close. No es el mensaje de la nota." }
       ]
     },
@@ -587,8 +587,8 @@
       label: "Contrato",
       actor: "A la vez",
       steps: [
-        { islands: ["admin", "staff"], links: ["a-s"], text: "El contrato y las policies salen de Admin hacia el trabajador." },
-        { islands: ["staff", "admin"], links: ["a-s"], text: "Cuando firma, Documents en Admin guarda el archivo. No es el formulario de Onboarding." }
+        { islands: ["admin", "staff"], links: ["a-s"], cats: { admin: "H&R / Contracts" }, text: "El contrato y las policies salen de Admin, categoria H&R / Contracts, hacia Staff, Contrato." },
+        { islands: ["staff", "admin"], links: ["a-s"], cats: { admin: "H&R / Documents" }, text: "Cuando firma, el archivo vuelve a Admin, categoria H&R / Documents. No es el formulario de Onboarding." }
       ]
     },
     {
@@ -596,8 +596,8 @@
       label: "PIN staff",
       actor: "A la vez",
       steps: [
-        { islands: ["admin"], links: [], text: "Admin guarda el PIN del trabajador en Documents." },
-        { islands: ["admin", "staff"], links: ["a-s"], text: "Con ese PIN entra en Staff. Es la misma cuenta que Onboarding." }
+        { islands: ["admin"], links: [], cats: { admin: "H&R / Documents" }, text: "Admin guarda el PIN del trabajador en H&R / Documents." },
+        { islands: ["admin", "staff"], links: ["a-s"], cats: { admin: "H&R / Documents" }, text: "Con ese PIN entra en Staff. Es la misma cuenta que Onboarding." }
       ]
     },
     {
@@ -605,8 +605,8 @@
       label: "Nomina",
       actor: "A la vez",
       steps: [
-        { islands: ["admin"], links: [], text: "H&R, Finance, deja el payslip." },
-        { islands: ["admin", "staff"], links: ["a-s"], text: "El trabajador lo abre en Staff. El PDF no cambia el horario." }
+        { islands: ["admin"], links: [], cats: { admin: "H&R / Finance" }, text: "H&R / Finance deja el payslip." },
+        { islands: ["admin", "staff"], links: ["a-s"], cats: { admin: "H&R / Finance" }, text: "El trabajador lo abre en Staff. El PDF no cambia el horario." }
       ]
     },
     {
