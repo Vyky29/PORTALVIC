@@ -75,12 +75,12 @@
   <script src="/portal/portal_staff_display_names.js?v=20260909-luliya-first"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
-  <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20261004-venue-send" />
+  <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20261005-note-inside" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20261004-dash-lilac" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260921-21h"></script>
-  <script src="/portal/admin-portal-form-record-modal.js?v=20261005-notes-only"></script>
+  <script src="/portal/admin-portal-form-record-modal.js?v=20261005-note-inside"></script>
   <script src="/portal/admin-portal-incident-followup.js?v=20260916-isp-admin-only"></script>
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
@@ -2693,7 +2693,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminLoadOfficeHelp(){
       if(window.__ADMIN_OFFICE_HELP_PROMISE) return window.__ADMIN_OFFICE_HELP_PROMISE;
-      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261005-v250')
+      window.__ADMIN_OFFICE_HELP_PROMISE = fetch('/portal/admin_office_help.json?v=20261005-v251')
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
       return window.__ADMIN_OFFICE_HELP_PROMISE;
@@ -39829,20 +39829,57 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       meta = meta || {};
       var id = String(meta.recordId || '').trim();
       var hit = portalAdminFeedbackNoteById(id);
-      var dateIso = String((hit && hit.sessionDate) || meta.sessionDate || '').trim().slice(0, 10);
-      var clientName = String((hit && hit.clientName) || meta.clientName || '').trim();
-      if(dateIso && /^\d{4}-\d{2}-\d{2}$/.test(dateIso)){
-        var h = sessionsHubEnsureState();
-        h.tab = 'feedback';
-        h.selectedIso = dateIso;
-        var week = bookingWeekIsoRangeMonSun(dateIso);
-        if(week && week[0]) h.weekAnchorIso = week[0];
-        state.sessionOverview.iso = dateIso;
-        if(clientName) h.clientQ = clientName;
-      }
-      openSessionsHubTab('feedback');
-      if(hit && hit.row) portalAdminOpenFormRecord('feedback', hit.row);
+      var row = hit && hit.row;
+      if(!row || !window.PortalFormRecordModal || typeof window.PortalFormRecordModal.openWithRow !== 'function') return;
+      window.PortalFormRecordModal.openWithRow('feedback', row, { noteBellId: String(row.id || id) });
     }
+    function portalAdminRunFeedbackNoteShare(mode, row){
+      row = row || {};
+      var noteText = portalAdminFeedbackNoteText(row) || String(row.relevant_information || '').replace(/\s+/g, ' ').trim();
+      var who = String(row.client_name || '').trim();
+      var svc = String(row.service || '').trim();
+      var dateIso = String(row.session_date || '').trim().slice(0, 10);
+      var writer = String(row.completed_by_name || '').trim() || 'the instructor';
+      var first = writer.split(/\s+/)[0] || 'there';
+      var subject = 'Relevant information' + (who ? ' - ' + who : '');
+      var bodyLines = [];
+      if(who) bodyLines.push('Participant: ' + who);
+      if(svc) bodyLines.push('Service / session: ' + svc);
+      if(dateIso) bodyLines.push('Session date: ' + dateIso);
+      if(writer) bodyLines.push('Recorded by: ' + writer);
+      bodyLines.push('');
+      bodyLines.push('Relevant information:');
+      bodyLines.push(noteText);
+      var body = bodyLines.join('\r\n');
+      var askText = 'Hi ' + first + ', can you clarify this internal note about ' + (who || 'the participant') + ' (' + dateIso + (svc ? ', ' + svc : '') + ')?\n\n' + noteText;
+      mode = String(mode || '');
+      if(mode === 'comms'){
+        try{
+          sessionStorage.setItem('portal_comms_prefill', askText);
+          sessionStorage.setItem('portal_comms_staff', writer);
+        }catch(_ss){}
+        if(typeof portalAdminSetAlertsPopOpen === 'function') portalAdminSetAlertsPopOpen(false);
+        if(typeof window.portalAdminOpenComms === 'function'){
+          window.portalAdminOpenComms({ mode: 'administration', staff: writer });
+          return;
+        }
+        window.location.href = 'comunicaciones.html?from=admin&mode=administration&staff=' + encodeURIComponent(writer);
+        return;
+      }
+      if(mode === 'announce'){
+        if(typeof openComposeModalAnnouncementOrReminder === 'function'){
+          openComposeModalAnnouncementOrReminder(false, {
+            title: subject,
+            body: body + '\r\n\r\n(Shared from the sessions hub for your awareness.)'
+          });
+        }
+        if(typeof portalAdminSetAlertsPopOpen === 'function') portalAdminSetAlertsPopOpen(false);
+        return;
+      }
+      var mailto = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body + '\r\n\r\n(Shared from the sessions hub for your awareness.)');
+      try{ window.location.href = mailto; }catch(_mail){ window.open(mailto, '_blank'); }
+    }
+    try{ window.portalAdminRunFeedbackNoteShare = portalAdminRunFeedbackNoteShare; }catch(_shareEx){}
     function portalAdminAckFeedbackNoteForMe(noteId){
       noteId = String(noteId || '').trim();
       if(!noteId) return;
@@ -39863,87 +39900,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       });
     }
-    function portalAdminEscalateFeedbackNote(noteId){
-      var hit = portalAdminFeedbackNoteById(noteId);
-      var row = (hit && hit.row) || {};
-      var noteText = portalAdminFeedbackNoteText(row);
-      var who = String(row.client_name || (hit && hit.clientName) || '').trim();
-      var svc = String(row.service || '').trim();
-      var dateIso = String(row.session_date || (hit && hit.sessionDate) || '').trim().slice(0, 10);
-      var writer = String(row.completed_by_name || '').trim() || 'the instructor';
-      var first = writer.split(/\s+/)[0] || 'there';
-      var subject = 'Relevant information' + (who ? ' - ' + who : '');
-      var bodyLines = [];
-      if(who) bodyLines.push('Participant: ' + who);
-      if(svc) bodyLines.push('Service / session: ' + svc);
-      if(dateIso) bodyLines.push('Session date: ' + dateIso);
-      if(writer) bodyLines.push('Recorded by: ' + writer);
-      bodyLines.push('');
-      bodyLines.push('Relevant information:');
-      bodyLines.push(noteText);
-      var body = bodyLines.join('\r\n');
-      var askText = 'Hi ' + first + ', can you clarify this internal note about ' + (who || 'the participant') + ' (' + dateIso + (svc ? ', ' + svc : '') + ')?\n\n' + noteText;
-      var old = document.getElementById('portalNoteEscalateSheet');
-      if(old) old.remove();
-      var sheet = document.createElement('div');
-      sheet.id = 'portalNoteEscalateSheet';
-      sheet.setAttribute('role', 'dialog');
-      sheet.setAttribute('aria-modal', 'true');
-      sheet.style.cssText = 'position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.45)';
-      sheet.innerHTML = '<div style="width:min(520px,100%);max-height:min(80vh,640px);overflow:auto;background:#fff;border-radius:16px;padding:16px 16px 14px;box-shadow:0 16px 40px rgba(15,23,42,.18)">' +
-        '<h3 style="margin:0 0 6px;font-size:16px">Internal note</h3>' +
-        '<p class="muted" style="margin:0 0 8px">' + esc(who || 'Participant') + (dateIso ? ' - ' + esc(dateIso) : '') + (svc ? ' - ' + esc(svc) : '') + '</p>' +
-        '<p class="muted" style="margin:0 0 8px">Written by: ' + esc(writer) + '</p>' +
-        '<p style="margin:0 0 10px">Internal only. Same actions as Register: email the CEOs, announce it to staff, or open Comms to ask the instructor.</p>' +
-        '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;margin:0 0 12px;overflow-wrap:anywhere">' + esc(noteText) + '</div>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-        '<button type="button" class="btn btn--ghost btn--sm" data-note-esc="email">Email CEOs</button>' +
-        '<button type="button" class="btn btn--ghost btn--sm" data-note-esc="announce">Announce to staff</button>' +
-        '<button type="button" class="btn btn--pri btn--sm" data-note-esc="comms">Open in Comms</button>' +
-        '<button type="button" class="btn btn--ghost btn--sm" data-note-esc="dismiss">Close</button>' +
-        '</div></div>';
-      document.body.appendChild(sheet);
-      sheet.addEventListener('click', function(ev){
-        var b = ev.target && ev.target.closest ? ev.target.closest('[data-note-esc]') : null;
-        if(!b){
-          if(ev.target === sheet) sheet.remove();
-          return;
-        }
-        var mode = String(b.getAttribute('data-note-esc') || '');
-        if(mode === 'dismiss'){
-          sheet.remove();
-          return;
-        }
-        if(mode === 'comms'){
-          sheet.remove();
-          try{
-            sessionStorage.setItem('portal_comms_prefill', askText);
-            sessionStorage.setItem('portal_comms_staff', writer);
-          }catch(_ss){}
-          if(typeof portalAdminSetAlertsPopOpen === 'function') portalAdminSetAlertsPopOpen(false);
-          if(typeof window.portalAdminOpenComms === 'function'){
-            window.portalAdminOpenComms({ mode: 'administration', staff: writer });
-            return;
-          }
-          window.location.href = 'comunicaciones.html?from=admin&mode=administration&staff=' + encodeURIComponent(writer);
-          return;
-        }
-        if(mode === 'announce'){
-          if(typeof openComposeModalAnnouncementOrReminder === 'function'){
-            openComposeModalAnnouncementOrReminder(false, {
-              title: subject,
-              body: body + '\r\n\r\n(Shared from the sessions hub for your awareness.)'
-            });
-          }
-          sheet.remove();
-          if(typeof portalAdminSetAlertsPopOpen === 'function') portalAdminSetAlertsPopOpen(false);
-          return;
-        }
-        var mailto = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body + '\r\n\r\n(Shared from the sessions hub for your awareness.)');
-        try{ window.location.href = mailto; }catch(_mail){ window.open(mailto, '_blank'); }
-        sheet.remove();
-      });
-    }
+    try{ window.portalAdminAckFeedbackNoteForMe = portalAdminAckFeedbackNoteForMe; }catch(_ackEx){}
     function portalAdminOpenIncidentFromBell(meta){
       meta = meta || {};
       var id = String(meta.recordId || '').trim();
@@ -40463,7 +40420,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<div style="min-width:0"><strong>'+esc(a.title)+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(a.sub)+'</div></div>'+
           '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'+
           '<button type="button" class="btn btn--ghost btn--sm" data-note-bell-act="view" data-alert-record-id="'+esc(a.id || '')+'">View</button>'+
-          '<button type="button" class="btn btn--pri btn--sm" data-note-bell-act="escalate" data-alert-record-id="'+esc(a.id || '')+'">Escalate</button>'+
           '<button type="button" class="btn btn--ghost btn--sm" data-note-bell-act="close" data-alert-record-id="'+esc(a.id || '')+'">Close</button>'+
           '</div></div>'+
           (t ? '<span class="chip chip--info" style="align-self:center;margin-right:12px">'+esc(t)+'</span>' : '')+
@@ -41572,10 +41528,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var feedbackId = String(noteAct.getAttribute('data-alert-record-id') || '').trim();
             if(noteBellAct === 'close'){
               portalAdminAckFeedbackNoteForMe(feedbackId);
-              return;
-            }
-            if(noteBellAct === 'escalate'){
-              portalAdminEscalateFeedbackNote(feedbackId);
               return;
             }
             if(noteBellAct === 'view'){

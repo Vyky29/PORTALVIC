@@ -275,7 +275,16 @@
     return lines.join("\n");
   }
 
-  function modalFootHtml(kind) {
+  function modalFootHtml(kind, opts) {
+    opts = opts || {};
+    if (opts.noteBellId) {
+      return (
+        '<footer class="pfrm-modal__foot pfrm-modal__foot--actions">' +
+        '<button type="button" class="pfrm-modal__btn pfrm-modal__btn--pri" data-pfrm-action="note-escalate">Escalate</button>' +
+        '<button type="button" class="pfrm-modal__btn" data-pfrm-action="note-close">Close</button>' +
+        "</footer>"
+      );
+    }
     if (kind === "incident") {
       return (
         '<footer class="pfrm-modal__foot pfrm-modal__foot--actions">' +
@@ -351,7 +360,7 @@
     );
   }
 
-  function buildModalHtml(kind, row) {
+  function buildModalHtml(kind, row, opts) {
     var title = "Report";
     var subtitle = "";
     var body = "";
@@ -392,7 +401,7 @@
       '<div class="pfrm-modal__body pfrm-qa">' +
       body +
       "</div>" +
-      modalFootHtml(kind) +
+      modalFootHtml(kind, opts) +
       "</div>"
     );
   }
@@ -408,7 +417,28 @@
     } catch (_2) {}
   }
 
-  function runModalAction(action, kind, row) {
+  function finishNoteBell(opts, ack) {
+    var id = opts && opts.noteBellId ? String(opts.noteBellId) : "";
+    closeModal();
+    if (ack && id && typeof global.portalAdminAckFeedbackNoteForMe === "function") {
+      global.portalAdminAckFeedbackNoteForMe(id);
+    }
+  }
+
+  function showNoteEscalateInside(row) {
+    if (!backdropEl) return;
+    var foot = backdropEl.querySelector(".pfrm-modal__foot");
+    if (!foot) return;
+    foot.innerHTML =
+      '<p class="pfrm-modal__act-lead">Internal only. Same actions as Register.</p>' +
+      '<button type="button" class="pfrm-modal__btn" data-pfrm-action="note-email">Email CEOs</button>' +
+      '<button type="button" class="pfrm-modal__btn" data-pfrm-action="note-announce">Announce to staff</button>' +
+      '<button type="button" class="pfrm-modal__btn pfrm-modal__btn--pri" data-pfrm-action="note-comms">Open in Comms</button>' +
+      '<button type="button" class="pfrm-modal__btn" data-pfrm-action="note-close">Close</button>';
+  }
+
+  function runModalAction(action, kind, row, opts) {
+    opts = opts || {};
     action = String(action || "").trim();
     if (!row) return;
     if (action === "copy") {
@@ -448,6 +478,22 @@
       void notify.openNotifyFlow(row, btn);
       return;
     }
+    if (action === "note-close") {
+      finishNoteBell(opts, true);
+      return;
+    }
+    if (action === "note-escalate") {
+      showNoteEscalateInside(row);
+      return;
+    }
+    if (action === "note-email" || action === "note-announce" || action === "note-comms") {
+      var mode = action === "note-email" ? "email" : action === "note-announce" ? "announce" : "comms";
+      if (typeof global.portalAdminRunFeedbackNoteShare === "function") {
+        global.portalAdminRunFeedbackNoteShare(mode, row);
+      }
+      if (mode === "comms" || mode === "announce") closeModal();
+      return;
+    }
     if (action === "goto-day") {
       var iso = clean(row.session_date).slice(0, 10);
       closeModal();
@@ -459,7 +505,8 @@
     }
   }
 
-  function bindModalEvents(kind, row) {
+  function bindModalEvents(kind, row, opts) {
+    opts = opts || {};
     if (!backdropEl) return;
     backdropEl.__pfrmKind = kind;
     backdropEl.__pfrmRow = row;
@@ -467,12 +514,16 @@
       var actionBtn = ev.target && ev.target.closest ? ev.target.closest("[data-pfrm-action]") : null;
       if (actionBtn) {
         ev.preventDefault();
-        runModalAction(actionBtn.getAttribute("data-pfrm-action"), kind, row);
+        ev.stopPropagation();
+        runModalAction(actionBtn.getAttribute("data-pfrm-action"), kind, row, opts);
         return;
       }
-      if (ev.target === backdropEl || ev.target.closest("[data-pfrm-close]")) {
+      var closer = ev.target && ev.target.closest ? ev.target.closest("[data-pfrm-close]") : null;
+      if (closer || ev.target === backdropEl) {
         ev.preventDefault();
-        closeModal();
+        ev.stopPropagation();
+        if (opts.noteBellId) finishNoteBell(opts, true);
+        else closeModal();
       }
     });
     if (!global.__PFRM_KEY_BOUND__) {
@@ -483,15 +534,16 @@
     }
   }
 
-  function openWithRow(kind, row) {
+  function openWithRow(kind, row, opts) {
+    opts = opts || {};
     if (!row) return;
     closeModal();
     backdropEl = document.createElement("div");
     backdropEl.className = "pfrm-modal-backdrop";
-    backdropEl.innerHTML = buildModalHtml(kind, row);
+    backdropEl.innerHTML = buildModalHtml(kind, row, opts);
     document.body.appendChild(backdropEl);
     document.body.classList.add("pfrm-modal-open");
-    bindModalEvents(kind, row);
+    bindModalEvents(kind, row, opts);
     var closeBtn = backdropEl.querySelector(".pfrm-modal__close");
     if (closeBtn) closeBtn.focus();
     if (kind === "incident") {

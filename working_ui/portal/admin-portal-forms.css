@@ -634,6 +634,14 @@ body.pfrm-modal-open { overflow: hidden; }
   flex-wrap: wrap;
 }
 .pfrm-modal__foot--actions { justify-content: flex-start; }
+.pfrm-modal__act-lead {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #475569;
+  overflow-wrap: anywhere;
+}
 .pfrm-modal__btn--pri {
   background: #16325c;
   border-color: #16325c;
