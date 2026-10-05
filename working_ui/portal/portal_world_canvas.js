@@ -133,6 +133,7 @@
     var nodes = root.querySelector("#pwNodes");
     var particles = root.querySelector("#pwParticles");
     var flow = root.querySelector("#pwFlow");
+    var sub = root.querySelector("#pwSub");
     var panel = root.querySelector("#pwPanel");
     var worldsEl = root.querySelector("#pwWorlds");
     var storiesEl = root.querySelector("#pwStories");
@@ -560,24 +561,146 @@
       panel.classList.toggle("is-open", state.mode === "flow" || !!state.panelOpen);
     }
 
+    var subFrame = 0;
+    function stopSubParticles() {
+      if (subFrame) cancelAnimationFrame(subFrame);
+      subFrame = 0;
+    }
+    function storyIslands(story) {
+      var ids = [];
+      function add(id) { if (id && byId[id] && ids.indexOf(id) < 0) ids.push(id); }
+      add(story.world);
+      story.steps.forEach(function (step) { stepIslands(step).forEach(add); });
+      story.steps.forEach(function (step) {
+        stepLinks(step).forEach(function (id) {
+          var link = linkById[id];
+          if (!link) return;
+          add(link.from);
+          add(link.to);
+        });
+      });
+      return ids;
+    }
+    function storyLinks(story) {
+      var seen = {};
+      var out = [];
+      story.steps.forEach(function (step) {
+        stepLinks(step).forEach(function (id) {
+          if (seen[id] || !linkById[id]) return;
+          seen[id] = true;
+          out.push(linkById[id]);
+        });
+      });
+      return out;
+    }
+    function buildSub(story) {
+      stopSubParticles();
+      var ids = storyIslands(story);
+      var links = storyLinks(story);
+      var rect = vw.getBoundingClientRect();
+      var n = Math.max(ids.length, 1);
+      var gap = 64;
+      var boxW = Math.max(180, Math.min(260, (rect.width - 40 - gap * (n - 1)) / n));
+      var boxH = Math.max(160, Math.min(240, rect.height - 160));
+      var total = n * boxW + (n - 1) * gap;
+      var x0 = Math.max(24, (rect.width - total) / 2);
+      var y0 = Math.max(88, (rect.height - boxH) / 2);
+      var box = {};
+      ids.forEach(function (id, i) {
+        box[id] = { x: x0 + i * (boxW + gap), y: y0, w: boxW, h: boxH };
+      });
+      var paths = links.map(function (link, i) {
+        var a = box[link.from];
+        var b = box[link.to];
+        if (!a || !b) return "";
+        var forward = a.x <= b.x;
+        var x1 = forward ? a.x + a.w : a.x;
+        var x2 = forward ? b.x : b.x + b.w;
+        var y1 = a.y + 70 + (i % 3) * 28;
+        var y2 = b.y + 70 + (i % 3) * 28;
+        var bow = 36 + (i % 2) * 28;
+        var cx = (x1 + x2) / 2;
+        var cy = Math.min(y1, y2) - bow;
+        var color = link.color || COLOR[link.from] || "#f4b740";
+        return '<path data-sub="' + link.id + '" stroke="' + color + '" marker-end="url(#pwSubArrow)" d="M ' + x1 + " " + y1 + " Q " + cx + " " + cy + " " + x2 + " " + y2 + '"/>';
+      }).join("");
+      var boxes = ids.map(function (id) {
+        var island = byId[id];
+        var b = box[id];
+        var home = id === (story.world || id);
+        var bits = story.steps.filter(function (step) {
+          if (home) return stepIslands(step).indexOf(id) !== -1 && stepLinks(step).every(function (linkId) {
+            return !linkById[linkId] || linkById[linkId].from === id;
+          });
+          return stepLinks(step).some(function (linkId) {
+            return linkById[linkId] && linkById[linkId].to === id;
+          });
+        }).map(function (step) {
+          return '<p class="pw-sub-step">' + step.text + "</p>";
+        }).join("");
+        return '<section class="pw-frame pw-sub-box ' + island.cls + '" style="left:' + b.x + "px;top:" + b.y + "px;width:" + b.w + "px;height:" + b.h + 'px">' +
+          '<span class="pw-kicker">' + island.kicker + "</span>" +
+          "<h2>" + island.name + "</h2>" +
+          (home ? '<p class="pw-sub-fn is-hot">' + story.label + "</p>" : "") +
+          bits +
+        "</section>";
+      }).join("");
+      sub.innerHTML = '<h2 class="pw-sub-title">' + story.label + "</h2>" +
+        '<svg class="pw-sub-svg" viewBox="0 0 ' + rect.width + " " + rect.height + '"><defs><marker id="pwSubArrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8 z" fill="#f4b740"></path></marker></defs>' + paths + "</svg>" +
+        boxes;
+      sub.hidden = false;
+      nodes.style.visibility = "hidden";
+      root.querySelector("#pwWires").style.visibility = "hidden";
+      stopParticles();
+      var dots = [];
+      sub.querySelectorAll("path[data-sub]").forEach(function (path) {
+        var k;
+        for (k = 0; k < 2; k++) {
+          var dot = document.createElement("i");
+          dot.className = "pw-dot" + (path.getAttribute("data-sub") === "auto-b" ? " is-reply" : "");
+          dot.style.background = path.getAttribute("stroke") || "#f4b740";
+          sub.appendChild(dot);
+          dots.push({ el: dot, path: path, len: path.getTotalLength() || 1, t0: performance.now() - k * 1100 });
+        }
+      });
+      function tick(now) {
+        dots.forEach(function (dot) {
+          var u = ((now - dot.t0) % 2200) / 2200;
+          var pt = dot.path.getPointAtLength(u * dot.len);
+          dot.el.style.left = pt.x + "px";
+          dot.el.style.top = pt.y + "px";
+        });
+        subFrame = requestAnimationFrame(tick);
+      }
+      if (dots.length) subFrame = requestAnimationFrame(tick);
+    }
+    function clearSub() {
+      stopSubParticles();
+      if (!sub) return;
+      sub.hidden = true;
+      sub.innerHTML = "";
+      nodes.style.visibility = "";
+      var svg = root.querySelector("#pwWires");
+      if (svg) svg.style.visibility = "";
+    }
+
     function openFlow(storyId, keepStep) {
       var story = storyById(storyId);
       state.story = story.id;
       state.world = story.world || state.world;
       state.focusLink = null;
-      state.panelOpen = true;
+      state.panelOpen = false;
+      state.playing = false;
+      if (state.timer) clearTimeout(state.timer);
       if (state.mode !== "flow") state.saved = { x: state.x, y: state.y, z: state.z };
       state.mode = "flow";
-      if (!keepStep) {
-        state.playing = true;
-        state.step = 0;
-      }
+      if (!keepStep) state.step = 0;
+      panel.classList.remove("is-open");
       world.hidden = false;
       flow.hidden = true;
       backBtn.hidden = false;
-      paintMap();
-      if (!keepStep) focusFrames(story);
-      armTimer();
+      buildSub(story);
+      renderTabs();
     }
 
     function focusFrames(story) {
@@ -618,6 +741,7 @@
         state.z = state.saved.z;
       }
       state.saved = null;
+      clearSub();
       flow.hidden = true;
       world.hidden = false;
       backBtn.hidden = true;

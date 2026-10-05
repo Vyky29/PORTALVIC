@@ -76,6 +76,20 @@
     #pwSim { margin-left: 0; background: #f4fbff; color: #102033; border: 0; }
     #pwBack { position: absolute; left: 12px; top: 12px; z-index: 6; background: #f4fbff; color: #102033; }
     #pwFlow { display: none !important; }
+    #pwSub[hidden] { display: none !important; }
+    #pwSub {
+      position: absolute; inset: 0; z-index: 4;
+      background-color: #071422;
+      background-image: radial-gradient(rgba(180,210,230,.35) 1.15px, transparent 1.25px);
+      background-size: 22px 22px;
+    }
+    .pw-sub-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; z-index: 2; }
+    .pw-sub-svg path { fill: none; stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 0 5px currentColor); }
+    .pw-sub-title { position: absolute; left: 16px; top: 52px; margin: 0; font-size: 22px; z-index: 5; }
+    .pw-sub-box { z-index: 3; overflow: hidden; }
+    .pw-sub-fn { margin: 8px 12px 0; padding: 8px 10px; border-radius: 9px; border: 1px solid rgba(255,255,255,.16); background: rgba(16,28,44,.95); font-weight: 750; }
+    .pw-sub-fn.is-hot { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+    .pw-sub-step { margin: 8px 12px; font-size: 13px; line-height: 1.35; color: #d5e4f0; overflow-wrap: anywhere; }
     aside.panel {
       display: none; position: absolute; top: 12px; right: 12px; z-index: 7; width: min(360px, calc(100% - 24px));
       max-height: calc(100% - 120px); overflow: auto; background: #101a28; color: #e7f2fb;
@@ -118,8 +132,9 @@
             </defs>
             <g id="pwPaths"></g>
           </svg>
-          <div id="pwNodes"></div>
-          <div id="pwParticles"></div>
+        <div id="pwNodes"></div>
+        <div id="pwParticles"></div>
+        <div id="pwSub" hidden></div>
         </div>
         <div id="pwFlow" hidden></div>
         <div class="pw-tools">
@@ -135,7 +150,7 @@
     </div>
   </div>
   <script src="/portal/portal_world_data.js?v=20261005-world-visual"></script>
-  <script src="/portal/portal_world_canvas.js?v=20261005-world-visual"></script>
+  <script src="/portal/portal_world_canvas.js?v=20261005-world-sub"></script>
   <script>
     if (window.PortalWorldCanvasBoot) window.PortalWorldCanvasBoot(document);
   </script>
