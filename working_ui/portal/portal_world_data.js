@@ -248,8 +248,9 @@
     { id: "a-s", from: "admin", to: "staff", label: "Today, cover, feedback, timesheet y expenses" },
     { id: "a-o", from: "admin", to: "onb", label: "Entrevista y alta desde Potential workers" },
     { id: "o-s", from: "onb", to: "staff", label: "Misma cuenta: al terminar el alta entra en Staff" },
-    { id: "a-p", from: "admin", to: "parent", label: "Today card, Bookings, Invoices y Absent" },
-    { id: "s-p", from: "staff", to: "parent", label: "Feedback que sale en la Today card" },
+    { id: "a-p", from: "admin", to: "parent", label: "Today card, Bookings, Invoices, Absent y Notas filtradas" },
+    { id: "s-p", from: "staff", to: "parent", label: "Stats a Session Feedback, directo y sin Admin" },
+    { id: "p-a", from: "parent", to: "admin", bow: -16, label: "Nota de la familia o descarga de foto: campana de Admin" },
     { id: "a-c", from: "admin", to: "ceo", bow: -8, label: "Cifras, visitantes y padres en el portal" },
     { id: "b-c", from: "booking", to: "ceo", bow: -5, label: "Visitantes de Booking" },
     { id: "p-c", from: "parent", to: "ceo", bow: -18, label: "Quien esta dentro de Parent" },
@@ -292,9 +293,12 @@
       label: "Sesion del dia",
       actor: "A la vez",
       steps: [
-        { islands: ["staff", "admin", "parent"], links: ["a-s", "a-p", "s-p"], text: "Empieza la sesion. A la vez: Staff Today, Admin Overview y la Today card de Parent." },
-        { islands: ["staff"], links: [], text: "Staff escribe el feedback." },
-        { islands: ["admin", "parent", "staff"], links: ["a-s", "s-p"], text: "A la vez: Overview pasa a verde, Parent lo lee en la Today card, y si falta el feedback el halo avisa en Staff y la campana en Admin." }
+        { islands: ["staff"], links: [], text: "Staff escribe el feedback. Relevant information se queda en Staff y no sale a la familia." },
+        { islands: ["staff", "parent"], links: ["s-p"], text: "Los stats (engagement, regulation, independence) van directos a Session Feedback del Parent. No pasan por Admin." },
+        { islands: ["admin"], links: [], text: "El texto escrito se filtra dentro de Admin. Hasta que ese filtro no esta, la nota no sigue." },
+        { islands: ["admin", "parent"], links: ["a-p"], text: "La nota filtrada llega a Notas del Parent. No sale en la tarjeta de hoy." },
+        { islands: ["admin"], links: [], text: "Overview pasa a verde con el feedback escrito. Eso actualiza el tablero de Admin. No escribe la nota ni los stats." },
+        { islands: ["admin", "staff"], links: ["a-s"], text: "Si falta, el aviso es otro efecto: halo en Staff y campana en Admin. No rellena la nota de la familia ni los stats." }
       ]
     },
     {
@@ -545,8 +549,9 @@
       label: "Notas",
       actor: "A la vez",
       steps: [
-        { islands: ["parent"], links: [], text: "La familia escribe una nota en Parent." },
-        { islands: ["parent", "admin", "staff"], links: ["a-p", "s-p"], text: "Admin y Staff la leen. No cambia la plaza ni el feedback." }
+        { islands: ["parent"], links: [], text: "La familia escribe en una nota de Parent." },
+        { islands: ["parent", "admin"], links: ["p-a"], text: "La campana de Admin recibe ese mensaje. Reply o Close. Staff no lo lee y no lo reescribe. No cambia la plaza ni el feedback." },
+        { islands: ["parent", "admin"], links: ["p-a"], text: "Si descarga una foto, la campana de Admin es solo Close. No es el mensaje de la nota." }
       ]
     },
     {

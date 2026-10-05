@@ -58,17 +58,6 @@
     xero: ["create_invoice"]
   };
 
-  var RULES = {
-    feedback: {
-      title: "Regla de producto, distinta de esta historia",
-      body: "La historia Sesion del dia dice que Parent lo lee en la Today card a la vez que Overview pasa a verde. La regla que hay que conservar es otra: el texto del feedback se filtra dentro de Admin y llega a Notas del Parent. Los stats (engagement, regulation, independence) van directos a Session Feedback del Parent, sin pasar por Admin. Relevant information no sale a la familia."
-    },
-    notes: {
-      title: "Regla de producto, distinta de esta historia",
-      body: "La historia Notas dice que Admin y Staff leen la nota de la familia. En la campana, un mensaje escrito en la nota llega a Admin con Reply o Close. Una foto descargada es solo Close. Staff no reescribe esa nota."
-    }
-  };
-
   function boot(root) {
     var data = global.PortalWorldData;
     if (!data) return;
@@ -76,15 +65,8 @@
     data.ISLANDS.forEach(function (island) { byId[island.id] = island; });
     var linkById = {};
     data.LINKS.forEach(function (link) { linkById[link.id] = link; });
-    var forward = {};
-    data.LINKS.forEach(function (link) { forward[link.from + ">" + link.to] = link.id; });
-    data.LINKS.forEach(function (link, index) {
-      var backId = forward[link.to + ">" + link.from];
-      var backIndex = -1;
-      if (backId) {
-        data.LINKS.forEach(function (other, i) { if (other.id === backId) backIndex = i; });
-      }
-      link.reply = backIndex > -1 && index > backIndex;
+    data.LINKS.forEach(function (link) {
+      link.reply = link.id === "auto-b";
       link.color = COLOR[link.from] || "#f4b740";
     });
 
@@ -322,14 +304,15 @@
     function cardPreview(text) {
       var t = String(text || "");
       var kind = "";
-      if (/today card/i.test(t)) kind = "Today card";
+      if (/session feedback/i.test(t)) kind = "Session Feedback";
+      else if (/today card/i.test(t)) kind = "Today card";
       else if (/overview/i.test(t)) kind = "Sessions Overview";
       else if (/halo|quick menu/i.test(t)) kind = "Staff Today";
       else if (/campana/i.test(t)) kind = "Campana Admin";
+      else if (/notas/i.test(t)) kind = "Notes";
       else if (/invoices/i.test(t)) kind = "Invoices";
       else if (/bookings/i.test(t)) kind = "Bookings";
       else if (/team/i.test(t)) kind = "Team";
-      else if (/notes|notas/i.test(t)) kind = "Notes";
       if (!kind) return "";
       var fx = effectKinds(t);
       var tag = fx.notify && fx.data
@@ -350,9 +333,6 @@
         var mark = isGate(item.text) ? " Condicion." : "";
         return '<li data-step="' + i + '"' + (i === state.step ? ' class="is-now"' : "") + "><b>" + (i + 1) + "." + mark + "</b> " + item.text + "</li>";
       }).join("");
-      var rule = RULES[story.id]
-        ? '<div class="pw-rule"><h3>' + RULES[story.id].title + "</h3><p>" + RULES[story.id].body + "</p></div>"
-        : "";
       var lessons = guideLessons(GUIDE_IDS[story.world] || []).slice(0, 2).map(lessonBlock).join("");
       var playLabel = state.playing ? "Pausa" : "Reproducir";
       panel.innerHTML =
@@ -368,7 +348,6 @@
           '<button type="button" data-act="prev">Paso anterior</button>' +
           '<button type="button" data-act="next">Paso siguiente</button>' +
         "</div>" +
-        rule +
         '<ol class="pw-steps">' + steps + "</ol>" +
         lessons;
       sim.textContent = state.playing ? "Simulacion en marcha" : "Simulacion en pausa";
@@ -493,8 +472,7 @@
           cardPreview(step.text) +
         "</section>";
       }).join('<span class="pw-flow-arrow" aria-hidden="true">→</span>');
-      var rule = RULES[story.id] ? '<div class="pw-rule"><h3>' + RULES[story.id].title + "</h3><p>" + RULES[story.id].body + "</p></div>" : "";
-      flow.innerHTML = '<div class="pw-flow-head"><h2>' + story.label + "</h2><p>Recorrido aislado. El resto del mapa esta fuera de la pantalla.</p></div>" + rule + '<div class="pw-flow-row">' + cols + "</div>";
+      flow.innerHTML = '<div class="pw-flow-head"><h2>' + story.label + "</h2><p>Recorrido aislado. El resto del mapa esta fuera de la pantalla.</p></div>" + '<div class="pw-flow-row">' + cols + "</div>";
       renderTabs();
       renderPanel();
     }
