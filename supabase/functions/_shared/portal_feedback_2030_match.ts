@@ -533,6 +533,14 @@ function occupantsTimeLabel(raw: unknown): string {
     .replace(/\s*-\s*/g, " to ");
 }
 
+/** "Timi · 11 – 1" inside a Day Centre block labelled 11.00 – 4.00. The band is the seat. */
+function childHoursFromSeatClient(client: string): string {
+  const m = String(client || "").trim().match(
+    /[·•|]\s*(\d{1,2}(?:[.:]\d{2})?\s*(?:to|–|—|-)\s*\d{1,2}(?:[.:]\d{2})?)\s*$/i,
+  );
+  return m ? occupantsTimeLabel(m[1]) : "";
+}
+
 function occupantsArea(venue: unknown): string | undefined {
   const v = String(venue || "").toLowerCase();
   if (/acton|northolt|westway|swimfarm|hub/.test(v)) return "West London";
@@ -601,25 +609,32 @@ export function slotsFromCapacityChainOccupants(
     if (String(slot.day || "").trim().toLowerCase() !== wd.toLowerCase()) continue;
     const service = occupantsServiceLabel(slot.serviceId);
     if (/crash|intensiv/i.test(service)) continue;
-    const time = occupantsTimeLabel(slot.timeLabel);
-    if (!time) continue;
+    const blockTime = occupantsTimeLabel(slot.timeLabel);
     const area = occupantsArea(slot.venue);
+    const dayCentre = /day centre/i.test(service);
     for (const line of slot.seatLines || []) {
       if (!line) continue;
       const kind = String(line.kind || "").trim().toLowerCase();
       if (kind === "open" || kind === "closed" || kind === "hold" || !kind) continue;
       let client = "";
+      let rawClient = "";
       if (kind === "trial") {
         const trialDate = String(line.trialDate || "").slice(0, 10);
         if (trialDate && trialDate !== iso) continue;
-        client = clientDisplayStem(String(line.trialClient || line.client || "").trim());
+        rawClient = String(line.trialClient || line.client || "").trim();
+        client = clientDisplayStem(rawClient);
       } else if (kind === "booked") {
         const from = String(line.bookedFrom || "").slice(0, 10);
         if (from && iso < from) continue;
-        client = clientDisplayStem(String(line.client || "").trim());
+        rawClient = String(line.client || "").trim();
+        client = clientDisplayStem(rawClient);
       } else {
         continue;
       }
+      /* Day Centre block is 11.00-4.00. The child's own hours are in the seat text.
+       * Without them the nag says "Timi 11.00 to 4.00" for a 11-1 seat. */
+      const time = childHoursFromSeatClient(rawClient) || (dayCentre ? "" : blockTime);
+      if (!time) continue;
       if (!isRealFeedbackClient(client)) continue;
       const staff = luliyaFeedbackStaffFrom28(
         String(line.instructor || "").trim(),

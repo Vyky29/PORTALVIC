@@ -486,11 +486,19 @@ Deno.serve(async (req) => {
       (standingOccupants as { bySlotId?: Record<string, Feedback2030OccupantSlot> })?.bySlotId,
       dayIso,
     );
+    /* Today's Day Centre board already names the kids. MADRE autumn standing
+     * (July week) still has the old Monday book, so it was gap-filling Timi
+     * onto Raul after the 5 Oct board had moved Timi off him. */
+    let madreSlots = slotsFromMadre(madreDoc, dayIso);
+    const occupantsHasDayCentre = occupantsSlots.some((s) => /day centre/i.test(String(s.service || "")));
+    if (occupantsHasDayCentre) {
+      madreSlots = madreSlots.filter((s) => !/day centre/i.test(String(s.service || "")));
+    }
     let slots = mergeFeedback2030Slots([
       rosterSlots,
       occupantsSlots,
       datedFallbackSlots(dayIso),
-      slotsFromMadre(madreDoc, dayIso),
+      madreSlots,
     ]);
     slots = scrubFadiOffDayCentreSlots(slots, dayIso);
     slots = applyFeedback2030BoardPolicy(slots, dayIso);
