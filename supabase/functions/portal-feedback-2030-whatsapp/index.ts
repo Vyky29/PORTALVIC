@@ -14,8 +14,8 @@
 //   0 14,15 * * 6    body {wave:"2000"}  — Saturday 15:00 London
 //   30 14,15 * * 6   body {wave:"2030"}  — Saturday 15:30 London
 //   Wave "biz" queues WhatsApp Business on the office computer. It does not call Meta.
-//   Wave "ring" is the locked-phone alert. Cron repeats it until the feedback is in,
-//   from the biz hour until 23:00 London (Sat 16:00, Sun 19:00, Mon-Fri 21:00).
+//   Wave "ring" is one locked-phone alert per staff per day, from the biz hour
+//   until 23:00 London (Sat 16:00, Sun 19:00, Mon-Fri 21:00). It does not repeat.
 // Manual: POST {"force":true,"wave":"2000"} or {"dryRun":true,"force":true,"wave":"ring"}
 //
 // Deploy: supabase functions deploy portal-feedback-2030-whatsapp --no-verify-jwt
@@ -648,18 +648,15 @@ Deno.serve(async (req) => {
         skipped.push({ username: t.username, reason: "no_api_reminder" });
         continue;
       }
-      const since = new Date(Date.now() - 8 * 60 * 1000).toISOString();
       const { data: recent } = await admin
         .from("portal_staff_notify_log")
-        .select("id, meta")
+        .select("id")
         .eq("kind", "feedback_ring_push")
         .eq("staff_profile_id", t.profileId)
-        .gte("created_at", since)
+        .eq("subject", `Feedback ring - ${iso}`)
         .limit(1);
-      const recentMeta = recent && recent[0] && recent[0].meta;
-      const recentWasCall = !!(recentMeta && recentMeta.call_ring);
-      if (recent && recent.length && recentWasCall) {
-        skipped.push({ username: t.username, reason: "recent" });
+      if (recent && recent.length && !force) {
+        skipped.push({ username: t.username, reason: "already_rang_today" });
         continue;
       }
       const ring = await sendFeedbackRingPush(admin, t.profileId, t.pending, t.sample);

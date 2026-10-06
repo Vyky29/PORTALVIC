@@ -1201,15 +1201,12 @@ export function slotIsResolved(
       return true;
     }
   }
-  const staffId = ctx.staffIdByKey?.[normalizeStaffKey(slot.staff)] || "";
   for (const m of ctx.absentMarks) {
     if (!keyTouchesClient(String(m.portal_session_key || ""), slot.client)) continue;
-    if (staffId && m.staff_user_id && String(m.staff_user_id) !== staffId) continue;
     return true;
   }
   for (const m of ctx.feedbackDoneMarks) {
     if (!keyTouchesClient(String(m.portal_session_key || ""), slot.client)) continue;
-    if (staffId && m.staff_user_id && String(m.staff_user_id) !== staffId) continue;
     return true;
   }
   for (const fb of ctx.feedbackRows) {

@@ -16,7 +16,7 @@
       "/portal/portal_roster_canonical.js?v=20261006-junaid-back",
       "/portal/autumn_staff_hours_reference.js?v=20261003-rota-silent",
       "/portal/portal_dc_services_local.js?v=20261003-oct-dc",
-      "/portal/portal_capacity_chain_occupants.js?v=20261006-junaid-back",
+      "/portal/portal_capacity_chain_occupants.js?v=20261006-elias-from",
       "/portal/portal_overview_capacity_chain.js?v=20261005-javi-book",
       "/portal/portal_client_day_visibility.js?v=20260916-short-names",
       "/portal/portal_resolve_day_board.js?v=20260920-victor-week1-snap",
