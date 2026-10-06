@@ -563,7 +563,8 @@
       "<li>Replies to messages sent <em>from the API number</em> → Meta inbox below (not the portal yet)</li>" +
       "<li>Manual family chats → WhatsApp Business app on the company mobile</li>" +
       "</ul>" +
-      '<a class="btn btn--sec btn--sm" id="portalAdminMetaWhatsappInboxLink" href="https://business.facebook.com/latest/inbox/all" target="_blank" rel="noopener noreferrer">Open Meta inbox (API number)</a></div>' +
+      '<a class="btn btn--sec btn--sm" id="portalAdminMetaWhatsappInboxLink" href="https://business.facebook.com/latest/inbox/all" target="_blank" rel="noopener noreferrer">Open Meta inbox (API number)</a> ' +
+      '<a class="btn btn--pri btn--sm" id="portalAdminMetaWhatsappTemplatesLink" href="https://business.facebook.com/latest/whatsapp_manager/message_templates" target="_blank" rel="noopener noreferrer">Edit WhatsApp templates</a></div>' +
       '<div class="card card-pad" style="margin-bottom:14px;border-color:#c5e0f5;background:linear-gradient(180deg,#f5faff,#eaf4fc)">' +
       '<h3 style="margin:0 0 8px;font-size:14px">Parent notify — test WhatsApp</h3>' +
       '<p class="muted" style="margin:0 0 10px;max-width:42rem;overflow-wrap:break-word">Sends via the <strong>API number</strong> (not the company mobile). Approved template <code>portal_parent_update</code> (one body variable) covers payment, instructor, absence and make-up drafts — see repo <code>database/META-WHATSAPP-PARENT-NOTIFY-TEMPLATES.md</code>. Set <code>PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE</code> to match Meta.</p>' +

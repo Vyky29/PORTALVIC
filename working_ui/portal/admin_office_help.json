@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v292",
+  "version": "2026-10-06-v293",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1827,7 +1827,8 @@
           ],
           "tips": [
             "API WhatsApp number — not the company mobile.",
-            "Template portal_parent_update covers common drafts."
+            "Template portal_parent_update covers common drafts.",
+            "To edit the approved templates, Settings has Edit WhatsApp templates. It opens Meta. Log in with the Facebook account that owns the business, then open portal_parent_update_v2 or portal_parent_urgent_v1."
           ],
           "es": {
             "title": "Avisos a padres / WhatsApp",
@@ -1841,7 +1842,8 @@
             ],
             "tips": [
               "El numero de WhatsApp API no es el movil de la empresa.",
-              "La plantilla portal_parent_update cubre los borradores habituales."
+              "La plantilla portal_parent_update cubre los borradores habituales.",
+              "Para editar las plantillas: Settings, Edit WhatsApp templates. Abre Meta. Entra con la cuenta de Facebook del negocio y abre portal_parent_update_v2 o portal_parent_urgent_v1."
             ]
           }
         },
