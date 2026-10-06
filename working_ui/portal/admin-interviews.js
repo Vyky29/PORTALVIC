@@ -43,6 +43,27 @@
     return c;
   }
 
+  function londonTodayIso() {
+    try {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(new Date());
+    } catch (_e) {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }
+
+  /** Shadowing until normalFrom. That date is the first day of normal pay. */
+  function shadowingStillOn(ob) {
+    if (!ob || ob.employment !== "shadowing") return false;
+    var from = String(ob.normalFrom || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) return true;
+    return londonTodayIso() < from;
+  }
+
   function phaseOf(candidate) {
     var c = ensureShape(candidate);
     var face = String(c.faceToFaceInterview.status || "");
@@ -51,7 +72,7 @@
     if (ob.didNotJoin) return "did_not_join";
     if (ob.offerCancelled) return "cancelled";
     if (ob.employment === "staff") return "staff";
-    if (ob.employment === "shadowing") return "shadowing";
+    if (ob.employment === "shadowing") return shadowingStillOn(ob) ? "shadowing" : "staff";
     if (ob.readyToStart || ob.onboardingCompleted) return "ready";
     if (face === "successful-ready" || face === "successful") return "onboarding";
     if (face === "successful-hold") return "hold";
@@ -103,14 +124,16 @@
   }
 
   function stageTone(phase) {
-    if (phase === "staff" || phase === "shadowing" || phase === "ready" || phase === "onboarding" || phase === "hold") {
-      return "#15803d";
-    }
+    if (phase === "staff") return "#15803d";
+    if (phase === "shadowing") return "#c2410c";
+    if (phase === "ready" || phase === "onboarding") return "#1d4ed8";
+    if (phase === "hold") return "#7c3aed";
     if (phase === "did_not_join") return "#334155";
     if (phase === "cancelled" || phase === "face_unsuccessful" || phase === "call_unsuccessful") {
-      return "#b45309";
+      return "#b91c1c";
     }
-    if (phase === "face_to_face" || phase === "call") return "#2d84b3";
+    if (phase === "face_to_face") return "#0f766e";
+    if (phase === "call") return "#0369a1";
     return "#64748b";
   }
 

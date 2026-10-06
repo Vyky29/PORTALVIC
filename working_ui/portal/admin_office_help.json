@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v287",
+  "version": "2026-10-06-v288",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2324,6 +2324,7 @@
           ],
           "tips": [
             "On hold stays under Successful. The next step says when to call again.",
+            "When Normal pay from is today or earlier, the chip becomes Staff and the next step says Normal pay. Staff is green. Shadowing is orange. Successful while onboarding is blue.",
             "Someone already working is Staff, not still on the onboarding checklist.",
             "Did not join switches off the staff login and takes them off the Onboarding PIN list."
           ]
