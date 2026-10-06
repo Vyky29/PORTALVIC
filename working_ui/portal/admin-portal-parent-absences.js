@@ -669,41 +669,150 @@
     return hit;
   }
 
+  function isoWeekdayName(iso) {
+    var p = String(iso || '').split('-');
+    if (p.length !== 3) return '';
+    var names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    if (!Number.isFinite(dt.getTime())) return '';
+    return names[dt.getDay()] || '';
+  }
+
+  function slotCoversIso(slot, iso) {
+    var phase = String((slot && slot.phase) || '');
+    if (phase.indexOf('week1') === 0) return false;
+    if (!iso) return phase.indexOf('dated_') !== 0;
+    if (phase.indexOf('dated_') === 0) return String(slot.validFrom || '').slice(0, 10) === iso;
+    var from = String(slot.validFrom || '').slice(0, 10);
+    var to = String(slot.validTo || '').slice(0, 10);
+    if (from && iso < from) return false;
+    if (to && iso > to) return false;
+    return true;
+  }
+
+  function labelStartMinutes(label) {
+    var m = String(label || '').match(/(\d{1,2})(?:[.:](\d{1,2}))?/);
+    if (!m) return null;
+    var h = parseInt(m[1], 10);
+    var min = parseInt(m[2] || '0', 10) || 0;
+    if (h >= 1 && h <= 7) h += 12;
+    return h * 60 + min;
+  }
+
+  function clockStartMinutes(raw) {
+    var m = String(raw || '').match(/(\d{1,2}):(\d{2})/);
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+
+  function clientSlug(name) {
+    return String(name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '');
+  }
+
+  function sameClient(a, b) {
+    var x = clientSlug(a);
+    var y = clientSlug(b);
+    if (!x || !y) return false;
+    return x === y || x.indexOf(y) === 0 || y.indexOf(x) === 0;
+  }
+
+  function absenceFreesLine(abs, slot, line) {
+    if (!abs || !slot || !line) return false;
+    if (!sameClient(abs.anchor_client_id, line.client)) return false;
+    var ven = String(abs.anchor_venue || '').trim().toLowerCase();
+    if (ven && ven !== String(slot.venue || '').trim().toLowerCase()) return false;
+    var aMin = clockStartMinutes(abs.anchor_start);
+    var sMin = labelStartMinutes(slot.timeLabel);
+    if (aMin == null || sMin == null || aMin !== sMin) return false;
+    return true;
+  }
+
+  async function absencesForDate(iso) {
+    var key = String(iso || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return [];
+    state._absByDate = state._absByDate || {};
+    if (state._absByDate[key]) return state._absByDate[key];
+    var client = cfg.getClient();
+    if (!client || !client.from) {
+      state._absByDate[key] = [];
+      return [];
+    }
+    var res = await client
+      .from('schedule_overrides')
+      .select('anchor_client_id,anchor_venue,anchor_start,session_date')
+      .eq('session_date', key)
+      .eq('status', 'active')
+      .eq('override_type', 'client_absence_announced')
+      .limit(200);
+    var rows = res.error ? [] : res.data || [];
+    state._absByDate[key] = rows;
+    return rows;
+  }
+
   function listOpenMakeupSlots(opts) {
     opts = opts || {};
     var venueFilter = String(opts.venue || '').trim().toLowerCase();
     var preferInstr = normName(opts.preferInstructor || '');
+    var sessionDate = String(opts.sessionDate || '').slice(0, 10);
+    var wantDay = isoWeekdayName(sessionDate);
+    var absences = opts.absences || [];
+    var skipClient = String(opts.skipClient || '').trim();
     var occ = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
     var by = occ && occ.bySlotId;
     if (!by) return [];
     var rows = [];
     Object.keys(by).forEach(function (id) {
       var slot = by[id] || {};
-      if (String(slot.phase || '').indexOf('week1') === 0) return;
-      if (String(slot.phase || '').indexOf('dated_') === 0) return;
-      if (Number(slot.openSeats || 0) < 1 && !(slot.openInstructors || []).length) return;
+      if (!slotCoversIso(slot, sessionDate)) return;
+      var day = String(slot.day || '').trim();
+      if (wantDay && day.toLowerCase() !== wantDay.toLowerCase()) return;
       var venue = String(slot.venue || '').trim();
       if (venueFilter && venue.toLowerCase() !== venueFilter) return;
       (slot.seatLines || []).forEach(function (line) {
-        if (String(line.kind || '') !== 'open') return;
         var instr = String(line.instructor || '').trim();
         if (!instr) return;
+        var kind = String(line.kind || '');
+        var freed = null;
+        if (kind === 'booked') {
+          if (skipClient && sameClient(line.client, skipClient)) return;
+          for (var i = 0; i < absences.length; i++) {
+            if (absenceFreesLine(absences[i], slot, line)) {
+              freed = absences[i];
+              break;
+            }
+          }
+          if (!freed) return;
+        } else if (kind !== 'open') {
+          return;
+        }
         var same = preferInstr && normName(instr) === preferInstr;
         rows.push({
           slotId: id,
           venue: venue,
-          day: String(slot.day || '').trim(),
+          day: day,
           timeLabel: String(slot.timeLabel || '').trim(),
           serviceId: String(slot.serviceId || '').trim(),
           instructor: instr,
           sameStanding: !!same,
-          nextDate: nextIsoForWeekday(slot.day)
+          freedByAbsent: !!freed,
+          absentClient: freed ? String(line.client || '').trim() : '',
+          nextDate: sessionDate || nextIsoForWeekday(day)
         });
       });
     });
+    function rank(row) {
+      if (row.sameStanding && row.freedByAbsent) return 0;
+      if (row.sameStanding) return 1;
+      if (row.freedByAbsent) return 2;
+      return 3;
+    }
     rows.sort(function (a, b) {
-      if (a.sameStanding !== b.sameStanding) return a.sameStanding ? -1 : 1;
-      if (a.venue !== b.venue) return a.venue < b.venue ? -1 : 1;
+      var ra = rank(a);
+      var rb = rank(b);
+      if (ra !== rb) return ra - rb;
       if (a.day !== b.day) return a.day < b.day ? -1 : 1;
       return String(a.timeLabel).localeCompare(String(b.timeLabel));
     });
@@ -731,9 +840,9 @@
     cfg.openModal(
       '<div class="modal-h"><h2 id="modalTitle">Makeup — pick open roster seat</h2></div>' +
         '<div class="modal-b" style="min-width:0">' +
-        '<p class="muted" style="margin:0 0 10px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Open seats from capacity-chain roster. Prefer same standing instructor' +
+        '<p class="muted" style="margin:0 0 10px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Turns with the normal instructor' +
         (preferInstr ? ' (<strong>' + esc(preferInstr) + '</strong>)' : '') +
-        '; other open plazas still listed if that instructor is full.</p>' +
+        ', including a seat free that day because a child is absent. Open seats with other workers are listed too.</p>' +
         '<label class="muted">Venue</label>' +
         '<select class="inp" id="ppMakeupVenuePick" style="max-width:100%;box-sizing:border-box">' +
         venues
@@ -762,57 +871,108 @@
     );
 
     var picked = null;
+    var paintGen = 0;
+    function sameMakeupSlot(a, b) {
+      if (!a || !b) return false;
+      return (
+        a.instructor === b.instructor &&
+        a.day === b.day &&
+        a.timeLabel === b.timeLabel &&
+        a.venue === b.venue &&
+        !!a.freedByAbsent === !!b.freedByAbsent &&
+        String(a.absentClient || '') === String(b.absentClient || '')
+      );
+    }
     function paintSlots() {
+      var gen = ++paintGen;
       var venueEl = global.document.getElementById('ppMakeupVenuePick');
       var listEl = global.document.getElementById('ppMakeupSlotList');
       var dateEl = global.document.getElementById('ppMakeupDatePick');
       var saveBtn = global.document.getElementById('ppMakeupSlotSave');
       if (!listEl) return;
       var venue = venueEl ? venueEl.value : hintVenue;
-      var slots = listOpenMakeupSlots({ venue: venue, preferInstructor: preferInstr });
+      var iso = dateEl ? String(dateEl.value || '').trim() : '';
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+        iso = nextIsoForWeekday('Monday');
+        if (dateEl && iso) dateEl.value = iso;
+      }
+      var keep = picked;
       picked = null;
       if (saveBtn) saveBtn.disabled = true;
-      if (!slots.length) {
-        listEl.innerHTML =
-          '<p class="muted" style="margin:0;overflow-wrap:break-word">No open seats at this venue on the standing roster.</p>';
-        return;
-      }
-      listEl.innerHTML = slots
-        .map(function (s, i) {
-          return (
-            '<button type="button" class="btn btn--ghost btn--sm" data-mk-slot="' +
-            i +
-            '" style="display:block;width:100%;text-align:left;margin:0 0 6px;min-width:0;overflow-wrap:break-word">' +
-            (s.sameStanding ? '<span class="chip chip--ok" style="font-size:10px">Same instructor</span> ' : '') +
-            '<strong>' +
-            esc(s.instructor) +
-            '</strong> · ' +
-            esc(s.day) +
-            ' · ' +
-            esc(s.timeLabel) +
-            ' · ' +
-            esc(s.venue) +
-            '</button>'
-          );
-        })
-        .join('');
-      listEl.querySelectorAll('[data-mk-slot]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var idx = Number(btn.getAttribute('data-mk-slot'));
-          picked = slots[idx];
+      listEl.innerHTML =
+        '<p class="muted" style="margin:0;overflow-wrap:break-word">Loading seats for this date...</p>';
+      absencesForDate(iso).then(function (absences) {
+        if (gen !== paintGen || !listEl) return;
+        var slots = listOpenMakeupSlots({
+          venue: venue,
+          preferInstructor: preferInstr,
+          sessionDate: iso,
+          absences: absences,
+          skipClient: report.participant_display
+        });
+        if (!slots.length) {
+          listEl.innerHTML =
+            '<p class="muted" style="margin:0;overflow-wrap:break-word">No open seats or absent-free seats at this venue on this date.</p>';
+          return;
+        }
+        listEl.innerHTML = slots
+          .map(function (s, i) {
+            var chips = '';
+            if (s.sameStanding) {
+              chips += '<span class="chip chip--ok" style="font-size:10px">Same instructor</span> ';
+            }
+            if (s.freedByAbsent) {
+              chips +=
+                '<span class="chip chip--info" style="font-size:10px">Free, ' +
+                esc(s.absentClient || 'child') +
+                ' absent</span> ';
+            }
+            return (
+              '<button type="button" class="btn btn--ghost btn--sm" data-mk-slot="' +
+              i +
+              '" style="display:block;width:100%;text-align:left;margin:0 0 6px;min-width:0;overflow-wrap:break-word">' +
+              chips +
+              '<strong>' +
+              esc(s.instructor) +
+              '</strong> · ' +
+              esc(s.day) +
+              ' · ' +
+              esc(s.timeLabel) +
+              ' · ' +
+              esc(s.venue) +
+              '</button>'
+            );
+          })
+          .join('');
+        function selectSlot(btn, slot) {
+          picked = slot;
           listEl.querySelectorAll('[data-mk-slot]').forEach(function (b) {
             b.classList.toggle('btn--pri', b === btn);
             b.classList.toggle('btn--ghost', b !== btn);
           });
-          if (dateEl && picked && picked.nextDate) dateEl.value = picked.nextDate;
           if (saveBtn) saveBtn.disabled = false;
+        }
+        listEl.querySelectorAll('[data-mk-slot]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var idx = Number(btn.getAttribute('data-mk-slot'));
+            selectSlot(btn, slots[idx]);
+          });
         });
+        if (keep) {
+          for (var si = 0; si < slots.length; si++) {
+            if (!sameMakeupSlot(keep, slots[si])) continue;
+            var again = listEl.querySelector('[data-mk-slot="' + si + '"]');
+            if (again) selectSlot(again, slots[si]);
+            break;
+          }
+        }
       });
-      if (slots[0] && dateEl && !dateEl.value) dateEl.value = slots[0].nextDate || '';
     }
 
     var venueEl = global.document.getElementById('ppMakeupVenuePick');
     if (venueEl) venueEl.addEventListener('change', paintSlots);
+    var datePick = global.document.getElementById('ppMakeupDatePick');
+    if (datePick) datePick.addEventListener('change', paintSlots);
     paintSlots();
 
     var cancel = global.document.getElementById('ppMakeupSlotCancel');
