@@ -934,7 +934,7 @@
         '</div>' +
         '<div class="modal-f">' +
         '<button type="button" class="btn btn--ghost" id="ppMakeupSlotCancel">Cancel</button>' +
-        '<button type="button" class="btn btn--pri" id="ppMakeupSlotSave" disabled>Place makeup on roster</button>' +
+        '<button type="button" class="btn btn--pri" id="ppMakeupSlotSave" disabled>Send offer to parent</button>' +
         '</div>'
     );
 
@@ -1105,7 +1105,8 @@
         session_time: slot.session_time,
         instructor_name: slot.instructor,
         service_label: slot.service_label || '',
-        offer_notes: 'Offered from Absents decide queue'
+        offer_notes: 'Offered from Absents decide queue',
+        await_parent: true
       })
     });
     var j = null;
@@ -1186,7 +1187,7 @@
                 else if (r.parent_notify.skipped) extra += ' · notify skipped';
                 else extra += ' · notify failed';
               }
-              if (slot) extra += ' · makeup placed on roster';
+              if (slot) extra += ' · offer sent, parent Accepts or Declines';
               cfg.toast(
                 outcome === 'none'
                   ? 'Decided: none (no parent message)' + extra
@@ -1278,7 +1279,7 @@
               if (o.error) {
                 cfg.toast('Grant ok; offer failed: ' + (o.message || o.error), 'error');
               } else {
-    cfg.toast('Makeup placed on the roster (Overview / Schedule)', 'ok');
+                cfg.toast('Offer sent. The parent Accepts or Declines in the portal. The seat is not on the roster until they Accept.', 'ok');
               }
               void renderHost(global.document.getElementById('portalParentAbsenceHost'));
             });

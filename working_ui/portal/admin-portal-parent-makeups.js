@@ -356,7 +356,8 @@
           session_date: sessionDate.trim(),
           session_time: sessionTime.trim(),
           instructor_name: instructor.trim(),
-          offer_notes: notes.trim()
+          offer_notes: notes.trim(),
+          await_parent: true
         }).then(function (r) {
           if (r.error) {
             cfg.toast(r.message || r.error, 'error');
