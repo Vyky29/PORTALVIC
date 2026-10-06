@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v294",
+  "version": "2026-10-06-v295",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1846,6 +1846,38 @@
               "La plantilla portal_parent_update cubre los borradores habituales.",
               "Para editar las plantillas: Settings, Edit WhatsApp templates. Abre Meta. Entra con la cuenta de Facebook del negocio y abre portal_parent_update_v2 o portal_parent_urgent_v1.",
               "No pulses Enter dentro de la caja {{1}}. Meta lo rechaza y el portal junta el texto en un bloque. Para que haya espacio, crea una plantilla nueva (no edites la que ya esta en uso) con una linea en blanco entre cada caja: {{1}}, linea en blanco, {{2}}, linea en blanco, {{3}}. Cuando Meta ponga Approved, las automatizaciones pueden meter un parrafo en cada caja."
+            ]
+          }
+        },
+        {
+          "id": "whatsapp_template_gaps",
+          "title": "WhatsApp template with gaps",
+          "summary": "Create a new Meta template so automated messages have a blank line between paragraphs.",
+          "where": "Settings → Edit WhatsApp templates",
+          "keywords": ["plantilla", "plantillas", "meta", "whatsapp api", "espacios", "bloque", "template"],
+          "steps": [
+            "Settings, Edit WhatsApp templates. Log in with the Facebook account that owns the business.",
+            "Create template. Category Utility. Name portal_parent_update_v3. Language English. Do not edit portal_parent_update_v2.",
+            "In the body, paste four boxes with a blank line between them, then the fixed closing lines.",
+            "Add a one-line sample for each box. Submit. Wait until the status says Approved."
+          ],
+          "tips": [
+            "Do not press Enter inside a box. Meta rejects line breaks inside {{1}}.",
+            "When it says Approved, the automations can be switched onto this template."
+          ],
+          "es": {
+            "title": "Plantilla de WhatsApp con espacios",
+            "summary": "Crea una plantilla nueva en Meta para que los mensajes automaticos salgan con una linea en blanco entre parrafos.",
+            "where": "Settings → Edit WhatsApp templates",
+            "steps": [
+              "Settings, Edit WhatsApp templates. Entra con la cuenta de Facebook del negocio.",
+              "Crear plantilla. Categoria Utility. Nombre portal_parent_update_v3. Idioma English. No edites portal_parent_update_v2.",
+              "En el cuerpo, pega cuatro cajas con una linea en blanco entre ellas y despues el cierre fijo.",
+              "Pon un ejemplo de una linea en cada caja. Envia. Espera a que el estado diga Approved."
+            ],
+            "tips": [
+              "No pulses Enter dentro de una caja. Meta rechaza los saltos de linea dentro de {{1}}.",
+              "Cuando diga Approved, se pueden pasar las automatizaciones a esta plantilla."
             ]
           }
         },
