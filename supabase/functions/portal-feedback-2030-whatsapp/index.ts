@@ -41,6 +41,7 @@ import {
   applyScheduleOverridesToFeedback2030Slots,
   datedFallbackSlots,
   dropSlotsForUnavailableStaff,
+  feedbackRingAlreadySentToday,
   FEEDBACK_2030_MADRE_TERM_KEYS,
   mergeFeedback2030Slots,
   outstandingByStaff,
@@ -655,7 +656,7 @@ Deno.serve(async (req) => {
         .eq("staff_profile_id", t.profileId)
         .eq("subject", `Feedback ring - ${iso}`)
         .limit(1);
-      if (recent && recent.length && !force) {
+      if (feedbackRingAlreadySentToday(recent, force)) {
         skipped.push({ username: t.username, reason: "already_rang_today" });
         continue;
       }

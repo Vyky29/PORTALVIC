@@ -1,11 +1,14 @@
 /**
- * Smoke: 20:30 matcher should treat Bismark Tinashe as covering Godsway,
- * and Aida Luliya as covering roster LULIYA.
+ * Smoke: 20:30 matcher. Covers, another staff's absent mark, an aquatic
+ * cancel stored under a Day Centre key, and Elias only from his start date.
+ * The ring sends once per staff per day.
  *   npx -y deno run -A database/local-vault/smoke-feedback-2030-shared-20260909.ts
  */
 import {
   applyFeedback2030BoardPolicy,
+  feedbackRingAlreadySentToday,
   slotIsResolved,
+  slotsFromCapacityChainOccupants,
   type Feedback2030Slot,
 } from "../../supabase/functions/_shared/portal_feedback_2030_match.ts";
 
@@ -111,6 +114,58 @@ function dbg(hid: string, msg: string, data: Record<string, unknown>) {
   } catch (_) {}
 }
 
+const fadiYoussef: Feedback2030Slot = {
+  staff: "Youssef",
+  client: "Fadi",
+  time: "12.30 to 3",
+  service: "Day Centre",
+};
+const fadiAbsentCtx = {
+  ...emptyCtx,
+  absentMarks: [{
+    portal_session_key: "2026-09-28|fadi|day_centre",
+    staff_user_id: "roberto-not-youssef",
+    mark_type: "absent",
+  }],
+};
+const emmanuelAbate: Feedback2030Slot = {
+  staff: "Luliya",
+  client: "Emmanuel Abate",
+  time: "4.00 to 4.30",
+  service: "Aquatic Activity",
+};
+const emanuelDayCentre: Feedback2030Slot = {
+  staff: "Roberto",
+  client: "Emanuel",
+  time: "12.30 to 3",
+  service: "Day Centre",
+};
+const luliyaCancelCtx = {
+  ...emptyCtx,
+  cancelRows: [{
+    client_name: "Emmanuel",
+    portal_session_key: "2026-10-06|emmanuel|day_centre",
+    service: "Aquatic Activity",
+    session_time: "4 to 4.30",
+  }],
+};
+const eliasBoard = {
+  "live-aquatic-acton-wednesday-16-00-4-00-4-30": {
+    serviceId: "aquatic",
+    day: "Wednesday",
+    venue: "Acton",
+    timeLabel: "4.00 - 4.30",
+    seatLines: [{
+      kind: "booked",
+      client: "Elias",
+      instructor: "Youssef",
+      bookedFrom: "2026-09-23",
+    }],
+  },
+};
+const eliasBefore = slotsFromCapacityChainOccupants(eliasBoard, "2026-09-16");
+const eliasOn = slotsFromCapacityChainOccupants(eliasBoard, "2026-09-23");
+
 dbg("B", "joelle-6.30-clock-parse", {
   time: joelleSimonLate.time,
   firstHm: clockProbe ? `${clockProbe[1]}:${clockProbe[2]}` : null,
@@ -128,6 +183,25 @@ const checks = [
   ["joelle 2:1 5.30 submit does not clear 6.30", slotIsResolved(joelleSimonLate, "2026-09-10", joelleCtx), false],
   ["thu10 drops joelle 6-6.30 from 20:30 list", joelleDropped.length === 0, true],
   ["thu10 keeps joelle 5.30-6 on 20:30 list", joelleKept530.length === 1, true],
+  [
+    "absent mark from another staff clears the seat",
+    slotIsResolved(fadiYoussef, "2026-09-28", fadiAbsentCtx),
+    true,
+  ],
+  [
+    "aquatic cancel keyed as day centre still closes Emmanuel Abate",
+    slotIsResolved(emmanuelAbate, "2026-10-06", luliyaCancelCtx),
+    true,
+  ],
+  [
+    "that aquatic cancel does not close Day Centre Emanuel",
+    slotIsResolved(emanuelDayCentre, "2026-10-06", luliyaCancelCtx),
+    false,
+  ],
+  ["Elias is not a seat before 23 Sep", eliasBefore.length === 0, true],
+  ["Elias is a seat from 23 Sep", eliasOn.length === 1, true],
+  ["ring does not send again the same day", feedbackRingAlreadySentToday([{ id: "1" }]), true],
+  ["ring still sends when nothing was logged", feedbackRingAlreadySentToday([]), false],
 ];
 
 let failed = 0;
