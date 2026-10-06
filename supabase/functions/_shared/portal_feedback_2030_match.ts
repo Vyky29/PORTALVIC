@@ -1175,6 +1175,8 @@ export type Feedback2030KeyRow = {
   client_name?: string | null;
   staff_user_id?: string | null;
   mark_type?: string | null;
+  service?: string | null;
+  session_time?: string | null;
 };
 
 function keyTouchesClient(key: string, client: string): boolean {
@@ -1182,6 +1184,32 @@ function keyTouchesClient(key: string, client: string): boolean {
   if (!sl) return false;
   const k = String(key || "").toLowerCase();
   return k.includes(sl) || rosterClientsMatch(client, key);
+}
+
+/** A cancellation form can store a Day Centre key for an aquatic seat. The service and time on the report are the record. */
+function cancelServiceFitsSlot(slotService: string, cancelService: string): boolean {
+  const slotDc = isDayCentreService(slotService);
+  const cancelDc = isDayCentreService(cancelService);
+  if (slotDc || cancelDc) return slotDc && cancelDc;
+  const slotAq = isAquaticService(slotService);
+  const cancelAq = isAquaticService(cancelService);
+  if (slotAq || cancelAq) return slotAq && cancelAq;
+  const a = slugClient(slotService);
+  const b = slugClient(cancelService);
+  if (!a || !b) return true;
+  return a === b || a.includes(b) || b.includes(a);
+}
+
+function cancelReportClearsSlot(row: Feedback2030KeyRow, slot: Feedback2030Slot): boolean {
+  const key = String(row.portal_session_key || "");
+  if (key && keyTouchesClient(key, slot.client)) return true;
+  const name = String(row.client_name || "").trim();
+  if (!name || !clientsClose(slot.client, name)) return false;
+  const cancelSvc = String(row.service || "").trim();
+  if (cancelSvc && !cancelServiceFitsSlot(slot.service, cancelSvc)) return false;
+  const cancelTime = String(row.session_time || "").trim();
+  if (cancelTime && !feedbackTimesCompatible(slot.time, cancelTime)) return false;
+  return true;
 }
 
 export function slotIsResolved(
@@ -1197,9 +1225,7 @@ export function slotIsResolved(
 ): boolean {
   const dc = isDayCentreService(slot.service);
   for (const c of ctx.cancelRows) {
-    if (keyTouchesClient(String(c.portal_session_key || c.client_name || ""), slot.client)) {
-      return true;
-    }
+    if (cancelReportClearsSlot(c, slot)) return true;
   }
   for (const m of ctx.absentMarks) {
     if (!keyTouchesClient(String(m.portal_session_key || ""), slot.client)) continue;

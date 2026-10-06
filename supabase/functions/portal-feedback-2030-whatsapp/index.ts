@@ -525,7 +525,7 @@ Deno.serve(async (req) => {
       .in("mark_type", ["absent", "feedback_done"]);
     const { data: cancelRows } = await admin
       .from("cancellation_reports")
-      .select("client_name, session_date, portal_session_key")
+      .select("client_name, session_date, portal_session_key, service, session_time")
       .eq("session_date", dayIso);
 
     const { data: profiles } = await admin
