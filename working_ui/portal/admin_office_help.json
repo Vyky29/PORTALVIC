@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v286",
+  "version": "2026-10-06-v287",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2354,7 +2354,7 @@
             "Stage 2 face-to-face still uses its own questions and stars."
           ],
           "tips": [
-            "If the microphone is blocked, attach the recording file. Do not expect a size-limit alert.",
+            "If the microphone is blocked, attach the recording file. An iPhone voice note is allowed. No recording means the file never reached the club, so attach it again.",
             "Save after notes or a recording so it stays on the candidate."
           ]
         },

@@ -2367,22 +2367,36 @@
       };
     }
 
+    function interviewAudioContentType(mimeType, fileName) {
+      const raw = String(mimeType || "").split(";")[0].trim().toLowerCase();
+      const name = String(fileName || "").toLowerCase();
+      if (raw === "audio/x-m4a" || raw === "audio/m4a") return "audio/mp4";
+      if (raw === "video/quicktime") return "video/mp4";
+      if (raw) return raw;
+      if (/\.m4a$/i.test(name)) return "audio/mp4";
+      if (/\.mp3$/i.test(name)) return "audio/mpeg";
+      if (/\.wav$/i.test(name)) return "audio/wav";
+      if (/\.mp4$/i.test(name) || /\.mov$/i.test(name)) return "video/mp4";
+      return "audio/webm";
+    }
+
     async function uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType) {
       const sb = getSupabase();
       if (!sb || !blob || !candidateId || !questionId) {
         return { ok: false, error: "missing_client_or_blob" };
       }
+      const contentType = interviewAudioContentType(mimeType, blob && blob.name);
       const safeQ = String(questionId).replace(/[^a-zA-Z0-9_-]/g, "_");
       const ext =
-        /mp4|m4a/i.test(mimeType || "") ? "m4a" : /ogg/i.test(mimeType || "") ? "ogg" : "webm";
+        /mp4|m4a|quicktime/i.test(contentType) ? "m4a" : /ogg/i.test(contentType) ? "ogg" : /mpeg|mp3/i.test(contentType) ? "mp3" : "webm";
       const path =
         String(candidateId) + "/" + safeQ + "_" + Date.now() + "." + ext;
       const { error } = await sb.storage.from(INTERVIEW_AUDIO_BUCKET).upload(path, blob, {
-        contentType: mimeType || "audio/webm",
+        contentType: contentType,
         upsert: true,
       });
       if (error) return { ok: false, error: error.message || String(error) };
-      return { ok: true, path: path };
+      return { ok: true, path: path, contentType: contentType };
     }
 
     function isAllowedCvFile(file) {
@@ -3913,7 +3927,7 @@
         <div class="phase-audio-row">
           <button type="button" class="btn-record btn-record--phase" data-question="${escapeHtml(phase.recordId)}" aria-label="Record ${escapeHtml(phase.title)}">Record this phase</button>
           <label class="phase-attach">Attach recording
-            <input type="file" accept="audio/*,.m4a,.mp3,.wav,.webm,.ogg,.aac" data-phase-upload="${escapeHtml(phase.fileId)}" />
+            <input type="file" accept="audio/*,video/mp4,video/quicktime,.m4a,.mp3,.mp4,.wav,.webm,.ogg,.aac,.mov" data-phase-upload="${escapeHtml(phase.fileId)}" />
           </label>
         </div>
         <p class="phase-rec-status" id="status-${escapeHtml(phase.recordId)}"></p>
@@ -5232,9 +5246,9 @@
       if (!up.ok) {
         setPhaseAudioStatus(
           questionId,
-          "Recording is on this device. Press Save again when the connection is back."
+          "Not saved. This recording did not reach the club, so nobody else can play it. Attach the file again."
         );
-        setSyncUi("pending", "Recording kept on this device", "");
+        setSyncUi("pending", "Recording did not reach the club", "");
       } else {
         setPhaseAudioStatus(questionId, "Recording saved.");
       }
