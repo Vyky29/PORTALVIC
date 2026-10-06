@@ -549,9 +549,11 @@
     if (last === "session_add") {
       const blob = parts.join("|").toLowerCase();
       if (blob.indexOf("day_centre") >= 0) return true;
-      for (let i = 0; i < parts.length; i++) {
-        const p = String(parts[i] || "").trim().toLowerCase();
-        if (portalClientIsDayCentreSharedParticipant(p)) return true;
+      if (!/aquatic|swim|climb|multi/.test(blob)) {
+        for (let i = 0; i < parts.length; i++) {
+          const p = String(parts[i] || "").trim().toLowerCase();
+          if (portalClientIsDayCentreSharedParticipant(p)) return true;
+        }
       }
     }
     if (parts.length >= 3 && parts[1] === "") return true;
@@ -741,7 +743,7 @@
   function rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso) {
     if (!s) return false;
     if (s.__portalSundayInstructorCover) return true;
-    if (portalClientIsDayCentreSharedParticipant(s.clientId || s.clientName)) return false;
+    if (isDayCentreRosterSession(s)) return false;
     const act = String((s.activity || s.rosterService || s.service) || "")
       .trim()
       .toLowerCase();

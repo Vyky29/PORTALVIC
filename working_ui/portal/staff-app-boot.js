@@ -79,7 +79,7 @@
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
-    preloadScript("/portal/staff-dashboard-feedback.js?v=20261004-dc-with");
+    preloadScript("/portal/staff-dashboard-feedback.js?v=20261007-name-not-dc");
   }
 
   if ("serviceWorker" in global.navigator) {
@@ -184,7 +184,7 @@
   var STAFF_DEFERRED_HEAVY = [
     "/portal/clients_info_embed.js?v=20260910-joelle-406",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
-      "/portal/portal_staff_lead_aquatic_slots.js?v=20261004-absent-hour",
+      "/portal/portal_staff_lead_aquatic_slots.js?v=20261007-name-not-dc",
     "/portal/portal_participant_general_hydrate.js?v=20260928-booking-general",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
     "/portal/portal_staff_photos.js?v=20261003-display-photo",

@@ -1158,6 +1158,7 @@
       if(!raw) return '';
       const slug = raw.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
       const first = slug.split('_')[0];
+      if(slug.indexOf('abate') >= 0) return slug;
       if(first === 'emmanuel' || first === 'emanuel') return 'emanuel';
       return first;
     }
@@ -1165,8 +1166,6 @@
       const act = String((row && (row.activity || row.rosterService || row.service)) || '').toLowerCase();
       const stem = String(clientStem || '').trim().toLowerCase();
       if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(row)) return 'day_centre';
-      if(typeof portalClientIsDayCentreSharedParticipant === 'function'
-        && portalClientIsDayCentreSharedParticipant(row && (row.clientId || row.client_name || row.clientName || row.name))) return 'day_centre';
       if(/day\s*centre/.test(act)) return 'day_centre';
       if(stem === 'tinashe' || (typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(row))) return 'bespoke';
       if(/bespoke/.test(act)) return 'bespoke';
@@ -2342,8 +2341,6 @@
       if(!item) return false;
       const base = item.__portalBaseSession || item;
       if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(base)) return true;
-      if(typeof portalClientIsDayCentreSharedParticipant === 'function'
-        && portalClientIsDayCentreSharedParticipant(item.clientId || item.name || base.clientId || base.clientName)) return true;
       return /day\s*centre/i.test(String(item.activity || item.service || base.activity || base.rosterService || base.service || ''));
     }
     /** Day Centre partners sit under the time, not under the name. */

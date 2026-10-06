@@ -407,13 +407,7 @@
       .trim()
       .toLowerCase();
     if (!iso || !cid) return "";
-    /* Day Centre shared participants must keep date|client|day_centre — never aquatic. */
-    if (
-      typeof global.portalClientIsDayCentreSharedParticipant === "function" &&
-      global.portalClientIsDayCentreSharedParticipant(cid)
-    ) {
-      return "";
-    }
+    /* A real Day Centre session keeps date|client|day_centre. The first name alone does not. */
     if (
       typeof global.portalRosterSessionIsDayCentre === "function" &&
       global.portalRosterSessionIsDayCentre(s)

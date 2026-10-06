@@ -260,7 +260,7 @@
     function portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso){
       if(portalSessionIsSundayInstructorCover(s)) return true;
       if(portalSessionIsSundaySwimfarmPerStaffFeedback(s, iso)) return true;
-      if(portalClientIsDayCentreSharedParticipant(s && (s.clientId || s.clientName))) return false;
+      if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)) return false;
       const act = String((s && (s.activity || s.rosterService || s.service)) || '').toLowerCase();
       if(/day\s*centre/.test(act)) return false;
       if(typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s)) return false;
@@ -982,10 +982,6 @@
       }
       if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s) && cid){
         add(iso + '|' + cid + '|day_centre');
-      }else if(cid && typeof portalClientIsDayCentreSharedParticipant === 'function'
-        && portalClientIsDayCentreSharedParticipant(cid)){
-        add(iso + '|' + cid + '|day_centre');
-        add(iso + '||' + cid);
       }
       if(typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s) && cid){
         add(iso + '|' + cid + '|bespoke_shared');
@@ -1321,8 +1317,8 @@
         const needsOwnFeedback = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
           && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
         const ownSrv = dashboardData && dashboardData.portalServerOwnFeedbackKeys;
-        const dcSharedClient = !!(cidForSlot && typeof portalClientIsDayCentreSharedParticipant === 'function'
-          && portalClientIsDayCentreSharedParticipant(cidForSlot));
+        const dcSharedClient = !!(baseS && typeof portalRosterSessionIsDayCentre === 'function'
+          && portalRosterSessionIsDayCentre(baseS));
         for(let i = 0; i < aliases.length; i++){
           const k = aliases[i];
           if(typeof portalStaffLeadFeedbackKeyMatchesAquaticSlot === 'function'

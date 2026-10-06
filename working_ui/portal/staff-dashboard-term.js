@@ -502,9 +502,7 @@
          Never overwrite Day Centre / bespoke shared (Ikram etc.) — that broke peer clear
          (Michelle/Roberto submit day_centre → Luliya outstanding still counted aquatic). */
       const keepSharedUnit = (typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s))
-        || (typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s))
-        || (typeof portalClientIsDayCentreSharedParticipant === 'function'
-          && portalClientIsDayCentreSharedParticipant(effClientId || s.clientId || s.clientName));
+        || (typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s));
       if(!keepSharedUnit){
         try{
           const act = String(s.activity || s.rosterService || s.service || '').trim();
@@ -692,9 +690,7 @@
         /* Shared Day Centre: peer (or self) already submitted this unit → not outstanding. */
         try{
           const cidDc = String(item.clientId || s.clientId || s.clientName || '').trim().toLowerCase();
-          const isDcShared = (typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s))
-            || (typeof portalClientIsDayCentreSharedParticipant === 'function'
-              && portalClientIsDayCentreSharedParticipant(cidDc));
+          const isDcShared = typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s);
           if(isDcShared && cidDc){
             const slugDc = cidDc.replace(/[^a-z0-9]+/g, '').replace(/^_+|_+$/g, '') || cidDc;
             const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
