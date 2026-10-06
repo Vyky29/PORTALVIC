@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Services &amp; prices 2026/27 — clubSENsational</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1a2a3a;
+      --muted: #5b7280;
+      --line: #d7e2e8;
+      --navy: #35415d;
+      --gold: #f4bd2a;
+      --gold-soft: #fff6dc;
+      --paper: #f4f7f9;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "DM Sans", Helvetica, Arial, sans-serif;
+      font-size: 15.5px;
+      line-height: 1.55;
+      background:
+        radial-gradient(900px 420px at 0% -10%, rgba(53, 65, 93, 0.10), transparent 55%),
+        radial-gradient(700px 380px at 100% 0%, rgba(244, 189, 42, 0.16), transparent 50%),
+        var(--paper);
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 28px 18px 72px; }
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 28px 28px 22px;
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 6px;
+      background: linear-gradient(180deg, var(--gold), var(--navy));
+    }
+    .eyebrow {
+      margin: 0 0 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--navy);
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.55rem, 3.4vw, 2.05rem);
+      line-height: 1.18;
+      color: var(--navy);
+    }
+    .lead { margin: 0; color: var(--muted); max-width: 40rem; }
+    .note {
+      margin: 14px 0 0;
+      padding: 12px 14px;
+      border-left: 4px solid var(--gold);
+      background: var(--gold-soft);
+      border-radius: 0 12px 12px 0;
+      font-size: 13.5px;
+      color: var(--ink);
+    }
+    h2 {
+      margin: 28px 0 10px;
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.28rem;
+      color: var(--navy);
+    }
+    h3 {
+      margin: 0 0 6px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    p { margin: 0 0 10px; }
+    .muted { color: var(--muted); }
+    .service {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin: 0 0 12px;
+      min-width: 0;
+    }
+    .service-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .price {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--navy);
+      white-space: nowrap;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0 0 8px;
+    }
+    .chip {
+      display: inline-block;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #eef2f6;
+      color: var(--navy);
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .chip-venue { background: #e0f2fe; color: #0369a1; }
+    .blurb { margin: 0; color: var(--muted); font-size: 14.5px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      overflow-wrap: break-word;
+    }
+    th {
+      background: #f8fafc;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--navy);
+    }
+    tr:last-child td { border-bottom: 0; }
+    .appendix {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-top: 8px;
+    }
+    .appendix ul { margin: 8px 0 0; padding-left: 18px; }
+    .appendix li { margin: 4px 0; }
+    .footer {
+      margin-top: 28px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    @media print {
+      body { background: #fff; }
+      .wrap { padding: 12px; }
+      .service, .hero, .appendix { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="hero">
+      <p class="eyebrow">clubSENsational · For parents</p>
+      <h1>Services &amp; prices · 2026/27</h1>
+      <p class="lead">
+        A simple guide to what we offer in the academic year 2026/27, where sessions run,
+        and the standard parent-funded prices. Places are for children and young people
+        with autism and/or learning disabilities, with 1:1 or 2:1 support depending on the place.
+      </p>
+      <p class="note">
+        Prices below are the standard session rates used for re-enrolment 2026/27.
+        Longer slots scale from the base unit (for example 60' Aquatic = 2 x 30').
+        VAT treatment is shown on your invoices / parent portal.
+        LA or NHS funded places may differ and are confirmed individually.
+      </p>
+    </header>
+
+    <h2>Activity services</h2>
+    <p class="muted" style="margin-top:-2px">After-school and weekend sessions across our venues.</p>
+
+    <article class="service">
+      <div class="service-top">
+        <h3>Aquatic Activity</h3>
+        <div class="price">£50 / 30'</div>
+      </div>
+      <div class="meta">
+        <span class="chip">From 3 years+</span>
+        <span class="chip">Usually 30' (also 60')</span>
+        <span class="chip chip-venue">Acton · Northolt · SwimFarm</span>
+      </div>
+      <p class="blurb">
+        1:1 or small-group swimming with sensory-aware instructors. We work at your child's pace -
+        water confidence, regulation, and independence in the pool.
+      </p>
+    </article>
+
+    <article class="service">
+      <div class="service-top">
+        <h3>Climbing Activity</h3>
+        <div class="price">£75 / 60'</div>
+      </div>
+      <div class="meta">
+        <span class="chip">From 3 years+</span>
+        <span class="chip">Usually 60'</span>
+        <span class="chip chip-venue">Westway</span>
+      </div>
+      <p class="blurb">
+        Supported climbing that builds strength, focus, and confidence.
+        Routes and support levels are matched to each child.
+      </p>
+    </article>
+
+    <article class="service">
+      <div class="service-top">
+        <h3>Physical Activity</h3>
+        <div class="price">£75 / 60'</div>
+      </div>
+      <div class="meta">
+        <span class="chip">From 12 years+</span>
+        <span class="chip">Usually 60'</span>
+        <span class="chip chip-venue">SwimFarm · Acton</span>
+      </div>
+      <p class="blurb">
+        Active movement sessions focused on coordination, stamina, and structure -
+        adapted so every young person can take part safely.
+      </p>
+    </article>
+
+    <article class="service">
+      <div class="service-top">
+        <h3>Multi-Activity</h3>
+        <div class="price">£120 / 90'</div>
+      </div>
+      <div class="meta">
+        <span class="chip">From 3 years+</span>
+        <span class="chip">Usually 90'</span>
+        <span class="chip chip-venue">SwimFarm · Northolt</span>
+      </div>
+      <p class="blurb">
+        A longer block that combines activities in one visit (for example pool plus land-based work).
+        Ideal when you want more variety in a single session.
+      </p>
+    </article>
+
+    <article class="service">
+      <div class="service-top">
+        <h3>Bespoke Programme</h3>
+        <div class="price">£125 / 60'</div>
+      </div>
+      <div class="meta">
+        <span class="chip">From 3 years+</span>
+        <span class="chip">Usually 60' (agreed with office)</span>
+        <span class="chip chip-venue">SwimFarm · Acton · Westway</span>
+      </div>
+      <p class="blurb">
+        A tailored programme built around your child's goals, support needs, and schedule -
+        planned with you and the delivery team.
+      </p>
+    </article>
+
+    <h2>Day Centre</h2>
+    <article class="service">
+      <div class="service-top">
+        <h3>Day Centre</h3>
+        <div class="price">Quote individually</div>
+      </div>
+      <div class="meta">
+        <span class="chip">Mon-Fri · 11am-4pm</span>
+        <span class="chip chip-venue">SwimFarm</span>
+      </div>
+      <p class="blurb">
+        A weekday daytime programme with structured support through the day - table work,
+        sensory / quiet time, gym, swimming, lunch and life skills, and community trips when staffing allows.
+        Places are arranged with families through the office so we can match funding and support needs properly.
+        Pricing is quoted individually (parent-funded, LA Direct Payments, or funder invoice).
+      </p>
+    </article>
+
+    <h2>Price at a glance</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Unit</th>
+          <th>Price</th>
+          <th>Venues</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Aquatic Activity</td>
+          <td>30'</td>
+          <td>£50</td>
+          <td>Acton · Northolt · SwimFarm</td>
+        </tr>
+        <tr>
+          <td>Climbing Activity</td>
+          <td>60'</td>
+          <td>£75</td>
+          <td>Westway</td>
+        </tr>
+        <tr>
+          <td>Physical Activity</td>
+          <td>60'</td>
+          <td>£75</td>
+          <td>SwimFarm · Acton</td>
+        </tr>
+        <tr>
+          <td>Multi-Activity</td>
+          <td>90'</td>
+          <td>£120</td>
+          <td>SwimFarm · Northolt</td>
+        </tr>
+        <tr>
+          <td>Bespoke Programme</td>
+          <td>60'</td>
+          <td>£125</td>
+          <td>SwimFarm · Acton · Westway</td>
+        </tr>
+        <tr>
+          <td>Day Centre</td>
+          <td>Weekday day</td>
+          <td>Quote individually</td>
+          <td>SwimFarm</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Appendix · Crash courses (holidays)</h2>
+    <div class="appendix">
+      <p class="blurb" style="margin-bottom:8px">
+        Short holiday programmes are separate from term re-enrolment rates. Availability and weeks open for booking
+        are shown on the parent portal / calendar when a crash course is running.
+      </p>
+      <ul>
+        <li><strong>Climbing crash</strong> - Westway · £75 per session · four-day weekly pack £300</li>
+        <li><strong>Swimming crash</strong> - Acton · £50 per 30' · four-day weekly pack £200</li>
+      </ul>
+      <p class="muted" style="margin:10px 0 0;font-size:13px">
+        Example: Summer holiday 2026 (July) offered climbing at Westway and swimming at Acton on selected Tue-Fri weeks.
+      </p>
+    </div>
+
+    <p class="footer">
+      clubSENsational Ltd · Academic year 2026/27 · Parent guide<br />
+      Questions about a place or a quote: use the parent portal messaging, or contact the office.
+    </p>
+  </main>
+</body>
+</html>
