@@ -95,6 +95,16 @@ Deno.serve(async (req) => {
       roster = { override_id: null, error: "roster_threw" };
     }
 
+    if (!roster.override_id) {
+      return json(409, {
+        ok: false,
+        error: "roster_failed",
+        roster_error: roster.error || "unknown",
+        message:
+          "Could not place this makeup on the timetable. It is still waiting for Accept. Please try again or contact the office.",
+      });
+    }
+
     const { data: updated, error } = await supabase
       .from("portal_parent_makeup_offers")
       .update({ status: "accepted", responded_at: now, updated_at: now })
@@ -109,16 +119,6 @@ Deno.serve(async (req) => {
       .from("portal_parent_makeup_grants")
       .update({ status: "consumed", closed_at: now, updated_at: now })
       .eq("id", offer.grant_id);
-
-    if (!roster.override_id) {
-      return json(200, {
-        ok: true,
-        offer: updated,
-        roster_error: roster.error || "unknown",
-        message:
-          "Accepted. The office has your answer. If the slot is not on the timetable yet, they will confirm it.",
-      });
-    }
 
     // Confirmed makeup: notify parent + instructor (real WA/email, not soft inbox only).
     let makeup_notify = null;

@@ -4831,7 +4831,7 @@
       var offers = Array.isArray(g.offers) ? g.offers.slice() : [];
       if (g.pending_offer) offers.push(g.pending_offer);
       offers.forEach(function (o) {
-        if (!o || String(o.status || "") !== "accepted") return;
+        if (!o || String(o.status || "") !== "accepted" || !o.roster_override_id) return;
         var iso = String(o.session_date || "").slice(0, 10);
         if (!iso || seen[iso]) return;
         seen[iso] = true;
