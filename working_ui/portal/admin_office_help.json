@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v295",
+  "version": "2026-10-06-v296",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1863,7 +1863,8 @@
           ],
           "tips": [
             "Do not press Enter inside a box. Meta rejects line breaks inside {{1}}.",
-            "When it says Approved, the automations can be switched onto this template."
+            "When it says Approved, the automations can be switched onto this template.",
+            "If Meta says the category does not match and recommends Marketing, press Cancel. Keep Servicio. Change the first line so it is an update about an existing booking, not a portal introduction."
           ],
           "es": {
             "title": "Plantilla de WhatsApp con espacios",
@@ -1877,7 +1878,8 @@
             ],
             "tips": [
               "No pulses Enter dentro de una caja. Meta rechaza los saltos de linea dentro de {{1}}.",
-              "Cuando diga Approved, se pueden pasar las automatizaciones a esta plantilla."
+              "Cuando diga Approved, se pueden pasar las automatizaciones a esta plantilla.",
+            "Si Meta dice que la categoria no coincide y recomienda Marketing, pulsa Cancelar. Deja Servicio. Cambia la primera linea para que sea un aviso de una reserva que ya existe, no una presentacion del portal."
             ]
           }
         },
