@@ -18,6 +18,7 @@ import {
   flattenWhatsappTemplateBody,
   normalizeParentPhoneE164,
   sendParentMobileMessage,
+  withStaffApiMachineFooter,
 } from "../_shared/portal_parent_messaging.ts";
 
 const KIND = "timesheet_deadline_wa";
@@ -82,13 +83,13 @@ function firstName(fullName: string, username: string): string {
 }
 
 function buildBody(first: string, range: string): string {
-  return (
+  return withStaffApiMachineFooter(
     `Hi ${first},\n\n` +
     `Reminder: your timesheet for ${range} has not been submitted.\n\n` +
     `Open the Staff Portal and press Submit tonight, before midnight:\n` +
     `${TIMESHEET_URL}\n\n` +
     `If it is late, a £5 penalty applies and the hours move to next month's pay.\n\n` +
-    `Thank you,\nclubSENsational office`
+    `Thank you,\nclubSENsational office`,
   );
 }
 

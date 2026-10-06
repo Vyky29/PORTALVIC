@@ -34,6 +34,7 @@ import {
   flattenWhatsappTemplateBody,
   normalizeParentPhoneE164,
   sendParentMobileMessage,
+  withStaffApiMachineFooter,
 } from "../_shared/portal_parent_messaging.ts";
 import {
   applyFeedback2030BoardPolicy,
@@ -263,14 +264,13 @@ function buildBody(first, pending, sample, wave, london) {
   const opener = carriesOlder
     ? `Session feedback is still open (${n} left${list ? ": " + list + more : ""}).`
     : `Today's session feedback is not complete yet (${n} left${list ? ": " + list + more : ""}).`;
-  return (
+  return withStaffApiMachineFooter(
     `Hi ${first},\n\n` +
     `${opener}\n\n` +
     `${timeLine} Please send them now in the Staff Portal (Today):\n` +
     `${PORTAL_URL}\n\n` +
     `After 9:00pm today's hours stay on hold until the office releases them.\n\n` +
-    `This message was sent automatically. Please do not reply to it.\n\n` +
-    `Thank you,\nclubSENsational office`
+    `Thank you,\nclubSENsational office`,
   );
 }
 

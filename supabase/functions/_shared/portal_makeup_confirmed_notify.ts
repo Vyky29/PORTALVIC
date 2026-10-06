@@ -11,6 +11,7 @@ import {
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
+  withStaffApiMachineFooter,
 } from "./portal_parent_messaging.ts";
 import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
 import {
@@ -256,12 +257,13 @@ export async function notifyMakeupConfirmed(
             username: staff.username,
           };
         } else {
-          const staffBody =
+          const staffBody = withStaffApiMachineFooter(
             `Make-up on your roster\n\n` +
             `${childName}\n` +
             `${whenLine}` +
             (instructorName ? `\nInstructor: ${instructorName}` : "") +
-            `\n\nPlease check Staff Today for this session.`;
+            `\n\nPlease check Staff Today for this session.`,
+          );
           const wa = await sendParentMobileMessage(phone, staffBody, {
             kind: "staff_contact_update",
           });

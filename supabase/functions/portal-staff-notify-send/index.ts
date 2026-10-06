@@ -29,6 +29,7 @@ import {
   maskPhoneForLog,
   normalizeParentPhoneE164,
   sendParentMobileMessage,
+  withStaffApiMachineFooter,
 } from "../_shared/portal_parent_messaging.ts";
 import {
   classifyWhatsappMediaMime,
@@ -114,7 +115,7 @@ Deno.serve(async (req) => {
   }
 
   const staffUsername = normalizeStaffUsernameKey(str(payload.staffUsername || payload.staffKey, 64));
-  const bodyText = str(payload.body || payload.whatsappBody, 4096);
+  let bodyText = str(payload.body || payload.whatsappBody, 4096);
   const kind = str(payload.kind, 64).toLowerCase() || "staff_message";
   let contextWaId = str(payload.contextWaId, 200);
   const mediaMime = str(payload.mediaMime || payload.mime, 120).toLowerCase();
@@ -128,6 +129,9 @@ Deno.serve(async (req) => {
   const hasMedia = !!mediaB64 && !!mediaMime;
   if (!bodyText && !hasMedia) {
     return portalAdminJson(400, { ok: false, error: "empty_body" });
+  }
+  if (kind !== "whatsapp_test") {
+    bodyText = withStaffApiMachineFooter(bodyText);
   }
 
   const admin = createClient(baseUrl, serviceRole, {

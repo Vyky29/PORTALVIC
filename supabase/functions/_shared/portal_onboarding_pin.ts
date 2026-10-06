@@ -4,6 +4,7 @@ import {
   maskPhoneForLog,
   normalizeParentPhoneE164,
   sendParentMobileMessage,
+  withStaffApiMachineFooter,
 } from "./portal_parent_messaging.ts";
 
 export const ONBOARDING_PIN_UUID_RE =
@@ -287,7 +288,7 @@ export async function sendStaffOnboardingWhatsapp(
   },
 ): Promise<{ ok: boolean; error?: string }> {
   const phone = normalizeParentPhoneE164(String(opts.phone || ""));
-  const body = String(opts.body || "").trim();
+  const body = withStaffApiMachineFooter(String(opts.body || ""));
   if (!phone) return { ok: false, error: "missing_staff_phone" };
   if (!body) return { ok: false, error: "empty_body" };
   const templateBody = flattenWhatsappTemplateBody(body);

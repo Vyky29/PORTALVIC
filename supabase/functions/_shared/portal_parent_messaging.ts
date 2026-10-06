@@ -17,6 +17,29 @@ export function normalizeParentPhoneE164(raw: string): string | null {
   return "+" + digits;
 }
 
+/** Staff API WhatsApp. Do not reply on this thread. */
+export function staffApiMachineFooter(): string {
+  return (
+    "This is an automatic message from the system. Please do not reply here.\n\n" +
+    "To reply, use Messages (chat) in the Staff Portal, or call or message the admin mobile on WhatsApp Business."
+  );
+}
+
+export function withStaffApiMachineFooter(body: string): string {
+  const footer = staffApiMachineFooter();
+  const stripped = String(body || "")
+    .replace(/\r\n/g, "\n")
+    .replace(
+      /\n*This is an automatic message from the system\. Please do not reply here\.[\s\S]*?WhatsApp Business\.?\s*/gi,
+      "\n\n",
+    )
+    .replace(/\n*This message was sent automatically\. Please do not reply to it\.?\s*/gi, "\n\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (!stripped) return footer;
+  return stripped + "\n\n" + footer;
+}
+
 export function plainTextToHtml(
   text: string,
   opts?: { instructorPhotoUrl?: string; instructorPhotoName?: string },
