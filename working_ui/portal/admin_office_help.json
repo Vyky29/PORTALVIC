@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v276",
+  "version": "2026-10-06-v277",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2852,7 +2852,8 @@
           ],
           "tips": [
             "DBS is its own type. Do not file it as a generic Certificate.",
-            "Safeguarding certificate is the training file, not the policy sign-off."
+            "Safeguarding certificate is the training file, not the policy sign-off.",
+            "The file is saved on that worker. Any admin opens it from Documents, on the DBS or Safeguarding button. PDF, JPG, PNG or a phone photo all attach."
           ]
         },
         {
@@ -2920,7 +2921,8 @@
           ],
           "tips": [
             "A gov.uk right to work screenshot is not a passport.",
-            "British / UK nationals can skip this if the passport is already uploaded."
+            "British / UK nationals can skip this if the passport is already uploaded.",
+            "The file is saved on that worker. Any admin opens it from Documents, on the Right to work button."
           ]
         },
         {

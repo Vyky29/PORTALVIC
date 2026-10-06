@@ -768,7 +768,7 @@
   }
 
   function previewIsImage(path) {
-    return /\.(png|jpe?g|gif|webp)(\?|$)/i.test(String(path || '').split('#')[0]);
+    return /\.(png|jpe?g|gif|webp|heic|heif)(\?|$)/i.test(String(path || '').split('#')[0]);
   }
 
   function previewFitUrl(url, path) {
@@ -1060,13 +1060,19 @@
       return;
     }
     var mime = String(file.type || '').toLowerCase();
+    var nameLower = String(file.name || '').toLowerCase();
     var okMime =
       !mime ||
       mime === 'application/pdf' ||
       mime === 'image/jpeg' ||
-      mime === 'image/png';
+      mime === 'image/png' ||
+      mime === 'image/webp' ||
+      mime === 'image/gif' ||
+      mime === 'image/heic' ||
+      mime === 'image/heif' ||
+      /\.(pdf|png|jpe?g|webp|gif|heic|heif)$/.test(nameLower);
     if (!okMime) {
-      setStatus('<strong>PDF or image only</strong> — PDF, JPG or PNG.', true);
+      setStatus('<strong>PDF or image only</strong> — PDF, JPG, PNG or a phone photo.', true);
       return;
     }
 
@@ -1084,13 +1090,29 @@
     }
 
     var ext = 'pdf';
-    if (mime === 'image/png' || /\.png$/i.test(file.name || '')) ext = 'png';
-    else if (mime === 'image/jpeg' || /\.jpe?g$/i.test(file.name || '')) ext = 'jpg';
+    if (mime === 'image/png' || /\.png$/i.test(nameLower)) ext = 'png';
+    else if (mime === 'image/jpeg' || /\.jpe?g$/i.test(nameLower)) ext = 'jpg';
+    else if (mime === 'image/webp' || /\.webp$/i.test(nameLower)) ext = 'webp';
+    else if (mime === 'image/gif' || /\.gif$/i.test(nameLower)) ext = 'gif';
+    else if (mime === 'image/heic' || mime === 'image/heif' || /\.heic$/i.test(nameLower)) ext = 'heic';
+    else if (/\.heif$/i.test(nameLower)) ext = 'heif';
     var stamp = new Date().toISOString().replace(/[:.]/g, '-');
     var filename = stamp + '_' + sanitizeFilenamePart(title) + '.' + ext;
     var storagePath = staffId + '/admin_documents/' + meta.key + '/' + filename;
     var contentType =
-      ext === 'png' ? 'image/png' : ext === 'jpg' ? 'image/jpeg' : 'application/pdf';
+      ext === 'png'
+        ? 'image/png'
+        : ext === 'jpg'
+          ? 'image/jpeg'
+          : ext === 'webp'
+            ? 'image/webp'
+            : ext === 'gif'
+              ? 'image/gif'
+              : ext === 'heic'
+                ? 'image/heic'
+                : ext === 'heif'
+                  ? 'image/heif'
+                  : 'application/pdf';
 
     state.uploading = true;
     var btn = document.getElementById('portalDocumentsUploadSubmit');
@@ -1338,7 +1360,7 @@
       '<div><label for="portalDocumentsTitle">Title</label>' +
       '<input class="inp" id="portalDocumentsTitle" type="text" maxlength="120" placeholder="e.g. DBS certificate · First aid expiring 2027" required /></div>' +
       '<div><label for="portalDocumentsFile">File</label>' +
-      '<input type="file" id="portalDocumentsFile" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png" required /></div>' +
+      '<input type="file" id="portalDocumentsFile" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png,image/webp,.webp,image/gif,.gif,image/heic,.heic,image/heif,.heif" required /></div>' +
       '</div>' +
       '<div class="portal-documents-upload-actions">' +
       '<button type="submit" class="btn btn--pri" id="portalDocumentsUploadSubmit">Attach to My Documents</button>' +
