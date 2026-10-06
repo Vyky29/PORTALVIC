@@ -730,25 +730,74 @@
     return true;
   }
 
-  async function absencesForDate(iso) {
-    var key = String(iso || '').slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return [];
-    state._absByDate = state._absByDate || {};
-    if (state._absByDate[key]) return state._absByDate[key];
+  function todayIso() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+
+  function parseIsoDate(iso) {
+    var p = String(iso || '').split('-');
+    if (p.length !== 3) return null;
+    var dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    if (!Number.isFinite(dt.getTime())) return null;
+    return dt;
+  }
+
+  function isoFromDate(dt) {
+    var m = String(dt.getMonth() + 1).padStart(2, '0');
+    var day = String(dt.getDate()).padStart(2, '0');
+    return dt.getFullYear() + '-' + m + '-' + day;
+  }
+
+  function formatShortDate(iso) {
+    var dt = parseIsoDate(iso);
+    if (!dt) return iso;
+    var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return days[dt.getDay()] + ' ' + dt.getDate() + ' ' + months[dt.getMonth()];
+  }
+
+  function datesForWeekday(dayName, fromIso, untilIso) {
+    var names = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    var want = names.indexOf(String(dayName || '').toLowerCase());
+    var cur = parseIsoDate(fromIso);
+    var end = parseIsoDate(untilIso);
+    if (want < 0 || !cur || !end) return [];
+    var out = [];
+    while (cur.getTime() <= end.getTime() && out.length < 24) {
+      if (cur.getDay() === want) out.push(isoFromDate(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return out;
+  }
+
+  async function absencesForRange(fromIso, untilIso, venue) {
+    var from = String(fromIso || '').slice(0, 10);
+    var until = String(untilIso || '').slice(0, 10);
+    var ven = String(venue || '').trim().toLowerCase();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(until)) return [];
+    var key = from + '|' + until + '|' + ven;
+    state._absByRange = state._absByRange || {};
+    if (state._absByRange[key]) return state._absByRange[key];
     var client = cfg.getClient();
     if (!client || !client.from) {
-      state._absByDate[key] = [];
+      state._absByRange[key] = [];
       return [];
     }
-    var res = await client
+    var q = client
       .from('schedule_overrides')
       .select('anchor_client_id,anchor_venue,anchor_start,session_date')
-      .eq('session_date', key)
+      .gte('session_date', from)
+      .lte('session_date', until)
       .eq('status', 'active')
       .eq('override_type', 'client_absence_announced')
-      .limit(200);
+      .limit(500);
+    if (ven) q = q.ilike('anchor_venue', venue);
+    var res = await q;
     var rows = res.error ? [] : res.data || [];
-    state._absByDate[key] = rows;
+    state._absByRange[key] = rows;
     return rows;
   }
 
@@ -757,6 +806,9 @@
     var venueFilter = String(opts.venue || '').trim().toLowerCase();
     var preferInstr = normName(opts.preferInstructor || '');
     var sessionDate = String(opts.sessionDate || '').slice(0, 10);
+    var rangeFrom = String(opts.rangeFrom || '').slice(0, 10);
+    var rangeUntil = String(opts.rangeUntil || '').slice(0, 10);
+    var expandDates = /^\d{4}-\d{2}-\d{2}$/.test(rangeFrom) && /^\d{4}-\d{2}-\d{2}$/.test(rangeUntil);
     var wantDay = isoWeekdayName(sessionDate);
     var absences = opts.absences || [];
     var skipClient = String(opts.skipClient || '').trim();
@@ -764,42 +816,58 @@
     var by = occ && occ.bySlotId;
     if (!by) return [];
     var rows = [];
+    function pushLine(id, slot, line, venue, day, iso, freed) {
+      var instr = String(line.instructor || '').trim();
+      if (!instr) return;
+      var same = preferInstr && normName(instr) === preferInstr;
+      rows.push({
+        slotId: id,
+        venue: venue,
+        day: day,
+        timeLabel: String(slot.timeLabel || '').trim(),
+        serviceId: String(slot.serviceId || '').trim(),
+        instructor: instr,
+        sameStanding: !!same,
+        freedByAbsent: !!freed,
+        absentClient: freed ? String(line.client || '').trim() : '',
+        nextDate: iso || nextIsoForWeekday(day)
+      });
+    }
     Object.keys(by).forEach(function (id) {
       var slot = by[id] || {};
-      if (!slotCoversIso(slot, sessionDate)) return;
       var day = String(slot.day || '').trim();
-      if (wantDay && day.toLowerCase() !== wantDay.toLowerCase()) return;
       var venue = String(slot.venue || '').trim();
       if (venueFilter && venue.toLowerCase() !== venueFilter) return;
-      (slot.seatLines || []).forEach(function (line) {
-        var instr = String(line.instructor || '').trim();
-        if (!instr) return;
-        var kind = String(line.kind || '');
-        var freed = null;
-        if (kind === 'booked') {
-          if (skipClient && sameClient(line.client, skipClient)) return;
-          for (var i = 0; i < absences.length; i++) {
-            if (absenceFreesLine(absences[i], slot, line)) {
-              freed = absences[i];
-              break;
-            }
+      if (wantDay && day.toLowerCase() !== wantDay.toLowerCase()) return;
+      var dates = expandDates ? datesForWeekday(day, rangeFrom, rangeUntil) : [sessionDate];
+      if (sessionDate) dates = dates.filter(function (iso) { return iso === sessionDate; });
+      if (!dates.length && !expandDates) dates = [''];
+      dates.forEach(function (iso) {
+        if (iso && !slotCoversIso(slot, iso)) return;
+        if (!iso && !slotCoversIso(slot, '')) return;
+        var dayAbs = [];
+        if (iso) {
+          for (var a = 0; a < absences.length; a++) {
+            if (String(absences[a].session_date || '').slice(0, 10) === iso) dayAbs.push(absences[a]);
           }
-          if (!freed) return;
-        } else if (kind !== 'open') {
-          return;
         }
-        var same = preferInstr && normName(instr) === preferInstr;
-        rows.push({
-          slotId: id,
-          venue: venue,
-          day: day,
-          timeLabel: String(slot.timeLabel || '').trim(),
-          serviceId: String(slot.serviceId || '').trim(),
-          instructor: instr,
-          sameStanding: !!same,
-          freedByAbsent: !!freed,
-          absentClient: freed ? String(line.client || '').trim() : '',
-          nextDate: sessionDate || nextIsoForWeekday(day)
+        (slot.seatLines || []).forEach(function (line) {
+          var kind = String(line.kind || '');
+          var freed = null;
+          if (kind === 'booked') {
+            if (!iso) return;
+            if (skipClient && sameClient(line.client, skipClient)) return;
+            for (var i = 0; i < dayAbs.length; i++) {
+              if (absenceFreesLine(dayAbs[i], slot, line)) {
+                freed = dayAbs[i];
+                break;
+              }
+            }
+            if (!freed) return;
+          } else if (kind !== 'open') {
+            return;
+          }
+          pushLine(id, slot, line, venue, day, iso, freed);
         });
       });
     });
@@ -813,7 +881,7 @@
       var ra = rank(a);
       var rb = rank(b);
       if (ra !== rb) return ra - rb;
-      if (a.day !== b.day) return a.day < b.day ? -1 : 1;
+      if (a.nextDate !== b.nextDate) return a.nextDate < b.nextDate ? -1 : 1;
       return String(a.timeLabel).localeCompare(String(b.timeLabel));
     });
     return rows;
@@ -840,9 +908,9 @@
     cfg.openModal(
       '<div class="modal-h"><h2 id="modalTitle">Makeup — pick open roster seat</h2></div>' +
         '<div class="modal-b" style="min-width:0">' +
-        '<p class="muted" style="margin:0 0 10px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Turns with the normal instructor' +
-        (preferInstr ? ' (<strong>' + esc(preferInstr) + '</strong>)' : '') +
-        ', including a seat free that day because a child is absent. Open seats with other workers are listed too.</p>' +
+        '<p class="muted" style="margin:0 0 10px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Every upcoming free seat at this venue' +
+        (preferInstr ? ', with <strong>' + esc(preferInstr) + '</strong> first' : '') +
+        '. A seat shows on each date a child is absent, so every free Wednesday is listed. Leave the date empty to see them all. Open seats with other workers stay on the list.</p>' +
         '<label class="muted">Venue</label>' +
         '<select class="inp" id="ppMakeupVenuePick" style="max-width:100%;box-sizing:border-box">' +
         venues
@@ -859,9 +927,9 @@
           })
           .join('') +
         '</select>' +
-        '<label class="muted" style="display:block;margin-top:10px">Session date</label>' +
+        '<label class="muted" style="display:block;margin-top:10px">Only this date (optional)</label>' +
         '<input class="inp" id="ppMakeupDatePick" type="date" style="max-width:100%;box-sizing:border-box" />' +
-        '<div id="ppMakeupSlotList" style="margin-top:10px;max-height:280px;overflow:auto;min-width:0"></div>' +
+        '<div id="ppMakeupSlotList" style="margin-top:10px;max-height:360px;overflow:auto;min-width:0"></div>' +
         '<p id="ppMakeupSlotErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px"></p>' +
         '</div>' +
         '<div class="modal-f">' +
@@ -879,6 +947,7 @@
         a.day === b.day &&
         a.timeLabel === b.timeLabel &&
         a.venue === b.venue &&
+        String(a.nextDate || '') === String(b.nextDate || '') &&
         !!a.freedByAbsent === !!b.freedByAbsent &&
         String(a.absentClient || '') === String(b.absentClient || '')
       );
@@ -892,27 +961,30 @@
       if (!listEl) return;
       var venue = venueEl ? venueEl.value : hintVenue;
       var iso = dateEl ? String(dateEl.value || '').trim() : '';
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
-        iso = nextIsoForWeekday('Monday');
-        if (dateEl && iso) dateEl.value = iso;
-      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) iso = '';
+      var rangeFrom = todayIso();
+      var rangeUntil = '2026-12-20';
       var keep = picked;
       picked = null;
       if (saveBtn) saveBtn.disabled = true;
       listEl.innerHTML =
-        '<p class="muted" style="margin:0;overflow-wrap:break-word">Loading seats for this date...</p>';
-      absencesForDate(iso).then(function (absences) {
+        '<p class="muted" style="margin:0;overflow-wrap:break-word">Loading free seats...</p>';
+      absencesForRange(rangeFrom, rangeUntil, venue).then(function (absences) {
         if (gen !== paintGen || !listEl) return;
         var slots = listOpenMakeupSlots({
           venue: venue,
           preferInstructor: preferInstr,
           sessionDate: iso,
+          rangeFrom: rangeFrom,
+          rangeUntil: rangeUntil,
           absences: absences,
           skipClient: report.participant_display
         });
         if (!slots.length) {
           listEl.innerHTML =
-            '<p class="muted" style="margin:0;overflow-wrap:break-word">No open seats or absent-free seats at this venue on this date.</p>';
+            '<p class="muted" style="margin:0;overflow-wrap:break-word">No free seats at this venue' +
+            (iso ? ' on this date. Clear the date to see every upcoming free day.' : ' through 20 Dec.') +
+            '</p>';
           return;
         }
         listEl.innerHTML = slots
@@ -935,7 +1007,7 @@
               '<strong>' +
               esc(s.instructor) +
               '</strong> · ' +
-              esc(s.day) +
+              esc(s.nextDate ? formatShortDate(s.nextDate) : s.day) +
               ' · ' +
               esc(s.timeLabel) +
               ' · ' +
@@ -995,7 +1067,10 @@
           showErr('Pick an open seat.');
           return;
         }
-        var sessionDate = dateEl ? String(dateEl.value || '').trim() : '';
+        var sessionDate = String((picked && picked.nextDate) || '').slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
+          sessionDate = dateEl ? String(dateEl.value || '').trim() : '';
+        }
         if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
           showErr('Session date required.');
           return;
