@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SwimFarm changing rooms</title>
+  <style>
+    :root {
+      --ink: #1c2430;
+      --paper: #f3efe6;
+      --green: #2d7a3e;
+      --blue: #2a679e;
+      --maroon: #7c3142;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+    }
+    .sheet {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 18px 14px 32px;
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 26px;
+      letter-spacing: -0.03em;
+    }
+    .sub {
+      margin: 0 0 16px;
+      color: #5c6b7a;
+      font-size: 14px;
+    }
+    .heads, .row {
+      display: grid;
+      grid-template-columns: 108px repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
+    .heads { margin-bottom: 8px; }
+    .row { margin-bottom: 8px; }
+    .corner { min-width: 0; }
+    .room {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      font-size: 14px;
+      text-align: center;
+      line-height: 1.15;
+      padding: 8px 10px;
+    }
+    .room span {
+      display: block;
+      max-width: 12rem;
+      overflow-wrap: break-word;
+    }
+    .green { background: var(--green); }
+    .blue { background: var(--blue); }
+    .maroon { background: var(--maroon); }
+    .time {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      text-align: right;
+      font-weight: 800;
+      font-size: 13px;
+      line-height: 1.25;
+      color: #314152;
+      padding-right: 2px;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .kid {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      min-height: 78px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      color: #fff;
+    }
+    .kid img {
+      width: 58px;
+      height: 58px;
+      border-radius: 10px;
+      object-fit: cover;
+      object-position: center top;
+      background: rgba(255,255,255,0.25);
+      flex: 0 0 auto;
+    }
+    .kid strong {
+      font-size: 18px;
+      line-height: 1.15;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    @media (max-width: 760px) {
+      .heads, .row { grid-template-columns: 1fr; }
+      .corner, .heads { display: none; }
+      .time {
+        justify-content: flex-start;
+        text-align: left;
+        padding: 8px 2px 0;
+        font-size: 15px;
+      }
+      .kid strong { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <h1>SwimFarm changing rooms</h1>
+    <p class="sub">Sunday. Current clients.</p>
+    <div class="heads">
+      <div class="corner"></div>
+      <div class="room green"><span>Big Changing Room</span></div>
+      <div class="room blue"><span>Changing room</span></div>
+      <div class="room maroon"><span>Changing room</span></div>
+    </div>
+    <div id="rows"></div>
+  </div>
+  <script>
+    var COLORS = ["green", "blue", "maroon"];
+    var ROWS = [
+      ["9.30 to 10.15",
+        ["Adam Ab", "portal/participants/adam-ab.png"],
+        ["Yusuf Ah", "portal/participants/yusef-ah.png"],
+        ["Jack S", "portal/participants/jack-s.png"]],
+      ["10.15 to 11",
+        ["Jack W", "portal/participants/jack-w.jpg"],
+        ["Zaid", "portal/participants/zaid.png"],
+        ["Samer", "portal/participants/samer.png"]],
+      ["11 to 11.45",
+        ["Hazem", "portal/participants/hazem.png"],
+        ["Cyrus", "portal/participants/cyrus.png"],
+        ["Arthur Ma", "portal/participants/arthur-manners.png"]],
+      ["11.45 to 12.30",
+        ["Arthur Mo", "portal/participants/arthur-mo.png"],
+        ["Eiji", "portal/participants/eiji.png"],
+        ["Gabriel", "portal/participants/gabriel.png"]],
+      ["12.30 to 1.15",
+        ["Rayyan F", "portal/participants/rayaan-fi.png"],
+        ["Aydaan Ah", "portal/participants/aydaan-ah.png"],
+        ["Amaar Ah", "portal/participants/amaar-ah.png"]],
+      ["1.15 to 2",
+        ["Haneef", "portal/participants/haneef.png"],
+        ["Adaam Ah", "portal/participants/adaam-ah.png"],
+        ["Erik", "portal/participants/erik.png"]]
+    ];
+    var host = document.getElementById("rows");
+    ROWS.forEach(function (row) {
+      var line = document.createElement("div");
+      line.className = "row";
+      var time = document.createElement("div");
+      time.className = "time";
+      time.textContent = row[0];
+      line.appendChild(time);
+      for (var i = 1; i <= 3; i++) {
+        var kid = document.createElement("div");
+        kid.className = "kid " + COLORS[i - 1];
+        var img = document.createElement("img");
+        img.alt = "";
+        img.src = "/" + row[i][1];
+        var name = document.createElement("strong");
+        name.textContent = row[i][0];
+        kid.appendChild(img);
+        kid.appendChild(name);
+        line.appendChild(kid);
+      }
+      host.appendChild(line);
+    });
+  </script>
+</body>
+</html>
