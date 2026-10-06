@@ -21,7 +21,7 @@ export function normalizeParentPhoneE164(raw: string): string | null {
 export function staffApiMachineFooter(): string {
   return (
     "This is an automatic message from the system. Please do not reply here.\n\n" +
-    "To reply, use Messages (chat) in the Staff Portal, or call or message the admin mobile on WhatsApp Business."
+    "To reply, use Messages (chat) in the Staff Portal, or call or message 07592 558671."
   );
 }
 
@@ -30,7 +30,7 @@ export function withStaffApiMachineFooter(body: string): string {
   const stripped = String(body || "")
     .replace(/\r\n/g, "\n")
     .replace(
-      /\n*This is an automatic message from the system\. Please do not reply here\.[\s\S]*?WhatsApp Business\.?\s*/gi,
+      /\n*This is an automatic message from the system\. Please do not reply here\.[\s\S]*?(?:WhatsApp Business|07592 558671)\.?\s*/gi,
       "\n\n",
     )
     .replace(/\n*This message was sent automatically\. Please do not reply to it\.?\s*/gi, "\n\n")
