@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v282",
+  "version": "2026-10-06-v283",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1716,6 +1716,7 @@
             "Leave Only this date empty. The list then shows every upcoming free day at that venue through 20 Dec, including each Wednesday a child is absent. Pick the row with the date you want.",
             "Send offer to parent does not put the child on the roster. The family sees Accept and Decline in the parent portal. The yellow makeup chip appears only after they Accept, and that same Accept paints the seat on Sessions Overview, Schedule and Covers, and Staff.",
             "The parent card shows the session and the instructor name only. Do not put office words on it (Absents, decide queue, admin).",
+            "Absent date stays the original missed day. If that makeup day is cancelled and you offer another day, the new row still shows the original date.",
             "If a makeup was placed on a seat that is not on that day's roster, Schedule and Covers still shows that name so you can open Change and Undo change."
           ]
         },
