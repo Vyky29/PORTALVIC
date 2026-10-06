@@ -16,7 +16,10 @@
 
   /** Automated API copy. Parents must not be asked to answer on this channel. */
   function machineOnlyLine() {
-    return "This message was sent automatically. Please do not reply to it.";
+    return (
+      "This is an automatic message from the system. Please do not reply here.\n\n" +
+      "To reply, use Messages in the parent portal, or call or message 07592 558671."
+    );
   }
 
   /** Public HTTPS URL for a portal static asset (staff dashboard photos). */

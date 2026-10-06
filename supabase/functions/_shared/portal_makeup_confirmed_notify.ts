@@ -10,6 +10,7 @@ import {
   normalizeParentPhoneE164,
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
+  parentApiMachineFooter,
   sendParentMobileMessage,
   withStaffApiMachineFooter,
 } from "./portal_parent_messaging.ts";
@@ -179,7 +180,7 @@ export async function notifyMakeupConfirmed(
       (instructorName ? ` with instructor ${instructorName}` : "") +
       `.\n\n` +
       `This session is now on the club roster.\n\n` +
-      `This message was sent automatically. Please do not reply to it.\n\n` +
+      `${parentApiMachineFooter()}\n\n` +
       `Portal: ${portalHint}\n\n— clubSENsational`;
     const subject = `Make-up confirmed · ${childName}`;
 

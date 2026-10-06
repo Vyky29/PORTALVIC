@@ -1856,7 +1856,8 @@
       'We are writing about ' + venue + ' on ' + when + '.\n\n' +
       lines.join('\n\n') +
       (mediaLine ? '\n\n' + mediaLine : '') + '\n\n' +
-      'This message was sent automatically. Please do not reply to it.\n\n' +
+      'This is an automatic message from the system. Please do not reply here.\n\n' +
+      'To reply, call or message 07592 558671.\n\n' +
       'Thank you,\n' +
       'ClubSENsational'
     );

@@ -8,6 +8,7 @@ import {
   flattenWhatsappTemplateBody,
   maskPhoneForLog,
   normalizeParentPhoneE164,
+  parentApiMachineFooter,
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
@@ -308,7 +309,7 @@ async function resolveParentContact(
 
 function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, child: string): string {
   const greet = `Hi ${parentFirstName(parentDisplay)},\n\nThis is ClubSENsational.\n\n`;
-  const signOff = `\n\nThis message was sent automatically. Please do not reply to it.\n\nThank you,\nClubSENsational`;
+  const signOff = `\n\n${parentApiMachineFooter()}\n\nThank you,\nClubSENsational`;
   const venue = clean(opts.venue, 80);
   const sessionDate = clean(opts.sessionDate, 12);
   const sessionTime = clockPart(clean(opts.sessionTime, 40));

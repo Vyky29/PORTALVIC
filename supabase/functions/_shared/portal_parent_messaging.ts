@@ -17,6 +17,14 @@ export function normalizeParentPhoneE164(raw: string): string | null {
   return "+" + digits;
 }
 
+/** Parent API WhatsApp. Do not reply on this thread. */
+export function parentApiMachineFooter(): string {
+  return (
+    "This is an automatic message from the system. Please do not reply here.\n\n" +
+    "To reply, use Messages in the parent portal, or call or message 07592 558671."
+  );
+}
+
 /** Staff API WhatsApp. Do not reply on this thread. */
 export function staffApiMachineFooter(): string {
   return (
