@@ -2601,6 +2601,10 @@
     const DEFAULT_FEEDBACK_LEAD_MS = 15 * 60 * 1000;
     function portalRosterSessionIsDayCentre(s){
       if(!s) return false;
+      /* Aquatic / climb / multi keep their own key. A shared first name
+         (Emmanuel the pool seat vs Emanuel in Day Centre) must not relabel them. */
+      const actBlob = String(s.activity || s.rosterService || s.service || '');
+      if(!/day\s*centre/i.test(actBlob) && /aquatic|swim|climb|multi[-\s]?activity|physical|fitness|\bgym\b/i.test(actBlob)) return false;
       if(/day\s*centre/i.test(String(s.rosterService || ''))) return true;
       if(/day\s*centre/i.test(String(s.service || ''))) return true;
       if(/day\s*centre/i.test(String(s.activity || ''))) return true;

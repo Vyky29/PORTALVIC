@@ -11,6 +11,7 @@ import {
   slotsFromCapacityChainOccupants,
   type Feedback2030Slot,
 } from "../../supabase/functions/_shared/portal_feedback_2030_match.ts";
+import { rosterSlotIsComplete } from "../../supabase/functions/_shared/portal_feedback_digest_match.ts";
 
 const iso = "2026-09-09";
 const emptyCtx = {
@@ -93,26 +94,6 @@ const joelleCtx = {
 };
 const joelleDropped = applyFeedback2030BoardPolicy([joelleSimonLate], "2026-09-10");
 const joelleKept530 = applyFeedback2030BoardPolicy([joelleSimon], "2026-09-10");
-const clockProbe = String(joelleSimonLate.time || "").toLowerCase().match(/(\d{1,2})[:.](\d{2})/);
-
-const DEBUG_LOG = "/Users/victor/cursor/PORTALVIC/.cursor/debug-f1029b.log";
-function dbg(hid: string, msg: string, data: Record<string, unknown>) {
-  try {
-    Deno.writeTextFileSync(
-      DEBUG_LOG,
-      JSON.stringify({
-        sessionId: "f1029b",
-        runId: "pre-fix",
-        hypothesisId: hid,
-        location: "smoke-feedback-2030-shared-20260909.ts",
-        message: msg,
-        data,
-        timestamp: Date.now(),
-      }) + "\n",
-      { append: true },
-    );
-  } catch (_) {}
-}
 
 const fadiYoussef: Feedback2030Slot = {
   staff: "Youssef",
@@ -165,13 +146,37 @@ const eliasBoard = {
 };
 const eliasBefore = slotsFromCapacityChainOccupants(eliasBoard, "2026-09-16");
 const eliasOn = slotsFromCapacityChainOccupants(eliasBoard, "2026-09-23");
-
-dbg("B", "joelle-6.30-clock-parse", {
-  time: joelleSimonLate.time,
-  firstHm: clockProbe ? `${clockProbe[1]}:${clockProbe[2]}` : null,
-  droppedLen: joelleDropped.length,
-  kept530: joelleKept530.length,
-});
+const emmanuelDayCentreSameSpelling: Feedback2030Slot = {
+  staff: "Roberto",
+  client: "Emmanuel",
+  time: "11 to 1",
+  service: "Day Centre",
+};
+const nameOnlyCancelCtx = {
+  ...emptyCtx,
+  cancelRows: [{
+    client_name: "Emmanuel",
+    portal_session_key: "2026-10-06|emmanuel|day_centre",
+  }],
+};
+const digestCtx = {
+  feedbackRows: [],
+  cancelRows: luliyaCancelCtx.cancelRows,
+  absentMarks: [],
+  feedbackDoneMarks: [],
+};
+const abateRoster = {
+  client_name: "Emmanuel Abate",
+  time_slot: "4 to 4.30",
+  service: "Aquatic Activity",
+  instructors: "Luliya",
+};
+const dcRoster = {
+  client_name: "Emmanuel",
+  time_slot: "11 to 1",
+  service: "Day Centre",
+  instructors: "Roberto",
+};
 
 const checks = [
   ["godsway tinashe covered by bismark", slotIsResolved(godsway, iso, ctx), true],
@@ -202,6 +207,18 @@ const checks = [
   ["Elias is a seat from 23 Sep", eliasOn.length === 1, true],
   ["ring does not send again the same day", feedbackRingAlreadySentToday([{ id: "1" }]), true],
   ["ring still sends when nothing was logged", feedbackRingAlreadySentToday([]), false],
+  [
+    "aquatic cancel does not close Day Centre Emmanuel",
+    slotIsResolved(emmanuelDayCentreSameSpelling, "2026-10-06", luliyaCancelCtx),
+    false,
+  ],
+  [
+    "name-only day centre key does not close Emmanuel Abate",
+    slotIsResolved(emmanuelAbate, "2026-10-06", nameOnlyCancelCtx),
+    false,
+  ],
+  ["9pm digest keeps the aquatic cancel", rosterSlotIsComplete(abateRoster, "2026-10-06", digestCtx), true],
+  ["9pm digest keeps Day Centre Emmanuel open", rosterSlotIsComplete(dcRoster, "2026-10-06", digestCtx), false],
 ];
 
 let failed = 0;
@@ -209,7 +226,6 @@ for (const [label, got, want] of checks) {
   const ok = got === want;
   if (!ok) failed += 1;
   console.log(`${ok ? "ok" : "FAIL"}  ${label}  got=${got} want=${want}`);
-  dbg("A", "check", { label, got, want, ok });
 }
 if (failed) {
   Deno.exit(1);

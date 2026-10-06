@@ -1332,6 +1332,9 @@ button{
         portal_session_key: (function(){
           var raw = clean(context.portalSessionKey);
           if(!raw) return null;
+          var svcLow = String(serviceVal || '').toLowerCase();
+          if(/aquatic|swim/.test(svcLow) && /\|day_centre$/i.test(raw)) raw = raw.replace(/\|day_centre$/i, '|aquatic');
+          else if(/day\s*centre/.test(svcLow) && /\|aquatic$/i.test(raw)) raw = raw.replace(/\|aquatic$/i, '|day_centre');
           try{
             if(window.PortalSessionKey && typeof window.PortalSessionKey.normalizePortalSessionKey === 'function'){
               return window.PortalSessionKey.normalizePortalSessionKey(raw) || raw;

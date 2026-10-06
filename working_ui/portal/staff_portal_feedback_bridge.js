@@ -665,6 +665,10 @@
 
   function isDayCentreRosterSession(s) {
     if (!s) return false;
+    const actBlob = String(s.activity || s.rosterService || s.service || "");
+    if (!/day\s*centre/i.test(actBlob) && /aquatic|swim|climb|multi[-\s]?activity|physical|fitness|\bgym\b/i.test(actBlob)) {
+      return false;
+    }
     if (portalClientIsDayCentreSharedParticipant(s.clientId || s.clientName)) return true;
     const blob = String(
       (s.rosterService || s.activity || s.service || "") + " " + (s.clientId || "")

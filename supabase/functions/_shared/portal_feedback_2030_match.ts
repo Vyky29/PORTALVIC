@@ -1200,14 +1200,28 @@ function cancelServiceFitsSlot(slotService: string, cancelService: string): bool
   return a === b || a.includes(b) || b.includes(a);
 }
 
+function cancelKeyAgreesWithService(key: string, service: string): boolean {
+  const k = String(key || "").toLowerCase();
+  const svc = String(service || "").trim();
+  if (!k || !svc) return true;
+  const keyDc = /day_centre/.test(k);
+  const keyAq = /aquatic|swim/.test(k);
+  if (isAquaticService(svc) && keyDc && !keyAq) return false;
+  if (isDayCentreService(svc) && keyAq && !keyDc) return false;
+  return true;
+}
+
 function cancelReportClearsSlot(row: Feedback2030KeyRow, slot: Feedback2030Slot): boolean {
   const key = String(row.portal_session_key || "");
-  if (key && keyTouchesClient(key, slot.client)) return true;
+  const cancelSvc = String(row.service || "").trim();
+  const cancelTime = String(row.session_time || "").trim();
+  if (key && cancelKeyAgreesWithService(key, cancelSvc) && keyTouchesClient(key, slot.client)) {
+    return true;
+  }
   const name = String(row.client_name || "").trim();
   if (!name || !clientsClose(slot.client, name)) return false;
-  const cancelSvc = String(row.service || "").trim();
+  if (!cancelSvc && !cancelTime) return false;
   if (cancelSvc && !cancelServiceFitsSlot(slot.service, cancelSvc)) return false;
-  const cancelTime = String(row.session_time || "").trim();
   if (cancelTime && !feedbackTimesCompatible(slot.time, cancelTime)) return false;
   return true;
 }

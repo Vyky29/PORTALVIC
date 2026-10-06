@@ -96,6 +96,8 @@ export type DigestFeedbackRow = {
 export type DigestKeyRow = {
   portal_session_key?: string | null;
   client_name?: string | null;
+  service?: string | null;
+  session_time?: string | null;
 };
 
 /** Stable slot identity for dedupe + completion lookup. */
@@ -148,19 +150,54 @@ function feedbackCoversRosterSlot(
   return true;
 }
 
+function digestServiceFits(rosterService: string, reportService: string): boolean {
+  const a = String(rosterService || "");
+  const b = String(reportService || "");
+  if (!b.trim()) return true;
+  const aDc = isDayCentreService(a);
+  const bDc = isDayCentreService(b);
+  if (aDc || bDc) return aDc && bDc;
+  const aAq = /aquatic|swim/i.test(a);
+  const bAq = /aquatic|swim/i.test(b);
+  if (aAq || bAq) return aAq && bAq;
+  return true;
+}
+
+function digestKeyAgreesWithService(key: string, service: string): boolean {
+  const k = String(key || "").toLowerCase();
+  const svc = String(service || "").trim();
+  if (!k || !svc) return true;
+  const keyDc = /day_centre/.test(k);
+  const keyAq = /aquatic|swim/.test(k);
+  if (/aquatic|swim/i.test(svc) && keyDc && !keyAq) return false;
+  if (isDayCentreService(svc) && keyAq && !keyDc) return false;
+  return true;
+}
+
 function keyRowCoversRosterSlot(
   row: DigestKeyRow,
   roster: DigestRosterRow,
   shiftDateIso: string,
 ): boolean {
   const pk = String(row.portal_session_key || "").trim();
-  if (pk) {
+  const svc = String(row.service || "").trim();
+  const keyAgrees = digestKeyAgreesWithService(pk, svc);
+  if (pk && keyAgrees) {
     const pkDate = portalSessionKeyDateIso(pk);
     if (pkDate && pkDate !== shiftDateIso) return false;
     return portalKeyMatchesRosterClient(pk, String(roster.client_name || ""));
   }
+  if (pk && !keyAgrees) {
+    const pkDate = portalSessionKeyDateIso(pk);
+    if (pkDate && pkDate !== shiftDateIso) return false;
+  }
   const name = String(row.client_name || "").trim();
-  return name ? rosterClientsMatch(String(roster.client_name || ""), name) : false;
+  if (!name || !rosterClientsMatch(String(roster.client_name || ""), name)) return false;
+  if (pk && !keyAgrees) {
+    if (!svc || !digestServiceFits(String(roster.service || ""), svc)) return false;
+    return true;
+  }
+  return true;
 }
 
 export function rosterSlotIsComplete(

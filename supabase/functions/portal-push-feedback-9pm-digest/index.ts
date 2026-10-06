@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
 
   const { data: cancelRows, error: canErr } = await admin
     .from("cancellation_reports")
-    .select("client_name, session_date, portal_session_key")
+    .select("client_name, session_date, portal_session_key, service, session_time")
     .eq("session_date", shiftDateIso);
   if (canErr) {
     console.error("[portal-feedback-late-digest] cancellations", canErr);
