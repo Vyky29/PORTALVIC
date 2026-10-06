@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v291",
+  "version": "2026-10-06-v292",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2873,7 +2873,12 @@
             "salvaguarda",
             "raul",
             "lado",
-            "camden",
+            "ealing",
+            "kensington",
+            "acton",
+            "northolt",
+            "westway",
+            "swimfarm",
             "designated lead",
             "report concern",
             "director",
@@ -2882,12 +2887,14 @@
           "steps": [
             "Email the concern the same day to Raul Salvador Gallego at raul@clubsensational.org. Write what was seen or said, the date, time, location, and who was involved. Keep the email.",
             "If he cannot be contacted, email Victor Matilla Casanova at victor@clubsensational.org or Javier Arranz Escorial at javier@clubsensational.org. Record who was emailed and when.",
-            "If the concern is about Raul, email Victor or Javier, and the Camden LADO.",
-            "If the concern is about Victor, email Raul, or Javier if Raul cannot be contacted, and the LADO.",
-            "If the concern is about Javier, email Raul, or Victor if Raul cannot be contacted, and the LADO.",
+            "If the concern is about Raul, email Victor or Javier, and the LADO for the borough where it happened.",
+            "If the concern is about Victor, email Raul, or Javier if Raul cannot be contacted, and that LADO.",
+            "If the concern is about Javier, email Raul, or Victor if Raul cannot be contacted, and that LADO.",
             "If someone is in immediate danger, call 999, then email Raul, or another director if he cannot be contacted.",
             "Leave the safeguarding account out of the Incident Report. If the session also had an injury, or had to stop, complete an Incident Report for that part only.",
-            "The company LADO is Camden: Jacqueline Fearon, LADO@camden.gov.uk, 020 7974 4556. Send the referral form within 1 working day when the threshold is met."
+            "Ealing (Acton and Northolt): asv@ealing.gov.uk, 020 8825 8930. Send the referral form within 1 working day.",
+            "Kensington and Chelsea (Westway and SwimFarm): KCLADO.Enquiries@rbkc.gov.uk, 020 7361 2120. Send the referral form first. The Duty LADO calls back within 24 working hours.",
+            "If the concern is not tied to a session, use the LADO for the borough where that adult usually works. If the adult works in both, contact either and follow the one they name."
           ],
           "tips": [
             "The Safeguarding Policy and the Safeguarding Reporting Procedure both name these emails.",
@@ -2900,12 +2907,14 @@
             "steps": [
               "Manda el email el mismo dia a Raul Salvador Gallego, raul@clubsensational.org. Escribe lo que se vio o se dijo, fecha, hora, sitio y quien estaba. Guarda el email.",
               "Si no se le localiza, escribe a Victor Matilla Casanova (victor@clubsensational.org) o a Javier Arranz Escorial (javier@clubsensational.org). Anota a quien se escribio y cuando.",
-              "Si la preocupacion es sobre Raul, escribe a Victor o a Javier, y al LADO de Camden.",
-              "Si es sobre Victor, escribe a Raul, o a Javier si Raul no contesta, y al LADO.",
-              "Si es sobre Javier, escribe a Raul, o a Victor si Raul no contesta, y al LADO.",
+              "Si la preocupacion es sobre Raul, escribe a Victor o a Javier, y al LADO del borough donde paso.",
+              "Si es sobre Victor, escribe a Raul, o a Javier si Raul no contesta, y a ese LADO.",
+              "Si es sobre Javier, escribe a Raul, o a Victor si Raul no contesta, y a ese LADO.",
               "Si hay peligro inmediato, llama al 999 y luego escribe a Raul, o a otro director si no contesta.",
               "El relato de safeguarding no va en el Incident Report. Si ademas hubo una lesion o la sesion se paro, ese parte si puede ser un incidente, sin el relato.",
-              "El LADO de la compania es Camden: Jacqueline Fearon, LADO@camden.gov.uk, 020 7974 4556. El formulario se manda en 1 dia laborable cuando el caso lo pide."
+              "Ealing (Acton y Northolt): asv@ealing.gov.uk, 020 8825 8930. El formulario se manda en 1 dia laborable.",
+              "Kensington and Chelsea (Westway y SwimFarm): KCLADO.Enquiries@rbkc.gov.uk, 020 7361 2120. Primero el formulario. El Duty LADO devuelve la llamada en 24 horas laborables.",
+              "Si no esta atada a una sesion, usa el LADO del borough donde ese adulto trabaja casi siempre. Si trabaja en los dos, llama a uno y sigue al que ellos digan."
             ],
             "tips": [
               "La Safeguarding Policy y el Safeguarding Reporting Procedure nombran estos emails.",
