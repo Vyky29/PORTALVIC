@@ -72,13 +72,16 @@ Deno.serve(async (req) => {
 
     const today = todayIsoLondon();
 
-    // Auto-expire open reports past the 14-day proof window (no upload left).
+    // Auto-expire open reports past the proof window only when no file was uploaded.
+    // Proof already on the row, or an office / Schedule absence, stays for the office to decide.
     await supabase
       .from("portal_parent_absence_reports")
       .update({ status: "expired", updated_at: new Date().toISOString() })
       .eq("parent_person_id", session.parent_person_id)
       .eq("contact_id", contactId)
       .in("status", ["missed", "pending_review"])
+      .is("schedule_override_id", null)
+      .is("proof_storage_path", null)
       .lt("proof_deadline", today);
 
     const { data: rows, error } = await supabase

@@ -66,14 +66,15 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // Expire only parent proof windows (absence + no schedule override link).
-  // Office / Schedule decision rows must stay open until decided.
+  // Expire only parent proof windows that never received a file.
+  // A row with proof, or an office / Schedule row, stays open until decided.
   await admin
     .from("portal_parent_absence_reports")
     .update({ status: "expired", updated_at: new Date().toISOString() })
     .eq("case_kind", "absence")
     .in("status", ["missed", "pending_review"])
     .is("schedule_override_id", null)
+    .is("proof_storage_path", null)
     .lt("proof_deadline", today);
 
   let query = admin
