@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v290",
+  "version": "2026-10-06-v291",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2866,7 +2866,7 @@
         {
           "id": "safeguarding_who_to_report",
           "title": "Safeguarding: who to report to",
-          "summary": "Report a safeguarding concern to Raul Salvador Gallego. If he cannot be reached, or the concern is about a director, use the other directors and the Camden LADO.",
+          "summary": "Email a safeguarding concern the same day to raul@clubsensational.org. The account stays in that email, not in an Incident Report.",
           "where": "Policies → Safeguarding Policy, and Safeguarding Reporting Procedure",
           "keywords": [
             "safeguarding",
@@ -2876,36 +2876,39 @@
             "camden",
             "designated lead",
             "report concern",
-            "director"
+            "director",
+            "email"
           ],
           "steps": [
-            "Report the concern to Raul Salvador Gallego, Designated Safeguarding Lead.",
-            "If he cannot be contacted, report to Victor Matilla Casanova or Javier Arranz Escorial. Record who was told and when.",
-            "If the concern is about Raul, report to Victor or Javier, and to the Camden LADO.",
-            "If the concern is about Victor, report to Raul, or to Javier if Raul cannot be contacted, and to the LADO.",
-            "If the concern is about Javier, report to Raul, or to Victor if Raul cannot be contacted, and to the LADO.",
-            "If someone is in immediate danger, call 999, then tell Raul, or another director if he cannot be contacted.",
+            "Email the concern the same day to Raul Salvador Gallego at raul@clubsensational.org. Write what was seen or said, the date, time, location, and who was involved. Keep the email.",
+            "If he cannot be contacted, email Victor Matilla Casanova at victor@clubsensational.org or Javier Arranz Escorial at javier@clubsensational.org. Record who was emailed and when.",
+            "If the concern is about Raul, email Victor or Javier, and the Camden LADO.",
+            "If the concern is about Victor, email Raul, or Javier if Raul cannot be contacted, and the LADO.",
+            "If the concern is about Javier, email Raul, or Victor if Raul cannot be contacted, and the LADO.",
+            "If someone is in immediate danger, call 999, then email Raul, or another director if he cannot be contacted.",
+            "Leave the safeguarding account out of the Incident Report. If the session also had an injury, or had to stop, complete an Incident Report for that part only.",
             "The company LADO is Camden: Jacqueline Fearon, LADO@camden.gov.uk, 020 7974 4556. Send the referral form within 1 working day when the threshold is met."
           ],
           "tips": [
-            "The Safeguarding Policy and the Safeguarding Reporting Procedure both name this route.",
+            "The Safeguarding Policy and the Safeguarding Reporting Procedure both name these emails.",
             "The general safeguarding CPD is at onboarding and every 3 years. The annual induction refresh covers the Safeguarding Policy in Module 6."
           ],
           "es": {
             "title": "Safeguarding: a quien reportar",
-            "summary": "Una preocupacion de safeguarding se reporta a Raul Salvador Gallego. Si no se le localiza, o es sobre un director, se usa a los otros directores y al LADO de Camden.",
+            "summary": "Una preocupacion de safeguarding se manda el mismo dia a raul@clubsensational.org. El relato se queda en ese email, no en un Incident Report.",
             "where": "Policies → Safeguarding Policy, y Safeguarding Reporting Procedure",
             "steps": [
-              "Reporta a Raul Salvador Gallego, Designated Safeguarding Lead.",
-              "Si no se le localiza, reporta a Victor Matilla Casanova o a Javier Arranz Escorial. Anota a quien se aviso y cuando.",
-              "Si la preocupacion es sobre Raul, reporta a Victor o a Javier, y al LADO de Camden.",
-              "Si es sobre Victor, reporta a Raul, o a Javier si Raul no contesta, y al LADO.",
-              "Si es sobre Javier, reporta a Raul, o a Victor si Raul no contesta, y al LADO.",
-              "Si hay peligro inmediato, llama al 999 y luego avisa a Raul, o a otro director si no contesta.",
+              "Manda el email el mismo dia a Raul Salvador Gallego, raul@clubsensational.org. Escribe lo que se vio o se dijo, fecha, hora, sitio y quien estaba. Guarda el email.",
+              "Si no se le localiza, escribe a Victor Matilla Casanova (victor@clubsensational.org) o a Javier Arranz Escorial (javier@clubsensational.org). Anota a quien se escribio y cuando.",
+              "Si la preocupacion es sobre Raul, escribe a Victor o a Javier, y al LADO de Camden.",
+              "Si es sobre Victor, escribe a Raul, o a Javier si Raul no contesta, y al LADO.",
+              "Si es sobre Javier, escribe a Raul, o a Victor si Raul no contesta, y al LADO.",
+              "Si hay peligro inmediato, llama al 999 y luego escribe a Raul, o a otro director si no contesta.",
+              "El relato de safeguarding no va en el Incident Report. Si ademas hubo una lesion o la sesion se paro, ese parte si puede ser un incidente, sin el relato.",
               "El LADO de la compania es Camden: Jacqueline Fearon, LADO@camden.gov.uk, 020 7974 4556. El formulario se manda en 1 dia laborable cuando el caso lo pide."
             ],
             "tips": [
-              "La Safeguarding Policy y el Safeguarding Reporting Procedure nombran esta ruta.",
+              "La Safeguarding Policy y el Safeguarding Reporting Procedure nombran estos emails.",
               "El CPD general de safeguarding es en el onboarding y cada 3 anos. El refresh anual de induccion cubre la Safeguarding Policy en el modulo 6."
             ]
           }
