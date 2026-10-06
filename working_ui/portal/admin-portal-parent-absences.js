@@ -609,6 +609,31 @@
       .trim();
   }
 
+  function programmeName(raw) {
+    var key = String(raw || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ');
+    var map = {
+      aquatic: 'Aquatic',
+      'aquatic activity': 'Aquatic',
+      physical: 'Physical',
+      'physical activity': 'Physical',
+      climbing: 'Climbing',
+      multi: 'Multi-activity',
+      'multi activity': 'Multi-activity',
+      bespoke: 'Bespoke',
+      'day centre': 'Day Centre',
+      session: 'Session'
+    };
+    if (map[key]) return map[key];
+    if (!key) return '';
+    return key.replace(/\b[a-z]/g, function (ch) {
+      return ch.toUpperCase();
+    });
+  }
+
   function timeLabelToOffer(label) {
     var s = String(label || '')
       .replace(/\u2013|\u2014|–|—/g, '-')
@@ -1081,7 +1106,7 @@
           instructor: picked.instructor,
           session_date: sessionDate,
           session_time: timeLabelToOffer(picked.timeLabel),
-          service_label: (picked.serviceId || 'session') + ' · ' + picked.venue
+          service_label: programmeName(picked.serviceId) || 'Session'
         });
       };
     }

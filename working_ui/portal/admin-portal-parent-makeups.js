@@ -618,7 +618,7 @@
       var venue = String(slot.venue || '').trim();
       if (venueFilter && venue.toLowerCase() !== venueFilter) return;
       var serviceMap = {
-        aquatic: 'Aquatic Activity',
+        aquatic: 'Aquatic',
         physical: 'Physical Activity',
         climbing: 'Climbing',
         multi: 'Multi-activity',
@@ -838,7 +838,7 @@
           return;
         }
         var slot = state.slotPick;
-        var serviceLabel = [slot.service || 'Session', slot.venue].filter(Boolean).join(' · ');
+        var serviceLabel = String(slot.service || 'Session').trim();
         save.disabled = true;
         void api('portal-admin-makeup-grant', {
           action: 'create',

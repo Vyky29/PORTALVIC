@@ -30,6 +30,52 @@ function formatDdMmYyyy(iso: string): string {
   return m[3] + "/" + m[2] + "/" + m[1];
 }
 
+function programmeName(raw: string): string {
+  const key = raw.trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+  const map: Record<string, string> = {
+    aquatic: "Aquatic",
+    "aquatic activity": "Aquatic",
+    physical: "Physical",
+    "physical activity": "Physical",
+    climbing: "Climbing",
+    multi: "Multi-activity",
+    "multi activity": "Multi-activity",
+    bespoke: "Bespoke",
+    "day centre": "Day Centre",
+    session: "Session",
+  };
+  if (map[key]) return map[key];
+  if (!key) return "";
+  return key.replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
+}
+
+/** Date, time, venue once, programme once. Drops a repeated venue inside the service label. */
+function makeupWhenLine(date: string, time: string, venue: string, serviceLabel: string): string {
+  const place = clean(venue, 80);
+  const seen = new Set<string>();
+  const bits: string[] = [];
+  function push(bit: string) {
+    const text = clean(bit, 80);
+    if (!text) return;
+    const key = text.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    bits.push(text);
+  }
+  push(date ? formatDdMmYyyy(date) : "");
+  push(time);
+  push(place);
+  String(serviceLabel || "")
+    .split(/\s*[·|]\s*/)
+    .forEach((part) => {
+      const text = clean(part, 80);
+      if (!text) return;
+      if (place && text.toLowerCase() === place.toLowerCase()) return;
+      push(programmeName(text));
+    });
+  return bits.join(" · ") || "the agreed session";
+}
+
 export type MakeupConfirmedNotifyInput = {
   parentPersonId?: string | null;
   contactId?: string | null;
@@ -110,13 +156,7 @@ export async function notifyMakeupConfirmed(
   const staffKey =
     normalizeStaffUsernameKey(clean(opts.instructorStaffKey, 80)) ||
     normalizeStaffUsernameKey(instructorName);
-  const whenBits = [
-    sessionDate ? formatDdMmYyyy(sessionDate) : "",
-    sessionTime,
-    venue,
-    serviceLabel,
-  ].filter(Boolean);
-  const whenLine = whenBits.join(" · ") || "the agreed session";
+  const whenLine = makeupWhenLine(sessionDate, sessionTime, venue, serviceLabel);
 
   const portalHint =
     clean(Deno.env.get("PORTAL_PARENT_PORTAL_URL"), 200) ||
