@@ -1181,6 +1181,37 @@
 }
 
 /**
+ * Sun 11 Oct onward: instructor only. Arthur Ma stays 11-11.45 and moves from
+ * Aurora to Roberto; Cyrus stays 11-11.45 and moves from Roberto to Aurora.
+ * In the Hub class Arthur Ma (11.45) goes to Godsway and Cyrus (11.45) to Berta.
+ */
+function sundayArthurCyrusInstructorPaintRow(isoDate, r) {
+  var iso = String(isoDate || "").substring(0, 10);
+  if (!r || !iso || iso < "2026-10-11") return r;
+  if (weekdayLongFromIso(iso) !== "Sunday") return r;
+  var pt = parseTimeSlot(r.time_slot, "Sunday");
+  var start = pt && pt.start;
+  var end = pt && pt.end;
+  var client = String(r.client_name || "").trim();
+  var area = String(r.area || "");
+  var inst = String(r.instructors || "");
+  var hub = /hub/i.test(area);
+  if (!hub && !/pool/i.test(area)) {
+    if (/\b(berta|godsway)\b/i.test(inst) && !/\b(roberto|aurora|javier)\b/i.test(inst)) hub = true;
+  }
+  var nextInst = "";
+  if (start === "11:00" && end === "11:45" && !hub) {
+    if (client === "Arthur Ma" && /\baurora\b/i.test(inst)) nextInst = "ROBERTO";
+    else if (client === "Cyrus" && /\broberto\b/i.test(inst)) nextInst = "AURORA";
+  } else if (start === "11:45" && end === "12:30" && hub) {
+    if (client === "Arthur Ma" && /\bberta\b/i.test(inst)) nextInst = "GODSWAY";
+    else if (client === "Cyrus" && /\bgodsway\b/i.test(inst)) nextInst = "BERTA";
+  }
+  if (!nextInst) return r;
+  return Object.assign({}, r, { instructors: nextInst });
+}
+
+/**
  * Mon Dan Northolt 6–6.30 is Amaar Ah from Mon 14 Sep. The Mon 7 standing snap
  * still says Adaam and was projected onto later Mondays.
  */
@@ -1199,6 +1230,7 @@ function mondayDanNortholtAmaarPaintRow(isoDate, r) {
 
 function rosterRowToSlot(isoDate, wd, r) {
   r = sundayCyrusGabrielPaintRow(isoDate, r);
+  r = sundayArthurCyrusInstructorPaintRow(isoDate, r);
   r = mondayDanNortholtAmaarPaintRow(isoDate, r);
     var slot = parseTimeSlot(r.time_slot, wd);
     var origInstRaw = clean(r.instructors);

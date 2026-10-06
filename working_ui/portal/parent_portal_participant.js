@@ -3651,7 +3651,33 @@
       seen[k] = true;
       names.push(name);
     });
-    return names;
+    return sundayArthurCyrusParentInstructors(s, data, names);
+  }
+
+  /**
+   * From Sun 11 Oct the Sunday Multi instructors swap, same times.
+   * Arthur Ma: Roberto in the pool (11-11.45) and Godsway in the class.
+   * Cyrus: Aurora in the pool and Berta in the class.
+   */
+  function sundayArthurCyrusParentInstructors(s, data, names) {
+    var iso = String((s && s.iso) || "").slice(0, 10);
+    if (!iso || iso < "2026-10-11" || !names || !names.length) return names;
+    var parts = iso.split("-");
+    var dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    if (isNaN(dt.getTime()) || dt.getDay() !== 0) return names;
+    var child = String(
+      (((data || {}).participant || {}).display_name) ||
+        ((data || {}).participant || {}).first_name ||
+        ""
+    ).trim();
+    var map = null;
+    if (/^arthur\s*ma/i.test(child)) map = { aurora: "Roberto", berta: "Godsway" };
+    else if (/^cyrus\b/i.test(child)) map = { roberto: "Aurora", godsway: "Berta" };
+    if (!map) return names;
+    return names.map(function (n) {
+      var key = String(n || "").trim().toLowerCase();
+      return map[key] || n;
+    });
   }
 
   /** Venue line for hub cards — programme defaults beat a generic SwimFarm preferred venue. */

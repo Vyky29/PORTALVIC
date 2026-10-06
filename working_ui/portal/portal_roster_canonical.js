@@ -1999,6 +1999,49 @@
   }
 
   /**
+   * From Sun 11 Oct, instructor only (the children stay on the same clock time).
+   * Pool 11-11.45: Arthur Ma with Roberto, Cyrus with Aurora.
+   * Hub 11.45-12.30: Arthur Ma with Godsway, Cyrus with Berta.
+   * Runs after the 27 Sep Cyrus/Gabriel order so it sees those names.
+   */
+  var SUNDAY_ARTHUR_CYRUS_INSTRUCTOR_FROM = "2026-10-11";
+  function applySundayArthurCyrusInstructors(row) {
+    if (!row) return row;
+    var iso = normIso(row.session_date);
+    if (!iso || iso < SUNDAY_ARTHUR_CYRUS_INSTRUCTOR_FROM) return row;
+    var time = String(row.time_slot || "").trim();
+    var client = String(row.client_name || "").trim();
+    var hub = /hub/i.test(String(row.area || ""));
+    var staff = String(row.instructors || "");
+    var next = Object.assign({}, row);
+    if (time === "11 to 11.45" && !hub) {
+      if (client === "Arthur Ma" && /aurora/i.test(staff)) {
+        next.instructors = "ROBERTO";
+        return next;
+      }
+      if (client === "Cyrus" && /roberto/i.test(staff)) {
+        next.instructors = "AURORA";
+        return next;
+      }
+    }
+    if (time === "11.45 to 12.30" && hub) {
+      if (client === "Arthur Ma" && /berta/i.test(staff)) {
+        next.instructors = "GODSWAY";
+        return next;
+      }
+      if (client === "Cyrus" && /godsway/i.test(staff)) {
+        next.instructors = "BERTA";
+        return next;
+      }
+    }
+    return row;
+  }
+
+  function applySundaySwimStandingOrder(row) {
+    return applySundayArthurCyrusInstructors(applySundayCyrusGabrielOrder(row));
+  }
+
+  /**
    * LOCAL EXTRA Sunday standing pool (SwimFarm) — Autumn truth, stamped 13 Sep.
    * Sun 6 DATE_EXTRA overlay is applied separately (Yusuf↔Simon swap).
    */
@@ -2085,7 +2128,7 @@
     });
     autumnSundayStandingPoolRows().forEach(function (row) {
       expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
-        out.push(applySundayCyrusGabrielOrder(exp));
+        out.push(applySundaySwimStandingOrder(exp));
       });
     });
     return out;
@@ -4001,7 +4044,7 @@
     autumnSundayStandingHubRows().forEach(function (row) {
       expandStandingRowAcrossAutumnTerm(row).forEach(function (exp) {
         if (normIso(exp.session_date) === "2026-09-06") return;
-        out.push(applySundayCyrusGabrielOrder(exp));
+        out.push(applySundaySwimStandingOrder(exp));
       });
     });
     autumnSundaySep6HubCoverRows().forEach(function (row) {
@@ -5027,7 +5070,7 @@
     coverOriginalSeatRows().forEach(function (raw) {
       var e = raw;
       if (iso && e.day === "sunday" && /swimfarm/.test(e.venue)) {
-        var swapped = applySundayCyrusGabrielOrder({
+        var swapped = applySundaySwimStandingOrder({
           client_name: e.clientName || e.clientKey,
           day: "Sunday",
           instructors: e.staffKey,
@@ -5044,7 +5087,7 @@
             day: e.day,
             venue: e.venue,
             venueLabel: e.venueLabel,
-            staffKey: e.staffKey,
+            staffKey: poolAreaStaffKey(swapped.instructors || e.staffKey) || e.staffKey,
             time: String(swapped.time_slot || e.time).trim(),
             area: String(swapped.area || e.area).trim(),
             service: String(swapped.service || e.service).trim(),

@@ -333,6 +333,34 @@ function sundayCyrusGabrielFeedbackClient(slot: Feedback2030Slot, iso: string): 
   return client;
 }
 
+/**
+ * Sun 11 Oct onward: same children, swapped instructors.
+ * Pool 11-11.45 Arthur Ma is with Roberto and Cyrus with Aurora.
+ * Hub 11.45 Arthur Ma is with Godsway and Cyrus with Berta.
+ */
+function sundayArthurCyrusFeedbackStaff(slot: Feedback2030Slot, iso: string): string {
+  const staff = String(slot.staff || "").trim();
+  if (!iso || iso < "2026-10-11") return staff;
+  if (weekdayLongUtcNoon(iso).toLowerCase() !== "sunday") return staff;
+  const band = sundayHalfBand(slot.time);
+  if (!band) return staff;
+  const client = String(slot.client || "").trim();
+  const hubArea = /hub/i.test(String(slot.area || ""));
+  const key = canonStaffKey(staff);
+  const hubStaff = key === "godsway" || key === "berta";
+  const poolStaff = key === "roberto" || key === "aurora";
+  const isHub = hubArea || (hubStaff && !poolStaff);
+  if (band === "1100" && !isHub) {
+    if (/^arthur\s*ma$/i.test(client) && key === "aurora") return "ROBERTO";
+    if (/^cyrus$/i.test(client) && key === "roberto") return "AURORA";
+  }
+  if (band === "1145" && isHub) {
+    if (/^arthur\s*ma$/i.test(client) && key === "berta") return "GODSWAY";
+    if (/^cyrus$/i.test(client) && key === "godsway") return "BERTA";
+  }
+  return staff;
+}
+
 /** Day-of board policy for Autumn Feedback 20:30 (B1b).
  * Aligns MADRE/roster seats with Overview capacity-chain truth:
  * - client start / Leila Mon swap / dated cancels
@@ -348,6 +376,7 @@ export function applyFeedback2030BoardPolicy(
     .map((s) => {
       let client = clientDisplayStem(s.client) || s.client;
       client = sundayCyrusGabrielFeedbackClient({ ...s, client }, iso);
+      const staff = sundayArthurCyrusFeedbackStaff({ ...s, client }, iso);
       /* Mon Dan Northolt 6–6.30: Adaam through Mon 7; Amaar from Mon 14 (Leila swap). */
       if (
         iso < "2026-09-14" &&
@@ -359,8 +388,8 @@ export function applyFeedback2030BoardPolicy(
           client = "Adaam Ah";
         }
       }
-      if (client === s.client) return s;
-      return { ...s, client };
+      if (client === s.client && staff === String(s.staff || "").trim()) return s;
+      return { ...s, client, staff };
     })
     .filter((s) => {
       if (staffSkipTueThuOfficeHoldFeedback(s.staff, iso)) return false;
