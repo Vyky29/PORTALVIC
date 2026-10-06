@@ -75,10 +75,7 @@
       /* From Tue 6 Oct. Sep Tuesdays stay on the occupants phase that ends 30 Sep. */
       {
         staff: "Roberto",
-        clients: [
-          { name: "ACAT", time: "11 to 12" },
-          { name: "Fadi", time: "12.30 to 3" },
-        ],
+        clients: [{ name: "Fadi", time: "12.30 to 3" }],
       },
       /* Michelle Tue: Manager 11-12.30, Fadi 12.30-3, Ikram 3-4. */
       {
@@ -4376,10 +4373,7 @@
   var TUESDAY_FROM_6_OCT_DC = [
     {
       staff: "Roberto",
-      clients: [
-        { name: "ACAT", time: "11 to 12" },
-        { name: "Fadi", time: "12.30 to 3" },
-      ],
+      clients: [{ name: "Fadi", time: "12.30 to 3" }],
     },
     {
       staff: "Victor",
