@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v293",
+  "version": "2026-10-06-v294",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1828,7 +1828,8 @@
           "tips": [
             "API WhatsApp number — not the company mobile.",
             "Template portal_parent_update covers common drafts.",
-            "To edit the approved templates, Settings has Edit WhatsApp templates. It opens Meta. Log in with the Facebook account that owns the business, then open portal_parent_update_v2 or portal_parent_urgent_v1."
+            "To edit the approved templates, Settings has Edit WhatsApp templates. It opens Meta. Log in with the Facebook account that owns the business, then open portal_parent_update_v2 or portal_parent_urgent_v1.",
+            "Do not press Enter inside the one {{1}} box. Meta rejects that and the portal flattens the text into one block. For gaps, create a new template (do not edit the live one) with a blank line between each box: {{1}} then a blank line then {{2}} then a blank line then {{3}}. When Meta shows Approved, the automations can fill one paragraph per box."
           ],
           "es": {
             "title": "Avisos a padres / WhatsApp",
@@ -1843,7 +1844,8 @@
             "tips": [
               "El numero de WhatsApp API no es el movil de la empresa.",
               "La plantilla portal_parent_update cubre los borradores habituales.",
-              "Para editar las plantillas: Settings, Edit WhatsApp templates. Abre Meta. Entra con la cuenta de Facebook del negocio y abre portal_parent_update_v2 o portal_parent_urgent_v1."
+              "Para editar las plantillas: Settings, Edit WhatsApp templates. Abre Meta. Entra con la cuenta de Facebook del negocio y abre portal_parent_update_v2 o portal_parent_urgent_v1.",
+              "No pulses Enter dentro de la caja {{1}}. Meta lo rechaza y el portal junta el texto en un bloque. Para que haya espacio, crea una plantilla nueva (no edites la que ya esta en uso) con una linea en blanco entre cada caja: {{1}}, linea en blanco, {{2}}, linea en blanco, {{3}}. Cuando Meta ponga Approved, las automatizaciones pueden meter un parrafo en cada caja."
             ]
           }
         },
