@@ -1105,7 +1105,6 @@
         session_time: slot.session_time,
         instructor_name: slot.instructor,
         service_label: slot.service_label || '',
-        offer_notes: 'Offered from Absents decide queue',
         await_parent: true
       })
     });

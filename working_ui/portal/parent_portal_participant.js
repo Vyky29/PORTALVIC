@@ -10672,6 +10672,13 @@
       });
   }
 
+  function parentFacingMakeupNote(raw) {
+    var note = String(raw || "").trim();
+    if (!note) return "";
+    if (/absents|decide queue|office phone|parent to accept|by admin/i.test(note)) return "";
+    return note;
+  }
+
   function makeupGrantCardHtml(g) {
     var pending = g.pending_offer;
     var status = String(g.status || "");
@@ -10691,12 +10698,12 @@
           ? '<p class="pp-absence-card__meta">' + esc(pending.service_label) + "</p>"
           : "") +
         (pending.instructor_name
-          ? '<p class="pp-absence-card__meta muted">Instructor: ' +
-            esc(pending.instructor_name) +
-            " (may differ from usual)</p>"
-          : '<p class="pp-absence-card__meta muted">Instructor may differ from your usual one.</p>') +
-        (pending.offer_notes
-          ? '<p class="pp-absence-card__reason">' + esc(pending.offer_notes) + "</p>"
+          ? '<p class="pp-absence-card__meta">' + esc(pending.instructor_name) + "</p>"
+          : "") +
+        (parentFacingMakeupNote(pending.offer_notes)
+          ? '<p class="pp-absence-card__reason">' +
+            esc(parentFacingMakeupNote(pending.offer_notes)) +
+            "</p>"
           : "") +
         '<p class="pp-notice pp-notice--error" role="status">If you decline, you forfeit this makeup — the slot may go to another family.</p>' +
         '<p class="pp-makeup-card__status" data-pp-makeup-status hidden></p>' +
@@ -10732,7 +10739,7 @@
           : status === "forfeited"
             ? "Makeup forfeited after a declined offer."
             : status === "cancelled"
-              ? "Cancelled by admin."
+              ? "This makeup was cancelled."
               : "Status: " + status;
     var notes = String(g.notes || "").trim();
     return (
@@ -10748,7 +10755,7 @@
         status === "open"
           ? "Awaiting slot"
           : status === "cancelled"
-            ? "Cancelled by admin"
+            ? "Cancelled"
             : status,
       ) +
       "</span></div>" +
@@ -10756,7 +10763,9 @@
       esc(g.preferred_venue || "") +
       (g.service_label ? " · " + esc(g.service_label) : "") +
       "</p>" +
-      (notes ? '<p class="pp-absence-card__reason">' + esc(notes) + "</p>" : "") +
+      (parentFacingMakeupNote(notes)
+        ? '<p class="pp-absence-card__reason">' + esc(parentFacingMakeupNote(notes)) + "</p>"
+        : "") +
       '<p class="pp-muted pp-absence-card__hint">' +
       esc(hint) +
       "</p></article>"

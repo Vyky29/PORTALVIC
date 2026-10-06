@@ -863,8 +863,7 @@
             session_time: timeLabelToOffer(slot.timeLabel),
             instructor_name: slot.instructor,
             service_label: serviceLabel,
-            await_parent: true,
-            offer_notes: 'Parent to accept'
+            await_parent: true
           }).then(function (o) {
             save.disabled = false;
             if (o.error) {
