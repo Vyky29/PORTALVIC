@@ -213,7 +213,7 @@
 
   function openHref(name) {
     var params = new URLSearchParams();
-    params.set("v", "20260904-interview-sync");
+    params.set("v", "20261006-phase-fold");
     if (name) params.set("q", name);
     return "/Working_interview.html?" + params.toString();
   }

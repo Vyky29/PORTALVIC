@@ -817,6 +817,44 @@
       font-weight:600;
       cursor:default;
     }
+    .check-card--fold{
+      padding:0;
+    }
+    .check-card--fold > summary{
+      list-style:none;
+      cursor:pointer;
+      margin:0;
+      padding:14px 36px 14px 14px;
+      min-width:0;
+      position:relative;
+    }
+    .check-card--fold > summary::-webkit-details-marker{display:none}
+    .check-card--fold > summary span{
+      display:block;
+      font-size:14px;
+      line-height:1.55;
+      font-weight:600;
+      overflow-wrap:break-word;
+    }
+    .check-card--fold > summary::after{
+      content:"";
+      position:absolute;
+      right:16px;
+      top:50%;
+      width:8px;
+      height:8px;
+      margin-top:-6px;
+      border-right:2px solid #60758a;
+      border-bottom:2px solid #60758a;
+      transform:rotate(45deg);
+    }
+    .check-card--fold[open] > summary::after{
+      margin-top:-2px;
+      transform:rotate(225deg);
+    }
+    .check-card--fold .question-notes{
+      padding:0 14px 14px;
+    }
     .check-card .question-label .question-helper{
       margin:6px 0 0;
       font-size:13px;
@@ -3850,12 +3888,13 @@
       const id = question.id;
       const notesId = id + "Notes";
       const notes = call && call[notesId] ? String(call[notesId]) : "";
-      return `<div class="check-card">
-<div class="question-label"><label for="${escapeHtml(notesId)}">${index}. ${escapeHtml(question.title)}</label></div>
+      const open = notes.trim() ? " open" : "";
+      return `<details class="check-card check-card--fold"${open}>
+<summary class="question-label"><span>${index}. ${escapeHtml(question.title)}</span></summary>
                         <div class="question-notes">
                           <textarea id="${escapeHtml(notesId)}" class="textarea" rows="3" placeholder="Write the answer / notes...">${escapeHtml(notes)}</textarea>
                         </div>
-                      </div>`;
+                      </details>`;
     }
 
     function questionHasAudio(section, questionId, candidateId) {
