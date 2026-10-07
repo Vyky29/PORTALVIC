@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-07-v307",
+  "version": "2026-10-07-v308",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2875,6 +2875,9 @@
             "bespoke",
             "horas",
             "late",
+            "llegada tarde",
+            "media hora",
+            "restar horas",
             "recordatorio",
             "24",
             "payroll"
@@ -2892,7 +2895,8 @@
             "On the 24th at 11pm London, WhatsApp reminds whoever has not submitted that cycle. Victor, Javi Palankas and Raul are not reminded. Andres, Angel and Giuseppe are not on payroll.",
             "An afternoon-only day off (Northolt or Acton, not SwimFarm) keeps the morning session. If that morning has no feedback it stays Pending in orange.",
             "Office, Interview and Manager do not need feedback. They must not leave the day orange when the child feedback is already in.",
-            "Michelle Day Centre is 10:45-4:15 (5.5h). That is her shift, not the children's 11:00-4:00 and not granted extra."
+            "Michelle Day Centre is 10:45-4:15 (5.5h). That is her shift, not the children's 11:00-4:00 and not granted extra.",
+            "A late half hour is stamped on that person and that date. The timesheet then shows a later start and that half hour is not paid. There is no box to type it."
           ]
         }
       ]
