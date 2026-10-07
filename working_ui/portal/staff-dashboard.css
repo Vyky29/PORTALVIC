@@ -1130,20 +1130,13 @@
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      transform-origin:center bottom;
+      transform-origin:center center;
+      box-shadow:none;
       animation:halo-chip-pulse 1.15s ease-in-out infinite;
     }
     @keyframes halo-chip-pulse{
-      0%,100%{
-        transform:scale(1.12);
-        background-color:color-mix(in srgb, var(--halo-c,#f97316) 58%, #fff);
-        box-shadow:0 3px 0 color-mix(in srgb, var(--halo-c,#f97316) 28%, #000);
-      }
-      50%{
-        transform:scale(0.82);
-        background-color:var(--halo-c,#f97316);
-        box-shadow:0 2px 0 color-mix(in srgb, var(--halo-c,#f97316) 40%, #000);
-      }
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(0.84)}
     }
 
     .avatar img{width:100%;height:100%;object-fit:cover;display:block}
