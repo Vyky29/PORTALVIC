@@ -6491,7 +6491,7 @@
         : '';
       const ordinalDate = portalNextSessionOrdinalDate(info.date);
       const spanLabel = portalNextSessionSpanLabel(rows);
-      const chipBits = [weekday, ordinalDate, spanLabel].filter(Boolean);
+      const chipBits = [weekday, ordinalDate].filter(Boolean);
       const chipLabel = chipBits.length ? ('Next Session: ' + chipBits.join(', ')) : '';
       const participantsRaw = rows
         .filter(portalNextSessionRowIncludeInChips)
