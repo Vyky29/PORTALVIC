@@ -1017,6 +1017,11 @@
       --avatar-core-size:82px;
       --avatar-orbit-outset:0px;
     }
+    .topbar-lead .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo{
+      --avatar-wrap-size:78px;
+      --avatar-core-size:66px;
+      --avatar-orbit-outset:12px;
+    }
     /* Unread internal chat only — blue orbits + logo pulse */
     .avatar-wrap.avatar-wrap--portal-alert-chat .avatar{
       animation:avatar-outline-alert-blue 1.12s ease-in-out infinite;
@@ -1100,6 +1105,25 @@
     @keyframes avatar-outline-alert-logo{
       0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--halo-c,#ec4899) 55%, transparent), 0 8px 16px color-mix(in srgb, var(--halo-c,#ec4899) 28%, transparent)}
       50%{box-shadow:0 0 0 8px color-mix(in srgb, var(--halo-c,#ec4899) 0%, transparent), 0 14px 26px color-mix(in srgb, var(--halo-c,#ec4899) 42%, transparent)}
+    }
+    .halo-alert-chip[hidden]{display:none !important}
+    .halo-alert-chip{
+      display:inline-block;
+      box-sizing:border-box;
+      max-width:min(148px, 42vw);
+      margin:6px 0 0;
+      padding:3px 9px;
+      border-radius:999px;
+      background:var(--halo-c,#0284c7);
+      color:var(--halo-ink,#fff);
+      font-size:11px;
+      font-weight:800;
+      line-height:1.2;
+      letter-spacing:.01em;
+      text-align:center;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     .avatar img{width:100%;height:100%;object-fit:cover;display:block}

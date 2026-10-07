@@ -9122,27 +9122,48 @@
       const scan = portalRosterOverrideHaloScan(st || null);
       const flags = portalNotificationAlertFlags(st);
       const colors = [];
-      function push(id, c, c2, c3){ colors.push({ id: id, c: c, c2: c2, c3: c3 }); }
-      if(scan.newShift || scan.other) push('shift', '#f5c400', '#ffe14a', '#fff3a0');
-      if(scan.trial) push('trial', '#7c3aed', '#a78bfa', '#ddd6fe');
-      if(scan.newClient) push('newclient', '#0284c7', '#38bdf8', '#bae6fd');
-      if(scan.makeup) push('makeup', '#ec4899', '#f472b6', '#fbcfe8');
-      if(scan.absent) push('absent', '#0f766e', '#0d9488', '#5eead4');
-      if(scan.cancelled) push('cancelled', '#171717', '#404040', '#737373');
-      if(scan.training || scan.meeting) push('training', '#2563eb', '#3b82f6', '#bfdbfe');
-      if(scan.shadowing) push('shadow', '#65a30d', '#84cc16', '#d9f99d');
-      if(flags.feedback) push('feedback', '#f97316', '#fb923c', '#fdba74');
-      if(!colors.length && flags.schedule) push('shift', '#f5c400', '#ffe14a', '#fff3a0');
+      function push(id, label, c, c2, c3, ink){
+        colors.push({ id: id, label: label, c: c, c2: c2, c3: c3, ink: ink || '#fff' });
+      }
+      if(scan.newShift || scan.other) push('shift', 'New shift', '#f5c400', '#ffe14a', '#fff3a0', '#1a1400');
+      if(scan.trial) push('trial', 'Trial', '#7c3aed', '#a78bfa', '#ddd6fe');
+      if(scan.newClient) push('newclient', 'New client', '#0284c7', '#38bdf8', '#bae6fd');
+      if(scan.makeup) push('makeup', 'MakeUp', '#ec4899', '#f472b6', '#fbcfe8');
+      if(scan.absent) push('absent', 'Absent', '#0f766e', '#0d9488', '#5eead4');
+      if(scan.cancelled) push('cancelled', 'Cancelled', '#171717', '#404040', '#737373');
+      if(scan.training) push('training', 'Training', '#2563eb', '#3b82f6', '#bfdbfe');
+      if(scan.meeting) push('meeting', 'Meeting', '#2563eb', '#3b82f6', '#bfdbfe');
+      if(scan.shadowing) push('shadow', 'Shadowing', '#65a30d', '#84cc16', '#d9f99d', '#142006');
+      if(flags.feedback) push('feedback', 'Feedback Pending', '#f97316', '#fb923c', '#fdba74');
+      if(!colors.length && flags.schedule) push('shift', 'New shift', '#f5c400', '#ffe14a', '#fff3a0', '#1a1400');
       return colors;
+    }
+    function portalHaloAlertChipEl(wrap){
+      const center = wrap && wrap.parentElement;
+      if(!center) return null;
+      let chip = center.querySelector('.halo-alert-chip');
+      if(chip) return chip;
+      chip = document.createElement('span');
+      chip.className = 'halo-alert-chip';
+      chip.id = 'haloAlertChip';
+      chip.setAttribute('hidden', '');
+      chip.setAttribute('aria-hidden', 'true');
+      wrap.insertAdjacentElement('afterend', chip);
+      return chip;
     }
     function portalSyncHaloAlertLogo(wrap, st){
       if(!wrap) return;
       const colors = portalHaloLogoColors(st);
+      const chip = portalHaloAlertChipEl(wrap);
       const sig = colors.map(function(col){ return col.id; }).join('|');
       if(!colors.length){
         wrap.classList.remove('avatar-wrap--alert-logo');
         wrap.removeAttribute('data-halo-logo');
         if(wrap._haloLogoTimer){ clearInterval(wrap._haloLogoTimer); wrap._haloLogoTimer = 0; }
+        if(chip){
+          chip.setAttribute('hidden', '');
+          chip.textContent = '';
+        }
         return;
       }
       wrap.classList.add('avatar-wrap--alert-logo');
@@ -9151,6 +9172,11 @@
         wrap.style.setProperty('--halo-c', col.c);
         wrap.style.setProperty('--halo-c2', col.c2);
         wrap.style.setProperty('--halo-c3', col.c3);
+        if(!chip) return;
+        chip.hidden = false;
+        chip.textContent = col.label;
+        chip.style.setProperty('--halo-c', col.c);
+        chip.style.setProperty('--halo-ink', col.ink || '#fff');
       }
       if(wrap.getAttribute('data-halo-logo') === sig) return;
       wrap.setAttribute('data-halo-logo', sig);
