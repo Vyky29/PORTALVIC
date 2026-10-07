@@ -2641,8 +2641,9 @@
       const rightColInner = `<span class="session-right-note">${areas || todaySessionThirdRowInnerHtml(item)}</span>`;
       return `<div class="session-card-body">${timeStack}<div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}</div></div>`;
     }
-    /** Face on the Today card. Stacked above the name when the day has 6 or fewer
-     *  cards; left of the name when there are more. */
+    /** Face on the Today card. Above the name when the row is tall enough.
+     *  A short row puts the photo on the left of the name. More than 6 cards
+     *  always keep it on the left. */
     function todaySessionNamePhotoHtml(item){
       if(!item) return '';
       const kind = String(item.kind || '').toLowerCase();

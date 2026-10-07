@@ -6182,8 +6182,9 @@
       flex:1 1 auto;
       gap:3px;
     }
-    /* Photo sits with the name. Side by side when the day has more than 6 cards.
-       Stacked above the name when there are 6 or fewer, including special cards. */
+    /* Photo sits with the name. Above the name when the card is tall.
+       On a short card it moves to the left of the name so the circle stays readable.
+       More than 6 cards always keep it on the left. */
     .section-card--today .session-name-photo-row{
       display:inline-flex;
       flex-direction:row;
@@ -6293,6 +6294,8 @@
       max-height:100%;
       min-height:0;
       overflow:hidden;
+      container-type:size;
+      container-name:todayname;
     }
     .section-card--today .session-name-stack{
       height:100%;
@@ -6435,6 +6438,90 @@
       min-height:0;
       aspect-ratio:1;
       align-self:center;
+    }
+    /* Short card: a circle above the name would be tiny. Put it on the left
+       instead, and keep the name plus any 2:1 line or chip on the right. */
+    @container todayname (max-height: 96px){
+      .section-card--today .today-grid[data-session-count="1"] .session-card-body .session-line--name .session-name-stack,
+      .section-card--today .today-grid[data-session-count="2"] .session-card-body .session-line--name .session-name-stack,
+      .section-card--today .today-grid[data-session-count="3"] .session-card-body .session-line--name .session-name-stack,
+      .section-card--today .today-grid[data-session-count="4"] .session-card-body .session-line--name .session-name-stack,
+      .section-card--today .today-grid[data-session-count="5"] .session-card-body .session-line--name .session-name-stack,
+      .section-card--today .today-grid[data-session-count="6"] .session-card-body .session-line--name .session-name-stack{
+        display:grid;
+        grid-template-columns:auto minmax(0, max-content);
+        grid-template-rows:auto auto;
+        align-items:center;
+        align-content:center;
+        justify-content:center;
+        column-gap:8px;
+        row-gap:1px;
+        width:100%;
+        height:100%;
+      }
+      .section-card--today .today-grid[data-session-count="1"] .session-card-body .session-line--name .session-name-photo-row,
+      .section-card--today .today-grid[data-session-count="2"] .session-card-body .session-line--name .session-name-photo-row,
+      .section-card--today .today-grid[data-session-count="3"] .session-card-body .session-line--name .session-name-photo-row,
+      .section-card--today .today-grid[data-session-count="4"] .session-card-body .session-line--name .session-name-photo-row,
+      .section-card--today .today-grid[data-session-count="5"] .session-card-body .session-line--name .session-name-photo-row,
+      .section-card--today .today-grid[data-session-count="6"] .session-card-body .session-line--name .session-name-photo-row,
+      .section-card--today .session-card-body .session-line--name .session-name-photo-row.session-name-photo-row--above{
+        display:contents;
+      }
+      .section-card--today .today-grid[data-session-count="1"] .session-card-body .session-line--name .session-name-photo,
+      .section-card--today .today-grid[data-session-count="2"] .session-card-body .session-line--name .session-name-photo,
+      .section-card--today .today-grid[data-session-count="3"] .session-card-body .session-line--name .session-name-photo,
+      .section-card--today .today-grid[data-session-count="4"] .session-card-body .session-line--name .session-name-photo,
+      .section-card--today .today-grid[data-session-count="5"] .session-card-body .session-line--name .session-name-photo,
+      .section-card--today .today-grid[data-session-count="6"] .session-card-body .session-line--name .session-name-photo,
+      .section-card--today .session-card-body .session-line--name .session-name-photo-row--above .session-name-photo{
+        grid-column:1;
+        grid-row:1 / -1;
+        width:min(46px, 100cqb);
+        height:auto;
+        max-width:100%;
+        max-height:100%;
+        min-width:0;
+        aspect-ratio:1;
+        align-self:center;
+        justify-self:center;
+      }
+      .section-card--today .today-grid[data-session-count="1"] .session-card-body .session-line--name .session-meta-name,
+      .section-card--today .today-grid[data-session-count="2"] .session-card-body .session-line--name .session-meta-name,
+      .section-card--today .today-grid[data-session-count="3"] .session-card-body .session-line--name .session-meta-name,
+      .section-card--today .today-grid[data-session-count="4"] .session-card-body .session-line--name .session-meta-name,
+      .section-card--today .today-grid[data-session-count="5"] .session-card-body .session-line--name .session-meta-name,
+      .section-card--today .today-grid[data-session-count="6"] .session-card-body .session-line--name .session-meta-name,
+      .section-card--today .session-name-photo-row--above .session-meta-name{
+        grid-column:2;
+        grid-row:1;
+        width:auto;
+        max-width:100%;
+        min-width:0;
+        text-align:left;
+        justify-self:start;
+      }
+      .section-card--today .today-grid[data-session-count="1"] .session-card-body .session-line--name .session-name-stack > .session-meta-support,
+      .section-card--today .today-grid[data-session-count="2"] .session-card-body .session-line--name .session-name-stack > .session-meta-support,
+      .section-card--today .today-grid[data-session-count="3"] .session-card-body .session-line--name .session-name-stack > .session-meta-support,
+      .section-card--today .today-grid[data-session-count="4"] .session-card-body .session-line--name .session-name-stack > .session-meta-support,
+      .section-card--today .today-grid[data-session-count="5"] .session-card-body .session-line--name .session-name-stack > .session-meta-support,
+      .section-card--today .today-grid[data-session-count="6"] .session-card-body .session-line--name .session-name-stack > .session-meta-support,
+      .section-card--today .today-grid[data-session-count="1"] .session-card-body .session-line--name .session-name-stack > .session-chips-below-name,
+      .section-card--today .today-grid[data-session-count="2"] .session-card-body .session-line--name .session-name-stack > .session-chips-below-name,
+      .section-card--today .today-grid[data-session-count="3"] .session-card-body .session-line--name .session-name-stack > .session-chips-below-name,
+      .section-card--today .today-grid[data-session-count="4"] .session-card-body .session-line--name .session-name-stack > .session-chips-below-name,
+      .section-card--today .today-grid[data-session-count="5"] .session-card-body .session-line--name .session-name-stack > .session-chips-below-name,
+      .section-card--today .today-grid[data-session-count="6"] .session-card-body .session-line--name .session-name-stack > .session-chips-below-name{
+        grid-column:2;
+        grid-row:2;
+        width:auto;
+        max-width:100%;
+        margin-top:0;
+        text-align:left;
+        justify-self:start;
+        justify-content:flex-start;
+      }
     }
     .section-card--today .session-seg-areas{
       display:flex;
