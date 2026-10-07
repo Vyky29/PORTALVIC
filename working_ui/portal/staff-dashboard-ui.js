@@ -833,12 +833,26 @@
         if(h > 80) row = Math.floor((h - Math.max(0, n - 1) * gap) / Math.max(1, n));
         if(w > 120) width = w;
       }catch(_){}
-      /* Name plus a status chip need their own lines. The face stays a circle
-         and shrinks so it does not cover either of them. */
-      var stackExtra = 46;
+      /* Name, plus a 2:1 line and/or a chip when the card has them.
+         The face stays a circle and must fit in what is left of the row. */
+      var namePx = 16;
+      var linePx = 14;
+      var linesUnder = 1;
+      try{
+        var stacks = grid && grid.querySelectorAll ? grid.querySelectorAll('.session-name-stack') : [];
+        var maxUnder = 0;
+        for(var si = 0; si < stacks.length; si++){
+          var under = 0;
+          if(stacks[si].querySelector('.session-meta-support, .session-dc-with')) under += 1;
+          if(stacks[si].querySelector('.session-chips-below-name')) under += 1;
+          if(under > maxUnder) maxUnder = under;
+        }
+        if(stacks.length) linesUnder = maxUnder;
+      }catch(_){}
+      var stackExtra = 8 + namePx + (linesUnder * linePx) + (linesUnder * 2);
       var above = Math.round(row - stackExtra);
       if(above > 68) above = 68;
-      if(above < 22) above = Math.max(18, Math.round(row - stackExtra));
+      if(above < 14) above = Math.max(12, above);
       var nameCol = Math.floor(width * 0.36);
       var special = Math.round(Math.min(above, nameCol > 0 ? nameCol : above));
       var side = Math.round(Math.min(52, Math.max(40, row - 14)));
