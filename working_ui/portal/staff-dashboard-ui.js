@@ -834,14 +834,14 @@
         if(h > 80) row = Math.floor((h - Math.max(0, n - 1) * gap) / Math.max(1, n));
         if(w > 120) width = w;
       }catch(_){}
-      var above = Math.round(Math.min(68, Math.max(46, row * 0.58)));
-      if(row < 100){
-        var fit = Math.max(42, row - 36);
-        above = Math.round(Math.min(above, fit));
-      }
+      /* Name plus a status chip need their own lines. The face stays a circle
+         and shrinks so it does not cover either of them. */
+      var stackExtra = 46;
+      var above = Math.round(row - stackExtra);
+      if(above > 68) above = 68;
+      if(above < 22) above = Math.max(18, Math.round(row - stackExtra));
       var nameCol = Math.floor(width * 0.36);
-      var special = Math.round(Math.min(80, nameCol, Math.max(above + 8, row * 0.52)));
-      if(row < 110) special = Math.round(Math.min(special, Math.max(above, row - 32)));
+      var special = Math.round(Math.min(above, nameCol > 0 ? nameCol : above));
       var side = Math.round(Math.min(52, Math.max(40, row - 14)));
       var mid = width - 78 - 72;
       if(mid > 40) side = Math.min(side, Math.max(40, mid - 80));
