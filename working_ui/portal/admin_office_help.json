@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-07-v303",
+  "version": "2026-10-07-v304",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1896,7 +1896,7 @@
           ],
           "tips": [
             "Requested name: clubSENsational Portal. Until Meta approves, the chat still says ClubSENsational Ltd.",
-            "The WhatsApp number uses a white badge with a blue ring: blue logo, blue clubSENsational, and blue PORTAL. The Business page logo stays gold and navy."
+            "The WhatsApp number uses a white centre and a wide blue ring that goes to the edge: blue logo, blue clubSENsational, and blue PORTAL. The Business page logo stays gold and navy."
           ],
           "es": {
             "title": "Nombre y logo del chat de WhatsApp",
@@ -1909,7 +1909,7 @@
             ],
             "tips": [
               "Nombre pedido: clubSENsational Portal. Hasta que Meta lo apruebe, el chat sigue diciendo ClubSENsational Ltd.",
-              "El numero de WhatsApp usa una placa blanca con aro azul: logo azul, clubSENsational en azul, y PORTAL en azul. El logo de Business sigue en dorado y azul marino."
+              "El numero de WhatsApp usa el centro blanco y un aro azul ancho hasta el borde: logo azul, clubSENsational en azul, y PORTAL en azul. El logo de Business sigue en dorado y azul marino."
             ]
           }
         },
