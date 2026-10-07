@@ -5161,6 +5161,56 @@
           : (kind === 'training' ? portalSessionAddTrainingDetail(ov.payload, staffRoleTrackForTodayBuild()) : null);
         const venueTitle = String(ov.anchor_venue || '').trim()
           .replace(/\S+/g, function(w){ return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); });
+        if(kind === 'shadowing' && typeof portalShadowingHostClientForAdd === 'function'){
+          const hostClient = portalShadowingHostClientForAdd(ov, sessionDateKey);
+          const hostRaw = String(ov.payload && ov.payload.trainer || '').trim().split(/[,&/]|\band\b/i)[0].trim();
+          const hostBit = (hostRaw.split(/\s+/).filter(Boolean)[0] || hostRaw);
+          const hostFirst = hostBit ? (hostBit.charAt(0).toUpperCase() + hostBit.slice(1)) : '';
+          if(hostClient && hostClient.clientId && hostClient.name){
+            const sHost = hostClient.session || {};
+            let poolHost = '';
+            try{
+              poolHost = resolvePoolLocationLabelFromSession(sHost, hostClient.activity || 'Swimming', {}, viewDay) || '';
+            }catch(_poolHost){ poolHost = ''; }
+            if(!poolHost) poolHost = areaNote;
+            extra.push({
+              time: rosterSlotTimeLabel({ start: stT, end: enT, venue: hostClient.venue || ov.anchor_venue || '' }),
+              kind: 'client',
+              clientId: hostClient.clientId,
+              name: hostClient.name,
+              activity: hostClient.activity || 'Swimming',
+              areaLabel: poolHost,
+              poolLocationLabel: poolHost,
+              showPoolSymbol: !!poolHost,
+              showSpecialty: false,
+              specialtyLabel: '',
+              general: '',
+              specialty: '',
+              openSheet: true,
+              sessionKey: sessionDateKey + '|' + stT + '|' + String(hostClient.clientId || '').toLowerCase(),
+              sessionStartTs: tts.sessionStartTs,
+              sessionEndTs: tts.sessionEndTs,
+              noSessionFeedbackRequired: true,
+              actionsDisabled: false,
+              detailsOpenAllowed: true,
+              portalObserverShadowing: true,
+              portalObserverShadowingLabel: hostFirst ? ('Shadowing ' + hostFirst) : 'Shadowing',
+              portalOverrideSuppressReviewOrange: true,
+              portalOverrideHideAdminBadge: true,
+              scheduleAdminAdjusted: true,
+              sessionVenue: String(hostClient.venue || ov.anchor_venue || '').trim() || '—',
+              __portalBaseSession: {
+                start: stT,
+                end: enT,
+                venue: hostClient.venue || ov.anchor_venue || '',
+                clientId: hostClient.clientId,
+                staffId: staffId
+              },
+              __portalScheduleOverride: ov
+            });
+            return;
+          }
+        }
         extra.push({
           time: rosterSlotTimeLabel(sT),
           kind: 'client',
@@ -5190,6 +5240,7 @@
           scheduleAdminAdjusted: true,
           portalOverrideHideAdminBadge: true,
           sessionVenue: venueTitle || '—',
+          __portalBaseSession: { start: stT, end: enT, venue: ov.anchor_venue || '', clientId: slug, staffId: staffId },
           __portalScheduleOverride: ov
         });
       });
@@ -5384,12 +5435,17 @@
         if(!Array.isArray(items) || !items.length) return items || [];
         const filledExact = Object.create(null);
         const filledWindows = [];
+        const shadowTimes = [];
         items.forEach(function(it){
           if(!it || it.kind !== 'client') return;
           const cid = String(it.clientId || '').trim().toLowerCase();
           if(!cid || cid === 'available' || cid === 'closed') return;
           filledExact[portalTodaySlotOccupancyKey(it)] = true;
           filledWindows.push(portalTodayItemSlotWindow(it));
+          if(cid === 'shadowing' || it.portalObserverShadowing){
+            const w = portalTodayItemSlotWindow(it);
+            if(Number.isFinite(w.startM)) shadowTimes.push(w);
+          }
         });
         return items.filter(function(it){
           if(!it || it.kind !== 'available') return true;
@@ -5397,6 +5453,14 @@
           const availWin = portalTodayItemSlotWindow(it);
           for(let i = 0; i < filledWindows.length; i++){
             if(portalTodaySlotWindowsOverlap(availWin, filledWindows[i])) return false;
+          }
+          if(Number.isFinite(availWin.startM)){
+            const availEnd = Number.isFinite(availWin.endM) ? availWin.endM : availWin.startM + 30;
+            for(let s = 0; s < shadowTimes.length; s++){
+              const sh = shadowTimes[s];
+              const shEnd = Number.isFinite(sh.endM) ? sh.endM : sh.startM + 30;
+              if(availWin.startM < shEnd && sh.startM < availEnd) return false;
+            }
           }
           return true;
         });

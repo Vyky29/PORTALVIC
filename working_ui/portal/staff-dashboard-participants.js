@@ -1443,15 +1443,92 @@
       });
       return found;
     }
+    /** Host's booked child for a shadowing session_add, so the shadower sees that child, not an empty seat. */
+    function portalShadowingHostClientForAdd(ov, sessionDateIso){
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!ov || !iso) return null;
+      const pl = portalSessionAddPayloadObject(ov);
+      const trainer = String(pl.trainer || '').trim();
+      if(!trainer) return null;
+      const ovStart = portalHmFromDbTime(ov.anchor_start) || '';
+      const ovEnd = portalHmFromDbTime(ov.anchor_end) || ovStart;
+      const dayWord = typeof portalWeekdayLongEnGB === 'function'
+        ? portalWeekdayLongEnGB(new Date(iso + 'T12:00:00'))
+        : '';
+      if(!dayWord) return null;
+      const shadower = portalStaffNormRosterKey(ov.anchor_staff_id);
+      function rowOk(s){
+        if(!s) return false;
+        const st = String(s.status || '').toLowerCase();
+        if(st === 'closed' || st === 'available') return false;
+        const cid = String(s.clientId || '').toLowerCase();
+        if(!cid || cid === 'closed' || cid === 'available' || cid === 'shadowing' || cid === 'training' || cid === 'meeting') return false;
+        const nm = String(s.clientDisplay || s.clientName || '').trim().toLowerCase();
+        if(/no\s*participant/.test(nm) || /no\s*client/.test(nm)) return false;
+        const hostId = String(s.staffId || '').trim();
+        if(shadower && portalStaffNormRosterKey(hostId) === shadower) return false;
+        const hostName = portalShadowingHostDisplayName(hostId);
+        if(!portalStaffNameMatchesShadowHost(trainer, hostId, hostName)) return false;
+        if(String(s.day || '').trim() && String(s.day || '').trim() !== dayWord) return false;
+        if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
+          && s.day
+          && !portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, dayWord)) return false;
+        const start = String(s.start || '').trim();
+        const end = String(s.end || start).trim();
+        if(ovStart && start && !portalHmRangeOverlaps(ovStart, ovEnd, start, end)) return false;
+        const venue = String(s.venue || s.sessionVenue || '').trim();
+        if(!portalShadowingVenuesMatch(ov.anchor_venue, venue)) return false;
+        return true;
+      }
+      function pack(s){
+        const cid = String(s.clientId || '').trim();
+        const name = portalParticipantDisplayName(String(s.clientDisplay || s.clientName || cid).trim(), cid);
+        if(!name) return null;
+        return {
+          clientId: cid,
+          name: name,
+          start: String(s.start || ovStart).trim(),
+          end: String(s.end || s.start || ovEnd).trim(),
+          venue: String(s.venue || s.sessionVenue || ov.anchor_venue || '').trim(),
+          activity: String(s.activity || s.rosterService || 'Swimming').trim(),
+          session: s
+        };
+      }
+      let found = null;
+      (typeof sessionsModel !== 'undefined' ? sessionsModel : []).forEach(function(s){
+        if(found || !rowOk(s)) return;
+        found = pack(s);
+      });
+      if(found) return found;
+      if(typeof portalBaseClientSessionsForCalendarDate !== 'function') return null;
+      const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
+      const profs = src && src.staffProfiles ? src.staffProfiles : null;
+      if(!profs) return null;
+      Object.keys(profs).forEach(function(sid){
+        if(found) return;
+        const prof = profs[sid];
+        const dn = prof && String(prof.staffName || prof.name || '').trim();
+        if(!portalStaffNameMatchesShadowHost(trainer, sid, dn)) return;
+        if(shadower && portalStaffNormRosterKey(sid) === shadower) return;
+        const rows = portalBaseClientSessionsForCalendarDate(dayWord, iso, sid, function(s){
+          return rowOk(Object.assign({ staffId: sid, day: dayWord }, s));
+        }) || [];
+        for(let i = 0; i < rows.length; i++){
+          const s = Object.assign({ staffId: sid, day: dayWord }, rows[i]);
+          if(!rowOk(s)) continue;
+          found = pack(s);
+          if(found) return;
+        }
+      });
+      return found;
+    }
     function portalSessionAddShadowingChipLabel(payload, ov, sessionDateIso){
       payload = payload && typeof payload === 'object' ? payload : {};
       const hosts = portalSessionAddSplitNames(String(payload.trainer || '').trim());
       const host = hosts[0] || '';
+      if(host) return 'Shadowing ' + host;
       const participant = portalShadowingParticipantForSessionAdd(ov, sessionDateIso);
-      const participantLabel = participant ? String(participant).trim().toUpperCase() : '';
-      if(host && participantLabel) return host + ' / ' + participantLabel;
-      if(hosts.length > 1) return hosts.join(' / ');
-      return host || participant || '';
+      return participant ? ('Shadowing ' + participant) : '';
     }
     function portalKnownMeetingGroupKeys(){
       return {
@@ -1754,7 +1831,7 @@
         const shadowerKey = portalStaffNormRosterKey(ov.anchor_staff_id);
         if(!shadowerKey || seen[shadowerKey]) return;
         seen[shadowerKey] = true;
-        const label = portalStaffProfileFirstName(ov.anchor_staff_id) + ' shadowing';
+        const label = portalStaffProfileFirstName(ov.anchor_staff_id) + ' Shadowing';
         out.push(label);
       });
       return out;
@@ -2003,9 +2080,13 @@
           && typeof portalTinasheClientFacingHm === 'function')
           ? portalTinasheClientFacingHm()
           : null;
+        const hitPl = portalSessionAddPayloadObject(hit);
+        const hitHosts = portalSessionAddSplitNames(String(hitPl.trainer || '').trim());
+        const hitHost = hitHosts[0] || '';
         const next = Object.assign({}, it, {
           portalObserverShadowing: true,
-          portalObserverShadowingLabel: 'Shadowing',
+          portalObserverShadowingLabel: String(it.portalObserverShadowingLabel || '').trim()
+            || (hitHost ? ('Shadowing ' + hitHost) : 'Shadowing'),
           noSessionFeedbackRequired: true,
           actionsDisabled: false,
           detailsOpenAllowed: true,
@@ -2135,8 +2216,11 @@
         return chips.join('');
       }
 
+      const hostShadowChip = (typeof portalTodayItemShowsShadowingHostAlert === 'function' && portalTodayItemShowsShadowingHostAlert(item))
+        ? portalShadowingHostBadgeHtml(item.portalShadowingHostLabels)
+        : '';
       const lifecycleChip = portalTodayFeedbackLifecycleChipHtml(item);
-      if(lifecycleChip) return lifecycleChip;
+      if(lifecycleChip) return hostShadowChip + lifecycleChip;
 
       /* After session start (or past day): never keep New Participant / Trial / Move in —
          show Pending so the card goes orange until Submitted / Cancel / Absent. */
@@ -2157,7 +2241,7 @@
           !rLife.cancelled &&
           !(typeof window !== 'undefined' && !window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__)
         ){
-          return '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
+          return hostShadowChip + '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
         }
       }catch(_){}
 
