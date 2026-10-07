@@ -6362,6 +6362,17 @@
     .section-card--today .session-name-stack:has(.session-name-photo-row) .session-chips-below-name.session-chips-below-name--tight{
       margin-top:-8px;
     }
+    .section-card--today .today-grid .session-card-body .session-line--name .session-name-stack:has(> .session-meta-support) .session-name-photo-row,
+    .section-card--today .today-grid .session-card-body .session-line--name .session-name-stack:has(.session-chips-below-name) .session-name-photo-row{
+      flex:0 1 auto;
+    }
+    .section-card--today .session-line--name .session-name-stack:has(> .session-meta-support){
+      gap:0;
+    }
+    .section-card--today .session-line--name .session-name-stack > .session-meta-support{
+      margin-top:0;
+      line-height:1.05;
+    }
     .section-card--today .session-seg-areas{
       display:flex;
       flex-direction:column;
