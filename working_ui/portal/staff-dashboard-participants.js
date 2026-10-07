@@ -2708,7 +2708,10 @@
       const nameIdentity = photoHtml
         ? '<span class="session-name-photo-row' + (dcBlock ? ' session-name-photo-row--above' : '') + '">' + photoHtml + nameCore + '</span>'
         : nameCore;
-      const underName = observerChipUnderName ? chipsRow : (dcBlock ? chipsRow : (meetingChipsRow || ''));
+      let underName = observerChipUnderName ? chipsRow : (dcBlock ? chipsRow : (meetingChipsRow || ''));
+      if(observerChipUnderName && !supportLine){
+        underName = underName.replace('session-chips-below-name', 'session-chips-below-name session-chips-below-name--tight');
+      }
       const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}${underName}</span>`;
       const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
       if(dcBlock){
