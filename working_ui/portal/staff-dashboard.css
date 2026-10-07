@@ -6360,7 +6360,7 @@
     }
     .section-card--today .session-line--name .session-chips-below-name.session-chips-below-name--tight,
     .section-card--today .session-name-stack:has(.session-name-photo-row) .session-chips-below-name.session-chips-below-name--tight{
-      margin-top:-8px;
+      margin-top:2px;
     }
     .section-card--today .today-grid .session-card-body .session-line--name .session-name-stack:has(> .session-meta-support) .session-name-photo-row,
     .section-card--today .today-grid .session-card-body .session-line--name .session-name-stack:has(.session-chips-below-name) .session-name-photo-row{
