@@ -1117,7 +1117,7 @@
       display:inline-block;
       box-sizing:border-box;
       max-width:100%;
-      margin:6px 0 0;
+      margin:10px 0 0;
       padding:5px 11px;
       border-radius:999px;
       background:var(--halo-c,#0284c7);
@@ -1130,16 +1130,19 @@
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      transform-origin:center bottom;
       animation:halo-chip-pulse 1.15s ease-in-out infinite;
     }
     @keyframes halo-chip-pulse{
       0%,100%{
-        background-color:var(--halo-c,#f97316);
-        box-shadow:0 2px 0 color-mix(in srgb, var(--halo-c,#f97316) 40%, #000);
-      }
-      50%{
+        transform:scale(1.12);
         background-color:color-mix(in srgb, var(--halo-c,#f97316) 58%, #fff);
         box-shadow:0 3px 0 color-mix(in srgb, var(--halo-c,#f97316) 28%, #000);
+      }
+      50%{
+        transform:scale(0.82);
+        background-color:var(--halo-c,#f97316);
+        box-shadow:0 2px 0 color-mix(in srgb, var(--halo-c,#f97316) 40%, #000);
       }
     }
 

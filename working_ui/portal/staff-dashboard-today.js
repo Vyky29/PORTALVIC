@@ -9163,6 +9163,10 @@
         wrap.classList.remove('avatar-wrap--alert-logo');
         wrap.removeAttribute('data-halo-logo');
         if(wrap._haloLogoTimer){ clearInterval(wrap._haloLogoTimer); wrap._haloLogoTimer = 0; }
+        if(wrap._haloLogoCycle){
+          wrap.removeEventListener('animationiteration', wrap._haloLogoCycle);
+          wrap._haloLogoCycle = null;
+        }
         if(chip){
           chip.setAttribute('hidden', '');
           chip.textContent = '';
@@ -9185,13 +9189,22 @@
       if(wrap.getAttribute('data-halo-logo') === sig) return;
       wrap.setAttribute('data-halo-logo', sig);
       if(wrap._haloLogoTimer){ clearInterval(wrap._haloLogoTimer); wrap._haloLogoTimer = 0; }
+      if(wrap._haloLogoCycle){
+        wrap.removeEventListener('animationiteration', wrap._haloLogoCycle);
+        wrap._haloLogoCycle = null;
+      }
       let i = 0;
       paint(0);
       if(colors.length > 1){
-        wrap._haloLogoTimer = setInterval(function(){
+        let cycles = 0;
+        wrap._haloLogoCycle = function(){
+          cycles += 1;
+          if(cycles < 3) return;
+          cycles = 0;
           i += 1;
           paint(i);
-        }, 1600);
+        };
+        wrap.addEventListener('animationiteration', wrap._haloLogoCycle);
       }
     }
     function syncPortalHeaderAlertChrome(st){
