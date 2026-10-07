@@ -565,14 +565,26 @@
       defer(runHeavy, 0);
       return true;
     }
+    function portalFormatOrdinalDayMonthYear(date){
+      if(!(date instanceof Date) || isNaN(date.getTime())) return '';
+      const day = date.getDate();
+      const month = date.toLocaleDateString('en-GB', { month: 'short' });
+      const n = day % 100;
+      let suf = 'th';
+      if(n < 11 || n > 13){
+        const u = day % 10;
+        if(u === 1) suf = 'st';
+        else if(u === 2) suf = 'nd';
+        else if(u === 3) suf = 'rd';
+      }
+      return String(day) + suf + ' ' + month + ' ' + date.getFullYear();
+    }
     function portalTodaySectionTitleText(){
       const custom = dashboardData && dashboardData.portalTodaySectionHeading;
       if(custom) return String(custom);
       const d = portalResolveTodaySectionCalendarDate();
       if(!d) return 'TODAY';
-      const num = typeof portalFormatPortalDateDdMmYyyy === 'function'
-        ? portalFormatPortalDateDdMmYyyy(d)
-        : '';
+      const num = portalFormatOrdinalDayMonthYear(d);
       const now = new Date();
       const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
       const d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();

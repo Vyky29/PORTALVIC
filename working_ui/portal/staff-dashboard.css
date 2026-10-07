@@ -1110,16 +1110,16 @@
     .halo-alert-chip{
       display:inline-block;
       box-sizing:border-box;
-      max-width:min(148px, 42vw);
+      max-width:100%;
       margin:6px 0 0;
-      padding:3px 9px;
+      padding:3px 8px;
       border-radius:999px;
       background:var(--halo-c,#0284c7);
       color:var(--halo-ink,#fff);
-      font-size:11px;
+      font-size:10px;
       font-weight:800;
       line-height:1.2;
-      letter-spacing:.01em;
+      letter-spacing:0;
       text-align:center;
       white-space:nowrap;
       overflow:hidden;
@@ -4850,8 +4850,8 @@
     .today-section-date{
       display:inline;
       margin:0;
-      font-size:11px;
-      font-weight:700;
+      font-size:13px;
+      font-weight:800;
       line-height:1.25;
       letter-spacing:.02em;
       color:inherit;
