@@ -3949,9 +3949,12 @@
       if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)) return 'new_shift';
       const t = String(row && row.override_type || '').trim();
       if(t === 'client_absence_announced') return 'absent';
-      if(t === 'client_replace_in_slot') return portalOverrideIsTrial(row)
-        ? 'trial'
-        : (portalOverrideIsDayReassignReplace(row) ? 'client_moved' : 'makeup');
+      if(t === 'client_replace_in_slot'){
+        if(portalOverrideIsTrial(row)) return 'trial';
+        if(portalOverrideIsClientMoveInReplace(row)) return 'move_in';
+        if(portalOverrideIsDayReassignReplace(row)) return 'client_moved';
+        return 'makeup';
+      }
       if(t === 'slot_open') return 'slot_opened';
       if(t === 'slot_clear_client'){
         let pl = null;

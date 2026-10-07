@@ -3355,11 +3355,11 @@
     #portalOperationalReminderList .setup-row--qm-ov-makeup .setup-row-text strong{color:#9d174d}
     #portalOperationalReminderList .setup-row--qm-ov-makeup .setup-row-sub{color:#be185d}
     #portalOperationalReminderList .setup-row--qm-ov-new-participant{
-      background:linear-gradient(180deg,#ecfdf5 0%,#d1fae5 100%);
-      border-color:rgba(5,150,105,.28);
+      background:linear-gradient(180deg,#e0f2fe 0%,#f0f9ff 100%);
+      border-color:rgba(2,132,199,.28);
     }
-    #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-text strong{color:#047857}
-    #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-sub{color:#059669}
+    #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-text strong{color:#0369a1}
+    #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-sub{color:#0284c7}
     #portalOperationalReminderList .setup-row--qm-ov-cancelled{
       border-color:rgba(82,82,91,.58);
       background:linear-gradient(180deg,#d6d6dc 0%,#bfc0c8 100%);

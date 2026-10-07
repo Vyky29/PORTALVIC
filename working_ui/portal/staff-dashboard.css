@@ -757,6 +757,26 @@
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar-orbit-layer circle{fill:#a78bfa !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar-orbit-layer circle:nth-child(2n){fill:#7c3aed !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar-orbit-layer circle:nth-child(3n){fill:#c4b5fd !important}
+    /* New client / Move in — same sky blue as the chip and the blue card */
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-new-client .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-new-client .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-new-client .avatar-aura{
+      background:
+        radial-gradient(circle at 40% 35%, rgba(255,255,255,.78) 0%, transparent 42%),
+        radial-gradient(circle at 72% 68%, rgba(56,189,248,.32) 0%, transparent 48%),
+        radial-gradient(circle at 50% 50%, rgba(2,132,199,.2) 0%, transparent 58%);
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-new-client .avatar{
+      animation:avatar-outline-alert-blue 1.12s ease-in-out infinite;
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-new-client .avatar-orbit-layer circle{fill:#38bdf8 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-new-client .avatar-orbit-layer circle:nth-child(2n){fill:#0284c7 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-new-client .avatar-orbit-layer circle:nth-child(3n){fill:#7dd3fc !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-new-client .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-new-client .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-new-client .avatar-orbit-layer circle:nth-child(2n+1){fill:#7c3aed !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-new-client .avatar-orbit-layer circle:nth-child(2n){fill:#0284c7 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-new-client .avatar-orbit-layer circle:nth-child(3n){fill:#38bdf8 !important}
     /* New shift + trial — gold and purple dots */
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial .avatar-orbit-layer{opacity:1;visibility:visible}
@@ -784,8 +804,8 @@
     .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar{
       animation:avatar-outline-schedule-makeup 1.12s ease-in-out infinite;
     }
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle{fill:#ec4899 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle:nth-child(2n){fill:#db2777 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle{fill:#d94f93 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle:nth-child(2n){fill:#c2185b !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle:nth-child(3n){fill:#f9a8d4 !important}
     /* Absent — teal orbit (distinct from New shift green) */
     .avatar-wrap.avatar-wrap--portal-alert-schedule-absent .avatar-orbit,
@@ -847,14 +867,20 @@
     .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle{fill:#3b82f6 !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle:nth-child(2n){fill:#2563eb !important}
     .avatar-wrap.avatar-wrap--portal-alert-schedule-training .avatar-orbit-layer circle:nth-child(3n){fill:#93c5fd !important}
-    /* Shadowing — sky blue orbit (session_add shadowing quick-menu tile) */
+    /* Meeting — same blue as the Training chip */
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-meeting .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-meeting .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-meeting .avatar-orbit-layer circle{fill:#3b82f6 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-meeting .avatar-orbit-layer circle:nth-child(2n){fill:#2563eb !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-meeting .avatar-orbit-layer circle:nth-child(3n){fill:#93c5fd !important}
+    /* Shadowing — lime, same as the chip and the green card */
     .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer,
     .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer{opacity:1;visibility:visible}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle{fill:#0ea5e9 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle:nth-child(2n){fill:#0284c7 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle:nth-child(3n){fill:#7dd3fc !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle{fill:#84cc16 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle:nth-child(2n){fill:#65a30d !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing-only .avatar-orbit-layer circle:nth-child(3n){fill:#bef264 !important}
     /* NEW SHIFT/CHANGES + shadowing — gold and sky blue alternating */
     .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer{opacity:1;visibility:visible}
@@ -862,14 +888,14 @@
       animation:avatar-outline-schedule-gold 1.12s ease-in-out infinite;
     }
     .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(2n+1){fill:var(--sen-gold) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(2n){fill:#0ea5e9 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#0284c7 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(2n){fill:#84cc16 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#65a30d !important}
     /* Outstanding feedback + shadowing — orange and sky blue */
     .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(2n+1){fill:#ea580c !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(2n){fill:#0ea5e9 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#0284c7 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(2n){fill:#84cc16 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#65a30d !important}
     /* Outstanding feedback + NEW SHIFT/CHANGES + shadowing — orange, gold, sky blue */
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer{opacity:1;visibility:visible}
@@ -878,7 +904,7 @@
     }
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n+1){fill:#ea580c !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n+2){fill:var(--sen-gold) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#0ea5e9 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule-shadowing .avatar-orbit-layer circle:nth-child(3n){fill:#84cc16 !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer{opacity:1;visibility:visible}
     .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar{
@@ -2967,18 +2993,18 @@
       border-color:rgba(124,58,237,.35);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant{
-      background:linear-gradient(180deg,#ccfbf1 0%,#99f6e4 100%);
-      border:2px solid rgba(13,148,136,.45);
+      background:linear-gradient(180deg,#e0f2fe 0%,#bae6fd 100%);
+      border:2px solid rgba(2,132,199,.45);
       color:var(--ink);
-      box-shadow:0 6px 18px rgba(13,148,136,.22);
+      box-shadow:0 6px 18px rgba(2,132,199,.22);
     }
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-copy strong{color:#0f766e}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-sub{color:#0d9488}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-chev{color:rgba(15,118,110,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-copy strong{color:#0369a1}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-sub{color:#0284c7}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-chev{color:rgba(3,105,161,.55)}
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-icon{
-      background:rgba(45,212,191,.28);
-      color:#0f766e;
-      border-color:rgba(13,148,136,.38);
+      background:rgba(56,189,248,.28);
+      color:#0369a1;
+      border-color:rgba(2,132,199,.38);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-cancelled,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled,
@@ -3031,26 +3057,26 @@
       border-color:rgba(113,113,122,.4);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing{
-      background:linear-gradient(180deg,#f0f9ff 0%,#e0f2fe 100%);
-      border:2px solid rgba(14,165,233,.42);
-      box-shadow:0 6px 18px rgba(14,165,233,.2);
-    }
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-copy strong{color:#0369a1}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-sub{color:#0284c7}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-chev{color:rgba(3,105,161,.55)}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-icon{
-      background:rgba(14,165,233,.2);color:#0369a1;border-color:rgba(14,165,233,.35);
-    }
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting{
       background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
       border:2px solid rgba(132,204,22,.45);
       box-shadow:0 6px 18px rgba(132,204,22,.2);
     }
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-copy strong{color:#4d7c0f}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-sub{color:#65a30d}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-chev{color:rgba(77,124,15,.55)}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-icon{
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-copy strong{color:#4d7c0f}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-sub{color:#65a30d}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-chev{color:rgba(77,124,15,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing .menu-btn-icon{
       background:rgba(132,204,22,.22);color:#4d7c0f;border-color:rgba(132,204,22,.38);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting{
+      background:linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%);
+      border:2px solid rgba(37,99,235,.42);
+      box-shadow:0 6px 18px rgba(37,99,235,.18);
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-copy strong{color:#1d4ed8}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-sub{color:#2563eb}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-chev{color:rgba(29,78,216,.55)}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting .menu-btn-icon{
+      background:rgba(59,130,246,.22);color:#1d4ed8;border-color:rgba(37,99,235,.35);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent:hover{
       border-color:rgba(5,150,105,.65);
@@ -3163,18 +3189,18 @@
       border-color:rgba(124,58,237,.35);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant{
-      background:linear-gradient(180deg,#ccfbf1 0%,#99f6e4 100%);
-      border:2px solid rgba(13,148,136,.45);
+      background:linear-gradient(180deg,#e0f2fe 0%,#bae6fd 100%);
+      border:2px solid rgba(2,132,199,.45);
       color:var(--ink);
-      box-shadow:0 6px 18px rgba(13,148,136,.22);
+      box-shadow:0 6px 18px rgba(2,132,199,.22);
     }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-copy strong{color:#0f766e}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-sub{color:#0d9488}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-chev{color:rgba(15,118,110,.55)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-copy strong{color:#0369a1}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-sub{color:#0284c7}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-chev{color:rgba(3,105,161,.55)}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-participant .menu-btn-icon{
-      background:rgba(45,212,191,.28);
-      color:#0f766e;
-      border-color:rgba(13,148,136,.38);
+      background:rgba(56,189,248,.28);
+      color:#0369a1;
+      border-color:rgba(2,132,199,.38);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-cancelled{
       background:linear-gradient(180deg,#d6d6dc 0%,#bfc0c8 100%) !important;
@@ -4016,11 +4042,11 @@
     #portalOperationalReminderList .setup-row--qm-ov-makeup .setup-row-text strong{color:#9d174d}
     #portalOperationalReminderList .setup-row--qm-ov-makeup .setup-row-sub{color:#be185d}
     #portalOperationalReminderList .setup-row--qm-ov-new-participant{
-      background:linear-gradient(180deg,#ecfdf5 0%,#d1fae5 100%);
-      border-color:rgba(5,150,105,.28);
+      background:linear-gradient(180deg,#e0f2fe 0%,#f0f9ff 100%);
+      border-color:rgba(2,132,199,.28);
     }
-    #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-text strong{color:#047857}
-    #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-sub{color:#059669}
+    #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-text strong{color:#0369a1}
+    #portalOperationalReminderList .setup-row--qm-ov-new-participant .setup-row-sub{color:#0284c7}
     #portalOperationalReminderList .setup-row--qm-ov-new-shift{
       background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%);
       border-color:rgba(245,158,11,.42);
@@ -4295,17 +4321,17 @@
       box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
     }
     .session-card.override--portal-cancelled{
-      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
-      border-color:rgba(123,18,18,.78);
-      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
+      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%);
+      border-color:rgba(23,23,23,.55);
+      box-shadow:0 0 0 1px rgba(23,23,23,.08),0 8px 22px rgba(23,23,23,.08);
     }
     /* Unresolved cancel chrome only — resolved Cancelled (review-done) must stay green. */
     .section-card--today .session-card.override--portal-cancelled:not(.session-card--review-done):not(.session-card--review-needed),
     .section-card--today .session-card.override--portal-cancelled.session-card--admin-adjusted:not(.session-card--review-done):not(.session-card--review-needed),
     .section-card--today .session-card.session-card--ov-red.override--portal-cancelled:not(.session-card--review-done):not(.session-card--review-needed){
-      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
-      border-color:#b71c1c;
-      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
+      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%);
+      border-color:#171717;
+      box-shadow:0 0 0 1px rgba(23,23,23,.08),0 8px 22px rgba(23,23,23,.08);
     }
     .section-card--today .session-card.override--portal-cancelled.session-card--review-done,
     .section-card--today .session-card.session-card--review-cancelled{
@@ -6293,7 +6319,7 @@
     }
     .portal-session-slot-chip--cancelled{
       color:#fff;
-      background:linear-gradient(145deg,#707070,#525252);
+      background:linear-gradient(145deg,#404040,#171717);
       border:1px solid rgba(255,255,255,.22);
       box-shadow:0 0 0 1px rgba(255,255,255,.28) inset,0 2px 8px rgba(0,0,0,.28);
     }

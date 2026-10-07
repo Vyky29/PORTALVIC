@@ -8759,7 +8759,7 @@
 
     /** Halo colours from quick-menu override kinds (absent = green orbit). */
     function portalRosterOverrideHaloScan(st){
-      const out = { newShift: false, trial: false, makeup: false, undo: false, absent: false, cancelled: false, training: false, shadowing: false, meeting: false, other: false };
+      const out = { newShift: false, trial: false, newClient: false, makeup: false, undo: false, absent: false, cancelled: false, training: false, shadowing: false, meeting: false, other: false };
       const dayGroups = Array.isArray(st && st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];
       for(let g = 0; g < dayGroups.length; g++){
         const items = Array.isArray(dayGroups[g] && dayGroups[g].items) ? dayGroups[g].items : [];
@@ -8772,7 +8772,8 @@
           if(k === 'meeting'){ out.meeting = true; continue; }
           if(k === 'cancelled' || k === 'shift_cancelled'){ out.cancelled = true; continue; }
           if(k === 'new_shift' || k === 'roster_day') out.newShift = true;
-          else if(k === 'trial' || k === 'new_participant') out.trial = true;
+          else if(k === 'new_participant' || k === 'move_in') out.newClient = true;
+          else if(k === 'trial') out.trial = true;
           else if(k === 'makeup') out.makeup = true;
           else if(k === 'reverted') out.undo = true;
           else if(k === 'slot_opened'){ /* cards only */ }
@@ -8783,7 +8784,7 @@
     }
     function portalScheduleHaloActive(scan){
       if(!scan) return false;
-      return !!(scan.newShift || scan.trial || scan.makeup || scan.undo || scan.absent || scan.cancelled || scan.training || scan.shadowing || scan.meeting || scan.other);
+      return !!(scan.newShift || scan.trial || scan.newClient || scan.makeup || scan.undo || scan.absent || scan.cancelled || scan.training || scan.shadowing || scan.meeting || scan.other);
     }
     function portalScheduleHaloMode(scan){
       if(!portalScheduleHaloActive(scan)) return '';
@@ -8796,10 +8797,13 @@
       if(scan.meeting && !scan.trial && !scan.makeup && !scan.undo && !ns && !scan.absent && !scan.cancelled && !scan.training && !scan.shadowing) return 'schedule-meeting';
       if(scan.undo && !scan.trial && !scan.makeup && !ns && !scan.absent && !scan.cancelled && !scan.training) return 'schedule-undo';
       if(scan.makeup && !scan.trial && !ns && !scan.undo && !scan.absent && !scan.cancelled && !scan.training) return 'schedule-makeup';
-      if(scan.trial && !ns && !scan.makeup && !scan.undo && !scan.absent && !scan.cancelled && !scan.training) return 'schedule-trial-only';
+      if(scan.newClient && !scan.trial && !ns && !scan.makeup && !scan.undo && !scan.absent && !scan.cancelled && !scan.training && !scan.shadowing && !scan.meeting) return 'schedule-new-client';
+      if(scan.trial && !scan.newClient && !ns && !scan.makeup && !scan.undo && !scan.absent && !scan.cancelled && !scan.training) return 'schedule-trial-only';
+      if(scan.trial && scan.newClient) return 'schedule-trial-new-client';
       if(scan.trial && ns) return 'schedule-trial';
       if(ns) return 'schedule';
       if(scan.trial) return 'schedule-trial-only';
+      if(scan.newClient) return 'schedule-new-client';
       if(scan.makeup) return 'schedule-makeup';
       if(scan.absent) return 'schedule-absent';
       if(scan.cancelled) return 'schedule-cancelled';
@@ -8910,6 +8914,8 @@
         'avatar-wrap--portal-alert-schedule',
         'avatar-wrap--portal-alert-schedule-trial',
         'avatar-wrap--portal-alert-schedule-trial-only',
+        'avatar-wrap--portal-alert-schedule-new-client',
+        'avatar-wrap--portal-alert-schedule-trial-new-client',
         'avatar-wrap--portal-alert-schedule-makeup',
         'avatar-wrap--portal-alert-schedule-absent',
         'avatar-wrap--portal-alert-schedule-undo',
@@ -8978,6 +8984,8 @@
         reminder: 'avatar-wrap--portal-alert-reminder',
         'schedule-trial': 'avatar-wrap--portal-alert-schedule-trial',
         'schedule-trial-only': 'avatar-wrap--portal-alert-schedule-trial-only',
+        'schedule-new-client': 'avatar-wrap--portal-alert-schedule-new-client',
+        'schedule-trial-new-client': 'avatar-wrap--portal-alert-schedule-trial-new-client',
         'schedule-makeup': 'avatar-wrap--portal-alert-schedule-makeup',
         'schedule-absent': 'avatar-wrap--portal-alert-schedule-absent',
         'schedule-undo': 'avatar-wrap--portal-alert-schedule-undo',
