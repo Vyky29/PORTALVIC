@@ -2339,6 +2339,10 @@
      */
     function timesheetLuliyaAfternoonShift(dayName, dateKey) {
       const iso = String(dateKey || "").slice(0, 10);
+      /* Tue 6 Oct: 4.00 class cancelled (late). Pay 4.30-6.00. 6.00-6.30 is Shadowing Aurora at £13.50. */
+      if (dayName === "Tuesday" && iso === "2026-10-06") {
+        return { startMin: 16 * 60 + 30, endMin: 18 * 60, hours: 1.5, payFullFrom: "", capHours: 1.5 };
+      }
       if (dayName === "Tuesday") {
         return { startMin: 16 * 60, endMin: 18 * 60 + 30, hours: 2.5, payFullFrom: "2026-09-15" };
       }
@@ -2352,6 +2356,7 @@
       const shift = timesheetLuliyaAfternoonShift(dayName, dateKey);
       const namedHours = named && Number(named.hours) > 0 ? Number(named.hours) : 0;
       if (!shift) return namedHours;
+      if (shift.capHours > 0) return shift.capHours;
       if (shift.payFullFrom && String(dateKey || "").slice(0, 10) >= shift.payFullFrom) {
         return Math.max(namedHours, shift.hours);
       }
@@ -3417,11 +3422,14 @@
       return youssefAutumnActonPaySpec(dayName, dateKey);
     }
     /** Autumn Acton after-school: Mon/Wed 1.5h (4-5.30) even if the book is 1h; every Friday from 11 Sep is 4-6 (2h).
-     * Named seats after the band (makeup / trial) add on top — they are not capped by 1.5h. */
+     * Wed 7 Oct 2026 was 4.30-5.30 only (1h). Named seats after the band add on top. */
     function youssefAutumnActonPaySpec(dayName, dateKey) {
       const iso = String(dateKey || "").slice(0, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !isYoussefAutumnTermIso(iso)) return null;
       const day = String(dayName || "");
+      if (day === "Wednesday" && iso === "2026-10-07") {
+        return { hours: 1, startMin: 16 * 60 + 30, endMin: 17 * 60 + 30 };
+      }
       if (day === "Friday") {
         if (iso < YOUSSEF_FRIDAY_ACTON_FIRST_ISO) return null;
         return { hours: 2, startMin: 16 * 60, endMin: 18 * 60 };

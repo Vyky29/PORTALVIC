@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-07-v308",
+  "version": "2026-10-07-v309",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2874,6 +2874,8 @@
             "upcoming",
             "bespoke",
             "horas",
+            "shadowing",
+            "juzgar",
             "late",
             "llegada tarde",
             "media hora",
@@ -2885,7 +2887,7 @@
           "steps": [
             "Today and later dates show as Upcoming. They are not completed and they are not ready to pay.",
             "A weekday support / bespoke shift that is the 4.15-6.15 band is 2 hours. A Sunday support shift that is 5 hours shows 9.15-2.15. The time the child is actually there inside that band is not extra granted hours on top.",
-            "Shadowing and Training added in Schedule & Covers pay £13.50/h. On the timesheet the service stays the session name and Shadowing or Training is the role line.",
+            "Shadowing and Training added in Schedule & Covers pay £13.50/h. On the timesheet the service stays the session name and Shadowing or Training is the role line. The person shadowing does not send that session's feedback. The instructor they are with sends it.",
             "Climbing (Carlos, Alex, and Andres when he covers Carlos) pays the feedbacks given that day. An hour with no participant is not paid.",
             "Absent on Schedule & Covers means that session's feedback is done."
           ],
