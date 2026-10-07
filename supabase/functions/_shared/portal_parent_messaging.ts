@@ -588,6 +588,42 @@ function whatsappTemplateBodyParam(body: string, template: string): string {
   return flattenWhatsappTemplateBody(text, WHATSAPP_TEMPLATE_BODY_MAX);
 }
 
+/** Approved spaced templates: four body boxes. Line breaks live in the template, not inside a box. */
+function isSpacedWhatsappTemplate(template: string): boolean {
+  const name = String(template || "").trim().toLowerCase();
+  return name === "portal_parent_update_v3" || name === "portal_staff_update_v3";
+}
+
+function stripTemplateClosing(body: string): string {
+  return String(body || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n*Thank you,\s*\nClubSENsational\s*$/i, "")
+    .replace(/\n*—\s*clubSENsational\s*$/i, "")
+    .replace(
+      /\n*This is an automatic message from the system\. Please do not reply here\.[\s\S]*$/i,
+      "",
+    )
+    .replace(/\n*This message was sent automatically\. Please do not reply to it\.?\s*$/i, "")
+    .trim();
+}
+
+/** One paragraph per box. Extra paragraphs fold into the fourth. Empty boxes stay a single hyphen. */
+export function spacedWhatsappTemplateParams(body: string): string[] {
+  const chunks = stripTemplateClosing(body)
+    .split(/\n\s*\n/)
+    .map((part) => part.replace(/[ \t]*\n[ \t]*/g, " ").replace(/\s{2,}/g, " ").trim())
+    .filter(Boolean);
+  const boxes = chunks.slice(0, 4);
+  if (chunks.length > 4) {
+    boxes[3] = [boxes[3], ...chunks.slice(4)].join(" — ");
+  }
+  while (boxes.length < 4) boxes.push("-");
+  return boxes.map((text) => {
+    const flat = text.replace(/\s{2,}/g, " ").trim().slice(0, 700);
+    return flat || "-";
+  });
+}
+
 function whatsappTemplateLangCandidates(preferred: string): string[] {
   const base = String(preferred || "en").trim() || "en";
   const out: string[] = [];
@@ -737,8 +773,10 @@ export async function sendParentMessageViaWhatsapp(
     }
   }
 
-  const paramText = whatsappTemplateBodyParam(body, template);
-  if (!paramText) {
+  const spaced = isSpacedWhatsappTemplate(template);
+  const paramText = spaced ? "" : whatsappTemplateBodyParam(body, template);
+  const spacedParams = spaced ? spacedWhatsappTemplateParams(body) : [];
+  if (!spaced && !paramText) {
     return { ok: false, error: "whatsapp_empty_template_body" };
   }
 
@@ -766,7 +804,10 @@ export async function sendParentMessageViaWhatsapp(
         }
         components.push({
           type: "body",
-          parameters: [{ type: "text", text: paramText }],
+          parameters: (spaced ? spacedParams : [paramText]).map((text) => ({
+            type: "text",
+            text,
+          })),
         });
         tpl.components = components;
       }
