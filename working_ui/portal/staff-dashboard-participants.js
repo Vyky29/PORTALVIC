@@ -1500,11 +1500,9 @@
         found = pack(s);
       });
       if(found) return found;
-      if(typeof portalBaseClientSessionsForCalendarDate !== 'function') return null;
       const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
       const profs = src && src.staffProfiles ? src.staffProfiles : null;
-      if(!profs) return null;
-      Object.keys(profs).forEach(function(sid){
+      if(profs && typeof portalBaseClientSessionsForCalendarDate === 'function') Object.keys(profs).forEach(function(sid){
         if(found) return;
         const prof = profs[sid];
         const dn = prof && String(prof.staffName || prof.name || '').trim();
@@ -1520,6 +1518,116 @@
           if(found) return;
         }
       });
+      if(found) return found;
+      /* The signed-in worker's sessionsModel does not include the host's book
+         (Luliya does not carry Dan's Mia). Read the full roster and the standing
+         occupants so the shadower still sees that child. */
+      function clockToHm(token){
+        const m = String(token || '').trim().match(/^(\d{1,2})(?:[:.](\d{1,2}))?$/);
+        if(!m) return '';
+        let h = parseInt(m[1], 10);
+        const min = m[2] != null && m[2] !== '' ? parseInt(m[2], 10) : 0;
+        if(!Number.isFinite(h) || h < 0 || h > 23 || !Number.isFinite(min) || min < 0 || min > 59) return '';
+        if(h >= 1 && h <= 7) h += 12;
+        return String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0');
+      }
+      function labelRange(label){
+        const bits = String(label || '').replace(/[–—]/g, '-').split(/\bto\b|-/i);
+        const parts = [];
+        for(let i = 0; i < bits.length; i++){
+          const p = String(bits[i] || '').trim();
+          if(p) parts.push(p);
+        }
+        if(parts.length < 2) return null;
+        const start = clockToHm(parts[0]);
+        const end = clockToHm(parts[1]);
+        if(!start || !end) return null;
+        return { start: start, end: end };
+      }
+      function slugName(name){
+        return String(name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      }
+      function hostNamed(inst){
+        const bit = String(inst || '').trim();
+        if(!bit) return false;
+        if(portalStaffNameMatchesShadowHost(trainer, bit, bit)) return true;
+        const tid = String(pl.trainer_staff_id || '').trim();
+        return !!(tid && portalStaffNameMatchesShadowHost(tid, bit, bit));
+      }
+      const rosterRows = src && Array.isArray(src.rows) ? src.rows : [];
+      let bestDate = '';
+      rosterRows.forEach(function(row){
+        if(!row) return;
+        if(String(row.day || '').trim() !== dayWord) return;
+        const nameRaw = String(row.client_name || '').trim();
+        if(!nameRaw || /no\s*participant|no\s*client/i.test(nameRaw)) return;
+        const instructors = String(row.instructors || '').split(/[,/&+]|\band\b/i).map(function(p){ return String(p || '').trim(); }).filter(Boolean);
+        if(!instructors.some(hostNamed)) return;
+        const range = labelRange(row.time_slot);
+        if(!range) return;
+        if(ovStart && !portalHmRangeOverlaps(ovStart, ovEnd, range.start, range.end)) return;
+        const venue = String(row.venue || '').trim();
+        if(!portalShadowingVenuesMatch(ov.anchor_venue, venue)) return;
+        const rowDate = String(row.session_date || row.date || '').slice(0, 10);
+        if(/^\d{4}-\d{2}-\d{2}$/.test(rowDate) && rowDate > iso) return;
+        if(bestDate && rowDate && rowDate < bestDate) return;
+        if(bestDate && !rowDate) return;
+        const packed = pack({
+          clientId: slugName(nameRaw),
+          clientName: nameRaw,
+          clientDisplay: nameRaw,
+          start: range.start,
+          end: range.end,
+          venue: venue || ov.anchor_venue || '',
+          activity: String(row.service || 'Swimming').trim() || 'Swimming',
+          rosterService: String(row.service || '').trim(),
+          rosterArea: String(row.area || '').trim(),
+          area: String(row.area || '').trim(),
+          staffId: String(pl.trainer_staff_id || '').trim(),
+          day: dayWord,
+          status: 'Scheduled'
+        });
+        if(!packed) return;
+        bestDate = rowDate || bestDate;
+        found = packed;
+      });
+      if(found) return found;
+      try{
+        const Occ = window.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+        const by = Occ && Occ.bySlotId;
+        if(by){
+          Object.keys(by).forEach(function(slotId){
+            if(found) return;
+            const slot = by[slotId];
+            if(!slot || String(slot.day || '').trim() !== dayWord) return;
+            if(!portalShadowingVenuesMatch(ov.anchor_venue, slot.venue)) return;
+            const range = labelRange(slot.timeLabel);
+            if(!range || (ovStart && !portalHmRangeOverlaps(ovStart, ovEnd, range.start, range.end))) return;
+            const lines = Array.isArray(slot.seatLines) ? slot.seatLines : [];
+            for(let i = 0; i < lines.length; i++){
+              const line = lines[i];
+              const client = String(line && line.client || '').trim();
+              if(!client || /no\s*participant|no\s*client/i.test(client)) continue;
+              if(!hostNamed(line && line.instructor)) continue;
+              found = pack({
+                clientId: slugName(client),
+                clientName: client,
+                clientDisplay: client,
+                start: range.start,
+                end: range.end,
+                venue: String(slot.venue || ov.anchor_venue || '').trim(),
+                activity: 'Swimming',
+                rosterArea: 'Teaching Pool',
+                area: 'Teaching Pool',
+                staffId: String(pl.trainer_staff_id || '').trim(),
+                day: dayWord,
+                status: 'Scheduled'
+              });
+              if(found) return;
+            }
+          });
+        }
+      }catch(_occ){}
       return found;
     }
     function portalSessionAddShadowingChipLabel(payload, ov, sessionDateIso){
@@ -2561,7 +2669,9 @@
       const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
       const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
       const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
-      const slotChip = meetingChipsRow ? '' : chipsRow;
+      const observerChipUnderName = typeof portalTodayItemShowsObserverShadowing === 'function'
+        && portalTodayItemShowsObserverShadowing(item);
+      const slotChip = (meetingChipsRow || observerChipUnderName) ? '' : chipsRow;
       const timeStack = hideDutyVenue
         ? `<div class="session-line session-line--time session-line--time-stack session-line--time-duty"><span class="session-slot-time">${time}</span>${slotChip}</div>`
         : `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span>${slotChip}</div>`;
@@ -2579,7 +2689,8 @@
       const nameIdentity = photoHtml
         ? '<span class="session-name-photo-row' + (dcBlock ? ' session-name-photo-row--above' : '') + '">' + photoHtml + nameCore + '</span>'
         : nameCore;
-      const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}${dcBlock ? chipsRow : (meetingChipsRow || '')}</span>`;
+      const underName = observerChipUnderName ? chipsRow : (dcBlock ? chipsRow : (meetingChipsRow || ''));
+      const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}${underName}</span>`;
       const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
       if(dcBlock){
         return `<div class="session-card-body session-card-body--dc-turns"><div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}<span class="session-slot-time">${time}</span>${dcBlock}</div></div>`;
