@@ -2337,10 +2337,8 @@
       if(k === 'meeting') return 'menu-btn--qm-ov-meeting';
       return 'menu-btn--qm-ov-other';
     }
-    function portalQuickMenuOverrideCancelledInlineStyle(kind){
-      const k = String(kind || '').trim();
-      if(k !== 'cancelled' && k !== 'shift_cancelled') return '';
-      return ' style="background:linear-gradient(180deg,#d6d6dc 0%,#bfc0c8 100%);background-color:#bfc0c8;color:#173247;border:2px solid rgba(82,82,91,.58);box-shadow:0 6px 18px rgba(82,82,91,.28)"';
+    function portalQuickMenuOverrideCancelledInlineStyle(){
+      return '';
     }
     function portalBuildQuickMenuOverrideStackHtml(st){
       const dayGroups = Array.isArray(st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];

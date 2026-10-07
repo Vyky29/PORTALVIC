@@ -2922,6 +2922,8 @@
     /* New shift — soft corporate yellow (Alerts quick menu; halo dots stay --sen-gold) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift,
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift{
+      --qm-glow:rgba(202,138,4,.35);
+      --qm-ring:rgba(250,204,21,.7);
       background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%);
       border:2px solid rgba(245,158,11,.42);
       color:var(--ink);
@@ -2945,19 +2947,25 @@
       border-color:rgba(245,158,11,.55);
       box-shadow:0 10px 26px rgba(249,191,46,.28);
     }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift.menu-btn--portal-pulse:not(:active),
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift.menu-btn--portal-pulse:not(:active){
-      animation:none;
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile.menu-btn--portal-pulse:not(:active),
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-tile.menu-btn--portal-pulse:not(:active){
+      animation:portal-qm-kind-pulse 1.35s ease-in-out infinite;
+    }
+    @keyframes portal-qm-kind-pulse{
+      0%,100%{box-shadow:0 6px 18px var(--qm-glow, rgba(23,50,71,.16)) !important}
+      50%{box-shadow:0 10px 26px var(--qm-glow, rgba(23,50,71,.28)), 0 0 0 2px var(--qm-ring, rgba(23,50,71,.28)) !important}
     }
     /* Schedule-changes halo (GuideGroup): same per-kind colours as legacy reminder tiles */
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent{
-      background:linear-gradient(180deg,#ecfdf5 0%,#d1fae5 100%);
-      border:2px solid rgba(5,150,105,.45);
+      --qm-glow:rgba(13,148,136,.35);
+      --qm-ring:rgba(13,148,136,.55);
+      background:linear-gradient(180deg,#f0fdfa 0%,#ccfbf1 100%);
+      border:2px solid rgba(13,148,136,.5);
       color:var(--ink);
       box-shadow:0 6px 18px rgba(16,185,129,.22);
     }
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent .menu-btn-copy strong{color:#065f46}
-    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent .menu-btn-sub{color:#047857}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent .menu-btn-copy strong{color:#0f766e}
+    #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent .menu-btn-sub{color:#0d9488}
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent .menu-btn-chev{color:rgba(6,95,70,.55)}
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-absent .menu-btn-icon{
       background:rgba(16,185,129,.2);
@@ -2965,6 +2973,8 @@
       border-color:rgba(5,150,105,.35);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-makeup{
+      --qm-glow:rgba(194,24,91,.35);
+      --qm-ring:rgba(217,79,147,.6);
       background:linear-gradient(180deg,#fdf2f8 0%,#fce7f3 100%);
       border:2px solid rgba(219,39,119,.42);
       color:var(--ink);
@@ -2979,6 +2989,8 @@
       border-color:rgba(219,39,119,.35);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-trial{
+      --qm-glow:rgba(124,58,237,.32);
+      --qm-ring:rgba(167,139,250,.7);
       background:linear-gradient(180deg,#f5f3ff 0%,#ede9fe 100%);
       border:2px solid rgba(124,58,237,.42);
       color:var(--ink);
@@ -2993,6 +3005,8 @@
       border-color:rgba(124,58,237,.35);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-participant{
+      --qm-glow:rgba(2,132,199,.32);
+      --qm-ring:rgba(56,189,248,.7);
       background:linear-gradient(180deg,#e0f2fe 0%,#bae6fd 100%);
       border:2px solid rgba(2,132,199,.45);
       color:var(--ink);
@@ -3032,6 +3046,8 @@
       border-color:rgba(82,82,91,.48) !important;
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-training{
+      --qm-glow:rgba(37,99,235,.32);
+      --qm-ring:rgba(59,130,246,.65);
       background:linear-gradient(180deg,#eff6ff 0%,#e0f2fe 100%);
       border:2px solid rgba(37,99,235,.42);
       box-shadow:0 6px 18px rgba(37,99,235,.18);
@@ -3043,6 +3059,8 @@
       background:rgba(59,130,246,.22);color:#1d4ed8;border-color:rgba(37,99,235,.35);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-reverted{
+      --qm-glow:rgba(82,82,91,.3);
+      --qm-ring:rgba(161,161,170,.7);
       background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%);
       border:2px solid rgba(113,113,122,.45);
       color:var(--ink);
@@ -3057,6 +3075,8 @@
       border-color:rgba(113,113,122,.4);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-shadowing{
+      --qm-glow:rgba(101,163,13,.32);
+      --qm-ring:rgba(132,204,22,.65);
       background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
       border:2px solid rgba(132,204,22,.45);
       box-shadow:0 6px 18px rgba(132,204,22,.2);
@@ -3068,6 +3088,8 @@
       background:rgba(132,204,22,.22);color:#4d7c0f;border-color:rgba(132,204,22,.38);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-meeting{
+      --qm-glow:rgba(37,99,235,.32);
+      --qm-ring:rgba(59,130,246,.65);
       background:linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%);
       border:2px solid rgba(37,99,235,.42);
       box-shadow:0 6px 18px rgba(37,99,235,.18);
@@ -3152,8 +3174,8 @@
       color:var(--ink);
       box-shadow:0 6px 18px rgba(16,185,129,.22);
     }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-absent .menu-btn-copy strong{color:#065f46}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-absent .menu-btn-sub{color:#047857}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-absent .menu-btn-copy strong{color:#0f766e}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-absent .menu-btn-sub{color:#0d9488}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-absent .menu-btn-chev{color:rgba(6,95,70,.55)}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-absent .menu-btn-icon{
       background:rgba(16,185,129,.2);
@@ -4162,9 +4184,9 @@
     /* Changed by Admin — yellow card (until session starts). Never paint ov-blue here;
        Move in / New Client keep their blue block below. */
     .section-card--today .session-card.session-card--admin-adjusted{
-      background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
-      border-color:rgba(200,165,45,.5);
-      box-shadow:0 1px 6px rgba(200,165,45,.12);
+      background:rgba(250,204,21,.22);
+      border-color:rgba(202,138,4,.4);
+      box-shadow:none;
     }
     /* Pending feedback wins over admin/shadowing yellow */
     .section-card--today .session-card.session-card--admin-adjusted.session-card--review-needed,
@@ -4194,9 +4216,9 @@
        inherently an admin change, so the whole card stays pink (never yellow)
        until feedback review states take over. */
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-pink:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
-      background:linear-gradient(180deg,#fde3ee 0%,#fbcfe0 100%);
-      border-color:#c2185b;
-      box-shadow:0 1px 6px rgba(194,24,91,.16);
+      background:rgba(217,79,147,.16);
+      border-color:rgba(194,24,91,.45);
+      box-shadow:none;
     }
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-pink:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
       border-color:#a01047;
@@ -4206,9 +4228,9 @@
     .section-card--today .session-card.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
     .section-card--today .session-card.session-card--ov-blue.override--replace:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
-      background:linear-gradient(180deg,#dbeafe 0%,#eff6ff 55%,#f8fbff 100%);
-      border-color:rgba(37,99,235,.58);
-      box-shadow:0 1px 6px rgba(37,99,235,.14);
+      background:rgba(56,189,248,.18);
+      border-color:rgba(2,132,199,.4);
+      box-shadow:none;
     }
     .section-card--today .session-card.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover,
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
@@ -4275,9 +4297,9 @@
     }
     /* Today · Shadowing — green card (former Team meeting look) */
     .section-card--today .session-card.session-card--ov-shadowing{
-      background:linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%);
-      border-color:rgba(132,204,22,.45);
-      box-shadow:0 1px 4px rgba(101,163,13,.12);
+      background:rgba(132,204,22,.16);
+      border-color:rgba(101,163,13,.4);
+      box-shadow:none;
     }
     .section-card--today .session-card.session-card--ov-shadowing:hover{
       border-color:rgba(101,163,13,.55);
@@ -4297,8 +4319,8 @@
     }
     .section-card--today .session-card.session-card--ov-trial,
     .section-card--today .session-card.override--trial{
-      background:linear-gradient(180deg,#f5f3ff 0%,#ede9fe 55%,rgba(255,255,255,.98) 100%);
-      border-color:rgba(124,58,237,.48);
+      background:rgba(124,58,237,.14);
+      border-color:rgba(124,58,237,.4);
     }
     .session-card--ov-blue{
       background:linear-gradient(180deg,#dbeafe 0%,#eff6ff 55%,#f8fbff 100%);
@@ -4329,9 +4351,9 @@
     .section-card--today .session-card.override--portal-cancelled:not(.session-card--review-done):not(.session-card--review-needed),
     .section-card--today .session-card.override--portal-cancelled.session-card--admin-adjusted:not(.session-card--review-done):not(.session-card--review-needed),
     .section-card--today .session-card.session-card--ov-red.override--portal-cancelled:not(.session-card--review-done):not(.session-card--review-needed){
-      background:linear-gradient(180deg,#f4f4f5 0%,#e4e4e7 100%);
-      border-color:#171717;
-      box-shadow:0 0 0 1px rgba(23,23,23,.08),0 8px 22px rgba(23,23,23,.08);
+      background:rgba(23,23,23,.08);
+      border-color:rgba(23,23,23,.45);
+      box-shadow:none;
     }
     .section-card--today .session-card.override--portal-cancelled.session-card--review-done,
     .section-card--today .session-card.session-card--review-cancelled{
@@ -9003,7 +9025,9 @@
       transform:none;
     }
     #menuSheet .menu-btn.menu-btn--qm-ov-cancelled.menu-btn--portal-pulse:not(:active){
-      animation:none !important;
+      --qm-glow:rgba(23,23,23,.4);
+      --qm-ring:rgba(23,23,23,.62);
+      animation:portal-qm-kind-pulse 1.35s ease-in-out infinite !important;
     }
     /* Cancelled — final beat-anything layer (logo-lite Admin Changes stack) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-tile.menu-btn--qm-ov-cancelled,

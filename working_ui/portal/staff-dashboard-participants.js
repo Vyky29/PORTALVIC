@@ -3406,9 +3406,11 @@
           ? portalClientFirstNameTokenForOverride(oldR)
           : '');
         const title = clientShort ? ('CHANGE UNDONE - ' + clientShort) : 'CHANGE UNDONE';
-        const sub = typeof portalOverrideRevertCardSubLabel === 'function'
+        const undone = typeof portalOverrideRevertCardSubLabel === 'function'
           ? portalOverrideRevertCardSubLabel(iso)
           : 'Goes back to normal';
+        const was = portalOverrideUndoPreviousTypeLabel(oldR.override_type);
+        const sub = [slot, was, undone].filter(Boolean).join(' · ');
         qList.push({
           revertId: rid,
           iso: iso,
@@ -3541,12 +3543,13 @@
     function portalOverrideQuickMenuDetailSub(row, opts){
       opts = opts || {};
       const parts = [];
+      const slot = portalOverrideQuickMenuTimeSlotLabel(row);
+      if(slot) parts.push(slot);
+      if(opts.changeNote) parts.push(String(opts.changeNote));
       if(opts.includeService){
         const svc = portalOverrideQuickMenuServiceLabel(row);
         if(svc) parts.push(svc);
       }
-      const slot = portalOverrideQuickMenuTimeSlotLabel(row);
-      if(slot) parts.push(slot);
       if(opts.includeNote !== false){
         const areaNote = portalOverrideQuickMenuAreaNoteLabel(row);
         if(areaNote) parts.push(areaNote);
@@ -4049,10 +4052,9 @@
       let sub;
       if(kind === 'slot_opened'){
         title = 'Slot reopened';
-        const subParts = [];
-        if(slot) subParts.push(slot);
-        if(venue) subParts.push(venue);
-        sub = subParts.length ? subParts.join(' · ') : 'This block is open on your roster for this date.';
+        sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+          ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true, changeNote: 'This block is open again' })
+          : ([slot, venue].filter(Boolean).join(' · ') || 'This block is open on your roster for this date.');
         return {
           id: portalScheduleOverrideRowDismissKey(row),
           iso: normaliseIsoDate(row && row.session_date),
@@ -4077,9 +4079,14 @@
         title = who
           ? (baseTitle + ' - ' + who + (datePart ? (' ' + datePart) : ''))
           : (baseTitle + (datePart ? (' ' + datePart) : ''));
-        sub = isNewClient && typeof portalOverrideQuickMenuDetailSub === 'function'
-          ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true })
-          : 'On your roster for the term. You will see them on their session days.';
+        sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+          ? portalOverrideQuickMenuDetailSub(row, {
+              includeService: true,
+              includeVenue: true,
+              includeNote: true,
+              changeNote: isNewClient ? 'New client for the term' : 'New participant for the term'
+            })
+          : 'New on the term roster';
         const P = window.PortalParticipantsSheet;
         const dismissId = P && typeof P.scheduleOverrideAttentionDismissKey === 'function'
           ? P.scheduleOverrideAttentionDismissKey(row)
@@ -4111,18 +4118,18 @@
             ? portalInstructorCoverMergedSlotLabel(row)
             : '';
           sub = typeof portalOverrideQuickMenuDetailSub === 'function'
-            ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
+            ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: true, includeNote: false, changeNote: 'New shift' })
             : '';
           if(mergedCover){
             const svcOnly = typeof portalOverrideQuickMenuServiceLabel === 'function'
               ? portalOverrideQuickMenuServiceLabel(row)
               : '';
-            sub = svcOnly ? (svcOnly + ' · ' + mergedCover) : mergedCover;
+            sub = 'New shift · ' + mergedCover + (svcOnly ? (' · ' + svcOnly) : '');
           }
         }else{
           title = 'Schedule change' + (datePart ? (' ' + datePart) : '');
           sub = typeof portalOverrideQuickMenuDetailSub === 'function'
-            ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: true, includeNote: false })
+            ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: true, includeNote: false, changeNote: 'Schedule change' })
             : '';
         }
         const P = window.PortalParticipantsSheet;
@@ -4167,11 +4174,14 @@
           : isoNav;
         const todayIso = typeof portalLondonTodayIso === 'function' ? portalLondonTodayIso() : '';
         const futureShift = !!(isoNav && todayIso && isoNav > todayIso);
-        const sub = dayLabel
-          ? ('Your shift on ' + dayLabel + (futureShift ? ' will be covered.' : ' was covered.'))
+        const coverLine = dayLabel
+          ? ('Your shift on ' + dayLabel + (futureShift ? ' will be covered' : ' was covered'))
           : (futureShift
-            ? 'Your shift will be covered by another instructor.'
-            : 'Your shift was covered by another instructor.');
+            ? 'Your shift will be covered by another instructor'
+            : 'Your shift was covered by another instructor');
+        const sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+          ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: true, includeNote: false, changeNote: coverLine })
+          : coverLine;
         return {
           id: portalOverrideInstructorReplacedDayDismissKey(row),
           iso: isoNav,
@@ -4188,7 +4198,7 @@
           : '';
         title = nm ? ('CANCELLED - ' + nm + (datePart ? (' ' + datePart) : '')) : ('CANCELLED' + (datePart ? (' ' + datePart) : ''));
         sub = typeof portalOverrideQuickMenuDetailSub === 'function'
-          ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true })
+          ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: true, includeNote: true, changeNote: 'Session cancelled' })
           : '';
       } else {
         const nameBit = (kind === 'makeup' || kind === 'trial' || kind === 'client_moved')
@@ -4200,14 +4210,20 @@
           : '';
         let baseTitle = 'Schedule change';
         if(kind === 'absent') baseTitle = 'ABSENT';
-        else if(kind === 'trial') baseTitle = 'TRIAL/NEW';
+        else if(kind === 'trial') baseTitle = 'TRIAL';
         else if(kind === 'makeup') baseTitle = 'MAKE UP';
-        else if(kind === 'client_moved') baseTitle = 'CHANGED';
+        else if(kind === 'move_in') baseTitle = 'MOVE IN';
+        else if(kind === 'client_moved') baseTitle = 'MOVED';
         title = nameBit
           ? (baseTitle + ' - ' + nameBit + (datePart ? (' ' + datePart) : ''))
           : (baseTitle + (datePart ? (' ' + datePart) : ''));
+        const changeNote = kind === 'absent' ? 'Marked absent'
+          : (kind === 'trial' ? 'Trial session'
+          : (kind === 'makeup' ? 'Make up session'
+          : (kind === 'move_in' ? 'Moved into this session'
+          : (kind === 'client_moved' ? 'Moved to this day' : 'Schedule change'))));
         sub = typeof portalOverrideQuickMenuDetailSub === 'function'
-          ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true })
+          ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: true, includeNote: true, changeNote: changeNote })
           : '';
       }
       return {
