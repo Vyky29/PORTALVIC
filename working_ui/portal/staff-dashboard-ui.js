@@ -660,7 +660,7 @@
         html += '<p class="today-day-panel__off-sub">Your next session is below</p></div></div>';
       }else{
         html += '<div class="today-day-panel__off-copy">';
-        html += '<p class="today-day-panel__off-title">No sessions</p>';
+        html += '<p class="today-day-panel__off-title">No sessions today</p>';
         html += '<p class="today-day-panel__off-sub">Nothing scheduled for this day</p></div></div>';
       }
       if(hasNext){
