@@ -444,13 +444,18 @@
        tall empty band under "Roberto" before the Today card. */
     header.topbar .topbar-center--halo h1.topbar-name.topbar-name--under-halo,
     .topbar-center--halo .topbar-name--under-halo{
-      margin-top:1px;
-      line-height:1.05;
-      font-size:clamp(15px, 4.2vw, 20px);
-      flex:0 0 auto;
-      justify-content:flex-start;
-      min-height:0;
-      height:auto;
+      position:absolute !important;
+      width:1px !important;
+      height:1px !important;
+      margin:-1px !important;
+      padding:0 !important;
+      overflow:hidden !important;
+      clip:rect(0,0,0,0) !important;
+      white-space:nowrap !important;
+      border:0 !important;
+    }
+    .topbar-center--halo:has(.avatar-wrap--alert-logo){
+      padding-top:12px;
     }
     .avatar-wrap:hover{
       transform:scale(1.05);
@@ -1047,6 +1052,44 @@
       33%{box-shadow:0 0 0 2px rgba(220,38,38,.58),0 16px 36px rgba(220,38,38,.4)}
       66%{box-shadow:0 0 0 2px rgba(249,115,22,.58),0 16px 36px rgba(249,115,22,.38)}
       100%{box-shadow:0 0 0 1px rgba(45,132,179,.42),0 12px 30px rgba(45,132,179,.32)}
+    }
+    /* Alert: coloured disc, white Club Sensational mark. Photo stays only when idle. */
+    .avatar-alert-mark{
+      display:none;
+      position:relative;
+      z-index:4;
+      width:78%;
+      aspect-ratio:577 / 309;
+      background:#fff;
+      -webkit-mask:url("/halo_cs_mark.png") center / contain no-repeat;
+      mask:url("/halo_cs_mark.png") center / contain no-repeat;
+      pointer-events:none;
+    }
+    .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar-alert-mark{
+      display:block;
+    }
+    .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .topbar-staff-photo,
+    .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar-brand-logo,
+    .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar-initials{
+      display:none !important;
+    }
+    .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar,
+    .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar.avatar--has-staff-photo{
+      background:var(--halo-c,#ec4899) !important;
+      animation:avatar-outline-alert-logo 1.12s ease-in-out infinite;
+    }
+    .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar-orbit-layer circle{
+      fill:var(--halo-c,#ec4899) !important;
+    }
+    .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar-orbit-layer circle:nth-child(2n){
+      fill:var(--halo-c2,#f472b6) !important;
+    }
+    .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar-orbit-layer circle:nth-child(3n){
+      fill:var(--halo-c3,#fbcfe8) !important;
+    }
+    @keyframes avatar-outline-alert-logo{
+      0%,100%{box-shadow:0 0 0 1px color-mix(in srgb, var(--halo-c,#ec4899) 40%, transparent), 0 8px 18px color-mix(in srgb, var(--halo-c,#ec4899) 28%, transparent)}
+      50%{box-shadow:0 0 0 2px color-mix(in srgb, var(--halo-c,#ec4899) 70%, transparent), 0 12px 24px color-mix(in srgb, var(--halo-c,#ec4899) 40%, transparent)}
     }
 
     .avatar img{width:100%;height:100%;object-fit:cover;display:block}
