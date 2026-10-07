@@ -9179,6 +9179,7 @@
         chip.hidden = false;
         chip.textContent = col.label;
         chip.style.setProperty('--halo-c', col.c);
+        chip.style.setProperty('--halo-c2', col.c2);
         chip.style.setProperty('--halo-ink', col.ink || '#fff');
       }
       if(wrap.getAttribute('data-halo-logo') === sig) return;
