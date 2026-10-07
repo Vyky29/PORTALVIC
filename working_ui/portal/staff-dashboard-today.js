@@ -6397,6 +6397,82 @@
       if(!name || name === '—' || /^no participant/i.test(name)) return false;
       return true;
     }
+    function portalNextSessionClockTokenFromTs(ts){
+      const n = Number(ts);
+      if(!Number.isFinite(n)) return '';
+      const d = new Date(n);
+      if(isNaN(d.getTime())) return '';
+      let h = d.getHours();
+      const m = d.getMinutes();
+      if(h === 0) h = 12;
+      else if(h > 12) h -= 12;
+      if(m === 0) return String(h);
+      if(m === 30) return h + '.30';
+      if(m === 15) return h + '.15';
+      if(m === 45) return h + '.45';
+      return h + '.' + String(m).padStart(2, '0');
+    }
+    function portalNextSessionLooseMinutes(token){
+      const raw = String(token || '').trim().toLowerCase().replace(/\s*(am|pm)\s*$/, '');
+      const m = raw.match(/^(\d{1,2})(?:[:.](\d{1,2}))?$/);
+      if(!m) return NaN;
+      let h = parseInt(m[1], 10);
+      const min = m[2] != null && m[2] !== '' ? parseInt(m[2], 10) : 0;
+      if(!Number.isFinite(h) || !Number.isFinite(min)) return NaN;
+      if(h >= 1 && h <= 7) h += 12;
+      return h * 60 + min;
+    }
+    function portalNextSessionSpanLabel(rows){
+      let lo = Infinity;
+      let hi = -Infinity;
+      let looseLo = Infinity;
+      let looseHi = -Infinity;
+      const list = Array.isArray(rows) ? rows : [];
+      list.forEach(function(r){
+        if(!portalNextSessionRowIncludeInChips(r)) return;
+        const a = Number(r && r.sessionStartTs);
+        const b = Number(r && r.sessionEndTs);
+        if(Number.isFinite(a) && Number.isFinite(b) && b > a){
+          lo = Math.min(lo, a);
+          hi = Math.max(hi, b);
+          return;
+        }
+        const label = String((r && (r.time || r.timeSlotLabel)) || '').trim();
+        const parts = label.split(/\bto\b|[–—-]/i).map(function(p){ return String(p || '').trim(); }).filter(Boolean);
+        if(parts.length < 2) return;
+        const startM = portalNextSessionLooseMinutes(parts[0]);
+        const endM = portalNextSessionLooseMinutes(parts[1]);
+        if(!Number.isFinite(startM) || !Number.isFinite(endM) || endM <= startM) return;
+        looseLo = Math.min(looseLo, startM);
+        looseHi = Math.max(looseHi, endM);
+      });
+      if(Number.isFinite(lo) && Number.isFinite(hi) && hi > lo){
+        const startTok = portalNextSessionClockTokenFromTs(lo);
+        const endTok = portalNextSessionClockTokenFromTs(hi);
+        if(startTok && endTok) return startTok + ' to ' + endTok;
+      }
+      if(Number.isFinite(looseLo) && Number.isFinite(looseHi) && looseHi > looseLo){
+        const day = new Date(2000, 0, 1, 0, 0, 0, 0).getTime();
+        const startTok = portalNextSessionClockTokenFromTs(day + looseLo * 60000);
+        const endTok = portalNextSessionClockTokenFromTs(day + looseHi * 60000);
+        if(startTok && endTok) return startTok + ' to ' + endTok;
+      }
+      return '';
+    }
+    function portalNextSessionOrdinalDate(date){
+      if(!(date instanceof Date) || isNaN(date.getTime())) return '';
+      const day = date.getDate();
+      const month = date.toLocaleDateString('en-GB', { month: 'short' });
+      const n = day % 100;
+      let suf = 'th';
+      if(n < 11 || n > 13){
+        const u = day % 10;
+        if(u === 1) suf = 'st';
+        else if(u === 2) suf = 'nd';
+        else if(u === 3) suf = 'rd';
+      }
+      return String(day) + suf + ' ' + month;
+    }
     function portalNextSessionPreviewFromRows(info, iso, rows){
       if(!info || !info.date || !iso || !Array.isArray(rows) || !rows.length) return null;
       const venues = {};
@@ -6410,6 +6486,10 @@
       const dateLabel = typeof portalFormatPortalDateDdMmYyyy === 'function'
         ? portalFormatPortalDateDdMmYyyy(info.date)
         : '';
+      const ordinalDate = portalNextSessionOrdinalDate(info.date);
+      const spanLabel = portalNextSessionSpanLabel(rows);
+      const chipBits = [weekday, ordinalDate, spanLabel].filter(Boolean);
+      const chipLabel = chipBits.length ? ('Next Session: ' + chipBits.join(', ')) : '';
       const participantsRaw = rows
         .filter(portalNextSessionRowIncludeInChips)
         .map(function(r){
@@ -6435,6 +6515,9 @@
       return {
         weekday: weekday,
         dateLabel: dateLabel,
+        ordinalDate: ordinalDate,
+        spanLabel: spanLabel,
+        chipLabel: chipLabel,
         iso: iso,
         sessionCount: participants.length,
         venueLabel: venueKeys[0] || String(rows[0] && rows[0].venue || '').trim(),

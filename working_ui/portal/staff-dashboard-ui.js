@@ -668,14 +668,10 @@
         const aria = 'Next session ' + String(preview.weekday || '') + ' ' + String(preview.dateLabel || '');
         html += '<div class="today-day-panel__next">';
         html += '<button type="button" class="today-day-panel__next-open" data-open-next-session="1" aria-label="' + escapeHtml(aria.trim()) + '">';
-        const nextDay = String(preview.weekday || '').trim();
-        let nextDate = String(preview.dateLabel || '').trim();
-        const nextDateShort = nextDate.match(/^(\d{2}\/\d{2})\/\d{4}$/);
-        if(nextDateShort) nextDate = nextDateShort[1];
+        const chip = String(preview.chipLabel || '').trim()
+          || ('Next Session: ' + [preview.weekday, preview.dateLabel].filter(Boolean).join(', '));
         html += '<div class="today-day-panel__next-head">';
-        html += '<span class="today-day-panel__next-kicker">Next session</span>';
-        if(nextDay) html += '<span class="today-day-panel__next-day">' + escapeHtml(nextDay) + '</span>';
-        if(nextDate) html += '<span class="today-day-panel__next-date">' + escapeHtml(nextDate) + '</span>';
+        html += '<span class="today-day-panel__next-chip">' + escapeHtml(chip) + '</span>';
         html += '</div>';
         html += '</button>';
         if(chips.length){

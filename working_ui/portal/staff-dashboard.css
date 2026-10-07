@@ -5461,6 +5461,21 @@
       min-width:0;
       text-align:center;
     }
+    .today-day-panel__next-chip{
+      display:inline-block;
+      max-width:100%;
+      box-sizing:border-box;
+      padding:6px 12px;
+      border-radius:12px;
+      background:#0284c7;
+      color:#fff;
+      font-size:13px;
+      font-weight:800;
+      line-height:1.3;
+      letter-spacing:.01em;
+      text-align:center;
+      overflow-wrap:break-word;
+    }
     .today-day-panel__next-line{
       margin:0;
       font-size:13px;
