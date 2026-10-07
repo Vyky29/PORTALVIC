@@ -13,9 +13,10 @@
 //   30 17,18 * * 0   body {wave:"2030"}  — Sunday 18:30 London
 //   0 14,15 * * 6    body {wave:"2000"}  — Saturday 15:00 London
 //   30 14,15 * * 6   body {wave:"2030"}  — Saturday 15:30 London
-//   Wave "biz" queues WhatsApp Business on the office computer. It does not call Meta.
-//   Wave "ring" is one locked-phone alert per staff per day, from the biz hour
-//   until 23:00 London (Sat 16:00, Sun 19:00, Mon-Fri 21:00). It does not repeat.
+//   Wave "biz" is the 21:00 WhatsApp, same staff template as the 20:00 and 20:30 alerts.
+//   Wave "ring" is one locked-phone push per staff per day, from the biz hour
+//   until 23:00 London (Sat 16:00, Sun 19:00, Mon-Fri 21:00). It does not repeat
+//   and it is not a WhatsApp.
 // Manual: POST {"force":true,"wave":"2000"} or {"dryRun":true,"force":true,"wave":"ring"}
 //
 // Deploy: supabase functions deploy portal-feedback-2030-whatsapp --no-verify-jwt
@@ -31,7 +32,6 @@ import {
   verifyPortalPushWebhook,
 } from "../_shared/portal_webpush_util.ts";
 import {
-  flattenWhatsappTemplateBody,
   normalizeParentPhoneE164,
   sendParentMobileMessage,
   withStaffApiMachineFooter,
@@ -352,7 +352,7 @@ async function sendFeedbackRingPush(admin, profileId, pending, sample) {
   return { sent, subs: subs.length, error: sent ? "" : lastErr || "push_failed" };
 }
 
-/** Normal WhatsApp Business chat. Not an API template. The office sends it from this computer. */
+/** 21:00 copy. Sent on the same staff WhatsApp template as the earlier alerts. */
 function buildBizBody(first, pending, sample) {
   const n = Math.max(1, pending);
   const list = (sample || []).slice(0, 3).join(", ");
@@ -629,7 +629,11 @@ Deno.serve(async (req) => {
     });
   }
 
-  const kind = wave === "2030" ? "feedback_2030_wa" : "feedback_2000_wa";
+  const kind = wave === "2030"
+    ? "feedback_2030_wa"
+    : wave === "biz"
+    ? "feedback_biz_wa"
+    : "feedback_2000_wa";
   const sent = [];
   const skipped = [];
   for (const t of targets) {
@@ -722,41 +726,11 @@ Deno.serve(async (req) => {
         skipped.push({ username: t.username, reason: "no_api_reminder" });
         continue;
       }
-      const body = buildBizBody(t.staffLabel, t.pending, t.sample);
-      await admin.from("portal_staff_notify_log").insert({
-        sent_by_user_id: null,
-        sent_by_email: "system@clubsensational.org",
-        kind: "feedback_biz_wa",
-        channel: "whatsapp_business",
-        staff_profile_id: t.profileId,
-        staff_username: t.username,
-        staff_display_name: t.staffLabel,
-        staff_phone: t.phone,
-        subject: `Feedback WhatsApp Business - ${iso}`,
-        body_text: body,
-        whatsapp_status: "business_pending",
-        whatsapp_message_id: null,
-        error_detail: null,
-        meta: {
-          campaign: "feedback_biz_wa",
-          session_date: iso,
-          pending: t.pending,
-          sample: t.sample,
-          used_template: false,
-        },
-      });
-      await admin.from(DEDUPE_TABLE).insert({
-        session_date: iso,
-        staff_user_id: t.profileId,
-        pending_count: t.pending,
-        wave: "biz",
-      });
-      sent.push({ username: t.username, pending: t.pending, business: true });
-      continue;
     }
-    const body = buildBody(t.staffLabel, t.pending, t.sample, wave, london);
-    const templateBody = flattenWhatsappTemplateBody(body);
-    const result = await sendParentMobileMessage(t.phone, templateBody, {
+    const body = wave === "biz"
+      ? withStaffApiMachineFooter(buildBizBody(t.staffLabel, t.pending, t.sample))
+      : buildBody(t.staffLabel, t.pending, t.sample, wave, london);
+    const result = await sendParentMobileMessage(t.phone, body, {
       kind: "staff_contact_update",
     });
     await admin.from("portal_staff_notify_log").insert({

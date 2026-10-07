@@ -385,8 +385,10 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
 
   const messages: ThreadMessage[] = [];
   (outboundRows || []).forEach((r) => {
-    const status = r.whatsapp_status != null ? String(r.whatsapp_status) : null;
     const kind = r.kind != null ? String(r.kind) : null;
+    /* Phone ring is a push, not a WhatsApp. Keep it out of this thread. */
+    if (kind === "feedback_ring_push") return;
+    const status = r.whatsapp_status != null ? String(r.whatsapp_status) : null;
     const meta = r.meta;
     const usedTpl =
       !!(meta && typeof meta === "object" && !Array.isArray(meta) &&
