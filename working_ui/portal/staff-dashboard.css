@@ -5499,6 +5499,8 @@
       letter-spacing:0;
       text-align:center;
       white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     .today-day-panel__next-line{
       margin:0;
