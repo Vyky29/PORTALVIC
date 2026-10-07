@@ -1405,6 +1405,31 @@ function rosterRowToSlot(isoDate, wd, r) {
   /** Latest standing snap ISO for this weekday (summer Jul window, else Autumn weekend stamps). */
   var _hubStandingIsoByDowCache = Object.create(null);
   var _hubStandingIsoByDowCacheN = -1;
+  /* One map per roster array. Register used to rescan every row for every aquatic feedback. */
+  var _rosterRowsByIsoSource = null;
+  var _rosterRowsByIsoMap = null;
+
+  function rosterRowsOnCalendarDate(rosterRows, isoDate) {
+    var dayIso = String(isoDate || "").trim().substring(0, 10);
+    if (!rosterRows || !rosterRows.length || !/^\d{4}-\d{2}-\d{2}$/.test(dayIso)) return [];
+    /* Callers pass [oneRow] to test a single dated seat. Do not replace the full index. */
+    if (rosterRows.length === 1) {
+      var only = rosterRows[0];
+      return rosterRowSessionDate(only) === dayIso ? [only] : [];
+    }
+    if (_rosterRowsByIsoSource !== rosterRows || !_rosterRowsByIsoMap) {
+      var map = Object.create(null);
+      for (var ri = 0; ri < rosterRows.length; ri++) {
+        var sd = rosterRowSessionDate(rosterRows[ri]);
+        if (!sd) continue;
+        if (!map[sd]) map[sd] = [];
+        map[sd].push(rosterRows[ri]);
+      }
+      _rosterRowsByIsoSource = rosterRows;
+      _rosterRowsByIsoMap = map;
+    }
+    return _rosterRowsByIsoMap[dayIso] || [];
+  }
   function hubLatestStandingIsoForDow(rosterRows, wd) {
     var want = clean(wd);
     if (!want || !rosterRows || !rosterRows.length) return "";
@@ -1471,10 +1496,9 @@ function rosterRowToSlot(isoDate, wd, r) {
     var standSvc = clean(standingRow && standingRow.service);
     var standMulti = isMultiActivityService(standSvc);
     var standArea = standMulti ? slotAreaKind(standingRow) : "";
-    for (var i = 0; i < rosterRows.length; i++) {
-      var o = rosterRows[i];
-      var sd = rosterRowSessionDate(o);
-      if (!sd || sd !== dayIso) continue;
+    var dayRows = rosterRowsOnCalendarDate(rosterRows, dayIso);
+    for (var i = 0; i < dayRows.length; i++) {
+      var o = dayRows[i];
       if (canonicalClientSlug(o.client_name) !== cid) continue;
       var oSvc = clean(o.service);
       if (!standSvc || !oSvc) continue;
@@ -1691,9 +1715,9 @@ function rosterRowToSlot(isoDate, wd, r) {
       return false;
     }
     if (clientHasDatedRosterInWeekSameFamily(rosterRows, r, isoDate)) return false;
-    for (var i = 0; i < rosterRows.length; i++) {
-      var o = rosterRows[i];
-      if (rosterRowSessionDate(o) !== isoDate) continue;
+    var datedToday = rosterRowsOnCalendarDate(rosterRows, isoDate);
+    for (var i = 0; i < datedToday.length; i++) {
+      var o = datedToday[i];
       if (clean(o.day) !== wd) continue;
       if (canonicalClientSlug(o.client_name) !== cid) continue;
       /* Same client dated today — only suppress undated row when same feedback family/area. */
@@ -5221,24 +5245,105 @@ function rosterRowToSlot(isoDate, wd, r) {
     else if (closeBtn.focus) closeBtn.focus();
   }
 
-  /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks when instructors differ. */
-  function aquaticSlotCountForClientOnDate(iso, clientName) {
-    var cid = canonicalClientSlug(clientName);
-    if (!iso || !cid) return 0;
+  /**
+   * Aquatic rows that apply on one date, built once per roster array.
+   * Indexing feedback used to walk the whole Autumn list once per aquatic note
+   * (nested again inside rosterRowAppliesOnDate) and Chrome offered to close the tab.
+   */
+  var _aquaticAppliedSource = null;
+  var _aquaticAppliedByDow = null;
+  var _aquaticAppliedByIso = null;
+
+  function aquaticAppliedRowsForDate(iso) {
+    var day = String(iso || "").trim().substring(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return [];
     var src = global.STAFF_DASHBOARD_SOURCE;
     var rows = src && Array.isArray(src.rows) ? src.rows : [];
-    var wd = weekdayLongFromIso(iso);
-    var n = 0;
-    for (var i = 0; i < rows.length; i++) {
-      var r = rows[i];
-      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
-      if (canonicalClientSlug(r.client_name) !== cid) continue;
-      if (!isAquaticService(r.service)) continue;
-      if (!isRosterClient(r.client_name)) continue;
-      n++;
+    if (_aquaticAppliedSource !== rows || !_aquaticAppliedByIso) {
+      _aquaticAppliedSource = rows;
+      _aquaticAppliedByIso = Object.create(null);
+      _aquaticAppliedByDow = Object.create(null);
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        if (!r || !isAquaticService(r.service) || !isRosterClient(r.client_name)) continue;
+        var dow = clean(r.day);
+        if (!dow) continue;
+        if (!_aquaticAppliedByDow[dow]) _aquaticAppliedByDow[dow] = [];
+        _aquaticAppliedByDow[dow].push(r);
+      }
     }
-    n += aquaticMakeupSlotsForClientOnDate(iso, clientName).length;
-    return n;
+    if (_aquaticAppliedByIso[day]) return _aquaticAppliedByIso[day];
+    var wd = weekdayLongFromIso(day);
+    var bucket = (_aquaticAppliedByDow && _aquaticAppliedByDow[wd]) || [];
+    var out = [];
+    for (var j = 0; j < bucket.length; j++) {
+      if (rosterRowAppliesOnDate(rows, bucket[j], day, wd)) out.push(bucket[j]);
+    }
+    _aquaticAppliedByIso[day] = out;
+    return out;
+  }
+
+  var _aquaticFactsSource = null;
+  var _aquaticFacts = null;
+
+  function aquaticDayFacts(iso, clientName) {
+    var cid = canonicalClientSlug(clientName);
+    var day = String(iso || "").trim().substring(0, 10);
+    if (!day || !cid) return { n: 0, sameInstructor: false };
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    if (_aquaticFactsSource !== rows || !_aquaticFacts) {
+      _aquaticFactsSource = rows;
+      _aquaticFacts = Object.create(null);
+    }
+    var key = day + "|" + cid;
+    if (_aquaticFacts[key]) return _aquaticFacts[key];
+    var applied = aquaticAppliedRowsForDate(day);
+    var byStart = Object.create(null);
+    var n = 0;
+    for (var i = 0; i < applied.length; i++) {
+      var r = applied[i];
+      if (canonicalClientSlug(r.client_name) !== cid) continue;
+      n++;
+      var pt = parseTimeSlot(r.time_slot, weekdayLongFromIso(day));
+      var st = clean(pt && pt.start) || "_";
+      if (!byStart[st]) byStart[st] = [];
+      if (r.instructors) byStart[st].push(r.instructors);
+    }
+    var makeups = aquaticMakeupSlotsForClientOnDate(day, clientName);
+    for (var m = 0; m < makeups.length; m++) {
+      n++;
+      var mk = clean(makeups[m].time_start || makeups[m].start) || "_";
+      if (!byStart[mk]) byStart[mk] = [];
+      if (makeups[m].instructor) byStart[mk].push(makeups[m].instructor);
+    }
+    var starts = Object.keys(byStart);
+    var same = false;
+    if (n >= 2 && starts.length) {
+      var lead = "";
+      same = true;
+      for (var s = 0; s < starts.length; s++) {
+        var setKey = instructorSetKeyFromNames(byStart[starts[s]]);
+        if (!setKey) {
+          same = false;
+          break;
+        }
+        if (!lead) lead = setKey;
+        else if (lead !== setKey) {
+          same = false;
+          break;
+        }
+      }
+      if (!lead) same = false;
+    }
+    var facts = { n: n, sameInstructor: same };
+    _aquaticFacts[key] = facts;
+    return facts;
+  }
+
+  /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks when instructors differ. */
+  function aquaticSlotCountForClientOnDate(iso, clientName) {
+    return aquaticDayFacts(iso, clientName).n;
   }
 
   function instructorSetKeyFromNames(names) {
@@ -5274,43 +5379,7 @@ function rosterRowToSlot(isoDate, wd, r) {
    * Different instructors on different clocks (Eiji 17:30 vs 18:00) stay per-slot.
    */
   function aquaticSameInstructorAllSlotsOnDate(iso, clientName) {
-    var cid = canonicalClientSlug(clientName);
-    if (!iso || !cid) return false;
-    var src = global.STAFF_DASHBOARD_SOURCE;
-    var rows = src && Array.isArray(src.rows) ? src.rows : [];
-    var wd = weekdayLongFromIso(iso);
-    var byStart = Object.create(null);
-    var n = 0;
-    function addAtStart(startHm, instBlob) {
-      var st = clean(startHm) || "_";
-      if (!byStart[st]) byStart[st] = [];
-      if (instBlob) byStart[st].push(instBlob);
-    }
-    for (var i = 0; i < rows.length; i++) {
-      var r = rows[i];
-      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
-      if (canonicalClientSlug(r.client_name) !== cid) continue;
-      if (!isAquaticService(r.service)) continue;
-      if (!isRosterClient(r.client_name)) continue;
-      n++;
-      var pt = parseTimeSlot(r.time_slot, wd);
-      addAtStart(pt && pt.start, r.instructors);
-    }
-    var makeups = aquaticMakeupSlotsForClientOnDate(iso, clientName);
-    for (var m = 0; m < makeups.length; m++) {
-      n++;
-      addAtStart(makeups[m].time_start || makeups[m].start, makeups[m].instructor);
-    }
-    var starts = Object.keys(byStart);
-    if (n < 2 || !starts.length) return false;
-    var lead = "";
-    for (var s = 0; s < starts.length; s++) {
-      var setKey = instructorSetKeyFromNames(byStart[starts[s]]);
-      if (!setKey) return false;
-      if (!lead) lead = setKey;
-      else if (lead !== setKey) return false;
-    }
-    return !!lead;
+    return aquaticDayFacts(iso, clientName).sameInstructor;
   }
 
   function aquaticRosterClockIsTwoToOne(slot) {
@@ -5320,15 +5389,11 @@ function rosterRowToSlot(isoDate, wd, r) {
     var wd = slot.day || weekdayLongFromIso(iso);
     var want = clean(slot.time_start || ((parseTimeSlot(slot.time_slot, wd) || {}).start));
     if (!iso || !cid || !want) return false;
-    var src = global.STAFF_DASHBOARD_SOURCE;
-    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    var applied = aquaticAppliedRowsForDate(iso);
     var names = [];
-    for (var i = 0; i < rows.length; i++) {
-      var r = rows[i];
-      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
+    for (var i = 0; i < applied.length; i++) {
+      var r = applied[i];
       if (canonicalClientSlug(r.client_name) !== cid) continue;
-      if (!isAquaticService(r.service)) continue;
-      if (!isRosterClient(r.client_name)) continue;
       var pt = parseTimeSlot(r.time_slot, wd);
       if (!pt || pt.start !== want) continue;
       names.push(r.instructors);
@@ -8149,8 +8214,9 @@ function rosterRowToSlot(isoDate, wd, r) {
       if (!ovCan) continue;
       var csdOv = rowDateIso(ovCan.session_date);
       if (!csdOv) continue;
-      /* One Day Centre instructor cleared: client stays until every instructor is cleared. */
-      if (this.dayCentreSessionStillStanding(csdOv, ovCan.client_name)) continue;
+      /* Do not expandSlots here. A Day Centre client who still has another instructor
+         is skipped later in slotCancellationCountsAsSubmitted. Expanding every
+         historical cancel while indexing feedback froze Register. */
       var ckOv = csdOv + "|" + canonicalClientSlug(ovCan.client_name);
       if (ckOv.length > 11) can[ckOv] = { countsAsSubmitted: true, during: false, row: ovCan };
     }
@@ -14546,33 +14612,31 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       clearTimeout(hub._registerStripRetry);
       hub._registerStripRetry = 0;
     }
-    function paintIso(iso) {
-      if (!iso || hubDayIsClubClosed(hub, iso) || hubDayIsProgrammeInactive(hub, iso)) return false;
-      hub.syncRegisterWeekCard(iso, hub.registerDayProgress(iso));
-      return true;
-    }
-    /* Every day in this pass. Idle used to skip the open day when the first
-       count threw, and a later refresh cancelled the rest, so a card stayed on
-       the raw submitted number until it was clicked. */
-    var days = this.weekDaysForDisplay();
-    var failed = [];
-    for (var i = 0; i < days.length; i++) {
-      try {
-        paintIso(days[i]);
-      } catch (_card) {
-        failed.push(days[i]);
-      }
-    }
-    if (!failed.length) return;
-    hub._registerStripRetry = setTimeout(function () {
+    /* One day per turn. Counting all 7 (Sunday is ~50 seats) in one pass
+       blocked the tab until Chrome asked to close it. */
+    hub._registerStripGen = (hub._registerStripGen || 0) + 1;
+    var gen = hub._registerStripGen;
+    var days = this.weekDaysForDisplay().slice();
+    var selected = clean(hub.selectedDay);
+    days.sort(function (a, b) {
+      if (a === selected) return -1;
+      if (b === selected) return 1;
+      return a < b ? -1 : a > b ? 1 : 0;
+    });
+    var idx = 0;
+    function step() {
       hub._registerStripRetry = 0;
-      if (!hub.hubIsLive()) return;
-      for (var f = 0; f < failed.length; f++) {
-        try {
-          paintIso(failed[f]);
-        } catch (_again) {}
-      }
-    }, 0);
+      if (gen !== hub._registerStripGen || !hub.hubIsLive()) return;
+      if (idx >= days.length) return;
+      var iso = days[idx++];
+      try {
+        if (iso && !hubDayIsClubClosed(hub, iso) && !hubDayIsProgrammeInactive(hub, iso)) {
+          hub.syncRegisterWeekCard(iso, hub.registerDayProgress(iso));
+        }
+      } catch (_card) {}
+      if (idx < days.length) hub._registerStripRetry = setTimeout(step, 0);
+    }
+    hub._registerStripRetry = setTimeout(step, 0);
   };
 
   function refillAshFilterSelect(selectEl, names, placeholder, currentValue) {
@@ -14729,13 +14793,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       return;
     }
     this.syncFeedbackChromeSelection();
+    var root = this.root;
+    var tbody = root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
+    if (tbody) tbody.innerHTML = this.htmlFeedbackRegisterTableBody();
     try {
       this.syncRegisterFilterOptions();
     } catch (_filt) {}
-    try {
-      this.syncRegisterWeekStripCounts();
-    } catch (_strip) {}
-    var root = this.root;
     var breakdownHost = root.querySelector("[data-ash-register-breakdown]");
     if (breakdownHost) {
       var wrapBd = document.createElement("div");
@@ -14753,8 +14816,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (next && metrics.parentNode) metrics.parentNode.replaceChild(next, metrics);
       } catch (_m) {}
     }
-    var tbody = root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
-    if (tbody) tbody.innerHTML = this.htmlFeedbackRegisterTableBody();
+    try {
+      this.syncRegisterWeekStripCounts();
+    } catch (_strip) {}
   };
 
   AdminSessionsHub.prototype.scheduleRegisterBodyPaint = function () {
@@ -15440,15 +15504,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (opts.overviewPicker && !opts.computeOverviewDayStats) {
           ds = { total: 0, done: 0 };
         } else if (hub.mode === "feedback" && !opts.overviewPicker) {
-          var ratio = typeof hub.staffingSessionStats === "function" ? hub.staffingSessionStats(iso) : null;
-          if (ratio && ratio.total) {
-            ds = { total: ratio.total, done: ratio.done, light: false };
-          } else {
-            var lightN = hub.feedbackCountForDateLight
-              ? hub.feedbackCountForDateLight(iso)
-              : 0;
-            ds = { total: 0, done: lightN, light: true };
-          }
+          /* Light count only. staffingSessionStats here expanded all 7 days
+             while the HTML was still being built and Chrome asked to close the tab.
+             Arrived/expected is written one day at a time by syncRegisterWeekStripCounts. */
+          var lightN = hub.feedbackCountForDateLight
+            ? hub.feedbackCountForDateLight(iso)
+            : 0;
+          ds = { total: 0, done: lightN, light: true };
         } else {
           ds = hub.dayStats(iso);
         }
