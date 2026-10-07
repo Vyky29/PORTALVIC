@@ -2,6 +2,11 @@
 // Deploy: supabase functions deploy portal-push-dispatch-schedule-override --no-verify-jwt
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import webpush from "npm:web-push@3.6.7";
+import {
+  normalizeParentPhoneE164,
+  sendParentMobileMessage,
+  withStaffApiMachineFooter,
+} from "../_shared/portal_parent_messaging.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -271,6 +276,64 @@ type StaffProfile = {
   app_role: string | null;
 };
 
+function ukDate(iso: string): string {
+  const m = String(iso || "").slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return String(iso || "").slice(0, 10);
+  return m[3] + "/" + m[2] + "/" + m[1];
+}
+
+function coverEventKey(direction: "assigned" | "removed", rosterKey: string): string {
+  return direction + ":" + String(rosterKey || "").slice(0, 80);
+}
+
+/** WhatsApp the named cover. Assigned and removed are separate, so undoing the override texts the same worker again. */
+async function sendCoverStaffWhatsapp(
+  admin: ReturnType<typeof createClient>,
+  record: Record<string, unknown>,
+  userIds: string[],
+  direction: "assigned" | "removed",
+  rosterKey: string,
+) {
+  const overrideId = String(record.id ?? "").trim();
+  if (!overrideId || !userIds.length || !rosterKey) return;
+  const event = coverEventKey(direction, rosterKey);
+  const { error: insErr } = await admin.from("portal_cover_whatsapp_sent").insert({
+    override_id: overrideId,
+    event,
+  });
+  if (insErr) {
+    const code = (insErr as { code?: string }).code || "";
+    const msg = insErr.message || "";
+    if (code === "23505" || msg.includes("duplicate")) return;
+    console.warn("[portal-push-dispatch] cover wa ledger", insErr);
+    return;
+  }
+  const { data: people } = await admin.from("staff_profiles")
+    .select("id, full_name, username, phone_e164")
+    .in("id", userIds);
+  const who = clientDisplayName(record) || "this session";
+  const when = String(record.anchor_time_slot_label || "").trim();
+  const venue = String(record.anchor_venue || "").trim();
+  const line = [ukDate(String(record.session_date || "")), when, venue].filter(Boolean).join(" · ");
+  let sent = 0;
+  for (const p of people || []) {
+    const phone = normalizeParentPhoneE164(String(p.phone_e164 || ""));
+    if (!phone) continue;
+    const first = String(p.full_name || p.username || "there").trim().split(/\s+/)[0] || "there";
+    const body = direction === "removed"
+      ? `Hi ${first},\n\nYou are no longer covering ${who}.\n\n${line}.\n\nThat cover was removed.`
+      : `Hi ${first},\n\nYou are covering ${who}.\n\n${line}.`;
+    const result = await sendParentMobileMessage(phone, withStaffApiMachineFooter(body), {
+      kind: "staff_contact_update",
+    });
+    if (result.ok) sent++;
+    else console.warn("[portal-push-dispatch] cover wa", result.error);
+  }
+  if (!sent) {
+    await admin.from("portal_cover_whatsapp_sent").delete().eq("override_id", overrideId).eq("event", event);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -444,6 +507,35 @@ Deno.serve(async (req) => {
 
   const ids = [...targetUserIds];
 
+  if (overrideType === "instructor_reassign") {
+    const direction = coverRemoved ? "removed" : "assigned";
+    await sendCoverStaffWhatsapp(
+      admin,
+      record as Record<string, unknown>,
+      ids,
+      direction,
+      targetRosterKey,
+    );
+    if (!coverRemoved && payload.old_record && typeof payload.old_record === "object") {
+      const oldKey = coverRosterKey(payload.old_record as Record<string, unknown>);
+      if (oldKey && oldKey !== targetRosterKey) {
+        const oldIds: string[] = [];
+        for (const p of profiles as StaffProfile[]) {
+          if (rosterKeyFromProfile(p.username ?? "", p.full_name ?? "") === oldKey) oldIds.push(p.id);
+        }
+        if (oldIds.length) {
+          await sendCoverStaffWhatsapp(
+            admin,
+            payload.old_record as Record<string, unknown>,
+            oldIds,
+            "removed",
+            oldKey,
+          );
+        }
+      }
+    }
+  }
+
   const { data: subs, error: subErr } = await admin.from("portal_push_subscriptions")
     .select("user_id, endpoint, subscription_json")
     .in("user_id", ids)
@@ -488,6 +580,43 @@ Deno.serve(async (req) => {
   if (dedupeErr) {
     const msg = dedupeErr.message || "";
     if (msg.includes("duplicate") || (dedupeErr as { code?: string }).code === "23505") {
+      if (coverRemoved) {
+        const removedEvent = "push_removed";
+        const { error: pushLedgerErr } = await admin.from("portal_cover_whatsapp_sent").insert({
+          override_id: overrideId,
+          event: removedEvent,
+        });
+        const pushDup = pushLedgerErr &&
+          ((pushLedgerErr as { code?: string }).code === "23505" ||
+            (pushLedgerErr.message || "").includes("duplicate"));
+        if (!pushLedgerErr || !pushDup) {
+          if (pushLedgerErr && !pushDup) {
+            console.warn("[portal-push-dispatch] cover removed push ledger", pushLedgerErr);
+          } else if (subs?.length) {
+            const copy = pushCopy(overrideType, record as Record<string, unknown>);
+            const notifyUrl = `${openBase}?portalOpen=alerts`;
+            const pushPayload = JSON.stringify({
+              title: copy.title,
+              body: `${copy.body} Date: ${sessionDate}.`,
+              url: notifyUrl,
+              portalOpen: "alerts",
+            });
+            for (const row of subs) {
+              const raw = row.subscription_json;
+              if (!raw || typeof raw !== "object") continue;
+              try {
+                await webpush.sendNotification(
+                  raw as unknown as webpush.PushSubscription,
+                  pushPayload,
+                  { TTL: 86400, urgency: "high" },
+                );
+              } catch (e) {
+                console.warn("[portal-push-dispatch] cover removed push", e);
+              }
+            }
+          }
+        }
+      }
       return new Response(JSON.stringify({ skipped: true, reason: "already sent" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

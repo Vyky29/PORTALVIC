@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-06-v296",
+  "version": "2026-10-07-v297",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1880,6 +1880,36 @@
               "No pulses Enter dentro de una caja. Meta rechaza los saltos de linea dentro de {{1}}.",
               "Cuando diga Approved, se pueden pasar las automatizaciones a esta plantilla.",
             "Si Meta dice que la categoria no coincide y recomienda Marketing, pulsa Cancelar. Deja Servicio. Cambia la primera linea para que sea un aviso de una reserva que ya existe, no una presentacion del portal."
+            ]
+          }
+        },
+        {
+          "id": "cover_and_makeup_whatsapp",
+          "title": "Cover WhatsApp and makeup reminder",
+          "summary": "The covering instructor gets a WhatsApp when the cover is saved, and another if that override is undone. A pending makeup gets one parent reminder the morning before.",
+          "where": "Schedule & Covers, and Absents makeup offers",
+          "keywords": ["cover", "override", "deshacer", "makeup", "recordatorio", "whatsapp"],
+          "steps": [
+            "Assign a named cover on Schedule & Covers. The instructor gets a WhatsApp with the child, date, time and venue. The app alert still happens.",
+            "Cancel that override, or move it to another instructor. The first instructor gets a WhatsApp that the cover was removed.",
+            "A makeup offer still waiting on Accept gets one WhatsApp at 08:00 London the day before the session. It does not repeat."
+          ],
+          "tips": [
+            "COVER NEEDED with no instructor does not send a WhatsApp.",
+            "If the instructor has no mobile on the staff profile, only the app alert goes out."
+          ],
+          "es": {
+            "title": "WhatsApp de cover y recordatorio de makeup",
+            "summary": "El instructor del cover recibe un WhatsApp al guardarlo, y otro si se deshace ese override. Un makeup pendiente recibe un solo recordatorio al padre la manana anterior.",
+            "where": "Schedule & Covers, y ofertas de makeup en Absents",
+            "steps": [
+              "Asigna un cover con nombre en Schedule & Covers. El instructor recibe un WhatsApp con el nino, la fecha, la hora y el sitio. El aviso de la app sigue.",
+              "Cancela ese override, o pasalo a otro instructor. El primero recibe un WhatsApp de que el cover ya no es suyo.",
+              "Un makeup que sigue sin Accept recibe un WhatsApp a las 08:00 de Londres el dia antes. No se repite."
+            ],
+            "tips": [
+              "COVER NEEDED sin instructor no manda WhatsApp.",
+              "Si el instructor no tiene movil en su ficha, solo sale el aviso de la app."
             ]
           }
         },

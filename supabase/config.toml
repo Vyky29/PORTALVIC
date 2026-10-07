@@ -450,6 +450,9 @@ verify_jwt = false
 [functions.portal-feedback-2030-whatsapp]
 verify_jwt = false
 
+[functions.portal-makeup-offer-reminder-whatsapp]
+verify_jwt = false
+
 [functions.portal-push-dispatch-outstanding-feedback]
 verify_jwt = false
 
