@@ -1625,6 +1625,13 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   max-height:17px !important;
   color:#173247 !important;
 }
+.topbar-lead--flank-6 #topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-btn__ico,
+.topbar-lead--flank-6 #topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-btn__ico svg{
+  width:30px !important;
+  height:30px !important;
+  max-width:30px !important;
+  max-height:30px !important;
+}
 #topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-label{
   flex:0 1 auto !important;
   width:auto !important;
