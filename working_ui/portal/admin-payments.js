@@ -1452,6 +1452,23 @@
 
     /* Autumn 26/27 Total column: Autumn (bold) → Spring → Summer → Year.
        Paid → green Autumn total; Flexi/GC partial → green paid / orange face (£x/£Autumn). */
+    if (bucket === "autumn_2627" && r && Array.isArray(r._gcPartLines) && r._gcPartLines.length) {
+      var gcPaid = Number(r._amountPaid) || 0;
+      var gcFace = Number(r.amount) || 0;
+      var gcHead =
+        '<span class="pay-amt-term pay-amt-term--flexi" title="Bespoke share of each GoCardless payment / Bespoke for this term">'
+        + "Autumn "
+        + '<span class="pay-amt-paid">' + money(gcPaid) + "</span>"
+        + '<span class="pay-amt-slash">/</span>'
+        + '<span class="pay-amt-face">' + money(gcFace) + "</span>"
+        + "</span>";
+      var gcBits = "";
+      r._gcPartLines.forEach(function (line) {
+        gcBits += '<span class="pay-amt-season ' + (line.paid ? "pay-amt-season--paid" : "pay-amt-season--due")
+          + '" title="' + esc(line.title || line.t) + '">' + esc(line.t) + "</span>";
+      });
+      return '<span class="pay-amt-stack">' + gcHead + gcBits + "</span>";
+    }
     if (bucket === "autumn_2627") {
       var split = autumnCatalogSeasonTotals(r);
       if (split.year > 0 || split.autumn > 0) {
@@ -2422,8 +2439,46 @@
       return out;
     }
 
+    /* Bespoke share of each GoCardless instalment (one mandate pays the whole package). */
+    function gcPartLines(matchFn) {
+      var sched = Array.isArray(r._paymentSchedule) ? r._paymentSchedule : [];
+      var items = Array.isArray(r._gcLineItems) ? r._gcLineItems : [];
+      var total = Number(r._gcInvoiceTotal) || 0;
+      if (!sched.length || !items.length || !(total > 0)) return null;
+      var part = 0;
+      items.forEach(function (it) {
+        if (matchFn(it)) part += Number(it.amount_gbp) || 0;
+      });
+      part = Math.round(part * 100) / 100;
+      if (!(part > 0)) return null;
+      var assigned = 0;
+      var lines = [];
+      var paidSum = 0;
+      for (var i = 0; i < sched.length; i++) {
+        var p = sched[i];
+        var full = Number(p.amount_gbp) || 0;
+        var share = i === sched.length - 1
+          ? Math.round((part - assigned) * 100) / 100
+          : Math.round(full * (part / total) * 100) / 100;
+        assigned = Math.round((assigned + share) * 100) / 100;
+        var paid = String(p.status || "").toLowerCase() === "paid" || !!p.paid_at;
+        if (paid) paidSum = Math.round((paidSum + share) * 100) / 100;
+        var label = String(p.label || "");
+        var monthM = label.match(/·\s*([A-Za-z]+)/);
+        var name = monthM ? monthM[1].slice(0, 3) : "P" + String(p.seq || i + 1);
+        lines.push({
+          t: name + " " + money(share),
+          paid: paid,
+          title: label
+            + " · GoCardless " + money(full)
+            + " · Bespoke " + money(share),
+        });
+      }
+      return { part: part, paidSum: paidSum, lines: lines };
+    }
+
     if (isAutumn) {
-      return [
+      var autumnParts = [
         clonePart(
           "thu_bespoke",
           "::thu-bespoke",
@@ -2453,6 +2508,25 @@
           }
         ),
       ];
+      var bespokeGc = gcPartLines(function (it) {
+        return String(it.service_key || "") === "BESPOKE_90"
+          || /bespoke/i.test(String(it.description || ""));
+      });
+      if (bespokeGc) {
+        var bespokeRow = autumnParts[0];
+        bespokeRow.amount = bespokeGc.part;
+        bespokeRow.amount_billed = bespokeGc.part;
+        bespokeRow._amountPaid = bespokeGc.paidSum;
+        bespokeRow.amount_out = Math.max(0, Math.round((bespokeGc.part - bespokeGc.paidSum) * 100) / 100);
+        bespokeRow._amountAutumn = bespokeGc.part;
+        bespokeRow.payment_status = bespokeGc.paidSum + 0.009 >= bespokeGc.part
+          ? "Paid"
+          : bespokeGc.paidSum > 0.009
+            ? "Partial"
+            : "Outstanding";
+        bespokeRow._gcPartLines = bespokeGc.lines;
+      }
+      return autumnParts;
     }
 
     /* Summer 25/26 — workbook session split; Bespoke stays £90/session. */
@@ -6814,6 +6888,10 @@
         if (sched.length) {
           row._paymentSchedule = sched;
           row._instalmentCount = sched.length;
+          if (Array.isArray(inv.line_items) && inv.line_items.length) {
+            row._gcLineItems = inv.line_items;
+            row._gcInvoiceTotal = Number(inv.amount_gbp) || 0;
+          }
         }
       }
       var pdf = String(inv.pdf_url || "").trim();
