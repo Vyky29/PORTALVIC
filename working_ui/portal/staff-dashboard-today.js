@@ -6402,15 +6402,18 @@
       if(!Number.isFinite(n)) return '';
       const d = new Date(n);
       if(isNaN(d.getTime())) return '';
-      let h = d.getHours();
+      const h24 = d.getHours();
+      let h = h24;
       const m = d.getMinutes();
+      const mer = h24 >= 12 ? 'PM' : 'AM';
       if(h === 0) h = 12;
       else if(h > 12) h -= 12;
-      if(m === 0) return String(h);
-      if(m === 30) return h + '.30';
-      if(m === 15) return h + '.15';
-      if(m === 45) return h + '.45';
-      return h + '.' + String(m).padStart(2, '0');
+      let tok = String(h);
+      if(m === 30) tok = h + '.30';
+      else if(m === 15) tok = h + '.15';
+      else if(m === 45) tok = h + '.45';
+      else if(m !== 0) tok = h + '.' + String(m).padStart(2, '0');
+      return tok + ' ' + mer;
     }
     function portalNextSessionLooseMinutes(token){
       const raw = String(token || '').trim().toLowerCase().replace(/\s*(am|pm)\s*$/, '');
@@ -6449,13 +6452,13 @@
       if(Number.isFinite(lo) && Number.isFinite(hi) && hi > lo){
         const startTok = portalNextSessionClockTokenFromTs(lo);
         const endTok = portalNextSessionClockTokenFromTs(hi);
-        if(startTok && endTok) return startTok + ' to ' + endTok;
+        if(startTok && endTok) return startTok + '-' + endTok;
       }
       if(Number.isFinite(looseLo) && Number.isFinite(looseHi) && looseHi > looseLo){
         const day = new Date(2000, 0, 1, 0, 0, 0, 0).getTime();
         const startTok = portalNextSessionClockTokenFromTs(day + looseLo * 60000);
         const endTok = portalNextSessionClockTokenFromTs(day + looseHi * 60000);
-        if(startTok && endTok) return startTok + ' to ' + endTok;
+        if(startTok && endTok) return startTok + '-' + endTok;
       }
       return '';
     }
@@ -6471,7 +6474,7 @@
         else if(u === 2) suf = 'nd';
         else if(u === 3) suf = 'rd';
       }
-      return String(day) + suf + ' ' + month;
+      return String(day) + suf + ' ' + month + ' ' + date.getFullYear();
     }
     function portalNextSessionPreviewFromRows(info, iso, rows){
       if(!info || !info.date || !iso || !Array.isArray(rows) || !rows.length) return null;
