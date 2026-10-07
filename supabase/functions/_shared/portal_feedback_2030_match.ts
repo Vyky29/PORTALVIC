@@ -1226,7 +1226,7 @@ function cancelReportClearsSlot(row: Feedback2030KeyRow, slot: Feedback2030Slot)
   return true;
 }
 
-/** One locked-phone ring per staff per London day. A later cron the same evening must not send again. */
+/** A ring in the last 30 minutes. The caller passes only rows inside that window. */
 export function feedbackRingAlreadySentToday(
   existing: { id?: string }[] | null | undefined,
   force?: boolean,

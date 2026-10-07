@@ -1,7 +1,7 @@
 /**
  * Smoke: 20:30 matcher. Covers, another staff's absent mark, an aquatic
  * cancel stored under a Day Centre key, and Elias only from his start date.
- * The ring sends once per staff per day.
+ * The ring sends once, then again after 30 minutes, until the feedback is in.
  *   npx -y deno run -A database/local-vault/smoke-feedback-2030-shared-20260909.ts
  */
 import {
@@ -205,7 +205,7 @@ const checks = [
   ],
   ["Elias is not a seat before 23 Sep", eliasBefore.length === 0, true],
   ["Elias is a seat from 23 Sep", eliasOn.length === 1, true],
-  ["ring does not send again the same day", feedbackRingAlreadySentToday([{ id: "1" }]), true],
+  ["ring waits 30 minutes before sending again", feedbackRingAlreadySentToday([{ id: "1" }]), true],
   ["ring still sends when nothing was logged", feedbackRingAlreadySentToday([]), false],
   [
     "aquatic cancel does not close Day Centre Emmanuel",

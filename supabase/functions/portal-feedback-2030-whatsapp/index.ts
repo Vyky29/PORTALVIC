@@ -14,9 +14,8 @@
 //   0 14,15 * * 6    body {wave:"2000"}  — Saturday 15:00 London
 //   30 14,15 * * 6   body {wave:"2030"}  — Saturday 15:30 London
 //   Wave "biz" is the 21:00 WhatsApp, same staff template as the 20:00 and 20:30 alerts.
-//   Wave "ring" is one locked-phone push per staff per day, and one WhatsApp on that
-//   same template. It does not repeat. If the 21:00 WhatsApp already went, the ring
-//   only rings the phone.
+//   Wave "ring" repeats every 30 minutes, phone and WhatsApp, from that hour until
+//   23:59 London, and only while feedback is still open. It stops when the feedback is in.
 // Manual: POST {"force":true,"wave":"2000"} or {"dryRun":true,"force":true,"wave":"ring"}
 //
 // Deploy: supabase functions deploy portal-feedback-2030-whatsapp --no-verify-jwt
@@ -193,7 +192,7 @@ function resolveWave(raw, london) {
   return "";
 }
 
-/** Locked-phone ring: from 30 minutes after the last API wave until midnight London. */
+/** Locked-phone ring plus WhatsApp, every 30 minutes, until the feedback is in or midnight. */
 function inRingWindow(london) {
   return london.hour >= bizHour(london) && london.hour <= 23;
 }
@@ -653,15 +652,16 @@ Deno.serve(async (req) => {
         skipped.push({ username: t.username, reason: "no_api_reminder" });
         continue;
       }
+      const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
       const { data: recent } = await admin
         .from("portal_staff_notify_log")
         .select("id")
         .eq("kind", "feedback_ring_push")
         .eq("staff_profile_id", t.profileId)
-        .eq("subject", `Feedback ring - ${iso}`)
+        .gte("created_at", since)
         .limit(1);
       if (feedbackRingAlreadySentToday(recent, force)) {
-        skipped.push({ username: t.username, reason: "already_rang_today" });
+        skipped.push({ username: t.username, reason: "rang_within_30m" });
         continue;
       }
       const ring = await sendFeedbackRingPush(admin, t.profileId, t.pending, t.sample);
@@ -691,21 +691,15 @@ Deno.serve(async (req) => {
       });
       let ringWhatsapp = false;
       if (t.phone) {
-        const { data: bizRow } = await admin
-          .from(DEDUPE_TABLE)
-          .select("id")
-          .eq("session_date", iso)
-          .eq("staff_user_id", t.profileId)
-          .eq("wave", "biz")
-          .maybeSingle();
-        const { data: ringWa } = await admin
+        const sinceWa = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        const { data: recentWa } = await admin
           .from("portal_staff_notify_log")
           .select("id")
-          .eq("kind", "feedback_ring_wa")
+          .in("kind", ["feedback_biz_wa", "feedback_ring_wa"])
           .eq("staff_profile_id", t.profileId)
-          .contains("meta", { session_date: iso })
+          .gte("created_at", sinceWa)
           .limit(1);
-        if (!bizRow && !(ringWa && ringWa.length)) {
+        if (!recentWa || !recentWa.length) {
           const waBody = withStaffApiMachineFooter(
             buildBizBody(t.staffLabel, t.pending, t.sample),
           );
@@ -782,7 +776,7 @@ Deno.serve(async (req) => {
         .select("id")
         .eq("kind", "feedback_ring_wa")
         .eq("staff_profile_id", t.profileId)
-        .contains("meta", { session_date: iso })
+        .gte("created_at", new Date(Date.now() - 30 * 60 * 1000).toISOString())
         .limit(1);
       if (ringWa && ringWa.length && !resend) {
         skipped.push({ username: t.username, reason: "already_sent_by_ring" });
