@@ -570,7 +570,7 @@ header.topbar:has(.topbar-lead--halo-flanks) .topbar,
   min-height:0;
 }
 .topbar-lead.topbar-lead--halo-flanks .topbar-center--halo:has(.avatar-wrap--alert-logo){
-  margin-top:18px !important;
+  margin-top:10px !important;
 }
 .topbar-lead .topbar-left.topbar-left--name{
   align-self:stretch;
