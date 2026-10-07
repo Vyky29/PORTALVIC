@@ -8775,7 +8775,7 @@
           else if(k === 'new_participant' || k === 'move_in') out.newClient = true;
           else if(k === 'trial') out.trial = true;
           else if(k === 'makeup') out.makeup = true;
-          else if(k === 'reverted') out.undo = true;
+          else if(k === 'reverted'){ /* no separate undo alert */ }
           else if(k === 'slot_opened'){ /* cards only */ }
           else out.other = true;
         }

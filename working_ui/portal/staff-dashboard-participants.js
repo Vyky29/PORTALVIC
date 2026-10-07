@@ -3380,7 +3380,9 @@
      * Admin “Undo change” sets override status active → cancelled. Staff: enqueue a quick-menu card,
      * vibrate + optional Notification, same dismiss + navigate-to-day as other roster tiles.
      */
-    window.portalHandleScheduleOverrideUndoFromRealtimePayload = function portalHandleScheduleOverrideUndoFromRealtimePayload(payload){
+    window.portalHandleScheduleOverrideUndoFromRealtimePayload = function portalHandleScheduleOverrideUndoFromRealtimePayload(){
+      /* Undo is not its own alert. The card goes back to normal on its own. */
+      return;
       try{
         if(!payload || String(payload.eventType || '').toUpperCase() !== 'UPDATE') return;
         const oldR = payload.old;
@@ -4626,7 +4628,7 @@
           if(!byIso[iso]) byIso[iso] = [];
           byIso[iso].push(pack);
         }
-        const qList = portalStaffRevertQueueLoad();
+        const qList = [];
         for(let qi = 0; qi < qList.length; qi++){
           const q = qList[qi];
           if(!q || !q.revertId || !q.iso) continue;

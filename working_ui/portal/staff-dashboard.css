@@ -42,7 +42,7 @@
       --reviewGreenBg:linear-gradient(180deg,#eef8f1 0%,#dff6e8 100%);
       --reviewGreenBorder:rgba(21,115,71,.32);
       --reviewGreenGlow:rgba(21,115,71,.1);
-      --reviewOrangeBg:linear-gradient(180deg,#fff6ed 0%,#ffe8d6 100%);
+      --reviewOrangeBg:linear-gradient(180deg,#fff4e6 0%,#ffd7a1 100%);
       --reviewOrangeBorder:rgba(200,110,45,.38);
       --reviewOrangeGlow:rgba(200,110,45,.12);
       --reviewRedBg:linear-gradient(180deg,#fff0f0 0%,#fde8e8 100%);
@@ -688,12 +688,12 @@
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar.avatar--brand-default img{
       background:linear-gradient(180deg,#ffedd5,#fed7aa);
     }
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle{fill:#ea580c !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle:nth-child(2n){fill:#c2410c !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle:nth-child(3n){fill:#f97316 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle{fill:#fb923c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle:nth-child(2n){fill:#f97316 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--cw circle:nth-child(3n){fill:#fdba74 !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle{fill:#f97316 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(2n){fill:#ea580c !important}
-    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(3n){fill:#c2410c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(2n){fill:#fb923c !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(3n){fill:#fdba74 !important}
     @keyframes avatar-outline-schedule-gold{
       0%,100%{box-shadow:0 0 0 1px rgba(249,191,46,.42),0 12px 30px rgba(244,183,64,.34)}
       50%{box-shadow:0 0 0 2px rgba(249,191,46,.68),0 16px 38px rgba(244,183,64,.48)}
@@ -739,9 +739,9 @@
     .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar{
       animation:avatar-outline-schedule-gold 1.12s ease-in-out infinite;
     }
-    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle{fill:var(--sen-gold) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(2n){fill:var(--gold) !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#ffe08a !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle{fill:#ffe14a !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#facc15 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#fff3a0 !important}
     /* Trial / new participant only — purple orbit */
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule-trial-only .avatar-orbit-layer{opacity:1;visibility:visible}
@@ -804,9 +804,9 @@
     .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar{
       animation:avatar-outline-schedule-makeup 1.12s ease-in-out infinite;
     }
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle{fill:#d94f93 !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle:nth-child(2n){fill:#c2185b !important}
-    .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle:nth-child(3n){fill:#f9a8d4 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle{fill:#f472b6 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle:nth-child(2n){fill:#ec4899 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule-makeup .avatar-orbit-layer circle:nth-child(3n){fill:#fbcfe8 !important}
     /* Absent — teal orbit (distinct from New shift green) */
     .avatar-wrap.avatar-wrap--portal-alert-schedule-absent .avatar-orbit,
     .avatar-wrap.avatar-wrap--portal-alert-schedule-absent .avatar-orbit-layer{opacity:1;visibility:visible}
@@ -2922,8 +2922,8 @@
     /* New shift — soft corporate yellow (Alerts quick menu; halo dots stay --sen-gold) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-new-shift,
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-new-shift{
-      --qm-glow:rgba(202,138,4,.35);
-      --qm-ring:rgba(250,204,21,.7);
+      --qm-glow:rgba(245,196,0,.4);
+      --qm-ring:rgba(255,225,74,.8);
       background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%);
       border:2px solid rgba(245,158,11,.42);
       color:var(--ink);
@@ -2973,8 +2973,8 @@
       border-color:rgba(5,150,105,.35);
     }
     #menuSheet.menu-sheet--logo-lite .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-makeup{
-      --qm-glow:rgba(194,24,91,.35);
-      --qm-ring:rgba(217,79,147,.6);
+      --qm-glow:rgba(236,72,153,.4);
+      --qm-ring:rgba(244,114,182,.75);
       background:linear-gradient(180deg,#fdf2f8 0%,#fce7f3 100%);
       border:2px solid rgba(219,39,119,.42);
       color:var(--ink);
@@ -4184,7 +4184,7 @@
     /* Changed by Admin — yellow card (until session starts). Never paint ov-blue here;
        Move in / New Client keep their blue block below. */
     .section-card--today .session-card.session-card--admin-adjusted{
-      background:rgba(250,204,21,.22);
+      background:rgba(255,225,74,.55);
       border-color:rgba(202,138,4,.4);
       box-shadow:none;
     }
@@ -4216,7 +4216,7 @@
        inherently an admin change, so the whole card stays pink (never yellow)
        until feedback review states take over. */
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-pink:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
-      background:rgba(217,79,147,.16);
+      background:rgba(244,114,182,.38);
       border-color:rgba(194,24,91,.45);
       box-shadow:none;
     }
@@ -6288,8 +6288,8 @@
       white-space:nowrap;
     }
     .portal-session-slot-chip--updated{
-      color:#fff;
-      background:linear-gradient(145deg,#facc15,#ca8a04);
+      color:#173247;
+      background:linear-gradient(145deg,#ffe14a,#f5c400);
       border:1px solid rgba(161,98,7,.42);
       box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(234,179,8,.24);
       font-weight:800;
@@ -6304,7 +6304,7 @@
     }
     .portal-session-slot-chip--pending{
       color:#fff;
-      background:linear-gradient(145deg,#e8872a,#c86a12);
+      background:linear-gradient(145deg,#fb923c,#f97316);
       border:1px solid rgba(160,80,20,.48);
       box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(200,106,18,.22);
     }
@@ -6347,7 +6347,7 @@
     }
     .portal-session-slot-chip--makeup{
       color:#fff;
-      background:linear-gradient(180deg,#d94f93,#c2185b);
+      background:linear-gradient(180deg,#f472b6,#ec4899);
       border:1px solid rgba(140,24,70,.34);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(194,24,91,.22);
     }
@@ -6449,7 +6449,7 @@
       letter-spacing:.04em;
       text-transform:uppercase;
       color:#fff;
-      background:linear-gradient(180deg,#d94f93,#c2185b);
+      background:linear-gradient(180deg,#f472b6,#ec4899);
       border:1px solid rgba(140,24,70,.34);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(194,24,91,.22);
       max-width:100%;
@@ -6537,7 +6537,7 @@
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--makeup{
       color:#fff;
       /* Rosa acordado para pills Make up en Next session list */
-      background:linear-gradient(180deg,#d94f93,#c2185b);
+      background:linear-gradient(180deg,#f472b6,#ec4899);
       border:1px solid rgba(140,24,70,.34);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(194,24,91,.22);
     }
@@ -6572,7 +6572,7 @@
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--updated,
     .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--updated{
       color:#fff;
-      background:linear-gradient(145deg,#facc15,#ca8a04);
+      background:linear-gradient(145deg,#ffe14a,#f5c400);
       border:1px solid rgba(161,98,7,.42);
       box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 10px rgba(234,179,8,.24);
     }
@@ -7470,7 +7470,7 @@
       box-shadow:0 4px 16px rgba(194,24,91,.16);
     }
     .calendar-day--week-row--work-ov-pink .week-day-icon{
-      background:linear-gradient(180deg,#d94f93,#c2185b);
+      background:linear-gradient(180deg,#f472b6,#ec4899);
       color:#fff;
       box-shadow:0 0 0 1px rgba(140,24,70,.36),0 2px 10px rgba(194,24,91,.24);
     }
@@ -7618,7 +7618,7 @@
     .week-override-tag--pink{
       color:#fff;
       -webkit-text-fill-color:#fff;
-      background:linear-gradient(180deg,#d94f93,#c2185b);
+      background:linear-gradient(180deg,#f472b6,#ec4899);
       border:1px solid rgba(140,24,70,.34);
     }
     .week-override-tag--trial{
@@ -7648,7 +7648,7 @@
     .week-override-tag--updated{
       color:#fff;
       -webkit-text-fill-color:#fff;
-      background:linear-gradient(145deg,#facc15,#ca8a04);
+      background:linear-gradient(145deg,#ffe14a,#f5c400);
       border:1px solid rgba(161,98,7,.42);
     }
     .week-override-tag--training,
@@ -7796,7 +7796,7 @@
     .calendar-day-tomorrow-override .tomorrow-makeup-pill,
     .calendar-day-tomorrow-middle .tomorrow-makeup-pill{
       color:#fff;
-      background:linear-gradient(180deg,#d94f93,#c2185b);
+      background:linear-gradient(180deg,#f472b6,#ec4899);
       border:1px solid rgba(140,24,70,.34);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(194,24,91,.22);
     }
