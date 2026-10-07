@@ -34,15 +34,25 @@
 
     var res = await sb
       .from("portal_participants")
-      .select("contact_id, display_name, avatar_storage_path")
+      .select("contact_id, display_name, avatar_storage_path, avatar_frame")
       .not("avatar_storage_path", "is", null);
+    if (res.error && /avatar_frame/i.test(String((res.error && res.error.message) || ""))) {
+      res = await sb
+        .from("portal_participants")
+        .select("contact_id, display_name, avatar_storage_path")
+        .not("avatar_storage_path", "is", null);
+    }
     if (res.error || !Array.isArray(res.data)) {
       console.warn("[portal] participant avatars hydrate", res.error || "no data");
       return false;
     }
 
     res.data.forEach(function (row) {
-      if (!row || !row.avatar_storage_path) return;
+      if (!row) return;
+      if (row.avatar_frame && typeof global.portalRegisterParticipantPhotoFrame === "function") {
+        global.portalRegisterParticipantPhotoFrame(row.contact_id, row.display_name, row.avatar_frame);
+      }
+      if (!row.avatar_storage_path) return;
       var url = avatarPublicUrl(row.avatar_storage_path);
       if (!url) return;
       global.portalRegisterParticipantStorageAvatar(row.contact_id, row.display_name, url);

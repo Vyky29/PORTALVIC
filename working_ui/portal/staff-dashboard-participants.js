@@ -2453,13 +2453,16 @@
       const loadAttr = typeof portalParticipantPhotoLoadingAttr === 'function'
         ? portalParticipantPhotoLoadingAttr()
         : ' loading="eager" fetchpriority="low"';
+      const frameAttr = typeof portalParticipantPhotoFrameAttr === 'function'
+        ? portalParticipantPhotoFrameAttr(name, clientId, src)
+        : '';
       const img = src
         ? '<img class="portal-screenshot-protected" src="' + escapeHtml(src) + '" alt=""' + loadAttr +
-          ' decoding="async" draggable="false"' +
+          ' decoding="async" draggable="false"' + frameAttr +
           (rest ? ' data-photo-fallbacks="' + escapeHtml(rest) + '"' : '') +
           ' onerror="var rest=(this.getAttribute(\'data-photo-fallbacks\')||\'\').split(\'|\').filter(Boolean);if(rest.length){this.setAttribute(\'data-photo-fallbacks\',rest.slice(1).join(\'|\'));this.src=rest[0];return;}this.remove();var p=this.parentElement;if(p)p.classList.remove(\'session-name-photo--has-photo\');" />'
         : '';
-      return '<span class="session-name-photo' + (src ? ' session-name-photo--has-photo' : '') + gCls + '" aria-hidden="true">' + initials + img + '</span>';
+      return '<span class="session-name-photo' + (src ? ' session-name-photo--has-photo' : '') + gCls + '" data-photo-name="' + escapeHtml(name) + '"' + (clientId ? ' data-photo-contact="' + escapeHtml(clientId) + '"' : '') + ' aria-hidden="true">' + initials + img + '</span>';
     }
     function todaySessionCardInnerHtml(item){
       if(item && Array.isArray(item.segments) && item.segments.length){

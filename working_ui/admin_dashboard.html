@@ -106,7 +106,8 @@
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
   <script src="/portal/admin-portal-parent-contact-edit.js?v=20261001-live-contact"></script>
   <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos-ceo"></script>
-  <script src="/portal/portal_participant_photos.js?v=20261006-ibrahim-photo"></script>
+  <script src="/portal/portal_participant_photos.js?v=20261007-photo-frame"></script>
+  <script src="/portal/admin-participant-photo-frame.js?v=20261007-photo-frame"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
   <script src="/portal/portal_staff_photos.js?v=20261005-expense-face"></script>
   <script src="/portal/admin-portal-achievements.js?v=20261001-old-section"></script>
@@ -22715,8 +22716,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         (function(){
           var photoName = String(P.name || '').replace(/_/g, ' ').trim();
           var photoYunis = /^yunis\b/i.test(photoName);
+          var photoCid = String((P && (P.contactId || P.id)) || '').replace(/^(pp-|old-)/i, '').trim();
+          if (!/^\d+$/.test(photoCid)) photoCid = '';
           return (typeof portalParticipantAvatarInnerHtml === 'function')
-            ? portalParticipantAvatarInnerHtml(photoName, '', { esc: esc, className: 'portal-roster-avatar pax-contacts-avatar pax-contacts-avatar--lg' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
+            ? portalParticipantAvatarInnerHtml(photoName, photoCid, { esc: esc, adjustable: true, contactId: photoCid, className: 'portal-roster-avatar pax-contacts-avatar pax-contacts-avatar--lg' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
             : '';
         })()+
         '<div class="pax-contacts-namecell__body"><strong>'+esc(P.name||'—')+'</strong><span class="muted" style="font-weight:600;font-size:13px"> · '+esc(P.id)+'</span></div></div></div>'+
@@ -24918,8 +24921,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var photoName = String(p.name || '').replace(/_/g, ' ').trim();
         var photoYunis = /^yunis\b/i.test(photoName);
         var photoCid = paxContactsPhotoLookupId(p);
+        var frameCid = (typeof paxContactsRealContactId === 'function' ? paxContactsRealContactId(p) : '') || photoCid;
         var photoHtml = (typeof portalParticipantAvatarInnerHtml === 'function')
-          ? portalParticipantAvatarInnerHtml(photoName, photoCid, { esc: esc, className: 'portal-roster-avatar pax-contacts-avatar' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
+          ? portalParticipantAvatarInnerHtml(photoName, photoCid || frameCid, { esc: esc, adjustable: true, contactId: frameCid, className: 'portal-roster-avatar pax-contacts-avatar' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
           : '';
         var bucket = paxContactsBucket(p);
         if(bucket === 'booking_history') cells = paxContactsOldHistoryCells(p);

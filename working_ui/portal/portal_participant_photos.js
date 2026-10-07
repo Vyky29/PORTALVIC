@@ -132,6 +132,103 @@
   /** Supabase Storage / remote URLs keyed by contact_id and normalized display name. */
   var PARTICIPANT_STORAGE_AVATARS = { byId: {}, byName: {} };
 
+  /** Admin pan/zoom for a parent upload. x/y are percent shift from centre. zoom 1 = whole photo. */
+  var PARTICIPANT_PHOTO_FRAMES = { byId: {}, byName: {} };
+
+  function clampNum(n, lo, hi, fallback) {
+    n = Number(n);
+    if (!isFinite(n)) return fallback;
+    if (n < lo) return lo;
+    if (n > hi) return hi;
+    return n;
+  }
+
+  function normalizePhotoFrame(frame) {
+    if (!frame || typeof frame !== "object") return null;
+    return {
+      x: Math.round(clampNum(frame.x, -80, 80, 0) * 10) / 10,
+      y: Math.round(clampNum(frame.y, -80, 80, 0) * 10) / 10,
+      zoom: Math.round(clampNum(frame.zoom, 1, 3, 1) * 100) / 100,
+    };
+  }
+
+  function frameContactKey(contactId) {
+    return String(contactId || "")
+      .trim()
+      .replace(/^pp-/i, "");
+  }
+
+  function portalRegisterParticipantPhotoFrame(contactId, displayName, frame) {
+    var f = normalizePhotoFrame(frame);
+    if (!f) return;
+    var id = frameContactKey(contactId);
+    if (id) PARTICIPANT_PHOTO_FRAMES.byId[id] = f;
+    var nk = storageAvatarKey(displayName);
+    if (nk) PARTICIPANT_PHOTO_FRAMES.byName[nk] = f;
+  }
+
+  function lookupPhotoFrame(contactId, displayName) {
+    var id = frameContactKey(contactId);
+    if (id && PARTICIPANT_PHOTO_FRAMES.byId[id]) return PARTICIPANT_PHOTO_FRAMES.byId[id];
+    var nk = storageAvatarKey(displayName);
+    if (nk && PARTICIPANT_PHOTO_FRAMES.byName[nk]) return PARTICIPANT_PHOTO_FRAMES.byName[nk];
+    return null;
+  }
+
+  function isParentUploadedPhotoUrl(url) {
+    return /participant-avatars/i.test(String(url || ""));
+  }
+
+  function ensurePhotoFrameCss() {
+    if (typeof document === "undefined") return;
+    if (document.getElementById("portal-photo-frame-css")) return;
+    var s = document.createElement("style");
+    s.id = "portal-photo-frame-css";
+    s.textContent =
+      'img[data-photo-frame="1"]{object-fit:contain !important;object-position:center center !important;transform:translate(var(--photo-x,0%),var(--photo-y,0%)) scale(var(--photo-zoom,1));transform-origin:center center;}' +
+      "[data-photo-adjust]{cursor:pointer;}" +
+      ".portal-roster-avatar,.pax-contacts-avatar,.session-name-photo,.calendar-day-avatar--photo,.clients-grid-avatar{overflow:hidden;}";
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  function photoFrameForUrl(name, clientId, url) {
+    var saved = lookupPhotoFrame(clientId, name);
+    if (!saved && !isParentUploadedPhotoUrl(url)) return null;
+    return saved || { x: 0, y: 0, zoom: 1 };
+  }
+
+  function portalParticipantPhotoFrameAttr(name, clientId, url) {
+    ensurePhotoFrameCss();
+    var f = photoFrameForUrl(name, clientId, url);
+    if (!f) return "";
+    return (
+      ' data-photo-frame="1" style="--photo-x:' +
+      f.x +
+      "%;--photo-y:" +
+      f.y +
+      "%;--photo-zoom:" +
+      f.zoom +
+      '"'
+    );
+  }
+
+  function applyPhotoFrameToImg(img, name, clientId, url) {
+    if (!img) return;
+    ensurePhotoFrameCss();
+    var f = photoFrameForUrl(name, clientId, url || img.getAttribute("src") || "");
+    if (!f) {
+      img.removeAttribute("data-photo-frame");
+      img.style.removeProperty("--photo-x");
+      img.style.removeProperty("--photo-y");
+      img.style.removeProperty("--photo-zoom");
+      return;
+    }
+    img.setAttribute("data-photo-frame", "1");
+    img.style.setProperty("--photo-x", f.x + "%");
+    img.style.setProperty("--photo-y", f.y + "%");
+    img.style.setProperty("--photo-zoom", String(f.zoom));
+  }
+
   function storageAvatarKey(name) {
     return String(name || "")
       .trim()
@@ -212,10 +309,18 @@
     var box = global.__PORTAL_SUPABASE__;
     var sb = box && box.client;
     if (!sb || typeof sb.from !== "function") return Promise.resolve(false);
-    return sb
-      .from("portal_participants")
-      .select("contact_id, display_name, avatar_storage_path")
-      .limit(2000)
+    function pull(withFrame) {
+      var cols = withFrame
+        ? "contact_id, display_name, avatar_storage_path, avatar_frame"
+        : "contact_id, display_name, avatar_storage_path";
+      return sb.from("portal_participants").select(cols).limit(2000);
+    }
+    return pull(true)
+      .then(function (res) {
+        var msg = res && res.error ? String(res.error.message || res.error.code || "") : "";
+        if (res && res.error && /avatar_frame/i.test(msg)) return pull(false);
+        return res;
+      })
       .then(function (res) {
         if (!res || res.error || !Array.isArray(res.data)) return false;
         var firstCount = Object.create(null);
@@ -225,7 +330,9 @@
           if (first) firstCount[first] = (firstCount[first] || 0) + 1;
         });
         res.data.forEach(function (r) {
-          if (!r || !r.avatar_storage_path || !r.display_name) return;
+          if (!r || !r.display_name) return;
+          if (r.avatar_frame) portalRegisterParticipantPhotoFrame(r.contact_id, r.display_name, r.avatar_frame);
+          if (!r.avatar_storage_path) return;
           var url = participantAvatarPublicUrl(r.avatar_storage_path);
           if (!url) return;
           portalRegisterParticipantStorageAvatar(r.contact_id, r.display_name, url);
@@ -529,10 +636,26 @@
     }
     var loadAttr = photoLoadAttr();
     var imgClass = String(opts.imgClass || "portal-roster-avatar__img portal-screenshot-protected").trim();
+    var frameAttr = portalParticipantPhotoFrameAttr(name, opts.contactId || clientId, url);
+    var adjustAttr = "";
+    var hiddenAttr = ' aria-hidden="true"';
+    if (opts.adjustable) {
+      var cid = frameContactKey(opts.contactId || clientId);
+      adjustAttr =
+        ' data-photo-adjust="1" role="button" tabindex="0" data-photo-contact="' +
+        esc(cid) +
+        '" data-photo-name="' +
+        esc(name) +
+        '" title="Adjust photo"';
+      hiddenAttr = "";
+    }
     return (
       '<span class="' +
       esc(wrapClass) +
-      ' portal-roster-avatar--has-photo" aria-hidden="true">' +
+      ' portal-roster-avatar--has-photo"' +
+      adjustAttr +
+      hiddenAttr +
+      ">" +
       initials +
       '<img class="' +
       esc(imgClass) +
@@ -541,6 +664,7 @@
       '" alt=""' +
       loadAttr +
       ' decoding="async" draggable="false"' +
+      frameAttr +
       (photoFallbacks ? ' data-photo-fallbacks="' + esc(photoFallbacks) + '"' : "") +
       ' onerror="if(window.portalParticipantPhotoTryFallback){window.portalParticipantPhotoTryFallback(this);}else{this.remove();var p=this.parentElement;if(p)p.classList.remove(\'portal-roster-avatar--has-photo\');}" />' +
       "</span>"
@@ -569,6 +693,7 @@
         '" alt=""' +
         loadAttr +
         ' decoding="async" draggable="false"' +
+        portalParticipantPhotoFrameAttr(name, clientId, photoUrl) +
         (photoFallbacks ? ' data-photo-fallbacks="' + esc(photoFallbacks) + '"' : "") +
         ' onerror="if(window.portalParticipantPhotoTryFallback){window.portalParticipantPhotoTryFallback(this);}else if(window.portalParticipantCalendarAvatarFallback){window.portalParticipantCalendarAvatarFallback(this);}" />' +
         "</div>"
@@ -657,6 +782,13 @@
       }
     });
 
+    root.querySelectorAll("[data-photo-name] img, img[data-photo-frame]").forEach(function (img) {
+      var wrap = img.closest("[data-photo-name]");
+      var name = wrap ? wrap.getAttribute("data-photo-name") || "" : "";
+      var cid = wrap ? wrap.getAttribute("data-photo-contact") || "" : "";
+      applyPhotoFrameToImg(img, name, cid, img.getAttribute("src") || "");
+    });
+
     if (typeof global.portalRefreshTodayNextParticipantPhotos === "function") {
       global.portalRefreshTodayNextParticipantPhotos(root);
     }
@@ -685,6 +817,10 @@
   global.portalParticipantGenderClass = portalParticipantGenderClass;
   global.portalParticipantInitials = portalParticipantInitials;
   global.portalParticipantAvatarInnerHtml = portalParticipantAvatarInnerHtml;
+  global.portalParticipantPhotoFrameAttr = portalParticipantPhotoFrameAttr;
+  global.portalRegisterParticipantPhotoFrame = portalRegisterParticipantPhotoFrame;
+  global.portalLookupParticipantPhotoFrame = lookupPhotoFrame;
+  global.portalApplyParticipantPhotoFrame = applyPhotoFrameToImg;
   global.portalParticipantCalendarAvatarHtml = portalParticipantCalendarAvatarHtml;
   global.portalNormalizeParticipantPhotoUrl = normalizePhotoUrl;
 })(

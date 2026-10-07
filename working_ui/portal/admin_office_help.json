@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-07-v306",
+  "version": "2026-10-07-v307",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -964,6 +964,46 @@
             "tips": [
               "En la oficina no digas former ni alumni. Di OLD.",
               "Kareena conto hasta el domingo 28 Sep 2026. Desde el martes 29 Sep 2026 es OLD."
+            ]
+          }
+        },
+        {
+          "id": "participant_photo_frame",
+          "title": "Centre a parent photo",
+          "summary": "Parent uploads show the whole photo, centred, with no zoom. Click the photo on Active to drag and zoom, then Save.",
+          "where": "CLIENT -> Active -> photo, or open the participant and click the photo",
+          "keywords": [
+            "photo",
+            "foto",
+            "zoom",
+            "centrar",
+            "centre",
+            "center",
+            "avatar",
+            "active",
+            "crop"
+          ],
+          "steps": [
+            "Open CLIENT and stay on Active.",
+            "Click the participant photo (the list circle, or the photo next to the name once the profile is open).",
+            "Drag the picture until the face sits in the circle. Zoom 1 shows the whole photo. Move the slider only if you want it closer.",
+            "Save. Reset puts it back to the whole photo, centred. The same framing shows on staff Today and the other circles."
+          ],
+          "tips": [
+            "Photos the office already had as a face crop stay as they were until you click and Save."
+          ],
+          "es": {
+            "title": "Centrar la foto de un padre",
+            "summary": "Las fotos que suben los padres se ven enteras y centradas, sin zoom. En Active, pulsa la foto para moverla y hacer zoom, y guarda.",
+            "where": "CLIENT -> Active -> foto, o abre el participante y pulsa la foto",
+            "steps": [
+              "Abre CLIENT y quedate en Active.",
+              "Pulsa la foto (el circulo de la lista, o la foto junto al nombre cuando el perfil esta abierto).",
+              "Arrastra hasta que la cara quede en el circulo. Zoom 1 ensena la foto entera. Mueve el slider solo si la quieres mas cerca.",
+              "Save. Reset la deja otra vez entera y centrada. El mismo encuadre sale en Today del staff y en los otros circulos."
+            ],
+            "tips": [
+              "Las fotos que ya eran un recorte de cara se quedan igual hasta que pulses y guardes."
             ]
           }
         },
