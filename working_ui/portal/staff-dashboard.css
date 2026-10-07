@@ -5324,11 +5324,14 @@
       border-bottom:0;
     }
     .today-day-panel--empty .today-day-panel__off-title{
-      font-size:28px;
+      font-size:clamp(18px, 5.4vw, 26px);
       font-weight:800;
       color:#fff;
       letter-spacing:-.02em;
       line-height:1.05;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     .today-day-panel--empty .today-day-panel__off-sub{
       margin-top:6px;
