@@ -4888,16 +4888,16 @@
     .portal-lead-team-today{
       display:block;
       width:100%;
-      border:1px solid rgba(153,27,27,.28);
+      border:1px solid rgba(45,132,179,.22);
       border-radius:14px;
-      background:linear-gradient(180deg,#f05252 0%,#dc2626 100%);
+      background:linear-gradient(180deg,#f8fcff 0%,#eef6fb 100%);
       padding:10px 12px;
       min-width:0;
       box-shadow:0 1px 5px rgba(23,50,71,.06);
       text-align:left;
       cursor:pointer;
       font:inherit;
-      color:#fff;
+      color:inherit;
       -webkit-tap-highlight-color:transparent;
     }
     .portal-lead-team-today:focus-visible{
@@ -4919,12 +4919,12 @@
       font-weight:800;
       letter-spacing:.05em;
       text-transform:uppercase;
-      color:#fff;
+      color:#2d84b3;
     }
     .portal-lead-team-today__hint{
       font-size:10px;
       font-weight:600;
-      color:rgba(255,255,255,.92);
+      color:var(--muted);
       letter-spacing:.02em;
     }
     .portal-lead-team-today__programme{
@@ -4932,7 +4932,7 @@
       min-width:0;
       font-size:11px;
       font-weight:600;
-      color:rgba(255,255,255,.92);
+      color:var(--muted);
       overflow-wrap:break-word;
       text-align:center;
     }
@@ -4989,7 +4989,7 @@
       gap:8px;
       margin-top:8px;
       padding-top:8px;
-      border-top:1px dashed rgba(255,255,255,.45);
+      border-top:1px dashed rgba(220,38,38,.28);
       min-width:0;
     }
     .portal-lead-team-today__absents-label{
@@ -4998,7 +4998,7 @@
       font-weight:800;
       letter-spacing:.04em;
       text-transform:uppercase;
-      color:#fff;
+      color:#b91c1c;
     }
     .portal-lead-team-today__absent-chips{
       display:flex;
