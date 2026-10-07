@@ -6355,12 +6355,12 @@
     .section-card--today .session-name-stack:has(.session-chips-below-name) .session-name-photo-row{
       flex:0 1 auto;
     }
+    .section-card--today .session-line--name .session-name-stack:has(.session-chips-below-name--tight){
+      gap:0;
+    }
     .section-card--today .session-line--name .session-chips-below-name.session-chips-below-name--tight,
     .section-card--today .session-name-stack:has(.session-name-photo-row) .session-chips-below-name.session-chips-below-name--tight{
-      margin-top:0;
-    }
-    .section-card--today .session-name-stack:has(.session-chips-below-name--tight){
-      gap:1px;
+      margin-top:-8px;
     }
     .section-card--today .session-seg-areas{
       display:flex;
