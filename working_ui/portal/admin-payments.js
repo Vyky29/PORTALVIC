@@ -1201,8 +1201,8 @@
 
   /**
    * Office sheet (Sep 2026), not the stale portal paint.
-   * Emanuel summer face is paid in full. Timi has £3,900 in and £3,400 still due.
-   * Uplift: Ikram + Fadi paid; only Timi £148.21 remains.
+   * Emanuel summer face is paid in full. Timi has £4,150 in; June £3,150 still due.
+   * Uplift IO, FA, ED and TD (£148.21) are paid.
    */
   function applyOfficeSummerNhsSettlement(r) {
     if (!r || !isSummerTermRow(r)) return;
@@ -1249,22 +1249,23 @@
     }
     if (slug === "timi" && !isNhsInflationUpliftRow(r) && face > 7000) {
       r.payment_status = "Partial";
-      r._amountPaid = 3900;
-      r.amount_out = Math.round((face - 3900) * 100) / 100;
+      r.amount = 7300;
+      r.amount_billed = 7300;
+      r._amountPaid = 4150;
+      r.amount_out = 3150;
       r._officeMonthLines = [
         { t: "Apr £250", paid: true },
         { t: "May £750", paid: true },
         { t: "Jun £3,150", paid: false },
-        { t: "Jul £2,900", paid: true },
-        { t: "Jul £250", paid: false },
+        { t: "Jul £3,150", paid: true },
       ];
       return;
     }
     if (isNhsInflationUpliftRow(r)) {
       var uplift = summerNhsUpliftInvoicesGbp(r);
       if (!uplift) return;
-      var paidUp = (uplift.io || 0) + (uplift.fa || 0) + (uplift.ed || 0);
-      var still = uplift.td || 0;
+      var paidUp = (uplift.io || 0) + (uplift.fa || 0) + (uplift.ed || 0) + (uplift.td || 0);
+      var still = 0;
       var faceUp = Math.round(((uplift.total || 0)) * 100) / 100;
       if (faceUp > 0) r.amount = faceUp;
       r._amountPaid = Math.round(paidUp * 100) / 100;
@@ -1572,7 +1573,7 @@
           ? monthLine("IO " + money(uplift.io), true)
             + monthLine("FA " + money(uplift.fa), true)
             + (uplift.ed > 0 ? monthLine("ED " + money(uplift.ed), true) : "")
-            + monthLine("TD " + money(uplift.td), false)
+            + monthLine("TD " + money(uplift.td), true)
           : "")
         + (julyPay
           ? '<span class="pay-amt-july" title="Ealing LA payments applied against Summer">−'
