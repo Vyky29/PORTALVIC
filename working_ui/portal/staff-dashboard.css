@@ -592,7 +592,9 @@
       .avatar-aura{animation:none}
       .avatar-wrap.avatar-wrap--portal-alert .avatar,
       .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar,
-      .avatar-wrap.avatar-wrap--portal-alert-both .avatar{animation:none}
+      .avatar-wrap.avatar-wrap--portal-alert-both .avatar,
+      .avatar-wrap.avatar-wrap--alert-logo,
+      .avatar-wrap.avatar-wrap--alert-logo .avatar{animation:none}
     }
     html.portal-staff-app .avatar-wrap:not(.avatar-wrap--portal-orbit-idle) .avatar-orbit-layer--cw,
     html.portal-staff-app .avatar-wrap:not(.avatar-wrap--portal-orbit-idle) .avatar-orbit-layer--ccw{
@@ -1073,10 +1075,14 @@
     .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar-initials{
       display:none !important;
     }
+    .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo{
+      transform-origin:center center;
+      animation:avatar-halo-grow 1.15s ease-in-out infinite;
+    }
     .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar,
     .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar.avatar--has-staff-photo{
       background:var(--halo-c,#ec4899) !important;
-      animation:avatar-outline-alert-logo 1.12s ease-in-out infinite;
+      animation:avatar-outline-alert-logo 1.15s ease-in-out infinite;
     }
     .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar-orbit-layer circle{
       fill:var(--halo-c,#ec4899) !important;
@@ -1087,9 +1093,13 @@
     .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--alert-logo .avatar-orbit-layer circle:nth-child(3n){
       fill:var(--halo-c3,#fbcfe8) !important;
     }
+    @keyframes avatar-halo-grow{
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(1.16)}
+    }
     @keyframes avatar-outline-alert-logo{
-      0%,100%{box-shadow:0 0 0 1px color-mix(in srgb, var(--halo-c,#ec4899) 40%, transparent), 0 8px 18px color-mix(in srgb, var(--halo-c,#ec4899) 28%, transparent)}
-      50%{box-shadow:0 0 0 2px color-mix(in srgb, var(--halo-c,#ec4899) 70%, transparent), 0 12px 24px color-mix(in srgb, var(--halo-c,#ec4899) 40%, transparent)}
+      0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--halo-c,#ec4899) 55%, transparent), 0 8px 16px color-mix(in srgb, var(--halo-c,#ec4899) 28%, transparent)}
+      50%{box-shadow:0 0 0 8px color-mix(in srgb, var(--halo-c,#ec4899) 0%, transparent), 0 14px 26px color-mix(in srgb, var(--halo-c,#ec4899) 42%, transparent)}
     }
 
     .avatar img{width:100%;height:100%;object-fit:cover;display:block}
