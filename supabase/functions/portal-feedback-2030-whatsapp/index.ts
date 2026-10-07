@@ -14,9 +14,9 @@
 //   0 14,15 * * 6    body {wave:"2000"}  — Saturday 15:00 London
 //   30 14,15 * * 6   body {wave:"2030"}  — Saturday 15:30 London
 //   Wave "biz" is the 21:00 WhatsApp, same staff template as the 20:00 and 20:30 alerts.
-//   Wave "ring" is one locked-phone push per staff per day, from the biz hour
-//   until 23:00 London (Sat 16:00, Sun 19:00, Mon-Fri 21:00). It does not repeat
-//   and it is not a WhatsApp.
+//   Wave "ring" is one locked-phone push per staff per day, and one WhatsApp on that
+//   same template. It does not repeat. If the 21:00 WhatsApp already went, the ring
+//   only rings the phone.
 // Manual: POST {"force":true,"wave":"2000"} or {"dryRun":true,"force":true,"wave":"ring"}
 //
 // Deploy: supabase functions deploy portal-feedback-2030-whatsapp --no-verify-jwt
@@ -665,9 +665,6 @@ Deno.serve(async (req) => {
         continue;
       }
       const ring = await sendFeedbackRingPush(admin, t.profileId, t.pending, t.sample);
-      const ringBody = `Safeguarding ring. ${t.pending} feedback still open${
-        (t.sample || []).length ? ": " + (t.sample || []).slice(0, 3).join(", ") : ""
-      }.`;
       await admin.from("portal_staff_notify_log").insert({
         sent_by_user_id: null,
         sent_by_email: "system@clubsensational.org",
@@ -678,7 +675,7 @@ Deno.serve(async (req) => {
         staff_display_name: t.staffLabel,
         staff_phone: t.phone || null,
         subject: `Feedback ring - ${iso}`,
-        body_text: ringBody,
+        body_text: `Phone ring. ${t.pending} feedback still open.`,
         whatsapp_status: ring.sent > 0 ? "sent" : "failed",
         whatsapp_message_id: null,
         error_detail: ring.sent > 0 ? null : ring.error || "no_push",
@@ -692,8 +689,62 @@ Deno.serve(async (req) => {
           call_ring: true,
         },
       });
-      if (ring.sent > 0) {
-        sent.push({ username: t.username, pending: t.pending, ring: true, devices: ring.sent });
+      let ringWhatsapp = false;
+      if (t.phone) {
+        const { data: bizRow } = await admin
+          .from(DEDUPE_TABLE)
+          .select("id")
+          .eq("session_date", iso)
+          .eq("staff_user_id", t.profileId)
+          .eq("wave", "biz")
+          .maybeSingle();
+        const { data: ringWa } = await admin
+          .from("portal_staff_notify_log")
+          .select("id")
+          .eq("kind", "feedback_ring_wa")
+          .eq("staff_profile_id", t.profileId)
+          .contains("meta", { session_date: iso })
+          .limit(1);
+        if (!bizRow && !(ringWa && ringWa.length)) {
+          const waBody = withStaffApiMachineFooter(
+            buildBizBody(t.staffLabel, t.pending, t.sample),
+          );
+          const waResult = await sendParentMobileMessage(t.phone, waBody, {
+            kind: "staff_contact_update",
+          });
+          await admin.from("portal_staff_notify_log").insert({
+            sent_by_user_id: null,
+            sent_by_email: "system@clubsensational.org",
+            kind: "feedback_ring_wa",
+            channel: "whatsapp",
+            staff_profile_id: t.profileId,
+            staff_username: t.username,
+            staff_display_name: t.staffLabel,
+            staff_phone: t.phone,
+            subject: `Feedback ring WhatsApp - ${iso}`,
+            body_text: waBody,
+            whatsapp_status: waResult.ok ? "sent" : "failed",
+            whatsapp_message_id: waResult.ok ? waResult.id : null,
+            error_detail: waResult.ok ? null : waResult.error,
+            meta: {
+              campaign: "feedback_ring_wa",
+              session_date: iso,
+              pending: t.pending,
+              sample: t.sample,
+              used_template: true,
+            },
+          });
+          ringWhatsapp = !!waResult.ok;
+        }
+      }
+      if (ring.sent > 0 || ringWhatsapp) {
+        sent.push({
+          username: t.username,
+          pending: t.pending,
+          ring: ring.sent > 0,
+          whatsapp: ringWhatsapp,
+          devices: ring.sent,
+        });
       } else {
         skipped.push({ username: t.username, reason: ring.error || "no_push" });
       }
@@ -724,6 +775,17 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (!apiWave && !force) {
         skipped.push({ username: t.username, reason: "no_api_reminder" });
+        continue;
+      }
+      const { data: ringWa } = await admin
+        .from("portal_staff_notify_log")
+        .select("id")
+        .eq("kind", "feedback_ring_wa")
+        .eq("staff_profile_id", t.profileId)
+        .contains("meta", { session_date: iso })
+        .limit(1);
+      if (ringWa && ringWa.length && !resend) {
+        skipped.push({ username: t.username, reason: "already_sent_by_ring" });
         continue;
       }
     }
