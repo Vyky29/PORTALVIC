@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Septiembre 2026, Autumn</title>
+<style>
+  @page { size: A4; margin: 12mm 12mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #0f2733; background: #fff; font-size: 10pt; line-height: 1.35; margin: 0; }
+  h1 { font-size: 16pt; margin: 0 0 4px; }
+  h2 { font-size: 11.5pt; margin: 14px 0 6px; color: #0e7c86; border-bottom: 2px solid #0e7c86; padding-bottom: 3px; }
+  .meta { color: #5b7280; font-size: 8.5pt; margin: 0 0 10px; }
+  .brand { font-weight: 800; color: #0e7c86; margin: 0 0 8px; text-align: center; }
+  .cover-logo { height: 64px; width: auto; display: block; margin: 0 auto 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 6px; font-size: 9pt; }
+  th, td { border-bottom: 1px solid #e2e8f0; padding: 4px 6px; text-align: left; }
+  th { background: #e6f3f4; font-size: 8pt; text-transform: uppercase; letter-spacing: .03em; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  td.now { color: #b91c1c; font-weight: 800; }
+  td.now.ok { color: #15803d; }
+  td.later { color: #15803d; font-weight: 800; }
+  tr.total td { font-weight: 800; border-top: 2px solid #94a3b8; background: #f8fafc; }
+  tr.remnant td { font-weight: 800; background: #ecfdf5; color: #15803d; }
+  tr.unpaid td { color: #b91c1c; font-weight: 700; }
+  tr.part td { font-size: 8pt; color: #15803d; font-weight: 600; padding-top: 2px; padding-bottom: 2px; }
+  tr.part.out td { color: #b91c1c; }
+  tr.part td:first-child { padding-left: 16px; }
+  tr.sec td { font-weight: 800; color: #0e7c86; background: #f8fafc; }
+  .note { font-size: 8.5pt; color: #5b7280; background: #f1f5f9; border-left: 3px solid #0e7c86; padding: 7px 9px; margin: 6px 0; }
+  .warn { font-size: 8.5pt; color: #92400e; background: #fffbeb; border-left: 3px solid #f59e0b; padding: 7px 9px; margin: 6px 0; }
+  .foot { margin-top: 12px; font-size: 8pt; color: #94a3b8; }
+  .pair { display: flex; gap: 14px; align-items: flex-start; }
+  .pair > section { flex: 1 1 0; min-width: 0; overflow-x: auto; }
+  @media screen and (max-width: 900px) {
+    body { padding: 12px; }
+    .pair { display: block; }
+    table { display: block; overflow-x: auto; max-width: 100%; }
+  }
+  .pair h2 { overflow-wrap: break-word; }
+  .pair td { overflow-wrap: break-word; }
+  .acc { border: 1px solid #e2e8f0; border-radius: 8px; margin: 0 0 8px; background: #fff; }
+  .acc summary { cursor: pointer; padding: 8px 10px; font-weight: 700; overflow-wrap: break-word; }
+  .acc summary .limpio { float: right; margin-left: 12px; white-space: nowrap; color: #15803d; }
+  .acc summary .limpio.bad { color: #b91c1c; }
+  tr.owed td { font-weight: 800; background: #fef2f2; color: #b91c1c; }
+  .acc table { margin: 0; }
+  .acc td:first-child { padding-left: 22px; }
+</style>
+</head>
+<body>
+  <img class="cover-logo" src="/portal/F-02-1.png" alt="clubSENsational" />
+  <p class="brand">clubSENsational</p>
+  <h1>Septiembre 2026, Autumn</h1>
+  <p class="meta">Facturado de septiembre: las sesiones de septiembre. Ingreso y gastos, solo la parte que es de septiembre. Hoja al 7 oct 2026.</p>
+
+  <h2>Entrado de septiembre</h2>
+  <table>
+    <tr><th></th><th class="num">Entrado de septiembre</th><th class="num">Deberia septiembre</th><th class="num">Falta</th></tr>
+    <tr><td>Day Centre</td><td class="num">£3,106.25</td><td class="num">£40,903.17</td><td class="num">£37,796.92</td></tr>
+    <tr><td>Afterschool y weekend</td><td class="num">£18,837.54</td><td class="num">£27,826.79</td><td class="num">£8,989.25</td></tr>
+    <tr class="total"><td>Septiembre</td><td class="num">£21,943.79</td><td class="num">£68,729.96</td><td class="num">£46,786.17</td></tr>
+  </table>
+
+  <div class="pair">
+  <section>
+  <h2>Day Centre</h2>
+  <table>
+    <tr><th></th><th class="num">Day Centre</th></tr>
+    <tr><td>Facturado en septiembre</td><td class="num">£40,903.17</td></tr>
+    <tr class="part"><td>Jack Stratton, entrado</td><td class="num">£700.00</td></tr>
+    <tr class="part"><td>Jack Walker, entrado. En la linea van £700</td><td class="num">£700.00</td></tr>
+    <tr class="part"><td>Kate Fordham, entrado</td><td class="num">£700.00</td></tr>
+    <tr class="part"><td>Kamy Akhavan, 1a mitad, entrado</td><td class="num">£350.00</td></tr>
+    <tr class="part out"><td>Kamy Akhavan, 2a mitad, vence el 26 oct, no ha entrado. No va en los £40,903.17</td><td class="num">£350.00</td></tr>
+    <tr class="part"><td>Cyrus, bespoke, entrado</td><td class="num">£656.25</td></tr>
+    <tr class="part out"><td>Fadi, NHS, no ha entrado</td><td class="num">£14,534.08</td></tr>
+    <tr class="part out"><td>Ikram, NHS, no ha entrado</td><td class="num">£13,774.05</td></tr>
+    <tr class="part out"><td>Emanuel, NHS, no ha entrado</td><td class="num">£6,631.95</td></tr>
+    <tr class="part out"><td>Timi, NHS, no ha entrado</td><td class="num">£2,856.84</td></tr>
+    <tr><td>Michelle, timesheet 1-24 sep, bruto, 77 horas</td><td class="num">£2,310.00</td></tr>
+    <tr><td>Luliya, timesheet</td><td class="num">£936.00</td></tr>
+    <tr><td>Youssef, timesheet</td><td class="num">£330.00</td></tr>
+    <tr><td>Youssef, tax de meses anteriores devuelto en septiembre, parte day centre</td><td class="num">£389.53</td></tr>
+    <tr><td>Victor, septiembre, cobrado el 18. Day centre</td><td class="num">£3,167.00</td></tr>
+    <tr><td>Raul, septiembre, cobrado el 30. Day centre</td><td class="num">£3,167.00</td></tr>
+    <tr><td>Patience, shadowing de septiembre, lo cobra en octubre</td><td class="num">£270.00</td></tr>
+    <tr><td>Roberto, mananas</td><td class="num">£1,505.00</td></tr>
+    <tr class="unpaid"><td>Piscina Day centre, lun/mie/vie 12:00-13:00, 13 dias x £50, sin pagar</td><td class="num">£650.00</td></tr>
+    <tr><td>Expenses de day centre, Michelle £22.15 y Patience £57.66</td><td class="num">£79.81</td></tr>
+    <tr class="remnant"><td>Remanente de Victor. Su mitad £14,049.41, menos gastos personales £361.04</td><td class="num">£13,688.37</td></tr>
+    <tr class="remnant"><td>Remanente de Raul. Su mitad £14,049.42, menos gastos personales £271.46</td><td class="num">£13,777.96</td></tr>
+  </table>
+  </section>
+  <section>
+  <h2>Afterschool y weekend</h2>
+  <table>
+    <tr><th></th><th class="num">Afterschool y weekend</th></tr>
+    <tr class="sec"><td colspan="2">Ingresos de septiembre</td></tr>
+    <tr><td>Piscina</td><td class="num">£12,789.29</td></tr>
+    <tr><td>Multi</td><td class="num">£8,640.00</td></tr>
+    <tr><td>Bespoke</td><td class="num">£3,322.50</td></tr>
+    <tr><td>Climbing</td><td class="num">£2,475.00</td></tr>
+    <tr><td>Fitness</td><td class="num">£600.00</td></tr>
+    <tr class="total"><td>Facturado en septiembre</td><td class="num">£27,826.79</td></tr>
+    <tr class="part"><td>Entrado de septiembre</td><td class="num">£18,837.54</td></tr>
+    <tr class="part out"><td>Por entrar</td><td class="num">£8,989.25</td></tr>
+    <tr class="part out"><td>Tinashe Nekati, Ealing</td><td class="num">£2,760.00</td></tr>
+    <tr class="part out"><td>Tinashe Nekati, NHS/ILA</td><td class="num">£562.50</td></tr>
+    <tr class="part out"><td>Adam Pilcher, H&amp;F</td><td class="num">£1,050.00</td></tr>
+    <tr class="part out"><td>Amar-Rai Singh, Ealing</td><td class="num">£800.00</td></tr>
+    <tr class="part out"><td>Aydaan Ahmed, Ealing</td><td class="num">£680.00</td></tr>
+    <tr class="part out"><td>Adaam Ah, Ealing</td><td class="num">£680.00</td></tr>
+    <tr class="part out"><td>Amaar Ahmed, Ealing</td><td class="num">£630.00</td></tr>
+    <tr class="part out"><td>Samer Bakhiet, Ealing</td><td class="num">£480.00</td></tr>
+    <tr class="part out"><td>Saaib Abdullah, H&amp;F</td><td class="num">£200.00</td></tr>
+    <tr class="part out"><td>Steven Cesare, Ealing</td><td class="num">£200.00</td></tr>
+    <tr class="part out"><td>Simon Yohannes, H&amp;F</td><td class="num">£200.00</td></tr>
+    <tr class="part out"><td>Faris Lobinet, H&amp;F</td><td class="num">£200.00</td></tr>
+    <tr class="part out"><td>Elijah Yared, H&amp;F</td><td class="num">£150.00</td></tr>
+    <tr class="part out"><td>Cyrus Mahdavi</td><td class="num">£134.75</td></tr>
+    <tr class="part out"><td>Aboodi Patel, H&amp;F</td><td class="num">£100.00</td></tr>
+    <tr class="part out"><td>Arthur Morrissey</td><td class="num">£88.50</td></tr>
+    <tr class="part out"><td>Yassir Boujettif, H&amp;F</td><td class="num">£50.00</td></tr>
+    <tr class="part out"><td>Rayan Thapa</td><td class="num">£23.50</td></tr>
+    <tr class="sec"><td colspan="2">Gastos de los servicios en septiembre</td></tr>
+    <tr><td>Piscina, 4 domingos x £50</td><td class="num">£200.00</td></tr>
+    <tr><td>HubRoom, multi y bespoke, parte de septiembre</td><td class="num">£1,476.92</td></tr>
+    <tr class="unpaid"><td>Climbing Westway, septiembre, sin pagar</td><td class="num">£99.00</td></tr>
+    <tr class="sec"><td colspan="2">Salarios</td></tr>
+    <tr><td>Victor, admin</td><td class="num">£1,000.00</td></tr>
+    <tr><td>Raul, admin</td><td class="num">£1,000.00</td></tr>
+    <tr><td>Sevitha, admin</td><td class="num">£3,862.92</td></tr>
+    <tr><td>Javier, timesheet</td><td class="num">£1,070.75</td></tr>
+    <tr><td>Roberto, timesheet</td><td class="num">£1,182.75</td></tr>
+    <tr><td>Aurora, timesheet</td><td class="num">£566.75</td></tr>
+    <tr><td>Godsway, timesheet</td><td class="num">£540.00</td></tr>
+    <tr><td>Luliya, timesheet</td><td class="num">£358.75</td></tr>
+    <tr><td>Carlos, timesheet. Se paga en octubre, £360 menos £5</td><td class="num">£355.00</td></tr>
+    <tr><td>Dan, timesheet</td><td class="num">£342.75</td></tr>
+    <tr><td>Emmanuel, timesheet</td><td class="num">£342.00</td></tr>
+    <tr><td>Alex, timesheet</td><td class="num">£330.00</td></tr>
+    <tr><td>Berta, timesheet</td><td class="num">£330.00</td></tr>
+    <tr><td>Bismark, timesheet</td><td class="num">£322.00</td></tr>
+    <tr><td>John, timesheet</td><td class="num">£275.00</td></tr>
+    <tr><td>Youssef, timesheet</td><td class="num">£264.00</td></tr>
+    <tr><td>Simon, timesheet</td><td class="num">£186.75</td></tr>
+    <tr><td>Sandra, timesheet</td><td class="num">£112.00</td></tr>
+    <tr><td>Ann, timesheet</td><td class="num">£67.50</td></tr>
+    <tr class="sec"><td colspan="2">Tambien afecta a afterschool</td></tr>
+    <tr><td>Youssef, tax de meses anteriores, parte empresa</td><td class="num">£444.07</td></tr>
+    <tr><td>Refund Mansura Akter, ya salio</td><td class="num">£50.00</td></tr>
+    <tr><td>Refund Kelidon Mesi, ya salio</td><td class="num">£50.00</td></tr>
+    <tr><td>Refund Nicole Stephens, ya salio</td><td class="num">£100.00</td></tr>
+    <tr><td>Refund Orla Sullivan, climbing, ya salio</td><td class="num">£236.25</td></tr>
+    <tr class="unpaid"><td>Refund Karo y Kareena, por cancelar, sin pagar</td><td class="num">£450.00</td></tr>
+    <tr class="owed"><td>Queda ahora</td><td class="num">£3,222.38</td></tr>
+    <tr class="remnant"><td>Quedaria</td><td class="num">£12,211.63</td></tr>
+  </table>
+  </section>
+  </div>
+
+  <h2 id="nominas">Nominas de septiembre</h2>
+  <div class="pair">
+  <section>
+  <h2>Day Centre</h2>
+  <table>
+    <tr><th></th><th class="num">Payroll</th><th class="num">Payslip</th></tr>
+    <tr><td>Victor, 18 sep</td><td class="num">£3,167.00</td><td class="num">£2,503.26</td></tr>
+    <tr><td>Raul. El del 29 volvio</td><td class="num">£3,167.00</td><td class="num">£2,503.26</td></tr>
+    <tr><td>Michelle, 28 sep y 1 oct</td><td class="num">£2,310.00</td><td class="num">£2,162.77</td></tr>
+    <tr><td>Roberto, mananas. Lo de empresa esta al otro lado</td><td class="num">£1,505.00</td><td class="num">£1,505.00</td></tr>
+    <tr><td>Luliya</td><td class="num">£936.00</td><td class="num">£734.49</td></tr>
+    <tr><td>Youssef, day centre del payslip</td><td class="num">£330.00</td><td class="num">£330.00</td></tr>
+    <tr class="part out"><td>Youssef, tax devuelto, parte day centre. Ya esta en el gasto de arriba</td><td class="num">-</td><td class="num">£389.53</td></tr>
+    <tr class="total"><td>Day Centre</td><td class="num">£11,415.00</td><td class="num">£9,738.78</td></tr>
+  </table>
+  </section>
+  <section>
+  <h2>After schools &amp; weekends salaries</h2>
+  <table>
+    <tr><th></th><th class="num">Payroll</th><th class="num">Payslip</th></tr>
+    <tr><td>Victor, admin de afterschool</td><td class="num">£1,000.00</td><td class="num">£790.42</td></tr>
+    <tr><td>Raul, admin de afterschool</td><td class="num">£1,000.00</td><td class="num">£790.42</td></tr>
+    <tr><td>Sevitha Admin</td><td class="num">£3,862.92</td><td class="num">£3,862.92</td></tr>
+    <tr><td>Javier, payslip September</td><td class="num">£1,070.75</td><td class="num">£854.93</td></tr>
+    <tr><td>Roberto, timesheet. El payslip va en los £2,228.77</td><td class="num">£1,182.75</td><td class="num">-</td></tr>
+    <tr><td>Roberto Empresa. Salio junto con las mananas, en los £2,228.77</td><td class="num">-</td><td class="num">£723.77</td></tr>
+    <tr><td>Aurora, payslip September</td><td class="num">£566.75</td><td class="num">£453.35</td></tr>
+    <tr><td>Godsway, payslip September</td><td class="num">£540.00</td><td class="num">£432.00</td></tr>
+    <tr><td>Luliya, payslip September</td><td class="num">£358.75</td><td class="num">£281.52</td></tr>
+    <tr><td>Dan, payslip September</td><td class="num">£342.75</td><td class="num">£274.35</td></tr>
+    <tr><td>Emmanuel, payslip September</td><td class="num">£342.00</td><td class="num">£273.60</td></tr>
+    <tr><td>Alex, payslip September</td><td class="num">£330.00</td><td class="num">£330.00</td></tr>
+    <tr><td>Berta, payslip September</td><td class="num">£330.00</td><td class="num">£264.00</td></tr>
+    <tr><td>Bismark, payslip September</td><td class="num">£322.00</td><td class="num">£257.60</td></tr>
+    <tr><td>John, payslip September</td><td class="num">£275.00</td><td class="num">£220.00</td></tr>
+    <tr><td>Youssef, afterschool del payslip</td><td class="num">£264.00</td><td class="num">£264.00</td></tr>
+    <tr class="part out"><td>Youssef, tax devuelto, parte empresa. Ya esta en el gasto de arriba</td><td class="num">-</td><td class="num">£444.07</td></tr>
+    <tr><td>Simon, payslip September</td><td class="num">£186.75</td><td class="num">£186.75</td></tr>
+    <tr><td>Sandra, payslip September</td><td class="num">£112.00</td><td class="num">£89.60</td></tr>
+    <tr class="total"><td>After schools &amp; weekends salaries</td><td class="num">£12,086.42</td><td class="num">£10,349.23</td></tr>
+  </table>
+  </section>
+  </div>
+
+  <h2 style="page-break-before: always;">Cada servicio en septiembre</h2>
+  <table>
+    <tr>
+      <th></th>
+      <th class="num">Seria</th>
+      <th class="num">Entro</th>
+      <th class="num">Por entrar</th>
+      <th class="num">Gastos</th>
+      <th class="num">Queda ahora</th>
+      <th class="num">Quedaria</th>
+    </tr>
+    <tr>
+      <td>Piscina</td>
+      <td class="num">£12,789.29</td>
+      <td class="num">£9,265.79</td>
+      <td class="num">£3,523.50</td>
+      <td class="num">£4,172.50</td>
+      <td class="num now">£5,093.29</td>
+      <td class="num later">£8,616.79</td>
+    </tr>
+    <tr>
+      <td>Multi</td>
+      <td class="num">£8,640.00</td>
+      <td class="num">£6,496.75</td>
+      <td class="num">£2,143.25</td>
+      <td class="num">£2,069.22</td>
+      <td class="num now">£4,427.53</td>
+      <td class="num later">£6,570.78</td>
+    </tr>
+    <tr>
+      <td>Bespoke</td>
+      <td class="num">£3,322.50</td>
+      <td class="num">£0.00</td>
+      <td class="num">£3,322.50</td>
+      <td class="num">£1,284.20</td>
+      <td class="num now">-£1,284.20</td>
+      <td class="num later">£2,038.30</td>
+    </tr>
+    <tr>
+      <td>Climbing</td>
+      <td class="num">£2,475.00</td>
+      <td class="num">£2,475.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£784.00</td>
+      <td class="num now ok">£1,691.00</td>
+      <td class="num later">£1,691.00</td>
+    </tr>
+    <tr>
+      <td>Fitness</td>
+      <td class="num">£600.00</td>
+      <td class="num">£600.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£112.00</td>
+      <td class="num now ok">£488.00</td>
+      <td class="num later">£488.00</td>
+    </tr>
+    <tr>
+      <td>Sevitha, admin</td>
+      <td class="num">£0.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£3,862.92</td>
+      <td class="num now">-£3,862.92</td>
+      <td class="num later">-£3,862.92</td>
+    </tr>
+    <tr>
+      <td>Victor, admin</td>
+      <td class="num">£0.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£1,000.00</td>
+      <td class="num now">-£1,000.00</td>
+      <td class="num later">-£1,000.00</td>
+    </tr>
+    <tr>
+      <td>Raul, admin</td>
+      <td class="num">£0.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£1,000.00</td>
+      <td class="num now">-£1,000.00</td>
+      <td class="num later">-£1,000.00</td>
+    </tr>
+    <tr>
+      <td>Youssef, tax devuelto, parte empresa</td>
+      <td class="num">£0.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£444.07</td>
+      <td class="num now">-£444.07</td>
+      <td class="num later">-£444.07</td>
+    </tr>
+    <tr>
+      <td>Refunds</td>
+      <td class="num">£0.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£0.00</td>
+      <td class="num">£886.25</td>
+      <td class="num now">-£886.25</td>
+      <td class="num later">-£886.25</td>
+    </tr>
+    <tr class="total">
+      <td>Afterschool y weekend</td>
+      <td class="num">£27,826.79</td>
+      <td class="num">£18,837.54</td>
+      <td class="num">£8,989.25</td>
+      <td class="num">£15,615.16</td>
+      <td class="num now">£3,222.38</td>
+      <td class="num later">£12,211.63</td>
+    </tr>
+  </table>
+
+  <p class="foot">clubSENsational · Septiembre 2026 Autumn · Documento interno · No es una cuenta auditada.</p>
+</body>
+</html>
