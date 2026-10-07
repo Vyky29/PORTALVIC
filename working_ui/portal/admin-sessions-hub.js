@@ -616,6 +616,13 @@
   }
 
   function clientAllowedOnWeekday(clientName, weekdayLong) {
+    /* Emanuel (Day Centre) is Monday, Wednesday and Friday. Never a Tuesday seat. */
+    if (
+      canonicalClientSlug(clientName) === "emanuel" &&
+      String(weekdayLong || "").trim() === "Tuesday"
+    ) {
+      return false;
+    }
     var Vis = global.PortalClientDayVisibility;
     if (Vis && typeof Vis.clientAllowedOnWeekday === "function") {
       return Vis.clientAllowedOnWeekday(clientName, weekdayLong);
@@ -8528,9 +8535,45 @@ function rosterRowToSlot(isoDate, wd, r) {
     return false;
   };
 
+  /**
+   * One Day Centre note for this child on this date closes every card
+   * (any worker, any block). Patience 11-12.30 covers Ikram for the whole day.
+   */
+  AdminSessionsHub.prototype.dayCentreClientFeedbackSubmitted = function (iso, clientName) {
+    var day = clean(iso).slice(0, 10);
+    var cid = canonicalClientSlug(clientName);
+    if (!day || !cid) return false;
+    function covers(list) {
+      if (!list) return false;
+      for (var i = 0; i < list.length; i++) {
+        var fb = list[i];
+        if (!fb) continue;
+        var fbDay = this.feedbackRowDate(fb) || feedbackSessionDate(fb);
+        if (fbDay !== day) continue;
+        if (canonicalClientSlug(fb.client_name) !== cid) continue;
+        if (isAbsentFeedbackRow(fb)) continue;
+        if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) continue;
+        var pk = clean(fb.portal_session_key).toLowerCase();
+        if (isDayCentreService(fb.service) || pk.indexOf("|day_centre") >= 0) return true;
+      }
+      return false;
+    }
+    if (covers.call(this, this._fbByDate && this._fbByDate[day])) return true;
+    return covers.call(this, (this.payload && this.payload.session_feedback) || []);
+  };
+
   /** Unit satisfied for overview stats / roster (matches Feedbacks tab awaiting rules). */
   AdminSessionsHub.prototype.feedbackUnitResolved = function (unit) {
     if (this.feedbackUnitAbsent(unit)) return true;
+    if (
+      unit &&
+      unit.slots &&
+      unit.slots[0] &&
+      isDayCentreService(unit.slots[0].service) &&
+      this.dayCentreClientFeedbackSubmitted(unit.slots[0].session_date, unit.slots[0].client_name)
+    ) {
+      return true;
+    }
     if (this.feedbackUnitComplete(unit)) return true;
     for (var si = 0; si < unit.slots.length; si++) {
       if (this.slotCancellationCountsAsSubmitted(unit.slots[si])) return true;
@@ -8814,6 +8857,15 @@ function rosterRowToSlot(isoDate, wd, r) {
         if (isRosterClient(r.client_name)) {
           if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
           if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
+        }
+        /* Raul is off Day Centre on Tuesdays from 6 Oct. A leaked seat must not stay open. */
+        if (
+          wd === "Tuesday" &&
+          String(isoDate || "").slice(0, 10) >= "2026-10-06" &&
+          isDayCentreService(r.service) &&
+          /^raul$/i.test(String(r.instructors || "").trim())
+        ) {
+          continue;
         }
         if (sunSwimOv && sunSwimOv.replaceSwimFarm && clean(r.venue) === "SwimFarm") continue;
         var slotRow = rosterRowToSlot(isoDate, wd, r);
@@ -10907,6 +10959,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       clockLabel = singleHm
         ? rosterHmTokenFrom24(singleHm, weekdayLongFromIso(fb.session_date)) || rawSessionTime
         : rawSessionTime;
+    }
+    if (
+      !terminal &&
+      (isDayCentreService(svcLabel) || isDayCentreService(fb.service))
+    ) {
+      var mergedDcClock = registerDayCentreMergedSlot(
+        hub,
+        clean(fb.session_date).slice(0, 10) || hub.feedbackRowDate(fb),
+        rawClient
+      );
+      if (mergedDcClock) clockLabel = rosterTimeDisplay(mergedDcClock) || clockLabel;
     }
     var svcTimeSub = clockLabel
       ? '<div class="ash-cell-sub">' + esc(clockLabel) + "</div>"

@@ -1351,6 +1351,9 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   }
   /* Feedback has pool/venue token; roster aquatic key often has no area segment. */
   if (sArea && !rArea) {
+    /* Day Centre / shared Bespoke submit has no clock. It still covers every
+       timed card for that child that day (Patience 11-12.30 -> Ikram 3-4). */
+    if (sArea === "day_centre" || sArea === "bespoke_shared") return true;
     if (
       isPoolOrAquaticArea(sArea) ||
       isSwimFarmVenueArea(sArea) ||

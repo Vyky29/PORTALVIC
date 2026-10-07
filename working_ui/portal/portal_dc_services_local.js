@@ -151,6 +151,24 @@
     });
   }
 
+  /** Emanuel is not in on Tuesdays. Raul is off Tuesday Day Centre from 6 Oct. */
+  function scrubTuesdayDcColumns(iso, dk, columns) {
+    if (dk !== "tuesday") return columns || [];
+    var day = normIso(iso);
+    return (columns || [])
+      .map(function (col) {
+        var staff = String((col && col.staff) || "").trim();
+        var clients = (col.clients || []).filter(function (c) {
+          return !/^emanuel$/i.test(String((c && c.name) || "").trim());
+        });
+        if (day >= "2026-10-06" && /^raul$/i.test(staff)) clients = [];
+        return { staff: col.staff, clients: clients };
+      })
+      .filter(function (col) {
+        return col.clients && col.clients.length;
+      });
+  }
+
   function columnsFromOccupantSlot(slot) {
     var byStaff = {};
     var order = [];
@@ -189,9 +207,13 @@
       return {
         phase: String(slot.phase || "services"),
         phaseLabel: String(slot.phaseLabel || slot.phase || "Services"),
-        columns: patienceDcColumnsHalfTerm(
+        columns: scrubTuesdayDcColumns(
           d,
-          luliyaDcColumnsFrom28(d, dk, columnsFromOccupantSlot(slot)),
+          dk,
+          patienceDcColumnsHalfTerm(
+            d,
+            luliyaDcColumnsFrom28(d, dk, columnsFromOccupantSlot(slot)),
+          ),
         ),
         source: "services",
         slotId: slot.id || null,
@@ -204,7 +226,7 @@
       return {
         phase: fb.phase || "canonical",
         phaseLabel: fb.phaseLabel || fb.phase || "Canonical template",
-        columns: Array.isArray(fb.columns) ? fb.columns : [],
+        columns: scrubTuesdayDcColumns(d, dk, Array.isArray(fb.columns) ? fb.columns : []),
         source: "canonical",
       };
     }

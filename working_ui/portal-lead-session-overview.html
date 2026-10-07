@@ -10,9 +10,9 @@
   <link rel="stylesheet" href="/portal/portal-lead-session-overview.css?v=20260606-phone-awaiting-week" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260621-lead-report-table-slim"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20261007-register-hang"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20261007-dc-day-feedback"></script>
   <script src="/portal/portal_client_identity.js?v=20261001-register-fast"></script>
-  <script src="/portal/admin-sessions-hub.js?v=20261007-register-hang"></script>
+  <script src="/portal/admin-sessions-hub.js?v=20261007-dc-day-feedback"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260614-acat-jun8-absent"></script>
 </head>
@@ -89,7 +89,7 @@
     </div>
   </main>
   <script type="module">
-    import { portalInitLeadSessionOverviewPage } from "/portal/portal_lead_session_overview_page.js?v=20261007-register-hang";
+    import { portalInitLeadSessionOverviewPage } from "/portal/portal_lead_session_overview_page.js?v=20261007-dc-day-feedback";
     if (typeof portalLockLandscape === "function") void portalLockLandscape();
     window.addEventListener("pagehide", function () {
       if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();

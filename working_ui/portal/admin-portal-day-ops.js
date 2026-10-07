@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20261007-register-hang';
+  var PORTAL_DAY_OPS_BUILD = '20261007-dc-day-feedback';
   var venueReviewFilters = {
     venue: '',
     staff: '',

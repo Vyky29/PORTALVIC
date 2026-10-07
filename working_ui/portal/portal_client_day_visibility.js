@@ -125,6 +125,13 @@
   }
 
   function clientAllowedOnWeekday(clientName, weekdayLong) {
+    /* Emanuel (Day Centre) is Monday, Wednesday and Friday. Never a Tuesday seat. */
+    if (
+      canonicalClientSlug(clientName) === "emanuel" &&
+      String(weekdayLong || "").trim() === "Tuesday"
+    ) {
+      return false;
+    }
     var allow = mapEntry(
       global.STAFF_DASHBOARD_SOURCE && global.STAFF_DASHBOARD_SOURCE.clientWeekdaysOnly,
       clientName

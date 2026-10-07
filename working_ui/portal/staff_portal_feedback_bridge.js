@@ -567,6 +567,16 @@
   /** Match status export row to one roster session (client + slot time + service), not every row that day. */
   function statusRowMatchesRosterSession(st, s, clientNotesById) {
     if (!clientMatch(st, s, clientNotesById)) return false;
+    /* One Day Centre note covers every block that day. Do not split on 11:00 vs 15:00. */
+    if (isDayCentreRosterSession(s) || isDayCentreStatusRow(st)) {
+      const act = String((s && (s.activity || s.rosterService || s.service)) || "")
+        .trim()
+        .toLowerCase();
+      if (/aquatic|swim|climb|multi[-\s]?activity|physical|fitness|\bgym\b/.test(act) && !/day\s*centre/.test(act)) {
+        return false;
+      }
+      return true;
+    }
     if (isBespokeSharedStatusRow(st) || isBespokeSharedRosterSession(s)) {
       const stKind = serviceKindFromLabel(st.service);
       const act = String(
@@ -1508,6 +1518,15 @@
     const rec = mergedRec || {};
     function cancelCountsAsDone() {
       return !!(rec.cancelled && !rec.cancelNeedsFeedback);
+    }
+    /* Any worker's Day Centre note closes every card for that child that day. */
+    if (
+      isDayCentreRosterSession(s) &&
+      !rec.absent &&
+      !cancelCountsAsDone() &&
+      anySubmittedCoversRosterSession(iso, s, clientNotesById)
+    ) {
+      return true;
     }
     if (rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso)) {
       if (rec.absent || cancelCountsAsDone()) return true;
