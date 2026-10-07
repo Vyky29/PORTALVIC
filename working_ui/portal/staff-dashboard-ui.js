@@ -661,7 +661,8 @@
       }else{
         html += '<div class="today-day-panel__off-copy">';
         html += '<p class="today-day-panel__off-title">No sessions today</p>';
-        html += '<p class="today-day-panel__off-sub">Nothing scheduled for this day</p></div></div>';
+        html += '<p class="today-day-panel__off-sub">Nothing scheduled for this day</p></div>';
+        html += '<span class="today-day-panel__off-icon today-day-panel__off-icon--end" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span></div>';
       }
       if(hasNext){
         const chips = Array.isArray(preview.participants) ? preview.participants : [];

@@ -5369,6 +5369,19 @@
       height:22px;
       display:block;
     }
+    .today-day-panel--empty .today-day-panel__off-icon--end{
+      margin-left:12px;
+      width:56px;
+      height:56px;
+      border-radius:16px;
+      color:#fff;
+      background:rgba(255,255,255,.16);
+      box-shadow:none;
+    }
+    .today-day-panel--empty .today-day-panel__off-icon--end svg{
+      width:30px;
+      height:30px;
+    }
     .today-day-panel__off-copy{
       min-width:0;
       flex:1 1 auto;
