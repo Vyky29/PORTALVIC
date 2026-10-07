@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-07-v305",
+  "version": "2026-10-07-v306",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1896,6 +1896,7 @@
           ],
           "tips": [
             "Requested name: clubSENsational Portal. Until Meta approves, the chat still says ClubSENsational Ltd.",
+            "The line under the name says: Portal updates. Reply in the portal, not here. To call, use the Business number 07592 558671.",
             "The WhatsApp number uses a white centre and a blue ring to the edge: blue logo, blue clubSENsational, and blue PORTAL. The Business page logo stays gold and navy."
           ],
           "es": {
@@ -1909,6 +1910,7 @@
             ],
             "tips": [
               "Nombre pedido: clubSENsational Portal. Hasta que Meta lo apruebe, el chat sigue diciendo ClubSENsational Ltd.",
+              "La frase debajo del nombre dice: Portal updates. Reply in the portal, not here. To call, use the Business number 07592 558671.",
               "El numero de WhatsApp usa el centro blanco y un aro azul hasta el borde: logo azul, clubSENsational en azul, y PORTAL en azul. El logo de Business sigue en dorado y azul marino."
             ]
           }
