@@ -475,7 +475,7 @@
     .pax-contacts-avatar.portal-roster-avatar--m{color:#1a5f8a;background:#cfe8f7}
     .pax-contacts-avatar.portal-roster-avatar--f{color:#8f3560;background:#f8d8e8}
     .pax-contacts-avatar .portal-roster-avatar__img{
-      position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;border-radius:inherit;
+      position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;border-radius:inherit;
     }
     .pax-contacts-avatar--yunis .portal-roster-avatar__img{object-position:center center}
     .pax-contacts-avatar.portal-roster-avatar--has-photo{color:transparent}
