@@ -5543,6 +5543,10 @@
           const cid = String(it.clientId || '').trim().toLowerCase();
           if(!cid || cid === 'available' || cid === 'closed' || cid === 'training' || cid === 'shadowing' || cid === 'meeting') return;
           if(/^no participant/i.test(String(it.name || ''))) return;
+          if(it.portalObserverShadowing){
+            it.portalTwoToOneSupportLabel = '';
+            return;
+          }
           const lab = portalTwoToOneSupportLabelForSession({
             day: anchorDayWord,
             session_date: sessionDateKey,

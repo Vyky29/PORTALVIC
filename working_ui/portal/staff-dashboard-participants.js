@@ -1323,34 +1323,55 @@
         partners.push({ key: k, spans: spans });
       });
       if(!partners.length) return '';
-      const events = [];
+      function isMichelle(key){
+        return portalShareCanonStaff(key) === 'michelle';
+      }
+      function presentAt(mid){
+        const hit = [];
+        partners.forEach(function(p){
+          for(let i = 0; i < p.spans.length; i++){
+            const sp = p.spans[i];
+            if(sp.start <= mid && sp.end > mid){
+              hit.push(p);
+              return;
+            }
+          }
+        });
+        /* Two staff already make the 2:1. Michelle on top of that pair is not a 3:1
+           and her name stays off this card. If she is the only other person, she is
+           the 2:1 and the other worker's card names her. */
+        const nonMichelle = hit.filter(function(p){ return !isMichelle(p.key); });
+        if(nonMichelle.length && hit.length > nonMichelle.length) return nonMichelle;
+        return hit;
+      }
+      const cuts = Object.create(null);
+      cuts[winStart] = true;
+      cuts[winEnd] = true;
       partners.forEach(function(p){
         p.spans.forEach(function(sp){
           const a = Math.max(sp.start, winStart);
           const b = Math.min(sp.end, winEnd);
-          if(b > a + 1){
-            events.push({ t: a, d: 1 });
-            events.push({ t: b, d: -1 });
+          if(b > a){
+            cuts[a] = true;
+            cuts[b] = true;
           }
         });
       });
-      events.sort(function(a, b){ return a.t - b.t || a.d - b.d; });
-      let curN = 0;
-      let maxOthers = 0;
-      events.forEach(function(e){
-        curN += e.d;
-        if(curN > maxOthers) maxOthers = curN;
-      });
-      const ratio = 1 + Math.max(1, maxOthers);
-      function coversAll(p){
-        return p.spans.length === 1 && p.spans[0].start <= winStart + 5 && p.spans[0].end >= winEnd - 5;
+      const times = Object.keys(cuts).map(function(t){ return Number(t); }).sort(function(a, b){ return a - b; });
+      const lines = [];
+      for(let i = 0; i < times.length - 1; i++){
+        const a = times[i];
+        const b = times[i + 1];
+        if(!(b > a + 1)) continue;
+        const here = presentAt(a + (b - a) / 2);
+        const names = here.map(function(p){ return portalShareStaffFirstName(p.key); }).filter(Boolean);
+        if(!names.length) continue;
+        const label = (names.length + 1) + ':1 with ' + portalShareJoinNames(names);
+        const last = lines[lines.length - 1];
+        if(last && last.label === label && last.end === a) last.end = b;
+        else lines.push({ label: label, start: a, end: b });
       }
-      const allFull = partners.every(coversAll);
-      if(allFull){
-        const names = partners.map(function(p){ return portalShareStaffFirstName(p.key); }).filter(Boolean);
-        if(!names.length) return '';
-        return '(' + (names.length + 1) + ':1 with ' + portalShareJoinNames(names) + ')';
-      }
+      if(!lines.length) return '';
       function fmtRange(a, b){
         function pad(n){ return (n < 10 ? '0' : '') + n; }
         const sh = Math.floor(a / 60);
@@ -1363,14 +1384,12 @@
         }
         return pad(sh) + ':' + pad(sm) + '-' + pad(eh) + ':' + pad(em);
       }
-      partners.sort(function(a, b){ return a.spans[0].start - b.spans[0].start; });
-      return partners.map(function(p){
-        const name = portalShareStaffFirstName(p.key);
-        if(!name) return '';
-        if(partners.length === 1 && coversAll(p)) return ratio + ':1 with ' + name;
-        const ranges = p.spans.map(function(sp){ return fmtRange(sp.start, sp.end); }).filter(Boolean).join(', ');
-        return ratio + ':1 with ' + name + (ranges ? ' ' + ranges : '');
-      }).filter(Boolean).join('\n');
+      if(lines.length === 1 && lines[0].start <= winStart + 5 && lines[0].end >= winEnd - 5){
+        return '(' + lines[0].label + ')';
+      }
+      return lines.map(function(line){
+        return line.label + ' ' + fmtRange(line.start, line.end);
+      }).join('\n');
     }
     try{ window.portalTwoToOneSupportLabelForSession = portalTwoToOneSupportLabelForSession; }catch(_){}
     function portalSessionAddPeopleChips(kind, payload, ov, sessionDateIso){
