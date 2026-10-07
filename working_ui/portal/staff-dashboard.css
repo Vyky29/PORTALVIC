@@ -5318,6 +5318,48 @@
       font-size:12.5px;
       margin-top:3px;
     }
+    .today-day-panel--empty .today-day-panel__off{
+      padding:22px 16px 20px;
+      background:linear-gradient(180deg,#f05252 0%,#dc2626 100%);
+      border-bottom:0;
+    }
+    .today-day-panel--empty .today-day-panel__off-title{
+      font-size:28px;
+      font-weight:800;
+      color:#fff;
+      letter-spacing:-.02em;
+      line-height:1.05;
+    }
+    .today-day-panel--empty .today-day-panel__off-sub{
+      margin-top:6px;
+      font-size:16px;
+      font-weight:700;
+      color:rgba(255,255,255,.94);
+      line-height:1.3;
+    }
+    .today-day-panel--empty .today-day-panel__next{
+      flex:0 0 auto;
+      gap:4px;
+      padding:8px 10px 10px;
+    }
+    .today-day-panel--empty .today-day-panel__next-line{
+      font-size:12px;
+      font-weight:700;
+    }
+    .today-day-panel--empty .today-day-panel__chips{
+      --today-next-avatar:44px !important;
+      --today-next-chip-gap-x:6px;
+      --today-next-chip-gap-y:4px;
+      flex:0 0 auto;
+      align-content:start;
+    }
+    .today-day-panel--empty .today-participant-chip{
+      gap:2px;
+      padding:0;
+    }
+    .today-day-panel--empty .today-participant-chip__name{
+      font-size:10px;
+    }
     .today-day-panel__off-icon{
       width:40px;
       height:40px;

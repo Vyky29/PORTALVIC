@@ -615,7 +615,8 @@
       const noAutumn = standingNoAutumn && !hasNext && coverDaysAhead < 1;
       const coverOnlyTerm = standingNoAutumn && !hasNext && coverDaysAhead > 0;
       const offRequested = mode === 'off_time_requested';
-      let html = '<div class="today-day-panel' + (hasNext ? ' today-day-panel--has-next' : ' today-day-panel--solo') + (offRequested ? ' today-day-panel--off-requested' : '') + (mode === 'shift' ? ' today-day-panel--shift' : '') + '" role="status">';
+      const showPlainNoSessions = !loading && mode !== 'loading' && !noAutumn && !(standingNoAutumn && hasNext) && !coverOnlyTerm && !(mode === 'shift' && shiftMeta) && mode !== 'sync' && mode !== 'off_time_requested' && mode !== 'off' && mode !== 'complete';
+      let html = '<div class="today-day-panel' + (hasNext ? ' today-day-panel--has-next' : ' today-day-panel--solo') + (showPlainNoSessions ? ' today-day-panel--empty' : '') + (offRequested ? ' today-day-panel--off-requested' : '') + (mode === 'shift' ? ' today-day-panel--shift' : '') + '" role="status">';
       html += '<div class="today-day-panel__off">';
       if(noAutumn){
         html += '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>';
