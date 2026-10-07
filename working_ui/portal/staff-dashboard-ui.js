@@ -818,8 +818,8 @@
       grid.style.setProperty('--today-photo', (n <= 6 ? face.above : face.side) + 'px');
       grid.style.setProperty('--today-photo-special', face.special + 'px');
     }
-    /** Photo diameter from the real row. 1-6 cards and special cards stack the face
-     *  above the name. More than 6 keep it on the left, between the old 72px and 32px. */
+    /** Photo diameter from the real row. 1-6 cards stack the face above the name.
+     *  More than 6 keep it on the left, between the old 72px and 32px. */
     function portalTodayFaceSizes(grid, n){
       var row = 140;
       var width = 360;

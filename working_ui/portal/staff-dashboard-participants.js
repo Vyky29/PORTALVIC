@@ -2375,32 +2375,63 @@
         return '<div class="session-seg-row"><span class="session-seg-note">' + noteHtml + '</span><span class="session-seg-time">' + t + '</span>' + underTime + '</div>';
       }).join('');
     }
-    /** Combined card: participant name on the far left, then a time / note mini-table
-     *  (e.g. Emanuel — 11 to 12 Day Centre / 12 to 1 Big Pool). One session for feedback. */
+    /** Drop clock ranges from a 2:1 line so the card shows "2:1 with Michelle". */
+    function portalSupportArrangementWithoutTimes(raw){
+      return String(raw || '').split('\n').map(function(line){
+        return String(line || '')
+          .replace(/\s+\d{1,2}(?:[:.]\d{2})?\s*(?:to|-|–|—)\s*\d{1,2}(?:[:.]\d{2})?/gi, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      }).filter(Boolean).join('\n');
+    }
+    function todaySessionSegmentAreasHtml(item){
+      const segs = item && item.segments || [];
+      const seen = Object.create(null);
+      const html = [];
+      segs.forEach(function(seg){
+        const noteRaw = String((seg && (seg.area || seg.label || seg.note)) || '').trim();
+        if(!noteRaw) return;
+        const key = noteRaw.toLowerCase();
+        if(seen[key]) return;
+        seen[key] = true;
+        let noteHtml = '';
+        if(typeof portalAreaNoteTodayColumnHtml === 'function'){
+          noteHtml = portalAreaNoteTodayColumnHtml(noteRaw) || '';
+        }
+        if(noteHtml) html.push(noteHtml);
+      });
+      if(!html.length) return '';
+      return '<span class="session-seg-areas">' + html.join('') + '</span>';
+    }
+    /** Special card uses the same three columns as a normal card. The coloured
+     *  left border stays on the card. */
     function todaySessionSegmentedCardInnerHtml(item){
-      const nameCore = `<span class="session-meta-name">${escapeHtml(portalTodayVisibleName(item))}</span>`;
+      const timeRaw = String(item.time || '').trim()
+        || String((item.segments && item.segments[0] && (item.segments[0].time_slot || item.segments[0].time)) || '').trim();
+      const time = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(timeRaw) : timeRaw);
+      const venueLine = escapeHtml(portalTodaySessionVenueLabel(item));
       const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
       const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);
       const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
       const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
       const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
-      const supportSub = String(item.portalTwoToOneSupportLabel || '').trim();
-      const dcBlock = portalDcSupportBlockHtml(item);
-      const supportLine = !dcBlock && supportSub
-        ? '<span class="session-meta-support">' + escapeHtml(supportSub) + '</span>'
+      const timeStack = `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span>${chipsRow}</div>`;
+      const nameCore = `<span class="session-meta-name">${escapeHtml(portalTodayVisibleName(item))}</span>`;
+      const supportRaw = portalSupportArrangementWithoutTimes(item.portalTwoToOneSupportLabel);
+      const supportLine = supportRaw
+        ? '<span class="session-meta-support">' + escapeHtml(supportRaw).replace(/\n/g, '<br>') + '</span>'
         : '';
       const photoHtml = todaySessionNamePhotoHtml(item);
       const nameIdentity = photoHtml
-        ? '<span class="session-name-photo-row session-name-photo-row--above">' + photoHtml + nameCore + '</span>'
+        ? '<span class="session-name-photo-row">' + photoHtml + nameCore + '</span>'
         : nameCore;
-      const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}${chipsRow}</span>`;
-      return `<div class="session-card-body session-card-body--segments">`
-        + `<div class="session-line session-line--name session-line--name-lead">${namePart}</div>`
-        + `<div class="session-seg-list">${todaySessionSegmentRowsHtml(item)}</div>`
-        + `</div>`;
+      const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}</span>`;
+      const areas = todaySessionSegmentAreasHtml(item);
+      const rightColInner = `<span class="session-right-note">${areas || todaySessionThirdRowInnerHtml(item)}</span>`;
+      return `<div class="session-card-body">${timeStack}<div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}</div></div>`;
     }
-    /** Face on the Today card. Special cards always stack it above the name.
-     *  Normal cards stack it above when the day has 6 or fewer cards; otherwise it stays left of the name. */
+    /** Face on the Today card. Stacked above the name when the day has 6 or fewer
+     *  cards; left of the name when there are more. */
     function todaySessionNamePhotoHtml(item){
       if(!item) return '';
       const kind = String(item.kind || '').toLowerCase();
