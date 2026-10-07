@@ -5346,10 +5346,6 @@
       gap:8px;
       padding:10px 10px 12px;
     }
-    .today-day-panel--empty .today-day-panel__next-line{
-      font-size:13px;
-      font-weight:800;
-    }
     .today-day-panel--empty .today-day-panel__chips{
       flex:1 1 auto;
       min-height:0;
@@ -5460,7 +5456,8 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:0;
+      flex-wrap:wrap;
+      gap:6px 8px;
       min-width:0;
       text-align:center;
     }
@@ -5478,16 +5475,29 @@
     }
     .today-day-panel__next-kicker{
       font-size:11px;
+      font-weight:700;
+      text-transform:none;
+      letter-spacing:.02em;
+      color:#64748b;
+      flex-shrink:0;
+    }
+    .today-day-panel__next-day{
+      display:inline-flex;
+      align-items:center;
+      padding:3px 10px;
+      border-radius:999px;
+      background:#0284c7;
+      color:#fff;
+      font-size:14px;
       font-weight:800;
-      text-transform:uppercase;
-      letter-spacing:.06em;
-      color:#0f172a;
+      line-height:1.2;
+      letter-spacing:.01em;
       flex-shrink:0;
     }
     .today-day-panel__next-date{
-      font-size:12px;
+      font-size:13px;
       font-weight:700;
-      color:#0f172a;
+      color:#334155;
       min-width:0;
       overflow:hidden;
       text-overflow:ellipsis;
