@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v324",
+  "version": "2026-10-08-v325",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -610,7 +610,7 @@
         {
           "id": "whatsapp_api_auto",
           "title": "WhatsApp API that sends by itself",
-          "summary": "Parents get a WhatsApp only when they would turn up wrong or money is due now. Absent does not. Accepting a makeup in the portal does not send a second WhatsApp. A credit that only sits in Credits does not either.",
+          "summary": "Parents get a WhatsApp only when they would turn up wrong or money is due now. Undoing a cover tells them the usual instructor is back. An open refund gets one reminder after 3 days.",
           "where": "Schedule & Covers, Absents, staff app",
           "keywords": [
             "whatsapp",
@@ -622,12 +622,12 @@
             "staff"
           ],
           "steps": [
-            "Parents, Aquatic / Multi-Activity / Climbing / Fitness only. Day Centre and Bespoke do not get these. Cover: the usual instructor is not available and the session is now with the named cover, with their photo. A second cover sends an update. Cancelled: that session has been cancelled and the office will be in touch. No money in that message. Move: the time changed for today only.",
+            "Parents, Aquatic / Multi-Activity / Climbing / Fitness only. Day Centre and Bespoke do not get these. Cover: the usual instructor is not available and the session is now with the named cover, with their photo. A second cover sends an update. Undo that cover and the parent hears that the usual instructor is taking the session again, with that instructor's photo. Cancelled: that session has been cancelled and the office will be in touch. No money in that message. Move: the time changed for today only.",
             "Add session card, Type Session, with a named child, tells that parent a session was added for today only, at that new time. Use it when the time does not already exist that day. An existing empty seat, or a seat free because someone is absent, is Move or a makeup onto that seat. No participant and Office do not get a WhatsApp. Day Centre and Bespoke do not either.",
             "Offer slot tells the parent a makeup is ready and they must Accept or Decline. A reminder goes out if they have not answered. If they Accept in the portal, that is the end of it for them: no second WhatsApp. If you place the makeup yourself, without them opening the portal, they do get the confirmation: it is ready in the parent portal. The instructor still gets Make-up on your roster either way.",
             "The instructor cancellation form tells the parent that the instructor reported a cancellation and the admin team will phone. Day Centre does not get that message. Bespoke does.",
             "Absent does not send a parent WhatsApp. Not from the parent portal, not from Schedule and Covers Absent, and not from the staff card.",
-            "When you decide a refund, the parent WhatsApp asks for the account name, sort code, and account number. A credit WhatsApps only when it is taken off an invoice they are about to pay. A credit that just sits in Credits, or waits for a later GoCardless collection, stays in the parent portal. Cancel service is the place-cancelled message, with the refund figures.",
+            "When you decide a refund, the parent WhatsApp asks for the account name, sort code, and account number. If that refund is still open 3 days later, one reminder asks again. It does not repeat. Mark the refund as paid once the money has gone in, and the reminder does not send. Refunds decided before 8 Oct 2026 are not chased. A credit WhatsApps only when it is taken off an invoice they are about to pay. A credit that just sits in Credits, or waits for a later GoCardless collection, stays in the parent portal. Cancel service is the place-cancelled message, with the refund figures.",
             "Staff WhatsApp: a named cover says You are covering this child, with date, time, and venue. Removing the cover says they are no longer covering. A makeup on their roster says Make-up on your roster. Evening feedback still owed says today's feedback is still not in. The timesheet deadline is one message per month.",
             "Absent participant and Session cancelled on the staff phone are the app, not WhatsApp."
           ],
@@ -636,15 +636,15 @@
           ],
           "es": {
             "title": "WhatsApp API que sale solo",
-            "summary": "Al padre le llega WhatsApp solo si se presentaria mal o hay dinero que pagar ahora. Absent no. Si aceptan un makeup en el portal, no sale un segundo WhatsApp. Un credit que solo queda en Credits tampoco.",
+            "summary": "Al padre le llega WhatsApp solo si se presentaria mal o hay dinero que pagar ahora. Si quitas un cover, le llega que vuelve el instructor de siempre. Un refund abierto tiene un solo recordatorio a los 3 dias.",
             "where": "Schedule & Covers, Absents, app del staff",
             "steps": [
-              "Padres, solo Aquatic, Multi-Activity, Climbing y Fitness. Day Centre y Bespoke no reciben estos. Cover: el instructor de siempre no esta y la sesion queda con el cover, con su foto. Un segundo cover manda una actualizacion. Cancelled: esa sesion se ha cancelado y la oficina hablara. Sin dinero en ese mensaje. Move: cambio de hora solo de hoy.",
+              "Padres, solo Aquatic, Multi-Activity, Climbing y Fitness. Day Centre y Bespoke no reciben estos. Cover: el instructor de siempre no esta y la sesion queda con el cover, con su foto. Un segundo cover manda una actualizacion. Si deshaces ese cover, al padre le llega que el instructor de siempre vuelve a dar la sesion, con su foto. Cancelled: esa sesion se ha cancelado y la oficina hablara. Sin dinero en ese mensaje. Move: cambio de hora solo de hoy.",
               "Add session card, Type Session, con un nino con nombre, le dice a ese padre que se anadio una sesion solo para hoy, a esa hora nueva. Usalo cuando esa hora no existe ese dia. Una plaza que ya existe vacia, o libre porque alguien falta, es Move o un makeup en esa plaza. No participant y Office no reciben WhatsApp. Day Centre y Bespoke tampoco.",
               "Offer slot le dice al padre que el makeup esta listo y que tienen que Accept o Decline. Si no contestan, sale un recordatorio. Si aceptan en el portal, ahi se queda: no hay un segundo WhatsApp. Si lo colocas tu, sin que entren al portal, si les llega la confirmacion: esta listo en el portal del padre. Al instructor le llega Make-up on your roster en los dos casos.",
               "El formulario de cancelacion del instructor le dice al padre que el instructor informo una cancelacion y que admin le llamara. Day Centre no recibe ese mensaje. Bespoke si.",
               "Absent no manda WhatsApp al padre. Ni desde su portal, ni desde Schedule and Covers Absent, ni desde la tarjeta del staff.",
-              "Si decides un refund, el WhatsApp pide nombre de la cuenta, sort code y account number. Un credit solo sale por WhatsApp si se descuenta de una factura que van a pagar ahora. Un credit que se queda en Credits, o que espera un cobro de GoCardless mas adelante, se queda en el portal del padre. Cancel service es el mensaje de plaza cancelada, con las cifras del refund.",
+              "Si decides un refund, el WhatsApp pide nombre de la cuenta, sort code y account number. Si ese refund sigue abierto 3 dias despues, sale un solo recordatorio. No se repite. Cuando el dinero ya esta ingresado, marcalo como pagado y el recordatorio no sale. Los refund de antes del 8 de octubre de 2026 no se persiguen. Un credit solo sale por WhatsApp si se descuenta de una factura que van a pagar ahora. Un credit que se queda en Credits, o que espera un cobro de GoCardless mas adelante, se queda en el portal del padre. Cancel service es el mensaje de plaza cancelada, con las cifras del refund.",
               "WhatsApp al staff: un cover con nombre dice You are covering, con fecha, hora y sede. Quitar el cover dice que ya no cubre. Un makeup en su roster dice Make-up on your roster. Por la noche, si falta feedback, dice que el feedback de hoy no esta. El cierre del timesheet es un mensaje al mes.",
               "Absent participant y Session cancelled en el telefono del staff son la app, no WhatsApp."
             ],

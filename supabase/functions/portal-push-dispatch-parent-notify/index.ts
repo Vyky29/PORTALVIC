@@ -28,9 +28,10 @@ const FAMILY_ALERT_VIBRATE = [200, 80, 200, 80, 280, 100, 200];
 
 function hubKindTitle(kind: string): string {
   const k = String(kind || "").toLowerCase();
-  if (k === "instructor_change" || k === "instructor_reassign") {
+  if (k === "instructor_change" || k === "instructor_reassign" || k === "instructor_restored") {
     return "Instructor update";
   }
+  if (k === "refund_bank_reminder") return "Refund details";
   if (k === "session_cancelled") return "Session cancelled";
   if (k === "instructor_reported_cancellation") return "Instructor reported a cancellation";
   if (k === "absence_announced") return "Absence noted";

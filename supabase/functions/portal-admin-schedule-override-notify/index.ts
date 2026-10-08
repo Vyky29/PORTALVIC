@@ -56,7 +56,8 @@ Deno.serve(async (req) => {
     kind !== "instructor_change_update" &&
     kind !== "session_cancelled" &&
     kind !== "session_added" &&
-    kind !== "time_change"
+    kind !== "time_change" &&
+    kind !== "instructor_restored"
   ) {
     return portalAdminJson(400, { ok: false, error: "bad_kind" });
   }

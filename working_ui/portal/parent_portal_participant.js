@@ -6203,7 +6203,7 @@
 
   function hubAlertKindLabel(kind) {
     var k = String(kind || "").toLowerCase();
-    if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
+    if (k === "instructor_change" || k === "instructor_reassign" || k === "instructor_restored") return "Instructor update";
     if (k === "time_change" || k === "session_time_change") return "Time change";
     if (k === "session_cancelled") return "Session cancelled";
     if (k === "instructor_reported_cancellation") return "Cancellation reported";
@@ -7765,7 +7765,7 @@
       if (!messageMatchesParticipant(m, data)) return null;
       var k = String(m.kind || "").toLowerCase();
       var title = "";
-      if (k === "instructor_change" || k === "instructor_reassign") {
+      if (k === "instructor_change" || k === "instructor_reassign" || k === "instructor_restored") {
         title = "Instructor update";
       } else if (k === "time_change" || k === "session_time_change") {
         title = "Time change";
@@ -8080,11 +8080,12 @@
     }
     var k = String(m.kind || "").trim();
     if (k === "custom" || k === "reply") return "Club message";
-    if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
+    if (k === "instructor_change" || k === "instructor_reassign" || k === "instructor_restored") return "Instructor update";
     if (k === "time_change" || k === "session_time_change") return "Time change";
     if (k === "session_cancelled") return "Session cancelled";
     if (k === "instructor_reported_cancellation") return "Cancellation reported";
     if (k === "absence_announced") return "Absence noted";
+    if (k === "refund_bank_reminder") return "Refund details";
     if (!k) return "Club message";
     return k.replace(/_/g, " ");
   }
@@ -8331,6 +8332,7 @@
       return (
         k === "instructor_change" ||
         k === "instructor_reassign" ||
+        k === "instructor_restored" ||
         k === "time_change" ||
         k === "session_time_change" ||
         k === "session_cancelled" ||

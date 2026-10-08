@@ -16744,6 +16744,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(String(ov.override_type || '').trim() === 'instructor_reassign'){
         try{ await schedNotifyCoverRemoved(client, ov); }catch(_covN){}
+        try{
+          var plUndo = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+          var coverUndo = String(plUndo.covering_staff_name || '').trim();
+          var usualKey = String(ov.anchor_staff_id || '').trim();
+          var usualName = schedStaffDisplayName(usualKey, '');
+          if(coverUndo && !/cover\s*needed/i.test(coverUndo) && usualName && usualName !== '\u2014'){
+            await schedNotifyOverrideParent(client, slot, ov.id, {
+              kind: 'instructor_restored',
+              coveringStaffName: usualName,
+              coveringStaffKey: usualKey,
+              priorCoveringStaffName: coverUndo
+            });
+          }
+        }catch(_rest){
+          console.warn('[sched] usual instructor back notify', _rest);
+        }
       }
       var demoId = slot && slot.demoId;
       var clientUndo = getSchedSupabaseClient();
@@ -18067,7 +18083,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         return { skipped: true, reason: 'fluid_card' };
       }
-      if(!opts._flush && (kind === 'instructor_change' || kind === 'instructor_change_update' || kind === 'session_cancelled' || kind === 'session_added')){
+      if(!opts._flush && (kind === 'instructor_change' || kind === 'instructor_change_update' || kind === 'instructor_restored' || kind === 'session_cancelled' || kind === 'session_added')){
         return schedQueueParentNotify(client, slot, overrideId, opts);
       }
       var display = String(opts.participantDisplay || slot.clientDisplay || '').trim();

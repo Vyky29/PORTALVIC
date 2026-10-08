@@ -179,7 +179,8 @@ export type ScheduleOverrideNotifyKind =
   | "session_cancelled"
   | "session_added"
   | "time_change"
-  | "instructor_reported_cancellation";
+  | "instructor_reported_cancellation"
+  | "instructor_restored";
 
 export type ScheduleOverrideNotifyInput = {
   kind: ScheduleOverrideNotifyKind;
@@ -331,7 +332,9 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
   const prior = clean(opts.priorCoveringStaffName, 120);
   const absent = clean(opts.absentInstructorName, 120);
   const continuing = clean(opts.continuingWith, 240);
-  const photoWho = continuing && absent
+  const photoWho = kind === "instructor_restored"
+    ? `${cover} (your instructor)`
+    : continuing && absent
     ? `${cover} (covering ${absent})`
     : `${cover} (your instructor)`;
   const photoLine =
@@ -351,6 +354,18 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
       greet +
         `We are writing about ${child}'s session${whenPart}${venuePart}.\n\n` +
         changeLine +
+        photoLine +
+        signOff,
+    );
+  }
+
+  if (kind === "instructor_restored") {
+    const back = cover || "Your usual instructor";
+    const left = prior ? `${prior.split(/\s+/)[0]} is no longer covering this session. ` : "";
+    return asciiBody(
+      greet +
+        `We are writing about ${child}'s session${whenPart}${venuePart}.\n\n` +
+        `${left}${back} is taking this session again.` +
         photoLine +
         signOff,
     );
@@ -501,7 +516,11 @@ async function fluidCardParentNotifyBlockReason(
 }
 
 function subjectForKind(kind: ScheduleOverrideNotifyKind, child: string): string {
-  if (kind === "instructor_change" || kind === "instructor_change_update") {
+  if (
+    kind === "instructor_change" ||
+    kind === "instructor_change_update" ||
+    kind === "instructor_restored"
+  ) {
     return `Instructor update · ${child}`;
   }
   if (kind === "time_change") return `Time change · ${child}`;
@@ -526,13 +545,16 @@ export async function notifyScheduleOverrideParent(
     kind !== "session_cancelled" &&
     kind !== "session_added" &&
     kind !== "time_change" &&
-    kind !== "instructor_reported_cancellation"
+    kind !== "instructor_reported_cancellation" &&
+    kind !== "instructor_restored"
   ) {
     return { ok: false, skipped: true, reason: "bad_kind" };
   }
 
   if (
-    (kind === "instructor_change" || kind === "instructor_change_update") &&
+    (kind === "instructor_change" ||
+      kind === "instructor_change_update" ||
+      kind === "instructor_restored") &&
     (!clean(opts.coveringStaffName, 120) ||
       /^cover[_ ]?needed$/i.test(clean(opts.coveringStaffName, 120)))
   ) {
@@ -571,7 +593,11 @@ export async function notifyScheduleOverrideParent(
   }
 
   let photoUrl = clean(opts.instructorPhotoUrl, 400);
-  if (kind === "instructor_change" || kind === "instructor_change_update") {
+  if (
+    kind === "instructor_change" ||
+    kind === "instructor_change_update" ||
+    kind === "instructor_restored"
+  ) {
     const official = officialStaffPhotoUrl(
       clean(opts.coveringStaffKey, 80),
       clean(opts.coveringStaffName, 120),
@@ -626,7 +652,9 @@ export async function notifyScheduleOverrideParent(
       const waOpts: Record<string, unknown> = { kind };
       if (
         photoUrl &&
-        (kind === "instructor_change" || kind === "instructor_change_update")
+        (kind === "instructor_change" ||
+          kind === "instructor_change_update" ||
+          kind === "instructor_restored")
       ) {
         waOpts.instructorPhotoUrl = photoUrl;
         waOpts.instructorPhotoName = clean(opts.coveringStaffName, 120);
