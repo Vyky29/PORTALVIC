@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v326",
+  "version": "2026-10-08-v327",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2738,7 +2738,8 @@
           ],
           "tips": [
             "Completed modules stay saved. Refreshing the page does not wipe a real pass.",
-            "New hires who must finish induction do not get the recap diploma path."
+            "New hires who must finish induction do not get the recap diploma path.",
+            "The Readiness column is the staff app and portal features. Induction and swimming stay in their own columns. An open module does not turn Readiness to Follow up."
           ]
         },
         {

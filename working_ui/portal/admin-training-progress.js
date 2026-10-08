@@ -392,8 +392,9 @@
     return portalFeaturesComplete(row);
   }
 
+  /** Device readiness only. Induction and swimming stay in the training columns. */
   function overallReady(row) {
-    return trainingReady(row) && appReady(row);
+    return accessIsPreferred(row) && appReady(row);
   }
 
   function enrichRow(row) {
@@ -423,10 +424,7 @@
   }
 
   function overallComplianceStatus(row) {
-    if (row.readiness.overallReady) return "ready";
-    if (!row.readiness.trainingReady) return "follow_up";
-    if (!row.readiness.appReady) return "follow_up";
-    return "ready";
+    return row.readiness.overallReady ? "ready" : "follow_up";
   }
 
   function deviceStatus(row) {
@@ -744,7 +742,6 @@
   function rowHighlightClass(row) {
     var r = row.readiness;
     var cls = [];
-    if (!r.trainingReady) cls.push("portal-sready-row--sg");
     if (!r.appReady) cls.push("portal-sready-row--app");
     if (!r.accessPreferred) cls.push("portal-sready-row--compliance");
     return cls.join(" ");
@@ -784,7 +781,7 @@
     if (!el) return;
     var total = rows.length;
     var fully = rows.filter(function (r) {
-      return r.readiness.overallReady && r.readiness.accessPreferred;
+      return r.readiness.overallReady;
     }).length;
     var trainInc = rows.filter(rowTrainingIncomplete).length;
     var onPortalvic = rows.filter(rowOnPortalvic).length;
@@ -799,7 +796,7 @@
       " / " +
       esc(String(total)) +
       "</div>" +
-      '<div class="kpi-s muted">Training + features + staff app</div></div>' +
+      '<div class="kpi-s muted">Staff app installed + features on</div></div>' +
       '<div class="kpi card--premium portal-sready-kpi">' +
       '<div class="kpi-l">Training incomplete</div>' +
       '<div class="kpi-v">' +
@@ -866,7 +863,7 @@
       "<th>Induction</th>" +
       "<th>Swimming training</th>" +
       "<th>Access</th>" +
-      "<th>Overall</th>" +
+        "<th>Readiness</th>" +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div>"
