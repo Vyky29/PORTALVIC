@@ -152,6 +152,11 @@
         ' <button type="button" class="btn btn--sm btn--ghost" data-credit-act="cancel" data-credit-id="' +
         esc(e.id) +
         '">Cancel</button>';
+    } else if (e.status === 'refunded' && e.kind === 'refund' && !e.xero_credit_note_id) {
+      actions =
+        '<button type="button" class="btn btn--sm btn--sec" data-credit-act="sync_refund_xero" data-credit-id="' +
+        esc(e.id) +
+        '">Sync Xero CN</button>';
     }
     return (
       '<tr>' +
@@ -251,9 +256,17 @@
         if (act === 'mark_refunded') {
           amountRaw = global.prompt('Confirm / set £ amount if missing (optional):', '') || '';
         }
+        if (act === 'sync_refund_xero') {
+          notes = notes || 'Xero credit note sync';
+        }
         btn.disabled = true;
         var body = { action: act, entry_id: id, notes: notes };
         if (String(amountRaw).trim()) body.amount_gbp = Number(amountRaw);
+        if (act === 'mark_refunded' || act === 'sync_refund_xero') {
+          body.notify_parent = !!global.confirm(
+            'Send WhatsApp and email to the parent that the refund was sent?\n\nCancel = no message (only ledger + Xero).'
+          );
+        }
         void api('portal-admin-parent-credits-update', body).then(function (r) {
           if (r.error) {
             cfg.toast(r.message || r.error || 'Update failed', 'error');
@@ -290,8 +303,17 @@
               state.filter = 'all';
             }
           } else {
-            cfg.toast(act === 'mark_refunded' ? 'Marked refunded' : 'Cancelled', 'ok');
-            if (act === 'mark_refunded') state.filter = 'all';
+            if (act === 'sync_refund_xero') {
+              var sx = r.settlement && r.settlement.xero;
+              if (sx && sx.ok) {
+                cfg.toast('Xero credit note synced' + (sx.xero_credit_note_number ? ' (' + sx.xero_credit_note_number + ')' : ''), 'ok');
+              } else {
+                cfg.toast((sx && sx.detail) || (sx && sx.error) || 'Xero sync failed', 'error');
+              }
+            } else {
+              cfg.toast(act === 'mark_refunded' ? 'Marked refunded' : 'Cancelled', 'ok');
+            }
+            if (act === 'mark_refunded' || act === 'sync_refund_xero') state.filter = 'all';
           }
           global.document.querySelectorAll('[data-credits-filter]').forEach(function (b) {
             var on = b.getAttribute('data-credits-filter') === state.filter;
@@ -684,7 +706,8 @@
         void api('portal-admin-parent-credits-update', {
           action: 'mark_refunded',
           entry_id: id,
-          notes: 'Paid back from participant Payments'
+          notes: 'Paid back from participant Payments',
+          notify_parent: false
         }).then(function (r) {
           if (r.error) {
             cfg.toast(r.message || r.error || 'Update failed', 'error');

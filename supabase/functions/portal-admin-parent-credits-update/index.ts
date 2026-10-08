@@ -10,6 +10,7 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 import { autoApplyOpenCreditToNextInvoices } from "../_shared/portal_family_credit_apply.ts";
+import { settleFamilyRefundAfterPayout } from "../_shared/portal_family_refund_settle.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -237,6 +238,29 @@ Deno.serve(async (req) => {
     });
   }
 
+  if (action === "sync_refund_xero") {
+    if (entry.kind !== "refund") {
+      return portalAdminJson(400, { ok: false, error: "not_a_refund" });
+    }
+    const notifyParent = body.notify_parent === true;
+    const settlement = await settleFamilyRefundAfterPayout(admin, entry, {
+      notifyParent,
+      sentByUserId: verified.userId || null,
+      sentByEmail: clean(verified.email, 200) || null,
+      linkedInvoiceNumber: clean(body.linked_invoice_number, 40) || null,
+    });
+    const { data: refreshed } = await admin
+      .from("portal_parent_family_credits")
+      .select("*")
+      .eq("id", entryId)
+      .maybeSingle();
+    return portalAdminJson(200, {
+      ok: true,
+      entry: refreshed || entry,
+      settlement,
+    });
+  }
+
   let nextStatus = "";
   if (action === "mark_refunded") {
     if (entry.kind !== "refund") {
@@ -272,6 +296,27 @@ Deno.serve(async (req) => {
   if (error || !updated) {
     console.error("[portal-admin-parent-credits-update]", error?.message);
     return portalAdminJson(500, { ok: false, error: "update_failed" });
+  }
+
+  let settlement: Record<string, unknown> | null = null;
+  if (action === "mark_refunded") {
+    const notifyParent = body.notify_parent === true;
+    settlement = await settleFamilyRefundAfterPayout(admin, updated, {
+      notifyParent,
+      sentByUserId: verified.userId || null,
+      sentByEmail: clean(verified.email, 200) || null,
+      linkedInvoiceNumber: clean(body.linked_invoice_number, 40) || null,
+    });
+    const { data: finalEntry } = await admin
+      .from("portal_parent_family_credits")
+      .select("*")
+      .eq("id", entryId)
+      .maybeSingle();
+    return portalAdminJson(200, {
+      ok: true,
+      entry: finalEntry || updated,
+      settlement,
+    });
   }
 
   return portalAdminJson(200, { ok: true, entry: updated });
