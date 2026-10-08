@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v314",
+  "version": "2026-10-08-v315",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -470,7 +470,9 @@
             }
           ],
           "steps": [
-            "From Operations Hub, tap the bell for incidents, cancellations, wellbeing, and makeups that have not happened yet.",
+            "From Operations Hub, tap the bell for incidents, cancellations, parent absents, wellbeing, and makeups that have not happened yet.",
+            "A parent absent from their portal with no proof is already none. It is on the bell so you see it. It is not in the decide queue.",
+            "If that parent uploads proof, the bell row becomes one you must judge (none, credit, refund, or makeup).",
             "Tap Pending for late feedback forms and absents / credits waiting for a decision.",
             "Work the queue: approve / reject late forms; decide absents (none, credit, close).",
             "Return to Overview if the decision should change the day board."
@@ -493,7 +495,9 @@
             "summary": "Franja del Operations Hub: formularios tarde, faltas por decidir, y el buzon de alertas.",
             "where": "Operations Hub (franja de arriba) → Pending / Alerts",
             "steps": [
-              "Desde Operations Hub, pulsa la campana para incidentes, cancelaciones, wellbeing y makeups que aun no han pasado.",
+              "Desde Operations Hub, pulsa la campana para incidentes, cancelaciones, faltas del portal de padres, wellbeing y makeups que aun no han pasado.",
+              "Una falta que el padre marca en su portal sin justificante ya queda en none. Sale en la campana para que la veas. No esta en la cola de decision.",
+              "Si ese padre sube la prueba, la fila de la campana pasa a ser una que tienes que juzgar (none, credit, refund o makeup).",
               "Pulsa Pending para feedbacks tarde y faltas / creditos que esperan una decision.",
               "Trabaja la cola: aprueba o rechaza formularios tarde; decide las faltas (none, credit, close).",
               "Vuelve a Overview si la decision tiene que cambiar el dia."

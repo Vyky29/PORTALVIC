@@ -7,6 +7,7 @@
  * A makeup whose session date has passed drops off.
  * Chat unread uses the Chat button badge in the header only (never this bell).
  * Absent quick marks from the session board stay off this bell.
+ * A parent-portal absent with no proof is a notice (none), not a decision.
  */
 (function (global) {
   "use strict";
@@ -20,6 +21,7 @@
     wellbeing: true,
     expense_unpaid: true,
     absent_decision: true,
+    parent_absent: true,
     cancel_refund: true,
     staff_support: false,
     general_info: true,
@@ -815,6 +817,65 @@
     return false;
   }
 
+  function activityFromParentPortalAbsent(row) {
+    if (!row || !row.id) return null;
+    var payload = row.payload || {};
+    if (payload.source && String(payload.source) !== "parent_portal") return null;
+    if (String(row.status || "") !== "noted") return null;
+    if (String(row.outcome || "") !== "none") return null;
+    var who = String(row.participant_display || "Participant").trim() || "Participant";
+    var when = String(row.session_date || "").slice(0, 10);
+    var service = String(row.service_label || "").trim();
+    var bits = [];
+    if (service) bits.push(service);
+    if (when) bits.push(when);
+    bits.push(payload.expects_proof ? "Will upload proof" : "No proof · none");
+    return {
+      id: "pabs-" + row.id,
+      title: "Parent absent · " + who,
+      sub: bits.join(" · "),
+      created_at: row.created_at || new Date().toISOString(),
+      kind: "parent_absent",
+      view: "absents_refunds",
+      recordId: String(row.id || ""),
+      clientName: who,
+      sessionDate: when,
+    };
+  }
+
+  function dropParentAbsentAlerts() {
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = listRef().filter(function (a) {
+      return String((a && a.id) || "").indexOf("pabs-") !== 0;
+    });
+  }
+
+  async function syncParentPortalAbsents(edgePost, opts) {
+    opts = opts || {};
+    if (typeof edgePost !== "function") return 0;
+    dropParentAbsentAlerts();
+    var res = await edgePost("portal-admin-parent-absence-list", {
+      status: "parent_portal_notice",
+      since: "2026-09-01",
+      limit: 40,
+    });
+    if (res.error) {
+      console.warn("[admin-bell] parent absents", res.error);
+      return 0;
+    }
+    var n = 0;
+    var reports = (res.data && res.data.reports) || [];
+    reports.forEach(function (r) {
+      var a = activityFromParentPortalAbsent(r);
+      if (!a) return;
+      pushActivityAlert(a, { silent: true });
+      n++;
+    });
+    if (!opts.silent && typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    return n;
+  }
+
   function dropDecideQueueAlerts() {
     global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = listRef().filter(function (a) {
       var id = String((a && a.id) || "");
@@ -1144,6 +1205,8 @@
   global.portalAdminBellRemoveExpenseUnpaid = removeExpenseUnpaidAlert;
   global.portalAdminBellSyncUnpaidExpensesFromServer = syncUnpaidExpensesFromServer;
   global.portalAdminBellSyncDecideQueuesFromServer = syncDecideQueuesFromServer;
+  global.portalAdminBellSyncParentAbsents = syncParentPortalAbsents;
+  global.portalAdminActivityFromParentPortalAbsent = activityFromParentPortalAbsent;
   global.portalAdminActivityFromUnpaidExpense = activityFromUnpaidExpense;
   unlockBellAudioOnGesture();
 })(typeof window !== "undefined" ? window : globalThis);

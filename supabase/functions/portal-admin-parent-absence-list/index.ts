@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
   let query = admin
     .from("portal_parent_absence_reports")
     .select(
-      "id, parent_person_id, contact_id, participant_display, session_date, service_label, session_time, status, case_kind, reason_code, reason_text, proof_storage_path, proof_file_name, proof_mime, proof_uploaded_at, proof_deadline, reviewed_at, review_notes, outcome, outcome_notes, schedule_override_id, created_at, updated_at",
+      "id, parent_person_id, contact_id, participant_display, session_date, service_label, session_time, status, case_kind, reason_code, reason_text, proof_storage_path, proof_file_name, proof_mime, proof_uploaded_at, proof_deadline, reviewed_at, review_notes, outcome, outcome_notes, schedule_override_id, payload, created_at, updated_at",
     )
     .gte("session_date", since)
     .order("session_date", { ascending: false })
@@ -91,7 +91,15 @@ Deno.serve(async (req) => {
     query = query.eq("case_kind", caseKindFilter);
   }
 
-  if (statusFilter === "needs_decision" || statusFilter === "open" || !statusFilter) {
+  if (statusFilter === "parent_portal_notice") {
+    const sinceNotice = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    query = query
+      .eq("case_kind", "absence")
+      .eq("status", "noted")
+      .eq("outcome", "none")
+      .filter("payload->>source", "eq", "parent_portal")
+      .gte("created_at", sinceNotice);
+  } else if (statusFilter === "needs_decision" || statusFilter === "open" || !statusFilter) {
     query = query.in("status", ["pending_review", "missed"]);
   } else if (statusFilter === "decided") {
     query = query.in("status", ["excused", "noted", "expired", "rejected"]);

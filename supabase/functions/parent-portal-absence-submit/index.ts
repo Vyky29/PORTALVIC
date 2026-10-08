@@ -3,8 +3,8 @@
 // parent-portal-absence-submit
 // Parent reports Absent:
 // - other_commitments / party / holidays / travel / birthday → status "noted" (NOT Missed)
-// - unwell + can_prove=false → "missed"
-// - unwell + can_prove=true (proof uploaded separately) → usually created as "missed" then proof upload → pending_review
+// - no file yet → noted + outcome none (office does not decide)
+// - proof upload later → pending_review (office must judge)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
@@ -19,14 +19,6 @@ const REASON_LABELS: Record<string, string> = {
   birthday: "Birthday",
   unwell: "Unwell",
 };
-
-const NON_MISSED = new Set([
-  "other_commitments",
-  "party",
-  "holidays",
-  "travel",
-  "birthday",
-]);
 
 function clean(v: unknown, max = 500): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -59,10 +51,9 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
-function resolveStatus(reasonCode: string, canProve: boolean): string {
-  if (NON_MISSED.has(reasonCode)) return "noted";
-  if (reasonCode === "unwell") return "missed";
-  return "missed";
+/** Parent app submit has no file yet. None until a proof file arrives. */
+function resolveStatus(_reasonCode: string, _canProve: boolean): string {
+  return "noted";
 }
 
 Deno.serve(async (req) => {
@@ -272,6 +263,7 @@ Deno.serve(async (req) => {
 
   const payloadExtra = {
     reason_code: reasonCode,
+    source: "parent_portal",
     can_prove: reasonCode === "unwell" ? canProve : false,
     expects_proof: reasonCode === "unwell" && canProve,
   };
@@ -280,6 +272,7 @@ Deno.serve(async (req) => {
     reason_code: reasonCode,
     reason_text: reasonText,
     status,
+    outcome: "none",
     session_time: sessionTime || "",
     participant_display: participantDisplay || "",
     proof_deadline: proofDeadline,
@@ -353,12 +346,9 @@ Deno.serve(async (req) => {
     const phone = normalizeParentPhoneE164(String(parentMeta?.mobile || "").trim());
     if (phone) {
       const parentName = clean(parentMeta?.parent_display, 120) || "Parent";
-      const statusLine =
-        status === "noted"
-          ? "Noted (not a Missed session)"
-          : status === "missed"
-          ? "Missed session"
-          : status;
+      const statusLine = canProve && reasonCode === "unwell"
+        ? "Noted · none until proof is uploaded"
+        : "Noted · none (no proof)";
       const bodyText =
         `Absent report: ${participantDisplay || "participant"} — ${sessionDate}` +
         (serviceLabel ? ` · ${serviceLabel}` : "") +
@@ -394,7 +384,7 @@ Deno.serve(async (req) => {
     ok: true,
     report: {
       ...inserted,
-      can_upload_proof: status === "missed" && canProve && proofDeadline >= today,
+      can_upload_proof: reasonCode === "unwell" && canProve && proofDeadline >= today,
       expects_proof: reasonCode === "unwell" && canProve,
     },
   });

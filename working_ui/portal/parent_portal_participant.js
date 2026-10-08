@@ -8659,7 +8659,7 @@
         '<p class="pp-absence-unwell__q">Can you prove it? (medical note, prescription in the participant&apos;s name, school note…)</p>' +
         '<div class="pp-absence-prove" role="group" aria-label="Can you prove it">' +
         '<label class="pp-absence-prove-chip"><input type="radio" name="ppAbsenceCanProve" value="yes" /><span>Yes — I will upload proof</span></label>' +
-        '<label class="pp-absence-prove-chip"><input type="radio" name="ppAbsenceCanProve" value="no" checked /><span>No — Missed session</span></label>' +
+        '<label class="pp-absence-prove-chip"><input type="radio" name="ppAbsenceCanProve" value="no" checked /><span>No proof</span></label>' +
         "</div>" +
         '<div id="ppAbsenceUploadBlock" class="pp-absence-upload-block" hidden>' +
         '<label class="pp-btn pp-btn--primary pp-absence-upload-btn" id="ppAbsenceUploadLabel">' +

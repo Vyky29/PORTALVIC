@@ -445,7 +445,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20261001-old-junaid-patrick-yassir"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20261005-expense-face"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20261008-parent-absent"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20261002-no-guide";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -40289,6 +40289,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.portalAdminBellSyncDecideQueuesFromServer === 'function'){
           await window.portalAdminBellSyncDecideQueuesFromServer(adminEdgePost, { silent: true });
         }
+        if(typeof window.portalAdminBellSyncParentAbsents === 'function'){
+          await window.portalAdminBellSyncParentAbsents(adminEdgePost, { silent: true });
+        }
         if(typeof window.portalAdminBellSyncGeneralInfoFromServer === 'function'){
           await window.portalAdminBellSyncGeneralInfoFromServer(client, { silent: true });
         }
@@ -40350,6 +40353,43 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               window.portalAdminPushActivityAlert(a);
             }
             void portalLateAdminRefreshNavBadge({ allowSound: true });
+          })
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_parent_absence_reports' }, function(payload){
+            var row = payload && payload.new;
+            var a = typeof window.portalAdminActivityFromParentPortalAbsent === 'function'
+              ? window.portalAdminActivityFromParentPortalAbsent(row)
+              : null;
+            if(a && typeof window.portalAdminPushActivityAlert === 'function'){
+              window.portalAdminPushActivityAlert(a);
+            }
+          })
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'portal_parent_absence_reports' }, function(payload){
+            var row = payload && payload.new;
+            if(!row || !row.id) return;
+            var list = window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || [];
+            var noticeId = 'pabs-' + row.id;
+            if(String(row.status || '') !== 'noted' || String(row.outcome || '') !== 'none'){
+              window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list.filter(function(item){
+                return !(item && item.id === noticeId);
+              });
+            }
+            if(String(row.status || '') === 'pending_review' && typeof window.portalAdminPushActivityAlert === 'function'){
+              var who = String(row.participant_display || 'Participant').trim() || 'Participant';
+              var when = String(row.session_date || '').slice(0, 10);
+              window.portalAdminPushActivityAlert({
+                id: 'absdec-' + row.id,
+                title: 'Absent · ' + who,
+                sub: (String(row.service_label || '').trim() ? String(row.service_label || '').trim() + ' · ' : '') + (when ? when + ' · ' : '') + 'Proof uploaded · still to decide',
+                created_at: row.updated_at || row.created_at || new Date().toISOString(),
+                kind: 'absent_decision',
+                view: 'absents_refunds',
+                recordId: String(row.id || ''),
+                clientName: who,
+                sessionDate: when
+              });
+            } else if(typeof window.__portalAdminRenderAlerts === 'function'){
+              window.__portalAdminRenderAlerts();
+            }
           })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cancellation_reports' }, function(payload){
             var a = portalAdminActivityFromCancellation(payload && payload.new);
@@ -41010,6 +41050,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               void portalLateAdminRefreshNavBadge({ allowSound: true });
               if(typeof window.portalAdminBellSyncWellbeingFromServer === 'function'){
                 void window.portalAdminBellSyncWellbeingFromServer(client, { silent: true });
+              }
+              if(typeof window.portalAdminBellSyncParentAbsents === 'function'){
+                void window.portalAdminBellSyncParentAbsents(adminEdgePost, { silent: true });
               }
               portalAdminFetchVenueReviewAlerts(client);
               portalAdminFetchFeedbackNoteAlerts(client);
