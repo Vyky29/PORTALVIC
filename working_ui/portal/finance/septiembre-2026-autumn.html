@@ -20,11 +20,16 @@
   td.now.ok { color: #15803d; }
   td.later { color: #15803d; font-weight: 800; }
   tr.total td { font-weight: 800; border-top: 2px solid #94a3b8; background: #f8fafc; }
-  tr.remnant td { font-weight: 800; background: #ecfdf5; color: #15803d; }
-  tr.unpaid td, tr.cost td { color: #b91c1c; font-weight: 700; }
-  tr.hold td { color: #64748b; }
-  tr.part td { font-size: 8pt; color: #15803d; font-weight: 600; padding-top: 2px; padding-bottom: 2px; }
-  tr.part.out td, td.num.due { color: #6d28d9; font-weight: 700; }
+  tr.remnant td { font-weight: 800; background: #ecfdf5; color: #0f2733; }
+  tr.remnant td.num { color: #15803d; }
+  tr.unpaid td, tr.cost td { color: #0f2733; font-weight: 700; }
+  tr.unpaid td.num, tr.cost td.num { color: #b91c1c; }
+  tr.hold td { color: #0f2733; }
+  tr.hold td.num { color: #64748b; }
+  tr.part td { font-size: 8pt; color: #0f2733; font-weight: 600; padding-top: 2px; padding-bottom: 2px; }
+  tr.part td.num { color: #15803d; }
+  tr.part.out td { color: #0f2733; }
+  tr.part.out td.num, td.num.due { color: #6d28d9; font-weight: 700; }
   tr.part td:first-child { padding-left: 16px; }
   tr.sec td { font-weight: 800; color: #0e7c86; background: #f8fafc; }
   .note { font-size: 8.5pt; color: #5b7280; background: #f1f5f9; border-left: 3px solid #0e7c86; padding: 7px 9px; margin: 6px 0; }
@@ -43,7 +48,8 @@
   .acc summary { cursor: pointer; padding: 8px 10px; font-weight: 700; overflow-wrap: break-word; }
   .acc summary .limpio { float: right; margin-left: 12px; white-space: nowrap; color: #15803d; }
   .acc summary .limpio.bad { color: #b91c1c; }
-  tr.owed td { font-weight: 800; background: #fef2f2; color: #b91c1c; }
+  tr.owed td { font-weight: 800; background: #fef2f2; color: #0f2733; }
+  tr.owed td.num { color: #b91c1c; }
   .acc table { margin: 0; }
   .acc td:first-child { padding-left: 22px; }
 </style>
