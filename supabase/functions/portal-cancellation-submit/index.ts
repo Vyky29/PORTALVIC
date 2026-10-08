@@ -13,6 +13,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { enqueueDecideFromStaffCancellation } from "../_shared/portal_enqueue_decide_from_cancellation.ts";
+import { notifyScheduleOverrideParent } from "../_shared/portal_schedule_override_notify.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -298,12 +299,36 @@ Deno.serve(async (req) => {
     decide = { ok: false, error: "enqueue_failed" };
   }
 
+  let parentNotified = false;
+  if (!(decide && decide.already_reported)) {
+    try {
+      const note = await notifyScheduleOverrideParent(supabase, {
+        kind: "instructor_reported_cancellation",
+        overrideId: cancellationId,
+        contactId: clean(payload.client_id) || null,
+        participantDisplay: clientName,
+        sessionDate,
+        sessionTime: clean(payload.session_time) || null,
+        serviceLabel: service,
+        venue: clean(payload.venue) || null,
+        absentInstructorName: submittedByName,
+        reason: cancellationTiming,
+        source: "staff_cancellation",
+        actorEmail: "staff-cancellation",
+      });
+      parentNotified = !!(note && note.ok);
+    } catch (noteErr) {
+      console.error("[portal-cancellation-submit] parent notify", noteErr);
+    }
+  }
+
   return json({
     ok: true,
     cancellation_id: cancellationId,
     submitted_by_user_id: profile.id,
     submitted_by_name: submittedByName,
     decide_queued: !!(decide && decide.ok),
+    parent_notified: parentNotified,
     decide,
   });
 });

@@ -32,6 +32,7 @@ function hubKindTitle(kind: string): string {
     return "Instructor update";
   }
   if (k === "session_cancelled") return "Session cancelled";
+  if (k === "instructor_reported_cancellation") return "Instructor reported a cancellation";
   if (k === "absence_announced") return "Absence noted";
   if (k === "custom") return "New message";
   if (k === "weekly_note") return "Weekly note";

@@ -6206,6 +6206,7 @@
     if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
     if (k === "time_change" || k === "session_time_change") return "Time change";
     if (k === "session_cancelled") return "Session cancelled";
+    if (k === "instructor_reported_cancellation") return "Cancellation reported";
     if (k === "absence_announced") return "Absence noted";
     return k.replace(/_/g, " ") || "Club update";
   }
@@ -6227,6 +6228,7 @@
     // cover notes live in Messages — do not surface them here.
     var ALERT = {
       session_cancelled: 1,
+      instructor_reported_cancellation: 1,
       absence_announced: 1,
     };
     var cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
@@ -7769,6 +7771,8 @@
         title = "Time change";
       } else if (k === "session_cancelled") {
         title = "Session cancelled";
+      } else if (k === "instructor_reported_cancellation") {
+        title = "Cancellation reported";
       } else if (k === "absence_announced") {
         title = "Absence noted";
       } else {
@@ -8079,6 +8083,7 @@
     if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
     if (k === "time_change" || k === "session_time_change") return "Time change";
     if (k === "session_cancelled") return "Session cancelled";
+    if (k === "instructor_reported_cancellation") return "Cancellation reported";
     if (k === "absence_announced") return "Absence noted";
     if (!k) return "Club message";
     return k.replace(/_/g, " ");

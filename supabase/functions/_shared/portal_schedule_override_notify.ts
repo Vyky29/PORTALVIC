@@ -178,7 +178,8 @@ export type ScheduleOverrideNotifyKind =
   | "instructor_change_update"
   | "session_cancelled"
   | "session_added"
-  | "time_change";
+  | "time_change"
+  | "instructor_reported_cancellation";
 
 export type ScheduleOverrideNotifyInput = {
   kind: ScheduleOverrideNotifyKind;
@@ -414,6 +415,22 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
     );
   }
 
+  if (kind === "instructor_reported_cancellation") {
+    const who = clean(opts.absentInstructorName, 80).split(/\s+/)[0] || "Your instructor";
+    const timing = clean(opts.reason, 80).toLowerCase();
+    const whenBit = timing.indexOf("during") >= 0
+      ? " during the session"
+      : timing.indexOf("before") >= 0
+      ? " before the session started"
+      : "";
+    return asciiBody(
+      greet +
+        `${who} has reported a cancellation of ${child}'s session${whenPart}${venuePart}${whenBit}.\n\n` +
+        `The admin team will contact you by phone.` +
+        signOff,
+    );
+  }
+
   // session_cancelled — neutral policy (no financial promise); Absents decide handles credit/refund later.
   const reason = clean(opts.reason, 300);
   const reasonPart = reason ? `\n\nNote from the team: ${reason}` : "";
@@ -489,6 +506,9 @@ function subjectForKind(kind: ScheduleOverrideNotifyKind, child: string): string
   }
   if (kind === "time_change") return `Time change · ${child}`;
   if (kind === "session_added") return `Session added · ${child}`;
+  if (kind === "instructor_reported_cancellation") {
+    return `Instructor reported a cancellation · ${child}`;
+  }
   return `Session cancelled · ${child}`;
 }
 
@@ -505,7 +525,8 @@ export async function notifyScheduleOverrideParent(
     kind !== "instructor_change_update" &&
     kind !== "session_cancelled" &&
     kind !== "session_added" &&
-    kind !== "time_change"
+    kind !== "time_change" &&
+    kind !== "instructor_reported_cancellation"
   ) {
     return { ok: false, skipped: true, reason: "bad_kind" };
   }
@@ -518,10 +539,13 @@ export async function notifyScheduleOverrideParent(
     return { ok: false, skipped: true, reason: "no_named_cover", kind };
   }
 
-  /* Day Centre and Bespoke stay on the staff board. Aquatic, Multi-Activity, Climbing and Fitness still notify. */
-  const fluidReason = await fluidCardParentNotifyBlockReason(admin, opts);
-  if (fluidReason) {
-    return { ok: true, skipped: true, reason: fluidReason, kind };
+  /* Day Centre and Bespoke stay on the staff board. Aquatic, Multi-Activity, Climbing and Fitness still notify.
+     An instructor cancellation report still tells the parent. The admin team will phone. */
+  if (kind !== "instructor_reported_cancellation") {
+    const fluidReason = await fluidCardParentNotifyBlockReason(admin, opts);
+    if (fluidReason) {
+      return { ok: true, skipped: true, reason: fluidReason, kind };
+    }
   }
 
   const overrideId = clean(opts.overrideId, 60);
