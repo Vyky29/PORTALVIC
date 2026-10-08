@@ -52,7 +52,10 @@
   tr.owed td.num { color: #b91c1c; }
   .acc table { margin: 0; }
   .acc td:first-child { padding-left: 22px; }
-  .iva { display: inline-block; margin-right: 6px; color: #15803d; font-weight: 800; letter-spacing: 0; }
+  span.iva, span.ivaq, span.novat { display: inline-block; margin-right: 6px; font-weight: 800; letter-spacing: 0; }
+  tr.cost td span.iva { color: #15803d; }
+  tr.cost td span.ivaq { color: #b45309; }
+  tr.cost td span.novat { color: #b91c1c; }
 </style>
 </head>
 <body>
@@ -236,22 +239,22 @@
     <tr class="cost"><td>Refund Nicole Stephens (Pagado, 18 &amp; 23 Sep)</td><td class="num">-£100.00</td></tr>
     <tr class="cost"><td>Refund Orla Sullivan, Service Cancellation (Pagado, 24 Sep)</td><td class="num">-£236.25</td></tr>
     <tr class="sec"><td colspan="2">Compras de septiembre, tarjeta empresa</td></tr>
-    <tr class="cost"><td>Cursor</td><td class="num">-£1,478.10</td></tr>
-    <tr class="cost"><td>Amazon, neto. Salio £435.84 y volvio £27.98</td><td class="num">-£407.86</td></tr>
-    <tr class="cost"><td><span class="iva" title="Factura con IVA del Reino Unido al 20%. Se desgrava.">IVA</span>Vercel</td><td class="num">-£287.45</td></tr>
-    <tr class="cost"><td>Wix</td><td class="num">-£230.40</td></tr>
-    <tr class="cost"><td>Deliveroo</td><td class="num">-£153.34</td></tr>
-    <tr class="cost"><td>Xero</td><td class="num">-£84.00</td></tr>
-    <tr class="cost"><td>ChatGPT</td><td class="num">-£75.31</td></tr>
-    <tr class="cost"><td>NSPCC</td><td class="num">-£60.00</td></tr>
-    <tr class="cost"><td>Supabase</td><td class="num">-£48.36</td></tr>
-    <tr class="cost"><td><span class="iva" title="Factura del 17 sep. IVA £7.80. Se desgrava.">IVA</span>1st Formations</td><td class="num">-£46.80</td></tr>
-    <tr class="cost"><td>HelloPrint</td><td class="num">-£43.48</td></tr>
-    <tr class="cost"><td>Facebook</td><td class="num">-£22.03</td></tr>
-    <tr class="cost"><td>QR Code</td><td class="num">-£16.51</td></tr>
-    <tr class="cost"><td>Apple</td><td class="num">-£8.99</td></tr>
-    <tr class="cost"><td>giffgaff</td><td class="num">-£8.00</td></tr>
-    <tr class="cost"><td>Co-op</td><td class="num">-£5.75</td></tr>
+    <tr class="cost"><td><span class="ivaq">IVA?</span>Cursor</td><td class="num">-£1,478.10</td></tr>
+    <tr class="cost"><td><span class="ivaq">IVA?</span>Amazon, neto. Salio £435.84 y volvio £27.98</td><td class="num">-£407.86</td></tr>
+    <tr class="cost"><td><span class="iva">IVA F</span>Vercel</td><td class="num">-£287.45</td></tr>
+    <tr class="cost"><td><span class="ivaq">IVA?</span>Wix</td><td class="num">-£230.40</td></tr>
+    <tr class="cost"><td><span class="ivaq">IVA?</span>Deliveroo</td><td class="num">-£153.34</td></tr>
+    <tr class="cost"><td><span class="iva">IVA F</span>Xero</td><td class="num">-£84.00</td></tr>
+    <tr class="cost"><td><span class="ivaq">IVA?</span>ChatGPT</td><td class="num">-£75.31</td></tr>
+    <tr class="cost"><td><span class="novat">NO IVA</span>NSPCC</td><td class="num">-£60.00</td></tr>
+    <tr class="cost"><td><span class="novat">NO IVA</span>Supabase</td><td class="num">-£48.36</td></tr>
+    <tr class="cost"><td><span class="iva">IVA F</span>1st Formations</td><td class="num">-£46.80</td></tr>
+    <tr class="cost"><td><span class="novat">NO IVA</span>HelloPrint</td><td class="num">-£43.48</td></tr>
+    <tr class="cost"><td><span class="ivaq">IVA?</span>Facebook</td><td class="num">-£22.03</td></tr>
+    <tr class="cost"><td><span class="ivaq">IVA?</span>QR Code</td><td class="num">-£16.51</td></tr>
+    <tr class="cost"><td><span class="ivaq">IVA?</span>Apple</td><td class="num">-£8.99</td></tr>
+    <tr class="cost"><td><span class="novat">NO IVA</span>giffgaff</td><td class="num">-£8.00</td></tr>
+    <tr class="cost"><td><span class="ivaq">IVA?</span>Co-op</td><td class="num">-£5.75</td></tr>
     <tr class="total cost"><td>Compras de septiembre</td><td class="num">-£2,976.38</td></tr>
     <tr class="cost"><td>Joelle, NHS, cab cobrado al dia. En el banco £334.49, volvio £7.34. Jue 10 y 17. El 24 no esta al 5 oct</td><td class="num">-£327.15</td></tr>
     <tr class="total cost"><td>Gastado hasta el dia</td><td class="num">-£10,018.38</td></tr>
