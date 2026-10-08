@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v311",
+  "version": "2026-10-08-v312",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1610,7 +1610,7 @@
             "Invoice Monday to Sunday, 28 days, four complete weeks. Not 1st to 30th/31st.",
             "One line only. Quantity 4. Unit price is the weekly package: attendance days in that week times the agreed day rate (with the September uplift). Amount is 4 times that week.",
             "Do not put the day rate as the unit price, and do not put the number of days in the month as the quantity. Their system splits the week over 7 days itself.",
-            "Reference: 4 weeks, start date to end date.",
+            "The Reference box at the top is the month only, for example September 2026. The 4-week dates stay on the service line, not in that box.",
             "Day Centre started Tuesday 1 Sep 2026. The first invoice is the week of that start, four full weeks: Monday 31 Aug 2026 to Sunday 27 Sep 2026. 31 Aug is only the Monday their week starts. Service on the invoice is from 1 Sep. Charge the full weekly package for that first week.",
             "Next block is Monday 28 Sep 2026 to Sunday 25 Oct 2026, then every 28 days.",
             "Calendar-month invoices already sent (September counted in days) need a credit and a replacement 4-week invoice. Do not send the next month the old way."
@@ -1628,7 +1628,7 @@
               "Factura de lunes a domingo, 28 dias, cuatro semanas completas. No del 1 al 30/31.",
               "Una sola linea. Cantidad 4. El precio unitario es el paquete de la semana: dias de asistencia de esa semana por la tarifa de dia acordada (con la subida de septiembre). El importe es 4 veces esa semana.",
               "No pongas la tarifa de dia como precio unitario, ni el numero de dias del mes como cantidad. Su sistema parte la semana en 7 dias solo.",
-              "Referencia: 4 weeks, fecha de inicio a fecha de fin.",
+              "El recuadro Reference de arriba es solo el mes, por ejemplo September 2026. Las fechas de las 4 semanas van en la linea del servicio, no en ese recuadro.",
               "El Day Centre empezo el martes 1 sep 2026. La primera factura es la semana de ese arranque, cuatro semanas enteras: lunes 31 ago 2026 a domingo 27 sep 2026. El 31 ago es solo el lunes en que empieza su semana. En la factura el servicio es desde el 1 sep. Esa primera semana se cobra entera.",
               "El siguiente bloque es lunes 28 sep 2026 a domingo 25 oct 2026, y luego cada 28 dias.",
               "Las facturas de mes natural ya enviadas (septiembre contado en dias) necesitan un abono y una factura nueva de 4 semanas. No mandes el mes siguiente como antes."

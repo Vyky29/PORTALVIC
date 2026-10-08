@@ -17,6 +17,7 @@ import {
 
 const APPLY = (Deno.env.get("APPLY") || "") === "1";
 const PERIOD = "4 weeks · 31 Aug 2026 to 27 Sep 2026";
+const REFERENCE = "September 2026";
 const DATES = `${PERIOD} · service from 1 Sep`;
 const OUT = "docs/finance/nhs-sep-2026-4week";
 
@@ -56,13 +57,14 @@ function weekLine(input: {
   description: string;
   detail: string;
   weekly: number;
+  dates?: string;
 }): PortalInvoiceLineItem {
   const weekly = round2(input.weekly);
   return {
     service_key: input.serviceKey,
     description: input.description,
     detail: input.detail,
-    dates: DATES,
+    dates: input.dates || DATES,
     quantity: 4,
     unit_price_gbp: weekly,
     amount_gbp: round2(weekly * 4),
@@ -121,6 +123,25 @@ const plans: Plan[] = [
       }),
     ],
   },
+  {
+    invoice: "INV-P-0543",
+    lines: [
+      weekLine({
+        serviceKey: "AQUATIC_60",
+        description: "Aquatic Activity 1h (2:1) · weekly package",
+        detail: "Thursday · Acton · 5.30-6.30 · 2:1",
+        weekly: round2(200 * 1.0203),
+        dates: PERIOD,
+      }),
+      weekLine({
+        serviceKey: "CAB_TRAVEL",
+        description: "CAB (travel) · weekly package",
+        detail: "Thursday · Acton · 5.30-6.30 · CAB",
+        weekly: round2(150 * 1.0203),
+        dates: PERIOD,
+      }),
+    ],
+  },
 ];
 
 console.log(`\nNHS September → ${PERIOD}\n`);
@@ -171,11 +192,11 @@ for (const p of plans) {
       unit_price_gbp: round2(total / 4),
       line_items: p.lines,
       line_description: description,
-      reference_text: PERIOD,
+      reference_text: REFERENCE,
       payment_schedule: [
         {
           seq: 1,
-          label: `${PERIOD} · NHS invoice`,
+          label: `${REFERENCE} · NHS invoice`,
           due_date: due,
           amount_gbp: total,
           status: "pending",
