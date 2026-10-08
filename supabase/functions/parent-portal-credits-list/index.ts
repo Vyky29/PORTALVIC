@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     const { data: rows, error } = await supabase
       .from("portal_parent_family_credits")
       .select(
-        "id, contact_id, participant_display, kind, status, amount_gbp, currency, service_label, session_date, notes, source, created_at, closed_at, close_notes",
+        "id, contact_id, participant_display, kind, status, amount_gbp, currency, service_label, session_date, source, created_at, closed_at",
       )
       .eq("parent_person_id", session.parent_person_id)
       .eq("contact_id", contactId)

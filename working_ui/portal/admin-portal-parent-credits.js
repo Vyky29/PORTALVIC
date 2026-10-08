@@ -171,8 +171,13 @@
       '<td style="text-align:center">' +
       statusChip(e.status, e.kind) +
       '</td>' +
-      '<td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
+      '<td class="muted" style="min-width:0;max-width:16rem">' +
+      '<div style="overflow-wrap:break-word;min-width:0">' +
       esc(e.notes || e.close_notes || '—') +
+      '</div>' +
+      '<button type="button" class="btn btn--sm btn--ghost" style="margin-top:6px" data-credit-act="edit_note" data-credit-id="' +
+      esc(e.id) +
+      '">Edit note</button>' +
       '</td>' +
       '<td class="muted" style="white-space:nowrap">' +
       esc(formatDate(e.created_at)) +
@@ -228,6 +233,13 @@
       btn.addEventListener('click', function () {
         var id = btn.getAttribute('data-credit-id');
         var act = btn.getAttribute('data-credit-act');
+        if (act === 'edit_note') {
+          var found = (state.entries || []).filter(function (row) {
+            return String(row.id) === String(id);
+          })[0];
+          openNoteModal(found || { id: id, notes: '' });
+          return;
+        }
         var promptLabel =
           act === 'mark_refunded'
             ? 'Notes for refunded (optional):'
@@ -385,6 +397,74 @@
     });
   }
 
+  function openNoteModal(entry) {
+    if (!entry || !entry.id) return;
+    var current = String(entry.notes || entry.close_notes || '');
+    if (typeof cfg.openModal !== 'function') {
+      var typed = global.prompt('Office note (parents do not see this):', current);
+      if (typed == null) return;
+      void api('portal-admin-parent-credits-update', {
+        action: 'set_note',
+        entry_id: entry.id,
+        notes: String(typed).trim()
+      }).then(function (r) {
+        if (r.error) {
+          cfg.toast(r.message || r.error || 'Note not saved', 'error');
+          return;
+        }
+        cfg.toast('Office note saved', 'ok');
+        void renderHost(global.document.getElementById('portalParentCreditsHost'));
+      });
+      return;
+    }
+    cfg.openModal(
+      '<div class="modal-h"><h2 id="modalTitle">Office note</h2></div>' +
+        '<div class="modal-b" style="min-width:0">' +
+        '<p class="muted" style="margin:0 0 10px;font-size:13px;line-height:1.45;overflow-wrap:break-word">This note stays on the admin ledger. The parent does not see it and does not get a message.</p>' +
+        '<label class="muted">Note</label>' +
+        '<textarea class="inp" id="ppCreditNoteText" rows="5" maxlength="800" style="max-width:100%;box-sizing:border-box;resize:vertical"></textarea>' +
+        '<p id="ppCreditNoteErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px;overflow-wrap:break-word"></p>' +
+        '</div>' +
+        '<div class="modal-f">' +
+        '<button type="button" class="btn btn--ghost" id="ppCreditNoteCancel">Cancel</button>' +
+        '<button type="button" class="btn btn--pri" id="ppCreditNoteSave">Save note</button>' +
+        '</div>'
+    );
+    var box = global.document.getElementById('ppCreditNoteText');
+    if (box) box.value = current;
+    var cancel = global.document.getElementById('ppCreditNoteCancel');
+    if (cancel) {
+      cancel.onclick = function () {
+        if (typeof cfg.closeModal === 'function') cfg.closeModal();
+      };
+    }
+    var save = global.document.getElementById('ppCreditNoteSave');
+    if (save) {
+      save.onclick = function () {
+        var errEl = global.document.getElementById('ppCreditNoteErr');
+        var text = box ? String(box.value || '').trim() : '';
+        save.disabled = true;
+        void api('portal-admin-parent-credits-update', {
+          action: 'set_note',
+          entry_id: entry.id,
+          notes: text
+        }).then(function (r) {
+          save.disabled = false;
+          if (r.error) {
+            if (errEl) {
+              errEl.style.display = 'block';
+              errEl.textContent = r.message || r.error || 'Note not saved';
+            }
+            return;
+          }
+          if (typeof cfg.closeModal === 'function') cfg.closeModal();
+          cfg.toast('Office note saved', 'ok');
+          void renderHost(global.document.getElementById('portalParentCreditsHost'));
+        });
+      };
+    }
+  }
+
   function openCreateModal() {
     if (typeof cfg.openModal !== 'function') {
       cfg.toast('Add credit modal unavailable', 'error');
@@ -411,7 +491,7 @@
         '<input class="inp" id="ppCreditCreateService" placeholder="e.g. Aquatic Activity" style="max-width:100%;box-sizing:border-box" />' +
         '<label class="muted" style="display:block;margin-top:10px">Session date (optional)</label>' +
         '<input class="inp" id="ppCreditCreateDate" type="date" style="max-width:100%;box-sizing:border-box" />' +
-        '<label class="muted" style="display:block;margin-top:10px">Notes (optional)</label>' +
+        '<label class="muted" style="display:block;margin-top:10px">Office note (optional, parents do not see it)</label>' +
         '<textarea class="inp" id="ppCreditCreateNotes" rows="2" placeholder="Parent called…" style="max-width:100%;box-sizing:border-box;resize:vertical"></textarea>' +
         '<p id="ppCreditCreateErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px;overflow-wrap:break-word"></p>' +
         '</div>' +

@@ -8742,10 +8742,6 @@
       (String(e.status) === "open" && String(e.kind || "").toLowerCase() !== "refund"
         ? '<p class="pp-muted pp-absence-card__hint">On your account — reduces the next term invoice (or Spring Direct Debit if you pay monthly).</p>'
         : "") +
-      (e.notes ? '<p class="pp-absence-card__reason">' + esc(e.notes) + "</p>" : "") +
-      (e.close_notes && e.status !== "open"
-        ? '<p class="pp-absence-card__meta muted">' + esc(e.close_notes) + "</p>"
-        : "") +
       "</article>"
     );
   }

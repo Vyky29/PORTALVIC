@@ -1,7 +1,7 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // portal-admin-parent-credits-update
-// mark_refunded | mark_applied | cancel | create (manual ledger row).
+// mark_refunded | mark_applied | cancel | create | set_note (office note, not sent to the parent).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -117,6 +117,26 @@ Deno.serve(async (req) => {
     .eq("id", entryId)
     .maybeSingle();
   if (loadErr || !entry) return portalAdminJson(404, { ok: false, error: "not_found" });
+
+  // Office note only. Parents never receive this field.
+  if (action === "set_note") {
+    const notes = clean(body.notes, 800);
+    const { data: noted, error: noteErr } = await admin
+      .from("portal_parent_family_credits")
+      .update({
+        notes: notes || null,
+        updated_at: now,
+      })
+      .eq("id", entryId)
+      .select("*")
+      .maybeSingle();
+    if (noteErr || !noted) {
+      console.error("[portal-admin-parent-credits-update] set_note", noteErr?.message);
+      return portalAdminJson(500, { ok: false, error: "update_failed" });
+    }
+    return portalAdminJson(200, { ok: true, entry: noted });
+  }
+
   if (entry.status !== "open") {
     return portalAdminJson(409, { ok: false, error: "not_open", status: entry.status });
   }

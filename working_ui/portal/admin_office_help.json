@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v315",
+  "version": "2026-10-08-v316",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1794,6 +1794,9 @@
             "cancelar servicio",
             "refund due",
             "mark paid back",
+            "edit note",
+            "nota admin",
+            "office note",
             "parte que le corresponde"
           ],
           "steps": [
@@ -1805,6 +1808,7 @@
           ],
           "tips": [
             "Sep+ absents and cancellations share one decide queue.",
+            "On Family credits and refunds, Edit note is for the office only. The parent sees the credit or refund, not that note, and gets no message when you save it.",
             "If the family already uploaded proof, the row stays on Open after the 2 weeks so you can still choose credit, refund or makeup.",
             "Automatic API messages (instructor change, time change, cancel, makeup confirm) say they are automatic and not to reply on that WhatsApp. The reply goes in Messages in the parent portal, or by call or message on 07592 558671.",
             "Private pay-in-advance cancellation: unused prepaid can be refunded with a fee of 10% of the unused amount (minimum £25, maximum £100). Sessions already delivered, including a summer crash course, stay paid. LA / NHS do not use this fee.",
@@ -1823,6 +1827,7 @@
             ],
             "tips": [
               "Las faltas y cancelaciones de septiembre en adelante comparten una sola cola de decision.",
+              "En Family credits and refunds, Edit note es solo para la oficina. El padre ve el credito o el refund, no esa nota, y no recibe mensaje al guardarla.",
               "Si la familia ya subio la prueba, la fila se queda en Open despues de las 2 semanas para poder elegir credit, refund o makeup.",
               "Los mensajes automaticos de la API (cambio de instructor, cambio de hora, cancelacion, makeup confirmado) dicen que son automaticos y que no contesten en ese WhatsApp. La respuesta va en Messages del portal de padres, o por llamada o mensaje al 07592 558671.",
               "Cancelacion de pago privado por adelantado: lo no usado se puede devolver con una tasa del 10% de lo no usado (minimo 25 libras, maximo 100). Las sesiones ya dadas, incluido un crash de verano, siguen pagadas. LA / NHS no usan esta tasa.",
