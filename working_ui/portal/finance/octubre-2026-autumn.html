@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Octubre 2026, Autumn</title>
+<style>
+  @page { size: A4; margin: 12mm 12mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #0f2733; background: #fff; font-size: 10pt; line-height: 1.35; margin: 0; }
+  h1 { font-size: 16pt; margin: 0 0 4px; }
+  h2 { font-size: 11.5pt; margin: 14px 0 6px; color: #0e7c86; border-bottom: 2px solid #0e7c86; padding-bottom: 3px; }
+  .meta { color: #5b7280; font-size: 8.5pt; margin: 0 0 10px; }
+  .brand { font-weight: 800; color: #0e7c86; margin: 0 0 8px; text-align: center; }
+  .cover-logo { height: 64px; width: auto; display: block; margin: 0 auto 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 6px; font-size: 9pt; }
+  th, td { border-bottom: 1px solid #e2e8f0; padding: 4px 6px; text-align: left; }
+  th { background: #e6f3f4; font-size: 8pt; text-transform: uppercase; letter-spacing: .03em; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  td.now { color: #b91c1c; font-weight: 800; }
+  td.now.ok { color: #15803d; }
+  td.later { color: #15803d; font-weight: 800; }
+  tr.total td { font-weight: 800; border-top: 2px solid #94a3b8; background: #f8fafc; }
+  tr.remnant td { font-weight: 800; background: #ecfdf5; color: #0f2733; }
+  tr.remnant td.num { color: #15803d; }
+  tr.unpaid td, tr.cost td { color: #0f2733; font-weight: 700; }
+  tr.unpaid td.num, tr.cost td.num { color: #b91c1c; }
+  tr.hold td { color: #0f2733; }
+  tr.hold td.num { color: #64748b; }
+  tr.part td { font-size: 8pt; color: #0f2733; font-weight: 600; padding-top: 2px; padding-bottom: 2px; }
+  tr.part td.num { color: #15803d; }
+  tr.part.out td { color: #0f2733; }
+  tr.part.out td.num, td.num.due { color: #6d28d9; font-weight: 700; }
+  tr.part td:first-child { padding-left: 16px; }
+  tr.sec td { font-weight: 800; color: #0e7c86; background: #f8fafc; font-size: 12pt; padding-top: 8px; padding-bottom: 8px; }
+  .note { font-size: 8.5pt; color: #5b7280; background: #f1f5f9; border-left: 3px solid #0e7c86; padding: 7px 9px; margin: 6px 0; }
+  .warn { font-size: 8.5pt; color: #92400e; background: #fffbeb; border-left: 3px solid #f59e0b; padding: 7px 9px; margin: 6px 0; }
+  .foot { margin-top: 12px; font-size: 8pt; color: #94a3b8; }
+  .pair { display: flex; gap: 14px; align-items: flex-start; }
+  .pair > section { flex: 1 1 0; min-width: 0; overflow-x: auto; }
+  @media screen and (max-width: 900px) {
+    body { padding: 12px; }
+    .pair { display: block; }
+    table { display: block; overflow-x: auto; max-width: 100%; }
+  }
+  .pair h2 { overflow-wrap: break-word; }
+  .pair td { overflow-wrap: break-word; }
+  tr.owed td { font-weight: 800; background: #fef2f2; color: #0f2733; }
+  tr.owed td.num { color: #b91c1c; }
+  span.iva, span.ivaq, span.novat, span.revc {
+    display: inline-block; width: 9px; height: 9px; margin-right: 8px; border-radius: 50%;
+    vertical-align: 1px; font-size: 0; line-height: 0; overflow: hidden; color: transparent;
+  }
+  span.iva { background: #15803d; }
+  span.ivaq { background: #1d4ed8; }
+  span.novat { background: #ea580c; }
+  span.revc { background: #7c3aed; }
+  .leyenda { font-size: 10pt; margin: 0 0 12px; }
+  .leyenda span { margin-left: 16px; }
+  .leyenda span:first-child { margin-left: 0; }
+  span.inciva, span.incexc { display: inline-block; margin-right: 6px; font-weight: 800; letter-spacing: 0; }
+  span.inciva { color: #ea580c; }
+  span.incexc { color: #0f766e; }
+</style>
+</head>
+<body>
+  <img class="cover-logo" src="https://portalvic.vercel.app/portal/F-02-1.png" alt="clubSENsational" />
+  <p class="brand">clubSENsational</p>
+  <h1>Octubre 2026, Autumn</h1>
+  <p class="meta">Misma logica que septiembre: ingreso del mes cuando todo este cobrado, menos gastos que ya sabemos. Octubre es periodo nuevo (no entra el cupo £20,000 de tarjetas, cortado 31 ago 2026). Hoja al 8 oct 2026. <a href="septiembre-2026-autumn.html">Septiembre 2026</a></p>
+  <p class="leyenda"><span class="novat">Sin IVA</span> Sin IVA <span class="iva">IVA F</span> IVA F <span class="revc">Reverse charge</span> Reverse charge <span class="ivaq">No se sabe</span> No se sabe</p>
+
+  <div class="warn">Ingreso privado y GoCardless de octubre (familias) se completara con el extracto Tide y el portal. Abajo, falta por entrar incluye la ola NHS/LA del 1 oct 2026 (£40,973.57 en total).</div>
+
+  <h2>A facturar en octubre</h2>
+  <table>
+    <tr><th></th><th class="num">Entrado hasta el dia</th><th class="num">Ingreso del mes (LA)</th><th class="num">Falta (LA)</th><th class="num">Quedaria (LA)</th></tr>
+    <tr><td>Day Centre</td><td class="num">£656.25</td><td class="num">£35,335.32</td><td class="num due">£34,679.07</td><td class="num later">£32,684.86</td></tr>
+    <tr><td>Afterschool y weekend</td><td class="num">£0.00</td><td class="num">£6,294.50</td><td class="num due">£6,294.50</td><td class="num later">£4,990.74</td></tr>
+    <tr class="total"><td>Octubre, solo LA en filas</td><td class="num">£656.25</td><td class="num">£41,629.82</td><td class="num due">£40,973.57</td><td class="num later">£37,675.60</td></tr>
+  </table>
+  <div class="note">Day Centre ingreso LA = funder octubre £34,679.07 mas bespoke Cyrus £656.25 (plazo 5 oct, INV-P-0019). Falta LA = vencimiento 1 oct sin cobrar. Quedaria LA = ingreso LA menos gastos de octubre que ya conocemos en cada columna (sin contar privado GC).</div>
+
+  <div class="pair">
+  <section>
+  <h2>Day Centre</h2>
+  <table>
+    <tr><th></th><th class="num">Day Centre</th></tr>
+    <tr class="sec"><td colspan="2">A facturar en octubre (LA)</td></tr>
+    <tr><td>Ingreso LA, cuando entre la ola del 1 oct</td><td class="num">£34,679.07</td></tr>
+    <tr><td>Bespoke Cyrus, octubre (ya entrado)</td><td class="num">£656.25</td></tr>
+    <tr class="cost"><td>Menos gastos que sabemos</td><td class="num">-£2,650.46</td></tr>
+    <tr class="remnant"><td>Quedaria (LA + Cyrus, sin privado)</td><td class="num">£32,684.86</td></tr>
+    <tr class="sec"><td colspan="2">Falta por entrar, ola 1 oct</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Fadi, Day Centre, octubre (INV-P-0236)</td><td class="num">£13,092.77</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Ikram, Day Centre, octubre (INV-P-0272)</td><td class="num">£12,104.47</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Emanuel, Day Centre, octubre (INV-P-0261)</td><td class="num">£6,029.04</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Timi, Day Centre, octubre (INV-P-0169)</td><td class="num">£2,791.91</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Tinashe, NHS parte octubre (INV-P-0180)</td><td class="num">£660.88</td></tr>
+    <tr class="total"><td>Falta por entrar</td><td class="num due">£34,679.07</td></tr>
+    <tr class="sec"><td colspan="2">Entrado hasta el dia, de octubre</td></tr>
+    <tr class="part"><td><span class="inciva">IVA</span>Cyrus, bespoke, plazo 5 oct (INV-P-0019), parte day centre</td><td class="num">£656.25</td></tr>
+    <tr class="total"><td>Entrado hasta el dia</td><td class="num">£656.25</td></tr>
+    <tr class="sec"><td colspan="2">Gastado hasta el dia, de octubre</td></tr>
+    <tr class="sec"><td colspan="2">Pagado en octubre, factura de septiembre</td></tr>
+    <tr class="cost"><td><span class="iva">IVA F</span>SwimFarm Pool Rent, Day Centre, sep. IVA £108.33. Sin pagar en hoja sep</td><td class="num">-£650.00</td></tr>
+    <tr class="cost"><td><span class="iva">IVA F</span>Addison Lee Ikram, cab sep, factura 3448593, 1 oct. IVA reclaimable en factura</td><td class="num">-£1,672.80</td></tr>
+    <tr class="total cost"><td>Pagado en octubre, factura de septiembre</td><td class="num">-£2,322.80</td></tr>
+    <tr class="sec"><td colspan="2">Salarios de octubre, sin pagar todavia</td></tr>
+    <tr class="cost"><td><span class="novat">NO IVA</span>Patience, shadowing sep £270 + expense sep £57.66. Primer cobro en octubre</td><td class="num">-£327.66</td></tr>
+    <tr class="total cost"><td>Salarios de octubre, sin pagar</td><td class="num">-£327.66</td></tr>
+    <tr class="owed"><td>Queda ahora. Entrado menos gastos que sabemos</td><td class="num">-£1,994.21</td></tr>
+    <tr class="part"><td>Beneficio cab Ikram sep, facturado 1 oct. Victor £81.87. Raul £81.87</td><td class="num">£163.74</td></tr>
+  </table>
+  </section>
+  <section>
+  <h2>Afterschool y weekend</h2>
+  <table>
+    <tr><th></th><th class="num">Afterschool y weekend</th></tr>
+    <tr class="sec"><td colspan="2">A facturar en octubre (LA)</td></tr>
+    <tr><td>Ingreso LA, ola 1 oct (octubre + sep pagado en oct)</td><td class="num">£6,294.50</td></tr>
+    <tr class="cost"><td>Menos gastos que sabemos</td><td class="num">-£1,303.76</td></tr>
+    <tr class="remnant"><td>Quedaria (LA, sin privado GC)</td><td class="num">£4,990.74</td></tr>
+    <tr class="sec"><td colspan="2">Falta por entrar, octubre 2026</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Adam Pilcher, H&amp;F (INV-P-0250)</td><td class="num">£1,036.36</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Aboodi Patel, H&amp;F (INV-P-0194)</td><td class="num">£345.45</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Elijah Yared, H&amp;F (INV-P-0225)</td><td class="num">£172.73</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Faris Lobinet, H&amp;F (INV-P-0287)</td><td class="num">£150.00</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Saaib Abdullah, H&amp;F (INV-P-0302)</td><td class="num">£150.00</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Simon Yohannes, H&amp;F (INV-P-0316)</td><td class="num">£150.00</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Yassir Boujettif, H&amp;F (INV-P-0208)</td><td class="num">£172.73</td></tr>
+    <tr class="sec"><td colspan="2">Falta por entrar, septiembre pagado en octubre</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Tinashe Nekati, Ealing sep (INV-P-0332)</td><td class="num">£1,295.45</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Amar-Rai Singh, Ealing sep (INV-P-0330)</td><td class="num">£690.90</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Adaam Ah, Ealing sep (INV-P-0334)</td><td class="num">£532.72</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Amaar Ahmed, Ealing sep (INV-P-0333)</td><td class="num">£532.72</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Aydaan Ahmed, Ealing sep (INV-P-0331)</td><td class="num">£532.72</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Samer Bakhiet, Ealing sep (INV-P-0329)</td><td class="num">£360.00</td></tr>
+    <tr class="part out"><td><span class="incexc">EXC</span>Steven Cesare, Ealing sep (INV-P-0328)</td><td class="num">£172.72</td></tr>
+    <tr class="total"><td>Falta por entrar</td><td class="num due">£6,294.50</td></tr>
+    <tr class="sec"><td colspan="2">Entrado hasta el dia, de octubre</td></tr>
+    <tr class="part"><td>Privado y GC octubre, pendiente cruce Tide 1-8 oct</td><td class="num">£0.00</td></tr>
+    <tr class="total"><td>Entrado hasta el dia</td><td class="num">£0.00</td></tr>
+    <tr class="sec"><td colspan="2">Gastado hasta el dia, de octubre</td></tr>
+    <tr class="sec"><td colspan="2">Compras de octubre</td></tr>
+    <tr class="cost"><td><span class="iva">IVA F</span>Wix, Business email, factura 1266325431, 6 oct 2026. IVA £10.31</td><td class="num">-£61.86</td></tr>
+    <tr class="sec"><td colspan="2">Staff Expenses</td></tr>
+    <tr class="cost"><td><span class="novat">NO IVA</span>NSPCC, 30 sep pedido / 1 oct banco, Ann (tercer hire)</td><td class="num">-£30.00</td></tr>
+    <tr class="sec"><td colspan="2">Pagado en octubre, factura de septiembre</td></tr>
+    <tr class="cost"><td><span class="novat">NO IVA</span>Climbing Westway, septiembre</td><td class="num">-£99.00</td></tr>
+    <tr class="cost"><td><span class="iva">IVA F</span>Addison Lee Joelle, cab sep jue 24, factura 3448593, 1 oct</td><td class="num">-£140.40</td></tr>
+    <tr class="total cost"><td>Gastado hasta el dia</td><td class="num">-£331.26</td></tr>
+    <tr class="sec"><td colspan="2">Refunds y cancellations, sin pagar</td></tr>
+    <tr class="cost"><td><span class="iva">IVA F</span>Refund Karo y Kareena, Service Cancellation. IVA £75.00</td><td class="num">-£450.00</td></tr>
+    <tr class="cost"><td><span class="iva">IVA F</span>Refund Elias Thomas. Sin pagar</td><td class="num">-£50.00</td></tr>
+    <tr class="cost"><td><span class="iva">IVA F</span>Refund Emmanuel Abate. Sin pagar</td><td class="num">-£50.00</td></tr>
+    <tr class="total cost"><td>Refunds sin pagar</td><td class="num">-£550.00</td></tr>
+    <tr class="sec"><td colspan="2">Salarios de octubre, sin pagar todavia</td></tr>
+    <tr class="cost"><td><span class="novat">NO IVA</span>Carlos, timesheet sep, lo cobra en octubre</td><td class="num">-£355.00</td></tr>
+    <tr class="cost"><td><span class="novat">NO IVA</span>Ann, shadowing 27 sep £67.50, lo cobra en octubre</td><td class="num">-£67.50</td></tr>
+    <tr class="total cost"><td>Salarios de octubre, sin pagar</td><td class="num">-£422.50</td></tr>
+    <tr class="owed"><td>Queda ahora. Entrado menos gastos que sabemos (sin LA entrado)</td><td class="num">-£1,303.76</td></tr>
+  </table>
+  </section>
+  </div>
+
+  <h2>Ola NHS / LA, 1 octubre 2026</h2>
+  <table>
+    <tr><th>Concepto</th><th class="num">Importe</th></tr>
+    <tr><td>Facturas etiqueta October 2026</td><td class="num">£36,856.34</td></tr>
+    <tr><td>Facturas September 2026, pagadas en octubre</td><td class="num">£4,117.23</td></tr>
+    <tr class="total"><td>Total ola 1 oct (portal, sin pagar al 8 oct)</td><td class="num due">£40,973.57</td></tr>
+  </table>
+
+  <h2>Cabs pagados en octubre (factura sep)</h2>
+  <table>
+    <tr><th>Cliente</th><th>Servicio</th><th class="num">Factura 3448593</th><th class="num">Nota</th></tr>
+    <tr><td>Addison Lee Ikram, 18 dias sep</td><td>Day Centre</td><td class="num">£1,672.80</td><td>Beneficio £163.74 (V/R £81.87 c/u)</td></tr>
+    <tr><td>Addison Lee Joelle, jue 24 sep</td><td>Afterschool</td><td class="num">£140.40</td><td>Jue 10 y 17 ya en sep (£327.15 tarjeta)</td></tr>
+    <tr class="total"><td>Total factura 1 oct (sin fee)</td><td></td><td class="num">£1,813.20</td><td>Pactado factura £1,836.54</td></tr>
+  </table>
+
+  <h2>Nominas pendientes de octubre (desde sep)</h2>
+  <table>
+    <tr><th></th><th class="num">Day Centre</th><th class="num">Afterschool y weekend</th><th class="num">Total</th></tr>
+    <tr><td>Patience, shadowing + expense sep</td><td class="num">£327.66</td><td class="num">£0.00</td><td class="num">£327.66</td></tr>
+    <tr><td>Carlos, timesheet</td><td class="num">£0.00</td><td class="num">£355.00</td><td class="num">£355.00</td></tr>
+    <tr><td>Ann, shadowing 27 sep</td><td class="num">£0.00</td><td class="num">£67.50</td><td class="num">£67.50</td></tr>
+    <tr class="total"><td>Total payroll hold</td><td class="num">£327.66</td><td class="num">£422.50</td><td class="num">£750.16</td></tr>
+  </table>
+  <div class="note">Timesheet octubre 1-24 se pagara a principios de noviembre. Esta hoja no incluye salarios de octubre todavia.</div>
+
+  <p class="foot">clubSENsational · Octubre 2026 Autumn · Documento interno · No es una cuenta auditada.</p>
+</body>
+</html>
