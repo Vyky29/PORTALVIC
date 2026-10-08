@@ -21,10 +21,10 @@
   td.later { color: #15803d; font-weight: 800; }
   tr.total td { font-weight: 800; border-top: 2px solid #94a3b8; background: #f8fafc; }
   tr.remnant td { font-weight: 800; background: #ecfdf5; color: #15803d; }
-  tr.unpaid td { color: #b91c1c; font-weight: 700; }
+  tr.unpaid td, tr.cost td { color: #b91c1c; font-weight: 700; }
   tr.hold td { color: #64748b; }
   tr.part td { font-size: 8pt; color: #15803d; font-weight: 600; padding-top: 2px; padding-bottom: 2px; }
-  tr.part.out td { color: #b91c1c; }
+  tr.part.out td, td.num.due { color: #6d28d9; font-weight: 700; }
   tr.part td:first-child { padding-left: 16px; }
   tr.sec td { font-weight: 800; color: #0e7c86; background: #f8fafc; }
   .note { font-size: 8.5pt; color: #5b7280; background: #f1f5f9; border-left: 3px solid #0e7c86; padding: 7px 9px; margin: 6px 0; }
@@ -57,9 +57,9 @@
   <h2>Entrado de septiembre</h2>
   <table>
     <tr><th></th><th class="num">Entrado de septiembre</th><th class="num">Deberia septiembre</th><th class="num">Falta</th></tr>
-    <tr><td>Day Centre</td><td class="num">£1,362.50</td><td class="num">£37,322.88</td><td class="num">£35,960.38</td></tr>
-    <tr><td>Afterschool y weekend</td><td class="num">£18,837.54</td><td class="num">£28,898.12</td><td class="num">£10,060.58</td></tr>
-    <tr class="total"><td>Septiembre</td><td class="num">£20,200.04</td><td class="num">£66,221.00</td><td class="num">£46,020.96</td></tr>
+    <tr><td>Day Centre</td><td class="num">£1,070.00</td><td class="num">£38,866.92</td><td class="num due">£37,796.92</td></tr>
+    <tr><td>Afterschool y weekend</td><td class="num">£18,837.54</td><td class="num">£28,898.12</td><td class="num due">£10,060.58</td></tr>
+    <tr class="total"><td>Septiembre</td><td class="num">£19,907.54</td><td class="num">£67,765.04</td><td class="num due">£47,857.50</td></tr>
   </table>
 
   <div class="pair">
@@ -68,42 +68,44 @@
   <table>
     <tr><th></th><th class="num">Day Centre</th></tr>
     <tr class="sec"><td colspan="2">Facturado en septiembre</td></tr>
-    <tr class="total"><td>Facturado en septiembre</td><td class="num">£37,322.88</td></tr>
+    <tr class="total"><td>Facturado en septiembre</td><td class="num">£38,866.92</td></tr>
     <tr><td>Jack Stratton, de los £700, 4 martes x £50</td><td class="num">£200.00</td></tr>
     <tr><td>Jack Walker, de los £700, 4 martes x £50</td><td class="num">£200.00</td></tr>
     <tr><td>Kate Fordham, de los £700, 4 martes x £50</td><td class="num">£200.00</td></tr>
     <tr><td>Kamy Akhavan, de los £700, 4 martes x £50</td><td class="num">£200.00</td></tr>
-    <tr><td>Cyrus, bespoke, 10, 17 y 24 sep, 3 x £187.50</td><td class="num">£562.50</td></tr>
-    <tr class="part out"><td>Fadi, NHS, no ha entrado</td><td class="num">£14,534.08</td></tr>
-    <tr class="part out"><td>Ikram, NHS, no ha entrado. £13,774.05 menos cab £102.03 x 18</td><td class="num">£11,937.51</td></tr>
+    <tr><td>Cyrus, bespoke, 15, 22 y 29 sep, 3 x £90</td><td class="num">£270.00</td></tr>
+    <tr class="hold"><td>Cyrus, 8 sep cancelada. Credito de £90 para el proximo term. No es septiembre</td><td class="num">£90.00</td></tr>
+    <tr class="hold"><td>Cyrus, credito de summer 2026 en el invoice de autumn. No es gasto de septiembre</td><td class="num">£90.00</td></tr>
+    <tr class="part out"><td>Fadi, NHS, factura de septiembre. Tiene que entrar</td><td class="num">£14,534.08</td></tr>
+    <tr class="part out"><td>Ikram, NHS, factura de septiembre, INV-P-0271. Tiene que entrar</td><td class="num">£13,774.05</td></tr>
     <tr><td>Emanuel y Timi, facturas de septiembre. Van en por entrar</td><td class="num">£9,488.79</td></tr>
     <tr class="sec"><td colspan="2">Entrado de septiembre</td></tr>
-    <tr class="total"><td>Entrado de septiembre</td><td class="num">£1,362.50</td></tr>
+    <tr class="total"><td>Entrado de septiembre</td><td class="num">£1,070.00</td></tr>
     <tr class="part"><td>Jack Stratton</td><td class="num">£200.00</td></tr>
     <tr class="part"><td>Jack Walker</td><td class="num">£200.00</td></tr>
     <tr class="part"><td>Kate Fordham</td><td class="num">£200.00</td></tr>
     <tr class="part"><td>Kamy Akhavan, de lo pagado solo esto es septiembre</td><td class="num">£200.00</td></tr>
-    <tr class="part"><td>Cyrus, bespoke, septiembre</td><td class="num">£562.50</td></tr>
+    <tr class="part"><td>Cyrus, bespoke, septiembre</td><td class="num">£270.00</td></tr>
     <tr class="sec"><td colspan="2">Por entrar</td></tr>
     <tr class="part out"><td>Emanuel, NHS, factura de septiembre, INV-P-0260. Tiene que entrar</td><td class="num">£6,631.95</td></tr>
     <tr class="part out"><td>Timi, NHS, factura de septiembre, INV-P-0168. Tiene que entrar</td><td class="num">£2,856.84</td></tr>
     <tr class="hold"><td>Kamy, 1a mitad £350, ya pagada. No es septiembre</td><td class="num">£350.00</td></tr>
     <tr class="hold"><td>Kamy, 2a mitad £350, vence el 26 oct. No es septiembre</td><td class="num">£350.00</td></tr>
-    <tr><td>Michelle, timesheet 1-24 sep, bruto, 77 horas</td><td class="num">£2,310.00</td></tr>
-    <tr><td>Luliya, timesheet</td><td class="num">£936.00</td></tr>
-    <tr><td>Youssef, timesheet</td><td class="num">£330.00</td></tr>
-    <tr><td>Youssef, tax de meses anteriores devuelto en septiembre, parte day centre</td><td class="num">£389.53</td></tr>
-    <tr><td>Victor, septiembre, cobrado el 18. Day centre</td><td class="num">£3,167.00</td></tr>
-    <tr><td>Raul, septiembre, cobrado el 30. Day centre</td><td class="num">£3,167.00</td></tr>
+    <tr class="cost"><td>Michelle, timesheet 1-24 sep, bruto, 77 horas</td><td class="num">-£2,310.00</td></tr>
+    <tr class="cost"><td>Luliya, timesheet</td><td class="num">-£936.00</td></tr>
+    <tr class="cost"><td>Youssef, timesheet</td><td class="num">-£330.00</td></tr>
+    <tr class="cost"><td>Youssef, tax de meses anteriores devuelto en septiembre, parte day centre</td><td class="num">-£389.53</td></tr>
+    <tr class="cost"><td>Victor, septiembre, cobrado el 18. Day centre</td><td class="num">-£3,167.00</td></tr>
+    <tr class="cost"><td>Raul, septiembre, cobrado el 30. Day centre</td><td class="num">-£3,167.00</td></tr>
     <tr class="hold"><td>Patience, shadowing de septiembre, lo cobra en octubre. No es gasto de septiembre</td><td class="num">£270.00</td></tr>
-    <tr><td>Roberto, mananas</td><td class="num">£1,505.00</td></tr>
-    <tr class="unpaid"><td>Piscina Day centre, lun/mie/vie 12:00-13:00, 13 dias x £50, sin pagar</td><td class="num">£650.00</td></tr>
-    <tr><td>Michelle, expenses, pagado el 28 sep</td><td class="num">£22.15</td></tr>
-    <tr><td>Luliya, DBS, parte day centre, pagado el 30 sep</td><td class="num">£28.83</td></tr>
+    <tr class="cost"><td>Roberto, mananas</td><td class="num">-£1,505.00</td></tr>
+    <tr class="cost"><td>Piscina Day centre, lun/mie/vie 12:00-13:00, 13 dias x £50, sin pagar</td><td class="num">-£650.00</td></tr>
+    <tr class="cost"><td>Michelle, expenses, pagado el 28 sep</td><td class="num">-£22.15</td></tr>
+    <tr class="cost"><td>Luliya, DBS, parte day centre, pagado el 30 sep</td><td class="num">-£28.83</td></tr>
     <tr class="hold"><td>Patience, expenses, lo cobra en octubre. No es gasto de septiembre</td><td class="num">£57.66</td></tr>
-    <tr><td>Ikram, cab pactado con el NHS, 18 x £102.03</td><td class="num">£1,836.54</td></tr>
-    <tr class="remnant"><td>Remanente de Victor. Su mitad £11,490.42, menos gastos personales £361.04</td><td class="num">£11,129.38</td></tr>
-    <tr class="remnant"><td>Remanente de Raul. Su mitad £11,490.41, menos gastos personales £271.46</td><td class="num">£11,218.95</td></tr>
+    <tr class="cost"><td>Ikram, cab pactado con el NHS, 18 x £102.03</td><td class="num">-£1,836.54</td></tr>
+    <tr class="remnant"><td>Remanente de Victor. Su mitad £12,262.44, menos gastos personales £361.04</td><td class="num">£11,901.40</td></tr>
+    <tr class="remnant"><td>Remanente de Raul. Su mitad £12,262.43, menos gastos personales £271.46</td><td class="num">£11,990.97</td></tr>
   </table>
   </section>
   <section>
@@ -139,39 +141,39 @@
     <tr class="part out"><td>Yassir Boujettif, H&amp;F</td><td class="num">£50.00</td></tr>
     <tr class="part out"><td>Rayan Thapa</td><td class="num">£23.50</td></tr>
     <tr class="sec"><td colspan="2">Gastos de los servicios en septiembre</td></tr>
-    <tr><td>Piscina, 4 domingos x £50</td><td class="num">£200.00</td></tr>
-    <tr><td>Joelle, NHS, cab pactado, 3 x £153.05</td><td class="num">£459.15</td></tr>
-    <tr><td>HubRoom, multi y bespoke, parte de septiembre</td><td class="num">£1,476.92</td></tr>
-    <tr class="unpaid"><td>Climbing Westway, septiembre, sin pagar</td><td class="num">£99.00</td></tr>
+    <tr class="cost"><td>Piscina, 4 domingos x £50</td><td class="num">-£200.00</td></tr>
+    <tr class="cost"><td>Joelle, NHS, cab pactado, 3 x £153.05</td><td class="num">-£459.15</td></tr>
+    <tr class="cost"><td>HubRoom, multi y bespoke, parte de septiembre</td><td class="num">-£1,476.92</td></tr>
+    <tr class="cost"><td>Climbing Westway, septiembre, sin pagar</td><td class="num">-£99.00</td></tr>
     <tr class="sec"><td colspan="2">Salarios</td></tr>
-    <tr><td>Victor, admin</td><td class="num">£1,000.00</td></tr>
-    <tr><td>Raul, admin</td><td class="num">£1,000.00</td></tr>
-    <tr><td>Sevitha, admin</td><td class="num">£3,862.92</td></tr>
-    <tr><td>Javier, timesheet</td><td class="num">£1,070.75</td></tr>
-    <tr><td>Roberto, timesheet</td><td class="num">£1,182.75</td></tr>
-    <tr><td>Aurora, timesheet</td><td class="num">£566.75</td></tr>
-    <tr><td>Godsway, timesheet</td><td class="num">£540.00</td></tr>
-    <tr><td>Luliya, timesheet</td><td class="num">£358.75</td></tr>
+    <tr class="cost"><td>Victor, admin</td><td class="num">-£1,000.00</td></tr>
+    <tr class="cost"><td>Raul, admin</td><td class="num">-£1,000.00</td></tr>
+    <tr class="cost"><td>Sevitha, admin</td><td class="num">-£3,862.92</td></tr>
+    <tr class="cost"><td>Javier, timesheet</td><td class="num">-£1,070.75</td></tr>
+    <tr class="cost"><td>Roberto, timesheet</td><td class="num">-£1,182.75</td></tr>
+    <tr class="cost"><td>Aurora, timesheet</td><td class="num">-£566.75</td></tr>
+    <tr class="cost"><td>Godsway, timesheet</td><td class="num">-£540.00</td></tr>
+    <tr class="cost"><td>Luliya, timesheet</td><td class="num">-£358.75</td></tr>
     <tr class="hold"><td>Carlos, timesheet, lo cobra en octubre. No es gasto de septiembre</td><td class="num">£355.00</td></tr>
-    <tr><td>Dan, timesheet</td><td class="num">£342.75</td></tr>
-    <tr><td>Emmanuel, timesheet</td><td class="num">£342.00</td></tr>
-    <tr><td>Alex, timesheet</td><td class="num">£330.00</td></tr>
-    <tr><td>Berta, timesheet</td><td class="num">£330.00</td></tr>
-    <tr><td>Bismark, timesheet</td><td class="num">£322.00</td></tr>
-    <tr><td>John, timesheet</td><td class="num">£275.00</td></tr>
-    <tr><td>Youssef, timesheet</td><td class="num">£264.00</td></tr>
-    <tr><td>Simon, timesheet</td><td class="num">£186.75</td></tr>
-    <tr><td>Sandra, timesheet</td><td class="num">£112.00</td></tr>
+    <tr class="cost"><td>Dan, timesheet</td><td class="num">-£342.75</td></tr>
+    <tr class="cost"><td>Emmanuel, timesheet</td><td class="num">-£342.00</td></tr>
+    <tr class="cost"><td>Alex, timesheet</td><td class="num">-£330.00</td></tr>
+    <tr class="cost"><td>Berta, timesheet</td><td class="num">-£330.00</td></tr>
+    <tr class="cost"><td>Bismark, timesheet</td><td class="num">-£322.00</td></tr>
+    <tr class="cost"><td>John, timesheet</td><td class="num">-£275.00</td></tr>
+    <tr class="cost"><td>Youssef, timesheet</td><td class="num">-£264.00</td></tr>
+    <tr class="cost"><td>Simon, timesheet</td><td class="num">-£186.75</td></tr>
+    <tr class="cost"><td>Sandra, timesheet</td><td class="num">-£112.00</td></tr>
     <tr class="hold"><td>Ann, timesheet, lo cobra en octubre. No es gasto de septiembre</td><td class="num">£67.50</td></tr>
     <tr class="sec"><td colspan="2">Tambien afecta a afterschool</td></tr>
-    <tr><td>Youssef, tax de meses anteriores, parte empresa</td><td class="num">£444.07</td></tr>
-    <tr><td>Simon, DBS, empresa, pagado el 28 sep</td><td class="num">£57.66</td></tr>
-    <tr><td>Luliya, DBS, parte empresa, pagado el 30 sep</td><td class="num">£28.83</td></tr>
-    <tr><td>Refund Mansura Akter, ya salio</td><td class="num">£50.00</td></tr>
-    <tr><td>Refund Kelidon Mesi, ya salio</td><td class="num">£50.00</td></tr>
-    <tr><td>Refund Nicole Stephens, ya salio</td><td class="num">£100.00</td></tr>
-    <tr><td>Refund Orla Sullivan, climbing, ya salio</td><td class="num">£236.25</td></tr>
-    <tr class="unpaid"><td>Refund Karo y Kareena, por cancelar, sin pagar</td><td class="num">£450.00</td></tr>
+    <tr class="cost"><td>Youssef, tax de meses anteriores, parte empresa</td><td class="num">-£444.07</td></tr>
+    <tr class="cost"><td>Simon, DBS, empresa, pagado el 28 sep</td><td class="num">-£57.66</td></tr>
+    <tr class="cost"><td>Luliya, DBS, parte empresa, pagado el 30 sep</td><td class="num">-£28.83</td></tr>
+    <tr class="cost"><td>Refund Mansura Akter, ya salio</td><td class="num">-£50.00</td></tr>
+    <tr class="cost"><td>Refund Kelidon Mesi, ya salio</td><td class="num">-£50.00</td></tr>
+    <tr class="cost"><td>Refund Nicole Stephens, ya salio</td><td class="num">-£100.00</td></tr>
+    <tr class="cost"><td>Refund Orla Sullivan, climbing, ya salio</td><td class="num">-£236.25</td></tr>
+    <tr class="cost"><td>Refund Karo y Kareena, por cancelar, sin pagar</td><td class="num">-£450.00</td></tr>
     <tr class="owed"><td>Queda ahora</td><td class="num">£3,099.24</td></tr>
     <tr class="remnant"><td>Quedaria</td><td class="num">£13,159.82</td></tr>
   </table>
