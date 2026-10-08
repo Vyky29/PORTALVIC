@@ -230,6 +230,13 @@ export async function notifyParentAbsenceOutcome(
     }
   }
 
+  /* A credit that only sits in Credits, or waits for a later GoCardless collection, stays in the portal.
+     WhatsApp only when it changes an invoice they are about to pay. Refunds always WhatsApp. */
+  const creditTouchesInvoiceNow =
+    outcome === "credit" &&
+    !!(opts.creditApply?.applications || []).find((a) => a && a.ok);
+  const skipCreditWhatsapp = outcome === "credit" && !creditTouchesInvoiceNow;
+
   let emailStatus = "skipped";
   let emailOk = false;
   const smtp = readParentNotifySmtpConfig();
@@ -253,7 +260,7 @@ export async function notifyParentAbsenceOutcome(
   let waStatus = "skipped";
   let waOk = false;
   let waId: string | null = null;
-  if (phone) {
+  if (phone && !skipCreditWhatsapp) {
     try {
       const wa = await sendParentMobileMessage(phone, bodyText, { kind });
       waOk = !!wa.ok;
@@ -274,7 +281,13 @@ export async function notifyParentAbsenceOutcome(
         sent_by_user_id: null,
         sent_by_email: clean(opts.actorEmail, 200) || "absence-decide",
         kind,
-        channel: phone && email ? "whatsapp_email" : phone ? "whatsapp" : "email",
+        channel: skipCreditWhatsapp
+          ? "email"
+          : phone && email
+            ? "whatsapp_email"
+            : phone
+              ? "whatsapp"
+              : "email",
         client_display: child,
         parent_name: parentName,
         parent_email: email || null,
@@ -289,7 +302,7 @@ export async function notifyParentAbsenceOutcome(
         resend_id: null,
         whatsapp_message_id: waId,
         error_detail:
-          emailOk || waOk
+          emailOk || waOk || skipCreditWhatsapp
             ? null
             : clean(
                 [emailStatus === "failed" ? "email_failed" : "", waStatus === "failed" ? "wa_failed" : ""]
@@ -305,6 +318,7 @@ export async function notifyParentAbsenceOutcome(
           amount_gbp: opts.amountGbp ?? null,
           credit_apply_skipped: opts.creditApply?.skipped || null,
           gocardless_held: opts.creditApply?.gocardless_held === true,
+          whatsapp_skipped: skipCreditWhatsapp ? "credit_stays_in_portal" : null,
           parent_phone_masked: phone ? maskPhoneForLog(phone) : null,
           automated: true,
           source: "portal-admin-parent-absence-decide",
@@ -325,6 +339,16 @@ export async function notifyParentAbsenceOutcome(
   }
 
   if (!emailOk && !waOk) {
+    if (skipCreditWhatsapp) {
+      return {
+        ok: true,
+        skipped: true,
+        reason: "credit_stays_in_portal",
+        kind,
+        email_status: emailStatus,
+        whatsapp_status: "skipped",
+      };
+    }
     return {
       ok: false,
       kind,

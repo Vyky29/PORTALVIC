@@ -165,6 +165,9 @@ export async function notifyMakeupConfirmed(
 
   const parent = await resolveParentContact(admin, opts);
   const childName = clean(opts.participantDisplay, 120) || parent?.child_display || child;
+  /* Parent already saw Accept in the portal. The offer WhatsApp is the one that had to arrive.
+     The instructor still gets Make-up on your roster. Office-placed makeups still message the parent. */
+  const parentAlreadyAccepted = clean(opts.source, 80) === "parent_portal_makeup_accept";
 
   let parentResult: MakeupConfirmedNotifyResult["parent"] = {
     ok: false,
@@ -172,7 +175,13 @@ export async function notifyMakeupConfirmed(
     reason: "no_parent",
   };
 
-  if (parent) {
+  if (parent && parentAlreadyAccepted) {
+    parentResult = {
+      ok: true,
+      skipped: true,
+      reason: "parent_accepted_in_portal",
+    };
+  } else if (parent) {
     const parentBody =
       `Hi ${parent.parent_display},\n\n` +
       `This is ClubSENsational.\n\n` +
