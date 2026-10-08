@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v318",
+  "version": "2026-10-08-v319",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -555,6 +555,53 @@
             "tips": [
               "Absents and credits es la cola de decision (credit, refund, makeup, none). No es este registro.",
               "Una falta del padre no sale aqui. Esta pantalla es el formulario del staff y la cancelacion de admin."
+            ]
+          }
+        },
+        {
+          "id": "cancel_vs_absent",
+          "title": "Session cancel, service cancel, and absent",
+          "summary": "A cancelled service, a cancelled session, and an absence are three different facts. Each party gets a different message.",
+          "where": "Edit term slot, Schedule & Covers, staff cancellation form, parent portal",
+          "keywords": [
+            "cancelacion",
+            "cancelar servicio",
+            "cancelar sesion",
+            "absent",
+            "falta",
+            "mensaje",
+            "padre",
+            "instructor",
+            "before the session",
+            "during the session"
+          ],
+          "steps": [
+            "Cancel service is Edit term slot. The place ends from the anchor date. The parent message names the weekday, the place, sessions already done, and any refund. If money is coming back it asks for the account name, sort code, and account number. The instructor gets one roster alert for the first cancelled day.",
+            "Cancel one session from the office: Schedule and Covers, Cancelled. Use this when the centre or the instructor cannot run that day. The parent WhatsApp says that session has been cancelled and that the office will be in touch about next steps. It does not mention money. The instructor push says Session cancelled. Absents then waits for credit, refund, makeup, or none. Day Centre and Bespoke do not WhatsApp the parent.",
+            "The staff cancellation form is the instructor, before the session or during it. It lands on Cancellations by venue and on the admin bell. The parent hub shows a cancelled chip. That form does not send the parent the office WhatsApp. You still decide the money in Absents.",
+            "Absent is the child not coming. The parent can mark it in their portal. If they phone, Schedule and Covers, Absent. That tells the instructor Absent participant. It does not send the parent a cancellation WhatsApp. A parent mark with no proof is none and shows on the bell. It does not push the instructor.",
+            "Absent on the staff card is that instructor's feedback only. It does not tell the parent and it does not open the office bell."
+          ],
+          "tips": [
+            "The fact can be shared. The sentence is not. The parent never sees the instructor push, and the instructor never sees the parent refund message.",
+            "On after-school and weekend 2:1 and 3:1, office Absent or Cancelled on one instructor is saved for every instructor on that seat. One parent message, one Absents row.",
+            "A staff tap of Absent does not do that. Only Schedule and Covers does."
+          ],
+          "es": {
+            "title": "Cancelar sesion, cancelar servicio, y falta",
+            "summary": "Cancelar el servicio, cancelar una sesion y una falta son tres hechos distintos. Cada parte recibe un mensaje distinto.",
+            "where": "Edit term slot, Schedule & Covers, formulario de cancelacion del staff, portal del padre",
+            "steps": [
+              "Cancel service es Edit term slot. La plaza se acaba desde la fecha ancla. El mensaje al padre nombra el dia, la plaza, las sesiones ya dadas y el refund si lo hay. Si hay dinero de vuelta pide el nombre de la cuenta, sort code y account number. El instructor recibe un aviso de roster por el primer dia cancelado.",
+              "Cancelar una sesion desde oficina: Schedule and Covers, Cancelled. Usalo cuando el centro o el instructor no pueden dar ese dia. El WhatsApp al padre dice que esa sesion se ha cancelado y que la oficina hablara de los siguientes pasos. No habla de dinero. El aviso al instructor dice Session cancelled. Absents espera credit, refund, makeup o none. Day Centre y Bespoke no avisan al padre por WhatsApp.",
+              "El formulario de cancelacion del staff lo pone el instructor, antes de la sesion o durante. Sale en Cancellations by venue y en la campana de admin. El padre ve un chip cancelado. Ese formulario no le manda el WhatsApp de oficina. El dinero lo decides tu en Absents.",
+              "Absent es que el nino no viene. El padre puede marcarlo en su portal. Si llama, Schedule and Covers, Absent. Eso avisa al instructor: Absent participant. No le manda al padre un WhatsApp de cancelacion. Una marca del padre sin justificante queda en none y sale en la campana. No avisa al instructor.",
+              "Absent en la tarjeta del staff es solo el feedback de ese instructor. No avisa al padre y no abre la campana de oficina."
+            ],
+            "tips": [
+              "El hecho puede ser el mismo para todos. La frase no. El padre no ve el aviso del instructor, y el instructor no ve el mensaje de refund del padre.",
+              "En after-school y weekend de 2:1 y 3:1, Absent o Cancelled de oficina en un instructor queda para todos los de esa plaza. Un mensaje al padre, una fila en Absents.",
+              "El Absent que pulsa el staff en su tarjeta no hace eso. Solo lo hace Schedule and Covers."
             ]
           }
         },
