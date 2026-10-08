@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v321",
+  "version": "2026-10-08-v322",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -604,6 +604,50 @@
             "tips": [
               "El hecho puede ser el mismo para todos. La frase no. El padre no ve el aviso del instructor, y el instructor no ve el mensaje de refund del padre.",
               "En after-school y weekend de 2:1 y 3:1, Absent o Cancelled en un instructor queda para todos los de esa plaza. Una fila en Absents. Una falta no va por WhatsApp."
+            ]
+          }
+        },
+        {
+          "id": "whatsapp_api_auto",
+          "title": "WhatsApp API that sends by itself",
+          "summary": "Parents get a WhatsApp for a named cover, a cancelled session, a new session, a time change, and a makeup on the roster. Absent does not. Staff get a WhatsApp for a named cover, a makeup on their roster, overdue feedback, and the timesheet deadline.",
+          "where": "Schedule & Covers, Absents, staff app",
+          "keywords": [
+            "whatsapp",
+            "api",
+            "makeup",
+            "cover",
+            "session cancelled",
+            "absent",
+            "staff"
+          ],
+          "steps": [
+            "Parents, Aquatic / Multi-Activity / Climbing / Fitness only. Day Centre and Bespoke do not get these. Cover: the usual instructor is not available and the session is now with the named cover, with their photo. A second cover sends an update. Cancelled: that session has been cancelled and the office will be in touch. No money in that message. Add session card: a session was added for today only. Move: the time changed for today only.",
+            "Makeup on the roster sends the parent a confirmation that the make-up is now on the roster, with the instructor. Offer slot is a different message: the makeup is ready and they must Accept or Decline. A reminder goes out if they have not answered.",
+            "The instructor cancellation form tells the parent that the instructor reported a cancellation and the admin team will phone. That one also goes to Day Centre and Bespoke.",
+            "Absent does not send a parent WhatsApp. Not from the parent portal, not from Schedule and Covers Absent, and not from the staff card.",
+            "When you decide a refund, the parent WhatsApp asks for the account name, sort code, and account number. A credit tells them the credit was added. Cancel service is the place-cancelled message, with the refund figures.",
+            "Staff WhatsApp: a named cover says You are covering this child, with date, time, and venue. Removing the cover says they are no longer covering. A makeup on their roster says Make-up on your roster. Evening feedback still owed says today's feedback is still not in. The timesheet deadline is one message per month.",
+            "Absent participant and Session cancelled on the staff phone are the app, not WhatsApp."
+          ],
+          "tips": [
+            "Every automatic parent WhatsApp says not to reply on WhatsApp. Replies go to Messages in the parent portal, or 07592 558671."
+          ],
+          "es": {
+            "title": "WhatsApp API que sale solo",
+            "summary": "Al padre le llega WhatsApp por un cover con nombre, una sesion cancelada, una sesion nueva, un cambio de hora y un makeup ya en el roster. Absent no. Al staff le llega por un cover con nombre, un makeup en su roster, feedback pendiente y el cierre del timesheet.",
+            "where": "Schedule & Covers, Absents, app del staff",
+            "steps": [
+              "Padres, solo Aquatic, Multi-Activity, Climbing y Fitness. Day Centre y Bespoke no reciben estos. Cover: el instructor de siempre no esta y la sesion queda con el cover, con su foto. Un segundo cover manda una actualizacion. Cancelled: esa sesion se ha cancelado y la oficina hablara. Sin dinero en ese mensaje. Add session card: se anadio una sesion solo para hoy. Move: cambio de hora solo de hoy.",
+              "Un makeup ya en el roster le confirma al padre que el make-up esta en el roster, con el instructor. Offer slot es otro mensaje: el makeup esta listo y tienen que Accept o Decline. Si no contestan, sale un recordatorio.",
+              "El formulario de cancelacion del instructor le dice al padre que el instructor informo una cancelacion y que admin le llamara. Ese si llega tambien a Day Centre y Bespoke.",
+              "Absent no manda WhatsApp al padre. Ni desde su portal, ni desde Schedule and Covers Absent, ni desde la tarjeta del staff.",
+              "Si decides un refund, el WhatsApp pide nombre de la cuenta, sort code y account number. Un credit dice que se anadio el credito. Cancel service es el mensaje de plaza cancelada, con las cifras del refund.",
+              "WhatsApp al staff: un cover con nombre dice You are covering, con fecha, hora y sede. Quitar el cover dice que ya no cubre. Un makeup en su roster dice Make-up on your roster. Por la noche, si falta feedback, dice que el feedback de hoy no esta. El cierre del timesheet es un mensaje al mes.",
+              "Absent participant y Session cancelled en el telefono del staff son la app, no WhatsApp."
+            ],
+            "tips": [
+              "Todo WhatsApp automatico al padre dice que no contesten por WhatsApp. La respuesta va a Messages del portal, o al 07592 558671."
             ]
           }
         },
