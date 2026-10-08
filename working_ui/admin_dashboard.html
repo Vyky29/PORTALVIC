@@ -28529,6 +28529,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var staff = reason.match(/Staff cancel \(([^)]+)\)/i);
         var who = staff && staff[1] ? String(staff[1]).trim() : 'Office';
         var service = String(r.service_label || '').split(' · ')[0].replace(/^30'\s*/i, '').trim();
+        var pl = r.payload && typeof r.payload === 'object' ? r.payload : {};
+        var storedTiming = String(pl.cancellation_timing || '').trim();
+        var timing = 'Office';
+        if (storedTiming === 'During the session' || storedTiming === 'Before the session started') {
+          timing = storedTiming;
+        } else if (/during the session/i.test(reason)) {
+          timing = 'During the session';
+        } else if (/before the session/i.test(reason)) {
+          timing = 'Before the session started';
+        } else if (staff) {
+          timing = 'Before the session started';
+        }
         return {
           id: 'absence:' + String(r.id || ''),
           created_at: r.created_at || null,
@@ -28536,7 +28548,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           session_time: String(r.session_time || '').trim(),
           client_name: String(r.participant_display || '').trim(),
           service: service || '-',
-          cancellation_timing: staff ? 'Before the session started' : 'Office',
+          cancellation_timing: timing,
           reason_category: reason || 'Club cancelled',
           submitted_by_name: who,
           portal_session_key: ''
