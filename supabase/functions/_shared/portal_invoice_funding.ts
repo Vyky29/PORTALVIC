@@ -308,6 +308,12 @@ export async function resolveLaFunderBillTo(
     .maybeSingle();
   const fundingLabel = clean(contact?.funding_label, 120);
 
+  /* Joelle Atoui is an NHS referral (2:1 afterschool). The contact label says EHCP funds. */
+  const nameKey = displayName.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  if (contactId === "406" || nameKey === "joelle atoui") {
+    return profileToBillTo(NHS_WNL_ICB_BILL_TO);
+  }
+
   const funderBlob = `${funder} ${fundingLabel} ${clientKey}`;
   const knownHfBand = resolveHfBandOverride(displayName, clientKey);
   if (
