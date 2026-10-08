@@ -254,10 +254,30 @@
     }
   }
 
+  function diplomaEarnedNow() {
+    var p = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+    var email = "";
+    try {
+      var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
+      email = sess && sess.user && sess.user.email ? String(sess.user.email) : "";
+    } catch (_e) {}
+    if (!p && typeof global.portalInductionLearnerHintFromUrl === "function") {
+      p = global.portalInductionLearnerHintFromUrl();
+    }
+    if (typeof global.portalInductionDiplomaEarned !== "function") return false;
+    return !!global.portalInductionDiplomaEarned(p, email);
+  }
+
   function applyCertificateOnlyLayout() {
     if (applyRefreshDueLayout()) return;
     if (!isTrainingComplete()) return;
     if (!learnerName()) return;
+    if (!diplomaEarnedNow()) {
+      var blocked = global.document.getElementById("inductionCertificatePanel");
+      if (blocked) blocked.hidden = true;
+      global.document.body.classList.remove("induction--certificate-only");
+      return;
+    }
     global.document.body.classList.remove("induction--refresh-due");
     global.document.body.classList.add("induction--certificate-only");
     var panel = global.document.getElementById("inductionCertificatePanel");
@@ -491,7 +511,7 @@
     void bootstrapAuth().then(function () {
       applyCertificateOnlyLayout();
       if (refreshDueNow()) return;
-      if (isTrainingComplete()) {
+      if (isTrainingComplete() && diplomaEarnedNow()) {
         bindDownload();
         void syncSavedCertificateUi();
         if (

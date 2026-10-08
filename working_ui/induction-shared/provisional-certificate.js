@@ -304,19 +304,37 @@
       nextBtn.textContent = 'Return to General Induction';
       nextBtn.style.display = 'inline-flex';
     }
-    if (certBtn) {
+    if (certBtn && diplomaEarnedNow()) {
       certBtn.hidden = false;
       certBtn.style.display = 'inline-flex';
       certBtn.onclick = function () {
         downloadCertificate();
       };
+    } else if (certBtn) {
+      certBtn.hidden = true;
+      certBtn.style.display = 'none';
+      if (scoreMsg) {
+        scoreMsg.textContent =
+          'Induction is on file. The diploma arrives after you finish this year\'s recap: every card, then the quiz.';
+      }
     }
+  }
+
+  function diplomaEarnedNow() {
+    if (typeof window.portalInductionDiplomaEarned !== 'function') return false;
+    var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+    var email = '';
+    try {
+      var sess = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
+      email = sess && sess.user && sess.user.email ? String(sess.user.email) : '';
+    } catch (e) {}
+    return !!window.portalInductionDiplomaEarned(p, email);
   }
 
   function refreshDashboardPanel() {
     var panel = document.getElementById('inductionCertificatePanel');
     if (!panel) return;
-    var ready = isTrainingMarkedComplete();
+    var ready = isTrainingMarkedComplete() && diplomaEarnedNow();
     panel.hidden = !ready;
     if (!ready) return;
 

@@ -80,8 +80,11 @@
     window.portalInductionSaveRefresh({
       year: yearLabel(),
       recap: true,
-      quizPass: !!prev.quizPass && prev.year === yearLabel(),
-      at: prev.at || "",
+      quizPass: !!prev.quizPass && prev.full === true && prev.year === yearLabel(),
+      full: prev.full === true && prev.year === yearLabel(),
+      score: prev.full === true ? Number(prev.score) || 0 : 0,
+      cards: prev.full === true ? Number(prev.cards) || 0 : 0,
+      at: prev.full === true ? prev.at || "" : "",
     });
   }
 
@@ -130,7 +133,11 @@
 
   function markPassed() {
     if (typeof window.portalInductionMarkAnnualRefreshPassed === "function") {
-      window.portalInductionMarkAnnualRefreshPassed();
+      window.portalInductionMarkAnnualRefreshPassed({
+        full: true,
+        score: QCOUNT,
+        cards: ITEMS.length,
+      });
     }
   }
 
@@ -415,7 +422,10 @@
       }
       unlockQuiz();
     }
-    if (prev.quizPass && prev.year === year) {
+    if (
+      typeof window.portalInductionRefreshPassedForYear === "function" &&
+      window.portalInductionRefreshPassedForYear(year)
+    ) {
       showDiploma();
     }
     refreshUi();

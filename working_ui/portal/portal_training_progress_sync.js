@@ -152,18 +152,22 @@
     var refresh =
       typeof global.portalInductionLoadRefresh === "function"
         ? global.portalInductionLoadRefresh()
-        : { year: "", recap: false, quizPass: false, at: "" };
+        : { year: "", recap: false, quizPass: false, full: false, score: 0, cards: 0, at: "" };
     var refreshDue =
       typeof global.portalInductionRefreshDue === "function"
         ? global.portalInductionRefreshDue(profile, authEmail)
         : false;
     if (!mustComplete && refresh && (refresh.year || refresh.quizPass || refresh.recap)) {
+      var refreshDone = !!(refresh.quizPass && refresh.full === true && refresh.year === year);
       moduleStates.refresh = {
         year: refresh.year || year,
         recap: !!refresh.recap,
-        quizPass: !!refresh.quizPass,
-        at: refresh.at || "",
-        label: refresh.quizPass && refresh.year === year ? "Done" : "Due",
+        quizPass: refreshDone,
+        full: refreshDone,
+        score: refreshDone ? Number(refresh.score) || 0 : 0,
+        cards: refreshDone ? Number(refresh.cards) || 0 : 0,
+        at: refreshDone ? refresh.at || "" : "",
+        label: refreshDone ? "Done" : "Due",
       };
     }
 
@@ -173,7 +177,7 @@
     if (fullDone && refreshDue) {
       phase = "Annual refresh due " + (year || "");
       pct = 90;
-    } else if (fullDone && refresh.quizPass && refresh.year === year) {
+    } else if (fullDone && refresh.quizPass && refresh.full === true && refresh.year === year) {
       phase = "Complete " + year;
       pct = 100;
     } else if (!mustComplete && (completeFlag || doneCount >= INDUCTION_MODULES)) {
@@ -498,11 +502,19 @@
           typeof global.portalInductionLoadRefresh === "function"
             ? global.portalInductionLoadRefresh()
             : {};
-        if (remote.quizPass && remote.year && !(local.quizPass && local.year === remote.year)) {
+        if (
+          remote.quizPass &&
+          remote.full === true &&
+          remote.year &&
+          !(local.quizPass && local.full === true && local.year === remote.year)
+        ) {
           global.portalInductionSaveRefresh({
             year: String(remote.year || ""),
-            recap: !!(remote.recap || remote.quizPass),
-            quizPass: !!remote.quizPass,
+            recap: true,
+            quizPass: true,
+            full: true,
+            score: Number(remote.score) || 0,
+            cards: Number(remote.cards) || 0,
             at: remote.at || "",
           });
           changed = true;

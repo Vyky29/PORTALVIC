@@ -216,7 +216,8 @@
   <script src="/portal/portal-ghost-view.js?v=20260911-teleport-iso"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260612-induction-view"></script>
-  <script src="/portal/portal_induction.js?v=20260923-induction-real"></script>
+  <script src="/portal/portal_induction.js?v=20261008-recap-diploma"></script>
+  <script src="/portal/portal_training_progress_sync.js?v=20261008-recap-diploma"></script>
   <script src="/portal/portal_induction_certificate.js?v=20260612-induction-view"></script>
   <script type="module">
     async function portalImportAuthModule() {
@@ -1185,6 +1186,25 @@
         docs = enrichWorkerFacingTitles(docs, ctx.staff_profile || null);
         const profile = ctx.staff_profile || null;
         const email = String((ctx.session && ctx.session.user && ctx.session.user.email) || "");
+        if (typeof window.portalHydrateInductionProgressFromSupabase === "function") {
+          try {
+            await window.portalHydrateInductionProgressFromSupabase();
+          } catch (e) {
+            console.warn("[my_documents] induction hydrate", e);
+          }
+        }
+        const realModules =
+          typeof window.portalInductionRealModulesAllPassed === "function" &&
+          window.portalInductionRealModulesAllPassed();
+        const recapDone =
+          typeof window.portalInductionRefreshPassedForYear === "function" &&
+          window.portalInductionRefreshPassedForYear();
+        docs = docs.filter((d) => {
+          const t = String((d && d.document_type) || "").toLowerCase();
+          if (t === "induction_certificate" && !realModules) return false;
+          if (t === "induction_recap_certificate" && !recapDone) return false;
+          return true;
+        });
         if (
           typeof window.portalInductionMustComplete === "function" &&
           window.portalInductionMustComplete(profile, email)

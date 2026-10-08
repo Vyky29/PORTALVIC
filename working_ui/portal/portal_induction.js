@@ -60,6 +60,17 @@
     return !!(fn && REQUIRED_FIRST_NAMES[fn]);
   }
 
+  /** CEO and admin keep induction on file. They are not asked for the annual recap. */
+  function portalInductionRoleExempt(profile) {
+    var app = String((profile && profile.app_role) || "")
+      .trim()
+      .toLowerCase();
+    var staff = String((profile && profile.staff_role) || "")
+      .trim()
+      .toLowerCase();
+    return app === "ceo" || app === "admin" || staff === "ceo" || staff === "admin";
+  }
+
   function portalInductionLearnerHintFromUrl() {
     try {
       var q = new URLSearchParams(global.location.search);
@@ -292,10 +303,13 @@
         year: String(data.year || ""),
         recap: !!data.recap,
         quizPass: !!data.quizPass,
+        full: data.full === true,
+        score: Number(data.score) || 0,
+        cards: Number(data.cards) || 0,
         at: data.at || "",
       };
     } catch (_e) {
-      return { year: "", recap: false, quizPass: false, at: "" };
+      return { year: "", recap: false, quizPass: false, full: false, score: 0, cards: 0, at: "" };
     }
   }
 
@@ -311,7 +325,33 @@
   function portalInductionRefreshPassedForYear(year) {
     var y = String(year || portalInductionTrainingYear());
     var r = portalInductionLoadRefresh();
-    return !!(r.quizPass && r.year === y);
+    return !!(r.quizPass && r.full === true && r.year === y);
+  }
+
+  function portalInductionModuleRecordIsReal(st) {
+    if (!st || !st.quizPass) return false;
+    if (st.outcomes || st.quizStarted) return true;
+    if (Number(st.maxWatchedTime) > 0) return true;
+    return false;
+  }
+
+  function portalInductionRealModulesAllPassed() {
+    for (var i = 1; i <= MODULES; i++) {
+      var st = {};
+      try {
+        st = JSON.parse(global.localStorage.getItem("provisional-induction-module-" + i) || "{}");
+      } catch (_e) {
+        st = {};
+      }
+      if (!portalInductionModuleRecordIsReal(st)) return false;
+    }
+    return true;
+  }
+
+  /** Diploma only after a real six-module pass, or after the full recap quiz. */
+  function portalInductionDiplomaEarned(profile, authEmail) {
+    if (portalInductionRefreshPassedForYear(portalInductionTrainingYear())) return true;
+    return portalInductionRealModulesAllPassed();
   }
 
   function portalInductionHasFullPathwayComplete(profile, authEmail) {
@@ -326,10 +366,12 @@
   }
 
   function portalInductionRefreshDue(profile, authEmail) {
+    if (portalInductionRoleExempt(profile)) return false;
+    if (portalInductionMustComplete(profile, authEmail)) return false;
     if (!portalInductionHasFullPathwayComplete(profile, authEmail)) return false;
     var year = portalInductionTrainingYear();
     if (portalInductionRefreshPassedForYear(year)) return false;
-    if (portalInductionModulesAllPassed() && !portalInductionLooksGrandfatheredComplete()) {
+    if (portalInductionRealModulesAllPassed()) {
       try {
         var at = String(global.localStorage.getItem(COMPLETED_AT_KEY) || "").trim();
         if (at && portalInductionTrainingYear(at) === year) return false;
@@ -338,12 +380,17 @@
     return true;
   }
 
-  function portalInductionMarkAnnualRefreshPassed() {
+  function portalInductionMarkAnnualRefreshPassed(extra) {
+    extra = extra || {};
+    if (extra.full !== true) return "";
     var year = portalInductionTrainingYear();
     portalInductionSaveRefresh({
       year: year,
       recap: true,
       quizPass: true,
+      full: true,
+      score: Number(extra.score) || 0,
+      cards: Number(extra.cards) || 0,
       at: new Date().toISOString(),
     });
     return year;
@@ -384,7 +431,7 @@
       return false;
     }
     if (portalInductionRefreshDue(profile, authEmail)) return false;
-    return true;
+    return portalInductionDiplomaEarned(profile, authEmail);
   }
 
   function portalInductionBaseUrl() {
@@ -549,8 +596,12 @@
         sub.textContent = "Core company training — start here";
       } else if (must && done) {
         sub.textContent = "Completed — certificate in My documents";
-      } else {
+      } else if (refreshDue) {
+        sub.textContent = "On file — annual recap still due";
+      } else if (portalInductionDiplomaEarned(profile, authEmail)) {
         sub.textContent = "Completed " + year + " — certificate in My documents";
+      } else {
+        sub.textContent = "Induction on file";
       }
     }
     if (done && !needsCert) btn.classList.add("menu-btn--induction-done");
@@ -569,7 +620,10 @@
     if (!btn) return;
     /* Recap is for people who already finished induction and were asked to refresh.
        New hires (full six modules) do not see it. */
-    if (portalInductionMustComplete(profile, authEmail)) {
+    if (
+      portalInductionMustComplete(profile, authEmail) ||
+      portalInductionRoleExempt(profile)
+    ) {
       btn.hidden = true;
       btn.setAttribute("aria-hidden", "true");
       btn.disabled = true;
@@ -649,6 +703,9 @@
 
   global.portalInductionClearFakeCompleteForRequired = portalInductionClearFakeCompleteForRequired;
   global.portalInductionMustComplete = portalInductionMustComplete;
+  global.portalInductionRoleExempt = portalInductionRoleExempt;
+  global.portalInductionDiplomaEarned = portalInductionDiplomaEarned;
+  global.portalInductionRealModulesAllPassed = portalInductionRealModulesAllPassed;
   global.portalInductionLearnerHintFromUrl = portalInductionLearnerHintFromUrl;
   global.portalInductionHasIdentifiableLearner = portalInductionHasIdentifiableLearner;
   global.portalInductionClearLocalProgress = portalInductionClearLocalProgress;

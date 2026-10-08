@@ -170,10 +170,70 @@
     });
   }
 
+  function roleExemptFromRecap(profile) {
+    var app = String((profile && profile.app_role) || "")
+      .trim()
+      .toLowerCase();
+    var staff = String((profile && profile.staff_role) || "")
+      .trim()
+      .toLowerCase();
+    return app === "ceo" || app === "admin" || staff === "ceo" || staff === "admin";
+  }
+
+  function realModuleCount(track) {
+    var mods = (track && track.module_states) || {};
+    var n = 0;
+    var i;
+    for (i = 1; i <= INDUCTION_MODULES; i++) {
+      if (moduleQuizIsReal(mods[String(i)])) n += 1;
+    }
+    return n;
+  }
+
+  function stampedModuleCount(track) {
+    var mods = (track && track.module_states) || {};
+    var n = 0;
+    var i;
+    for (i = 1; i <= INDUCTION_MODULES; i++) {
+      if (mods[String(i)] && mods[String(i)].quizPass) n += 1;
+    }
+    return n;
+  }
+
+  function recapPassedThisYear(track) {
+    var refresh = track && track.module_states && track.module_states.refresh;
+    if (!refresh || refresh.full !== true || !refresh.quizPass) return false;
+    var year = "";
+    try {
+      var now = new Date();
+      var y = now.getFullYear();
+      var m = now.getMonth() + 1;
+      year = m >= 9 ? y + "/" + String(y + 1).slice(-2) : y - 1 + "/" + String(y).slice(-2);
+    } catch (_e) {}
+    return !!year && String(refresh.year || "") === year;
+  }
+
+  function inductionOnFile(row) {
+    var ind = row.tracks && row.tracks.induction;
+    if (!ind) return false;
+    if (realModuleCount(ind) >= INDUCTION_MODULES) return true;
+    if (inductionRequiredForProfile(row.profile)) return false;
+    return stampedModuleCount(ind) >= INDUCTION_MODULES;
+  }
+
+  function recapStillDue(row) {
+    if (!inductionOnFile(row)) return false;
+    if (roleExemptFromRecap(row.profile)) return false;
+    if (inductionRequiredForProfile(row.profile) && realModuleCount(row.tracks.induction) >= INDUCTION_MODULES) {
+      return false;
+    }
+    return !recapPassedThisYear(row.tracks.induction);
+  }
+
   function inductionStatus(row) {
     var ind = row.tracks.induction;
     if (!ind) return "not_started";
-    if (trackIsComplete(ind)) return "complete";
+    if (inductionOnFile(row)) return "complete";
     if (trackIsInProgress(ind)) return "in_progress";
     return "not_started";
   }
@@ -698,11 +758,13 @@
     return html;
   }
 
-  function moduleChip(n, mod) {
-    var done = moduleQuizIsReal(mod);
+  function moduleChip(n, mod, onFile) {
+    var done = moduleQuizIsReal(mod) || !!(onFile && mod && mod.quizPass);
     var partial = mod && !moduleIsAutoStamp(mod) && (mod.video || mod.journey || mod.quizStarted || Number(mod.maxWatchedTime) > 0) && !done;
     var cls = done ? "chip--ok" : partial ? "chip--info" : "chip--pend";
-    var title = (mod && mod.label) || (done ? "Done" : partial ? "In progress" : "Not started");
+    var title = onFile && mod && mod.quizPass && !moduleQuizIsReal(mod)
+      ? "On file"
+      : (mod && mod.label) || (done ? "Done" : partial ? "In progress" : "Not started");
     var inner = done ? "✓" : String(n);
     return (
       '<span class="chip ' +
@@ -722,20 +784,25 @@
     if (!p) return "";
     var mods = p.module_states || {};
     var chips = "";
-    var doneCount = 0;
+    var doneCount = realModuleCount(p);
+    var onFile = inductionOnFile(row) && doneCount < INDUCTION_MODULES;
     var i;
+    var note;
     for (i = 1; i <= INDUCTION_MODULES; i++) {
-      if (moduleQuizIsReal(mods[String(i)])) doneCount += 1;
-      chips += moduleChip(i, mods[String(i)]);
+      chips += moduleChip(i, mods[String(i)], onFile);
     }
+    if (doneCount >= INDUCTION_MODULES) note = "6 of 6 modules";
+    else if (recapStillDue(row)) note = "Recap due";
+    else if (onFile) note = "On file";
+    else note = doneCount + " of 6 modules";
     return (
       '<div class="portal-sready-ind-detail" title="Module detail">' +
       '<div class="portal-tprog-mod-row">' +
       chips +
       "</div>" +
       '<span class="muted portal-sready-subdate">' +
-      doneCount +
-      " of 6 modules</span></div>"
+      esc(note) +
+      "</span></div>"
     );
   }
 

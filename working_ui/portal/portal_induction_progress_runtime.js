@@ -12,7 +12,7 @@ function queueSync() {
 async function bootInductionProgressRuntime() {
   try {
     await bootstrapDashboardSupabase({ page: "general_induction" });
-    await import("./portal_training_progress_sync.js?v=20260923-induction-real");
+    await import("./portal_training_progress_sync.js?v=20261008-recap-diploma");
     if (typeof window.portalHydrateInductionProgressFromSupabase === "function") {
       await window.portalHydrateInductionProgressFromSupabase();
     }
