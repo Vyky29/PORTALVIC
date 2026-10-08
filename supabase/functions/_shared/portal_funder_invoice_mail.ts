@@ -1,6 +1,6 @@
 /**
  * Monthly funder invoices to Sevitha at admin@.
- * Day 20: NHS. Day 25: H&F and NHS/ILA.
+ * Day 20 at 9am London: NHS. Day 25 at 9am London: H&F and NHS/ILA.
  * NHS/ILA is the ILA monthly pack (ready_by tinashe-nhs, or funding label NHS ILA).
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -26,17 +26,20 @@ type ShareRow = {
   notes: string | null;
 };
 
-export function londonYmd(now = new Date()): { day: number; ym: string } {
+export function londonYmd(now = new Date()): { day: number; hour: number; ym: string } {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23",
   }).formatToParts(now);
   const get = (t: string) => parts.find((p) => p.type === t)?.value || "";
   const day = Number(get("day"));
+  const hour = Number(get("hour"));
   const ym = `${get("year")}-${get("month")}`;
-  return { day, ym };
+  return { day, hour, ym };
 }
 
 /** 20 = NHS. 25 = H&F and NHS/ILA. Other days send nothing. */

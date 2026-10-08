@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v313",
+  "version": "2026-10-08-v314",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1643,7 +1643,7 @@
         {
           "id": "funder_invoices_to_sevitha",
           "title": "Send H&F, NHS/ILA and NHS invoices to Sevitha",
-          "summary": "H&F and NHS/ILA go to admin@ on the 25th. NHS goes on the 20th. The portal sends them.",
+          "summary": "From October, H&F and NHS/ILA go to admin@ at 9am on the 25th. NHS goes at 9am on the 20th.",
           "where": "Finance → the month's H&F, NHS/ILA and NHS invoices",
           "keywords": [
             "sevitha",
@@ -1654,14 +1654,15 @@
             "nhs",
             "nhs/ila",
             "ila",
+            "9am",
             "dia 20",
             "dia 25",
             "facturas",
             "enviar"
           ],
           "steps": [
-            "On the 25th of the month the portal emails that month's H&F invoices and NHS/ILA invoices to admin@clubsensational.org.",
-            "On the 20th of the month it emails that month's NHS invoices to the same address.",
+            "From October, at 9am London on the 25th, the portal emails that month's H&F invoices and NHS/ILA invoices to admin@clubsensational.org.",
+            "At 9am London on the 20th it emails that month's NHS invoices to the same address.",
             "NHS/ILA is the ILA monthly invoice (Tinashe's Friday pack). It is not the NHS North West Day Centre pack.",
             "Each email has the PDF attached. The Reference on the PDF stays the month, for example September 2026.",
             "A month already sent is not sent again. If a PDF is missing, that pack is not emailed until the PDF is there."
@@ -1672,11 +1673,11 @@
           ],
           "es": {
             "title": "Mandar a Sevitha las facturas de H&F, NHS/ILA y NHS",
-            "summary": "H&F y NHS/ILA van a admin@ el dia 25. NHS va el dia 20. El portal las manda.",
+            "summary": "Desde octubre, H&F y NHS/ILA van a admin@ a las 9am del dia 25. NHS va a las 9am del dia 20.",
             "where": "Finance → las facturas del mes de H&F, NHS/ILA y NHS",
             "steps": [
-              "El dia 25 el portal manda por email las facturas de ese mes de H&F y de NHS/ILA a admin@clubsensational.org.",
-              "El dia 20 manda las facturas de NHS de ese mes a la misma direccion.",
+              "Desde octubre, a las 9am (hora de Londres) del dia 25, el portal manda las facturas de ese mes de H&F y de NHS/ILA a admin@clubsensational.org.",
+              "A las 9am del dia 20 manda las facturas de NHS de ese mes a la misma direccion.",
               "NHS/ILA es la factura mensual de ILA (el paquete del viernes de Tinashe). No es el paquete de Day Centre de NHS North West.",
               "Cada email lleva el PDF. El Reference del PDF sigue siendo el mes, por ejemplo September 2026.",
               "Un mes ya enviado no se vuelve a mandar. Si falta un PDF, ese grupo no sale hasta que el PDF este."

@@ -1,5 +1,6 @@
 -- Log of funder invoice emails to admin@, and the London-morning job
--- that sends NHS on the 20th and H&F + NHS/ILA on the 25th.
+-- that sends NHS at 9am London on the 20th and H&F + NHS/ILA at 9am on the 25th.
+-- 08:00 and 09:00 UTC cover 9am London in summer and winter. The function only sends at 9am London.
 -- Secret is copied from a live portal cron. Do not store it in git.
 
 create table if not exists public.portal_funder_invoice_mail_log (
@@ -48,7 +49,7 @@ begin
 
   perform cron.schedule(
     'portal-funder-invoice-mail-daily',
-    '0 7 * * *',
+    '0 8,9 * * *',
     format($job$
     select net.http_post(
       url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-cron-funder-invoice-mail',

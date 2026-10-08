@@ -1,8 +1,8 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // portal-cron-funder-invoice-mail
-// London morning: day 20 sends NHS invoices, day 25 sends H&F and NHS/ILA,
-// to admin@clubsensational.org. Other days do nothing.
+// 9am London: day 20 sends NHS invoices, day 25 sends H&F and NHS/ILA,
+// to admin@clubsensational.org. Other days and other hours do nothing.
 //
 // Auth: x-portal-webhook-secret or admin JWT.
 
@@ -51,12 +51,15 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  let ym = londonYmd().ym;
-  let packs = packsDueOnLondonDay(londonYmd().day);
+  const clock = londonYmd();
+  let ym = clock.ym;
+  let packs = packsDueOnLondonDay(clock.day);
+  let explicit = false;
   if (req.method === "POST") {
     try {
       const body = await req.json();
       if (body && typeof body.ym === "string" && Array.isArray(body.packs)) {
+        explicit = true;
         ym = body.ym;
         packs = body.packs.filter((p: string) =>
           p === "hf" || p === "nhs" || p === "nhs_ila"
@@ -67,8 +70,12 @@ Deno.serve(async (req) => {
     }
   }
 
+  if (!explicit && clock.hour !== 9) {
+    return json(200, { ok: true, skipped: "not_9am_london", ym: clock.ym, hour: clock.hour });
+  }
+
   if (!packs || !packs.length) {
-    return json(200, { ok: true, skipped: "not_send_day", ym: londonYmd().ym });
+    return json(200, { ok: true, skipped: "not_send_day", ym: clock.ym });
   }
 
   try {
