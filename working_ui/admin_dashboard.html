@@ -5575,7 +5575,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var tinasheLine = list.every(schedSlotIsTinasheTeam);
       if(!dayCentreLine && !tinasheLine) return null;
       /* A cover on one person stays on that person. The others remain on the line.
-         Tinashe absence is still kept on the instructor row it was saved on. */
+         After-school and weekend 2:1 and 3:1 also copy absent or cancel onto each co-instructor.
+         Day Centre stays on the instructor you opened. */
       var seen = Object.create(null);
       var all = [];
       list.forEach(function(sl){
@@ -17544,6 +17545,152 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return bits.join(' · ').slice(0, 160) || 'Session';
     }
     /**
+     * After-school (weekday from 15:00) and weekend 2:1 / 3:1.
+     * Day Centre, office, training, and home or manager duty stay out.
+     */
+    function schedSlotIsAfterschoolOrWeekendSharedRatio(slot){
+      if(!slot || schedSlotIsDayCentre(slot)) return false;
+      if(typeof schedIsHomeDutyParticipant === 'function' && schedIsHomeDutyParticipant(slot)) return false;
+      if(typeof schedIsManagerDutyParticipant === 'function' && schedIsManagerDutyParticipant(slot)) return false;
+      var prog = String((slot.programme || slot.rosterService || slot.service || slot.activity) || '').toLowerCase();
+      if(prog.indexOf('office') >= 0 || prog.indexOf('training') >= 0 || prog.indexOf('shadow') >= 0) return false;
+      var iso = String(slot.sessionDate || '').slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      var dow = new Date(iso + 'T12:00:00').getDay();
+      if(dow === 0 || dow === 6) return true;
+      var start = schedPgTimeToMinutes(slot.parentAnchorStart || slot.anchorStart);
+      return Number.isFinite(start) && start >= 15 * 60;
+    }
+    /**
+     * Other instructors on the same child and overlapping window.
+     * One card per instructor. Empty unless the seat is exactly 2:1 or 3:1.
+     */
+    function schedSharedRatioPeerSlots(slot, windowStart, windowEnd){
+      if(!schedSlotIsAfterschoolOrWeekendSharedRatio(slot)) return [];
+      var iso = String(slot.sessionDate || '').slice(0, 10);
+      var slug = '';
+      try{
+        slug = adminCanonicalClientSlug(String(slot.clientSlug || slot.clientDisplay || '').trim());
+      }catch(_slug){
+        slug = String(slot.clientSlug || '').trim().toLowerCase();
+      }
+      var self = normalizeSchedAnchorStaffId(slot.staffRosterId || '');
+      if(!iso || !slug || !self) return [];
+      var winStart = windowStart || slot.parentAnchorStart || slot.anchorStart;
+      var winEnd = windowEnd || slot.parentAnchorEnd || slot.anchorEnd;
+      var pool = [];
+      try{
+        var raw = slotsForSelectedDate(iso);
+        if(raw && raw.length){
+          pool = pool.concat(raw);
+          if(typeof schedExpandAquaticHalfHourSlots === 'function'){
+            pool = pool.concat(schedExpandAquaticHalfHourSlots(raw));
+          }
+        }
+      }catch(_raw){}
+      if(sched.cachedDaySlots && sched.cachedDaySlots.length) pool = pool.concat(sched.cachedDaySlots);
+      var bag = sched.slotsById || {};
+      Object.keys(bag).forEach(function(k){
+        if(bag[k]) pool.push(bag[k]);
+      });
+      if(slot.allInstructors && slot.allInstructors.length >= 2){
+        slot.allInstructors.forEach(function(inst){
+          var rid = normalizeSchedAnchorStaffId(inst && inst.staffRosterId);
+          if(!rid || rid === self) return;
+          pool.push(Object.assign({}, slot, {
+            staffRosterId: rid,
+            staffName: String((inst && inst.staffName) || '').trim() || schedStaffDisplayName(rid, rid)
+          }));
+        });
+      }
+      var byStaff = Object.create(null);
+      var staffSet = Object.create(null);
+      staffSet[self] = true;
+      var winLo = schedPgTimeToMinutes(winStart);
+      var winHi = schedPgTimeToMinutes(winEnd);
+      pool.forEach(function(other){
+        if(!other) return;
+        if(String(other.sessionDate || iso).slice(0, 10) !== iso) return;
+        if(schedSlotIsDayCentre(other)) return;
+        var otherSlug = '';
+        try{
+          otherSlug = adminCanonicalClientSlug(String(other.clientSlug || other.clientDisplay || '').trim());
+        }catch(_os){
+          otherSlug = String(other.clientSlug || '').trim().toLowerCase();
+        }
+        if(!otherSlug || otherSlug !== slug) return;
+        var rid = normalizeSchedAnchorStaffId(other.staffRosterId);
+        if(!rid || rid === self) return;
+        var oStart = other.anchorStart;
+        var oEnd = other.anchorEnd;
+        if(!schedTimeRangesOverlap(winStart, winEnd, oStart, oEnd)) return;
+        staffSet[rid] = true;
+        var lo = schedPgTimeToMinutes(oStart);
+        var hi = schedPgTimeToMinutes(oEnd);
+        var contained = Number.isFinite(winLo) && Number.isFinite(winHi) && Number.isFinite(lo) && Number.isFinite(hi) && lo >= winLo && hi <= winHi;
+        var span = (Number.isFinite(lo) && Number.isFinite(hi) && hi > lo) ? (hi - lo) : 9999;
+        if(!byStaff[rid]) byStaff[rid] = [];
+        byStaff[rid].push({ slot: other, contained: contained, span: span, key: normTimeShort(oStart) + '|' + normTimeShort(oEnd) });
+      });
+      var n = Object.keys(staffSet).length;
+      if(n < 2 || n > 3) return [];
+      var peers = [];
+      Object.keys(byStaff).forEach(function(rid){
+        var list = byStaff[rid];
+        var inside = list.filter(function(item){ return item.contained; });
+        var use = inside.length ? inside : list.slice().sort(function(a, b){ return a.span - b.span; }).slice(0, 1);
+        var seenTime = Object.create(null);
+        use.forEach(function(item){
+          if(seenTime[item.key]) return;
+          seenTime[item.key] = true;
+          peers.push(item.slot);
+        });
+      });
+      return peers;
+    }
+    async function schedMirrorSharedRatioAbsentOrCancel(client, slot, row){
+      if(!client || !slot || !row) return [];
+      var peers = schedSharedRatioPeerSlots(slot, row.anchor_start, row.anchor_end);
+      if(!peers.length) return [];
+      var names = [];
+      var seenName = Object.create(null);
+      for(var i = 0; i < peers.length; i++){
+        var peer = peers[i];
+        var peerStaff = normalizeSchedAnchorStaffId(peer.staffRosterId);
+        if(!peerStaff) continue;
+        var peerRow = Object.assign({}, row, {
+          anchor_staff_id: peerStaff,
+          anchor_start: peer.anchorStart || row.anchor_start,
+          anchor_end: peer.anchorEnd || row.anchor_end,
+          anchor_venue: peer.venue || row.anchor_venue,
+          anchor_time_slot_label: peer.anchorTimeLabel || peer.whenLabel || row.anchor_time_slot_label,
+          payload: Object.assign({}, row.payload || {}, { shared_ratio_mirror: true })
+        });
+        delete peerRow.id;
+        var peerSlot = Object.assign({}, slot, {
+          staffRosterId: peerStaff,
+          staffName: peer.staffName || peerStaff,
+          anchorStart: peerRow.anchor_start,
+          anchorEnd: peerRow.anchor_end,
+          venue: peerRow.anchor_venue
+        });
+        var eq = null;
+        try{ eq = schedFindEquivalentActiveOverride(peerSlot, peerRow); }catch(_eq){ eq = null; }
+        if(eq) continue;
+        var ins = await client.from('schedule_overrides').insert([peerRow]).select('id');
+        if(ins.error){
+          console.warn('[sched] shared-ratio mirror failed', peerStaff, ins.error);
+          continue;
+        }
+        var label = String(peer.staffName || '').trim() || schedStaffDisplayName(peerStaff, peerStaff);
+        if(label && !seenName[label]){
+          seenName[label] = true;
+          names.push(label);
+        }
+      }
+      return names;
+    }
+    /**
      * Day Centre: one instructor cancel is not a client cancel while another
      * instructor still has that client the same day (standing seat or session_add).
      */
@@ -18352,6 +18499,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           await schedEnqueueAbsentDecisionQueue(client, slot, ins0.id, reason);
         }catch(_enqA){
           console.warn('[portal] absent decision queue enqueue failed', _enqA);
+        }
+      }
+      /* 2:1 and 3:1 after-school / weekend: one save covers every instructor.
+         Parent queue and WhatsApp stay on the first row only. */
+      var sharedRatioMirror = ovType === 'client_absence_announced';
+      if(ovType === 'slot_close') sharedRatioMirror = !dcInstructorOnlyCancel && !(payload && payload.dc_instructor_only);
+      if(ovType === 'slot_clear_client' && ovTypeRaw === 'client_cancelled'){
+        sharedRatioMirror = !dcInstructorOnlyCancel && !(payload && payload.dc_instructor_only);
+      }
+      if(sharedRatioMirror){
+        try{
+          var sharedNames = await schedMirrorSharedRatioAbsentOrCancel(client, slot, row);
+          if(sharedNames && sharedNames.length){
+            var sharedBit = 'Also marked for ' + sharedNames.join(', ') + '.';
+            sched.lastMsg = String(sched.lastMsg || 'Override saved.').replace(/\s*$/, '') + ' ' + sharedBit;
+          }
+        }catch(_share){
+          console.warn('[portal] shared-ratio mirror failed', _share);
         }
       }
       /* Confirmed MakeUp (not trial, not same-day reassign): notify + close Absents row. */

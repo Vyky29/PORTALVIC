@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v317",
+  "version": "2026-10-08-v318",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -135,7 +135,12 @@
             "change time",
             "cambiar hora",
             "nueva hora",
-            "cancel and add"
+            "cancel and add",
+            "2:1",
+            "3:1",
+            "afterschool",
+            "weekend",
+            "todos"
           ],
           "demos": [
             {
@@ -162,7 +167,8 @@
             "A cover keeps the original seat. Today shows that area: Hub Room, Big Pool, Small Pool or Teaching Pool. It does not drop to a dash. Covering the whole Sunday Hub book is one NEW SHIFT, 9.15 to 2.15. A single slot stays that slot.",
             "There is no clock editor on an existing row. Move to another slot today only lands on a band that already exists that day. To use a new time, Change, Cancelled, Save override on the old row, then + Add session card, Type Session, with the new Start and End. That is one day. Edit term slot is only if that weekday should keep the new time for the rest of term.",
             "Parents of Aquatic, Multi-Activity, Climbing and Fitness get a WhatsApp. Cancelled sends one message that the old session is cancelled, and opens Absents. + Add session card then sends a second message that a session was added, with the new time. Move sends one time-change message, old time and new time, when the target band already exists. Day Centre and Bespoke do not WhatsApp parents, because those cards change more often.",
-            "On Sessions Overview, those same after-school and weekend cards say Cancelled by admin on the old time and Added by admin on the new card. A cover on the old time does not stay as Cover. Day Centre and Bespoke cards keep the chips they had before."
+            "On Sessions Overview, those same after-school and weekend cards say Cancelled by admin on the old time and Added by admin on the new card. A cover on the old time does not stay as Cover. Day Centre and Bespoke cards keep the chips they had before.",
+            "On after-school and weekend 2:1 and 3:1, Absent or Cancelled on one instructor applies to every instructor on that seat. Each of them is notified and their feedback clears. The parent still gets one message. Day Centre stays on the instructor you opened."
           ],
           "es": {
             "title": "Schedule & Covers (un dia)",
@@ -187,7 +193,8 @@
               "Un cover conserva la plaza original. Today ensena esa area: Hub Room, Big Pool, Small Pool o Teaching Pool. No se queda en una raya. Cubrir el Hub entero del domingo es una sola NEW SHIFT, 9.15 to 2.15. Una sola franja se queda en esa franja.",
               "En una fila que ya existe no hay campo para cambiar la hora. Move to another slot today solo cae en una franja que ya existe ese dia. Para una hora nueva: Change, Cancelled, Save override en la fila vieja, y luego + Add session card, Type Session, con el Start y el End nuevos. Es un dia. Edit term slot solo si ese dia de la semana debe quedarse con la hora nueva el resto del term.",
               "Los padres de Aquatic, Multi-Activity, Climbing y Fitness reciben WhatsApp. Cancelled manda un mensaje de que la sesion vieja esta cancelada, y abre Absents. + Add session card manda un segundo mensaje de que se anadio una sesion, con la hora nueva. Move manda un solo mensaje de cambio de hora, hora vieja y hora nueva, si la franja de destino ya existe. Day Centre y Bespoke no avisan a los padres, porque esas tarjetas cambian mas a menudo.",
-              "En Sessions Overview, esas mismas tarjetas de after-school y weekend dicen Cancelled by admin en la hora vieja y Added by admin en la tarjeta nueva. Un cover en la hora vieja no se queda como Cover. Day Centre y Bespoke conservan los chips de antes."
+              "En Sessions Overview, esas mismas tarjetas de after-school y weekend dicen Cancelled by admin en la hora vieja y Added by admin en la tarjeta nueva. Un cover en la hora vieja no se queda como Cover. Day Centre y Bespoke conservan los chips de antes.",
+              "En after-school y weekend de 2:1 y 3:1, Absent o Cancelled en un instructor vale para todos los de esa plaza. A cada uno le llega el aviso y se les quita el feedback. El padre sigue recibiendo un solo mensaje. Day Centre se queda en el instructor que abriste."
             ]
           }
         },
