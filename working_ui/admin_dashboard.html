@@ -101,7 +101,7 @@
   <script src="/portal/admin-payslips.js?v=20261001-payslip-amount"></script>
   <script src="/portal/admin-portal-pins.js?v=20261001-family-pins"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
-  <script src="/portal/admin-training-progress.js?v=20261008-train-here"></script>
+  <script src="/portal/admin-training-progress.js?v=20261008-live-hr"></script>
   <script src="/portal/admin-portal-staff-map.js?v=20261008-loc-roster"></script>
   <script src="/portal/admin-push-devices.js?v=20260920-pwa-app"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
@@ -532,7 +532,7 @@
       { id:'servicecap', label:'Fill seats → Services §2 Booking Portal' },
       { id:'portal_activity', label:'Portal activity' },
       { id:'portal_training_progress', label:'App readiness', hubLabel:'App readiness' },
-      { id:'staff_live_map', label:'Staff live map', hubLabel:'Staff live map', skipBottomNav:true },
+      { id:'staff_live_map', label:'Live map', hubLabel:'Live map', skipBottomNav:true },
       { id:'portal_push_devices', label:'Staff push devices' },
       { id:'participant_achievements', label:'Photos/Videos', hubLabel:'Photos/Videos' },
       { id:'announcements', label:'Announcements', hubLabel:'Announcements', dayOpsAct:'announcements_comms' },
@@ -590,7 +590,7 @@
       { id:'g_services', label:'Services & places', children:['services_places','leads','c4k_waitlist','portal_participant_documents','services_roster','new_client','term_roster_edit'] },
       { id:'g_clients', label:'Clients & Families', children:['__h:Clients','clients','clients_old','clients_trial','clients_cfk','c4k_reviews','c4k_reports','__h:Family','participant_achievements','portal_parent_broadcast','portal_family_pins','portal_parent_teleport','__h:Documents','portal_registration_form','portal_climbing_registrations','portal_parent_consents','care_plans'] },
       { id:'g_xero', label:'Finance', children:['__h:Xero','finance_xero','finance_create','__h:Tide','finance_reenrolments','finance_payments','__h:Other','absents_refunds','finance_cancelled_services','commissioning_terms','family_terms'] },
-      { id:'g_zoho', label:'H&R', children:['__h:Formal workers','c4k_late_submissions','session_disruptions','staffhr','roster_spreadsheets','staff_ghost_teleport','portal_docs_portalpin','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','__h:Files','portal_documents','hr_pay','hr_policies','day_centre_documents'] },
+      { id:'g_zoho', label:'H&R', children:['__h:Formal workers','c4k_late_submissions','session_disruptions','staffhr','roster_spreadsheets','staff_live_map','staff_ghost_teleport','portal_docs_portalpin','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','__h:Files','portal_documents','hr_pay','hr_policies','day_centre_documents'] },
       { id:'g_potential', label:'Potential workers', children:['onboarding','interviews'] },
       { id:'g_settings_portal', label:'Settings', children:['settings','cs_world','portal_push_devices','portal_device_notifications','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
     ];
@@ -646,6 +646,7 @@
       staffhr_contracts:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>',
       staffhr_training_records:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/>',
       staffhr_uniform:'<path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>',
+      staff_live_map:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>',
       invoices:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
       logs:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
       recruitment:'<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
@@ -32242,6 +32243,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
         staffhr_contracts:'Employment contracts — create & send, plus Issue plan (checklist + NEST notices).',
         staffhr_training_records:'Training records — induction, recap and swimming, plus event signatures and certificate PDFs.',
+        staff_live_map:'Live map — who on the roster is at the venue during their shift.',
         staffhr_uniform:'Uniform stock — live matrix by size, stock in, issue/return linked to each staff Uniform record.',
         portal_documents:'Worker files. The buttons switch Timesheets, Expenses, Checklists, Passports, Certificates, First aid and the rest.',
         hr_pay:'Timesheets, payslips, expenses, pay rates and the payroll report. The buttons stay on the page.',
@@ -32381,7 +32383,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         preview:[],
         status:'',
         primary:['c4k_late_submissions','session_disruptions','staffhr','roster_spreadsheets','staff_ghost_teleport','portal_docs_portalpin','portal_documents','hr_pay','hr_policies','day_centre_documents'],
-        secondary:[{ id:'staffhr_contracts', label:'Contracts' },{ id:'staffhr_training_records', label:'Training records' },{ id:'staffhr_uniform', label:'Uniform' }]
+        secondary:[{ id:'staffhr_contracts', label:'Contracts' },{ id:'staffhr_training_records', label:'Training records' },{ id:'staffhr_uniform', label:'Uniform' },{ id:'staff_live_map', label:'Live map' }]
       },
       {
         id:'more',
@@ -34256,6 +34258,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_contracts">Contracts</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_uniform">Uniform stock</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staff_live_map">Live map</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="portal_training_progress">App readiness</button></div>'+
         '<div id="portalTrainingOnRecords"></div>'+
         '<div id="trModuleRoot"></div>'
@@ -34269,7 +34272,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_contracts">Contracts</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_training_records">Training records</button></div>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_training_records">Training records</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staff_live_map">Live map</button></div>'+
         '<div id="uniformModuleRoot"></div>'
       );
     }

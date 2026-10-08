@@ -1296,8 +1296,7 @@
         '<p class="page-intro portal-activity-intro">Preferred: installed Staff app on clubsensational-staff. Location is on only from 15 minutes before the first session until 10 minutes after the last.</p>';
     var extraBtns = training
       ? ""
-      : '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staff_live_map">Live map</button>' +
-        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_training_records">Training records</button>';
+      : '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">H&amp;R</button>';
     return (
       '<div id="portalTrainingProgressRoot" class="portal-activity-embed portal-day-ops-embed portal-tprog-embed portal-sready-embed" data-portal-tprog-bound="0" data-portal-tprog-mode="' +
       (training ? "training" : "readiness") +
