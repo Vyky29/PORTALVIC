@@ -1835,7 +1835,7 @@
     wrap.innerHTML =
       "<div style=\"background:#fff;color:#0f172a;border-radius:16px;max-width:560px;width:100%;max-height:min(92vh,760px);overflow:auto;padding:16px;box-sizing:border-box\">" +
       "<h2 style=\"margin:0 0 8px;font-size:18px\">Cancel service</h2>" +
-      "<p style=\"margin:0 0 10px;font-size:13px;line-height:1.4\">One message to the parent. The bank refund is paid back the same way they paid. This does not move the money by itself." +
+      "<p style=\"margin:0 0 10px;font-size:13px;line-height:1.4\">One message to the parent. When there is a refund, it asks for their bank details so the office can pay it in. This does not move the money by itself." +
       (quote && quote.invoice_number ? " Invoice " + esc(quote.invoice_number) + "." : "") +
       "</p>" +
       lines +

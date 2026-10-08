@@ -174,7 +174,9 @@ export async function notifyParentAbsenceOutcome(
       `We have approved a refund` +
       (amountLabel ? ` of ${amountLabel}` : "") +
       ` for ${child} (${session}).\n\n` +
-      `Please check your bank in the next few days. Details are in the parent portal under Credits & refunds.\n\n` +
+      `To pay this into your account, please send the name on the account, the sort code, and the account number. ` +
+      `Use Messages in the parent portal, or call or message 07592 558671.\n\n` +
+      `Details are also in the parent portal under Credits & refunds.\n\n` +
       `Portal: ${portalHint}\n\n— clubSENsational`;
   } else {
     const apply = opts.creditApply || null;

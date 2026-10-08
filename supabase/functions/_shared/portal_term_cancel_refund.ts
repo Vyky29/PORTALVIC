@@ -195,8 +195,9 @@ function buildMessage(q: Record<string, unknown>): string {
   if (q.confident && Number(q.refund_gbp) > 0) {
     lines.push(
       "",
-      "We will refund " + gbp(Number(q.refund_gbp)) +
-        ". The refund goes back the same way you paid. It can take a few days.",
+      "We will refund " + gbp(Number(q.refund_gbp)) + ".\n\n" +
+        "To pay this into your account, please send the name on the account, the sort code, and the account number. " +
+        "Use Messages in the parent portal, or call or message 07592 558671.",
     );
   } else if (q.confident && Number(q.paid_gbp) > 0 && Number(q.refund_gbp) <= 0) {
     lines.push("", "No refund is due.");

@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v316",
+  "version": "2026-10-08-v317",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -897,7 +897,7 @@
             "Set the anchor to a date that is the same weekday as the service. A Sunday place needs a Sunday anchor. A Wednesday anchor cancels Wednesdays.",
             "Set the time slot, then save. Clicking the Now card only picks the seat. It does not change the anchor.",
             "That anchor date and later matching weekdays drop. Dates before the anchor stay. The seat stays on the board as No participant and opens on the public offer. The instructor gets one roster alert for the first cancelled day.",
-            "Parents see a cancelled chip for those dates. Rest of term and Every weekday open a sheet with the refund (paid, sessions already done, 10% administration, amount back, and what will not be collected). Confirm sends one message to the parent. The bank transfer is still paid back the same way. LA / NHS do not get the administration charge."
+            "Parents see a cancelled chip for those dates. Rest of term and Every weekday open a sheet with the refund (paid, sessions already done, 10% administration, amount back, and what will not be collected). Confirm sends one message to the parent. When there is a refund, that message asks for the name on the account, sort code, and account number so the office can pay it in. LA / NHS do not get the administration charge."
           ],
           "tips": [
             "Every [weekday] until end of term also removes days already delivered. Use that only when the whole weekday pattern should go, including the past.",
@@ -917,7 +917,7 @@
               "Pon el ancla en una fecha que sea el mismo dia de la semana que el servicio. Una plaza de domingo necesita un ancla en domingo. Un ancla en miercoles cancela miercoles.",
               "Pon la franja y guarda. Pulsar la tarjeta Now solo elige la plaza. No cambia el ancla.",
               "Ese dia ancla y los mismos dias de la semana posteriores se caen. Los dias anteriores se quedan. La plaza sigue en el tablero como No participant y se abre en la oferta publica. El instructor recibe un aviso de roster por el primer dia cancelado.",
-              "Los padres ven un chip cancelado en esas fechas. Rest of term y Every weekday abren una hoja con el reembolso (pagado, sesiones ya dadas, 10% de administracion, lo que se devuelve y lo que no se va a cobrar). Confirm manda un mensaje al padre. La transferencia se devuelve igual. LA / NHS no llevan ese cargo de administracion."
+              "Los padres ven un chip cancelado en esas fechas. Rest of term y Every weekday abren una hoja con el reembolso (pagado, sesiones ya dadas, 10% de administracion, lo que se devuelve y lo que no se va a cobrar). Confirm manda un mensaje al padre. Si hay refund, ese mensaje pide el nombre de la cuenta, sort code y account number para poder hacer el ingreso. LA / NHS no llevan ese cargo de administracion."
             ],
             "tips": [
               "Every [weekday] until end of term tambien quita dias ya dados. Usalo solo cuando todo ese dia de la semana tiene que irse, incluido el pasado.",
@@ -1804,7 +1804,7 @@
             "In Reason write that there is no instructor. Do not ask them to reply on this message. Save. That day only is cancelled. The standing service stays.",
             "The parent gets an automatic WhatsApp that the session is cancelled, including that note. It says the message was sent automatically. The row lands in Absents, refunds and credits.",
             "When the family tells the office refund or credit another way, open that row. Choose Credit or Refund, then Approve. For a refund enter the session amount. For a credit enter the same amount, or leave the amount blank for a session credit with no cash figure.",
-            "Approve writes the family ledger and sends the outcome message. Makeup is only if they ask for another day."
+            "Approve writes the family ledger and sends the outcome message. A refund message asks for the name on the account, sort code, and account number so the office can pay it in. Makeup is only if they ask for another day."
           ],
           "tips": [
             "Sep+ absents and cancellations share one decide queue.",
@@ -1823,7 +1823,7 @@
               "En Reason escribe que no hay instructor. No pidas que contesten en ese mensaje. Guarda. Solo ese dia se cancela. El servicio fijo se queda.",
               "El padre recibe un WhatsApp automatico de que la sesion esta cancelada, con esa nota. Dice que el mensaje salio solo. La fila cae en Absents, refunds and credits.",
               "Cuando la familia diga a la oficina refund o credit por otro lado, abre esa fila. Elige Credit o Refund, y luego Approve. En un refund pon el importe de la sesion. En un credit pon el mismo importe, o dejalo en blanco para un credito de sesion sin cifra.",
-              "Approve escribe el libro de la familia y manda el mensaje del resultado. Makeup solo si piden otro dia."
+              "Approve escribe el libro de la familia y manda el mensaje del resultado. El mensaje de refund pide el nombre de la cuenta, sort code y account number para poder hacer el ingreso. Makeup solo si piden otro dia."
             ],
             "tips": [
               "Las faltas y cancelaciones de septiembre en adelante comparten una sola cola de decision.",
