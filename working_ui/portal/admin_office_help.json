@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v331",
+  "version": "2026-10-08-v332",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2746,8 +2746,7 @@
             "Completed modules stay saved. Refreshing the page does not wipe a real pass.",
             "New hires who must finish induction do not get the recap diploma path.",
             "The Readiness column is the staff app and portal features. Induction and swimming stay in their own columns. An open module does not turn Readiness to Follow up.",
-            "Location on Readiness is the phone permission and a live share only during the shift: 15 minutes before until 10 minutes after. It is for coming to help. It is not a clock-in and it does not change pay.",
-            "The permissions announcement Submit checks a real GPS fix. If location is blocked, Submit does not sign the announcement.",
+            "Location runs inside the staff app for people on the roster that day, from 15 minutes before the first session until 10 minutes after the last. It is for coming to help. It is not a clock-in and it does not change pay. Do not send a daily announcement for it.",
             "Patience still does the six modules. Emmanuel and Ann finished those modules. Every other worker except CEO and admin does the annual recap: all twelve cards, then the quiz. The diploma is saved to My documents only after that full pass. Opening the page does not create it."
           ]
         },

@@ -101,7 +101,8 @@
   <script src="/portal/admin-payslips.js?v=20261001-payslip-amount"></script>
   <script src="/portal/admin-portal-pins.js?v=20261001-family-pins"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
-  <script src="/portal/admin-training-progress.js?v=20261008-shift-loc"></script>
+  <script src="/portal/admin-training-progress.js?v=20261008-loc-roster"></script>
+  <script src="/portal/admin-portal-staff-map.js?v=20261008-loc-roster"></script>
   <script src="/portal/admin-push-devices.js?v=20260920-pwa-app"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
   <script src="/portal/admin-portal-parent-contact-edit.js?v=20261001-live-contact"></script>
@@ -531,6 +532,7 @@
       { id:'servicecap', label:'Fill seats → Services §2 Booking Portal' },
       { id:'portal_activity', label:'Portal activity' },
       { id:'portal_training_progress', label:'Staff readiness', hubLabel:'Staff readiness' },
+      { id:'staff_live_map', label:'Staff live map', hubLabel:'Staff live map', skipBottomNav:true },
       { id:'portal_push_devices', label:'Staff push devices' },
       { id:'participant_achievements', label:'Photos/Videos', hubLabel:'Photos/Videos' },
       { id:'announcements', label:'Announcements', hubLabel:'Announcements', dayOpsAct:'announcements_comms' },
@@ -2340,7 +2342,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(prevViewId && prevViewId !== String(id || '')){
         portalAdminSaveViewScroll(prevViewId);
       }
-      if(id === 'staff_live_map') id = 'nav_hub';
+      if(state.view === 'staff_live_map' && id !== 'staff_live_map'){
+        try{
+          if(window.PortalStaffLiveMap && typeof window.PortalStaffLiveMap.destroyModule === 'function'){
+            window.PortalStaffLiveMap.destroyModule();
+          }
+        }catch(_mapDestroy){}
+      }
       if(state.view === 'staff_ghost_teleport' && id !== 'staff_ghost_teleport'){
         try{
           if(window.PortalGhostTeleport && typeof window.PortalGhostTeleport.destroyModule === 'function'){
@@ -31415,6 +31423,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         html = viewPortalDocuments();
       }else if(id==='portal_activity') html = viewPortalActivity();
       else if(id==='portal_training_progress') html = viewPortalTrainingProgress();
+      else if(id==='staff_live_map') html = viewStaffLiveMap();
       else if(id==='portal_push_devices') html = viewPortalPushDevices();
       else if(id==='participant_achievements') html = viewParticipantAchievements();
       else if(id==='staff_ghost_teleport') html = viewStaffGhostTeleport();
@@ -33431,6 +33440,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalTrainingProgressConfigureOnce();
       if(window.PortalTrainingProgress && typeof window.PortalTrainingProgress.bindModule === 'function'){
         window.PortalTrainingProgress.bindModule();
+      }
+    }
+    function portalStaffLiveMapConfigureOnce(){
+      if(window.__portalStaffLiveMapConfigured || !window.PortalStaffLiveMap) return;
+      window.__portalStaffLiveMapConfigured = true;
+      window.PortalStaffLiveMap.configure({
+        esc: esc,
+        getClient: getSchedSupabaseClient
+      });
+    }
+    function viewStaffLiveMap(){
+      portalStaffLiveMapConfigureOnce();
+      return window.PortalStaffLiveMap ? window.PortalStaffLiveMap.viewHtml() : '<p class="page-intro">Staff map failed to load.</p>';
+    }
+    function bindStaffLiveMapModule(){
+      portalStaffLiveMapConfigureOnce();
+      if(window.PortalStaffLiveMap && typeof window.PortalStaffLiveMap.bindModule === 'function'){
+        window.PortalStaffLiveMap.bindModule();
       }
     }
     function portalPushDevicesConfigureOnce(){
@@ -36293,6 +36320,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='portal_activity') bindPortalActivityModule();
       if(id==='session_disruptions') portalSessionDisruptionsBind();
       if(id==='portal_training_progress') bindPortalTrainingProgressModule();
+      if(id==='staff_live_map') bindStaffLiveMapModule();
       if(id==='portal_push_devices') bindPortalPushDevicesModule();
       if(id==='portal_parent_notify_log') bindPortalParentNotifyLogModule();
       if(id==='portal_staff_whatsapp') bindPortalStaffWhatsappModule();
@@ -41884,7 +41912,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(qp && (navIdIsRoutableView(qp) || qp === 'reports')) initial = qp;
       else if(hash && (navIdIsRoutableView(hash) || hash === 'reports')) initial = hash;
-      if(initial === 'staff_live_map' || qp === 'staff_live_map' || hash === 'staff_live_map') initial = 'nav_hub';
       if(qp === 'ceo' || hash === 'ceo') initial = 'nav_hub';
       var pathLower = String(location.pathname || '').toLowerCase();
       if(pathLower.indexOf('/adminportal') >= 0 || pathLower.indexOf('/operations-admin') >= 0){

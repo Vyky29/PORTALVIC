@@ -743,14 +743,7 @@ export function portalVoiceTypingOfferedForStaff() {
 }
 
 export function portalLocationRequiredForSetup() {
-  try {
-    if (typeof window.portalLiveMapLocationRequiredToday !== "function") return false;
-    var box = window.__PORTAL_SUPABASE__ || {};
-    var user = box.session && box.session.user ? box.session.user : null;
-    return !!window.portalLiveMapLocationRequiredToday(box.staff_profile || null, user);
-  } catch (_) {
-    return false;
-  }
+  return false;
 }
 
 export function portalMandatoryAlertsSettingsComplete() {
@@ -912,9 +905,8 @@ export function portalRefreshLocationUi() {
       btn.disabled = false;
     }
   } else {
-    statusEl.textContent = portalLocationRequiredForSetup()
-      ? "Off — required on a work day, from 15 minutes before your shift until 10 minutes after."
-      : "Not required today — no shift on your rota.";
+    statusEl.textContent =
+      "Off on this phone. When it is already allowed, it shares only during a roster shift: 15 minutes before until 10 minutes after.";
     if (btn) {
       btn.textContent = "Allow location";
       btn.disabled = false;

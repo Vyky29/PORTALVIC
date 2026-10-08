@@ -933,10 +933,6 @@
   /** User gesture: run default portal permissions when signable asks for it. */
   global.portalActivatePermissionsFromSignableItem = async function portalActivatePermissionsFromSignableItem(item) {
     if (!global.portalSignableItemTriggersPortalPermissions(item)) return null;
-    var loc = "prompt";
-    if (typeof global.portalRequestLocationPermission === "function") {
-      loc = await global.portalRequestLocationPermission();
-    }
     try {
       var box = readBox();
       var client = box && box.client;
@@ -950,14 +946,12 @@
         uid
       ) {
         var hasPush = await global.portalWorkerHasPortalPushSubscription(client, uid);
-        if (hasPush) return { location: loc };
+        if (hasPush) return null;
       }
     } catch (_) {}
     if (typeof global.portalRequestDefaultPortalPermissions === "function") {
-      var all = await global.portalRequestDefaultPortalPermissions();
-      if (all && loc === "granted") all.location = "granted";
-      return all;
+      return await global.portalRequestDefaultPortalPermissions();
     }
-    return { location: loc };
+    return null;
   };
 })(typeof window !== "undefined" ? window : globalThis);

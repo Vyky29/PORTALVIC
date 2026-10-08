@@ -1301,6 +1301,7 @@
       '<option value="browser_only">Browser only</option>' +
       "</select></label>" +
       '<button type="button" class="btn btn--sec btn--sm" id="portalTrainingProgressRefresh">Refresh</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staff_live_map">Live map</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">Staff &amp; HR</button>' +
       "</div>" +
       '<div class="ash-tabs portal-sready-tabs" role="tablist" aria-label="Training and readiness">' +

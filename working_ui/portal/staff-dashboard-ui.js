@@ -6634,31 +6634,8 @@
         const isProfileCampaign =
           typeof portalSignableItemIsAnnualProfileCampaign === 'function' &&
           portalSignableItemIsAnnualProfileCampaign(pending);
-        if(typeof portalSignableItemTriggersPortalPermissions === 'function' && portalSignableItemTriggersPortalPermissions(pending)){
-          signBtn.disabled = true;
-          var locState = 'prompt';
-          try{
-            if(typeof portalRequestLocationPermission === 'function'){
-              locState = await portalRequestLocationPermission();
-            }else if(typeof portalActivatePermissionsFromSignableItem === 'function'){
-              var permResult = await portalActivatePermissionsFromSignableItem(pending);
-              locState = permResult && permResult.location ? permResult.location : 'prompt';
-            }
-          }catch(_locErr){
-            locState = 'prompt';
-          }
-          if(locState !== 'granted'){
-            signBtn.disabled = false;
-            var locNote = document.getElementById('announcementLocationStatus');
-            if(!locNote){
-              locNote = document.createElement('p');
-              locNote.id = 'announcementLocationStatus';
-              locNote.className = 'announcement-message-p';
-              signBtn.insertAdjacentElement('beforebegin', locNote);
-            }
-            locNote.textContent = 'Allow location, then submit again. During your shift the office can see where you are from 15 minutes before until 10 minutes after, so we can come and help. It is not a clock-in and it does not change your pay.';
-            return;
-          }
+        if(typeof portalActivatePermissionsFromSignableItem === 'function'){
+          void portalActivatePermissionsFromSignableItem(pending);
         }
         const isReminder = portalSignableItemIsReminder(pending);
         const isFbOwed = !!(pending && pending.outstandingFeedback);
