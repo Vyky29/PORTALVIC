@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v334",
+  "version": "2026-10-08-v335",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1916,7 +1916,7 @@
             "Private pay-in-advance cancellation: unused prepaid can be refunded with a fee of 10% of the unused amount (minimum £25, maximum £100). Sessions already delivered, including a summer crash course, stay paid. LA / NHS do not use this fee.",
             "Cancelling the standing place is Edit term slot. Set the anchor to a date on that weekday, then Rest of term from the anchor. The refund told to the parent is written under that participant, Payments, Cancel refund, and on this ledger. Mark paid back when that money has gone back. The programme payments row still shows what they paid in.",
             "Finance month: count the refund on the month you confirmed Cancel service or Approve refund, not the month the bank pays out. Example: Orla Patrick climbing £236.25 is September (cancel from 27 Sep, paid 24 Sep). Karo and Kareena £450 together is September cancel of Autumn swim even if Tide pays in October.",
-            "Xero: Mark refunded or Sync Xero CN on Family credits creates CN-P-… against the linked INV-P (same VAT). WhatsApp or email after payout is optional (checkbox off by default). If the invoice was already paid in full, Xero may keep the CN unallocated; bank payout plus authorised CN is still correct — link CN to the invoice in Xero UI if you need it on the invoice screen.",
+            "Mark refunded opens one modal: office note, then an optional tick Notify parent (WhatsApp + email that the refund was sent). Leave the tick off unless the money already left the bank — default is ledger + Xero CN only. Same modal from participant Payments Mark paid back. Sync Xero CN uses the same tick if you only need Xero later. Paid invoices in Xero may not take API allocation; authorised CN + bank payout is still fine.",
             "Cancel service should leave everything square: void future instalments on the portal invoice schedule, open refund on Family credits, cancelled chips on the parent hub, roster ends from the anchor. Check GoCardless / Stripe so nothing still collects after void."
           ],
           "es": {
@@ -1938,7 +1938,7 @@
               "Cancelacion de pago privado por adelantado: lo no usado se puede devolver con una tasa del 10% de lo no usado (minimo 25 libras, maximo 100). Las sesiones ya dadas, incluido un crash de verano, siguen pagadas. LA / NHS no usan esta tasa.",
               "Cancelar la plaza fija es Edit term slot. Pon el ancla en una fecha de ese dia de la semana, y luego Rest of term from the anchor. El reembolso que se le dijo al padre queda en ese participante, Payments, Cancel refund, y en este libro. Mark paid back cuando ese dinero ya ha vuelto. La fila de programme payments sigue mostrando lo que pagaron.",
               "Mes en la hoja de gestion: el refund va en el mes en que confirmaste Cancel service o Approve refund, no en el mes en que sale del banco. Ejemplo: Orla Patrick climbing £236.25 es septiembre (cancel desde 27 sep, pagado 24 sep). Karo y Kareena £450 juntos es septiembre aunque Tide pague en octubre.",
-              "Xero: Mark refunded o Sync Xero CN en Family credits crea CN-P-… contra el INV-P enlazado (mismo IVA). WhatsApp o email tras el pago es opcional (casilla desmarcada por defecto). Si la factura ya estaba pagada al completo, Xero puede dejar el CN sin asignar; banco + CN autorizado sigue siendo correcto — enlaza el CN a la factura en Xero si lo quieres en pantalla.",
+              "Mark refunded abre un modal: nota de oficina y una casilla opcional Notify parent (WhatsApp + email de que el refund ya se envio). Dejala sin marcar salvo que el dinero ya salio del banco — por defecto solo libro + CN en Xero. El mismo modal sale en participant Payments Mark paid back. Sync Xero CN usa la misma casilla si solo falta Xero. Facturas ya pagadas en Xero pueden no aceptar asignacion por API; CN autorizado + banco sigue valiendo.",
               "Cancel service debe dejar todo cuadrado: anular plazos futuros en la factura del portal, refund abierto en Credits, chips cancelados en el hub del padre, roster cortado desde el ancla. Revisa GoCardless / Stripe para que no cobre despues del void."
             ]
           }

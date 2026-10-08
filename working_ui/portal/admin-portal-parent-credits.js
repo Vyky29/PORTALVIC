@@ -245,82 +245,20 @@
           openNoteModal(found || { id: id, notes: '' });
           return;
         }
-        var promptLabel =
-          act === 'mark_refunded'
-            ? 'Notes for refunded (optional):'
-            : act === 'mark_applied'
-              ? 'Notes (optional). Flexi → 2nd half; GoCardless → hold for Spring mandate (monthly):'
-              : 'Cancel reason (optional):';
-        var notes = global.prompt(promptLabel, '') || '';
-        var amountRaw = '';
-        if (act === 'mark_refunded') {
-          amountRaw = global.prompt('Confirm / set £ amount if missing (optional):', '') || '';
-        }
-        if (act === 'sync_refund_xero') {
-          notes = notes || 'Xero credit note sync';
-        }
-        btn.disabled = true;
-        var body = { action: act, entry_id: id, notes: notes };
-        if (String(amountRaw).trim()) body.amount_gbp = Number(amountRaw);
         if (act === 'mark_refunded' || act === 'sync_refund_xero') {
-          body.notify_parent = !!global.confirm(
-            'Send WhatsApp and email to the parent that the refund was sent?\n\nCancel = no message (only ledger + Xero).'
-          );
+          var foundRefund = (state.entries || []).filter(function (row) {
+            return String(row.id) === String(id);
+          })[0];
+          openRefundPayoutModal(foundRefund || { id: id }, act);
+          return;
         }
-        void api('portal-admin-parent-credits-update', body).then(function (r) {
-          if (r.error) {
-            cfg.toast(r.message || r.error || 'Update failed', 'error');
-            btn.disabled = false;
-            return;
-          }
-          if (act === 'mark_applied') {
-            var apps = (r.credit_apply && r.credit_apply.applications) || [];
-            var okApp = apps.find(function (a) {
-              return a && a.ok;
-            });
-            if (okApp) {
-              cfg.toast(
-                'Credit applied to invoice' +
-                  (okApp.applied_gbp != null ? ' (£' + Number(okApp.applied_gbp).toFixed(2) + ')' : '') +
-                  (okApp.invoice_remaining_gbp != null
-                    ? ' · remaining £' + Number(okApp.invoice_remaining_gbp).toFixed(2)
-                    : '') +
-                  ' (flexi → 2nd half when open)',
-                'ok'
-              );
-              state.filter = 'all';
-            } else if (r.held_for_spring_gc) {
-              cfg.toast(
-                'GoCardless — credit stays Available for Spring mandate (monthly). Not taken off Autumn GC.',
-                'ok'
-              );
-              state.filter = 'open';
-            } else if (r.held_for_next_term || (r.entry && r.entry.status === 'open')) {
-              cfg.toast('No bank/flexi invoice yet — credit stays Available for next term', 'ok');
-              state.filter = 'open';
-            } else {
-              cfg.toast('Credit updated', 'ok');
-              state.filter = 'all';
-            }
-          } else {
-            if (act === 'sync_refund_xero') {
-              var sx = r.settlement && r.settlement.xero;
-              if (sx && sx.ok) {
-                cfg.toast('Xero credit note synced' + (sx.xero_credit_note_number ? ' (' + sx.xero_credit_note_number + ')' : ''), 'ok');
-              } else {
-                cfg.toast((sx && sx.detail) || (sx && sx.error) || 'Xero sync failed', 'error');
-              }
-            } else {
-              cfg.toast(act === 'mark_refunded' ? 'Marked refunded' : 'Cancelled', 'ok');
-            }
-            if (act === 'mark_refunded' || act === 'sync_refund_xero') state.filter = 'all';
-          }
-          global.document.querySelectorAll('[data-credits-filter]').forEach(function (b) {
-            var on = b.getAttribute('data-credits-filter') === state.filter;
-            b.classList.toggle('btn--ghost', !on);
-          });
-          void renderHost(global.document.getElementById('portalParentCreditsHost'));
-        });
+        var promptLabel =
+          act === 'mark_applied'
+            ? 'Notes (optional). Flexi → 2nd half; GoCardless → hold for Spring mandate (monthly):'
+            : 'Cancel reason (optional):';
+        var notes = global.prompt(promptLabel, '') || '';
+        btn.disabled = true;
+        submitCreditAction({ action: act, entry_id: id, notes: notes }, btn, act);
       });
     });
   }
@@ -417,6 +355,179 @@
         hitsEl.hidden = true;
       });
     });
+  }
+
+  function submitCreditAction(body, btn, act, onDone) {
+    void api('portal-admin-parent-credits-update', body).then(function (r) {
+      if (r.error) {
+        cfg.toast(r.message || r.error || 'Update failed', 'error');
+        if (btn) btn.disabled = false;
+        return;
+      }
+      if (act === 'mark_applied') {
+        var apps = (r.credit_apply && r.credit_apply.applications) || [];
+        var okApp = apps.find(function (a) {
+          return a && a.ok;
+        });
+        if (okApp) {
+          cfg.toast(
+            'Credit applied to invoice' +
+              (okApp.applied_gbp != null ? ' (£' + Number(okApp.applied_gbp).toFixed(2) + ')' : '') +
+              (okApp.invoice_remaining_gbp != null
+                ? ' · remaining £' + Number(okApp.invoice_remaining_gbp).toFixed(2)
+                : '') +
+              ' (flexi → 2nd half when open)',
+            'ok'
+          );
+          state.filter = 'all';
+        } else if (r.held_for_spring_gc) {
+          cfg.toast(
+            'GoCardless — credit stays Available for Spring mandate (monthly). Not taken off Autumn GC.',
+            'ok'
+          );
+          state.filter = 'open';
+        } else if (r.held_for_next_term || (r.entry && r.entry.status === 'open')) {
+          cfg.toast('No bank/flexi invoice yet — credit stays Available for next term', 'ok');
+          state.filter = 'open';
+        } else {
+          cfg.toast('Credit updated', 'ok');
+          state.filter = 'all';
+        }
+      } else if (act === 'sync_refund_xero') {
+        var sx = r.settlement && r.settlement.xero;
+        if (sx && sx.ok) {
+          cfg.toast(
+            'Xero credit note synced' + (sx.xero_credit_note_number ? ' (' + sx.xero_credit_note_number + ')' : ''),
+            'ok'
+          );
+        } else {
+          cfg.toast((sx && sx.detail) || (sx && sx.error) || 'Xero sync failed', 'error');
+        }
+        state.filter = 'all';
+      } else if (act === 'mark_refunded') {
+        var st = r.settlement && r.settlement.notify;
+        if (st && st.ok) {
+          cfg.toast('Marked refunded · parent notified', 'ok');
+        } else {
+          cfg.toast('Marked refunded', 'ok');
+        }
+        state.filter = 'all';
+      } else {
+        cfg.toast(act === 'cancel' ? 'Cancelled' : 'Updated', 'ok');
+        if (act === 'cancel') state.filter = 'all';
+      }
+      global.document.querySelectorAll('[data-credits-filter]').forEach(function (b) {
+        var on = b.getAttribute('data-credits-filter') === state.filter;
+        b.classList.toggle('btn--ghost', !on);
+      });
+      void renderHost(global.document.getElementById('portalParentCreditsHost'));
+      if (typeof onDone === 'function') onDone(r);
+    });
+  }
+
+  /**
+   * Mark refunded / Sync Xero: one modal, optional parent notify (off by default).
+   */
+  function openRefundPayoutModal(entry, act, opts) {
+    opts = opts || {};
+    if (!entry || !entry.id) return;
+    var isSync = act === 'sync_refund_xero';
+    var title = isSync ? 'Sync Xero credit note' : 'Mark refund paid';
+    var primaryLabel = isSync ? 'Sync Xero CN' : 'Mark refunded';
+    var amountKnown = entry.amount_gbp != null && entry.amount_gbp !== '';
+    var defaultNotes = isSync ? 'Xero credit note sync' : '';
+
+    function runFallback() {
+      var notes = global.prompt(isSync ? 'Notes (optional):' : 'Notes for refunded (optional):', defaultNotes);
+      if (notes == null) return;
+      var amountRaw = '';
+      if (!amountKnown && !isSync) {
+        amountRaw = global.prompt('Confirm £ amount (optional):', String(entry.amount_gbp || '')) || '';
+      }
+      var body = { action: act, entry_id: entry.id, notes: notes, notify_parent: false };
+      if (String(amountRaw).trim()) body.amount_gbp = Number(amountRaw);
+      submitCreditAction(body, null, act, opts.onSuccess);
+    }
+
+    if (typeof cfg.openModal !== 'function') {
+      runFallback();
+      return;
+    }
+
+    cfg.openModal(
+      '<div class="modal-h"><h2 id="modalTitle">' +
+        esc(title) +
+        '</h2></div>' +
+        '<div class="modal-b" style="min-width:0">' +
+        '<p style="margin:0 0 8px;font-weight:700;overflow-wrap:break-word;min-width:0">' +
+        esc(entry.participant_display || 'Participant') +
+        ' · ' +
+        esc(formatMoney(entry.amount_gbp)) +
+        '</p>' +
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Updates the ledger to <strong>Refunded</strong>, creates the Xero credit note when needed, and leaves the parent portal on Refunded. They do not get a message unless you tick below.</p>' +
+        (amountKnown
+          ? ''
+          : '<label class="muted">Amount £</label>' +
+            '<input class="inp" id="ppRefundPayoutAmount" type="number" min="0" step="0.01" placeholder="Required if missing" style="max-width:100%;box-sizing:border-box;margin-bottom:10px" />') +
+        '<label class="muted">Office note (optional, parents do not see this)</label>' +
+        '<textarea class="inp" id="ppRefundPayoutNotes" rows="3" maxlength="800" placeholder="Bank ref, date paid…" style="max-width:100%;box-sizing:border-box;resize:vertical"></textarea>' +
+        '<label style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 0;cursor:pointer;min-width:0">' +
+        '<input type="checkbox" id="ppRefundNotifyParent" style="margin-top:3px;flex-shrink:0" />' +
+        '<span style="min-width:0;overflow-wrap:break-word;font-size:13px;line-height:1.45"><strong>Notify parent</strong> — WhatsApp and email: refund has been sent (use after money left the bank).</span>' +
+        '</label>' +
+        '<p id="ppRefundPayoutErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px;overflow-wrap:break-word"></p>' +
+        '</div>' +
+        '<div class="modal-f">' +
+        '<button type="button" class="btn btn--ghost" id="ppRefundPayoutCancel">Cancel</button>' +
+        '<button type="button" class="btn btn--pri" id="ppRefundPayoutSave">' +
+        esc(primaryLabel) +
+        '</button>' +
+        '</div>'
+    );
+
+    var notesBox = global.document.getElementById('ppRefundPayoutNotes');
+    if (notesBox) notesBox.value = defaultNotes;
+    var cancel = global.document.getElementById('ppRefundPayoutCancel');
+    if (cancel) {
+      cancel.onclick = function () {
+        if (typeof cfg.closeModal === 'function') cfg.closeModal();
+      };
+    }
+    var save = global.document.getElementById('ppRefundPayoutSave');
+    if (save) {
+      save.onclick = function () {
+        var errEl = global.document.getElementById('ppRefundPayoutErr');
+        function showErr(msg) {
+          if (!errEl) return;
+          errEl.style.display = 'block';
+          errEl.textContent = msg;
+        }
+        if (errEl) errEl.style.display = 'none';
+        var notes = notesBox ? String(notesBox.value || '').trim() : '';
+        var notifyEl = global.document.getElementById('ppRefundNotifyParent');
+        var notify = !!(notifyEl && notifyEl.checked);
+        var body = { action: act, entry_id: entry.id, notes: notes, notify_parent: notify };
+        if (!amountKnown) {
+          var amtEl = global.document.getElementById('ppRefundPayoutAmount');
+          var raw = amtEl ? String(amtEl.value || '').trim() : '';
+          if (!raw) {
+            showErr('Enter the refund amount.');
+            return;
+          }
+          var n = Number(raw);
+          if (!isFinite(n) || n <= 0) {
+            showErr('Invalid amount.');
+            return;
+          }
+          body.amount_gbp = n;
+        }
+        save.disabled = true;
+        submitCreditAction(body, save, act, function () {
+          if (typeof cfg.closeModal === 'function') cfg.closeModal();
+          if (typeof opts.onSuccess === 'function') opts.onSuccess();
+        });
+      };
+    }
   }
 
   function openNoteModal(entry) {
@@ -701,21 +812,13 @@
         var id = btn.getAttribute('data-pax-refund-paid');
         var amt = btn.getAttribute('data-pax-refund-amt');
         var label = formatMoney(amt);
-        if (!global.confirm('Mark ' + label + ' as paid back to the family?')) return;
-        btn.disabled = true;
-        void api('portal-admin-parent-credits-update', {
-          action: 'mark_refunded',
-          entry_id: id,
-          notes: 'Paid back from participant Payments',
-          notify_parent: false
-        }).then(function (r) {
-          if (r.error) {
-            cfg.toast(r.message || r.error || 'Update failed', 'error');
-            btn.disabled = false;
-            return;
+        var row = rows.filter(function (e) {
+          return String(e.id) === String(id);
+        })[0];
+        openRefundPayoutModal(row || { id: id, amount_gbp: amt, participant_display: name }, 'mark_refunded', {
+          onSuccess: function () {
+            void mountParticipantCancelRefunds(hostEl, name);
           }
-          cfg.toast('Marked paid back', 'ok');
-          void mountParticipantCancelRefunds(hostEl, name);
         });
       });
     });
