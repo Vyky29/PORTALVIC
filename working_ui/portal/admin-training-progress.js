@@ -17,7 +17,8 @@
     rows: [],
     loading: false,
     filter: "all",
-    tab: "training_compliance",
+    tab: "app_device",
+    mode: "readiness",
     permissionsAnnouncementIds: [],
   };
 
@@ -599,6 +600,13 @@
     return !row.readiness.trainingReady;
   }
 
+  function rowTrainingOpen(row) {
+    if (!inductionOnFile(row)) return true;
+    if (recapStillDue(row)) return true;
+    var swim = swimmingStatus(row);
+    return swim === "not_started" || swim === "in_progress";
+  }
+
   function rowComplianceMissing(_row) {
     return false;
   }
@@ -675,6 +683,7 @@
     if (f === "all") return rows;
     if (f === "attention") return rows.filter(rowNeedsAttention);
     if (f === "training_incomplete") return rows.filter(rowTrainingIncomplete);
+    if (f === "training_open") return rows.filter(rowTrainingOpen);
     if (f === "app_setup_missing") return rows.filter(rowAppSetupMissing);
     if (f === "browser_only") return rows.filter(rowWebOnly);
     if (f === "portalvic") return rows.filter(rowOnPortalvic);
@@ -1118,23 +1127,6 @@
       btn.classList.toggle("is-active", on);
       btn.setAttribute("aria-selected", on ? "true" : "false");
     });
-    var title = document.getElementById("portalTrainingProgressTitle");
-    var desc = document.getElementById("portalTrainingProgressDesc");
-    var intro = document.getElementById("portalTrainingProgressIntro");
-    var readiness = state.tab === "app_device";
-    if (title) title.textContent = readiness ? "Readiness" : state.tab === "follow_up" ? "Follow-up" : "Training";
-    if (desc) {
-      desc.textContent = readiness
-        ? "Staff app, portalvic, or web browser. Training is the other tab."
-        : state.tab === "follow_up"
-          ? "Open training and app items, listed separately inside each row."
-          : "Induction, annual recap, and swimming. Readiness is the next tab.";
-    }
-    if (intro) {
-      intro.textContent = readiness
-        ? "Preferred: installed Staff app on clubsensational-staff. Host is recorded when they open the portal after this update."
-        : "Induction on file stays Complete. Workers except CEO and admin still owe the recap. The diploma is only after all twelve cards and the quiz.";
-    }
   }
 
   async function refresh() {
@@ -1254,6 +1246,9 @@
     var root = document.getElementById("portalTrainingProgressRoot");
     if (!root || root.getAttribute("data-portal-tprog-bound") === "1") return;
     root.setAttribute("data-portal-tprog-bound", "1");
+    state.mode = root.getAttribute("data-portal-tprog-mode") === "training" ? "training" : "readiness";
+    state.tab = state.mode === "training" ? "training_compliance" : "app_device";
+    state.filter = "all";
 
     var refreshBtn = document.getElementById("portalTrainingProgressRefresh");
     if (refreshBtn) {
@@ -1273,7 +1268,7 @@
     root.addEventListener("click", function (ev) {
       var tabBtn = ev.target.closest ? ev.target.closest("[data-portal-sready-tab]") : null;
       if (!tabBtn || !root.contains(tabBtn)) return;
-      state.tab = tabBtn.getAttribute("data-portal-sready-tab") || "training_compliance";
+      state.tab = tabBtn.getAttribute("data-portal-sready-tab") || "app_device";
       syncTabsUi();
       renderTable(state.rows);
     });
@@ -1282,32 +1277,41 @@
     void refresh();
   }
 
-  function viewHtml() {
+  function viewHtml(mode) {
+    var training = mode === "training";
+    var filters = training
+      ? '<option value="all">All staff</option>' +
+        '<option value="training_incomplete">Induction not finished</option>' +
+        '<option value="training_open">Recap or induction open</option>'
+      : '<option value="all">All staff</option>' +
+        '<option value="attention">Needs follow-up</option>' +
+        '<option value="app_setup_missing">App setup missing</option>' +
+        '<option value="portalvic">On portalvic</option>' +
+        '<option value="browser_only">Browser only</option>';
+    var head = training
+      ? '<h2 class="ash-table-title">Induction, recap and swimming</h2>' +
+        '<p class="page-intro portal-activity-intro">Induction on file stays Complete. Workers except CEO and admin still owe the recap. The diploma is only after all twelve cards and the quiz.</p>'
+      : '<h1 class="page-title">App readiness</h1>' +
+        '<p class="page-desc">Staff app, portalvic, or web browser. Location shows here when someone on the roster is sharing during their shift.</p>' +
+        '<p class="page-intro portal-activity-intro">Preferred: installed Staff app on clubsensational-staff. Location is on only from 15 minutes before the first session until 10 minutes after the last.</p>';
+    var extraBtns = training
+      ? ""
+      : '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staff_live_map">Live map</button>' +
+        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_training_records">Training records</button>';
     return (
-      '<div id="portalTrainingProgressRoot" class="portal-activity-embed portal-day-ops-embed portal-tprog-embed portal-sready-embed" data-portal-tprog-bound="0">' +
-      '<h1 class="page-title" id="portalTrainingProgressTitle">Training</h1>' +
-      '<p class="page-desc" id="portalTrainingProgressDesc">Induction, annual recap, and swimming. Readiness is the next tab.</p>' +
-      '<p class="page-intro portal-activity-intro" id="portalTrainingProgressIntro">Induction on file stays Complete. Workers except CEO and admin still owe the recap. The diploma is only after all twelve cards and the quiz.</p>' +
+      '<div id="portalTrainingProgressRoot" class="portal-activity-embed portal-day-ops-embed portal-tprog-embed portal-sready-embed" data-portal-tprog-bound="0" data-portal-tprog-mode="' +
+      (training ? "training" : "readiness") +
+      '">' +
+      head +
       '<div id="portalStaffReadinessKpis" class="portal-sready-kpis-wrap" aria-live="polite"></div>' +
       '<div id="portalTrainingProgressStatus" class="portal-forms-status" role="status"></div>' +
       '<div class="portal-activity-toolbar">' +
       '<label class="portal-activity-toolbar__day"><span class="muted">Show</span> ' +
       '<select class="inp" id="portalTrainingProgressFilter">' +
-      '<option value="all">All Staff</option>' +
-      '<option value="attention">Needs Follow-Up</option>' +
-      '<option value="training_incomplete">Training Incomplete</option>' +
-      '<option value="app_setup_missing">App Setup Missing</option>' +
-      '<option value="portalvic">On portalvic</option>' +
-      '<option value="browser_only">Browser only</option>' +
+      filters +
       "</select></label>" +
       '<button type="button" class="btn btn--sec btn--sm" id="portalTrainingProgressRefresh">Refresh</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staff_live_map">Live map</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">Staff &amp; HR</button>' +
-      "</div>" +
-      '<div class="ash-tabs portal-sready-tabs" role="tablist" aria-label="Training and readiness">' +
-      '<button type="button" class="ash-tab is-active" role="tab" data-portal-sready-tab="training_compliance" aria-selected="true">Training</button>' +
-      '<button type="button" class="ash-tab" role="tab" data-portal-sready-tab="app_device" aria-selected="false">Readiness</button>' +
-      '<button type="button" class="ash-tab" role="tab" data-portal-sready-tab="follow_up" aria-selected="false">Needs Follow-Up</button>' +
+      extraBtns +
       "</div>" +
       '<p class="portal-activity-count" id="portalTrainingProgressCount">Loading…</p>' +
       '<div id="portalTrainingProgressTableWrap" aria-live="polite"></div>' +

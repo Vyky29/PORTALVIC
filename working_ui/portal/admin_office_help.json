@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-v332",
+  "version": "2026-10-08-v333",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2722,7 +2722,7 @@
           "id": "induction_progress_admin",
           "title": "See what a new hire has done of induction",
           "summary": "Induction is complete only when all 6 modules have a real quiz pass. A recap diploma or an automatic stamp is not completion.",
-          "where": "H&R → Training progress / Staff Readiness",
+          "where": "H&R → Training records",
           "keywords": [
             "induction",
             "modulos",
@@ -2736,7 +2736,7 @@
             "new hire"
           ],
           "steps": [
-            "Open Training progress (Staff Readiness) and find the worker.",
+            "Open H&R, then Training records. Induction, recap and swimming are the first table.",
             "Read the module chips and the count, for example 2 of 6 modules.",
             "Treat it as complete only when 6 modules show a real quiz pass.",
             "A recap button or a diploma does not mean the 6 modules are done.",
@@ -2745,7 +2745,7 @@
           "tips": [
             "Completed modules stay saved. Refreshing the page does not wipe a real pass.",
             "New hires who must finish induction do not get the recap diploma path.",
-            "The Readiness column is the staff app and portal features. Induction and swimming stay in their own columns. An open module does not turn Readiness to Follow up.",
+            "Induction, recap and swimming live on Training records. App readiness is the staff app, alerts, camera and location. Location is not on the training table.",
             "Location runs inside the staff app for people on the roster that day, from 15 minutes before the first session until 10 minutes after the last. It is for coming to help. It is not a clock-in and it does not change pay. Do not send a daily announcement for it.",
             "Patience still does the six modules. Emmanuel and Ann finished those modules. Every other worker except CEO and admin does the annual recap: all twelve cards, then the quiz. The diploma is saved to My documents only after that full pass. Opening the page does not create it."
           ]
@@ -3431,7 +3431,7 @@
         {
           "id": "ceo_menu_from_settings",
           "title": "CEO menu and what left Settings",
-          "summary": "Staff readiness, Activity log and Portal activity are on the CEO menu. Alerts and Office help stay in the top bar.",
+          "summary": "App readiness, Activity log and Portal activity are on the CEO menu. Alerts and Office help stay in the top bar.",
           "where": "CEO portal menu, and admin top bar",
           "keywords": [
             "ceo",
@@ -3445,7 +3445,7 @@
             "portal activity"
           ],
           "steps": [
-            "Open the CEO portal. Under Company insights is Activity log. Next to Parents in portal is Portal activity, then Staff readiness.",
+            "Open the CEO portal. Under Company insights is Activity log. Next to Parents in portal is Portal activity, then App readiness.",
             "Those three open the same admin screens. They are not in the admin Settings menu.",
             "Alerts inbox is the bell in the admin top bar. It is not a Settings item.",
             "Office help is the link on Operations Hub and the i on each page. It is not a Settings item.",

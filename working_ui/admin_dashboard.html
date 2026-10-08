@@ -101,7 +101,7 @@
   <script src="/portal/admin-payslips.js?v=20261001-payslip-amount"></script>
   <script src="/portal/admin-portal-pins.js?v=20261001-family-pins"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
-  <script src="/portal/admin-training-progress.js?v=20261008-loc-roster"></script>
+  <script src="/portal/admin-training-progress.js?v=20261008-train-here"></script>
   <script src="/portal/admin-portal-staff-map.js?v=20261008-loc-roster"></script>
   <script src="/portal/admin-push-devices.js?v=20260920-pwa-app"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
@@ -531,7 +531,7 @@
       { id:'c4k_reports', label:'Reports', hubLabel:'Reports' },
       { id:'servicecap', label:'Fill seats → Services §2 Booking Portal' },
       { id:'portal_activity', label:'Portal activity' },
-      { id:'portal_training_progress', label:'Staff readiness', hubLabel:'Staff readiness' },
+      { id:'portal_training_progress', label:'App readiness', hubLabel:'App readiness' },
       { id:'staff_live_map', label:'Staff live map', hubLabel:'Staff live map', skipBottomNav:true },
       { id:'portal_push_devices', label:'Staff push devices' },
       { id:'participant_achievements', label:'Photos/Videos', hubLabel:'Photos/Videos' },
@@ -32241,7 +32241,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
         staffhr_contracts:'Employment contracts — create & send, plus Issue plan (checklist + NEST notices).',
-        staffhr_training_records:'Training records — events, signatures, expiry watch, and certificate PDFs in My Documents.',
+        staffhr_training_records:'Training records — induction, recap and swimming, plus event signatures and certificate PDFs.',
         staffhr_uniform:'Uniform stock — live matrix by size, stock in, issue/return linked to each staff Uniform record.',
         portal_documents:'Worker files. The buttons switch Timesheets, Expenses, Checklists, Passports, Certificates, First aid and the rest.',
         hr_pay:'Timesheets, payslips, expenses, pay rates and the payroll report. The buttons stay on the page.',
@@ -32250,7 +32250,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         care_plans:'Day Centre care support plans and behaviour support plans. Staff only.',
         portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
-        portal_training_progress:'Staff readiness — training, compliance sign-offs, and app/device setup in one operational view.',
+        portal_training_progress:'App readiness — staff app, alerts, camera, and location during a roster shift.',
         portal_push_devices:'Who has Web Push registered on their phone or browser — real background alerts, not just the browser Allow flag.',
         participant_achievements:'Session photos after feedback.',
         announcements:'Notices and reminders for staff.',
@@ -32799,7 +32799,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       sessions_pickup: 'Drop off &amp; pick up portal',
       announcements: 'Notices &amp; reminders',
       portal_activity: 'Login, pages &amp; time on app',
-      portal_training_progress: 'Training, compliance and app setup',
+      portal_training_progress: 'Staff app, alerts and location',
       portal_push_devices: 'Background alerts registered',
       c4k_reviews: 'Term reviews &amp; goals',
       c4k_reports: 'Request packs &amp; LA delivery',
@@ -33434,7 +33434,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function viewPortalTrainingProgress(){
       portalTrainingProgressConfigureOnce();
-      return window.PortalTrainingProgress ? window.PortalTrainingProgress.viewHtml() : '<p class="page-intro">Training progress module failed to load.</p>';
+      return window.PortalTrainingProgress ? window.PortalTrainingProgress.viewHtml("readiness") : '<p class="page-intro">App readiness failed to load.</p>';
     }
     function bindPortalTrainingProgressModule(){
       portalTrainingProgressConfigureOnce();
@@ -34251,12 +34251,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewStaffHRTrainingRecords(){
       return (
         '<h1 class="page-title">Training records</h1>'+
-        '<p class="page-intro">Real training events (fire evacuation, venue induction, shadowing, policy briefings, etc.). Assign staff, request attendance signatures, and keep optional PDFs in <strong>My Documents → Certificates</strong>. This is separate from Induction / swimming module progress and the HR spreadsheet matrix.</p>'+
+        '<p class="page-intro">Induction, recap and swimming are the table below. Event records (evacuation, shadowing, briefings) stay under that, with signatures and PDFs in <strong>My Documents → Certificates</strong>.</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_contracts">Contracts</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_uniform">Uniform stock</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" data-view-target="portal_training_progress">Training &amp; readiness</button></div>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="portal_training_progress">App readiness</button></div>'+
+        '<div id="portalTrainingOnRecords"></div>'+
         '<div id="trModuleRoot"></div>'
       );
     }
@@ -36245,6 +36246,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         bindStaffHRContractsView();
       }
       if(id==='staffhr_training_records'){
+        portalTrainingProgressConfigureOnce();
+        var trainHost = $('portalTrainingOnRecords');
+        if(trainHost && window.PortalTrainingProgress){
+          trainHost.innerHTML = window.PortalTrainingProgress.viewHtml("training");
+          window.PortalTrainingProgress.bindModule();
+        }
         if(window.AdminTrainingRecords && $('trModuleRoot')){
           window.AdminTrainingRecords.configure({
             getClient: getSchedSupabaseClient,
