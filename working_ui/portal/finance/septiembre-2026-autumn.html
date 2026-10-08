@@ -52,11 +52,17 @@
   tr.owed td.num { color: #b91c1c; }
   .acc table { margin: 0; }
   .acc td:first-child { padding-left: 22px; }
-  span.iva, span.ivaq, span.novat, span.revc { display: inline-block; margin-right: 6px; font-weight: 800; letter-spacing: 0; }
-  span.iva { color: #15803d; }
-  span.ivaq { color: #1d4ed8; }
-  span.novat { color: #b91c1c; }
-  span.revc { color: #7c3aed; }
+  span.iva, span.ivaq, span.novat, span.revc {
+    display: inline-block; width: 9px; height: 9px; margin-right: 8px; border-radius: 50%;
+    vertical-align: 1px; font-size: 0; line-height: 0; overflow: hidden; color: transparent;
+  }
+  span.iva { background: #15803d; }
+  span.ivaq { background: #1d4ed8; }
+  span.novat { background: #ea580c; }
+  span.revc { background: #7c3aed; }
+  .leyenda { font-size: 10pt; margin: 0 0 12px; }
+  .leyenda span { margin-left: 16px; }
+  .leyenda span:first-child { margin-left: 0; }
   span.inciva, span.incexc { display: inline-block; margin-right: 6px; font-weight: 800; letter-spacing: 0; }
   span.inciva { color: #ea580c; }
   span.incexc { color: #0f766e; }
@@ -67,6 +73,7 @@
   <p class="brand">clubSENsational</p>
   <h1>Septiembre 2026, Autumn</h1>
   <p class="meta">Las dos columnas van igual. A facturar es el ingreso del mes cuando todo este cobrado, menos los gastos que ya sabemos. Cada cifra sale una sola vez. Hoja al 8 oct 2026.</p>
+  <p class="leyenda"><span class="novat">Sin IVA</span> Sin IVA <span class="iva">IVA F</span> IVA F <span class="revc">Reverse charge</span> Reverse charge <span class="ivaq">No se sabe</span> No se sabe</p>
 
   <h2>A facturar en septiembre</h2>
   <table>
@@ -254,7 +261,6 @@
     <tr class="sec"><td colspan="2">Otros</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>Youssef, tax de meses anteriores, parte empresa</td><td class="num">-£444.07</td></tr>
     <tr class="sec"><td colspan="2">Compras de septiembre, tarjeta empresa</td></tr>
-    <tr><td colspan="2"><span class="iva">IVA F</span></td></tr>
     <tr class="cost"><td><span class="iva">IVA F</span>Vercel, 28 Sep</td><td class="num">-£287.45</td></tr>
     <tr class="cost"><td><span class="iva">IVA F</span>Xero, 5 Sep</td><td class="num">-£84.00</td></tr>
     <tr class="cost"><td><span class="iva">IVA F</span>1st Formations, 18 Sep</td><td class="num">-£46.80</td></tr>
@@ -270,21 +276,18 @@
     <tr class="cost"><td><span class="iva">IVA F</span>Amazon, 24 Sep, Straame paper, 2 packs</td><td class="num">-£17.98</td></tr>
     <tr class="cost"><td><span class="iva">IVA F</span>Amazon, 12 Sep, FOMIYES leg rest</td><td class="num">-£13.70</td></tr>
     <tr class="cost"><td><span class="iva">IVA F</span>Amazon, 24 Sep, Flash floor cleaner</td><td class="num">-£5.00</td></tr>
-    <tr><td colspan="2"><span class="novat">NO IVA</span></td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>HelloPrint, 12 Sep</td><td class="num">-£43.48</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>Amazon, 24 Sep, bungee cords</td><td class="num">-£15.59</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>giffgaff, 12 Sep</td><td class="num">-£8.00</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>Co-op, 25 Sep</td><td class="num">-£5.75</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>Ropa de Empresa, Cajero Tesco - 10 sep. Incluye £6 de comision</td><td class="num">-£1,350.00</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>Deliveroo, 9 Sep &amp; 24 Sep</td><td class="num">-£153.34</td></tr>
-    <tr><td colspan="2"><span class="revc">REV C</span></td></tr>
     <tr class="cost"><td><span class="revc">REV C</span>Cursor, 11-30 Sep</td><td class="num">-£1,478.10</td></tr>
     <tr class="cost"><td><span class="revc">REV C</span>ChatGPT, 30 Sep</td><td class="num">-£75.31</td></tr>
     <tr class="cost"><td><span class="revc">REV C</span>Supabase, 18 Sep</td><td class="num">-£48.36</td></tr>
     <tr class="cost"><td><span class="revc">REV C</span>Facebook, 1 Sep &amp; 25 Sep</td><td class="num">-£22.03</td></tr>
     <tr class="cost"><td><span class="revc">REV C</span>QR Code, 8 Sep</td><td class="num">-£16.51</td></tr>
     <tr class="cost"><td><span class="revc">REV C</span>Apple, 12 Sep</td><td class="num">-£8.99</td></tr>
-    <tr><td colspan="2"><span class="ivaq">IVA?</span></td></tr>
     <tr class="cost"><td><span class="ivaq">IVA?</span>Amazon, 12 Sep, wheelchair straps, sin factura</td><td class="num">-£17.98</td></tr>
     <tr class="cost"><td><span class="ivaq">IVA?</span>Wix, 30 Sep</td><td class="num">-£230.40</td></tr>
     <tr class="total cost"><td>Compras de septiembre</td><td class="num">-£4,266.38</td></tr>
