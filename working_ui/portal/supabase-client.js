@@ -871,6 +871,38 @@ export async function portalUpsertStaffSessionQuickMark(supabase, row) {
   if (error) throw error;
 }
 
+/**
+ * Staff Absent tap → parent orange chip + Absents queue + co-instructor app push.
+ * No WhatsApp.
+ * @param {import("@supabase/supabase-js").SupabaseClient} supabase
+ */
+export async function portalAnnounceStaffAbsence(supabase, body) {
+  if (!supabase) return { ok: false, error: "no_client" };
+  const { data: sess } = await supabase.auth.getSession();
+  const token = sess && sess.session && sess.session.access_token;
+  if (!token) return { ok: false, error: "no_session" };
+  const { key } = readConfig();
+  const res = await fetch(getSupabaseFunctionUrl("portal-staff-absent-announce"), {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + token,
+      apikey: key,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body || {}),
+  });
+  let payload = null;
+  try {
+    payload = await res.json();
+  } catch (_e) {
+    payload = null;
+  }
+  if (!res.ok) {
+    return { ok: false, error: (payload && payload.error) || String(res.status), payload: payload };
+  }
+  return payload || { ok: true };
+}
+
 /** Client slug tokens from portal_session_key (skip date, time, empty). */
 function clientSlugTokensFromPortalSessionKey(key) {
   const parts = String(key || "")

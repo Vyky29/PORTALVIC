@@ -556,6 +556,9 @@ verify_jwt = false
 [functions.parent-portal-absence-submit]
 verify_jwt = false
 
+[functions.portal-staff-absent-announce]
+verify_jwt = false
+
 [functions.parent-portal-absence-proof-upload]
 verify_jwt = false
 

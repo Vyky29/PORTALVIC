@@ -4806,9 +4806,14 @@
     );
   }
 
-  /** Blue / green / red key. Orange absent only when this child has a makeup grant. */
+  /** Blue / green / red key. Orange absent when this child has an absent day, or a makeup grant. */
   function termChipColorLegendHtml(data) {
-    var showAbsent = !!(data && data._ppMakeupGranted);
+    var absentDates = data && data.attendance_summary && data.attendance_summary.absent_dates;
+    var showAbsent = !!(
+      (data && data._ppMakeupGranted) ||
+      (data && data._ppHasAbsentChip) ||
+      (absentDates && absentDates.length)
+    );
     var showMakeup = !!(
       data &&
       Array.isArray(data._ppMakeupSessions) &&
@@ -5661,6 +5666,12 @@
 
   function applyTermDateChipStatuses(host, data, statusByIso) {
     if (!host) return;
+    var chipMap = statusByIso || {};
+    var hasAbsentChip = false;
+    Object.keys(chipMap).forEach(function (k) {
+      if (chipMap[k] === "absent") hasAbsentChip = true;
+    });
+    if (data && hasAbsentChip) data._ppHasAbsentChip = true;
     /* My booking Day Centre year board — same absent/cancel/done tones as Hub. */
     var bookingWrap = host.querySelector(".pp-booking-year-dates");
     if (bookingWrap) {

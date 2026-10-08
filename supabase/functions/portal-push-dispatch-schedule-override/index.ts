@@ -480,6 +480,19 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  const skipPushKey = normSpreadsheetKey(
+    String(payloadObj(record as Record<string, unknown>).skip_push_staff_key ?? ""),
+  );
+  if (
+    overrideType === "client_absence_announced" &&
+    skipPushKey &&
+    skipPushKey === targetRosterKey
+  ) {
+    return new Response(
+      JSON.stringify({ ok: true, skipped: true, reason: "actor_already_marked" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 
   const { data: profiles, error: profErr } = await admin.from("staff_profiles")
     .select("id, username, full_name, app_role")

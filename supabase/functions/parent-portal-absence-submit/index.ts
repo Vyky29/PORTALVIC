@@ -10,6 +10,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession, parentPortalGhostWriteResponse } from "../_shared/parent_portal_session.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
+import { announceClientAbsenceOnInstructorCards } from "../_shared/portal_announce_client_absence.ts";
 
 const REASON_LABELS: Record<string, string> = {
   other_commitments: "Other commitments",
@@ -178,6 +179,25 @@ Deno.serve(async (req) => {
       console.error("[parent-portal-absence-submit] withdraw", wErr?.message);
       return json(500, { ok: false, error: "save_failed" });
     }
+    try {
+      const { data: mirrors } = await supabase
+        .from("schedule_overrides")
+        .select("id, payload")
+        .eq("session_date", String(row.session_date || "").slice(0, 10))
+        .eq("override_type", "client_absence_announced")
+        .eq("status", "active")
+        .limit(20);
+      const drop = (mirrors || []).filter((ov) => {
+        const pl = ov.payload && typeof ov.payload === "object" ? ov.payload : {};
+        return String(pl.source || "") === "parent_portal" &&
+          String(pl.absence_report_id || "") === String(row.id);
+      }).map((ov) => ov.id);
+      if (drop.length) {
+        await supabase.from("schedule_overrides").update({ status: "cancelled" }).in("id", drop);
+      }
+    } catch (cancelErr) {
+      console.error("[parent-portal-absence-submit] withdraw cards", cancelErr);
+    }
     return json(200, {
       ok: true,
       withdrawn: true,
@@ -224,6 +244,20 @@ Deno.serve(async (req) => {
     const canProof =
       String(existing.proof_deadline || "") >= today &&
       existing.status !== "excused";
+    try {
+      await announceClientAbsenceOnInstructorCards(supabase, {
+        sessionDate: String(existing.session_date || sessionDate),
+        clientDisplay: participantDisplay || String(existing.participant_display || ""),
+        contactId,
+        serviceLabel: String(existing.service_label || serviceLabel),
+        sessionTime: String(existing.session_time || sessionTime),
+        source: "parent_portal",
+        absenceReportId: String(existing.id || ""),
+        reason: "Parent marked absent",
+      });
+    } catch (annErr) {
+      console.error("[parent-portal-absence-submit] announce existing", annErr);
+    }
     return json(200, {
       ok: true,
       report: {
@@ -249,6 +283,20 @@ Deno.serve(async (req) => {
 
   if (existing) {
     const canProof = String(existing.proof_deadline || "") >= today;
+    try {
+      await announceClientAbsenceOnInstructorCards(supabase, {
+        sessionDate: String(existing.session_date || sessionDate),
+        clientDisplay: participantDisplay || String(existing.participant_display || ""),
+        contactId,
+        serviceLabel: String(existing.service_label || serviceLabel),
+        sessionTime: String(existing.session_time || sessionTime),
+        source: "parent_portal",
+        absenceReportId: String(existing.id || ""),
+        reason: "Parent marked absent",
+      });
+    } catch (annErr2) {
+      console.error("[parent-portal-absence-submit] announce existing", annErr2);
+    }
     return json(200, {
       ok: true,
       report: {
@@ -378,6 +426,21 @@ Deno.serve(async (req) => {
     }
   } catch (e) {
     console.error("[parent-portal-absence-submit] inbox notify", e);
+  }
+
+  try {
+    await announceClientAbsenceOnInstructorCards(supabase, {
+      sessionDate,
+      clientDisplay: participantDisplay,
+      contactId,
+      serviceLabel,
+      sessionTime,
+      source: "parent_portal",
+      absenceReportId: String(inserted?.id || ""),
+      reason: "Parent marked absent",
+    });
+  } catch (annErr) {
+    console.error("[parent-portal-absence-submit] announce", annErr);
   }
 
   return json(200, {

@@ -1065,6 +1065,26 @@
         absentSyncPending: false,
         feedbackDone: false
       };
+      try {
+        const boxAnn = window.__PORTAL_SUPABASE__;
+        const isoAnn = String(item.sessionKey || "").split("|")[0];
+        if (boxAnn && boxAnn.client && /^\d{4}-\d{2}-\d{2}$/.test(isoAnn)) {
+          const modAnn = await import(PORTAL_SUPABASE_CLIENT_MODULE);
+          if (modAnn.portalAnnounceStaffAbsence) {
+            const ann = await modAnn.portalAnnounceStaffAbsence(boxAnn.client, {
+              session_date: isoAnn,
+              client_name: String(item.name || item.clientName || item.clientDisplay || item.clientId || "").trim(),
+              service_label: String(item.rosterService || item.activity || item.programme || "").trim(),
+              session_time: String(item.time || item.whenLabel || "").trim(),
+              venue: String(item.venue || item.poolLocationLabel || item.areaLabel || "").trim(),
+              portal_session_key: String(item.sessionKey || "")
+            });
+            if (!ann || ann.ok === false) console.warn("[portal] staff absent announce", ann);
+          }
+        }
+      } catch (annErr) {
+        console.warn("[portal] staff absent announce", annErr);
+      }
       sessionReviewActivityTs[item.sessionKey] = Date.now();
       persistSessionReviewMap();
       if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();

@@ -1693,10 +1693,13 @@ Deno.serve(async (req) => {
           if (
             kind === "cancellation" ||
             reason === "instructor_cancelled" ||
-            reason === "admin_cancelled"
+            reason === "admin_cancelled" ||
+            reason === "club_cancelled"
           ) {
             cancelSet.add(iso);
             absentSet.delete(iso);
+          } else if (String(row.status || "") !== "rejected") {
+            if (!cancelSet.has(iso)) absentSet.add(iso);
           }
         }
         attendanceSummary = {
