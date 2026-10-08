@@ -161,7 +161,7 @@
         return loadSequential(EXTRACTED_BEFORE_AUTH, false);
       })
       .then(function () {
-        return loadScript("/portal/staff-dashboard-auth-supabase.js?v=20261008-loc-roster", true);
+        return loadScript("/portal/staff-dashboard-auth-supabase.js?v=20261009-no-live-mention", true);
       })
       .then(function () {
         return loadSequential(EXTRACTED_AFTER_AUTH, false);

@@ -1293,7 +1293,7 @@
         '<p class="page-intro portal-activity-intro">Induction on file stays Complete. Workers except CEO and admin still owe the recap. The diploma is only after all twelve cards and the quiz.</p>'
       : '<h1 class="page-title">App readiness</h1>' +
         '<p class="page-desc">Staff app, portalvic, or web browser. Location shows here when someone on the roster is sharing during their shift.</p>' +
-        '<p class="page-intro portal-activity-intro">Preferred: installed Staff app on clubsensational-staff. Location is on only from 15 minutes before the first session until 10 minutes after the last.</p>';
+        '<p class="page-intro portal-activity-intro">Preferred: installed Staff app on clubsensational-staff.</p>';
     var extraBtns = training
       ? ""
       : '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">H&amp;R</button>';

@@ -486,27 +486,24 @@
     },
     {
       "id": "alerts-settings",
-      "title": "Alerts, location and microphone",
+      "title": "Alerts and microphone",
       "keywords": [
         "alerts",
         "notifications",
         "push",
         "microphone",
-        "location",
         "permission",
-        "gps",
         "alertas"
       ],
-      "voice_script": "In Settings, turn on notifications once per device. Location is only for Bespoke and Day Centre during your shift. Microphone is optional for voice feedback.",
-      "content": "Quick menu → Settings → Alerts & notifications.\n\nNotifications — turn on once per device; use Send test to check.\n\nLocation — only Bespoke Programme and Day Centre staff during rota shift (community support live map for leads/admins; buffer before first and after last session).\n\nMicrophone — optional for voice feedback or voice typing in forms.\n\nFor illustrated help topics, open Staff help guide from Quick menu → Settings.",
+      "voice_script": "In Settings, turn on notifications once per device. Microphone is optional for voice feedback.",
+      "content": "Quick menu → Settings → Alerts & notifications.\n\nNotifications — turn on once per device; use Send test to check.\n\nMicrophone — optional for voice feedback or voice typing in forms.\n\nFor illustrated help topics, open Staff help guide from Quick menu → Settings.",
       "demos": [
         {
           "demo": "alerts-settings",
           "caption": "Settings toggles — notifications, location and microphone."
         }
       ],
-      "illustrations": [],
-      "audio": "/portal/help-audio/alerts-settings-overview.mp3?v=20260707-club-voice"
+      "illustrations": []
     },
     {
       "id": "area-notes",

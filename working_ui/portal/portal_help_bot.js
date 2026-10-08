@@ -5,8 +5,8 @@
 (function (global) {
   "use strict";
 
-  var KNOWLEDGE_URL = "/portal/portal_help_knowledge.json?v=20260707-feedback-guide-v17";
-  var AGENT_GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20260707-feedback-guide-v17";
+  var KNOWLEDGE_URL = "/portal/portal_help_knowledge.json?v=20261009-no-live-mention";
+  var AGENT_GUIDE_URL = "/portal/portal_help_agent_guide.json?v=20261009-no-live-mention";
   var MIN_SCORE = 5;
   var knowledge = null;
   var knowledgePromise = null;

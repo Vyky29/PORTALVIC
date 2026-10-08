@@ -1564,7 +1564,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
       throw new Error("skip_location_on_lead_overview");
     }
     await import("./portal_live_map_shift_window.js?v=20261008-loc-roster");
-    const perm = await import("./portal_location_permission.js?v=20261008-loc-roster");
+    const perm = await import("./portal_location_permission.js?v=20261009-no-live-mention");
     window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
     window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
     window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;

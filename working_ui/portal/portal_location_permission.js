@@ -887,8 +887,7 @@ export function portalRefreshLocationUi() {
   } else   if (st === "granted") {
     var upload = typeof window !== "undefined" ? window.__PORTAL_LOCATION_LAST_UPLOAD__ : null;
     if (upload && upload.ok) {
-      statusEl.textContent =
-        "On — office can see you from 15 minutes before your shift until 10 minutes after, so we can come and help. This is not a clock-in.";
+      statusEl.textContent = "On.";
     } else if (upload && upload.ok === false && upload.message) {
       statusEl.textContent = "On — could not send yet. Tap Refresh or wait for the next GPS update.";
     } else {
@@ -905,8 +904,7 @@ export function portalRefreshLocationUi() {
       btn.disabled = false;
     }
   } else {
-    statusEl.textContent =
-      "Off on this phone. When it is already allowed, it shares only during a roster shift: 15 minutes before until 10 minutes after.";
+    statusEl.textContent = "Off.";
     if (btn) {
       btn.textContent = "Allow location";
       btn.disabled = false;
