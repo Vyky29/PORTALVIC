@@ -321,6 +321,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     filter?: string;
     billing_amount?: string;
     skip_pdf_urls?: boolean;
+    sign_share_id?: string;
   } = {};
   try {
     body = await req.json();
@@ -342,6 +343,40 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  /* One PDF on demand when the list did not attach a signed link. */
+  const signShareId = clean(body.sign_share_id, 80);
+  if (signShareId) {
+    const { data: share, error: shareErr } = await admin
+      .from("portal_parent_invoice_share")
+      .select("id, document_id, invoice_number")
+      .eq("id", signShareId)
+      .maybeSingle();
+    if (shareErr || !share?.document_id) {
+      return portalAdminJson(404, { ok: false, error: "invoice_not_found" });
+    }
+    const { data: doc, error: docErr } = await admin
+      .from("documents")
+      .select("id, file_url")
+      .eq("id", share.document_id)
+      .maybeSingle();
+    const path = clean(doc?.file_url, 500);
+    if (docErr || !path) {
+      return portalAdminJson(404, { ok: false, error: "pdf_missing" });
+    }
+    const { data: signed, error: signErr } = await admin.storage
+      .from(BUCKET)
+      .createSignedUrl(path, 3600);
+    const pdfUrl = String(signed?.signedUrl || "").trim();
+    if (signErr || !pdfUrl) {
+      return portalAdminJson(500, { ok: false, error: "pdf_sign_failed" });
+    }
+    return portalAdminJson(200, {
+      ok: true,
+      pdf_url: pdfUrl,
+      invoice_number: share.invoice_number || null,
+    });
+  }
 
   let q = admin
     .from("portal_parent_invoice_share")
@@ -406,13 +441,22 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     shares = (shares || []).filter((s) => isLostSlotInvoice(s));
   }
 
-  const docIds = (shares || []).map((s) => String(s.document_id || "")).filter(Boolean);
+  const docIds = [
+    ...new Set((shares || []).map((s) => String(s.document_id || "")).filter(Boolean)),
+  ];
   const docsById = new Map<string, Record<string, unknown>>();
-  if (docIds.length) {
-    const { data: docs } = await admin
+  /* One giant .in() drops the PDF join when the id list is long. */
+  const DOC_CHUNK = 80;
+  for (let i = 0; i < docIds.length; i += DOC_CHUNK) {
+    const chunk = docIds.slice(i, i + DOC_CHUNK);
+    const { data: docs, error: docErr } = await admin
       .from("documents")
       .select("id, title, related_date, file_url, created_at, related_client, document_type")
-      .in("id", docIds);
+      .in("id", chunk);
+    if (docErr) {
+      console.error("[portal-admin-parent-invoices-list] documents", docErr.message);
+      continue;
+    }
     for (const d of docs || []) {
       if (d?.id) docsById.set(String(d.id), d);
     }
@@ -668,7 +712,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
             | undefined;
           if (!row || row.error) continue;
           const path = clean(row.path, 500) || chunk[j];
-          const url = clean(row.signedUrl, 2000);
+          const raw = row as { signedUrl?: string; signedURL?: string };
+          const url = String(raw.signedUrl || raw.signedURL || "").trim();
           if (path && url) pdfUrlByPath.set(path, url);
         }
       } catch (err) {

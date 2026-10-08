@@ -2046,7 +2046,11 @@
         ? '<a class="btn btn--ghost btn--sm" href="' +
           esc(inv.pdf_url) +
           '" target="_blank" rel="noopener">PDF</a> '
-        : '') +
+        : inv.document_id
+          ? '<button type="button" class="btn btn--ghost btn--sm" data-inv-act="pdf" data-inv-id="' +
+            id +
+            '">PDF</button> '
+          : '') +
       (inv.share_status === 'ready'
         ? '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="hide" data-inv-id="' +
           id +
@@ -2743,6 +2747,18 @@
         var act = btn.getAttribute('data-inv-act');
         var id = btn.getAttribute('data-inv-id');
         if (!id) return;
+        if (act === 'pdf') {
+          btn.disabled = true;
+          api('portal-admin-parent-invoices-list', { sign_share_id: id }).then(function (r) {
+            btn.disabled = false;
+            if (r.error || !r.pdf_url) {
+              cfg.toast(r.message || 'Could not open the invoice PDF', 'error');
+              return;
+            }
+            global.open(r.pdf_url, '_blank', 'noopener');
+          });
+          return;
+        }
         var allowEarlyInstalment = false;
         var markAllInstalments = false;
         if (act === 'paid') {
