@@ -493,7 +493,14 @@ function invoiceDescriptionLines(input: {
     /* LA / NHS funder invoices: never print participant or parent names.
      * Ealing year: Client ID + Service/Slot/Venue + Reference (no PO, no Flexi). */
     if (ealingHeader) {
+      /* Same lead as NHS when exempt. VAT invoices use the shorter support line. */
+      const lead = descriptionBody.filter((s) => s.trim());
+      const fallbackLead = input.vatMode === "exempt"
+        ? "Structured activity support delivered within a structured activity environment for a SEND participant as part of funded provision."
+        : "Structured activity support delivered for a SEND participant.";
       return [
+        ...(lead.length ? lead : [fallbackLead]),
+        "",
         `Client ID: ${input.clientIdLabel || "—"}`,
         input.hfLaInvoice ? `PO Number: ${input.poLabel || "—"}` : null,
         clean(input.ealingService, 120)
@@ -505,7 +512,6 @@ function invoiceDescriptionLines(input: {
         clean(input.ealingVenue, 120)
           ? `Venue: ${clean(input.ealingVenue, 120)}`
           : null,
-        // Year already shown in the invoice Reference box — do not repeat here.
       ].filter((x): x is string => x !== null);
     }
     /* NHS: month stays in the top Reference box only.
