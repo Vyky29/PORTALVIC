@@ -807,6 +807,7 @@
   }
 
   function rowHighlightClass(row) {
+    if (state.tab === "training_compliance") return "";
     var r = row.readiness;
     var cls = [];
     if (!r.appReady) cls.push("portal-sready-row--app");
@@ -843,61 +844,74 @@
     return statusBadge("bad", "Not set up");
   }
 
+  function kpiCard(label, value, sub, alert) {
+    return (
+      '<div class="kpi card--premium portal-sready-kpi' +
+      (alert ? " kpi--alert" : "") +
+      '">' +
+      '<div class="kpi-l">' +
+      esc(label) +
+      "</div>" +
+      '<div class="kpi-v">' +
+      esc(String(value)) +
+      "</div>" +
+      '<div class="kpi-s muted">' +
+      esc(sub) +
+      "</div></div>"
+    );
+  }
+
   function renderKpis(rows) {
     var el = document.getElementById("portalStaffReadinessKpis");
     if (!el) return;
     var total = rows.length;
-    var fully = rows.filter(function (r) {
-      return r.readiness.overallReady;
-    }).length;
-    var trainInc = rows.filter(rowTrainingIncomplete).length;
-    var onPortalvic = rows.filter(rowOnPortalvic).length;
-    var appMiss = rows.filter(rowAppSetupMissing).length;
-    var browserOnly = rows.filter(rowWebOnly).length;
-    el.innerHTML =
-      '<div class="grid-kpi portal-sready-kpis">' +
-      '<div class="kpi card--premium portal-sready-kpi portal-sready-kpi--ok">' +
-      '<div class="kpi-l">Staff fully ready</div>' +
-      '<div class="kpi-v">' +
-      esc(String(fully)) +
-      " / " +
-      esc(String(total)) +
-      "</div>" +
-      '<div class="kpi-s muted">Staff app installed + features on</div></div>' +
-      '<div class="kpi card--premium portal-sready-kpi">' +
-      '<div class="kpi-l">Training incomplete</div>' +
-      '<div class="kpi-v">' +
-      esc(String(trainInc)) +
-      "</div>" +
-      '<div class="kpi-s muted">Induction or swimming in progress</div></div>' +
-      '<div class="kpi card--premium portal-sready-kpi' +
-      (onPortalvic || browserOnly ? " kpi--alert" : "") +
-      '">' +
-      '<div class="kpi-l">Wrong / web access</div>' +
-      '<div class="kpi-v">' +
-      esc(String(onPortalvic + browserOnly)) +
-      "</div>" +
-      '<div class="kpi-s muted">' +
-      esc(String(onPortalvic)) +
-      " portalvic · " +
-      esc(String(browserOnly)) +
-      " browser</div></div>" +
-      '<div class="kpi card--premium portal-sready-kpi' +
-      (appMiss ? " kpi--alert" : "") +
-      '">' +
-      '<div class="kpi-l">App setup missing</div>' +
-      '<div class="kpi-v">' +
-      esc(String(appMiss)) +
-      "</div>" +
-      '<div class="kpi-s muted">Alerts or features</div></div>' +
-      "</div>";
+    var html;
+    if (state.tab === "app_device") {
+      var fully = rows.filter(function (r) {
+        return r.readiness.overallReady;
+      }).length;
+      var onPortalvic = rows.filter(rowOnPortalvic).length;
+      var browserOnly = rows.filter(rowWebOnly).length;
+      var appMiss = rows.filter(rowAppSetupMissing).length;
+      html =
+        kpiCard("Staff fully ready", fully + " / " + total, "Staff app installed + features on", false) +
+        kpiCard(
+          "Wrong / web access",
+          onPortalvic + browserOnly,
+          onPortalvic + " portalvic · " + browserOnly + " browser",
+          !!(onPortalvic || browserOnly)
+        ) +
+        kpiCard("App setup missing", appMiss, "Alerts or features", !!appMiss);
+    } else if (state.tab === "follow_up") {
+      html =
+        kpiCard("Needs follow-up", rows.filter(rowNeedsAttention).length, "Training or app still open", false);
+    } else {
+      var notDone = rows.filter(function (r) {
+        return !inductionOnFile(r);
+      }).length;
+      var recapDue = rows.filter(recapStillDue).length;
+      var recapDone = rows.filter(function (r) {
+        return recapPassedThisYear(r.tracks && r.tracks.induction);
+      }).length;
+      html =
+        kpiCard("Induction not finished", notDone, "Six modules still open", !!notDone) +
+        kpiCard("Recap due", recapDue, "Twelve cards, then the quiz", !!recapDue) +
+        kpiCard("Recap done", recapDone, "Diploma after the full quiz", false);
+    }
+    el.innerHTML = '<div class="grid-kpi portal-sready-kpis">' + html + "</div>";
+  }
+
+  function recapCell(row) {
+    if (!inductionOnFile(row)) return statusBadge("muted", "After induction");
+    if (recapPassedThisYear(row.tracks && row.tracks.induction)) return statusBadge("ok", "Done");
+    if (recapStillDue(row)) return statusBadge("warn", "Due");
+    return statusBadge("muted", "Not required");
   }
 
   function renderTrainingTable(rows) {
     var body = rows
       .map(function (row) {
         var r = row.readiness;
-        var overall = overallComplianceStatus(row);
         return (
           '<tr class="' +
           esc(rowHighlightClass(row)) +
@@ -910,13 +924,10 @@
           inductionDetailHtml(row) +
           "</td>" +
           "<td>" +
-          labelBadge(SWIM_LABELS, r.swimming) +
-          "</td>" +
-          '<td class="portal-sready-cell">' +
-          accessChannelCell(row) +
+          recapCell(row) +
           "</td>" +
           "<td>" +
-          labelBadge(OVERALL_LABELS, overall) +
+          labelBadge(SWIM_LABELS, r.swimming) +
           "</td>" +
           "</tr>"
         );
@@ -928,9 +939,8 @@
       "<thead><tr>" +
       "<th>Staff</th>" +
       "<th>Induction</th>" +
+      "<th>Recap</th>" +
       "<th>Swimming training</th>" +
-      "<th>Access</th>" +
-        "<th>Readiness</th>" +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div>"
@@ -1098,6 +1108,23 @@
       btn.classList.toggle("is-active", on);
       btn.setAttribute("aria-selected", on ? "true" : "false");
     });
+    var title = document.getElementById("portalTrainingProgressTitle");
+    var desc = document.getElementById("portalTrainingProgressDesc");
+    var intro = document.getElementById("portalTrainingProgressIntro");
+    var readiness = state.tab === "app_device";
+    if (title) title.textContent = readiness ? "Readiness" : state.tab === "follow_up" ? "Follow-up" : "Training";
+    if (desc) {
+      desc.textContent = readiness
+        ? "Staff app, portalvic, or web browser. Training is the other tab."
+        : state.tab === "follow_up"
+          ? "Open training and app items, listed separately inside each row."
+          : "Induction, annual recap, and swimming. Readiness is the next tab.";
+    }
+    if (intro) {
+      intro.textContent = readiness
+        ? "Preferred: installed Staff app on clubsensational-staff. Host is recorded when they open the portal after this update."
+        : "Induction on file stays Complete. Workers except CEO and admin still owe the recap. The diploma is only after all twelve cards and the quiz.";
+    }
   }
 
   async function refresh() {
@@ -1114,7 +1141,7 @@
 
     var profilesRes = await client
       .from("staff_profiles")
-      .select("id, full_name, username, is_active")
+      .select("id, full_name, username, is_active, app_role, staff_role")
       .eq("is_active", true)
       .order("full_name", { ascending: true });
 
@@ -1242,9 +1269,9 @@
   function viewHtml() {
     return (
       '<div id="portalTrainingProgressRoot" class="portal-activity-embed portal-day-ops-embed portal-tprog-embed portal-sready-embed" data-portal-tprog-bound="0">' +
-      '<h1 class="page-title">Staff Readiness</h1>' +
-      '<p class="page-desc">Training and device access — portalvic, clubsensational-staff, or web</p>' +
-      '<p class="page-intro portal-activity-intro">Shows real induction progress and how each person last opened the portal: <strong>Staff app</strong> (clubsensational-staff), <strong>portalvic</strong>, or <strong>web browser</strong>. Preferred: installed Staff app. Host is recorded when they open the portal after this update; until then Access may say host unknown.</p>' +
+      '<h1 class="page-title" id="portalTrainingProgressTitle">Training</h1>' +
+      '<p class="page-desc" id="portalTrainingProgressDesc">Induction, annual recap, and swimming. Readiness is the next tab.</p>' +
+      '<p class="page-intro portal-activity-intro" id="portalTrainingProgressIntro">Induction on file stays Complete. Workers except CEO and admin still owe the recap. The diploma is only after all twelve cards and the quiz.</p>' +
       '<div id="portalStaffReadinessKpis" class="portal-sready-kpis-wrap" aria-live="polite"></div>' +
       '<div id="portalTrainingProgressStatus" class="portal-forms-status" role="status"></div>' +
       '<div class="portal-activity-toolbar">' +
@@ -1260,9 +1287,9 @@
       '<button type="button" class="btn btn--sec btn--sm" id="portalTrainingProgressRefresh">Refresh</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">Staff &amp; HR</button>' +
       "</div>" +
-      '<div class="ash-tabs portal-sready-tabs" role="tablist" aria-label="Staff readiness views">' +
-      '<button type="button" class="ash-tab is-active" role="tab" data-portal-sready-tab="training_compliance" aria-selected="true">Training &amp; Access</button>' +
-      '<button type="button" class="ash-tab" role="tab" data-portal-sready-tab="app_device" aria-selected="false">App &amp; Device</button>' +
+      '<div class="ash-tabs portal-sready-tabs" role="tablist" aria-label="Training and readiness">' +
+      '<button type="button" class="ash-tab is-active" role="tab" data-portal-sready-tab="training_compliance" aria-selected="true">Training</button>' +
+      '<button type="button" class="ash-tab" role="tab" data-portal-sready-tab="app_device" aria-selected="false">Readiness</button>' +
       '<button type="button" class="ash-tab" role="tab" data-portal-sready-tab="follow_up" aria-selected="false">Needs Follow-Up</button>' +
       "</div>" +
       '<p class="portal-activity-count" id="portalTrainingProgressCount">Loading…</p>' +
