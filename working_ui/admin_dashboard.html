@@ -28501,37 +28501,105 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return out;
     }
+    function adminCancelTimeKey(raw){
+      var m = String(raw || '').toLowerCase().match(/(\d{1,2})(?:[:.](\d{2}))?/);
+      if(!m) return '';
+      var h = parseInt(m[1], 10);
+      var min = m[2] ? parseInt(m[2], 10) : 0;
+      if(h >= 1 && h <= 7) h += 12;
+      return String(h) + ':' + String(min);
+    }
+    function adminCancelIdentity(row){
+      var date = String(row && row.session_date || '').trim().slice(0, 10);
+      var first = adminRosterSlugify(row && row.client_name).split('_')[0] || '';
+      return date + '|' + first + '|' + adminCancelTimeKey(row && row.session_time);
+    }
+    /** Absents rows whose case is a cancellation. Staff-form rows already in the list win. */
+    async function adminAbsenceCancellationsAsReports(sinceIso){
+      var edge = await adminEdgePost('portal-admin-parent-absence-list', {
+        case_kind: 'cancellation',
+        status: 'all',
+        since: sinceIso,
+        limit: 400
+      });
+      var reports = edge && edge.data && edge.data.reports;
+      if(!Array.isArray(reports)) return [];
+      return reports.map(function(r){
+        var reason = String(r.reason_text || '').trim();
+        var staff = reason.match(/Staff cancel \(([^)]+)\)/i);
+        var who = staff && staff[1] ? String(staff[1]).trim() : 'Office';
+        var service = String(r.service_label || '').split(' · ')[0].replace(/^30'\s*/i, '').trim();
+        return {
+          id: 'absence:' + String(r.id || ''),
+          created_at: r.created_at || null,
+          session_date: String(r.session_date || '').slice(0, 10),
+          session_time: String(r.session_time || '').trim(),
+          client_name: String(r.participant_display || '').trim(),
+          service: service || '-',
+          cancellation_timing: staff ? 'Before the session started' : 'Office',
+          reason_category: reason || 'Club cancelled',
+          submitted_by_name: who,
+          portal_session_key: ''
+        };
+      });
+    }
+    function adminAppendAbsenceCancellations(rows, extra){
+      var seen = {};
+      (rows || []).forEach(function(row){
+        seen[adminCancelIdentity(row)] = true;
+      });
+      (extra || []).forEach(function(row){
+        if(!row || !row.client_name || !row.session_date) return;
+        var k = adminCancelIdentity(row);
+        if(!k || seen[k]) return;
+        seen[k] = true;
+        rows.push(row);
+      });
+      rows.sort(function(a, b){
+        return String(b.session_date || '').localeCompare(String(a.session_date || '')) ||
+          String(b.created_at || '').localeCompare(String(a.created_at || ''));
+      });
+      return rows;
+    }
     async function adminFetchCancellationReportsForHub(){
       if(window.__PORTAL_CANCELLATION_REPORTS__) return window.__PORTAL_CANCELLATION_REPORTS__;
       var portalRows = adminCancellationPortalRows().map(adminMapPortalCancellationRow);
+      var since = new Date();
+      since.setDate(since.getDate() - 120);
+      var sinceIso = since.toISOString().slice(0, 10);
       var auth = await adminEnsureAuthedSupabaseClient();
+      var dbRows = [];
+      var loadErr = null;
       if(!auth.client || !auth.tok){
-        adminRecordLiveLoad('cancellation_reports', { count: portalRows.length, error: auth.error || 'no_client', portalOnly: true });
-        window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports([], portalRows);
-        return window.__PORTAL_CANCELLATION_REPORTS__;
+        loadErr = auth.error || 'no_client';
+      }else{
+        try{
+          var res = await adminSupabaseWithRetry(function(){
+            return auth.client
+              .from('cancellation_reports')
+              .select('id,created_at,session_date,session_time,client_name,service,cancellation_timing,reason_category,submitted_by_name,portal_session_key')
+              .gte('session_date', sinceIso)
+              .order('session_date', { ascending: false })
+              .limit(400);
+          });
+          dbRows = res.error ? [] : (res.data || []);
+          if(res.error) loadErr = res.error.message || String(res.error);
+        }catch(e){
+          loadErr = String(e && e.message ? e.message : e);
+        }
       }
+      var merged = adminMergeCancellationReports(dbRows, portalRows);
       try{
-        var since = new Date();
-        since.setDate(since.getDate() - 120);
-        var res = await adminSupabaseWithRetry(function(){
-          return auth.client
-            .from('cancellation_reports')
-            .select('id,created_at,session_date,session_time,client_name,service,cancellation_timing,reason_category,submitted_by_name,portal_session_key')
-            .gte('session_date', since.toISOString().slice(0, 10))
-            .order('session_date', { ascending: false })
-            .limit(400);
-        });
-        var dbRows = res.error ? [] : (res.data || []);
-        window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports(dbRows, portalRows);
-        adminRecordLiveLoad('cancellation_reports', {
-          count: window.__PORTAL_CANCELLATION_REPORTS__.length,
-          error: res.error ? (res.error.message || String(res.error)) : null
-        });
-      }catch(e){
-        adminRecordLiveLoad('cancellation_reports', { count: portalRows.length, error: String(e && e.message ? e.message : e), portalOnly: true });
-        window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports([], portalRows);
-      }
-      return window.__PORTAL_CANCELLATION_REPORTS__;
+        var extra = await adminAbsenceCancellationsAsReports(sinceIso);
+        merged = adminAppendAbsenceCancellations(merged, extra);
+      }catch(_abs){}
+      window.__PORTAL_CANCELLATION_REPORTS__ = merged;
+      adminRecordLiveLoad('cancellation_reports', {
+        count: merged.length,
+        error: loadErr,
+        portalOnly: !auth.client || !auth.tok
+      });
+      return merged;
     }
     function adminInvalidateSessionsHubLiveCaches(){
       window.__PORTAL_CANCELLATION_REPORTS__ = null;
