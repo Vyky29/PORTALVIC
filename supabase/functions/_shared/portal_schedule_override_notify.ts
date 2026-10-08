@@ -540,10 +540,12 @@ export async function notifyScheduleOverrideParent(
   }
 
   /* Day Centre and Bespoke stay on the staff board. Aquatic, Multi-Activity, Climbing and Fitness still notify.
-     An instructor cancellation report still tells the parent. The admin team will phone. */
-  if (kind !== "instructor_reported_cancellation") {
-    const fluidReason = await fluidCardParentNotifyBlockReason(admin, opts);
-    if (fluidReason) {
+     An instructor cancellation report still tells the parent, except Day Centre. */
+  const fluidReason = await fluidCardParentNotifyBlockReason(admin, opts);
+  if (fluidReason) {
+    const dayCentreOnly = kind === "instructor_reported_cancellation" &&
+      fluidReason !== "day_centre_no_parent_notify";
+    if (!dayCentreOnly) {
       return { ok: true, skipped: true, reason: fluidReason, kind };
     }
   }
