@@ -161,7 +161,7 @@
         return loadSequential(EXTRACTED_BEFORE_AUTH, false);
       })
       .then(function () {
-        return loadScript("/portal/staff-dashboard-auth-supabase.js?v=20260920-no-live-map", true);
+        return loadScript("/portal/staff-dashboard-auth-supabase.js?v=20261008-shift-loc", true);
       })
       .then(function () {
         return loadSequential(EXTRACTED_AFTER_AUTH, false);

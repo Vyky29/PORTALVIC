@@ -1,12 +1,12 @@
 /**
  * Staff live map — share GPS around today's roster shift for all services:
- * from 15 minutes before first session until 15 minutes after last session.
+ * from 15 minutes before first session until 10 minutes after last session.
  */
 (function (global) {
   "use strict";
 
   var BEFORE_MS = 15 * 60 * 1000;
-  var AFTER_MS = 15 * 60 * 1000;
+  var AFTER_MS = 10 * 60 * 1000;
 
   function localTodayIso() {
     try {

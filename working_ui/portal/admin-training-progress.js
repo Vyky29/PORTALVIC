@@ -818,6 +818,16 @@
   function permissionCell(row, field) {
     var s = row.setup || {};
     if (field === "location") {
+      var live = row.liveLocation;
+      if (live && live.is_sharing && live.updated_at) {
+        return (
+          statusBadge("ok", "Sharing") +
+          '<span class="muted portal-sready-subdate">' +
+          esc(live.ago || formatLondon(live.updated_at)) +
+          "</span>"
+        );
+      }
+      if (s.location_granted) return statusBadge("ok", "On");
       return statusBadge("muted", "Off");
     }
     if (field === "camera") {
@@ -1154,6 +1164,12 @@
     var setupRes = await client.from("portal_staff_setup_status").select("*");
 
     var liveLocRows = [];
+    try {
+      var liveRes = await client
+        .from("portal_staff_live_locations")
+        .select("staff_user_id, updated_at, is_sharing");
+      if (!liveRes.error && Array.isArray(liveRes.data)) liveLocRows = liveRes.data;
+    } catch (_liveErr) {}
 
     var annRes = await client
       .from("portal_staff_announcements")

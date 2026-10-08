@@ -301,11 +301,8 @@ export function requestLocationPermission() {
       resolve("unsupported");
       return;
     }
-    if (portalLocationPermissionDenied()) {
-      _state = "denied";
-      resolve("denied");
-      return;
-    }
+    /* A remembered deny must not skip the phone. Submit on the permissions announcement
+       needs a real GPS fix, including when they turn location back on. */
     if (
       typeof location !== "undefined" &&
       location.protocol !== "https:" &&
@@ -746,7 +743,14 @@ export function portalVoiceTypingOfferedForStaff() {
 }
 
 export function portalLocationRequiredForSetup() {
-  return false;
+  try {
+    if (typeof window.portalLiveMapLocationRequiredToday !== "function") return false;
+    var box = window.__PORTAL_SUPABASE__ || {};
+    var user = box.session && box.session.user ? box.session.user : null;
+    return !!window.portalLiveMapLocationRequiredToday(box.staff_profile || null, user);
+  } catch (_) {
+    return false;
+  }
 }
 
 export function portalMandatoryAlertsSettingsComplete() {
@@ -891,7 +895,7 @@ export function portalRefreshLocationUi() {
     var upload = typeof window !== "undefined" ? window.__PORTAL_LOCATION_LAST_UPLOAD__ : null;
     if (upload && upload.ok) {
       statusEl.textContent =
-        "On — office can see you on the live map during your shift (±15 min).";
+        "On — office can see you from 15 minutes before your shift until 10 minutes after, so we can come and help. This is not a clock-in.";
     } else if (upload && upload.ok === false && upload.message) {
       statusEl.textContent = "On — could not send yet. Tap Refresh or wait for the next GPS update.";
     } else {
@@ -909,7 +913,7 @@ export function portalRefreshLocationUi() {
     }
   } else {
     statusEl.textContent = portalLocationRequiredForSetup()
-      ? "Off — required during your shift (15 min before until 15 min after)."
+      ? "Off — required on a work day, from 15 minutes before your shift until 10 minutes after."
       : "Not required today — no shift on your rota.";
     if (btn) {
       btn.textContent = "Allow location";

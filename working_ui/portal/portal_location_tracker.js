@@ -1,6 +1,6 @@
 /**
  * Shares staff/lead GPS with portal_staff_live_locations during the roster shift window
- * (15 min before first session until 15 min after last; Bespoke/DC strict, others may extend for pending feedback).
+ * (15 min before first session until 10 min after last).
  */
 import { getSharedSupabaseClient } from "./supabase-client.js";
 import { portalPresenceSurface } from "./portal_live_presence.js";
@@ -90,7 +90,7 @@ async function ensureShiftWindowModule() {
   if (_shiftWindowModuleLoading) return;
   _shiftWindowModuleLoading = true;
   try {
-    await import("./portal_live_map_shift_window.js?v=20260610-all-services-window");
+    await import("./portal_live_map_shift_window.js?v=20261008-shift-loc");
   } catch (err) {
     console.debug("[portal] live map shift window module skipped:", err);
   } finally {
