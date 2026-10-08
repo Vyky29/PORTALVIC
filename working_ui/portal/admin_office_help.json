@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-07-v309",
+  "version": "2026-10-08-v310",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1583,6 +1583,58 @@
               "El chip viejo 1 partially paid era una factura aun abierta. No era una cuota.",
               "GoCardless crea los meses siguientes por adelantado. Pending en GoCardless no es Paid en la factura hasta que ese cobro sale.",
               "Un mes se pone verde solo cuando ese cobro ha salido. El cobro de octubre no debe pintar noviembre."
+            ]
+          }
+        },
+        {
+          "id": "nhs_4_week_invoice",
+          "title": "NHS invoices every 4 weeks (28 days)",
+          "summary": "NHS pays a weekly package over 7 days, in blocks of 4 weeks. Do not send a calendar month counted in attendance days.",
+          "where": "Finance → the NHS Day Centre invoice (PO XXPRASHERV1)",
+          "keywords": [
+            "nhs",
+            "nwl",
+            "28 days",
+            "4 weeks",
+            "4 weekly",
+            "four weekly",
+            "weekly",
+            "per day",
+            "day rate",
+            "xxprasherv1",
+            "factura nhs",
+            "semanas",
+            "28 dias"
+          ],
+          "steps": [
+            "Invoice Monday to Sunday, 28 days, four complete weeks. Not 1st to 30th/31st.",
+            "One line only. Quantity 4. Unit price is the weekly package: attendance days in that week times the agreed day rate (with the September uplift). Amount is 4 times that week.",
+            "Do not put the day rate as the unit price, and do not put the number of days in the month as the quantity. Their system splits the week over 7 days itself.",
+            "Reference: 4 weeks, start date to end date.",
+            "Ask NHS which Monday their cycle starts on, then keep that rhythm. A month that starts or ends mid-week will not match.",
+            "Calendar-month invoices already sent (September counted in days) need a credit and a replacement 4-week invoice. Do not send the next month the old way."
+          ],
+          "tips": [
+            "The weekly cost stays the same. Only the period and the line shape change.",
+            "Days before the first full Monday-Sunday block (for example 1-4 Sep 2026) do not fit a 28-day invoice. Agree that stub with NHS before adding it.",
+            "Same shape if they query an after-school NHS invoice that was billed per session inside a calendar month: 4 times the weekly package, not a list of single days."
+          ],
+          "es": {
+            "title": "Facturas NHS cada 4 semanas (28 dias)",
+            "summary": "El NHS paga un paquete semanal repartido en 7 dias, en bloques de 4 semanas. No mandes un mes natural contado en dias de asistencia.",
+            "where": "Finance → la factura NHS de Day Centre (PO XXPRASHERV1)",
+            "steps": [
+              "Factura de lunes a domingo, 28 dias, cuatro semanas completas. No del 1 al 30/31.",
+              "Una sola linea. Cantidad 4. El precio unitario es el paquete de la semana: dias de asistencia de esa semana por la tarifa de dia acordada (con la subida de septiembre). El importe es 4 veces esa semana.",
+              "No pongas la tarifa de dia como precio unitario, ni el numero de dias del mes como cantidad. Su sistema parte la semana en 7 dias solo.",
+              "Referencia: 4 weeks, fecha de inicio a fecha de fin.",
+              "Pregunta al NHS que lunes empieza su ciclo, y sigue ese ritmo. Un mes que empieza o acaba a media semana no cuadra.",
+              "Las facturas de mes natural ya enviadas (septiembre contado en dias) necesitan un abono y una factura nueva de 4 semanas. No mandes el mes siguiente como antes."
+            ],
+            "tips": [
+              "El coste semanal no cambia. Cambian el periodo y la forma de la linea.",
+              "Los dias anteriores al primer bloque lunes-domingo (por ejemplo 1-4 sep 2026) no caben en una factura de 28 dias. Acuerda ese resto con el NHS antes de sumarlo.",
+              "La misma forma si preguntan por una factura NHS de after-school cobrada por sesion dentro de un mes natural: 4 veces el paquete semanal, no una lista de dias sueltos."
             ]
           }
         },
