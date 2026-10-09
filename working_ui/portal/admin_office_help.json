@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09-v348",
+  "version": "2026-10-09-v349",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -3552,6 +3552,35 @@
           ],
           "tips": [
             "If a family needs this weekend after 18:00 on Friday, the office books it by hand. The portal will not offer it."
+          ]
+        },
+        {
+          "id": "post_trial_same_day_offer",
+          "title": "After a paid trial, the term offer closes the same night",
+          "summary": "When the trial hour ends, WhatsApp sends a term link. If they have not booked by 23:59 London that same day, the next week's seat goes live.",
+          "where": "Automatic. Cron portal-cron-post-trial-offers, every 10 minutes.",
+          "keywords": [
+            "trial",
+            "term",
+            "post trial",
+            "24 horas",
+            "dia siguiente",
+            "23:59",
+            "whatsapp",
+            "soft hold",
+            "slot live",
+            "despues del trial"
+          ],
+          "steps": [
+            "The paid trial is one session only. The following week, same day and time, stays held for that family.",
+            "About 5 minutes after the trial hour ends, WhatsApp says the trial has finished, gives the term pay link, and says to finish by the end of that date.",
+            "If they have not booked, a second WhatsApp goes at 20:00 London the same day.",
+            "At 23:59 London that same day the hold drops and the seat goes live for other families.",
+            "If they pay the term from that link before 23:59, the hold becomes their term place."
+          ],
+          "tips": [
+            "The clock is 23:59 on the trial day. It is not 24 hours after the start time, and it is not 14 days.",
+            "The parent does not get this WhatsApp on the day they pay. It goes out after the trial session has finished."
           ]
         },
         {
