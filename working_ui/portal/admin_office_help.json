@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09-v344",
+  "version": "2026-10-09-v345",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1921,7 +1921,8 @@
             "CEO finance sheet line shape: concept; refunds add Xero CN-... or CN pendiente; then (Pagado, d Sep), (Pagado, d Oct), or (Sin pagar) for bank date; IVA F rows end with IVA £... to reclaim. Addison Lee cabs: own dated block; IVA is VAT on booking or priority fees on the invoice, not one sixth of the fare gross.",
             "Monthly CEO sheets = management month (activity), not bank day. LA/NHS often pays late: update Entrado on the activity month when Tide shows money. Autumn example: Ealing September 2026 block (£4,117.23) stays on September sheet; bank expected ~13 Oct 2026; H&F/ILA/NHS dates unknown. Use portal/finance/flujos-autumn-2026.html for quarter cash-lag view.",
             "Autumn Flexi-Manually: 1st half due 15 Aug (often paid in August) maps to September + October activity on Sep/Oct CEO sheets. 2nd half due 26 Oct (bank wave) maps to November + December activity, not all on October when Tide lands.",
-            "CEO Autumn: four monthly sheets (Sep-Dec) match September layout (DC + Afterschool, Falta/Entrado/Gastado). LA/NHS payment waves and term crosses live on portal/finance/autumn-2026-term.html, not a duplicate ola table on October."
+            "CEO Autumn: four monthly sheets (Sep-Dec) match September layout (DC + Afterschool, Falta/Entrado/Gastado). LA/NHS payment waves and term crosses live on portal/finance/autumn-2026-term.html, not a duplicate ola table on October.",
+            "Autumn Entrado split: GoCardless September/October = full monthly instalment on that month sheet. Flexi 1st half paid in Jul/Aug = half of that payment on September AND half on October (section Flexi / one off). Full term paid upfront = total on autumn-2026-term.html; September sheet only the September activity share (session dates on the invoice).",
             "Mark refunded opens one modal: office note, then an optional tick Notify parent (WhatsApp + email that the refund was sent). Leave the tick off unless the money already left the bank — default is ledger + Xero CN only. Same modal from participant Payments Mark paid back. Sync Xero CN uses the same tick if you only need Xero later. Paid invoices in Xero may not take API allocation; authorised CN + bank payout is still fine.",
             "Cancel service should leave everything square: void future instalments on the portal invoice schedule, open refund on Family credits, cancelled chips on the parent hub, roster ends from the anchor. Check GoCardless / Stripe so nothing still collects after void."
           ],
@@ -1947,7 +1948,8 @@
               "Forma de fila en la hoja CEO: concepto; en refunds Xero CN-... o CN pendiente; luego (Pagado, d Sep), (Pagado, d Oct) o (Sin pagar) = fecha banco; filas IVA F cierran con IVA £... para reclamar. Cabs Addison Lee: bloque propio por fecha; IVA = VAT de fees en factura, no un sexto del viaje.",
               "Hojas CEO mensuales = mes de gestion (actividad), no dia de banco. LA/NHS suelen pagar tarde: al entrar en Tide, actualiza Entrado en la hoja del mes de actividad. Ejemplo Autumn: bloque Ealing September 2026 (£4,117.23) en hoja septiembre; banco supuesto ~13 oct 2026; H&F/ILA/NHS sin fecha. Vista retrasos: portal/finance/flujos-autumn-2026.html.",
               "Flexi-Manually Autumn: 1st half (15 ago, muchas en agosto) = actividad septiembre + octubre en hojas sep/oct. 2nd half (26 oct, ola banco) = actividad noviembre + diciembre; no meter todo en octubre cuando entre Tide.",
-              "CEO Autumn: cuatro hojas mensuales (sep-dic) como septiembre (DC + Afterschool). Olas LA/NHS y cruces del term en portal/finance/autumn-2026-term.html; no tabla ola suelta al pie de octubre."
+              "CEO Autumn: cuatro hojas mensuales (sep-dic) como septiembre (DC + Afterschool). Olas LA/NHS y cruces del term en portal/finance/autumn-2026-term.html; no tabla ola suelta al pie de octubre.",
+              "Entrado Autumn: GoCardless sep/oct = cuota entera del mes. Flexi 1st half (cobro jul/ago) = mitad en septiembre y mitad en octubre (bloque Flexi / one off). Pago term al contado = total en autumn-2026-term.html; en septiembre solo la parte de sesiones de septiembre.",
               "Mark refunded abre un modal: nota de oficina y una casilla opcional Notify parent (WhatsApp + email de que el refund ya se envio). Dejala sin marcar salvo que el dinero ya salio del banco — por defecto solo libro + CN en Xero. El mismo modal sale en participant Payments Mark paid back. Sync Xero CN usa la misma casilla si solo falta Xero. Facturas ya pagadas en Xero pueden no aceptar asignacion por API; CN autorizado + banco sigue valiendo.",
               "Cancel service debe dejar todo cuadrado: anular plazos futuros en la factura del portal, refund abierto en Credits, chips cancelados en el hub del padre, roster cortado desde el ancla. Revisa GoCardless / Stripe para que no cobre despues del void."
             ]
