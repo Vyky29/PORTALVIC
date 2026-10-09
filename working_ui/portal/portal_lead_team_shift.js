@@ -72,6 +72,61 @@ function portalAuthContext() {
   }
 }
 
+/** Person whose Today board is on screen (ghost target, else the signed-in worker). */
+function dashboardPersonKey() {
+  try {
+    if (typeof window === "undefined") return "";
+    const ghost = window.__PORTAL_GHOST_VIEW__;
+    if (ghost && ghost.active) {
+      const gk = canonicalStaffKey(ghost.rosterKey || "");
+      if (gk) return gk;
+    }
+    if (typeof window.STAFF_DASHBOARD_ID !== "undefined" && window.STAFF_DASHBOARD_ID) {
+      return canonicalStaffKey(window.STAFF_DASHBOARD_ID);
+    }
+  } catch (_) {}
+  return "";
+}
+
+function authRosterKey(profile) {
+  try {
+    if (typeof window !== "undefined" && typeof window.portalAuthStaffRosterId === "function") {
+      const k = canonicalStaffKey(window.portalAuthStaffRosterId());
+      if (k) return k;
+    }
+  } catch (_) {}
+  if (!profile) return "";
+  return canonicalStaffKey(profile.username || String(profile.full_name || "").split(/\s+/)[0] || "");
+}
+
+/**
+ * Team on shift belongs to the worker on screen.
+ * Ghost view keeps the office session (Victor / Javi / Raul), which would
+ * otherwise paint the club team card on a support worker's dashboard.
+ */
+function viewerIdentityForTeamCard(profile, email) {
+  const dash = dashboardPersonKey();
+  if (!dash) return { profile: profile, email: email };
+  let ghosting = false;
+  let ghostName = "";
+  try {
+    const ghost = typeof window !== "undefined" ? window.__PORTAL_GHOST_VIEW__ : null;
+    ghosting = !!(ghost && ghost.active);
+    ghostName = ghost && ghost.displayName ? String(ghost.displayName) : "";
+  } catch (_) {}
+  const authKey = authRosterKey(profile);
+  if (!ghosting && (!authKey || authKey === dash)) return { profile: profile, email: email };
+  return {
+    profile: {
+      username: dash,
+      full_name: ghostName || dash,
+      app_role: "staff",
+      staff_role: "staff",
+    },
+    email: "",
+  };
+}
+
 function rosterSource() {
   try {
     return typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
@@ -1167,7 +1222,8 @@ function todayIsoYmd() {
 }
 
 export function portalLeadTeamShiftContext() {
-  const { profile, email } = portalAuthContext();
+  const auth = portalAuthContext();
+  const { profile, email } = viewerIdentityForTeamCard(auth.profile, auth.email);
   const leadKey = portalLeadTeamViewerKey(profile, email);
   if (!leadKey) return null;
   const scopes = portalLeadTeamSessionScopesForProfile(profile, email);
