@@ -16,7 +16,7 @@
       "/portal/portal_roster_canonical.js?v=20261009-ibrahim-114",
       "/portal/autumn_staff_hours_reference.js?v=20261003-rota-silent",
       "/portal/portal_dc_services_local.js?v=20261007-dc-day-feedback",
-      "/portal/portal_capacity_chain_occupants.js?v=20261009-ibrahim-114",
+      "/portal/portal_capacity_chain_occupants.js?v=20261009-acat-tue",
       "/portal/portal_overview_capacity_chain.js?v=20261005-javi-book",
       "/portal/portal_client_day_visibility.js?v=20261007-dc-day-feedback",
       "/portal/portal_resolve_day_board.js?v=20260920-victor-week1-snap",
