@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09-v342",
+  "version": "2026-10-09-v343",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1669,7 +1669,7 @@
             "Inside the invoice, each month is its own row. Paid is green and shows the GoCardless payment. Scheduled is the next month, not due yet. Hidden is a later month.",
             "Two collections so far (early September and 2 October) means September and October Paid, November Scheduled, December Hidden.",
             "1 of 3 paid is a plan that starts in October (3 months left), not the second collection of a 4-month plan.",
-            "GoCardless Autumn monthly: September payout lands in September management month, October in October (chip Paid ~early month), not batched on 26 Oct. Flexi 2nd half due 26 Oct 2026 is the separate bank-transfer wave."
+            "GoCardless Autumn monthly: September payout lands in September management month, October in October (chip Paid ~early month), not batched on 26 Oct. Flexi 2nd half due 26 Oct 2026 is bank transfer; CEO activity is Nov+Dec (1st half Aug covered Sep+Oct)."
           ],
           "tips": [
             "The old chip 1 partially paid meant one invoice still open. It did not mean one instalment.",
@@ -1685,7 +1685,7 @@
               "Dentro de la factura, cada mes es una fila. Paid en verde es el cobro de GoCardless. Scheduled es el mes siguiente, aun no toca. Hidden es un mes posterior.",
               "Dos cobros hasta ahora (principios de septiembre y el 2 de octubre) = septiembre y octubre Paid, noviembre Scheduled, diciembre Hidden.",
               "1 of 3 paid es un plan que empieza en octubre (quedan 3 meses), no el segundo cobro de un plan de 4.",
-              "GoCardless mensual Autumn: septiembre entra en gestion septiembre, octubre en gestion octubre (Paid ~principios de mes), no el 26 oct. Flexi 2nd half vence 26 Oct 2026; esa ola es transferencia, aparte del GC."
+              "GoCardless mensual Autumn: septiembre entra en gestion septiembre, octubre en gestion octubre (Paid ~principios de mes), no el 26 oct. Flexi 2nd half vence 26 oct (banco); gestion nov+dic. 1st half ago cubrio sep+oct."
             ],
             "tips": [
               "El chip viejo 1 partially paid era una factura aun abierta. No era una cuota.",
@@ -1920,6 +1920,7 @@
             "Finance month: refund goes on the month the office tramites Cancel service or Approve refund, not the bank payout date. Calendar anchor can be a later date that is not the child's weekday (e.g. Kareena told 29 Sep, anchor 6 Oct not her Tuesday — still September on the sheet; bank line (Pagado, 8 Oct)). Orla £236.25 is September. Emmanuel / Elias tramitados in October stay on October.",
             "CEO finance sheet line shape: concept; refunds add Xero CN-... or CN pendiente; then (Pagado, d Sep), (Pagado, d Oct), or (Sin pagar) for bank date; IVA F rows end with IVA £... to reclaim. Addison Lee cabs: own dated block; IVA is VAT on booking or priority fees on the invoice, not one sixth of the fare gross.",
             "Monthly CEO sheets = management month (activity), not bank day. LA/NHS often pays late: update Entrado on the activity month when Tide shows money. Autumn example: Ealing September 2026 block (£4,117.23) stays on September sheet; bank expected ~13 Oct 2026; H&F/ILA/NHS dates unknown. Use portal/finance/flujos-autumn-2026.html for quarter cash-lag view.",
+            "Autumn Flexi-Manually: 1st half due 15 Aug (often paid in August) maps to September + October activity on Sep/Oct CEO sheets. 2nd half due 26 Oct (bank wave) maps to November + December activity, not all on October when Tide lands."
             "Mark refunded opens one modal: office note, then an optional tick Notify parent (WhatsApp + email that the refund was sent). Leave the tick off unless the money already left the bank — default is ledger + Xero CN only. Same modal from participant Payments Mark paid back. Sync Xero CN uses the same tick if you only need Xero later. Paid invoices in Xero may not take API allocation; authorised CN + bank payout is still fine.",
             "Cancel service should leave everything square: void future instalments on the portal invoice schedule, open refund on Family credits, cancelled chips on the parent hub, roster ends from the anchor. Check GoCardless / Stripe so nothing still collects after void."
           ],
@@ -1944,6 +1945,7 @@
               "Mes en la hoja: el refund va en el mes en que la oficina tramita Cancel service o Approve refund, no en la fecha del banco. La ancla en calendario puede ser un dia que no es su weekday (Kareena aviso 29 sep, ancla 6 oct no era su martes — sigue en septiembre; en fila (Pagado, 8 Oct)). Orla £236.25 septiembre. Emmanuel / Elias tramitados en octubre van en octubre.",
               "Forma de fila en la hoja CEO: concepto; en refunds Xero CN-... o CN pendiente; luego (Pagado, d Sep), (Pagado, d Oct) o (Sin pagar) = fecha banco; filas IVA F cierran con IVA £... para reclamar. Cabs Addison Lee: bloque propio por fecha; IVA = VAT de fees en factura, no un sexto del viaje.",
               "Hojas CEO mensuales = mes de gestion (actividad), no dia de banco. LA/NHS suelen pagar tarde: al entrar en Tide, actualiza Entrado en la hoja del mes de actividad. Ejemplo Autumn: bloque Ealing September 2026 (£4,117.23) en hoja septiembre; banco supuesto ~13 oct 2026; H&F/ILA/NHS sin fecha. Vista retrasos: portal/finance/flujos-autumn-2026.html.",
+              "Flexi-Manually Autumn: 1st half (15 ago, muchas en agosto) = actividad septiembre + octubre en hojas sep/oct. 2nd half (26 oct, ola banco) = actividad noviembre + diciembre; no meter todo en octubre cuando entre Tide."
               "Mark refunded abre un modal: nota de oficina y una casilla opcional Notify parent (WhatsApp + email de que el refund ya se envio). Dejala sin marcar salvo que el dinero ya salio del banco — por defecto solo libro + CN en Xero. El mismo modal sale en participant Payments Mark paid back. Sync Xero CN usa la misma casilla si solo falta Xero. Facturas ya pagadas en Xero pueden no aceptar asignacion por API; CN autorizado + banco sigue valiendo.",
               "Cancel service debe dejar todo cuadrado: anular plazos futuros en la factura del portal, refund abierto en Credits, chips cancelados en el hub del padre, roster cortado desde el ancla. Revisa GoCardless / Stripe para que no cobre despues del void."
             ]
