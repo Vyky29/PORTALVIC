@@ -41,7 +41,7 @@
     document.body.appendChild(overlay);
     var css = document.createElement("style");
     css.textContent =
-      "#photoFrameSheet{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:16px;}" +
+      "#photoFrameSheet{position:fixed;inset:0;z-index:21000;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:auto;}" +
       "#photoFrameSheet[hidden]{display:none !important;}" +
       ".photo-frame-sheet__back{position:absolute;inset:0;background:rgba(15,23,42,.45);}" +
       ".photo-frame-sheet__card{position:relative;width:min(360px,100%);max-width:100%;background:#fff;border-radius:16px;padding:16px;box-shadow:0 16px 40px rgba(15,23,42,.22);box-sizing:border-box;}" +
@@ -139,6 +139,7 @@
     document.getElementById("photoFrameStatus").textContent = contact ? "" : "No contact id on this photo, so Save cannot store it.";
     var preview = document.getElementById("photoFrameImg");
     preview.src = state.src;
+    document.body.appendChild(overlay);
     overlay.hidden = false;
     paint();
   }
