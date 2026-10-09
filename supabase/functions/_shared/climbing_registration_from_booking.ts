@@ -4,7 +4,7 @@
  * Parent signature is not invented. Contact and medical lines come from the
  * club registration that actually has the questionnaire.
  */
-import { PDFDocument, StandardFonts, rgb, type PDFFont } from "npm:pdf-lib@1.17.1";
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage } from "npm:pdf-lib@1.17.1";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   readParentNotifySmtpConfig,
@@ -103,41 +103,312 @@ function officeEmails(): string[] {
   return list.length ? list : ["info@clubsensational.org"];
 }
 
-async function buildPdf(fields: Array<[string, string]>): Promise<Uint8Array> {
+type SupervisorArt = {
+  label: string;
+  sig: string;
+  photo: string;
+};
+
+const SUPERVISORS: Array<{ keys: string[]; art: SupervisorArt }> = [
+  { keys: ["alex"], art: { label: "Alex S", sig: "climbing_instructor_signatures/alex-signature.png", photo: "staff_photos/alex.png" } },
+  { keys: ["bismark"], art: { label: "Bismark G", sig: "climbing_instructor_signatures/bismark-signature.png", photo: "staff_photos/bismark.png" } },
+  { keys: ["carlos"], art: { label: "Carlos H", sig: "climbing_instructor_signatures/carlos-signature.png", photo: "staff_photos/carlos.png" } },
+  { keys: ["javier", "javi"], art: { label: "Javi A", sig: "climbing_instructor_signatures/javi-signature.png", photo: "staff_photos/javi.png" } },
+  { keys: ["andres"], art: { label: "Andres B", sig: "climbing_instructor_signatures/andres-signature.png", photo: "staff_photos/andres.png" } },
+];
+
+function supervisorFromText(text: string): SupervisorArt | null {
+  const blob = pdfSafe(text, 400).toLowerCase();
+  for (const row of SUPERVISORS) {
+    if (row.keys.some((k) => new RegExp(`\\b${k}\\b`).test(blob))) return row.art;
+  }
+  return null;
+}
+
+async function loadPortalPng(rel: string): Promise<Uint8Array | null> {
+  try {
+    const local = new URL(`../../../working_ui/portal/${rel}`, import.meta.url);
+    return await Deno.readFile(local);
+  } catch {
+    /* Deployed function has no working_ui tree. */
+  }
+  try {
+    const res = await fetch(`https://portalvic.vercel.app/portal/${rel}`);
+    if (!res.ok) return null;
+    return new Uint8Array(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+type VirginForm = {
+  staffName: string;
+  juniorGender: string;
+  juniorFirst: string;
+  juniorSurname: string;
+  juniorAddress: string;
+  juniorDob: string;
+  juniorPostcode: string;
+  juniorEmergency: string;
+  juniorMobile: string;
+  juniorEmail: string;
+  juniorMedical: string;
+  guardianFirst: string;
+  guardianSurname: string;
+  guardianAddress: string;
+  guardianPostcode: string;
+  guardianMobile: string;
+  guardianEmail: string;
+  guardianEmergencyName: string;
+  guardianEmergencyNumber: string;
+  bookingName: string;
+  supervisorName: string;
+  logo: Uint8Array | null;
+  signature: Uint8Array | null;
+  photo: Uint8Array | null;
+};
+
+const PAGE_W = 595.28;
+const PAGE_H = 841.89;
+const MM = 72 / 25.4;
+const RED = rgb(198 / 255, 40 / 255, 40 / 255);
+const GREY = rgb(232 / 255, 232 / 255, 232 / 255);
+const LINE = rgb(80 / 255, 80 / 255, 80 / 255);
+const YELLOW = rgb(1, 251 / 255, 230 / 255);
+const BLACK = rgb(0, 0, 0);
+
+function mm(n: number): number {
+  return n * MM;
+}
+
+export async function buildVirginPdf(form: VirginForm): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  let page = doc.addPage([595, 842]);
-  let y = 800;
-
-  function ensure(h: number) {
-    if (y - h < 48) {
-      page = doc.addPage([595, 842]);
-      y = 800;
+  async function embed(bytes: Uint8Array | null): Promise<PDFImage | null> {
+    if (!bytes || bytes.length < 4) return null;
+    try {
+      if (bytes[0] === 0x89 && bytes[1] === 0x50) return await doc.embedPng(bytes);
+      if (bytes[0] === 0xff && bytes[1] === 0xd8) return await doc.embedJpg(bytes);
+    } catch {
+      return null;
     }
+    return null;
+  }
+  const logo = await embed(form.logo);
+  const signature = await embed(form.signature);
+  const photo = await embed(form.photo);
+
+  let page = doc.addPage([PAGE_W, PAGE_H]);
+  let y = 16;
+
+  function newPage() {
+    page = doc.addPage([PAGE_W, PAGE_H]);
+    y = 16;
+    paintLogo();
+    y = 34;
   }
 
-  function draw(text: string, size: number, face: PDFFont, color = rgb(0.06, 0.09, 0.16)) {
-    const lines = wrap(text, face, size, 500);
+  function paintLogo() {
+    if (!logo) return;
+    page.drawImage(logo, { x: mm(144), y: PAGE_H - mm(30), width: mm(52), height: mm(20) });
+  }
+
+  function need(h: number) {
+    if (y + h > 282) newPage();
+  }
+
+  function wrapText(text: string, face: PDFFont, size: number, widthMm: number): string[] {
+    return wrap(text, face, size, mm(widthMm));
+  }
+
+  function textIn(x: number, top: number, w: number, h: number, value: string, face: PDFFont, size = 7) {
+    const lines = wrapText(value, face, size, Math.max(w - 3, 8)).slice(0, Math.max(1, Math.floor((h - 1) / 3.2)));
+    const block = lines.length * 3.2;
+    let ty = top + (h - block) / 2 + 2.6;
     for (const line of lines) {
-      ensure(size + 4);
-      page.drawText(line, { x: 48, y, size, font: face, color });
-      y -= size + 4;
+      page.drawText(line, {
+        x: mm(x + 1.4),
+        y: PAGE_H - mm(ty),
+        size,
+        font: face,
+        color: BLACK,
+      });
+      ty += 3.2;
     }
   }
 
-  draw("JUNIOR REGISTRATION FORM AND CLIMBING PARENTAL CONSENT", 12, bold, rgb(0.7, 0.1, 0.1));
-  y -= 4;
-  draw("Everyone Active / Westway. Filled by clubSENsational from the family registration.", 9, font);
-  draw("The parent has not signed the Everyone Active consent on this copy.", 9, font);
-  y -= 8;
-
-  for (const [label, value] of fields) {
-    if (!value) continue;
-    draw(label, 9, bold);
-    draw(value, 10, font);
-    y -= 4;
+  function cell(x: number, w: number, h: number, value: string, label: boolean) {
+    const filled = !label && pdfSafe(value, 20).length > 0;
+    page.drawRectangle({
+      x: mm(x),
+      y: PAGE_H - mm(y + h),
+      width: mm(w),
+      height: mm(h),
+      color: label ? GREY : (filled ? YELLOW : rgb(1, 1, 1)),
+      borderColor: LINE,
+      borderWidth: 0.4,
+    });
+    textIn(x, y, w, h, value, label ? bold : font, 7);
   }
+
+  function row4(l1: string, v1: string, l2: string, v2: string, h = 6.2) {
+    need(h);
+    const c = 45.5;
+    cell(14, c, h, l1, true);
+    cell(14 + c, c, h, v1, false);
+    cell(14 + c * 2, c, h, l2, true);
+    cell(14 + c * 3, c, h, v2, false);
+    y += h;
+  }
+
+  function row2(label: string, value: string, h = 6.2) {
+    need(h);
+    cell(14, 91, h, label, true);
+    cell(105, 91, h, value, false);
+    y += h;
+  }
+
+  function bar(label: string) {
+    need(7);
+    page.drawRectangle({
+      x: mm(14),
+      y: PAGE_H - mm(y + 7),
+      width: mm(182),
+      height: mm(7),
+      color: rgb(216 / 255, 216 / 255, 216 / 255),
+      borderColor: LINE,
+      borderWidth: 0.4,
+    });
+    const size = 8;
+    const width = bold.widthOfTextAtSize(label, size);
+    page.drawText(label, {
+      x: mm(14) + (mm(182) - width) / 2,
+      y: PAGE_H - mm(y + 4.8),
+      size,
+      font: bold,
+      color: BLACK,
+    });
+    y += 7;
+  }
+
+  function paragraph(value: string) {
+    const lines = wrapText(value, font, 7, 180);
+    const h = lines.length * 3.1 + 2;
+    need(h);
+    let ty = y + 3;
+    for (const line of lines) {
+      page.drawText(line, { x: mm(14), y: PAGE_H - mm(ty), size: 7, font, color: BLACK });
+      ty += 3.1;
+    }
+    y += h;
+  }
+
+  function title(lines: string[]) {
+    for (const line of lines) {
+      page.drawText(line, { x: mm(14), y: PAGE_H - mm(y), size: 13, font: bold, color: RED });
+      y += 6.2;
+    }
+    y += 2;
+  }
+
+  paintLogo();
+  y = 18;
+  title(["JUNIOR REGISTRATION FORM AND", "CLIMBING PARENTAL CONSENT", "FOR JUNIOR CLIMBING"]);
+  page.drawLine({ start: { x: mm(14), y: PAGE_H - mm(y) }, end: { x: mm(196), y: PAGE_H - mm(y) }, thickness: 0.6, color: BLACK });
+  y += 3;
+  row4("Staff Name:", form.staffName, "Registration Number:", "");
+  bar("(A) Junior");
+  row4("Title:", "", "Male/Female:", form.juniorGender);
+  row4("First Name:", form.juniorFirst, "Surname:", form.juniorSurname);
+  row4("Address:", form.juniorAddress, "Date of Birth:", form.juniorDob, 11);
+  row4("Post Code:", form.juniorPostcode, "In Case of Emergency Number:", form.juniorEmergency);
+  row4("Mobile Tel. Number:", form.juniorMobile, "Email address:", form.juniorEmail);
+  row2("Details of relevant medical history, including medication:", form.juniorMedical, 16);
+  y += 2;
+  paragraph("Collection - Any parent that brings their children to Westway for any activities must ensure that they collect them on time. Persistent late collections could be considered neglectful and a pattern developing will be recorded by the Duty Manager/Sports Manager. If the child is not picked up within 30 minutes on three occasions without a legitimate reason the Social Services will be called, the parent may be charged for the additional costs of looking after their child and the disruption to services.");
+  y += 2;
+  bar("(B) Parent/Legal Guardian");
+  row4("Title:", "", "Male/Female:", "");
+  row4("First Name:", form.guardianFirst, "Surname:", form.guardianSurname);
+  row4("Address:", form.guardianAddress, "Date of Birth:", "", 11);
+  row4("Post Code:", form.guardianPostcode, "Home Tel. Number:", "");
+  row4("Mobile Tel. Number:", form.guardianMobile, "Email address:", form.guardianEmail);
+  row4("In Case of Emergency Name:", form.guardianEmergencyName, "In Case of Emergency Number:", form.guardianEmergencyNumber);
+  row2("Details of relevant medical history, including medication:", "", 10);
+  y += 2;
+  bar("Marketing and communication");
+  row2("Guest passes / promotions:", "");
+  row2("Partner offers:", "");
+  row2("Data sharing Council/Westway:", "");
+  row2("Preferred methods of communication:", "");
+  row2("How did you hear about us?", "");
+  y += 2;
+  bar("Privacy");
+  row2("Do you agree to Everyone Active holding your and your child's data?", "", 12);
+
+  newPage();
+  y = 34;
+  title(["JUNIOR CLIMBING", "CONSENT"]);
+  row2("BMC Participation Statement:", "");
+  paragraph("The British Mountaineering Council recognises that climbing and mountaineering are activities with a risk of personal injury or death. Participants in these activities should be aware of and accept these risks, and be responsible for their own actions and involvement.");
+  y += 2;
+  page.drawText("PARENTAL CONSENT FOR INSTRUCTED SESSIONS", {
+    x: mm(14), y: PAGE_H - mm(y), size: 9, font: bold, color: RED,
+  });
+  y += 6;
+  paragraph("Please note that this form is only valid for one school year. Children must be 5 years and over. Name of the booking: " + (form.bookingName || "clubSENsational"));
+  row2("Signature (Instructed):", "");
+  row2("Date (Instructed):", "");
+  y += 3;
+  page.drawText("CASUAL CLIMBING NOVICE UNDER SUPERVISION (UNDER 18YRS)", {
+    x: mm(14), y: PAGE_H - mm(y), size: 9, font: bold, color: RED,
+  });
+  y += 6;
+  paragraph("Consent: I have read the participation statement and the Junior Climbing Recognition of Risk document. I consent to my child climbing at The Westway Sports Centre under the supervision of the climber named below.");
+  row2("Signature of Parent/Legal Guardian:", "", 18);
+  row2("Date:", "");
+  need(18);
+  cell(14, 91, 18, "Name of Supervisor:", true);
+  page.drawRectangle({
+    x: mm(105),
+    y: PAGE_H - mm(y + 18),
+    width: mm(91),
+    height: mm(18),
+    color: form.supervisorName ? YELLOW : rgb(1, 1, 1),
+    borderColor: LINE,
+    borderWidth: 0.4,
+  });
+  if (photo) {
+    page.drawImage(photo, { x: mm(107), y: PAGE_H - mm(y + 16), width: mm(14), height: mm(14) });
+    textIn(122, y, 72, 18, form.supervisorName, font, 9);
+  } else {
+    textIn(105, y, 91, 18, form.supervisorName, font, 9);
+  }
+  y += 18;
+  need(18);
+  cell(14, 91, 18, "Signature of supervisor:", true);
+  page.drawRectangle({
+    x: mm(105),
+    y: PAGE_H - mm(y + 18),
+    width: mm(91),
+    height: mm(18),
+    color: signature ? YELLOW : rgb(1, 1, 1),
+    borderColor: LINE,
+    borderWidth: 0.4,
+  });
+  if (signature) {
+    page.drawImage(signature, { x: mm(108), y: PAGE_H - mm(y + 16), width: mm(50), height: mm(14) });
+  }
+  y += 22;
+  page.drawText("PARENTAL CONSENT FOR JUNIOR TEST (14+ YEARS)", {
+    x: mm(14), y: PAGE_H - mm(y), size: 9, font: bold, color: RED,
+  });
+  y += 6;
+  row2("Unsupervised Top roping:", "");
+  row2("Unsupervised Lead:", "");
+  row2("Signature of Parent/Legal Guardian:", "");
+  row2("Date:", "");
 
   return doc.save();
 }
@@ -213,33 +484,59 @@ export async function mintClimbingRegistrationForOffice(
   const phone = bit(payload, "parent_phone") || clean(best.parent_phone, 40);
   const email = bit(payload, "parent_email") || clean(best.parent_email, 120);
   const summary = clean(item.bookingSummary, 180) || bookingSummaryFrom(climbingBooking) || "Climbing Activity · Westway";
+  let instructorBlob = [
+    summary,
+    climbingBooking && climbingBooking.instructor,
+    climbingBooking && climbingBooking.staff,
+  ].map((x) => clean(x, 80)).join(" ");
+  if (!supervisorFromText(instructorBlob)) {
+    const { data: lines } = await admin
+      .from("portal_participant_service_lines")
+      .select("sessions")
+      .ilike("client_name", name)
+      .limit(4);
+    const sessions = (Array.isArray(lines) ? lines : []).flatMap((row) =>
+      Array.isArray(row.sessions) ? row.sessions as Array<Record<string, unknown>> : []
+    );
+    const climb = sessions.find((s) => /climb|westway/i.test(clean(s.service, 40) + " " + clean(s.venue, 40)));
+    if (climb) instructorBlob += " " + clean(climb.instructor, 40);
+  }
+  const supervisor = supervisorFromText(instructorBlob);
+  const [logo, signature, photo] = await Promise.all([
+    loadPortalPng("everyone-active-logo.png"),
+    supervisor ? loadPortalPng(supervisor.sig) : Promise.resolve(null),
+    supervisor ? loadPortalPng(supervisor.photo) : Promise.resolve(null),
+  ]);
+  const dobUk = /^\d{4}-\d{2}-\d{2}$/.test(dob)
+    ? `${dob.slice(8, 10)}/${dob.slice(5, 7)}/${dob.slice(0, 4)}`
+    : dob;
 
-  const fields: Array<[string, string]> = [
-    ["Staff", "clubSENsational"],
-    ["Booking", summary],
-    ["Junior first name", child.first],
-    ["Junior surname", child.last],
-    ["Male/Female", bit(payload, "participant_gender")],
-    ["Date of birth", dob],
-    ["Address", address],
-    ["Post code", postcode],
-    ["Emergency number", phone],
-    ["Email", email],
-    ["School", bit(payload, "participant_school")],
-    ["Medical history, including medication", medicalLine(payload)],
-    ["Parent / guardian first name", parent.first],
-    ["Parent / guardian surname", parent.last],
-    ["Relationship", bit(payload, "relationship")],
-    ["Guardian address", address],
-    ["Guardian post code", postcode],
-    ["Guardian mobile", phone],
-    ["Guardian email", email],
-    ["Emergency contact", parent.first ? `${parent.first} ${parent.last}`.trim() : ""],
-    ["Emergency number", phone],
-    ["Everyone Active consent signature", "Not signed on this copy"],
-  ];
-
-  const pdfBytes = await buildPdf(fields);
+  const pdfBytes = await buildVirginPdf({
+    staffName: supervisor ? supervisor.label : "",
+    juniorGender: bit(payload, "participant_gender"),
+    juniorFirst: child.first,
+    juniorSurname: child.last,
+    juniorAddress: address,
+    juniorDob: dobUk,
+    juniorPostcode: postcode,
+    juniorEmergency: phone,
+    juniorMobile: phone,
+    juniorEmail: email,
+    juniorMedical: medicalLine(payload),
+    guardianFirst: parent.first,
+    guardianSurname: parent.last,
+    guardianAddress: address,
+    guardianPostcode: postcode,
+    guardianMobile: phone,
+    guardianEmail: email,
+    guardianEmergencyName: `${parent.first} ${parent.last}`.trim(),
+    guardianEmergencyNumber: phone,
+    bookingName: summary || "clubSENsational",
+    supervisorName: supervisor ? supervisor.label : "",
+    logo,
+    signature,
+    photo,
+  });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const safe = pdfSafe(name, 60).replace(/[^\w\- ]+/g, "").replace(/\s+/g, "_") || "participant";
   const pdfPath = `climbing_registration/${stamp}_${safe}/form.pdf`;
@@ -307,7 +604,7 @@ export async function mintClimbingRegistrationForOffice(
         `<p>Climbing registration for <strong>${escapeHtml(name)}</strong>, filled from the club registration so it can be sent to Virgin / Westway.</p>` +
         (item.force ? `<p>Updated copy. Use this place line.</p>` : "") +
         `<p>Place: ${escapeHtml(summary)}</p>` +
-        `<p>The parent has not signed the Everyone Active consent on this copy. The PDF is attached.</p>`,
+        `<p>This is the Everyone Active junior form (Virgin layout). The club supervisor name, signature and photo are on the consent page. The parent signature line is blank.</p>`,
       attachment: {
         filename: `${safe}_climbing_registration.pdf`,
         contentBase64: btoa(binary),
