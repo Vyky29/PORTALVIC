@@ -1949,6 +1949,78 @@ export async function createFinishBookingStripeCheckout(
   };
 }
 
+async function trialBookingCompletedAlreadySent(
+  admin: SupabaseClient,
+  participantName: string,
+): Promise<boolean> {
+  const name = clean(participantName, 120);
+  if (!name) return false;
+  const { data } = await admin
+    .from("portal_parent_notify_log")
+    .select("email_status, whatsapp_status")
+    .eq("kind", "trial_booking_completed")
+    .eq("client_display", name)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  return (data || []).some((row) => {
+    const email = String((row as { email_status?: string }).email_status || "");
+    const wa = String((row as { whatsapp_status?: string }).whatsapp_status || "");
+    return email === "sent" || wa === "sent" || wa === "delivered" || wa === "read";
+  });
+}
+
+/** WhatsApp + email when a trial is paid. Skips if that confirmation already went out. */
+async function ensureTrialPaidParentNotify(
+  admin: SupabaseClient,
+  token: CompletionTokenRow,
+): Promise<void> {
+  if (!finishBookingTokenIsTrial(token)) return;
+  const contactId = clean(token.contact_id, 40);
+  const { data: contact } = contactId
+    ? await admin
+      .from("portal_parent_contacts")
+      .select("parent_display, email, mobile, child_display")
+      .eq("contact_id", contactId)
+      .maybeSingle()
+    : { data: null };
+  const participant = clean(contact?.child_display, 120) || "Participant";
+  if (await trialBookingCompletedAlreadySent(admin, participant)) return;
+
+  let reservation: Record<string, unknown> | null = null;
+  const reservationId = clean(token.reservation_id, 80);
+  if (reservationId) {
+    const { data } = await admin
+      .from("portal_booking_slot_reservations")
+      .select("*")
+      .eq("id", reservationId)
+      .maybeSingle();
+    reservation = data;
+  }
+  if (!reservation?.id && token.document_id) {
+    const { data } = await admin
+      .from("portal_booking_slot_reservations")
+      .select("*")
+      .eq("document_id", token.document_id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    reservation = data;
+  }
+  const instructor =
+    (reservation && preferredInstructorForReservation(reservation)) ||
+    (reservation ? extractInstructorFromNotes(reservation.notes) : "") ||
+    "";
+  await notifyParentTrialBookingCompleted({
+    admin,
+    parentName: contact?.parent_display || null,
+    parentEmail: contact?.email || null,
+    parentPhone: contact?.mobile || null,
+    participantName: participant,
+    reservation,
+    instructorName: instructor || null,
+  });
+}
+
 /** After first instalment is paid (bank confirm or GC / Stripe), complete booking + PIN. */
 async function completeFinishBookingWithPin(
   admin: SupabaseClient,
@@ -1964,6 +2036,16 @@ async function completeFinishBookingWithPin(
   const token = await findFinishTokenForInvoice(admin, invId);
   if (!token) return { completed: false, reason: "no_token" };
   if (String(token.status) === "completed") {
+    if (finishBookingTokenIsTrial(token)) {
+      try {
+        await ensureTrialPaidParentNotify(admin, token);
+      } catch (e) {
+        console.warn(
+          "[finish-booking] trial notify retry",
+          e instanceof Error ? e.message : String(e),
+        );
+      }
+    }
     return { completed: true, pinSent: false, reason: "already_completed" };
   }
 
@@ -2041,15 +2123,7 @@ async function completeFinishBookingWithPin(
       (reservation ? extractInstructorFromNotes(reservation.notes) : "") ||
       "";
     try {
-      await notifyParentTrialBookingCompleted({
-        admin,
-        parentName: contact?.parent_display || null,
-        parentEmail: contact?.email || null,
-        parentPhone: contact?.mobile || null,
-        participantName: contact?.child_display || "Participant",
-        reservation,
-        instructorName: instructor || null,
-      });
+      await ensureTrialPaidParentNotify(admin, token);
     } catch (e) {
       console.warn(
         "[finish-booking] trial completed notify",
@@ -2131,6 +2205,16 @@ async function completeFinishBookingWithPin(
       const sync = await syncOpsAfterFinishBookingPaid(admin, token as CompletionTokenRow, {
         paidVia: "paid",
       });
+      if (finishBookingTokenIsTrial(token)) {
+        try {
+          await ensureTrialPaidParentNotify(admin, token);
+        } catch (e) {
+          console.warn(
+            "[finish-booking] trial notify existing pin",
+            e instanceof Error ? e.message : String(e),
+          );
+        }
+      }
       console.log("[finish-booking] ops sync", sync.notes.join("|"));
       return { completed: true, pinSent: false, reason: "existing_pin_no_resend" };
     }
@@ -2174,6 +2258,17 @@ async function completeFinishBookingWithPin(
       sync.notes.join("|"),
     );
     return { completed: false, pinSent: false, reason: "awaiting_gocardless_mandate" };
+  }
+
+  if (finishBookingTokenIsTrial(token)) {
+    try {
+      await ensureTrialPaidParentNotify(admin, token);
+    } catch (e) {
+      console.warn(
+        "[finish-booking] trial notify with pin",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
   }
 
   const result = await issueParentPortalPinForCompletion(admin, token as CompletionTokenRow, {

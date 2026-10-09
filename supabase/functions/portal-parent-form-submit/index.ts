@@ -33,6 +33,13 @@ import {
   bookingLooksClimbing,
   mintClimbingRegistrationForOffice,
 } from "../_shared/climbing_registration_from_booking.ts";
+import {
+  normalizeParentPhoneE164,
+  normalizePublicPhotoUrl,
+  readParentNotifySmtpConfig,
+  sendParentEmailViaSmtp,
+  sendParentMobileMessage,
+} from "../_shared/portal_parent_messaging.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -283,6 +290,70 @@ async function markBookingLeadsSubmitted(
   return { updated, primaryLeadId };
 }
 
+async function sendOfficeParentSessionNote(
+  admin: ReturnType<typeof createClient>,
+  opts: { contactId: string; subject: string; note: string; instructor?: string },
+): Promise<{ ok: boolean; emailed?: boolean; wa?: boolean; error?: string }> {
+  const contactId = sanitizePart(opts.contactId, 40);
+  const subject = sanitizePart(opts.subject, 160);
+  const note = String(opts.note || "").replace(/\s+/g, " ").trim().slice(0, 900);
+  if (!contactId || !subject || !note) return { ok: false, error: "missing_note" };
+  const { data: contact } = await admin
+    .from("portal_parent_contacts")
+    .select("parent_display, email, mobile, child_display")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  if (!contact) return { ok: false, error: "contact_missing" };
+  const parentName = sanitizePart(String(contact.parent_display || ""), 120) || "Parent / carer";
+  const child = sanitizePart(String(contact.child_display || ""), 120) || "Participant";
+  const email = sanitizePart(String(contact.email || ""), 200);
+  const phone = normalizeParentPhoneE164(String(contact.mobile || ""));
+  const stem = sanitizePart(String(opts.instructor || ""), 40).split(" ")[0].toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const photo = stem ? normalizePublicPhotoUrl(`/portal/staff_photos/${stem}.png`) : "";
+  let emailed = false;
+  const smtp = readParentNotifySmtpConfig();
+  if (smtp && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const mail = await sendParentEmailViaSmtp({
+      config: smtp,
+      to: email,
+      subject,
+      bodyText: `Hi ${parentName},\n\n${note}\n\n- clubSENsational`,
+      instructorPhotoUrl: photo || undefined,
+      instructorPhotoName: stem ? stem[0].toUpperCase() + stem.slice(1) : undefined,
+    });
+    emailed = !!mail.ok;
+  }
+  let waOk = false;
+  let waId = "";
+  if (phone) {
+    const wa = await sendParentMobileMessage(phone, note, {
+      kind: "instructor_change",
+      instructorPhotoUrl: photo || undefined,
+      instructorPhotoName: stem ? stem[0].toUpperCase() + stem.slice(1) : undefined,
+    });
+    waOk = !!wa.ok;
+    waId = wa.ok ? String(wa.id || "") : "";
+    if (!wa.ok) console.warn("[office-session-note] whatsapp", wa.error);
+  }
+  await admin.from("portal_parent_notify_log").insert({
+    sent_by_user_id: null,
+    sent_by_email: "system@office",
+    kind: "session_time_correction",
+    channel: emailed && waOk ? "both" : emailed ? "email" : "whatsapp",
+    client_display: child,
+    parent_name: parentName,
+    parent_email: email || null,
+    parent_phone: phone || null,
+    subject,
+    body_text: note,
+    message_type: "text",
+    email_status: emailed ? "sent" : email ? "failed" : "skipped",
+    whatsapp_status: waOk ? "sent" : phone ? "failed" : "skipped",
+    whatsapp_message_id: waId || null,
+  });
+  return { ok: emailed || waOk, emailed, wa: waOk, error: emailed || waOk ? "" : "not_sent" };
+}
+
 async function callerIsServiceRole(baseUrl: string, token: string, envKey: string): Promise<boolean> {
   const t = token.trim();
   if (!t) return false;
@@ -313,7 +384,14 @@ Deno.serve(async (req) => {
     const callerToken = officeHdr || auth || apikey;
     const officeCaller = await callerIsServiceRole(baseUrl, callerToken, serviceRole);
     if (!officeCaller) return json(401, { ok: false, error: "mint_auth" });
-    let body: { action?: string; items?: Array<{ name?: string; bookingSummary?: string }> } = {};
+    let body: {
+      action?: string;
+      items?: Array<{ name?: string; bookingSummary?: string; force?: boolean }>;
+      contactId?: string;
+      subject?: string;
+      note?: string;
+      instructor?: string;
+    } = {};
     try {
       body = await req.json();
     } catch {
@@ -332,9 +410,28 @@ Deno.serve(async (req) => {
         results.push(await mintClimbingRegistrationForOffice(admin, {
           name,
           bookingSummary: item?.bookingSummary || null,
+          force: item?.force === true,
         }));
       }
       return json(200, { ok: true, results });
+    }
+    if (body.action === "office_parent_session_note") {
+      const adminKey = callerToken.length > 80 ? callerToken : serviceRole;
+      const admin = createClient(baseUrl, adminKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const sent = await sendOfficeParentSessionNote(admin, {
+        contactId: String(body.contactId || ""),
+        subject: String(body.subject || ""),
+        note: String(body.note || ""),
+        instructor: String(body.instructor || ""),
+      });
+      return json(sent.ok ? 200 : 502, {
+        ok: sent.ok,
+        emailed: !!sent.emailed,
+        wa: !!sent.wa,
+        error: sent.ok ? "" : (sent.error || "not_sent"),
+      });
     }
     return json(400, { ok: false, error: "unknown_action" });
   }

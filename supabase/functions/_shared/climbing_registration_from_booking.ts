@@ -16,6 +16,8 @@ const BUCKET = "participant-documents";
 export type ClimbingMintItem = {
   name: string;
   bookingSummary?: string | null;
+  /** Rebuild and email again when a climbing form already exists. */
+  force?: boolean;
 };
 
 function clean(v: unknown, max = 500): string {
@@ -171,7 +173,8 @@ export async function mintClimbingRegistrationForOffice(
     .eq("form_type", "climbing_registration")
     .ilike("participant_name", name)
     .limit(1);
-  if (already && already.length) return { ok: true, skipped: "already_sent", id: String(already[0].id) };
+  const existingId = already && already.length ? String(already[0].id) : "";
+  if (existingId && !item.force) return { ok: true, skipped: "already_sent", id: existingId };
 
   const { data: docs } = await admin
     .from("portal_participant_documents")
@@ -246,28 +249,46 @@ export async function mintClimbingRegistrationForOffice(
   });
   if (upErr) return { ok: false, error: "pdf_upload_failed" };
 
-  const { data: inserted, error: insErr } = await admin
-    .from("portal_participant_documents")
-    .insert({
-      form_type: "climbing_registration",
-      participant_name: name,
-      participant_dob: dob || null,
-      parent_name: bit(payload, "parent_name") || clean(best.parent_name, 120) || null,
-      parent_email: email || null,
-      parent_phone: phone || null,
-      pdf_storage_path: pdfPath,
-      payload_json: {
-        source: "registration_for_virgin",
-        booking_summary: summary,
-        junior_first_name: child.first,
-        junior_surname: child.last,
+  const docPayload = {
+    source: "registration_for_virgin",
+    booking_summary: summary,
+    junior_first_name: child.first,
+    junior_surname: child.last,
+    participant_name: name,
+  };
+  let savedId = existingId;
+  if (existingId) {
+    const { error: updErr } = await admin
+      .from("portal_participant_documents")
+      .update({
+        participant_dob: dob || null,
+        parent_name: bit(payload, "parent_name") || clean(best.parent_name, 120) || null,
+        parent_email: email || null,
+        parent_phone: phone || null,
+        pdf_storage_path: pdfPath,
+        payload_json: docPayload,
+      })
+      .eq("id", existingId);
+    if (updErr) return { ok: false, error: "save_failed" };
+  } else {
+    const { data: inserted, error: insErr } = await admin
+      .from("portal_participant_documents")
+      .insert({
+        form_type: "climbing_registration",
         participant_name: name,
-      },
-      status: "new",
-    })
-    .select("id")
-    .single();
-  if (insErr || !inserted) return { ok: false, error: "save_failed" };
+        participant_dob: dob || null,
+        parent_name: bit(payload, "parent_name") || clean(best.parent_name, 120) || null,
+        parent_email: email || null,
+        parent_phone: phone || null,
+        pdf_storage_path: pdfPath,
+        payload_json: docPayload,
+        status: "new",
+      })
+      .select("id")
+      .single();
+    if (insErr || !inserted) return { ok: false, error: "save_failed" };
+    savedId = String(inserted.id);
+  }
 
   const smtp = readParentNotifySmtpConfig();
   const tos = officeEmails();
@@ -284,6 +305,7 @@ export async function mintClimbingRegistrationForOffice(
       subject: `Climbing registration for Virgin · ${name}`,
       html:
         `<p>Climbing registration for <strong>${escapeHtml(name)}</strong>, filled from the club registration so it can be sent to Virgin / Westway.</p>` +
+        (item.force ? `<p>Updated copy. Use this place line.</p>` : "") +
         `<p>Place: ${escapeHtml(summary)}</p>` +
         `<p>The parent has not signed the Everyone Active consent on this copy. The PDF is attached.</p>`,
       attachment: {
@@ -296,7 +318,7 @@ export async function mintClimbingRegistrationForOffice(
     if (!sent.ok) console.warn("[climbing-reg] email", sent.error);
   }
 
-  return { ok: true, id: String(inserted.id), emailed };
+  return { ok: true, id: savedId, emailed };
 }
 
 function escapeHtml(s: string): string {

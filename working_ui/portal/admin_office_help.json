@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09-v356",
+  "version": "2026-10-09-v357",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -917,6 +917,7 @@
           "where": "Booking / pay link → then Sessions Overview",
           "steps": [
             "Family completes finish-booking payment (Stripe or bank confirm).",
+            "A paid trial sends the parent a confirmation on WhatsApp and by email: child, day, time, venue, and instructor. Card payment sends it as soon as Stripe marks the invoice paid. Mark paid sends the same message. If that confirmation already went out, it is not sent again.",
             "Ops sync folds MADRE + trial schedule_overrides (+ dated roster row).",
             "Open Sessions Overview on the first session date — the child should appear.",
             "If missing, check payment status and Schedule & Covers / overrides for that date.",
@@ -933,6 +934,7 @@
             "where": "Enlace de pago y luego Sessions Overview",
             "steps": [
               "La familia paga finish-booking (Stripe o confirmacion de banco).",
+              "Un trial pagado manda al padre una confirmacion por WhatsApp y por email: nino, dia, hora, sede e instructor. Si pagan con tarjeta, sale en cuanto Stripe marca la factura pagada. Mark paid manda el mismo mensaje. Si esa confirmacion ya salio, no se repite.",
               "El sistema pliega MADRE, el override de trial y la fila del roster de ese dia.",
               "Abre Sessions Overview en la fecha de la primera sesion. El nino tiene que salir.",
               "Si no sale, mira el pago y Schedule & Covers / overrides de ese dia.",
@@ -1879,13 +1881,17 @@
             "bank payment",
             "stripe",
             "tide",
-            "confirm payment"
+            "confirm payment",
+            "trial",
+            "whatsapp",
+            "confirmacion"
           ],
           "steps": [
             "Open the invoice or payment row.",
             "Confirm bank / Stripe payment as your process requires.",
             "Mark paid / validate so re-enrol and booking status update.",
-            "If a finish-booking trial was waiting, check Overview for the first session date."
+            "If a finish-booking trial was waiting, check Overview for the first session date.",
+            "Mark paid on a trial also sends the parent the confirmation on WhatsApp and by email (child, day, time, venue, instructor). A card payment already sent that message when Stripe marked it paid, so Mark paid does not send a second copy."
           ],
           "tips": [],
           "es": {
@@ -1897,6 +1903,7 @@
               "Confirma el pago de banco o de Stripe segun el camino.",
               "Mark paid / valida para que re-enrolment y el estado de la reserva se actualicen.",
               "Si un trial de finish-booking estaba esperando, mira Overview en la fecha de la primera sesion.",
+              "Mark paid en un trial tambien manda al padre la confirmacion por WhatsApp y por email (nino, dia, hora, sede, instructor). Si pagaron con tarjeta, ese mensaje ya salio cuando Stripe lo marco pagado, y Mark paid no manda otra copia.",
               "Despues de una transferencia, el padre tiene que avisar a la oficina. Un toque en el enlace no marca el pago solo."
             ],
             "tips": [
