@@ -116,9 +116,27 @@ function isTrialNotes(notes: string | null | undefined): boolean {
   return /booking_kind\s*=\s*trial/i.test(String(notes || ""));
 }
 
-function isTrialPaidNotes(notes: string | null | undefined): boolean {
+/** Week-after hold copied from a trial. Same slot, not a term place yet. */
+function isPostTrialSoftHold(notes: string | null | undefined): boolean {
   const n = String(notes || "");
-  return /trial_paid/i.test(n) || /paid_stripe/i.test(n) || /stripe.*paid|paid.*stripe/i.test(n);
+  return /post_trial_term_soft_hold/i.test(n) || /awaits_parent_term_or_free/i.test(n);
+}
+
+function isTrialPlaceNotes(notes: string | null | undefined): boolean {
+  return isTrialNotes(notes) || isPostTrialSoftHold(notes);
+}
+
+/** "Mohamed" and "Mohamed Mohamud" are one child. Different first names are not. */
+function sameChildName(a: string, b: string): boolean {
+  const na = normalizeName(a);
+  const nb = normalizeName(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  const ap = na.split(" ");
+  const bp = nb.split(" ");
+  if (ap[0] !== bp[0]) return false;
+  if (ap.length === 1 || bp.length === 1) return true;
+  return namesMatch(na, nb);
 }
 
 function isPayHoldNotes(notes: string | null | undefined): boolean {
@@ -428,15 +446,16 @@ function derivePlace(row: {
 
   // 1) Live seat / class membership (may also be on another waiting list).
   if (row.in_class === true) {
-    if (resStatus === "validated" && isTrialNotes(res?.notes)) {
+    if (resStatus === "validated" && isTrialPlaceNotes(res?.notes)) {
       return withWaitSecondary(
         {
-          kind: "trial_in_class",
-          label: "In class · trial",
+          kind: "active",
+          label: "ACTIVE",
           tone: "ok",
           detail,
           secondary_label: null,
           secondary_tone: null,
+          chips: [{ label: "ACTIVE", tone: "ok" }],
         },
         waitFlag,
       );
@@ -478,32 +497,17 @@ function derivePlace(row: {
         secondary_tone: null,
       };
     }
-    if (isTrialNotes(res?.notes)) {
-      if (isTrialPaidNotes(res?.notes)) {
-        return withWaitSecondary(
-          {
-            kind: "trial",
-            label: "Formal · trial",
-            tone: "ok",
-            detail,
-            secondary_label: null,
-            secondary_tone: null,
-          },
-          waitFlag,
-        );
-      }
-      // Accepted / held trial but no paid marker — treat as admin hold pending contact.
+    if (isTrialPlaceNotes(res?.notes)) {
+      // Trial, or the week-after hold of that trial. Not a formal term place.
+      // In-class children are handled above as ACTIVE.
       return {
-        kind: "registered_trial_expired_admin_hold",
+        kind: "trial_registered",
         label: "REGISTERED",
         tone: "pend",
         detail,
-        secondary_label: "Not a client",
-        secondary_tone: "urg",
-        chips: [
-          { label: "REGISTERED", tone: "pend" },
-          { label: "Not a client", tone: "urg" },
-        ],
+        secondary_label: null,
+        secondary_tone: null,
+        chips: [{ label: "REGISTERED", tone: "pend" }],
       };
     }
     return withWaitSecondary(
@@ -771,14 +775,18 @@ Deno.serve(async (req) => {
     }
   }
 
-  const contactByChild = new Map<
-    string,
-    { in_class: boolean | null; on_waiting_list: boolean | null; child_display: string }
-  >();
+  type ContactLite = {
+    in_class: boolean | null;
+    on_waiting_list: boolean | null;
+    child_display: string;
+    email: string;
+    key: string;
+  };
+  const contactRows: ContactLite[] = [];
   if (childNames.length) {
     const { data: contacts } = await admin
       .from("portal_parent_contacts")
-      .select("child_display, in_class, on_waiting_list")
+      .select("child_display, in_class, on_waiting_list, email_norm")
       .limit(5000);
     for (const c of contacts || []) {
       const display = String(c.child_display || "");
@@ -787,23 +795,35 @@ Deno.serve(async (req) => {
       if (!key) continue;
       if (
         !childNames.some(
-          (n) => n === key || namesMatch(n, key) || key.includes(n) || n.includes(key),
+          (n) => n === key || sameChildName(n, key) || namesMatch(n, key),
         )
       ) {
         continue;
       }
-      const next = {
+      contactRows.push({
         in_class: c.in_class === true ? true : c.in_class === false ? false : null,
         on_waiting_list:
           c.on_waiting_list === true ? true : c.on_waiting_list === false ? false : null,
         child_display: display,
-      };
-      const prev = contactByChild.get(key);
-      // Prefer live in-class / non-retired over stale duplicate contacts.
-      if (!prev || (next.in_class === true && prev.in_class !== true)) {
-        contactByChild.set(key, next);
-      }
+        email: emailNorm(String(c.email_norm || "")),
+        key,
+      });
     }
+  }
+
+  function pickContact(childName: string, parentEmail: string): ContactLite | null {
+    const who = normalizeName(childName);
+    const em = emailNorm(parentEmail);
+    if (!who) return null;
+    const named = contactRows.filter((c) => sameChildName(c.key, who) || c.key === who);
+    const hits = em ? named.filter((c) => c.email === em) : named;
+    const pool = em ? hits : named;
+    const live = pool.filter((c) => c.in_class === true);
+    if (live.length === 1) return live[0];
+    if (live.length > 1) {
+      return live.find((c) => c.key === who) || null;
+    }
+    return pool.find((c) => c.key === who) || pool[0] || null;
   }
 
   /** Latest reservation per email+child (prefer live statuses). */
@@ -903,17 +923,7 @@ Deno.serve(async (req) => {
 
     const em = emailNorm(String(row.parent_email || ""));
     const lead = em ? leadByEmail.get(em) : null;
-    const childKey = normalizeName(row.participant_name);
-    let contact = childKey ? contactByChild.get(childKey) : null;
-    if (!contact && childKey) {
-      for (const [k, v] of contactByChild.entries()) {
-        if (isMergedRetiredName(v.child_display || k)) continue;
-        if (namesMatch(k, childKey) || k.includes(childKey) || childKey.includes(k)) {
-          contact = v;
-          if (v.in_class === true) break;
-        }
-      }
-    }
+    const contact = pickContact(String(row.participant_name || ""), em);
 
     const reservation = findReservation(String(row.parent_email || ""), row.participant_name);
     const place = derivePlace({

@@ -169,14 +169,16 @@
     }
   }
 
-  function documentsTableHtml(docs, emptyMsg) {
+  function documentsTableHtml(docs, emptyMsg, opts) {
     if (!docs.length) {
       return '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">' + esc(emptyMsg || 'No documents yet.') + '</p>';
     }
+    var climbingTable = !!(opts && opts.climbing);
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Submitted</th><th>Form</th><th>Place</th><th>Participant</th><th>Parent</th><th>Office review</th><th>PDF</th><th>Photo</th><th>Review</th>' +
+      '<th>Submitted</th><th>Form</th><th>Place</th><th>Participant</th><th>Parent</th><th>Office review</th><th>PDF</th>' +
+      (climbingTable ? '' : '<th>Photo</th><th>Review</th>') +
       '</tr></thead><tbody>' +
       docs.map(function (d) {
         var formType = String(d.form_type || '').toLowerCase();
@@ -251,7 +253,14 @@
           placeKind === 'expired' ||
           placeKind === 'released' ||
           /^registered/i.test(placeLab);
-        if (registeredNotClient && placeKind !== 'in_class' && placeKind !== 'trial_in_class' && placeKind !== 'formal') {
+        if (
+          registeredNotClient &&
+          placeKind !== 'in_class' &&
+          placeKind !== 'trial_in_class' &&
+          placeKind !== 'formal' &&
+          placeKind !== 'trial_registered' &&
+          placeKind !== 'active'
+        ) {
           placeChips = [
             { label: 'REGISTERED', tone: 'pend' },
             { label: 'Not a client', tone: 'urg' },
@@ -388,12 +397,14 @@
           '<td>' +
           pdfLink +
           '</td>' +
-          '<td>' +
-          photoLink +
-          '</td>' +
-          '<td style="min-width:0">' +
-          reviewCell +
-          '</td>' +
+          (climbingTable
+            ? ''
+            : '<td>' +
+              photoLink +
+              '</td>' +
+              '<td style="min-width:0">' +
+              reviewCell +
+              '</td>') +
           '</tr>'
         );
       }).join('') +
@@ -449,7 +460,9 @@
       : '<p class="muted" style="margin:0 0 10px">' +
         esc(String((res.documents || []).length)) +
         ' submission(s).</p>';
-    hostEl.innerHTML = intro + documentsTableHtml(res.documents, emptyMsg);
+    hostEl.innerHTML = intro + documentsTableHtml(res.documents, emptyMsg, {
+      climbing: scope.form_type === 'climbing_registration',
+    });
     hostEl.querySelectorAll('.portal-pax-doc-open').forEach(function (btn) {
       btn.addEventListener('click', function (ev) {
         if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
