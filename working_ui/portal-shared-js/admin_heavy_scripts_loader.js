@@ -13,7 +13,7 @@
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
-      "/portal/portal_roster_canonical.js?v=20261006-junaid-back",
+      "/portal/portal_roster_canonical.js?v=20261009-roberto-emanuel-34",
       "/portal/autumn_staff_hours_reference.js?v=20261003-rota-silent",
       "/portal/portal_dc_services_local.js?v=20261007-dc-day-feedback",
       "/portal/portal_capacity_chain_occupants.js?v=20261006-elias-from",
