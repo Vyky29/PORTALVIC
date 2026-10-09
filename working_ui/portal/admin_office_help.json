@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09-v355",
+  "version": "2026-10-09-v356",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -3189,7 +3189,11 @@
             "pay hold",
             "general info",
             "trial",
-            "foto"
+            "foto",
+            "climbing",
+            "virgin",
+            "westway",
+            "everyone active"
           ],
           "steps": [
             "Open Registration Form under Documents. Each row is a form that came in through the Booking Portal. People already in class are on this table too. It is not the REGISTERED list under Services & places, and it is not LEADS.",
@@ -3200,6 +3204,7 @@
             "Then check Tide, Mark paid in Bookings, and send the PIN.",
             "Mark reviewed means you opened the PDF. Resend finish link if they lost it.",
             "Climbing forms and Parent consents are under Clients & Families, Documents. Registration Form is there too.",
+            "A climbing booking fills the Everyone Active junior form from the registration and emails the PDF to info@clubsensational.org, so the office can send it to Virgin. The parent signature is not on that copy.",
             "Do not show them as booked kids on Sessions until they are a CLIENT.",
             "Staff General on the trial card reads this form, the same way the photo does. (Trial) on the name does not hide it."
           ],
@@ -3219,6 +3224,7 @@
               "Luego mira Tide, Mark paid en Bookings, y manda el PIN.",
               "Mark reviewed quiere decir que abriste el PDF. Resend finish link si lo perdieron.",
               "Climbing forms y Parent consents estan en Clients & Families, Documents. Registration Form tambien esta ahi.",
+              "Un booking de climbing rellena el formulario junior de Everyone Active con el registro y manda el PDF a info@clubsensational.org, para enviarlo a Virgin. La firma del padre no va en esa copia.",
               "No los pongas como ninos reservados en Sessions hasta que sean CLIENT.",
               "General en el staff del trial lee este formulario, igual que la foto. (Trial) en el nombre no lo esconde."
             ],

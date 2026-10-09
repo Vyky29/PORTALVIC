@@ -29,6 +29,10 @@ import {
   notesWithInstructor,
   pickOpenInstructorsForBand,
 } from "../_shared/portal_booking_reservation_ops.ts";
+import {
+  bookingLooksClimbing,
+  mintClimbingRegistrationForOffice,
+} from "../_shared/climbing_registration_from_booking.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -279,6 +283,18 @@ async function markBookingLeadsSubmitted(
   return { updated, primaryLeadId };
 }
 
+async function callerIsServiceRole(baseUrl: string, token: string, envKey: string): Promise<boolean> {
+  const t = token.trim();
+  if (!t) return false;
+  if (t === envKey) return true;
+  if (t.length < 80) return false;
+  const probe = createClient(baseUrl, t, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { error } = await probe.auth.admin.listUsers({ page: 1, perPage: 1 });
+  return !error;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { ok: false, error: "method_not_allowed" });
@@ -287,6 +303,40 @@ Deno.serve(async (req) => {
   const serviceRole = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
   if (!baseUrl || !serviceRole) {
     return json(500, { ok: false, error: "server_misconfigured" });
+  }
+
+  const auth = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  const apikey = (req.headers.get("apikey") || "").trim();
+  const officeHdr = (req.headers.get("x-portal-office") || "").trim();
+  const contentType = (req.headers.get("content-type") || "").toLowerCase();
+  if (contentType.includes("application/json")) {
+    const callerToken = officeHdr || auth || apikey;
+    const officeCaller = await callerIsServiceRole(baseUrl, callerToken, serviceRole);
+    if (!officeCaller) return json(401, { ok: false, error: "mint_auth" });
+    let body: { action?: string; items?: Array<{ name?: string; bookingSummary?: string }> } = {};
+    try {
+      body = await req.json();
+    } catch {
+      return json(400, { ok: false, error: "bad_json" });
+    }
+    if (body.action === "mint_climbing_for_participants") {
+      const adminKey = callerToken.length > 80 ? callerToken : serviceRole;
+      const admin = createClient(baseUrl, adminKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const items = Array.isArray(body.items) ? body.items : [];
+      const results = [];
+      for (const item of items) {
+        const name = sanitizePart(String(item?.name || ""), 120);
+        if (!name) continue;
+        results.push(await mintClimbingRegistrationForOffice(admin, {
+          name,
+          bookingSummary: item?.bookingSummary || null,
+        }));
+      }
+      return json(200, { ok: true, results });
+    }
+    return json(400, { ok: false, error: "unknown_action" });
   }
 
   let form: FormData;
@@ -821,6 +871,17 @@ Deno.serve(async (req) => {
     });
   } catch (notifyErr) {
     console.warn("[portal-parent-form-submit] office notify", notifyErr);
+  }
+
+  if (formType === "client_registration" && bookingLooksClimbing(bookingRequest as unknown as Record<string, unknown>)) {
+    try {
+      await mintClimbingRegistrationForOffice(admin, {
+        name: participantName,
+        bookingSummary,
+      });
+    } catch (climbErr) {
+      console.warn("[portal-parent-form-submit] climbing form", climbErr);
+    }
   }
 
   let finishBooking: {
