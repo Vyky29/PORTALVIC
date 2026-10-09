@@ -22,8 +22,14 @@
   tr.total td { font-weight: 800; border-top: 2px solid #94a3b8; background: #f8fafc; }
   tr.remnant td { font-weight: 800; background: #ecfdf5; color: #0f2733; }
   tr.remnant td.num { color: #15803d; }
-  tr.unpaid td, tr.cost td { color: #0f2733; font-weight: 700; }
-  tr.unpaid td.num, tr.cost td.num { color: #b91c1c; }
+  tr.cost td { color: #0f2733; font-weight: 700; }
+  tr.cost td.num { color: #0f2733; }
+  tr.sin-pagar td,
+  tr.sin-pagar td.num,
+  tr.cost.sin-pagar td,
+  tr.cost.sin-pagar td.num { color: #b91c1c; font-weight: 800; }
+  tr.sin-pagar td,
+  tr.cost.sin-pagar td { background: #fef2f2; }
   tr.hold td { color: #0f2733; }
   tr.hold td.num { color: #64748b; }
   tr.part td { font-size: 8pt; color: #0f2733; font-weight: 600; padding-top: 2px; padding-bottom: 2px; }
@@ -73,7 +79,7 @@
   <p class="brand">clubSENsational</p>
   <h1>Septiembre 2026, Autumn</h1>
   <p class="meta">Las dos columnas van igual. Gasto de septiembre pagado en octubre sigue aqui (mismo mes de gestion). Refunds: mes en que la oficina tramita Cancel service o Approve refund (aunque la ancla no sea weekday del nino). Hoja al 9 oct 2026. <a href="octubre-2026-autumn.html">Octubre 2026</a></p>
-  <p class="leyenda"><span class="novat">Sin IVA</span> Sin IVA <span class="iva">IVA F</span> IVA F <span class="revc">Reverse charge</span> Reverse charge <span class="ivaq">No se sabe</span> No se sabe</p>
+  <p class="leyenda"><span class="novat">Sin IVA</span> Sin IVA <span class="iva">IVA F</span> IVA F <span class="revc">Reverse charge</span> Reverse charge <span class="ivaq">No se sabe</span> No se sabe · <strong style="color:#b91c1c">Fila roja</strong> = (Sin pagar), pendiente de banco</p>
   <p class="meta definiciones">Definicion de fila: concepto; en refunds <strong>Xero CN-...</strong> o CN pendiente; cierre <strong>(Pagado, d Sep)</strong>, <strong>(Pagado, d Oct)</strong> o <strong>(Sin pagar)</strong> (fecha = banco). IVA F: al final <strong>IVA £...</strong> para reclamar. Addison Lee: IVA = VAT de fees en la factura (no un sexto del viaje); reparte factura 3448593 entre Ikram y Joelle jue 24.</p>
 
   <h2>A facturar en septiembre</h2>
@@ -119,8 +125,8 @@
     <tr class="cost"><td><span class="novat">NO IVA</span>Luliya, DBS, parte day centre (Pagado, 30 Sep)</td><td class="num">-£28.83</td></tr>
     <tr class="cost"><td><span class="iva">IVA F</span>SwimFarm Pool Rent, Day Centre, lun/mar/mie/vie (Sep). (Pagado, 1 Oct). IVA £108.33</td><td class="num">-£650.00</td></tr>
     <tr class="cost"><td><span class="iva">IVA F</span>Addison Lee Ikram, cab Sep, 18 dias. Factura 3448593. (Pagado, 1 Oct). IVA £52.35</td><td class="num">-£1,672.80</td></tr>
-    <tr class="cost"><td><span class="novat">NO IVA</span>Patience, expense 24 sep. (Sin pagar)</td><td class="num">-£57.66</td></tr>
-    <tr class="cost"><td><span class="novat">NO IVA</span>Patience, shadowing 25-30 sep, £270. (Sin pagar). Parte sep; resto shadowing oct en hoja octubre</td><td class="num">-£270.00</td></tr>
+    <tr class="cost sin-pagar"><td><span class="novat">NO IVA</span>Patience, expense 24 sep. (Sin pagar)</td><td class="num">-£57.66</td></tr>
+    <tr class="cost sin-pagar"><td><span class="novat">NO IVA</span>Patience, shadowing 25-30 sep, £270. (Sin pagar). Parte sep; resto shadowing oct en hoja octubre</td><td class="num">-£270.00</td></tr>
     <tr class="total cost"><td>Gastado hasta el dia</td><td class="num">-£3,136.41</td></tr>
     <tr class="sec"><td colspan="2">Salarios de septiembre</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>Michelle, Day Centre timesheet 1-24 Sep</td><td class="num">-£2,310.00</td></tr>
@@ -128,7 +134,7 @@
     <tr class="cost"><td><span class="novat">NO IVA</span>Youssef, Day Centre timesheet 1-24 Sep</td><td class="num">-£330.00</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>Raul, Day centre salary Sep (Full time)</td><td class="num">-£3,167.00</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>Victor, Day centre salary Sep (Full time)</td><td class="num">-£3,167.00</td></tr>
-    <tr class="cost"><td><span class="novat">NO IVA</span>Roberto, Day centre salary Sep (Part-time)</td><td class="num">-£1,505.00</td></tr>
+    <tr class="cost sin-pagar"><td><span class="novat">NO IVA</span>Roberto, Day centre salary Sep (Part-time). (Sin pagar)</td><td class="num">-£1,505.00</td></tr>
     <tr class="total cost"><td>Salarios de septiembre</td><td class="num">-£11,415.00</td></tr>
     <tr class="owed"><td>Queda ahora. Entrado menos los gastos que sabemos</td><td class="num">-£13,481.41</td></tr>
     <tr class="sec"><td colspan="2">Gasto personal de Victor</td></tr>
@@ -311,8 +317,8 @@
     <tr class="cost"><td><span class="iva">IVA F</span>Refund Orla Sullivan, Service Cancellation. Xero CN pendiente (INV-P-0346). (Pagado, 24 Sep). IVA £39.37</td><td class="num">-£236.25</td></tr>
     <tr class="cost"><td><span class="iva">IVA F</span>Refund Chopi / Kareena, Service Cancellation. Xero CN-P-0499-Rffe5. (Pagado, 8 Oct). IVA £75</td><td class="num">-£450.00</td></tr>
     <tr class="total cost"><td>Refunds y cancellations</td><td class="num">-£886.25</td></tr>
-    <tr class="cost"><td><span class="novat">NO IVA</span>Climbing Westway, septiembre. (Pagado, oct)</td><td class="num">-£99.00</td></tr>
-    <tr class="cost"><td><span class="novat">NO IVA</span>NSPCC, 30 sep pedido, Ann (tercer hire). (Pagado, 1 Oct)</td><td class="num">-£30.00</td></tr>
+    <tr class="cost sin-pagar"><td><span class="novat">NO IVA</span>Climbing Westway, septiembre. (Sin pagar)</td><td class="num">-£99.00</td></tr>
+    <tr class="cost"><td><span class="novat">NO IVA</span>NSPCC training, Ann (tercer hire), pedido 30 Sep. (Pagado, 1 Oct)</td><td class="num">-£30.00</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>Ann, DBS check. Tramite sep 2026. (Pagado, oct)</td><td class="num">-£57.66</td></tr>
     <tr class="sec"><td colspan="2">Salarios de septiembre</td></tr>
     <tr class="cost"><td><span class="novat">NO IVA</span>Victor, Admin</td><td class="num">-£1,000.00</td></tr>
@@ -426,7 +432,7 @@
     <tr><td>Victor Salary, Sep Day Centre (Pagado, 18 Sep)</td><td class="num">£3,167.00</td></tr>
     <tr><td>Raul Salary, Sep Day Centre (Pagado, 30 Sep)</td><td class="num">£3,167.00</td></tr>
     <tr><td>Michelle Salary, Sep Day Centre (Pagado, 28 Sep &amp; 1 Oct)</td><td class="num">£2,310.00</td></tr>
-    <tr><td>Roberto Salary, Sep Day Centre (Part-time)</td><td class="num">£1,505.00</td></tr>
+    <tr class="sin-pagar"><td>Roberto Salary, Sep Day Centre (Part-time). (Sin pagar)</td><td class="num">£1,505.00</td></tr>
     <tr><td>Luliya Salary, Sep Day Centre (Pagado, 30 Sep)</td><td class="num">£936.00</td></tr>
     <tr><td>Youssef Salary, Sep Day Centre (Pagado, 30 Sep)</td><td class="num">£330.00</td></tr>
     <tr class="total"><td>Day Centre</td><td class="num">£11,415.00</td></tr>
