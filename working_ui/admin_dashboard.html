@@ -21899,8 +21899,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(pid.indexOf('pp-') === 0) cid = pid.slice(3);
         else if(pid.indexOf('old-') === 0) cid = pid.slice(4);
       }
-      if(!/^\d+$/.test(cid)) return '';
-      return cid;
+      if(/^\d+$/.test(cid)) return cid;
+      /* gap-logan-hibbitts and the other filled-in contacts are real ids, not roster slugs. */
+      if(/^gap-[a-z0-9-]+$/i.test(cid)) return cid;
+      return '';
     }
     /** Lowest contact id among people who share a first name. Empty when the first name is unique. */
     function paxContactsBareFirstOwner(first){
