@@ -4327,6 +4327,7 @@
    * Timi leaves Monday Day Centre from 5 Oct and sits on Tuesday.
    * Victor Tuesday 3.30-5 stays the Cyrus Bespoke row.
    * Victor is on Monday Day Centre only on 5 Oct.
+   * Ibrahim Mon 5 Oct is 11 to 1. From Mon 12 Oct he is 11 to 4.
    * From Wed 7 Oct Victor is off Day Centre and Raul has Office then Emanuel.
    * From Fri 9 Oct Raul is off Day Centre.
    */
@@ -4494,17 +4495,11 @@
     {
       staff: "Michelle",
       clients: [
-        { name: "Emanuel", time: "11 to 12.30" },
-        { name: "Ikram", time: "12.30 to 4" },
+        { name: "Emanuel", time: "11 to 3" },
+        { name: "Ikram", time: "3 to 4" },
       ],
     },
-    {
-      staff: "Raul",
-      clients: [
-        { name: "Ibrahim", time: "11 to 1" },
-        { name: "Emanuel", time: "12.30 to 3" },
-      ],
-    },
+    { staff: "Raul", clients: [{ name: "Ibrahim", time: "11 to 4" }] },
   ];
 
   function dcDatedBoardRows(iso, day, board) {

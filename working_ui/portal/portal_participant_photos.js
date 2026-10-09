@@ -19,6 +19,8 @@
     haneef: "portal/participants/haneef.png",
     haneff: "portal/participants/haneef.png",
     ibrahim: "portal/participants/ibrahim.png",
+    "ibrahim amir": "portal/participants/ibrahim.png",
+    "ibrahim a": "portal/participants/ibrahim.png",
     "haneef yusuf": "portal/participants/haneef.png",
     "amaar ah": "portal/participants/amaar-ah.png",
     "aydaan ah": "portal/participants/aydaan-ah.png",

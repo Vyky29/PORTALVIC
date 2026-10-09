@@ -16,7 +16,7 @@
     "/portal/portal_staff_feedback_data_loader.js?v=20261007-dc-day-feedback",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20261005-logan-white",
-      "/portal/portal_roster_canonical.js?v=20261009-roberto-emanuel-34",
+      "/portal/portal_roster_canonical.js?v=20261009-ibrahim-114",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/portal_client_day_visibility.js?v=20261007-dc-day-feedback",
@@ -35,7 +35,7 @@
   var TIER_UI = [
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
     "/portal/portal_dashboard_ui_coalesce.js?v=20260922-idle-timeouts",
-    "/portal/portal_participant_photos.js?v=20261009-trial-general",
+    "/portal/portal_participant_photos.js?v=20261009-ibrahim-114",
     "/portal/portal_topbar_header.js?v=20260904-michelle-interviews",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
     "/portal/portal_swimming_instructor_menus.js?v=20260916-isp-admin-only",
