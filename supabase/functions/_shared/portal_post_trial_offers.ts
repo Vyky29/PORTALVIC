@@ -17,6 +17,7 @@ import {
   sendParentMessageViaWhatsapp,
 } from "./portal_parent_messaging.ts";
 import { finishBookingUrl, mintFinishBookingToken } from "./portal_booking_finish.ts";
+import { tideBankDetailsFromEnv } from "./tide_bank_details.ts";
 
 const BOOKING_PORTAL_FALLBACK = "https://www.clubsensational.org/bookingportal";
 
@@ -166,10 +167,28 @@ export function formatLondonDeadline(deadlineIso: string): string {
   return `before ${time} on ${date}`;
 }
 
+/** Same account printed on invoices when Tide secrets are missing on this function. */
+const INVOICE_BANK = {
+  payee_name: "ClubSENsational LTD",
+  sort_code: "04-06-05",
+  account_number: "16987295",
+};
+
+function bankTransferLines(child: string): string {
+  const bank = tideBankDetailsFromEnv();
+  const payee = bank.payee_name || INVOICE_BANK.payee_name;
+  const sort = bank.sort_code || INVOICE_BANK.sort_code;
+  const account = bank.account_number || INVOICE_BANK.account_number;
+  const ref = clean(child, 40) || "your child";
+  return (
+    `Bank transfer: pay ${payee}, sort code ${sort}, account ${account}. ` +
+    `Use reference ${ref}. Then WhatsApp the office that you have paid.`
+  );
+}
+
 function buildOfferBody(opts: {
   first: string;
   child: string;
-  trialLabel: string;
   slotLabel: string;
   deadlineLabel: string;
   finishUrl: string;
@@ -177,17 +196,15 @@ function buildOfferBody(opts: {
 }): string {
   const intro =
     opts.wave === 1
-      ? `${opts.child}'s trial (${opts.trialLabel}) has finished.`
-      : `Reminder: ${opts.child}'s trial (${opts.trialLabel}) finished earlier today, and we have not received a term booking yet.`;
+      ? `${opts.child}'s trial has finished.`
+      : `Reminder: we still have not received the term payment for ${opts.child}.`;
   return (
     `Hi ${opts.first},\n\n` +
-    `${intro}\n\n` +
-    `To keep the same place for Autumn term (${opts.slotLabel}), finish booking and pay here:\n` +
+    `${intro} To keep the same place (${opts.slotLabel}), pay ${opts.deadlineLabel}:\n` +
     `${opts.finishUrl}\n\n` +
-    `Please finish ${opts.deadlineLabel}. ` +
-    `If we do not hear from you by then, the place will be released for other families.\n\n` +
-    `If you want a different slot, reply and we will help. ` +
-    `If you do not want the continuing place, you do not need to reply. It is released at that time.\n\n` +
+    `Card or Apple Pay confirms by itself.\n\n` +
+    `${bankTransferLines(opts.child)}\n\n` +
+    `If you do not pay by then, the place is released.\n\n` +
     `Thanks,\n` +
     `Office | clubSENsational`
   );
@@ -441,7 +458,6 @@ async function sendOfferWhatsapp(
   const body = buildOfferBody({
     first: firstName(String(offer.parent_name || "")),
     child: child.split(/\s+/)[0] || child,
-    trialLabel,
     slotLabel: slotLabel || trialLabel,
     deadlineLabel: formatLondonDeadline(deadlineIso),
     finishUrl: minted.url,
