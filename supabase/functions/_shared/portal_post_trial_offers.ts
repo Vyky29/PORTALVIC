@@ -187,7 +187,7 @@ function buildOfferBody(opts: {
     `Please finish ${opts.deadlineLabel}. ` +
     `If we do not hear from you by then, the place will be released for other families.\n\n` +
     `If you want a different slot, reply and we will help. ` +
-    `If you do not want a continuing place, reply FREE and we will release it now.\n\n` +
+    `If you do not want the continuing place, you do not need to reply. It is released at that time.\n\n` +
     `Thanks,\n` +
     `Office | clubSENsational`
   );
@@ -664,6 +664,24 @@ export async function ensurePostTrialOfferAfterPaid(
   return softHoldId ? "post_trial_offer_created_with_hold" : "post_trial_offer_created";
 }
 
+/** The finish link pays this same row. That is a keep, not a reason to release it. */
+async function softHoldAlreadyPaid(
+  admin: SupabaseClient,
+  offer: Record<string, unknown>,
+): Promise<boolean> {
+  const holdId = clean(offer.soft_hold_reservation_id, 80);
+  if (!holdId) return false;
+  const { data } = await admin
+    .from("portal_booking_slot_reservations")
+    .select("notes, status")
+    .eq("id", holdId)
+    .maybeSingle();
+  const notes = String(data?.notes || "");
+  if (/booking_paid/i.test(notes)) return true;
+  const st = String(data?.status || "").toLowerCase();
+  return st === "paid" || st === "confirmed";
+}
+
 async function parentTookTermAction(
   admin: SupabaseClient,
   offer: Record<string, unknown>,
@@ -671,6 +689,7 @@ async function parentTookTermAction(
   const phone = normalizeParentPhoneE164(String(offer.parent_phone || ""));
   const participant = clean(offer.participant_name, 120).toLowerCase();
   const since = clean(String(offer.trial_session_date || ""), 12);
+  const softHoldId = clean(offer.soft_hold_reservation_id, 80);
   if (!phone && !participant) return false;
 
   let q = admin
@@ -683,6 +702,7 @@ async function parentTookTermAction(
   const { data } = await q;
   const rows = data || [];
   return rows.some((r) => {
+    if (softHoldId && String(r.id) === softHoldId) return false;
     if (/post_trial_term_soft_hold/i.test(String(r.notes || ""))) return false;
     const samePhone =
       phone &&
@@ -701,6 +721,7 @@ async function releaseSoftHold(
 ): Promise<void> {
   const holdId = clean(offer.soft_hold_reservation_id, 80);
   if (!holdId) return;
+  if (await softHoldAlreadyPaid(admin, offer)) return;
   const now = new Date().toISOString();
   await admin
     .from("portal_booking_slot_reservations")
@@ -744,6 +765,20 @@ export async function runPostTrialOffersMaintenance(
     stats.pending += 1;
     try {
       const offer = await refreshOfferSlotFromReservation(admin, rawOffer);
+
+      if (await softHoldAlreadyPaid(admin, offer)) {
+        await admin
+          .from("portal_post_trial_offers")
+          .update({
+            status: "term_booked",
+            resolved_at: now.toISOString(),
+            resolve_note: "paid_same_slot",
+            updated_at: now.toISOString(),
+          })
+          .eq("id", offer.id);
+        stats.term_booked += 1;
+        continue;
+      }
 
       if (await parentTookTermAction(admin, offer)) {
         await releaseSoftHold(admin, offer, "term_booked");

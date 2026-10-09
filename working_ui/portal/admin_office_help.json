@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09-v350",
+  "version": "2026-10-09-v351",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -3578,7 +3578,9 @@
             "Office Mark paid and the parent paying by card both count. Either one keeps the place.",
             "About 5 minutes after the trial hour ends, WhatsApp says the trial has finished, gives the term pay link, and says that deadline.",
             "If they have not paid, a second WhatsApp goes at 20:00 London the same day.",
-            "When those 24 hours are up, the hold drops and the seat goes live for other families."
+            "The WhatsApp link opens finish-booking for that same slot, already set to the term. Card pay and office Mark paid both keep it.",
+            "There is no separate leave button. If they do not pay by the deadline, the seat goes live.",
+            "Opening the pay page does not cut the hold down to 30 minutes."
           ],
           "tips": [
             "The clock starts when the trial starts. It is not 23:59 the same night, and it is not 14 days.",

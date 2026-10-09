@@ -1596,8 +1596,9 @@ Deno.serve(async (req) => {
       })
       .eq("id", token.id);
 
-    // Bank / GC / trial: short 30' pay window. Seat frees if unpaid (unless parent reported).
-    if (reservation?.id && !isTrial) {
+    // Bank / GC: short 30' pay window. A post-trial term link keeps the 24h hold
+    // so opening the invoice does not free the same slot before the deadline.
+    if (reservation?.id && !isTrial && !postTrialConvert) {
       const prevNotes = String(reservation.notes || "").trim();
       await admin
         .from("portal_booking_slot_reservations")

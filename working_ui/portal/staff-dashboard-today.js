@@ -1901,6 +1901,16 @@
           ? portalOverrideReplaceParticipantDisplayName(row)
           : '';
         const Psheet = window.PortalParticipantsSheet;
+        if (typeof portalOverrideIsTrial === "function" && portalOverrideIsTrial(row)) {
+          var trialWho = String(who || "").replace(/\s*\(\s*trial[^)]*\)\s*/gi, " ").replace(/\s+/g, " ").trim();
+          if (trialWho) {
+            return {
+              title: "New client for trial: " + trialWho,
+              body: trialWho + " is on your roster for a trial."
+            };
+          }
+          return { title: "New client for trial", body: "A trial was added to your roster." };
+        }
         const isNewClient = !!(Psheet && (
           (typeof Psheet.overrideIsFinishBookingNewClient === 'function' && Psheet.overrideIsFinishBookingNewClient(row))
           || (typeof Psheet.overrideIsTermNewParticipant === 'function' && Psheet.overrideIsTermNewParticipant(row))

@@ -163,6 +163,19 @@ function pushCopy(
   if (t === "client_replace_in_slot") {
     const full = record ? replacementDisplayName(record) : "";
     const name = full.trim() || who;
+    const trialName = name.replace(/\s*\(\s*trial[^)]*\)\s*/gi, " ").replace(/\s+/g, " ").trim();
+    if (isTrialReplace(record)) {
+      if (trialName) {
+        return {
+          title: `New client for trial: ${trialName}`,
+          body: `${trialName} is on your roster for a trial.`,
+        };
+      }
+      return {
+        title: "New client for trial",
+        body: "A trial was added to your roster.",
+      };
+    }
     if (isFinishBookingNewClient(record)) {
       if (name) {
         return {
