@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Flujos de caja, Autumn 2026 (Sep-Oct)</title>
+<style>
+  @page { size: A4; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #0f2733; background: #fff; font-size: 10pt; line-height: 1.4; margin: 0; padding: 12px; }
+  h1 { font-size: 16pt; margin: 0 0 4px; }
+  h2 { font-size: 11.5pt; margin: 16px 0 6px; color: #0e7c86; border-bottom: 2px solid #0e7c86; padding-bottom: 3px; }
+  .meta { color: #5b7280; font-size: 8.5pt; margin: 0 0 10px; }
+  .brand { font-weight: 800; color: #0e7c86; margin: 0 0 8px; text-align: center; }
+  .cover-logo { height: 56px; width: auto; display: block; margin: 0 auto 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 10px; font-size: 9pt; }
+  th, td { border-bottom: 1px solid #e2e8f0; padding: 5px 6px; text-align: left; vertical-align: top; }
+  th { background: #e6f3f4; font-size: 8pt; text-transform: uppercase; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  tr.total td { font-weight: 800; background: #f8fafc; border-top: 2px solid #94a3b8; }
+  .note { font-size: 8.5pt; color: #5b7280; background: #f1f5f9; border-left: 3px solid #0e7c86; padding: 8px 10px; margin: 8px 0; }
+  .warn { font-size: 8.5pt; color: #92400e; background: #fffbeb; border-left: 3px solid #f59e0b; padding: 8px 10px; margin: 8px 0; }
+  .nav a { margin-right: 12px; }
+  td.tbc { color: #6d28d9; font-weight: 700; }
+  td.ok { color: #15803d; font-weight: 700; }
+  td.pending { color: #b91c1c; font-weight: 700; }
+  .foot { margin-top: 14px; font-size: 8pt; color: #94a3b8; }
+</style>
+</head>
+<body>
+  <img class="cover-logo" src="https://portalvic.vercel.app/portal/F-02-1.png" alt="clubSENsational" />
+  <p class="brand">clubSENsational</p>
+  <h1>Flujos de caja, Autumn 2026</h1>
+  <p class="meta nav">Hojas de gestion (actividad del mes): <a href="septiembre-2026-autumn.html">Septiembre 2026</a> · <a href="octubre-2026-autumn.html">Octubre 2026</a> · Este documento (caja / retrasos). Hoja al 9 oct 2026.</p>
+
+  <div class="note">
+    <strong>Dos relojes.</strong> Las hojas mensuales miden <strong>ganancia del mes de actividad</strong> (servicios, gastos de ese mes, refunds cuando se tramitan).
+    El <strong>banco</strong> suele llegar <strong>uno o varios meses despues</strong> (LA, NHS, parte de nominas). No vamos al dia en caja; vamos mes vencido y actualizamos la hoja de gestion cuando entra el dinero.
+  </div>
+
+  <h2>Ola LA / NHS, 1 octubre 2026 (vencimiento facturas)</h2>
+  <table>
+    <tr>
+      <th>Tramo en factura</th>
+      <th class="num">Importe (ola 1 oct)</th>
+      <th>Hoja de gestion</th>
+      <th>Cobro en banco</th>
+      <th>Accion cuando entre</th>
+    </tr>
+    <tr>
+      <td>Ealing, etiqueta <strong>September 2026</strong></td>
+      <td class="num">£4,117.23</td>
+      <td><a href="septiembre-2026-autumn.html">Septiembre</a> (Falta por entrar / Entrado)</td>
+      <td class="pending">Supuesto <strong>13 Oct 2026</strong></td>
+      <td>Mover a Entrado; anotar fecha banco. No en octubre.</td>
+    </tr>
+    <tr>
+      <td>H&amp;F + resto LA, etiqueta <strong>October 2026</strong></td>
+      <td class="num">£36,856.34</td>
+      <td><a href="octubre-2026-autumn.html">Octubre</a></td>
+      <td class="tbc">Fecha desconocida</td>
+      <td>Actualizar octubre cuando entre.</td>
+    </tr>
+    <tr>
+      <td>NHS / ILA (parte en ola, ej. Joelle NHS en sep)</td>
+      <td class="tbc">Por factura</td>
+      <td>Mes de la etiqueta en factura</td>
+      <td class="tbc">Desconocido</td>
+      <td>Cuando entre, actualizar la hoja del <strong>mes de gestion</strong>, no el mes del banco solo.</td>
+    </tr>
+  </table>
+
+  <div class="warn">
+    ILA y H&amp;F: no tenemos fecha de pago fiable. NHS: menos aun. Cuando aparezca en Tide, cruzar con PO / etiqueta September|October 2026 y tocar la hoja del mes que corresponde a la actividad.
+  </div>
+
+  <h2>Trimestre Sep-Oct-Nov 2026 (vista caja, borrador)</h2>
+  <p class="meta">Filas = mes en que <strong>entra dinero al banco</strong> (o supuesto). Columnas = a que mes de <strong>actividad</strong> pertenece ese ingreso. Sirve para ver el retraso, no sustituye las hojas mensuales.</p>
+  <table>
+    <tr>
+      <th>Mes banco</th>
+      <th>Actividad sep 2026</th>
+      <th>Actividad oct 2026</th>
+      <th>Actividad nov 2026</th>
+      <th>Notas</th>
+    </tr>
+    <tr>
+      <td>Sep 2026</td>
+      <td class="num">Privado GC, parte LA summer, nominas 30 sep</td>
+      <td class="num">-</td>
+      <td class="num">-</td>
+      <td>Ver hoja septiembre (Entrado hasta el dia).</td>
+    </tr>
+    <tr>
+      <td>Oct 2026</td>
+      <td class="num pending">Ealing £4,117.23 (13 oct sup.)</td>
+      <td class="num tbc">Ola LA Oct £36,856 + NHS/ILA TBC</td>
+      <td class="num">-</td>
+      <td>Gastos sep pagados en oct siguen en filas sep con (Pagado, d Oct).</td>
+    </tr>
+    <tr>
+      <td>Nov 2026</td>
+      <td class="num tbc">Restos LA/NHS sep si tarde</td>
+      <td class="num tbc">Timesheet oct 1-24, GC oct</td>
+      <td class="num tbc">-</td>
+      <td>Ampliar cuando cerremos oct en Tide.</td>
+    </tr>
+  </table>
+
+  <h2>Gastos y cobros: reglas rapidas</h2>
+  <table>
+    <tr><th>Tipo</th><th>Mes en hoja</th><th>Fecha en fila</th></tr>
+    <tr><td>Refund tramitado</td><td>Mes del tramite (Cancel / Approve)</td><td><strong>(Pagado, …)</strong> = banco</td></tr>
+    <tr><td>LA Ealing sep</td><td>Septiembre</td><td>Entrado cuando banco; supuesto 13 oct</td></tr>
+    <tr><td>SwimFarm DC sep sin pagar</td><td>Septiembre</td><td><strong>(Sin pagar)</strong> rojo hasta banco</td></tr>
+    <tr><td>Ann shadowing 27 sep + cover 2 oct</td><td>Sep / Oct respectivamente</td><td>Un pago oct en banco; dos filas rojas</td></tr>
+    <tr><td>Timesheet 1-24</td><td>Mes del periodo</td><td>Nomina suele salir mes siguiente</td></tr>
+  </table>
+
+  <p class="foot">clubSENsational · Flujos Autumn 2026 · Documento interno · Complemento de las hojas mensuales, no cuenta auditada.</p>
+</body>
+</html>
