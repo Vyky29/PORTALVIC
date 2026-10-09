@@ -44,3 +44,18 @@ export function suggestedTransferReference(
     .trim()
     .slice(0, 40);
 }
+
+/**
+ * Bank reference for a term payment that has no invoice number yet.
+ * The invoice is created when the office marks paid. Tide keeps 18 characters.
+ * "Mohamed term" is distinct from the earlier trial payment under the same name.
+ */
+export function termPayReference(displayName: string): string {
+  const name = String(displayName || "").replace(/\s+/g, " ").trim();
+  const first = name.split(" ")[0] || "Term";
+  const full = name ? `${name} term` : "term";
+  if (full.length <= 18) return full;
+  const short = `${first} term`;
+  if (short.length <= 18) return short;
+  return short.slice(0, 18).trim();
+}

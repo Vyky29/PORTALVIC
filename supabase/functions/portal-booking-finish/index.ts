@@ -13,6 +13,7 @@ import { bookingPortalServiceLabel, gcNeedsBankRemainderForCurrentMonth } from "
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 import {
   suggestedTransferReference,
+  termPayReference,
   tideBankDetailsFromEnv,
 } from "../_shared/tide_bank_details.ts";
 import {
@@ -1652,10 +1653,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     const bank = tideBankDetailsFromEnv();
-    const transferRef = suggestedTransferReference(
-      invOut?.invoice_number,
-      String(doc.participant_name || ""),
-    );
+    const participantName = String(doc.participant_name || "");
+    const transferRef = postTrialConvert
+      ? termPayReference(participantName)
+      : suggestedTransferReference(invOut?.invoice_number, participantName);
 
     let stripeCheckout: Record<string, unknown> | null = null;
     if (isTrialStripe && invoiceId) {

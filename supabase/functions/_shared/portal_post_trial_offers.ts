@@ -17,7 +17,7 @@ import {
   sendParentMessageViaWhatsapp,
 } from "./portal_parent_messaging.ts";
 import { finishBookingUrl, mintFinishBookingToken } from "./portal_booking_finish.ts";
-import { tideBankDetailsFromEnv } from "./tide_bank_details.ts";
+import { termPayReference, tideBankDetailsFromEnv } from "./tide_bank_details.ts";
 
 const BOOKING_PORTAL_FALLBACK = "https://www.clubsensational.org/bookingportal";
 
@@ -179,7 +179,7 @@ function bankTransferLines(child: string): string {
   const payee = bank.payee_name || INVOICE_BANK.payee_name;
   const sort = bank.sort_code || INVOICE_BANK.sort_code;
   const account = bank.account_number || INVOICE_BANK.account_number;
-  const ref = clean(child, 40) || "your child";
+  const ref = termPayReference(child);
   return (
     `Bank transfer: pay ${payee}, sort code ${sort}, account ${account}. ` +
     `Use reference ${ref}. Then WhatsApp the office that you have paid.`
