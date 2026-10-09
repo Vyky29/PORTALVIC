@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260926-team-shift-sun";
+} from "./portal_lead_session_scope.js?v=20261009-michelle-fri-team";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",

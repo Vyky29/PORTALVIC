@@ -113,9 +113,9 @@ const JOHN_SCOPES = [
 const MICHELLE_SCOPES = [
   {
     id: "day-centre-all",
-    label: "Day Centre — Mon to Thu",
-    /* Team of the Day: Michelle Mon–Thu (not Friday). */
-    weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday"],
+    label: "Day Centre — Mon, Tue, Wed, Fri",
+    /* Team of the Day: Michelle works Day Centre Mon, Tue, Wed and Fri. Thursday is her day off. */
+    weekdays: ["Monday", "Tuesday", "Wednesday", "Friday"],
     serviceKeys: ["daycentre"],
     programmeWideRoster: true,
     leadTeamBanner: true,
