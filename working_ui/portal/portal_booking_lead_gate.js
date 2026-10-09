@@ -212,6 +212,9 @@
     var c = cfg();
     if (!c.url || !c.anon) throw new Error("missing_config");
     var visitToken = bookingServiceSessionToken();
+    /* Family PIN sign-in does not read the visit token. Sending it made the
+       browser block the call (that function did not allow the header). */
+    var attachVisit = visitToken && path !== "parent-portal-sign-in";
     var res = await fetch(c.url + "/functions/v1/" + path, {
       method: "POST",
       headers: Object.assign(
@@ -220,7 +223,7 @@
           Authorization: "Bearer " + c.anon,
           apikey: c.anon,
         },
-        visitToken ? { "x-booking-service-session": visitToken } : {},
+        attachVisit ? { "x-booking-service-session": visitToken } : {},
         headers || {}
       ),
       body: JSON.stringify(body || {}),

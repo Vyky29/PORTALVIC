@@ -3,7 +3,7 @@
 export const parentPortalCorsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-parent-portal-session",
+    "authorization, x-client-info, apikey, content-type, x-parent-portal-session, x-booking-service-session",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
