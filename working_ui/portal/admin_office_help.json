@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09-v347",
+  "version": "2026-10-09-v348",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -3523,6 +3523,35 @@
           "tips": [
             "If the top bar shows another family, Sign out before booking. The slot link does not switch the account by itself.",
             "Fully booked with no payment usually means the 30-minute hold has not been cleared yet."
+          ]
+        },
+        {
+          "id": "weekend_friday_1800_cutoff",
+          "title": "Weekend bookings close Friday at 18:00",
+          "summary": "After Friday 18:00 London, a new Saturday or Sunday booking skips this weekend and takes the same slot the week after.",
+          "where": "Booking Portal, finish booking",
+          "keywords": [
+            "weekend",
+            "sunday",
+            "saturday",
+            "friday",
+            "18:00",
+            "cutoff",
+            "next week",
+            "domingo",
+            "sabado",
+            "viernes",
+            "finde",
+            "siguiente"
+          ],
+          "steps": [
+            "A Saturday or Sunday place booked before Friday 18:00 London can be this coming weekend.",
+            "From Friday 18:00, this weekend is closed for new bookings. The same day and time moves forward one week.",
+            "Example: Friday 9 Oct at 18:07, Sunday climbing. Sunday 11 is closed. The trial lands on Sunday 18.",
+            "The paid trial is still that one Sunday only. It does not book every Sunday in between."
+          ],
+          "tips": [
+            "If a family needs this weekend after 18:00 on Friday, the office books it by hand. The portal will not offer it."
           ]
         },
         {
