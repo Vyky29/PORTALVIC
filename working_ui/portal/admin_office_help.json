@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09-v346",
+  "version": "2026-10-09-v347",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -110,6 +110,33 @@
               "La pagina se queda limpia. La i al lado de Sessions Overview explica el tablero. Los contadores vivos no van en la pagina."
             ]
           }
+        },
+        {
+          "id": "team_shift_notice",
+          "title": "Team schedule notice (leads and office)",
+          "summary": "Michelle, John, Berta, Roberto and office see another worker's schedule change as a blue notice they can read. It does not open that worker's updated card.",
+          "where": "Staff app → logo → Quick menu → Team shift changes",
+          "keywords": [
+            "team shift",
+            "schedule changes",
+            "caja azul",
+            "blue box",
+            "updated card",
+            "michelle",
+            "john",
+            "berta",
+            "roberto",
+            "oficina",
+            "office"
+          ],
+          "steps": [
+            "A change on your own roster still opens from Admin Changes. That button goes to your updated card.",
+            "A change on someone else's roster shows under Team shift changes as a blue notice. Read the line. It does not open their card.",
+            "Michelle, John, Berta, Roberto, Victor, Javi and Raul get that notice for the programme they lead. Other staff only see their own cards."
+          ],
+          "tips": [
+            "If the blue box used to do nothing when tapped, that was another worker's card. The notice now stays on the menu so you can read it."
+          ]
         },
         {
           "id": "schedule_covers",

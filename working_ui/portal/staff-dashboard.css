@@ -3224,6 +3224,18 @@
     #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-chev{
       color:rgba(12,74,110,.5);
     }
+    #menuSheet.menu-sheet--logo-lite .portal-lead-team-qm-host .menu-btn.menu-btn--qm-lead-team-shift--notice,
+    #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift--notice{
+      cursor:default;
+      pointer-events:none;
+    }
+    #menuSheet.menu-sheet--logo-lite .portal-lead-team-qm-host .menu-btn.menu-btn--qm-lead-team-shift--notice .menu-btn-copy,
+    #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift--notice .menu-btn-copy,
+    #menuSheet.menu-sheet--logo-lite .portal-lead-team-qm-host .menu-btn.menu-btn--qm-lead-team-shift--notice .menu-btn-sub,
+    #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift--notice .menu-btn-sub{
+      min-width:0;
+      overflow-wrap:break-word;
+    }
     #menuSheet.menu-sheet--logo-lite .portal-lead-team-qm-host .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-icon,
     #menuSheet.menu-sheet--logo-lite #portalLeadTeamShiftQuickHost .menu-btn.menu-btn--qm-lead-team-shift .menu-btn-icon{
       background:rgba(14,116,144,.16);

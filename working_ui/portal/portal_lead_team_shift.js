@@ -2282,8 +2282,8 @@ function dayCardDateLabel(iso) {
 }
 
 /**
- * One card per DAY (not per change): says which day has team changes and, when
- * tapped, navigates to that day's detail card via the shared override handler.
+ * One notice per day. Leads and office can read another worker's change here.
+ * It is not a button: that card is not on their roster, so it must not open it.
  */
 function renderQuickMenuChanges(changes) {
   if (!changes.length) return "";
@@ -2297,44 +2297,45 @@ function renderQuickMenuChanges(changes) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
     if (isLeadTeamShiftDayDismissed(iso)) return;
     if (!byIso[iso]) {
-      byIso[iso] = { iso: iso, count: 0 };
+      byIso[iso] = { iso: iso, count: 0, titles: [] };
       order.push(iso);
     }
     byIso[iso].count += 1;
+    const line = String(ch.title || "").trim();
+    if (line && byIso[iso].titles.indexOf(line) < 0) byIso[iso].titles.push(line);
   });
   order.sort();
 
-  const btns = order
+  const notes = order
     .slice(0, 14)
     .map(function (iso) {
       const day = byIso[iso];
       const title = escHtml(dayCardDateLabel(iso));
-      const countLabel = day.count > 1 ? day.count + " changes" : "1 change";
-      const subText = countLabel + " · tap to view";
-      const dismissKey = portalLeadTeamShiftDayDismissKey(iso);
+      const shown = day.titles.slice(0, 3);
+      const extra = day.titles.length > shown.length ? day.titles.length - shown.length : 0;
+      let subText = shown.join(" · ");
+      if (!subText) subText = day.count > 1 ? day.count + " changes" : "1 change";
+      else if (extra > 0) subText += " · +" + extra + " more";
       const sub = '<span class="menu-btn-sub">' + escHtml(subText) + "</span>";
       return (
-        '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-lead-team-shift menu-btn--portal-pulse"' +
-        ' data-action="open-roster-override-attention" data-portal-override-id="' +
-        escHtml(dismissKey) +
-        '" data-portal-override-nav-iso="' +
-        escHtml(iso) +
-        '" aria-label="Team changes on ' +
+        '<div class="menu-btn notice menu-btn--qm-tile menu-btn--qm-lead-team-shift menu-btn--qm-lead-team-shift--notice" role="status"' +
+        ' aria-label="Team changes on ' +
         title +
+        ". " +
+        escHtml(subText) +
         '">' +
         '<div class="menu-btn-icon" aria-hidden="true">' +
         calIcon +
         "</div>" +
         '<div class="menu-btn-copy"><strong>' +
         title +
-        " — schedule changes</strong>" +
+        " — team schedule</strong>" +
         sub +
-        "</div>" +
-        '<span class="menu-btn-chev" aria-hidden="true">›</span></button>'
+        "</div></div>"
       );
     })
     .join("");
-  return '<div class="portal-lead-team-qm-stack" role="group" aria-label="Team shift changes">' + btns + "</div>";
+  return '<div class="portal-lead-team-qm-stack" role="group" aria-label="Team shift changes">' + notes + "</div>";
 }
 
 export function portalSyncLeadTeamShiftUi() {
@@ -2495,6 +2496,7 @@ if (typeof window !== "undefined") {
   window.portalLeadTeamShiftContext = portalLeadTeamShiftContext;
   window.portalLeadTeamOnShiftForIso = portalLeadTeamOnShiftForIso;
   window.portalLeadTeamShiftChanges = portalLeadTeamShiftChanges;
+  window.portalRenderLeadTeamShiftNotices = renderQuickMenuChanges;
   window.portalLeadTeamShiftDayDismissKey = portalLeadTeamShiftDayDismissKey;
   window.portalLeadTeamShiftDayDismissed = isLeadTeamShiftDayDismissed;
   window.portalLeadOverrideRowAppliesToLeadScope = portalLeadOverrideRowAppliesToLeadScope;

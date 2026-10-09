@@ -3481,37 +3481,10 @@
         if(portalLoggedInStaffReassignedOffSlotForRow(row)) return false;
         return true;
       }
-      if(typeof window.portalLeadOverrideRowAppliesToLeadScope === 'function'
-        && window.portalLeadOverrideRowAppliesToLeadScope(row)){
-        // Programme leads do NOT need a per-session card for every instructor
-        // cover in their programme — the "Team on shift today" bar already shows
-        // who is covering. Suppress instructor_reassign here so a Sunday with a
-        // couple of cover instructors does not flood the lead's Admin changes
-        // list with one "Schedule change - <participant>" card per slot. Other
-        // change types (absences, trials, cancellations, new participants…) in
-        // their scope still surface as before.
-        if(t === 'instructor_reassign') return false;
-        // Ops viewers (Victor / Javi / Raul) use Team of the Day club-wide —
-        // they must NOT get every instructor's "New participant — … On your
-        // roster" card (e.g. Patrick on Carlos). That alert is for the
-        // anchored instructor only.
-        try{
-          const leadCtx = typeof window.portalLeadTeamShiftContext === 'function'
-            ? window.portalLeadTeamShiftContext()
-            : null;
-          if(leadCtx && String(leadCtx.leadKey || '') === 'ops'){
-            const P = window.PortalParticipantsSheet;
-            if(P && typeof P.overrideIsTermNewParticipant === 'function'
-              && P.overrideIsTermNewParticipant(row)) return false;
-            let plOps = row.payload;
-            if(typeof plOps === 'string'){
-              try{ plOps = JSON.parse(plOps); }catch(_){ plOps = null; }
-            }
-            if(plOps && plOps.term_new_participant === true) return false;
-          }
-        }catch(_){}
-        return true;
-      }
+      /* Michelle, John, Berta, Roberto and office (Victor, Javi, Raul) do not
+         get another worker's change as an Admin Changes button. That button
+         opens the updated card on this roster, and the card is not theirs.
+         Those changes stay on the Team shift notice. */
       return false;
     }
     /** Same as applies-to-staff but ignores row status (for undo payloads where status is already cancelled). */

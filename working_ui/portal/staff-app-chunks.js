@@ -50,7 +50,7 @@
     "/portal/staff-dashboard-feedback.js?v=20261007-name-not-dc",
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=20261007-halo-logo",
-    "/portal/staff-dashboard-participants.js?v=20261007-halo-logo",
+    "/portal/staff-dashboard-participants.js?v=20261009-team-change-notice",
     "/portal/staff-dashboard-today.js?v=20261009-michelle-fri-team",
     "/portal/staff-dashboard-ui.js?v=" + VER,
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
@@ -59,7 +59,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20261009-patience-team-card",
+    "/portal/portal_lead_team_shift.js?v=20261009-team-change-notice",
   ];
 
   var TIER_IDLE = [
@@ -71,7 +71,7 @@
     "/portal/staff-dashboard-feedback.js?v=20261007-name-not-dc",
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=20261007-halo-logo",
-    "/portal/staff-dashboard-participants.js?v=20261007-halo-logo",
+    "/portal/staff-dashboard-participants.js?v=20261009-team-change-notice",
     "/portal/staff-dashboard-today.js?v=20261009-michelle-fri-team",
     "/portal/staff-dashboard-ui.js?v=" + VER,
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
