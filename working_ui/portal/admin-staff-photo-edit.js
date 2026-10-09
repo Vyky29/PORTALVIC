@@ -63,11 +63,12 @@
 
   function segmenter() {
     if (segmenterPromise) return segmenterPromise;
+    /* 0.10.22 was never published, so the browser could not load the module. */
     segmenterPromise = import(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/vision_bundle.mjs"
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/vision_bundle.mjs"
     ).then(function (vision) {
       return vision.FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/wasm"
       ).then(function (fileset) {
         return vision.ImageSegmenter.createFromOptions(fileset, {
           baseOptions: {
