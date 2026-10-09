@@ -232,8 +232,10 @@ export async function ensureInterestedClientFromRegistration(
         .eq("contact_id", contactId)
         .maybeSingle();
       const prev = String(existing?.general_info_sheet || "").trim();
-      // Do not wipe office-curated sheets on re-submit; only seed when empty.
-      if (!prev) {
+      const sectionCount = (sheet: string) =>
+        (String(sheet || "").match(/(?:^|\n)\s*\d+\.\s+[^:\n]+:/g) || []).length;
+      // A later booking stub must not wipe the questionnaire. A fuller registration replaces a short stub.
+      if (sectionCount(fresh) > sectionCount(prev)) {
         await admin.from("portal_participant_general_info").upsert(
           {
             contact_id: contactId,

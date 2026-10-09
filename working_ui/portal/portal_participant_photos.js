@@ -231,6 +231,8 @@
 
   function storageAvatarKey(name) {
     return String(name || "")
+      .replace(/\(\s*trial[^)]*\)/gi, " ")
+      .replace(/\s+trial\s*$/i, " ")
       .trim()
       .toLowerCase()
       .normalize("NFD")

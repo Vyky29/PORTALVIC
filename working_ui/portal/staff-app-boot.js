@@ -172,20 +172,22 @@
   }
 
   function afterDeferredDashboardScripts() {
-    if (typeof global.portalHydrateParticipantGeneralInfoFromSupabase === "function") {
-      void global.portalHydrateParticipantGeneralInfoFromSupabase();
-    }
-    global.__PORTAL_STAFF_DEFERRED_DASHBOARD_READY__ = true;
-    try {
-      global.dispatchEvent(new Event("portal:staff-deferred-dashboard-ready"));
-    } catch (_) {}
+    var hydrate = typeof global.portalHydrateParticipantGeneralInfoFromSupabase === "function"
+      ? global.portalHydrateParticipantGeneralInfoFromSupabase()
+      : null;
+    Promise.resolve(hydrate).then(function () {
+      global.__PORTAL_STAFF_DEFERRED_DASHBOARD_READY__ = true;
+      try {
+        global.dispatchEvent(new Event("portal:staff-deferred-dashboard-ready"));
+      } catch (_) {}
+    });
   }
 
   var STAFF_DEFERRED_HEAVY = [
     "/portal/clients_info_embed.js?v=20260910-joelle-406",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
       "/portal/portal_staff_lead_aquatic_slots.js?v=20261007-name-not-dc",
-    "/portal/portal_participant_general_hydrate.js?v=20260928-booking-general",
+    "/portal/portal_participant_general_hydrate.js?v=20261009-trial-general",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
     "/portal/portal_staff_photos.js?v=20261003-display-photo",
   ];

@@ -16,14 +16,28 @@
       .trim();
   }
 
+  /** Card titles keep "(Trial)". The registration row is stored under the child name. */
+  function rosterNameForInfo(name) {
+    return normName(
+      String(name || "")
+        .replace(/\(\s*trial[^)]*\)/gi, " ")
+        .replace(/\s+trial\s*$/i, " ")
+    );
+  }
+
   function registerGeneralInfo(contactId, displayName, sheet) {
     sheet = String(sheet || "").trim();
     if (!sheet) return;
     /* Staff UI hides Other Notes; keep full sheet in STORE for admin if needed via name key. */
     var id = String(contactId || "").trim();
     if (id) STORE.byContactId[id] = sheet;
-    var nk = normName(displayName);
-    if (nk) STORE.byName[nk] = sheet;
+    var nk = rosterNameForInfo(displayName);
+    if (nk) {
+      STORE.byName[nk] = sheet;
+      /* Same slug the photo index uses (ilyas_aziz), so a trial card id hits this sheet. */
+      var slug = nk.replace(/\s+/g, "_");
+      if (slug && slug !== id) STORE.byContactId[slug] = sheet;
+    }
   }
 
   function stripOtherNotesForStaff(sheet) {
@@ -38,12 +52,14 @@
     var id = String(clientId || "").trim();
     var sheet = "";
     if (id && STORE.byContactId[id]) sheet = STORE.byContactId[id];
-    if (!sheet) {
-      var nk = normName(displayName);
-      if (nk && STORE.byName[nk]) sheet = STORE.byName[nk];
+    var nk = rosterNameForInfo(displayName);
+    if (!sheet && nk && STORE.byName[nk]) sheet = STORE.byName[nk];
+    if (!sheet && nk) {
+      var nameSlug = nk.replace(/\s+/g, "_");
+      if (nameSlug && STORE.byContactId[nameSlug]) sheet = STORE.byContactId[nameSlug];
     }
     if (!sheet && global.PortalParticipantIdentity && typeof global.PortalParticipantIdentity.canonicalClientId === "function") {
-      var want = global.PortalParticipantIdentity.canonicalClientId(displayName || clientId);
+      var want = global.PortalParticipantIdentity.canonicalClientId(nk || displayName || clientId);
       var keys = Object.keys(STORE.byName);
       for (var i = 0; i < keys.length; i++) {
         if (global.PortalParticipantIdentity.canonicalClientId(keys[i]) === want) {
@@ -74,7 +90,7 @@
       Object.keys(clientNotesById).forEach(function (cid) {
         var note = clientNotesById[cid];
         if (!note) return;
-        if (normName(note.name || cid) === nk) {
+        if (rosterNameForInfo(note.name || cid) === nk || normName(cid) === nk) {
           note.generalInfoSheet = stripOtherNotesForStaff(STORE.byName[nk]);
           var infoText = String(note.generalInfoSheet || "").trim();
           if (infoText && typeof global.portalDeriveMedicalAlertFromInfo === "function") {
@@ -209,7 +225,7 @@
   }
 
   function namesMatch(a, b) {
-    return normName(a) && normName(a) === normName(b);
+    return rosterNameForInfo(a) && rosterNameForInfo(a) === rosterNameForInfo(b);
   }
 
   /**
@@ -217,9 +233,9 @@
    * When this login can read the form, rebuild the numbered sheet for display.
    */
   async function expandGeneralInfoFromRegistration(clientId, displayName) {
-    var name = String(displayName || "").trim();
+    var name = rosterNameForInfo(displayName);
     var id = String(clientId || "").trim();
-    var current = portalParticipantGeneralInfoText(id, name);
+    var current = portalParticipantGeneralInfoText(id, displayName);
     if (sheetLooksNumbered(current) && /(?:^|\n)\s*1\.\s*Age:/i.test(current)) return "";
     var box = global.__PORTAL_SUPABASE__;
     var sb = box && box.client;
@@ -230,19 +246,25 @@
       .eq("form_type", "client_registration")
       .ilike("participant_name", name)
       .order("submitted_at", { ascending: false })
-      .limit(3);
+      .limit(8);
     if (res.error || !Array.isArray(res.data) || !res.data.length) return "";
-    var row = null;
+    var sheet = "";
+    var matchedName = name;
+    var bestSections = 0;
     for (var i = 0; i < res.data.length; i++) {
-      if (res.data[i] && namesMatch(res.data[i].participant_name, name)) {
-        row = res.data[i];
-        break;
+      var candidate = res.data[i];
+      if (!candidate || !namesMatch(candidate.participant_name, name)) continue;
+      var built = sheetFromRegistrationPayload(candidate.payload_json, candidate.participant_dob);
+      if (!built || !sheetLooksNumbered(built)) continue;
+      var n = (built.match(/(?:^|\n)\s*\d+\.\s+[^:\n]+:/g) || []).length;
+      if (n > bestSections) {
+        sheet = built;
+        matchedName = candidate.participant_name || name;
+        bestSections = n;
       }
     }
-    if (!row) return "";
-    var sheet = sheetFromRegistrationPayload(row.payload_json, row.participant_dob);
-    if (!sheet || !sheetLooksNumbered(sheet)) return "";
-    registerGeneralInfo(id, name, sheet);
+    if (!sheet) return "";
+    registerGeneralInfo(id, matchedName || name, sheet);
     if (global.clientNotesById && id && global.clientNotesById[id]) {
       global.clientNotesById[id].generalInfoSheet = stripOtherNotesForStaff(sheet);
     }

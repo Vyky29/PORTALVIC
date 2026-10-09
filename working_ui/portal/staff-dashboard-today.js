@@ -4486,7 +4486,7 @@
           const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
             && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
           const adminClientSwap = !!s.portalAdminClientSwap;
-          const generalBody = hasReplaceOv && anchorNotesForMakeup
+          const generalBody = hasReplaceOv && anchorNotesForMakeup && !isTrialOv
             ? clientGeneralBodyForMakeupSession(anchorNotesForMakeup, c, s, activity, viewDay, supportHidePoolNote)
             : clientGeneralBodyFromNotes(c, s);
           const twoToOneLabel = typeof portalTwoToOneSupportLabelForSession === 'function'
