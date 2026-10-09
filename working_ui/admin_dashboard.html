@@ -21944,8 +21944,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       function mesiSeat(n){ return n === 'mia' || n === 'mia mesi' || n === 'mia m'; }
       return (smoliar(x) && mesiSeat(y)) || (smoliar(y) && mesiSeat(x));
     }
+    /** Monday Day Centre "Ibrahim" is Ibrahim Amir. Ibrahim Trawally is another child. */
+    function adminPortalIbrahimTrawallyIsOtherChild(a, b){
+      function norm(n){
+        return String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      var x = norm(a);
+      var y = norm(b);
+      function trawally(n){ return n === 'ibrahim trawally' || /(^| )trawally$/.test(n); }
+      function dayCentre(n){ return n === 'ibrahim' || n === 'ibrahim amir' || n === 'ibrahim a'; }
+      return (trawally(x) && dayCentre(y)) || (trawally(y) && dayCentre(x));
+    }
     function paxContactsKeepSeparate(a, b){
       if(adminPortalMiaSmoliarIsOtherChild(a && a.name, b && b.name)) return true;
+      if(adminPortalIbrahimTrawallyIsOtherChild(a && a.name, b && b.name)) return true;
       try{
         var idn = window.PortalParticipantIdentity;
         if(idn && typeof idn.canonicalClientId === 'function'){
@@ -22418,9 +22430,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function paxContactsLiveContactFor(p){
       var byId = window.PAX_CONTACTS_LIVE_BY_ID || {};
       var ids = Object.keys(byId);
-      if(!ids.length || !p || p._cfkContact) return null;
+      if(!ids.length || !p) return null;
       var cid = paxContactsRealContactId(p);
       if(cid && byId[cid]) return byId[cid];
+      if(p._cfkContact) return null;
       var name = paxContactsNormName(p.name);
       var i;
       for(i = 0; i < ids.length; i++){
@@ -23435,6 +23448,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(summerParent.indexOf('messing') >= 0) return true;
       }
       if(n === 'chaitanya' || n === 'chaitanya marasini') return true;
+      /* Ibrahim Trawally is not the Monday Day Centre Ibrahim (Ibrahim Amir). */
+      if(n === 'ibrahim trawally') return true;
       /* Eddie Ritzema (Eddie Ri) came for a climbing trial. Eddie Mckenzie stays ACTIVE. */
       if(n === 'eddie ritzema' || n === 'eddie ri') return true;
       if(n === 'yaqoub ismail' || n === 'yaqoub') return true;
@@ -23801,6 +23816,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }catch(_canonFirst){}
       if(adminPortalMiaSmoliarIsOtherChild(aa, bb)) return false;
+      if(adminPortalIbrahimTrawallyIsOtherChild(aa, bb)) return false;
       if(typeof adminPortalParticipantMatchesDisplayName === 'function' && adminPortalParticipantMatchesDisplayName(aa, bb, amb || {})) return true;
       try{
         var idn = window.PortalParticipantIdentity;
@@ -37401,6 +37417,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var rosterNorm = adminPortalNormalizedPersonName(rosterOrSheetDisplayName);
       if(!portalNorm || !rosterNorm) return false;
       if(adminPortalMiaSmoliarIsOtherChild(portalFullName, rosterOrSheetDisplayName)) return false;
+      if(typeof adminPortalIbrahimTrawallyIsOtherChild === 'function' && adminPortalIbrahimTrawallyIsOtherChild(portalFullName, rosterOrSheetDisplayName)) return false;
       if(portalNorm === rosterNorm) return true;
       var pf = adminPortalFuzzyFirstToken(portalFullName);
       var rf = adminPortalFuzzyFirstToken(rosterOrSheetDisplayName);
