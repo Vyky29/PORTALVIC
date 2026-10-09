@@ -174,12 +174,12 @@ const INVOICE_BANK = {
   account_number: "16987295",
 };
 
-function bankTransferLines(child: string): string {
+function bankTransferLines(child: string, dateIso: string): string {
   const bank = tideBankDetailsFromEnv();
   const payee = bank.payee_name || INVOICE_BANK.payee_name;
   const sort = bank.sort_code || INVOICE_BANK.sort_code;
   const account = bank.account_number || INVOICE_BANK.account_number;
-  const ref = termPayReference(child);
+  const ref = termPayReference(child, dateIso);
   return (
     `Bank transfer: pay ${payee}, sort code ${sort}, account ${account}. ` +
     `Use reference ${ref}. Then WhatsApp the office that you have paid.`
@@ -189,6 +189,8 @@ function bankTransferLines(child: string): string {
 function buildOfferBody(opts: {
   first: string;
   child: string;
+  payName: string;
+  payDate: string;
   slotLabel: string;
   deadlineLabel: string;
   finishUrl: string;
@@ -203,7 +205,7 @@ function buildOfferBody(opts: {
     `${intro} To keep the same place (${opts.slotLabel}), pay ${opts.deadlineLabel}:\n` +
     `${opts.finishUrl}\n\n` +
     `Card or Apple Pay confirms by itself.\n\n` +
-    `${bankTransferLines(opts.child)}\n\n` +
+    `${bankTransferLines(opts.payName || opts.child, opts.payDate)}\n\n` +
     `If you do not pay by then, the place is released.\n\n` +
     `Thanks,\n` +
     `Office | clubSENsational`
@@ -439,6 +441,16 @@ async function sendOfferWhatsapp(
   }
 
   const child = clean(offer.participant_name, 80) || "your child";
+  let payDate = nextWeeklyDateIso(clean(String(offer.trial_session_date || ""), 12));
+  if (minted.softHoldId) {
+    const { data: hold } = await admin
+      .from("portal_booking_slot_reservations")
+      .select("date_iso")
+      .eq("id", minted.softHoldId)
+      .maybeSingle();
+    const holdDate = clean(String(hold?.date_iso || ""), 12);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(holdDate)) payDate = holdDate;
+  }
   const trialLabel = [
     clean(offer.trial_venue, 40),
     clean(offer.trial_service, 40),
@@ -458,6 +470,8 @@ async function sendOfferWhatsapp(
   const body = buildOfferBody({
     first: firstName(String(offer.parent_name || "")),
     child: child.split(/\s+/)[0] || child,
+    payName: child,
+    payDate,
     slotLabel: slotLabel || trialLabel,
     deadlineLabel: formatLondonDeadline(deadlineIso),
     finishUrl: minted.url,

@@ -45,17 +45,36 @@ export function suggestedTransferReference(
     .slice(0, 40);
 }
 
+/** Tide Faster Payments keeps 18 characters. "18 Oct 26" is 9. */
+function tideReferenceDate(dateIso: string | null | undefined): string {
+  const iso = String(dateIso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+  const d = new Date(`${iso}T12:00:00.000Z`);
+  const day = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+  }).format(d);
+  const mon = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    month: "short",
+  }).format(d);
+  return `${day} ${mon} ${iso.slice(2, 4)}`;
+}
+
 /**
- * Bank reference for a term payment that has no invoice number yet.
+ * Bank reference for a term or flexi payment that has no invoice number yet.
  * The invoice is created when the office marks paid. Tide keeps 18 characters.
- * "Mohamed term" is distinct from the earlier trial payment under the same name.
+ * The date is the first session of that payment, so autumn, spring, and
+ * flexi 1 / flexi 2 do not share one reference. The trial payment stays the name only.
  */
-export function termPayReference(displayName: string): string {
+export function termPayReference(displayName: string, dateIso?: string | null): string {
   const name = String(displayName || "").replace(/\s+/g, " ").trim();
-  const first = name.split(" ")[0] || "Term";
-  const full = name ? `${name} term` : "term";
-  if (full.length <= 18) return full;
-  const short = `${first} term`;
+  const first = name.split(" ")[0] || "Club";
+  const stamp = tideReferenceDate(dateIso);
+  if (!stamp) return (name || first).slice(0, 18).trim();
+  const full = `${name} ${stamp}`.trim();
+  if (name && full.length <= 18) return full;
+  const short = `${first} ${stamp}`.trim();
   if (short.length <= 18) return short;
   return short.slice(0, 18).trim();
 }

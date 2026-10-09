@@ -1655,7 +1655,10 @@ Deno.serve(async (req) => {
     const bank = tideBankDetailsFromEnv();
     const participantName = String(doc.participant_name || "");
     const transferRef = postTrialConvert
-      ? termPayReference(participantName)
+      ? termPayReference(
+        participantName,
+        reservation?.date_iso ? String(reservation.date_iso).slice(0, 10) : "",
+      )
       : suggestedTransferReference(invOut?.invoice_number, participantName);
 
     let stripeCheckout: Record<string, unknown> | null = null;
