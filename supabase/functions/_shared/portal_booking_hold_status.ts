@@ -40,13 +40,27 @@ export function filterActiveBookingHolds<
     }
     /*
      * A validated trial row whose clock has passed must not keep the public
-     * seat. The post-trial soft hold is a different row and is released at
-     * end of day; the original trial row used to stay validated and paint
-     * Fully booked (Elias / Youssef Wed Acton 4.00-4.30).
+     * seat. The original trial row used to stay validated and paint Fully
+     * booked (Elias / Youssef Wed Acton 4.00-4.30).
      */
     if (
       st === "validated" &&
       /booking_kind\s*=\s*trial/i.test(notes) &&
+      !bookingHoldStillActive(
+        h.hold_expires_at == null ? null : String(h.hold_expires_at),
+        nowMs,
+      )
+    ) {
+      return false;
+    }
+    /*
+     * Next-week soft hold after a paid trial. It occupies the seat for 24
+     * hours from the trial start, then the place goes live even if the
+     * status row has not been flipped yet.
+     */
+    if (
+      st === "validated" &&
+      notes.includes("post_trial_term_soft_hold") &&
       !bookingHoldStillActive(
         h.hold_expires_at == null ? null : String(h.hold_expires_at),
         nowMs,

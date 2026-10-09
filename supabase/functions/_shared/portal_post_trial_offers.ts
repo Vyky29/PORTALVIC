@@ -1,10 +1,12 @@
 /**
- * Post-trial term offer (same or other slot) with same-day deadline (Europe/London).
+ * Post-trial term offer. The next week's seat stays held for 24 hours from
+ * the trial start (Europe/London). Tuesday 3:00pm start means pay before
+ * Wednesday 3:00pm. Office Mark paid and parent card pay both count.
  *
  * Waves:
- *  1) shortly after trial session end
- *  2) 20:00 London same day if still pending
- * EOD (23:59 London): release soft hold + office alert.
+ *  1) about 5 minutes after the trial hour ends
+ *  2) 20:00 London the same day if still unpaid
+ * At start + 24h: release the soft hold and tell the office.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -72,19 +74,40 @@ export function londonParts(d = new Date()): {
   };
 }
 
-/** Parse end clock from labels like "9.00 – 9.30", "4.30-5", "9 to 9.30". */
-export function parseTrialEndMinutes(timeLabel: string): number | null {
-  const s = clean(timeLabel, 80).toLowerCase().replace(/–/g, "-").replace(/to/g, "-");
-  const parts = s.split("-").map((p) => p.trim()).filter(Boolean);
-  if (parts.length < 2) return null;
-  const end = parts[parts.length - 1];
-  const m = end.match(/^(\d{1,2})(?:[.:](\d{2}))?$/);
+/** Clock minutes from one side of "9.00 – 9.30", "4.30-5", "2 to 3". */
+function parseClockMinutes(piece: string): number | null {
+  const m = piece.match(/^(\d{1,2})(?:[.:](\d{2}))?$/);
   if (!m) return null;
   let h = Number(m[1]);
   const min = m[2] != null ? Number(m[2]) : 0;
   if (h >= 1 && h <= 7) h += 12; // afternoon shorthand
   if (h === 24) h = 0;
+  if (h > 23 || min > 59) return null;
   return h * 60 + min;
+}
+
+function timeLabelParts(timeLabel: string): string[] {
+  return clean(timeLabel, 80)
+    .toLowerCase()
+    .replace(/–/g, "-")
+    .replace(/to/g, "-")
+    .split("-")
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+/** Parse start clock. "2.00 – 3.00" is 14:00. */
+export function parseTrialStartMinutes(timeLabel: string): number | null {
+  const parts = timeLabelParts(timeLabel);
+  if (!parts.length) return null;
+  return parseClockMinutes(parts[0]);
+}
+
+/** Parse end clock from labels like "9.00 – 9.30", "4.30-5", "9 to 9.30". */
+export function parseTrialEndMinutes(timeLabel: string): number | null {
+  const parts = timeLabelParts(timeLabel);
+  if (parts.length < 2) return null;
+  return parseClockMinutes(parts[parts.length - 1]);
 }
 
 /** Instant for London date + HH:MM (approx via Europe/London offset sampling). */
@@ -106,8 +129,41 @@ export function londonDateTimeToUtcIso(
   return new Date(utc).toISOString();
 }
 
-export function trialDeadlineUtcIso(sessionDateIso: string): string {
-  return londonDateTimeToUtcIso(sessionDateIso, 23, 59);
+/**
+ * 24 hours after the trial starts. Sunday 2:00pm -> Monday 2:00pm London.
+ * Unparsed labels fall back to noon so the window is still one day, not 23:59.
+ */
+export function trialDeadlineUtcIso(sessionDateIso: string, timeLabel = ""): string {
+  const startMin = parseTrialStartMinutes(timeLabel);
+  const minutes = startMin == null ? 12 * 60 : startMin;
+  const startIso = londonDateTimeToUtcIso(
+    sessionDateIso,
+    Math.floor(minutes / 60),
+    minutes % 60,
+  );
+  return new Date(new Date(startIso).getTime() + 24 * 60 * 60 * 1000).toISOString();
+}
+
+/** Parent-facing clock, e.g. "before 2:00pm on Monday 12 October". */
+export function formatLondonDeadline(deadlineIso: string): string {
+  const d = new Date(deadlineIso);
+  if (!Number.isFinite(d.getTime())) return "within 24 hours of the trial start";
+  const date = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(d);
+  const time = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  })
+    .format(d)
+    .replace(/\s+/g, "")
+    .toLowerCase();
+  return `before ${time} on ${date}`;
 }
 
 function buildOfferBody(opts: {
@@ -128,7 +184,7 @@ function buildOfferBody(opts: {
     `${intro}\n\n` +
     `To keep the same place for Autumn term (${opts.slotLabel}), finish booking and pay here:\n` +
     `${opts.finishUrl}\n\n` +
-    `Please finish by ${opts.deadlineLabel}. ` +
+    `Please finish ${opts.deadlineLabel}. ` +
     `If we do not hear from you by then, the place will be released for other families.\n\n` +
     `If you want a different slot, reply and we will help. ` +
     `If you do not want a continuing place, reply FREE and we will release it now.\n\n` +
@@ -167,14 +223,28 @@ async function mintPostTrialTermFinishLink(
   const trialDate = clean(String(offer.trial_session_date || ""), 12);
   const termFirstDate = nextWeeklyDateIso(trialDate);
   const now = new Date().toISOString();
+  const { data: holdRow } = await admin
+    .from("portal_booking_slot_reservations")
+    .select("notes")
+    .eq("id", softHoldId)
+    .maybeSingle();
+  const instructor = String(holdRow?.notes || "").match(/instructor=[^|]+/i)?.[0] || "";
+  const holdNotes = [
+    "post_trial_term_soft_hold",
+    "booking_kind=term",
+    "awaits_parent_term_or_free",
+    "finish_link_minted",
+    instructor,
+  ]
+    .filter(Boolean)
+    .join("|");
 
   // Keep seat occupied; stamp booking_kind=term and first remaining weekly date.
   const { error: holdErr } = await admin
     .from("portal_booking_slot_reservations")
     .update({
       date_iso: termFirstDate || trialDate || null,
-      notes:
-        "post_trial_term_soft_hold|booking_kind=term|awaits_parent_term_or_free|finish_link_minted",
+      notes: holdNotes,
       updated_at: now,
       released_at: null,
     })
@@ -297,6 +367,19 @@ async function refreshOfferSlotFromReservation(
     patch.trial_session_date = nextDate;
   }
 
+  const dateForClock = /^\d{4}-\d{2}-\d{2}$/.test(nextDate)
+    ? nextDate
+    : clean(String(offer.trial_session_date || ""), 12);
+  const timeForClock = nextTime || clean(offer.trial_time_label, 80);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateForClock)) {
+    const nextDeadline = trialDeadlineUtcIso(dateForClock, timeForClock);
+    const prevMs = new Date(String(offer.deadline_at || "")).getTime();
+    const nextMs = new Date(nextDeadline).getTime();
+    if (!Number.isFinite(prevMs) || Math.abs(prevMs - nextMs) > 60_000) {
+      patch.deadline_at = nextDeadline;
+    }
+  }
+
   if (!Object.keys(patch).length) return offer;
 
   patch.updated_at = new Date().toISOString();
@@ -307,6 +390,19 @@ async function refreshOfferSlotFromReservation(
   if (error) {
     console.warn("[post-trial] refresh offer from reservation", error.message);
     return offer;
+  }
+  if (patch.deadline_at) {
+    const holdId = clean(offer.soft_hold_reservation_id, 80);
+    if (holdId) {
+      await admin
+        .from("portal_booking_slot_reservations")
+        .update({
+          hold_expires_at: patch.deadline_at,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", holdId)
+        .neq("status", "released");
+    }
   }
   return { ...offer, ...patch };
 }
@@ -341,15 +437,13 @@ async function sendOfferWhatsapp(
   ]
     .filter(Boolean)
     .join(" · ");
-  const sessionDate = clean(String(offer.trial_session_date || ""), 12);
   const deadlineIso = clean(String(offer.deadline_at || ""), 40);
-  const deadlineLondon = deadlineIso ? londonParts(new Date(deadlineIso)).isoDate : sessionDate;
   const body = buildOfferBody({
     first: firstName(String(offer.parent_name || "")),
     child: child.split(/\s+/)[0] || child,
     trialLabel,
     slotLabel: slotLabel || trialLabel,
-    deadlineLabel: `end of ${deadlineLondon || sessionDate}`,
+    deadlineLabel: formatLondonDeadline(deadlineIso),
     finishUrl: minted.url,
     wave,
   });
@@ -449,7 +543,7 @@ async function notifyOfficeNoDecision(
 ): Promise<void> {
   const child = clean(offer.participant_name, 80) || "Participant";
   const parent = clean(offer.parent_name, 80) || "Parent";
-  const subject = `Post-trial: no decision · ${child} · released EOD`;
+  const subject = `Post-trial: no decision · ${child} · hold released`;
   const bodyText =
     `Post-trial offer expired with no term booking / FREE reply.\n\n` +
     `Participant: ${child}\n` +
@@ -494,14 +588,14 @@ export async function ensurePostTrialOfferAfterPaid(
   const sessionDate = clean(reservation.date_iso, 12);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) return "post_trial_bad_date";
 
-  const deadlineAt = trialDeadlineUtcIso(sessionDate);
+  const deadlineAt = trialDeadlineUtcIso(sessionDate, clean(reservation.time_label, 80));
   const slotId = clean(reservation.slot_id, 160);
   const participant = clean(reservation.participant_name, 120) || "Participant";
   const parent = clean(reservation.parent_name, 120);
   const phone = clean(reservation.parent_phone, 40);
   const email = clean(reservation.parent_email, 120);
 
-  // Soft-hold: same slot blocked until EOD. Drop trial hold from capacity first
+  // Soft-hold: same slot blocked for 24h from the trial start. Drop trial hold first
   // so the parent is not blocked by their own trial + soft hold (= FULL).
   const trialHoldCut = new Date().toISOString();
   await admin
@@ -621,7 +715,7 @@ async function releaseSoftHold(
     .neq("status", "released");
 }
 
-/** Cron tick: wave1 after session end, wave2 at 20:00, EOD release. */
+/** Cron tick: wave1 after session end, wave2 at 20:00, release at start + 24h. */
 export async function runPostTrialOffersMaintenance(
   admin: SupabaseClient,
 ): Promise<Record<string, number>> {
@@ -672,24 +766,11 @@ export async function runPostTrialOffersMaintenance(
         london.isoDate > sessionDate ||
         (london.isoDate === sessionDate &&
           london.hour * 60 + london.minute >= endMin + 5);
+      const deadline = new Date(String(offer.deadline_at || ""));
+      const deadlinePassed =
+        Number.isFinite(deadline.getTime()) && now >= deadline;
 
-      if (!offer.wave1_sent_at && sessionEnded) {
-        if (london.isoDate > sessionDate) {
-          const extended = trialDeadlineUtcIso(london.isoDate);
-          offer.deadline_at = extended;
-          await admin
-            .from("portal_post_trial_offers")
-            .update({ deadline_at: extended, updated_at: now.toISOString() })
-            .eq("id", offer.id);
-          const holdId = clean(offer.soft_hold_reservation_id, 80);
-          if (holdId) {
-            await admin
-              .from("portal_booking_slot_reservations")
-              .update({ hold_expires_at: extended, updated_at: now.toISOString() })
-              .eq("id", holdId)
-              .neq("status", "released");
-          }
-        }
+      if (!offer.wave1_sent_at && sessionEnded && !deadlinePassed) {
         const sent = await sendOfferWhatsapp(admin, offer, 1);
         if (sent.ok) {
           await admin
@@ -705,7 +786,7 @@ export async function runPostTrialOffersMaintenance(
       }
 
       const after20 = london.isoDate === sessionDate && london.hour >= 20;
-      if (offer.wave1_sent_at && !offer.wave2_sent_at && after20) {
+      if (!deadlinePassed && offer.wave1_sent_at && !offer.wave2_sent_at && after20) {
         const sent = await sendOfferWhatsapp(admin, offer, 2);
         if (sent.ok) {
           await admin
@@ -720,8 +801,7 @@ export async function runPostTrialOffersMaintenance(
         }
       }
 
-      const deadline = new Date(String(offer.deadline_at || ""));
-      if (Number.isFinite(deadline.getTime()) && now >= deadline) {
+      if (deadlinePassed) {
         await releaseSoftHold(admin, offer, "eod_no_decision");
         await admin
           .from("portal_post_trial_offers")
