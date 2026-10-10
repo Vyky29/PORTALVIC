@@ -40615,12 +40615,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!bundle){
           window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = prevAlerts;
         } else {
-          (bundle.cancellations || []).forEach(function(r){
-            var a = portalAdminActivityFromCancellation(r);
-            if(a && typeof window.portalAdminPushActivityAlert === 'function'){
-              window.portalAdminPushActivityAlert(a, { silent: true });
-            }
-          });
           (bundle.incidents || []).forEach(function(r){
             var a = portalAdminActivityFromIncident(r);
             if(a && typeof window.portalAdminPushActivityAlert === 'function'){
@@ -40768,12 +40762,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               });
             } else if(typeof window.__portalAdminRenderAlerts === 'function'){
               window.__portalAdminRenderAlerts();
-            }
-          })
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cancellation_reports' }, function(payload){
-            var a = portalAdminActivityFromCancellation(payload && payload.new);
-            if(a && typeof window.portalAdminPushActivityAlert === 'function'){
-              window.portalAdminPushActivityAlert(a);
             }
           })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'incident_reports' }, function(payload){
