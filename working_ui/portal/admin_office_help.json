@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09-v359",
+  "version": "2026-10-10-v360",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -600,12 +600,17 @@
             "padre",
             "instructor",
             "before the session",
-            "during the session"
+            "during the session",
+            "bell",
+            "campana",
+            "two alerts",
+            "dos avisos"
           ],
           "steps": [
             "Cancel service is Edit term slot. The place ends from the anchor date. The parent message names the weekday, the place, sessions already done, and any refund. If money is coming back it asks for the account name, sort code, and account number. The instructor gets one roster alert for the first cancelled day.",
             "Cancel one session from the office: Schedule and Covers, Cancelled. Use this when the centre or the instructor cannot run that day. The parent WhatsApp says that session has been cancelled and that the office will be in touch about next steps. It does not mention money. The instructor push says Session cancelled. Absents then waits for credit, refund, makeup, or none. Day Centre and Bespoke do not WhatsApp the parent.",
             "The staff cancellation form is the instructor, before the session or during it. It lands on Cancellations by venue and on the admin bell. The parent hub shows a cancelled chip. The parent also gets a message: the instructor has reported a cancellation, and the admin team will contact them by phone. It is not the office Cancelled WhatsApp, and it does not mention money. You still decide the money in Absents.",
+            "That one form puts two lines on the bell. The line with the session time and Decide credit, refund, makeup or none is the Absents queue. It drops once you choose. The line with the instructor name is the report. It stays with the other recent activity.",
             "Absent is the child not coming. No WhatsApp. The parent term dates show an orange chip, and the legend says Orange - absent.",
             "If the parent marks it in their portal with no proof, it stays none on the bell. You do not decide it unless they upload proof. The instructor card is marked absent and the app notifies them. Not WhatsApp.",
             "If they phone, Schedule and Covers, Absent. Same orange chip for the parent. The instructor app says Absent participant. It enters Absents.",
@@ -623,6 +628,7 @@
               "Cancel service es Edit term slot. La plaza se acaba desde la fecha ancla. El mensaje al padre nombra el dia, la plaza, las sesiones ya dadas y el refund si lo hay. Si hay dinero de vuelta pide el nombre de la cuenta, sort code y account number. El instructor recibe un aviso de roster por el primer dia cancelado.",
               "Cancelar una sesion desde oficina: Schedule and Covers, Cancelled. Usalo cuando el centro o el instructor no pueden dar ese dia. El WhatsApp al padre dice que esa sesion se ha cancelado y que la oficina hablara de los siguientes pasos. No habla de dinero. El aviso al instructor dice Session cancelled. Absents espera credit, refund, makeup o none. Day Centre y Bespoke no avisan al padre por WhatsApp.",
               "El formulario de cancelacion del staff lo pone el instructor, antes de la sesion o durante. Sale en Cancellations by venue y en la campana de admin. El padre ve un chip cancelado. Tambien le llega un mensaje: el instructor ha informado de una cancelacion, y el equipo de admin le llamara por telefono. No es el WhatsApp de Cancelled de oficina, y no habla de dinero. El dinero lo decides tu en Absents.",
+              "Ese mismo formulario pone dos lineas en la campana. La que lleva la hora y Decide credit, refund, makeup or none es la cola de Absents. Se quita cuando eliges. La que lleva el nombre del instructor es el informe. Se queda con el resto de actividad reciente.",
               "Absent es que el nino no viene. No hay WhatsApp. En las fechas del term del padre sale el chip naranja, y la leyenda dice Orange - absent.",
               "Si el padre lo marca en su portal sin justificante, queda en none en la campana. No decides nada hasta que suba la prueba. La tarjeta del instructor queda en absent y la app le avisa. No es WhatsApp.",
               "Si llaman, Schedule and Covers, Absent. El padre ve el mismo chip naranja. La app del instructor dice Absent participant. Entra en Absents.",
