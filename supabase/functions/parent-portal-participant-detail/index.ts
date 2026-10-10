@@ -2575,7 +2575,7 @@ Deno.serve(async (req) => {
          */
         booked_from: bookedFromIso,
         avatar_url: avatar.avatar_url,
-        has_avatar: !!(avatar.avatar_url || participant.avatar_storage_path),
+        has_avatar: !!avatar.avatar_url,
       },
       general: {
         services,

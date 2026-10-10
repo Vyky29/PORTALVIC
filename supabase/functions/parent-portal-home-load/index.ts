@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
         },
         avatar_url: avatar.avatar_url,
         avatar_source: avatar.avatar_source,
-        has_avatar: !!(avatar.avatar_url || c.avatar_storage_path),
+        has_avatar: !!avatar.avatar_url,
       };
     }),
   );

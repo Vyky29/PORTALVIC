@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v378",
+  "version": "2026-10-10-v379",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1632,8 +1632,51 @@
           ],
           "tips": [
             "The board name and the list name can differ (short name vs full name). They are the same child when the roster id matches.",
-            "A parent adds the portrait from their hub. Office does not type a photo in."
+            "A photo the office saves, or a file on the machine, shows on Staff and Admin. The parent sees initials until the family uploads one."
           ]
+        },
+        {
+          "id": "portrait_who_sees_it",
+          "title": "Who sees the portrait",
+          "summary": "Office and machine photos show on Staff and Admin. A family upload from booking or the parent hub shows everywhere. Admin zoom stays on Staff and Admin.",
+          "where": "Admin client photo, Staff Today, parent hub",
+          "keywords": [
+            "foto",
+            "portrait",
+            "zoom",
+            "iniciales",
+            "booking",
+            "waiting",
+            "trial",
+            "parent",
+            "staff",
+            "admin"
+          ],
+          "steps": [
+            "A photo you save in Admin, or a photo file put on the machine, shows on Staff and Admin.",
+            "The parent sees initials until the family uploads a photo.",
+            "Booking registration for waiting, a term place, or a trial uploads a photo. That photo shows on the parent hub, Staff, and Admin.",
+            "Zoom or position set in Admin applies on Staff and Admin. The parent sees the whole photo, without that zoom."
+          ],
+          "tips": [
+            "Initials on the parent hub do not mean Staff is missing the office photo.",
+            "A later family upload replaces what the parent sees. Staff and Admin still keep the zoom on their own screens."
+          ],
+          "es": {
+            "title": "Quien ve el retrato",
+            "summary": "Las fotos de oficina y de la maquina salen en Staff y Admin. La que sube la familia en booking o en su portal sale en todos. El zoom de Admin se queda en Staff y Admin.",
+            "where": "Foto del cliente en Admin, Staff Today, portal del padre",
+            "steps": [
+              "Una foto que guardas en Admin, o un archivo puesto en la maquina, sale en Staff y Admin.",
+              "El padre ve iniciales hasta que la familia sube una foto.",
+              "La registration de booking para waiting, plaza de term o trial sube foto. Esa foto sale en el portal del padre, en Staff y en Admin.",
+              "El zoom o la posicion que pones en Admin vale en Staff y Admin. El padre ve la foto entera, sin ese zoom."
+            ],
+            "tips": [
+              "Iniciales en el portal del padre no quieren decir que en Staff falte la foto de oficina.",
+              "Si la familia sube una despues, esa es la que ve el padre. Staff y Admin siguen con el zoom en sus pantallas."
+            ]
+          }
         },
         {
           "id": "participant_sheet_multi_term",

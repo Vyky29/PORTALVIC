@@ -393,7 +393,11 @@
         });
         res.data.forEach(function (r) {
           if (!r || !r.display_name) return;
-          if (r.avatar_frame) portalRegisterParticipantPhotoFrame(r.contact_id, r.display_name, r.avatar_frame);
+          if (photoFrameSurfaceOn() && r.avatar_frame) {
+            portalRegisterParticipantPhotoFrame(r.contact_id, r.display_name, r.avatar_frame);
+          }
+          /* Parent pages take the family photo from the portal API, not this index. */
+          if (!photoFrameSurfaceOn()) return;
           if (!r.avatar_storage_path) return;
           var url = participantAvatarPublicUrl(r.avatar_storage_path);
           if (!url) return;
@@ -565,11 +569,11 @@
     function addIfOnDisk(raw) {
       var p = participantPhotoPathOnDisk(raw);
       if (!p) return;
-      /* Office recognition photo. Parents keep an empty circle until they upload. */
-      if (!photoFrameSurfaceOn() && /\/participants\/(?:emani|vithura)\.jpe?g(?:$|\?)/i.test(p)) return;
       add(p);
     }
     function addStaticRoster() {
+      /* Files under portal/participants/ are office portraits. Parents see initials. */
+      if (!photoFrameSurfaceOn()) return;
       var mapped = mappedRosterPhotoRelative(name);
       if (mapped) addIfOnDisk(mapped);
       var keys = rosterPhotoLookupKeys(name);
@@ -581,7 +585,7 @@
       }
     }
 
-    /* Always resolve roster PNGs (first-name aware). Parent/storage URL still wins via unshift. */
+    /* Office PNGs on staff and admin. A family upload passed in still wins via unshift. */
     addStaticRoster();
 
     var storageUrl = portalParticipantStorageAvatarUrl(contactId, name);
@@ -602,12 +606,12 @@
           !global.portalSanitizeRemoteAvatarUrl(avatarOverride)
         )
       ) {
-        addIfOnDisk(avatarOverride);
+        if (photoFrameSurfaceOn()) addIfOnDisk(avatarOverride);
       }
     }
 
-    /* Extra hyphen guesses for unmapped names */
-    if (key && !mappedRosterPhotoRelative(name)) {
+    /* Extra hyphen guesses for unmapped names. Office files only. */
+    if (photoFrameSurfaceOn() && key && !mappedRosterPhotoRelative(name)) {
       var hyphenSlug = key.replace(/\s+/g, "-");
       addIfOnDisk("portal/participants/" + hyphenSlug + ".png");
       addIfOnDisk("portal/participants/" + hyphenSlug + ".jpg");

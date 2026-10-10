@@ -204,6 +204,47 @@ export async function lookupLatestParentFormPhotoPath(
   return null;
 }
 
+/** Family uploads. These show on the parent portal as well as staff and admin. */
+const FAMILY_AVATAR_SOURCES = new Set([
+  "parent_form",
+  "parent_portal",
+  "parent_portal_home",
+  "parent_portal_reenrol",
+  "re_enrolment",
+  "booking_existing_confirm",
+  "registration_form",
+  "registration_for_virgin",
+]);
+
+export function isFamilyAvatarSource(source: string | null | undefined): boolean {
+  const s = String(source || "").trim().toLowerCase();
+  if (!s || s.endsWith("_archive") || s.endsWith("_removed")) return false;
+  return FAMILY_AVATAR_SOURCES.has(s);
+}
+
+async function latestLiveAvatarSource(
+  admin: SupabaseClient,
+  contactId: string,
+): Promise<string | null> {
+  const id = String(contactId || "").trim();
+  if (!id) return null;
+  const { data } = await admin
+    .from("portal_participant_avatar_history")
+    .select("source, storage_path, created_at")
+    .eq("contact_id", id)
+    .eq("is_live", true)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  for (const row of data || []) {
+    const path = String(row?.storage_path || "");
+    const source = String(row?.source || "");
+    if (path.startsWith("_admin-archive/")) continue;
+    if (source.endsWith("_archive") || source.endsWith("_removed")) continue;
+    return source || null;
+  }
+  return null;
+}
+
 export async function resolveParticipantAvatarUrls(
   admin: SupabaseClient,
   supabaseUrl: string,
@@ -216,9 +257,14 @@ export async function resolveParticipantAvatarUrls(
 ): Promise<{ avatar_url: string | null; avatar_source: string | null }> {
   const path = String(participant.avatar_storage_path || "").trim();
   if (path) {
+    const source = await latestLiveAvatarSource(admin, participant.contact_id);
+    /* Office and machine portraits stay on staff and admin. Parents see initials. */
+    if (!isFamilyAvatarSource(source)) {
+      return { avatar_url: null, avatar_source: source || "office" };
+    }
     return {
       avatar_url: participantAvatarPublicUrl(supabaseUrl, path),
-      avatar_source: "storage",
+      avatar_source: source,
     };
   }
 
