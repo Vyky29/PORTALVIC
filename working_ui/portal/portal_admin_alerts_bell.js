@@ -47,10 +47,16 @@
     return isNaN(t) ? 0 : t;
   }
 
+  /** Instructor cancellation report (cx-…). Decide rows are cxdec-, unpaid refunds are cxpay-. */
+  function isInstructorCancellationReport(item) {
+    var id = String((item && item.id) || "");
+    return id.indexOf("cx-") === 0 && id.indexOf("cxdec-") !== 0 && id.indexOf("cxpay-") !== 0;
+  }
+
   function pruneDisallowed() {
     var list = listRef();
     global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list.filter(function (a) {
-      return a && isAllowedKind(a.kind);
+      return a && isAllowedKind(a.kind) && !isInstructorCancellationReport(a);
     });
   }
 
@@ -104,6 +110,7 @@
 
   function bellShows(item) {
     if (!item || !isAllowedKind(item.kind)) return false;
+    if (isInstructorCancellationReport(item)) return false;
     if (item.kind === "chat") return false;
     if (item.kind === "makeup_accepted") return makeupStillUpcoming(item);
     return true;
@@ -1061,6 +1068,7 @@
   function pushActivityAlert(item, opts) {
     opts = opts || {};
     if (!item || !item.id || !isAllowedKind(item.kind)) return false;
+    if (isInstructorCancellationReport(item)) return false;
     var list = listRef();
     if (list.some(function (a) {
       return a.id === item.id;

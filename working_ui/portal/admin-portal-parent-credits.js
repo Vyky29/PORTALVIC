@@ -230,6 +230,26 @@
     }
     hostEl.innerHTML = tableHtml(state.entries);
     bindRowActions(hostEl);
+    focusUnpaidRefund(hostEl);
+  }
+
+  function focusUnpaidRefund(hostEl) {
+    var focusId = String(global.__portalAbsentsFocusCreditId || '').trim();
+    if (!focusId || !hostEl) return;
+    var box = global.document.getElementById('portalAbsentsLedgerDetails');
+    if (box) box.open = true;
+    var hit = null;
+    hostEl.querySelectorAll('[data-credit-id]').forEach(function (btn) {
+      if (!hit && btn.getAttribute('data-credit-id') === focusId) hit = btn;
+    });
+    var row = hit && hit.closest ? hit.closest('tr') : null;
+    if (row) row.style.background = 'rgba(91, 75, 255, 0.08)';
+    var target = row || box;
+    if (target && target.scrollIntoView) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    global.__portalAbsentsFocusCreditId = '';
+    global.__portalAbsentsOpenLedger = false;
   }
 
   function bindRowActions(hostEl) {

@@ -93,7 +93,7 @@
   <script src="/portal/admin-portal-booking-leads.js?v=20261003-outcome-chips"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20261004-wait-form"></script>
   <script src="/portal/admin-office-calendar.js?v=20261004-cal-notes"></script>
-  <script src="/portal/admin-portal-parent-credits.js?v=20261008-refund-modal"></script>
+  <script src="/portal/admin-portal-parent-credits.js?v=20261010-refund-open"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20261002-xero-ui"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20261008-inv-pdf"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20261006-makeup-line"></script>
@@ -446,7 +446,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20261009-acat-tue"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20261008-parent-absent"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20261010-bell-cx"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20261002-no-guide";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -2161,6 +2161,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!a || !a.view) return;
           portalAdminOpenActivityAlert({
             view: a.view,
+            kind: a.kind || '',
             recordId: a.recordId || '',
             clientName: a.clientName || '',
             sessionDate: a.sessionDate || ''
@@ -31947,9 +31948,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalParentCreditsConfigureOnce();
         secondary += window.PortalParentCredits.embedHtml();
       }
+      var openLedger = !!window.__portalAbsentsOpenLedger;
+      window.__portalAbsentsOpenLedger = false;
       return '<h1 class="page-title">Absents, refunds &amp; credits</h1>'+
         parentQueue+
-        '<details style="margin:0 0 14px;min-width:0">'+
+        '<details id="portalAbsentsLedgerDetails"'+(openLedger ? ' open' : '')+' style="margin:0 0 14px;min-width:0">'+
         '<summary style="cursor:pointer;font-weight:700;font-size:14px;padding:8px 0;overflow-wrap:break-word">Makeup grants &amp; family credits / refunds (after you decide above)</summary>'+
         '<div style="margin-top:8px">'+secondary+'</div>'+
         '</details>';
@@ -40059,23 +40062,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
     }
 
-    function portalAdminActivityFromCancellation(row){
-      if(!row || !row.id) return null;
-      var who = String(row.submitted_by_name || 'Staff').trim() || 'Staff';
-      var client = String(row.client_name || 'Participant').trim() || 'Participant';
-      return {
-        id: 'cx-' + row.id,
-        title: 'Cancellation · ' + client,
-        sub: who + ' · ' + String(row.session_date || '').slice(0, 10),
-        created_at: row.created_at,
-        kind: 'cancellation',
-        view: 'cancellations',
-        recordId: String(row.id || ''),
-        clientName: client,
-        sessionDate: String(row.session_date || '').trim().slice(0, 10)
-      };
-    }
-
     function portalAdminActivityFromIncident(row){
       if(!row || !row.id) return null;
       var who = String(row.submitted_by_name || 'Staff').trim() || 'Staff';
@@ -40411,6 +40397,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       if(tab === 'absents_refunds' || tab === 'hr_pay' || tab === 'finance_cancelled_services'){
+        if(tab === 'absents_refunds' && String(meta.kind || '') === 'cancel_refund'){
+          window.__portalAbsentsOpenLedger = true;
+          window.__portalAbsentsFocusCreditId = String(meta.recordId || '').trim();
+        }else if(tab === 'absents_refunds'){
+          window.__portalAbsentsOpenLedger = false;
+          window.__portalAbsentsFocusCreditId = '';
+        }
         setView(tab);
         return;
       }
@@ -40900,6 +40893,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var activityHtml = (activityList || []).map(function(a){
         var jump = a.view ? ' data-alert-view="'+esc(a.view)+'"' : '';
         var meta = '';
+        if(a.kind) meta += ' data-alert-kind="'+esc(a.kind)+'"';
         if(a.recordId) meta += ' data-alert-record-id="'+esc(a.recordId)+'"';
         if(a.clientName) meta += ' data-alert-client="'+esc(a.clientName)+'"';
         if(a.sessionDate) meta += ' data-alert-date="'+esc(a.sessionDate)+'"';
@@ -42374,6 +42368,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           try{ if(typeof window.portalSyncAdminTopbarCurrent === 'function') window.portalSyncAdminTopbarCurrent(); }catch(_alCur2){}
           portalAdminOpenActivityAlert({
             view: v,
+            kind: String(btn.getAttribute('data-alert-kind') || '').trim(),
             recordId: String(btn.getAttribute('data-alert-record-id') || '').trim(),
             clientName: String(btn.getAttribute('data-alert-client') || '').trim(),
             sessionDate: String(btn.getAttribute('data-alert-date') || '').trim(),
