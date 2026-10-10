@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v381",
+  "version": "2026-10-10-v382",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2085,7 +2085,8 @@
           "steps": [
             "Not in Xero and the money is already in: send that invoice to Xero once. It is created for the full invoice total and left awaiting payment. The portal does not mark it paid in Xero and does not write the Tide line.",
             "Already in Xero: do not send it again. Reconcile the bank line against the invoice that is already there.",
-            "Bank or GoCardless: the Tide line should equal the invoice, or the half that has been paid. Match that line to the invoice. On a flexi, allocate only the half that has landed. The other half stays open until it is paid.",
+            "Bank transfer: the Tide line should equal the invoice, or the half that has been paid. Match that line to the invoice. On a flexi, allocate only the half that has landed.",
+            "GoCardless: the parent pays the month plus 1.50. GoCardless then takes 1.25% plus 20p, plus 20% VAT, capped at 6.00 with the VAT included. On these monthly amounts that fee is more than 1.50, so Tide is lower than the month. Match the month the parent paid, then Spend money for the GoCardless fee, tax inclusive, so the line equals what landed.",
             "Stripe or Apple Pay: the parent pays the invoice plus a card fee, so the club still nets the invoice total. Stripe keeps its own fee and pays the rest into Tide, often several charges in one payout.",
             "Match the Tide payout to the invoice totals, not to the higher amount the parent paid on the card.",
             "What is left on that payout is the fee difference. If Tide is higher than the invoices, the extra stayed with you. If Tide is lower, Stripe took more than the fee we added. That difference is the fee, not a missing invoice.",
@@ -2104,7 +2105,8 @@
             "steps": [
               "Not in Xero y el dinero ya entro: manda esa factura a Xero una vez. Se crea por el total de la factura y queda pendiente de pago. El portal no la marca pagada en Xero y no escribe la linea de Tide.",
               "Ya esta en Xero: no la mandes otra vez. Concilia la linea del banco contra la factura que ya esta.",
-              "Banco o GoCardless: la linea de Tide tiene que ser el importe de la factura, o la mitad que ya se ha pagado. Casa esa linea con la factura. En un flexi, asigna solo la mitad que ha entrado. La otra mitad sigue abierta hasta que se pague.",
+              "Transferencia: la linea de Tide tiene que ser el importe de la factura, o la mitad que ya se ha pagado. Casa esa linea con la factura. En un flexi, asigna solo la mitad que ha entrado.",
+              "GoCardless: el padre paga el mes mas 1.50. GoCardless se queda luego el 1.25% mas 20p, mas el 20% de VAT, con tope de 6.00 ya con el VAT. En estos plazos esa comision pasa de 1.50, asi que Tide entra mas bajo que el mes. Casa el mes que pago el padre, y luego un gasto (Spend money) por la comision de GoCardless, tax inclusive, para que la linea cuadre con lo que entro.",
               "Stripe o Apple Pay: el padre paga la factura mas una tasa de tarjeta, para que el club se quede con el total de la factura. Stripe se queda su tasa real y paga el resto a Tide, a menudo varios cobros en un solo ingreso.",
               "Casa el ingreso de Tide con los totales de las facturas, no con la cifra mas alta que el padre pago con la tarjeta.",
               "Lo que sobra o falta en ese ingreso es la diferencia de tasas. Si Tide es mas alto que las facturas, el extra se quedo aqui. Si Tide es mas bajo, Stripe se quedo mas de la tasa que sumamos. Esa diferencia es la tasa, no una factura que falte.",
