@@ -187,7 +187,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261010-trial-lines" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261010-bell-chip-colors" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20261004-header-order" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -40896,13 +40896,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminAlertAction(a){
       var kind = String(a && a.kind || '');
-      if(kind === 'expense_unpaid' || kind === 'cancel_refund') return { label: 'Pay', done: false, accepted: false };
-      if(kind === 'absent_decision' || kind === 'cancellation' || kind === 'late_approval') return { label: 'Decide', done: false, accepted: false };
-      if(kind === 'makeup_accepted') return { label: 'View', done: true, accepted: true };
+      if(kind === 'expense_unpaid' || kind === 'cancel_refund') return { label: 'Pay', tone: 'pay', done: false, accepted: false };
+      if(kind === 'absent_decision' || kind === 'cancellation' || kind === 'late_approval') return { label: 'Decide', tone: 'decide', done: false, accepted: false };
+      if(kind === 'makeup_accepted') return { label: 'View', tone: 'view', done: true, accepted: true };
       if(kind === 'general_info' || kind === 'parent_absent' || kind === 'parent_action' || kind === 'wellbeing'){
-        return { label: 'View', done: true, accepted: false };
+        return { label: 'View', tone: 'view', done: true, accepted: false };
       }
-      return { label: 'View', done: false, accepted: false };
+      return { label: 'View', tone: 'view', done: false, accepted: false };
     }
     function renderAlerts(){
       var pop = $('alertsPop');
@@ -40931,7 +40931,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }else if(act.done && a.id){
           closeBtn = '<button type="button" class="chip portal-admin-alert-act portal-admin-alert-act--close" data-parent-action-dismiss="'+esc(a.id)+'">Close</button>';
         }
-        var goChip = '<button type="button" class="chip chip--info portal-admin-alert-act"'+jump+meta+'>'+esc(act.label)+'</button>';
+        var goChip = '<button type="button" class="chip portal-admin-alert-act portal-admin-alert-act--'+(act.tone || 'view')+'"'+jump+meta+'>'+esc(act.label)+'</button>';
         return '<div class="portal-admin-activity-row'+(act.accepted ? ' portal-admin-activity-row--accepted' : '')+'">'+
           '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit">'+portalAdminAlertFaceHtml(a)+'<div style="min-width:0;flex:1"><strong>'+esc(portalAdminShowDateText(a.title))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub))+'</div></div></button>'+
           '<span class="portal-admin-alert-acts">'+goChip+closeBtn+'</span>'+

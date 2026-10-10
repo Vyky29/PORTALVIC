@@ -4103,7 +4103,10 @@
     .portal-admin-alert-act{
       border:0;cursor:pointer;font:inherit;font-weight:700;line-height:1.2;white-space:nowrap;
     }
-    .portal-admin-alert-act--close{background:#f1f5f9;color:#334155}
+    .chip.portal-admin-alert-act--pay{background:#fef3c7;color:#92400e}
+    .chip.portal-admin-alert-act--decide{background:#ffedd5;color:#9a3412}
+    .chip.portal-admin-alert-act--view{background:#dbeafe;color:#1d4ed8}
+    .chip.portal-admin-alert-act--close{background:#f1f5f9;color:#334155}
     .portal-admin-activity-row--accepted{background:#ecfdf3}
     .portal-admin-activity-row--accepted .portal-admin-activity-alert,
     .portal-admin-activity-row--accepted .portal-admin-activity-alert:hover{background:transparent !important}
