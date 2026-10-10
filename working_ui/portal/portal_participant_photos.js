@@ -48,6 +48,7 @@
     timi: "portal/participants/timi.png?v=20260628-timi-smile",
     "timi dairo": "portal/participants/timi.png?v=20260628-timi-smile",
     ikram: "portal/participants/ikram.png",
+    emani: "portal/participants/emani.jpg?v=20261010-emani",
     "ikram omar": "portal/participants/ikram.png",
     rodin: "portal/participants/rodin.png",
     "rodin esmati": "portal/participants/rodin.png",
@@ -104,6 +105,7 @@
     "/portal/participants/ayden-w.png": true,
     "/portal/participants/cyrus.png": true,
     "/portal/participants/eiji.png": true,
+    "/portal/participants/emani.jpg": true,
     "/portal/participants/emanuel.png": true,
     "/portal/participants/erik.png": true,
     "/portal/participants/fadi.png": true,
@@ -540,7 +542,10 @@
     }
     function addIfOnDisk(raw) {
       var p = participantPhotoPathOnDisk(raw);
-      if (p) add(p);
+      if (!p) return;
+      /* Office recognition photo. Parents keep an empty circle until they upload. */
+      if (!photoFrameSurfaceOn() && /\/participants\/emani\.jpe?g(?:$|\?)/i.test(p)) return;
+      add(p);
     }
     function addStaticRoster() {
       var mapped = mappedRosterPhotoRelative(name);
