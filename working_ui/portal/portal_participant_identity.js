@@ -25,6 +25,7 @@
     samer_bakhiet: "samer",
     rayan_tapa: "rayan_ta",
     rayan_thapa: "rayan_ta",
+    rayan_th: "rayan_ta",
     steven_cesare: "steven",
     steven_ces: "steven",
     steven_c: "steven",
@@ -50,7 +51,10 @@
     adam_abed: "adam_ab",
     abodi: "abodi_pa",
     junaid: "junaid_f",
+    junaid_fu: "junaid_f",
+    junaid_fussaini: "junaid_f",
     khalid_ab: "khalid",
+    khalid_abdulla: "khalid",
     rayyan_fi: "rayyan_f",
     chaitanya_trial_28_06: "chaitanya",
   };

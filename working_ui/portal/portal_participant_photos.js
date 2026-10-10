@@ -166,11 +166,19 @@
       .replace(/^pp-/i, "");
   }
 
+  function canonicalAvatarId(nameOrId) {
+    var idn = global.PortalParticipantIdentity;
+    if (!idn || typeof idn.canonicalClientId !== "function") return "";
+    return String(idn.canonicalClientId(nameOrId) || "").trim();
+  }
+
   function portalRegisterParticipantPhotoFrame(contactId, displayName, frame) {
     var f = normalizePhotoFrame(frame);
     if (!f) return;
     var id = frameContactKey(contactId);
     if (id) PARTICIPANT_PHOTO_FRAMES.byId[id] = f;
+    var canon = canonicalAvatarId(displayName);
+    if (canon) PARTICIPANT_PHOTO_FRAMES.byId[canon] = f;
     var nk = storageAvatarKey(displayName);
     if (nk) PARTICIPANT_PHOTO_FRAMES.byName[nk] = f;
   }
@@ -205,6 +213,10 @@
   function lookupPhotoFrame(contactId, displayName) {
     var id = frameContactKey(contactId);
     if (id && PARTICIPANT_PHOTO_FRAMES.byId[id]) return PARTICIPANT_PHOTO_FRAMES.byId[id];
+    var canonFrame = canonicalAvatarId(id) || canonicalAvatarId(displayName);
+    if (canonFrame && PARTICIPANT_PHOTO_FRAMES.byId[canonFrame]) {
+      return PARTICIPANT_PHOTO_FRAMES.byId[canonFrame];
+    }
     var nk = storageAvatarKey(displayName);
     if (!nk) return null;
     if (PARTICIPANT_PHOTO_FRAMES.byName[nk]) return PARTICIPANT_PHOTO_FRAMES.byName[nk];
@@ -298,6 +310,8 @@
     if (!url || !/^https?:\/\//i.test(url)) return;
     var id = String(contactId || "").trim();
     if (id) PARTICIPANT_STORAGE_AVATARS.byId[id] = url;
+    var canon = canonicalAvatarId(displayName);
+    if (canon) PARTICIPANT_STORAGE_AVATARS.byId[canon] = url;
     var nk = storageAvatarKey(displayName);
     if (nk) PARTICIPANT_STORAGE_AVATARS.byName[nk] = url;
     var rawSlug = nk ? nk.replace(/\s+/g, "_") : "";
@@ -411,6 +425,10 @@
   function portalParticipantStorageAvatarUrl(contactId, displayName) {
     var id = String(contactId || "").trim();
     if (id && PARTICIPANT_STORAGE_AVATARS.byId[id]) return PARTICIPANT_STORAGE_AVATARS.byId[id];
+    var canonId = canonicalAvatarId(id) || canonicalAvatarId(displayName);
+    if (canonId && PARTICIPANT_STORAGE_AVATARS.byId[canonId]) {
+      return PARTICIPANT_STORAGE_AVATARS.byId[canonId];
+    }
     var nk = storageAvatarKey(displayName);
     if (nk && PARTICIPANT_STORAGE_AVATARS.byName[nk]) return PARTICIPANT_STORAGE_AVATARS.byName[nk];
     var rawSlug = nk ? nk.replace(/\s+/g, "_") : "";

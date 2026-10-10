@@ -22,6 +22,8 @@ const ROSTER_SPELLING_ALIASES: Record<string, string> = {
   amar_ra: "amar_rai",
   sammer: "samer",
   rayan_tapa: "rayan_ta",
+  rayan_thapa: "rayan_ta",
+  rayan_th: "rayan_ta",
   steven_ces: "steven",
   steven_c: "steven",
   steven_ce: "steven",
@@ -38,7 +40,10 @@ const CLIENT_INFO_SLUG_ALIASES: Record<string, string> = {
   adam_abed: "adam_ab",
   abodi: "abodi_pa",
   junaid: "junaid_f",
+  junaid_fu: "junaid_f",
+  junaid_fussaini: "junaid_f",
   khalid_ab: "khalid",
+  khalid_abdulla: "khalid",
   rayyan_fi: "rayyan_f",
   rayyan_fida: "rayyan_f",
   rayyan_fda: "rayyan_f",
@@ -155,6 +160,8 @@ export function isAcatGroupClientId(clientIdOrName: string): boolean {
 
 const CLIENT_INFO_SHEET_ALIASES: Record<string, string> = {
   rayan_tapa: "rayan_ta",
+  rayan_thapa: "rayan_ta",
+  rayan_th: "rayan_ta",
   aadam_ah: "adaam_ah",
 };
 

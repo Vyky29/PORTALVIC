@@ -1537,6 +1537,11 @@
     set["name:" + low] = true;
     var slug = autumnSlug(name);
     if (slug) set[slug] = true;
+    var idn = global.PortalParticipantIdentity;
+    if (idn && typeof idn.canonicalClientId === "function") {
+      var canon = String(idn.canonicalClientId(name) || "").trim();
+      if (canon) set[canon] = true;
+    }
   }
 
   /** Standing Autumn seats. Historical spreadsheet rows are not a current place. */
@@ -1584,6 +1589,12 @@
     if (!set) return false;
     var key = achievementClientKey(g.key);
     if (key && set[key]) return false;
+    var idn = global.PortalParticipantIdentity;
+    if (idn && typeof idn.canonicalClientId === "function") {
+      var canonKey = String(idn.canonicalClientId(g.key) || "").trim();
+      var canonName = String(idn.canonicalClientId(g.clientName) || "").trim();
+      if ((canonKey && set[canonKey]) || (canonName && set[canonName])) return false;
+    }
     var name = normalizeParticipantName(g.clientName);
     if (name && set["name:" + name]) return false;
     if (name && set[autumnSlug(name)]) return false;
