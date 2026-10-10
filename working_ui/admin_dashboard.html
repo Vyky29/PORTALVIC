@@ -30026,6 +30026,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(Array.isArray(rows) && rows.length && typeof window.portalAdminAdoptSessionFeedback === 'function'){
         try{ window.portalAdminAdoptSessionFeedback(rows); }catch(_a){}
       }
+      var replay = state && state._paxDrawerReplay;
+      if(replay && !replay._painting && rows && rows.length && state._paxDrawerReplayN !== rows.length){
+        var drawer = $('clientDrawer');
+        if(drawer && drawer.classList.contains('open') && replay.c && replay.c.name){
+          state._paxDrawerReplayN = rows.length;
+          replay._painting = true;
+          try{
+            openClientDrawerBody(replay.c, replay.linkedCid, Object.assign({}, replay.drawerOpts || {}, { _fbRetry: true }));
+          }catch(_repaint){}
+          replay._painting = false;
+        }
+      }
     }
     async function adminFetchSessionFeedbackForHub(){
       if(__adminSessionFeedbackCache && __adminSessionFeedbackCache.length){
@@ -37548,15 +37560,37 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return ex || '\u2014';
     }
     function adminPortalFeedbackRowsForClientDisplayName(displayName){
-      var rows = adminSessionFeedbackPortalRows();
-      if(!rows.length || !String(displayName || '').trim()) return [];
-      var out = [];
-      for(var i = 0; i < rows.length; i++){
-        var row = rows[i];
-        if(!adminPortalFeedbackRowIsAttendedFeedback(row)) continue;
-        if(adminPortalNameMatchesBooking(row.clientName, displayName)) out.push(row);
+      var want = String(displayName || '').trim();
+      if(!want) return [];
+      var amb = adminPortalParticipantAmbiguityMap();
+      var byKey = {};
+      function consider(row){
+        if(!row || !adminPortalFeedbackRowIsAttendedFeedback(row)) return;
+        var nm = adminSfStr(row.clientName);
+        if(!adminPortalParticipantMatchesDisplayName(want, nm, amb)) return;
+        var canon = '';
+        try{
+          if(window.PortalParticipantIdentity && typeof window.PortalParticipantIdentity.canonicalClientId === 'function'){
+            canon = window.PortalParticipantIdentity.canonicalClientId(nm) || '';
+          }
+        }catch(_id){}
+        var k = [
+          adminSfStr(row.date).substring(0, 10),
+          canon || nm.toLowerCase(),
+          adminSfStr(row.service).toLowerCase(),
+          adminSfStr(row.portalSessionKey || row.sessionTimeSlot)
+        ].join('|');
+        if(!byKey[k] || adminSfStr(row.submittedAt) > adminSfStr(byKey[k].submittedAt)) byKey[k] = row;
       }
-      return out;
+      var portal = adminSessionFeedbackPortalRows();
+      var i;
+      for(i = 0; i < portal.length; i++) consider(portal[i]);
+      var live = adminLiveSessionFeedbackHubRows();
+      for(i = 0; i < live.length; i++){
+        if(!adminHubFeedbackRowIsComplete(live[i])) continue;
+        consider(adminLiveHubFeedbackToPortalSourceRow(live[i]));
+      }
+      return Object.keys(byKey).map(function(k){ return byKey[k]; });
     }
     function adminPortalFeedbackSortedForDrawer(displayName){
       return adminPortalFeedbackRowsForClientDisplayName(displayName)
@@ -37802,6 +37836,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var sessionIso = String(opts.sessionIso || '').trim() || isoDateLocal(new Date());
       var label = String(opts.label || '').trim();
       stripParticipantSheetChrome();
+      state._paxDrawerReplay = null;
       var model = portalStaffDrawerModel(r, label);
       state.drawerStaff = model.mockId || null;
       state.drawerClient = null;
@@ -37957,6 +37992,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Full participant sheet: <code>linkedCid</code> is MOCK key, or <code>null</code> for export-only synthetic rows. */
     function openClientDrawerBody(c, linkedCid, drawerOpts){
       drawerOpts = drawerOpts || {};
+      var prevReplayName = state._paxDrawerReplay && state._paxDrawerReplay.c && state._paxDrawerReplay.c.name;
+      if(prevReplayName !== (c && c.name)) state._paxDrawerReplayN = 0;
+      state._paxDrawerReplay = { c: c, linkedCid: linkedCid, drawerOpts: drawerOpts };
       var fromSchedule = !!drawerOpts.fromSchedule;
       state.drawerStaff = null;
       state.drawerClient = linkedCid || null;
@@ -37978,6 +38016,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var ciMissingBanner = adminParticipantClientsInfoMissingNoteHtml(c.name, c.id || linkedCid);
       var portalSorted = adminPortalFeedbackSortedForDrawer(c.name);
       var usePortal = portalSorted.length > 0;
+      if(!usePortal && c && c.name && !drawerOpts._fbRetry){
+        var paintName = String(c.name).trim();
+        adminFetchSessionFeedbackForHub().then(function(){
+          var drawer = $('clientDrawer');
+          if(!drawer || !drawer.classList.contains('open')) return;
+          if(String($('drawerClientName').textContent || '').trim() !== paintName) return;
+          if(!adminPortalFeedbackSortedForDrawer(paintName).length) return;
+          openClientDrawerBody(c, linkedCid, Object.assign({}, drawerOpts, { _fbRetry: true }));
+        }).catch(function(){});
+      }
       var portalM = usePortal ? adminPortalFeedbackMetricsForDrawer(portalSorted) : null;
       var termStartIso = adminPortalFeedbackTermStartIso();
       var portalTermSorted = usePortal
@@ -38399,6 +38447,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       state.drawerClient = null;
       state.drawerStaff = null;
       state.drawerIsSynthetic = false;
+      state._paxDrawerReplay = null;
     }
 
     function openModal(html, opts){
