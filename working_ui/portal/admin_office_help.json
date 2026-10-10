@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v380",
+  "version": "2026-10-10-v381",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2088,11 +2088,14 @@
             "Bank or GoCardless: the Tide line should equal the invoice, or the half that has been paid. Match that line to the invoice. On a flexi, allocate only the half that has landed. The other half stays open until it is paid.",
             "Stripe or Apple Pay: the parent pays the invoice plus a card fee, so the club still nets the invoice total. Stripe keeps its own fee and pays the rest into Tide, often several charges in one payout.",
             "Match the Tide payout to the invoice totals, not to the higher amount the parent paid on the card.",
-            "What is left on that payout is the fee difference. If Tide is higher than the invoices, the extra stayed with you. If Tide is lower, Stripe took more than the fee we added. That difference is the fee, not a missing invoice."
+            "What is left on that payout is the fee difference. If Tide is higher than the invoices, the extra stayed with you. If Tide is lower, Stripe took more than the fee we added. That difference is the fee, not a missing invoice.",
+            "Reconcile the leftover on the same Tide line. Find and Match the invoices, then New transaction: receive money, from Stripe, account 200 Sales Structured Support, amount equal to the leftover, tax 20% VAT on Income, tax inclusive. Do not add a second invoice for the parent.",
+            "If the leftover comes from an LA or NHS invoice (VAT exempt), use account 202 and No VAT instead of account 200."
           ],
           "tips": [
             "Do not send a lost slot. Do not send an unpaid draft.",
-            "A red Xero failed line will not send until the Xero login is accepted again."
+            "A red Xero failed line will not send until the Xero login is accepted again.",
+            "Tax inclusive means the leftover amount is the gross. Xero takes the VAT out of it. Tax exclusive would add VAT on top and the line would not match Tide."
           ],
           "es": {
             "title": "Stripe, Xero y Tide",
@@ -2104,11 +2107,14 @@
               "Banco o GoCardless: la linea de Tide tiene que ser el importe de la factura, o la mitad que ya se ha pagado. Casa esa linea con la factura. En un flexi, asigna solo la mitad que ha entrado. La otra mitad sigue abierta hasta que se pague.",
               "Stripe o Apple Pay: el padre paga la factura mas una tasa de tarjeta, para que el club se quede con el total de la factura. Stripe se queda su tasa real y paga el resto a Tide, a menudo varios cobros en un solo ingreso.",
               "Casa el ingreso de Tide con los totales de las facturas, no con la cifra mas alta que el padre pago con la tarjeta.",
-              "Lo que sobra o falta en ese ingreso es la diferencia de tasas. Si Tide es mas alto que las facturas, el extra se quedo aqui. Si Tide es mas bajo, Stripe se quedo mas de la tasa que sumamos. Esa diferencia es la tasa, no una factura que falte."
+              "Lo que sobra o falta en ese ingreso es la diferencia de tasas. Si Tide es mas alto que las facturas, el extra se quedo aqui. Si Tide es mas bajo, Stripe se quedo mas de la tasa que sumamos. Esa diferencia es la tasa, no una factura que falte.",
+              "El pico se concilia en la misma linea de Tide. Find and Match de las facturas, y luego New transaction: dinero recibido, de Stripe, cuenta 200 Sales Structured Support, importe igual al pico, impuesto 20% VAT on Income, tax inclusive. No hagas otra factura al padre.",
+              "Si el pico sale de una factura LA o NHS (VAT exempt), usa la cuenta 202 y No VAT, no la 200."
             ],
             "tips": [
               "No mandes un lost slot. No mandes un borrador sin pagar.",
-              "Una linea roja Xero failed no se envia hasta que el login de Xero vuelva a aceptarse."
+              "Una linea roja Xero failed no se envia hasta que el login de Xero vuelva a aceptarse.",
+              "Tax inclusive quiere decir que el pico es el bruto. Xero saca el VAT de dentro. Si lo pones exclusive, suma el VAT encima y la linea no cuadra con Tide."
             ]
           }
         },
