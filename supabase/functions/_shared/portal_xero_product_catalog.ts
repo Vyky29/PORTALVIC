@@ -543,6 +543,177 @@ function naturalList(values: string[]): string {
   return `${values.slice(0, -1).join(", ")} and ${values[values.length - 1]}`;
 }
 
+const NHS_DAY_INDEX: Record<string, number> = {
+  sun: 0,
+  mon: 1,
+  tue: 2,
+  wed: 3,
+  thu: 4,
+  fri: 5,
+  sat: 6,
+};
+
+const NHS_MONTH_INDEX: Record<string, number> = {
+  jan: 0,
+  feb: 1,
+  mar: 2,
+  apr: 3,
+  may: 4,
+  jun: 5,
+  jul: 6,
+  aug: 7,
+  sep: 8,
+  oct: 9,
+  nov: 10,
+  dec: 11,
+};
+
+function nhsOrdinal(day: number): string {
+  const teen = day % 100;
+  if (teen >= 11 && teen <= 13) return `${day}th`;
+  switch (day % 10) {
+    case 1:
+      return `${day}st`;
+    case 2:
+      return `${day}nd`;
+    case 3:
+      return `${day}rd`;
+    default:
+      return `${day}th`;
+  }
+}
+
+function nhsVenueLabel(raw: string): string {
+  const s = raw.trim();
+  const k = s.toLowerCase();
+  if (!k) return "";
+  if (k.includes("swimfarm")) return "SwimFarm Centre";
+  if (k.includes("northolt")) return "Northolt Centre";
+  if (k.includes("westway")) return "Westway Centre";
+  if (k === "acton" || k.startsWith("acton ")) return "Acton Centre";
+  return s;
+}
+
+function nhsParseUkDate(raw: string, yearHint?: number): Date | null {
+  const m = String(raw || "").trim().match(/(\d{1,2})\s+([A-Za-z]{3,})(?:\s+(\d{4}))?/);
+  if (!m) return null;
+  const month = NHS_MONTH_INDEX[m[2].slice(0, 3).toLowerCase()];
+  if (month == null) return null;
+  const year = m[3] ? Number(m[3]) : yearHint;
+  if (!year) return null;
+  return new Date(Date.UTC(year, month, Number(m[1])));
+}
+
+function nhsWeekdays(slot: string): number[] {
+  const s = slot.toLowerCase();
+  if (/mon\s*-\s*fri|monday\s+to\s+friday/.test(s)) return [1, 2, 3, 4, 5];
+  const out: number[] = [];
+  const re = /\b(mon|tue|wed|thu|fri|sat|sun)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(s))) {
+    const day = NHS_DAY_INDEX[m[1]];
+    if (!out.includes(day)) out.push(day);
+  }
+  return out;
+}
+
+function nhsSessionDateLines(datesRaw: string, slot: string): { count: number; lines: string[] } {
+  const dates = String(datesRaw || "");
+  const range = dates.match(
+    /(\d{1,2}\s+[A-Za-z]{3,}\s+\d{4})\s+to\s+(\d{1,2}\s+[A-Za-z]{3,}\s+\d{4})/i,
+  );
+  if (!range) return { count: 0, lines: [] };
+  const end = nhsParseUkDate(range[2]);
+  const rangeStart = nhsParseUkDate(range[1]);
+  if (!end || !rangeStart) return { count: 0, lines: [] };
+  const fromBit = dates.match(/service from\s+(\d{1,2}\s+[A-Za-z]{3,})/i);
+  const start = fromBit
+    ? nhsParseUkDate(fromBit[1], end.getUTCFullYear()) || rangeStart
+    : rangeStart;
+  const days = nhsWeekdays(slot);
+  if (!days.length || start.getTime() > end.getTime()) return { count: 0, lines: [] };
+  const hits: Date[] = [];
+  for (let t = start.getTime(); t <= end.getTime(); t += 86400000) {
+    const d = new Date(t);
+    if (days.includes(d.getUTCDay())) hits.push(d);
+  }
+  const groups: Date[][] = [];
+  let key = "";
+  for (const d of hits) {
+    const dow = d.getUTCDay() || 7;
+    const monday = new Date(d);
+    monday.setUTCDate(d.getUTCDate() - dow + 1);
+    const nextKey = monday.toISOString().slice(0, 10);
+    if (nextKey !== key) {
+      groups.push([]);
+      key = nextKey;
+    }
+    groups[groups.length - 1].push(d);
+  }
+  return {
+    count: hits.length,
+    lines: groups.map((g) => g.map((d) => nhsOrdinal(d.getUTCDate())).join(", ")),
+  };
+}
+
+/** NHS PDF service block: labeled lines, dates grouped by week. */
+export function formatNhsInvoiceServiceLines(line: PortalInvoiceLineItem): string[] {
+  const description = String(line.description || "").trim();
+  const detail = String(line.detail || "").trim();
+  const datesRaw = String(line.dates || "").trim();
+  const service = description
+    .replace(/\s*\(\d+\s*:\s*\d+\)\s*/g, " ")
+    .replace(/\s*[·|].*$/, "")
+    .replace(/\s*weekly package\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  let slot = "";
+  let venue = "";
+  let time = "";
+  let support = "";
+  for (const part of detail.split(/\s*[·|]\s*/).map((s) => s.trim()).filter(Boolean)) {
+    if (/\d{1,2}[.:]\d{2}/.test(part)) {
+      time = part.replace(/\s+/g, "");
+      continue;
+    }
+    if (/\b(mon|tue|wed|thu|fri|sat|sun)/i.test(part)) {
+      slot = part;
+      continue;
+    }
+    const ratio = part.match(/\b(\d+\s*:\s*\d+)\b/);
+    if (ratio && !/\d{1,2}:\d{2}/.test(part)) {
+      support = ratio[1].replace(/\s+/g, "");
+      continue;
+    }
+    if (/^cab$/i.test(part)) {
+      support = "CAB";
+      continue;
+    }
+    venue = part;
+  }
+  if (!support) {
+    const fromTitle = description.match(/\((\d+\s*:\s*\d+)\)/);
+    if (fromTitle) support = fromTitle[1].replace(/\s+/g, "");
+  }
+  const period = datesRaw.match(
+    /(\d+\s+weeks?)\s*[·\-]\s*(\d{1,2}\s+[A-Za-z]{3,}\s+\d{4}\s+to\s+\d{1,2}\s+[A-Za-z]{3,}\s+\d{4})/i,
+  );
+  const sessions = nhsSessionDateLines(datesRaw, slot);
+  const lines = [
+    service ? `Service: ${service}` : "",
+    venue ? `Venue: ${nhsVenueLabel(venue)}` : "",
+    slot ? `Slot: ${slot}` : "",
+    time ? `Time: ${time}` : "",
+    support ? `Support: ${support}` : "",
+    period ? `Period: ${period[1]} - ${period[2].replace(/\s+/g, " ")}` : "",
+    sessions.count ? `Sessions: ${sessions.count}` : "",
+    sessions.lines.length ? "Dates:" : "",
+    ...sessions.lines,
+    !sessions.lines.length && datesRaw ? `Dates: ${datesRaw.replace(/^Dates:\s*/i, "")}` : "",
+  ].filter(Boolean);
+  return lines.length ? lines : [description || "Service"];
+}
+
 export function fundedProvisionDescriptionLead(lines: PortalInvoiceLineItem[]): string {
   const environments = Array.from(
     new Set((lines || []).map(fundedEnvironmentForLine).filter(Boolean)),

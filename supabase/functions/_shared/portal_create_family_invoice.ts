@@ -19,6 +19,7 @@ import {
   paymentSchedulePlanShortLabel,
 } from "./portal_invoice_payment_schedule.ts";
 import {
+  formatNhsInvoiceServiceLines,
   lineItemsToDescription,
   type PortalInvoiceLineItem,
 } from "./portal_xero_product_catalog.ts";
@@ -443,6 +444,20 @@ export function familyBookingPaymentMethodLabel(
   return `${channel} (${plan.replace(/\s*\([^)]*\)\s*/g, " ").trim()})`;
 }
 
+function nhsPdfLineItems(
+  lines: PortalInvoiceLineItem[] | undefined,
+  nhs: boolean,
+): PortalInvoiceLineItem[] {
+  const list = lines || [];
+  if (!nhs) return list;
+  return list.map((line) => ({
+    ...line,
+    description: formatNhsInvoiceServiceLines(line).join("\n"),
+    detail: null,
+    dates: null,
+  }));
+}
+
 function invoiceDescriptionLines(input: {
   lineDescription: string;
   vatMode: PortalInvoiceVatMode;
@@ -517,8 +532,14 @@ function invoiceDescriptionLines(input: {
     /* NHS: month stays in the top Reference box only.
      * Body: Client's ID NWL… + Reference = shared PO (XXPRASHERV1). */
     if (input.nhsInvoice) {
+      const rawLead = descriptionBody.find((s) => s.trim()) ||
+        "Structured activity support delivered within a day centre environment for a SEND participant as part of funded provision.";
+      const splitAt = rawLead.search(/\s+for a SEND participant\b/i);
+      const leadLines = splitAt > 0
+        ? [rawLead.slice(0, splitAt).trim(), rawLead.slice(splitAt).trim()]
+        : [rawLead];
       return [
-        ...descriptionBody,
+        ...leadLines,
         "",
         `Client's ID: ${formatNhsClientIdLabel(input.clientIdLabel)}`,
         `Reference: ${input.poLabel || "XXPRASHERV1"}`,
@@ -780,7 +801,7 @@ export async function createPortalFamilyInvoice(
       totalGbp: amountGbp,
       quantity,
       descriptionLines,
-      lineItems: input.lineItems || [],
+      lineItems: nhsPdfLineItems(input.lineItems, nhsInvoice),
       billToName,
       billToLines,
       participantName: displayName,
@@ -1145,7 +1166,7 @@ export async function regeneratePortalInvoiceSharePdf(
       totalGbp: amountGbp,
       quantity,
       descriptionLines,
-      lineItems,
+      lineItems: nhsPdfLineItems(lineItems, nhsInvoice),
       billToName,
       billToLines,
       participantName: displayName,

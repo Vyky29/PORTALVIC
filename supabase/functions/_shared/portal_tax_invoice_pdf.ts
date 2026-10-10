@@ -135,6 +135,19 @@ function pdfSafeText(raw: unknown): string {
     .trim();
 }
 
+function wrapPdfLinesKeepingBreaks(text: string, maxChars: number, maxLines: number): string[] {
+  const out: string[] = [];
+  for (const part of String(text || "").split(/\n/)) {
+    if (!part.trim()) {
+      out.push("");
+    } else {
+      out.push(...wrapPdfLines(part, maxChars));
+    }
+    if (out.length >= maxLines) break;
+  }
+  return out.slice(0, maxLines);
+}
+
 function wrapPdfLines(text: string, maxChars = 68): string[] {
   const clean = pdfSafeText(text);
   if (!clean) return [];
@@ -442,7 +455,7 @@ export async function buildPortalTaxInvoicePdf(
           )
           : round4Money(rowSplit.net / line.quantity);
       const rowVatLabel = rowIsCredit ? "No VAT" : vatLabel;
-      const rowDesc = wrapPdfLines(line.description, 46).slice(0, 3);
+      const rowDesc = wrapPdfLinesKeepingBreaks(line.description, 52, 20);
       const rowDetail = line.detail ? wrapPdfLines(line.detail, 40).slice(0, 2) : [];
       // Session date lists can wrap past 2 lines (Autumn Mon/Wed blocks).
       const rowDates = line.dates ? wrapPdfLines(line.dates, 55).slice(0, 4) : [];
