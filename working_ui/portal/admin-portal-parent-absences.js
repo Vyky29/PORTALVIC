@@ -1145,6 +1145,19 @@
     return j;
   }
 
+  function parentOfferNotifyNote(notify) {
+    if (!notify) return '';
+    if (notify.ok) {
+      return (
+        ' · email ' +
+        (notify.email_status || 'skipped') +
+        ', WhatsApp ' +
+        (notify.whatsapp_status || 'skipped')
+      );
+    }
+    return ' · parent message failed';
+  }
+
   function bindRowActions(hostEl) {
     if (!hostEl) return;
     hostEl.querySelectorAll('[data-absence-reopen]').forEach(function (btn) {
@@ -1227,6 +1240,8 @@
                     'Makeup granted but offer failed: ' + (o.message || o.error),
                     'error'
                   );
+                } else {
+                  extra += parentOfferNotifyNote(o.parent_notify);
                 }
                 if (typeof cfg.closeModal === 'function') cfg.closeModal();
                 finish();
@@ -1303,7 +1318,11 @@
               if (o.error) {
                 cfg.toast('Grant ok; offer failed: ' + (o.message || o.error), 'error');
               } else {
-                cfg.toast('Offer sent. The parent Accepts or Declines in the portal. The seat is not on the roster until they Accept.', 'ok');
+                cfg.toast(
+                  'Offer sent. The parent Accepts or Declines in the portal. The seat is not on the roster until they Accept.' +
+                    parentOfferNotifyNote(o.parent_notify),
+                  o.parent_notify && o.parent_notify.ok === false ? 'error' : 'ok'
+                );
               }
               void renderHost(global.document.getElementById('portalParentAbsenceHost'));
             });
