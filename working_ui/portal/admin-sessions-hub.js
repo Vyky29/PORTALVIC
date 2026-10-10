@@ -14318,6 +14318,34 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     supportKeys = sortStaffKeys(supportKeys);
     climbKeys = sortStaffKeys(climbKeys);
 
+    function columnHasDayCentre(key) {
+      var items = byKey[key] || [];
+      for (var di = 0; di < items.length; di++) {
+        var svc = items[di] && items[di].slot ? items[di].slot.service : "";
+        if (isDayCentreService(svc)) return true;
+      }
+      return false;
+    }
+    function splitDayCentreFirst(list) {
+      var dc = [];
+      var rest = [];
+      (list || []).forEach(function (key) {
+        if (columnHasDayCentre(key)) dc.push(key);
+        else rest.push(key);
+      });
+      return { dc: dc, rest: rest };
+    }
+    /*
+     * One grid. Day Centre columns lead, then everyone else fills the
+     * gaps. A new row starts only when the row above is full, so climbing
+     * does not open a line of its own under a half-empty row.
+     */
+    var swimSplit = splitDayCentreFirst(swimKeys);
+    var supportSplit = splitDayCentreFirst(supportKeys);
+    var climbSplit = splitDayCentreFirst(climbKeys);
+    var boardKeys = swimSplit.dc
+      .concat(supportSplit.dc, climbSplit.dc, swimSplit.rest, supportSplit.rest, climbSplit.rest);
+
     function renderCols(keys) {
       return keys
         .map(function (key) {
@@ -14326,13 +14354,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         .join("");
     }
 
-    /*
-     * Row 1: swimming instructors + hub support (typically 6 on Sunday).
-     * Row 2: climbing only (typically Alex + Carlos) — same 6-track grid so
-     * card width matches the row above (not stretched to half-width).
-     */
-    var poolKeys = swimKeys.concat(supportKeys);
-    if (!poolKeys.length && !climbKeys.length) {
+    if (!boardKeys.length) {
       return (
         '<div class="ash-day-board" data-ash-day-board="1">' +
         '<div class="ash-db-empty">' +
@@ -14340,21 +14362,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         "</div></div>"
       );
     }
-    var html = '<div class="ash-day-board" data-ash-day-board="1">';
-    if (poolKeys.length) {
-      html +=
-        '<div class="ash-day-board__group ash-day-board__group--pool">' +
-        renderCols(poolKeys) +
-        "</div>";
-    }
-    if (climbKeys.length) {
-      html +=
-        '<div class="ash-day-board__group ash-day-board__group--climb" aria-label="Climbing">' +
-        renderCols(climbKeys) +
-        "</div>";
-    }
-    html += "</div>";
-    return html;
+    return (
+      '<div class="ash-day-board" data-ash-day-board="1">' +
+      '<div class="ash-day-board__group ash-day-board__group--pool">' +
+      renderCols(boardKeys) +
+      "</div></div>"
+    );
   };
 
   AdminSessionsHub.prototype.htmlTrackingTableBody = function (displaySlots, unitComplete, unitAbsent) {

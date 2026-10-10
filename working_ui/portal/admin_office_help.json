@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v366",
+  "version": "2026-10-10-v367",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -65,7 +65,10 @@
             "wait hold",
             "hueco",
             "photo",
-            "foto"
+            "foto",
+            "day centre",
+            "fila",
+            "domingo"
           ],
           "demos": [
             {
@@ -89,7 +92,8 @@
             "An empty seat and a Hold Waitlist do not need a cover. They do not appear on a worker card. A real child on that day still needs a cover when their instructor is off.",
             "Parents do not see instructor day offs or COVER NEEDED — that is office/staff only.",
             "Aquatic halves may merge on Staff Today; Overview / Schedule keep 30-minute cards when needed.",
-            "The page itself stays quiet. The i next to Sessions Overview holds what the board is. Live row counts stay off the page."
+            "The page itself stays quiet. The i next to Sessions Overview holds what the board is. Live row counts stay off the page.",
+            "Columns with a Day Centre card sit together at the start of the first row. If that row still has space, someone without Day Centre can fill it. A new row starts only when the row above is full, including on Sunday."
           ],
           "es": {
             "title": "Sessions Overview (el tablero del dia)",
@@ -107,7 +111,8 @@
               "Una plaza vacia y un Hold Waitlist no necesitan cover. No salen en la tarjeta del trabajador. Un nino de verdad ese dia si necesita cover cuando su instructor esta libre.",
               "Los padres no ven dias libres del instructor ni COVER NEEDED. Eso es solo oficina y staff.",
               "Las medias de aquatic pueden juntarse en Staff Today. Overview y Schedule mantienen tarjetas de 30 minutos cuando hace falta.",
-              "La pagina se queda limpia. La i al lado de Sessions Overview explica el tablero. Los contadores vivos no van en la pagina."
+              "La pagina se queda limpia. La i al lado de Sessions Overview explica el tablero. Los contadores vivos no van en la pagina.",
+              "Las columnas con una tarjeta de Day Centre van juntas al principio de la primera fila. Si en esa fila sobra sitio, entra alguien sin Day Centre. Una fila nueva empieza solo cuando la de arriba esta llena, tambien el domingo."
             ]
           }
         },
