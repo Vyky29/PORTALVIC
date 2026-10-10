@@ -169,6 +169,14 @@ Deno.serve(async (req) => {
       results.push({ id: shareId, ok: true, skipped: "already_has_xero_id" });
       continue;
     }
+    const tracker = String(share.notes || "").match(
+      /Consolidated payment tracker:\s*([0-9a-f-]{20,80})/i,
+    );
+    if (tracker && tracker[1] !== shareId) {
+      skipped += 1;
+      results.push({ id: shareId, ok: true, skipped: "schedule_shadow" });
+      continue;
+    }
 
     const cid = clean(share.contact_id, 120);
     const parent = parentByContact.get(cid) || {};

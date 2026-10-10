@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v385",
+  "version": "2026-10-10-v386",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2104,7 +2104,8 @@
             "Do not send a lost slot. Do not send an unpaid draft.",
             "A red Xero failed line will not send until the Xero login is accepted again.",
             "Tax inclusive means the leftover amount is the gross. Xero takes the VAT out of it. Tax exclusive would add VAT on top and the line would not match Tide.",
-            "The GoCardless fee is not 6.00 on every month. It is capped at 6.00. Smaller months cost less. Use the gap on that Tide line."
+            "The GoCardless fee is not 6.00 on every month. It is capped at 6.00. Smaller months cost less. Use the gap on that Tide line.",
+            "Match the term invoice only. A hidden monthly copy is the same month. Do not send it to Xero. A note that says GoCardless cancelled on that copy is not a cancelled collection."
           ],
           "es": {
             "title": "Stripe, Xero y Tide",
@@ -2126,7 +2127,8 @@
               "No mandes un lost slot. No mandes un borrador sin pagar.",
               "Una linea roja Xero failed no se envia hasta que el login de Xero vuelva a aceptarse.",
               "Tax inclusive quiere decir que el pico es el bruto. Xero saca el VAT de dentro. Si lo pones exclusive, suma el VAT encima y la linea no cuadra con Tide.",
-              "La comision de GoCardless no es 6.00 en todos los meses. El tope es 6.00. En los meses pequenos es menos. Usa la diferencia de esa linea de Tide."
+              "La comision de GoCardless no es 6.00 en todos los meses. El tope es 6.00. En los meses pequenos es menos. Usa la diferencia de esa linea de Tide.",
+              "Casa solo la factura del term. Una copia hidden del mes es el mismo mes. No la mandes a Xero. Una nota que diga GoCardless cancelled en esa copia no es un cobro cancelado."
             ]
           }
         },

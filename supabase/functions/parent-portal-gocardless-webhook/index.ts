@@ -61,7 +61,10 @@ async function planGcInstalment(
   paidViaRef: string,
   fallbackAmount: number,
 ): Promise<GcInstalmentPlan> {
-  if (paymentRef && schedule.some((row) => scheduleRowHasPaymentId(row, paymentRef))) {
+  const stamped = paymentRef
+    ? schedule.find((row) => scheduleRowHasPaymentId(row, paymentRef))
+    : undefined;
+  if (stamped && String(stamped.status || "pending").toLowerCase() === "paid") {
     return { kind: "already" };
   }
   let amountGbp = 0;
@@ -72,6 +75,14 @@ async function planGcInstalment(
       if (pay.data.amount_pence > 0) amountGbp = Math.round(pay.data.amount_pence) / 100;
       description = String(pay.data.description || "");
     }
+  }
+  if (stamped) {
+    const rowAmt = Number(stamped.amount_gbp) || 0;
+    return {
+      kind: "apply",
+      amountGbp: amountGbp > 0 ? amountGbp : rowAmt || fallbackAmount,
+      targetSeq: Number(stamped.seq) || null,
+    };
   }
   const month = instalmentMonthKey(description);
   if (month) {
@@ -494,15 +505,22 @@ async function handlePaymentEvent(
     const details = (event.details || {}) as Record<string, unknown>;
     const cause = clean(details.cause || details.description || action, 200);
     if (paymentId || invoiceShareId) {
-      let q = supabase
-        .from("portal_parent_invoice_share")
-        .update({
-          notes: `GoCardless ${action}: ${cause}`.slice(0, 500),
-          updated_at: new Date().toISOString(),
-        });
-      if (invoiceShareId) q = q.eq("id", invoiceShareId);
-      else q = q.eq("gocardless_payment_id", paymentId);
-      await q;
+      let lookup = supabase.from("portal_parent_invoice_share").select("id, notes");
+      lookup = invoiceShareId
+        ? lookup.eq("id", invoiceShareId)
+        : lookup.eq("gocardless_payment_id", paymentId);
+      const { data: row } = await lookup.maybeSingle();
+      const prev = String(row?.notes || "");
+      const tracker = prev.match(/Consolidated payment tracker:\s*[0-9a-f-]{20,80}/i);
+      const notes = (tracker
+        ? `${tracker[0]}. GoCardless ${action}: ${cause}`
+        : `GoCardless ${action}: ${cause}`).slice(0, 500);
+      if (row?.id) {
+        await supabase
+          .from("portal_parent_invoice_share")
+          .update({ notes, updated_at: new Date().toISOString() })
+          .eq("id", row.id);
+      }
     }
     return { ok: true, noted: action, payment_id: paymentId || null };
   }

@@ -49,7 +49,7 @@ export async function pushPortalInvoiceShareToXero(
   const { data: share, error } = await admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, contact_id, document_id, invoice_number, amount_gbp, due_date, quantity, unit_price_gbp, line_description, line_items, reference_text, vat_mode, xero_invoice_id, created_at, payment_status, payment_method_hint, payment_schedule, notes",
+      "id, contact_id, document_id, invoice_number, amount_gbp, due_date, quantity, unit_price_gbp, line_description, line_items, reference_text, vat_mode, xero_invoice_id, created_at, payment_status, payment_method_hint, payment_schedule, notes, share_status",
     )
     .eq("id", shareId)
     .maybeSingle();
@@ -59,6 +59,15 @@ export async function pushPortalInvoiceShareToXero(
   }
   if (clean(share.xero_invoice_id, 80)) {
     return { ok: true, xero_invoice_id: String(share.xero_invoice_id), skipped: true };
+  }
+  if (clean(share.share_status, 20).toLowerCase() === "hidden") {
+    return { ok: false, error: "xero_skip_hidden_schedule_copy" };
+  }
+  const tracker = String(share.notes || "").match(
+    /Consolidated payment tracker:\s*([0-9a-f-]{20,80})/i,
+  );
+  if (tracker && tracker[1] !== String(share.id)) {
+    return { ok: false, error: "xero_skip_schedule_shadow" };
   }
 
   const payStatus = clean(share.payment_status, 40).toLowerCase();
