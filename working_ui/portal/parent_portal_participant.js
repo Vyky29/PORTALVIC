@@ -6806,7 +6806,10 @@
       gallery =
         global.PortalClientSessionsOverview &&
         typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
-          ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, { parentDownloads: true })
+          ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, {
+              parentDownloads: true,
+              noteMessages: data.note_messages || [],
+            })
           : "";
     } else if (aquaticOnly) {
       gallery =
@@ -6819,7 +6822,10 @@
       gallery =
         global.PortalClientSessionsOverview &&
         typeof global.PortalClientSessionsOverview.achievementsGalleryHtml === "function"
-          ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, { parentDownloads: true })
+          ? global.PortalClientSessionsOverview.achievementsGalleryHtml(achievements, {
+              parentDownloads: true,
+              noteMessages: data.note_messages || [],
+            })
           : '<p class="pp-muted">No session photos for this participant yet.</p>';
     }
     var subNote = aquaticOnly && !achievements.length
@@ -6838,6 +6844,7 @@
     );
     bindBack(host, data, opts);
     bindAchievementDownloads(host, data, opts);
+    bindAchievementComments(host, data, opts);
     if (
       global.PortalClientSessionsOverview &&
       typeof global.PortalClientSessionsOverview.primeAchievementVideoFrames === "function"
@@ -6885,6 +6892,62 @@
           })
           .finally(function () {
             btn.removeAttribute("aria-busy");
+          });
+      });
+    });
+  }
+
+  function bindAchievementComments(host, data, opts) {
+    if (!opts || typeof opts.sendNoteMessage !== "function") return;
+    host.querySelectorAll("[data-pp-ach-comment]").forEach(function (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var box = form.querySelector("textarea");
+        var status = form.querySelector(".pp-ach-comment__status");
+        var btn = form.querySelector("button");
+        var text = String((box && box.value) || "").replace(/\s+/g, " ").trim();
+        var photoId = form.getAttribute("data-pp-ach-comment") || "";
+        if (text.length < 2) {
+          if (status) {
+            status.hidden = false;
+            status.textContent = "Write a little more before sending.";
+          }
+          return;
+        }
+        if (btn) btn.disabled = true;
+        opts
+          .sendNoteMessage({
+            note_key: "photo:" + photoId,
+            session_date: form.getAttribute("data-pp-ach-date") || "",
+            service_label: "Achievement photo",
+            message: text,
+          })
+          .then(function (saved) {
+            if (!Array.isArray(data.note_messages)) data.note_messages = [];
+            data.note_messages.push(
+              (saved && saved.message) || {
+                note_key: "photo:" + photoId,
+                parent_body: text,
+                admin_reply: "",
+              },
+            );
+            if (box) box.value = "";
+            if (status) {
+              status.hidden = false;
+              status.textContent = "Sent to the office.";
+            }
+            var line =
+              '<p class="pp-ach-comment__mine"><strong>You</strong><br />' + esc(text) + "</p>";
+            form.insertAdjacentHTML("beforebegin", line);
+          })
+          .catch(function () {
+            if (status) {
+              status.hidden = false;
+              status.textContent = "Could not send. Try again in a moment.";
+            }
+          })
+          .finally(function () {
+            if (btn) btn.disabled = false;
           });
       });
     });

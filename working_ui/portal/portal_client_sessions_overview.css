@@ -837,6 +837,9 @@ body.portal-force-landscape{
   gap:10px;
   min-width:0;
 }
+.pp-ach-view .pp-ach-grid{
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+}
 .pp-ach-item{
   margin:0;
   min-width:0;
@@ -918,6 +921,38 @@ body.portal-force-landscape{
 .pp-ach-dl-btn--saved{
   opacity:.72;
   cursor:default;
+}
+.pp-ach-comment{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-top:8px;
+  min-width:0;
+}
+.pp-ach-comment__label{
+  font-size:11px;
+  font-weight:700;
+  color:var(--ink,#173247);
+}
+.pp-ach-comment textarea{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  min-height:64px;
+  border:1px solid rgba(23,50,71,.14);
+  border-radius:8px;
+  padding:6px 8px;
+  font:inherit;
+  font-size:12px;
+  overflow-wrap:anywhere;
+}
+.pp-ach-comment__mine,
+.pp-ach-comment__status{
+  margin:6px 0 0;
+  font-size:11px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+  min-width:0;
 }
 .pp-participant-body{
   min-width:0;

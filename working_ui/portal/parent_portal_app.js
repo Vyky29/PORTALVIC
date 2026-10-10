@@ -93,7 +93,10 @@
     if (sectionsLoaded.indexOf("weekly_notes") >= 0 && Array.isArray(patch.weekly_notes)) {
       base.weekly_notes = patch.weekly_notes;
     }
-    if (sectionsLoaded.indexOf("weekly_notes") >= 0 && Array.isArray(patch.note_messages)) {
+    if (
+      (sectionsLoaded.indexOf("weekly_notes") >= 0 || sectionsLoaded.indexOf("achievements") >= 0) &&
+      Array.isArray(patch.note_messages)
+    ) {
       base.note_messages = patch.note_messages;
     }
     if (patch.weekly_note_latest !== undefined) base.weekly_note_latest = patch.weekly_note_latest;

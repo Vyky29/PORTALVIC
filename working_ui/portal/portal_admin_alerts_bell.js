@@ -1424,17 +1424,10 @@
         .gte("responded_at", sinceIso)
         .order("responded_at", { ascending: false })
         .limit(20);
-      var messagesP = client
-        .from("portal_parent_whatsapp_inbound")
-        .select("id, contact_name, body_text, created_at, meta")
-        .gte("created_at", sinceIso)
-        .order("created_at", { ascending: false })
-        .limit(40);
-      var packed = await Promise.all([photosP, consentsP, declinedP, messagesP]);
+      var packed = await Promise.all([photosP, consentsP, declinedP]);
       var photosRes = packed[0];
       var consentsRes = packed[1];
       var declinedRes = packed[2];
-      var messagesRes = packed[3];
       var contactIds = [];
       function addContact(id) {
         id = String(id || "").trim();
@@ -1551,34 +1544,6 @@
           );
           n++;
         });
-      }
-      if (messagesRes && !messagesRes.error) {
-        (messagesRes.data || []).forEach(function (row) {
-          if (!row || !row.id) return;
-          var meta = row.meta && typeof row.meta === "object" ? row.meta : {};
-          var src = String(meta.source || "");
-          if (src !== "parent_portal" && src !== "parent_app") return;
-          var who = String(meta.participant_display || row.contact_name || "Parent").trim() || "Parent";
-          var snippet = String(row.body_text || "").replace(/\s+/g, " ").trim();
-          if (snippet.length > 90) snippet = snippet.slice(0, 88) + "...";
-          pushParentAction(
-            {
-              id: "pmsg-" + row.id,
-              title: "Message from parent · " + who,
-              sub: (snippet ? snippet + " · " : "") + "Parent portal — Messages",
-              created_at: row.created_at,
-              kind: "parent_action",
-              view: "portal_parent_notify_log",
-              recordId: String(row.id),
-              clientName: who,
-              sessionDate: "",
-            },
-            { silent: silent }
-          );
-          n++;
-        });
-      } else if (messagesRes && messagesRes.error) {
-        console.warn("[admin-bell] parent messages", messagesRes.error);
       }
       sortNewestFirst();
       if (typeof global.__portalAdminRenderAlerts === "function") {

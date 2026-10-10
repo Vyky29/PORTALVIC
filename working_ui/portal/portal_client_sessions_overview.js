@@ -1406,6 +1406,39 @@
               esc(dlLabel) +
               "</button>"
             : "";
+          var photoKey = "photo:" + photoId;
+          var photoNotes = parentDownloads && photoId
+            ? (opts.noteMessages || []).filter(function (row) {
+                return row && String(row.note_key || "") === photoKey;
+              })
+            : [];
+          var commentForm = parentDownloads && photoId
+            ? photoNotes
+                .map(function (row) {
+                  var line =
+                    '<p class="pp-ach-comment__mine"><strong>You</strong><br />' +
+                    esc(row.parent_body || "") +
+                    "</p>";
+                  if (row.admin_reply) {
+                    line +=
+                      '<p class="pp-ach-comment__mine"><strong>Office</strong><br />' +
+                      esc(row.admin_reply) +
+                      "</p>";
+                  }
+                  return line;
+                })
+                .join("") +
+              '<form class="pp-ach-comment" data-pp-ach-comment="' +
+              esc(photoId) +
+              '" data-pp-ach-date="' +
+              esc(clean(a.session_date).slice(0, 10)) +
+              '">' +
+              '<label class="pp-ach-comment__label">Comment on this photo</label>' +
+              '<textarea maxlength="2000" placeholder="Write to the office"></textarea>' +
+              '<button type="submit" class="pp-ach-dl-btn">Send</button>' +
+              '<p class="pp-ach-comment__status" role="status" hidden></p>' +
+              "</form>"
+            : "";
           return (
             '<figure class="' +
             itemClass +
@@ -1421,6 +1454,7 @@
             '<figcaption class="pp-ach-cap">' +
             esc(when) +
             dlBtn +
+            commentForm +
             "</figcaption></figure>"
           );
         })

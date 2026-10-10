@@ -111,9 +111,9 @@
   <script src="/portal/admin-participant-photo-frame.js?v=20261009-photo-front"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
   <script src="/portal/portal_staff_photos.js?v=20261005-expense-face"></script>
-  <script src="/portal/admin-portal-achievements.js?v=20261001-old-section"></script>
+  <script src="/portal/admin-portal-achievements.js?v=20261010-photo-comment"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
-  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20261007-photo-center" />
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20261010-photo-comment" />
 <script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
 <script src="/portal/portal_admin_topbar.js?v=20261002-photo-only"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20261004-login-hub"></script>
@@ -446,7 +446,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20261009-acat-tue"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20261010-bell-chips"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20261010-photo-bell"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20261002-no-guide";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -40978,6 +40978,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<div style="flex:1;min-width:0;padding:12px 16px">'+
           '<div style="min-width:0"><strong>'+esc(portalAdminShowDateText(a.title))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub))+'</div></div>'+
           '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'+
+          '<button type="button" class="btn btn--ghost btn--sm" data-photo-bell-act="view" data-alert-record-id="'+esc(a.id || '')+'">View</button>'+
           '<button type="button" class="btn btn--ghost btn--sm" data-photo-bell-act="close" data-alert-record-id="'+esc(a.id || '')+'">Close</button>'+
           '</div></div></div>';
       }).join('');
@@ -40989,6 +40990,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<div style="flex:1;min-width:0;padding:12px 16px">'+
           '<div style="min-width:0"><strong>'+esc(portalAdminShowDateText(a.title))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub))+'</div></div>'+
           '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'+
+          (a.photoComment ? '<button type="button" class="btn btn--ghost btn--sm" data-parent-bell-act="view" data-alert-record-id="'+rid+'">View</button>' : '')+
           '<button type="button" class="btn btn--ghost btn--sm" data-parent-bell-act="reply" data-alert-record-id="'+rid+'">Reply</button>'+
           '<button type="button" class="btn btn--ghost btn--sm" data-parent-bell-act="close" data-alert-record-id="'+rid+'">Close</button>'+
           '</div>'+
@@ -41000,7 +41002,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '</div></div></div></div>';
       }).join('');
       var emptyHtml = !activityHtml && !venueHtml && !noteHtml && !photoHtml && !parentNoteHtml
-        ? '<p class="muted" style="margin:12px 16px">Nothing open. Pay and Decide stay until that work is done. View and Close are for something already finished, including a parent photo, consents, or message.</p>'
+        ? '<p class="muted" style="margin:12px 16px">Nothing open. Pay and Decide stay until that work is done. View and Close are for something already finished, including a parent photo, a photo download, a comment on a photo, or consents.</p>'
         : '';
       var clearWellbeingBtn = wellbeingN > 0
         ? '<button type="button" class="btn btn--ghost btn--sm" id="portalAdminClearWellbeingAlerts" style="margin-left:auto;font-size:12px">Clear wellbeing ('+wellbeingN+')</button>'
@@ -41236,7 +41238,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .order('parent_downloaded_at', { ascending: false })
         .limit(30);
       var notesP = client.from('portal_parent_note_messages')
-        .select('id, child_name, session_date, service_label, parent_body, created_at')
+        .select('id, child_name, session_date, service_label, parent_body, note_key, created_at')
         .gte('created_at', since)
         .order('created_at', { ascending: false })
         .limit(30);
@@ -41260,7 +41262,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               photos.push({
                 id: id,
                 title: 'Photo downloaded · ' + who,
-                sub: dateIso || 'Achievement photo',
+                sub: (dateIso ? dateIso + ' · ' : '') + 'Parent portal — Photos/Videos',
                 clientName: who,
                 sessionDate: dateIso
               });
@@ -41279,12 +41281,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var label = String(row.service_label || '').trim();
               var snippet = String(row.parent_body || '').replace(/\s+/g, ' ').trim();
               if(snippet.length > 90) snippet = snippet.slice(0, 88) + '...';
+              var onPhoto = String(row.note_key || '').indexOf('photo:') === 0;
               familyNotes.push({
                 id: id,
-                title: 'Note from parent · ' + who,
-                sub: [label, dateIso, snippet].filter(Boolean).join(' · '),
+                title: (onPhoto ? 'Comment on a photo · ' : 'Note from parent · ') + who,
+                sub: (onPhoto
+                  ? [dateIso, snippet, 'Parent portal — Photos/Videos']
+                  : [label, dateIso, snippet, 'Parent portal — Notes']
+                ).filter(Boolean).join(' · '),
                 clientName: who,
-                sessionDate: dateIso
+                sessionDate: dateIso,
+                photoComment: onPhoto
               });
             });
           }else if(notesRes && notesRes.error){
@@ -42291,6 +42298,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(photoAct && alertsPopEl.contains(photoAct)){
             ev.preventDefault();
             ev.stopPropagation();
+            var photoBellAct = String(photoAct.getAttribute('data-photo-bell-act') || '').trim();
+            if(photoBellAct === 'view'){
+              portalAdminSetAlertsPopOpen(false);
+              setView('participant_achievements');
+              return;
+            }
             portalAdminAckFamilyBell('photo_download', String(photoAct.getAttribute('data-alert-record-id') || '').trim());
             return;
           }
@@ -42300,6 +42313,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ev.stopPropagation();
             var parentBellAct = String(parentAct.getAttribute('data-parent-bell-act') || '').trim();
             var parentId = String(parentAct.getAttribute('data-alert-record-id') || '').trim();
+            if(parentBellAct === 'view'){
+              portalAdminSetAlertsPopOpen(false);
+              setView('participant_achievements');
+              return;
+            }
             if(parentBellAct === 'close'){
               portalAdminAckFamilyBell('parent_note', parentId);
               return;

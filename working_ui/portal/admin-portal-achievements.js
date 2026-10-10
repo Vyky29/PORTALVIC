@@ -355,7 +355,7 @@
 
   async function fetchAllPhotos(client) {
     var res = await client.rpc("portal_admin_list_achievement_photos_all");
-    if (!res.error) return res.data || [];
+    if (!res.error) return attachParentPhotoComments(client, res.data || []);
     console.warn("[achievements] list RPC failed, using table fallback", res.error);
     var fallback = await client
       .from("portal_participant_achievement_photos")
@@ -366,7 +366,31 @@
       .order("client_name", { ascending: true })
       .order("created_at", { ascending: true });
     if (fallback.error) throw fallback.error;
-    return fallback.data || [];
+    return attachParentPhotoComments(client, fallback.data || []);
+  }
+
+  async function attachParentPhotoComments(client, rows) {
+    rows = rows || [];
+    if (!client || !rows.length) return rows;
+    var res = await client
+      .from("portal_parent_note_messages")
+      .select("note_key, parent_body, created_at")
+      .like("note_key", "photo:%")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (res.error || !res.data) return rows;
+    var latest = Object.create(null);
+    res.data.forEach(function (row) {
+      var id = String((row && row.note_key) || "").replace(/^photo:/, "");
+      if (!id || latest[id]) return;
+      var text = String(row.parent_body || "").replace(/\s+/g, " ").trim();
+      if (text.length > 80) text = text.slice(0, 78) + "...";
+      latest[id] = text;
+    });
+    rows.forEach(function (row) {
+      if (row && latest[String(row.id)]) row.parent_comment = latest[String(row.id)];
+    });
+    return rows;
   }
 
   function currentDetailStayKey(fallbackKey) {
@@ -1904,6 +1928,9 @@
           '<span class="portal-admin-achievement-thumb__who">' +
           esc(statusDetail) +
           "</span>" +
+          (row.parent_comment
+            ? '<span class="portal-admin-achievement-thumb__who">Parent: ' + esc(row.parent_comment) + "</span>"
+            : "") +
           '<span class="portal-admin-achievement-thumb__title">' +
           esc(caption) +
           "</span>";

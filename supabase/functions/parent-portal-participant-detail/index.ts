@@ -2311,7 +2311,7 @@ Deno.serve(async (req) => {
   }
 
   let noteMessages: Record<string, unknown>[] = [];
-  if (wantWeeklyNotes && !suppressSessionProgress) {
+  if ((wantWeeklyNotes || wantAchievements) && !suppressSessionProgress) {
     const { data: threadRows, error: threadErr } = await supabase
       .from("portal_parent_note_messages")
       .select("id, note_key, session_date, service_label, parent_body, admin_reply, created_at")

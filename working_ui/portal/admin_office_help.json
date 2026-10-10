@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v371",
+  "version": "2026-10-10-v372",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -3056,7 +3056,7 @@
             "On a venue row, View opens the review and Close removes it from your bell only. Another admin still has it until they Close it. Unpaid expenses, cancellations, and refunds stay until that flow is finished. A Notes row is only Relevant information with more than two words. N/A, nothing, No, and a dash do not open the bell. Outside, a Notes row has View and Close. Close removes it from your bell only. Inside the record, Escalate opens the same Register actions and does not clear it. Close inside removes it from your bell only. The session narrative and Positive do not open the bell. A makeup whose session day has passed leaves the bell.",
             "Each row has one chip for the job. Pay opens the unpaid expense or the refund still to mark paid. Decide opens an absent or cancellation still to judge. View opens something already done. Close sits next to View only when the work is finished, and it clears that row on your bell only.",
             "Makeup accepted is a light green row with View and Close. View opens Absents, refunds and credits. Close clears it on your bell only. Another admin still sees it until they close it. If the case was already decided before you opened the bell, you see Makeup accepted, not the earlier decide steps.",
-            "A parent photo, consents update, parent-portal message, or declined makeup arrives on the bell. The detail names the admin screen it changes: Active clients, Parent consents, Messages, or Absents, refunds and credits. View opens that screen. Close clears it for you only."
+            "A parent photo, consents update, or declined makeup arrives on the bell. So does a photo they download, and a comment they write on a photo in their portal. The detail names the admin screen: Active clients, Parent consents, Photos/Videos, or Absents, refunds and credits. A message they write in the portal stays in Messages. View opens that screen. Close clears it for you only. Reply on a photo comment sends the answer back to that photo."
           ],
           "es": {
             "title": "La campana es un popup",
@@ -3074,7 +3074,7 @@
               "En un venue, View abre el parte y Close lo quita solo de tu campana. El otro admin lo sigue viendo hasta que el pulse Close. Los gastos sin pagar, las cancelaciones y los refunds se quedan hasta que el flujo termine. Una fila Notes es solo Relevant information con mas de dos palabras. N/A, nothing, No y un guion no abren la campana. Fuera, Notes tiene View y Close. Close la quita solo de tu campana. Dentro, Escalate abre las mismas acciones que Register y no la quita. Close dentro la quita solo de tu campana. La narrativa de la sesion y Positive tampoco abren la campana. Un makeup de un dia que ya paso sale de la campana.",
               "Cada fila lleva un chip del trabajo. Pay abre el gasto sin pagar o el reembolso que aun hay que marcar pagado. Decide abre una falta o una cancelacion por juzgar. View abre algo que ya esta hecho. Close sale al lado de View solo cuando el trabajo ya termino, y lo quita solo de tu campana.",
               "Makeup accepted es una fila verde claro con View y Close. View abre Absents, refunds and credits. Close lo quita solo de tu campana. El otro admin lo sigue viendo hasta que lo cierre. Si el caso ya estaba juzgado antes de que abrieras la campana, ves Makeup accepted, no los pasos anteriores de decidir.",
-              "Una foto de un padre, un consentimiento, un mensaje del portal de padres o un makeup rechazado llega a la campana. El detalle dice la pantalla de admin que cambia: Active clients, Parent consents, Messages, o Absents, refunds and credits. View abre esa pantalla. Close lo quita solo para ti."
+              "Una foto de un padre, un consentimiento o un makeup rechazado llega a la campana. Tambien si se bajan una foto, o si comentan una foto de su portal. El detalle dice la pantalla de admin: Active clients, Parent consents, Photos/Videos, o Absents, refunds and credits. Un mensaje escrito en el portal se queda en Messages. View abre esa pantalla. Close lo quita solo para ti. Reply en un comentario de foto devuelve la respuesta a esa foto."
             ]
           }
         },
