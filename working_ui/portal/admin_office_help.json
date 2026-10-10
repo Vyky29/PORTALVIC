@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v379",
+  "version": "2026-10-10-v380",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2048,7 +2048,7 @@
           ],
           "tips": [
             "A GoCardless chip can sit on an invoice whose first half was marked as a bank payment. Read the instalment line for how that half was paid.",
-            "Hidden October rows can still add a Not in Xero or Xero failed count on the family chip."
+            "A hidden October GoCardless row is the same monthly collection already listed on the term invoice. Do not send that hidden row to Xero. It can still add a Not in Xero count on the family chip."
           ],
           "es": {
             "title": "Xero failed, Not in Xero y lost slot",
@@ -2062,7 +2062,7 @@
             ],
             "tips": [
               "Un chip de GoCardless puede salir en una factura cuya primera mitad se marco como banco. La linea del plazo dice como entro esa mitad.",
-              "Filas de octubre hidden pueden sumar igual Not in Xero o Xero failed en el chip de la familia."
+              "Una fila hidden de octubre de GoCardless es el mismo cobro mensual que ya esta en la factura del term. No la mandes a Xero. Puede sumar igual Not in Xero en el chip de la familia."
             ]
           }
         },
