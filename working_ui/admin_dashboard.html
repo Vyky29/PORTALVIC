@@ -446,7 +446,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20261009-acat-tue"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20261010-bell-cx"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20261010-makeup-close"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20261002-no-guide";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -40903,6 +40903,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var dismiss = '';
         if(a.kind === 'wellbeing' && a.recordId){
           dismiss = '<button type="button" class="portal-admin-wellbeing-dismiss" data-wellbeing-dismiss="'+esc(a.recordId)+'" title="Dismiss alert" aria-label="Dismiss">×</button>';
+        }else if(a.kind === 'makeup_accepted' && a.recordId){
+          dismiss = '<button type="button" class="portal-admin-wellbeing-dismiss" data-makeup-dismiss="'+esc(a.recordId)+'" title="Close for me" aria-label="Close">×</button>';
         }
         return '<div class="portal-admin-activity-row">'+
           '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit">'+portalAdminAlertFaceHtml(a)+'<div style="min-width:0;flex:1"><strong>'+esc(portalAdminShowDateText(a.title))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub))+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>'+
@@ -42335,6 +42337,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               });
               return;
             }
+          }
+          var makeupDismissBtn = ev.target && ev.target.closest ? ev.target.closest('[data-makeup-dismiss]') : null;
+          if(makeupDismissBtn && alertsPopEl.contains(makeupDismissBtn)){
+            ev.preventDefault();
+            ev.stopPropagation();
+            var makeupId = String(makeupDismissBtn.getAttribute('data-makeup-dismiss') || '').trim();
+            var makeupClient = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+            if(makeupId && typeof window.portalAdminBellDismissMakeupAccept === 'function'){
+              void window.portalAdminBellDismissMakeupAccept(makeupClient, makeupId);
+            }
+            return;
           }
           var dismissBtn = ev.target && ev.target.closest ? ev.target.closest('[data-wellbeing-dismiss]') : null;
           if(dismissBtn && alertsPopEl.contains(dismissBtn)){

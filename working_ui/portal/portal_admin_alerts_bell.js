@@ -5,6 +5,9 @@
  * pending, late incident approvals, session disruptions, general-info
  * updates, and makeup accepts whose session is today or later.
  * A makeup whose session date has passed drops off.
+ * Closing a makeup accept removes it for that admin only.
+ * If the absence was already decided, the bell keeps the accept
+ * and drops the earlier decide line.
  * Chat unread uses the Chat button badge in the header only (never this bell).
  * Absent quick marks from the session board stay off this bell.
  * A parent-portal absent with no proof is a notice (none), not a decision.
@@ -108,12 +111,49 @@
     });
   }
 
+  function makeupDismissedMap() {
+    global.__PORTAL_ADMIN_MAKEUP_DISMISSED__ =
+      global.__PORTAL_ADMIN_MAKEUP_DISMISSED__ || Object.create(null);
+    return global.__PORTAL_ADMIN_MAKEUP_DISMISSED__;
+  }
+
+  function makeupAcceptDismissed(item) {
+    if (!item || item.kind !== "makeup_accepted") return false;
+    var id = String(item.recordId || "").trim();
+    return !!(id && makeupDismissedMap()[id]);
+  }
+
   function bellShows(item) {
     if (!item || !isAllowedKind(item.kind)) return false;
     if (isInstructorCancellationReport(item)) return false;
     if (item.kind === "chat") return false;
-    if (item.kind === "makeup_accepted") return makeupStillUpcoming(item);
+    if (item.kind === "makeup_accepted") {
+      if (makeupAcceptDismissed(item)) return false;
+      return makeupStillUpcoming(item);
+    }
     return true;
+  }
+
+  /**
+   * A parent accept is the end of that absence. Drop the earlier
+   * "still to decide" line so a late viewer sees the result, not the steps.
+   */
+  function collapseJudgedMakeupProcess() {
+    var list = listRef();
+    var acceptedAbsence = Object.create(null);
+    list.forEach(function (a) {
+      if (!a || a.kind !== "makeup_accepted" || makeupAcceptDismissed(a)) return;
+      var key = String(a.caseKey || "").trim();
+      if (key) acceptedAbsence[key] = true;
+    });
+    var keys = Object.keys(acceptedAbsence);
+    if (!keys.length) return;
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list.filter(function (a) {
+      if (!a) return false;
+      var id = String(a.id || "");
+      if (id.indexOf("absdec-") !== 0 && id.indexOf("cxdec-") !== 0) return true;
+      return !acceptedAbsence[String(a.recordId || "")];
+    });
   }
 
   function unpaidExpenseCount() {
@@ -332,19 +372,25 @@
       try {
         var grants = await client
           .from("portal_parent_makeup_grants")
-          .select("id, participant_display")
+          .select("id, participant_display, absence_report_id")
           .in("id", grantIds);
         (grants.data || []).forEach(function (g) {
           if (!g || !g.id) return;
-          nameByGrant[String(g.id)] = String(g.participant_display || "").trim();
+          nameByGrant[String(g.id)] = {
+            name: String(g.participant_display || "").trim(),
+            absenceId: String(g.absence_report_id || "").trim(),
+          };
         });
       } catch (_) {}
     }
+    var dismissed = await loadMakeupDismissedIds(client);
     rows.forEach(function (r) {
       if (!r || !r.id) return;
+      if (dismissed[String(r.id)]) return;
       var sessionDay = isoDay(r.session_date);
       if (!sessionDay || sessionDay < londonTodayIso()) return;
-      var who = nameByGrant[String(r.grant_id || "")] || "Participant";
+      var grant = nameByGrant[String(r.grant_id || "")] || {};
+      var who = grant.name || "Participant";
       var when = [r.session_date, r.session_time, r.venue, r.instructor_name]
         .map(function (x) { return String(x || "").trim(); })
         .filter(Boolean)
@@ -360,10 +406,13 @@
           recordId: String(r.id),
           clientName: who,
           sessionDate: String(r.session_date || "").slice(0, 10),
+          caseKey: grant.absenceId || "",
         },
         { silent: opts.silent || bootstrapSilent },
       );
     });
+    dropDismissedMakeupAccepts();
+    collapseJudgedMakeupProcess();
     prunePassedMakeups();
     sortNewestFirst();
     if (typeof global.__portalAdminRenderAlerts === "function") {
@@ -1089,6 +1138,7 @@
       recordId: item.recordId || "",
       clientName: item.clientName || "",
       sessionDate: item.sessionDate || "",
+      caseKey: item.caseKey || "",
       chatHintIdx:
         item.chatHintIdx === undefined || item.chatHintIdx === null
           ? ""
@@ -1171,9 +1221,77 @@
   function prepareForRender() {
     pruneDisallowed();
     prunePassedMakeups();
+    dropDismissedMakeupAccepts();
+    collapseJudgedMakeupProcess();
     sortNewestFirst();
     notifyExpenseBadges();
     return listRef().filter(bellShows);
+  }
+
+  async function loadMakeupDismissedIds(client) {
+    var mine = makeupDismissedMap();
+    if (!client || !client.auth || !client.from) return mine;
+    var sess = await client.auth.getSession();
+    var uid =
+      sess &&
+      sess.data &&
+      sess.data.session &&
+      sess.data.session.user &&
+      sess.data.session.user.id;
+    if (!uid) return mine;
+    var res = await client
+      .from("portal_admin_bell_item_reads")
+      .select("item_id")
+      .eq("user_id", uid)
+      .eq("item_kind", "makeup_accepted")
+      .limit(200);
+    if (res.error) {
+      console.warn("[admin-bell] makeup dismiss reads", res.error);
+      return mine;
+    }
+    (res.data || []).forEach(function (r) {
+      if (r && r.item_id) mine[String(r.item_id)] = true;
+    });
+    return mine;
+  }
+
+  function dropDismissedMakeupAccepts() {
+    var mine = makeupDismissedMap();
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = listRef().filter(function (a) {
+      return !makeupAcceptDismissed(a);
+    });
+    return mine;
+  }
+
+  async function dismissMakeupAccept(client, offerId) {
+    var id = String(offerId || "").trim();
+    if (!id) return false;
+    makeupDismissedMap()[id] = true;
+    dropDismissedMakeupAccepts();
+    collapseJudgedMakeupProcess();
+    sortNewestFirst();
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    if (!client || !client.auth || !client.from) return true;
+    var sess = await client.auth.getSession();
+    var uid =
+      sess &&
+      sess.data &&
+      sess.data.session &&
+      sess.data.session.user &&
+      sess.data.session.user.id;
+    if (!uid) return true;
+    var res = await client.from("portal_admin_bell_item_reads").insert({
+      item_kind: "makeup_accepted",
+      item_id: id,
+      user_id: uid,
+    });
+    var code = res && res.error && String(res.error.code || "");
+    if (res && res.error && code !== "23505") {
+      console.warn("[admin-bell] dismiss makeup accept", res.error);
+    }
+    return true;
   }
 
   function badgeCount() {
@@ -1205,6 +1323,7 @@
   global.portalAdminBellOnWellbeingNotificationInsert = onWellbeingNotificationInsert;
   global.portalAdminBellOnWellbeingCheckinUpdated = onWellbeingCheckinUpdated;
   global.portalAdminBellDismissWellbeingCheckin = dismissWellbeingCheckin;
+  global.portalAdminBellDismissMakeupAccept = dismissMakeupAccept;
   global.portalAdminBellDismissAllWellbeing = dismissAllWellbeingNotifications;
   global.portalAdminBellOnStaffDmInsert = onStaffDmInsert;
   global.portalAdminBellSyncSupportUnread = syncSupportUnreadFromMessages;
