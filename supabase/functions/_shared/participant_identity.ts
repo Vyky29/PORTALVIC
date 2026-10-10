@@ -29,7 +29,7 @@ const ROSTER_SPELLING_ALIASES: Record<string, string> = {
   steven_ce: "steven",
   yusuf: "yusuf_ah",
   yusef: "yusuf_ah",
-  /* Anab's son. Board "Mohamed", old "Mohammed", contact "Mohamed Yusuf", list "Mohamed Mohamud". */
+  /* Anab's son. Registration name stays Mohamed Yusuf. Board label is Mohamed. Old list said Mohamud. */
   mohamed: "mohamed_mohamud",
   mohammed: "mohamed_mohamud",
   mohamed_yusuf: "mohamed_mohamud",
