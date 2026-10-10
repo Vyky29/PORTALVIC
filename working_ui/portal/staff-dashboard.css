@@ -10118,12 +10118,24 @@
       height:30px;
       opacity:.5;
     }
+    .client-photo-slot--has-photo{cursor:pointer}
     .client-photo-slot img{
       width:100%;
       height:100%;
       border-radius:50%;
       object-fit:cover;
       display:block;
+    }
+    .client-photo-lightbox{
+      position:fixed;inset:0;z-index:240;display:flex;align-items:center;justify-content:center;
+    }
+    .client-photo-lightbox__back{position:absolute;inset:0;background:rgba(11,18,32,.72)}
+    .client-photo-lightbox__frame{
+      position:relative;width:min(78vw,320px);height:min(78vw,320px);border-radius:50%;overflow:hidden;
+      background:#e8f2fa;border:3px solid #fff;box-shadow:0 16px 40px rgba(0,0,0,.35);
+    }
+    .client-photo-lightbox__frame img{
+      width:100%;height:100%;object-fit:contain;display:block;
     }
 
     .sheet-backdrop{

@@ -167,6 +167,10 @@
       if (!img) {
         el.classList.add("today-participant-chip__avatar--has-photo");
         el.classList.add("today-participant-chip__avatar--initials");
+        var frameAttr =
+          typeof global.portalParticipantPhotoFrameAttr === "function"
+            ? global.portalParticipantPhotoFrameAttr(name, clientId, src)
+            : "";
         el.innerHTML =
           escapeHtml(chipAvatarInitials(name)) +
           '<img class="portal-screenshot-protected" src="' +
@@ -174,6 +178,7 @@
           '" alt=""' +
           loadAttr +
           ' decoding="async" draggable="false"' +
+          frameAttr +
           (photoFallbacks ? ' data-photo-fallbacks="' + escapeHtml(photoFallbacks) + '"' : "") +
           ' onerror="if(window.portalTodayNextChipPhotoTryFallback){window.portalTodayNextChipPhotoTryFallback(this);}" />';
         return;
@@ -183,9 +188,17 @@
         img.setAttribute("data-photo-fallbacks", photoFallbacks);
         img.src = src;
         el.classList.add("today-participant-chip__avatar--has-photo");
+        if (typeof global.portalApplyParticipantPhotoFrame === "function") {
+          global.portalApplyParticipantPhotoFrame(img, name, clientId, src);
+        }
         return;
       }
-      if (img.complete && img.naturalWidth > 0) return;
+      if (img.complete && img.naturalWidth > 0) {
+        if (typeof global.portalApplyParticipantPhotoFrame === "function") {
+          global.portalApplyParticipantPhotoFrame(img, name, clientId, src);
+        }
+        return;
+      }
       /* Incomplete or zero-size: often after sheet open/close aborts decode on iOS.
          Force a reload instead of leaving initials forever. */
       if (img.getAttribute("data-photo-fallbacks") && img.complete && !(img.naturalWidth > 0)) {
@@ -248,12 +261,17 @@
       var initials = esc(chipAvatarInitials(rawName));
       var av = initials;
       if (src) {
+        var frameAttr =
+          typeof global.portalParticipantPhotoFrameAttr === "function"
+            ? global.portalParticipantPhotoFrameAttr(rawName, rawId, src)
+            : "";
         av +=
           '<img class="portal-screenshot-protected" src="' +
           esc(src) +
           '" alt=""' +
           loadAttr +
           ' decoding="async" draggable="false"' +
+          frameAttr +
           (photoFallbacks ? ' data-photo-fallbacks="' + esc(photoFallbacks) + '"' : "") +
           ' onerror="if(window.portalTodayNextChipPhotoTryFallback){window.portalTodayNextChipPhotoTryFallback(this);}" />';
       }

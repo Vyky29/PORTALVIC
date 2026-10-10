@@ -169,12 +169,49 @@
     if (nk) PARTICIPANT_PHOTO_FRAMES.byName[nk] = f;
   }
 
+  function photoFrameSurfaceOn() {
+    try {
+      var p = String((global.location && global.location.pathname) || "").toLowerCase();
+      if (p.indexOf("parent") >= 0 || p.indexOf("booking") >= 0) return false;
+    } catch (_) {}
+    return true;
+  }
+
+  /** Roster cards say "Yusuf Ah". The saved frame is on "Yusuf Ahmed". */
+  function photoFrameNameMatches(cardKey, storedKey) {
+    if (!cardKey || !storedKey) return false;
+    if (cardKey === storedKey) return true;
+    if (storedKey.indexOf(cardKey + " ") === 0 || cardKey.indexOf(storedKey + " ") === 0) return true;
+    var a = cardKey.split(" ");
+    var b = storedKey.split(" ");
+    if (!a.length || !b.length || a[0] !== b[0]) return false;
+    var short = a.length <= b.length ? a : b;
+    var long = a.length <= b.length ? b : a;
+    var i;
+    for (i = 1; i < short.length; i++) {
+      var s = short[i];
+      var l = long[i] || "";
+      if (l.indexOf(s) !== 0 && s.indexOf(l) !== 0) return false;
+    }
+    return true;
+  }
+
   function lookupPhotoFrame(contactId, displayName) {
     var id = frameContactKey(contactId);
     if (id && PARTICIPANT_PHOTO_FRAMES.byId[id]) return PARTICIPANT_PHOTO_FRAMES.byId[id];
     var nk = storageAvatarKey(displayName);
-    if (nk && PARTICIPANT_PHOTO_FRAMES.byName[nk]) return PARTICIPANT_PHOTO_FRAMES.byName[nk];
-    return null;
+    if (!nk) return null;
+    if (PARTICIPANT_PHOTO_FRAMES.byName[nk]) return PARTICIPANT_PHOTO_FRAMES.byName[nk];
+    var hit = null;
+    var keys = Object.keys(PARTICIPANT_PHOTO_FRAMES.byName);
+    var i;
+    for (i = 0; i < keys.length; i++) {
+      if (!photoFrameNameMatches(nk, keys[i])) continue;
+      var frame = PARTICIPANT_PHOTO_FRAMES.byName[keys[i]];
+      if (hit && hit !== frame) return null;
+      hit = frame;
+    }
+    return hit;
   }
 
   function isParentUploadedPhotoUrl(url) {
@@ -189,11 +226,12 @@
     s.textContent =
       'img[data-photo-frame="1"]{object-fit:contain !important;object-position:center center !important;transform:translate(var(--photo-x,0%),var(--photo-y,0%)) scale(var(--photo-zoom,1));transform-origin:center center;}' +
       "[data-photo-adjust]{cursor:pointer;}" +
-      ".portal-roster-avatar,.pax-contacts-avatar,.session-name-photo,.calendar-day-avatar--photo,.clients-grid-avatar{overflow:hidden;}";
+      ".portal-roster-avatar,.pax-contacts-avatar,.session-name-photo,.calendar-day-avatar--photo,.clients-grid-avatar,.today-participant-chip__avatar,.client-photo-slot--has-photo{overflow:hidden;}";
     (document.head || document.documentElement).appendChild(s);
   }
 
   function photoFrameForUrl(name, clientId, url) {
+    if (!photoFrameSurfaceOn()) return null;
     var saved = lookupPhotoFrame(clientId, name);
     if (!saved && !isParentUploadedPhotoUrl(url)) return null;
     return saved || { x: 0, y: 0, zoom: 1 };

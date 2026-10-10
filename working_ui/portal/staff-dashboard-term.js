@@ -3040,15 +3040,22 @@
           : url;
         const existing = slot.querySelector('img');
         const existingSrc = existing ? String(existing.getAttribute('src') || existing.src || '') : '';
-        if(existing && existingSrc && (existingSrc === norm || existingSrc.endsWith(norm) || norm.endsWith(existingSrc.split('?')[0]))){
-          slot.classList.add('client-photo-slot--has-photo');
-          return;
-        }
         slot.classList.add('client-photo-slot--has-photo');
         slot.classList.remove('client-photo-slot--m', 'client-photo-slot--f');
         slot.setAttribute('data-participant-name', displayName);
         if(clientId) slot.setAttribute('data-participant-client-id', String(clientId));
-        slot.innerHTML = '<img class="portal-screenshot-protected" src="' + escapeHtml(url) + '" alt="" loading="eager" fetchpriority="low" decoding="async" draggable="false" onerror="portalClientPhotoSlotFallback(this)">';
+        if(existing && existingSrc && (existingSrc === norm || existingSrc.endsWith(norm) || norm.endsWith(existingSrc.split('?')[0]))){
+          if(typeof portalApplyParticipantPhotoFrame === 'function'){
+            portalApplyParticipantPhotoFrame(existing, displayName, clientId, norm);
+          }
+          bindClientPhotoLightbox(slot);
+          return;
+        }
+        const frameAttr = typeof portalParticipantPhotoFrameAttr === 'function'
+          ? portalParticipantPhotoFrameAttr(displayName, clientId, url)
+          : '';
+        slot.innerHTML = '<img class="portal-screenshot-protected" src="' + escapeHtml(url) + '" alt="" loading="eager" fetchpriority="low" decoding="async" draggable="false"' + frameAttr + ' onerror="portalClientPhotoSlotFallback(this)">';
+        bindClientPhotoLightbox(slot);
       } else {
         slot.classList.remove('client-photo-slot--has-photo');
         slot.classList.remove('client-photo-slot--m', 'client-photo-slot--f');
@@ -3059,6 +3066,49 @@
         if(clientId) slot.setAttribute('data-participant-client-id', String(clientId));
         slot.innerHTML = clientPhotoSlotPlaceholderHtml(displayName);
       }
+    }
+    function closeClientPhotoLightbox(){
+      const box = document.getElementById('clientPhotoLightbox');
+      if(box) box.remove();
+    }
+    function bindClientPhotoLightbox(slot){
+      if(!slot || slot.getAttribute('data-photo-zoom-bound') === '1') return;
+      slot.setAttribute('data-photo-zoom-bound', '1');
+      slot.addEventListener('click', function(ev){
+        if(!slot.classList.contains('client-photo-slot--has-photo')) return;
+        const img = slot.querySelector('img');
+        if(!img) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeClientPhotoLightbox();
+        const box = document.createElement('div');
+        box.id = 'clientPhotoLightbox';
+        box.className = 'client-photo-lightbox';
+        box.innerHTML = '<div class="client-photo-lightbox__back" data-client-photo-close="1"></div>' +
+          '<div class="client-photo-lightbox__frame" role="dialog" aria-modal="true" aria-label="Participant photo">' +
+          '<img class="portal-screenshot-protected" alt="" draggable="false" />' +
+          '</div>';
+        const big = box.querySelector('img');
+        big.src = img.getAttribute('src') || '';
+        if(img.getAttribute('data-photo-frame') === '1'){
+          big.setAttribute('data-photo-frame', '1');
+          ['--photo-x', '--photo-y', '--photo-zoom'].forEach(function(key){
+            const val = img.style.getPropertyValue(key);
+            if(val) big.style.setProperty(key, val);
+          });
+        }
+        box.addEventListener('click', function(clickEv){
+          const t = clickEv.target;
+          if(t && t.getAttribute && t.getAttribute('data-client-photo-close') === '1') closeClientPhotoLightbox();
+        });
+        document.body.appendChild(box);
+      });
+    }
+    if(!window.__clientPhotoLightboxKeyBound){
+      window.__clientPhotoLightboxKeyBound = true;
+      document.addEventListener('keydown', function(ev){
+        if(ev.key === 'Escape') closeClientPhotoLightbox();
+      });
     }
     window.portalClientPhotoSlotFallback = function(img){
       const slot = img && img.parentElement;
@@ -3079,7 +3129,10 @@
       var loadAttr = typeof portalParticipantPhotoLoadingAttr === 'function'
         ? portalParticipantPhotoLoadingAttr()
         : ' loading="eager" fetchpriority="low"';
-      return initials + '<img class="clients-grid-avatar-img portal-screenshot-protected" src="' + escapeHtml(url) + '" alt=""' + loadAttr + ' decoding="async" draggable="false" onerror="this.remove()">';
+      var frameAttr = typeof portalParticipantPhotoFrameAttr === 'function'
+        ? portalParticipantPhotoFrameAttr(name, clientId, url)
+        : '';
+      return initials + '<img class="clients-grid-avatar-img portal-screenshot-protected" src="' + escapeHtml(url) + '" alt=""' + loadAttr + ' decoding="async" draggable="false"' + frameAttr + ' onerror="this.remove()">';
     }
     /** Topbar: first token = given name line; remaining tokens = surname line. */
     function splitStaffTopbarName(fullName){
