@@ -1796,6 +1796,12 @@ export async function syncOpsAfterFinishBookingPaid(
       .neq("id", String(reservation.id))
       .in("status", ["validated", "confirmed", "paid"]);
     for (const sib of linkedForOv || []) {
+      const sibNotes = String((sib as { notes?: string }).notes || "");
+      /* The week after a trial is a term hold, not a second paid trial. */
+      if (/post_trial_term_soft_hold/i.test(sibNotes)) continue;
+      const sibDate = clean(String((sib as { date_iso?: string }).date_iso || ""), 12).slice(0, 10);
+      const paidDate = clean(reservation.date_iso, 12).slice(0, 10);
+      if (isTrial && sibDate && paidDate && sibDate !== paidDate) continue;
       const sibOv = await ensurePaidBookingScheduleOverride(
         admin,
         sib as Record<string, unknown>,

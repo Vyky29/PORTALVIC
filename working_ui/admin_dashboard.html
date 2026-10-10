@@ -187,7 +187,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261010-bell-chips" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261010-trial-lines" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20261004-header-order" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -25134,6 +25134,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(emRaw && emRaw !== '—') whoParts.push('<div class="pax-who__mail">'+esc(emRaw)+'</div>');
         if(phRaw && phRaw !== '—') whoParts.push('<div class="pax-who__phone">'+esc(phRaw)+'</div>');
         var whoHtml = '<div class="pax-who">'+whoParts.join('')+'</div>';
+        var seatCount = 0;
+        try{ seatCount = paxContactsCurrentSeatBands(p).length; }catch(_seatCount){ seatCount = 0; }
         var cells = paxContactsServiceSlotCells(p);
         var waitSeat = paxContactsWaitSeatCells(p);
         var trialSeat = paxContactsTrialServiceSlotCells(p);
@@ -25146,6 +25148,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ? portalParticipantAvatarInnerHtml(photoName, photoCid || frameCid, { esc: esc, adjustable: true, contactId: frameCid, className: 'portal-roster-avatar pax-contacts-avatar' + (photoYunis ? ' pax-contacts-avatar--yunis' : '') })
           : '';
         var bucket = paxContactsBucket(p);
+        var paidSeat = bucket === 'programme_in' && seatCount > 0;
         if(bucket === 'booking_history') cells = paxContactsOldHistoryCells(p);
         var bkMeta = paxContactsBookingStatusMeta(bucket);
         function paxStatusChip(meta){
@@ -25161,13 +25164,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ? { label: 'Lost slot', bg: '#fee2e2', fg: '#991b1b' }
             : null;
         if(placeMeta) bkChip += paxStatusChip(placeMeta);
+        var trialChipRows = [];
+        try{ trialChipRows = paxContactsTrialsForPerson(p); }catch(_trialChip){ trialChipRows = []; }
+        if(trialChipRows.length){
+          var trialLab = paxContactsTrialStateLabel(trialChipRows[0].sessionIso) || 'On Trial';
+          var trialMeta = { label: trialLab, bg: '#ede9fe', fg: '#5b21b6' };
+          if(bucket === 'trial') bkChip = paxStatusChip(trialMeta);
+          else bkChip += paxStatusChip(trialMeta);
+        }
         if(bucket === 'booking_history'){
-          var oldTrials = [];
-          try{ oldTrials = paxContactsTrialsForPerson(p); }catch(_oldTrial){ oldTrials = []; }
-          if(oldTrials.length && paxContactsNamedOldClient(p) && /^chaitanya\b/i.test(String(p.name || '').trim())){
-            var trialLab = paxContactsTrialStateLabel(oldTrials[0].sessionIso) || 'Trialled';
-            bkChip += paxStatusChip({ label: trialLab, bg: '#ede9fe', fg: '#5b21b6' });
-          }
           if(paxContactsCancelledTheirService(p)){
             bkChip += paxStatusChip({ label: 'Cancelled', bg: '#fee2e2', fg: '#991b1b' });
           }
@@ -25250,8 +25255,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td class="pax-contacts-meta pax-money-col">'+fundingCell+'</td>'+
           '<td class="pax-contacts-meta pax-money-col">'+paymentCell+'</td>'+
           '<td class="pax-contacts-age">'+ageCell+'</td>'+
-          '<td class="pax-contacts-svc"><div class="pax-seat-lines">'+cells.svc+'</div><div class="pax-wait-seat" hidden>'+waitSeat.svc+'</div><div class="pax-trial-seat" hidden>'+trialSeat.svc+'</div></td>'+
-          '<td class="pax-contacts-slot"><div class="pax-seat-lines">'+cells.slot+'</div><div class="pax-wait-seat" hidden>'+waitSeat.slot+'</div><div class="pax-trial-seat" hidden>'+trialSeat.slot+'</div></td>'+
+          '<td class="pax-contacts-svc"><div class="pax-seat-lines"'+(paidSeat ? ' data-pax-paid="1"' : '')+'>'+cells.svc+'</div><div class="pax-wait-seat" hidden>'+waitSeat.svc+'</div><div class="pax-trial-seat" hidden>'+trialSeat.svc+'</div></td>'+
+          '<td class="pax-contacts-slot"><div class="pax-seat-lines"'+(paidSeat ? ' data-pax-paid="1"' : '')+'>'+cells.slot+'</div><div class="pax-wait-seat" hidden>'+waitSeat.slot+'</div><div class="pax-trial-seat" hidden>'+trialSeat.slot+'</div></td>'+
           '<td class="pax-joined-col" hidden>'+paxContactsJoinedCell(p)+'</td>'+
           '<td class="pax-source-col" hidden>'+paxContactsSourceCell(p)+'</td>'+
           '<td class="pax-registered-col" hidden>'+paxContactsRegisteredCell(p)+'</td>'+
@@ -25312,7 +25317,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             : (bookingSelected === 'cfk_leads'
               ? 'CFK LEADS is only this screen. Search filters it. This is not the Leads page under Services. The old webhook export was interested and was never a client. Those names are here.'
               : (bookingSelected === 'trial'
-                ? 'On Trial / Trialled is only this screen. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen. Service is the trial, not the place they have now.'
+                ? 'On Trial / Trialled is only this screen. The name shows the trial chip and also Active, Registered or Old when they are that as well. Grey lines are the paid place they have now. Lilac lines are the trial. A session still ahead is On Trial. A session already held is Trialled.'
                 : 'ACTIVE is on a place now. This screen is only that list. Pick one filter: Support, Funding, Payment or Service. All is everyone on this screen. A cancelled place is not ACTIVE. The Photo column is that child\'s own picture.'))));
       var focus = bookingSelected === 'waiting' ? (state.waitlistFocus || null) : null;
       var focusBanner = '';
@@ -36427,9 +36432,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           root2.querySelectorAll('.pax-registered-col').forEach(function(el){ el.hidden = !showRegistered; });
           root2.querySelectorAll('.pax-outcome-col').forEach(function(el){ el.hidden = !showOutcome; });
           root2.querySelectorAll('.pax-trial-col').forEach(function(el){ el.hidden = !showTrial; });
+          var trialTbl = $('paxContactsTbl');
+          if(trialTbl) trialTbl.classList.toggle('pax-contacts-tbl--trial', showTrial);
           root2.querySelectorAll('.pax-seat-lines').forEach(function(el){
             var onWait = !!(el.closest && el.closest('tr') && el.closest('tr').getAttribute('data-pax-wait') === '1');
-            el.hidden = showTrial || (showJoined && onWait);
+            el.hidden = showTrial ? el.getAttribute('data-pax-paid') !== '1' : (showJoined && onWait);
           });
           root2.querySelectorAll('.pax-wait-seat').forEach(function(el){
             var onWait = !!(el.closest && el.closest('tr') && el.closest('tr').getAttribute('data-pax-wait') === '1');

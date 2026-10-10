@@ -484,6 +484,8 @@
     .pax-contacts-tbl .pax-contacts-namebtn .muted{display:block;font-size:12px;margin-top:2px;overflow-wrap:break-word}
     .pax-contacts-tbl .pax-svc-line,
     .pax-contacts-tbl .pax-slot-line{white-space:nowrap;line-height:1.45;text-align:center}
+    .pax-contacts-tbl--trial .pax-seat-lines{color:#64748b}
+    .pax-contacts-tbl--trial .pax-trial-seat{color:#6d28d9}
     .pax-contacts-tbl .pax-slot-line--duration{white-space:normal;overflow-wrap:anywhere}
     .pax-contacts-tbl td.pax-contacts-slot:has(.pax-slot-line--duration){white-space:normal}
     .pax-contacts-tbl td.pax-contacts-svc,
