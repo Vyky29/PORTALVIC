@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v384",
+  "version": "2026-10-10-v385",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2082,13 +2082,18 @@
             "fee",
             "reconcile",
             "conciliar",
+            "grupo",
+            "batch",
+            "comision",
+            "falta",
             "not in xero"
           ],
           "steps": [
             "Not in Xero and the money is already in: send that invoice to Xero once. It is created for the full invoice total and left awaiting payment. The portal does not mark it paid in Xero and does not write the Tide line.",
             "Already in Xero: do not send it again. Reconcile the bank line against the invoice that is already there.",
             "Bank transfer: the Tide line should equal the invoice, or the half that has been paid. Match that line to the invoice. On a flexi, allocate only the half that has landed.",
-            "GoCardless: the parent pays the month plus 1.50. GoCardless then takes 1.25% plus 20p, plus 20% VAT, capped at 6.00 with the VAT included. On these monthly amounts that fee is more than 1.50, so Tide is lower than the month. Match the month the parent paid, then Spend money for the GoCardless fee, tax inclusive, so the line equals what landed.",
+            "GoCardless lands as one Tide line for the whole group. The line is lower than the months by the fees. Find and Match each invoice for the amount taken from the parent that month, not the lower amount that landed, and not the full term when the invoice covers the whole term. On a term invoice, apply only that month so the rest stays open.",
+            "On that same match, New transaction, Spend money, for the whole gap between those months and the Tide line. Use 20% VAT on Expenses, tax inclusive. That one expense is every fee on the line, including a fee for a collection that failed and has no invoice to tick. Do not make a second invoice for the fee. Do not match a hidden monthly copy: that month already sits on the term invoice.",
             "Stripe or Apple Pay: the parent pays the invoice plus a card fee, so the club still nets the invoice total. Stripe keeps its own fee and pays the rest into Tide, often several charges in one payout.",
             "Match the Tide payout to the invoice totals, not to the higher amount the parent paid on the card.",
             "What is left on that payout is the fee difference. If Tide is higher than the invoices, the extra stayed with you. If Tide is lower, Stripe took more than the fee we added. That difference is the fee, not a missing invoice.",
@@ -2098,7 +2103,8 @@
           "tips": [
             "Do not send a lost slot. Do not send an unpaid draft.",
             "A red Xero failed line will not send until the Xero login is accepted again.",
-            "Tax inclusive means the leftover amount is the gross. Xero takes the VAT out of it. Tax exclusive would add VAT on top and the line would not match Tide."
+            "Tax inclusive means the leftover amount is the gross. Xero takes the VAT out of it. Tax exclusive would add VAT on top and the line would not match Tide.",
+            "The GoCardless fee is not 6.00 on every month. It is capped at 6.00. Smaller months cost less. Use the gap on that Tide line."
           ],
           "es": {
             "title": "Stripe, Xero y Tide",
@@ -2108,7 +2114,8 @@
               "Not in Xero y el dinero ya entro: manda esa factura a Xero una vez. Se crea por el total de la factura y queda pendiente de pago. El portal no la marca pagada en Xero y no escribe la linea de Tide.",
               "Ya esta en Xero: no la mandes otra vez. Concilia la linea del banco contra la factura que ya esta.",
               "Transferencia: la linea de Tide tiene que ser el importe de la factura, o la mitad que ya se ha pagado. Casa esa linea con la factura. En un flexi, asigna solo la mitad que ha entrado.",
-              "GoCardless: el padre paga el mes mas 1.50. GoCardless se queda luego el 1.25% mas 20p, mas el 20% de VAT, con tope de 6.00 ya con el VAT. En estos plazos esa comision pasa de 1.50, asi que Tide entra mas bajo que el mes. Casa el mes que pago el padre, y luego un gasto (Spend money) por la comision de GoCardless, tax inclusive, para que la linea cuadre con lo que entro.",
+              "GoCardless entra en un solo ingreso de Tide para todo el grupo. La linea es mas baja que los meses, por las comisiones. Find and Match de cada factura por lo que se le cobro al padre ese mes, no por lo que entro en el banco, y no por el term entero si la factura es de todo el trimestre. En una factura de term, aplica solo ese mes y el resto se queda abierto.",
+              "En esa misma conciliacion, New transaction, Spend money, por toda la diferencia entre esos meses y la linea de Tide. Impuesto 20% VAT on Expenses, tax inclusive. Ese unico gasto son todas las comisiones de la linea, tambien la de un cobro que fallo y no tiene factura que marcar. No hagas otra factura por la comision. No cases una copia hidden del mes: ese mes ya esta en la factura del term.",
               "Stripe o Apple Pay: el padre paga la factura mas una tasa de tarjeta, para que el club se quede con el total de la factura. Stripe se queda su tasa real y paga el resto a Tide, a menudo varios cobros en un solo ingreso.",
               "Casa el ingreso de Tide con los totales de las facturas, no con la cifra mas alta que el padre pago con la tarjeta.",
               "Lo que sobra o falta en ese ingreso es la diferencia de tasas. Si Tide es mas alto que las facturas, el extra se quedo aqui. Si Tide es mas bajo, Stripe se quedo mas de la tasa que sumamos. Esa diferencia es la tasa, no una factura que falte.",
@@ -2118,7 +2125,8 @@
             "tips": [
               "No mandes un lost slot. No mandes un borrador sin pagar.",
               "Una linea roja Xero failed no se envia hasta que el login de Xero vuelva a aceptarse.",
-              "Tax inclusive quiere decir que el pico es el bruto. Xero saca el VAT de dentro. Si lo pones exclusive, suma el VAT encima y la linea no cuadra con Tide."
+              "Tax inclusive quiere decir que el pico es el bruto. Xero saca el VAT de dentro. Si lo pones exclusive, suma el VAT encima y la linea no cuadra con Tide.",
+              "La comision de GoCardless no es 6.00 en todos los meses. El tope es 6.00. En los meses pequenos es menos. Usa la diferencia de esa linea de Tide."
             ]
           }
         },
