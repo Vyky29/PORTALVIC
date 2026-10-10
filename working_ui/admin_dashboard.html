@@ -36653,8 +36653,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           var searchNote = '';
           if(!n && missed.length && missed.length <= 8){
-            missed.forEach(function(hit){ hit.tr.style.display = ''; });
-            n = missed.length;
             var statusSel = $('paxContactsBookingStatus');
             var here = (statusSel && statusSel.selectedOptions && statusSel.selectedOptions[0]) ? statusSel.selectedOptions[0].textContent : 'this list';
             searchNote = 'Not in ' + here + '. ' + missed.map(function(hit){

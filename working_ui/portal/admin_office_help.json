@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v369",
+  "version": "2026-10-10-v370",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1491,7 +1491,7 @@
             "REGISTERED: filled the registration form, no term place, not on a waiting list. The Registered column is the day they registered, newest at the top. Someone who only comes to crash courses stays here, with Service set to Crash courses, so you can offer them a term place.",
             "CFK LEADS is its own screen under Clients & Families. It is the Class for Kids contact file, not the Leads page. Funding and Payment are not on this screen. Age comes from the date of birth on that file. Service says Class for Kids. The time column is the first and last booking date from that file, when the file has them. The line under the status says Class for Kids file.",
             "On Trial / Trialled is its own screen under Clients & Families. Someone who booked a trial and has a trial session. Booked is the day they booked. Service and Time slot are that trial, not the place they have now. Trial session is only the day, plus On Trial or Trialled. A session still ahead is On Trial. A session already held is Trialled. Newest session is at the top. They stay on Active as well when they took a term place afterwards.",
-            "Search stays inside the screen you opened. It does not pull people from the other lists.",
+            "Search stays inside the screen you opened. A match on another list is named under the search, with that list. Their row does not appear here.",
             "A short name on the bookings shows on that child's row when it is the same person. Consecutive halves on the same day show as one time. The venue is in brackets after the time, such as Tuesday, 3:30 pm to 5:00 pm (SWIMFARM).",
             "Age uses the date of birth. If the contact has no date, the list uses the birth line on the registration (Clients Info).",
             "Contact, email, phone and age come from the child's contact record. A short roster name still shows that parent and those details.",
@@ -1523,7 +1523,7 @@
               "REGISTERED: relleno el formulario, no tiene plaza de term, y no esta en lista de espera. La columna Registered es el dia en que se registro, el mas reciente arriba. Quien solo viene a crash courses se queda aqui, con Service en Crash courses, para poder ofrecerle una plaza de term.",
               "CFK LEADS es su pantalla en Clients & Families. Es el archivo de contactos de Class for Kids, no la pagina Leads. Funding y Payment no estan en esta pantalla. La edad sale de la fecha de nacimiento de ese archivo. Service dice Class for Kids. La columna de hora es la primera y la ultima fecha de reserva de ese archivo, cuando el archivo las tiene. La linea bajo el estado dice Class for Kids file.",
               "On Trial / Trialled es su pantalla en Clients & Families. Alguien que reservo un trial y tiene una sesion de trial. Booked es el dia en que reservo. Service y Time slot son ese trial, no la plaza que tiene ahora. Trial session es solo el dia, mas On Trial o Trialled. Una sesion que todavia no ha llegado es On Trial. Una sesion ya dada es Trialled. La sesion mas reciente va arriba. Siguen en Active tambien si despues cogieron una plaza de term.",
-              "Search se queda en la pantalla que abriste. No trae gente de las otras listas.",
+              "Search se queda en la pantalla que abriste. Si el nombre esta en otra lista, sale debajo de la busqueda, con esa lista. La fila no aparece aqui.",
               "Un nombre corto de las reservas sale en la fila de ese nino cuando es la misma persona. Dos medias seguidas el mismo dia se ven como una hora. La sede va entre parentesis despues de la hora, por ejemplo Tuesday, 3:30 pm to 5:00 pm (SWIMFARM).",
               "La edad usa la fecha de nacimiento. Si el contacto no tiene fecha, la lista usa la linea de nacimiento del registro (Clients Info).",
               "Contacto, email, telefono y edad salen del registro de contacto del nino. Un nombre corto del roster sigue ensenando a ese padre y esos datos.",
