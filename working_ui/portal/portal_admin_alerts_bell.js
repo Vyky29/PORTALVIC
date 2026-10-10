@@ -3,7 +3,8 @@
  * Incidents, cancellations still to decide, absents still to decide,
  * service-cancel refunds not paid back, unpaid expenses, wellbeing still
  * pending, late incident approvals, session disruptions, general-info
- * updates, and makeup accepts whose session is today or later.
+ * updates, parent portal actions (photo, consents, messages, a declined
+ * makeup), and makeup accepts whose session is today or later.
  * A makeup whose session date has passed drops off.
  * Closing a makeup accept removes it for that admin only.
  * If the absence was already decided, the bell keeps the accept
@@ -30,6 +31,7 @@
     general_info: true,
     session_disruption: true,
     makeup_accepted: true,
+    parent_action: true,
   };
 
   var bootstrapSilent = false;
@@ -111,6 +113,57 @@
     });
   }
 
+  function parentActionDismissedMap() {
+    global.__PORTAL_ADMIN_PARENT_ACTION_DISMISSED__ =
+      global.__PORTAL_ADMIN_PARENT_ACTION_DISMISSED__ || Object.create(null);
+    return global.__PORTAL_ADMIN_PARENT_ACTION_DISMISSED__;
+  }
+
+  function parentActionDismissed(item) {
+    if (!item) return false;
+    var kind = String(item.kind || "");
+    if (kind !== "general_info" && kind !== "parent_absent" && kind !== "parent_action") {
+      return false;
+    }
+    var id = String(item.id || "").trim();
+    return !!(id && parentActionDismissedMap()[id]);
+  }
+
+  async function ensureParentActionDismissed(client) {
+    var mine = parentActionDismissedMap();
+    if (global.__PORTAL_ADMIN_PARENT_ACTION_DISMISSED_AT__) return mine;
+    global.__PORTAL_ADMIN_PARENT_ACTION_DISMISSED_AT__ = Date.now();
+    if (!client || !client.auth || !client.from) return mine;
+    try {
+      var sess = await client.auth.getSession();
+      var uid =
+        sess &&
+        sess.data &&
+        sess.data.session &&
+        sess.data.session.user &&
+        sess.data.session.user.id;
+      if (!uid) return mine;
+      var res = await client
+        .from("portal_admin_bell_item_reads")
+        .select("item_id")
+        .eq("user_id", uid)
+        .eq("item_kind", "parent_action")
+        .limit(400);
+      if (res.error) {
+        console.warn("[admin-bell] parent action reads", res.error);
+        global.__PORTAL_ADMIN_PARENT_ACTION_DISMISSED_AT__ = 0;
+        return mine;
+      }
+      (res.data || []).forEach(function (r) {
+        if (r && r.item_id) mine[String(r.item_id)] = true;
+      });
+    } catch (err) {
+      global.__PORTAL_ADMIN_PARENT_ACTION_DISMISSED_AT__ = 0;
+      console.warn("[admin-bell] parent action reads", err);
+    }
+    return mine;
+  }
+
   function makeupDismissedMap() {
     global.__PORTAL_ADMIN_MAKEUP_DISMISSED__ =
       global.__PORTAL_ADMIN_MAKEUP_DISMISSED__ || Object.create(null);
@@ -131,6 +184,7 @@
       if (makeupAcceptDismissed(item)) return false;
       return makeupStillUpcoming(item);
     }
+    if (parentActionDismissed(item)) return false;
     return true;
   }
 
@@ -283,6 +337,7 @@
   async function syncGeneralInfoFromServer(client, opts) {
     opts = opts || {};
     if (!client || !client.from) return 0;
+    await ensureParentActionDismissed(client);
     var since = new Date();
     since.setDate(since.getDate() - 14);
     var res = await client
@@ -334,6 +389,7 @@
         nameByContact[String(r.contact_id || "")] || "",
       );
       if (!a) return;
+      if (parentActionDismissedMap()[a.id]) return;
       pushActivityAlert(a, {
         silent: opts.silent || bootstrapSilent,
       });
@@ -908,6 +964,8 @@
   async function syncParentPortalAbsents(edgePost, opts) {
     opts = opts || {};
     if (typeof edgePost !== "function") return 0;
+    var bellClient = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client;
+    if (bellClient) await ensureParentActionDismissed(bellClient);
     dropParentAbsentAlerts();
     var res = await edgePost("portal-admin-parent-absence-list", {
       status: "parent_portal_notice",
@@ -923,6 +981,7 @@
     reports.forEach(function (r) {
       var a = activityFromParentPortalAbsent(r);
       if (!a) return;
+      if (parentActionDismissedMap()[a.id]) return;
       pushActivityAlert(a, { silent: true });
       n++;
     });
@@ -1294,6 +1353,276 @@
     return true;
   }
 
+  var PARENT_PHOTO_SOURCES = {
+    parent_portal: true,
+    parent_portal_reenrol: true,
+    re_enrolment: true,
+    parent_form: true,
+    booking_existing_confirm: true,
+    parent_portal_removed: true,
+    parent_portal_reenrol_removed: true,
+    re_enrolment_removed: true,
+    parent_form_removed: true,
+    booking_existing_confirm_removed: true,
+  };
+
+  async function namesForContacts(client, contactIds) {
+    var nameByContact = Object.create(null);
+    if (!client || !contactIds.length) return nameByContact;
+    try {
+      var pax = await client
+        .from("portal_participants")
+        .select("contact_id, display_name")
+        .in("contact_id", contactIds);
+      (pax.data || []).forEach(function (p) {
+        if (!p || !p.contact_id) return;
+        nameByContact[String(p.contact_id)] = String(p.display_name || "").trim();
+      });
+    } catch (_) {}
+    return nameByContact;
+  }
+
+  function pushParentAction(item, opts) {
+    if (!item || !item.id) return;
+    if (parentActionDismissedMap()[item.id]) return;
+    pushActivityAlert(item, opts);
+  }
+
+  /**
+   * Parent portal writes that already landed in a table the office can read.
+   * View opens the admin screen that shows the change. Close is per admin.
+   */
+  async function syncParentPortalActionsFromServer(client, opts) {
+    opts = opts || {};
+    if (!client || !client.from) return 0;
+    try {
+      await ensureParentActionDismissed(client);
+      global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = listRef().filter(function (a) {
+        return !a || a.kind !== "parent_action";
+      });
+      var since = new Date();
+      since.setDate(since.getDate() - 14);
+      var sinceIso = since.toISOString();
+      var silent = opts.silent || bootstrapSilent;
+      var photosP = client
+        .from("portal_participant_avatar_history")
+        .select("id, contact_id, source, created_at")
+        .gte("created_at", sinceIso)
+        .order("created_at", { ascending: false })
+        .limit(40);
+      var consentsP = client
+        .from("portal_participant_parent_consents")
+        .select("contact_id, updated_at, updated_by_parent_person_id")
+        .gte("updated_at", sinceIso)
+        .not("updated_by_parent_person_id", "is", null)
+        .order("updated_at", { ascending: false })
+        .limit(30);
+      var declinedP = client
+        .from("portal_parent_makeup_offers")
+        .select("id, grant_id, venue, session_date, session_time, responded_at")
+        .eq("status", "declined")
+        .gte("responded_at", sinceIso)
+        .order("responded_at", { ascending: false })
+        .limit(20);
+      var messagesP = client
+        .from("portal_parent_whatsapp_inbound")
+        .select("id, contact_name, body_text, created_at, meta")
+        .gte("created_at", sinceIso)
+        .order("created_at", { ascending: false })
+        .limit(40);
+      var packed = await Promise.all([photosP, consentsP, declinedP, messagesP]);
+      var photosRes = packed[0];
+      var consentsRes = packed[1];
+      var declinedRes = packed[2];
+      var messagesRes = packed[3];
+      var contactIds = [];
+      function addContact(id) {
+        id = String(id || "").trim();
+        if (id && contactIds.indexOf(id) < 0) contactIds.push(id);
+      }
+      if (photosRes && !photosRes.error) {
+        (photosRes.data || []).forEach(function (row) {
+          if (!row || !PARENT_PHOTO_SOURCES[String(row.source || "")]) return;
+          addContact(row.contact_id);
+        });
+      } else if (photosRes && photosRes.error) {
+        console.warn("[admin-bell] parent photos", photosRes.error);
+      }
+      if (consentsRes && !consentsRes.error) {
+        (consentsRes.data || []).forEach(function (row) {
+          addContact(row && row.contact_id);
+        });
+      } else if (consentsRes && consentsRes.error) {
+        console.warn("[admin-bell] parent consents", consentsRes.error);
+      }
+      var grantIds = [];
+      if (declinedRes && !declinedRes.error) {
+        (declinedRes.data || []).forEach(function (row) {
+          var g = String((row && row.grant_id) || "").trim();
+          if (g && grantIds.indexOf(g) < 0) grantIds.push(g);
+        });
+      } else if (declinedRes && declinedRes.error) {
+        console.warn("[admin-bell] makeup declined", declinedRes.error);
+      }
+      var nameByGrant = Object.create(null);
+      if (grantIds.length) {
+        try {
+          var grants = await client
+            .from("portal_parent_makeup_grants")
+            .select("id, participant_display")
+            .in("id", grantIds);
+          (grants.data || []).forEach(function (g) {
+            if (!g || !g.id) return;
+            nameByGrant[String(g.id)] = String(g.participant_display || "").trim();
+          });
+        } catch (_) {}
+      }
+      var names = await namesForContacts(client, contactIds);
+      var n = 0;
+      if (photosRes && !photosRes.error) {
+        (photosRes.data || []).forEach(function (row) {
+          if (!row || !row.id) return;
+          var source = String(row.source || "");
+          if (!PARENT_PHOTO_SOURCES[source]) return;
+          var cid = String(row.contact_id || "").trim();
+          var who = names[cid] || "Participant";
+          var removed = source.indexOf("removed") >= 0;
+          pushParentAction(
+            {
+              id: "pphoto-" + row.id,
+              title: (removed ? "Photo removed · " : "Photo updated · ") + who,
+              sub: "Parent portal — Active clients",
+              created_at: row.created_at,
+              kind: "parent_action",
+              view: "clients",
+              recordId: cid ? "pp-" + cid : "",
+              clientName: who,
+              sessionDate: "",
+            },
+            { silent: silent }
+          );
+          n++;
+        });
+      }
+      if (consentsRes && !consentsRes.error) {
+        (consentsRes.data || []).forEach(function (row) {
+          if (!row || !row.contact_id || !row.updated_at) return;
+          var cid = String(row.contact_id).trim();
+          var who = names[cid] || "Participant";
+          var stamp = String(row.updated_at);
+          pushParentAction(
+            {
+              id: "pcons-" + cid + "-" + stamp,
+              title: "Consents updated · " + who,
+              sub: "Parent portal — Parent consents",
+              created_at: stamp,
+              kind: "parent_action",
+              view: "portal_parent_consents",
+              recordId: cid,
+              clientName: who,
+              sessionDate: "",
+            },
+            { silent: silent }
+          );
+          n++;
+        });
+      }
+      if (declinedRes && !declinedRes.error) {
+        (declinedRes.data || []).forEach(function (row) {
+          if (!row || !row.id) return;
+          var who = nameByGrant[String(row.grant_id || "")] || "Participant";
+          var when = [row.session_date, row.session_time, row.venue]
+            .map(function (x) { return String(x || "").trim(); })
+            .filter(Boolean)
+            .join(" · ");
+          pushParentAction(
+            {
+              id: "pmkdec-" + row.id,
+              title: "Makeup declined · " + who,
+              sub: (when ? when + " · " : "") + "Parent portal — Absents, refunds and credits",
+              created_at: row.responded_at,
+              kind: "parent_action",
+              view: "absents_refunds",
+              recordId: String(row.id),
+              clientName: who,
+              sessionDate: String(row.session_date || "").slice(0, 10),
+            },
+            { silent: silent }
+          );
+          n++;
+        });
+      }
+      if (messagesRes && !messagesRes.error) {
+        (messagesRes.data || []).forEach(function (row) {
+          if (!row || !row.id) return;
+          var meta = row.meta && typeof row.meta === "object" ? row.meta : {};
+          var src = String(meta.source || "");
+          if (src !== "parent_portal" && src !== "parent_app") return;
+          var who = String(meta.participant_display || row.contact_name || "Parent").trim() || "Parent";
+          var snippet = String(row.body_text || "").replace(/\s+/g, " ").trim();
+          if (snippet.length > 90) snippet = snippet.slice(0, 88) + "...";
+          pushParentAction(
+            {
+              id: "pmsg-" + row.id,
+              title: "Message from parent · " + who,
+              sub: (snippet ? snippet + " · " : "") + "Parent portal — Messages",
+              created_at: row.created_at,
+              kind: "parent_action",
+              view: "portal_parent_notify_log",
+              recordId: String(row.id),
+              clientName: who,
+              sessionDate: "",
+            },
+            { silent: silent }
+          );
+          n++;
+        });
+      } else if (messagesRes && messagesRes.error) {
+        console.warn("[admin-bell] parent messages", messagesRes.error);
+      }
+      sortNewestFirst();
+      if (typeof global.__portalAdminRenderAlerts === "function") {
+        global.__portalAdminRenderAlerts();
+      }
+      return n;
+    } catch (err) {
+      console.warn("[admin-bell] parent portal actions", err);
+      return 0;
+    }
+  }
+
+  async function dismissParentAction(client, alertId) {
+    var id = String(alertId || "").trim();
+    if (!id) return false;
+    parentActionDismissedMap()[id] = true;
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = listRef().filter(function (a) {
+      return !a || String(a.id) !== id;
+    });
+    sortNewestFirst();
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    if (!client || !client.auth || !client.from) return true;
+    var sess = await client.auth.getSession();
+    var uid =
+      sess &&
+      sess.data &&
+      sess.data.session &&
+      sess.data.session.user &&
+      sess.data.session.user.id;
+    if (!uid) return true;
+    var res = await client.from("portal_admin_bell_item_reads").insert({
+      item_kind: "parent_action",
+      item_id: id,
+      user_id: uid,
+    });
+    var code = res && res.error && String(res.error.code || "");
+    if (res && res.error && code !== "23505") {
+      console.warn("[admin-bell] dismiss parent action", res.error);
+    }
+    return true;
+  }
+
   function badgeCount() {
     return prepareForRender().length;
   }
@@ -1313,6 +1642,8 @@
   global.portalAdminActivityFromGeneralInfoLog = activityFromGeneralInfoLog;
   global.portalAdminBellSyncGeneralInfoFromServer = syncGeneralInfoFromServer;
   global.portalAdminBellSyncMakeupAcceptsFromServer = syncMakeupAcceptsFromServer;
+  global.portalAdminBellSyncParentPortalActions = syncParentPortalActionsFromServer;
+  global.portalAdminBellDismissParentAction = dismissParentAction;
   global.portalAdminSyncChatBellAlerts = syncChatBellAlerts;
   global.portalAdminBellResolveChatHints = resolveChatHints;
   global.portalAdminPushActivityAlert = pushActivityAlert;

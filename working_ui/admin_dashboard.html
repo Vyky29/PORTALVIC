@@ -187,7 +187,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261007-photo-center" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261010-bell-chips" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20261004-header-order" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -446,7 +446,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20261009-acat-tue"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20261010-makeup-close"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20261010-bell-chips"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20261002-no-guide";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -40396,7 +40396,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tab === 'absents'){
         return;
       }
-      if(tab === 'absents_refunds' || tab === 'hr_pay' || tab === 'finance_cancelled_services'){
+        if(tab === 'portal_parent_notify_log'){
+          setView('portal_parent_notify_log');
+          return;
+        }
+        if(tab === 'absents_refunds' || tab === 'hr_pay' || tab === 'finance_cancelled_services'){
         if(tab === 'absents_refunds' && String(meta.kind || '') === 'cancel_refund'){
           window.__portalAbsentsOpenLedger = true;
           window.__portalAbsentsFocusCreditId = String(meta.recordId || '').trim();
@@ -40664,6 +40668,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.portalAdminBellSyncMakeupAcceptsFromServer === 'function'){
           await window.portalAdminBellSyncMakeupAcceptsFromServer(client, { silent: true });
         }
+        if(typeof window.portalAdminBellSyncParentPortalActions === 'function'){
+          await window.portalAdminBellSyncParentPortalActions(client, { silent: true });
+        }
         if(typeof window.portalAdminBellPruneAndSort === 'function'){
           window.portalAdminBellPruneAndSort();
         }
@@ -40882,6 +40889,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return d + '/' + mo + '/' + y;
       });
     }
+    function portalAdminAlertAction(a){
+      var kind = String(a && a.kind || '');
+      if(kind === 'expense_unpaid' || kind === 'cancel_refund') return { label: 'Pay', done: false, accepted: false };
+      if(kind === 'absent_decision' || kind === 'cancellation' || kind === 'late_approval') return { label: 'Decide', done: false, accepted: false };
+      if(kind === 'makeup_accepted') return { label: 'View', done: true, accepted: true };
+      if(kind === 'general_info' || kind === 'parent_absent' || kind === 'parent_action' || kind === 'wellbeing'){
+        return { label: 'View', done: true, accepted: false };
+      }
+      return { label: 'View', done: false, accepted: false };
+    }
     function renderAlerts(){
       var pop = $('alertsPop');
       if(!pop) return;
@@ -40900,15 +40917,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(a.view === 'chat' && (a.chatHintIdx !== '' && a.chatHintIdx !== undefined && a.chatHintIdx !== null)){
           meta += ' data-alert-chat-hint="'+esc(String(a.chatHintIdx))+'"';
         }
-        var dismiss = '';
-        if(a.kind === 'wellbeing' && a.recordId){
-          dismiss = '<button type="button" class="portal-admin-wellbeing-dismiss" data-wellbeing-dismiss="'+esc(a.recordId)+'" title="Dismiss alert" aria-label="Dismiss">×</button>';
-        }else if(a.kind === 'makeup_accepted' && a.recordId){
-          dismiss = '<button type="button" class="portal-admin-wellbeing-dismiss" data-makeup-dismiss="'+esc(a.recordId)+'" title="Close for me" aria-label="Close">×</button>';
+        var act = portalAdminAlertAction(a);
+        var closeBtn = '';
+        if(act.done && a.kind === 'wellbeing' && a.recordId){
+          closeBtn = '<button type="button" class="chip portal-admin-alert-act portal-admin-alert-act--close" data-wellbeing-dismiss="'+esc(a.recordId)+'">Close</button>';
+        }else if(act.done && a.kind === 'makeup_accepted' && a.recordId){
+          closeBtn = '<button type="button" class="chip portal-admin-alert-act portal-admin-alert-act--close" data-makeup-dismiss="'+esc(a.recordId)+'">Close</button>';
+        }else if(act.done && a.id){
+          closeBtn = '<button type="button" class="chip portal-admin-alert-act portal-admin-alert-act--close" data-parent-action-dismiss="'+esc(a.id)+'">Close</button>';
         }
-        return '<div class="portal-admin-activity-row">'+
-          '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit">'+portalAdminAlertFaceHtml(a)+'<div style="min-width:0;flex:1"><strong>'+esc(portalAdminShowDateText(a.title))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub))+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>'+
-          dismiss+
+        var goChip = '<button type="button" class="chip chip--info portal-admin-alert-act"'+jump+meta+'>'+esc(act.label)+'</button>';
+        return '<div class="portal-admin-activity-row'+(act.accepted ? ' portal-admin-activity-row--accepted' : '')+'">'+
+          '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit">'+portalAdminAlertFaceHtml(a)+'<div style="min-width:0;flex:1"><strong>'+esc(portalAdminShowDateText(a.title))+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(portalAdminShowDateText(a.sub))+'</div></div></button>'+
+          '<span class="portal-admin-alert-acts">'+goChip+closeBtn+'</span>'+
         '</div>';
       }).join('');
       var venueList = window.__PORTAL_VENUE_REVIEW_ALERTS__ || [];
@@ -40974,7 +40995,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '</div></div></div></div>';
       }).join('');
       var emptyHtml = !activityHtml && !venueHtml && !noteHtml && !photoHtml && !parentNoteHtml
-        ? '<p class="muted" style="margin:12px 16px">Nothing open. The bell lists a message sent to Pilar when there are venue issues, feedback notes, incidents, absents still to decide, refunds, unpaid expenses, wellbeing, disruptions, makeups that have not happened yet, a downloaded photo, and a message a parent wrote on a note.</p>'
+        ? '<p class="muted" style="margin:12px 16px">Nothing open. Pay and Decide stay until that work is done. View and Close are for something already finished, including a parent photo, consents, or message.</p>'
         : '';
       var clearWellbeingBtn = wellbeingN > 0
         ? '<button type="button" class="btn btn--ghost btn--sm" id="portalAdminClearWellbeingAlerts" style="margin-left:auto;font-size:12px">Clear wellbeing ('+wellbeingN+')</button>'
@@ -42337,6 +42358,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               });
               return;
             }
+          }
+          var parentActionBtn = ev.target && ev.target.closest ? ev.target.closest('[data-parent-action-dismiss]') : null;
+          if(parentActionBtn && alertsPopEl.contains(parentActionBtn)){
+            ev.preventDefault();
+            ev.stopPropagation();
+            var parentActionId = String(parentActionBtn.getAttribute('data-parent-action-dismiss') || '').trim();
+            var parentActionClient = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+            if(parentActionId && typeof window.portalAdminBellDismissParentAction === 'function'){
+              void window.portalAdminBellDismissParentAction(parentActionClient, parentActionId);
+            }
+            return;
           }
           var makeupDismissBtn = ev.target && ev.target.closest ? ev.target.closest('[data-makeup-dismiss]') : null;
           if(makeupDismissBtn && alertsPopEl.contains(makeupDismissBtn)){

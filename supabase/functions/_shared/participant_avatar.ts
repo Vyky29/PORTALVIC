@@ -125,6 +125,8 @@ export async function removeLiveParticipantAvatar(
     const prevArchive = await copyAvatarToArchive(admin, prevPath, contactId, "removed");
     if (prevArchive) {
       await insertAvatarHistory(admin, contactId, prevArchive, `${source}_removed`, false);
+    } else {
+      await insertAvatarHistory(admin, contactId, prevPath, `${source}_removed`, false);
     }
   }
 
