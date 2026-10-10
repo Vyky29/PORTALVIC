@@ -3213,11 +3213,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Autumn 2026/27 start — KPI / strip windows prefer this when filtering "this term". */
     var ADMIN_PORTAL_CURRENT_TERM_START_ISO = '2026-09-01';
     function adminPortalFeedbackTermStartIso(){
-      try{
-        var meta = window.SESSION_FEEDBACK_PORTAL_SOURCE && window.SESSION_FEEDBACK_PORTAL_SOURCE.meta;
-        var s = meta && String(meta.coverageFromIso || '').trim();
-        if(s.length >= 10 && /^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
-      }catch(_e){}
       return ADMIN_PORTAL_CURRENT_TERM_START_ISO;
     }
     function adminPortalFeedbackTermTitle(){
@@ -4644,11 +4639,50 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!want) return [];
       var amb = adminPortalParticipantAmbiguityMap();
       var termStart = adminPortalFeedbackTermStartIso();
-      return adminSessionFeedbackPortalRows().filter(function(r){
+      var rows = adminSessionFeedbackPortalRows().filter(function(r){
         if(!adminPortalParticipantMatchesDisplayName(want, adminSfStr(r.clientName), amb)) return false;
         var iso = adminSfStr(r.date).substring(0, 10);
         return !(iso.length >= 10 && iso < termStart);
       });
+      return adminPortalFeedbackCollapseMultiSameDay(rows);
+    }
+    /** Multi activity is one visit per day. The two halves are one session. */
+    function adminPortalFeedbackServiceIsMulti(service){
+      var s = String(service || '').toLowerCase();
+      return /multi[\s_-]*activity/.test(s) || s.indexOf('multi activity') >= 0 || s.indexOf('multi-activity') >= 0 || /splash/.test(s);
+    }
+    function adminPortalFeedbackCollapseMultiSameDay(rows){
+      var out = [];
+      var at = Object.create(null);
+      (rows || []).forEach(function(r){
+        if(!r || !adminPortalFeedbackServiceIsMulti(r.service)){
+          out.push(r);
+          return;
+        }
+        var iso = bookingFeedbackDateIsoForRow(r) || '';
+        if(!iso){
+          out.push(r);
+          return;
+        }
+        if(at[iso] == null){
+          var host = Object.assign({}, r, { _multiParts: [r] });
+          at[iso] = out.length;
+          out.push(host);
+          return;
+        }
+        var kept = out[at[iso]];
+        kept._multiParts.push(r);
+        var nums = [];
+        kept._multiParts.forEach(function(p){
+          var n = Number(p.engagement);
+          if(!isNaN(n) && n >= 1 && n <= 5) nums.push(n);
+        });
+        if(nums.length){
+          var mean = nums.reduce(function(a, b){ return a + b; }, 0) / nums.length;
+          kept.engagement = Math.round(mean * 10) / 10;
+        }
+      });
+      return out;
     }
     function adminC4kRegistersKpiIndependenceParticipantVisualHtml(list){
       return adminC4kRegistersKpiIndependenceBarsHtml(list);
@@ -37952,23 +37986,47 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return t !== '—' && low !== 'n/a' && low !== 'na';
       }
       if(usePortal && portalSorted && portalSorted.length){
-        var posItems = [];
-        var relItems = [];
-        var ri, r, pr, whenDisp, pos, rel;
-        for(ri = 0; ri < portalSorted.length; ri++){
-          r = portalSorted[ri];
-          pr = adminPortalFeedbackRowToRegister(r);
-          whenDisp = pr.dateDisplay || adminFormatUkDateFromIso(adminSfStr(r.date)) || '—';
-          pos = String(pr.pos || '').trim();
-          if(rowMeaningful(pos)) posItems.push('<li style="margin:0 0 10px;min-width:0;overflow-wrap:break-word"><strong>'+esc(whenDisp)+'</strong> · '+esc(pos)+'</li>');
-          rel = String(pr.rel || '').trim();
-          if(rowMeaningful(rel)) relItems.push('<li style="margin:0 0 10px;min-width:0;overflow-wrap:break-word"><strong>'+esc(whenDisp)+'</strong> · '+esc(rel)+'</li>');
+        function feedBlocks(field){
+          var blocks = [];
+          var multiAt = Object.create(null);
+          var ri, r, pr, whenDisp, text, iso, slot;
+          for(ri = 0; ri < portalSorted.length; ri++){
+            r = portalSorted[ri];
+            pr = adminPortalFeedbackRowToRegister(r);
+            text = String(pr[field] || '').trim();
+            if(!rowMeaningful(text)) continue;
+            whenDisp = pr.dateDisplay || adminFormatUkDateFromIso(adminSfStr(r.date)) || '—';
+            iso = bookingFeedbackDateIsoForRow(r);
+            slot = adminSfStr(r.sessionTimeSlot || pr.sessionTimeSlot);
+            if(!adminPortalFeedbackServiceIsMulti(r.service) || !iso){
+              blocks.push('<li style="margin:0 0 10px;min-width:0;overflow-wrap:break-word"><strong>'+esc(whenDisp)+'</strong> · '+esc(text)+'</li>');
+              continue;
+            }
+            if(multiAt[iso] == null){
+              multiAt[iso] = { when: whenDisp, lines: [], seen: Object.create(null) };
+              blocks.push(multiAt[iso]);
+            }
+            if(multiAt[iso].seen[text]) continue;
+            multiAt[iso].seen[text] = true;
+            multiAt[iso].lines.push({ slot: slot, text: text });
+          }
+          return blocks.map(function(block){
+            if(typeof block === 'string') return block;
+            if(!block.lines.length) return '';
+            var body = block.lines.map(function(line){
+              var bit = line.slot ? '<span class="muted">'+esc(line.slot)+'</span> · '+esc(line.text) : esc(line.text);
+              return '<li style="margin:0 0 8px;min-width:0;overflow-wrap:break-word">'+bit+'</li>';
+            }).join('');
+            return '<li style="margin:0 0 12px;min-width:0;overflow-wrap:break-word"><strong>'+esc(block.when)+'</strong><ul style="margin:6px 0 0;padding-left:18px;list-style:disc;min-width:0">'+body+'</ul></li>';
+          }).join('');
         }
-        posBlock = posItems.length
-          ? '<ul style="margin:8px 0 0;padding-left:18px;list-style:disc;min-width:0">'+posItems.join('')+'</ul>'
+        var posItems = feedBlocks('pos');
+        var relItems = feedBlocks('rel');
+        posBlock = posItems
+          ? '<ul style="margin:8px 0 0;padding-left:18px;list-style:disc;min-width:0">'+posItems+'</ul>'
           : '<p class="muted" style="margin:8px 0 0;font-size:13px">No positive feedback lines in this export for this participant.</p>';
-        relBlock = relItems.length
-          ? '<ul style="margin:8px 0 0;padding-left:18px;list-style:disc;min-width:0">'+relItems.join('')+'</ul>'
+        relBlock = relItems
+          ? '<ul style="margin:8px 0 0;padding-left:18px;list-style:disc;min-width:0">'+relItems+'</ul>'
           : '<p class="muted" style="margin:8px 0 0;font-size:13px">No relevant information lines in this export for this participant.</p>';
       }else{
         var positives = (c.positives && c.positives.length) ? c.positives : [];
@@ -37987,7 +38045,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         paxDrawerSectionCardHeaderHtml('<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>', 'Session feedback feed')+
         '<p class="muted" style="margin:0 0 12px;font-size:11px;line-height:1.45;max-width:48rem;overflow-wrap:break-word">'+
         (usePortal
-          ? 'Positive and <strong>relevant information</strong> lines from every matched row in the session feedback export.'
+          ? 'Positive and <strong>relevant information</strong> lines. Multi activity for the same day sits under one date. The session count is the days they came this term.'
           : 'Demo highlights from the MOCK profile until the export matches this participant by name.')+
         '</p>'+
         paxDrawerKpiHeadingHtml('<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/>', 'Positive feedback (all sessions)', true, 'positive')+posBlock+
@@ -38048,12 +38106,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             return iso && iso < termStartIso;
           })
         : [];
-      var stAllE = usePortal ? adminPortalEngagementStatsFromPortalRows(portalSorted) : null;
-      var stTermE = usePortal && portalTermSorted.length ? adminPortalEngagementStatsFromPortalRows(portalTermSorted) : null;
-      var stPriorE = usePortal && portalPreSorted.length ? adminPortalEngagementStatsFromPortalRows(portalPreSorted) : null;
-      if(usePortal && portalM){
+      var portalTermVisits = adminPortalFeedbackCollapseMultiSameDay(portalTermSorted);
+      var stTermE = usePortal && portalTermVisits.length ? adminPortalEngagementStatsFromPortalRows(portalTermVisits) : null;
+      var stPriorE = usePortal && portalPreSorted.length ? adminPortalEngagementStatsFromPortalRows(adminPortalFeedbackCollapseMultiSameDay(portalPreSorted)) : null;
+      if(usePortal && portalTermVisits.length){
+        portalM = adminPortalFeedbackMetricsForDrawer(portalTermVisits);
         ytd = portalM.n;
         if(portalM.attPct != null) attPct = portalM.attPct;
+      }else if(usePortal && portalM){
+        ytd = 0;
+        attPct = 0;
+        portalM = { n: 0, attended: 0, missed: 0, unknown: 0, attPct: 0 };
       }
       ytd = Number.isFinite(Number(ytd)) ? Number(ytd) : 0;
       attPct = Number.isFinite(Number(attPct)) ? Number(attPct) : 0;
@@ -38066,7 +38129,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var sessRows;
       var recentSessTitle = 'Recent sessions';
       if(usePortal){
-        var primaryList = portalTermSorted.length ? portalTermSorted : portalSorted;
+        var primaryList = portalTermVisits.length ? portalTermVisits : portalSorted;
         recentSessTitle = portalTermSorted.length
           ? ('Recent sessions (' + ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE + ')')
           : ('Recent sessions (all dates — none in term from ' + adminFormatUkDateFromIso(termStartIso + 'T12:00:00') + ' yet)');
@@ -38115,9 +38178,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(stPriorE && stPriorE.n > 0 && typeof stPriorE.mean === 'number'){
           exParts.push('Earlier: mean ' + stPriorE.mean.toFixed(1) + '/5 (' + stPriorE.n + ')');
         }
-        if(stAllE && stAllE.n > 0 && typeof stAllE.mean === 'number'){
-          exParts.push('All rows: mean ' + stAllE.mean.toFixed(1) + '/5 (' + stAllE.n + ')');
-        }
         if(exParts.length){
           engExtraStat = '<span class="muted pax-sheet-stat-foot">'+esc(exParts.join(' · '))+'</span>';
         }
@@ -38156,10 +38216,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         srcP =
           '<p class="pax-sheet-source">Top tiles and <strong>Recent sessions</strong> use <strong>MOCK.clientsById</strong> until the export matches this participant — then session rows sync from <code>SESSION_FEEDBACK_PORTAL_SOURCE</code>. Override slices with <code>window.PORTAL_CLIENT_DETAIL_BY_ID</code>.</p>';
       }
-      var termRowCount = usePortal ? portalTermSorted.length : 0;
+      var termRowCount = usePortal ? portalTermVisits.length : 0;
       var ytdFoot =
         usePortal
-          ? '<span class="muted pax-sheet-stat-foot">'+esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE)+': <strong>'+esc(String(termRowCount))+'</strong> row(s) in term window</span>'
+          ? '<span class="muted pax-sheet-stat-foot">'+esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE)+': <strong>'+esc(String(termRowCount))+'</strong> this term</span>'
           : '';
       var earlierFeedbackBlock = '';
       if(usePortal && portalPreSorted.length){

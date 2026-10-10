@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v373",
+  "version": "2026-10-10-v374",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1590,6 +1590,34 @@
           "tips": [
             "The board name and the list name can differ (short name vs full name). They are the same child when the roster id matches.",
             "A parent adds the portrait from their hub. Office does not type a photo in."
+          ]
+        },
+        {
+          "id": "participant_sheet_multi_term",
+          "title": "Participant sheet counts autumn visits",
+          "summary": "Sessions on a participant sheet are the days they came this autumn term. Multi activity for one day is one visit, and both comments sit under that date.",
+          "where": "Click a participant on Sessions, then the profile sheet",
+          "keywords": [
+            "sessions",
+            "ytd",
+            "multi",
+            "multi activity",
+            "comentarios",
+            "fecha",
+            "autumn",
+            "term",
+            "profile",
+            "feedback feed"
+          ],
+          "steps": [
+            "Open the participant from the day board.",
+            "Sessions is how many days they came from 1 Sep 2026, this autumn term.",
+            "Multi activity is two halves the same morning. That is one day, not two sessions.",
+            "In Session feedback feed, that day's comments sit under the one date. Each half keeps its own line under it."
+          ],
+          "tips": [
+            "Comments from before this term stay in the feed, under their own date. They are not part of the session count.",
+            "Aquatic and other programmes still count each session on its own day."
           ]
         },
         {
