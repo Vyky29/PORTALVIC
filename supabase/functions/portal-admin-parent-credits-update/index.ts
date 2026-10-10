@@ -138,6 +138,29 @@ Deno.serve(async (req) => {
     return portalAdminJson(200, { ok: true, entry: noted });
   }
 
+  if (action === "sync_refund_xero") {
+    if (entry.kind !== "refund" || entry.status !== "refunded") {
+      return portalAdminJson(400, { ok: false, error: "not_a_refunded_refund" });
+    }
+    const notifyParent = body.notify_parent === true;
+    const settlement = await settleFamilyRefundAfterPayout(admin, entry, {
+      notifyParent,
+      sentByUserId: verified.userId || null,
+      sentByEmail: clean(verified.email, 200) || null,
+      linkedInvoiceNumber: clean(body.linked_invoice_number, 40) || null,
+    });
+    const { data: refreshed } = await admin
+      .from("portal_parent_family_credits")
+      .select("*")
+      .eq("id", entryId)
+      .maybeSingle();
+    return portalAdminJson(200, {
+      ok: true,
+      entry: refreshed || entry,
+      settlement,
+    });
+  }
+
   if (entry.status !== "open") {
     return portalAdminJson(409, { ok: false, error: "not_open", status: entry.status });
   }
@@ -235,29 +258,6 @@ Deno.serve(async (req) => {
           skipped === "gocardless_held_for_next_term" ||
           credit_apply?.gocardless_held
         ),
-    });
-  }
-
-  if (action === "sync_refund_xero") {
-    if (entry.kind !== "refund") {
-      return portalAdminJson(400, { ok: false, error: "not_a_refund" });
-    }
-    const notifyParent = body.notify_parent === true;
-    const settlement = await settleFamilyRefundAfterPayout(admin, entry, {
-      notifyParent,
-      sentByUserId: verified.userId || null,
-      sentByEmail: clean(verified.email, 200) || null,
-      linkedInvoiceNumber: clean(body.linked_invoice_number, 40) || null,
-    });
-    const { data: refreshed } = await admin
-      .from("portal_parent_family_credits")
-      .select("*")
-      .eq("id", entryId)
-      .maybeSingle();
-    return portalAdminJson(200, {
-      ok: true,
-      entry: refreshed || entry,
-      settlement,
     });
   }
 

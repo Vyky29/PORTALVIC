@@ -152,11 +152,6 @@
         ' <button type="button" class="btn btn--sm btn--ghost" data-credit-act="cancel" data-credit-id="' +
         esc(e.id) +
         '">Cancel</button>';
-    } else if (e.status === 'refunded' && e.kind === 'refund' && !e.xero_credit_note_id) {
-      actions =
-        '<button type="button" class="btn btn--sm btn--sec" data-credit-act="sync_refund_xero" data-credit-id="' +
-        esc(e.id) +
-        '">Sync Xero CN</button>';
     }
     return (
       '<tr>' +

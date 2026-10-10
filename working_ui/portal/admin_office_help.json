@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v383",
+  "version": "2026-10-10-v384",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -623,7 +623,7 @@
           "tips": [
             "The fact can be shared. The sentence is not. The parent never sees the instructor push, and the instructor never sees the parent refund message.",
             "On after-school and weekend 2:1 and 3:1, Absent or Cancelled on one instructor is saved for every instructor on that seat. One Absents row. No WhatsApp for an absence.",
-            "Cancel service keeps 10% of the unused prepaid amount as the cancellation fee. That fee stays on the invoice as income. The parent message and the refund row are only the rest. When the money has gone back, open the family and press Mark paid back. That creates the Xero credit note for the refund and allocates it to the invoice. The invoice must already be in Xero. If the row already says Refunded and has no credit note, press Sync Xero CN in Absents. The unpaid instalment voided in the portal is still on the Xero invoice until you credit that part as well."
+            "Cancel service keeps 10% of the unused prepaid amount as the cancellation fee. That fee stays on the invoice as income. The parent message and the refund row are only the rest. When the money has gone back, open the family and press Mark paid back. That creates the Xero credit note for the refund and allocates it to the invoice. The invoice must already be in Xero. The unpaid instalment voided in the portal is still on the Xero invoice until you credit that part as well."
           ],
           "es": {
             "title": "Cancelar sesion, cancelar servicio, y falta",
@@ -641,7 +641,7 @@
             "tips": [
               "El hecho puede ser el mismo para todos. La frase no. El padre no ve el aviso del instructor, y el instructor no ve el mensaje de refund del padre.",
               "En after-school y weekend de 2:1 y 3:1, Absent o Cancelled en un instructor queda para todos los de esa plaza. Una fila en Absents. Una falta no va por WhatsApp.",
-              "Cancel service se queda el 10% de lo pagado que ya no se va a dar, como cancellation fee. Ese 10% se queda en la factura como ingreso. El mensaje al padre y la fila del refund son solo el resto. Cuando el dinero ya ha salido, abre la familia y pulsa Mark paid back. Eso crea la nota de credito en Xero por el refund y la aplica a la factura. La factura tiene que estar ya en Xero. Si la fila ya dice Refunded y no tiene nota, pulsa Sync Xero CN en Absents. El plazo anulado en el portal sigue en la factura de Xero hasta que abones tambien esa parte."
+              "Cancel service se queda el 10% de lo pagado que ya no se va a dar, como cancellation fee. Ese 10% se queda en la factura como ingreso. El mensaje al padre y la fila del refund son solo el resto. Cuando el dinero ya ha salido, abre la familia y pulsa Mark paid back. Eso crea la nota de credito en Xero por el refund y la aplica a la factura. La factura tiene que estar ya en Xero. El plazo anulado en el portal sigue en la factura de Xero hasta que abones tambien esa parte."
             ]
           }
         },
@@ -2214,7 +2214,7 @@
             "Autumn Flexi-Manually: 1st half due 15 Aug (often paid in August) maps to September + October activity on Sep/Oct CEO sheets. 2nd half due 26 Oct (bank wave) maps to November + December activity, not all on October when Tide lands.",
             "CEO Autumn: four monthly sheets (Sep-Dec) match September layout (DC + Afterschool, Falta/Entrado/Gastado). LA/NHS payment waves and term crosses live on portal/finance/autumn-2026-term.html, not a duplicate ola table on October.",
             "Autumn Entrado split: GoCardless September/October = full monthly instalment on that month sheet. Flexi 1st half paid in Jul/Aug = half of that payment on September AND half on October (section Flexi / one off). Full term paid upfront = total on autumn-2026-term.html; September sheet only the September activity share (session dates on the invoice).",
-            "Mark refunded opens one modal: office note, then an optional tick Notify parent (WhatsApp + email that the refund was sent). Leave the tick off unless the money already left the bank — default is ledger + Xero CN only. Same modal from participant Payments Mark paid back. Sync Xero CN uses the same tick if you only need Xero later. Paid invoices in Xero may not take API allocation; authorised CN + bank payout is still fine.",
+            "Mark refunded opens one modal: office note, then an optional tick Notify parent (WhatsApp + email that the refund was sent). Leave the tick off unless the money already left the bank — default is ledger + Xero CN only. Same modal from participant Payments Mark paid back. Paid invoices in Xero may not take the credit note onto the invoice; the authorised credit note plus the bank payout is still the refund.",
             "Cancel service should leave everything square: void future instalments on the portal invoice schedule, open refund on Family credits, cancelled chips on the parent hub, roster ends from the anchor. Check GoCardless / Stripe so nothing still collects after void."
           ],
           "es": {
@@ -2243,7 +2243,7 @@
               "Flexi-Manually Autumn: 1st half (15 ago, muchas en agosto) = actividad septiembre + octubre en hojas sep/oct. 2nd half (26 oct, ola banco) = actividad noviembre + diciembre; no meter todo en octubre cuando entre Tide.",
               "CEO Autumn: cuatro hojas mensuales (sep-dic) como septiembre (DC + Afterschool). Olas LA/NHS y cruces del term en portal/finance/autumn-2026-term.html; no tabla ola suelta al pie de octubre.",
               "Entrado Autumn: GoCardless sep/oct = cuota entera del mes. Flexi 1st half (cobro jul/ago) = mitad en septiembre y mitad en octubre (bloque Flexi / one off). Pago term al contado = total en autumn-2026-term.html; en septiembre solo la parte de sesiones de septiembre.",
-              "Mark refunded abre un modal: nota de oficina y una casilla opcional Notify parent (WhatsApp + email de que el refund ya se envio). Dejala sin marcar salvo que el dinero ya salio del banco — por defecto solo libro + CN en Xero. El mismo modal sale en participant Payments Mark paid back. Sync Xero CN usa la misma casilla si solo falta Xero. Facturas ya pagadas en Xero pueden no aceptar asignacion por API; CN autorizado + banco sigue valiendo.",
+              "Mark refunded abre un modal: nota de oficina y una casilla opcional Notify parent (WhatsApp + email de que el refund ya se envio). Dejala sin marcar salvo que el dinero ya salio del banco — por defecto solo libro + CN en Xero. El mismo modal sale en participant Payments Mark paid back. Si la factura ya esta pagada en Xero, la nota de credito no se pega encima; la nota autorizada mas el pago del banco es el refund.",
               "Cancel service debe dejar todo cuadrado: anular plazos futuros en la factura del portal, refund abierto en Credits, chips cancelados en el hub del padre, roster cortado desde el ancla. Revisa GoCardless / Stripe para que no cobre despues del void."
             ]
           }
