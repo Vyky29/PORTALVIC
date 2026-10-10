@@ -595,8 +595,48 @@
     if (input) input.checked = true;
   }
 
+  function trialFundingLabel(code) {
+    return code === "la_direct_payments"
+      ? "Using LA funds (Exempt)"
+      : code === "privately_funded"
+        ? "Using Private funds (VAT 20%)"
+        : "";
+  }
+
+  function readTrialFundingChoice() {
+    var picked = (
+      document.querySelector('input[name="trial_funding"]:checked') || {}
+    ).value;
+    return picked === "la_direct_payments" || picked === "privately_funded"
+      ? picked
+      : "";
+  }
+
+  function syncTrialFundingRadios(data) {
+    var box = document.getElementById("fbTrialFundingBox");
+    if (box) box.hidden = false;
+    var code = data && data.funding_code;
+    var inputs = document.querySelectorAll('input[name="trial_funding"]');
+    for (var i = 0; i < inputs.length; i++) {
+      inputs[i].checked =
+        inputs[i].value === "privately_funded" ||
+        inputs[i].value === "la_direct_payments"
+          ? inputs[i].value === code
+          : false;
+    }
+  }
+
   function startTrialWithPlan(data, notice, plan) {
-    var funding = data.funding_code || "privately_funded";
+    var funding = readTrialFundingChoice() || data.funding_code;
+    if (funding !== "privately_funded" && funding !== "la_direct_payments") {
+      showNotice(
+        notice,
+        "Please choose Private funds or LA funds before you pay.",
+        "error",
+      );
+      return Promise.resolve();
+    }
+    data.funding_code = funding;
     var payPlan = plan === "one_off_bank" ? "one_off_bank" : "stripe_instant";
     data.booking_scope = "trial_session";
     data.pay_plan = payPlan;
@@ -639,8 +679,12 @@
         showNotice(
           notice,
           payPlan === "one_off_bank"
-            ? "Trial invoice ready — transfer within 30 minutes, then email or WhatsApp the office (photo welcome)."
-            : "Trial ready — pay now with card or Apple Pay to confirm your session.",
+            ? "Trial invoice ready (" +
+              trialFundingLabel(funding) +
+              ") — transfer within 30 minutes, then email or WhatsApp the office (photo welcome)."
+            : "Trial invoice: " +
+              trialFundingLabel(funding) +
+              ". Pay now with card or Apple Pay to confirm your session.",
           "ok",
         );
       });
@@ -651,6 +695,9 @@
     var planBox = document.getElementById("fbPayPlanBox");
     if (channelBox) channelBox.hidden = false;
     if (planBox) planBox.hidden = true;
+    syncTrialFundingRadios(data);
+    var trialNext = document.getElementById("fbPayChannelNext");
+    if (trialNext) trialNext.textContent = "Pay now";
     var intro = document.querySelector("#fbStepPay > .muted");
     if (intro) {
       intro.textContent =
@@ -692,6 +739,10 @@
   }
 
   function restoreTermPayChannel() {
+    var trialFund = document.getElementById("fbTrialFundingBox");
+    if (trialFund) trialFund.hidden = true;
+    var termNext = document.getElementById("fbPayChannelNext");
+    if (termNext) termNext.textContent = "Continue";
     var intro = document.querySelector("#fbStepPay > .muted");
     if (intro) {
       intro.textContent =
@@ -1134,7 +1185,6 @@
         data.status === "scope_saved")
     ) {
       data.booking_scope = "trial_session";
-      if (!data.funding_code) data.funding_code = "privately_funded";
       if (data.invoice) {
         showInvoice(data);
         return;
@@ -1355,6 +1405,16 @@
           return;
         }
         if (data.booking_scope === "trial_session") {
+          var trialFunding = readTrialFundingChoice();
+          if (!trialFunding) {
+            showNotice(
+              notice,
+              "Please choose Private funds or LA funds before you pay.",
+              "error",
+            );
+            return;
+          }
+          data.funding_code = trialFunding;
           void startTrialWithPlan(data, notice, "stripe_instant").catch(function (err) {
             showNotice(notice, err.message || "Could not create trial invoice.", "error");
           });
@@ -1482,6 +1542,13 @@
       esc(money(firstAmt)) +
       "</strong>" +
       "</p>";
+    var fundPaint = trialFundingLabel(data.funding_code);
+    if (fundPaint) {
+      html +=
+        '<p class="muted" style="margin:-4px 0 12px;overflow-wrap:break-word">Invoice: <strong>' +
+        esc(fundPaint) +
+        "</strong></p>";
+    }
 
     if (
       gcUrl &&

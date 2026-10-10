@@ -196,6 +196,19 @@
       <p class="muted">First choose how you pay. Then pick the plan for that method.</p>
       <form id="fbPayForm">
         <div id="fbPayChannelBox">
+          <div id="fbTrialFundingBox" hidden>
+            <p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">How will this trial be funded? This is what we print on the invoice.</p>
+            <label class="choice">
+              <input type="radio" name="trial_funding" value="privately_funded" />
+              <strong>Using Private funds (VAT 20%)</strong>
+              <span class="hint">You pay yourself. The invoice includes VAT at 20%.</span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="trial_funding" value="la_direct_payments" />
+              <strong>Using LA funds (Exempt)</strong>
+              <span class="hint">Local Authority / EHCP Direct Payments. The invoice is VAT exempt. You still pay this trial by card or Apple Pay.</span>
+            </label>
+          </div>
           <label class="choice">
             <input type="radio" name="pay_channel" value="bank_transfer" checked />
             <strong>Bank transfer</strong>
@@ -254,6 +267,6 @@
       <a class="btn btn--pri" id="fbDonePortal" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260915-post-trial-term-only"></script>
+  <script src="/portal/portal_finish_booking.js?v=20261010-trial-funding"></script>
 </body>
 </html>

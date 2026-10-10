@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v375",
+  "version": "2026-10-10-v376",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -953,6 +953,49 @@
               "En los enlaces de pago no pongas frases de suitability.",
               "Aquatic: un override por cada media hora, no una banda de 60 minutos.",
               "El enlace de term sale solo. Contestar FREE suelta la plaza. Otra hora es una respuesta a la oficina, no un trial nuevo."
+            ]
+          }
+        },
+        {
+          "id": "trial_funding_before_pay",
+          "title": "Trial pay: Private funds or LA funds",
+          "summary": "A trial invoice follows the funding choice the family makes just before they pay.",
+          "where": "Finish booking → Trial session → Payment",
+          "keywords": [
+            "trial",
+            "vat",
+            "private",
+            "la funds",
+            "exempt",
+            "invoice",
+            "fondos",
+            "privado"
+          ],
+          "steps": [
+            "The family opens the finish-booking link and chooses Trial session (pay now).",
+            "On the payment step, just before Pay, they choose Using Private funds (VAT 20%) or Using LA funds (Exempt).",
+            "Pay stays card or Apple Pay. The place is held while they pay.",
+            "Private funds writes the invoice with VAT at 20%. LA funds writes the same session price as VAT exempt.",
+            "The client list chip follows that invoice: Using Private funds (VAT 20%) or Using LA funds (Exempt)."
+          ],
+          "tips": [
+            "A trial link that opens straight on payment still asks for this choice. Nothing is assumed.",
+            "Local Authority / NHS referral is a different path. That one does not create a parent invoice."
+          ],
+          "es": {
+            "title": "Pago de trial: fondos privados o fondos LA",
+            "summary": "La factura del trial sigue lo que la familia elige justo antes de pagar.",
+            "where": "Finish booking, Trial session, Payment",
+            "steps": [
+              "La familia abre el enlace de finish-booking y elige Trial session (pay now).",
+              "En el paso de pago, justo antes de Pay, elige Using Private funds (VAT 20%) o Using LA funds (Exempt).",
+              "El pago sigue siendo tarjeta o Apple Pay. La plaza queda reservada mientras pagan.",
+              "Fondos privados escribe la factura con VAT al 20%. Fondos LA escribe el mismo precio de la sesion como VAT exempt.",
+              "El chip de la lista de clientes sigue esa factura: Using Private funds (VAT 20%) o Using LA funds (Exempt)."
+            ],
+            "tips": [
+              "Un enlace de trial que abre directo en el pago igual pide esta eleccion. No se asume nada.",
+              "Local Authority / NHS referral es otro camino. Ese no crea factura para el padre."
             ]
           }
         },

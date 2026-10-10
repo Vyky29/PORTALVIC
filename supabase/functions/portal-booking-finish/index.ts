@@ -1424,8 +1424,9 @@ Deno.serve(async (req) => {
 
     const fundingLabel =
       funding === "la_direct_payments"
-        ? "Using LA money (Participant EHCP funds)"
-        : "Using Own money (private family funds)";
+        ? "Using LA funds (Exempt)"
+        : "Using Private funds (VAT 20%)";
+    const vatMode = funding === "la_direct_payments" ? "exempt" : "vat_20";
     const asOfForLabel = new Date().toISOString().slice(0, 10);
     const gcBankFirstLabel =
       plan === "gocardless_monthly" &&
@@ -1465,6 +1466,7 @@ Deno.serve(async (req) => {
           timeLabel,
           sessionDateIso,
           payPlan: plan,
+          vatMode,
         })
         : quoteNewClientMidTermInvoice({
           term,
@@ -1476,6 +1478,7 @@ Deno.serve(async (req) => {
           serviceKey,
           serviceLabel: serviceName,
           detail: detailLine,
+          vatMode,
         });
     if ("error" in quote) return json(400, { ok: false, error: quote.error });
 
@@ -1519,7 +1522,7 @@ Deno.serve(async (req) => {
       amountGbp: quote.invoiceTotalGbp,
       dueDateIso: quote.paymentSchedule[0]?.due_date || asOf,
       invoiceDateIso: asOf,
-      vatMode: "vat_20",
+      vatMode,
       lineDescription: quote.lineDescription,
       reference: quote.reference,
       notes: `Finish booking · ${funding} · ${scope} · ${plan} · token ${token.id}`,
@@ -1584,6 +1587,8 @@ Deno.serve(async (req) => {
         status: "awaiting_payment",
         choices_json: {
           funding_code: funding,
+          funding_label: fundingLabel,
+          vat_mode: vatMode,
           booking_scope: scope,
           booking_kind: scope === "trial_session" ? "trial" : "term",
           pay_plan: plan,
@@ -1716,6 +1721,8 @@ Deno.serve(async (req) => {
       gc_step2_unlocked: false,
       choices_json: {
         funding_code: funding,
+        funding_label: fundingLabel,
+        vat_mode: vatMode,
         booking_scope: scope,
         pay_plan: plan,
         scope_label: scopeLabel,
