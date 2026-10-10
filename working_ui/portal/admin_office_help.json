@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v368",
+  "version": "2026-10-10-v369",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -834,7 +834,7 @@
           "where": "Services & places → Places (Booking Portal)",
           "steps": [
             "This page is not Service roster. Places is the Booking Portal offer. Service roster is a different screen: who is booked and the standing instructor.",
-            "Refresh reloads the live seats from the roster. Open Booking Portal opens the family site in a new tab, so you see the same offer they see. Waiting list opens the WAITING LIST screen.",
+            "Refresh reloads the live seats from the roster. Open Booking Portal opens the offer in a new tab. If you are signed in as admin, the top bar says Office view and it does not ask for a parent login. Waiting list opens the WAITING LIST screen.",
             "Day, Service and Venue filter the board. All days, All services and All venues show the whole offer. Open places only hides bands that are already full. Turn that box off when you also need to see full bands.",
             "Open bands is how many bands in this filter still have at least one free seat. Free slots is how many empty seats those bands add up to. Full bands is how many bands are full, and those rows only show when Open places only is off. Total rows is how many bands the filter is showing. None of those numbers is a count of people to call.",
             "Each weekday is its own block, for example Monday, 11 bands. One row is one band: service, venue, time, the seat list, and Place.",
@@ -859,7 +859,7 @@
             "where": "Services & places → Places (Booking Portal)",
             "steps": [
               "Esta pagina no es Service roster. Places es la oferta del Booking Portal. Service roster es otra pantalla: quien esta reservado y el instructor de siempre.",
-              "Refresh vuelve a cargar las plazas vivas. Open Booking Portal abre la web de familias en otra pestana, para ver la misma oferta que ven ellos. Waiting list abre la pantalla WAITING LIST.",
+              "Refresh vuelve a cargar las plazas vivas. Open Booking Portal abre la oferta en otra pestana. Si estas dentro como admin, arriba dice Office view y no pide el login de padre. Waiting list abre la pantalla WAITING LIST.",
               "Day, Service y Venue filtran el tablero. All days, All services y All venues ensenan toda la oferta. Open places only esconde las franjas que ya estan llenas. Quitale la marca si tambien quieres ver las llenas.",
               "Open bands es cuantas franjas de este filtro siguen con al menos una plaza libre. Free slots es cuantas plazas vacias suman esas franjas. Full bands es cuantas franjas estan llenas, y solo se ven si quitas Open places only. Total rows es cuantas franjas ensena el filtro. Ninguno de esos numeros es gente a la que llamar.",
               "Cada dia es un bloque, por ejemplo Monday, 11 bands. Una fila es una franja: servicio, sede, hora, la lista de plazas, y Place.",
@@ -3564,8 +3564,8 @@
             "email"
           ],
           "steps": [
-            "Open Booking Portal. The top bar says Connected as the parent name and email, or Not signed in.",
-            "Sign in is the welcome popup (family PIN or email code). Sign out clears that browser and asks again.",
+            "Open Booking Portal. A family sees Connected as their name and email, or Not signed in. An admin signed in on this site sees Office view and is not asked for the parent login.",
+            "Sign in is the welcome popup (family PIN or email code). Sign out clears that family on this browser and asks again. Office view has Admin, which returns to Places.",
             "Clients and former families both see their own name. A former label only means they are not in class yet.",
             "When a registration finishes, the pay link holds that seat for 30 minutes. If they do not pay, the hold expires and the seat is free on the offer again.",
             "Do not send a second hold while they are about to pay. A second hold paints the seat full before payment."

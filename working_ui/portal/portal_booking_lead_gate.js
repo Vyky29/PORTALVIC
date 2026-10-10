@@ -21,6 +21,9 @@
     /** choice | pin | returning | new */
     flow: "choice",
     wired: false,
+    /** Admin / CEO already signed in on this host. Browse without a parent login. */
+    officeView: false,
+    officeName: "",
   };
 
   function cfg() {
@@ -136,6 +139,63 @@
       );
     } catch (_e) {
       /* ignore */
+    }
+  }
+
+  function readStaffAccessToken() {
+    var stores = [global.localStorage, global.sessionStorage];
+    for (var s = 0; s < stores.length; s++) {
+      var store = stores[s];
+      if (!store) continue;
+      try {
+        for (var i = 0; i < store.length; i++) {
+          var key = store.key(i);
+          if (!key || !/^sb-.*-auth-token/i.test(key)) continue;
+          var data = JSON.parse(store.getItem(key) || "null");
+          var sess = data && data.currentSession ? data.currentSession : data;
+          if (!sess || !sess.access_token || !sess.user || !sess.user.id) continue;
+          var exp = Number(sess.expires_at || 0);
+          if (exp && exp * 1000 < Date.now()) continue;
+          return { token: String(sess.access_token), userId: String(sess.user.id) };
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+    }
+    return null;
+  }
+
+  /** Same-origin admin or CEO session. Parents do not have this login. */
+  async function tryOfficeStaffView() {
+    var sess = readStaffAccessToken();
+    if (!sess) return false;
+    var c = cfg();
+    if (!c.url || !c.anon) return false;
+    try {
+      var res = await fetch(
+        c.url +
+          "/rest/v1/staff_profiles?id=eq." +
+          encodeURIComponent(sess.userId) +
+          "&select=app_role,full_name",
+        {
+          headers: {
+            apikey: c.anon,
+            Authorization: "Bearer " + sess.token,
+            Accept: "application/json",
+          },
+        }
+      );
+      if (!res.ok) return false;
+      var rows = await res.json();
+      var row = rows && rows[0];
+      if (!row) return false;
+      var role = String(row.app_role || "").toLowerCase();
+      if (role !== "admin" && role !== "ceo") return false;
+      state.officeView = true;
+      state.officeName = String(row.full_name || "").replace(/\s+/g, " ").trim();
+      return true;
+    } catch (_e) {
+      return false;
     }
   }
 
@@ -358,6 +418,10 @@
   }
 
   function openGate() {
+    if (state.officeView) {
+      unlock();
+      return;
+    }
     void tryParentPortalHandoff().then(function (ok) {
       if (ok) {
         unlock();
@@ -831,6 +895,12 @@
     showModal(false);
     adoptTokenFromUrl();
 
+    var officeOk = await tryOfficeStaffView();
+    if (officeOk) {
+      unlock();
+      return true;
+    }
+
     var forceGate = false;
     try {
       forceGate = global.sessionStorage.getItem("clubsens_booking_force_gate_v1") === "1";
@@ -889,6 +959,9 @@
     clearSession: clearSession,
     isUnlocked: function () {
       return !!state.signedIn;
+    },
+    isOfficeView: function () {
+      return !!state.officeView;
     },
     openGate: openGate,
     privacyVersion: PRIVACY_VERSION,

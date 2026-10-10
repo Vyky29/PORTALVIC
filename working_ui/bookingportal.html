@@ -1887,7 +1887,7 @@
   <script src="/portal/portal_booking_offer.js?v=20260913-aquatic-30"></script>
   <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20261009-pin-visit-header"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20261010-office-view"></script>
   <script src="/portal/portal_booking_waitlist.js?v=20260913-no-cross-family-pii"></script>
   <script>
     (function () {
@@ -1906,8 +1906,19 @@
       function portalPaintBookingSession() {
         var chip = document.getElementById("bookingSessionChip");
         var who = document.getElementById("bookingSessionWho");
+        var btn = document.getElementById("bookingSessionSignOut");
         if (!chip || !who) return;
         var gate = window.PortalBookingLeadGate;
+        if (gate && gate.isOfficeView && gate.isOfficeView()) {
+          chip.hidden = false;
+          chip.classList.add("is-out");
+          who.textContent = "Office view";
+          if (btn) {
+            btn.textContent = "Admin";
+            btn.setAttribute("data-mode", "office");
+          }
+          return;
+        }
         var lead = null;
         try {
           if (gate && gate.isUnlocked && gate.isUnlocked() && gate.getLeadForPrefill) {
@@ -1916,7 +1927,6 @@
         } catch (_e) {
           lead = null;
         }
-        var btn = document.getElementById("bookingSessionSignOut");
         var name = lead && (lead.parent_name || lead.first_name);
         var email = lead && (lead.email || lead.parent_email);
         chip.hidden = false;
@@ -1963,6 +1973,10 @@
       var bookingSignOutBtn = document.getElementById("bookingSessionSignOut");
       if (bookingSignOutBtn) {
         bookingSignOutBtn.addEventListener("click", function () {
+          if (bookingSignOutBtn.getAttribute("data-mode") === "office") {
+            window.location.href = "/admin_dashboard.html#services_places";
+            return;
+          }
           if (bookingSignOutBtn.getAttribute("data-mode") === "in") {
             if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.openGate) {
               window.PortalBookingLeadGate.openGate();
