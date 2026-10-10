@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v376",
+  "version": "2026-10-10-v377",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1981,6 +1981,45 @@
             "tips": [
               "En el texto del enlace de finish-booking no pongas frases de suitability.",
               "Create invoice y Xero products no son los botones de la fila de Finance. Esos son Bookings y Payments."
+            ]
+          }
+        },
+        {
+          "id": "invoice_xero_and_lost_slot",
+          "title": "Xero failed, Not in Xero, and lost slot",
+          "summary": "Three different invoice states. A failed push stays red until Xero accepts it. A half-paid flexi invoice can be live and still not in Xero. A lost slot is an old invoice for a place that was released.",
+          "where": "Finance → Bookings",
+          "keywords": [
+            "xero",
+            "xero failed",
+            "not in xero",
+            "lost slot",
+            "factura",
+            "flexi"
+          ],
+          "steps": [
+            "Xero failed (red) means the invoice is paid and a send to Xero was tried. The login to Xero was refused. The red line stays until a later send succeeds. Mark paid does not clear it.",
+            "Not in Xero (grey) means money is in (paid, or the first half of a flexi) and the invoice was never sent, or an early send was cleared. A flexi with one half still scheduled stays here until it is sent.",
+            "Lost slot (red card, hidden) is not the live invoice. The family re-enrolled and did not pay, so that place was released. Do not collect it and do not send it to Xero.",
+            "If the same child has a lost-slot card and a green partial card, the green one is the place they are on now. The pink one is the old place."
+          ],
+          "tips": [
+            "A GoCardless chip can sit on an invoice whose first half was marked as a bank payment. Read the instalment line for how that half was paid.",
+            "Hidden October rows can still add a Not in Xero or Xero failed count on the family chip."
+          ],
+          "es": {
+            "title": "Xero failed, Not in Xero y lost slot",
+            "summary": "Son tres estados. Un envio fallido sigue en rojo hasta que Xero lo acepta. Un flexi a medias puede estar vivo y aun no estar en Xero. Lost slot es una factura vieja de una plaza que se solto.",
+            "where": "Finance, Bookings",
+            "steps": [
+              "Xero failed (rojo) es una factura pagada cuyo envio a Xero se intento y el login de Xero lo rechazo. La linea roja se queda hasta que un envio posterior salga bien. Mark paid no la quita.",
+              "Not in Xero (gris) es dinero ya entrado (pagada, o la primera mitad de un flexi) que no se ha enviado, o un envio temprano que se borro. Un flexi con la otra mitad aun programada se queda ahi hasta que se envie.",
+              "Lost slot (tarjeta roja, hidden) no es la factura viva. La familia se reinscribio y no pago, asi que esa plaza se solto. No se cobra y no se manda a Xero.",
+              "Si el mismo nino tiene una tarjeta lost slot y otra verde a medias, la verde es la plaza de ahora. La rosa es la plaza vieja."
+            ],
+            "tips": [
+              "Un chip de GoCardless puede salir en una factura cuya primera mitad se marco como banco. La linea del plazo dice como entro esa mitad.",
+              "Filas de octubre hidden pueden sumar igual Not in Xero o Xero failed en el chip de la familia."
             ]
           }
         },
