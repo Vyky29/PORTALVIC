@@ -49,6 +49,9 @@
     "timi dairo": "portal/participants/timi.png?v=20260628-timi-smile",
     ikram: "portal/participants/ikram.png",
     emani: "portal/participants/emani.jpg?v=20261010-emani",
+    vithura: "portal/participants/vithura.jpg?v=20261010-vithura",
+    "vithura pa": "portal/participants/vithura.jpg?v=20261010-vithura",
+    "vithura pakeerathan": "portal/participants/vithura.jpg?v=20261010-vithura",
     "ikram omar": "portal/participants/ikram.png",
     rodin: "portal/participants/rodin.png",
     "rodin esmati": "portal/participants/rodin.png",
@@ -106,6 +109,7 @@
     "/portal/participants/cyrus.png": true,
     "/portal/participants/eiji.png": true,
     "/portal/participants/emani.jpg": true,
+    "/portal/participants/vithura.jpg": true,
     "/portal/participants/emanuel.png": true,
     "/portal/participants/erik.png": true,
     "/portal/participants/fadi.png": true,
@@ -544,7 +548,7 @@
       var p = participantPhotoPathOnDisk(raw);
       if (!p) return;
       /* Office recognition photo. Parents keep an empty circle until they upload. */
-      if (!photoFrameSurfaceOn() && /\/participants\/emani\.jpe?g(?:$|\?)/i.test(p)) return;
+      if (!photoFrameSurfaceOn() && /\/participants\/(?:emani|vithura)\.jpe?g(?:$|\?)/i.test(p)) return;
       add(p);
     }
     function addStaticRoster() {
