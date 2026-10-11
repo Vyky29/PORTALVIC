@@ -1235,6 +1235,42 @@ export function feedbackRingAlreadySentToday(
   return !!(existing && existing.length);
 }
 
+/**
+ * Tuesday SwimFarm 11.00-12.00 is one Acat group card (Day Centre key
+ * `acat|day_centre`). The four children on the aquatic seat are that same
+ * group, not four feedbacks.
+ */
+const TUESDAY_ACAT_MEMBER_SLUGS = new Set([
+  "jack_s",
+  "jack_stratton",
+  "jack_s_stratton",
+  "jack_w",
+  "jack_walker",
+  "jack_w_walker",
+  "kamy",
+  "kamy_akhavan",
+  "kate",
+  "kate_fordham",
+]);
+
+function slugIsTuesdayAcatMember(name: string): boolean {
+  const slug = slugClient(clientDisplayStem(name));
+  return !!slug && TUESDAY_ACAT_MEMBER_SLUGS.has(slug);
+}
+
+function isTuesdayAcatGroupAquaticSeat(slot: Feedback2030Slot, iso: string): boolean {
+  if (weekdayLongUtcNoon(iso) !== "Tuesday") return false;
+  if (!isAquaticService(slot.service)) return false;
+  if (feedbackClockMinutes(slot.time) !== 11 * 60) return false;
+  return slugIsTuesdayAcatMember(slot.client);
+}
+
+function feedbackIsAcatGroup(fb: Feedback2030Row): boolean {
+  const slug = slugClient(clientDisplayStem(String(fb.client_name || "")));
+  if (slug === "acat" || slug === "acat_group") return true;
+  return /(?:^|\|)acat(?:\||$)/i.test(String(fb.portal_session_key || ""));
+}
+
 export function slotIsResolved(
   slot: Feedback2030Slot,
   iso: string,
@@ -1247,6 +1283,11 @@ export function slotIsResolved(
   },
 ): boolean {
   const dc = isDayCentreService(slot.service);
+  if (isTuesdayAcatGroupAquaticSeat(slot, iso)) {
+    for (const fb of ctx.feedbackRows) {
+      if (feedbackIsAcatGroup(fb)) return true;
+    }
+  }
   for (const c of ctx.cancelRows) {
     if (cancelReportClearsSlot(c, slot)) return true;
   }
@@ -1277,6 +1318,8 @@ export function outstandingByStaff(
   const map = new Map<string, Feedback2030StaffDebt>();
   for (const slot of slots) {
     if (!isRealFeedbackClient(slot.client)) continue;
+    /* The Acat day-centre card is the one Tuesday unit. These aquatic rows are the same hour. */
+    if (isTuesdayAcatGroupAquaticSeat(slot, iso)) continue;
     if (staffSkipTueThuOfficeHoldFeedback(slot.staff, iso)) continue;
     if (slotIsResolved(slot, iso, ctx)) continue;
     if (!isUsableCoverStaff(slot.staff)) continue;
