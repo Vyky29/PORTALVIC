@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-11-v392",
+  "version": "2026-10-11-v393",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2222,14 +2222,20 @@
             "edit note",
             "nota admin",
             "office note",
-            "parte que le corresponde"
+            "parte que le corresponde",
+            "none",
+            "makeup",
+            "proof",
+            "justificante",
+            "sin prueba"
           ],
           "steps": [
             "One day with no instructor: Schedule and Covers, that date, Change on the child's card, then Cancelled. Do not use Absent. Absent is the family missing the session.",
             "In Reason write that there is no instructor. Do not ask them to reply on this message. Save. That day only is cancelled. The standing service stays.",
             "The parent gets an automatic WhatsApp that the session is cancelled, including that note. It says the message was sent automatically. The row lands in Absents, refunds and credits.",
             "When the family tells the office refund or credit another way, open that row. Choose Credit or Refund, then Approve. For a refund enter the session amount. For a credit enter the same amount, or leave the amount blank for a session credit with no cash figure.",
-            "Approve writes the family ledger and sends the outcome message. A refund message asks for the name on the account, sort code, and account number so the office can pay it in. Makeup is only if they ask for another day."
+            "Approve writes the family ledger and sends the outcome message. A refund message asks for the name on the account, sort code, and account number so the office can pay it in. Makeup is only if they ask for another day.",
+            "Admin can Approve None with no proof. That is no money and no parent message. Admin can also choose Makeup with no proof and pick the seat. Credit and refund still need the uploaded proof, unless the row is a club cancellation or already came from Schedule and Covers."
           ],
           "tips": [
             "Sep+ absents and cancellations share one decide queue.",
@@ -2258,7 +2264,8 @@
               "En Reason escribe que no hay instructor. No pidas que contesten en ese mensaje. Guarda. Solo ese dia se cancela. El servicio fijo se queda.",
               "El padre recibe un WhatsApp automatico de que la sesion esta cancelada, con esa nota. Dice que el mensaje salio solo. La fila cae en Absents, refunds and credits.",
               "Cuando la familia diga a la oficina refund o credit por otro lado, abre esa fila. Elige Credit o Refund, y luego Approve. En un refund pon el importe de la sesion. En un credit pon el mismo importe, o dejalo en blanco para un credito de sesion sin cifra.",
-              "Approve escribe el libro de la familia y manda el mensaje del resultado. El mensaje de refund pide el nombre de la cuenta, sort code y account number para poder hacer el ingreso. Makeup solo si piden otro dia."
+              "Approve escribe el libro de la familia y manda el mensaje del resultado. El mensaje de refund pide el nombre de la cuenta, sort code y account number para poder hacer el ingreso. Makeup solo si piden otro dia.",
+              "Admin puede aprobar None sin prueba. Eso es sin dinero y sin mensaje al padre. Admin tambien puede elegir Makeup sin prueba y elegir la plaza. Credit y refund siguen necesitando la prueba subida, salvo que la fila sea una cancelacion del club o ya venga de Schedule and Covers."
             ],
             "tips": [
               "Las faltas y cancelaciones de septiembre en adelante comparten una sola cola de decision.",

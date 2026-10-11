@@ -262,15 +262,16 @@ Deno.serve(async (req) => {
   const caseKind = clean(report.case_kind, 20).toLowerCase() || "absence";
   const isCancellationCase = caseKind === "cancellation";
   const fromSchedule = !!clean(report.schedule_override_id, 60);
-  // Parent proof absences need a file. Schedule / office / cancellation rows
-  // are already on the board — office may decide credit/refund/makeup/none without proof.
-  const mayDecideWithoutProof = isCancellationCase || fromSchedule;
+  // Credit and refund on a parent proof absence need the file.
+  // Admin may close as none, or grant makeup, with no file. This function is admin-only.
+  // Schedule / cancellation rows may also decide credit or refund without proof.
+  const mayDecideWithoutProof =
+    isCancellationCase || fromSchedule || outcome === "none" || outcome === "makeup";
   if (action === "approve" && !report.proof_storage_path && !mayDecideWithoutProof) {
     return portalAdminJson(400, {
       ok: false,
       error: "proof_required",
-      message:
-        "Cannot excuse without uploaded proof. For no-proof makeups use Grant makeup instead.",
+      message: "Credit and refund need uploaded proof. None and makeup do not.",
     });
   }
 
