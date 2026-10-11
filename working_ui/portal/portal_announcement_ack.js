@@ -930,35 +930,8 @@
     }
   };
 
-  /** User gesture: Sign asks for every feature still off. Opening the sheet does not. */
-  global.portalActivatePermissionsFromSignableItem = async function portalActivatePermissionsFromSignableItem(
-    item,
-    opts
-  ) {
-    if (!global.portalSignableItemTriggersPortalPermissions(item)) return null;
-    var promptAll = !!(opts && opts.promptAll);
-    if (promptAll && typeof global.portalRequestStaffFeaturePermissions === "function") {
-      return await global.portalRequestStaffFeaturePermissions();
-    }
-    try {
-      var box = readBox();
-      var client = box && box.client;
-      var uid =
-        (box.session && box.session.user && box.session.user.id) ||
-        (box.staff_profile && box.staff_profile.id) ||
-        "";
-      if (
-        typeof global.portalWorkerHasPortalPushSubscription === "function" &&
-        client &&
-        uid
-      ) {
-        var hasPush = await global.portalWorkerHasPortalPushSubscription(client, uid);
-        if (hasPush) return null;
-      }
-    } catch (_) {}
-    if (typeof global.portalRequestDefaultPortalPermissions === "function") {
-      return await global.portalRequestDefaultPortalPermissions();
-    }
+  /** Signing records that they read it. It does not ask the phone for permissions. */
+  global.portalActivatePermissionsFromSignableItem = async function portalActivatePermissionsFromSignableItem() {
     return null;
   };
 })(typeof window !== "undefined" ? window : globalThis);
