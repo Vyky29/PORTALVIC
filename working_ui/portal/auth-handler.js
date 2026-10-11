@@ -1563,7 +1563,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
     if (isLeadOverview || isGhostDashboard) {
       throw new Error("skip_location_on_lead_overview");
     }
-    await import("./portal_live_map_shift_window.js?v=20261008-loc-roster");
+    await import("./portal_live_map_shift_window.js?v=20261011-hub-shift");
     const perm = await import("./portal_location_permission.js?v=20261009-no-live-mention");
     window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
     window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
@@ -1600,7 +1600,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
     perm.portalRefreshCameraUi();
     perm.portalRefreshEnableAllUi();
     perm.portalSyncAlertsSettingsChrome();
-    const locTrack = await import("./portal_location_tracker.js?v=20261008-loc-roster");
+    const locTrack = await import("./portal_location_tracker.js?v=20261011-hub-shift");
     window.portalRestartLocationTracker = function () {
       return locTrack.restartPortalLocationTracker({ page, profile, session });
     };

@@ -5195,6 +5195,7 @@
     normIso: normIso,
     lookupStandingPoolArea: lookupStandingPoolArea,
     lookupOriginalSeatForCover: lookupOriginalSeatForCover,
+    autumnSundayStandingHubRows: autumnSundayStandingHubRows,
     overlayStandingPoolAreasOntoRows: overlayStandingPoolAreasOntoRows,
     scrubAdaamAydaanActonTueBeforeFirstSession: scrubAdaamAydaanActonTueBeforeFirstSession,
     scrubKareenaActonTueBeforeFirstSession: scrubKareenaActonTueBeforeFirstSession,

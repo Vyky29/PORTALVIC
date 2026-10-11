@@ -102,10 +102,111 @@
     return typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
   }
 
+  function dashboardSessionsModel() {
+    try {
+      if (typeof sessionsModel !== "undefined" && Array.isArray(sessionsModel) && sessionsModel.length) {
+        return sessionsModel;
+      }
+    } catch (_) {}
+    if (global.sessionsModel && Array.isArray(global.sessionsModel) && global.sessionsModel.length) {
+      return global.sessionsModel;
+    }
+    return null;
+  }
+
+  function hubRosterKey(raw) {
+    var s = String(raw || "").toLowerCase();
+    if (s.indexOf("emmanuel") >= 0 || s.indexOf("emanuel") >= 0) return "emmanuel";
+    if (s.indexOf("godsway") >= 0) return "godsway";
+    if (s.indexOf("berta") >= 0) return "berta";
+    return "";
+  }
+
+  /** Sunday 1-7 are afternoon (1.15 = 13:15). Morning Hub stays 9.30. */
+  function parseSundayHubSlot(timeSlot) {
+    var normalized = String(timeSlot || "")
+      .replace(/\s*-\s*/g, " to ")
+      .replace(/\s+/g, " ")
+      .trim();
+    var parts = normalized.split(/\s+to\s+/i);
+    if (parts.length < 2) return null;
+    function hm(token) {
+      var t = String(token || "").trim();
+      var h = 0;
+      var m = 0;
+      if (t.indexOf(":") >= 0) {
+        var c = t.split(":");
+        h = parseInt(c[0], 10) || 0;
+        m = parseInt(c[1], 10) || 0;
+      } else {
+        var p = t.split(".");
+        h = parseInt(p[0], 10) || 0;
+        m = p.length > 1 ? parseInt(p[1], 10) || 0 : 0;
+      }
+      if (h >= 1 && h <= 7) h += 12;
+      return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+    }
+    return { start: hm(parts[0]), end: hm(parts[1]) };
+  }
+
+  /**
+   * Capacity-chain Staff Today drops Sunday Hub (Berta / Emmanuel / Godsway).
+   * The live map was treating that as "no shift" and never asked the phone for GPS.
+   */
+  function canonicalSundayHubSessions(staffKey, todayIso) {
+    var todayDow = "";
+    try {
+      todayDow = new Date().toLocaleDateString("en-GB", {
+        weekday: "long",
+        timeZone: "Europe/London",
+      });
+    } catch (_) {}
+    if (todayDow !== "Sunday") return [];
+    if (todayIso === "2026-09-06") return [];
+    var want = hubRosterKey(staffKey);
+    if (!want) return [];
+    var Canon = global.PortalRosterCanonical;
+    if (!Canon || typeof Canon.autumnSundayStandingHubRows !== "function") return [];
+    try {
+      if (
+        typeof Canon.autumnStaffStandingOffOnIso === "function" &&
+        Canon.autumnStaffStandingOffOnIso(want, todayIso)
+      ) {
+        return [];
+      }
+    } catch (_) {}
+    var rows = [];
+    try {
+      rows = Canon.autumnSundayStandingHubRows() || [];
+    } catch (_) {
+      return [];
+    }
+    var out = [];
+    rows.forEach(function (row) {
+      if (hubRosterKey(row && row.instructors) !== want) return;
+      var t = parseSundayHubSlot(row.time_slot);
+      if (!t) return;
+      out.push({
+        start: t.start,
+        end: t.end,
+        day: "Sunday",
+        session_date: todayIso,
+        clientId: "hub",
+      });
+    });
+    return out;
+  }
+
   function todaySessionsForProfile(profile, authUser) {
     var bootWrap = bootWrapForProfile(profile, authUser);
-    if (!bootWrap || !bootWrap.boot) return [];
-    return sessionsForCalendarToday(bootWrap.boot.sessionsModel);
+    var live = dashboardSessionsModel();
+    var fromLive = live ? sessionsForCalendarToday(live) : [];
+    if (fromLive.length) return fromLive;
+    var fromBoot =
+      bootWrap && bootWrap.boot ? sessionsForCalendarToday(bootWrap.boot.sessionsModel) : [];
+    if (fromBoot.length) return fromBoot;
+    var staffKey = resolveStaffRosterKey(profile, authUser, bootWrap);
+    return canonicalSundayHubSessions(staffKey, localTodayIso());
   }
 
   /**
