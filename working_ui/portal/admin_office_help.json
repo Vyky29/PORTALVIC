@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-11-v393",
+  "version": "2026-10-11-v394",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -929,7 +929,7 @@
           "steps": [
             "Family completes finish-booking payment (Stripe or bank confirm).",
             "A paid trial sends the parent a confirmation on WhatsApp and by email: child, day, time, venue, and instructor. Card payment sends it as soon as Stripe marks the invoice paid. Mark paid sends the same message. If that confirmation already went out, it is not sent again.",
-            "The instructor does not get that WhatsApp, and it does not appear in Comms or WhatsApp API. Their alert is a phone push: New client for trial. A cover is the message that WhatsApps the worker.",
+            "The instructor does not get that WhatsApp, and it does not appear in Comms or WhatsApp API. Their alert is a phone push: New client for trial. It is sent when the roster row is written, and again if the day, the time, or the instructor on that row changes. The phone notifies then, with the app closed, locked, or open. A cover is the message that WhatsApps the worker.",
             "Ops sync folds MADRE + trial schedule_overrides (+ dated roster row).",
             "Open Sessions Overview on the first session date — the child should appear.",
             "If missing, check payment status and Schedule & Covers / overrides for that date.",
@@ -947,7 +947,7 @@
             "steps": [
               "La familia paga finish-booking (Stripe o confirmacion de banco).",
               "Un trial pagado manda al padre una confirmacion por WhatsApp y por email: nino, dia, hora, sede e instructor. Si pagan con tarjeta, sale en cuanto Stripe marca la factura pagada. Mark paid manda el mismo mensaje. Si esa confirmacion ya salio, no se repite.",
-              "Al instructor no le llega ese WhatsApp, y no sale en Comms ni en WhatsApp API. Su aviso es un push al movil: New client for trial. El que se manda por WhatsApp al trabajador es un cover.",
+              "Al instructor no le llega ese WhatsApp, y no sale en Comms ni en WhatsApp API. Su aviso es un push al movil: New client for trial. Sale cuando se escribe la fila del roster, y otra vez si cambian el dia, la hora o el instructor de esa fila. El movil avisa en ese momento, con la app cerrada, bloqueada o abierta. El que se manda por WhatsApp al trabajador es un cover.",
               "El sistema pliega MADRE, el override de trial y la fila del roster de ese dia.",
               "Abre Sessions Overview en la fecha de la primera sesion. El nino tiene que salir.",
               "Si no sale, mira el pago y Schedule & Covers / overrides de ese dia.",

@@ -154,6 +154,22 @@ function isFinishBookingNewClient(record?: Record<string, unknown>): boolean {
   return flagTrue(pl.finish_booking) || flagTrue(pl.new_client) || flagTrue(pl.term_new_participant);
 }
 
+/** Day, time, instructor, or child. updated_at alone must not buzz the phone again. */
+function rosterPushFingerprint(record: Record<string, unknown>): string {
+  return [
+    String(record.session_date ?? "").slice(0, 10),
+    String(record.anchor_start ?? ""),
+    String(record.anchor_end ?? ""),
+    String(record.anchor_time_slot_label ?? ""),
+    normSpreadsheetKey(String(record.anchor_staff_id ?? "")),
+    String(record.override_type ?? "").trim(),
+    String(record.status ?? "").trim(),
+    clientDisplayName(record).toLowerCase(),
+    isTrialReplace(record) ? "trial" : "",
+    coverRosterKey(record),
+  ].join("|");
+}
+
 function pushCopy(
   overrideType: string,
   record?: Record<string, unknown>,
@@ -600,6 +616,20 @@ Deno.serve(async (req) => {
     );
   }
 
+  const isUpdate = String(payload.type || "").toUpperCase() === "UPDATE";
+  const oldRec = payload.old_record && typeof payload.old_record === "object"
+    ? payload.old_record as Record<string, unknown>
+    : null;
+  if (isUpdate && oldRec) {
+    if (rosterPushFingerprint(record as Record<string, unknown>) === rosterPushFingerprint(oldRec)) {
+      return new Response(
+        JSON.stringify({ skipped: true, reason: "unchanged" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    await admin.from("portal_webpush_override_sent").delete().eq("override_id", overrideId);
+  }
+
   const { error: dedupeErr } = await admin.from("portal_webpush_override_sent")
     .insert({ override_id: overrideId });
 
@@ -626,6 +656,7 @@ Deno.serve(async (req) => {
               body: `${copy.body} Date: ${sessionDate}.`,
               url: notifyUrl,
               portalOpen: "alerts",
+              vibrate: [200, 80, 200, 80, 280, 100, 200],
             });
             for (const row of subs) {
               const raw = row.subscription_json;
@@ -662,6 +693,7 @@ Deno.serve(async (req) => {
     body,
     url: notifyUrl,
     portalOpen: "alerts",
+    vibrate: [200, 80, 200, 80, 280, 100, 200],
   });
 
   let sent = 0;
