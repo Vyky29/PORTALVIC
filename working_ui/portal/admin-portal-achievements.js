@@ -354,19 +354,51 @@
   }
 
   async function fetchAllPhotos(client) {
-    var res = await client.rpc("portal_admin_list_achievement_photos_all");
-    if (!res.error) return attachParentPhotoComments(client, res.data || []);
-    console.warn("[achievements] list RPC failed, using table fallback", res.error);
-    var fallback = await client
-      .from("portal_participant_achievement_photos")
-      .select(
-        "id, staff_user_id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at, session_date, portal_session_key, parent_downloaded_at"
-      )
-      .in("status", ["draft", "attached", "archived_unused", "downloaded"])
-      .order("client_name", { ascending: true })
-      .order("created_at", { ascending: true });
-    if (fallback.error) throw fallback.error;
-    return attachParentPhotoComments(client, fallback.data || []);
+    var pageSize = 1000;
+    var all = [];
+    var offset = 0;
+    var page = 0;
+    while (page < 30) {
+      var res = await client.rpc("portal_admin_list_achievement_photos_all", {
+        p_limit: pageSize,
+        p_offset: offset,
+      });
+      if (res.error) {
+        console.warn("[achievements] list RPC failed, using table fallback", res.error);
+        return fetchAllPhotosFromTable(client);
+      }
+      var batch = res.data || [];
+      all = all.concat(batch);
+      if (batch.length < pageSize) break;
+      offset += pageSize;
+      page += 1;
+    }
+    return attachParentPhotoComments(client, all);
+  }
+
+  async function fetchAllPhotosFromTable(client) {
+    var pageSize = 1000;
+    var all = [];
+    var offset = 0;
+    var page = 0;
+    while (page < 30) {
+      var fallback = await client
+        .from("portal_participant_achievement_photos")
+        .select(
+          "id, staff_user_id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at, session_date, portal_session_key, media_type, duration_ms, parent_downloaded_at"
+        )
+        .in("status", ["draft", "attached", "archived_unused", "downloaded"])
+        .order("client_id", { ascending: true })
+        .order("created_at", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (fallback.error) throw fallback.error;
+      var batch = fallback.data || [];
+      all = all.concat(batch);
+      if (batch.length < pageSize) break;
+      offset += pageSize;
+      page += 1;
+    }
+    return attachParentPhotoComments(client, all);
   }
 
   async function attachParentPhotoComments(client, rows) {
