@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-11-v395",
+  "version": "2026-10-11-v396",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2565,7 +2565,7 @@
           "tips": [
             "Audience is admin/staff — not parents.",
             "One Sign button cannot merge the four prompts. The phone shows them in a row.",
-            "If that person already chose Don't Allow, the phone will not ask again. They still need the phone Settings for that item.",
+            "If that person already chose Don't Allow, the phone will not ask again. The message should tell them to leave the app, open Settings, then Notifications, search for CS Portal, and turn notifications on.",
             "Schedule changes and outstanding feedback use the logo halo and Quick menu. They are not a blocking Sign and submit sheet."
           ]
         },
