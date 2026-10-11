@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-10-v386",
+  "version": "2026-10-11-v387",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1620,6 +1620,10 @@
             "videos",
             "old clientes",
             "old clients",
+            "inbox",
+            "unassigned",
+            "sin participante",
+            "bandeja",
             "foto",
             "iniciales",
             "portrait",
@@ -1628,14 +1632,30 @@
           ],
           "steps": [
             "Open Family → Photos/Videos.",
+            "The first box is Inbox (unassigned). Photos uploaded without a child land there. It stays at the top even when the count is 0. Open it, then assign each photo to a participant.",
             "The letter boxes are children on an Autumn seat. OLD CLIENTES is everyone else on the list.",
             "The number under the name is achievement photos, not the portrait. 0 photos can still show a face.",
             "Initials mean no portrait is saved on that child. A photo on another screen uses the same saved file."
           ],
           "tips": [
             "The board name and the list name can differ (short name vs full name). They are the same child when the roster id matches.",
-            "A photo the office saves, or a file on the machine, shows on Staff and Admin. The parent sees initials until the family uploads one."
-          ]
+            "A photo the office saves, or a file on the machine, shows on Staff and Admin. The parent sees initials until the family uploads one.",
+            "Inbox (unassigned) is not a child. It is the drop box for photos taken without picking a participant."
+          ],
+          "es": {
+            "title": "Fotos y videos, y OLD CLIENTES",
+            "summary": "OLD CLIENTES en Fotos/Videos es quien no tiene plaza de Autumn. La primera caja es Inbox (unassigned): fotos subidas sin elegir nino.",
+            "where": "Family, Photos/Videos",
+            "steps": [
+              "Abre Family, Photos/Videos.",
+              "La primera caja es Inbox (unassigned). Ahi llegan las fotos subidas sin elegir nino. Sigue arriba aunque ponga 0. Abrela y asigna cada foto a un participante.",
+              "Las cajas de letras son ninos con plaza de Autumn. OLD CLIENTES es el resto de la lista.",
+              "El numero bajo el nombre son fotos de logros, no el retrato. 0 photos puede seguir ensenando una cara."
+            ],
+            "tips": [
+              "Inbox (unassigned) no es un nino. Es la caja de las fotos hechas sin elegir participante."
+            ]
+          }
         },
         {
           "id": "portrait_who_sees_it",

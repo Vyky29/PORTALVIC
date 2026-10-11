@@ -693,6 +693,10 @@
       var n = normalizeParticipantName(g.clientName);
       if (n) byName[n] = true;
     });
+    if (!byKey[INBOX_CLIENT_ID]) {
+      groups.unshift({ key: INBOX_CLIENT_ID, clientName: INBOX_CLIENT_NAME, photos: [] });
+      byKey[INBOX_CLIENT_ID] = true;
+    }
     emptyDirectoryParticipants().forEach(function (p) {
       if (!p) return;
       var key = achievementClientKey(p.key || p.clientName);
@@ -1606,6 +1610,7 @@
     var n = g.photos.length;
     return (
       '<button type="button" class="portal-ach-person' +
+      (isInboxGroupKey(g.key) ? " portal-ach-person--inbox" : "") +
       (oldClient ? " portal-ach-person--old" : "") +
       '" data-participant-key="' +
       esc(g.key) +
@@ -1652,8 +1657,10 @@
     if (!host) return;
     var current = [];
     var oldClients = [];
+    var inbox = null;
     (directoryState.groups || []).forEach(function (g) {
-      if (isOldAutumnClient(g)) oldClients.push(g);
+      if (isInboxGroupKey(g.key)) inbox = g;
+      else if (isOldAutumnClient(g)) oldClients.push(g);
       else current.push(g);
     });
     oldClients.sort(function (a, b) {
@@ -1662,11 +1669,12 @@
       });
     });
     var buckets = letterBuckets(current);
-    if (!buckets.length && !oldClients.length) {
+    if (!inbox && !buckets.length && !oldClients.length) {
       host.innerHTML = '<p class="muted">No achievement photos yet.</p>';
       return;
     }
     var html = '<div class="portal-ach-dir">';
+    if (inbox) html += letterSectionHtml("Inbox", [inbox], false);
     buckets.forEach(function (bucket) {
       html += letterSectionHtml(bucket.letter, bucket.participants, false);
     });

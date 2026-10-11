@@ -1671,6 +1671,13 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   transform: translateY(-1px);
   outline: none;
 }
+.portal-ach-letter:first-child .portal-ach-person--inbox {
+  border: 2px solid #0f766e;
+  background: #f0fdfa;
+}
+.portal-ach-person--inbox .portal-ach-person__name {
+  color: #0f766e;
+}
 .portal-ach-person--old {
   border: 2px solid #dc2626;
   outline: 2px solid #dc2626;
