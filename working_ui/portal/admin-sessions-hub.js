@@ -4107,13 +4107,13 @@ function rosterRowToSlot(isoDate, wd, r) {
   function htmlParticipantPill(name, escFn, slotOpt) {
     var esc = escFn || esc;
     if (slotOpt && hubSlotIsTrial(slotOpt)) {
-      var trialName = clean(name) || "Trial";
+      var trialName = clean(name);
       trialName = trialName
         .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
         .replace(/^trial\s*[-·:]?\s*/i, "")
         .replace(/\s+/g, " ")
-        .trim() || "Trial";
-      return '<span class="ash-pill ash-pill--trial">Trial · ' + esc(trialName) + "</span>";
+        .trim();
+      return '<span class="ash-pill ash-pill--client">' + esc(trialName || clean(name)) + "</span>";
     }
     var kind = rosterSlotKind(name);
     if (kind === "open") {
