@@ -775,6 +775,7 @@
         grid.style.removeProperty('--today-row-gap');
         grid.style.removeProperty('--today-photo');
         grid.style.removeProperty('--today-photo-special');
+        grid.classList.remove('today-grid--faces-beside');
         return;
       }
       const n = Math.min(9, count);
@@ -815,8 +816,12 @@
       grid.style.setProperty('--today-row-gap', gapPx + 'px');
       grid.style.setProperty('--today-row-pad-y', padY + 'px');
       var face = portalTodayFaceSizes(grid, n);
-      grid.style.setProperty('--today-photo', (n <= 6 ? face.above : face.side) + 'px');
-      grid.style.setProperty('--today-photo-special', face.special + 'px');
+      /* 7 or more cards put the face beside the name. The stacked leftover
+         (special) is only a few pixels on a full Sunday, so use the row height. */
+      var beside = n > 6;
+      grid.classList.toggle('today-grid--faces-beside', beside);
+      grid.style.setProperty('--today-photo', (beside ? face.side : face.above) + 'px');
+      grid.style.setProperty('--today-photo-special', (beside ? face.side : face.special) + 'px');
     }
     /** Photo diameter from the real row. 1-6 cards stack the face above the name.
      *  More than 6 keep it on the left, between the old 72px and 32px. */
@@ -855,10 +860,9 @@
       if(above < 14) above = Math.max(12, above);
       var nameCol = Math.floor(width * 0.36);
       var special = Math.round(Math.min(above, nameCol > 0 ? nameCol : above));
-      var side = Math.round(Math.min(52, Math.max(40, row - 14)));
-      var mid = width - 78 - 72;
-      if(mid > 40) side = Math.min(side, Math.max(40, mid - 80));
-      if(row < 58) side = Math.round(Math.min(side, Math.max(36, row - 12)));
+      /* Beside the name: the circle should fill the row, not sit as a dot. */
+      var side = Math.round(Math.min(64, Math.max(44, row - 8)));
+      if(row < 52) side = Math.round(Math.max(32, Math.min(side, row - 6)));
       return { above: above, special: special, side: side };
     }
 

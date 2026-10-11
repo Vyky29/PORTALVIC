@@ -6354,6 +6354,15 @@
       max-height:none;
       aspect-ratio:1;
     }
+    .section-card--today .today-grid.today-grid--faces-beside .session-card-body .session-name-photo{
+      width:min(var(--today-photo, 48px), 64px);
+      max-width:64px;
+      min-width:0;
+      height:auto;
+      max-height:calc(100% - 4px);
+      aspect-ratio:1;
+      flex:0 0 auto;
+    }
     .section-card--today .session-name-photo img{
       position:absolute;
       inset:0;
