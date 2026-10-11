@@ -930,8 +930,16 @@
     }
   };
 
-  /** Signing records that they read it. It does not ask the phone for permissions. */
-  global.portalActivatePermissionsFromSignableItem = async function portalActivatePermissionsFromSignableItem() {
+  /** Sign connects features already allowed. It does not open a phone Allow sheet. */
+  global.portalActivatePermissionsFromSignableItem = async function portalActivatePermissionsFromSignableItem(
+    item,
+    opts
+  ) {
+    if (!global.portalSignableItemTriggersPortalPermissions(item)) return null;
+    if (!(opts && opts.promptAll)) return null;
+    if (typeof global.portalConnectStaffFeaturesQuietly === "function") {
+      return await global.portalConnectStaffFeaturesQuietly();
+    }
     return null;
   };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -161,7 +161,7 @@
         return loadSequential(EXTRACTED_BEFORE_AUTH, false);
       })
       .then(function () {
-        return loadScript("/portal/staff-dashboard-auth-supabase.js?v=20261011-feature-perms", true);
+        return loadScript("/portal/staff-dashboard-auth-supabase.js?v=20261011-quiet-connect", true);
       })
       .then(function () {
         return loadSequential(EXTRACTED_AFTER_AUTH, false);

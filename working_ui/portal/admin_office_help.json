@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-11-v397",
+  "version": "2026-10-11-v398",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2558,12 +2558,13 @@
             "Compose the announcement or reminder.",
             "Pick audience (group roster shows who is in the group).",
             "Publish — staff see a blocking sheet until they confirm.",
-            "Signing records that they read it. It does not turn on notifications, microphone, camera, or location.",
+            "Tick the permissions box. Sign connects, inside the app, whatever the phone already allows. Staff do not see an Allow sheet.",
+            "The message only tells them to leave the app, open Settings, then Notifications, and turn on CS Portal.",
             "Use reminders for time-bound nags."
           ],
           "tips": [
             "Audience is admin/staff — not parents.",
-            "The iPhone Allow sheet is the phone, not an office question. A website cannot turn notifications, microphone, camera, or location on by itself. After Allow once, the next open does not ask.",
+            "The announcement does not open the iPhone Allow sheet. Notifications of CS Portal are switched on in the phone Settings app.",
             "Schedule changes and outstanding feedback use the logo halo and Quick menu. They are not a blocking Sign and submit sheet."
           ]
         },

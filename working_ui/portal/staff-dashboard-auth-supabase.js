@@ -1,4 +1,4 @@
-import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalStaffDisplayName, portalStaffAuthorFirstName, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20261011-feature-perms";
+import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalStaffDisplayName, portalStaffAuthorFirstName, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20261011-quiet-connect";
 import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260818-es-exec";
 import {
   portalEnforceStaffAppPilotGate,

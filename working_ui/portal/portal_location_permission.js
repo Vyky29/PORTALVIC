@@ -717,6 +717,45 @@ export async function requestDefaultPortalPermissions() {
   return results;
 }
 
+async function quietPermissionState(name) {
+  try {
+    if (typeof navigator === "undefined" || !navigator.permissions?.query) return "unknown";
+    const perm = await navigator.permissions.query({ name });
+    return perm && perm.state ? String(perm.state) : "unknown";
+  } catch (_) {
+    return "unknown";
+  }
+}
+
+/**
+ * Sign connects features the phone already allows. It does not open an Allow sheet.
+ * Notifications still need CS Portal switched on in the iPhone Settings app.
+ */
+export async function connectStaffFeaturesQuietly() {
+  const notifications =
+    typeof Notification !== "undefined" ? String(Notification.permission || "") : "unsupported";
+  if (notifications === "granted" && typeof window.portalEnsureWebPushSubscription === "function") {
+    void window.portalEnsureWebPushSubscription();
+  }
+
+  const microphone = await quietPermissionState("microphone");
+  if (microphone === "granted") markMicrophoneGranted();
+
+  const camera = await quietPermissionState("camera");
+  if (camera === "granted") markCameraGranted();
+
+  const location = await quietPermissionState("geolocation");
+  if (location === "granted") {
+    markLocationGranted();
+    if (typeof window.portalRestartLocationTracker === "function") {
+      void window.portalRestartLocationTracker();
+    }
+  }
+
+  refreshDefaultPortalPermissionsUi();
+  return { notifications, microphone, camera, location };
+}
+
 /**
  * One tap: alerts, microphone (feedback), camera (sessions), location (incidents).
  * The phone still shows a separate Allow for each one that is not already on.
