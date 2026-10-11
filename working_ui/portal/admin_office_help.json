@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-11-v388",
+  "version": "2026-10-11-v389",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2836,6 +2836,45 @@
       "blurb": "Formal workers, timetable, Documents, Finance and Policies. Onboarding and interviews are under Potential workers.",
       "priority": 2,
       "lessons": [
+        {
+          "id": "staff_live_map",
+          "title": "Staff live map only shows a fresh GPS pin",
+          "summary": "Someone in the staff app is not a pin. The map only draws a phone that sent location in the last 20 minutes, during that worker's own shift.",
+          "where": "H&R, Staff live map",
+          "keywords": [
+            "live map",
+            "mapa",
+            "gps",
+            "ubicacion",
+            "location",
+            "nadie",
+            "0 on map",
+            "activo"
+          ],
+          "steps": [
+            "Open H&R, then Staff live map. The count is pins from the last 20 minutes.",
+            "The phone sends location only during that worker's shift: from 15 minutes before the first session until 10 minutes after the last.",
+            "The staff app has to stay open on their own phone, with location allowed. A push alert does not send GPS. Locking the phone or leaving the app stops the pin.",
+            "Someone who only opened the app, and has no session today, does not appear. Being in the portal is not the same as sharing location."
+          ],
+          "tips": [
+            "If the map says 0, nobody's phone has sent GPS in the last 20 minutes. Refresh does not invent a pin."
+          ],
+          "es": {
+            "title": "El mapa en vivo solo pinta un GPS reciente",
+            "summary": "Que alguien este en la app de staff no es un punto. El mapa solo pinta un movil que mando ubicacion en los ultimos 20 minutos, y solo durante su turno.",
+            "where": "H&R, Staff live map",
+            "steps": [
+              "Abre H&R y luego Staff live map. El numero son puntos de los ultimos 20 minutos.",
+              "El movil manda ubicacion solo en el turno de esa persona: desde 15 minutos antes de la primera sesion hasta 10 minutos despues de la ultima.",
+              "La app de staff tiene que seguir abierta en su propio movil, con la ubicacion permitida. Un aviso push no manda GPS. Si bloquea el movil o sale de la app, el punto se cae.",
+              "Quien solo abrio la app, y hoy no tiene sesion, no sale. Estar en el portal no es compartir ubicacion."
+            ],
+            "tips": [
+              "Si el mapa pone 0, ningun movil ha mandado GPS en los ultimos 20 minutos. Refresh no inventa un punto."
+            ]
+          }
+        },
         {
           "id": "late_feedback",
           "title": "Late feedback and timesheet pay",
