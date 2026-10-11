@@ -431,11 +431,14 @@
   }
 
   function onContinueClick(btn) {
-    if (typeof global.portalRequestDefaultPortalPermissions === "function") {
+    var askAll = typeof global.portalRequestStaffFeaturePermissions === "function"
+      ? global.portalRequestStaffFeaturePermissions
+      : global.portalRequestDefaultPortalPermissions;
+    if (typeof askAll === "function") {
       btn.disabled = true;
       var prev = btn.textContent;
       btn.textContent = "Allow when asked…";
-      void global.portalRequestDefaultPortalPermissions().finally(function () {
+      void askAll().finally(function () {
         silentPushRegister();
         refresh();
         if (

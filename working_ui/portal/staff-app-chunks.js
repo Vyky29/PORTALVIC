@@ -52,7 +52,7 @@
     "/portal/staff-dashboard-term.js?v=20261007-halo-logo",
     "/portal/staff-dashboard-participants.js?v=20261009-team-change-notice",
     "/portal/staff-dashboard-today.js?v=20261009-trial-general",
-    "/portal/staff-dashboard-ui.js?v=" + VER,
+    "/portal/staff-dashboard-ui.js?v=20261011-feature-perms",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
@@ -73,7 +73,7 @@
     "/portal/staff-dashboard-term.js?v=20261007-halo-logo",
     "/portal/staff-dashboard-participants.js?v=20261009-team-change-notice",
     "/portal/staff-dashboard-today.js?v=20261009-trial-general",
-    "/portal/staff-dashboard-ui.js?v=" + VER,
+    "/portal/staff-dashboard-ui.js?v=20261011-feature-perms",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
@@ -161,7 +161,7 @@
         return loadSequential(EXTRACTED_BEFORE_AUTH, false);
       })
       .then(function () {
-        return loadScript("/portal/staff-dashboard-auth-supabase.js?v=20261011-hub-shift", true);
+        return loadScript("/portal/staff-dashboard-auth-supabase.js?v=20261011-feature-perms", true);
       })
       .then(function () {
         return loadSequential(EXTRACTED_AFTER_AUTH, false);

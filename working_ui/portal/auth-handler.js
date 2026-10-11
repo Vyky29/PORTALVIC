@@ -1564,7 +1564,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
       throw new Error("skip_location_on_lead_overview");
     }
     await import("./portal_live_map_shift_window.js?v=20261011-hub-shift");
-    const perm = await import("./portal_location_permission.js?v=20261009-no-live-mention");
+    const perm = await import("./portal_location_permission.js?v=20261011-feature-perms");
     window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
     window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
     window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;
@@ -1577,6 +1577,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
     window.portalRequestCallMediaPermissions = perm.requestCallMediaPermissions;
     window.portalRequestAllPortalPermissions = perm.requestAllPortalPermissions;
     window.portalRequestDefaultPortalPermissions = perm.requestDefaultPortalPermissions;
+    window.portalRequestStaffFeaturePermissions = perm.requestStaffFeaturePermissions;
     window.portalRefreshLocationUi = perm.portalRefreshLocationUi;
     window.portalRefreshMicrophoneUi = perm.portalRefreshMicrophoneUi;
     window.portalRefreshCameraUi = perm.portalRefreshCameraUi;

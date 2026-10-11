@@ -6639,7 +6639,7 @@
           typeof portalSignableItemIsAnnualProfileCampaign === 'function' &&
           portalSignableItemIsAnnualProfileCampaign(pending);
         if(typeof portalActivatePermissionsFromSignableItem === 'function'){
-          void portalActivatePermissionsFromSignableItem(pending);
+          void portalActivatePermissionsFromSignableItem(pending, { promptAll: true });
         }
         const isReminder = portalSignableItemIsReminder(pending);
         const isFbOwed = !!(pending && pending.outstandingFeedback);

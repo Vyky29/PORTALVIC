@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-11-v394",
+  "version": "2026-10-11-v395",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2558,10 +2558,14 @@
             "Compose the announcement or reminder.",
             "Pick audience (group roster shows who is in the group).",
             "Publish — staff see a blocking sheet until they confirm.",
+            "Tick When they press Sign, the phone asks for alerts, microphone, camera, and location. Leave it unticked until you want those prompts.",
+            "When a worker presses Sign, the phone asks, one after another, for whatever is still off: alerts, microphone for feedback, camera for sessions, location for incidents. Each Allow is the phone's own prompt.",
             "Use reminders for time-bound nags."
           ],
           "tips": [
             "Audience is admin/staff — not parents.",
+            "One Sign button cannot merge the four prompts. The phone shows them in a row.",
+            "If that person already chose Don't Allow, the phone will not ask again. They still need the phone Settings for that item.",
             "Schedule changes and outstanding feedback use the logo halo and Quick menu. They are not a blocking Sign and submit sheet."
           ]
         },

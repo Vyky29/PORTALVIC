@@ -930,9 +930,16 @@
     }
   };
 
-  /** User gesture: run default portal permissions when signable asks for it. */
-  global.portalActivatePermissionsFromSignableItem = async function portalActivatePermissionsFromSignableItem(item) {
+  /** User gesture: Sign asks for every feature still off. Opening the sheet does not. */
+  global.portalActivatePermissionsFromSignableItem = async function portalActivatePermissionsFromSignableItem(
+    item,
+    opts
+  ) {
     if (!global.portalSignableItemTriggersPortalPermissions(item)) return null;
+    var promptAll = !!(opts && opts.promptAll);
+    if (promptAll && typeof global.portalRequestStaffFeaturePermissions === "function") {
+      return await global.portalRequestStaffFeaturePermissions();
+    }
     try {
       var box = readBox();
       var client = box && box.client;

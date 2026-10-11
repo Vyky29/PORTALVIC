@@ -266,7 +266,7 @@
     var urls = [
       "/portal/portal_web_push_support.js?v=20260914-audio-gesture-only",
       "/portal/portal_ensure_web_push.js?v=20260619-inflight-fix",
-      "/portal/portal_alerts_notifications_ui.js?v=20260711-wa-unread-push",
+      "/portal/portal_alerts_notifications_ui.js?v=20261011-feature-perms",
     ];
     var i = 0;
     function next() {

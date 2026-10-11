@@ -717,6 +717,60 @@ export async function requestDefaultPortalPermissions() {
   return results;
 }
 
+/**
+ * One tap: alerts, microphone (feedback), camera (sessions), location (incidents).
+ * The phone still shows a separate Allow for each one that is not already on.
+ * A previous Don't Allow does not show again.
+ */
+export async function requestStaffFeaturePermissions() {
+  if (typeof window.portalStaffChatCalls?.primeCallRingAudio === "function") {
+    window.portalStaffChatCalls.primeCallRingAudio();
+  }
+
+  const results = {
+    notifications: "skipped",
+    microphone: "skipped",
+    camera: "skipped",
+    location: "skipped",
+  };
+
+  if (!portalNotificationsGranted()) {
+    results.notifications = await requestNotificationPermission();
+  } else {
+    results.notifications = "granted";
+    if (typeof window.portalEnsureWebPushSubscription === "function") {
+      void window.portalEnsureWebPushSubscription();
+    }
+  }
+
+  if (!portalMicrophonePermissionGranted()) {
+    results.microphone = await requestMicrophonePermission();
+  } else {
+    results.microphone = "granted";
+  }
+
+  const camRequired = portalCameraRequiredForSetup();
+  if (camRequired && !portalCameraPermissionGranted()) {
+    results.camera = await requestCameraPermission();
+  } else if (portalCameraPermissionGranted()) {
+    results.camera = "granted";
+  } else {
+    results.camera = "not_required";
+  }
+
+  if (!portalLocationPermissionGranted()) {
+    results.location = await requestLocationPermission();
+  } else {
+    results.location = "granted";
+  }
+
+  refreshDefaultPortalPermissionsUi();
+  window.dispatchEvent(
+    new CustomEvent("portal:all-permissions-change", { detail: results })
+  );
+  return results;
+}
+
 /** @deprecated Use requestDefaultPortalPermissions — kept for callers. */
 export async function requestAllPortalPermissions() {
   return requestDefaultPortalPermissions();
