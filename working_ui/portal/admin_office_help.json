@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-11-v390",
+  "version": "2026-10-11-v391",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2849,17 +2849,22 @@
             "location",
             "nadie",
             "0 on map",
-            "activo"
+            "activo",
+            "announcement",
+            "firmar",
+            "all staff"
           ],
           "steps": [
             "Open H&R, then Staff live map. The count is pins from the last 20 minutes.",
             "The phone sends location only during that worker's shift: from 15 minutes before the first session until 10 minutes after the last.",
             "Sunday Hub at SwimFarm (9.30 to 2) counts as that shift. The pin can still be missing until the worker refreshes the staff app once, with location allowed and the app left open.",
             "The staff app has to stay open on their own phone, with location allowed. A push alert does not send GPS. Locking the phone or leaving the app stops the pin.",
-            "Someone who only opened the app, and has no session today, does not appear. Being in the portal is not the same as sharing location."
+            "Someone who only opened the app, and has no session today, does not appear. Being in the portal is not the same as sharing location.",
+            "An announcement reaches everyone when To is All staff (everyone). Signing records that they read it. The phone turns location on only when that person taps Allow on the phone's own prompt."
           ],
           "tips": [
-            "If the map says 0, nobody's phone has sent GPS in the last 20 minutes. Refresh does not invent a pin."
+            "If the map says 0, nobody's phone has sent GPS in the last 20 minutes. Refresh does not invent a pin.",
+            "Do not use a cover subject. A signature does not switch GPS on."
           ],
           "es": {
             "title": "El mapa en vivo solo pinta un GPS reciente",
@@ -2870,10 +2875,12 @@
               "El movil manda ubicacion solo en el turno de esa persona: desde 15 minutos antes de la primera sesion hasta 10 minutos despues de la ultima.",
               "El Hub del domingo en SwimFarm (9.30 a 2) cuenta como ese turno. El punto puede seguir faltando hasta que esa persona refresque la app de staff una vez, con la ubicacion permitida y la app abierta.",
               "La app de staff tiene que seguir abierta en su propio movil, con la ubicacion permitida. Un aviso push no manda GPS. Si bloquea el movil o sale de la app, el punto se cae.",
-              "Quien solo abrio la app, y hoy no tiene sesion, no sale. Estar en el portal no es compartir ubicacion."
+              "Quien solo abrio la app, y hoy no tiene sesion, no sale. Estar en el portal no es compartir ubicacion.",
+              "Un aviso llega a todos si en To eliges All staff (everyone). Firmar guarda que lo leyeron. La ubicacion se enciende cuando esa persona pulsa Allow en el aviso de su propio movil."
             ],
             "tips": [
-              "Si el mapa pone 0, ningun movil ha mandado GPS en los ultimos 20 minutos. Refresh no inventa un punto."
+              "Si el mapa pone 0, ningun movil ha mandado GPS en los ultimos 20 minutos. Refresh no inventa un punto.",
+              "No uses un tema tapadera. La firma no enciende el GPS."
             ]
           }
         },
