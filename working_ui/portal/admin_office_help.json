@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-12-v406",
+  "version": "2026-10-12-v407",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2807,7 +2807,7 @@
             "Staff API messages say they are automatic and not to reply on that WhatsApp. The reply goes in Messages (chat) in the Staff Portal, or by call or message on 07592 558671.",
             "The second API message goes only to people who still owe feedback.",
             "A missed day stays in the same reminder. The 8:00pm message is not only today. If feedback from the last 3 weeks is still missing, that day is named in the text (Sun 11 Oct) and it stays until that person sends it. Week 1 (1 to 4 Sep) stays out.",
-            "The link opens that past day. Staff can also open Week and tap that date, then Feedback on each card. Today on a Monday does not show Sunday.",
+            "The WhatsApp names that day. It does not include a link. Staff open Week, tap that date, then Feedback on each card. Today on a Monday does not show Sunday.",
             "Tuesday 11.00-12.00 SwimFarm is one ACAT group feedback. The reminder counts that one Acat card. It does not split the children in that hour into separate feedbacks.",
             "A same-day move clears the old half. That half counts as already done, because the feedback sits on the time they moved to. It does not stay Awaiting and it does not text anyone.",
             "Staff tap Outstanding feedbacks. That opens the owed day and the client card, including a past date, so they can write the feedback there.",
@@ -2827,7 +2827,7 @@
               "Los mensajes de API al staff dicen que son automaticos y que no contesten en ese WhatsApp. La respuesta va en Messages (chat) del portal de staff, o por llamada o mensaje al 07592 558671.",
               "El segundo mensaje de API solo sale a quien todavia debe feedback.",
               "Un dia que quedo sin feedback sigue en el mismo aviso. El mensaje de las 8:00 no es solo de hoy. Si falta feedback de las ultimas 3 semanas, el texto nombra ese dia (Sun 11 Oct) y sigue hasta que esa persona lo manda. La semana 1 (1 al 4 Sep) queda fuera.",
-              "El enlace abre ese dia pasado. Tambien pueden ir a Week, pulsar esa fecha, y Feedback en cada card. Today un lunes no ensena el domingo.",
+              "El WhatsApp nombra ese dia. No lleva enlace. El staff abre Week, pulsa esa fecha, y Feedback en cada card. Today un lunes no ensena el domingo.",
               "El martes 11.00-12.00 en SwimFarm es un solo feedback de grupo, Acat. El aviso cuenta esa tarjeta. No parte a los ninos de esa hora en feedbacks sueltos.",
               "Si el nino se movio el mismo dia, el hueco viejo cuenta como hecho: el feedback esta en la hora nueva. No sigue en Awaiting y no manda WhatsApp.",
               "El staff pulsa Outstanding feedbacks. Abre el dia que debe y la card del nino, tambien si es un dia pasado, para escribir el feedback ahi.",

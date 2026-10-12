@@ -272,12 +272,8 @@ function buildBody(first, pending, sample, wave, london, openIso) {
   const pastOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || "")) || sampleIsPastDay(sample);
   const carriesOlder = pastOnly || (sample || []).some((s) => /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d/.test(String(s || "")));
   const weekday = londonWeekday(london) !== "saturday" && londonWeekday(london) !== "sunday";
-  const dayLabel = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || "")) ? shortDayLabel(openIso) : "";
-  const where = pastOnly
-    ? (dayLabel ? `Staff Portal (Week, ${dayLabel})` : "Staff Portal")
-    : "Staff Portal (Today)";
   const timeLine = pastOnly
-    ? "These are still open."
+    ? ""
     : wave === "2030"
       ? weekday
         ? "Final reminder: 30 minutes left - the day closes at 9:00pm."
@@ -291,13 +287,14 @@ function buildBody(first, pending, sample, wave, london, openIso) {
   const holdLine = pastOnly
     ? ""
     : `After 9:00pm today's hours stay on hold until the office releases them.\n\n`;
+  const close = pastOnly ? "Thank you" : `Thank you,\nclubSENsational office`;
+  const middle = timeLine ? `${timeLine}\n\n` : "";
   return withStaffApiMachineFooter(
     `Hi ${first},\n\n` +
     `${opener}\n\n` +
-    `${timeLine} Please send them now in the ${where}:\n` +
-    `${portalFeedbackLink(openIso)}\n\n` +
+    middle +
     holdLine +
-    `Thank you,\nclubSENsational office`,
+    close,
   );
 }
 
@@ -384,19 +381,26 @@ function buildBizBody(first, pending, sample, openIso) {
   const list = (sample || []).slice(0, 3).join(", ");
   const more = n > 3 ? ` (+${n - 3} more)` : "";
   const pastOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || "")) || sampleIsPastDay(sample);
-  const dayLabel = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || "")) ? shortDayLabel(openIso) : "";
   const opener = pastOnly
     ? `Session feedback is still not in (${n} left${list ? ": " + list + more : ""}).`
     : `Today's session feedback is still not in (${n} left${list ? ": " + list + more : ""}).`;
-  const where = pastOnly
-    ? (dayLabel ? `Staff Portal (Week, ${dayLabel})` : "Staff Portal")
-    : "Staff Portal (Today)";
   return (
     `Hi ${first},\n\n` +
     `${opener}\n\n` +
-    `Please send them in the ${where}:\n` +
-    `${portalFeedbackLink(openIso)}\n\n` +
     `Thank you`
+  );
+}
+
+/** Staff template needs four boxes. A past-day note only has three lines, so the
+ *  fourth box is blank. The office copy stays the text without that blank. */
+function feedbackSendBody(visible) {
+  const src = String(visible || "");
+  const head = src.split(/\n\nTo reply, use Messages/i)[0] || "";
+  const n = head.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean).length;
+  if (n >= 4) return src;
+  return src.replace(
+    /\n\nTo reply, use Messages/i,
+    "\n\n\u200B\n\nTo reply, use Messages",
   );
 }
 
@@ -740,7 +744,7 @@ Deno.serve(async (req) => {
           const waBody = withStaffApiMachineFooter(
             buildBizBody(t.staffLabel, t.pending, t.sample, t.openIso),
           );
-          const waResult = await sendParentMobileMessage(t.phone, waBody, {
+          const waResult = await sendParentMobileMessage(t.phone, feedbackSendBody(waBody), {
             kind: "staff_contact_update",
           });
           await admin.from("portal_staff_notify_log").insert({
@@ -763,6 +767,7 @@ Deno.serve(async (req) => {
               pending: t.pending,
               sample: t.sample,
               used_template: true,
+              wa_client_body: waBody,
             },
           });
           ringWhatsapp = !!waResult.ok;
@@ -823,7 +828,7 @@ Deno.serve(async (req) => {
     const body = wave === "biz"
       ? withStaffApiMachineFooter(buildBizBody(t.staffLabel, t.pending, t.sample, t.openIso))
       : buildBody(t.staffLabel, t.pending, t.sample, wave, london, t.openIso);
-    const result = await sendParentMobileMessage(t.phone, body, {
+    const result = await sendParentMobileMessage(t.phone, feedbackSendBody(body), {
       kind: "staff_contact_update",
     });
     await admin.from("portal_staff_notify_log").insert({
@@ -847,6 +852,7 @@ Deno.serve(async (req) => {
         pending: t.pending,
         sample: t.sample,
         used_template: true,
+        wa_client_body: body,
       },
     });
     if (result.ok) {
