@@ -2382,6 +2382,8 @@
         push('<span class="portal-session-slot-chip portal-session-slot-chip--move-in" aria-label="Change instructor"><span>Change instructor</span></span>');
       } else if(!!item.portalOverrideMoveInTag || symNorm === 'move in' || symNorm === 'moved in'){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--move-in" aria-label="Move in"><span>Move in</span></span>');
+      } else if(!!item.portalOverrideSwapTag || symNorm === 'swapped' || symNorm === 'swap'){
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--swapped" aria-label="Swapped"><span>Swapped</span></span>');
       } else if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--makeup" aria-label="Make up"><span>Make up</span></span>');
       } else if(pillText && pillNorm !== 'UPDATED'){
@@ -5662,6 +5664,7 @@
             portalOverrideMakeUpTag: false,
             portalOverrideTrialTag: false,
             portalOverrideCardTone: isClientSwap ? 'blue' : ((pill === 'UPDATED' || it.portalRosterTimeUpdated) ? 'blue' : (it.portalOverrideCardTone === 'pink' ? '' : it.portalOverrideCardTone)),
+            portalOverrideSwapTag: isClientSwap,
             portalOverrideSymbolText: isClientSwap ? 'Swapped' : '',
             scheduleAdminAdjusted: true,
             portalOverrideHideAdminBadge: false,

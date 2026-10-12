@@ -4283,12 +4283,12 @@
       border-color:rgba(185,28,28,.52);
       box-shadow:0 1px 4px rgba(220,38,38,.22);
     }
-    /* Changed by Admin — yellow card (until session starts). Never paint ov-blue here;
-       Move in / New Client keep their blue block below. */
+    /* Changed by Admin — pale cream gold (until session starts). Never paint ov-blue here;
+       Move in / New Client / Swap keep their blue block below. */
     .section-card--today .session-card.session-card--admin-adjusted{
-      background:rgba(255,225,74,.55);
-      border-color:rgba(202,138,4,.4);
-      box-shadow:none;
+      background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
+      border-color:rgba(200,165,45,.5);
+      box-shadow:0 1px 6px rgba(200,165,45,.12);
     }
     /* Pending feedback wins over admin/shadowing yellow */
     .section-card--today .session-card.session-card--admin-adjusted.session-card--review-needed,
@@ -6723,10 +6723,10 @@
       white-space:nowrap;
     }
     .portal-session-slot-chip--updated{
-      color:#173247;
-      background:linear-gradient(145deg,#ffe14a,#f5c400);
-      border:1px solid rgba(161,98,7,.42);
-      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(234,179,8,.24);
+      color:#fff;
+      background:linear-gradient(145deg,#f59e0b,#d97706);
+      border:1px solid rgba(180,95,20,.48);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(217,119,6,.22);
       font-weight:800;
       text-transform:none;
     }
@@ -6820,6 +6820,19 @@
       text-transform:none;
     }
     .portal-session-slot-chip--move-in > span{
+      white-space:normal;
+      overflow-wrap:anywhere;
+      text-overflow:unset;
+      text-align:center;
+    }
+    .portal-session-slot-chip--swapped{
+      color:#fff;
+      background:linear-gradient(145deg,#818cf8,#4f46e5);
+      border:1px solid rgba(67,56,202,.5);
+      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 2px 8px rgba(79,70,229,.28);
+      text-transform:none;
+    }
+    .portal-session-slot-chip--swapped > span{
       white-space:normal;
       overflow-wrap:anywhere;
       text-overflow:unset;

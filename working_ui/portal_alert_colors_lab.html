@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20261012-half-split" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20261012-admin-amber" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260614-area-label-unify" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -442,7 +442,7 @@
         </div>
       </div>
       <h3 style="margin:20px 0 8px;font-size:.9rem">Today — ciclo de vida (3 formas)</h3>
-      <p class="lab-lead">Mismo markup que <code>staff_dashboard.html</code>: <strong>(1) antes</strong> — catálogo completo (normal, trial, makeup, Updated by admin, training, NO PARTICIPANT, Closed…) · <strong>(2) sesión empezada</strong> — naranja + solo chip Pending · <strong>(3) review hecho</strong> — verde + solo Submitted / Absent / Cancelled. Chips: <strong>texto blanco</strong> sobre color del tipo.</p>
+      <p class="lab-lead">Mismo markup que <code>staff_dashboard.html</code>: <strong>(1) antes</strong> — catálogo completo (normal, trial, new participant, makeup, Updated by admin, move in, swap, training, NO PARTICIPANT, Closed…) · <strong>(2) sesión empezada</strong> — naranja + solo chip Pending · <strong>(3) review hecho</strong> — verde + solo Submitted / Absent / Cancelled. Chips: <strong>texto blanco</strong> sobre color del tipo.</p>
       <div class="lab-today-demos lab-today-demos--catalog staff-dashboard" id="labTodaySection"></div>
       <div class="lab-today-demos lab-today-demos--catalog staff-dashboard" id="labTodayOverridesSection" hidden aria-hidden="true"></div>
       <h3 style="margin:18px 0 8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lab-muted)">Chips Today + Week + Term</h3>
@@ -489,8 +489,11 @@
       { estado: 'Normal + feedback pendiente', card: 'session-card--review-needed', chip: 'portal-session-slot-chip--pending' },
       { estado: 'Normal + feedback enviado', card: 'session-card--review-done', chip: 'portal-session-slot-chip--submitted' },
       { estado: 'Trial (override activo)', card: 'session-card--ov-trial override--trial', chip: 'portal-session-slot-chip--trial' },
+      { estado: 'New Participant', card: 'session-card--ov-blue', chip: 'portal-session-slot-chip--new-client' },
       { estado: 'MakeUp (override activo)', card: 'session-card--ov-pink override--replace', chip: 'portal-session-slot-chip--makeup' },
-      { estado: 'Updated by admin', card: 'session-card--admin-adjusted', chip: 'portal-session-slot-chip--updated' },
+      { estado: 'Updated by admin', card: 'session-card--admin-adjusted', chip: 'portal-session-slot-chip--updated · ambar' },
+      { estado: 'Move in', card: 'session-card--ov-blue', chip: 'portal-session-slot-chip--move-in' },
+      { estado: 'Swap', card: 'session-card--ov-blue', chip: 'portal-session-slot-chip--swapped' },
       { estado: 'Absent', card: 'override--absent session-card--ov-green', chip: 'portal-session-slot-chip--absent' },
       { estado: 'Cancelled', card: 'session-card--ov-green override--portal-cancelled', chip: 'portal-session-slot-chip--cancelled' },
       { estado: 'NO PARTICIPANT (slot abierto)', card: '(default blanco)', chip: '— · texto rojo' },
@@ -1349,11 +1352,17 @@
       var phase1 = [
         todayCatalogRow('', '4 to 4.30', 'Acton', 'Elijah', '', '', teachingPool),
         todayCatalogRow('session-card--ov-trial override--trial', '4.30 to 5', 'Westway', 'Chaitanya',
-          'portal-session-slot-chip--trial', 'Trial/New Participant', teachingPool),
+          'portal-session-slot-chip--trial', 'Trial', teachingPool),
+        todayCatalogRow('session-card--ov-blue', '5 to 5.30', 'Acton', 'Leila',
+          'portal-session-slot-chip--new-client', 'New Participant', teachingPool),
         todayCatalogRow('session-card--ov-pink override--replace', '11 to 12', 'Acton', 'Eddie Ri',
           'portal-session-slot-chip--makeup', 'Make up', hubRoom),
         todayCatalogRow('session-card--admin-adjusted', '4.30 to 5', 'Acton', 'Aqsa',
           'portal-session-slot-chip--updated', 'Updated by admin', bigPool),
+        todayCatalogRow('session-card--ov-blue', '4 to 4.30', 'Acton', 'Yusuf',
+          'portal-session-slot-chip--move-in', 'Move in', teachingPool),
+        todayCatalogRow('session-card--ov-blue', '5.30 to 6', 'Acton', 'Samer',
+          'portal-session-slot-chip--swapped', 'Swapped', bigPool),
         todayCatalogRowTraining('session-card--ov-training', '10 to 11', 'Westway', 'Training session', 'Swimming Instructors', ['Javi'], hubRoom),
         todayCatalogRow('session-card--ov-shadowing', '2 to 4', 'Acton', 'Shadowing',
           'portal-session-slot-chip--shadowing', 'Roberto / AQSA', teachingPool),
@@ -1410,9 +1419,12 @@
       var chips = [
         ['portal-session-slot-chip--pending', 'Pending', 'Feedback due · naranja'],
         ['portal-session-slot-chip--submitted', 'Submitted', 'Feedback done · verde'],
-        ['portal-session-slot-chip--trial', 'Trial/New Participant', 'Lila oscuro · card lila claro'],
+        ['portal-session-slot-chip--trial', 'Trial', 'Lila oscuro · card lila claro'],
+        ['portal-session-slot-chip--new-client', 'New Participant', 'Azul cielo · card azul'],
         ['portal-session-slot-chip--makeup', 'Make up', 'Rosa'],
-        ['portal-session-slot-chip--updated', 'Updated by admin', 'Amarillo · card amarilla'],
+        ['portal-session-slot-chip--updated', 'Updated by admin', 'Ambar · card crema'],
+        ['portal-session-slot-chip--move-in', 'Move in', 'Azul · card azul'],
+        ['portal-session-slot-chip--swapped', 'Swapped', 'Indigo · card azul'],
         ['portal-session-slot-chip--absent', 'Absent', 'Teal'],
         ['portal-session-slot-chip--cancelled', 'Cancelled', 'Negro'],
         ['portal-session-slot-chip--training', 'Swimming Instructors + Javi', 'Training · azul · equipo + directores'],
