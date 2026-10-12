@@ -1211,8 +1211,10 @@
       return;
     }
 
-    // Office / prior choices already locked trial — never show term £900 pricing flow.
+    // Office / prior choices already locked trial — never show term pricing flow.
     // Post-trial convert is the opposite: never show another trial.
+    // stepRouted stays on the pay step without returning, so Continue below is wired.
+    var stepRouted = false;
     if (
       data.post_trial_convert === true ||
       (data.choices_json && data.choices_json.post_trial_convert === true)
@@ -1235,10 +1237,11 @@
       ) {
         setStep("fbStepPay");
         showPayChannel(data);
-        return;
+        stepRouted = true;
       }
     }
     if (
+      !stepRouted &&
       (data.is_trial_intent ||
         data.booking_kind === "trial" ||
         data.booking_scope === "trial_session") &&
@@ -1253,10 +1256,12 @@
       }
       setStep("fbStepPay");
       showPayChannel(data);
-      return;
+      stepRouted = true;
     }
 
-    if (
+    if (stepRouted) {
+      /* Pay step already chosen. Fall through to wire Continue. */
+    } else if (
       (data.status === "scope_saved" || data.status === "choices_saved") &&
       data.funding_code &&
       data.booking_scope
