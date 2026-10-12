@@ -611,7 +611,7 @@
         return false;
       }
       const tone = String(item && item.portalOverrideCardTone || '').trim().toLowerCase();
-      if(tone === 'blue' || tone === 'trial' || tone === 'purple' || tone === 'pink') return false;
+      if(tone === 'blue' || tone === 'trial' || tone === 'purple' || tone === 'pink' || tone === 'move-in' || tone === 'swap') return false;
       if(portalTodayItemShowsAdminShiftBadge(item)) return true;
       if(typeof portalSessionItemRosterTimeUpdated === 'function' && portalSessionItemRosterTimeUpdated(item)) return true;
       return false;
@@ -621,7 +621,7 @@
       return labels.map(function(lab){
         const esc = escapeHtml(String(lab || '').trim());
         if(!esc) return '';
-        return '<span class="portal-sched-ov-badge override--shadowing-host" title="A colleague is shadowing your session">' + esc + '</span>';
+        return '<span class="portal-session-slot-chip portal-session-slot-chip--shadowing" title="A colleague is shadowing your session">' + esc + '</span>';
       }).join('');
     }
     function portalTodaySessionOverrideCardClass(item){
@@ -636,6 +636,8 @@
       if(t === 'meeting') return ' session-card--ov-meeting';
       if(t === 'pink') return ' session-card--ov-pink';
       if(t === 'trial' || t === 'purple') return ' session-card--ov-trial';
+      if(t === 'move-in') return ' session-card--ov-move-in';
+      if(t === 'swap') return ' session-card--ov-swap';
       if(t === 'blue') return ' session-card--ov-blue';
       if(t === 'red') return ' session-card--ov-red';
       return '';
@@ -1729,8 +1731,17 @@
       if(tone === 'training' && (group || directors.length)){
         const who = directors.map(function(n){
           return String(n || '').replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
-        }).filter(Boolean).join(', ');
-        const line = who && group ? (who + ' (' + group + ')') : (who || group);
+        }).filter(Boolean).join(' / ');
+        const line = group && who ? (group + ' / ' + who) : (group || who);
+        const esc = escapeHtml(line);
+        if(!esc) return '';
+        return '<div class="session-meeting-chip-row"><span class="' + cls + '" aria-label="' + esc + '"><span>' + esc + '</span></span></div>';
+      }
+      if(tone === 'meeting' && (group || directors.length)){
+        const who = directors.map(function(n){
+          return String(n || '').replace(/\s+/g, ' ').trim();
+        }).filter(Boolean).join(' / ');
+        const line = group && who ? (group + ' / ' + who) : (group || who);
         const esc = escapeHtml(line);
         if(!esc) return '';
         return '<div class="session-meeting-chip-row"><span class="' + cls + '" aria-label="' + esc + '"><span>' + esc + '</span></span></div>';
@@ -2213,7 +2224,7 @@
         const next = Object.assign({}, it, {
           portalObserverShadowing: true,
           portalObserverShadowingLabel: String(it.portalObserverShadowingLabel || '').trim()
-            || (hitHost ? ('Shadowing ' + hitHost) : 'Shadowing'),
+            || (hitHost ? ((String(it.name || it.clientName || '').trim() ? (String(it.name || it.clientName || '').trim() + ', ') : '') + 'shadowing ' + hitHost) : 'Shadowing'),
           noSessionFeedbackRequired: true,
           actionsDisabled: false,
           detailsOpenAllowed: true,
@@ -3180,7 +3191,7 @@
         portalOverrideTrialTag: false,
         portalOverrideNewClientTag: false,
         portalOverrideMoveInTag: true,
-        portalOverrideCardTone: 'blue',
+        portalOverrideCardTone: 'move-in',
         portalOverrideSymbolText: 'Move in',
         portalOverrideHideAdminBadge: true,
         portalOverrideAlertPill: '',
@@ -5402,7 +5413,7 @@
         actionsDisabled: true,
         detailsOpenAllowed: true,
         portalOverrideSuppressReviewOrange: true,
-        portalOverrideCardTone: 'blue',
+        portalOverrideCardTone: 'move-in',
         portalOverrideAlertPill: '',
         portalOverrideSymbolText: 'Move in and change instructor',
         portalOverrideMoveInstructorTag: true,
@@ -5646,7 +5657,7 @@
             portalOverrideTrialTag: false,
             portalOverrideNewClientTag: false,
             portalOverrideMoveInTag: true,
-            portalOverrideCardTone: 'blue',
+            portalOverrideCardTone: 'move-in',
             portalOverrideSymbolText: 'Move in',
             scheduleAdminAdjusted: true,
             portalOverrideHideAdminBadge: true,
@@ -5663,7 +5674,7 @@
           return Object.assign({}, it, {
             portalOverrideMakeUpTag: false,
             portalOverrideTrialTag: false,
-            portalOverrideCardTone: isClientSwap ? 'blue' : ((pill === 'UPDATED' || it.portalRosterTimeUpdated) ? 'blue' : (it.portalOverrideCardTone === 'pink' ? '' : it.portalOverrideCardTone)),
+            portalOverrideCardTone: isClientSwap ? 'swap' : ((pill === 'UPDATED' || it.portalRosterTimeUpdated) ? 'blue' : (it.portalOverrideCardTone === 'pink' ? '' : it.portalOverrideCardTone)),
             portalOverrideSwapTag: isClientSwap,
             portalOverrideSymbolText: isClientSwap ? 'Swapped' : '',
             scheduleAdminAdjusted: true,

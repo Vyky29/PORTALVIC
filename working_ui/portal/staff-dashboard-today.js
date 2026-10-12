@@ -4542,7 +4542,7 @@
             portalOverrideTrialTag: isTrialOv,
             portalOverrideNewClientTag: !!isNewClientOv,
             portalOverrideMoveInTag: !!isClientMoveIn,
-            portalOverrideCardTone: fadiDcCancel ? 'red' : (isMakeUpCard ? 'pink' : (isClientMoveIn || isNewClientOv || slotWasUpdated || adminClientSwap ? 'blue' : (isTrialOv ? 'trial' : ''))),
+            portalOverrideCardTone: fadiDcCancel ? 'red' : (isMakeUpCard ? 'pink' : (isClientMoveIn ? 'move-in' : (adminClientSwap ? 'swap' : (isNewClientOv || slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : ''))))),
             portalOverrideSymbolText: isTrialOv ? 'Trial' : (isNewClientOv ? 'New Participant' : (isClientMoveIn ? 'Move in' : (isMakeUpCard ? 'Make Up' : ''))),
             portalOverrideHideAdminBadge: !!isClientMoveIn,
             portalOverrideAlertPill: fadiDcCancel ? 'CANCELLED' : (slotWasUpdated && !isClientMoveIn ? 'UPDATED' : ''),
@@ -5097,7 +5097,7 @@
           portalOverrideMakeUpTag: makeUpPinkCover,
           portalOverrideTrialTag: isTrialCoverOv,
           portalOverrideMoveInTag: coverMoveIn,
-          portalOverrideCardTone: isTrialCoverOv ? 'trial' : (makeUpPinkCover ? 'pink' : (coverMoveIn ? 'blue' : '')),
+          portalOverrideCardTone: isTrialCoverOv ? 'trial' : (makeUpPinkCover ? 'pink' : (coverMoveIn ? 'move-in' : '')),
           portalOverrideSymbolText: isTrialCoverOv ? 'Trial' : (coverMoveIn ? 'Move in' : (makeUpPinkCover ? 'Make Up' : '')),
           portalOverrideHideAdminBadge: !!coverMoveIn,
           portalOverrideAlertPill: '',
@@ -5222,7 +5222,9 @@
               actionsDisabled: false,
               detailsOpenAllowed: true,
               portalObserverShadowing: true,
-              portalObserverShadowingLabel: hostFirst ? ('Shadowing ' + hostFirst) : 'Shadowing',
+              portalObserverShadowingLabel: hostFirst
+                ? ((hostClient.name ? (String(hostClient.name).trim() + ', ') : '') + 'shadowing ' + hostFirst)
+                : 'Shadowing',
               portalOverrideSuppressReviewOrange: true,
               portalOverrideHideAdminBadge: true,
               scheduleAdminAdjusted: true,

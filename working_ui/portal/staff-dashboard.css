@@ -4318,13 +4318,13 @@
        inherently an admin change, so the whole card stays pink (never yellow)
        until feedback review states take over. */
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-pink:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
-      background:rgba(244,114,182,.38);
-      border-color:rgba(194,24,91,.45);
+      background:rgba(252,233,241,.92);
+      border-color:rgba(194,24,91,.32);
       box-shadow:none;
     }
     .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-pink:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
-      border-color:#a01047;
-      box-shadow:0 4px 14px rgba(194,24,91,.22);
+      border-color:rgba(194,24,91,.48);
+      box-shadow:0 4px 14px rgba(194,24,91,.12);
     }
     /* Move in / New Client: keep blue card (never Make Up pink or admin yellow). */
     .section-card--today .session-card.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
@@ -4385,17 +4385,47 @@
       border-color:rgba(45,132,179,.34);
       box-shadow:0 1px 4px rgba(23,50,71,.07);
     }
-    /* Today · Training / Meeting — neutral card (Elijah-style), coloured chips only */
-    .section-card--today .session-card.session-card--ov-training,
-    .section-card--today .session-card.session-card--ov-meeting{
+    /* Today · Training stays white. Meeting is the same shape, a step darker. Chips carry the colour. */
+    .section-card--today .session-card.session-card--ov-training{
       background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
-      border-color:rgba(45,132,179,.34);
+      border-color:rgba(45,132,179,.28);
       box-shadow:0 1px 4px rgba(23,50,71,.07);
     }
-    .section-card--today .session-card.session-card--ov-training:hover,
-    .section-card--today .session-card.session-card--ov-meeting:hover{
-      border-color:rgba(45,132,179,.48);
+    .section-card--today .session-card.session-card--ov-meeting{
+      background:linear-gradient(180deg,#f8fafc 0%,#e2e8f0 100%);
+      border-color:rgba(51,65,85,.28);
+      box-shadow:0 1px 4px rgba(23,50,71,.07);
+    }
+    .section-card--today .session-card.session-card--ov-training:hover{
+      border-color:rgba(45,132,179,.42);
       box-shadow:0 4px 14px rgba(23,50,71,.1);
+    }
+    .section-card--today .session-card.session-card--ov-meeting:hover{
+      border-color:rgba(51,65,85,.42);
+      box-shadow:0 4px 14px rgba(23,50,71,.1);
+    }
+    /* Move in is teal. Swap is indigo. Neither shares New Participant blue. */
+    .section-card--today .session-card.session-card--ov-move-in:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-move-in:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
+      background:rgba(13,148,136,.14);
+      border-color:rgba(15,118,110,.32);
+      box-shadow:none;
+    }
+    .section-card--today .session-card.session-card--ov-move-in:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-move-in:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
+      border-color:rgba(15,118,110,.5);
+      box-shadow:0 4px 14px rgba(13,148,136,.16);
+    }
+    .section-card--today .session-card.session-card--ov-swap:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-swap:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
+      background:rgba(99,102,241,.16);
+      border-color:rgba(79,70,229,.32);
+      box-shadow:none;
+    }
+    .section-card--today .session-card.session-card--ov-swap:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-swap:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
+      border-color:rgba(79,70,229,.5);
+      box-shadow:0 4px 14px rgba(79,70,229,.16);
     }
     /* Today · Shadowing — green card (former Team meeting look) */
     .section-card--today .session-card.session-card--ov-shadowing{
@@ -4409,7 +4439,7 @@
     }
     .session-card--ov-pink{
       background:rgba(252,233,241,.92);
-      border-color:rgba(136,14,79,.72);
+      border-color:rgba(194,24,91,.32);
     }
     .session-card--ov-trial{
       background:linear-gradient(180deg,#f5f3ff 0%,#ede9fe 55%,rgba(255,255,255,.98) 100%);
@@ -4417,7 +4447,7 @@
     }
     .section-card--today .session-card.session-card--ov-pink,
     .section-card--today .session-card.override--replace{
-      border-color:#c2185b;
+      border-color:rgba(194,24,91,.32);
     }
     .section-card--today .session-card.session-card--ov-trial,
     .section-card--today .session-card.override--trial{
@@ -4476,7 +4506,7 @@
       border-left-color:var(--reviewGreenBorder);
     }
     .session-card.override--closed{background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);border-color:rgba(123,18,18,.78)}
-    .session-card.override--replace{background:rgba(252,233,241,.92);border-color:rgba(136,14,79,.72)}
+    .session-card.override--replace{background:rgba(252,233,241,.92);border-color:rgba(194,24,91,.32)}
     .session-card.override--trial{background:linear-gradient(180deg,#f5f3ff 0%,#ede9fe 55%,rgba(255,255,255,.98) 100%);border-color:rgba(124,58,237,.48)}
     .section-card--today .session-card.override--replace.session-card--review-needed{
       background:var(--reviewOrangeBg);
@@ -6075,6 +6105,14 @@
       overflow-wrap:normal;
       text-align:center;
     }
+    .section-card--today .session-line--time-stack .portal-session-slot-chip--training > span,
+    .section-card--today .session-line--time-stack .portal-session-slot-chip--meeting > span,
+    .section-card--today .session-line--time-stack .portal-session-slot-chip--shadowing > span{
+      white-space:normal;
+      overflow:visible;
+      text-overflow:unset;
+      overflow-wrap:anywhere;
+    }
     .section-card--today .session-line--time-stack .session-slot-time{
       display:block;
       width:100%;
@@ -6723,10 +6761,10 @@
       white-space:nowrap;
     }
     .portal-session-slot-chip--updated{
-      color:#fff;
-      background:linear-gradient(145deg,#f59e0b,#d97706);
-      border:1px solid rgba(180,95,20,.48);
-      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(217,119,6,.22);
+      color:#854d0e;
+      background:linear-gradient(145deg,#fde68a,#f5c842);
+      border:1px solid rgba(180,130,20,.4);
+      box-shadow:0 0 0 1px rgba(255,255,255,.55) inset,0 1px 4px rgba(180,130,20,.16);
       font-weight:800;
       text-transform:none;
     }
@@ -6814,9 +6852,9 @@
     }
     .portal-session-slot-chip--move-in{
       color:#fff;
-      background:linear-gradient(145deg,#38bdf8,#0369a1);
-      border:1px solid rgba(3,105,161,.5);
-      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 2px 8px rgba(3,105,161,.28);
+      background:linear-gradient(145deg,#2dd4bf,#0f766e);
+      border:1px solid rgba(15,118,110,.5);
+      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 2px 8px rgba(15,118,110,.28);
       text-transform:none;
     }
     .portal-session-slot-chip--move-in > span{
@@ -6846,9 +6884,9 @@
     }
     .portal-session-slot-chip--training{
       color:#fff;
-      background:linear-gradient(145deg,#3b82f6,#2563eb);
-      border:1px solid rgba(37,99,235,.45);
-      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(37,99,235,.22);
+      background:linear-gradient(145deg,#94a3b8,#64748b);
+      border:1px solid rgba(71,85,105,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(71,85,105,.18);
     }
     .portal-session-slot-chip--shadowing{
       color:#fff;
@@ -6856,11 +6894,19 @@
       border:1px solid rgba(101,163,13,.45);
       box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(101,163,13,.22);
     }
+    .portal-session-slot-chip--shadowing > span,
+    .portal-session-slot-chip--training > span,
+    .portal-session-slot-chip--meeting > span{
+      white-space:normal;
+      overflow-wrap:anywhere;
+      text-overflow:unset;
+      text-align:center;
+    }
     .portal-session-slot-chip--meeting{
       color:#fff;
-      background:linear-gradient(145deg,#3b82f6,#2563eb);
-      border:1px solid rgba(37,99,235,.45);
-      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(37,99,235,.22);
+      background:#111;
+      border:1px solid rgba(0,0,0,.55);
+      box-shadow:0 0 0 1px rgba(255,255,255,.18) inset,0 2px 8px rgba(0,0,0,.28);
     }
     .section-card--today .session-card-body--today-ov-split .session-line--name .session-name-stack{
       gap:2px;
@@ -7147,10 +7193,14 @@
       appearance:none;
     }
     /* Override tones must follow base .session-card (same specificity, later wins) */
-    .session-card.session-card--ov-training,
-    .session-card.session-card--ov-meeting{
+    .session-card.session-card--ov-training{
       background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
-      border-color:rgba(45,132,179,.34);
+      border-color:rgba(45,132,179,.28);
+      box-shadow:0 1px 4px rgba(23,50,71,.07);
+    }
+    .session-card.session-card--ov-meeting{
+      background:linear-gradient(180deg,#f8fafc 0%,#e2e8f0 100%);
+      border-color:rgba(51,65,85,.28);
       box-shadow:0 1px 4px rgba(23,50,71,.07);
     }
     .session-card.session-card--ov-shadowing{
