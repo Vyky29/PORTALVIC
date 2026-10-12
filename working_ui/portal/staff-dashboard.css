@@ -6890,9 +6890,9 @@
     }
     .portal-session-slot-chip--shadowing{
       color:#fff;
-      background:linear-gradient(145deg,#84cc16,#65a30d);
-      border:1px solid rgba(101,163,13,.45);
-      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(101,163,13,.22);
+      background:linear-gradient(145deg,#f87171,#dc2626);
+      border:1px solid rgba(185,28,28,.5);
+      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 2px 8px rgba(220,38,38,.22);
     }
     .portal-session-slot-chip--shadowing > span,
     .portal-session-slot-chip--training > span,

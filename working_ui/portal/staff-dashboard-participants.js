@@ -632,7 +632,7 @@
       if(t === 'green') return ' session-card--ov-green';
       if(t === 'yellow') return ' session-card--ov-yellow';
       if(t === 'training') return ' session-card--ov-training';
-      if(t === 'shadowing') return ' session-card--ov-shadowing';
+      if(t === 'shadowing') return '';
       if(t === 'meeting') return ' session-card--ov-meeting';
       if(t === 'pink') return ' session-card--ov-pink';
       if(t === 'trial' || t === 'purple') return ' session-card--ov-trial';
@@ -2224,7 +2224,7 @@
         const next = Object.assign({}, it, {
           portalObserverShadowing: true,
           portalObserverShadowingLabel: String(it.portalObserverShadowingLabel || '').trim()
-            || (hitHost ? ((String(it.name || it.clientName || '').trim() ? (String(it.name || it.clientName || '').trim() + ', ') : '') + 'shadowing ' + hitHost) : 'Shadowing'),
+            || (hitHost ? ('Shadowing ' + hitHost) : 'Shadowing'),
           noSessionFeedbackRequired: true,
           actionsDisabled: false,
           detailsOpenAllowed: true,

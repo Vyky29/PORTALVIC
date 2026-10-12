@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20261012-chips" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20261012-shadow-red" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260614-area-label-unify" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -503,8 +503,8 @@
       { estado: 'NO PARTICIPANT (slot abierto)', card: '(default blanco)', chip: '— · texto rojo' },
       { estado: 'Closed', card: 'session-card--closed', chip: '—' },
       { estado: 'Training (admin session_add)', card: '(default blanco)', chip: 'portal-session-slot-chip--training · equipo + directores' },
-      { estado: 'Shadowing (admin session_add)', card: 'session-card--ov-shadowing', chip: 'portal-session-slot-chip--shadowing · verde' },
-      { estado: 'Shadowing host (compañero en tu sesión)', card: '(default blanco)', chip: 'portal-session-slot-chip--shadowing · verde' },
+      { estado: 'Shadowing (admin session_add)', card: '(default blanco)', chip: 'portal-session-slot-chip--shadowing · rojo' },
+      { estado: 'Shadowing host (compañero en tu sesión)', card: '(default blanco)', chip: 'portal-session-slot-chip--shadowing · rojo' },
       { estado: 'Meeting (admin session_add)', card: '(default blanco)', chip: 'portal-session-slot-chip--training · azul' },
     ];
 
@@ -1371,9 +1371,9 @@
           'portal-session-slot-chip--swapped', 'Swapped', bigPool),
         todayCatalogRow('session-card--ov-training', '10 to 11', 'Westway', 'Training session',
           'portal-session-slot-chip--training', 'Swimming Instructors / Javi', hubRoom),
-        todayCatalogRow('session-card--ov-shadowing', '2 to 4', 'Acton', 'Aqsa',
-          'portal-session-slot-chip--shadowing', 'Aqsa, shadowing Roberto', teachingPool),
-        todayCatalogRow('', '2 to 4', 'Acton', 'Samira',
+        todayCatalogRow('', '2 to 4', 'Acton', 'Aqsa',
+          'portal-session-slot-chip--shadowing', 'Shadowing Roberto', teachingPool),
+        todayCatalogRow('', '2 to 4', 'Acton', 'Aqsa',
           'portal-session-slot-chip--shadowing', 'Alex shadowing you', teachingPool),
         todayCatalogRow('session-card--ov-meeting', '9 to 10', 'Acton', 'Team meeting',
           'portal-session-slot-chip--meeting', 'Swimming Instructors / Javi / Raul', hubRoom),
@@ -1418,7 +1418,7 @@
             todayLifecycleHead('done', '3 · Review completado', 'verde + solo Submitted / Absent / Cancelled')+
             phase3+
           '</div></div>'+
-          '<p class="lab-sub">Referencia visual de las <strong>3 fases</strong> + catálogo completo de tipos (fase 1). <strong>Training:</strong> card blanca + un chip gris. <strong>Meeting:</strong> card un poco mas oscura + un chip negro. <strong>Shadowing:</strong> nombre del cliente + chip verde. <strong>Host:</strong> card blanca + el mismo chip verde.</p>'+
+          '<p class="lab-sub">Referencia visual de las <strong>3 fases</strong> + catálogo completo de tipos (fase 1). <strong>Training:</strong> card blanca + un chip gris. <strong>Meeting:</strong> card un poco mas oscura + un chip negro. <strong>Shadowing:</strong> card blanca (Elijah) + chip rojo. El nombre es el cliente; el chip dice a quien sigues, o quien te hace shadowing.</p>'+
         '</div>';
 
       if(overrideHost) overrideHost.innerHTML = '';
@@ -1437,7 +1437,7 @@
         ['portal-session-slot-chip--absent', 'Absent', 'Teal'],
         ['portal-session-slot-chip--cancelled', 'Cancelled', 'Negro'],
         ['portal-session-slot-chip--training', 'Swimming Instructors / Javi', 'Training · gris · un solo chip'],
-        ['portal-session-slot-chip--shadowing', 'Aqsa, shadowing Roberto', 'Shadowing · verde · mismo chip en el host'],
+        ['portal-session-slot-chip--shadowing', 'Shadowing Roberto', 'Shadowing · chip rojo · card blanca'],
         ['portal-session-slot-chip--meeting', 'Swimming Instructors / Javi / Raul', 'Meeting · negro · card un poco mas oscura'],
         ['portal-session-slot-chip--plain', 'Generic', 'Gris (fallback)']
       ];

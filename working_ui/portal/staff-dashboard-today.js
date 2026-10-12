@@ -5222,9 +5222,7 @@
               actionsDisabled: false,
               detailsOpenAllowed: true,
               portalObserverShadowing: true,
-              portalObserverShadowingLabel: hostFirst
-                ? ((hostClient.name ? (String(hostClient.name).trim() + ', ') : '') + 'shadowing ' + hostFirst)
-                : 'Shadowing',
+              portalObserverShadowingLabel: hostFirst ? ('Shadowing ' + hostFirst) : 'Shadowing',
               portalOverrideSuppressReviewOrange: true,
               portalOverrideHideAdminBadge: true,
               scheduleAdminAdjusted: true,
