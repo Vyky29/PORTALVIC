@@ -686,15 +686,23 @@ export function slotsFromCapacityChainOccupants(
 }
 
 export function mergeFeedback2030Slots(lists: Feedback2030Slot[][]): Feedback2030Slot[] {
-  const seen = new Set<string>();
+  const seen = new Map<string, Feedback2030Slot>();
   const out: Feedback2030Slot[] = [];
   for (const list of lists) {
     for (const s of list) {
       if (!isRealFeedbackClient(s.client)) continue;
       const k = slotDedupeKey(s);
-      if (seen.has(k)) continue;
-      seen.add(k);
-      out.push(s);
+      const prev = seen.get(k);
+      if (prev) {
+        /* Staff see 5-5.30 + 5.30-6 as one hour. Keep that span, not the first half. */
+        if (isAquaticService(prev.service) || isAquaticService(s.service)) {
+          prev.time = unionAquaticTime(prev.time, s.time);
+        }
+        continue;
+      }
+      const copy = { ...s };
+      seen.set(k, copy);
+      out.push(copy);
     }
   }
   return out;
@@ -773,6 +781,79 @@ function feedbackTimesCompatible(a: string, b: string): boolean {
   return folded <= 30;
 }
 
+/** Leading clock only. 4 and 16.30 stay as written; 1-7 are afternoon. */
+function clockTokenToMinutes(token: string): number | null {
+  const s = String(token || "").trim().toLowerCase();
+  const withMin = s.match(/^(\d{1,2})[:.](\d{2})$/);
+  if (withMin) {
+    let h = Number(withMin[1]);
+    const min = Number(withMin[2]);
+    if (h <= 7) h += 12;
+    if (h > 23 || min > 59) return null;
+    return h * 60 + min;
+  }
+  const hourOnly = s.match(/^(\d{1,2})$/);
+  if (!hourOnly) return null;
+  let h = Number(hourOnly[1]);
+  if (h <= 7) h += 12;
+  if (h > 23) return null;
+  return h * 60;
+}
+
+function parseRangeEnds(raw: string): { start: number; end: number } | null {
+  const parts = String(raw || "")
+    .replace(/[–—]/g, " to ")
+    .split(/\s+to\s+/i)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (!parts.length) return null;
+  const start = clockTokenToMinutes(parts[0]);
+  if (start == null) return null;
+  if (parts.length < 2) return { start, end: start + 30 };
+  const endRaw = clockTokenToMinutes(parts[1]);
+  if (endRaw == null) return { start, end: start + 30 };
+  const end = endRaw <= start ? endRaw + 12 * 60 : endRaw;
+  return { start, end };
+}
+
+/** 16:00 → 4, 16:30 → 4.30, 17:00 → 5. Matches the card staff see. */
+function clubMinsLabel(mins: number): string {
+  let h = Math.floor(mins / 60) % 24;
+  const m = ((mins % 60) + 60) % 60;
+  if (h >= 13 && h <= 19) h -= 12;
+  if (m === 0) return String(h);
+  return h + "." + String(m).padStart(2, "0");
+}
+
+/** Consecutive same-instructor halves become the hour the staff card shows. */
+function unionAquaticTime(a: string, b: string): string {
+  const ra = parseRangeEnds(a);
+  const rb = parseRangeEnds(b);
+  if (!ra || !rb) return String(a || b || "").trim();
+  const touch = ra.start <= rb.end && rb.start <= ra.end;
+  if (!touch) return String(a || "").trim() || String(b || "").trim();
+  const start = Math.min(ra.start, rb.start);
+  const end = Math.max(ra.end, rb.end);
+  if (end <= start) return String(a || b || "").trim();
+  return clubMinsLabel(start) + " to " + clubMinsLabel(end);
+}
+
+function feedbackSampleClient(raw: string): string {
+  const stem = clientDisplayStem(raw) || String(raw || "").trim();
+  if (!stem.includes("_")) return stem;
+  return stem
+    .split("_")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function feedbackSampleTime(raw: string): string {
+  const r = parseRangeEnds(raw);
+  if (!r || r.end <= r.start) return String(raw || "").trim();
+  return clubMinsLabel(r.start) + " to " + clubMinsLabel(r.end);
+}
+
 function clientMatchesOverride(
   slotClient: string,
   anchorClientId: string,
@@ -838,13 +919,22 @@ export function applyScheduleOverridesToFeedback2030Slots(
       service: String(service || "").trim(),
       area: area ? String(area).trim() || undefined : undefined,
     };
-    if (
-      next.some((s) =>
-        staffKeysMatch(s.staff, candidate.staff) &&
-        clientsClose(s.client, candidate.client) &&
-        feedbackTimesCompatible(s.time, candidate.time)
-      )
-    ) {
+    const existing = next.find((s) =>
+      staffKeysMatch(s.staff, candidate.staff) &&
+      clientsClose(s.client, candidate.client) &&
+      feedbackTimesCompatible(s.time, candidate.time)
+    );
+    if (existing) {
+      /* Same seat stored as two halves. Keep the span the staff card shows. */
+      existing.time = unionAquaticTime(existing.time, candidate.time);
+      if (!existing.service && candidate.service) existing.service = candidate.service;
+      if (
+        candidate.client &&
+        existing.client.includes("_") &&
+        !candidate.client.includes("_")
+      ) {
+        existing.client = candidate.client;
+      }
       return;
     }
     next.push(candidate);
@@ -1048,16 +1138,17 @@ export function applyScheduleOverridesToFeedback2030Slots(
 export function softDedupeFeedback2030Slots(slots: Feedback2030Slot[]): Feedback2030Slot[] {
   const out: Feedback2030Slot[] = [];
   for (const s of slots) {
-    if (
-      out.some((o) =>
-        staffKeysMatch(o.staff, s.staff) &&
-        clientsClose(o.client, s.client) &&
-        feedbackTimesCompatible(o.time, s.time)
-      )
-    ) {
+    const prev = out.find((o) =>
+      staffKeysMatch(o.staff, s.staff) &&
+      clientsClose(o.client, s.client) &&
+      feedbackTimesCompatible(o.time, s.time)
+    );
+    if (prev) {
+      prev.time = unionAquaticTime(prev.time, s.time);
+      if (!prev.service && s.service) prev.service = s.service;
       continue;
     }
-    out.push(s);
+    out.push({ ...s });
   }
   return out;
 }
@@ -1144,6 +1235,15 @@ function aquaticTimesExactOr12h(slotTime: string, keyOrTime: string): boolean {
   return Math.abs(ma - mb) === 12 * 60;
 }
 
+/** A submit on either half of the hour the staff card shows (5-6) covers that card. */
+function aquaticKeyInsideSlot(slotTime: string, keyHm: string): boolean {
+  const range = parseRangeEnds(slotTime);
+  const key = clockTokenToMinutes(keyHm);
+  if (!range || key == null) return false;
+  const inside = (m: number) => m >= range.start && m < range.end;
+  return inside(key) || inside(key + 12 * 60);
+}
+
 function feedbackClearsSharedStaffUnit(slot: Feedback2030Slot, fb: Feedback2030Row): boolean {
   if (isDayCentreService(slot.service) || isDayCentreService(String(fb.service || ""))) {
     return true;
@@ -1156,7 +1256,9 @@ function feedbackClearsSharedStaffUnit(slot: Feedback2030Slot, fb: Feedback2030R
   /* 2:1 aquatic (Joelle Thu Acton): one submit clears both instructors on that half. */
   if (isAquaticService(slot.service) || isAquaticService(String(fb.service || "")) || /\|aquatic(?:\||$)/i.test(pk)) {
     const keyHm = hmFromFeedbackKey(pk);
-    if (keyHm) return aquaticTimesExactOr12h(slot.time, keyHm);
+    if (keyHm) {
+      return aquaticTimesExactOr12h(slot.time, keyHm) || aquaticKeyInsideSlot(slot.time, keyHm);
+    }
     if (/\|aquatic(?:\||$)/i.test(pk) && !/\d{1,2}:\d{2}/.test(pk)) return true;
   }
   return false;
@@ -1179,11 +1281,30 @@ export type Feedback2030KeyRow = {
   session_time?: string | null;
 };
 
+/** Staff-app slugs drop a trailing letter (amar_ra = Amar Rai). Do not let "emmanuel" close "Emmanuel Abate". */
+function keyTokenMatchesClient(token: string, client: string): boolean {
+  const sl = slugClient(clientDisplayStem(client) || client);
+  const tok = slugClient(token);
+  if (!sl || !tok) return false;
+  if (sl === tok) return true;
+  if (!(sl.startsWith(tok) || tok.startsWith(sl))) return false;
+  if (sl[tok.length] === "_" || tok[sl.length] === "_") return false;
+  return true;
+}
+
 function keyTouchesClient(key: string, client: string): boolean {
   const sl = slugClient(client);
   if (!sl) return false;
   const k = String(key || "").toLowerCase();
-  return k.includes(sl) || rosterClientsMatch(client, key);
+  if (k.includes(sl) || rosterClientsMatch(client, key)) return true;
+  const parts = k.split("|").map((p) => p.trim()).filter(Boolean);
+  for (const p of parts) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(p)) continue;
+    if (/^\d{1,2}:\d{2}$/.test(p)) continue;
+    if (/multi|climb|aquatic|bespoke|day_centre|swim|hub|pool/.test(p)) continue;
+    if (keyTokenMatchesClient(p, client)) return true;
+  }
+  return false;
 }
 
 /** A cancellation form can store a Day Centre key for an aquatic seat. The service and time on the report are the record. */
@@ -1337,7 +1458,7 @@ export function outstandingByStaff(
     }
     row.pending += 1;
     if (row.sample.length < 4) {
-      row.sample.push(`${slot.client} ${slot.time}`.trim());
+      row.sample.push(`${feedbackSampleClient(slot.client)} ${feedbackSampleTime(slot.time)}`.trim());
     }
   }
   return [...map.values()].sort((a, b) => a.staffLabel.localeCompare(b.staffLabel));

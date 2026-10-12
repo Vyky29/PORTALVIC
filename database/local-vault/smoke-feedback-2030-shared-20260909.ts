@@ -6,9 +6,13 @@
  */
 import {
   applyFeedback2030BoardPolicy,
+  applyScheduleOverridesToFeedback2030Slots,
   feedbackRingAlreadySentToday,
+  mergeFeedback2030Slots,
+  outstandingByStaff,
   slotIsResolved,
   slotsFromCapacityChainOccupants,
+  slotsFromRosterRows,
   type Feedback2030Slot,
 } from "../../supabase/functions/_shared/portal_feedback_2030_match.ts";
 import { rosterSlotIsComplete } from "../../supabase/functions/_shared/portal_feedback_digest_match.ts";
@@ -220,6 +224,97 @@ const checks = [
   ["9pm digest keeps the aquatic cancel", rosterSlotIsComplete(abateRoster, "2026-10-06", digestCtx), true],
   ["9pm digest keeps Day Centre Emmanuel open", rosterSlotIsComplete(dcRoster, "2026-10-06", digestCtx), false],
 ];
+
+const danHalves = slotsFromRosterRows([
+  {
+    client_name: "Amar Rai",
+    time_slot: "5.30 to 6",
+    service: "Aquatic Activity",
+    instructors: "DAN",
+    day: "Monday",
+  },
+  {
+    client_name: "Amar Rai",
+    time_slot: "5 to 5.30",
+    service: "Aquatic Activity",
+    instructors: "DAN",
+    day: "Monday",
+  },
+], "2026-10-12");
+const danMerged = mergeFeedback2030Slots([danHalves]);
+const danOpen = outstandingByStaff(danMerged, "2026-10-12", emptyCtx);
+const danAbsent = outstandingByStaff(danMerged, "2026-10-12", {
+  ...emptyCtx,
+  absentMarks: [
+    { portal_session_key: "2026-10-12|amar_ra|aquatic", mark_type: "absent" },
+    { portal_session_key: "2026-10-12|17:30|amar_ra", mark_type: "absent" },
+  ],
+});
+const youssefAdam = applyScheduleOverridesToFeedback2030Slots(
+  slotsFromRosterRows([{
+    client_name: "Adam P",
+    time_slot: "4 to 5.30",
+    service: "Aquatic Activity",
+    instructors: "ROBERTO",
+    day: "Monday",
+  }], "2026-10-12"),
+  [
+    {
+      override_type: "instructor_reassign",
+      status: "active",
+      anchor_staff_id: "roberto",
+      anchor_client_id: "adam_p",
+      anchor_time_slot_label: "16 to 16.30",
+      payload: { covering_staff_id: "youssef", covering_staff_name: "Youssef" },
+    },
+    {
+      override_type: "instructor_reassign",
+      status: "active",
+      anchor_staff_id: "roberto",
+      anchor_client_id: "adam_p",
+      anchor_time_slot_label: "16.30 to 17",
+      payload: { covering_staff_id: "youssef", covering_staff_name: "Youssef" },
+    },
+    {
+      override_type: "instructor_reassign",
+      status: "active",
+      anchor_staff_id: "roberto",
+      anchor_client_id: "adam_p",
+      anchor_time_slot_label: "17 to 17.30",
+      payload: { covering_staff_id: "youssef", covering_staff_name: "Youssef" },
+    },
+    {
+      override_type: "slot_clear_client",
+      status: "active",
+      anchor_staff_id: "roberto",
+      anchor_client_id: "adam_p",
+      anchor_time_slot_label: "17 to 17.30",
+      payload: { cancelled_by_admin: true, feedback_resolution: "cancelled" },
+    },
+  ],
+);
+const youssefOpen = outstandingByStaff(youssefAdam, "2026-10-12", emptyCtx);
+const youssefDone = outstandingByStaff(youssefAdam, "2026-10-12", {
+  ...emptyCtx,
+  feedbackRows: [{
+    client_name: "Adam P",
+    completed_by_name: "Youssef",
+    portal_session_key: "2026-10-12|adam_p|aquatic",
+    service: "Aquatic Activity",
+  }],
+});
+const youssefDebt = youssefOpen.find((d) => d.staffKey === "youssef");
+checks.push(
+  ["Dan hour is one card labelled 5 to 6", danMerged.length === 1 && danOpen[0]?.sample[0] === "Amar Rai 5 to 6", true],
+  ["Dan absent on amar_ra clears the hour", danAbsent.length === 0, true],
+  ["Youssef 4-5 is one card, not 16:00-16:30", youssefDebt?.pending === 1 && youssefDebt?.sample[0] === "Adam P 4 to 5", true],
+  ["Youssef block feedback clears both halves", youssefDone.every((d) => d.staffKey !== "youssef"), true],
+  [
+    "5.30 submit still does not clear a separate 6-6.30 card",
+    slotIsResolved(joelleSimonLate, "2026-09-10", joelleCtx) === false,
+    true,
+  ],
+);
 
 let failed = 0;
 for (const [label, got, want] of checks) {
