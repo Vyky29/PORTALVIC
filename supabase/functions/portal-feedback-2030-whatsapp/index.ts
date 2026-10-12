@@ -260,17 +260,24 @@ function portalFeedbackLink(openIso: string): string {
   return u.toString();
 }
 
+function sampleIsPastDay(sample) {
+  return (sample || []).length > 0 &&
+    (sample || []).every((s) => /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d/.test(String(s || "")));
+}
+
 function buildBody(first, pending, sample, wave, london, openIso) {
   const n = Math.max(1, pending);
   const list = sample.slice(0, 3).join(", ");
   const more = n > 3 ? ` (+${n - 3} more)` : "";
-  const pastOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || ""));
+  const pastOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || "")) || sampleIsPastDay(sample);
   const carriesOlder = pastOnly || (sample || []).some((s) => /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d/.test(String(s || "")));
   const weekday = londonWeekday(london) !== "saturday" && londonWeekday(london) !== "sunday";
-  const dayLabel = pastOnly ? shortDayLabel(openIso) : "";
-  const where = pastOnly ? `Staff Portal (Week, ${dayLabel})` : "Staff Portal (Today)";
+  const dayLabel = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || "")) ? shortDayLabel(openIso) : "";
+  const where = pastOnly
+    ? (dayLabel ? `Staff Portal (Week, ${dayLabel})` : "Staff Portal")
+    : "Staff Portal (Today)";
   const timeLine = pastOnly
-    ? `These are still open from ${dayLabel}.`
+    ? "These are still open."
     : wave === "2030"
       ? weekday
         ? "Final reminder: 30 minutes left - the day closes at 9:00pm."
@@ -376,12 +383,14 @@ function buildBizBody(first, pending, sample, openIso) {
   const n = Math.max(1, pending);
   const list = (sample || []).slice(0, 3).join(", ");
   const more = n > 3 ? ` (+${n - 3} more)` : "";
-  const pastOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || ""));
-  const dayLabel = pastOnly ? shortDayLabel(openIso) : "";
+  const pastOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || "")) || sampleIsPastDay(sample);
+  const dayLabel = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || "")) ? shortDayLabel(openIso) : "";
   const opener = pastOnly
-    ? `Session feedback from ${dayLabel} is still not in (${n} left${list ? ": " + list + more : ""}).`
+    ? `Session feedback is still not in (${n} left${list ? ": " + list + more : ""}).`
     : `Today's session feedback is still not in (${n} left${list ? ": " + list + more : ""}).`;
-  const where = pastOnly ? `Staff Portal (Week, ${dayLabel})` : "Staff Portal (Today)";
+  const where = pastOnly
+    ? (dayLabel ? `Staff Portal (Week, ${dayLabel})` : "Staff Portal")
+    : "Staff Portal (Today)";
   return (
     `Hi ${first},\n\n` +
     `${opener}\n\n` +
