@@ -12882,11 +12882,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return !!(a && b && a.start < b.end && b.start < a.end);
   }
 
-  function dayBoardItemIsOpenSeat(it) {
+  /** Standing card the override sits next to: empty seat, or the client who was cancelled / absent. */
+  function dayBoardItemIsOldSeat(it) {
     var st = (it && it.st) || {};
     var slot = (it && it.slot) || {};
     if (st.boardPlace === "cover") return false;
-    if (st.isOpenSlot) return true;
+    if (st.isOpenSlot || st.isCancelled || st.isAbsent) return true;
     return rosterSlotKind(slot.client_name) === "open";
   }
 
@@ -12900,20 +12901,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   /**
-   * Open seat + override participant at the same time share a cluster id.
-   * 0 means the card stands alone.
+   * Old seat (empty, cancelled, or absent) + override participant at the same time
+   * share a cluster id. 0 means the card stands alone.
    */
   function dayBoardSeatPairClusters(items) {
     var n = (items || []).length;
     var parent = [];
     var bounds = [];
-    var open = [];
+    var oldSeat = [];
     var added = [];
     var i;
     for (i = 0; i < n; i++) {
       parent[i] = i;
       bounds[i] = dayBoardItemClockBounds(items[i] && items[i].slot);
-      open[i] = dayBoardItemIsOpenSeat(items[i]);
+      oldSeat[i] = dayBoardItemIsOldSeat(items[i]);
       added[i] = dayBoardItemIsOverrideParticipant(items[i]);
     }
     function find(x) {
@@ -12929,23 +12930,23 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (ra !== rb) parent[rb] = ra;
     }
     for (i = 0; i < n; i++) {
-      if (!open[i]) continue;
+      if (!oldSeat[i]) continue;
       for (var j = 0; j < n; j++) {
         if (!added[j]) continue;
         if (dayBoardClockOverlaps(bounds[i], bounds[j])) unite(i, j);
       }
     }
-    var hasOpen = Object.create(null);
+    var hasOld = Object.create(null);
     var hasAdded = Object.create(null);
     for (i = 0; i < n; i++) {
       var root = find(i);
-      if (open[i]) hasOpen[root] = true;
+      if (oldSeat[i]) hasOld[root] = true;
       if (added[i]) hasAdded[root] = true;
     }
     var out = [];
     for (i = 0; i < n; i++) {
       var r = find(i);
-      out[i] = hasOpen[r] && hasAdded[r] && (open[i] || added[i]) ? r + 1 : 0;
+      out[i] = hasOld[r] && hasAdded[r] && (oldSeat[i] || added[i]) ? r + 1 : 0;
     }
     return out;
   }
@@ -12967,6 +12968,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hoursParts = dayBoardStaffWorkHoursParts(items, key || label);
     var seatPairCluster = dayBoardSeatPairClusters(items);
     var cards = "";
+    var seenPair = Object.create(null);
     var pi = 0;
     while (pi < items.length) {
       var cluster = seatPairCluster[pi];
@@ -12975,13 +12977,30 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         pi += 1;
         continue;
       }
-      var group = "";
-      var groupId = cluster;
-      while (pi < items.length && seatPairCluster[pi] === groupId) {
-        group += htmlDayBoardCard(hub, items[pi].slot, items[pi].st, esc, true);
+      if (seenPair[cluster]) {
         pi += 1;
+        continue;
+      }
+      seenPair[cluster] = true;
+      var members = [];
+      var mi;
+      for (mi = 0; mi < items.length; mi++) {
+        if (seatPairCluster[mi] === cluster) members.push(mi);
+      }
+      /* The new override participant stays above the empty or cancelled card. */
+      members.sort(function (a, b) {
+        var aNew = dayBoardItemIsOverrideParticipant(items[a]) ? 0 : 1;
+        var bNew = dayBoardItemIsOverrideParticipant(items[b]) ? 0 : 1;
+        if (aNew !== bNew) return aNew - bNew;
+        return a - b;
+      });
+      var group = "";
+      for (mi = 0; mi < members.length; mi++) {
+        var it = items[members[mi]];
+        group += htmlDayBoardCard(hub, it.slot, it.st, esc, true);
       }
       cards += '<div class="ash-db-seat-pair">' + group + "</div>";
+      pi += 1;
     }
     var headExtra = "";
     if (away) {
