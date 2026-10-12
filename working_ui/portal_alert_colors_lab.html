@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20261012-shadow-red" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20261012-done-chips" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260614-area-label-unify" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -263,9 +263,9 @@
     .lab-today-panel .portal-session-slot-chip--cancelled,
     #labLiveScope .portal-session-slot-chip--cancelled{
       color:#fff !important;
-      background:linear-gradient(145deg,#707070,#525252) !important;
-      border:1px solid rgba(255,255,255,.22) !important;
-      box-shadow:0 0 0 1px rgba(255,255,255,.28) inset,0 2px 8px rgba(0,0,0,.28) !important;
+      background:linear-gradient(145deg,#166534,#052e16) !important;
+      border:1px solid rgba(5,46,22,.55) !important;
+      box-shadow:0 0 0 1px rgba(255,255,255,.28) inset,0 2px 8px rgba(5,46,22,.28) !important;
     }
     .lab-today-panel .portal-session-slot-chip--cancelled > span,
     #labLiveScope .portal-session-slot-chip--cancelled > span{
@@ -861,7 +861,7 @@
 
     function buildLiveCss(){
       var lines = [];
-      lines.push('#labLiveScope .portal-session-slot-chip--cancelled{background:linear-gradient(145deg,#707070,#525252) !important;color:#fff !important;border:1px solid rgba(255,255,255,.22) !important}');
+      lines.push('#labLiveScope .portal-session-slot-chip--cancelled{background:linear-gradient(145deg,#166534,#052e16) !important;color:#fff !important;border:1px solid rgba(5,46,22,.55) !important}');
       lines.push('#labLiveScope .portal-session-slot-chip--cancelled > span{color:#fff !important;-webkit-text-fill-color:#fff !important}');
       state.overrides.forEach(function(ov){
         var c = ov.id === 'cancelled' ? cancelledCanonicalColors() : (ov.colors || {});
@@ -1427,7 +1427,7 @@
     function renderChipLegend(){
       var chips = [
         ['portal-session-slot-chip--pending', 'Pending', 'Feedback due · naranja'],
-        ['portal-session-slot-chip--submitted', 'Submitted', 'Feedback done · verde'],
+        ['portal-session-slot-chip--submitted', 'Submitted', 'Feedback done · verde vivo'],
         ['portal-session-slot-chip--trial', 'Trial', 'Lila oscuro · card lila claro'],
         ['portal-session-slot-chip--new-client', 'New Participant', 'Azul cielo · card azul'],
         ['portal-session-slot-chip--makeup', 'Make up', 'Rosa'],
@@ -1435,7 +1435,7 @@
         ['portal-session-slot-chip--move-in', 'Move in', 'Verde azulado · card igual'],
         ['portal-session-slot-chip--swapped', 'Swapped', 'Indigo · card igual'],
         ['portal-session-slot-chip--absent', 'Absent', 'Teal'],
-        ['portal-session-slot-chip--cancelled', 'Cancelled', 'Negro'],
+        ['portal-session-slot-chip--cancelled', 'Cancelled', 'Verde oscuro'],
         ['portal-session-slot-chip--training', 'Swimming Instructors / Javi', 'Training · gris · un solo chip'],
         ['portal-session-slot-chip--shadowing', 'Shadowing Roberto', 'Shadowing · chip rojo · card blanca'],
         ['portal-session-slot-chip--meeting', 'Swimming Instructors / Javi / Raul', 'Meeting · negro · card un poco mas oscura'],

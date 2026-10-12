@@ -6783,9 +6783,9 @@
     }
     .portal-session-slot-chip--submitted{
       color:#fff;
-      background:linear-gradient(145deg,#157347,#0f5b37);
-      border:1px solid rgba(11,85,51,.45);
-      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(15,91,55,.22);
+      background:linear-gradient(145deg,#4ade80,#16a34a);
+      border:1px solid rgba(21,128,61,.5);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(22,163,74,.28);
     }
     .portal-session-slot-chip--submitted-late{
       color:#fff;
@@ -6814,9 +6814,9 @@
     }
     .portal-session-slot-chip--cancelled{
       color:#fff;
-      background:linear-gradient(145deg,#404040,#171717);
-      border:1px solid rgba(255,255,255,.22);
-      box-shadow:0 0 0 1px rgba(255,255,255,.28) inset,0 2px 8px rgba(0,0,0,.28);
+      background:linear-gradient(145deg,#166534,#052e16);
+      border:1px solid rgba(5,46,22,.55);
+      box-shadow:0 0 0 1px rgba(255,255,255,.28) inset,0 2px 8px rgba(5,46,22,.28);
     }
     .portal-session-slot-chip--makeup{
       color:#fff;
