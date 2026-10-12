@@ -204,9 +204,31 @@ function buildOfferBody(opts: {
     `Hi ${opts.first},\n\n` +
     `${intro} To keep the same place (${opts.slotLabel}), pay ${opts.deadlineLabel}:\n` +
     `${opts.finishUrl}\n\n` +
-    `Card or Apple Pay confirms by itself.\n\n` +
+    `Open this link in your email app. It opens in the browser, where card or Apple Pay can go through. Card or Apple Pay confirms by itself.\n\n` +
     `${bankTransferLines(opts.payName || opts.child, opts.payDate)}\n\n` +
     `If you do not pay by then, the place is released.\n\n` +
+    `Thanks,\n` +
+    `Office | clubSENsational`
+  );
+}
+
+/** WhatsApp must not carry the pay URL. Tapping it opens WhatsApp's browser, where card pay fails. */
+function buildOfferWhatsappNudge(opts: {
+  first: string;
+  child: string;
+  slotLabel: string;
+  deadlineLabel: string;
+  wave: 1 | 2;
+}): string {
+  const intro =
+    opts.wave === 1
+      ? `${opts.child}'s trial has finished.`
+      : `Reminder: we still have not received the term payment for ${opts.child}.`;
+  return (
+    `Hi ${opts.first},\n\n` +
+    `${intro}\n\n` +
+    `The payment link has been sent to your email. Open that email and pay from the link there. It opens in your browser, so card or Apple Pay can go through.\n\n` +
+    `Pay ${opts.deadlineLabel} to keep the same place (${opts.slotLabel}). If you do not pay by then, the place is released.\n\n` +
     `Thanks,\n` +
     `Office | clubSENsational`
   );
@@ -430,7 +452,7 @@ async function sendOfferWhatsapp(
   admin: SupabaseClient,
   offer: Record<string, unknown>,
   wave: 1 | 2,
-): Promise<{ ok: boolean; error?: string; id?: string }> {
+): Promise<{ ok: boolean; error?: string; id?: string; emailSent?: boolean; whatsappSent?: boolean }> {
   const phone = normalizeParentPhoneE164(String(offer.parent_phone || ""));
   if (!phone) return { ok: false, error: "bad_phone" };
 
@@ -467,47 +489,97 @@ async function sendOfferWhatsapp(
     .filter(Boolean)
     .join(" · ");
   const deadlineIso = clean(String(offer.deadline_at || ""), 40);
-  const body = buildOfferBody({
+  const childFirst = child.split(/\s+/)[0] || child;
+  const placeLabel = slotLabel || trialLabel;
+  const deadlineLabel = formatLondonDeadline(deadlineIso);
+  const emailBody = buildOfferBody({
     first: firstName(String(offer.parent_name || "")),
-    child: child.split(/\s+/)[0] || child,
+    child: childFirst,
     payName: child,
     payDate,
-    slotLabel: slotLabel || trialLabel,
-    deadlineLabel: formatLondonDeadline(deadlineIso),
+    slotLabel: placeLabel,
+    deadlineLabel,
     finishUrl: minted.url,
     wave,
   });
-  const flat = flattenWhatsappTemplateBody(body);
+  const nudgeBody = buildOfferWhatsappNudge({
+    first: firstName(String(offer.parent_name || "")),
+    child: childFirst,
+    slotLabel: placeLabel.replace(/ · /g, ", "),
+    deadlineLabel,
+    wave,
+  });
+  const kind = wave === 1 ? "post_trial_offer_wave1" : "post_trial_offer_wave2";
+  const parentEmail = clean(offer.parent_email, 120);
+  const emailOkAddress = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail);
+  const smtp = readParentNotifySmtpConfig();
+  let emailSent = false;
+  let emailError = "";
+  if (smtp && emailOkAddress) {
+    const mail = await sendParentEmailViaSmtp({
+      config: smtp,
+      to: parentEmail,
+      subject: `Payment link for ${childFirst}`,
+      bodyText: emailBody,
+    });
+    emailSent = mail.ok;
+    emailError = mail.ok ? "" : (mail.error || "email_failed");
+  } else {
+    emailError = emailOkAddress ? "smtp_not_configured" : "no_parent_email";
+  }
+  const logMeta = {
+    campaign: kind,
+    offer_id: offer.id,
+    reservation_id: offer.reservation_id,
+    soft_hold_reservation_id: minted.softHoldId,
+    finish_token_id: minted.tokenId,
+    finish_url: minted.url,
+    wave,
+    // Kept for older log readers — do not send parents here for same-slot convert.
+    booking_portal_fallback: BOOKING_PORTAL_FALLBACK,
+  };
+  await admin.from("portal_parent_notify_log").insert({
+    sent_by_email: "system@clubsensational.org",
+    kind,
+    channel: "email",
+    parent_phone: phone,
+    parent_email: parentEmail || null,
+    parent_name: clean(offer.parent_name, 120) || null,
+    subject: `Payment link for ${childFirst}`,
+    body_text: emailBody,
+    email_status: emailSent ? "sent" : "failed",
+    error_detail: emailSent ? null : emailError,
+    meta: logMeta,
+  });
+
+  // The link stays in email. WhatsApp only points at that email.
+  // If the email did not send, WhatsApp keeps the link so the family can still pay.
+  const waSource = emailSent ? nudgeBody : emailBody;
+  const flat = flattenWhatsappTemplateBody(waSource);
   if (flat.length > 700) {
-    return { ok: false, error: "wa_too_long:" + flat.length };
+    return {
+      ok: emailSent,
+      emailSent,
+      whatsappSent: false,
+      error: emailSent ? undefined : "wa_too_long:" + flat.length,
+    };
   }
   const result = await sendParentMessageViaWhatsapp(phone, flat, {
     kind: "contact_update",
   });
-  const kind = wave === 1 ? "post_trial_offer_wave1" : "post_trial_offer_wave2";
   await admin.from("portal_parent_notify_log").insert({
     sent_by_email: "system@clubsensational.org",
     kind,
     channel: "whatsapp",
     parent_phone: phone,
-    parent_email: clean(offer.parent_email, 120) || null,
+    parent_email: parentEmail || null,
     parent_name: clean(offer.parent_name, 120) || null,
     subject: `Post-trial term finish · ${child} · wave ${wave}`,
-    body_text: body,
+    body_text: waSource,
     whatsapp_status: result.ok ? "sent" : "failed",
     whatsapp_message_id: result.ok ? result.id : null,
     error_detail: result.ok ? null : result.error,
-    meta: {
-      campaign: kind,
-      offer_id: offer.id,
-      reservation_id: offer.reservation_id,
-      soft_hold_reservation_id: minted.softHoldId,
-      finish_token_id: minted.tokenId,
-      finish_url: minted.url,
-      wave,
-      // Kept for older log readers — do not send parents here for same-slot convert.
-      booking_portal_fallback: BOOKING_PORTAL_FALLBACK,
-    },
+    meta: { ...logMeta, email_sent: emailSent, whatsapp_has_link: !emailSent },
   });
 
   const prevMeta =
@@ -527,9 +599,40 @@ async function sendOfferWhatsapp(
     })
     .eq("id", offer.id);
 
-  return result.ok
-    ? { ok: true, id: result.id }
-    : { ok: false, error: result.error || "wa_failed" };
+  const parentGotLink = emailSent || result.ok;
+  return parentGotLink
+    ? { ok: true, id: result.id, emailSent, whatsappSent: result.ok }
+    : { ok: false, emailSent, whatsappSent: false, error: result.error || emailError || "wa_failed" };
+}
+
+/** One family: email the pay link, WhatsApp only says it is in the email. Does not mint a second wave flag. */
+export async function resendPostTrialPayViaEmail(
+  admin: SupabaseClient,
+  offerId: string,
+): Promise<{ ok: boolean; email_sent: boolean; whatsapp_sent: boolean; error?: string }> {
+  const id = clean(offerId, 80);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) {
+    return { ok: false, email_sent: false, whatsapp_sent: false, error: "bad_offer_id" };
+  }
+  const { data, error } = await admin
+    .from("portal_post_trial_offers")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) {
+    return { ok: false, email_sent: false, whatsapp_sent: false, error: error?.message || "offer_not_found" };
+  }
+  if (String(data.status || "") !== "pending") {
+    return { ok: false, email_sent: false, whatsapp_sent: false, error: "offer_not_pending" };
+  }
+  const wave: 1 | 2 = data.wave1_sent_at ? 2 : 1;
+  const sent = await sendOfferWhatsapp(admin, data, wave);
+  return {
+    ok: sent.ok,
+    email_sent: sent.emailSent === true,
+    whatsapp_sent: sent.whatsappSent === true,
+    error: sent.ok ? undefined : sent.error,
+  };
 }
 
 async function notifyOfficeWaveFail(

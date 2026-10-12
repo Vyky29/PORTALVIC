@@ -9,7 +9,10 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { verifyPortalAdminAccessToken } from "../_shared/portal_admin_auth.ts";
-import { runPostTrialOffersMaintenance } from "../_shared/portal_post_trial_offers.ts";
+import {
+  resendPostTrialPayViaEmail,
+  runPostTrialOffersMaintenance,
+} from "../_shared/portal_post_trial_offers.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -47,7 +50,21 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  let resendOfferId = "";
+  if (req.method === "POST") {
+    try {
+      const body = await req.json();
+      resendOfferId = String(body?.resend_offer_id || "").trim();
+    } catch {
+      resendOfferId = "";
+    }
+  }
+
   try {
+    if (resendOfferId) {
+      const sent = await resendPostTrialPayViaEmail(admin, resendOfferId);
+      return json(sent.ok ? 200 : 400, sent);
+    }
     const result = await runPostTrialOffersMaintenance(admin);
     return json(200, { ok: true, ...result });
   } catch (e) {
