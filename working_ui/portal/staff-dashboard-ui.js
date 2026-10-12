@@ -2762,6 +2762,64 @@
       });
       return out;
     }
+    /**
+     * After-school half term, Day Centre still open (weekday, not a weekend closure).
+     * Dual staff keep a green/red cell: morning open, afternoon closed.
+     */
+    function portalAfterSchoolHalfTermDayCentreStillOpen(iso){
+      const key = String(iso || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+      const cal = window.PortalTermCalendar;
+      if(cal && typeof cal.isClosedIso === 'function'){
+        if(typeof cal.isFullyClosedIso === 'function' && cal.isFullyClosedIso(key)) return false;
+        const asClosed = cal.isClosedIso(key, 'afterschool');
+        const dcClosed = cal.isClosedIso(key, 'day_centre');
+        return !!asClosed && !dcClosed;
+      }
+      const br = portalTermBreakIsoRange();
+      if(!(br.from && br.to && key >= br.from && key <= br.to)) return false;
+      const dow = new Date(key + 'T12:00:00').getDay();
+      return dow >= 1 && dow <= 5;
+    }
+    function portalTermInstructorMatchesStaff(instructors, staffId){
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!sid) return false;
+      const raw = String(instructors || '');
+      const match = typeof window.portalStaffKeysMatch === 'function'
+        ? window.portalStaffKeysMatch
+        : (typeof portalStaffKeysMatch === 'function' ? portalStaffKeysMatch : null);
+      if(match && match(raw, sid)) return true;
+      const parts = raw.split(/[,/]| and /i);
+      for(let i = 0; i < parts.length; i++){
+        const p = String(parts[i] || '').trim();
+        if(!p) continue;
+        if(match && match(p, sid)) return true;
+        if(p.toLowerCase() === sid) return true;
+      }
+      return false;
+    }
+    const portalTermWeekdayBookMemo = {};
+    /** Standing weekday book: Day Centre and/or after-school, ignoring half-term closures. */
+    function portalTermStaffWeekdayProgrammeBooks(staffId, dayWord){
+      const sid = String(staffId || '').trim().toLowerCase();
+      const day = String(dayWord || '').trim();
+      const memoKey = sid + '|' + day;
+      if(portalTermWeekdayBookMemo[memoKey]) return portalTermWeekdayBookMemo[memoKey];
+      const out = { dc: false, after: false };
+      const rows = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.rows) || [];
+      for(let i = 0; i < rows.length; i++){
+        const r = rows[i];
+        if(!r || String(r.day || '').trim() !== day) continue;
+        if(!portalTermInstructorMatchesStaff(r.instructors, sid)) continue;
+        const svc = String(r.service || '').trim();
+        if(!svc) continue;
+        if(/day\s*centre/i.test(svc)) out.dc = true;
+        else out.after = true;
+        if(out.dc && out.after) break;
+      }
+      portalTermWeekdayBookMemo[memoKey] = out;
+      return out;
+    }
     function isHalfTermDay(year, monthIndex, day, weekStartStrings){
       const iso = termCalendarDateKey(year, monthIndex, day);
       if(portalTermClosedDates().indexOf(iso) !== -1) return true;
@@ -3923,6 +3981,17 @@
             cls += ' half-term term-cal-day--ov-pulse-shift-removed';
             label = `${day}, day off (time off requested)`;
             parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
+            continue;
+          }
+          const asDcOpen = !staffRequestedAway && portalAfterSchoolHalfTermDayCentreStillOpen(isoKey);
+          const programmeBooks = (termStaffId && asDcOpen)
+            ? portalTermStaffWeekdayProgrammeBooks(termStaffId, dayWordRoster)
+            : { dc: false, after: false };
+          /* Day Centre open + after-school closed the same weekday: green over red. */
+          if(asDcOpen && programmeBooks.dc && programmeBooks.after && !beforeFirst && !termClosedDay){
+            cls += ' term-cal-day--split-worked-off';
+            label = `${day}, day centre open, afternoon closed`;
+            parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${isoKey}" data-term-review-weekday="${dayWordRoster}" data-term-review-judgement="0" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
             continue;
           }
           if(halfBlocksNav){

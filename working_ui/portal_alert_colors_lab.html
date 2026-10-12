@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Portal — lab colores alertas</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20261012-pending-wash" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20261012-half-split" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260614-area-label-unify" />
   <style>
     :root{--lab-ink:#173247;--lab-muted:#728290;--lab-accent:#2d84b3}
@@ -1463,6 +1463,7 @@
         termDayDemo(21, 'term-feedback-late', 'Outstanding (naranja fijo)') +
         termDayDemo(28, 'half-term', 'Day off (rojo fijo)');
       var termRemovedCell = termDayDemo(35, 'half-term term-cal-day--ov-pulse-shift-removed', 'Quitado del shift (rojo · parpadeo)');
+      var termHalfDayCell = termDayDemo(26, 'term-cal-day--split-worked-off', 'Medio dia (verde Day Centre + rojo tarde)');
       var firstPill = state.overrides.find(function(o){ return o.pillClass; });
       var firstTomorrow = state.overrides.find(function(o){ return o.tomorrowClass; });
       var termOnlyMiniIds = { day_off: true, shift_removed: true };
@@ -1524,7 +1525,10 @@
           '<p class="lab-sub">Azul = turno en curso · Verde = feedback hecho · Naranja = outstanding · Rojo = day off</p>'+
           '<p class="lab-term-block-title">Quitado del shift original del term</p>'+
           '<div class="lab-term-row">'+termRemovedCell+'</div>'+
-          '<p class="lab-sub">Caja roja + parpadeo intenso · solo días que <em>eran</em> shift del term timetable</p></div>'+
+          '<p class="lab-sub">Caja roja + parpadeo intenso · solo días que <em>eran</em> shift del term timetable</p>'+
+          '<p class="lab-term-block-title">Medio dia — Day Centre abierto, tarde cerrada</p>'+
+          '<div class="lab-term-row">'+termHalfDayCell+'</div>'+
+          '<p class="lab-sub">Verde arriba, rojo abajo. Half term de octubre para quien tiene Day Centre y after-school el mismo dia (Roberto, lun-vie).</p></div>'+
         renderChipLegend();
     }
 
