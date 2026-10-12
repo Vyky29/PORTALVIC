@@ -36,6 +36,50 @@
     return false;
   }
 
+  /** WhatsApp opens links in its own browser. Stripe and Apple Pay do not run there. */
+  function openedInsideWhatsApp() {
+    try {
+      return /WhatsApp/i.test(String(global.navigator && global.navigator.userAgent || ""));
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function whatsAppCardGateHtml() {
+    return (
+      '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Open in Safari before you pay by card</p>' +
+      '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">The link works. Card and Apple Pay do not open inside WhatsApp, so this page stops before the payment screen.</p>' +
+      '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">On iPhone: tap the menu on this page, then Open in Safari. Choose Card / Apple Pay there.</p>' +
+      '<button type="button" class="btn btn--pri" id="fbCopySafariLink">Copy this link</button>' +
+      '<p class="muted" style="margin:10px 0 0;overflow-wrap:break-word">Bank transfer still works inside WhatsApp.</p>'
+    );
+  }
+
+  function bindCopySafariLink() {
+    var btn = document.getElementById("fbCopySafariLink");
+    if (!btn || btn.getAttribute("data-bound") === "1") return;
+    btn.setAttribute("data-bound", "1");
+    btn.onclick = function () {
+      var link = String(global.location.href || "");
+      var notice = document.getElementById("fbNotice");
+      function ok() {
+        showNotice(notice, "Link copied. Paste it into Safari.", "ok");
+      }
+      function fail() {
+        showNotice(notice, "Copy the address at the top and open it in Safari.", "error");
+      }
+      try {
+        if (global.navigator.clipboard && global.navigator.clipboard.writeText) {
+          global.navigator.clipboard.writeText(link).then(ok).catch(fail);
+          return;
+        }
+      } catch (_e2) {
+        /* fall through */
+      }
+      fail();
+    };
+  }
+
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
@@ -672,7 +716,12 @@
         data.pay_hold_expires_at = out.pay_hold_expires_at;
         data.status = "awaiting_payment";
         showInvoice(data);
-        if (payPlan === "stripe_instant" && data.checkout_url && !isDemoMode()) {
+        if (
+          payPlan === "stripe_instant" &&
+          data.checkout_url &&
+          !isDemoMode() &&
+          !openedInsideWhatsApp()
+        ) {
           global.location.href = data.checkout_url;
           return;
         }
@@ -735,6 +784,19 @@
       stripeLabel.hidden = false;
       var stripeInput = stripeLabel.querySelector('input[name="pay_channel"]');
       if (stripeInput) stripeInput.checked = true;
+    }
+    if (openedInsideWhatsApp() && channelBox && !document.getElementById("fbWhatsAppCardGate")) {
+      var gate = document.createElement("div");
+      gate.id = "fbWhatsAppCardGate";
+      gate.style.margin = "0 0 12px";
+      gate.innerHTML = whatsAppCardGateHtml();
+      if (trialNext && trialNext.parentNode === channelBox) {
+        channelBox.insertBefore(gate, trialNext);
+      } else {
+        channelBox.appendChild(gate);
+      }
+      bindCopySafariLink();
+      if (trialNext) trialNext.textContent = "Open in Safari to pay";
     }
   }
 
@@ -1415,6 +1477,14 @@
             return;
           }
           data.funding_code = trialFunding;
+          if (openedInsideWhatsApp()) {
+            showNotice(
+              notice,
+              "Card payment does not open inside WhatsApp. Tap the menu on this page, choose Open in Safari, then pay.",
+              "error",
+            );
+            return;
+          }
           void startTrialWithPlan(data, notice, "stripe_instant").catch(function (err) {
             showNotice(notice, err.message || "Could not create trial invoice.", "error");
           });
@@ -1605,6 +1675,8 @@
           '">Pay with card / Apple Pay</a>' +
           '<p class="muted" style="margin:10px 0 8px">Demo: Stripe checkout (no real charge). Or mark paid below.</p>' +
           '<button type="button" class="btn" id="fbConfirmPaid">Demo: paid with card</button>';
+      } else if (openedInsideWhatsApp()) {
+        html += whatsAppCardGateHtml();
       } else if (checkoutUrl) {
         html +=
           chargeNote +
@@ -1703,10 +1775,17 @@
           "<strong>Card / Apple Pay</strong>" +
           '<span class="hint">1 step: pay now. We are notified automatically — no message needed.</span>' +
           "</label>" +
+          (openedInsideWhatsApp()
+            ? '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">This page is open inside WhatsApp. Bank transfer works here. Card / Apple Pay only works after you open this link in Safari.</p>'
+            : "") +
           '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
           holdLine +
           "</p>" +
           '<button type="button" class="btn btn--pri" id="fbInvoicePayViaNext">Continue</button>';
+      } else if (payVia === "apple_pay" && openedInsideWhatsApp()) {
+        html +=
+          whatsAppCardGateHtml() +
+          '<button type="button" class="btn" id="fbInvoicePayViaBack" style="background:#eef3f7;color:var(--ink);margin-top:12px">Back - choose bank transfer</button>';
       } else if (payVia === "apple_pay") {
         html +=
           '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Pay with card / Apple Pay</p>' +
@@ -1796,6 +1875,7 @@
       }
     }
     if (host) host.innerHTML = html;
+    bindCopySafariLink();
     var payViaKeyBind =
       "fb_invoice_pay_via_" + String(inv.id || inv.invoice_number || "x");
     function setInvoicePayVia(via) {
@@ -1835,6 +1915,14 @@
     var bankStripePay = document.getElementById("fbBankStripePay");
     if (bankStripePay) {
       bankStripePay.onclick = function () {
+        if (openedInsideWhatsApp()) {
+          showNotice(
+            document.getElementById("fbNotice"),
+            "Card payment does not open inside WhatsApp. Open this page in Safari, then pay.",
+            "error",
+          );
+          return;
+        }
         showNotice(
           document.getElementById("fbNotice"),
           "Opening card / Apple Pay…",
@@ -1891,6 +1979,14 @@
     var stripeRetry = document.getElementById("fbStripeRetry");
     if (stripeRetry) {
       stripeRetry.onclick = function () {
+        if (openedInsideWhatsApp()) {
+          showNotice(
+            document.getElementById("fbNotice"),
+            "Card payment does not open inside WhatsApp. Open this page in Safari, then pay.",
+            "error",
+          );
+          return;
+        }
         showNotice(document.getElementById("fbNotice"), "Opening payment…", "");
         void api("create_stripe_checkout", {
           booking_scope: data.booking_scope || "trial_session",
