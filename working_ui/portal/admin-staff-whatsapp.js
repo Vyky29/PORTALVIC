@@ -728,6 +728,7 @@
     if (/^read on whatsapp$/i.test(label)) label = "Read";
     var portalDelivery = /^seen in portal$/i.test(label) || (st === "failed" && seenPortal);
     var ticks = "";
+    var readHtml = "";
     var cls = "portal-staff-wa-admin__chip";
     if (portalDelivery) {
       cls += " is-portal";
@@ -735,6 +736,11 @@
     } else if (st === "read") {
       cls += " is-read";
       ticks = '<span class="portal-staff-wa-admin__ticks" aria-hidden="true">✓✓</span>';
+      var readAt = m && m.whatsapp_read_at ? formatTime(m.whatsapp_read_at) : "";
+      if (readAt) {
+        label = "Read";
+        readHtml = '<span class="portal-staff-wa-admin__read-at">' + esc(readAt) + "</span>";
+      }
     } else if (st === "delivered") {
       cls += " is-delivered";
       ticks = '<span class="portal-staff-wa-admin__ticks" aria-hidden="true">✓✓</span>';
@@ -763,6 +769,7 @@
       (titleBits.length ? ' title="' + esc(titleBits.join(" · ")) + '"' : "") +
       ">" +
       esc(label) +
+      (readHtml ? " " + readHtml : "") +
       (ticks ? " " + ticks : "") +
       "</span>"
     );

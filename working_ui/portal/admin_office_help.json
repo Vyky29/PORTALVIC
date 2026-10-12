@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-12-v403",
+  "version": "2026-10-12-v404",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2484,6 +2484,34 @@
       "blurb": "Parent WhatsApp / notify, staff announcements and broadcasts.",
       "priority": 2,
       "lessons": [
+        {
+          "id": "staff_wa_read_time",
+          "title": "When a staff WhatsApp was read",
+          "summary": "The green Read chip on a staff message shows the date and time WhatsApp marked it read.",
+          "where": "Staff messages (S), open the conversation",
+          "keywords": ["read", "leido", "hora", "staff whatsapp", "berta"],
+          "steps": [
+            "Open Staff messages (S) and the conversation.",
+            "On a green Read chip, the time next to Read is when they opened it on WhatsApp.",
+            "The line above the chip is when the office sent it, not when they read it."
+          ],
+          "tips": [
+            "Two messages can share the same read time if they were opened together."
+          ],
+          "es": {
+            "title": "A que hora leyeron un WhatsApp de staff",
+            "summary": "El chip verde Read en un mensaje de staff muestra la fecha y la hora en que WhatsApp lo marco como leido.",
+            "where": "Staff messages (S), abre la conversacion",
+            "steps": [
+              "Abre Staff messages (S) y la conversacion.",
+              "En el chip verde Read, la hora al lado de Read es cuando lo abrio en WhatsApp.",
+              "La linea de encima del chip es cuando la oficina lo envio, no cuando lo leyo."
+            ],
+            "tips": [
+              "Dos mensajes pueden tener la misma hora de lectura si los abrio juntos."
+            ]
+          }
+        },
         {
           "id": "parent_notify",
           "title": "Parent notify / WhatsApp",

@@ -489,6 +489,10 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
   background:rgba(22,163,74,.18);
   color:#15803d;
 }
+.portal-staff-wa-admin__read-at{
+  font-weight:650;
+  white-space:nowrap;
+}
 .portal-staff-wa-admin__chip.is-delivered{
   background:rgba(22,163,74,.14);
   color:#15803d;
