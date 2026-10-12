@@ -512,7 +512,8 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 }
 
 .portal-pnlog-bubble__reply,
-.portal-pnlog-bubble__edit {
+.portal-pnlog-bubble__edit,
+.portal-pnlog-bubble__delete {
   border: 0;
   background: transparent;
   color: inherit;
@@ -526,8 +527,19 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 }
 
 .portal-pnlog-bubble__reply:hover,
-.portal-pnlog-bubble__edit:hover {
+.portal-pnlog-bubble__edit:hover,
+.portal-pnlog-bubble__delete:hover {
   opacity: 0.85;
+}
+
+.portal-pnlog-bubble__delete {
+  border: 1px solid #b91c1c;
+  border-radius: 999px;
+  background: #fff;
+  color: #b91c1c;
+  text-decoration: none;
+  padding: 1px 8px;
+  line-height: 1.4;
 }
 
 .portal-pnlog-bubble__reply.is-active {

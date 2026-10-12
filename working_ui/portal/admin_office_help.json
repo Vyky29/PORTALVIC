@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-12-v401",
+  "version": "2026-10-12-v402",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2810,6 +2810,47 @@
             "You can only delete messages you sent, including ones you sent as ADMIN.",
             "Calls cannot be deleted this way."
           ]
+        },
+        {
+          "id": "delete_family_api_message",
+          "title": "Delete a family API message",
+          "summary": "Delete on a family WhatsApp bubble removes it for every office user and from the parent portal.",
+          "where": "Family messages (P), open the conversation",
+          "keywords": [
+            "delete",
+            "borrar",
+            "eliminar",
+            "everyone",
+            "to everyone",
+            "api",
+            "family messages",
+            "mensaje"
+          ],
+          "steps": [
+            "Open Family messages (P) and the conversation.",
+            "On the message, press Delete. Any office user who can open the thread can press it, including on automatic Schedule messages.",
+            "Confirm Delete this message for everyone.",
+            "The message leaves the office thread and the parent portal."
+          ],
+          "tips": [
+            "WhatsApp already delivered to the phone stays on the phone. The API cannot unsend it.",
+            "The same Delete chip is on parent replies in the thread."
+          ],
+          "es": {
+            "title": "Borrar un mensaje de API a la familia",
+            "summary": "Delete en un mensaje de WhatsApp de familia lo quita para toda la oficina y del portal de padres.",
+            "where": "Family messages (P), abre la conversacion",
+            "steps": [
+              "Abre Family messages (P) y la conversacion.",
+              "En el mensaje, pulsa Delete. Lo puede pulsar cualquier persona de oficina que vea el hilo, tambien en los mensajes automaticos de Schedule.",
+              "Confirma Delete this message for everyone.",
+              "El mensaje sale del hilo de oficina y del portal de padres."
+            ],
+            "tips": [
+              "El WhatsApp que ya llego al movil se queda en el movil. La API no puede retirarlo.",
+              "El mismo chip Delete esta en las respuestas del padre."
+            ]
+          }
         },
         {
           "id": "comms_green_vs_read",
