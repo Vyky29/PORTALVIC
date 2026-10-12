@@ -1753,7 +1753,10 @@
     } else if (bodyStr && !isMediaPlaceholder) {
       contentHtml =
         '<div class="portal-pnlog-bubble__text">' +
-        esc(bodyStr).replace(/\r\n/g, "\n").replace(/\n/g, "<br>") +
+        esc(bodyStr)
+          .replace(/\r\n/g, "\n")
+          .replace(/\n/g, "<br>")
+          .replace(/\*Please do not reply here\.\*/g, "<strong>Please do not reply here.</strong>") +
         "</div>";
     }
     var errHtml =

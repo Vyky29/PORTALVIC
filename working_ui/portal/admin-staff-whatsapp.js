@@ -849,7 +849,10 @@
         var bodyHtml =
           bodyStr && !isPlaceholder
             ? '<div class="portal-staff-wa-admin__body">' +
-              esc(bodyStr).replace(/\r\n/g, "\n").replace(/\n/g, "<br>") +
+              esc(bodyStr)
+                .replace(/\r\n/g, "\n")
+                .replace(/\n/g, "<br>")
+                .replace(/\*Please do not reply here\.\*/g, "<strong>Please do not reply here.</strong>") +
               "</div>"
             : "";
         var chips = [];

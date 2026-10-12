@@ -169,12 +169,12 @@ function ownerMessage(rows: Record<string, unknown>[]): string {
     lines.join("\n\n"),
     mediaLine,
     "",
-    "This is an automatic message from the system. Please do not reply here.",
-    "",
     "To reply, call or message 07592 558671.",
     "",
+    "This is an automatic message from the system. *Please do not reply here.*",
+    "",
     "Thank you,",
-    "ClubSENsational",
+    "ClubSENsational Portal",
   ].filter((line, i, arr) => !(line === "" && arr[i - 1] === "")).join("\n");
 }
 

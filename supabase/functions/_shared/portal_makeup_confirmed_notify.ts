@@ -189,8 +189,8 @@ export async function notifyMakeupConfirmed(
       (instructorName ? ` with instructor ${instructorName}` : "") +
       `.\n\n` +
       `It is ready in your parent portal.\n\n` +
-      `${parentApiMachineFooter()}\n\n` +
-      `Portal: ${portalHint}\n\n— clubSENsational`;
+      `Portal: ${portalHint}\n\n` +
+      parentApiMachineFooter();
     const subject = `Make-up confirmed · ${childName}`;
 
     let emailStatus = "skipped";

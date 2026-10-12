@@ -17,33 +17,47 @@ export function normalizeParentPhoneE164(raw: string): string | null {
   return "+" + digits;
 }
 
+/** WhatsApp shows *this* in bold. */
+const API_DO_NOT_REPLY = "*Please do not reply here.*";
+
+function apiThankYou(): string {
+  return "Thank you,\nClubSENsational Portal";
+}
+
 /** Parent API WhatsApp. Do not reply on this thread. */
 export function parentApiMachineFooter(): string {
   return (
-    "This is an automatic message from the system. Please do not reply here.\n\n" +
-    "To reply, use Messages in the parent portal, or call or message 07592 558671."
+    "To reply, use Messages in the parent portal, or call or message 07592 558671.\n\n" +
+    "This is an automatic message from the system. " + API_DO_NOT_REPLY + "\n\n" +
+    apiThankYou()
   );
 }
 
 /** Staff API WhatsApp. Do not reply on this thread. */
 export function staffApiMachineFooter(): string {
   return (
-    "This is an automatic message from the system. Please do not reply here.\n\n" +
-    "To reply, use Messages (chat) in the Staff Portal, or call or message 07592 558671."
+    "To reply, use Messages (chat) in the Staff Portal, or call or message 07592 558671.\n\n" +
+    "This is an automatic message from the system. " + API_DO_NOT_REPLY + "\n\n" +
+    apiThankYou()
   );
+}
+
+function stripApiMachineFooter(body: string): string {
+  return String(body || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n*Thank you,\s*\nClubSENsational(?: Portal)?\s*$/i, "")
+    .replace(/\n*—\s*clubSENsational\s*$/i, "")
+    .replace(/\n*Thanks,\s*\nOffice\s*\|\s*clubSENsational\s*$/i, "")
+    .replace(/\n*To reply, use Messages[\s\S]*$/i, "")
+    .replace(/\n*\*?This is an automatic message from the system\.[\s\S]*$/i, "")
+    .replace(/\n*This message was sent automatically\. Please do not reply to it\.?\s*/gi, "\n\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 export function withStaffApiMachineFooter(body: string): string {
   const footer = staffApiMachineFooter();
-  const stripped = String(body || "")
-    .replace(/\r\n/g, "\n")
-    .replace(
-      /\n*This is an automatic message from the system\. Please do not reply here\.[\s\S]*?(?:WhatsApp Business|07592 558671)\.?\s*/gi,
-      "\n\n",
-    )
-    .replace(/\n*This message was sent automatically\. Please do not reply to it\.?\s*/gi, "\n\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  const stripped = stripApiMachineFooter(body);
   if (!stripped) return footer;
   return stripped + "\n\n" + footer;
 }
@@ -63,7 +77,9 @@ export function plainTextToHtml(
   const paragraphs = normalized.split(/\n{2,}/);
   const bodyHtml = paragraphs
     .map((para) => {
-      const inner = esc(para).replace(/\n/g, "<br>");
+      const inner = esc(para)
+        .replace(/\n/g, "<br>")
+        .replace(/\*Please do not reply here\.\*/g, "<strong>Please do not reply here.</strong>");
       return `<p style="margin:0 0 14px 0">${inner || "&nbsp;"}</p>`;
     })
     .join("");
@@ -582,7 +598,7 @@ export function flattenWhatsappTemplateBody(body: string, max = WHATSAPP_TEMPLAT
 function whatsappTemplateBodyParam(body: string, template: string): string {
   let text = String(body || "").trim();
   if (template !== "hello_world") {
-    text = text.replace(/\n*Thank you,\s*\nClubSENsational\s*$/i, "").trim();
+    text = stripApiMachineFooter(text);
   }
   // Meta template {{1}} rejects newlines/tabs and 5+ consecutive spaces.
   return flattenWhatsappTemplateBody(text, WHATSAPP_TEMPLATE_BODY_MAX);
@@ -595,16 +611,7 @@ function isSpacedWhatsappTemplate(template: string): boolean {
 }
 
 function stripTemplateClosing(body: string): string {
-  return String(body || "")
-    .replace(/\r\n/g, "\n")
-    .replace(/\n*Thank you,\s*\nClubSENsational\s*$/i, "")
-    .replace(/\n*—\s*clubSENsational\s*$/i, "")
-    .replace(
-      /\n*This is an automatic message from the system\. Please do not reply here\.[\s\S]*$/i,
-      "",
-    )
-    .replace(/\n*This message was sent automatically\. Please do not reply to it\.?\s*$/i, "")
-    .trim();
+  return stripApiMachineFooter(body);
 }
 
 /** One paragraph per box. Extra paragraphs fold into the fourth. Empty boxes stay a single hyphen. */

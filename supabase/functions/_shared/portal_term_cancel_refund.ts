@@ -3,6 +3,7 @@
 // and the one parent message. LA / NHS do not pay the admin charge.
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { parentApiMachineFooter } from "./portal_parent_messaging.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -206,7 +207,7 @@ function buildMessage(q: Record<string, unknown>): string {
     const due = q.uncollected_due ? " due on " + longDate(String(q.uncollected_due)) : "";
     lines.push("", "The rest of the invoice, " + gbp(Number(q.uncollected_gbp)) + due + ", will not be collected.");
   }
-  lines.push("", "Thank you,", "ClubSENsational");
+  lines.push("", parentApiMachineFooter());
   return lines.join("\n");
 }
 

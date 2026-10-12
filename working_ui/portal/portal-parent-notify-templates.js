@@ -10,16 +10,18 @@
     return n ? "Hi " + n + ",\n\n" : "Hi,\n\n";
   }
 
+  /** Every parent API message ends with this. Asterisks are WhatsApp bold. */
   function signOff() {
-    return "\n\nThank you,\nClubSENsational";
+    return (
+      "\n\nTo reply, use Messages in the parent portal, or call or message 07592 558671.\n\n" +
+      "This is an automatic message from the system. *Please do not reply here.*\n\n" +
+      "Thank you,\nClubSENsational Portal"
+    );
   }
 
-  /** Automated API copy. Parents must not be asked to answer on this channel. */
+  /** Kept so older template joins still compile. The close now lives in signOff. */
   function machineOnlyLine() {
-    return (
-      "This is an automatic message from the system. Please do not reply here.\n\n" +
-      "To reply, use Messages in the parent portal, or call or message 07592 558671."
-    );
+    return "";
   }
 
   /** Public HTTPS URL for a portal static asset (staff dashboard photos). */

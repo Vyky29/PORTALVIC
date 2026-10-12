@@ -15,6 +15,7 @@ import {
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   sendParentMessageViaWhatsapp,
+  parentApiMachineFooter,
 } from "./portal_parent_messaging.ts";
 import { finishBookingUrl, mintFinishBookingToken } from "./portal_booking_finish.ts";
 import { termPayReference, tideBankDetailsFromEnv } from "./tide_bank_details.ts";
@@ -229,8 +230,7 @@ function buildOfferWhatsappNudge(opts: {
     `${intro}\n\n` +
     `The payment link has been sent to your email. Open that email and pay from the link there. It opens in your browser, so card or Apple Pay can go through.\n\n` +
     `Pay ${opts.deadlineLabel} to keep the same place (${opts.slotLabel}). If you do not pay by then, the place is released.\n\n` +
-    `Thanks,\n` +
-    `Office | clubSENsational`
+    parentApiMachineFooter()
   );
 }
 

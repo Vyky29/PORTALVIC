@@ -7,6 +7,7 @@ import {
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
+  parentApiMachineFooter,
 } from "./portal_parent_messaging.ts";
 
 function clean(v: unknown, max = 500): string {
@@ -57,8 +58,7 @@ export async function notifyParentRefundPaidOut(
     (inv ? `Original invoice: ${inv}.\n` : "") +
     (cn ? `Credit note: ${cn}.\n` : "") +
     `You can also see this under Credits & refunds in the parent portal.\n\n` +
-    `Please do not reply on WhatsApp. Use Messages in the parent portal, or call 07592 558671.\n\n` +
-    `Thank you,\nClubSENsational`;
+    parentApiMachineFooter();
 
   const subject = "Your refund has been sent";
 

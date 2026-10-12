@@ -169,8 +169,7 @@ Deno.serve(async (req) => {
       `We still need the account details to pay the refund of ${gbp(amount)} for ${child}.\n\n` +
       `Please send the name on the account, the sort code, and the account number. ` +
       `Use Messages in the parent portal, or call or message 07592 558671.\n\n` +
-      `${parentApiMachineFooter()}\n\n` +
-      `Thank you,\nClubSENsational`;
+      parentApiMachineFooter();
 
     if (body.dryRun) {
       sent.push(id);

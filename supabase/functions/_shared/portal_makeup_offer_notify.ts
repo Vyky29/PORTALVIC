@@ -71,8 +71,7 @@ export async function notifyParentMakeupOffer(
     `A makeup is ready for ${child}: ${when}.\n\n` +
     `Please open the parent portal and Accept or Decline so we can confirm the place.\n\n` +
     `Portal: ${portal}\n\n` +
-    `${parentApiMachineFooter()}\n\n` +
-    `— clubSENsational`;
+    parentApiMachineFooter();
   const subject = `Makeup to confirm · ${child}`.slice(0, 200);
 
   if (!phone && !email) {
