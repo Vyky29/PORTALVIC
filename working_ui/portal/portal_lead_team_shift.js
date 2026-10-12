@@ -1623,9 +1623,8 @@ function renderTodayStrip(team) {
       "</span>"
     );
   });
-  const isoDay = weekdayFromIso(team.iso);
-  /* Two rows only on Sunday when the team is bigger than three. Two or three stay on one line. */
-  const twoLines = isoDay === "Sunday" && chipHtml.length > 3;
+  /* Two rows when the team is bigger than three so every name stays inside the card. */
+  const twoLines = chipHtml.length > 3;
   const rowSplit = twoLines ? Math.ceil(chipHtml.length / 2) : chipHtml.length;
   const chipRows = [chipHtml.slice(0, rowSplit), chipHtml.slice(rowSplit)].filter(function (row) {
     return row.length;
@@ -2425,10 +2424,18 @@ export function portalSyncLeadTeamShiftUi() {
 
       const team = workingToday ? portalLeadTeamOnShiftForIso(iso, ctx) : null;
       const showToday = !!team;
+      /* Chips match the sheet: every Day Centre instructor on that day, including the viewer. */
+      let stripTeam = team;
+      if (team) {
+        const board = portalLeadTeamRosterTableModel(iso, ctx);
+        if (board && Array.isArray(board.members) && board.members.length) {
+          stripTeam = Object.assign({}, team, { members: board.members });
+        }
+      }
 
       if (todayHost) {
         if (showToday) {
-          todayHost.innerHTML = renderTodayStrip(team);
+          todayHost.innerHTML = renderTodayStrip(stripTeam);
           todayHost.hidden = false;
         } else {
           todayHost.innerHTML = "";
