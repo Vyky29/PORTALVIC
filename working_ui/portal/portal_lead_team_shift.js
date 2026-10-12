@@ -295,7 +295,8 @@ function teamBoardNeedsFullRoster(dayKind) {
     dayKind === "ops_club_all" ||
     dayKind === "sunday_ma_swimfarm" ||
     dayKind === "roberto_sun_pool" ||
-    dayKind === "roberto_thu_dc"
+    dayKind === "roberto_thu_dc" ||
+    dayKind === "michelle_day_centre"
   );
 }
 
@@ -1602,6 +1603,24 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
   return out;
 }
 
+/** Today chips are the other Day Centre instructors, not the person looking at the screen. */
+function todayStripMembers(team, board, leadKey) {
+  const raw =
+    board && Array.isArray(board.members) && board.members.length
+      ? board.members
+      : team && Array.isArray(team.members)
+        ? team.members
+        : [];
+  const self = normKey(leadKey);
+  return raw.filter(function (m) {
+    const k = normKey(m && m.key);
+    if (!k) return false;
+    if (m.isViewerLead) return false;
+    if (self && k === self) return false;
+    return true;
+  });
+}
+
 function renderTodayStrip(team) {
   if (!team || !team.members.length) {
     return (
@@ -2417,21 +2436,22 @@ export function portalSyncLeadTeamShiftUi() {
           "|" +
           String((last && last.updated_at) || (last && last.created_at) || "");
       } catch (_) {}
-      const syncFp = String(ctx.leadKey) + "|" + iso + "|" + String(!!workingToday) + "|" + ovFp;
+      const team = workingToday ? portalLeadTeamOnShiftForIso(iso, ctx) : null;
+      const board = team ? portalLeadTeamRosterTableModel(iso, ctx) : null;
+      const stripMembers = todayStripMembers(team, board, ctx.leadKey);
+      const nameFp = stripMembers
+        .map(function (m) {
+          return normKey(m.key);
+        })
+        .join(",");
+      const syncFp = String(ctx.leadKey) + "|" + iso + "|" + String(!!workingToday) + "|" + ovFp + "|" + nameFp;
       if (window.__PORTAL_LEAD_TEAM_SYNC_FP__ === syncFp) {
         return;
       }
 
-      const team = workingToday ? portalLeadTeamOnShiftForIso(iso, ctx) : null;
-      const showToday = !!team;
-      /* Chips match the sheet: every Day Centre instructor on that day, including the viewer. */
-      let stripTeam = team;
-      if (team) {
-        const board = portalLeadTeamRosterTableModel(iso, ctx);
-        if (board && Array.isArray(board.members) && board.members.length) {
-          stripTeam = Object.assign({}, team, { members: board.members });
-        }
-      }
+      const showToday = !!team && stripMembers.length > 0;
+      /* Same people as the opened sheet, without Michelle's own name. */
+      const stripTeam = team ? Object.assign({}, team, { members: stripMembers }) : null;
 
       if (todayHost) {
         if (showToday) {
