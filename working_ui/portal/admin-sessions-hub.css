@@ -2341,6 +2341,21 @@
       border-color: #fecdd3;
     }
     .ash-db-card--open .ash-db-card__name { color: #9f1239; }
+    /* Open seat and the override participant at the same time stay two cards, inside one box. */
+    .ash-db-seat-pair {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      box-sizing: border-box;
+      border: 2px solid #0f766e;
+      border-radius: 12px;
+      padding: 5px;
+      background: #f0fdfa;
+    }
+    .ash-db-card.ash-db-card--seat-pair,
+    .ash-db-card.ash-db-card--open.ash-db-card--seat-pair {
+      border-color: #0f766e;
+    }
     .ash-db-card--closed {
       background: #f1f5f9;
       border-color: #cbd5e1;

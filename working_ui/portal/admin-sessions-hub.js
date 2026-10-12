@@ -12861,6 +12861,95 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return parts.frame + (parts.paid ? " " + parts.paid : "");
   }
 
+  function dayBoardItemClockBounds(slot) {
+    if (!slot) return null;
+    var wd = slot.day || weekdayLongFromIso(slot.session_date);
+    var startHm = clean(slot.time_start);
+    var endHm = clean(slot.time_end);
+    if (!startHm || !endHm) {
+      var raw = clean(slot.time_slot);
+      var pt = raw ? parseTimeSlot(raw, wd) : null;
+      startHm = startHm || (pt && pt.start) || "";
+      endHm = endHm || (pt && pt.end) || "";
+    }
+    var start = hmToMinutesOfDay(startHm);
+    var end = hmToMinutesOfDay(endHm);
+    if (start == null || end == null || end <= start) return null;
+    return { start: start, end: end };
+  }
+
+  function dayBoardClockOverlaps(a, b) {
+    return !!(a && b && a.start < b.end && b.start < a.end);
+  }
+
+  function dayBoardItemIsOpenSeat(it) {
+    var st = (it && it.st) || {};
+    var slot = (it && it.slot) || {};
+    if (st.boardPlace === "cover") return false;
+    if (st.isOpenSlot) return true;
+    return rosterSlotKind(slot.client_name) === "open";
+  }
+
+  /** Cover / override card that puts a real participant on this column. */
+  function dayBoardItemIsOverrideParticipant(it) {
+    var st = (it && it.st) || {};
+    if (st.boardPlace !== "cover") return false;
+    if (st.isOpenSlot || st.isClosed || st.isCancelled || st.isAbsent || st.isStaffDayOff) return false;
+    var kind = rosterSlotKind(it.slot && it.slot.client_name);
+    return kind !== "open" && kind !== "closed" && kind !== "staff_duty" && kind !== "manager";
+  }
+
+  /**
+   * Open seat + override participant at the same time share a cluster id.
+   * 0 means the card stands alone.
+   */
+  function dayBoardSeatPairClusters(items) {
+    var n = (items || []).length;
+    var parent = [];
+    var bounds = [];
+    var open = [];
+    var added = [];
+    var i;
+    for (i = 0; i < n; i++) {
+      parent[i] = i;
+      bounds[i] = dayBoardItemClockBounds(items[i] && items[i].slot);
+      open[i] = dayBoardItemIsOpenSeat(items[i]);
+      added[i] = dayBoardItemIsOverrideParticipant(items[i]);
+    }
+    function find(x) {
+      while (parent[x] !== x) {
+        parent[x] = parent[parent[x]];
+        x = parent[x];
+      }
+      return x;
+    }
+    function unite(a, b) {
+      var ra = find(a);
+      var rb = find(b);
+      if (ra !== rb) parent[rb] = ra;
+    }
+    for (i = 0; i < n; i++) {
+      if (!open[i]) continue;
+      for (var j = 0; j < n; j++) {
+        if (!added[j]) continue;
+        if (dayBoardClockOverlaps(bounds[i], bounds[j])) unite(i, j);
+      }
+    }
+    var hasOpen = Object.create(null);
+    var hasAdded = Object.create(null);
+    for (i = 0; i < n; i++) {
+      var root = find(i);
+      if (open[i]) hasOpen[root] = true;
+      if (added[i]) hasAdded[root] = true;
+    }
+    var out = [];
+    for (i = 0; i < n; i++) {
+      var r = find(i);
+      out[i] = hasOpen[r] && hasAdded[r] && (open[i] || added[i]) ? r + 1 : 0;
+    }
+    return out;
+  }
+
   function dayBoardColHtml(hub, key, label, items, esc) {
     var dayIso = String((hub && hub.selectedDay) || "").slice(0, 10);
     var isCoverCol = key === "coverneeded";
@@ -12876,11 +12965,24 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
     }
     var hoursParts = dayBoardStaffWorkHoursParts(items, key || label);
-    var cards = items
-      .map(function (it) {
-        return htmlDayBoardCard(hub, it.slot, it.st, esc);
-      })
-      .join("");
+    var seatPairCluster = dayBoardSeatPairClusters(items);
+    var cards = "";
+    var pi = 0;
+    while (pi < items.length) {
+      var cluster = seatPairCluster[pi];
+      if (!(cluster > 0)) {
+        cards += htmlDayBoardCard(hub, items[pi].slot, items[pi].st, esc, false);
+        pi += 1;
+        continue;
+      }
+      var group = "";
+      var groupId = cluster;
+      while (pi < items.length && seatPairCluster[pi] === groupId) {
+        group += htmlDayBoardCard(hub, items[pi].slot, items[pi].st, esc, true);
+        pi += 1;
+      }
+      cards += '<div class="ash-db-seat-pair">' + group + "</div>";
+    }
     var headExtra = "";
     if (away) {
       headExtra =
@@ -13777,7 +13879,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     );
   }
 
-  function htmlDayBoardCard(hub, slot, st, esc) {
+  function htmlDayBoardCard(hub, slot, st, esc, seatPair) {
     var band = dayBoardServiceBand(slot);
     var nameHtml;
     if (st.isAbsent || st.isCancelled || st.boardPlace === "away" || st.isStaffDayOff) {
@@ -13861,6 +13963,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (st.boardPlace === "away" || st.isStaffDayOff ? " ash-db-card--needs-cover" : "") +
       (st.boardPlace === "mirror" ? " ash-db-card--cover-mirror" : "") +
       (st.isCoverNeeded && st.boardPlace !== "away" ? " ash-db-card--cover-needed" : "") +
+      (seatPair ? " ash-db-card--seat-pair" : "") +
       '">' +
       '<div class="ash-db-card__body">' +
       '<div class="ash-db-card__band">' +
