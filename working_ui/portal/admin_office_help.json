@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-12-v407",
+  "version": "2026-10-12-v408",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -3359,7 +3359,7 @@
           "tips": [
             "The page explains the jobs. It does not start them or stop them.",
             "Pay hold, trial offers, the 06:00 buffer and the 21:00 office push are on the saved clock. Staff feedback WhatsApp is on. The timesheet reminder and weekly notes are built for those times.",
-            "The 15 Aug 2026 unpaid release and the 26 Jun 2026 payroll email are finished. They do not repeat."
+            "The 21:00 office push names children who still owe yesterday's feedback. An open seat (No participant, Office, Closed) is not on that list."
           ],
           "es": {
             "title": "Lo que corre solo",
@@ -3376,7 +3376,7 @@
             "tips": [
               "La pagina explica los trabajos. No los enciende ni los apaga.",
               "Pay hold, ofertas de trial, el buffer de las 06:00 y el push de las 21:00 estan en el reloj guardado. El WhatsApp de feedback al staff esta encendido. El timesheet y las notas semanales estan hechos para esas horas.",
-              "La suelta del 15 ago 2026 y el email de nomina del 26 jun 2026 ya terminaron. No se repiten."
+              "El push de las 21:00 a la oficina nombra a los ninos a los que aun les falta el feedback de ayer. Un asiento abierto (No participant, Office, Closed) no entra en esa lista."
             ]
           }
         },

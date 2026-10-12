@@ -15,7 +15,7 @@ import {
   slotsFromRosterRows,
   type Feedback2030Slot,
 } from "../../supabase/functions/_shared/portal_feedback_2030_match.ts";
-import { rosterSlotIsComplete } from "../../supabase/functions/_shared/portal_feedback_digest_match.ts";
+import { missingFeedbackClientsForShift, rosterSlotIsComplete } from "../../supabase/functions/_shared/portal_feedback_digest_match.ts";
 
 const iso = "2026-09-09";
 const emptyCtx = {
@@ -312,6 +312,18 @@ checks.push(
   [
     "5.30 submit still does not clear a separate 6-6.30 card",
     slotIsResolved(joelleSimonLate, "2026-09-10", joelleCtx) === false,
+    true,
+  ],
+  [
+    "No participant is not a missing feedback",
+    missingFeedbackClientsForShift(
+      [
+        { client_name: "No participant", time_slot: "9 to 9.30", service: "Aquatic Activity", instructors: "JAVIER" },
+        { client_name: "Yusef", time_slot: "11 to 12", service: "Climbing Activity", instructors: "ALEX" },
+      ],
+      "2026-10-11",
+      emptyCtx,
+    ).join(",") === "Yusef",
     true,
   ],
 );

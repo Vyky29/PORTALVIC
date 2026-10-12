@@ -229,6 +229,20 @@ export function rosterSlotIsComplete(
   return false;
 }
 
+function digestClientOwesFeedback(name: string): boolean {
+  const n = String(name || "").trim();
+  if (!n) return false;
+  /* Open seats and duty labels are not a child. Never list them as missing feedback. */
+  const skip =
+    /^(home|manager|closed|available|no[_\s]*participant|no[_\s]*client|open|cover[_\s]*needed|off|day[_\s]*off|casa|na|office|interview|interviews|admin|ops|operations|shadowing|training|meeting|team[_\s]*meeting|hold[_\s]?waitlist|waitlist|waiting[_\s]?list|waiting|elia)$/i;
+  const parts = n.split(/\s*[·•|]\s*/).map((p) => String(p || "").trim()).filter(Boolean);
+  for (const part of parts.length ? parts : [n]) {
+    if (skip.test(part)) return false;
+    if (skip.test(slugClient(part).replace(/_/g, " "))) return false;
+  }
+  return true;
+}
+
 export function missingFeedbackClientsForShift(
   rosterRows: DigestRosterRow[],
   shiftDateIso: string,
@@ -245,8 +259,7 @@ export function missingFeedbackClientsForShift(
 
   for (const r of rosterRows) {
     const client = String(r.client_name || "").trim();
-    if (!client || /^closed$/i.test(client)) continue;
-    if (/^(office|manager|home|interview)\b/i.test(client)) continue;
+    if (!client || !digestClientOwesFeedback(client)) continue;
     const slotKey = rosterDigestSlotKey(r, shiftDateIso);
     if (seenSlots.has(slotKey)) continue;
     seenSlots.add(slotKey);
