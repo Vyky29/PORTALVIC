@@ -20,6 +20,8 @@ export type Feedback2030StaffDebt = {
   staffLabel: string;
   pending: number;
   sample: string[];
+  /** Set when every owed card is the same past day. Empty when today is included. */
+  openIso?: string;
 };
 
 const SKIP_CLIENT = /^(home|manager|closed|available|no[_ ]participant|no[_ ]client|open|cover[_ ]needed|off|day[_ ]off|casa|na|office|interview|interviews|admin|ops|operations|shadowing|training|meeting|team[_ ]meeting|hold[_ ]?waitlist|waitlist|waiting[_ ]?list|waiting|elia)$/i;

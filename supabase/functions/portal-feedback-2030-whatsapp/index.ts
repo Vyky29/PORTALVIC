@@ -143,10 +143,14 @@ function mergeStaffDebts(
           staffLabel: d.staffLabel,
           pending: d.pending,
           sample: (d.sample || []).slice(0, 4),
+          openIso: d.openIso || "",
         });
         continue;
       }
       ex.pending += d.pending;
+      if (d.openIso && ex.openIso && d.openIso !== ex.openIso) ex.openIso = "";
+      else if (d.openIso && !ex.openIso) ex.openIso = "";
+      else if (!d.openIso) ex.openIso = "";
       for (const s of d.sample || []) {
         if (ex.sample.length >= 4) break;
         if (ex.sample.indexOf(s) < 0) ex.sample.push(s);
@@ -247,14 +251,27 @@ function greetName(username: string, fullName: string, fallback: string): string
   return first;
 }
 
-function buildBody(first, pending, sample, wave, london) {
+function portalFeedbackLink(openIso: string): string {
+  const iso = String(openIso || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return PORTAL_URL;
+  const u = new URL(PORTAL_URL);
+  u.searchParams.set("portalReviewDate", iso);
+  u.searchParams.set("portalOpenOwed", "1");
+  return u.toString();
+}
+
+function buildBody(first, pending, sample, wave, london, openIso) {
   const n = Math.max(1, pending);
   const list = sample.slice(0, 3).join(", ");
   const more = n > 3 ? ` (+${n - 3} more)` : "";
-  const carriesOlder = (sample || []).some((s) => /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d/.test(String(s || "")));
+  const pastOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || ""));
+  const carriesOlder = pastOnly || (sample || []).some((s) => /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d/.test(String(s || "")));
   const weekday = londonWeekday(london) !== "saturday" && londonWeekday(london) !== "sunday";
-  const timeLine =
-    wave === "2030"
+  const dayLabel = pastOnly ? shortDayLabel(openIso) : "";
+  const where = pastOnly ? `Staff Portal (Week, ${dayLabel})` : "Staff Portal (Today)";
+  const timeLine = pastOnly
+    ? `These are still open from ${dayLabel}.`
+    : wave === "2030"
       ? weekday
         ? "Final reminder: 30 minutes left - the day closes at 9:00pm."
         : "Final reminder for today."
@@ -264,12 +281,15 @@ function buildBody(first, pending, sample, wave, london) {
   const opener = carriesOlder
     ? `Session feedback is still open (${n} left${list ? ": " + list + more : ""}).`
     : `Today's session feedback is not complete yet (${n} left${list ? ": " + list + more : ""}).`;
+  const holdLine = pastOnly
+    ? ""
+    : `After 9:00pm today's hours stay on hold until the office releases them.\n\n`;
   return withStaffApiMachineFooter(
     `Hi ${first},\n\n` +
     `${opener}\n\n` +
-    `${timeLine} Please send them now in the Staff Portal (Today):\n` +
-    `${PORTAL_URL}\n\n` +
-    `After 9:00pm today's hours stay on hold until the office releases them.\n\n` +
+    `${timeLine} Please send them now in the ${where}:\n` +
+    `${portalFeedbackLink(openIso)}\n\n` +
+    holdLine +
     `Thank you,\nclubSENsational office`,
   );
 }
@@ -300,7 +320,7 @@ function pickNewestPushSubs(rows) {
  * Same locked-phone ring as an incoming call. Repeats from cron until pending is 0.
  * Does not send WhatsApp.
  */
-async function sendFeedbackRingPush(admin, profileId, pending, sample) {
+async function sendFeedbackRingPush(admin, profileId, pending, sample, openIso) {
   if (!initVapidFromEnv()) return { sent: 0, subs: 0, error: "no_vapid" };
   const expanded = await expandPushSubscriptionUserIds(admin, [profileId]);
   const { data: subsRaw, error: subErr } = await admin
@@ -320,7 +340,7 @@ async function sendFeedbackRingPush(admin, profileId, pending, sample) {
   const payload = JSON.stringify({
     title,
     body: pushBody,
-    url: PORTAL_URL,
+    url: portalFeedbackLink(openIso),
     /* Call ring already on the phone. It sounds when the feedback alerts are off. */
     portalOpen: "incoming_call",
     tag: "portal-incoming-call-feedback",
@@ -352,15 +372,21 @@ async function sendFeedbackRingPush(admin, profileId, pending, sample) {
 }
 
 /** 21:00 copy. Sent on the same staff WhatsApp template as the earlier alerts. */
-function buildBizBody(first, pending, sample) {
+function buildBizBody(first, pending, sample, openIso) {
   const n = Math.max(1, pending);
   const list = (sample || []).slice(0, 3).join(", ");
   const more = n > 3 ? ` (+${n - 3} more)` : "";
+  const pastOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(openIso || ""));
+  const dayLabel = pastOnly ? shortDayLabel(openIso) : "";
+  const opener = pastOnly
+    ? `Session feedback from ${dayLabel} is still not in (${n} left${list ? ": " + list + more : ""}).`
+    : `Today's session feedback is still not in (${n} left${list ? ": " + list + more : ""}).`;
+  const where = pastOnly ? `Staff Portal (Week, ${dayLabel})` : "Staff Portal (Today)";
   return (
     `Hi ${first},\n\n` +
-    `Today's session feedback is still not in (${n} left${list ? ": " + list + more : ""}).\n\n` +
-    `Please send them in the Staff Portal (Today):\n` +
-    `${PORTAL_URL}\n\n` +
+    `${opener}\n\n` +
+    `Please send them in the ${where}:\n` +
+    `${portalFeedbackLink(openIso)}\n\n` +
     `Thank you`
   );
 }
@@ -584,6 +610,7 @@ Deno.serve(async (req) => {
     slots = slots.concat(pack.slots);
     debtLists.push(pack.debts.map((d) => ({
       ...d,
+      openIso: pastIsos[i],
       sample: (d.sample || []).map((s) => `${label} ${s}`),
     })));
   });
@@ -605,6 +632,7 @@ Deno.serve(async (req) => {
       profileId: profile?.id || null,
       pending: debt.pending,
       sample: debt.sample,
+      openIso: debt.openIso || "",
       phone,
     });
   }
@@ -664,7 +692,7 @@ Deno.serve(async (req) => {
         skipped.push({ username: t.username, reason: "rang_within_30m" });
         continue;
       }
-      const ring = await sendFeedbackRingPush(admin, t.profileId, t.pending, t.sample);
+      const ring = await sendFeedbackRingPush(admin, t.profileId, t.pending, t.sample, t.openIso);
       await admin.from("portal_staff_notify_log").insert({
         sent_by_user_id: null,
         sent_by_email: "system@clubsensational.org",
@@ -701,7 +729,7 @@ Deno.serve(async (req) => {
           .limit(1);
         if (!recentWa || !recentWa.length) {
           const waBody = withStaffApiMachineFooter(
-            buildBizBody(t.staffLabel, t.pending, t.sample),
+            buildBizBody(t.staffLabel, t.pending, t.sample, t.openIso),
           );
           const waResult = await sendParentMobileMessage(t.phone, waBody, {
             kind: "staff_contact_update",
@@ -784,8 +812,8 @@ Deno.serve(async (req) => {
       }
     }
     const body = wave === "biz"
-      ? withStaffApiMachineFooter(buildBizBody(t.staffLabel, t.pending, t.sample))
-      : buildBody(t.staffLabel, t.pending, t.sample, wave, london);
+      ? withStaffApiMachineFooter(buildBizBody(t.staffLabel, t.pending, t.sample, t.openIso))
+      : buildBody(t.staffLabel, t.pending, t.sample, wave, london, t.openIso);
     const result = await sendParentMobileMessage(t.phone, body, {
       kind: "staff_contact_update",
     });

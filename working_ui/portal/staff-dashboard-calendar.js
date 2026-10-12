@@ -50,7 +50,8 @@
            trap the worker on that day every time they open the app. Feedback
            return links still land on the day they just saved. */
         const feedbackReturn = params.get('portalAfterFeedback') === '1'
-          || params.get('portalPostFeedback') === '1';
+          || params.get('portalPostFeedback') === '1'
+          || params.get('portalOpenOwed') === '1';
         if(!feedbackReturn && (reviewDateParsed || params.get('portalReviewDay'))){
           let dropStaleReview = !reviewDateParsed;
           if(reviewDateParsed){
