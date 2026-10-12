@@ -4725,13 +4725,19 @@
         else rest.push(it);
       }
       if(!cancelled.length) return items;
+      if(cancelled.length === 1) return items;
       const iso = String(dayIso || (cancelled[0] && cancelled[0].iso) || '').trim();
       const dismissIds = cancelled.map(function(it){ return String(it && it.id || '').trim(); }).filter(Boolean);
+      const times = [];
+      cancelled.forEach(function(it){
+        const first = String(it && it.sub || '').split(' · ')[0].trim();
+        if(first && /\d/.test(first) && /\bto\b/i.test(first) && times.indexOf(first) < 0) times.push(first);
+      });
       rest.push({
         id: 'cancelled-day:' + iso,
         iso: iso,
         title: 'Sessions Cancelled = ' + cancelled.length,
-        sub: '',
+        sub: times.join(', '),
         kind: 'cancelled',
         _cancelledDismissIds: dismissIds
       });

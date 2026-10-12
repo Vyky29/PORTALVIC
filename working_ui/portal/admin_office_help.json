@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-12-v402",
+  "version": "2026-10-12-v403",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -48,6 +48,45 @@
             "Phase 1: list pending mandates + reveal PIN with orange Final check + copy-ready WhatsApp draft. Schedule writes, day offs and mark paid stay manual.",
             "After each new portal flow ships, update this guide so Ask and Operator stay the same truth."
           ]
+        },
+        {
+          "id": "staff_today_cancelled_card",
+          "title": "Cancelled participant on Staff Today",
+          "summary": "An office cancellation does not stay as a Today card. The logo halo keeps the cancellation button with the hour.",
+          "where": "Staff app, Today",
+          "keywords": [
+            "cancelled",
+            "cancelado",
+            "staff today",
+            "halo",
+            "no participant",
+            "card"
+          ],
+          "steps": [
+            "On Staff Today, a participant the office cancelled does not appear as a card.",
+            "The other cards for that day stay, including open seats that say NO PARTICIPANT.",
+            "The logo halo still has the cancellation button. It names the participant and the hour.",
+            "A same-day move still shows a card. Only an office cancellation drops the card."
+          ],
+          "tips": [
+            "Weekday Day Centre cancellations already stayed off Today. After-school and weekend office cancellations now do the same.",
+            "The parent still gets the WhatsApp. This only changes the worker's Today list."
+          ],
+          "es": {
+            "title": "Participante cancelado en Staff Today",
+            "summary": "Una cancelacion de oficina no se queda como tarjeta en Today. El halo del logo guarda el boton de la cancelacion con la hora.",
+            "where": "App de staff, Today",
+            "steps": [
+              "En Staff Today, un participante que la oficina cancelo no sale como tarjeta.",
+              "El resto de tarjetas del dia siguen, incluidas las plazas abiertas que dicen NO PARTICIPANT.",
+              "El halo del logo sigue con el boton de la cancelacion. Lleva el nombre y la hora.",
+              "Un cambio de hora el mismo dia sigue saliendo en tarjeta. Solo la cancelacion de oficina quita la tarjeta."
+            ],
+            "tips": [
+              "Las cancelaciones de Day Centre entre semana ya no salian en Today. Las de after-school y fin de semana ahora igual.",
+              "El padre sigue recibiendo el WhatsApp. Esto solo cambia la lista Today del worker."
+            ]
+          }
         },
         {
           "id": "sessions_overview",

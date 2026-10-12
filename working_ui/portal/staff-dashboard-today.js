@@ -30,7 +30,8 @@
     }
     /**
      * Weekday Day Centre cancellations drop off Today (no red card).
-     * After-school and weekend cancelled sessions still paint red.
+     * After-school and weekend cancelled sessions still paint red unless
+     * the office cancelled that participant (those stay on the halo only).
      */
     function portalTodayHideCancelledDayCentreCard(s, sessionDateKey){
       if(!s) return false;
@@ -45,6 +46,23 @@
         }
       }
       return true;
+    }
+    /**
+     * Office-cancelled participant: no Today card. The halo keeps the
+     * cancellation button with the hour. A same-day move still paints a card.
+     */
+    function portalTodayItemIsOfficeCancelledCard(it){
+      if(!it) return false;
+      if(String(it.portalOverrideAlertPill || '').toUpperCase() !== 'CANCELLED') return false;
+      var ov = it.__portalScheduleOverride || null;
+      if(!ov) return false;
+      var t = String(ov.override_type || '').trim();
+      if(t === 'slot_close' || t === 'client_cancelled') return true;
+      if(t !== 'slot_clear_client') return false;
+      var pl = ov.payload || {};
+      if(pl.client_move === true || pl.client_move === 'true') return false;
+      if(typeof portalOverrideIsClientMoveOutClear === 'function' && portalOverrideIsClientMoveOutClear(ov)) return false;
+      return !!(pl.cancelled_by_admin);
     }
     /** Fadi cancelled DC seats — retired; weekday DC cancels use portalTodayHideCancelledDayCentreCard. */
     function portalTodayIsFadiDcCancelledSeat(s, sessionDateKey){
@@ -5481,6 +5499,7 @@
             portalSuppressAvailableWhenSlotFilled(
               primary.concat(portalDedupeInstructorCoverExtras(primary, extra)).filter(function(it){
                 if(!it) return false;
+                if(portalTodayItemIsOfficeCancelledCard(it)) return false;
                 if(String(it.portalOverrideAlertPill || '').toUpperCase() !== 'CANCELLED') return true;
                 return !portalTodayHideCancelledDayCentreCard(it.__portalBaseSession || it, sessionDateKey);
               })
