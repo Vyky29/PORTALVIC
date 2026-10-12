@@ -8646,11 +8646,23 @@
       color:var(--danger);
       box-shadow:0 0 0 1px rgba(217,83,79,.12);
     }
+    /* Morning worked, afternoon off: red on top, green below. Pulses — it is a day off. */
     .term-cal-day.term-cal-day--split-worked-off{
-      background:linear-gradient(to bottom, var(--successSoft) 50%, var(--dangerSoft) 50%);
-      border-color:rgba(21,115,71,.35);
-      color:#14532d;
+      background:linear-gradient(to bottom, #fecaca 50%, #bbf7d0 50%);
+      border-color:rgba(185,28,28,.72);
+      color:#991b1b;
       cursor:pointer;
+      animation:termOvPulseShiftRemovedCell 1.35s ease-in-out infinite;
+      box-shadow:0 0 0 2px rgba(185,28,28,.45),0 6px 16px rgba(185,28,28,.2);
+    }
+    /* Morning off, afternoon worked: green on top, red below. Pulses — it is a day off. */
+    .term-cal-day.term-cal-day--split-off-worked{
+      background:linear-gradient(to bottom, #bbf7d0 50%, #fecaca 50%);
+      border-color:rgba(185,28,28,.72);
+      color:#991b1b;
+      cursor:pointer;
+      animation:termOvPulseShiftRemovedCell 1.35s ease-in-out infinite;
+      box-shadow:0 0 0 2px rgba(185,28,28,.45),0 6px 16px rgba(185,28,28,.2);
     }
     .term-cal-day.term-feedback-complete{
       background:var(--successSoft);
@@ -8898,6 +8910,8 @@
       .term-cal-day.term-cal-day--ov-pulse-outstanding,
       .term-cal-day.term-cal-day--ov-pulse-day-off,
       .term-cal-day.term-cal-day--ov-pulse-shift-removed,
+      .term-cal-day.term-cal-day--split-worked-off,
+      .term-cal-day.term-cal-day--split-off-worked,
       .term-cal-day.term-cal-day--ov-pulse-both{animation:none}
       .term-cal-day.term-cal-day--ov-pulse-makeup{box-shadow:0 0 0 1px rgba(194,24,91,.22),0 4px 12px rgba(194,24,91,.14)}
       .term-cal-day.term-cal-day--ov-pulse-trial{box-shadow:0 0 0 1px rgba(167,139,250,.28),0 4px 12px rgba(167,139,250,.12)}
@@ -8911,7 +8925,9 @@
       .term-cal-day.term-cal-day--ov-pulse-both{box-shadow:0 0 0 2px rgba(112,45,112,.25),0 4px 14px rgba(112,45,112,.12)}
       .term-cal-day.term-cal-day--ov-pulse-outstanding{box-shadow:0 0 0 1px rgba(200,110,45,.32),0 4px 12px rgba(200,110,45,.16)}
       .term-cal-day.term-cal-day--ov-pulse-day-off{box-shadow:0 0 0 1px rgba(217,83,79,.32),0 4px 12px rgba(217,83,79,.14)}
-      .term-cal-day.term-cal-day--ov-pulse-shift-removed{box-shadow:0 0 0 2px rgba(185,28,28,.55),0 8px 20px rgba(185,28,28,.28)}
+      .term-cal-day.term-cal-day--ov-pulse-shift-removed,
+      .term-cal-day.term-cal-day--split-worked-off,
+      .term-cal-day.term-cal-day--split-off-worked{box-shadow:0 0 0 2px rgba(185,28,28,.55),0 8px 20px rgba(185,28,28,.28)}
     }
 
     /* Closed sheets must leave the hit tree. iOS still captures inset:0 +

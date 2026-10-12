@@ -2483,17 +2483,10 @@
       }catch(_){ list = []; }
       return Array.isArray(list) && list.length > 0;
     }
-    /** Afternoon-only request: morning still worked, so the term cell is two colours. */
-    function portalTermStaffAwayIsAfternoonOnly(iso, staffId){
+    function portalTermUnavailabilityReasonMatches(iso, staffId, pattern){
       const key = String(iso || '').trim().slice(0, 10);
       const sid = String(staffId || '').trim().toLowerCase();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(key) || !sid) return false;
-      const canon = typeof portalCanonicalStaffKeyForMatch === 'function'
-        ? String(portalCanonicalStaffKeyForMatch(sid) || '').trim().toLowerCase()
-        : sid;
-      const luliya = canon === 'luliya' || canon === 'lulia' || sid === 'luliya' || sid === 'lulia'
-        || sid.indexOf('luliya') >= 0 || sid.indexOf('lulia') >= 0 || sid.indexOf('aidaluli') >= 0;
-      if(key === '2026-09-23' && luliya) return true;
       const rows = (typeof window !== 'undefined' && window.__PORTAL_STAFF_UNAVAILABILITY__) || [];
       const keys = typeof portalTermStaffProfileLookupKeys === 'function'
         ? portalTermStaffProfileLookupKeys(sid)
@@ -2506,11 +2499,33 @@
           return who === k || who.indexOf(k) >= 0 || k.indexOf(who) === 0;
         });
         if(!mine && who) continue;
-        if(/afternoon only/i.test(String(r.reason || ''))) return true;
+        if(pattern.test(String(r.reason || ''))) return true;
       }
       return false;
     }
+    /** Afternoon-only request: morning still worked. Cell is red on top, green below. */
+    function portalTermStaffAwayIsAfternoonOnly(iso, staffId){
+      const key = String(iso || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key) || !sid) return false;
+      const canon = typeof portalCanonicalStaffKeyForMatch === 'function'
+        ? String(portalCanonicalStaffKeyForMatch(sid) || '').trim().toLowerCase()
+        : sid;
+      const luliya = canon === 'luliya' || canon === 'lulia' || sid === 'luliya' || sid === 'lulia'
+        || sid.indexOf('luliya') >= 0 || sid.indexOf('lulia') >= 0 || sid.indexOf('aidaluli') >= 0;
+      if(key === '2026-09-23' && luliya) return true;
+      if(portalTermUnavailabilityReasonMatches(key, sid, /afternoon only/i)) return true;
+      return false;
+    }
     try{ window.portalTermStaffAwayIsAfternoonOnly = portalTermStaffAwayIsAfternoonOnly; }catch(_){}
+    /** Morning-only request: afternoon still worked. Cell is green on top, red below. */
+    function portalTermStaffAwayIsMorningOnly(iso, staffId){
+      const key = String(iso || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key) || !sid) return false;
+      return portalTermUnavailabilityReasonMatches(key, sid, /morning only/i);
+    }
+    try{ window.portalTermStaffAwayIsMorningOnly = portalTermStaffAwayIsMorningOnly; }catch(_){}
     function portalTermStaffAwayDatesFor(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const map = t && t.termStaffAwayDatesByProfileKey;
@@ -3968,11 +3983,22 @@
             const dayWordAway = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const afternoonOnly = typeof portalTermStaffAwayIsAfternoonOnly === 'function'
               && portalTermStaffAwayIsAfternoonOnly(isoKey, termStaffId);
-            const keptWork = afternoonOnly
+            const morningOnly = !afternoonOnly
+              && typeof portalTermStaffAwayIsMorningOnly === 'function'
+              && portalTermStaffAwayIsMorningOnly(isoKey, termStaffId);
+            const keptWork = (afternoonOnly || morningOnly)
               && portalTermStaffKeptClientSessionsOnDate(isoKey, dayWordAway, termStaffId);
-            if(keptWork){
+            if(keptWork && afternoonOnly){
+              /* Morning worked, afternoon off: red above, green below. */
               cls += ' term-cal-day--split-worked-off';
-              label = `${day}, worked part of the day, rest of the day off`;
+              label = `${day}, worked the morning, afternoon off`;
+              parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${isoKey}" data-term-review-weekday="${dayWordAway}" data-term-review-judgement="0" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
+              continue;
+            }
+            if(keptWork && morningOnly){
+              /* Morning off, afternoon worked: green above, red below. */
+              cls += ' term-cal-day--split-off-worked';
+              label = `${day}, morning off, worked the afternoon`;
               parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${isoKey}" data-term-review-weekday="${dayWordAway}" data-term-review-judgement="0" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
               continue;
             }
@@ -3987,7 +4013,7 @@
           const programmeBooks = (termStaffId && asDcOpen)
             ? portalTermStaffWeekdayProgrammeBooks(termStaffId, dayWordRoster)
             : { dc: false, after: false };
-          /* Day Centre open + after-school closed the same weekday: green over red. */
+          /* Day Centre open (morning worked) + after-school closed: red above, green below. */
           if(asDcOpen && programmeBooks.dc && programmeBooks.after && !beforeFirst && !termClosedDay){
             cls += ' term-cal-day--split-worked-off';
             label = `${day}, day centre open, afternoon closed`;

@@ -52,7 +52,7 @@
     "/portal/staff-dashboard-term.js?v=20261007-halo-logo",
     "/portal/staff-dashboard-participants.js?v=20261012-admin-amber",
     "/portal/staff-dashboard-today.js?v=20261012-cancel-halo",
-    "/portal/staff-dashboard-ui.js?v=20261011-feature-perms",
+    "/portal/staff-dashboard-ui.js?v=20261012-half-both",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
@@ -73,7 +73,7 @@
     "/portal/staff-dashboard-term.js?v=20261007-halo-logo",
     "/portal/staff-dashboard-participants.js?v=20261012-admin-amber",
     "/portal/staff-dashboard-today.js?v=20261012-cancel-halo",
-    "/portal/staff-dashboard-ui.js?v=20261011-feature-perms",
+    "/portal/staff-dashboard-ui.js?v=20261012-half-both",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
