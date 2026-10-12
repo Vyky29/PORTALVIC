@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 145;
+  var SOURCE_VERSION = 146;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -4327,7 +4327,7 @@
    * Timi leaves Monday Day Centre from 5 Oct and sits on Tuesday.
    * Victor Tuesday 3.30-5 stays the Cyrus Bespoke row.
    * Victor is on Monday Day Centre only on 5 Oct.
-   * Ibrahim Mon 5 Oct is 11 to 1. From Mon 12 Oct he is 11 to 4.
+   * Ibrahim is on Monday Day Centre only on 5 Oct (11 to 1). From Mon 12 Oct he is off Monday until he has signed.
    * From Wed 7 Oct Victor is off Day Centre and Raul has Office then Emanuel.
    * From Fri 9 Oct Raul is off Day Centre.
    */
@@ -4480,26 +4480,33 @@
     {
       staff: "Roberto",
       clients: [
-        { name: "Ibrahim", time: "11 to 12.30" },
-        { name: "Fadi", time: "12.30 to 3" },
+        { name: "Emanuel", time: "11 to 1" },
+        { name: "Fadi", time: "1 to 3" },
       ],
     },
     {
       staff: "Youssef",
       clients: [
-        { name: "Ikram", time: "11 to 12.30" },
-        { name: "Fadi", time: "12.30 to 3" },
+        { name: "Ikram", time: "11 to 1" },
+        { name: "Fadi", time: "1 to 3" },
       ],
     },
     { staff: "Patience", clients: [{ name: "Ikram", time: "11 to 4" }] },
     {
       staff: "Michelle",
       clients: [
-        { name: "Emanuel", time: "11 to 3" },
-        { name: "Ikram", time: "3 to 4" },
+        { name: "Manager", time: "11 to 12.30" },
+        { name: "Fadi", time: "12.30 to 1" },
+        { name: "Ikram", time: "1 to 4" },
       ],
     },
-    { staff: "Raul", clients: [{ name: "Ibrahim", time: "11 to 4" }] },
+    {
+      staff: "Raul",
+      clients: [
+        { name: "Fadi", time: "12.30 to 1" },
+        { name: "Emanuel", time: "1 to 4" },
+      ],
+    },
   ];
 
   function dcDatedBoardRows(iso, day, board) {
