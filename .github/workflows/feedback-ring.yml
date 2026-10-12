@@ -43,8 +43,8 @@ jobs:
             exit 0
           fi
           if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
-            echo "SUPABASE_ACCESS_TOKEN is missing. The ring was not published."
-            exit 1
+            echo "SUPABASE_ACCESS_TOKEN is not set on GitHub. Skip publish. The function is deployed from the machine that already has the Supabase login."
+            exit 0
           fi
           if [ "$ring" = 1 ]; then
             npx supabase functions deploy portal-feedback-2030-whatsapp --project-ref cklpnwhlqsulpmkipmqb --no-verify-jwt
