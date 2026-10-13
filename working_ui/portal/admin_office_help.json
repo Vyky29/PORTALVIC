@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-13-v417",
+  "version": "2026-10-13-v418",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -725,7 +725,8 @@
             "Absent participant and Session cancelled on the staff phone are the app, not WhatsApp."
           ],
           "tips": [
-            "Every automatic parent WhatsApp says not to reply on WhatsApp. Replies go to Messages in the parent portal, or 07592 558671."
+            "Every automatic parent WhatsApp says not to reply on WhatsApp. Replies go to Messages in the parent portal, or 07592 558671.",
+            "The 8pm feedback WhatsApp goes to the cover, not the usual instructor. A child swapped into that covered seat the same day is the cover's feedback too. A half with no cover saved still asks the usual instructor."
           ],
           "es": {
             "title": "WhatsApp API que sale solo",
@@ -742,7 +743,8 @@
               "Absent participant y Session cancelled en el telefono del staff son la app, no WhatsApp."
             ],
             "tips": [
-              "Todo WhatsApp automatico al padre dice que no contesten por WhatsApp. La respuesta va a Messages del portal, o al 07592 558671."
+              "Todo WhatsApp automatico al padre dice que no contesten por WhatsApp. La respuesta va a Messages del portal, o al 07592 558671.",
+              "El WhatsApp de feedback de las 20:00 va al cover, no al instructor de siempre. Un nino cambiado a esa plaza cubierta el mismo dia tambien es feedback del cover. Una media hora sin cover guardado se la sigue pidiendo al instructor de siempre."
             ]
           }
         },

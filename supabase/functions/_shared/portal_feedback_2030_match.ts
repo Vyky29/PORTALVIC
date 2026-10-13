@@ -900,6 +900,41 @@ export function applyScheduleOverridesToFeedback2030Slots(
   );
   if (!active.length) return slots;
 
+  const payloadOf = (ov: Feedback2030OverrideRow): Record<string, unknown> =>
+    (ov.payload && typeof ov.payload === "object")
+      ? ov.payload as Record<string, unknown>
+      : {};
+
+  /* Javi covering Luliya's 4.00 seat: a later swap of Christian into that seat
+     follows Javi. The feedback does not go back to Luliya. */
+  const seatCoverStaff = (staff: string, time: string): string => {
+    for (const ov of active) {
+      if (String(ov.override_type || "").trim() !== "instructor_reassign") continue;
+      if (!staffKeysMatch(String(ov.anchor_staff_id || ""), staff)) continue;
+      if (!feedbackTimesCompatible(String(ov.anchor_time_slot_label || ""), time)) continue;
+      const cover = String(
+        payloadOf(ov).covering_staff_id || payloadOf(ov).covering_staff_name || "",
+      ).trim();
+      if (cover && isUsableCoverStaff(cover)) return cover;
+    }
+    return "";
+  };
+
+  const seatSwapClient = (staff: string, time: string): string => {
+    for (const ov of active) {
+      if (String(ov.override_type || "").trim() !== "client_replace_in_slot") continue;
+      if (!staffKeysMatch(String(ov.anchor_staff_id || ""), staff)) continue;
+      if (!feedbackTimesCompatible(String(ov.anchor_time_slot_label || ""), time)) continue;
+      const pl = payloadOf(ov);
+      const toClient = String(
+        pl.to_client_name || pl.replacement_client_name || pl.to_client_id ||
+          pl.replacement_client_id || "",
+      ).trim();
+      if (toClient && isRealFeedbackClient(toClient)) return toClient;
+    }
+    return "";
+  };
+
   let next = slots.slice();
 
   const dropMatching = (pred: (s: Feedback2030Slot) => boolean): void => {
@@ -1005,9 +1040,19 @@ export function applyScheduleOverridesToFeedback2030Slots(
         return true;
       });
       if (cover && isUsableCoverStaff(cover)) {
-        const label = removedClientLabel ||
+        const swappedIn = seatSwapClient(anchorStaff || absentStaff, timeLab);
+        const label = swappedIn || removedClientLabel ||
           (isRealFeedbackClient(clientName) ? clientName : "") ||
           anchorClient;
+        if (swappedIn) {
+          dropMatching((s) => {
+            if (!staffKeysMatch(s.staff, absentStaff) && !staffKeysMatch(s.staff, anchorStaff)) {
+              return false;
+            }
+            if (!feedbackTimesCompatible(s.time, timeLab)) return false;
+            return clientsClose(s.client, swappedIn);
+          });
+        }
         /* Prefer username id (javi) over display name so debt collapses to one key. */
         const coverStaffLabel = /^[a-z0-9_]+$/i.test(cover)
           ? cover
@@ -1077,18 +1122,23 @@ export function applyScheduleOverridesToFeedback2030Slots(
       const coverStaff = String(
         pl.covering_staff_name || pl.covering_staff_id || anchorStaff || "",
       ).trim();
-      if (!coverStaff) continue;
+      const seatedCover = seatCoverStaff(anchorStaff, timeLab);
+      const staffForChild = seatedCover && isUsableCoverStaff(seatedCover)
+        ? seatedCover
+        : coverStaff;
+      if (!staffForChild) continue;
       dropMatching((s) => {
-        if (!staffKeysMatch(s.staff, coverStaff) && !staffKeysMatch(s.staff, anchorStaff)) {
-          return false;
-        }
+        const onSeat = staffKeysMatch(s.staff, coverStaff) ||
+          staffKeysMatch(s.staff, anchorStaff) ||
+          (seatedCover ? staffKeysMatch(s.staff, seatedCover) : false);
+        if (!onSeat) return false;
         if (!feedbackTimesCompatible(s.time, timeLab)) return false;
         const openish = !isRealFeedbackClient(s.client) ||
           clientsClose(s.client, anchorClient) ||
           /^(available|open|no[_ ]participant)$/i.test(slugClient(s.client));
         return openish || clientsClose(s.client, toClient);
       });
-      upsertCover(coverStaff, toClient, timeLab, svc, String(pl.area || "").trim() || undefined);
+      upsertCover(staffForChild, toClient, timeLab, svc, String(pl.area || "").trim() || undefined);
     }
   }
 
