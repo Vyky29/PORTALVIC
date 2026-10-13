@@ -1222,6 +1222,26 @@ function clean(v: unknown, max = 4000): string {
     .slice(0, max);
 }
 
+function normPerson(v: unknown): string {
+  return String(v ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function firstPersonToken(v: unknown): string {
+  return normPerson(v).split(" ")[0] || "";
+}
+
+/** Climbing trial seats are released after the day. The hub chip stays purple. */
+function isHubTrialNotes(notes: unknown): boolean {
+  return /booking_kind\s*=\s*trial|\btrial_paid\b|trial_hold_cleared/i.test(String(notes || ""));
+}
+
 function isoFromAny(raw: unknown): string {
   const s = clean(raw, 32);
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
@@ -2364,16 +2384,45 @@ Deno.serve(async (req) => {
     ].filter(Boolean);
     const { data: contactMeta } = await supabase
       .from("portal_parent_contacts")
-      .select("email, mobile, child_display, child_first_name")
+      .select("email, mobile, child_display, child_first_name, parent_display, dob_iso, parent_person_id")
       .eq("contact_id", contactId)
+      .eq("parent_person_id", session.parent_person_id)
       .maybeSingle();
     const parentEmail = clean(contactMeta?.email, 120).toLowerCase();
+    const sameChildIds = new Set<string>([contactId]);
+    const childDob = clean(contactMeta?.dob_iso || participant.dob_iso, 10);
+    const childFirst = firstPersonToken(
+      contactMeta?.child_first_name || participant.first_name || contactMeta?.child_display || displayName,
+    );
+    const parentName = normPerson(contactMeta?.parent_display);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(childDob) && childFirst && parentName) {
+      const { data: sameDob } = await supabase
+        .from("portal_participants")
+        .select("contact_id, display_name, first_name")
+        .eq("dob_iso", childDob)
+        .limit(30);
+      const twinIds = (sameDob || [])
+        .filter((row) => firstPersonToken(row.first_name || row.display_name) === childFirst)
+        .map((row) => clean(row.contact_id, 120))
+        .filter(Boolean);
+      if (twinIds.length) {
+        const { data: twinContacts } = await supabase
+          .from("portal_parent_contacts")
+          .select("contact_id, parent_display")
+          .in("contact_id", twinIds);
+        for (const row of twinContacts || []) {
+          if (normPerson(row.parent_display) !== parentName) continue;
+          const id = clean(row.contact_id, 120);
+          if (id) sameChildIds.add(id);
+        }
+      }
+    }
     const { data: tokenDocs } = await supabase
       .from("portal_booking_completion_tokens")
       .select("document_id")
-      .eq("contact_id", contactId)
+      .in("contact_id", [...sameChildIds])
       .not("document_id", "is", null)
-      .limit(20);
+      .limit(40);
     const docIds = [
       ...new Set(
         (tokenDocs || [])
@@ -2400,7 +2449,7 @@ Deno.serve(async (req) => {
         .select(reservationCols)
         .in("document_id", docIds)
         .eq("status", "released")
-        .ilike("notes", "%booking_kind=trial%")
+        .or("notes.ilike.%booking_kind=trial%,notes.ilike.%trial_hold_cleared%,notes.ilike.%trial_paid%")
         .order("date_iso", { ascending: true })
         .limit(8);
       const seenTrialIso = new Set(
@@ -2440,9 +2489,7 @@ Deno.serve(async (req) => {
     for (const row of bookedRows) {
       const iso = clean(row.date_iso, 12).slice(0, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
-      const trialish = /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(
-        String(row.notes || ""),
-      );
+      const trialish = isHubTrialNotes(row.notes);
       if (!trialish && (!bookedFromIso || iso < bookedFromIso)) bookedFromIso = iso;
     }
 
@@ -2497,24 +2544,20 @@ Deno.serve(async (req) => {
       return /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso >= todayIso;
     });
 
-    const hasTrialReservation = bookedRows.some((row) =>
-      /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(String(row.notes || "")),
-    );
+    const hasTrialReservation = bookedRows.some((row) => isHubTrialNotes(row.notes));
 
     /* Past trials stay on the hub as purple chips (e.g. Reggie trial 15 Sep, term from 22). */
     const pastTrialBooked = bookedRows.filter((row) => {
       const iso = clean(row.date_iso, 12).slice(0, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || iso >= todayIso) return false;
-      return /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(String(row.notes || ""));
+      return isHubTrialNotes(row.notes);
     });
 
     upcomingBookedSessions = [...pastTrialBooked, ...futureBooked]
       .map((row) => {
         const iso = clean(row.date_iso, 12).slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
-        const trialish = /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(
-          String(row.notes || ""),
-        );
+        const trialish = isHubTrialNotes(row.notes);
         return {
           iso,
           day: clean(row.day_label, 20),
