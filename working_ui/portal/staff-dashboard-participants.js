@@ -2732,23 +2732,19 @@
           ? `<span class="session-meta-name session-meta-name--home"><span>${escapeHtml(item.name)}</span></span>`
           : `<span class="session-meta-name">${escapeHtml(portalTodayVisibleName(item))}</span>`);
       const supportSub = String(item.portalTwoToOneSupportLabel || '').trim();
-      const dcBlock = portalDcSupportBlockHtml(item);
-      const supportLine = !dcBlock && supportSub
+      const supportLine = supportSub
         ? '<span class="session-meta-support">' + escapeHtml(supportSub) + '</span>'
         : '';
       const photoHtml = todaySessionNamePhotoHtml(item);
       const nameIdentity = photoHtml
-        ? '<span class="session-name-photo-row' + (dcBlock ? ' session-name-photo-row--above' : '') + '">' + photoHtml + nameCore + '</span>'
+        ? '<span class="session-name-photo-row">' + photoHtml + nameCore + '</span>'
         : nameCore;
-      let underName = observerChipUnderName ? chipsRow : (dcBlock ? chipsRow : (meetingChipsRow || ''));
+      let underName = observerChipUnderName ? chipsRow : (meetingChipsRow || '');
       if(observerChipUnderName && !supportLine){
         underName = underName.replace('session-chips-below-name', 'session-chips-below-name session-chips-below-name--tight');
       }
       const namePart = `<span class="session-name-stack">${nameIdentity}${supportLine}${underName}</span>`;
       const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
-      if(dcBlock){
-        return `<div class="session-card-body session-card-body--dc-turns"><div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}<span class="session-slot-time">${time}</span>${dcBlock}</div></div>`;
-      }
       return `<div class="session-card-body">${timeStack}<div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}</div></div>`;
     }
 
