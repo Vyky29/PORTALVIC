@@ -755,6 +755,19 @@
     return true;
   }
 
+  function replaceTakesLine(rep, slot, line) {
+    if (!rep || !slot || !line) return false;
+    var ven = String(rep.anchor_venue || '').trim().toLowerCase();
+    if (ven && ven !== String(slot.venue || '').trim().toLowerCase()) return false;
+    var aMin = clockStartMinutes(rep.anchor_start);
+    var sMin = labelStartMinutes(slot.timeLabel);
+    if (aMin == null || sMin == null || aMin !== sMin) return false;
+    var staff = normName(rep.anchor_staff_id);
+    var instr = normName(line.instructor);
+    if (!staff || !instr) return false;
+    return staff === instr || instr.indexOf(staff) === 0 || staff.indexOf(instr) === 0;
+  }
+
   function todayIso() {
     var d = new Date();
     var m = String(d.getMonth() + 1).padStart(2, '0');
@@ -826,6 +839,34 @@
     return rows;
   }
 
+  async function replacesForRange(fromIso, untilIso, venue) {
+    var from = String(fromIso || '').slice(0, 10);
+    var until = String(untilIso || '').slice(0, 10);
+    var ven = String(venue || '').trim().toLowerCase();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(until)) return [];
+    var key = from + '|' + until + '|' + ven;
+    state._repByRange = state._repByRange || {};
+    if (state._repByRange[key]) return state._repByRange[key];
+    var client = cfg.getClient();
+    if (!client || !client.from) {
+      state._repByRange[key] = [];
+      return [];
+    }
+    var q = client
+      .from('schedule_overrides')
+      .select('anchor_staff_id,anchor_venue,anchor_start,session_date')
+      .gte('session_date', from)
+      .lte('session_date', until)
+      .eq('status', 'active')
+      .eq('override_type', 'client_replace_in_slot')
+      .limit(500);
+    if (ven) q = q.ilike('anchor_venue', venue);
+    var res = await q;
+    var rows = res.error ? [] : res.data || [];
+    state._repByRange[key] = rows;
+    return rows;
+  }
+
   function listOpenMakeupSlots(opts) {
     opts = opts || {};
     var venueFilter = String(opts.venue || '').trim().toLowerCase();
@@ -836,6 +877,7 @@
     var expandDates = /^\d{4}-\d{2}-\d{2}$/.test(rangeFrom) && /^\d{4}-\d{2}-\d{2}$/.test(rangeUntil);
     var wantDay = isoWeekdayName(sessionDate);
     var absences = opts.absences || [];
+    var replaces = opts.replaces || [];
     var skipClient = String(opts.skipClient || '').trim();
     var occ = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
     var by = occ && occ.bySlotId;
@@ -871,9 +913,13 @@
         if (iso && !slotCoversIso(slot, iso)) return;
         if (!iso && !slotCoversIso(slot, '')) return;
         var dayAbs = [];
+        var dayRep = [];
         if (iso) {
           for (var a = 0; a < absences.length; a++) {
             if (String(absences[a].session_date || '').slice(0, 10) === iso) dayAbs.push(absences[a]);
+          }
+          for (var r = 0; r < replaces.length; r++) {
+            if (String(replaces[r].session_date || '').slice(0, 10) === iso) dayRep.push(replaces[r]);
           }
         }
         (slot.seatLines || []).forEach(function (line) {
@@ -892,6 +938,14 @@
           } else if (kind !== 'open') {
             return;
           }
+          var taken = false;
+          for (var t = 0; t < dayRep.length; t++) {
+            if (replaceTakesLine(dayRep[t], slot, line)) {
+              taken = true;
+              break;
+            }
+          }
+          if (taken) return;
           pushLine(id, slot, line, venue, day, iso, freed);
         });
       });
@@ -994,7 +1048,10 @@
       if (saveBtn) saveBtn.disabled = true;
       listEl.innerHTML =
         '<p class="muted" style="margin:0;overflow-wrap:break-word">Loading free seats...</p>';
-      absencesForRange(rangeFrom, rangeUntil, venue).then(function (absences) {
+      Promise.all([
+        absencesForRange(rangeFrom, rangeUntil, venue),
+        replacesForRange(rangeFrom, rangeUntil, venue)
+      ]).then(function (loaded) {
         if (gen !== paintGen || !listEl) return;
         var slots = listOpenMakeupSlots({
           venue: venue,
@@ -1002,7 +1059,8 @@
           sessionDate: iso,
           rangeFrom: rangeFrom,
           rangeUntil: rangeUntil,
-          absences: absences,
+          absences: loaded[0],
+          replaces: loaded[1],
           skipClient: report.participant_display
         });
         if (!slots.length) {

@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-13-v416",
+  "version": "2026-10-13-v417",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2399,7 +2399,7 @@
             "Back to decide is only while the grant is still Open or Offered. On roster does not go back to the decide queue. Undo that day on Schedule and Covers, then Add makeup.",
             "Move to another slot today only moves inside that same date. Another week is Undo on the old day, then a new grant and Offer slot.",
             "Add makeup: type the first letters of the name, pick the centre, then an open seat (their instructor or another instructor) and the day. Confirm date. The seat goes on the roster then. The parent is told the date is booked.",
-            "The seat list for a date shows that instructor's turns, plus a seat that is free because a child is Absent that day (the name on the chip is the child who is away). Open seats with other workers stay on the list too.",
+            "The seat list for a date shows that instructor's turns, plus a seat that is free because a child is Absent that day (the name on the chip is the child who is away). Open seats with other workers stay on the list too. A seat that already has a makeup that day is left off the list.",
             "Leave Only this date empty. The list then shows every upcoming free day at that venue through 20 Dec, including each Wednesday a child is absent. Pick the row with the date you want.",
             "Confirm date puts the child on the roster and paints the yellow makeup chip. The parent does not Accept or Decline. A reply on WhatsApp does not change the day. The date on the Absents row under Proof deadline is the proof window, not the makeup day.",
             "The parent card shows the session and the instructor name only. Do not put office words on it (Absents, decide queue, admin).",
