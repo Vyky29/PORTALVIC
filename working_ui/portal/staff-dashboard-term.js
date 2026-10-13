@@ -2629,7 +2629,8 @@
     function portalFeedbackItemIsDayCentre(item){
       if(!item) return false;
       if(item.dayCentre === true || item.isDayCentre === true) return true;
-      if(/day\s*centre/i.test(String(item.service || ''))) return true;
+      /* Added cards store the programme on activity, not service. */
+      if(/day\s*centre/i.test(String(item.service || item.activity || ''))) return true;
       return portalRosterSessionIsDayCentre(item.__portalBaseSession);
     }
     function portalFeedbackLeadMsForItem(item){

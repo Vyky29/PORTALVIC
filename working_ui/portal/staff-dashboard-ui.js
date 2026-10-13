@@ -5534,6 +5534,10 @@
         ? getEffectiveSessionReviewRecord(item)
         : getSessionReviewRecord(item)) || { feedbackDone: false, incident: false, absent: false, cancelled: false };
       const ended = isSessionEndedForFeedback(item);
+      const leadMin = (typeof window.portalFeedbackLeadMsForItem === 'function')
+        ? Math.round(window.portalFeedbackLeadMsForItem(item) / 60000)
+        : 15;
+      const leadHint = 'Available from ' + leadMin + ' minutes before the session ends';
       const cancelNeedsFb = !!(rec.cancelled && rec.cancelNeedsFeedback && !rec.feedbackDone);
       const terminal = !!(rec.absent || (rec.cancelled && !cancelNeedsFb));
       const actionsDisabledByOverride = !!(item && item.actionsDisabled);
@@ -5545,20 +5549,20 @@
         ? (rec.absent ? 'Absence recorded (feedback not required)' : 'Cancellation recorded (before start — counts as submitted)')
         : (rec.feedbackDone ? 'Feedback already recorded'
           : (cancelNeedsFb && !ended ? 'Session cancelled during the session — submit feedback when the session ends'
-            : ((!bypass && !ended) ? 'Available from 15 minutes before the session ends' : 'Open session feedback form')));
+            : ((!bypass && !ended) ? leadHint : 'Open session feedback form')));
       abs.disabled = actionsDisabledByOverride || terminal || !!rec.feedbackDone || cancelNeedsFb || (!bypass && !ended);
       abs.title = actionsDisabledByOverride
         ? 'Disabled: session already resolved by Admin as Absent'
         : terminal
         ? (rec.absent ? 'Absence recorded' : 'Cancellation already recorded')
         : (cancelNeedsFb ? 'Cancellation recorded during session — submit feedback instead'
-          : (rec.feedbackDone ? 'Feedback already recorded; absence unavailable' : ((!bypass && !ended) ? 'Available from 15 minutes before the session ends' : 'Mark this session as absent (feedback not required)')));
+          : (rec.feedbackDone ? 'Feedback already recorded; absence unavailable' : ((!bypass && !ended) ? leadHint : 'Mark this session as absent (feedback not required)')));
       inc.disabled = actionsDisabledByOverride || terminal || (!bypass && !ended);
       inc.title = actionsDisabledByOverride
         ? 'Disabled: session already resolved by Admin as Absent'
         : terminal
         ? 'Session closed (absence or cancellation)'
-        : ((!bypass && !ended) ? 'Available from 15 minutes before the session ends' : 'Record an incident (row stays orange)');
+        : ((!bypass && !ended) ? leadHint : 'Record an incident (row stays orange)');
       /* Cancel available once the slot has a client — before or after start (timing chosen on the form). */
       can.disabled = actionsDisabledByOverride || terminal || cancelNeedsFb || (!bypass && sessionModelStatus(item) === 'Available');
       can.title = actionsDisabledByOverride
@@ -5595,7 +5599,13 @@
         : getSessionReviewRecord(item)) || {};
       if(rec.feedbackDone || rec.absent || (rec.cancelled && !rec.cancelNeedsFeedback)) return;
       if(!portalStaffIsDemoAccount() && typeof isSessionEndedForFeedback === 'function' && !isSessionEndedForFeedback(item) && !rec.cancelNeedsFeedback){
-        try{ alert('Feedback opens from 15 minutes before the session ends. For a past day, open that date from Week or Term first.'); }catch(_){}
+        var leadAlert = 15;
+        try{
+          if(typeof window.portalFeedbackLeadMsForItem === 'function'){
+            leadAlert = Math.round(window.portalFeedbackLeadMsForItem(item) / 60000);
+          }
+        }catch(_){}
+        try{ alert('Feedback opens from ' + leadAlert + ' minutes before the session ends. For a past day, open that date from Week or Term first.'); }catch(_){}
         return;
       }
       if(typeof portalEnsureLateSubmissionAllowed === 'function' && !portalStaffIsDemoAccount()){

@@ -5173,12 +5173,25 @@
           };
           const ttsAdd = portalSessionRowTimestamps(sessionDateKey, stAdd, enAdd, anchor);
           const notesAdd = (typeof portalClientNotesLookup === 'function' ? portalClientNotesLookup(paxId) : null) || { name: paxName };
+          const addedBase = {
+            start: stAdd,
+            end: enAdd,
+            venue: ov.anchor_venue || 'SwimFarm',
+            clientId: paxId,
+            clientName: paxName,
+            activity: activityAdd,
+            rosterService: activityAdd,
+            service: activityAdd,
+            staffId: staffId
+          };
           extra.push({
             time: rosterSlotTimeLabel(sAdd),
             kind: 'client',
             clientId: paxId || paxName,
             name: notesAdd.name || paxName,
             activity: activityAdd,
+            service: activityAdd,
+            dayCentre: /day\s*centre/i.test(activityAdd),
             areaLabel: String(pAdd.area || 'Hub Room').trim(),
             poolLocationLabel: null,
             showPoolSymbol: false,
@@ -5192,6 +5205,7 @@
             ),
             sessionStartTs: ttsAdd.sessionStartTs,
             sessionEndTs: ttsAdd.sessionEndTs,
+            __portalBaseSession: addedBase,
             noSessionFeedbackRequired: portalClientIsHoldWaitlistNoFeedback(paxName)
               || portalClientIsHoldWaitlistNoFeedback(paxId)
               || portalStaffSkipTueThuOfficeHoldFeedback(staffId, sessionDateKey),
