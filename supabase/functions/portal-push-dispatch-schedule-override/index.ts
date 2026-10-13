@@ -366,6 +366,7 @@ type CoverFacts = {
   venue: string;
   area: string;
   dateLabel: string;
+  sortMin: number;
 };
 
 /**
@@ -429,6 +430,7 @@ async function resolveCoverFacts(
     venue,
     area: area || "Area not on the roster",
     dateLabel: ukDate(iso),
+    sortMin: seatStart == null ? 0 : seatStart,
   };
 }
 
@@ -449,6 +451,281 @@ function coverWhatsappParagraphs(
 
 function coverEventKey(direction: "assigned" | "removed", rosterKey: string): string {
   return direction + ":" + String(rosterKey || "").slice(0, 80);
+}
+
+const COVER_BATCH_WAIT_MS = 60_000;
+
+/** Several covers in a row become one WhatsApp. One session keeps the four-box text. */
+function coverBatchParagraphs(
+  first: string,
+  factsList: CoverFacts[],
+  direction: "assigned" | "removed",
+): string {
+  const ordered = factsList.slice().sort((a, b) => a.sortMin - b.sortMin);
+  if (ordered.length === 1) return coverWhatsappParagraphs(first, ordered[0], direction);
+  const staffs: string[] = [];
+  for (const facts of ordered) {
+    if (facts.staffName && !staffs.includes(facts.staffName)) staffs.push(facts.staffName);
+  }
+  const who = staffs.join(" and ") || "the instructor";
+  const lead = direction === "removed"
+    ? `You are no longer covering ${who}.`
+    : `You are covering ${who}.`;
+  const sessions = ordered.map((facts) => {
+    const prefix = staffs.length > 1 ? `${facts.staffName}: ` : "";
+    const when = facts.when ? `, ${facts.when}` : "";
+    const area = facts.area && facts.area !== "Area not on the roster" ? `, ${facts.area}` : "";
+    return `${prefix}${facts.childName}${when}${area}`;
+  }).join(". ");
+  const places: string[] = [];
+  for (const facts of ordered) {
+    const where = [facts.dateLabel, facts.venue].filter(Boolean).join(" - ");
+    if (where && !places.includes(where)) places.push(where);
+  }
+  return `Hi ${first},\n\n${lead}\n\n${sessions}.\n\n${places.join(". ")}.`;
+}
+
+/** Drop this override from an open batch. True when it was still waiting, so it was never texted. */
+async function pullPendingCoverOverride(
+  admin: ReturnType<typeof createClient>,
+  overrideId: string,
+  direction: "assigned" | "removed",
+): Promise<boolean> {
+  const { data } = await admin.from("portal_cover_whatsapp_batch")
+    .select("id, override_ids")
+    .eq("status", "pending")
+    .eq("direction", direction)
+    .contains("override_ids", [overrideId]);
+  let found = false;
+  for (const row of data || []) {
+    found = true;
+    const ids = (Array.isArray(row.override_ids) ? row.override_ids : [])
+      .map((id: unknown) => String(id))
+      .filter((id: string) => id && id !== overrideId);
+    if (!ids.length) {
+      await admin.from("portal_cover_whatsapp_batch").delete().eq("id", row.id).eq("status", "pending");
+    } else {
+      await admin.from("portal_cover_whatsapp_batch").update({
+        override_ids: ids,
+        updated_at: new Date().toISOString(),
+      }).eq("id", row.id).eq("status", "pending");
+    }
+  }
+  return found;
+}
+
+/**
+ * Hold the cover WhatsApp for one minute. Another override for the same
+ * instructor and day resets the minute. One message goes out after a quiet minute.
+ */
+async function enqueueCoverWhatsapp(
+  admin: ReturnType<typeof createClient>,
+  record: Record<string, unknown>,
+  direction: "assigned" | "removed",
+  rosterKey: string,
+) {
+  const overrideId = String(record.id ?? "").trim();
+  const sessionDate = String(record.session_date ?? "").slice(0, 10);
+  if (!overrideId || !rosterKey || !/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) return;
+
+  if (direction === "removed") {
+    const stillWaiting = await pullPendingCoverOverride(admin, overrideId, "assigned");
+    if (stillWaiting) return;
+  } else {
+    await pullPendingCoverOverride(admin, overrideId, "removed");
+  }
+
+  const event = coverEventKey(direction, rosterKey);
+  const { data: already } = await admin.from("portal_cover_whatsapp_sent")
+    .select("override_id")
+    .eq("override_id", overrideId)
+    .eq("event", event)
+    .maybeSingle();
+  if (already) return;
+
+  const sendAfter = new Date(Date.now() + COVER_BATCH_WAIT_MS).toISOString();
+  const patchOpen = async (row: { id: string; override_ids?: unknown }) => {
+    const ids = (Array.isArray(row.override_ids) ? row.override_ids : []).map((id: unknown) => String(id));
+    if (ids.includes(overrideId)) return;
+    ids.push(overrideId);
+    await admin.from("portal_cover_whatsapp_batch").update({
+      override_ids: ids,
+      send_after: sendAfter,
+      updated_at: new Date().toISOString(),
+    }).eq("id", row.id).eq("status", "pending");
+  };
+
+  const { data: open } = await admin.from("portal_cover_whatsapp_batch")
+    .select("id, override_ids")
+    .eq("roster_key", rosterKey)
+    .eq("session_date", sessionDate)
+    .eq("direction", direction)
+    .eq("status", "pending")
+    .maybeSingle();
+  if (open) {
+    await patchOpen(open);
+    return;
+  }
+
+  const { error } = await admin.from("portal_cover_whatsapp_batch").insert({
+    roster_key: rosterKey,
+    session_date: sessionDate,
+    direction,
+    send_after: sendAfter,
+    override_ids: [overrideId],
+    status: "pending",
+  });
+  if (!error) return;
+  const code = (error as { code?: string }).code || "";
+  if (code !== "23505" && !String(error.message || "").includes("duplicate")) {
+    console.warn("[portal-push-dispatch] cover batch enqueue", error);
+    return;
+  }
+  const { data: raced } = await admin.from("portal_cover_whatsapp_batch")
+    .select("id, override_ids")
+    .eq("roster_key", rosterKey)
+    .eq("session_date", sessionDate)
+    .eq("direction", direction)
+    .eq("status", "pending")
+    .maybeSingle();
+  if (raced) await patchOpen(raced);
+}
+
+async function sendCoverBatchWhatsapp(
+  admin: ReturnType<typeof createClient>,
+  batch: {
+    id: string;
+    roster_key: string;
+    direction: string;
+    override_ids?: unknown;
+  },
+) {
+  const direction = batch.direction === "removed" ? "removed" : "assigned";
+  const rosterKey = String(batch.roster_key || "");
+  const overrideIds = (Array.isArray(batch.override_ids) ? batch.override_ids : [])
+    .map((id: unknown) => String(id || "").trim())
+    .filter(Boolean);
+  const fresh: string[] = [];
+  for (const overrideId of overrideIds) {
+    const event = coverEventKey(direction, rosterKey);
+    const { error: insErr } = await admin.from("portal_cover_whatsapp_sent").insert({
+      override_id: overrideId,
+      event,
+    });
+    if (insErr) {
+      const code = (insErr as { code?: string }).code || "";
+      if (code === "23505" || String(insErr.message || "").includes("duplicate")) continue;
+      console.warn("[portal-push-dispatch] cover batch ledger", insErr);
+      continue;
+    }
+    fresh.push(overrideId);
+  }
+  if (!fresh.length) return;
+
+  const { data: records } = await admin.from("schedule_overrides")
+    .select("id, session_date, anchor_staff_id, anchor_client_id, anchor_start, anchor_time_slot_label, anchor_venue, payload")
+    .in("id", fresh);
+  const facts: CoverFacts[] = [];
+  for (const record of records || []) {
+    facts.push(await resolveCoverFacts(admin, record as Record<string, unknown>));
+  }
+  if (!facts.length) {
+    for (const overrideId of fresh) {
+      await admin.from("portal_cover_whatsapp_sent").delete()
+        .eq("override_id", overrideId)
+        .eq("event", coverEventKey(direction, rosterKey));
+    }
+    return;
+  }
+
+  const { data: profiles } = await admin.from("staff_profiles")
+    .select("id, full_name, username, phone_e164, app_role")
+    .in("app_role", ["staff", "lead", "ceo"]);
+  const people = (profiles || []).filter((p) =>
+    rosterKeyFromProfile(String(p.username || ""), String(p.full_name || "")) === rosterKey
+  );
+  let sent = 0;
+  let body = "";
+  for (const p of people) {
+    const phone = normalizeParentPhoneE164(String(p.phone_e164 || ""));
+    if (!phone) continue;
+    const first = String(p.full_name || p.username || "there").trim().split(/\s+/)[0] || "there";
+    body = coverBatchParagraphs(first, facts, direction);
+    const result = await sendParentMobileMessage(phone, withStaffApiMachineFooter(body), {
+      kind: "staff_contact_update",
+    });
+    if (result.ok) sent++;
+    else console.warn("[portal-push-dispatch] cover batch wa", result.error);
+    await admin.from("portal_staff_notify_log").insert({
+      sent_by_user_id: null,
+      sent_by_email: "system@clubsensational.org",
+      kind: "staff_contact_update",
+      channel: "whatsapp",
+      staff_profile_id: p.id,
+      staff_username: p.username || null,
+      staff_display_name: p.full_name || p.username || null,
+      staff_phone: phone,
+      subject: null,
+      body_text: body,
+      whatsapp_status: result.ok ? (result.channel === "sms" ? "sent_sms" : "sent") : "failed",
+      whatsapp_message_id: result.ok ? result.id : null,
+      error_detail: result.ok ? null : (result.error || "send_failed"),
+      meta: {
+        used_template: true,
+        wa_client_body: body,
+        override_ids: fresh,
+        cover_direction: direction,
+        source: "schedule_override_cover_batch",
+      },
+    });
+  }
+  if (!sent) {
+    for (const overrideId of fresh) {
+      await admin.from("portal_cover_whatsapp_sent").delete()
+        .eq("override_id", overrideId)
+        .eq("event", coverEventKey(direction, rosterKey));
+    }
+    throw new Error("cover_batch_not_sent");
+  }
+}
+
+async function flushCoverWhatsappBatches(admin: ReturnType<typeof createClient>) {
+  const now = new Date().toISOString();
+  const { data: due, error } = await admin.from("portal_cover_whatsapp_batch")
+    .select("id, roster_key, direction, override_ids, send_after")
+    .eq("status", "pending")
+    .lte("send_after", now)
+    .limit(20);
+  if (error) {
+    console.warn("[portal-push-dispatch] cover batch due", error);
+    return { flushed: 0 };
+  }
+  let flushed = 0;
+  for (const row of due || []) {
+    const { data: claimed } = await admin.from("portal_cover_whatsapp_batch")
+      .update({ status: "sending", updated_at: now })
+      .eq("id", row.id)
+      .eq("status", "pending")
+      .lte("send_after", now)
+      .select("id, roster_key, direction, override_ids")
+      .maybeSingle();
+    if (!claimed) continue;
+    try {
+      await sendCoverBatchWhatsapp(admin, claimed);
+      await admin.from("portal_cover_whatsapp_batch")
+        .update({ status: "sent", updated_at: new Date().toISOString() })
+        .eq("id", claimed.id);
+      flushed++;
+    } catch (e) {
+      console.warn("[portal-push-dispatch] cover batch flush", e);
+      await admin.from("portal_cover_whatsapp_batch").update({
+        status: "pending",
+        send_after: new Date(Date.now() + COVER_BATCH_WAIT_MS).toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", claimed.id).eq("status", "sending");
+    }
+  }
+  return { flushed };
 }
 
 /** WhatsApp the named cover. Assigned and removed are separate, so undoing the override texts the same worker again. */
@@ -569,6 +846,14 @@ Deno.serve(async (req) => {
     payload = await req.json();
   } catch {
     return new Response("Bad JSON", { status: 400, headers: corsHeaders });
+  }
+
+  if (String((payload as { action?: string }).action || "") === "flush_cover_batches") {
+    const flushAdmin = createClient(supabaseUrl, serviceKey);
+    const result = await flushCoverWhatsappBatches(flushAdmin);
+    return new Response(JSON.stringify({ ok: true, ...result }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   if (payload.table !== "schedule_overrides") {
@@ -709,30 +994,21 @@ Deno.serve(async (req) => {
 
   if (overrideType === "instructor_reassign") {
     const direction = coverRemoved ? "removed" : "assigned";
-    await sendCoverStaffWhatsapp(
+    await enqueueCoverWhatsapp(
       admin,
       record as Record<string, unknown>,
-      ids,
       direction,
       targetRosterKey,
-      coverFacts || undefined,
     );
     if (!coverRemoved && payload.old_record && typeof payload.old_record === "object") {
       const oldKey = coverRosterKey(payload.old_record as Record<string, unknown>);
       if (oldKey && oldKey !== targetRosterKey) {
-        const oldIds: string[] = [];
-        for (const p of profiles as StaffProfile[]) {
-          if (rosterKeyFromProfile(p.username ?? "", p.full_name ?? "") === oldKey) oldIds.push(p.id);
-        }
-        if (oldIds.length) {
-          await sendCoverStaffWhatsapp(
-            admin,
-            payload.old_record as Record<string, unknown>,
-            oldIds,
-            "removed",
-            oldKey,
-          );
-        }
+        await enqueueCoverWhatsapp(
+          admin,
+          payload.old_record as Record<string, unknown>,
+          "removed",
+          oldKey,
+        );
       }
     }
   }
