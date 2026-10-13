@@ -6402,6 +6402,35 @@
       aspect-ratio:1;
       flex:0 0 auto;
     }
+    /* A 2:1 line sits under the photo and the name. Shrink the circle so the
+       line fits inside the card and does not cover the face. */
+    .section-card--today .session-name-stack:has(> .session-meta-support){
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
+    .section-card--today .session-name-stack:has(> .session-meta-support) > .session-name-photo-row{
+      width:auto;
+      max-width:100%;
+      align-self:center;
+      justify-content:center;
+      flex:0 0 auto;
+      min-height:36px;
+      max-height:none;
+    }
+    .section-card--today .today-grid.today-grid--faces-beside .session-name-stack:has(> .session-meta-support) .session-name-photo,
+    .section-card--today .session-name-stack:has(> .session-meta-support) .session-name-photo{
+      width:36px;
+      height:36px;
+      min-width:36px;
+      min-height:36px;
+      max-width:36px;
+      max-height:36px;
+    }
+    .section-card--today .session-name-stack:has(> .session-meta-support) > .session-meta-support{
+      width:100%;
+      text-align:center;
+    }
     .section-card--today .session-name-photo img{
       position:absolute;
       inset:0;
