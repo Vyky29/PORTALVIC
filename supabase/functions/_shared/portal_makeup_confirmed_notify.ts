@@ -185,10 +185,10 @@ export async function notifyMakeupConfirmed(
     const parentBody =
       `Hi ${parent.parent_display},\n\n` +
       `This is ClubSENsational.\n\n` +
-      `We are confirming a make-up session for ${childName} on ${whenLine}` +
-      (instructorName ? ` with instructor ${instructorName}` : "") +
+      `A make-up session for ${childName} is confirmed: ${whenLine}` +
+      (instructorName ? ` with ${instructorName}` : "") +
       `.\n\n` +
-      `It is ready in your parent portal.\n\n` +
+      `This date is booked. You do not need to accept it.\n\n` +
       `Portal: ${portalHint}\n\n` +
       parentApiMachineFooter();
     const subject = `Make-up confirmed · ${childName}`;

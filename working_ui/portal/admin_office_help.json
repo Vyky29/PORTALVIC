@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-13-v413",
+  "version": "2026-10-13-v414",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -717,7 +717,7 @@
           "steps": [
             "Parents, Aquatic / Multi-Activity / Climbing / Fitness only. Day Centre and Bespoke do not get these. Cover: the usual instructor is not available and the session is now with the named cover, with their photo. A second cover sends an update. Undo that cover and the parent hears that the usual instructor is taking the session again, with that instructor's photo. Cancelled: that session has been cancelled and the office will be in touch. No money in that message. Move: the time changed for today only.",
             "Add session card, Type Session, with a named child, tells that parent a session was added for today only, at that new time. Use it when the time does not already exist that day. An existing empty seat, or a seat free because someone is absent, is Move or a makeup onto that seat. No participant and Office do not get a WhatsApp. Day Centre and Bespoke do not either.",
-            "Offer slot tells the parent a makeup is ready and they must Accept or Decline. That message goes by WhatsApp and by email, and it shows in the parent message log. A reminder WhatsApp goes out if they have not answered. If they Accept in the portal, that is the end of it for them: no second WhatsApp. If you place the makeup yourself, without them opening the portal, they do get the confirmation: it is ready in the parent portal. The instructor still gets Make-up on your roster either way.",
+            "Confirm date books the makeup on that day. The parent WhatsApp and email say the date is confirmed and they do not need to accept it. The same text is in the parent message log. The instructor gets Make-up on your roster. A reply on WhatsApp does not change the day.",
             "The instructor cancellation form tells the parent that the instructor reported a cancellation and the admin team will phone. Day Centre does not get that message. Bespoke does.",
             "Absent does not send a parent WhatsApp. Not from the parent portal, not from Schedule and Covers Absent, and not from the staff card.",
             "When you decide a refund, the parent WhatsApp asks for the account name, sort code, and account number. If that refund is still open 3 days later, one reminder asks again. It does not repeat. Mark the refund as paid once the money has gone in, and the reminder does not send. Refunds decided before 8 Oct 2026 are not chased. A credit WhatsApps only when it is taken off an invoice they are about to pay. A credit that just sits in Credits, or waits for a later GoCardless collection, stays in the parent portal. Cancel service is the place-cancelled message, with the refund figures.",
@@ -734,7 +734,7 @@
             "steps": [
               "Padres, solo Aquatic, Multi-Activity, Climbing y Fitness. Day Centre y Bespoke no reciben estos. Cover: el instructor de siempre no esta y la sesion queda con el cover, con su foto. Un segundo cover manda una actualizacion. Si deshaces ese cover, al padre le llega que el instructor de siempre vuelve a dar la sesion, con su foto. Cancelled: esa sesion se ha cancelado y la oficina hablara. Sin dinero en ese mensaje. Move: cambio de hora solo de hoy.",
               "Add session card, Type Session, con un nino con nombre, le dice a ese padre que se anadio una sesion solo para hoy, a esa hora nueva. Usalo cuando esa hora no existe ese dia. Una plaza que ya existe vacia, o libre porque alguien falta, es Move o un makeup en esa plaza. No participant y Office no reciben WhatsApp. Day Centre y Bespoke tampoco.",
-              "Offer slot le dice al padre que el makeup esta listo y que tienen que Accept o Decline. Ese mensaje sale por WhatsApp y por email, y se ve en el registro de mensajes del padre. Si no contestan, sale un recordatorio por WhatsApp. Si aceptan en el portal, ahi se queda: no hay un segundo WhatsApp. Si lo colocas tu, sin que entren al portal, si les llega la confirmacion: esta listo en el portal del padre. Al instructor le llega Make-up on your roster en los dos casos.",
+              "Confirm date deja el makeup en ese dia. El WhatsApp y el email al padre dicen que la fecha esta confirmada y que no tienen que aceptarla. El mismo texto queda en el registro de mensajes del padre. Al instructor le llega Make-up on your roster. Una respuesta por WhatsApp no cambia el dia.",
               "El formulario de cancelacion del instructor le dice al padre que el instructor informo una cancelacion y que admin le llamara. Day Centre no recibe ese mensaje. Bespoke si.",
               "Absent no manda WhatsApp al padre. Ni desde su portal, ni desde Schedule and Covers Absent, ni desde la tarjeta del staff.",
               "Si decides un refund, el WhatsApp pide nombre de la cuenta, sort code y account number. Si ese refund sigue abierto 3 dias despues, sale un solo recordatorio. No se repite. Cuando el dinero ya esta ingresado, marcalo como pagado y el recordatorio no sale. Los refund de antes del 8 de octubre de 2026 no se persiguen. Un credit solo sale por WhatsApp si se descuenta de una factura que van a pagar ahora. Un credit que se queda en Credits, o que espera un cobro de GoCardless mas adelante, se queda en el portal del padre. Cancel service es el mensaje de plaza cancelada, con las cifras del refund.",
@@ -2373,7 +2373,7 @@
         {
           "id": "makeup",
           "title": "Cancel a makeup and give a new one",
-          "summary": "Makeup grants live on Absents, refunds and credits. Schedule and Covers shows the seat only after the family accepts and it is on the roster.",
+          "summary": "Phone the parent, agree the day, then Confirm date. That day is booked. The parent is told. They do not accept it in the portal.",
           "where": "Absents, refunds and credits → Makeup grants",
           "keywords": [
             "makeup",
@@ -2387,20 +2387,19 @@
             "reschedule session"
           ],
           "steps": [
-            "Open Absents, refunds and credits, then Makeup grants. The grant is not a row on Schedule and Covers until the family accepts it.",
-            "While the status is Open: Offer slot to name a day, or Cancel grant to drop it. Then Add makeup to issue a new open grant, and Offer slot again.",
-            "While the status is Offered (the family has not accepted yet): Withdraw offer to take the day back, or Cancel grant. The grant returns to Open so you can offer another day.",
-            "When the family Accepts in the parent portal, the makeup is written onto that day's roster. The grant then says On roster. Sessions Overview and Staff show that card on the makeup date. The admin bell shows Makeup accepted. A reply on WhatsApp does not accept.",
+            "Phone the parent and agree a free day. Then open Absents, refunds and credits, Makeup, and Confirm date on that seat.",
+            "Confirm date writes the makeup onto the roster that moment. The parent WhatsApp says the date is booked and they do not need to accept it. Sessions Overview and Staff show that card. The instructor gets Make-up on your roster.",
+            "While the status is Open: Confirm date to name the day, or Cancel grant to drop it.",
             "On roster has no Cancel grant. To drop that one day, open Schedule and Covers on the makeup date, Change on that card, then Undo change. Do not use Cancelled: that sends a cancellation and opens a new Absents row.",
-            "The old On roster grant cannot be offered again. Add makeup for a new open grant, then Offer slot. Date is YYYY-MM-DD, time like 6 to 6.30, instructor name required. The new day paints on Schedule and Covers when the family Accepts."
+            "The old On roster grant cannot be booked again. Add makeup for a new open grant, then Confirm date. Date is YYYY-MM-DD, time like 6 to 6.30, instructor name required."
           ],
           "tips": [
             "Back to decide is only while the grant is still Open or Offered. On roster does not go back to the decide queue. Undo that day on Schedule and Covers, then Add makeup.",
             "Move to another slot today only moves inside that same date. Another week is Undo on the old day, then a new grant and Offer slot.",
-            "Add makeup: type the first letters of the name, pick the centre, then an open seat (their instructor or another instructor) and the day. Send to parent. They Accept or Decline in the parent portal. The seat is not on the roster until they Accept.",
+            "Add makeup: type the first letters of the name, pick the centre, then an open seat (their instructor or another instructor) and the day. Confirm date. The seat goes on the roster then. The parent is told the date is booked.",
             "The seat list for a date shows that instructor's turns, plus a seat that is free because a child is Absent that day (the name on the chip is the child who is away). Open seats with other workers stay on the list too.",
             "Leave Only this date empty. The list then shows every upcoming free day at that venue through 20 Dec, including each Wednesday a child is absent. Pick the row with the date you want.",
-            "Send offer to parent does not put the child on the roster. The parent hub shows Makeup to confirm above Next session, with Accept and Decline, and that date is a yellow chip. The same cards are at the top of Absent. Sessions Overview, Schedule and Covers, and Staff stay empty until they Accept. A reply on WhatsApp does not accept. The date on the Absents row under Proof deadline is the proof window, not the makeup day.",
+            "Confirm date puts the child on the roster and paints the yellow makeup chip. The parent does not Accept or Decline. A reply on WhatsApp does not change the day. The date on the Absents row under Proof deadline is the proof window, not the makeup day.",
             "The parent card shows the session and the instructor name only. Do not put office words on it (Absents, decide queue, admin).",
             "Absent date stays the original missed day. If that makeup day is cancelled and you offer another day, the new row still shows the original date.",
             "If a makeup was placed on a seat that is not on that day's roster, Schedule and Covers still shows that name so you can open Change and Undo change."

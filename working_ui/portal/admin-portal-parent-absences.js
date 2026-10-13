@@ -959,7 +959,7 @@
         '</div>' +
         '<div class="modal-f">' +
         '<button type="button" class="btn btn--ghost" id="ppMakeupSlotCancel">Cancel</button>' +
-        '<button type="button" class="btn btn--pri" id="ppMakeupSlotSave" disabled>Send offer to parent</button>' +
+        '<button type="button" class="btn btn--pri" id="ppMakeupSlotSave" disabled>Confirm date</button>' +
         '</div>'
     );
 
@@ -1129,8 +1129,7 @@
         session_date: slot.session_date,
         session_time: slot.session_time,
         instructor_name: slot.instructor,
-        service_label: slot.service_label || '',
-        await_parent: true
+        service_label: slot.service_label || ''
       })
     });
     var j = null;
@@ -1224,7 +1223,6 @@
                 else if (r.parent_notify.skipped) extra += ' · notify skipped';
                 else extra += ' · notify failed';
               }
-              if (slot) extra += ' · offer sent, parent Accepts or Declines';
               cfg.toast(
                 outcome === 'none'
                   ? 'Decided: none (no parent message)' + extra
@@ -1237,11 +1235,13 @@
               void createMakeupOffer(r.grant.id, slot).then(function (o) {
                 if (o.error) {
                   cfg.toast(
-                    'Makeup granted but offer failed: ' + (o.message || o.error),
+                    'Makeup not booked: ' + (o.message || o.error),
                     'error'
                   );
                 } else {
-                  extra += parentOfferNotifyNote(o.parent_notify);
+                  extra +=
+                    ' · date confirmed on the roster' +
+                    parentOfferNotifyNote(o.makeup_notify && o.makeup_notify.parent);
                 }
                 if (typeof cfg.closeModal === 'function') cfg.closeModal();
                 finish();
@@ -1318,10 +1318,13 @@
               if (o.error) {
                 cfg.toast('Grant ok; offer failed: ' + (o.message || o.error), 'error');
               } else {
+                var told = o.makeup_notify && o.makeup_notify.parent && o.makeup_notify.parent.ok;
                 cfg.toast(
-                  'Offer sent. The parent Accepts or Declines in the portal. The seat is not on the roster until they Accept.' +
-                    parentOfferNotifyNote(o.parent_notify),
-                  o.parent_notify && o.parent_notify.ok === false ? 'error' : 'ok'
+                  (told
+                    ? 'Date confirmed. It is on the roster. The parent has been told.'
+                    : 'Date confirmed on the roster. The parent message did not send.') +
+                    parentOfferNotifyNote(o.makeup_notify && o.makeup_notify.parent),
+                  told ? 'ok' : 'error'
                 );
               }
               void renderHost(global.document.getElementById('portalParentAbsenceHost'));

@@ -15,7 +15,6 @@ import {
   parseMakeupSessionTime,
 } from "../_shared/parent_portal_makeup_roster.ts";
 import { notifyMakeupConfirmed } from "../_shared/portal_makeup_confirmed_notify.ts";
-import { notifyParentMakeupOffer } from "../_shared/portal_makeup_offer_notify.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -198,22 +197,8 @@ Deno.serve(async (req) => {
     .update({ status: "offered", updated_at: now })
     .eq("id", grantId);
 
-  if (body.await_parent === true) {
-    const parent_notify = await notifyParentMakeupOffer(
-      admin,
-      grant,
-      offer,
-      verified.email || null,
-    );
-    return portalAdminJson(200, {
-      ok: true,
-      offer,
-      grant_id: grantId,
-      pending_parent_accept: true,
-      parent_notify,
-    });
-  }
-
+  // Office picks the date on the phone with the parent. That date is final.
+  // Do not leave a pending Accept in the parent portal.
   const roster = await applyAcceptedMakeupToRoster(
     admin,
     offer,
@@ -223,14 +208,21 @@ Deno.serve(async (req) => {
 
   if (!roster.override_id) {
     console.error("[portal-admin-makeup-offer] roster", roster.error);
-    return portalAdminJson(200, {
-      ok: true,
-      offer,
-      grant_id: grantId,
-      roster_override_id: null,
-      pending_parent_accept: true,
+    await admin
+      .from("portal_parent_makeup_offers")
+      .update({ status: "withdrawn", updated_at: now, responded_at: now })
+      .eq("id", offer.id);
+    await admin
+      .from("portal_parent_makeup_grants")
+      .update({ status: "open", updated_at: now })
+      .eq("id", grantId)
+      .eq("status", "offered");
+    return portalAdminJson(409, {
+      ok: false,
+      error: "roster_failed",
       message:
-        "Offer saved but the seat could not be placed on the roster yet. Parent can still Accept, or pick the seat again.",
+        roster.error ||
+        "Could not place this makeup on the timetable. The date was not saved. Pick the seat again.",
     });
   }
 

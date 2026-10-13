@@ -1940,7 +1940,7 @@
       actionBtns +
       "</div>" +
       '<p class="muted" style="margin:8px 0 0;font-size:12px">Selected: <strong id="sclOvTypeSelText">None</strong></p>' +
-      '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">Parent MakeUp is only on Absents, refunds &amp; credits (Offer slot). Use Trial here for a paid trial seat.</p>' +
+      '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">Parent MakeUp is only on Absents, refunds &amp; credits (Confirm date). Use Trial here for a paid trial seat.</p>' +
       '<div id="sclWrapCover" style="display:none">' +
       '<label class="muted" for="sclFormCover" style="display:block;margin-top:12px">Covering instructor</label>' +
       '<input class="inp" id="sclFormCover" style="width:100%;max-width:100%" placeholder="e.g. Luliya" />' +

@@ -156,7 +156,7 @@
         esc(g.id) +
         '" data-venue="' +
         esc(g.preferred_venue || '') +
-        '">Offer slot</button>' +
+        '">Confirm date</button>' +
         ' <button type="button" class="btn btn--sm btn--ghost" data-makeup-cancel="' +
         esc(g.id) +
         '">Cancel grant</button>' +
@@ -284,7 +284,7 @@
       '<div class="card-h"><h3>Makeup grants (by venue)</h3>' +
       '<span class="chip chip--pend" id="portalMakeupMeta">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Waiting-list style: offer a concrete slot at the family&apos;s <strong>preferred venue</strong> (instructor + time required). If they <strong>Accept</strong>, MakeUp is written to the roster automatically. If they <strong>Decline</strong>, they forfeit the grant and the slot can go to the next family. Wrong grant? <strong>Cancel grant</strong>. Use <strong>Add makeup</strong> when a parent phones in.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Phone the parent, agree the day, then <strong>Confirm date</strong> at their venue (instructor + time required). That day is booked straight away. The parent gets a confirmation. They do not accept it in the portal. Wrong grant? <strong>Cancel grant</strong>. Use <strong>Add makeup</strong> when a parent phones in.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-makeup-filter="open">Open</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-makeup-filter="offered">Offered</button>' +
@@ -344,7 +344,7 @@
         }
         var instructor = global.prompt('Instructor (required — used for roster):', '') || '';
         if (!String(instructor).trim()) {
-          cfg.toast('Instructor required so Accept can place MakeUp on the roster', 'error');
+          cfg.toast('Instructor required so the makeup can go on the roster', 'error');
           return;
         }
         var notes = global.prompt('Note to family (optional):', '') || '';
@@ -356,15 +356,14 @@
           session_date: sessionDate.trim(),
           session_time: sessionTime.trim(),
           instructor_name: instructor.trim(),
-          offer_notes: notes.trim(),
-          await_parent: true
+          offer_notes: notes.trim()
         }).then(function (r) {
           if (r.error) {
             cfg.toast(r.message || r.error, 'error');
             btn.disabled = false;
             return;
           }
-          cfg.toast('Offer sent — Accept places MakeUp on roster; Decline forfeits', 'ok');
+          cfg.toast('Date confirmed. It is on the roster. The parent has been told.', 'ok');
           void renderHost(global.document.getElementById('portalMakeupHost'));
         });
       });
@@ -784,7 +783,7 @@
         '</div>' +
         '<div class="modal-f">' +
         '<button type="button" class="btn btn--ghost" id="ppMakeupCreateCancel">Cancel</button>' +
-        '<button type="button" class="btn btn--pri" id="ppMakeupCreateSave">Send to parent</button>' +
+        '<button type="button" class="btn btn--pri" id="ppMakeupCreateSave">Confirm date</button>' +
         '</div>'
     );
 
@@ -848,7 +847,7 @@
           preferred_venue: slot.venue,
           service_label: serviceLabel,
           source: 'admin',
-          notes: 'Office phone · parent to accept'
+          notes: 'Office phone · date confirmed'
         }).then(function (r) {
           if (r.error || !r.grant || !r.grant.id) {
             save.disabled = false;
@@ -862,20 +861,20 @@
             session_date: state.datePick,
             session_time: timeLabelToOffer(slot.timeLabel),
             instructor_name: slot.instructor,
-            service_label: serviceLabel,
-            await_parent: true
+            service_label: serviceLabel
           }).then(function (o) {
             save.disabled = false;
             if (o.error) {
-              showErr(o.message || o.error || 'Offer failed');
+              showErr(o.message || o.error || 'Could not book this date');
               return;
             }
             if (typeof cfg.closeModal === 'function') cfg.closeModal();
+            var told = o.makeup_notify && o.makeup_notify.parent && o.makeup_notify.parent.ok;
             cfg.toast(
-              o.parent_notify && o.parent_notify.ok
-                ? 'Sent. Parent Accepts or Declines in the portal.'
-                : 'Offer saved. Parent notify did not send — they can still Accept in the portal.',
-              'ok'
+              told
+                ? 'Date confirmed. It is on the roster. The parent has been told.'
+                : 'Date confirmed on the roster. The parent message did not send.',
+              told ? 'ok' : 'error'
             );
             void renderHost(global.document.getElementById('portalMakeupHost'));
           });
