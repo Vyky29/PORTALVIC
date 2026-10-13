@@ -4374,7 +4374,10 @@
   var TUESDAY_FROM_6_OCT_DC = [
     {
       staff: "Roberto",
-      clients: [{ name: "Fadi", time: "12.30 to 3" }],
+      clients: [
+        { name: "ACAT", time: "11 to 12" },
+        { name: "Fadi", time: "12.30 to 3" },
+      ],
     },
     {
       staff: "Victor",

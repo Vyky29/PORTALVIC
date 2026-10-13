@@ -529,7 +529,11 @@
         clientId: effClientId,
         noSessionFeedbackRequired: false
       };
-      if(st === 'Absent' || (adminAbsentOv && !replaceOvSameSlot)){
+      if(typeof portalTuesdayAcatAquaticMemberNoOwnFeedback === 'function'
+        && portalTuesdayAcatAquaticMemberNoOwnFeedback(s, isoKey, effClientId, s.clientName)){
+        item.noSessionFeedbackRequired = true;
+        item.portalOverrideSuppressReviewOrange = true;
+      } else if(st === 'Absent' || (adminAbsentOv && !replaceOvSameSlot)){
         item.noSessionFeedbackRequired = true;
         item.portalOverrideAlertPill = 'ABSENT';
         item.portalOverrideSuppressReviewOrange = true;

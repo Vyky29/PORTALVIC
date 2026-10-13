@@ -2162,6 +2162,7 @@
       if(st === 'Home' || st === 'Manager') return false;
       if(st === 'Office' || st === 'Interview' || st === 'Admin') return false;
       if(st === 'Closed' && !openedClosed) return false;
+      if(portalTuesdayAcatAquaticMemberNoOwnFeedback(s, sessionDateIso, s.clientId, s.clientName)) return false;
       const cid0 = String(s.clientId || '').trim().toLowerCase();
       if(!cid0 || cid0 === 'available') return false;
       if(cid0 === 'closed' && !openedClosed) return false;
@@ -2646,6 +2647,35 @@
       const suffix = portalSessionFeedbackUnitSuffix(s, activity, portalStaffIsSupportWorkerForAreaNotes());
       return portalNormalizeSessionReviewKey(String(sessionDateIso) + '|' + String(s.start || '') + '|' + cid + suffix);
     }
+    /**
+     * Tuesday SwimFarm 11.00-12.00 aquatic seats for the Acat group.
+     * Roberto submits one Day Centre ACAT card. These four do not each owe feedback.
+     */
+    function portalTuesdayAcatAquaticMemberNoOwnFeedback(s, iso, clientId, clientName){
+      const isoN = String(iso || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(isoN)) return false;
+      const wd = new Date(isoN + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' }).toLowerCase();
+      if(wd !== 'tuesday') return false;
+      const act = String((s && (s.activity || s.rosterService || s.service)) || '').toLowerCase();
+      if(!/aquatic|swim/.test(act)) return false;
+      if(/day\s*centre/.test(act)) return false;
+      const start = String((s && s.start) || '').trim();
+      if(start !== '11:00' && start !== '11') return false;
+      const raw = String(clientName || clientId || (s && (s.clientName || s.clientId)) || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[_-]+/g, ' ');
+      const slug = raw.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      if(slug === 'jack_s' || slug === 'jack_stratton' || slug === 'jack_s_stratton') return true;
+      if(slug === 'jack_w' || slug === 'jack_walker' || slug === 'jack_w_walker') return true;
+      if(slug === 'kamy' || slug === 'kamy_akhavan') return true;
+      if(slug === 'kate' || slug === 'kate_fordham') return true;
+      if(/^jack\s+s\b/.test(raw) || /^jack\s+stratton\b/.test(raw)) return true;
+      if(/^jack\s+w\b/.test(raw) || /^jack\s+walker\b/.test(raw)) return true;
+      if(/^kamy\b/.test(raw)) return true;
+      if(/^kate\s+fordham\b/.test(raw)) return true;
+      return false;
+    }
     /** HOLD WAITLIST / Elia office-hold seats never owe session feedback. */
     function portalClientIsHoldWaitlistNoFeedback(name){
       const low = String(name || '').trim().toLowerCase().replace(/[_-]+/g, ' ');
@@ -2692,6 +2722,7 @@
     try{
       window.portalClientIsHoldWaitlistNoFeedback = portalClientIsHoldWaitlistNoFeedback;
       window.portalStaffSkipTueThuOfficeHoldFeedback = portalStaffSkipTueThuOfficeHoldFeedback;
+      window.portalTuesdayAcatAquaticMemberNoOwnFeedback = portalTuesdayAcatAquaticMemberNoOwnFeedback;
     }catch(_){}
     function portalSessionReviewKeyForModelRow(s, viewDayWord, sessionDateIso){
       if(!portalSessionContributesToReviewKeys(s, viewDayWord, sessionDateIso)) return '';
@@ -4546,10 +4577,12 @@
             portalOverrideSymbolText: isTrialOv ? 'Trial' : (isNewClientOv ? 'New Participant' : (isClientMoveIn ? 'Move in' : (isMakeUpCard ? 'Make Up' : ''))),
             portalOverrideHideAdminBadge: !!isClientMoveIn,
             portalOverrideAlertPill: fadiDcCancel ? 'CANCELLED' : (slotWasUpdated && !isClientMoveIn ? 'UPDATED' : ''),
-            noSessionFeedbackRequired: !!fadiDcCancel,
+            noSessionFeedbackRequired: !!fadiDcCancel
+              || portalTuesdayAcatAquaticMemberNoOwnFeedback(s, sessionDateKey, effClientId, c && c.name),
             actionsDisabled: !!fadiDcCancel,
             detailsOpenAllowed: true,
-            portalOverrideSuppressReviewOrange: !!fadiDcCancel,
+            portalOverrideSuppressReviewOrange: !!fadiDcCancel
+              || portalTuesdayAcatAquaticMemberNoOwnFeedback(s, sessionDateKey, effClientId, c && c.name),
             portalRosterTimeUpdated: !!slotWasUpdated,
             scheduleAdminAdjusted: !!(isClientMoveIn || isDayReassignReplace || slotWasUpdated || adminClientSwap)
           }, meta, isClientMoveIn && replaceOvSameSlot ? { __portalScheduleOverride: replaceOvSameSlot } : null);

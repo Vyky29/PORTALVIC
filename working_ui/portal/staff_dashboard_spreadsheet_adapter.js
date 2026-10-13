@@ -729,6 +729,10 @@
     if (cid === "yusuf_ah" || cid === "yusef" || cid === "yusuf") {
       return "Yusuf Ah";
     }
+    /* Group card. Kept out of the participant directory, still the Tuesday 11-12 feedback. */
+    if (cid === "acat" || cid === "acat_group") {
+      return "ACAT";
+    }
     if (cid && map[cid]) return map[cid];
     const name = coreName || rawIn;
     if (name && !isParticipantCatalogExcludedName(name)) {
