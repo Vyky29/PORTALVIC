@@ -136,6 +136,30 @@ function toPgTime(raw: string): string | null {
   return null;
 }
 
+function disruptionSlotIsAfternoon(raw: {
+  programme?: string;
+  anchor_start?: string;
+  anchor_time_slot_label?: string;
+}): boolean {
+  const service = clean(raw.programme, 80).toLowerCase();
+  if (/day\s*centre/.test(service)) return false;
+  const clock = String(raw.anchor_start || raw.anchor_time_slot_label || "");
+  const hm = /(\d{1,2}):(\d{2})/.exec(clock);
+  let mins = NaN;
+  if (hm) {
+    mins = Number(hm[1]) * 60 + Number(hm[2]);
+  } else {
+    const loose = /(\d{1,2})(?:[:.](\d{2}))?/.exec(clock.replace(/[\u2013\u2014]/g, "-"));
+    if (loose) {
+      let h = Number(loose[1]);
+      const min = Number(loose[2] || 0);
+      if (h >= 1 && h <= 7) h += 12;
+      mins = h * 60 + min;
+    }
+  }
+  return Number.isFinite(mins) && mins >= 15 * 60;
+}
+
 async function resolveNameKey(
   admin: ReturnType<typeof createClient>,
   userId: string,
@@ -198,7 +222,7 @@ Deno.serve(async (req) => {
   const { data: report, error: loadErr } = await admin
     .from("session_disruption_reports")
     .select(
-      "id, submitted_by_user_id, submitted_by_name, session_date, disruption_type, reason_category, venue",
+      "id, submitted_by_user_id, submitted_by_name, session_date, disruption_type, reason_category, venue, shift_label",
     )
     .eq("id", reportId)
     .maybeSingle();
@@ -299,15 +323,13 @@ Deno.serve(async (req) => {
 
   let dayOffRecorded = false;
   if (nameKey && sessionDate) {
-    const venueBlob = clean(report.venue, 200).toLowerCase();
-    const afternoonOnly =
-      !/swimfarm|swim farm|hub|day centre/.test(venueBlob) &&
-      /northolt|acton/.test(venueBlob);
+    const shift = clean((report as { shift_label?: string }).shift_label, 20);
+    const bandNote = shift === "Morning" ? "Morning only" : shift === "Afternoon" ? "Afternoon only" : "";
     const offReason = [
       "Time off requested",
       clean(report.disruption_type, 80),
       clean(report.reason_category, 80),
-      afternoonOnly ? "Afternoon only" : "",
+      bandNote,
     ]
       .filter(Boolean)
       .join(" — ");
@@ -364,6 +386,14 @@ Deno.serve(async (req) => {
       const start = toPgTime(String(raw.anchor_start || ""));
       const end = toPgTime(String(raw.anchor_end || "")) || start;
       if (!start) continue;
+      const shiftBand = clean((report as { shift_label?: string }).shift_label, 20);
+      const afternoonSeat = disruptionSlotIsAfternoon({
+        programme: raw.programme,
+        anchor_start: start,
+        anchor_time_slot_label: raw.anchor_time_slot_label,
+      });
+      if (shiftBand === "Morning" && afternoonSeat) continue;
+      if (shiftBand === "Afternoon" && !afternoonSeat) continue;
       const venue = clean(raw.anchor_venue, 80) || null;
       if (venue && venues.indexOf(venue) < 0) venues.push(venue);
 

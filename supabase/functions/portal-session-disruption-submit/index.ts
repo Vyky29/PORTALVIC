@@ -141,6 +141,10 @@ Deno.serve(async (req) => {
 
   const originRaw = clean(r.origin, 40);
   const origin = ORIGINS.has(originRaw) ? originRaw : "direct";
+  const shiftRaw = clean(r.shift_label, 20);
+  const shiftLabel = shiftRaw === "Morning" || shiftRaw === "Afternoon" || shiftRaw === "Day"
+    ? shiftRaw
+    : "Day";
   const submittedByName = clean(profile.full_name || profile.username, 200);
   const roleLabel = clean(r.role_label || profile.staff_role, 200);
 
@@ -151,6 +155,7 @@ Deno.serve(async (req) => {
     disruption_type: disruptionType,
     session_date: sessionDate,
     venue,
+    shift_label: shiftLabel,
     reason_category: reasonCategory,
     reason_description: clean(r.reason_description, 1500) || null,
     expected_return: expectedReturn,

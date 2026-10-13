@@ -13,7 +13,7 @@ import {
 
 const SELECT_COLS =
   "id,created_at,submitted_by_user_id,submitted_by_name,role_label,disruption_type," +
-  "session_date,venue,reason_category,reason_description,expected_return,return_date," +
+  "session_date,venue,shift_label,reason_category,reason_description,expected_return,return_date," +
   "could_prevent,prevention_details,additional_comments,origin,day_off_recorded," +
   "validated_at,validated_by,validated_by_name";
 

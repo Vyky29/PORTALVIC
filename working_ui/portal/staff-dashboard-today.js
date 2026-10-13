@@ -5852,6 +5852,9 @@
           if(typeof portalTermStaffAwayIsAfternoonOnly === 'function' && portalTermStaffAwayIsAfternoonOnly(iso, sid)){
             return false;
           }
+          if(typeof portalTermStaffAwayIsMorningOnly === 'function' && portalTermStaffAwayIsMorningOnly(iso, sid)){
+            return false;
+          }
           return true;
         }
         if(iso && typeof portalStaffHasShiftOnCalendarDate === 'function'
@@ -6738,8 +6741,13 @@
       const afternoonOnlyAway = !!(id && selectedIso
         && typeof portalTermStaffAwayIsAfternoonOnly === 'function'
         && portalTermStaffAwayIsAfternoonOnly(selectedIso, id));
+      const morningOnlyAway = !!(id && selectedIso
+        && !afternoonOnlyAway
+        && typeof portalTermStaffAwayIsMorningOnly === 'function'
+        && portalTermStaffAwayIsMorningOnly(selectedIso, id));
       const awayOffEarly = !!(id && selectedIso
         && !afternoonOnlyAway
+        && !morningOnlyAway
         && typeof portalTermStaffAwayOnDate === 'function'
         && portalTermStaffAwayOnDate(selectedIso, id));
       const todayOffEarly = awayOffEarly || !!(id && liveToday
@@ -6857,9 +6865,41 @@
           return startM < 15 * 60;
         });
       }
+      if(morningOnlyAway && rows.length){
+        rows = rows.filter(function(row){
+          const base = row && row.__portalBaseSession;
+          const blob = [
+            row && row.name, row && row.clientName, row && row.clientId, row && row.activity,
+            base && (base.client_name || base.clientName || base.clientDisplay || base.name),
+            base && (base.clientId || base.client_id),
+            base && (base.activity || base.service)
+          ].join(' ').toLowerCase();
+          if(blob.indexOf('ikram') >= 0 || /day\s*centre/.test(blob)) return false;
+          const startRaw = (base && base.start) || (row && row.start) || (row && row.time) || (row && row.timeLabel) || '';
+          let startM = NaN;
+          if(typeof portalHmToMinutes === 'function'){
+            const hm = typeof portalCanonicalHmToken === 'function'
+              ? portalCanonicalHmToken(startRaw)
+              : String(startRaw || '').trim();
+            startM = portalHmToMinutes(hm);
+          }
+          if(!Number.isFinite(startM)){
+            const m = String(startRaw || '').match(/(\d{1,2})(?:[:.](\d{2}))?/);
+            if(m){
+              let h = Number(m[1]);
+              const min = Number(m[2] || 0);
+              if(h >= 1 && h <= 7) h += 12;
+              startM = h * 60 + min;
+            }
+          }
+          if(!Number.isFinite(startM)) return false;
+          return startM >= 15 * 60;
+        });
+      }
       if(dashboardData) dashboardData.portalTodayAfternoonOff = !!afternoonOnlyAway;
       const awayOff = !!(id && selectedIso
         && !afternoonOnlyAway
+        && !morningOnlyAway
         && typeof portalTermStaffAwayOnDate === 'function'
         && portalTermStaffAwayOnDate(selectedIso, id));
       const todayOff = awayOff || !!(id && liveToday

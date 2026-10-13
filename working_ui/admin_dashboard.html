@@ -31136,6 +31136,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td style="min-width:0;overflow-wrap:break-word"><strong>'+portalSdEsc(r.submitted_by_name || '')+'</strong>'+(r.role_label ? '<div class="muted" style="font-size:12px">'+portalSdEsc(r.role_label)+'</div>' : '')+'</td>'+
           '<td style="white-space:nowrap">'+portalSdEsc(r.disruption_type || '')+'</td>'+
           '<td style="min-width:0;overflow-wrap:break-word">'+portalSdEsc(r.venue || '')+'</td>'+
+          '<td style="white-space:nowrap">'+portalSdEsc(portalSdReportShift(r))+'</td>'+
           '<td style="min-width:0;overflow-wrap:break-word">'+reason+'</td>'+
           '<td style="min-width:0;overflow-wrap:break-word">'+ret+'</td>'+
           '<td style="white-space:nowrap">'+status+'</td>'+
@@ -31145,7 +31146,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.innerHTML = ''+
         '<p class="muted" style="margin:0 0 8px">'+rows.length+' report'+(rows.length===1?'':'s')+' \u00b7 '+pending+' pending validation.</p>'+
         '<div style="overflow:auto"><table class="tbl tbl--center tbl--dense"><thead><tr>'+
-          '<th>Absence date</th><th>Staff</th><th>Type</th><th>Venue</th><th>Reason</th><th>Expected return</th><th>Status</th><th>Action</th>'+
+          '<th>Absence date</th><th>Staff</th><th>Type</th><th>Venue</th><th>Shift</th><th>Reason</th><th>Expected return</th><th>Status</th><th>Action</th>'+
         '</tr></thead><tbody>'+body+'</tbody></table></div>';
       portalSdBindRowActions();
     }
@@ -31285,7 +31286,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return slots;
     }
-    /** Booked slots for this staff on the disruption date (whole day, every venue). */
+    /** Booked slots for this staff on the disruption date, limited to the shift they marked. */
+    function portalSdReportShift(report){
+      var s = String(report && report.shift_label || '').trim();
+      if(s === 'Morning' || s === 'Afternoon') return s;
+      return 'Day';
+    }
+    function portalSdClockMinutes(raw){
+      var s = String(raw || '').trim();
+      var hm = s.match(/(\d{1,2}):(\d{2})/);
+      if(hm) return (Number(hm[1]) * 60) + Number(hm[2]);
+      var m = s.match(/(\d{1,2})(?:[:.](\d{2}))?/);
+      if(!m) return NaN;
+      var h = Number(m[1]);
+      var min = Number(m[2] || 0);
+      if(h >= 1 && h <= 7) h += 12;
+      return h * 60 + min;
+    }
+    function portalSdSlotIsAfternoon(sl){
+      var prog = String((sl && (sl.programme || sl.service || sl.rosterService || sl.activity)) || '').toLowerCase();
+      if(/day\s*centre/.test(prog)) return false;
+      var mins = portalSdClockMinutes((sl && (sl.anchorStart || sl.start)) || (sl && (sl.anchorTimeLabel || sl.whenLabel || sl.time)) || '');
+      return Number.isFinite(mins) && mins >= 15 * 60;
+    }
     function portalSdCollectCoverSlots(report){
       var iso = String(report && report.session_date || '').slice(0, 10);
       if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return [];
@@ -31302,6 +31325,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(cid === 'manager' || cid === 'home') continue;
         var label = String(sl.clientDisplay || '').trim().toLowerCase();
         if(label === 'no participant' || label === 'closed' || label === 'available') continue;
+        var shift = portalSdReportShift(report);
+        var afternoon = portalSdSlotIsAfternoon(sl);
+        if(shift === 'Morning' && afternoon) continue;
+        if(shift === 'Afternoon' && !afternoon) continue;
         out.push({
           anchor_start: sl.anchorStart || sl.start || '',
           anchor_end: sl.anchorEnd || sl.end || '',
@@ -31309,7 +31336,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           anchor_client_id: cid,
           anchor_client_name: String(sl.clientDisplay || sl.clientName || '').trim(),
           anchor_time_slot_label: sl.anchorTimeLabel || sl.whenLabel || '',
-          programme: sl.programme || '',
+          programme: sl.programme || sl.service || sl.rosterService || sl.activity || '',
           area: sl.rosterArea || ''
         });
       }
@@ -31348,11 +31375,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if(action === 'validate'){
           var n = Number(res.data.covers_written || 0);
+          var shiftWord = report ? portalSdReportShift(report) : 'Day';
+          var offWord = shiftWord === 'Morning' ? 'Morning off' : (shiftWord === 'Afternoon' ? 'Afternoon off' : 'Day off');
           try{
             window.alert(
               n > 0
-                ? ('Day off validated. COVER NEEDED is on Schedule & Covers and Sessions Overview ('+n+' service'+(n===1?'':'s')+'). Parents stay as they are until you assign the new instructor.')
-                : 'Day off validated for the worker. No booked participant was on that day, so COVER NEEDED was not written. Parents stay as they are.'
+                ? (offWord+' validated. COVER NEEDED is on Schedule & Covers and Sessions Overview ('+n+' service'+(n===1?'':'s')+'). Parents stay as they are until you assign the new instructor.')
+                : offWord+' validated for the worker. No booked participant was on that shift, so COVER NEEDED was not written. Parents stay as they are.'
             );
           }catch(_a){}
           try{
@@ -31417,7 +31446,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalSdDetailFieldHtml('Submitted', portalSdFmtDateTime(r.created_at));
       var session = portalSdDetailFieldHtml('Type of disruption', r.disruption_type)+
         portalSdDetailFieldHtml('Date of affected session(s)', portalSdFmtDate(r.session_date).replace(/<[^>]*>/g,''))+
-        portalSdDetailFieldHtml('Venue', r.venue);
+        portalSdDetailFieldHtml('Venue', r.venue)+
+        portalSdDetailFieldHtml('Shift', portalSdReportShift(r));
       var reason = portalSdDetailFieldHtml('Reason', r.reason_category)+
         portalSdDetailFieldHtml('Brief description', r.reason_description);
       var ret2 = portalSdDetailFieldHtml('Expected return', ret);
