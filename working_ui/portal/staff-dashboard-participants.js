@@ -1123,6 +1123,24 @@
             addStaff(cover, stMins, enMins);
             const origKey = portalShareCanonStaff(orig);
             if(origKey && origKey !== portalShareCanonStaff(cover) && byStaff[origKey]) delete byStaff[origKey];
+            return;
+          }
+          /* Same-day child swap: the instructor who gave this child away is not still 2:1. */
+          if(t === 'client_replace_in_slot'){
+            const pSwap = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+            const isSwap = pSwap.client_swap === true || pSwap.client_swap === 'true';
+            if(!isSwap) return;
+            const leftStem = portalShareClientStem(ov.anchor_client_id || pSwap.swapped_with_client_id);
+            const arrivedStem = portalShareClientStem(pSwap.replacement_client_id || pSwap.to_client_id);
+            if(!leftStem || leftStem !== clientStem) return;
+            if(arrivedStem && arrivedStem === clientStem) return;
+            const stSwap = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_start) : ov.anchor_start;
+            const enSwap = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_end) : ov.anchor_end;
+            const stSwapMins = portalShareStartMins({ start: stSwap, time_slot: ov.anchor_time_slot_label });
+            const enSwapMins = portalShareEndMins({ end: enSwap, time_slot: ov.anchor_time_slot_label });
+            if(!portalShareSpansOverlapViewer(stSwapMins, enSwapMins)) return;
+            const gaveAwayKey = portalShareCanonStaff(ov.anchor_staff_id);
+            if(gaveAwayKey && byStaff[gaveAwayKey]) delete byStaff[gaveAwayKey];
           }
         });
       }

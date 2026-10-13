@@ -5609,6 +5609,11 @@
             it.portalTwoToOneSupportLabel = '';
             return;
           }
+          /* Swapped child changed instructor. The chip is enough; no 2:1 line under the name. */
+          if(it.portalOverrideSwapTag || String(it.portalOverrideSymbolText || '').trim() === 'Swapped'){
+            it.portalTwoToOneSupportLabel = '';
+            return;
+          }
           const lab = portalTwoToOneSupportLabelForSession({
             day: anchorDayWord,
             session_date: sessionDateKey,
