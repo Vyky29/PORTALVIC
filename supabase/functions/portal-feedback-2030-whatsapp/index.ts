@@ -43,6 +43,7 @@ import {
   feedbackRingAlreadySentToday,
   FEEDBACK_2030_MADRE_TERM_KEYS,
   mergeFeedback2030Slots,
+  preferRosterOverMadreGhosts,
   outstandingByStaff,
   resolveProfileForStaffKey,
   scrubFadiOffDayCentreSlots,
@@ -528,7 +529,10 @@ Deno.serve(async (req) => {
     /* Today's Day Centre board already names the kids. MADRE autumn standing
      * (July week) still has the old Monday book, so it was gap-filling Timi
      * onto Raul after the 5 Oct board had moved Timi off him. */
-    let madreSlots = slotsFromMadre(madreDoc, dayIso);
+    let madreSlots = preferRosterOverMadreGhosts(
+      rosterSlots,
+      slotsFromMadre(madreDoc, dayIso),
+    );
     const occupantsHasDayCentre = occupantsSlots.some((s) => /day centre/i.test(String(s.service || "")));
     if (occupantsHasDayCentre) {
       madreSlots = madreSlots.filter((s) => !/day centre/i.test(String(s.service || "")));

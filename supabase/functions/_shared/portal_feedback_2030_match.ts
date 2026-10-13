@@ -687,6 +687,34 @@ export function slotsFromCapacityChainOccupants(
   return out;
 }
 
+/**
+ * Autumn MADRE still names the July instructor. If roster already seats that
+ * child in the programme, keep the roster instructor and drop the old MADRE one.
+ */
+export function preferRosterOverMadreGhosts(
+  rosterSlots: Feedback2030Slot[],
+  madreSlots: Feedback2030Slot[],
+): Feedback2030Slot[] {
+  const staffBy = new Map<string, Set<string>>();
+  for (const s of rosterSlots || []) {
+    if (!isRealFeedbackClient(s.client)) continue;
+    const k = slugClient(clientDisplayStem(s.client) || s.client) + "|" + slugClient(s.service);
+    let set = staffBy.get(k);
+    if (!set) {
+      set = new Set();
+      staffBy.set(k, set);
+    }
+    const key = canonStaffKey(s.staff);
+    if (key) set.add(key);
+  }
+  return (madreSlots || []).filter((s) => {
+    const k = slugClient(clientDisplayStem(s.client) || s.client) + "|" + slugClient(s.service);
+    const rosterStaff = staffBy.get(k);
+    if (!rosterStaff || !rosterStaff.size) return true;
+    return rosterStaff.has(canonStaffKey(s.staff));
+  });
+}
+
 export function mergeFeedback2030Slots(lists: Feedback2030Slot[][]): Feedback2030Slot[] {
   const seen = new Map<string, Feedback2030Slot>();
   const out: Feedback2030Slot[] = [];
@@ -757,6 +785,15 @@ function staffKeysMatch(a: string, b: string): boolean {
   return x === y;
 }
 
+function stripSlotWeekday(raw: string): string {
+  return String(raw || "")
+    .replace(
+      /^(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*[·•|,\-–—]?\s*/i,
+      "",
+    )
+    .trim();
+}
+
 /** First clock in a slot label → minutes from midnight (keeps 9 / 16 as written). */
 function feedbackClockMinutes(raw: string): number | null {
   const s = String(raw || "").trim().toLowerCase();
@@ -802,8 +839,19 @@ function clockTokenToMinutes(token: string): number | null {
   return h * 60;
 }
 
+/** Same half, or an hour book that contains that half. Adjacent 4.00 and 4.30 do not match. */
+function feedbackTimesSameSeat(a: string, b: string): boolean {
+  const ra = parseRangeEnds(a);
+  const rb = parseRangeEnds(b);
+  if (!ra || !rb) return feedbackTimesCompatible(a, b);
+  const diff = Math.abs(ra.start - rb.start);
+  if (diff === 0 || diff === 12 * 60) return true;
+  const overlap = Math.min(ra.end, rb.end) - Math.max(ra.start, rb.start);
+  return overlap >= 20;
+}
+
 function parseRangeEnds(raw: string): { start: number; end: number } | null {
-  const parts = String(raw || "")
+  const parts = stripSlotWeekday(raw)
     .replace(/[–—]/g, " to ")
     .split(/\s+to\s+/i)
     .map((p) => p.trim())
@@ -911,7 +959,7 @@ export function applyScheduleOverridesToFeedback2030Slots(
     for (const ov of active) {
       if (String(ov.override_type || "").trim() !== "instructor_reassign") continue;
       if (!staffKeysMatch(String(ov.anchor_staff_id || ""), staff)) continue;
-      if (!feedbackTimesCompatible(String(ov.anchor_time_slot_label || ""), time)) continue;
+      if (!feedbackTimesSameSeat(String(ov.anchor_time_slot_label || ""), time)) continue;
       const cover = String(
         payloadOf(ov).covering_staff_id || payloadOf(ov).covering_staff_name || "",
       ).trim();
@@ -924,7 +972,7 @@ export function applyScheduleOverridesToFeedback2030Slots(
     for (const ov of active) {
       if (String(ov.override_type || "").trim() !== "client_replace_in_slot") continue;
       if (!staffKeysMatch(String(ov.anchor_staff_id || ""), staff)) continue;
-      if (!feedbackTimesCompatible(String(ov.anchor_time_slot_label || ""), time)) continue;
+      if (!feedbackTimesSameSeat(String(ov.anchor_time_slot_label || ""), time)) continue;
       const pl = payloadOf(ov);
       const toClient = String(
         pl.to_client_name || pl.replacement_client_name || pl.to_client_id ||
