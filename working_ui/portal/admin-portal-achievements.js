@@ -39,6 +39,7 @@
     lastDetailView: null,
   };
   var inboxSelection = Object.create(null);
+  var folderSelection = Object.create(null);
 
   function configure(options) {
     if (!options) return;
@@ -180,6 +181,36 @@
     return to;
   }
 
+  /** Storage path is staff / date / client / file. Swap only the client folder. */
+  function participantMoveNewPath(sourcePath, toClientId) {
+    var toCid = normalizeClientId(toClientId);
+    var parts = String(sourcePath || "")
+      .trim()
+      .split("/")
+      .filter(Boolean);
+    if (parts.length < 4 || !toCid || toCid === INBOX_CLIENT_ID) {
+      throw new Error("Could not compute the destination folder.");
+    }
+    if (parts[2] === toCid) throw new Error("Photo is already in that folder.");
+    parts[2] = toCid;
+    return parts.join("/");
+  }
+
+  function photoWasDownloaded(row) {
+    if (!row) return false;
+    if (String(row.status || "") === "downloaded") return true;
+    return !!row.parent_downloaded_at;
+  }
+
+  function appendDownloadedMark(parent, row) {
+    if (!parent || !photoWasDownloaded(row)) return;
+    var mark = document.createElement("span");
+    mark.className = "portal-admin-achievement-thumb__downloaded";
+    mark.textContent = "Downloaded";
+    mark.title = photoStatusDetail(row);
+    parent.appendChild(mark);
+  }
+
   /** Copy path from one participant folder to another (same staff/day/file name). */
   function participantCopyNewPath(sourcePath, fromClientId, toClientId) {
     var fromCid = normalizeClientId(fromClientId);
@@ -262,6 +293,44 @@
     }
   }
 
+  /** Move one photo into another participant folder. Download mark stays on the file. */
+  async function movePhotoToParticipant(row, target) {
+    var client = cfg.getClient();
+    if (!client) throw new Error("Sign in required.");
+    if (!row || !row.id) throw new Error("Missing photo.");
+    var toKey = normalizeClientId(target && target.key);
+    var toName = String((target && target.clientName) || "").trim();
+    if (!toKey || toKey === INBOX_CLIENT_ID || !toName) {
+      throw new Error("Pick a participant.");
+    }
+    if (toKey === normalizeClientId(row.client_id)) {
+      throw new Error("Photo is already in that folder.");
+    }
+    var fromPath = String(row.storage_path || "").trim();
+    var newPath = participantMoveNewPath(fromPath, toKey);
+    await moveAchievementStorage(client, fromPath, newPath);
+    if (!(await storageObjectExists(client, newPath))) {
+      throw new Error("The file did not land in the new folder. Nothing was moved.");
+    }
+    var res = await client
+      .from("portal_participant_achievement_photos")
+      .update({
+        client_id: toKey,
+        client_name: toName,
+        storage_path: newPath,
+        session_feedback_id: null,
+      })
+      .eq("id", row.id)
+      .select("id")
+      .maybeSingle();
+    if (res.error || !res.data) {
+      try {
+        await moveAchievementStorage(client, newPath, fromPath);
+      } catch (_rollback) {}
+      throw res.error || new Error("Could not update the photo folder.");
+    }
+  }
+
   async function copyAchievementStorage(client, fromPath, toPath) {
     fromPath = String(fromPath || "").trim();
     toPath = String(toPath || "").trim();
@@ -312,6 +381,7 @@
       empty.className = "portal-admin-achievement-thumb__empty muted";
       empty.textContent = "No preview";
       parent.appendChild(empty);
+      appendDownloadedMark(parent, row);
       return;
     }
     if (rowMediaType(row) === "video") {
@@ -336,6 +406,7 @@
       badge.setAttribute("aria-hidden", "true");
       badge.textContent = "Video";
       parent.appendChild(badge);
+      appendDownloadedMark(parent, row);
       return;
     }
     var img = document.createElement("img");
@@ -351,6 +422,7 @@
       parent.appendChild(miss);
     });
     parent.appendChild(img);
+    appendDownloadedMark(parent, row);
   }
 
   async function fetchAllPhotos(client) {
@@ -1052,6 +1124,34 @@
     }
   }
 
+  function clearFolderSelection() {
+    folderSelection = Object.create(null);
+  }
+
+  function folderSelectedIds() {
+    return Object.keys(folderSelection).filter(function (k) {
+      return folderSelection[k];
+    });
+  }
+
+  function updateFolderMoveUi(detailRoot, photos) {
+    if (!detailRoot || !detailRoot.querySelector) return;
+    var countEl = detailRoot.querySelector("#portalAchFolderSelCount");
+    var moveBtn = detailRoot.querySelector("#portalAchFolderMoveBtn");
+    var selectAll = detailRoot.querySelector("#portalAchFolderSelectAll");
+    var picker = detailRoot._movePicker;
+    var targets = picker ? picker.getSelectedTargets() : [];
+    var ids = folderSelectedIds();
+    if (countEl) {
+      countEl.textContent = ids.length + " selected";
+    }
+    if (moveBtn) moveBtn.disabled = !ids.length || targets.length !== 1;
+    if (selectAll && photos && photos.length) {
+      selectAll.checked = ids.length > 0 && ids.length === photos.length;
+      selectAll.indeterminate = ids.length > 0 && ids.length < photos.length;
+    }
+  }
+
   async function assignInboxPhoto(photoId, clientId, clientName, storagePath) {
     var client = cfg.getClient();
     if (!client) throw new Error("Sign in required.");
@@ -1469,6 +1569,8 @@
       }
     }
     document.body.classList.remove("portal-achievements-viewer-open");
+    var dlMark = document.getElementById("portalAdminAchievementsViewerDownloaded");
+    if (dlMark) dlMark.hidden = true;
     showViewerToast("", false);
     viewerState.index = -1;
     viewerState.photos = [];
@@ -1540,6 +1642,13 @@
       }
     } else if (img) {
       img.src = url;
+    }
+    var dlMark = document.getElementById("portalAdminAchievementsViewerDownloaded");
+    if (dlMark) {
+      var downloaded = photoWasDownloaded(row);
+      dlMark.hidden = !downloaded;
+      dlMark.textContent = downloaded ? "Downloaded" : "";
+      dlMark.title = downloaded ? photoStatusDetail(row) : "";
     }
     if (viewer) {
       viewer.hidden = false;
@@ -1755,8 +1864,20 @@
         })
       : [];
     if (isInbox) clearInboxSelection();
+    clearFolderSelection();
     var detailRoot = document.createElement("div");
     detailRoot.className = "portal-ach-detail";
+    var moveTargets = isInbox ? [] : participantAssignOptions(key);
+    var moveBarHtml = !isInbox
+      ? '<div class="portal-ach-inbox-bulk" id="portalAchFolderMoveBar">' +
+        '<label class="portal-ach-inbox-bulk__select-all">' +
+        '<input type="checkbox" id="portalAchFolderSelectAll" aria-label="Select all photos" />' +
+        "<span>Select all</span></label>" +
+        '<span class="portal-ach-inbox-bulk__count muted" id="portalAchFolderSelCount">0 selected</span>' +
+        '<div class="portal-ach-inbox-participant-pick portal-ach-inbox-bulk__select" id="portalAchFolderMoveHost"></div>' +
+        '<button type="button" class="btn btn--sec btn--sm" id="portalAchFolderMoveBtn" disabled>Move selected</button>' +
+        "</div>"
+      : "";
     var bulkBarHtml = isInbox
       ? '<div class="portal-ach-inbox-bulk" id="portalAchInboxBulkBar">' +
         '<label class="portal-ach-inbox-bulk__select-all">' +
@@ -1785,9 +1906,10 @@
       (staffList.length ? " · " + esc(staffList.join(", ")) : "") +
       (isInbox
         ? ". Tick photos, add one or more participants above, then Assign selected. The same photo can go to everyone in the shot. Double-click a photo to view full screen."
-        : ". Double-click a photo to view full screen. Draft photos wrongly assigned from the lead inbox can be returned with Return to inbox. Delete any photo that should not be kept.") +
+        : ". Tick the photos, pick one participant, then Move selected. A green Downloaded mark in the top right means a parent already saved that photo. Double-click a photo to view full screen.") +
       "</p></div></div></div></div>" +
       bulkBarHtml +
+      moveBarHtml +
       '<div class="portal-admin-achievement-gallery portal-ach-detail__gallery portal-achievement-protected"></div>';
     host.innerHTML = "";
     host.appendChild(detailRoot);
@@ -1922,6 +2044,88 @@
       }
       updateInboxBulkUi(detailRoot, draftPhotos);
     }
+    if (!isInbox) {
+      var movePicker = moveTargets.length
+        ? mountParticipantMultiPicker(
+            detailRoot.querySelector("#portalAchFolderMoveHost"),
+            moveTargets
+          )
+        : null;
+      detailRoot._movePicker = movePicker;
+      var moveInput = detailRoot.querySelector("#portalAchFolderMoveHost input");
+      if (moveInput) moveInput.setAttribute("aria-label", "Participant to move the photos to");
+      var moveBtn = detailRoot.querySelector("#portalAchFolderMoveBtn");
+      var folderSelectAll = detailRoot.querySelector("#portalAchFolderSelectAll");
+      if (movePicker) {
+        movePicker.onChange(function () {
+          updateFolderMoveUi(detailRoot, group.photos);
+        });
+      }
+      if (folderSelectAll) {
+        folderSelectAll.addEventListener("change", function () {
+          clearFolderSelection();
+          if (folderSelectAll.checked) {
+            group.photos.forEach(function (row) {
+              folderSelection[String(row.id)] = true;
+            });
+          }
+          detailRoot.querySelectorAll("[data-ach-folder-id]").forEach(function (cb) {
+            cb.checked = !!folderSelectAll.checked;
+          });
+          updateFolderMoveUi(detailRoot, group.photos);
+        });
+      }
+      if (moveBtn) {
+        moveBtn.addEventListener("click", function () {
+          if (movePicker) movePicker.tryAddFromInput();
+          var picked = movePicker ? movePicker.getSelectedTargets() : [];
+          var ids = folderSelectedIds();
+          if (!ids.length || picked.length !== 1) {
+            setAchievementsStatus("Select the photos and one participant.", true);
+            return;
+          }
+          var dest = picked[0];
+          if (
+            !global.confirm(
+              "Move " +
+                ids.length +
+                " photo(s) to " +
+                dest.clientName +
+                "? They leave this folder. A photo a parent already downloaded keeps the Downloaded mark."
+            )
+          ) {
+            return;
+          }
+          moveBtn.disabled = true;
+          var rowsById = Object.create(null);
+          group.photos.forEach(function (row) {
+            rowsById[String(row.id)] = row;
+          });
+          var chain = Promise.resolve();
+          ids.forEach(function (pid) {
+            var row = rowsById[pid];
+            if (!row) return;
+            chain = chain.then(function () {
+              return movePhotoToParticipant(row, dest);
+            });
+          });
+          void chain
+            .then(function () {
+              clearFolderSelection();
+              setAchievementsStatus(
+                ids.length + " photo(s) moved to " + dest.clientName + "."
+              );
+              return refresh({ stayOnKey: key });
+            })
+            .catch(function (err) {
+              console.error(err);
+              moveBtn.disabled = false;
+              setAchievementsStatus((err && err.message) || "Could not move the photos.", true);
+            });
+        });
+      }
+      updateFolderMoveUi(detailRoot, group.photos);
+    }
     var grid = detailRoot.querySelector(".portal-admin-achievement-gallery");
     var galleryPhotos = sortPhotosChronologically(group.photos.slice());
     var lastGalleryDayKey = "";
@@ -1946,17 +2150,24 @@
         );
         var wrap = document.createElement("div");
         wrap.className = "portal-admin-achievement-thumb-wrap";
-        if (isInbox && row.status === "draft") {
+        if ((isInbox && row.status === "draft") || !isInbox) {
           var pick = document.createElement("label");
           pick.className = "portal-ach-inbox-pick";
           var checkbox = document.createElement("input");
           checkbox.type = "checkbox";
           checkbox.className = "portal-ach-inbox-pick__input";
-          checkbox.setAttribute("data-ach-select-id", String(row.id));
+          if (isInbox) checkbox.setAttribute("data-ach-select-id", String(row.id));
+          else checkbox.setAttribute("data-ach-folder-id", String(row.id));
           checkbox.addEventListener("change", function () {
-            if (checkbox.checked) inboxSelection[String(row.id)] = true;
-            else delete inboxSelection[String(row.id)];
-            updateInboxBulkUi(detailRoot, draftPhotos);
+            if (isInbox) {
+              if (checkbox.checked) inboxSelection[String(row.id)] = true;
+              else delete inboxSelection[String(row.id)];
+              updateInboxBulkUi(detailRoot, draftPhotos);
+              return;
+            }
+            if (checkbox.checked) folderSelection[String(row.id)] = true;
+            else delete folderSelection[String(row.id)];
+            updateFolderMoveUi(detailRoot, group.photos);
           });
           pick.appendChild(checkbox);
           var pickLabel = document.createElement("span");
@@ -2211,7 +2422,7 @@
     return (
       '<div id="portalAdminAchievementsRoot" class="portal-day-ops-embed">' +
       '<h1 class="page-title">Participant achievements</h1>' +
-      '<p class="page-intro">All in-app photos, by participant (A–Z). Lead inbox photos appear under <strong>Inbox (unassigned)</strong> until you assign them to a participant. If a draft was assigned to the wrong person, open that participant and use <strong>Return to inbox</strong>.</p>' +
+      '<p class="page-intro">All in-app photos, by participant (A–Z). Lead inbox photos appear under <strong>Inbox (unassigned)</strong> until you assign them to a participant. Open a participant, tick the photos, and use <strong>Move selected</strong> to put them in another child\'s folder. A green <strong>Downloaded</strong> mark in the top right means a parent already saved that photo.</p>' +
       '<div class="portal-activity-toolbar">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalAdminAchievementsRefresh">Refresh</button>' +
       "</div>" +
@@ -2224,6 +2435,7 @@
       "</div>" +
       '<div class="portal-achievements-viewer__stage portal-achievement-protected">' +
       '<img id="portalAdminAchievementsViewerImg" alt="" draggable="false" class="portal-achievements-viewer__img" />' +
+      '<span id="portalAdminAchievementsViewerDownloaded" class="portal-admin-achievement-thumb__downloaded portal-admin-achievements-viewer__downloaded" hidden>Downloaded</span>' +
       "</div>" +
       '<div class="portal-achievements-viewer__nav" role="group" aria-label="Photo navigation">' +
       '<button type="button" class="portal-achievements-viewer__nav-btn" id="portalAdminAchievementsViewerPrev" aria-label="Previous photo">' +

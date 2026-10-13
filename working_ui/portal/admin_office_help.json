@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-13-v418",
+  "version": "2026-10-13-v419",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1702,11 +1702,18 @@
             "iniciales",
             "portrait",
             "avatar",
-            "0 photos"
+            "0 photos",
+            "move",
+            "mover",
+            "downloaded",
+            "descargada",
+            "descargado"
           ],
           "steps": [
             "Open Family → Photos/Videos.",
             "The first box is Inbox (unassigned). Photos uploaded without a child land there. It stays at the top even when the count is 0. Open it, then assign each photo to a participant.",
+            "To move photos that are already in the wrong child's folder, open that child, tick the photos, pick the right participant, and press Move selected.",
+            "A green Downloaded mark in the top right of a photo means a parent already saved it. The mark stays if you move the photo.",
             "The letter boxes are children on an Autumn seat. OLD CLIENTES is everyone else on the list.",
             "The number under the name is achievement photos, not the portrait. 0 photos can still show a face.",
             "Initials mean no portrait is saved on that child. A photo on another screen uses the same saved file."
@@ -1714,7 +1721,8 @@
           "tips": [
             "The board name and the list name can differ (short name vs full name). They are the same child when the roster id matches.",
             "A photo the office saves, or a file on the machine, shows on Staff and Admin. The parent sees initials until the family uploads one.",
-            "Inbox (unassigned) is not a child. It is the drop box for photos taken without picking a participant."
+            "Inbox (unassigned) is not a child. It is the drop box for photos taken without picking a participant.",
+            "Move selected changes the folder. It does not copy the photo. The parent who already downloaded it keeps that green mark."
           ],
           "es": {
             "title": "Fotos y videos, y OLD CLIENTES",
@@ -1723,11 +1731,14 @@
             "steps": [
               "Abre Family, Photos/Videos.",
               "La primera caja es Inbox (unassigned). Ahi llegan las fotos subidas sin elegir nino. Sigue arriba aunque ponga 0. Abrela y asigna cada foto a un participante.",
+              "Para mover fotos que ya estan en la carpeta de otro nino, abre ese nino, marca las fotos, elige el participante correcto y pulsa Move selected.",
+              "Una marca verde Downloaded arriba a la derecha significa que un padre ya la guardo. Si mueves la foto, la marca se queda.",
               "Las cajas de letras son ninos con plaza de Autumn. OLD CLIENTES es el resto de la lista.",
               "El numero bajo el nombre son fotos de logros, no el retrato. 0 photos puede seguir ensenando una cara."
             ],
             "tips": [
-              "Inbox (unassigned) no es un nino. Es la caja de las fotos hechas sin elegir participante."
+              "Inbox (unassigned) no es un nino. Es la caja de las fotos hechas sin elegir participante.",
+              "Move selected cambia la carpeta. No copia la foto."
             ]
           }
         },
