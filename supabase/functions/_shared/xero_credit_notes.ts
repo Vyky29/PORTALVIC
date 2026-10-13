@@ -162,6 +162,7 @@ export async function xeroCreateRefundCreditNote(
         xero_credit_note_number: existing.number,
         allocated: alloc.ok,
         ...(alloc.skipReason ? { allocation_skip_reason: alloc.skipReason } : {}),
+        ...(alloc.detail ? { allocation_detail: alloc.detail } : {}),
       };
     }
   }
@@ -240,6 +241,7 @@ export async function xeroCreateRefundCreditNote(
       xero_credit_note_number: cnNum,
       allocated: false,
       ...(alloc.skipReason ? { allocation_skip_reason: alloc.skipReason } : {}),
+      ...(alloc.detail ? { allocation_detail: alloc.detail } : {}),
     };
   }
 
@@ -277,7 +279,8 @@ async function xeroAllocateCreditNoteToInvoice(
     Allocations: [
       {
         Invoice: { InvoiceID: invoiceId },
-        AppliedAmount: round2(amount),
+        Amount: round2(amount),
+        Date: new Date().toISOString().slice(0, 10),
       },
     ],
   };
