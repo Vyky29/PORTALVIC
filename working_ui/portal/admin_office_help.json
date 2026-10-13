@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-13-v409",
+  "version": "2026-10-13-v410",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -718,7 +718,7 @@
             "The instructor cancellation form tells the parent that the instructor reported a cancellation and the admin team will phone. Day Centre does not get that message. Bespoke does.",
             "Absent does not send a parent WhatsApp. Not from the parent portal, not from Schedule and Covers Absent, and not from the staff card.",
             "When you decide a refund, the parent WhatsApp asks for the account name, sort code, and account number. If that refund is still open 3 days later, one reminder asks again. It does not repeat. Mark the refund as paid once the money has gone in, and the reminder does not send. Refunds decided before 8 Oct 2026 are not chased. A credit WhatsApps only when it is taken off an invoice they are about to pay. A credit that just sits in Credits, or waits for a later GoCardless collection, stays in the parent portal. Cancel service is the place-cancelled message, with the refund figures.",
-            "Staff WhatsApp: a named cover says You are covering this child, with date, time, and venue. Removing the cover says they are no longer covering. A makeup on their roster says Make-up on your roster. Evening feedback still owed says today's feedback is still not in. The timesheet deadline is one message per month.",
+            "Staff WhatsApp: a named cover says You are covering the instructor who is off, then the session with the child who is in that seat today (a swap that day, not the usual child), the time, the date and venue, and the child's area. That same text is in Staff messages. Removing the cover says they are no longer covering. A makeup on their roster says Make-up on your roster. Evening feedback still owed says today's feedback is still not in. The timesheet deadline is one message per month.",
             "Absent participant and Session cancelled on the staff phone are the app, not WhatsApp."
           ],
           "tips": [
@@ -735,7 +735,7 @@
               "El formulario de cancelacion del instructor le dice al padre que el instructor informo una cancelacion y que admin le llamara. Day Centre no recibe ese mensaje. Bespoke si.",
               "Absent no manda WhatsApp al padre. Ni desde su portal, ni desde Schedule and Covers Absent, ni desde la tarjeta del staff.",
               "Si decides un refund, el WhatsApp pide nombre de la cuenta, sort code y account number. Si ese refund sigue abierto 3 dias despues, sale un solo recordatorio. No se repite. Cuando el dinero ya esta ingresado, marcalo como pagado y el recordatorio no sale. Los refund de antes del 8 de octubre de 2026 no se persiguen. Un credit solo sale por WhatsApp si se descuenta de una factura que van a pagar ahora. Un credit que se queda en Credits, o que espera un cobro de GoCardless mas adelante, se queda en el portal del padre. Cancel service es el mensaje de plaza cancelada, con las cifras del refund.",
-              "WhatsApp al staff: un cover con nombre dice You are covering, con fecha, hora y sede. Quitar el cover dice que ya no cubre. Un makeup en su roster dice Make-up on your roster. Por la noche, si falta feedback, dice que el feedback de hoy no esta. El cierre del timesheet es un mensaje al mes.",
+              "WhatsApp al staff: un cover con nombre dice You are covering y el instructor que falta, luego la sesion con el nino que esta hoy en esa plaza (el swap de ese dia, no el nino de siempre), la hora, la fecha y la sede, y el area del nino. Ese mismo texto sale en Staff messages. Quitar el cover dice que ya no cubre. Un makeup en su roster dice Make-up on your roster. Por la noche, si falta feedback, dice que el feedback de hoy no esta. El cierre del timesheet es un mensaje al mes.",
               "Absent participant y Session cancelled en el telefono del staff son la app, no WhatsApp."
             ],
             "tips": [

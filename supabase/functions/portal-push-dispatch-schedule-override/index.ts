@@ -173,9 +173,10 @@ function rosterPushFingerprint(record: Record<string, unknown>): string {
 function pushCopy(
   overrideType: string,
   record?: Record<string, unknown>,
+  facts?: CoverFacts | null,
 ): { title: string; body: string } {
   const t = String(overrideType || "").trim();
-  const who = record ? clientDisplayName(record) : "";
+  const who = (facts && facts.childName) || (record ? clientDisplayName(record) : "");
   if (t === "client_replace_in_slot") {
     const full = record ? replacementDisplayName(record) : "";
     const name = full.trim() || who;
@@ -271,6 +272,15 @@ function pushCopy(
         body: bits.join(" ") + ". You are not covering this session.",
       };
     }
+    if (facts && facts.staffName) {
+      const session = facts.when
+        ? `Session with ${facts.childName}, ${facts.when}`
+        : `Session with ${facts.childName}`;
+      return {
+        title: facts.childName ? `Cover: ${facts.childName}` : "Cover session",
+        body: `You are covering ${facts.staffName}. ${session}.`,
+      };
+    }
     const bits = [who || "A participant", "is now on your roster (cover)"];
     if (when) bits.push(`· ${when}`);
     if (venue) bits.push(`· ${venue}`);
@@ -311,6 +321,132 @@ function ukDate(iso: string): string {
   return m[3] + "/" + m[2] + "/" + m[1];
 }
 
+function weekdayName(iso: string): string {
+  const m = String(iso || "").slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return "";
+  const dt = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][dt.getUTCDay()] || "";
+}
+
+/** "16:00:00" and "4 to 4.30" are the same afternoon half. */
+function startMinutes(raw: string): number | null {
+  const s = String(raw || "").trim().toLowerCase();
+  const hm = s.match(/^(\d{1,2}):(\d{2})/);
+  if (hm) return Number(hm[1]) * 60 + Number(hm[2]);
+  const label = s.match(/(\d{1,2})(?:[:.](\d{2}))?/);
+  if (!label) return null;
+  return Number(label[1]) * 60 + Number(label[2] || 0);
+}
+
+function sameClock(a: number | null, b: number | null): boolean {
+  if (a == null || b == null) return false;
+  if (a === b) return true;
+  return Math.abs(a - b) === 12 * 60;
+}
+
+function displayPerson(raw: string): string {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  if (/\s/.test(s) && /[A-Z]/.test(s)) return s;
+  return prettyClientLabel(s);
+}
+
+function personKeysMatch(rosterName: string, want: string): boolean {
+  const r = normSpreadsheetKey(rosterName);
+  const w = normSpreadsheetKey(want);
+  if (!r || !w) return false;
+  if (r === w || r.startsWith(w) || w.startsWith(r)) return true;
+  return normSpreadsheetKey(String(rosterName || "").split(/\s+/)[0] || "") === w;
+}
+
+type CoverFacts = {
+  staffName: string;
+  childName: string;
+  when: string;
+  venue: string;
+  area: string;
+  dateLabel: string;
+};
+
+/**
+ * Cover WhatsApp names the instructor who is off, then the child who is actually
+ * in that seat today (a same-slot swap wins over the standing child), then the
+ * child's pool / area. Four paragraphs fill the staff template boxes.
+ */
+async function resolveCoverFacts(
+  admin: ReturnType<typeof createClient>,
+  record: Record<string, unknown>,
+): Promise<CoverFacts> {
+  const staffName = displayPerson(String(record.anchor_staff_id || "")) || "the instructor";
+  const standingChild = clientDisplayName(record) || "this session";
+  const when = String(record.anchor_time_slot_label || "")
+    .replace(/^[A-Za-z]+ · /, "")
+    .trim();
+  const venue = String(record.anchor_venue || "").trim();
+  const iso = String(record.session_date || "").slice(0, 10);
+  const seatStart = startMinutes(String(record.anchor_start || "") || when);
+  let childName = standingChild;
+
+  const { data: swaps } = await admin.from("schedule_overrides")
+    .select("anchor_client_id, anchor_start, payload")
+    .eq("session_date", iso)
+    .eq("status", "active")
+    .eq("override_type", "client_replace_in_slot")
+    .eq("anchor_staff_id", String(record.anchor_staff_id || ""));
+  const seatClient = normSpreadsheetKey(String(record.anchor_client_id || ""));
+  for (const row of swaps || []) {
+    if (!sameClock(seatStart, startMinutes(String(row.anchor_start || "")))) continue;
+    const rowClient = normSpreadsheetKey(String(row.anchor_client_id || ""));
+    if (seatClient && rowClient && seatClient !== rowClient) continue;
+    const pl = row.payload && typeof row.payload === "object" ? row.payload : {};
+    const next = displayPerson(String(
+      pl.to_client_name || pl.replacement_client_name || "",
+    ));
+    if (next && normSpreadsheetKey(next) !== seatClient) childName = next;
+  }
+
+  let area = "";
+  const day = weekdayName(iso);
+  if (day && childName) {
+    const token = childName.split(/\s+/)[0] || childName;
+    const { data: rows } = await admin.from("portal_roster_rows")
+      .select("client_name, time_slot, area, service, session_date")
+      .eq("status", "active")
+      .ilike("day", day)
+      .ilike("client_name", `%${token}%`)
+      .limit(40);
+    const matches = (rows || []).filter((row) => personKeysMatch(String(row.client_name || ""), childName));
+    const timed = matches.filter((row) => sameClock(seatStart, startMinutes(String(row.time_slot || ""))));
+    const pool = timed.length ? timed : matches;
+    const standing = pool.find((row) => !row.session_date) || pool[0];
+    area = String(standing?.area || standing?.service || "").trim();
+  }
+
+  return {
+    staffName,
+    childName,
+    when,
+    venue,
+    area: area || "Area not on the roster",
+    dateLabel: ukDate(iso),
+  };
+}
+
+function coverWhatsappParagraphs(
+  first: string,
+  facts: CoverFacts,
+  direction: "assigned" | "removed",
+): string {
+  const session = facts.when
+    ? `Session with ${facts.childName}, ${facts.when}`
+    : `Session with ${facts.childName}`;
+  const lead = direction === "removed"
+    ? `You are no longer covering ${facts.staffName}. ${session}. That cover was removed.`
+    : `You are covering ${facts.staffName}. ${session}.`;
+  const where = [facts.dateLabel, facts.venue].filter(Boolean).join(" - ");
+  return `Hi ${first},\n\n${lead}\n\n${where}.\n\n${facts.area}`;
+}
+
 function coverEventKey(direction: "assigned" | "removed", rosterKey: string): string {
   return direction + ":" + String(rosterKey || "").slice(0, 80);
 }
@@ -322,6 +458,7 @@ async function sendCoverStaffWhatsapp(
   userIds: string[],
   direction: "assigned" | "removed",
   rosterKey: string,
+  facts?: CoverFacts,
 ) {
   const overrideId = String(record.id ?? "").trim();
   if (!overrideId || !userIds.length || !rosterKey) return;
@@ -337,26 +474,43 @@ async function sendCoverStaffWhatsapp(
     console.warn("[portal-push-dispatch] cover wa ledger", insErr);
     return;
   }
+  const resolved = facts || await resolveCoverFacts(admin, record);
   const { data: people } = await admin.from("staff_profiles")
     .select("id, full_name, username, phone_e164")
     .in("id", userIds);
-  const who = clientDisplayName(record) || "this session";
-  const when = String(record.anchor_time_slot_label || "").trim();
-  const venue = String(record.anchor_venue || "").trim();
-  const line = [ukDate(String(record.session_date || "")), when, venue].filter(Boolean).join(" · ");
   let sent = 0;
   for (const p of people || []) {
     const phone = normalizeParentPhoneE164(String(p.phone_e164 || ""));
     if (!phone) continue;
     const first = String(p.full_name || p.username || "there").trim().split(/\s+/)[0] || "there";
-    const body = direction === "removed"
-      ? `Hi ${first},\n\nYou are no longer covering ${who}.\n\n${line}.\n\nThat cover was removed.`
-      : `Hi ${first},\n\nYou are covering ${who}.\n\n${line}.`;
+    const body = coverWhatsappParagraphs(first, resolved, direction);
     const result = await sendParentMobileMessage(phone, withStaffApiMachineFooter(body), {
       kind: "staff_contact_update",
     });
     if (result.ok) sent++;
     else console.warn("[portal-push-dispatch] cover wa", result.error);
+    await admin.from("portal_staff_notify_log").insert({
+      sent_by_user_id: null,
+      sent_by_email: "system@clubsensational.org",
+      kind: "staff_contact_update",
+      channel: "whatsapp",
+      staff_profile_id: p.id,
+      staff_username: p.username || null,
+      staff_display_name: p.full_name || p.username || null,
+      staff_phone: phone,
+      subject: null,
+      body_text: body,
+      whatsapp_status: result.ok ? (result.channel === "sms" ? "sent_sms" : "sent") : "failed",
+      whatsapp_message_id: result.ok ? result.id : null,
+      error_detail: result.ok ? null : (result.error || "send_failed"),
+      meta: {
+        used_template: true,
+        wa_client_body: body,
+        override_id: overrideId,
+        cover_direction: direction,
+        source: "schedule_override_cover",
+      },
+    });
   }
   if (!sent) {
     await admin.from("portal_cover_whatsapp_sent").delete().eq("override_id", overrideId).eq("event", event);
@@ -549,6 +703,10 @@ Deno.serve(async (req) => {
 
   const ids = [...targetUserIds];
 
+  const coverFacts = overrideType === "instructor_reassign"
+    ? await resolveCoverFacts(admin, record as Record<string, unknown>)
+    : null;
+
   if (overrideType === "instructor_reassign") {
     const direction = coverRemoved ? "removed" : "assigned";
     await sendCoverStaffWhatsapp(
@@ -557,6 +715,7 @@ Deno.serve(async (req) => {
       ids,
       direction,
       targetRosterKey,
+      coverFacts || undefined,
     );
     if (!coverRemoved && payload.old_record && typeof payload.old_record === "object") {
       const oldKey = coverRosterKey(payload.old_record as Record<string, unknown>);
@@ -649,7 +808,7 @@ Deno.serve(async (req) => {
           if (pushLedgerErr && !pushDup) {
             console.warn("[portal-push-dispatch] cover removed push ledger", pushLedgerErr);
           } else if (subs?.length) {
-            const copy = pushCopy(overrideType, record as Record<string, unknown>);
+            const copy = pushCopy(overrideType, record as Record<string, unknown>, coverFacts);
             const notifyUrl = `${openBase}?portalOpen=alerts`;
             const pushPayload = JSON.stringify({
               title: copy.title,
@@ -685,7 +844,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  const copy = pushCopy(overrideType, record as Record<string, unknown>);
+  const copy = pushCopy(overrideType, record as Record<string, unknown>, coverFacts);
   const notifyUrl = `${openBase}?portalOpen=alerts`;
   const body = `${copy.body} Date: ${sessionDate}.`;
   const pushPayload = JSON.stringify({
