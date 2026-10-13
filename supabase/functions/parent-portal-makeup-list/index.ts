@@ -11,6 +11,20 @@ function clean(v: unknown, max = 200): string {
   return String(v ?? "").trim().slice(0, max);
 }
 
+function normPerson(v: unknown): string {
+  return clean(v, 160)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function firstToken(v: unknown): string {
+  return normPerson(v).split(" ")[0] || "";
+}
+
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -59,13 +73,55 @@ Deno.serve(async (req) => {
     if (!fallback.data) return parentPortalJsonInvalid(403);
   }
 
+  // Same child can exist twice (in-class hub vs an older contact). The hub
+  // opens the in-class row. Makeups saved on the other row still belong here
+  // when the parent name, first name and date of birth match.
+  const contactIds = new Set<string>([contactId]);
+  const { data: selfContact } = await supabase
+    .from("portal_parent_contacts")
+    .select("parent_display, child_display, child_first_name, dob_iso")
+    .eq("parent_person_id", session.parent_person_id)
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  const { data: selfPax } = await supabase
+    .from("portal_participants")
+    .select("display_name, first_name, dob_iso")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  const dob = clean(selfContact?.dob_iso || selfPax?.dob_iso, 10);
+  const childFirst = firstToken(
+    selfContact?.child_first_name || selfPax?.first_name || selfContact?.child_display || selfPax?.display_name,
+  );
+  const parentName = normPerson(selfContact?.parent_display);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dob) && childFirst && parentName) {
+    const { data: sameDob } = await supabase
+      .from("portal_participants")
+      .select("contact_id, display_name, first_name")
+      .eq("dob_iso", dob)
+      .limit(30);
+    const twinIds = (sameDob || [])
+      .filter((row) => firstToken(row.first_name || row.display_name) === childFirst)
+      .map((row) => clean(row.contact_id, 120))
+      .filter(Boolean);
+    if (twinIds.length) {
+      const { data: twinContacts } = await supabase
+        .from("portal_parent_contacts")
+        .select("contact_id, parent_display")
+        .in("contact_id", twinIds);
+      for (const row of twinContacts || []) {
+        if (normPerson(row.parent_display) !== parentName) continue;
+        const id = clean(row.contact_id, 120);
+        if (id) contactIds.add(id);
+      }
+    }
+  }
+
   const { data: grants, error } = await supabase
     .from("portal_parent_makeup_grants")
     .select(
-      "id, contact_id, participant_display, preferred_venue, service_label, status, source, notes, created_at, closed_at",
+      "id, contact_id, parent_person_id, participant_display, preferred_venue, service_label, status, source, notes, created_at, closed_at",
     )
-    .eq("parent_person_id", session.parent_person_id)
-    .eq("contact_id", contactId)
+    .in("contact_id", [...contactIds])
     .order("created_at", { ascending: false })
     .limit(30);
 
@@ -94,10 +150,17 @@ Deno.serve(async (req) => {
     byGrant[gid].push(o);
   }
 
-  const rows = (grants || []).map((g) => {
+  const visible = (grants || []).filter((g) => {
+    const cid = String(g.contact_id || "");
+    if (cid === contactId) return String(g.parent_person_id || "") === session.parent_person_id;
+    return contactIds.has(cid);
+  });
+
+  const rows = visible.map((g) => {
     const list = byGrant[g.id] || [];
+    const { parent_person_id: _parentPersonId, ...rest } = g;
     return {
-      ...g,
+      ...rest,
       pending_offer: list.find((o) => o.status === "pending") || null,
       offers: list,
     };
