@@ -9,14 +9,14 @@
     var VER = "20261005-logan-stay-white";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20261013-dc-half-blue",
+    "/portal/term_from_timetable.js?v=20261013-dec18",
     "/portal/term_calendar_dashboard_shared.js?v=20261013-dc-half-blue",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260914-no-eddie-may",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20261013-acat-tue",
     "/portal/portal_staff_feedback_data_loader.js?v=20261007-dc-day-feedback",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20261005-logan-white",
-      "/portal/portal_roster_canonical.js?v=20261013-dc-half-blue",
+      "/portal/portal_roster_canonical.js?v=20261013-dec18",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/portal_client_day_visibility.js?v=20261007-dc-day-feedback",
@@ -52,7 +52,7 @@
     "/portal/staff-dashboard-term.js?v=20261013-acat-tue",
     "/portal/staff-dashboard-participants.js?v=20261013-dc-same-card",
     "/portal/staff-dashboard-today.js?v=20261013-shift-band",
-    "/portal/staff-dashboard-ui.js?v=20261013-dc-half-blue",
+    "/portal/staff-dashboard-ui.js?v=20261013-dec18",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
@@ -73,7 +73,7 @@
     "/portal/staff-dashboard-term.js?v=20261013-acat-tue",
     "/portal/staff-dashboard-participants.js?v=20261013-dc-same-card",
     "/portal/staff-dashboard-today.js?v=20261013-shift-band",
-    "/portal/staff-dashboard-ui.js?v=20261013-dc-half-blue",
+    "/portal/staff-dashboard-ui.js?v=20261013-dec18",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];

@@ -3,7 +3,7 @@
 Autumn Term 2026 staff pool timetable + term_from_timetable.js for staff dashboard.
 
 Calendar view: Mon 31 Aug 2026 (closed) through Wed 31 Dec 2026.
-Sessions: Tue 1 Sep 2026 .. Thu 17 Dec 2026 (closed from 18 Dec).
+Sessions: Tue 1 Sep 2026 .. Fri 18 Dec 2026 (closed from 19 Dec).
 Half term: Mon 26 Oct .. Fri 30 Oct 2026.
 
 Run:
@@ -38,13 +38,13 @@ CALENDAR_TO = "2026-12-31"
 SESSION_FROM = "2026-09-01"  # Day Centre only Mon 1 Sep
 AFTERSCHOOL_WEEKEND_FROM = "2026-09-05"  # Sat/Sun after-school (first club weekend)
 AFTERSCHOOL_WEEKDAY_FROM = "2026-09-07"  # Mon 7 Sep — weekday after-schools / evenings
-SESSION_TO = "2026-12-17"
+SESSION_TO = "2026-12-18"
 TERM_BREAK_FROM = "2026-10-26"
 TERM_BREAK_TO = "2026-10-30"
 HALF_TERM_WEEK_STARTS = ["2026-10-26"]
 
 TERM_CLOSED_DATES = ["2026-08-31"] + [
-    f"2026-12-{d:02d}" for d in range(18, 32)
+    f"2026-12-{d:02d}" for d in range(19, 32)
 ]
 
 # Staff no longer on rota (Autumn 26/27). Bismark returned Hub Tinashe from Wed 9 Sep.

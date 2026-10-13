@@ -4013,10 +4013,27 @@
           const programmeBooks = (termStaffId && asDcOpen)
             ? portalTermStaffWeekdayProgrammeBooks(termStaffId, dayWordRoster)
             : { dc: false, after: false };
-          /* After-school half term, Day Centre still open: the day stays the normal
-             open blue. Afternoon sessions are omitted; only the morning DC shifts show. */
+          /* After-school half term. Morning Day Centre stays open: blue on top
+             until the feedback is done, then green. The afternoon stays red.
+             A requested Day Centre day off (no afternoon either) is already
+             solid red above, before this branch. */
           const dcMorningOpen = asDcOpen && programmeBooks.dc && !beforeFirst && !termClosedDay;
-          if(halfBlocksNav && !dcMorningOpen){
+          if(dcMorningOpen){
+            const fbDc = getTermFeedbackStateForDay(y, monthIndex, day);
+            cls += ' term-cal-day--split-dc-open';
+            if(fbDc === 'complete'){
+              cls += ' term-feedback-complete';
+              label = `${day}, day centre complete, afternoon closed`;
+            }else if(fbDc === 'late'){
+              cls += ' term-feedback-late';
+              label = `${day}, day centre feedback due, afternoon closed`;
+            }else{
+              label = `${day}, day centre open, afternoon closed`;
+            }
+            parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${isoKey}" data-term-review-weekday="${dayWordRoster}" data-term-review-judgement="${fbDc === 'late' ? '1' : '0'}" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
+            continue;
+          }
+          if(halfBlocksNav){
             const ovPulseHalf = (termClosedDay || beforeFirst)
               ? ''
               : portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWordRoster);
@@ -4042,7 +4059,7 @@
             if(ovPulseHalf && dayFlagsOff && dayFlagsOff.hasAbsentAnnounced){
               cls += ' term-cal-day--with-badge';
             }
-          } else if(isWorked || dcMorningOpen){
+          } else if(isWorked){
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const fb = getTermFeedbackStateForDay(y, monthIndex, day);
             const dayWordNav = dt.toLocaleDateString('en-GB', { weekday: 'long' });

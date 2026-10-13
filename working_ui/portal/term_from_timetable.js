@@ -26,7 +26,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   },
   "termDashboardCalendarFrom": "2026-08-31",
   "termDashboardCalendarTo": "2026-12-31",
-  "termDashboardCalendarToDayCentre": "2026-12-17",
+  "termDashboardCalendarToDayCentre": "2026-12-18",
   "termStaffDayCentreCalendarKeys": [
     "michelle",
     "luliya",
@@ -36,7 +36,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "youssef"
   ],
   "firstDate": "2026-09-01",
-  "lastDate": "2026-12-17",
+  "lastDate": "2026-12-18",
   "termBreakFrom": "2026-10-26",
   "termBreakTo": "2026-10-30",
   "termResumeDate": "2026-09-01",
@@ -47,7 +47,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termFeedbackReminderFromIso": "2026-09-01",
   "termClosedDates": [
     "2026-08-31",
-    "2026-12-18",
     "2026-12-19",
     "2026-12-20",
     "2026-12-21",
@@ -68,19 +67,22 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-09-13",
       "2026-09-15",
       "2026-10-04"
+    ],
+    "roberto": [
+      "2026-10-30"
     ]
   },
   "termStaffOffWeekdaysRangeByProfileKey": {
     "roberto": {
       "from": "2026-09-01",
-      "to": "2026-12-17",
+      "to": "2026-12-18",
       "weekdays": [
         6
       ]
     },
     "john": {
       "from": "2026-09-01",
-      "to": "2026-12-17",
+      "to": "2026-12-18",
       "weekdays": [
         5,
         0
@@ -88,14 +90,14 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     },
     "luliya": {
       "from": "2026-09-01",
-      "to": "2026-12-17",
+      "to": "2026-12-18",
       "weekdays": [
         4
       ]
     },
     "emmanuel": {
       "from": "2026-09-01",
-      "to": "2026-12-17",
+      "to": "2026-12-18",
       "weekdays": [
         1,
         2,
@@ -430,7 +432,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-12-09",
       "2026-12-11",
       "2026-12-14",
-      "2026-12-16"
+      "2026-12-16",
+      "2026-12-18"
     ],
     "carlos": [
       "2026-09-06",
@@ -509,7 +512,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-12-04",
       "2026-12-06",
       "2026-12-11",
-      "2026-12-13"
+      "2026-12-13",
+      "2026-12-18"
     ],
     "godsway": [
       "2026-09-06",
@@ -755,7 +759,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-12-11",
       "2026-12-14",
       "2026-12-15",
-      "2026-12-16"
+      "2026-12-16",
+      "2026-12-18"
     ],
     "raul": [
       "2026-09-01",
@@ -814,7 +819,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-12-11",
       "2026-12-14",
       "2026-12-15",
-      "2026-12-16"
+      "2026-12-16",
+      "2026-12-18"
     ],
     "roberto": [
       "2026-09-01",
@@ -904,7 +910,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-12-14",
       "2026-12-15",
       "2026-12-16",
-      "2026-12-17"
+      "2026-12-17",
+      "2026-12-18"
     ],
     "sandra": [
       "2026-09-07",
@@ -996,7 +1003,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-12-11",
       "2026-12-14",
       "2026-12-15",
-      "2026-12-16"
+      "2026-12-16",
+      "2026-12-18"
     ],
     "youssef": [
       "2026-09-03",
@@ -1074,7 +1082,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-12-12",
       "2026-12-14",
       "2026-12-16",
-      "2026-12-17"
+      "2026-12-17",
+      "2026-12-18"
     ]
   }
 };
@@ -1084,7 +1093,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   if (!t) return;
   var dates = [];
   var cur = new Date("2026-10-05T12:00:00");
-  var end = new Date("2026-12-17T12:00:00");
+  var end = new Date("2026-12-18T12:00:00");
   while (cur <= end) {
     var dow = cur.getDay();
     var iso =

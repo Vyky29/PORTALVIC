@@ -4057,7 +4057,7 @@
    * From Wed 7 Oct her Ikram 11-4 is the Wednesday board (Luliya moves to Ikram then Fadi).
    */
   var PATIENCE_IKRAM_FROM = "2026-10-05";
-  var PATIENCE_IKRAM_UNTIL = "2026-12-17";
+  var PATIENCE_IKRAM_UNTIL = "2026-12-18";
 
   function patienceIkramDates() {
     var out = [];

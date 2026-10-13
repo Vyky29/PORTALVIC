@@ -8698,6 +8698,29 @@
       color:var(--danger);
       box-shadow:0 0 0 1px rgba(217,83,79,.12);
     }
+    /* Day Centre morning open, after-school closed: blue on top, red below.
+       Once the morning feedback is done, the top turns green. The bottom stays red. */
+    .term-cal-day.term-cal-day--split-dc-open{
+      background:linear-gradient(to bottom, var(--blueSoft, #d6ebf7) 50%, #fecaca 50%);
+      border-color:rgba(45,132,179,.4);
+      color:var(--blue, #1a5f8a);
+      cursor:pointer;
+      animation:none;
+      box-shadow:none;
+    }
+    .term-cal-day.term-cal-day--split-dc-open.term-feedback-complete{
+      background:linear-gradient(to bottom, #bbf7d0 50%, #fecaca 50%);
+      border-color:rgba(21,115,71,.4);
+      color:#157347;
+      box-shadow:none;
+    }
+    .term-cal-day.term-cal-day--split-dc-open.term-feedback-late{
+      background:linear-gradient(to bottom, #ffe8cc 50%, #fecaca 50%);
+      border-color:rgba(200,110,45,.45);
+      color:#7a4e00;
+      box-shadow:none;
+      animation:none;
+    }
     /* Morning worked, afternoon off: red on top, green below. Pulses — it is a day off. */
     .term-cal-day.term-cal-day--split-worked-off{
       background:linear-gradient(to bottom, #fecaca 50%, #bbf7d0 50%);
