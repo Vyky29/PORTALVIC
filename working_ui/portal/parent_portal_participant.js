@@ -4003,6 +4003,7 @@
     var out = [];
     rows.forEach(function (raw) {
       if (!raw) return;
+      if (raw.pending) return;
       var iso = String(raw.iso || "").slice(0, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
       if (iso < todayIso) {
@@ -4393,11 +4394,11 @@
         icon: CHIP_X_SVG,
       };
     }
-    /* Makeup day granted by the office — not a regular weekday. */
+    /* Makeup day — yellow while the family still has to Accept, and after it is on the roster. */
     if (d.makeupSession || st === "makeup") {
       return {
         tone: "makeup",
-        title: "Makeup — " + d.iso,
+        title: (d.makeupPending ? "Makeup to confirm — " : "Makeup — ") + d.iso,
         icon: "",
       };
     }
@@ -4852,7 +4853,9 @@
 
   function placedMakeupSessionsFromGrants(grants) {
     var sessions = [];
+    var pending = [];
     var seen = Object.create(null);
+    var seenOffer = Object.create(null);
     var granted = false;
     (grants || []).forEach(function (g) {
       if (!g) return;
@@ -4862,8 +4865,28 @@
       var offers = Array.isArray(g.offers) ? g.offers.slice() : [];
       if (g.pending_offer) offers.push(g.pending_offer);
       offers.forEach(function (o) {
-        if (!o || String(o.status || "") !== "accepted" || !o.roster_override_id) return;
+        if (!o) return;
+        var oid = String(o.id || "");
+        if (oid && seenOffer[oid]) return;
+        if (oid) seenOffer[oid] = true;
+        var st = String(o.status || "");
         var iso = String(o.session_date || "").slice(0, 10);
+        if (st === "pending" || (gst === "offered" && !st && iso)) {
+          pending.push(o);
+          if (!iso || seen[iso]) return;
+          seen[iso] = true;
+          sessions.push({
+            iso: iso,
+            time: String(o.session_time || "").trim(),
+            venue: String(o.venue || g.preferred_venue || "").trim(),
+            area: String(o.area || "").trim(),
+            label: String(o.service_label || g.service_label || "").trim(),
+            instructor: String(o.instructor_name || "").trim(),
+            pending: true,
+          });
+          return;
+        }
+        if (st !== "accepted" || !o.roster_override_id) return;
         if (!iso || seen[iso]) return;
         seen[iso] = true;
         sessions.push({
@@ -4876,14 +4899,15 @@
         });
       });
     });
-    return { granted: granted, sessions: sessions };
+    return { granted: granted, sessions: sessions, pending: pending };
   }
 
   function rememberMakeupSessions(data, payload) {
-    if (!data) return { granted: false, sessions: [] };
+    if (!data) return { granted: false, sessions: [], pending: [] };
     var parsed = placedMakeupSessionsFromGrants((payload && payload.grants) || []);
     data._ppMakeupGranted = parsed.granted;
     data._ppMakeupSessions = parsed.sessions;
+    data._ppMakeupPendingOffers = parsed.pending;
     return parsed;
   }
 
@@ -4902,6 +4926,7 @@
             isNext: false,
             pendingReenrol: false,
             makeupSession: true,
+            makeupPending: !!row.pending,
           },
           data,
         );
@@ -4918,6 +4943,7 @@
       list.forEach(function (d) {
         if (!d || d.iso !== chip.iso) return;
         d.makeupSession = true;
+        if (chip.makeupPending) d.makeupPending = true;
         d.pendingReenrol = false;
         d.notBooked = false;
         found = true;
@@ -6186,6 +6212,7 @@
       "</div>";
     return (
       '<section class="pp-hub-ops" aria-label="Sessions and next booking">' +
+      hubMakeupConfirmHtml(data) +
       '<p class="' +
       headingClass +
       '" data-pp-next-heading>' +
@@ -6199,6 +6226,115 @@
       '<div id="ppHubAlerts" class="pp-hub-alerts" hidden></div>' +
       "</section>"
     );
+  }
+
+  function hubMakeupConfirmHtml(data) {
+    var offers = (data && data._ppMakeupPendingOffers) || [];
+    if (!offers.length) return "";
+    var cards = offers
+      .map(function (o) {
+        if (!o || !o.id) return "";
+        var iso = String(o.session_date || "").slice(0, 10);
+        var when = formatHubDateLabel(iso) || iso;
+        var bits = [o.venue, o.session_time, o.instructor_name].filter(function (bit) {
+          return String(bit || "").trim();
+        });
+        return (
+          '<article class="pp-absence-card pp-makeup-card pp-hub-makeup-confirm" data-status="offered">' +
+          '<div class="pp-absence-card__head"><strong>Makeup to confirm</strong>' +
+          '<span class="pp-absence-chip">Accept or decline</span></div>' +
+          '<p class="pp-absence-card__svc">' +
+          esc(when) +
+          "</p>" +
+          (bits.length
+            ? '<p class="pp-absence-card__meta">' + esc(bits.join(" · ")) + "</p>"
+            : "") +
+          '<p class="pp-notice pp-notice--error" role="status">If you decline, you forfeit this makeup.</p>' +
+          '<p class="pp-makeup-card__status" data-pp-makeup-status hidden></p>' +
+          '<div class="pp-makeup-acts">' +
+          '<button type="button" class="pp-btn pp-btn--primary" data-pp-makeup-accept="' +
+          esc(o.id) +
+          '">Accept</button>' +
+          '<button type="button" class="pp-btn pp-btn--ghost" data-pp-makeup-decline="' +
+          esc(o.id) +
+          '">Decline</button>' +
+          "</div></article>"
+        );
+      })
+      .join("");
+    if (!cards) return "";
+    return '<div class="pp-hub-makeup-confirm-list">' + cards + "</div>";
+  }
+
+  function bindHubMakeupConfirm(host, data, opts) {
+    if (!host || !opts) return;
+    function setStatus(btn, kind, text) {
+      var card = btn && btn.closest ? btn.closest(".pp-makeup-card") : null;
+      var line = card ? card.querySelector("[data-pp-makeup-status]") : null;
+      if (!line) return;
+      line.hidden = !text;
+      line.className = "pp-makeup-card__status" + (kind ? " pp-notice pp-notice--" + kind : "");
+      line.textContent = text || "";
+    }
+    function reload() {
+      if (typeof opts.listMakeups !== "function") return;
+      void opts.listMakeups().then(function (payload) {
+        if (!host.isConnected) return;
+        rememberMakeupSessions(data, payload);
+        repaintHubOpsCard(host, data, opts);
+      });
+    }
+    host.querySelectorAll(".pp-hub-makeup-confirm [data-pp-makeup-accept]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var offerId = btn.getAttribute("data-pp-makeup-accept");
+        if (!offerId || typeof opts.respondMakeup !== "function") return;
+        btn.disabled = true;
+        setStatus(btn, "info", "Accepting…");
+        void opts
+          .respondMakeup(offerId, "accept")
+          .then(function () {
+            setStatus(btn, "info", "Accepted. This makeup is on the club roster.");
+            reload();
+          })
+          .catch(function (err) {
+            setStatus(
+              btn,
+              "error",
+              (err && (err.messageText || err.message)) || "Could not accept — try again.",
+            );
+            btn.disabled = false;
+          });
+      });
+    });
+    host.querySelectorAll(".pp-hub-makeup-confirm [data-pp-makeup-decline]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var offerId = btn.getAttribute("data-pp-makeup-decline");
+        if (!offerId || typeof opts.respondMakeup !== "function") return;
+        if (
+          !global.confirm(
+            "Decline this offer? You will forfeit the makeup and the slot may go to another family.",
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        setStatus(btn, "info", "Declining…");
+        void opts
+          .respondMakeup(offerId, "decline", "")
+          .then(function () {
+            setStatus(btn, "info", "Declined.");
+            reload();
+          })
+          .catch(function (err) {
+            setStatus(
+              btn,
+              "error",
+              (err && (err.messageText || err.message)) || "Could not decline — try again.",
+            );
+            btn.disabled = false;
+          });
+      });
+    });
   }
 
   function hubAlertKindLabel(kind) {
@@ -6342,6 +6478,7 @@
       }
     }
     bindHubOpenButtons(host, data, opts, neu);
+    bindHubMakeupConfirm(host, data, opts);
     if (host._ppTermStatusByIso || neu.querySelector('[data-pp-term-chips="this"]')) {
       applyTermDateChipStatuses(host, data, host._ppTermStatusByIso || {});
     }
@@ -6404,17 +6541,24 @@
         if (!host.isConnected) return;
         var grants = (payload && payload.grants) || [];
         var open = grants.filter(function (g) {
-          return g && (g.status === "open" || g.pending_offer);
+          var st = String((g && g.status) || "").toLowerCase();
+          return g && (st === "open" || st === "offered" || g.pending_offer);
         });
         rememberMakeupSessions(data, payload);
         repaintHubOpsCard(host, data, opts);
         var due = grants.some(function (g) {
-          return g && g.pending_offer;
+          var st = String((g && g.status) || "").toLowerCase();
+          return g && (g.pending_offer || st === "offered");
         });
         var makeupBtn = host.querySelector('.pp-hub-shortcut--makeup[data-pp-open="makeup"]');
         if (makeupBtn) {
           makeupBtn.hidden = !due;
           makeupBtn.classList.toggle("pp-hub-shortcut--makeup-due", !!due);
+        }
+        if ((data._ppMakeupPendingOffers || []).length) {
+          var stale = host.querySelector("#ppHubMakeupNotice");
+          if (stale) stale.remove();
+          return;
         }
         var shell = host.querySelector(".pp-pax-shell[data-pp-view='hub']");
         if (!shell) return;
@@ -8759,6 +8903,8 @@
         "</form>" +
         '<div id="ppAbsenceNotice" class="pp-notice" hidden></div>' +
         "</div>" +
+        '<h4 class="pp-absence-list-title" id="ppAbsenceMakeupTitle" hidden>Makeup to confirm</h4>' +
+        '<div id="ppMakeupListHost" data-pp-pending-only="1" hidden></div>' +
         '<h4 class="pp-absence-list-title">Your absence reports</h4>' +
         '<div id="ppAbsenceListHost"><p class="pp-muted">Loading…</p></div>',
     );
@@ -10953,13 +11099,28 @@
         .listMakeups()
         .then(function (payload) {
           var grants = (payload && payload.grants) || [];
-          if (!grants.length) {
+          var pendingOnly = makeupHost.getAttribute("data-pp-pending-only") === "1";
+          var title = host.querySelector("#ppAbsenceMakeupTitle");
+          var visible = grants.filter(function (g) {
+            if (!pendingOnly) return true;
+            var st = String((g && g.status) || "").toLowerCase();
+            return !!(g && (g.pending_offer || st === "offered"));
+          });
+          if (!visible.length) {
+            if (pendingOnly) {
+              makeupHost.hidden = true;
+              makeupHost.innerHTML = "";
+              if (title) title.hidden = true;
+              return;
+            }
             makeupHost.innerHTML =
               '<p class="pp-muted">No makeup grants yet. If the office issues one after a missed session without proof, it will appear here.</p>';
             return;
           }
+          makeupHost.hidden = false;
+          if (title) title.hidden = false;
           makeupHost.innerHTML =
-            '<div class="pp-absence-list">' + grants.map(makeupGrantCardHtml).join("") + "</div>";
+            '<div class="pp-absence-list">' + visible.map(makeupGrantCardHtml).join("") + "</div>";
           makeupHost.querySelectorAll("[data-pp-makeup-accept]").forEach(function (btn) {
             btn.addEventListener("click", function () {
               var offerId = btn.getAttribute("data-pp-makeup-accept");
