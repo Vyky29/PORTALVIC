@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20261007-dc-day-feedback';
+  var PORTAL_DAY_OPS_BUILD = '20261013-swap-cover';
   var venueReviewFilters = {
     venue: '',
     staff: '',

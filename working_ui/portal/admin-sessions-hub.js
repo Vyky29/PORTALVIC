@@ -2440,8 +2440,12 @@ function rosterRowToSlot(isoDate, wd, r) {
         var rosterName = resolveRosterClientName(canonicalClientSlug(repName || repId));
         if (rosterName) repName = rosterName;
         if (ov.id) painted[String(ov.id)] = true;
+        /* Cover was saved on the standing child. Remember that name so Javi still gets Christian. */
+        var fromClient = slot.portalSwapFromClient || slot.client_name;
         return Object.assign({}, slot, {
           client_name: repName,
+          portalSwapFromClient: fromClient,
+          portalSeatReplaceOverride: ov,
           portalOverrideDayMoveTag: true,
           __portalScheduleOverride: slot.__portalScheduleOverride || ov,
         });
@@ -13721,10 +13725,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         );
       }
     } else if (slot && slot.portalOverrideDayMoveTag && !st.isAbsent) {
-      var moveLab =
-        slot.__portalScheduleOverride && hubOverrideLabel(slot.__portalScheduleOverride) === "Swapped"
-          ? "Swapped"
-          : "Moved in";
+      var moveOv = slot.portalSeatReplaceOverride || slot.__portalScheduleOverride;
+      var moveLab = moveOv && hubOverrideLabel(moveOv) === "Swapped" ? "Swapped" : "Moved in";
       chips.push('<span class="override-chip override--instructor">' + esc(moveLab) + "</span>");
     }
     if (st.isCancelled) {
