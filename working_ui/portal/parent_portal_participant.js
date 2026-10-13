@@ -4886,9 +4886,7 @@
           });
           return;
         }
-        if (st !== "accepted" || !o.roster_override_id) return;
-        if (!iso || seen[iso]) return;
-        seen[iso] = true;
+        if (st !== "accepted" || !o.roster_override_id || !iso) return;
         sessions.push({
           iso: iso,
           time: String(o.session_time || "").trim(),
@@ -4899,7 +4897,86 @@
         });
       });
     });
-    return { granted: granted, sessions: sessions, pending: pending };
+    var placed = [];
+    var waiting = [];
+    sessions.forEach(function (row) {
+      if (row && row.pending) waiting.push(row);
+      else placed.push(row);
+    });
+    return {
+      granted: granted,
+      sessions: waiting.concat(mergePlacedMakeupSessions(placed)),
+      pending: pending,
+    };
+  }
+
+  function makeupClockLabel(mins) {
+    var h = Math.floor(mins / 60);
+    var m = mins % 60;
+    var hh = h % 12;
+    if (!hh) hh = 12;
+    return hh + "." + (m < 10 ? "0" : "") + m;
+  }
+
+  /** Two accepted aquatic halves the same day, same instructor, become one hour. */
+  function mergePlacedMakeupSessions(rows) {
+    var groups = Object.create(null);
+    (rows || []).forEach(function (row) {
+      if (!row || !row.iso) return;
+      var key = [
+        row.iso,
+        normName(row.venue),
+        normName(row.instructor),
+        /aquatic|swim/i.test(row.label || "") ? "aquatic" : normName(row.label),
+      ].join("|");
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(row);
+    });
+    var out = [];
+    Object.keys(groups).forEach(function (key) {
+      var list = groups[key].slice().sort(function (a, b) {
+        return parseServiceStartMinutes(a.time) - parseServiceStartMinutes(b.time);
+      });
+      var cur = null;
+      list.forEach(function (row) {
+        var start = parseServiceStartMinutes(row.time);
+        var end = parseServiceEndMinutes(row.time);
+        if (!cur) {
+          cur = {
+            row: row,
+            start: start,
+            end: end,
+          };
+          return;
+        }
+        if (
+          start < 9999 &&
+          cur.end != null &&
+          start === cur.end &&
+          /aquatic|swim/i.test(row.label || "") &&
+          /aquatic|swim/i.test(cur.row.label || "")
+        ) {
+          cur.end = end;
+          return;
+        }
+        out.push(cur.row);
+        cur = { row: row, start: start, end: end };
+      });
+      if (!cur) return;
+      if (cur.end != null && cur.start < 9999 && cur.end - cur.start >= 60) {
+        var span = cur.end - cur.start;
+        cur.row = Object.assign({}, cur.row, {
+          time: makeupClockLabel(cur.start) + " to " + makeupClockLabel(cur.end),
+          label: /aquatic|swim/i.test(cur.row.label || "") ? span + "' Aquatic" : cur.row.label,
+        });
+      }
+      out.push(cur.row);
+    });
+    out.sort(function (a, b) {
+      if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
+      return parseServiceStartMinutes(a.time) - parseServiceStartMinutes(b.time);
+    });
+    return out;
   }
 
   function rememberMakeupSessions(data, payload) {
