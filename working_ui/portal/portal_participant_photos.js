@@ -238,14 +238,18 @@
 
   function ensurePhotoFrameCss() {
     if (typeof document === "undefined") return;
-    if (document.getElementById("portal-photo-frame-css")) return;
-    var s = document.createElement("style");
-    s.id = "portal-photo-frame-css";
-    s.textContent =
-      'img[data-photo-frame="1"]{object-fit:contain !important;object-position:center center !important;transform:translate(var(--photo-x,0%),var(--photo-y,0%)) scale(var(--photo-zoom,1));transform-origin:center center;}' +
+    var css =
+      'img[data-photo-frame="1"]{object-fit:cover !important;object-position:center center !important;transform:translate(var(--photo-x,0%),var(--photo-y,0%)) scale(var(--photo-zoom,1));transform-origin:center center;}' +
+      '.client-photo-lightbox__frame img[data-photo-frame="1"]{object-fit:contain !important;}' +
       "[data-photo-adjust]{cursor:pointer;}" +
       ".portal-roster-avatar,.pax-contacts-avatar,.session-name-photo,.calendar-day-avatar--photo,.clients-grid-avatar,.today-participant-chip__avatar,.client-photo-slot--has-photo{overflow:hidden;}";
-    (document.head || document.documentElement).appendChild(s);
+    var s = document.getElementById("portal-photo-frame-css");
+    if (!s) {
+      s = document.createElement("style");
+      s.id = "portal-photo-frame-css";
+      (document.head || document.documentElement).appendChild(s);
+    }
+    if (s.textContent !== css) s.textContent = css;
   }
 
   function photoFrameForUrl(name, clientId, url) {
