@@ -13768,6 +13768,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</span>"
       );
     }
+    if (st.boardPlace === "kept" && st.coverByLabel) {
+      chips.push(
+        '<span class="override-chip override--instructor">' +
+          esc(st.coverByLabel + " covering") +
+          "</span>"
+      );
+    }
     if (st.boardPlace === "mirror" || (st.isCoverNeeded && st.boardPlace !== "away" && st.boardPlace !== "cover")) {
       chips.push('<span class="override-chip override--cover-needed">COVER NEEDED</span>');
     } else if (
@@ -14145,6 +14152,39 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
       if (realCover) {
         pushCoverColumn(slot.portalCoveringStaffName || slot.portalCoveringStaffId, fromLabel);
+        /*
+         * Change instructor while they are still on the rota (no day-off yet).
+         * Keep their clients on this column, with a chip naming who is covering.
+         */
+        if (!awayOrig.length) {
+          var keptCover = dayBoardStaffLabel(
+            slot.portalCoveringStaffName || slot.portalCoveringStaffId
+          );
+          for (var keepI = 0; keepI < origInsts.length; keepI++) {
+            var keepWho = origInsts[keepI];
+            if (!keepWho || keepWho === "Unassigned") continue;
+            if (dayBoardStaffKeysEqual(keepWho, slot.portalCoveringStaffName || slot.portalCoveringStaffId)) continue;
+            if (hubStaffAwayOnIso(hub, iso, keepWho)) continue;
+            pushBoardItem(
+              dayBoardStaffKey(keepWho),
+              dayBoardStaffLabel(keepWho),
+              slot,
+              cloneBoardState(st, {
+                boardPlace: "kept",
+                coverByLabel: keptCover,
+                isStaffDayOff: false,
+                isCoverNeeded: false,
+                isRealCover: false,
+                isInstructorReassign: false,
+                tone: st.isAbsent
+                  ? "absent"
+                  : st.isCancelled
+                    ? "cancelled"
+                    : st.tone,
+              })
+            );
+          }
+        }
         /*
          * Slash Multi seats: after Timetable resolve, still paint sibling workers
          * who remain on the seat (not the covered-away token).

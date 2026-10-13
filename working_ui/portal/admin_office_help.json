@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-13-v410",
+  "version": "2026-10-13-v411",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -296,6 +296,7 @@
           ],
           "tips": [
             "One change, one screen. Rest of term goes through Edit term slot. One date goes through Schedule & Covers.",
+            "Two trials, cancel one: Schedule and Covers, that date, Change, Cancelled, Save override. The other trial stays. Edit term slot would change the standing weekday for the rest of term.",
             "A new family on an open seat is Places. It is not a one-day cover.",
             "Who works which hours is Instructor timetable (H&R), not Edit term slot.",
             "Do not use Schedule & Covers to swap someone for the whole term. An orange or red banner means that one-day action fights the standing roster. Open Edit term slot from the drawer.",
@@ -316,6 +317,7 @@
             ],
             "tips": [
               "Un cambio, una pantalla. El resto del term va por Edit term slot. Una fecha va por Schedule & Covers.",
+              "Dos trials, cancelar uno: Schedule and Covers, esa fecha, Change, Cancelled, Save override. El otro trial se queda. Edit term slot cambiaria el dia fijo el resto del term.",
               "Una familia nueva en una plaza libre es Places. No es un cover de un dia.",
               "Quien trabaja que horas es Instructor timetable (H&R), no Edit term slot.",
               "No uses Schedule & Covers para cambiar a alguien el term entero. Un aviso naranja o rojo quiere decir que esa accion de un dia choca con el roster fijo. Abre Edit term slot desde el cajon.",
@@ -389,6 +391,7 @@
           ],
           "tips": [
             "Change Instructor replaces the person on that row. Use Add session card when someone already on the board picks up extra hours, or when one seat must split between two people.",
+            "Change Instructor before the day off is requested: Sessions Overview keeps that worker's clients, with a chip naming who is covering. Their Staff app shows Session Cancelled until they request the day. After the day off, the column goes red.",
             "Do not Change Instructor over a worker who is off. That overwrites their seat.",
             "On the row, Add a new card (keep this seat) copies time, client and venue into the form. You still choose the staff."
           ]
