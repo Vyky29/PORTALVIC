@@ -4052,7 +4052,8 @@
 
   /**
    * Patience Day Centre with Ikram 11-4, Mon / Tue / Wed / Fri, from 5 Oct 2026
-   * through 17 Dec. Before that she is shadowing. Half term 26-30 Oct is skipped.
+   * through 17 Dec, including 26-30 Oct. Before that she is shadowing.
+   * After-school is closed that week; her morning Day Centre still runs.
    * From Wed 7 Oct her Ikram 11-4 is the Wednesday board (Luliya moves to Ikram then Fadi).
    */
   var PATIENCE_IKRAM_FROM = "2026-10-05";
@@ -4071,7 +4072,7 @@
         String(cur.getMonth() + 1).padStart(2, "0") +
         "-" +
         String(cur.getDate()).padStart(2, "0");
-      if (dayName[dow] && (iso < "2026-10-26" || iso > "2026-10-30")) {
+      if (dayName[dow]) {
         out.push({ iso: iso, day: dayName[dow] });
       }
       cur.setDate(cur.getDate() + 1);

@@ -133,12 +133,9 @@
     return /^fadi\b/i.test(String(name || "").trim());
   }
 
-  /** Patience Ikram seat skips half term 26-30 Oct, same as the roster inject. */
+  /** Patience keeps her morning Day Centre through 26-30 Oct. After-school is the part that stops. */
   function patienceDcColumnsHalfTerm(iso, columns) {
-    if (!iso || iso < "2026-10-26" || iso > "2026-10-30") return columns;
-    return (columns || []).filter(function (col) {
-      return !/\bpatience\b/i.test(String((col && col.staff) || ""));
-    });
+    return columns;
   }
 
   /** From Mon 28 Sep Luliya leaves Monday and Friday Day Centre. Wednesday she is back from 7 Oct. Tue DC stays. */

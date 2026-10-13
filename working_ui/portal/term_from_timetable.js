@@ -680,6 +680,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-10-14",
       "2026-10-20",
       "2026-10-21",
+      "2026-10-27",
+      "2026-10-28",
       "2026-11-03",
       "2026-11-04",
       "2026-11-10",
@@ -1035,6 +1037,10 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-10-22",
       "2026-10-23",
       "2026-10-24",
+      "2026-10-26",
+      "2026-10-28",
+      "2026-10-29",
+      "2026-10-30",
       "2026-10-31",
       "2026-11-02",
       "2026-11-04",
@@ -1087,7 +1093,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       String(cur.getMonth() + 1).padStart(2, "0") +
       "-" +
       String(cur.getDate()).padStart(2, "0");
-    if ((dow === 1 || dow === 2 || dow === 3 || dow === 5) && (iso < "2026-10-26" || iso > "2026-10-30")) {
+    if (dow === 1 || dow === 2 || dow === 3 || dow === 5) {
       dates.push(iso);
     }
     cur.setDate(cur.getDate() + 1);

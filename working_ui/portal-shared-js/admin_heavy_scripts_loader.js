@@ -6,16 +6,16 @@
 
   var SETS = {
     roster: [
-      "/portal/term_from_timetable.js?v=20260928-patience-tue",
+      "/portal/term_from_timetable.js?v=20261013-dc-half-blue",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260912-amaar-mon-keep",
       "/portal/clients_info_embed.js?v=20260910-joelle-406",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
-      "/portal/portal_roster_canonical.js?v=20261013-acat-tue",
+      "/portal/portal_roster_canonical.js?v=20261013-dc-half-blue",
       "/portal/autumn_staff_hours_reference.js?v=20261003-rota-silent",
-      "/portal/portal_dc_services_local.js?v=20261007-dc-day-feedback",
+      "/portal/portal_dc_services_local.js?v=20261013-dc-half-blue",
       "/portal/portal_capacity_chain_occupants.js?v=20261013-acat-card",
       "/portal/portal_overview_capacity_chain.js?v=20261005-javi-book",
       "/portal/portal_client_day_visibility.js?v=20261007-dc-day-feedback",

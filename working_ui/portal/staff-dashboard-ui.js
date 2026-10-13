@@ -2779,7 +2779,7 @@
     }
     /**
      * After-school half term, Day Centre still open (weekday, not a weekend closure).
-     * Dual staff keep a green/red cell: morning open, afternoon closed.
+     * Staff with a morning Day Centre shift keep a normal open day. Afternoon sessions do not show.
      */
     function portalAfterSchoolHalfTermDayCentreStillOpen(iso){
       const key = String(iso || '').trim().slice(0, 10);
@@ -4013,14 +4013,10 @@
           const programmeBooks = (termStaffId && asDcOpen)
             ? portalTermStaffWeekdayProgrammeBooks(termStaffId, dayWordRoster)
             : { dc: false, after: false };
-          /* Day Centre open (morning worked) + after-school closed: red above, green below. */
-          if(asDcOpen && programmeBooks.dc && programmeBooks.after && !beforeFirst && !termClosedDay){
-            cls += ' term-cal-day--split-worked-off';
-            label = `${day}, day centre open, afternoon closed`;
-            parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${isoKey}" data-term-review-weekday="${dayWordRoster}" data-term-review-judgement="0" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
-            continue;
-          }
-          if(halfBlocksNav){
+          /* After-school half term, Day Centre still open: the day stays the normal
+             open blue. Afternoon sessions are omitted; only the morning DC shifts show. */
+          const dcMorningOpen = asDcOpen && programmeBooks.dc && !beforeFirst && !termClosedDay;
+          if(halfBlocksNav && !dcMorningOpen){
             const ovPulseHalf = (termClosedDay || beforeFirst)
               ? ''
               : portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWordRoster);
@@ -4046,7 +4042,7 @@
             if(ovPulseHalf && dayFlagsOff && dayFlagsOff.hasAbsentAnnounced){
               cls += ' term-cal-day--with-badge';
             }
-          } else if(isWorked){
+          } else if(isWorked || dcMorningOpen){
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const fb = getTermFeedbackStateForDay(y, monthIndex, day);
             const dayWordNav = dt.toLocaleDateString('en-GB', { weekday: 'long' });

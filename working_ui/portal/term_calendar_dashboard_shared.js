@@ -342,6 +342,8 @@
     var weekendFrom = normIso(t.termAfterSchoolWeekendFrom) || "2026-09-05";
     var weekdayFrom = normIso(t.termAfterSchoolWeekdayFrom) || "2026-09-07";
     var dow = new Date(iso + "T12:00:00").getDay();
+    var cal = global.PortalTermCalendar;
+    if (cal && typeof cal.isClosedIso === "function" && cal.isClosedIso(iso, "afterschool")) return false;
     if (dow === 0 || dow === 6) return iso >= weekendFrom;
     return iso >= weekdayFrom;
   }
