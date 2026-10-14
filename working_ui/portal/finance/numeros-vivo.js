@@ -20,15 +20,15 @@ function panelHechos() {
     <p class="meta">Hoja al 14 oct 2026. Es la misma en todas las hojas en uso. Day Centre es Victor y Raul.</p>
     <div class="kpis">
       <div class="kpi"><div class="v">£212,125.30</div><div class="l">Day Centre, sep 25 a jul 26</div></div>
-      <div class="kpi"><div class="v">£196,577.09</div><div class="l">Ya entrado. Fadi el 23 sep</div></div>
-      <div class="kpi"><div class="v">£15,548.21</div><div class="l">Falta: Ikram £12,000 y Timi £3,548.21</div></div>
+      <div class="kpi"><div class="v">£196,725.30</div><div class="l">Ya entrado. Fadi el 8 oct, uplift de Timi el 5 oct</div></div>
+      <div class="kpi"><div class="v">£15,400.00</div><div class="l">Falta: Ikram £12,000 y Timi £3,400</div></div>
     </div>
     <div class="kpis">
-      <div class="kpi"><div class="v">£93,247.54</div><div class="l">Remanente ahora</div></div>
-      <div class="kpi"><div class="v">£26,790.77</div><div class="l">Victor por coger ahora</div></div>
-      <div class="kpi"><div class="v">£46,623.77</div><div class="l">Raul por coger ahora</div></div>
+      <div class="kpi"><div class="v">£93,395.75</div><div class="l">Remanente ahora</div></div>
+      <div class="kpi"><div class="v">£26,864.88</div><div class="l">Victor por coger ahora</div></div>
+      <div class="kpi"><div class="v">£46,697.87</div><div class="l">Raul por coger ahora</div></div>
     </div>
-    <div class="note">Victor ya cogio £19,833 (Michelle £12,000 y £7,833 de julio). Cuando entren los £15,548.21, Victor coge £34,564.88 y Raul £54,397.87. Tarjetas personales, sin top: Victor £18,338.37, Raul £19,088.99, Javier £10,753.21. Para igualar a Raul: Victor £750.62 y Javier £8,335.78. No se ha dado.</div>
+    <div class="note">Victor ya cogio £19,833 (Michelle £12,000 y £7,833 de julio). Cuando entren los £15,400, Victor coge £34,564.88 y Raul £54,397.87. Tarjetas personales, sin top: Victor £18,338.37, Raul £19,088.99, Javier £10,753.21. Para igualar a Raul: Victor £750.62 y Javier £8,335.78. No se ha dado.</div>
   `;
 }
 
@@ -91,7 +91,7 @@ async function panelPortal() {
         html += `<tr><td>${esc(r.inv)}</td><td>${esc(r.term)}</td><td>${esc(r.desc)}</td><td class="num">${gbp(r.left)}</td></tr>`;
       });
       html += "</table></div>";
-      html += '<div class="warn">Si el banco ya cobro y la factura sigue aqui, el portal no la tiene marcada como pagada. Fadi junio y julio, £22,662.50, entraron el 23 sep aunque el portal no lo diga.</div>';
+      html += '<div class="warn">Si el banco ya cobro y la factura sigue aqui, el portal no la tiene marcada como pagada. Fadi junio y julio, £22,662.50, entraron el 8 oct aunque el portal no lo diga.</div>';
     }
     box.innerHTML = html;
     meta.textContent = rows.length + " facturas, " + new Date().toLocaleString("en-GB", { timeZone: "Europe/London" }) + ".";
