@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v420",
+  "version": "2026-10-14-v421",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -106,6 +106,9 @@
             "photo",
             "foto",
             "day centre",
+            "half term",
+            "bespoke",
+            "tinashe",
             "fila",
             "domingo"
           ],
@@ -132,7 +135,8 @@
             "Parents do not see instructor day offs or COVER NEEDED — that is office/staff only.",
             "Aquatic halves may merge on Staff Today; Overview / Schedule keep 30-minute cards when needed.",
             "The page itself stays quiet. The i next to Sessions Overview holds what the board is. Live row counts stay off the page.",
-            "Columns with a Day Centre card sit together at the start of the first row. If that row still has space, someone without Day Centre can fill it. A new row starts only when the row above is full, including on Sunday."
+            "Columns with a Day Centre card sit together at the start of the first row. If that row still has space, someone without Day Centre can fill it. A new row starts only when the row above is full, including on Sunday.",
+            "October half term (24 Oct to 1 Nov) is morning Day Centre only. After-school, weekend, and Bespoke are off. Tinashe does not appear on those days."
           ],
           "es": {
             "title": "Sessions Overview (el tablero del dia)",

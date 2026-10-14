@@ -4232,19 +4232,30 @@ function rosterRowToSlot(isoDate, wd, r) {
   }
 
   /** 2026/27: 1–4 Sep Day Centre only; ASW/Climb/Multi from Sat 5 Sep.
-   *  Oct half term: morning Day Centre only. After-school and weekend stay off. */
+   *  Oct half term: morning Day Centre only. After-school, Bespoke, and weekend stay off. */
   var AUTUMN_DC_ONLY_FROM = "2026-09-01";
   var AUTUMN_ASW_FROM = "2026-09-05";
+  var AUTUMN_HALF_TERM_FROM = "2026-10-24";
+  var AUTUMN_HALF_TERM_TO = "2026-11-01";
+  function autumnHalfTermNonDayCentreClosed(iso) {
+    return iso >= AUTUMN_HALF_TERM_FROM && iso <= AUTUMN_HALF_TERM_TO;
+  }
   function rosterServiceAllowedOnAutumnDate(service, isoDate) {
     var iso = String(isoDate || "").trim().substring(0, 10);
     if (!iso) return true;
     if (iso >= AUTUMN_DC_ONLY_FROM && iso < AUTUMN_ASW_FROM) return isDayCentreService(service);
+    /* Bespoke closes with after-school. Do not keep it because a calendar script is stale. */
+    if (!isDayCentreService(service) && autumnHalfTermNonDayCentreClosed(iso)) return false;
+    if (
+      isDayCentreService(service) &&
+      ((iso >= "2026-10-24" && iso <= "2026-10-25") || (iso >= "2026-10-31" && iso <= "2026-11-01"))
+    ) {
+      return false;
+    }
     var cal = global.PortalTermCalendar;
     if (cal && typeof cal.isClosedIso === "function") {
       var kind = isDayCentreService(service) ? "day_centre" : "afterschool";
       if (cal.isClosedIso(iso, kind)) return false;
-    } else if (!isDayCentreService(service) && iso >= "2026-10-24" && iso <= "2026-11-01") {
-      return false;
     }
     return true;
   }
@@ -8933,9 +8944,14 @@ function rosterRowToSlot(isoDate, wd, r) {
       out = annotateBespokeSharedUnitKeys(out);
       out = applyShadowingHostDisplay(this, out);
       out = injectDutyPersonCards(this, out, isoDate, wd);
-      /* Half term and other programme closures: drop after-school even if an override injected it. */
+      /* Half term: drop after-school and Bespoke even if an override injected them. */
       out = out.filter(function (s) {
-        if (!s || !clean(s.service)) return true;
+        if (!s) return false;
+        if (autumnHalfTermNonDayCentreClosed(String(isoDate || "").slice(0, 10))) {
+          if (isBespokeService(s.service)) return false;
+          if (/^tinashe\b/i.test(clean(s.client_name))) return false;
+        }
+        if (!clean(s.service)) return true;
         return rosterServiceAllowedOnAutumnDate(s.service, isoDate);
       });
       /* One pass: auto consecutive swim merge using this day's slots only. */

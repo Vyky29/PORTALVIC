@@ -3610,17 +3610,20 @@
     return out;
   }
 
-  /** After-school / weekend half term, and Day Centre on the flanking weekends. */
+  /** After-school, Bespoke, and weekend half term. Day Centre stays open on the weekdays. */
   function autumnProgrammeClosedOnIso(service, iso) {
     var d = normIso(iso);
     if (!d) return false;
-    var cal = typeof window !== "undefined" ? window.PortalTermCalendar : null;
-    var kind = isDayCentreService(service) ? "day_centre" : "afterschool";
-    if (cal && typeof cal.isClosedIso === "function") return !!cal.isClosedIso(d, kind);
-    if (kind === "day_centre") {
-      return (d >= "2026-10-24" && d <= "2026-10-25") || (d >= "2026-10-31" && d <= "2026-11-01");
+    var bespoke = isBespokeService(service);
+    var dc = isDayCentreService(service) && !bespoke;
+    if (!dc && d >= "2026-10-24" && d <= "2026-11-01") return true;
+    if (dc && ((d >= "2026-10-24" && d <= "2026-10-25") || (d >= "2026-10-31" && d <= "2026-11-01"))) {
+      return true;
     }
-    return d >= "2026-10-24" && d <= "2026-11-01";
+    var cal = typeof window !== "undefined" ? window.PortalTermCalendar : null;
+    var kind = dc ? "day_centre" : "afterschool";
+    if (cal && typeof cal.isClosedIso === "function") return !!cal.isClosedIso(d, kind);
+    return false;
   }
 
   function autumnStandingServiceAllowedOnIso(service, iso) {

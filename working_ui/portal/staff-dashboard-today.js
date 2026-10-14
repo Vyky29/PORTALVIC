@@ -3878,25 +3878,34 @@
         return true;
       });
     }
-    /** Half term: morning Day Centre stays. After-school and weekend cards do not. */
+    /** Half term: morning Day Centre stays. After-school, Bespoke, and weekend cards do not. */
     function portalTodayDropHalfTermClosedProgramme(items, sessionDateKey){
       var iso = String(sessionDateKey || '').slice(0, 10);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !Array.isArray(items)) return items || [];
+      var half = iso >= '2026-10-24' && iso <= '2026-11-01';
       var cal = typeof window !== 'undefined' ? window.PortalTermCalendar : null;
       function closed(kind){
-        if(cal && typeof cal.isClosedIso === 'function') return !!cal.isClosedIso(iso, kind);
-        if(kind === 'day_centre'){
+        if(kind !== 'day_centre' && half) return true;
+        if(kind === 'day_centre' && half){
           return (iso >= '2026-10-24' && iso <= '2026-10-25') || (iso >= '2026-10-31' && iso <= '2026-11-01');
         }
-        return iso >= '2026-10-24' && iso <= '2026-11-01';
+        if(cal && typeof cal.isClosedIso === 'function') return !!cal.isClosedIso(iso, kind);
+        return false;
       }
       if(!closed('afterschool') && !closed('day_centre')) return items;
       return items.filter(function(it){
         if(!it || (it.kind !== 'client' && it.kind !== 'available')) return true;
         var base = it.__portalBaseSession || it;
+        var blob = [
+          it.activity, it.service, it.name, it.clientId,
+          base && base.rosterService, base && base.service, base && base.activity,
+          base && base.clientId, base && base.clientName, base && base.client_name
+        ].join(' ');
+        var bespoke = /bespoke/i.test(blob) || /^tinashe\b/i.test(String(it.name || it.clientId || ''));
+        if(bespoke) return !closed('afterschool');
         var dc = portalTodaySessionIsDayCentre(base) || portalTodaySessionIsDayCentre(it);
         if(!dc){
-          var svc = String(it.activity || it.service || base.rosterService || base.service || base.activity || '');
+          var svc = String(it.activity || it.service || (base && (base.rosterService || base.service || base.activity)) || '');
           dc = /day\s*centre/i.test(svc);
         }
         return !closed(dc ? 'day_centre' : 'afterschool');

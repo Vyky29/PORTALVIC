@@ -471,6 +471,8 @@
         var iso = String((dr && dr.date) || "").slice(0, 10);
         if (!iso || iso < TERM_FROM || iso > TERM_THROUGH) return;
         if (!isoInWindow(iso, win)) return;
+        /* Oct half term: no Bespoke (Tinashe / Cyrus). Morning Day Centre stays. */
+        if (iso >= "2026-10-24" && iso <= "2026-11-01") return;
         (dr.cells || []).forEach(function (cell, ci) {
           var band = String((cell && cell.band) || "").toLowerCase();
           if (band !== "bespoke") return;

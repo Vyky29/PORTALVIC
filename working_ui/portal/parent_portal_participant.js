@@ -4196,9 +4196,11 @@
       var col = jsDow === 0 ? 6 : jsDow - 1;
       var kind = dcCols[col] ? "day_centre" : "afterschool";
       var closed =
-        global.PortalTermCalendar && typeof global.PortalTermCalendar.isClosedIso === "function"
-          ? global.PortalTermCalendar.isClosedIso(iso, { serviceKind: kind })
-          : isClubClosedIso(iso, data, kind === "day_centre" ? "Day Centre" : "Aquatic");
+        kind !== "day_centre" && iso >= "2026-10-24" && iso <= "2026-11-01"
+          ? true
+          : global.PortalTermCalendar && typeof global.PortalTermCalendar.isClosedIso === "function"
+            ? global.PortalTermCalendar.isClosedIso(iso, { serviceKind: kind })
+            : isClubClosedIso(iso, data, kind === "day_centre" ? "Day Centre" : "Aquatic");
       if (!closed) {
         // 1–4 Sept 2026: Day Centre only — other services start 5 Sept.
         // A term place with fromIso does not paint earlier weeks of that weekday.
