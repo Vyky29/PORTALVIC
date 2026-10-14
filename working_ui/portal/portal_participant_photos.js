@@ -338,12 +338,13 @@
     return false;
   }
 
-  function participantAvatarPublicUrl(storagePath) {
+  /** Live path never changes on a new photo, so ?v= is what makes browsers drop the old face. */
+  function participantAvatarPublicUrl(storagePath, version) {
     var path = String(storagePath || "").trim();
     if (!path) return "";
     var base = String(global.SUPABASE_URL || "").replace(/\/$/, "");
     if (!base) return "";
-    return (
+    var url =
       base +
       "/storage/v1/object/public/participant-avatars/" +
       path
@@ -351,8 +352,9 @@
         .map(function (part) {
           return encodeURIComponent(part);
         })
-        .join("/")
-    );
+        .join("/");
+    var v = String(version || "").trim();
+    return v ? url + "?v=" + encodeURIComponent(v) : url;
   }
 
   function refreshOpenParticipantPhotos() {
@@ -377,8 +379,8 @@
     if (!sb || typeof sb.from !== "function") return Promise.resolve(false);
     function pull(withFrame) {
       var cols = withFrame
-        ? "contact_id, display_name, avatar_storage_path, avatar_frame"
-        : "contact_id, display_name, avatar_storage_path";
+        ? "contact_id, display_name, avatar_storage_path, avatar_updated_at, avatar_frame"
+        : "contact_id, display_name, avatar_storage_path, avatar_updated_at";
       return sb.from("portal_participants").select(cols).limit(2000);
     }
     return pull(true)
@@ -403,7 +405,7 @@
           /* Parent pages take the family photo from the portal API, not this index. */
           if (!photoFrameSurfaceOn()) return;
           if (!r.avatar_storage_path) return;
-          var url = participantAvatarPublicUrl(r.avatar_storage_path);
+          var url = participantAvatarPublicUrl(r.avatar_storage_path, r.avatar_updated_at);
           if (!url) return;
           portalRegisterParticipantStorageAvatar(r.contact_id, r.display_name, url);
           var nk = storageAvatarKey(r.display_name);

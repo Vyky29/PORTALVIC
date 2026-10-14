@@ -9,12 +9,12 @@
     return String(global.SUPABASE_URL || "").replace(/\/$/, "");
   }
 
-  function avatarPublicUrl(storagePath) {
+  function avatarPublicUrl(storagePath, version) {
     var path = String(storagePath || "").trim();
     if (!path) return "";
     var base = supabaseUrl();
     if (!base) return "";
-    return (
+    var url =
       base +
       "/storage/v1/object/public/participant-avatars/" +
       path
@@ -22,8 +22,9 @@
         .map(function (seg) {
           return encodeURIComponent(seg);
         })
-        .join("/")
-    );
+        .join("/");
+    var v = String(version || "").trim();
+    return v ? url + "?v=" + encodeURIComponent(v) : url;
   }
 
   async function hydrateParticipantAvatarsFromSupabase() {
@@ -34,12 +35,12 @@
 
     var res = await sb
       .from("portal_participants")
-      .select("contact_id, display_name, avatar_storage_path, avatar_frame")
+      .select("contact_id, display_name, avatar_storage_path, avatar_updated_at, avatar_frame")
       .not("avatar_storage_path", "is", null);
     if (res.error && /avatar_frame/i.test(String((res.error && res.error.message) || ""))) {
       res = await sb
         .from("portal_participants")
-        .select("contact_id, display_name, avatar_storage_path")
+        .select("contact_id, display_name, avatar_storage_path, avatar_updated_at")
         .not("avatar_storage_path", "is", null);
     }
     if (res.error || !Array.isArray(res.data)) {
@@ -53,7 +54,7 @@
         global.portalRegisterParticipantPhotoFrame(row.contact_id, row.display_name, row.avatar_frame);
       }
       if (!row.avatar_storage_path) return;
-      var url = avatarPublicUrl(row.avatar_storage_path);
+      var url = avatarPublicUrl(row.avatar_storage_path, row.avatar_updated_at);
       if (!url) return;
       global.portalRegisterParticipantStorageAvatar(row.contact_id, row.display_name, url);
     });
