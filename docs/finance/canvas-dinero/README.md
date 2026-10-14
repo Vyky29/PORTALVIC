@@ -25,5 +25,4 @@ Canvas de Cursor, o abre el indice `dinero-indice` alli.
 | 09b | director-loans-sep25-jul26 | Sep 25 – Jul 26 · director loans (aparte) |
 | 10 | foto2-mananas-sep25-jun26 | Foto 2 remanente V&R mananas |
 | 11 | beneficio-servicios-2025-26 | Remanente afterschools + venues |
-| 12 | aug-distribution-vjr-2026 | Reparto agosto · resumen V/R/J |
 | 13 | valor-empresa-ahora | Valor ahora · caja + potes + cobros |
