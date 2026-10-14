@@ -28,7 +28,7 @@ function panelHechos() {
       <div class="kpi"><div class="v">£26,790.77</div><div class="l">Victor por coger ahora</div></div>
       <div class="kpi"><div class="v">£46,623.77</div><div class="l">Raul por coger ahora</div></div>
     </div>
-    <div class="note">Victor ya cogio £19,833 (Michelle £12,000 y £7,833 de julio). Cuando entren los £15,548.21, Victor coge £34,564.88 y Raul £54,397.87. Tarjetas hasta el 24 sep: Victor £18,422.72, Raul £19,088.99, Javier £10,753.21. Top hasta £20,000: £1,577.28, £911.01 y £9,246.79. La empresa pone £11,735.08.</div>
+    <div class="note">Victor ya cogio £19,833 (Michelle £12,000 y £7,833 de julio). Cuando entren los £15,548.21, Victor coge £34,564.88 y Raul £54,397.87. Tarjetas personales, sin top: Victor £18,338.37, Raul £19,088.99, Javier £10,753.21. Para igualar a Raul: Victor £750.62 y Javier £8,335.78. No se ha dado.</div>
   `;
 }
 
