@@ -8,6 +8,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 import {
   maskPhoneForLog,
   normalizeParentPhoneE164,
+  normalizePublicPhotoUrl,
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   parentApiMachineFooter,
@@ -15,6 +16,7 @@ import {
   withStaffApiMachineFooter,
 } from "./portal_parent_messaging.ts";
 import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
+import { sessionBlockEmailText } from "./portal_booking_context.ts";
 import {
   findStaffLeaderByUsername,
   normalizeStaffUsernameKey,
@@ -182,16 +184,27 @@ export async function notifyMakeupConfirmed(
       reason: "parent_accepted_in_portal",
     };
   } else if (parent) {
+    const instructorStem = instructorName.split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const photoUrl = instructorStem
+      ? normalizePublicPhotoUrl(`/portal/staff_photos/${instructorStem === "lulia" ? "luliya" : instructorStem}.png`)
+      : "";
+    const placeBlock = sessionBlockEmailText({
+      service: serviceLabel,
+      venue,
+      dateIso: sessionDate,
+      time: sessionTime,
+      instructor: instructorName,
+      withPhoto: !!photoUrl,
+    });
     const parentBody =
       `Hi ${parent.parent_display},\n\n` +
       `This is ClubSENsational.\n\n` +
-      `A make-up session for ${childName} is confirmed: ${whenLine}` +
-      (instructorName ? ` with ${instructorName}` : "") +
-      `.\n\n` +
+      `A makeup session for ${childName} is confirmed.\n\n` +
+      (placeBlock ? `${placeBlock}\n\n` : `Session: ${whenLine}.\n\n`) +
       `This date is booked. You do not need to accept it.\n\n` +
       `Portal: ${portalHint}\n\n` +
       parentApiMachineFooter();
-    const subject = `Make-up confirmed · ${childName}`;
+    const subject = `Makeup confirmed · ${childName}`;
 
     let emailStatus = "skipped";
     let emailOk = false;
@@ -203,6 +216,8 @@ export async function notifyMakeupConfirmed(
           to: parent.email,
           subject,
           bodyText: parentBody,
+          instructorPhotoUrl: photoUrl || undefined,
+          instructorPhotoName: instructorName || undefined,
         });
         emailOk = !!mail.ok;
         emailStatus = mail.ok ? "sent" : "failed";
@@ -218,8 +233,10 @@ export async function notifyMakeupConfirmed(
     const phone = normalizeParentPhoneE164(parent.mobile);
     if (phone) {
       try {
-        const wa = await sendParentMobileMessage(phone, parentBody, {
+        const wa = await sendParentMobileMessage(phone, parentBody.replace(/\n?\[\[photo\]\]/g, ""), {
           kind: "makeup_scheduled",
+          instructorPhotoUrl: photoUrl || undefined,
+          instructorPhotoName: instructorName || undefined,
         });
         waOk = !!wa.ok;
         waStatus = wa.ok ? (wa.channel === "sms" ? "sent_sms" : "sent") : "failed";

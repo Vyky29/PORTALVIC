@@ -645,10 +645,13 @@ async function sendCoverBatchWhatsapp(
     rosterKeyFromProfile(String(p.username || ""), String(p.full_name || "")) === rosterKey
   );
   let sent = 0;
+  let attempted = 0;
   let body = "";
   for (const p of people) {
+    if (String(p.username || "").trim().toLowerCase() === "michelle") continue;
     const phone = normalizeParentPhoneE164(String(p.phone_e164 || ""));
     if (!phone) continue;
+    attempted++;
     const first = String(p.full_name || p.username || "there").trim().split(/\s+/)[0] || "there";
     body = coverBatchParagraphs(first, facts, direction);
     const result = await sendParentMobileMessage(phone, withStaffApiMachineFooter(body), {
@@ -679,7 +682,7 @@ async function sendCoverBatchWhatsapp(
       },
     });
   }
-  if (!sent) {
+  if (!sent && attempted) {
     for (const overrideId of fresh) {
       await admin.from("portal_cover_whatsapp_sent").delete()
         .eq("override_id", overrideId)
@@ -756,9 +759,12 @@ async function sendCoverStaffWhatsapp(
     .select("id, full_name, username, phone_e164")
     .in("id", userIds);
   let sent = 0;
+  let attempted = 0;
   for (const p of people || []) {
+    if (String(p.username || "").trim().toLowerCase() === "michelle") continue;
     const phone = normalizeParentPhoneE164(String(p.phone_e164 || ""));
     if (!phone) continue;
+    attempted++;
     const first = String(p.full_name || p.username || "there").trim().split(/\s+/)[0] || "there";
     const body = coverWhatsappParagraphs(first, resolved, direction);
     const result = await sendParentMobileMessage(phone, withStaffApiMachineFooter(body), {
@@ -789,7 +795,7 @@ async function sendCoverStaffWhatsapp(
       },
     });
   }
-  if (!sent) {
+  if (!sent && attempted) {
     await admin.from("portal_cover_whatsapp_sent").delete().eq("override_id", overrideId).eq("event", event);
   }
 }

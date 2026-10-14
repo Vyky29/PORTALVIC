@@ -56,7 +56,7 @@ export async function saveParticipantAvatarWithArchive(
   photoBytes: Uint8Array,
   contentType: string,
   source: string,
-): Promise<{ avatar_path: string; archive_path: string } | null> {
+): Promise<{ avatar_path: string; archive_path: string; avatar_updated_at: string } | null> {
   if (!photoBytes.length || !contactId) return null;
 
   const ext = avatarExtension(contentType);
@@ -76,9 +76,11 @@ export async function saveParticipantAvatarWithArchive(
     }
   }
 
+  /* Same live path on every change. Short cache + ?v= on the URL, or browsers keep the old face. */
   const { error: upErr } = await admin.storage.from(AVATAR_BUCKET).upload(livePath, photoBytes, {
     contentType: contentType || (ext === "png" ? "image/png" : "image/jpeg"),
     upsert: true,
+    cacheControl: "60",
   });
   if (upErr) {
     console.warn("[participant_avatar] live upload", upErr.message);
@@ -106,7 +108,7 @@ export async function saveParticipantAvatarWithArchive(
     await insertAvatarHistory(admin, contactId, archivePath, `${source}_archive`, false);
   }
 
-  return { avatar_path: livePath, archive_path: archErr ? "" : archivePath };
+  return { avatar_path: livePath, archive_path: archErr ? "" : archivePath, avatar_updated_at: nowIso };
 }
 
 export async function removeLiveParticipantAvatar(
@@ -149,11 +151,14 @@ export async function removeLiveParticipantAvatar(
 export function participantAvatarPublicUrl(
   supabaseUrl: string,
   storagePath: string | null | undefined,
+  version?: string | null,
 ): string {
   const path = String(storagePath || "").trim();
   if (!path || !supabaseUrl) return "";
   const base = supabaseUrl.replace(/\/$/, "");
-  return `${base}/storage/v1/object/public/${AVATAR_BUCKET}/${path.split("/").map(encodeURIComponent).join("/")}`;
+  const url = `${base}/storage/v1/object/public/${AVATAR_BUCKET}/${path.split("/").map(encodeURIComponent).join("/")}`;
+  const v = String(version || "").trim();
+  return v ? `${url}?v=${encodeURIComponent(v)}` : url;
 }
 
 export function participantDocumentPublicUrl(
@@ -253,6 +258,7 @@ export async function resolveParticipantAvatarUrls(
     display_name: string;
     dob_iso?: string | null;
     avatar_storage_path?: string | null;
+    avatar_updated_at?: string | null;
   },
 ): Promise<{ avatar_url: string | null; avatar_source: string | null }> {
   const path = String(participant.avatar_storage_path || "").trim();
@@ -263,7 +269,7 @@ export async function resolveParticipantAvatarUrls(
       return { avatar_url: null, avatar_source: source || "office" };
     }
     return {
-      avatar_url: participantAvatarPublicUrl(supabaseUrl, path),
+      avatar_url: participantAvatarPublicUrl(supabaseUrl, path, participant.avatar_updated_at),
       avatar_source: source,
     };
   }

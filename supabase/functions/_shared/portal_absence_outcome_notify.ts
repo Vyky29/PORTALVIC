@@ -177,7 +177,7 @@ export async function notifyParentAbsenceOutcome(
       `To pay this into your account, please send the name on the account, the sort code, and the account number. ` +
       `Use Messages in the parent portal, or call or message 07592 558671.\n\n` +
       `Details are also in the parent portal under Credits & refunds.\n\n` +
-      `Portal: ${portalHint}\n\n— clubSENsational`;
+      `Portal: ${portalHint}\n\nThank you,\nclubSENsational`;
   } else {
     const apply = opts.creditApply || null;
     const firstOk = (apply?.applications || []).find((a) => a && a.ok);
@@ -204,7 +204,7 @@ export async function notifyParentAbsenceOutcome(
         (paidFull
           ? "That invoice is now paid in full."
           : `The remaining amount due is ${formatGbp(remain) || "reduced"}.`) +
-        `\n\nSee Credits & refunds in the parent portal: ${portalHint}\n\n— clubSENsational`;
+        `\n\nSee Credits & refunds in the parent portal: ${portalHint}\n\nThank you,\nclubSENsational`;
     } else if (gcHeld) {
       subject = amountLabel
         ? `Credit for Spring · ${child} · ${amountLabel}`
@@ -215,7 +215,7 @@ export async function notifyParentAbsenceOutcome(
         (amountLabel ? ` a ${amountLabel}` : " a") +
         ` credit for ${child}.\n\n` +
         `Because you pay by GoCardless, this credit is held for your Spring Direct Payment mandate (monthly). It is not taken off this Autumn collection.\n\n` +
-        `See Credits & refunds in the parent portal: ${portalHint}\n\n— clubSENsational`;
+        `See Credits & refunds in the parent portal: ${portalHint}\n\nThank you,\nclubSENsational`;
     } else {
       subject = amountLabel
         ? `Credit added · ${child} · ${amountLabel}`
@@ -226,7 +226,7 @@ export async function notifyParentAbsenceOutcome(
         (amountLabel ? ` a ${amountLabel}` : " a") +
         ` credit for ${child} (${session}).\n\n` +
         `It is visible under Credits & refunds in the parent portal and will reduce your next invoice / next term balance.\n\n` +
-        `Portal: ${portalHint}\n\n— clubSENsational`;
+        `Portal: ${portalHint}\n\nThank you,\nclubSENsational`;
     }
   }
 

@@ -100,7 +100,7 @@ export async function notifyParentWeeklyNoteReady(
   const noteBody = clean(opts.body || note.body, 900);
   const portalHint =
     clean(Deno.env.get("PORTAL_PARENT_PORTAL_URL"), 200) ||
-    "https://portal.clubsensational.org/parent_portal.html";
+    "https://www.clubsensational.org/parent";
 
   const waText = [
     `${childFirst}'s weekly note (${weekLabel}) is ready.`,

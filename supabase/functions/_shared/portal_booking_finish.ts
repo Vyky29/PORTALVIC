@@ -17,8 +17,11 @@ import { hashFamilyPin, newRandomFamilyPin } from "./parent_portal_pin.ts";
 import { familyPersonIdsForParent, upsertFamilyPin } from "./parent_portal_pin_family.ts";
 import {
   extractBookingRequest,
+  bookingPlaceSummary,
   bookingRequestSummary,
   normalizePendingBookingRequest,
+  requestedPlaceEmailText,
+  sessionBlockEmailText,
 } from "./portal_booking_context.ts";
 import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
 import {
@@ -488,6 +491,14 @@ export async function notifyParentFinishBooking(opts: {
   parentPhone: string | null;
   participantName: string;
   slotSummary: string | null;
+  requestedPlace?: {
+    service?: unknown;
+    venue?: unknown;
+    day?: unknown;
+    dateIso?: unknown;
+    time?: unknown;
+    instructor?: unknown;
+  } | null;
   rawToken: string;
   admin?: SupabaseClient | null;
   /** registration_submitted = pay-now copy after form submit (no suitability wording) */
@@ -499,6 +510,8 @@ export async function notifyParentFinishBooking(opts: {
   const participant = clean(opts.participantName, 120) || "your child";
   const link = finishBookingUrl(opts.rawToken);
   const slot = clean(opts.slotSummary, 200);
+  const placeBlock = opts.requestedPlace ? requestedPlaceEmailText(opts.requestedPlace) : "";
+  const placeEmail = placeBlock ? `${placeBlock}\n\n` : "";
   const autoPay = opts.variant === "registration_submitted";
   const resendHold = opts.variant === "resend_pay_hold";
   const trial = !!opts.isTrial;
@@ -543,25 +556,26 @@ export async function notifyParentFinishBooking(opts: {
         ? `Hi ${name},\n\n` +
           `Please finish booking for ${participant} now.\n\n` +
           `${link}\n\n` +
-          (slot ? `Place: ${slot}\n\n` : "") +
+          placeEmail +
           `Your place is held for 30 minutes only while you complete funding, payment and the first instalment.\n\n` +
           `If the window ends without payment, the seat returns to the Booking Portal.\n\n` +
           (trial
-            ? `After payment we send a booking-completed message with the day, time, venue and instructor.\n\n— clubSENsational`
-            : `After the office confirms your payment we send your Parent Portal PIN.\n\n— clubSENsational`)
+            ? `After payment we send a booking-completed message with the day, time, venue and instructor.\n\nThank you,\nclubSENsational`
+            : `After the office confirms your payment we send your Parent Portal PIN.\n\nThank you,\nclubSENsational`)
         : autoPay
           ? `Hi ${name},\n\n` +
             `Thank you — we received the registration for ${participant}.\n\n` +
             `Please complete booking and payment now:\n${link}\n\n` +
-            (slot ? `Requested place: ${slot}\n\n` : "") +
-            `Your place is held for 30 minutes while you pay.\n\n— clubSENsational`
+            placeEmail +
+            `Your place is held for 30 minutes while you pay.\n\nThank you,\nclubSENsational`
           : `Hi ${name},\n\n` +
             `clubSENsational has accepted the registration for ${participant}.\n\n` +
             `Please finish your booking:\n${link}\n\n` +
-            (slot ? `Requested place: ${slot}\n\n` : "") +
+            placeEmail +
             (trial
-              ? `Your place is held for 30 minutes while you pay. After payment we send a booking-completed message with the day, time, venue and instructor.\n\n— clubSENsational`
-              : `Your place is held for 30 minutes while you pay. After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`),
+              ? `Your place is held for 30 minutes while you pay. After payment we send a booking-completed message with the day, time, venue and instructor.\n\nThank you,\nclubSENsational`
+              : `Your place is held for 30 minutes while you pay. After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\nThank you,\nclubSENsational`),
+      replyFooter: "no_portal",
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-notify] email", mail.error);
@@ -625,41 +639,68 @@ async function resolveFinishBookingLeadAndReservation(
     payload_json?: unknown;
   },
   reservationIdHint: string | null,
-): Promise<{ leadId: string | null; reservationId: string | null; slotSummary: string | null }> {
+): Promise<{
+  leadId: string | null;
+  reservationId: string | null;
+  slotSummary: string | null;
+  requestedPlace: {
+    service?: unknown;
+    venue?: unknown;
+    day?: unknown;
+    dateIso?: unknown;
+    time?: unknown;
+    instructor?: unknown;
+  } | null;
+}> {
   let reservationId = reservationIdHint;
   let slotSummary: string | null = null;
+  let requestedPlace: {
+    service?: unknown;
+    venue?: unknown;
+    day?: unknown;
+    dateIso?: unknown;
+    time?: unknown;
+    instructor?: unknown;
+  } | null = null;
+
+  const placeFromHold = (hold: Record<string, unknown>) => {
+    slotSummary = bookingPlaceSummary({
+      service: hold.service_name,
+      venue: hold.venue,
+      day: hold.day_label,
+      dateIso: hold.date_iso,
+      time: hold.time_label,
+    });
+    requestedPlace = {
+      service: hold.service_name,
+      venue: hold.venue,
+      day: hold.day_label,
+      dateIso: hold.date_iso,
+      time: hold.time_label,
+      instructor: preferredInstructorForReservation(hold),
+    };
+  };
 
   if (reservationId) {
     const { data: hold } = await admin
       .from("portal_booking_slot_reservations")
-      .select("id, service_name, venue, day_label, time_label")
+      .select("id, service_name, venue, day_label, time_label, date_iso, notes, activity")
       .eq("id", reservationId)
       .maybeSingle();
-    if (hold) {
-      slotSummary = [hold.service_name, hold.venue, hold.day_label, hold.time_label]
-        .filter(Boolean)
-        .join(" · ");
-    }
+    if (hold) placeFromHold(hold as Record<string, unknown>);
   }
 
   if (!reservationId) {
     const { data: holds } = await admin
       .from("portal_booking_slot_reservations")
-      .select("id, status, service_name, venue, day_label, time_label")
+      .select("id, status, service_name, venue, day_label, time_label, date_iso, notes, activity")
       .eq("document_id", doc.id)
       .in("status", ["validated", "pending", "awaiting_payment"])
       .order("created_at", { ascending: false })
       .limit(1);
     if (holds?.[0]) {
       reservationId = String(holds[0].id);
-      slotSummary = [
-        holds[0].service_name,
-        holds[0].venue,
-        holds[0].day_label,
-        holds[0].time_label,
-      ]
-        .filter(Boolean)
-        .join(" · ");
+      placeFromHold(holds[0] as Record<string, unknown>);
     }
   }
 
@@ -682,6 +723,15 @@ async function resolveFinishBookingLeadAndReservation(
             : null,
         ) || normalizePendingBookingFromRows(byEmail);
       slotSummary = bookingRequestSummary(br);
+      if (br && !requestedPlace) {
+        requestedPlace = {
+          service: br.service_name,
+          venue: br.venue,
+          day: br.day,
+          dateIso: br.date_iso,
+          time: br.time,
+        };
+      }
     }
   }
 
@@ -703,10 +753,19 @@ async function resolveFinishBookingLeadAndReservation(
             : null,
         ) || normalizePendingBookingFromRows(byPhone);
       slotSummary = bookingRequestSummary(br);
+      if (br && !requestedPlace) {
+        requestedPlace = {
+          service: br.service_name,
+          venue: br.venue,
+          day: br.day,
+          dateIso: br.date_iso,
+          time: br.time,
+        };
+      }
     }
   }
 
-  return { leadId: [...leadIds][0] || null, reservationId, slotSummary };
+  return { leadId: [...leadIds][0] || null, reservationId, slotSummary, requestedPlace };
 }
 
 /** Prepare slot holds so finish-booking can proceed without admin Accept first. */
@@ -964,6 +1023,7 @@ export async function sendFinishBookingAfterRegistration(
       parentPhone: doc.parent_phone,
       participantName: doc.participant_name,
       slotSummary: resolved.slotSummary,
+      requestedPlace: resolved.requestedPlace,
       rawToken: minted.rawToken,
       admin,
       variant: opts?.variant || "registration_submitted",
@@ -1039,7 +1099,7 @@ export async function notifyParentPortalPin(opts: {
         `Sign in at ${portalUrl}\n` +
         `Child first name: ${first}\n` +
         `Family PIN: ${opts.pin4}\n\n` +
-        `Keep this PIN private. You can change it after login.\n\n— clubSENsational`,
+        `Keep this PIN private. You can change it after login.\n\nThank you,\nclubSENsational`,
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-pin] email", mail.error);
@@ -1085,6 +1145,17 @@ export async function notifyParentTrialBookingCompleted(opts: {
   const whenPart = when || "your booked time";
   const venuePart = venue ? ` at ${venue}` : "";
   const withWho = instructor ? `, with ${instructor}` : "";
+  const placeBlock = opts.reservation
+    ? sessionBlockEmailText({
+      service: opts.reservation.service_name,
+      venue: opts.reservation.venue,
+      day: opts.reservation.day_label,
+      dateIso: opts.reservation.date_iso,
+      time: opts.reservation.time_label,
+      instructor,
+      withPhoto: !!photo.url,
+    })
+    : "";
   const bodyText =
     `Booking completed for ${participant}. Trial: ${whenPart}${venuePart}${withWho}. ` +
     (photo.url
@@ -1106,13 +1177,11 @@ export async function notifyParentTrialBookingCompleted(opts: {
       bodyText:
         `Hi ${name},\n\n` +
         `Booking completed for ${participant}.\n\n` +
-        `Trial: ${whenPart}${venuePart}${withWho}.\n\n` +
-        (photo.url
-          ? `Please show them the photo so they know who to expect.\n\n`
-          : "") +
-        `See you there.\n\n— clubSENsational`,
+        (placeBlock ? `${placeBlock}\n\n` : `Trial: ${whenPart}${venuePart}${withWho}.\n\n`) +
+        `See you there.\n\nThank you,\nclubSENsational`,
       instructorPhotoUrl: photo.url || undefined,
       instructorPhotoName: photo.name || undefined,
+      replyFooter: "no_portal",
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-trial] email", mail.error);
@@ -1179,7 +1248,7 @@ export async function notifyParentCompleteGocardlessStep3(opts: {
         `Thank you — we have confirmed your first bank payment for ${participant}.\n\n` +
         `One more step: please sign in to the Parent Portal (${portalUrl}) → Invoices → tap Set up Direct Payment.\n\n` +
         `That opens a fresh bank-authorisation page. Do not reuse an old GoCardless link from WhatsApp (those expire).\n\n` +
-        `We cannot schedule future collections until GoCardless is completed.\n\n— clubSENsational`,
+        `We cannot schedule future collections until GoCardless is completed.\n\nThank you,\nclubSENsational`,
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-gc-step3] email", mail.error);

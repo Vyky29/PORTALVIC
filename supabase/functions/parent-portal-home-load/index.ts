@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
     ? await supabase
       .from("portal_participants")
       .select(
-        "contact_id, display_name, first_name, last_name, dob_iso, in_class, on_waiting_list, avatar_storage_path",
+        "contact_id, display_name, first_name, last_name, dob_iso, in_class, on_waiting_list, avatar_storage_path, avatar_updated_at",
       )
       .in("contact_id", linkedIds)
     : { data: [] as Array<Record<string, unknown>> };
@@ -131,6 +131,7 @@ Deno.serve(async (req) => {
       in_class: p?.in_class ?? row.in_class,
       on_waiting_list: p?.on_waiting_list ?? row.on_waiting_list,
       avatar_storage_path: p?.avatar_storage_path || null,
+      avatar_updated_at: p?.avatar_updated_at || null,
       city: row.city || null,
       postcode: row.postcode || null,
       email: row.email || null,
@@ -182,6 +183,7 @@ Deno.serve(async (req) => {
         display_name: String(displayName || ""),
         dob_iso: c.dob_iso,
         avatar_storage_path: c.avatar_storage_path,
+        avatar_updated_at: c.avatar_updated_at,
       });
       return {
         contact_id: c.contact_id,

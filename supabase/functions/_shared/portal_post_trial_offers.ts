@@ -18,6 +18,7 @@ import {
   parentApiMachineFooter,
 } from "./portal_parent_messaging.ts";
 import { finishBookingUrl, mintFinishBookingToken } from "./portal_booking_finish.ts";
+import { sessionBlockEmailText } from "./portal_booking_context.ts";
 import { termPayReference, tideBankDetailsFromEnv } from "./tide_bank_details.ts";
 
 const BOOKING_PORTAL_FALLBACK = "https://www.clubsensational.org/bookingportal";
@@ -183,7 +184,7 @@ function bankTransferLines(child: string, dateIso: string): string {
   const ref = termPayReference(child, dateIso);
   return (
     `Bank transfer: pay ${payee}, sort code ${sort}, account ${account}. ` +
-    `Use reference ${ref}. Then WhatsApp the office that you have paid.`
+    `Use reference ${ref}.`
   );
 }
 
@@ -193,6 +194,7 @@ function buildOfferBody(opts: {
   payName: string;
   payDate: string;
   slotLabel: string;
+  placeBlock?: string;
   deadlineLabel: string;
   finishUrl: string;
   wave: 1 | 2;
@@ -201,15 +203,20 @@ function buildOfferBody(opts: {
     opts.wave === 1
       ? `${opts.child}'s trial has finished.`
       : `Reminder: we still have not received the term payment for ${opts.child}.`;
+  const place = opts.placeBlock
+    ? `${opts.placeBlock}\n\n`
+    : `Place: ${opts.slotLabel}\n\n`;
   return (
     `Hi ${opts.first},\n\n` +
-    `${intro} To keep the same place (${opts.slotLabel}), pay ${opts.deadlineLabel}:\n` +
+    `${intro} To keep the same place, pay ${opts.deadlineLabel}.\n\n` +
+    place +
+    `1) Open the link in this email. It opens in your browser, where card or Apple Pay can go through. Card or Apple Pay confirms by itself.\n` +
     `${opts.finishUrl}\n\n` +
-    `Open this link in your email app. It opens in the browser, where card or Apple Pay can go through. Card or Apple Pay confirms by itself.\n\n` +
+    `2) If you choose a bank transfer, use the details below and message the office that you have paid.\n` +
     `${bankTransferLines(opts.payName || opts.child, opts.payDate)}\n\n` +
     `If you do not pay by then, the place is released.\n\n` +
-    `Thanks,\n` +
-    `Office | clubSENsational`
+    `Thank you,\n` +
+    `clubSENsational`
   );
 }
 
@@ -498,6 +505,12 @@ async function sendOfferWhatsapp(
     payName: child,
     payDate,
     slotLabel: placeLabel,
+    placeBlock: sessionBlockEmailText({
+      service: offer.trial_service,
+      venue: offer.trial_venue,
+      dateIso: offer.trial_session_date,
+      time: offer.trial_time_label,
+    }) || "",
     deadlineLabel,
     finishUrl: minted.url,
     wave,
@@ -521,6 +534,7 @@ async function sendOfferWhatsapp(
       to: parentEmail,
       subject: `Payment link for ${childFirst}`,
       bodyText: emailBody,
+      replyFooter: "no_portal",
     });
     emailSent = mail.ok;
     emailError = mail.ok ? "" : (mail.error || "email_failed");
@@ -663,6 +677,7 @@ async function notifyOfficeWaveFail(
         to,
         subject,
         bodyText,
+        replyFooter: "off",
       });
       if (!mail.ok) console.warn("[post-trial-office] wave fail email", to, mail.error);
     }
@@ -695,6 +710,7 @@ async function notifyOfficeNoDecision(
         to,
         subject,
         bodyText,
+        replyFooter: "off",
       });
       if (!mail.ok) console.warn("[post-trial-office] email", to, mail.error);
     }

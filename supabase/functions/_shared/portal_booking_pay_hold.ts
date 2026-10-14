@@ -9,6 +9,7 @@ import {
   sendParentMobileMessage,
 } from "./portal_parent_messaging.ts";
 import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
+import { sessionBlockEmailText } from "./portal_booking_context.ts";
 export {
   BOOKING_SLOT_HOLD_STATUSES,
   bookingActiveHoldExpiresFilter,
@@ -175,7 +176,7 @@ export async function nudgeUnpaidBookingPayHolds(
   const { data: candidates, error } = await admin
     .from("portal_booking_slot_reservations")
     .select(
-      "id, document_id, participant_name, parent_name, parent_email, parent_phone, service_name, venue, day_label, time_label, hold_expires_at, notes, status",
+      "id, document_id, participant_name, parent_name, parent_email, parent_phone, service_name, venue, day_label, time_label, date_iso, hold_expires_at, notes, status",
     )
     .eq("status", "awaiting_payment")
     .gt("hold_expires_at", now)
@@ -246,6 +247,21 @@ export async function nudgeUnpaidBookingPayHolds(
       `. Pay now or the seat goes live again` +
       (slot ? ` (${slot})` : "") +
       `: ${finishLink}`;
+    const placeBlock = sessionBlockEmailText({
+      service: row.service_name,
+      venue: row.venue,
+      day: row.day_label,
+      dateIso: row.date_iso,
+      time: row.time_label,
+    });
+    const emailBody =
+      `Hi ${parent.split(/\s+/)[0] || parent},\n\n` +
+      `Reminder: ${participant}'s place is held for about ${minsLeft} more minute` +
+      (minsLeft === 1 ? "" : "s") +
+      `. Pay now or the seat goes live again.\n\n` +
+      (placeBlock ? `${placeBlock}\n\n` : "") +
+      `${finishLink}\n\n` +
+      `Thank you,\nclubSENsational`;
 
     let emailOk = false;
     let wa: { ok: boolean; id?: string; channel?: string; error?: string } = {
@@ -258,7 +274,8 @@ export async function nudgeUnpaidBookingPayHolds(
         config: smtp,
         to: email,
         subject: `Pay within ${minsLeft} min · ${participant}`,
-        bodyText,
+        bodyText: emailBody,
+        replyFooter: "no_portal",
       });
       emailOk = !!mail.ok;
       if (!mail.ok) {

@@ -495,11 +495,36 @@ export function slotsFromRosterRows(
   iso: string,
 ): Feedback2030Slot[] {
   const wd = weekdayLongUtcNoon(iso);
+  const seatKey = (client: string, service: string, time: string) =>
+    [
+      slugClient(clientDisplayStem(client) || client),
+      slugClient(service),
+      String(time || "").trim().toLowerCase().replace(/\s+/g, " "),
+    ].join("|");
+  /* A dated row is that Tuesday's instructor. The undated template must not
+     add a second worker on the same seat (Roberto standing + Luliya dated). */
+  const datedSeats = new Set<string>();
+  for (const r of rows || []) {
+    const d = String(r.session_date || "").slice(0, 10);
+    if (d !== iso) continue;
+    datedSeats.add(seatKey(
+      String(r.client_name || ""),
+      String(r.service || ""),
+      String(r.time_slot || ""),
+    ));
+  }
   const out: Feedback2030Slot[] = [];
   for (const r of rows || []) {
     const d = String(r.session_date || "").slice(0, 10);
     if (d && d !== iso) continue;
     if (!d && String(r.day || "").trim() && String(r.day).toLowerCase() !== wd.toLowerCase()) {
+      continue;
+    }
+    if (!d && datedSeats.has(seatKey(
+      String(r.client_name || ""),
+      String(r.service || ""),
+      String(r.time_slot || ""),
+    ))) {
       continue;
     }
     const client = String(r.client_name || "").trim();

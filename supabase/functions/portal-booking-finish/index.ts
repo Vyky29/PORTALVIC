@@ -46,6 +46,7 @@ import {
   gocardlessCreateBillingRequestFlow,
 } from "../_shared/gocardless.ts";
 import {
+  bookingPlaceSummary,
   extractBookingRequest,
   reservationFieldsFromBookingRequest,
   resolveSessionDateIso,
@@ -78,15 +79,13 @@ function slotSummaryFromReservation(
   reservation: Record<string, unknown> | null | undefined,
 ): string {
   if (!reservation) return "";
-  const bits = [
-    reservation.service_name,
-    reservation.venue,
-    reservation.day_label,
-    reservation.time_label,
-  ]
-    .map((x) => clean(x, 120))
-    .filter(Boolean);
-  return bits.join(" · ");
+  return bookingPlaceSummary({
+    service: reservation.service_name,
+    venue: reservation.venue,
+    day: reservation.day_label,
+    dateIso: reservation.date_iso,
+    time: reservation.time_label,
+  }) || "";
 }
 
 function json(status: number, body: Record<string, unknown>) {

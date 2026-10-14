@@ -88,6 +88,6 @@ Deno.serve(async (req) => {
     ok: true,
     avatar_path: saved.avatar_path,
     archive_path: saved.archive_path || null,
-    avatar_url: participantAvatarPublicUrl(url, saved.avatar_path),
+    avatar_url: participantAvatarPublicUrl(url, saved.avatar_path, saved.avatar_updated_at),
   });
 });

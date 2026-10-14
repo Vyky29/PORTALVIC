@@ -358,12 +358,13 @@ Deno.serve(async (req) => {
       to: email,
       subject: "Your clubSENsational booking access code",
       bodyText:
-        `Hello ${greeting},\n\n` +
+        `Hi ${greeting},\n\n` +
         `Your access code for the clubSENsational Booking Portal is:\n\n` +
         `${code}\n\n` +
         `It expires in 10 minutes. Enter this code on the booking page to explore availability.\n\n` +
         `If you did not request this, you can ignore this email.\n\n` +
-        `— clubSENsational`,
+        `Thank you,\nclubSENsational`,
+      replyFooter: "no_portal",
     });
     if (mail.ok) channel = "email";
     else {

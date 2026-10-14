@@ -254,10 +254,12 @@ Deno.serve(async (req) => {
     `Name: ${pinName}\n` +
     `Email: ${email}\n` +
     `PIN: ${pin}\n\n` +
-    `Sign in with your first name (or email) and this PIN.\n` +
-    `The communication channel is Comms in the staff app — use that for office messages.\n` +
-    `Then complete General Induction and Safeguarding in the staff app.\n\n` +
-    `Office | clubSENsational\n`;
+    `Sign in with your first name (or email) and this PIN.\n\n` +
+    `In the staff app, complete General Induction and Safeguarding.\n\n` +
+    `Contact Sevitha to process the DBS payment.\n\n` +
+    `The communication channel is Comms in the staff app. Use that for office messages.\n\n` +
+    `Thank you,\n` +
+    `clubSENsational`;
 
   const smtp = readParentNotifySmtpConfig();
   let emailOk = false;
@@ -269,6 +271,7 @@ Deno.serve(async (req) => {
         to: email,
         subject,
         bodyText: text,
+        replyFooter: "staff",
       });
       emailOk = !!mail.ok;
       emailError = mail.ok ? null : String(mail.error || "send_failed");

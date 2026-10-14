@@ -61,6 +61,13 @@ function registrationReviewUrl(): string {
     : `${base}?view=portal_participant_documents`;
 }
 
+function leadsReviewUrl(): string {
+  const adminBase = adminPushOpenBase().replace(/\/$/, "");
+  const base = adminBase || "https://portalvic.vercel.app/admin_dashboard.html";
+  if (/[?&]view=/.test(base)) return base;
+  return base.includes("?") ? `${base}&view=leads` : `${base}?view=leads`;
+}
+
 function reenrolmentsReviewUrl(): string {
   const adminBase = adminPushOpenBase().replace(/\/$/, "");
   const origin = String(Deno.env.get("PORTAL_PUBLIC_ORIGIN") || "")
@@ -90,10 +97,6 @@ export async function notifyOfficeNewBookingLead(opts: {
   const mobile = String(opts.mobile || "").trim();
   const source = String(opts.source || "Booking Page").trim();
   const status = String(opts.clientStatus || "prospective").trim();
-  const eventLabel =
-    opts.event === "verified"
-      ? "verified OTP and unlocked the offer"
-      : "requested a Booking Portal access code";
 
   const smtp = readParentNotifySmtpConfig();
   const tos = officeNotifyEmails();
@@ -102,22 +105,24 @@ export async function notifyOfficeNewBookingLead(opts: {
       opts.event === "verified"
         ? `Booking lead verified · ${name}`
         : `New booking lead · ${name}`;
+    const headline =
+      opts.event === "verified"
+        ? `${name} entered the email code and can see the places.`
+        : `${name} asked for a Booking Portal code. The places are not open yet.`;
     const bodyText =
-      `Booking Portal lead ${eventLabel}.\n\n` +
+      `${headline}\n\n` +
       `Name: ${name}\n` +
-      `Email: ${email}\n` +
-      `Phone: ${mobile}\n` +
-      `Source: ${source}\n` +
-      `Client status: ${status}\n` +
-      `Lead id: ${opts.leadId}\n\n` +
-      `Open Admin → Enquiries & intake (Booking Portal leads).\n` +
-      `— clubSENsational portal`;
+      `Email: ${email || "-"}\n` +
+      `Phone: ${mobile || "-"}\n\n` +
+      `LEADS:\n` +
+      `${leadsReviewUrl()}`;
     for (const to of tos) {
       const mail = await sendParentEmailViaSmtp({
         config: smtp,
         to,
         subject,
         bodyText,
+        replyFooter: "off",
       });
       if (!mail.ok) {
         console.warn(
@@ -314,6 +319,7 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
           subject,
           bodyText,
           replyTo: email || undefined,
+          replyFooter: "off",
         });
         if (!plain.ok) {
           console.warn(
@@ -435,6 +441,7 @@ export async function notifyOfficeWaitlistJoin(opts: {
         to,
         subject,
         bodyText,
+        replyFooter: "off",
       });
       if (!mail.ok) {
         console.warn("[waitlist-office-notify] email failed", to, mail.error);
@@ -540,6 +547,7 @@ export async function notifyOfficeStripePaymentReceived(opts: {
         to,
         subject,
         bodyText,
+        replyFooter: "off",
       });
       if (!mail.ok) {
         console.warn("[stripe-office-notify] email failed", to, mail.error);
@@ -652,6 +660,7 @@ export async function notifyOfficeBankPaymentReported(opts: {
         to,
         subject,
         bodyText,
+        replyFooter: "off",
       });
       if (!mail.ok) {
         console.warn("[bank-report-office-notify] email failed", to, mail.error);
@@ -792,7 +801,8 @@ export async function notifyOfficePayHoldStarted(opts: {
         `Amount due: £${amount.toFixed(2)}\n\n` +
         bankBlock +
         `\nUse that reference on the transfer. After you pay, WhatsApp or email the office.\n\n` +
-        `— clubSENsational`,
+        `Thank you,\nclubSENsational`,
+      replyFooter: "no_portal",
     });
     if (!parentMail.ok) {
       console.warn("[pay-hold-parent-bank] email failed", email, parentMail.error);
@@ -806,6 +816,7 @@ export async function notifyOfficePayHoldStarted(opts: {
         to,
         subject,
         bodyText,
+        replyFooter: "off",
       });
       if (!mail.ok) {
         console.warn("[pay-hold-office-notify] email failed", to, mail.error);
@@ -909,6 +920,7 @@ export async function notifyOfficeSwNhsReferral(opts: {
         to,
         subject,
         bodyText,
+        replyFooter: "off",
       });
       if (!mail.ok) {
         console.warn("[sw-nhs-referral-office-notify] email failed", to, mail.error);

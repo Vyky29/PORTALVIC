@@ -7,11 +7,13 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 import {
   maskPhoneForLog,
   normalizeParentPhoneE164,
+  normalizePublicPhotoUrl,
   parentApiMachineFooter,
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
 } from "./portal_parent_messaging.ts";
+import { sessionBlockEmailText } from "./portal_booking_context.ts";
 import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
 
 function clean(v: unknown, max = 500): string {
@@ -54,21 +56,35 @@ export async function notifyParentMakeupOffer(
   const phone = normalizeParentPhoneE164(phoneRaw);
   const sessionDate = clean(String(offer.session_date || ""), 12);
   const venue = clean(offer.venue, 80);
+  const instructorName = clean(offer.instructor_name, 40);
   const when = [
     clean(offer.service_label, 80),
     venue,
     prettySessionDate(sessionDate),
     clean(offer.session_time, 40),
-    clean(offer.instructor_name, 40) ? "with " + clean(offer.instructor_name, 40) : "",
+    instructorName ? "with " + instructorName : "",
   ]
     .filter(Boolean)
     .join(" | ");
+  const instructorStem = instructorName.split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const photoUrl = instructorStem
+    ? normalizePublicPhotoUrl(`/portal/staff_photos/${instructorStem === "lulia" ? "luliya" : instructorStem}.png`)
+    : "";
+  const placeBlock = sessionBlockEmailText({
+    service: offer.service_label,
+    venue,
+    dateIso: sessionDate,
+    time: offer.session_time,
+    instructor: instructorName,
+    withPhoto: !!photoUrl,
+  });
   const portal =
     clean(Deno.env.get("PORTAL_PARENT_PORTAL_URL"), 200) ||
     "https://www.clubsensational.org/parent";
   const bodyText =
     `Hi ${parentName},\n\n` +
-    `A makeup is ready for ${child}: ${when}.\n\n` +
+    `A makeup is ready for ${child}.\n\n` +
+    (placeBlock ? `${placeBlock}\n\n` : `Session: ${when}.\n\n`) +
     `Please open the parent portal and Accept or Decline so we can confirm the place.\n\n` +
     `Portal: ${portal}\n\n` +
     parentApiMachineFooter();
@@ -88,6 +104,8 @@ export async function notifyParentMakeupOffer(
         to: email,
         subject,
         bodyText,
+        instructorPhotoUrl: photoUrl || undefined,
+        instructorPhotoName: instructorName || undefined,
       });
       emailOk = !!mail.ok;
       emailStatus = mail.ok ? "sent" : "failed";
@@ -103,7 +121,11 @@ export async function notifyParentMakeupOffer(
   let waId: string | null = null;
   if (phone) {
     try {
-      const wa = await sendParentMobileMessage(phone, bodyText, { kind: "makeup_offer" });
+      const wa = await sendParentMobileMessage(phone, bodyText.replace(/\n?\[\[photo\]\]/g, ""), {
+        kind: "makeup_offer",
+        instructorPhotoUrl: photoUrl || undefined,
+        instructorPhotoName: instructorName || undefined,
+      });
       waOk = !!wa.ok;
       waStatus = wa.ok ? (wa.channel === "sms" ? "sent_sms" : "sent") : "failed";
       waId = wa.ok ? clean(wa.id, 120) || null : null;

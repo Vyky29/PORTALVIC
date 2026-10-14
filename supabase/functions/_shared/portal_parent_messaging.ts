@@ -21,7 +21,7 @@ export function normalizeParentPhoneE164(raw: string): string | null {
 const API_DO_NOT_REPLY = "*Please do not reply here.*";
 
 function apiThankYou(): string {
-  return "Thank you,\nClubSENsational Portal";
+  return "Thank you,\nclubSENsational";
 }
 
 /** Parent API WhatsApp. Do not reply on this thread. */
@@ -33,10 +33,28 @@ export function parentApiMachineFooter(): string {
   );
 }
 
-/** Staff API WhatsApp. Do not reply on this thread. */
+/** Staff who already have the staff app. Comms is the channel. */
 export function staffApiMachineFooter(): string {
   return (
-    "To reply, use Messages (chat) in the Staff Portal, or call or message 07592 558671.\n\n" +
+    "To reply, use Comms in the Staff Portal, or call or message 07592 558671.\n\n" +
+    "This is an automatic message from the system. " + API_DO_NOT_REPLY + "\n\n" +
+    apiThankYou()
+  );
+}
+
+/** Onboarding hire has no staff app yet. */
+export function onboardingReplyFooter(): string {
+  return (
+    "To reply, contact the admin, or call or message 07592 558671.\n\n" +
+    "This is an automatic message from the system. " + API_DO_NOT_REPLY + "\n\n" +
+    apiThankYou()
+  );
+}
+
+/** Lead or trial family: no Parent Portal yet. */
+export function noPortalReplyFooter(): string {
+  return (
+    "To reply, call or message 07592 558671.\n\n" +
     "This is an automatic message from the system. " + API_DO_NOT_REPLY + "\n\n" +
     apiThankYou()
   );
@@ -45,10 +63,11 @@ export function staffApiMachineFooter(): string {
 function stripApiMachineFooter(body: string): string {
   return String(body || "")
     .replace(/\r\n/g, "\n")
-    .replace(/\n*Thank you,\s*\nClubSENsational(?: Portal)?\s*$/i, "")
-    .replace(/\n*—\s*clubSENsational\s*$/i, "")
+    .replace(/\n*(?:Thank you|Thanks),?\s*\n\s*clubSENsational(?:\s+office|\s+Portal)?\s*$/i, "")
+    .replace(/\n*(?:Thank you|Thanks)\s*$/i, "")
+    .replace(/\n*[—-]\s*clubSENsational\s*$/i, "")
     .replace(/\n*Thanks,\s*\nOffice\s*\|\s*clubSENsational\s*$/i, "")
-    .replace(/\n*To reply, use Messages[\s\S]*$/i, "")
+    .replace(/\n*To reply,[\s\S]*$/i, "")
     .replace(/\n*\*?This is an automatic message from the system\.[\s\S]*$/i, "")
     .replace(/\n*This message was sent automatically\. Please do not reply to it\.?\s*/gi, "\n\n")
     .replace(/\n{3,}/g, "\n\n")
@@ -62,41 +81,133 @@ export function withStaffApiMachineFooter(body: string): string {
   return stripped + "\n\n" + footer;
 }
 
-export function plainTextToHtml(
-  text: string,
-  opts?: { instructorPhotoUrl?: string; instructorPhotoName?: string },
-): string {
-  const esc = (s: string) => String(s || "")
+/**
+ * parent = family already has the Parent Portal.
+ * staff = worker already has the staff app (Comms).
+ * onboarding = hire has no app yet (contact the admin).
+ * no_portal = lead or trial, no Parent Portal yet.
+ * off = office inbox only (info@), not a person.
+ */
+export type EmailReplyFooter = "parent" | "staff" | "onboarding" | "no_portal" | "off";
+
+export function ensureEmailReplyFooter(body: string, kind: EmailReplyFooter = "parent"): string {
+  const text = String(body || "").replace(/\r\n/g, "\n").trim();
+  if (!text || kind === "off") return text;
+  if (/To reply,/i.test(text)) return text;
+  const footer = kind === "staff"
+    ? staffApiMachineFooter()
+    : kind === "onboarding"
+    ? onboardingReplyFooter()
+    : kind === "no_portal"
+    ? noPortalReplyFooter()
+    : parentApiMachineFooter();
+  const stripped = stripApiMachineFooter(text);
+  return `${stripped}\n\n${footer}`;
+}
+
+const PARENT_EMAIL_LOGO_URL = "https://www.clubsensational.org/portal/F-02-1.png";
+
+function escapeEmailHtml(s: string): string {
+  return String(s || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/** Letterhead used by every automatic parent and office email. */
+export function plainTextToHtml(
+  text: string,
+  opts?: { instructorPhotoUrl?: string; instructorPhotoName?: string },
+): string {
+  const esc = escapeEmailHtml;
   // Build real <p> paragraphs (blank lines -> paragraph gap, single \n -> <br>).
   // Outlook / Hotmail ignore white-space:pre-wrap, so rely on <p> margins + <br>.
   const normalized = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const paragraphs = normalized.split(/\n{2,}/);
+  const photo = normalizePublicPhotoUrl(String(opts?.instructorPhotoUrl || "").trim());
+  const photoName = String(opts?.instructorPhotoName || "Instructor").trim() || "Instructor";
+  let inlinePhoto = false;
+  function lineHtml(line: string): string {
+    const raw = line.trim();
+    if (raw.startsWith("[[photo]]")) {
+      inlinePhoto = true;
+      const who = raw.slice("[[photo]]".length).trim();
+      const img = photo
+        ? `<img src="${esc(photo)}" alt="${esc(who || photoName)}" width="96" height="96" style="display:block;width:96px;height:96px;border-radius:48px;border:0;margin:4px 0 8px 0;" />`
+        : "";
+      if (who && img) return `${esc(who)}<br />${img}`;
+      if (img) return img;
+      return esc(who);
+    }
+    if (/^https?:\/\/\S+$/.test(raw)) {
+      const href = esc(raw);
+      return `<a href="${href}" style="color:#1a628a;text-decoration:underline;word-break:break-all;">${href}</a>`;
+    }
+    if (/^\d{6}$/.test(raw)) {
+      return `<span style="display:inline-block;margin:4px 0 2px 0;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:0.28em;color:#102536;">${esc(raw)}</span>`;
+    }
+    return esc(line)
+      .replace(/\*Please do not reply here\.\*/g, "<strong>Please do not reply here.</strong>");
+  }
   const bodyHtml = paragraphs
     .map((para) => {
-      const inner = esc(para)
-        .replace(/\n/g, "<br>")
-        .replace(/\*Please do not reply here\.\*/g, "<strong>Please do not reply here.</strong>");
-      return `<p style="margin:0 0 14px 0">${inner || "&nbsp;"}</p>`;
+      const lines = String(para || "").split("\n");
+      const chunks: string[] = [];
+      const textLines: string[] = [];
+      const flush = () => {
+        if (!textLines.length) return;
+        chunks.push(`<p style="margin:0 0 14px 0">${textLines.join("<br />")}</p>`);
+        textLines.length = 0;
+      };
+      for (const line of lines) {
+        if (line.trim().startsWith("[[photo]]")) {
+          flush();
+          chunks.push(lineHtml(line));
+        } else {
+          textLines.push(lineHtml(line));
+        }
+      }
+      flush();
+      return chunks.join("") || `<p style="margin:0 0 14px 0">&nbsp;</p>`;
     })
     .join("");
-  let html =
-    `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0f172a">${bodyHtml}</div>`;
-  const photo = normalizePublicPhotoUrl(String(opts?.instructorPhotoUrl || "").trim());
-  if (photo) {
-    const alt = esc(String(opts?.instructorPhotoName || "Instructor").trim() || "Instructor");
-    html +=
-      `<p style="margin:16px 0 0"><img src="${esc(photo)}" alt="${alt}" width="200" style="max-width:200px;height:auto;border-radius:12px;display:block;border:1px solid #e2e8f0" /></p>`;
-  }
-  return html;
+  const photoHtml = photo && !inlinePhoto
+    ? `<p style="margin:8px 0 14px 0"><img src="${esc(photo)}" alt="${esc(String(opts?.instructorPhotoName || "Instructor").trim() || "Instructor")}" width="96" height="96" style="width:96px;height:96px;border-radius:48px;display:block;border:2px solid #e2e8f0" /></p>`
+    : "";
+  return (
+    `<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head>` +
+    `<body style="margin:0;padding:0;background:#eef4f8;">` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef4f8;border-collapse:collapse;">` +
+    `<tr><td align="center" style="padding:28px 12px;">` +
+    `<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:#ffffff;border:1px solid #d7e2ea;border-radius:16px;border-collapse:separate;">` +
+    `<tr><td style="background:#102536;padding:20px 24px 18px 24px;">` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">` +
+    `<tr>` +
+    `<td width="144" valign="middle" style="width:144px;padding:0 18px 0 0;">` +
+    `<img src="${PARENT_EMAIL_LOGO_URL}" alt="" width="128" height="128" style="display:block;width:128px;height:128px;border-radius:20px;border:0;" />` +
+    `</td>` +
+    `<td valign="middle" style="font-family:Arial,Helvetica,sans-serif;">` +
+    `<p style="margin:0;font-size:22px;line-height:1.15;font-weight:700;color:#ffffff;">clubSENsational</p>` +
+    `<p style="margin:6px 0 0 0;font-size:11px;line-height:1.3;letter-spacing:0.08em;text-transform:uppercase;color:#f9bf2e;">Autism consultancy services</p>` +
+    `</td>` +
+    `</tr></table>` +
+    `</td></tr>` +
+    `<tr><td style="height:4px;background:#f9bf2e;font-size:0;line-height:0;">&nbsp;</td></tr>` +
+    `<tr><td style="padding:26px 28px 28px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#102536;">` +
+    bodyHtml +
+    photoHtml +
+    `</td></tr>` +
+    `</table>` +
+    `</td></tr></table>` +
+    `</body></html>`
+  );
 }
 
 export function normalizePublicPhotoUrl(raw: string): string {
   const u = String(raw || "").trim();
   if (!u) return "";
+  if (/^cid:/i.test(u)) return u;
   if (/^https:\/\//i.test(u)) return u.replace(/\?.*$/, "");
   const origin = (Deno.env.get("PORTAL_PUBLIC_ORIGIN") ?? "").trim().replace(/\/$/, "") ||
     "https://portalvic.vercel.app";
@@ -311,6 +422,33 @@ async function smtpClose(
   }
 }
 
+async function fetchInlineInstructorPhoto(
+  url: string,
+): Promise<{ bytes: Uint8Array; mime: string } | null> {
+  const href = normalizePublicPhotoUrl(url);
+  if (!href) return null;
+  try {
+    const res = await fetch(href);
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (!bytes.length || bytes.length > 800_000) return null;
+    const mime = String(res.headers.get("content-type") || "image/png").split(";")[0].trim();
+    if (!/^image\//i.test(mime)) return null;
+    return { bytes, mime };
+  } catch {
+    return null;
+  }
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const size = 0x8000;
+  for (let i = 0; i < bytes.length; i += size) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + size));
+  }
+  return btoa(binary);
+}
+
 export async function sendParentEmailViaSmtp(opts: {
   config: ParentNotifySmtpConfig;
   replyTo?: string;
@@ -319,30 +457,39 @@ export async function sendParentEmailViaSmtp(opts: {
   bodyText: string;
   instructorPhotoUrl?: string;
   instructorPhotoName?: string;
+  /** Parent and staff mail get the To reply close. Office alerts pass off. */
+  replyFooter?: EmailReplyFooter;
 }): Promise<SendEmailResult> {
+  const bodyText = ensureEmailReplyFooter(opts.bodyText, opts.replyFooter || "parent");
   const fromHeader = formatFromHeader(opts.config.from);
   const fromEnvelope = parseMailbox(opts.config.from).address || opts.config.user;
   const messageId = `portal-${crypto.randomUUID()}@${fromEnvelope.split("@")[1] || "clubsensational.org"}`;
   const boundary = `portal_${crypto.randomUUID().replace(/-/g, "")}`;
-  const html = plainTextToHtml(opts.bodyText, {
-    instructorPhotoUrl: opts.instructorPhotoUrl,
+  const related = `portal_rel_${crypto.randomUUID().replace(/-/g, "")}`;
+  const photoFile = await fetchInlineInstructorPhoto(String(opts.instructorPhotoUrl || ""));
+  const photoSrc = photoFile ? "cid:instructor-photo" : opts.instructorPhotoUrl;
+  const html = plainTextToHtml(bodyText, {
+    instructorPhotoUrl: photoSrc,
     instructorPhotoName: opts.instructorPhotoName,
   });
+  const plain = bodyText.replace(/\[\[photo\]\]/g, "");
   const headers = [
     `From: ${fromHeader}`,
     `To: ${opts.to}`,
     `Subject: ${encodeSubject(opts.subject)}`,
     `Message-ID: <${messageId}>`,
     "MIME-Version: 1.0",
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    photoFile
+      ? `Content-Type: multipart/related; boundary="${related}"`
+      : `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ];
   if (opts.replyTo) headers.push(`Reply-To: ${opts.replyTo}`);
-  const body = [
+  const alternative = [
     `--${boundary}`,
     "Content-Type: text/plain; charset=UTF-8",
     "Content-Transfer-Encoding: 8bit",
     "",
-    opts.bodyText,
+    plain,
     `--${boundary}`,
     "Content-Type: text/html; charset=UTF-8",
     "Content-Transfer-Encoding: 8bit",
@@ -351,6 +498,23 @@ export async function sendParentEmailViaSmtp(opts: {
     `--${boundary}--`,
     "",
   ].join("\r\n");
+  const body = photoFile
+    ? [
+      `--${related}`,
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      "",
+      alternative.replace(/\r\n$/, ""),
+      `--${related}`,
+      `Content-Type: ${photoFile.mime}`,
+      "Content-Transfer-Encoding: base64",
+      "Content-ID: <instructor-photo>",
+      `Content-Disposition: inline; filename="instructor.${photoFile.mime.includes("jpeg") || photoFile.mime.includes("jpg") ? "jpg" : "png"}"`,
+      "",
+      wrapBase64(bytesToBase64(photoFile.bytes)),
+      `--${related}--`,
+      "",
+    ].join("\r\n")
+    : alternative;
 
   let conn: SmtpConn | null = null;
   let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;

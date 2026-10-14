@@ -14,6 +14,7 @@ import {
   sendParentMobileMessage,
 } from "./portal_parent_messaging.ts";
 import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
+import { sessionBlockEmailText } from "./portal_booking_context.ts";
 
 function clean(v: unknown, max = 2000): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -311,7 +312,6 @@ async function resolveParentContact(
 
 function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, child: string): string {
   const greet = `Hi ${parentFirstName(parentDisplay)},\n\nThis is ClubSENsational.\n\n`;
-  const signOff = `\n\n${parentApiMachineFooter()}`;
   const venue = clean(opts.venue, 80);
   const sessionDate = clean(opts.sessionDate, 12);
   const sessionTime = clockPart(clean(opts.sessionTime, 40));
@@ -332,15 +332,21 @@ function buildBody(opts: ScheduleOverrideNotifyInput, parentDisplay: string, chi
   const prior = clean(opts.priorCoveringStaffName, 120);
   const absent = clean(opts.absentInstructorName, 120);
   const continuing = clean(opts.continuingWith, 240);
-  const photoWho = kind === "instructor_restored"
-    ? `${cover} (your instructor)`
-    : continuing && absent
-    ? `${cover} (covering ${absent})`
-    : `${cover} (your instructor)`;
-  const photoLine =
-    cover && photoUrl
-      ? `\n\nPhoto of ${photoWho}: ${photoUrl}\nPlease show ${child} the photo above so they know who to expect.\n`
-      : "\n";
+  const photoLine = "\n";
+  const showInstructor =
+    kind === "instructor_change" ||
+    kind === "instructor_change_update" ||
+    kind === "instructor_restored" ||
+    (kind === "session_added" && !!cover);
+  const sessionBlock = sessionBlockEmailText({
+    service: opts.serviceLabel,
+    venue,
+    dateIso: sessionDate,
+    time: sessionTime,
+    instructor: showInstructor ? cover : "",
+    withPhoto: !!(showInstructor && cover && photoUrl),
+  });
+  const signOff = (sessionBlock ? `\n\n${sessionBlock}` : "") + `\n\n${parentApiMachineFooter()}`;
 
   if (kind === "instructor_change") {
     const changeLine = continuing
@@ -622,7 +628,7 @@ export async function notifyScheduleOverrideParent(
     child,
   );
   const subject = subjectForKind(kind, child);
-  const flat = flattenWhatsappTemplateBody(body);
+  const flat = flattenWhatsappTemplateBody(body.replace(/\n?\[\[photo\]\]/g, ""));
 
   let emailStatus = "skipped";
   let emailOk = false;
@@ -634,6 +640,8 @@ export async function notifyScheduleOverrideParent(
         to: parent.email,
         subject,
         bodyText: body,
+        instructorPhotoUrl: photoUrl || undefined,
+        instructorPhotoName: clean(opts.coveringStaffName, 120) || undefined,
       });
       emailOk = !!mail.ok;
       emailStatus = mail.ok ? "sent" : "failed";

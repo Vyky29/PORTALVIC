@@ -353,13 +353,13 @@ Deno.serve(async (req) => {
   const text =
     `Hi ${fullName.split(/\s+/)[0] || fullName},\n\n` +
     `You are ready for onboarding as ${roleLabel}.\n\n` +
-    `1) Sign in: ${loginUrl}\n` +
-    `   Email: ${email}\n` +
-    `   Temporary password: ${tempPassword}\n\n` +
-      `2) Complete your onboarding hub (photo, documents, job application, health form):\n` +
-      `${hubUrl}\n\n` +
-      `When that is done, the office checks your hub. If it is complete they will give you a 4-digit PIN for the staff app.\n\n` +
-      `Office | clubSENsational\n`;
+    `Sign in: ${loginUrl}\n` +
+    `Email: ${email}\n` +
+    `Temporary password: ${tempPassword}\n\n` +
+    `Once you are in, complete your onboarding hub: photo, documents, job application and health form.\n\n` +
+    `When you have finished, the admin will check your references. When the references and everything else are OK, you will be given the PIN for the staff app.\n\n` +
+    `Thank you,\n` +
+    `clubSENsational`;
 
   const smtp = readParentNotifySmtpConfig();
   let emailOk = false;
@@ -371,6 +371,7 @@ Deno.serve(async (req) => {
         to: email,
         subject,
         bodyText: text,
+        replyFooter: "onboarding",
       });
       emailOk = !!mail.ok;
       emailError = mail.ok ? null : String(mail.error || "send_failed");

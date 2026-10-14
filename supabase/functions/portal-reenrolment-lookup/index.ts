@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
   if (parentPersonId && contactIdParam) {
     const { data: pRow } = await supabase
       .from("portal_participants")
-      .select("contact_id, display_name, first_name, last_name, dob_iso, parent_person_id, avatar_storage_path")
+      .select("contact_id, display_name, first_name, last_name, dob_iso, parent_person_id, avatar_storage_path, avatar_updated_at")
       .eq("contact_id", contactIdParam)
       .eq("parent_person_id", parentPersonId)
       .maybeSingle();
@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
 
     const { data: participants } = await supabase
       .from("portal_participants")
-      .select("contact_id, display_name, first_name, last_name, dob_iso, parent_person_id, avatar_storage_path")
+      .select("contact_id, display_name, first_name, last_name, dob_iso, parent_person_id, avatar_storage_path, avatar_updated_at")
       .in("parent_person_id", parentIds);
 
     participantRow = (participants || []).find((p) => {
@@ -225,6 +225,9 @@ Deno.serve(async (req) => {
     dob_iso: participantRow.dob_iso ? String(participantRow.dob_iso) : null,
     avatar_storage_path: participantRow.avatar_storage_path
       ? String(participantRow.avatar_storage_path)
+      : null,
+    avatar_updated_at: participantRow.avatar_updated_at
+      ? String(participantRow.avatar_updated_at)
       : null,
   });
 

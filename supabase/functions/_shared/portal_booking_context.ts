@@ -70,17 +70,176 @@ export function normalizePendingBookingRequest(
   return extractBookingRequest({ booking_request: raw });
 }
 
+const BOOKING_DATE_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+/** 19 Oct 2026. Empty when the booking has no calendar date. */
+export function formatBookingDateLabel(iso: string | null | undefined): string | null {
+  const m = String(iso || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const month = BOOKING_DATE_MONTHS[Number(m[2]) - 1];
+  if (!month) return null;
+  return `${Number(m[3])} ${month} ${m[1]}`;
+}
+
+const VENUE_EMAIL_LABELS: Record<string, string> = {
+  acton: "Acton Centre",
+  northolt: "Northolt Centre",
+  swimfarm: "SwimFarm Centre",
+  westway: "Westway Centre",
+  chiswick: "Chiswick / Zoom",
+};
+
+/** Acton → Acton Centre. A name that already says Centre stays as written. */
+export function venueEmailLabel(raw: unknown): string {
+  const text = clean(raw, 80);
+  if (!text) return "";
+  if (/centre/i.test(text)) return text;
+  return VENUE_EMAIL_LABELS[text.toLowerCase()] || text;
+}
+
+function clockBit(raw: string): { hour24: number; label: string } | null {
+  const bit = String(raw || "").trim();
+  const m = bit.match(/^(\d{1,2})(?::|\.)(\d{2})$/) || bit.match(/^(\d{1,2})$/);
+  if (!m) return null;
+  const hour = Number(m[1]);
+  const minute = m[2] != null ? Number(m[2]) : 0;
+  if (!Number.isFinite(hour) || hour > 23 || minute > 59) return null;
+  const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return {
+    hour24: hour,
+    label: `${h12}:${String(minute).padStart(2, "0")}`,
+  };
+}
+
+/** 8-11 stay morning. 12 is noon. 1-7 are the afternoon sessions written without pm. */
+function meridiemForHour(hour24: number): "am" | "pm" {
+  if (hour24 >= 8 && hour24 <= 11) return "am";
+  if (hour24 === 0) return "am";
+  return "pm";
+}
+
+/** 5:00-5:30 → 5:00-5:30pm. Morning and afternoon in one range keep both. */
+export function formatBookingClockRange(raw: unknown): string {
+  const text = clean(raw, 80).replace(/[–—]/g, "-");
+  if (!text) return "";
+  if (/\b(am|pm)\b/i.test(text)) return text.replace(/\s+/g, "");
+  const bits = text.split(/\s*(?:-|to)\s*/i).map((part) => part.trim()).filter(Boolean);
+  const parsed = bits.map((bit) => clockBit(bit));
+  if (!parsed.length || parsed.some((bit) => !bit)) return text;
+  const start = parsed[0]!;
+  const end = parsed[parsed.length - 1]!;
+  const startMer = meridiemForHour(start.hour24);
+  const endMer = meridiemForHour(end.hour24);
+  if (parsed.length === 1) return `${start.label}${startMer}`;
+  if (startMer === endMer) return `${start.label}-${end.label}${endMer}`;
+  return `${start.label}${startMer}-${end.label}${endMer}`;
+}
+
+const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+export function weekdayFromIso(iso: string | null | undefined): string {
+  const m = String(iso || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return "";
+  const dt = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return WEEKDAY_NAMES[dt.getUTCDay()] || "";
+}
+
+/** Last line of a session block when the parent may see the instructor. */
+export const SESSION_BLOCK_PHOTO_MARK = "[[photo]]";
+
+/**
+ * Session block, one labelled line each.
+ * Service, Date, Venue, then Instructor and the photo under that line.
+ * Pass instructor only when the parent may see the worker (completed booking or existing client).
+ */
+export function sessionBlockEmailText(parts: {
+  service?: unknown;
+  venue?: unknown;
+  day?: unknown;
+  dateIso?: unknown;
+  time?: unknown;
+  instructor?: unknown;
+  withPhoto?: boolean;
+}): string | null {
+  const service = clean(parts.service, 120);
+  const time = formatBookingClockRange(parts.time);
+  const dateIso = parts.dateIso == null ? "" : String(parts.dateIso);
+  const day = clean(parts.day, 40) || weekdayFromIso(dateIso);
+  const date = formatBookingDateLabel(dateIso);
+  const when = [day, date].filter(Boolean).join(", ");
+  const venue = venueEmailLabel(parts.venue);
+  const instructor = clean(parts.instructor, 80);
+  const lines: string[] = [];
+  if (service && time) lines.push(`Service: ${service} (${time})`);
+  else if (service) lines.push(`Service: ${service}`);
+  else if (time) lines.push(`Service: ${time}`);
+  if (when) lines.push(`Date: ${when}`);
+  if (venue) lines.push(`Venue: ${venue}`);
+  if (instructor) lines.push(`Instructor: ${instructor}`);
+  if (instructor && parts.withPhoto) lines.push(SESSION_BLOCK_PHOTO_MARK);
+  return lines.length ? lines.join("\n") : null;
+}
+
+/** Finish-booking place. Service, date and venue only. No instructor and no photo. */
+export function requestedPlaceEmailText(parts: {
+  service?: unknown;
+  venue?: unknown;
+  day?: unknown;
+  dateIso?: unknown;
+  time?: unknown;
+  instructor?: unknown;
+}): string | null {
+  return sessionBlockEmailText({
+    service: parts.service,
+    venue: parts.venue,
+    day: parts.day,
+    dateIso: parts.dateIso,
+    time: parts.time,
+  });
+}
+
+export function bookingPlaceSummary(parts: {
+  service?: unknown;
+  venue?: unknown;
+  day?: unknown;
+  dateIso?: unknown;
+  time?: unknown;
+  trial?: boolean;
+}): string | null {
+  const bits = [
+    clean(parts.service, 120),
+    clean(parts.venue, 80),
+    clean(parts.day, 40),
+    formatBookingDateLabel(parts.dateIso == null ? null : String(parts.dateIso)),
+    clean(parts.time, 80),
+    parts.trial ? "Trial" : "",
+  ].filter(Boolean);
+  return bits.join(" · ") || null;
+}
+
 export function bookingRequestSummary(br: PortalBookingRequest | null): string | null {
   if (!br) return null;
-  return [
-    br.service_name,
-    br.venue,
-    br.day,
-    br.time,
-    br.booking_kind === "trial" ? "Trial" : null,
-  ]
-    .filter(Boolean)
-    .join(" · ") || br.slot_id;
+  return bookingPlaceSummary({
+    service: br.service_name,
+    venue: br.venue,
+    day: br.day,
+    dateIso: br.date_iso,
+    time: br.time,
+    trial: br.booking_kind === "trial",
+  }) || br.slot_id;
 }
 
 export function reservationFieldsFromBookingRequest(

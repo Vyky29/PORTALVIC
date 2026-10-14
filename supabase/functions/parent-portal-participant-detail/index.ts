@@ -1346,7 +1346,7 @@ Deno.serve(async (req) => {
 
   const { data: participantRow, error: partErr } = await supabase
     .from("portal_participants")
-    .select("contact_id, display_name, first_name, last_name, dob_iso, in_class, on_waiting_list, avatar_storage_path")
+    .select("contact_id, display_name, first_name, last_name, dob_iso, in_class, on_waiting_list, avatar_storage_path, avatar_updated_at")
     .eq("contact_id", contactId)
     .maybeSingle();
 
@@ -1362,6 +1362,7 @@ Deno.serve(async (req) => {
       in_class: linked.in_class,
       on_waiting_list: linked.on_waiting_list,
       avatar_storage_path: null,
+      avatar_updated_at: null,
     }
     : null);
 
@@ -1413,6 +1414,7 @@ Deno.serve(async (req) => {
     display_name: displayName,
     dob_iso: participant.dob_iso,
     avatar_storage_path: participant.avatar_storage_path,
+    avatar_updated_at: participant.avatar_updated_at,
   });
 
   let generalInfoSheet = "";

@@ -13,6 +13,7 @@ import {
 } from "../_shared/portal_booking_finish.ts";
 import {
   extractBookingRequest,
+  bookingPlaceSummary,
   bookingRequestSummary,
   normalizePendingBookingRequest,
 } from "../_shared/portal_booking_context.ts";
@@ -44,21 +45,20 @@ async function resolveLeadAndReservation(
   let slotSummary: string | null = null;
   const { data: holds } = await admin
     .from("portal_booking_slot_reservations")
-    .select("id, status, service_name, venue, day_label, time_label")
+    .select("id, status, service_name, venue, day_label, time_label, date_iso")
     .eq("document_id", doc.id)
     .in("status", ["validated", "pending"])
     .order("created_at", { ascending: false })
     .limit(1);
   if (holds?.[0]) {
     reservationId = String(holds[0].id);
-    slotSummary = [
-      holds[0].service_name,
-      holds[0].venue,
-      holds[0].day_label,
-      holds[0].time_label,
-    ]
-      .filter(Boolean)
-      .join(" · ");
+    slotSummary = bookingPlaceSummary({
+      service: holds[0].service_name,
+      venue: holds[0].venue,
+      day: holds[0].day_label,
+      dateIso: holds[0].date_iso,
+      time: holds[0].time_label,
+    });
   }
 
   const leadIds = new Set<string>();
