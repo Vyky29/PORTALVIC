@@ -120,31 +120,7 @@ export async function sendParentPortalOtpViaWhatsapp(
   const url = `https://graph.facebook.com/v20.0/${phoneId}/messages`;
   const to = phoneE164.replace(/^\+/, "");
   const template = (Deno.env.get("META_WHATSAPP_TEMPLATE_NAME") || "").trim();
-  const lang = (Deno.env.get("META_WHATSAPP_TEMPLATE_LANG") || "en").trim();
-  const payload = template
-    ? {
-      messaging_product: "whatsapp",
-      to,
-      type: "template",
-      template: {
-        name: template,
-        language: { code: lang },
-        components: [
-          { type: "body", parameters: [{ type: "text", text: code }] },
-          { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: code }] },
-        ],
-      },
-    }
-    : {
-      messaging_product: "whatsapp",
-      to,
-      type: "text",
-      text: {
-        body: textBody ||
-          `Your clubSENsational parent portal verification code is ${code}. It expires in 10 minutes. If you did not request this, ignore this message.`,
-      },
-    };
-  try {
+  const post = async (payload: Record<string, unknown>) => {
     const r = await fetch(url, {
       method: "POST",
       headers: {
@@ -153,11 +129,49 @@ export async function sendParentPortalOtpViaWhatsapp(
       },
       body: JSON.stringify(payload),
     });
-    if (!r.ok) {
-      console.warn("[parent-portal-otp] WhatsApp send failed", r.status, await r.text());
-      return false;
+    return { ok: r.ok, status: r.status, text: r.ok ? "" : await r.text() };
+  };
+  try {
+    if (!template) {
+      const res = await post({
+        messaging_product: "whatsapp",
+        to,
+        type: "text",
+        text: {
+          body: textBody ||
+            `Your clubSENsational parent portal verification code is ${code}. It expires in 10 minutes. If you did not request this, ignore this message.`,
+        },
+      });
+      if (!res.ok) console.warn("[parent-portal-otp] WhatsApp send failed", res.status, res.text);
+      return res.ok;
     }
-    return true;
+    /* Meta keys the template on the exact locale (en vs en_GB vs en_US). */
+    const langs = [
+      Deno.env.get("META_WHATSAPP_OTP_TEMPLATE_LANG"),
+      Deno.env.get("META_WHATSAPP_TEMPLATE_LANG"),
+      "en",
+      "en_GB",
+      "en_US",
+    ].map((l) => String(l || "").trim()).filter((l, i, a) => l && a.indexOf(l) === i);
+    for (const lang of langs) {
+      const res = await post({
+        messaging_product: "whatsapp",
+        to,
+        type: "template",
+        template: {
+          name: template,
+          language: { code: lang },
+          components: [
+            { type: "body", parameters: [{ type: "text", text: code }] },
+            { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: code }] },
+          ],
+        },
+      });
+      if (res.ok) return true;
+      console.warn("[parent-portal-otp] WhatsApp template send failed", lang, res.status, res.text);
+      if (!/132001/.test(res.text)) return false;
+    }
+    return false;
   } catch (e) {
     console.warn("[parent-portal-otp] WhatsApp send error", e);
     return false;
