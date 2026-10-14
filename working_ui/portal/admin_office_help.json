@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v440",
+  "version": "2026-10-14-v441",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -4431,6 +4431,7 @@
             "The Day Centre half changes when that figure is entered into the shared box. It then shows on every in-use sheet.",
             "The review is two columns. In use is on the left. Closed is on the right. Ver opens the sheet. Volver a las hojas comes back.",
             "En uso and Cerrado, and the note, stay in this browser. Tell the office which sheets are closed, or paste Copiar notas. That is what moves a sheet to closed and applies the correction.",
+            "Taxis Ikram y Joelle stays in use. Pactado is the NHS cab line. Cobrado is what the taxi firm charged. Positive means the NHS covers more than the charge.",
             "Tide sheets start as closures. They do not move when the portal takes a payment.",
             "If the bank has been paid and the portal half still shows the invoice, the portal invoice is not marked paid yet."
           ],
@@ -4448,6 +4449,7 @@
               "La parte de Day Centre cambia cuando se mete esa cifra en el recuadro. Entonces sale en todas las hojas en uso.",
               "La revision son dos columnas. En uso a la izquierda. Cerrados a la derecha. Ver abre la hoja. Volver a las hojas regresa.",
               "En uso, Cerrado y la nota se quedan en este navegador. Di cuales estan cerrados, o pega Copiar notas. Eso es lo que pasa una hoja a cerrado y aplica la correccion.",
+              "Taxis Ikram y Joelle sigue en uso. Pactado es la linea CAB del NHS. Cobrado es lo que ha pasado la empresa de taxis. Positivo: el NHS cubre mas que el cargo.",
               "Las hojas de Tide empiezan como cierres. No se mueven cuando el portal cobra.",
               "Si el banco ya cobro y el portal sigue mostrando la factura, el portal no la tiene marcada como pagada."
             ],
