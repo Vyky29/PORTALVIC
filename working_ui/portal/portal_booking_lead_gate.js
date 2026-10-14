@@ -466,7 +466,8 @@
 
   function afterOtpSent(email, out, msgId, btn, idleLabel) {
     state.pendingEmail = email;
-    var hint = (out.data && out.data.email_hint) || email;
+    /* Show what they typed in full, so a typo is easy to spot. */
+    var hint = email || (out.data && out.data.email_hint) || "";
     var otpHint = $("bookingLeadOtpHint");
     if (otpHint) {
       var recog = (out.data && out.data.recognition) || "";
@@ -479,9 +480,11 @@
       var viaWa = !!(out.data && out.data.whatsapp_sent);
       otpHint.textContent = viaWa
         ? prefix +
-          "We sent a 6-digit code to " + hint + " and to your WhatsApp. " +
-          "If that email looks wrong, use the code from WhatsApp. Enter it below to explore availability."
-        : prefix + "We sent a 6-digit code to " + hint + ". Enter it below to explore availability.";
+          "We sent a 6-digit code to " + hint + " and to your WhatsApp. Enter it below to explore availability. " +
+          "If that email is wrong, tap Edit details to correct it."
+        : prefix +
+          "We sent a 6-digit code to " + hint + ". Enter it below to explore availability. " +
+          "No email after a minute? Check spam, or tap Edit details to correct your email.";
     }
     showStep("otp");
     var codeEl = $("bookingLeadCode");

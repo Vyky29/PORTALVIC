@@ -117,13 +117,28 @@ Deno.serve(async (req) => {
 
   const nowIso = new Date().toISOString();
 
-  const { data: existingLead } = await supabase
+  const leadCols =
+    "id, parent_name, email, mobile, booking_status, client_status, email_verified_at, first_page_visited";
+  let { data: existingLead } = await supabase
     .from("portal_booking_leads")
-    .select(
-      "id, parent_name, email, mobile, booking_status, client_status, email_verified_at, first_page_visited",
-    )
+    .select(leadCols)
     .eq("email_norm", email)
     .maybeSingle();
+
+  /* Parent fixed a mistyped email via Edit details: correct that lead, do not open a second one. */
+  if (!existingLead && !isReturning && phone10.length >= 10) {
+    const sinceTypo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const { data: typoLead } = await supabase
+      .from("portal_booking_leads")
+      .select(leadCols)
+      .eq("phone_lookup", phone10)
+      .is("email_verified_at", null)
+      .gte("created_at", sinceTypo)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (typoLead) existingLead = typoLead;
+  }
 
   let contact: ContactHit | null = null;
   {
