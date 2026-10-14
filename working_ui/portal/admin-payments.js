@@ -1293,14 +1293,16 @@
   /**
    * Live NHS monthly INV-Ps, Sep 2026–Jul 2027, uplift included. All still unpaid.
    * Fadi 0235–0245, Emanuel 0260–0270, Ikram 0271–0281, Timi 0168–0178.
+   * September is the 4-week block (31 Aug–27 Sep) reissued 8 Oct 2026.
+   * Must match portal_parent_invoice_share amount_gbp when an INV-P is reissued.
    */
   function nhsFunderYearMonths(r) {
     if (termBucketFor(r) !== "autumn_2627") return null;
     var slug = paymentParticipantSlug(r);
     var table = {
-      fadi: [14534.08, 14534.08, 13873.44, 9248.96, 13212.8, 13212.8, 12552.16, 9909.6, 13873.44, 14534.08, 14534.08],
-      ikram: [13774.05, 13008.83, 13008.83, 8417.48, 12243.6, 12243.6, 11478.38, 9182.7, 13008.83, 13774.05, 13008.83],
-      emanuel: [6631.95, 6631.95, 6631.95, 4081.2, 6121.8, 6121.8, 5611.65, 4591.35, 6631.95, 6631.95, 6631.95],
+      fadi: [13212.8, 14534.08, 13873.44, 9248.96, 13212.8, 13212.8, 12552.16, 9909.6, 13873.44, 14534.08, 14534.08],
+      ikram: [12243.6, 13008.83, 13008.83, 8417.48, 12243.6, 12243.6, 11478.38, 9182.7, 13008.83, 13774.05, 13008.83],
+      emanuel: [6121.8, 6631.95, 6631.95, 4081.2, 6121.8, 6121.8, 5611.65, 4591.35, 6631.95, 6631.95, 6631.95],
       timi: [2856.84, 3213.95, 3213.95, 1785.53, 2856.84, 2856.84, 2499.74, 2142.63, 3213.95, 2856.84, 3213.95],
     };
     var amts = table[slug];
@@ -7021,6 +7023,19 @@
 
     return Object.keys(agg).map(function (key) {
       var row = agg[key];
+      /* NHS Day Centre: Autumn = Sep–Dec INV-Ps, year = all 11 (not the booking catalogue). */
+      var nhsMonthsAgg = nhsFunderYearMonths(row);
+      if (nhsMonthsAgg && nhsMonthsAgg.length === 11) {
+        var nhsSum = function (from, to) {
+          return Math.round(
+            nhsMonthsAgg.slice(from, to).reduce(function (s, m) { return s + m.amt; }, 0) * 100
+          ) / 100;
+        };
+        row._amountAutumn = nhsSum(0, 4);
+        row._amountSpring = nhsSum(4, 7);
+        row._amountSummer = nhsSum(7, 11);
+        row._amountAnnual = nhsSum(0, 11);
+      }
       var a = Number(row._amountAutumn) || 0;
       var sp = Number(row._amountSpring) || 0;
       var su = Number(row._amountSummer) || 0;
