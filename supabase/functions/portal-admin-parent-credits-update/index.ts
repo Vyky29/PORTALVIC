@@ -9,7 +9,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
-import { autoApplyOpenCreditToNextInvoices } from "../_shared/portal_family_credit_apply.ts";
+import { applyOpenCreditToInvoice, autoApplyOpenCreditToNextInvoices } from "../_shared/portal_family_credit_apply.ts";
 import { settleFamilyRefundAfterPayout } from "../_shared/portal_family_refund_settle.ts";
 
 function clean(v: unknown, max = 500): string {
@@ -172,9 +172,21 @@ Deno.serve(async (req) => {
       return portalAdminJson(400, { ok: false, error: "not_a_credit" });
     }
     const notes = clean(body.notes, 800);
+    const preferInvoice = clean(body.invoice_id, 80);
     let credit_apply = null;
     try {
-      credit_apply = await autoApplyOpenCreditToNextInvoices(admin, entryId);
+      if (preferInvoice) {
+        const one = await applyOpenCreditToInvoice(admin, {
+          creditId: entryId,
+          invoiceId: preferInvoice,
+          contactId: clean(entry.contact_id, 120),
+          allowHidden: true,
+          actor: "admin",
+        });
+        credit_apply = { ok: !!one.ok, applications: [one], skipped: one.ok ? undefined : one.error };
+      } else {
+        credit_apply = await autoApplyOpenCreditToNextInvoices(admin, entryId);
+      }
     } catch (err) {
       console.error("[portal-admin-parent-credits-update] mark_applied auto-apply", err);
       return portalAdminJson(500, { ok: false, error: "auto_apply_failed" });
