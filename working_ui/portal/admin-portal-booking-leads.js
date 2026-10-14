@@ -115,18 +115,36 @@
     return String(raw || "—").replace(/_/g, " ");
   }
 
-  /** What this visit did. Only looked, Waiting list, Trial, or Term. */
+  /** OTP asked and received, and they did not open a service or a time. */
+  function otpRequestOnly(r) {
+    r = r || {};
+    if (entryWay(r).key !== "otp") return false;
+    if (lookedActionText(r)) return false;
+    if (String(r.visit_place || "").trim()) return false;
+    var viewed = Array.isArray(r.services_viewed) ? r.services_viewed : [];
+    var saw = false;
+    viewed.forEach(function (item) {
+      if (prettyService(item)) saw = true;
+    });
+    if (saw) return false;
+    if (String(r.activity_interest || "").trim()) return false;
+    return true;
+  }
+
+  /** What this visit did. OTP request, Only looked, Waiting list, Trial, or Term. */
   function leadOutcome(r) {
     r = r || {};
     var key = String(r.visit_outcome || "").toLowerCase();
     if (key === "trial") return { key: "trial", label: "Booked Trial", tone: "lead-trial" };
     if (key === "term") return { key: "term", label: "Booked Term", tone: "ok" };
     if (key === "waiting") return { key: "waiting", label: "Waiting list", tone: "wait" };
-    if (key === "looked") return { key: "looked", label: "Only looked", tone: "lead-looked" };
     var book = String(r.booking_status || "").toLowerCase();
     var client = String(r.client_status || "").toLowerCase();
     if (book === "waiting_list" || client === "waiting_list") {
       return { key: "waiting", label: "Waiting list", tone: "wait" };
+    }
+    if (otpRequestOnly(r)) {
+      return { key: "otp_received", label: "OTP request and receive", tone: "pend" };
     }
     return { key: "looked", label: "Only looked", tone: "lead-looked" };
   }
@@ -670,6 +688,7 @@
       : "";
     var outcomeChips = [
       ["all", "All"],
+      ["otp_received", "OTP request and receive"],
       ["looked", "Only looked"],
       ["waiting", "Waiting list"],
       ["trial", "Trial"],
@@ -728,7 +747,7 @@
       (cols.track
         ? '<th title="Office list only. Booked takes the email off the marketing list. It does not change Outcome.">Track status</th>'
         : "") +
-      '<th>Outcome</th><th title="Only looked: the services they opened. Trial or Term: service, time, day and venue.">Activity</th><th>Updated</th>' +
+      '<th>Outcome</th><th title="Only looked: the services they opened. OTP request and receive: they only asked for the code, so Activity stays blank. Trial or Term: the place is under the chip.">Activity</th><th>Updated</th>' +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div></div>";
