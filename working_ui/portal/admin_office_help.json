@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v421",
+  "version": "2026-10-14-v422",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1964,7 +1964,7 @@
           ],
           "steps": [
             "Under the invoice number the parent sees the place: activity, day, time, venue, then the term. Two Autumn invoices are two places.",
-            "Bank transfer (no fee) only shows on an invoice the family pays by bank. It scrolls to the Tide box on that same card: payee, sort code, account, and the child name as the reference.",
+            "Bank transfer (no fee) only shows on the invoice the family pays by bank. The tap opens the Tide box under that same card: payee, sort code, account, and the child's name as the reference. It does not open the other invoice.",
             "A Direct Payment invoice does not show that box. GoCardless collects it. The setup button is only there until the mandate is active.",
             "A Direct Payment invoice that is still partly unpaid does not hide the Tide box on a bank-transfer invoice for another place."
           ],

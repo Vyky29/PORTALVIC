@@ -10022,30 +10022,42 @@
     );
   }
 
-  function invoiceBankPanelHtml(inv, previewBtnHtml) {
+  function invoiceChildReference(inv, data) {
+    var p = data && data.participant;
+    var name = "";
+    if (p) {
+      name = String(p.display_name || "").trim();
+      if (!name) {
+        name = [p.first_name, p.last_name]
+          .filter(Boolean)
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+    }
+    if (name && name.toLowerCase() !== "participant") return name;
+    var bank = inv && inv.bank_transfer;
+    return String((inv && inv.suggested_reference) || (bank && bank.reference_hint) || "").trim();
+  }
+
+  function invoiceBankPanelHtml(inv, data) {
     var bank = inv && inv.bank_transfer;
     if (!bank) return "";
     var status = String((inv && inv.payment_status) || "").toLowerCase();
     if (status === "paid" || status === "void") return "";
-    var ref = String((inv && inv.suggested_reference) || bank.reference_hint || "").trim();
-    var previewBlock = previewBtnHtml
-      ? '<div class="pp-invoice-pay__preview">' + previewBtnHtml + "</div>"
-      : "";
+    var ref = invoiceChildReference(inv, data);
     if (!bank.available) {
       return (
-        '<div class="pp-invoice-pay">' +
+        '<div class="pp-invoice-pay pp-invoice-pay--bank" data-pp-bank-panel hidden>' +
         '<p class="pp-invoice-pay__title">Pay by bank transfer</p>' +
         '<p class="pp-muted pp-invoice-pay__note">' +
         esc(bank.message || "Contact the office for bank transfer details.") +
         "</p>" +
-        previewBlock +
         "</div>"
       );
     }
     return (
-      '<div class="pp-invoice-pay" id="pp-invoice-bank-' +
-      esc(String((inv && inv.id) || "")) +
-      '">' +
+      '<div class="pp-invoice-pay pp-invoice-pay--bank" data-pp-bank-panel hidden>' +
       '<p class="pp-invoice-pay__title">Pay by bank transfer (Tide)</p>' +
       '<dl class="pp-invoice-pay__dl">' +
       "<div><dt>Payee</dt><dd>" +
@@ -10061,13 +10073,12 @@
         ? "<div><dt>Reference</dt><dd>" + esc(ref) + "</dd></div>"
         : "") +
       "</dl>" +
-      '<p class="pp-muted pp-invoice-pay__note">Use the participant name as the payment reference so we can match it in Tide. Prefer bank transfer — no card fee.</p>' +
-      previewBlock +
+      '<p class="pp-muted pp-invoice-pay__note">Put the child\'s name as the payment reference so we can match it in Tide.</p>' +
       "</div>"
     );
   }
 
-  function invoiceCardHtml(inv) {
+  function invoiceCardHtml(inv, data) {
     var num = String((inv && inv.invoice_number) || "").trim();
     // Parent-facing title must start with INV-… — never a naked "Crash £700" style label.
     var title = num;
@@ -10291,8 +10302,7 @@
           ) +
           "</a>";
       }
-      // Preview lives in the yellow Tide box when bank panel is shown.
-      if (!showBankPanel && previewBtnHtml) {
+      if (previewBtnHtml) {
         extraActs = previewBtnHtml + extraActs;
       }
       if (extraActs) {
@@ -10329,8 +10339,9 @@
         (bankBtn || payBtn
           ? '<div class="pp-invoice-pay-pair">' + bankBtn + payBtn + "</div>"
           : "") +
+        (showBankPanel ? invoiceBankPanelHtml(inv, data) : "") +
         (showBankPanel
-          ? '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">The Tide payee, sort code, and account are in the box above. After you transfer, open <strong>Messages</strong> (or WhatsApp / email <a href="' +
+          ? '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">After you transfer, open <strong>Messages</strong> (or WhatsApp / email <a href="' +
             esc(OFFICE_CONTACT_MAILTO) +
             '">info@clubsensational.org</a>) and tell us you have paid. A photo is optional. The office checks Tide and marks the invoice paid.</p>'
           : "");
@@ -10414,7 +10425,6 @@
       (status === "unpaid" || status === "partial")
         ? '<p class="pp-muted pp-invoice-pay__note">No payment needed yet — we will ask closer to this due date.</p>'
         : "") +
-      (showBankPanel ? invoiceBankPanelHtml(inv, previewBtnHtml) : "") +
       (isPaid || !payActionNeeded ? "" : creditHtml) +
       (isPaid
         ? ""
@@ -10587,7 +10597,14 @@
           return;
         }
         listHost.innerHTML =
-          receiptsHtml + (invoices.length ? invoices.map(invoiceCardHtml).join("") : "");
+          receiptsHtml +
+          (invoices.length
+            ? invoices
+                .map(function (inv) {
+                  return invoiceCardHtml(inv, data);
+                })
+                .join("")
+            : "");
         wireInvoiceActions();
         try {
           var pendingReturn = sessionStorage.getItem("pp_invoice_return_pending");
@@ -10771,30 +10788,30 @@
 
       listHost.querySelectorAll("[data-pp-scroll-bank]").forEach(function (btn) {
         btn.addEventListener("click", function () {
-          var id = btn.getAttribute("data-pp-scroll-bank");
-          var panel = id
-            ? listHost.querySelector("#pp-invoice-bank-" + id)
-            : null;
-          if (panel && typeof panel.scrollIntoView === "function") {
-            try {
-              panel.scrollIntoView({ behavior: "smooth", block: "center" });
-            } catch (_e) {
-              panel.scrollIntoView(true);
-            }
-            panel.classList.add("pp-invoice-pay--flash");
-            global.setTimeout(function () {
-              panel.classList.remove("pp-invoice-pay--flash");
-            }, 2200);
+          var card = btn.closest ? btn.closest("article") : null;
+          var panel = card ? card.querySelector("[data-pp-bank-panel]") : null;
+          if (!panel) {
             showNotice(
-              "ok",
-              "Use the payee, sort code, and account in the highlighted box. Put the participant name as the reference, then message the office.",
+              "info",
+              "Bank details for this invoice are not on the card. Contact the office.",
             );
             return;
           }
-          showNotice(
-            "info",
-            "Bank details are not on this invoice. If an earlier invoice still needs paying, settle that one first.",
-          );
+          listHost.querySelectorAll("[data-pp-bank-panel]").forEach(function (other) {
+            if (other !== panel) other.hidden = true;
+          });
+          panel.hidden = false;
+          try {
+            panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          } catch (_e) {
+            try {
+              panel.scrollIntoView(true);
+            } catch (_e2) {}
+          }
+          panel.classList.add("pp-invoice-pay--flash");
+          global.setTimeout(function () {
+            panel.classList.remove("pp-invoice-pay--flash");
+          }, 2200);
         });
       });
 
