@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v426",
+  "version": "2026-10-14-v427",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2392,7 +2392,9 @@
             "Mark refunded opens one modal: office note, then an optional tick Notify parent (WhatsApp + email that the refund was sent). Leave the tick off unless the money already left the bank — default is ledger + Xero CN only. Same modal from participant Payments Mark paid back. Paid invoices in Xero may not take the credit note onto the invoice; the authorised credit note plus the bank payout is still the refund.",
             "Cancel service should leave everything square: void future instalments on the portal invoice schedule, open refund on Family credits, cancelled chips on the parent hub, roster ends from the anchor. Check GoCardless / Stripe so nothing still collects after void.",
             "Hold wait on an empty climbing hour (same office hold as Elia): Places shows HOLD WAITLIST and the seat is not bookable. Instructors still see No participant and do not owe feedback.",
-            "If the family cancels a place but wants the unused paid part kept for the next term, do not refund and do not take the admin fee. Leave an open credit. It applies to the next term invoice: to anything new they book, or to the services they already have. Unpaid later-term invoices that still list that service lose the line, and the total is recalculated."
+            "Cancel service (Edit term slot, anchor on that weekday, Rest of term) is the refund path. The sheet shows paid, sessions already done, unused, the admin charge, and the refund. Cancel and message parent sends WhatsApp and email, and writes an open refund on Family credits and refunds. It asks for bank details. It does not pay the money by itself.",
+            "Credit instead of a refund is not on that button. Do not press Cancel and message parent if the family wants the unused paid part kept. That press tells them a refund is coming. The open credit sits on Finance, Family credits and refunds, kind credit. The parent sees it under Credits and refunds in their portal. Cancelled days show on My Calendar. No WhatsApp goes out unless you send one.",
+            "Unpaid later-term invoices that still list the cancelled service lose that line, and the total is recalculated. The open credit is not applied to those drafts. It waits for the next term invoice."
           ],
           "es": {
             "title": "Faltas, reembolsos y creditos",
