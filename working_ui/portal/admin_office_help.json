@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v437",
+  "version": "2026-10-14-v439",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -893,6 +893,51 @@
           }
         },
         {
+          "id": "booking_code_wrong_email",
+          "title": "Parent did not get the booking access code",
+          "summary": "Usually a mistyped email. The parent fixes it on the code step with Edit details. The same lead is corrected, not duplicated.",
+          "where": "Booking Portal (bookingportal) - Enter your access code step",
+          "keywords": [
+            "otp",
+            "access code",
+            "codigo",
+            "no le llega el codigo",
+            "email mal",
+            "wrong email",
+            "mistyped",
+            "address not found",
+            "rebota",
+            "bounce",
+            "edit details",
+            "whatsapp code"
+          ],
+          "steps": [
+            "Ask the parent to look at the code step. It shows the full email they typed.",
+            "If the email is wrong, tap Edit details, correct the email, keep the same mobile, and tap Send access code again.",
+            "The new code goes to the corrected email. The lead keeps one row with the right email, and the office does not get a second new lead alert.",
+            "When the WhatsApp code template is live, the same code also arrives on WhatsApp, so they can get in even with a wrong email. Still ask them to correct the email, or later booking emails bounce."
+          ],
+          "tips": [
+            "An Address not found bounce in the info@ inbox means the email does not exist. Ask the parent for the right one.",
+            "The correction only joins to the old lead when the mobile is the same and the old email was never verified (last 48 hours)."
+          ],
+          "es": {
+            "title": "Al padre no le llega el codigo del booking",
+            "summary": "Casi siempre es un email mal escrito. El padre lo arregla en el paso del codigo con Edit details. Se corrige el mismo lead, no se duplica.",
+            "where": "Booking Portal (bookingportal) - paso Enter your access code",
+            "steps": [
+              "Pide al padre que mire el paso del codigo. Ahi sale el email entero que escribio.",
+              "Si esta mal, que pulse Edit details, corrija el email, deje el mismo movil y pulse Send access code otra vez.",
+              "El codigo nuevo va al email corregido. El lead se queda en una sola fila con el email bueno y la oficina no recibe otro aviso de lead nuevo.",
+              "Cuando la plantilla de WhatsApp para codigos este activa, el mismo codigo llega tambien por WhatsApp y pueden entrar aunque el email este mal. Aun asi, que corrijan el email o los siguientes correos del booking rebotaran."
+            ],
+            "tips": [
+              "Un rebote Address not found en info@ significa que ese email no existe. Pide al padre el correcto.",
+              "La correccion solo se une al lead viejo si el movil es el mismo y el email viejo nunca se verifico (ultimas 48 horas)."
+            ]
+          }
+        },
+        {
           "id": "services_board",
           "title": "Places (Booking Portal)",
           "summary": "This screen is the offer families can book. Each row is one time band: who is already in it, and how many seats are still open.",
@@ -1134,7 +1179,7 @@
               "Para sentar a un trabajador con un nino de Day Centre el resto del term: abre ese dia y esa hora, pon el instructor, alcance Rest of term from the anchor. El ancla tiene que ser ese dia de la semana.",
               "Ejemplo: Joel a Anas todos los lunes el resto de Autumn = Edit term slot.",
               "Para quitar el servicio el resto del term, usa la leccion Cancel a service.",
-            "Un solo dia, dos ninos que ya tienen plaza: Schedule and Covers, Swap with another child today. Cambian solo las plazas del servicio que abriste. Los otros servicios de ese dia se quedan. Los instructores se quedan. Edit term slot es solo si ese orden tiene que quedarse el resto del term. Gabriel y Cyrus desde el domingo 27 Sep es ese orden fijo de los domingos."
+              "Un solo dia, dos ninos que ya tienen plaza: Schedule and Covers, Swap with another child today. Cambian solo las plazas del servicio que abriste. Los otros servicios de ese dia se quedan. Los instructores se quedan. Edit term slot es solo si ese orden tiene que quedarse el resto del term. Gabriel y Cyrus desde el domingo 27 Sep es ese orden fijo de los domingos."
             ]
           }
         },
@@ -2580,7 +2625,13 @@
           "title": "When a staff WhatsApp was read",
           "summary": "The green Read chip on a staff message shows the date and time WhatsApp marked it read.",
           "where": "Staff messages (S), open the conversation",
-          "keywords": ["read", "leido", "hora", "staff whatsapp", "berta"],
+          "keywords": [
+            "read",
+            "leido",
+            "hora",
+            "staff whatsapp",
+            "berta"
+          ],
           "steps": [
             "Open Staff messages (S) and the conversation.",
             "On a green Read chip, the time next to Read is when they opened it on WhatsApp.",
@@ -2645,7 +2696,15 @@
           "title": "WhatsApp template with gaps",
           "summary": "Create a new Meta template so automated messages have a blank line between paragraphs.",
           "where": "Settings → Edit WhatsApp templates",
-          "keywords": ["plantilla", "plantillas", "meta", "whatsapp api", "espacios", "bloque", "template"],
+          "keywords": [
+            "plantilla",
+            "plantillas",
+            "meta",
+            "whatsapp api",
+            "espacios",
+            "bloque",
+            "template"
+          ],
           "steps": [
             "Settings, Edit WhatsApp templates. Log in with the Facebook account that owns the business.",
             "Create template. Category Utility. Name portal_parent_update_v3. Language English. Do not edit portal_parent_update_v2.",
@@ -2670,7 +2729,51 @@
             "tips": [
               "No pulses Enter dentro de una caja. Meta rechaza los saltos de linea dentro de {{1}}.",
               "Padres usan portal_parent_update_v3. Staff usa portal_staff_update_v3. El nombre del chat y el logo redondo no van en la plantilla.",
-            "Si Meta dice que la categoria no coincide y recomienda Marketing, pulsa Cancelar. Deja Servicio. Cambia la primera linea para que sea un aviso de una reserva que ya existe, no una presentacion del portal."
+              "Si Meta dice que la categoria no coincide y recomienda Marketing, pulsa Cancelar. Deja Servicio. Cambia la primera linea para que sea un aviso de una reserva que ya existe, no una presentacion del portal."
+            ]
+          }
+        },
+        {
+          "id": "whatsapp_access_code_template",
+          "title": "WhatsApp template for access codes",
+          "summary": "One Authentication template sends the 6-digit codes on WhatsApp: booking access code, parent portal code and staff annual profile code.",
+          "where": "Settings → Edit WhatsApp templates (Meta WhatsApp Manager)",
+          "keywords": [
+            "otp",
+            "codigo",
+            "access code",
+            "verification code",
+            "authentication",
+            "autenticacion",
+            "copy code",
+            "plantilla codigo",
+            "whatsapp code"
+          ],
+          "steps": [
+            "Settings, Edit WhatsApp templates. Log in with the Facebook account that owns the business.",
+            "Create template. Category Authentication. Name clubsen_access_code. Language English.",
+            "Code delivery: Copy code. Tick Add security recommendation. Tick Add expiry time and set 10 minutes.",
+            "Leave the button text as Copy code. Meta writes the message body itself. Submit and wait for Approved.",
+            "Send the template name and language to whoever sets up Supabase. They set META_WHATSAPP_TEMPLATE_NAME. From then on codes also go out on WhatsApp."
+          ],
+          "tips": [
+            "Do not use Utility or Marketing for codes. Meta can pause the template and hurt the other WhatsApp templates.",
+            "Without this template, a WhatsApp code only reaches someone who wrote to us in the last 24 hours."
+          ],
+          "es": {
+            "title": "Plantilla de WhatsApp para codigos",
+            "summary": "Una plantilla Authentication manda los codigos de 6 cifras por WhatsApp: codigo del booking, del portal de padres y del perfil anual de staff.",
+            "where": "Settings → Edit WhatsApp templates (Meta WhatsApp Manager)",
+            "steps": [
+              "Settings, Edit WhatsApp templates. Entra con la cuenta de Facebook duena del negocio.",
+              "Create template. Categoria Authentication. Nombre clubsen_access_code. Idioma English.",
+              "Code delivery: Copy code. Marca Add security recommendation. Marca Add expiry time y pon 10 minutos.",
+              "Deja el boton como Copy code. El texto del mensaje lo pone Meta. Submit y espera a Approved.",
+              "Pasa el nombre y el idioma a quien configura Supabase. Se pone META_WHATSAPP_TEMPLATE_NAME. Desde ahi los codigos salen tambien por WhatsApp."
+            ],
+            "tips": [
+              "No uses Utility ni Marketing para codigos. Meta puede pausar la plantilla y perjudicar a las otras plantillas de WhatsApp.",
+              "Sin esta plantilla, el codigo por WhatsApp solo llega a quien nos escribio en las ultimas 24 horas."
             ]
           }
         },
@@ -2679,7 +2782,14 @@
           "title": "WhatsApp chat name and logo",
           "summary": "The name and photo on the chat belong to the API number. They are separate from the Facebook Business page.",
           "where": "Meta WhatsApp Manager, phone number profile",
-          "keywords": ["nombre", "logo", "display name", "clubsensational ltd", "foto", "perfil"],
+          "keywords": [
+            "nombre",
+            "logo",
+            "display name",
+            "clubsensational ltd",
+            "foto",
+            "perfil"
+          ],
           "steps": [
             "The name parents see is the display name of the WhatsApp API number. A new name goes to Meta for review. The old name stays until Meta approves it.",
             "The photo on the chat is the WhatsApp profile picture. It can be a different file from the Business page logo.",
@@ -2711,7 +2821,14 @@
           "title": "Cover WhatsApp and makeup reminder",
           "summary": "The covering instructor gets a WhatsApp when the cover is saved, and another if that override is undone. A pending makeup gets one parent reminder the morning before.",
           "where": "Schedule & Covers, and Absents makeup offers",
-          "keywords": ["cover", "override", "deshacer", "makeup", "recordatorio", "whatsapp"],
+          "keywords": [
+            "cover",
+            "override",
+            "deshacer",
+            "makeup",
+            "recordatorio",
+            "whatsapp"
+          ],
           "steps": [
             "Assign a named cover on Schedule & Covers. The instructor gets a WhatsApp with the child, date, time and venue. The app alert still happens.",
             "Cancel that override, or move it to another instructor. The first instructor gets a WhatsApp that the cover was removed.",
