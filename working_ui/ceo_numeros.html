@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hojas de numeros · CEO</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #0f2733; background: #f4f8f9; }
+  header { background: #fff; border-bottom: 1px solid #d7e2e8; padding: 14px 18px; }
+  h1 { margin: 0 0 4px; font-size: 1.35rem; }
+  a { color: #0e7c86; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  h2 { font-size: 1.05rem; color: #0e7c86; border-bottom: 2px solid #0e7c86; padding-bottom: 4px; }
+  .meta { color: #5b7280; font-size: 0.9rem; margin: 0; }
+  .note, .warn { font-size: 0.88rem; padding: 8px 10px; margin: 8px 0 14px; }
+  .note { background: #f1f5f9; border-left: 3px solid #0e7c86; color: #3d5160; }
+  .warn { background: #fffbeb; border-left: 3px solid #f59e0b; color: #92400e; }
+  .sheets { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; margin: 8px 0 18px; }
+  .sheets a { display: block; background: #fff; border: 1px solid #d7e2e8; border-radius: 8px; padding: 10px 12px; text-decoration: none; min-width: 0; }
+  .sheets a b { display: block; color: #0f2733; overflow-wrap: anywhere; }
+  .sheets a span { display: block; color: #5b7280; font-size: 0.82rem; margin-top: 2px; overflow-wrap: anywhere; }
+  table { width: 100%; border-collapse: collapse; background: #fff; font-size: 0.88rem; margin: 0 0 14px; }
+  th, td { border-bottom: 1px solid #e2e8f0; padding: 6px 8px; text-align: left; min-width: 0; overflow-wrap: anywhere; }
+  th { background: #e6f3f4; font-size: 0.75rem; text-transform: uppercase; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  tr.total td { font-weight: 800; background: #f8fafc; }
+  .wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hojas de numeros</h1>
+  <p class="meta"><a href="ceo_dashboard.html#ceo-finance">Volver al CEO</a></p>
+</header>
+<main>
+  <h2>En vivo, desde el portal</h2>
+  <p class="meta" id="liveMeta">Cargando facturas...</p>
+  <div class="note">Esto sale de las facturas del portal. Cuando una se marca pagada, o entra una nueva, esta tabla cambia al abrirla. El banco de Tide y las tarjetas personales no estan aqui: el portal no los recibe solos.</div>
+  <div id="live"></div>
+
+  <h2>Hojas de cierre</h2>
+  <p class="meta">Cifras ya cerradas. No se mueven cuando el portal cobra una factura nueva.</p>
+  <div class="sheets">
+    <a href="/portal/finance/day-centre-sep25-jul26.html" target="_blank" rel="noopener"><b>Day Centre, sep 25 a jul 26</b><span>Victor y Raul. Fadi ya entro. Faltan Ikram y Timi.</span></a>
+    <a href="/portal/finance/septiembre-2026-autumn.html" target="_blank" rel="noopener"><b>Septiembre 2026</b><span>Autumn cobrado y timesheet del 1 al 24.</span></a>
+    <a href="/portal/finance/octubre-2026-autumn.html" target="_blank" rel="noopener"><b>Octubre 2026</b><span>Autumn de octubre.</span></a>
+    <a href="/portal/finance/autumn-2026-term.html" target="_blank" rel="noopener"><b>Autumn 2026, el term</b><span>Septiembre a diciembre.</span></a>
+    <a href="/portal/finance/flujos-autumn-2026.html" target="_blank" rel="noopener"><b>Flujo de caja</b><span>El desfase de sep y oct.</span></a>
+    <a href="/portal/finance/beneficio-servicios-2025-26.html" target="_blank" rel="noopener"><b>Afterschool, dic a jul</b><span>Remanente de los tres, £63,598.64.</span></a>
+    <a href="/portal/finance/tarjetas-personales-vjr.html" target="_blank" rel="noopener"><b>Tarjetas personales</b><span>Victor, Raul y Javier, hasta el 24 sep.</span></a>
+    <a href="/portal/finance/vat-jun-aug-2026.pdf" target="_blank" rel="noopener"><b>VAT, jun a ago 2026</b><span>PDF del retorno.</span></a>
+  </div>
+  <div class="warn">Las hojas de Tide, Miriam y el reparto de agosto siguen siendo el cierre de esas fechas. Para cambiarlas hay que meter el dato en la hoja, no solo en el portal.</div>
+</main>
+<script type="module">
+import { bootstrapDashboardSupabase } from "/portal/auth-handler.js?v=20260625-exec-single-session-exempt";
+await bootstrapDashboardSupabase({ page: "ceo" });
+const client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+const live = document.getElementById("live");
+const meta = document.getElementById("liveMeta");
+function gbp(n) {
+  return "£" + Number(n || 0).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+  });
+}
+function potOf(r) {
+  const b = (String(r.line_description || "") + " " + String(r.notes || "")).toLowerCase();
+  return /day centre/.test(b) ? "Day Centre" : "Resto";
+}
+if (!client) {
+  meta.textContent = "No hay sesion del portal.";
+} else {
+  try {
+    const cols = "invoice_number,amount_gbp,amount_paid_gbp,payment_status,share_status,billing_term,notes,line_description,paid_at";
+    const rows = [];
+    for (let from = 0; from < 8000; from += 1000) {
+      const { data, error } = await client.from("portal_parent_invoice_share").select(cols).range(from, from + 999);
+      if (error) throw new Error(error.message);
+      rows.push.apply(rows, data || []);
+      if (!data || data.length < 1000) break;
+    }
+    const terms = {};
+    const nhsOpen = [];
+    rows.forEach(function (r) {
+      if (r.payment_status === "void" || r.share_status === "void") return;
+      const term = r.billing_term || "sin termino";
+      const face = Number(r.amount_gbp) || 0;
+      const paid = Number(r.amount_paid_gbp) || 0;
+      const left = Math.max(0, Math.round((face - paid) * 100) / 100);
+      const pot = potOf(r);
+      if (!terms[term]) terms[term] = { n: 0, paid: 0, left: 0, dcPaid: 0, dcLeft: 0, restPaid: 0, restLeft: 0 };
+      const t = terms[term];
+      t.n += 1;
+      t.paid += paid;
+      t.left += left;
+      if (pot === "Day Centre") { t.dcPaid += paid; t.dcLeft += left; }
+      else { t.restPaid += paid; t.restLeft += left; }
+      const blob = (String(r.notes || "") + " " + String(r.line_description || "")).toLowerCase();
+      if (left > 0.5 && /nhs/.test(blob) && /day centre/.test(blob)) {
+        nhsOpen.push({ inv: r.invoice_number, left: left, term: term, desc: String(r.line_description || "").slice(0, 80) });
+      }
+    });
+    const order = Object.keys(terms).sort();
+    let html = '<div class="wrap"><table><tr><th>Termino</th><th class="num">Facturas</th><th class="num">Cobrado</th><th class="num">Falta</th><th class="num">DC cobrado</th><th class="num">DC falta</th><th class="num">Resto cobrado</th><th class="num">Resto falta</th></tr>';
+    order.forEach(function (k) {
+      const t = terms[k];
+      html += "<tr><td>" + esc(k) + "</td><td class='num'>" + t.n + "</td><td class='num'>" + gbp(t.paid) + "</td><td class='num'>" + gbp(t.left) + "</td><td class='num'>" + gbp(t.dcPaid) + "</td><td class='num'>" + gbp(t.dcLeft) + "</td><td class='num'>" + gbp(t.restPaid) + "</td><td class='num'>" + gbp(t.restLeft) + "</td></tr>";
+    });
+    html += "</table></div>";
+    nhsOpen.sort(function (a, b) { return b.left - a.left; });
+    html += "<h2>NHS Day Centre que el portal aun deja sin cobrar</h2>";
+    if (!nhsOpen.length) {
+      html += '<p class="meta">El portal no deja ninguna factura NHS de Day Centre con importe pendiente.</p>';
+    } else {
+      html += '<div class="wrap"><table><tr><th>Factura</th><th>Termino</th><th>Detalle</th><th class="num">Falta</th></tr>';
+      nhsOpen.slice(0, 40).forEach(function (r) {
+        html += "<tr><td>" + esc(r.inv) + "</td><td>" + esc(r.term) + "</td><td>" + esc(r.desc) + "</td><td class='num'>" + gbp(r.left) + "</td></tr>";
+      });
+      html += "</table></div>";
+      html += '<div class="warn">Si el banco ya cobro y la factura sigue aqui, el portal no la tiene marcada como pagada.</div>';
+    }
+    live.innerHTML = html;
+    meta.textContent = rows.length + " facturas leidas del portal, " + new Date().toLocaleString("en-GB", { timeZone: "Europe/London" }) + ".";
+  } catch (err) {
+    meta.textContent = "No se pudieron leer las facturas.";
+    live.innerHTML = '<div class="warn">' + esc(err && err.message ? err.message : err) + "</div>";
+  }
+}
+</script>
+</body>
+</html>
