@@ -52,7 +52,7 @@
     "/portal/staff-dashboard-term.js?v=20261013-acat-tue",
     "/portal/staff-dashboard-participants.js?v=20261013-dc-same-card",
     "/portal/staff-dashboard-today.js?v=20261013-shift-band",
-    "/portal/staff-dashboard-ui.js?v=20261013-dec18",
+    "/portal/staff-dashboard-ui.js?v=20261014-luliya-fri-red",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
@@ -73,7 +73,7 @@
     "/portal/staff-dashboard-term.js?v=20261013-acat-tue",
     "/portal/staff-dashboard-participants.js?v=20261013-dc-same-card",
     "/portal/staff-dashboard-today.js?v=20261013-shift-band",
-    "/portal/staff-dashboard-ui.js?v=20261013-dec18",
+    "/portal/staff-dashboard-ui.js?v=20261014-luliya-fri-red",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];

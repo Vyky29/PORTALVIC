@@ -2778,6 +2778,22 @@
       return out;
     }
     /**
+     * From Mon 28 Sep 2026 Luliya is off Fridays (applyLuliyaNewStandingFrom28).
+     * The undated Friday template still lists her Day Centre, so half term must
+     * not invent a morning on Friday. Other October Fridays stay red the same way.
+     */
+    function portalTermStaffDroppedWeekdayStanding(staffId, dayWord, iso){
+      const sid = String(staffId || '').trim().toLowerCase();
+      const day = String(dayWord || '').trim().toLowerCase();
+      const key = String(iso || '').trim().slice(0, 10);
+      if(!sid || !day || key < '2026-09-28') return false;
+      const luliya = sid === 'luliya' || sid === 'lulia' || sid === 'lulya'
+        || sid === 'aida' || sid === 'aidalulia' || sid === 'aidaluliyajemal'
+        || sid === 'stf021';
+      if(!luliya) return false;
+      return day === 'friday';
+    }
+    /**
      * After-school half term, Day Centre still open (weekday, not a weekend closure).
      * Staff with a morning Day Centre shift keep a normal open day. Afternoon sessions do not show.
      */
@@ -4010,14 +4026,18 @@
             continue;
           }
           const asDcOpen = !staffRequestedAway && portalAfterSchoolHalfTermDayCentreStillOpen(isoKey);
-          const programmeBooks = (termStaffId && asDcOpen)
+          const droppedStanding = termStaffId
+            && portalTermStaffDroppedWeekdayStanding(termStaffId, dayWordRoster, isoKey);
+          const programmeBooks = (termStaffId && asDcOpen && !droppedStanding)
             ? portalTermStaffWeekdayProgrammeBooks(termStaffId, dayWordRoster)
             : { dc: false, after: false };
           /* After-school half term. Morning Day Centre stays open: blue on top
              until the feedback is done, then green. The afternoon stays red.
              A requested Day Centre day off (no afternoon either) is already
-             solid red above, before this branch. */
-          const dcMorningOpen = asDcOpen && programmeBooks.dc && !beforeFirst && !termClosedDay;
+             solid red above, before this branch.
+             A Friday she is not on rota for (Luliya from 28 Sep) stays
+             solid red, same as her other October Fridays. */
+          const dcMorningOpen = asDcOpen && programmeBooks.dc && !droppedStanding && !beforeFirst && !termClosedDay;
           if(dcMorningOpen){
             const fbDc = getTermFeedbackStateForDay(y, monthIndex, day);
             cls += ' term-cal-day--split-dc-open';
