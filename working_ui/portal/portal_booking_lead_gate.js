@@ -316,7 +316,15 @@
     gate.setAttribute("aria-hidden", show ? "false" : "true");
     document.documentElement.classList.toggle("booking-gate-open", !!show);
     document.body.classList.toggle("booking-gate-open", !!show);
-    // Keep page scrollable under the gate so visitors can browse (blurred) while registering.
+    if (show) {
+      try {
+        if (typeof global.portalCloseBookingSheetsForGate === "function") {
+          global.portalCloseBookingSheetsForGate();
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+    }
   }
 
   function showStep(step) {
