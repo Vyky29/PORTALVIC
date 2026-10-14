@@ -7487,6 +7487,12 @@
       var built = buildMyCalendarDayColors(data);
       loadOpts.dayColors = built.colMap || {};
       loadOpts.dayColorFrom = built.fromByCol || {};
+      /* Standing weekdays are this term only. Later terms stay blank until that term is booked. */
+      var bookedTerm = hubActiveCalendarTerm(isoDateLocal(new Date()));
+      var throughIso = bookedTerm
+        ? String(bookedTerm.mainTermEnds || bookedTerm.ends || bookedTerm.lastDay || "").slice(0, 10)
+        : "";
+      loadOpts.dayColorThrough = /^\d{4}-\d{2}-\d{2}$/.test(throughIso) ? throughIso : "2026-12-18";
       var makeupIso = Object.create(null);
       ((data && data._ppMakeupSessions) || []).forEach(function (row) {
         if (row && row.iso) makeupIso[row.iso] = "#facc15";
@@ -7533,7 +7539,7 @@
         "&apos;s booked trial date is highlighted — other open days stay unmarked until a full place is confirmed."
       : "ClubSENsational sessions calendar 2026/27. Coloured circles are " +
         esc(pName) +
-        "&apos;s usual session weekdays. Two services on the same day split the circle in half; three services use three slices.";
+        "&apos;s session days this term. Later terms stay blank until that term is booked. Two services on the same day split the circle in half; three services use three slices.";
     var body =
       '<h3 class="pp-pax-subview-title">My Calendar</h3>' +
       crashBlock +

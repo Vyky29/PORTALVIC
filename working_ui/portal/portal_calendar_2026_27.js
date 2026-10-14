@@ -202,6 +202,7 @@
     if (!root || !root.querySelectorAll) return;
     markOpts = markOpts || {};
     var fromByCol = markOpts.fromByCol || {};
+    var throughIso = String(markOpts.throughIso || "").slice(0, 10);
     var grids = root.querySelectorAll(".dc-cal-grid");
     Array.prototype.forEach.call(grids, function (grid) {
       var label = String(grid.getAttribute("aria-label") || "").trim();
@@ -215,7 +216,7 @@
         if (!cell.classList.contains("dc-cal-cell--green")) continue;
         var col = i % 7;
         var fromIso = fromByCol[col] || fromByCol[String(col)] || "";
-        if (fromIso && monthNum && year) {
+        if ((fromIso || throughIso) && monthNum && year) {
           var dayEl = cell.querySelector(".dc-cal-day");
           var dayNum = Number(dayEl && String(dayEl.textContent || "").trim());
           if (Number.isFinite(dayNum) && dayNum >= 1) {
@@ -227,7 +228,7 @@
               "-" +
               (dayNum < 10 ? "0" : "") +
               dayNum;
-            if (iso < fromIso) {
+            if ((fromIso && iso < fromIso) || (throughIso && iso > throughIso)) {
               cell.classList.remove("dc-cal-cell--green");
               cell.classList.add("dc-cal-cell--open");
               continue;
@@ -428,6 +429,7 @@
         try {
           global.portalMarkPreviewSessionDays(node, opts.dayColors, {
             fromByCol: opts.dayColorFrom || {},
+            throughIso: opts.dayColorThrough || "",
           });
         } catch (_mine) {}
       }

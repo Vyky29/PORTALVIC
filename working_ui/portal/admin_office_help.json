@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v423",
+  "version": "2026-10-14-v424",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1885,7 +1885,9 @@
             "Office uses Overview + Schedule & Covers for the full picture.",
             "If a parent asks why a cover shows, check instructor_reassign has a real cover name."
           ],
-          "tips": []
+          "tips": [
+            "My Calendar paints the child's weekdays for the term they have booked. While Autumn is the current term, Spring and Summer stay blank. A whole-year place does not preview later terms early."
+          ]
         }
       ]
     },
