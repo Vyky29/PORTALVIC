@@ -2559,6 +2559,16 @@ function rosterRowToSlot(isoDate, wd, r) {
     return { start: start, end: end, label: label };
   }
 
+  /** A rest-of-term edit is copied onto later weeks. Updated is the start week only. */
+  function slotUpdateIsTermRepeatAfterStart(ov, iso) {
+    var p = overridePayloadObj(ov);
+    var scope = clean(p.scope);
+    if (scope !== "rest_of_term" && scope !== "weekday_term") return false;
+    var anchor = String(p.anchor_date || p.effective_from || "").slice(0, 10);
+    var viewed = String(iso || (ov && ov.session_date) || "").slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(anchor) && /^\d{4}-\d{2}-\d{2}$/.test(viewed) && viewed > anchor;
+  }
+
   /**
    * Paint schedule_overrides slot_update onto standing seats so Feedbacks / Overview clocks
    * match Staff Today when dated roster rows are thin.
@@ -2633,11 +2643,20 @@ function rosterRowToSlot(isoDate, wd, r) {
       if (!best) return slot;
       var bounds = slotUpdateNewBounds(best, wd);
       if (!bounds.start) return slot;
+      var termRepeat = slotUpdateIsTermRepeatAfterStart(best, slot.session_date);
       if (sStart && bounds.start === sStart && (!bounds.end || bounds.end === normTimeShort(slot.time_end))) {
+        if (termRepeat) return slot;
         return Object.assign({}, slot, {
           __portalScheduleOverride: slot.__portalScheduleOverride || best,
           portalRosterTimeUpdated: true,
           scheduleAdminAdjusted: true,
+        });
+      }
+      if (termRepeat) {
+        return Object.assign({}, slot, {
+          time_start: bounds.start,
+          time_end: bounds.end || bounds.start,
+          time_slot: bounds.label || slot.time_slot,
         });
       }
       return Object.assign({}, slot, {
@@ -3321,7 +3340,10 @@ function rosterRowToSlot(isoDate, wd, r) {
     if (slot && (slot.portalShadowingHost || slot.portalShadowingObserver)) return false;
     /* Standing Hub Bespoke: kid 4.30–6 · staff 4.15–6.15 is not an admin update. */
     if (hubSlotIsStandingTinasheStaffBand(slot)) return false;
-    if (overrideIsSlotUpdateType(slotOv)) return true;
+    if (overrideIsSlotUpdateType(slotOv)) {
+      if (slotUpdateIsTermRepeatAfterStart(slotOv, slot && slot.session_date)) return false;
+      return true;
+    }
     if (hubSlotShowsNewClientChip(slot, slotOv)) {
       return !!(slot && (slot.portalRosterTimeUpdated || slot.scheduleAdminAdjusted));
     }
