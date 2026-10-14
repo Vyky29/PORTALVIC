@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v425",
+  "version": "2026-10-14-v426",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1851,7 +1851,8 @@
           ],
           "tips": [
             "A full seat does not get held by the waiting list.",
-            "Do not look for the old webhook names on this screen. They are on CFK LEADS."
+            "Do not look for the old webhook names on this screen. They are on CFK LEADS.",
+            "Half-term intensives on Booking Portal are not a place. Until the office opens real times, the row says Not open yet. It is not 1 space and it does not start a booking."
           ],
           "es": {
             "title": "La lista de espera es Booking Portal",

@@ -2173,14 +2173,16 @@
       }
 
       function slotRowHtml(s, showVenue) {
-        var full = slotIsFull(s);
+        var enquire = !!s.enquireOnly;
+        var full = !enquire && slotIsFull(s);
+        var state = enquire ? "Not open yet" : full ? "Full · Join list" : slotOpenLabel(s);
         return (
-          '<button type="button" class="slot is-clickable" data-book-slot="' + esc(s.id) + '">' +
+          '<button type="button" class="slot' + (enquire ? "" : " is-clickable") + '" data-book-slot="' + esc(s.id) + '">' +
           "<div><strong>" + esc(s.day) + " · " + esc(s.timeLabel) + "</strong>" +
           (showVenue ? "<span>" + esc(venueName(s.venue)) + "</span>" : "") +
           "</div>" +
-          '<div class="slot__state ' + (full ? "is-full" : "is-open") + '">' +
-          (full ? "Full · Join list" : slotOpenLabel(s)) +
+          '<div class="slot__state ' + (enquire || full ? "is-full" : "is-open") + '">' +
+          state +
           "</div></button>"
         );
       }
@@ -2676,6 +2678,7 @@
         });
         if (!slot) return;
         noteLookedPlace(slot.serviceId, slot);
+        if (slot.enquireOnly) return;
         if (slotIsFull(slot)) {
           openWaitlistSheet(slot);
           return;

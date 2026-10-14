@@ -314,7 +314,7 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
         timeLabel: "Times TBC",
         packLabel: "enquire",
         sortTime: "10:00",
-        capacity: 1,
+        capacity: 0,
         taken: 0,
         enquireOnly: true,
       });
