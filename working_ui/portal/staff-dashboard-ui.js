@@ -860,10 +860,23 @@
       if(above < 14) above = Math.max(12, above);
       var nameCol = Math.floor(width * 0.36);
       var special = Math.round(Math.min(above, nameCol > 0 ? nameCol : above));
-      /* Beside the name: the circle should fill the row, not sit as a dot. */
-      var side = Math.round(Math.min(64, Math.max(44, row - 8)));
-      if(row < 52) side = Math.round(Math.max(32, Math.min(side, row - 6)));
+      /* Beside the name: the circle fills the row, and always stays inside it. */
+      var side = Math.round(Math.min(64, row - 8));
+      if(side < 28) side = 28;
       return { above: above, special: special, side: side };
+    }
+    if(!window.__PORTAL_TODAY_FACE_RESIZE__){
+      window.__PORTAL_TODAY_FACE_RESIZE__ = true;
+      var todayFaceResizeTimer = 0;
+      window.addEventListener('resize', function(){
+        clearTimeout(todayFaceResizeTimer);
+        todayFaceResizeTimer = setTimeout(function(){
+          var grid = document.getElementById('todayGrid');
+          if(!grid || !grid.querySelector('.today-grid-rows')) return;
+          var n = grid.querySelectorAll('.today-grid-rows > .session-card').length;
+          if(n > 0) applyTodayGridSizing(grid, n);
+        }, 60);
+      });
     }
 
     function portalDeferReminderChromeFromPaint(){

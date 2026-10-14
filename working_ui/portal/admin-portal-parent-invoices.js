@@ -303,6 +303,14 @@
     return /place released|never paid|aug\s*15|unpaid_autumn_first|auto-released/i.test(notes);
   }
 
+
+  /** Lost-slot and void INV-Ps: shown first, collapsed. Live invoices stay open. */
+  function isCancelledInvoice(inv) {
+    if (!inv || inv.created_via === 'la_office_auto') return false;
+    if (isLostSlotInvoice(inv)) return true;
+    return String(inv.payment_status || '').toLowerCase() === 'void';
+  }
+
   function statusChip(payment, share, inv) {
     var pay = String(payment || 'unpaid');
     var sh = String(share || 'hidden');
@@ -680,13 +688,18 @@
   }
 
   function paintInvoiceList(host, invoices) {
-    var displayInvoices = invoicesForClientQuery(invoicesForMethodFilter(invoices || []));
+    var periodNow = effectiveAmountPeriod();
+    var displayInvoices = invoicesForClientQuery(invoicesForMethodFilter(invoices || [])).filter(function (inv) {
+      return invoiceMatchesAmountPeriod(inv, periodNow);
+    });
     if (!displayInvoices.length) {
       var emptyMsg = String(state.clientQuery || '').trim()
         ? 'No invoices match <strong>' +
           esc(String(state.clientQuery).trim()) +
           '</strong> with the current filters. Clear the search or switch Year / Method.'
-        : 'No families match this payment method filter. Try <strong>All</strong> or another method chip.';
+        : periodNow === 'summer_2526' || periodNow === 'autumn_2526' || periodNow === 'spring_2526'
+          ? 'No invoices in this term for 2025/26. Summer 25/26 is crash courses and June-July bills. Autumn 26/27 is the other year chip.'
+          : 'No families match this payment method filter. Try <strong>All</strong> or another method chip.';
       host.innerHTML =
         accordionListStyles() +
         '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">' +
@@ -1305,6 +1318,11 @@
    */
   function invoiceActivityDateKey(inv) {
     if (!inv) return '';
+    var period = effectiveAmountPeriod();
+    if (period === 'summer_2526' || period === 'autumn_2526' || period === 'spring_2526') {
+      var dueKey = isoDayKeyFromRaw(inv.due_date);
+      if (dueKey) return dueKey;
+    }
     var best = '';
     var candidates = [
       inv.paid_at,
@@ -1733,15 +1751,65 @@
     }, 0);
   }
 
+
+  /**
+   * Summer 25/26 (crash + June/July bills) stays out of Autumn 26/27.
+   * Autumn 26/27 invoices that only carry a crash line stay in Autumn.
+   */
+  function invoiceSeasonSlot(inv) {
+    var blob = [
+      inv && inv.reference_text,
+      inv && inv.line_description,
+      inv && inv.notes,
+      inv && inv.title,
+      inv && inv.invoice_number,
+    ]
+      .map(function (x) { return String(x || '').toLowerCase(); })
+      .join(' ');
+    var term = String((inv && inv.billing_term) || '').toLowerCase();
+    var due = String((inv && inv.due_date) || '');
+    var says2627 = /26\s*\/\s*27/.test(blob);
+    var says2526 = /25\s*\/\s*26/.test(blob) || /summer crash/.test(blob);
+    if (inv && inv.is_la_office_auto) return { year: '2627', term: 'autumn' };
+    if (inv && inv.is_standalone_year_2526 === true && term !== 'autumn' && term !== 'spring') {
+      return { year: '2526', term: 'summer' };
+    }
+    if (says2526 && !says2627) {
+      var prior = term === 'autumn' || term === 'spring' || term === 'summer' ? term : 'summer';
+      return { year: '2526', term: prior };
+    }
+    if (term === 'summer' && due && due < '2026-09-01' && !says2627) {
+      return { year: '2526', term: 'summer' };
+    }
+    if (term === 'spring' || term === 'summer' || term === 'autumn') {
+      return { year: '2627', term: term };
+    }
+    return { year: '2627', term: 'autumn' };
+  }
+
+  function invoiceMatchesAmountPeriod(inv, period) {
+    var slot = invoiceSeasonSlot(inv);
+    if (period === 'summer_2526') return slot.year === '2526' && slot.term === 'summer';
+    if (period === 'autumn_2526') return slot.year === '2526' && slot.term === 'autumn';
+    if (period === 'spring_2526') return slot.year === '2526' && slot.term === 'spring';
+    if (period === 'spring') return slot.year === '2627' && slot.term === 'spring';
+    if (period === 'summer') return slot.year === '2627' && slot.term === 'summer';
+    if (period === 'autumn') return slot.year === '2627' && slot.term === 'autumn';
+    return true;
+  }
+
   function effectiveAmountPeriod() {
-    if (state.billingYear === '2526') return 'year_2526';
     var p = String(state.amountPeriod || 'autumn').toLowerCase();
-    if (p !== 'autumn' && p !== 'spring' && p !== 'summer') return 'autumn';
+    if (p !== 'autumn' && p !== 'spring' && p !== 'summer') p = 'autumn';
+    if (state.billingYear === '2526') return p + '_2526';
     return p;
   }
 
   function amountPeriodLabel(period) {
     var p = String(period || 'autumn').toLowerCase();
+    if (p === 'summer_2526') return 'Summer 25/26';
+    if (p === 'autumn_2526') return 'Autumn 25/26';
+    if (p === 'spring_2526') return 'Spring 26';
     if (p === 'year_2526' || p === '2526') return 'Year 25/26';
     if (p === 'year' || p === 'annual') return 'Year 26/27';
     if (p === 'spring') return 'Spring 27';
@@ -1751,6 +1819,9 @@
 
   function groupAmountForPeriod(group, period) {
     var p = String(period || state.amountPeriod || 'autumn').toLowerCase();
+    if (p === 'summer_2526' || p === 'autumn_2526' || p === 'spring_2526') {
+      return groupTotalGbp(group.invoices || []);
+    }
     if (p === 'year_2526' || p === '2526') {
       var crashSum = 0;
       (group.invoices || []).forEach(function (inv) {
@@ -2194,11 +2265,13 @@
     var metaInv = invoices[0] || (group.invoices && group.invoices[0]) || {};
     var contactId = esc(group.contact_id || '');
     var name = group.name || 'Participant';
-    var cards = invoices
-      .map(function (inv, idx) {
-        if (inv.created_via === 'la_office_auto') {
-          return (
-            '<article class="pp-inv-acc__card" data-invoice-id="' +
+    var cancelledCards = [];
+    var liveCards = [];
+    var liveHoldGiven = false;
+    invoices.forEach(function (inv) {
+      if (inv.created_via === 'la_office_auto') {
+        liveCards.push(
+          '<article class="pp-inv-acc__card" data-invoice-id="' +
             esc(inv.id) +
             '">' +
             '<div class="pp-inv-acc__grid">' +
@@ -2223,12 +2296,57 @@
             '</strong></div>' +
             '<div style="margin-top:8px"><span class="muted">Funding</span><br>' +
             fundingChipHtml(inv) +
-            '</div></div></div></article>'
-          );
-        }
-        return invoiceDetailCardHtml(inv, { showHoldOnce: idx === 0 });
-      })
-      .join('');
+            '</div></div></div></article>',
+        );
+        return;
+      }
+      if (isCancelledInvoice(inv)) {
+        cancelledCards.push(invoiceDetailCardHtml(inv, { showHoldOnce: false }));
+        return;
+      }
+      liveCards.push(invoiceDetailCardHtml(inv, { showHoldOnce: !liveHoldGiven }));
+      liveHoldGiven = true;
+    });
+    var cancelledBlock = '';
+    if (cancelledCards.length) {
+      var cancelledInvs = invoices.filter(isCancelledInvoice);
+      var cancelledNums = cancelledInvs
+        .map(function (inv) {
+          return String(inv.invoice_number || '').trim();
+        })
+        .filter(Boolean);
+      var cancelledAmt = cancelledInvs.reduce(function (sum, inv) {
+        var n = Number(inv.amount_gbp);
+        return sum + (Number.isFinite(n) ? n : 0);
+      }, 0);
+      cancelledBlock =
+        '<details class="pp-inv-acc__item pp-inv-acc__item--cancelled">' +
+        '<summary class="pp-inv-acc__sum pp-inv-acc__sum--cancelled">' +
+        '<span class="pp-inv-acc__chev" aria-hidden="true"></span>' +
+        '<span class="pp-inv-acc__who">' +
+        '<strong class="pp-inv-acc__name">Cancelled</strong>' +
+        '<span class="pp-inv-acc__num">' +
+        esc(
+          String(cancelledCards.length) +
+            (cancelledCards.length === 1 ? ' invoice' : ' invoices') +
+            (cancelledNums.length ? ' · ' + cancelledNums.join(' · ') : ''),
+        ) +
+        '</span></span>' +
+        '<span class="pp-inv-acc__amounts">' +
+        '<span class="pp-inv-acc__amt">' +
+        esc(formatMoney(cancelledAmt)) +
+        '</span></span>' +
+        '<span class="pp-inv-acc__status">' +
+        (cancelledInvs.some(isLostSlotInvoice)
+          ? '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--lost">lost slot</span>'
+          : '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--hidden">void</span>') +
+        '</span></summary>' +
+        '<div class="pp-inv-acc__body">' +
+        '<div class="pp-inv-acc__cards">' +
+        cancelledCards.join('') +
+        '</div></div></details>';
+    }
+    var cards = cancelledBlock + liveCards.join('');
     var countLabel = group.is_la_office_auto && !n
       ? 'Auto re-enrolled · no INV-P'
       : String(n) + ' invoice' + (n === 1 ? '' : 's');
@@ -2465,6 +2583,9 @@
       '.pp-inv-acc__pay-chip--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
       '.pp-inv-acc__item--lost>summary{background:#fef2f2;border-color:#fecaca}' +
       '.pp-inv-acc__item--lost .pp-inv-acc__name{color:#991b1b}' +
+      '.pp-inv-acc__item--cancelled{border-color:#fecaca;background:#fff}' +
+      '.pp-inv-acc__sum--cancelled{background:#fef2f2}' +
+      '.pp-inv-acc__item--cancelled>.pp-inv-acc__sum .pp-inv-acc__name{color:#991b1b}' +
       '.pp-inv-acc__status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
       '.pp-inv-acc__xero{font-size:11px;color:#64748b}' +
       '.pp-inv-acc__xero--ok{color:#1e40af}' +

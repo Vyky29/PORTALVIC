@@ -48,7 +48,10 @@ function round2(n: number): number {
 
 function termLabel(term: string): string {
   const t = clean(term, 20).toLowerCase();
-  if (t === "year_2526" || t === "2526" || t === "summer_2526") return "Year 25/26";
+  if (t === "summer_2526") return "Summer 25/26";
+  if (t === "autumn_2526") return "Autumn 25/26";
+  if (t === "spring_2526") return "Spring 26";
+  if (t === "year_2526" || t === "2526") return "Year 25/26";
   if (t === "year" || t === "annual") return "Year 26/27";
   if (t === "autumn") return "Autumn 26/27";
   if (t === "spring") return "Spring 27";
@@ -58,15 +61,51 @@ function termLabel(term: string): string {
 
 function normalizeBillingAmountKey(
   raw: unknown,
-): "year" | "year_2526" | "autumn" | "spring" | "summer" {
-  const t = clean(raw, 20).toLowerCase();
-  if (t === "year_2526" || t === "2526" || t === "summer_2526" || t === "year2526") {
+): "year" | "year_2526" | "summer_2526" | "autumn_2526" | "spring_2526" | "autumn" | "spring" | "summer" {
+  const t = clean(raw, 40).toLowerCase();
+  if (t === "summer_2526") return "summer_2526";
+  if (t === "autumn_2526") return "autumn_2526";
+  if (t === "spring_2526") return "spring_2526";
+  if (t === "year_2526" || t === "2526" || t === "year2526") {
     return "year_2526";
   }
   if (t === "year" || t === "annual") return "year";
   if (t === "spring") return "spring";
   if (t === "summer") return "summer";
   return "autumn";
+}
+
+
+/** Summer term 25/26: crash / intensive and June–July bills. Not Autumn 26/27. */
+function isSummer2526ListInvoice(inv: Record<string, unknown>): boolean {
+  if (inv.is_la_office_auto === true) return false;
+  if (inv.is_standalone_year_2526 === true) return true;
+  if ((Number(inv.crash_course_gbp) || 0) > 0.009) return true;
+  const term = clean(inv.billing_term, 20).toLowerCase();
+  if (term === "autumn" || term === "spring") return false;
+  const blob = [
+    clean(inv.reference_text, 200),
+    clean(inv.line_description, 800),
+    clean(inv.notes, 400),
+    clean(inv.invoice_number, 80),
+  ].join(" ").toLowerCase();
+  if (/26\s*\/\s*27/.test(blob) && !/25\s*\/\s*26/.test(blob)) return false;
+  if (/25\s*\/\s*26/.test(blob) || /summer crash/.test(blob)) return true;
+  const due = clean(inv.due_date, 20);
+  if (term === "summer" && due && due < "2026-09-01") return true;
+  return false;
+}
+
+function isPriorYear2526Term(inv: Record<string, unknown>, term: "autumn" | "spring"): boolean {
+  if (inv.is_la_office_auto === true || inv.is_standalone_year_2526 === true) return false;
+  const blob = [
+    clean(inv.reference_text, 200),
+    clean(inv.line_description, 400),
+    clean(inv.billing_term, 20),
+  ].join(" ").toLowerCase();
+  if (!/25\s*\/\s*26/.test(blob)) return false;
+  if (/26\s*\/\s*27/.test(blob)) return false;
+  return blob.includes(term);
 }
 
 /** Sum line amounts tagged as summer crash / intensive (Year 25/26 day-centre pot). */
@@ -194,14 +233,16 @@ function termTotalsFromPaymentContext(ctx: ReturnType<typeof paymentRowToContext
 
 function bookedFieldsFromTotals(
   totals: { autumn: number; spring: number; summer: number; annual: number } | null | undefined,
-  amountKey: "year" | "year_2526" | "autumn" | "spring" | "summer",
+  amountKey: "year" | "year_2526" | "summer_2526" | "autumn_2526" | "spring_2526" | "autumn" | "spring" | "summer",
 ) {
   const autumn = totals?.autumn || 0;
   const spring = totals?.spring || 0;
   const summer = totals?.summer || 0;
   const annual = totals?.annual || 0;
-  const selected =
-    amountKey === "year" || amountKey === "year_2526"
+  const priorYear = amountKey === "summer_2526" || amountKey === "autumn_2526" || amountKey === "spring_2526";
+  const selected = priorYear
+    ? 0
+    : amountKey === "year" || amountKey === "year_2526"
       ? annual
       : amountKey === "spring"
         ? spring
@@ -216,10 +257,8 @@ function bookedFieldsFromTotals(
     booked_term_gbp:
       amountKey === "year" || amountKey === "year_2526" ? annual || null : selected || null,
     billing_term:
-      amountKey === "year" ? "year" : amountKey === "year_2526" ? "year_2526" : amountKey,
-    billing_term_label: termLabel(
-      amountKey === "year" ? "year" : amountKey === "year_2526" ? "year_2526" : amountKey,
-    ),
+      amountKey === "year" ? "year" : amountKey,
+    billing_term_label: termLabel(amountKey === "year" ? "year" : amountKey),
     amount_selected_gbp: selected || null,
   };
 }
@@ -238,7 +277,7 @@ type BookedSlotSummary = {
 
 function bookedSlotsFromPaymentContext(
   ctx: ReturnType<typeof paymentRowToContext>,
-  amountKey: "year" | "year_2526" | "autumn" | "spring" | "summer",
+  amountKey: "year" | "year_2526" | "summer_2526" | "autumn_2526" | "spring_2526" | "autumn" | "spring" | "summer",
 ): BookedSlotSummary[] {
   const termKey =
     amountKey === "year" || amountKey === "year_2526" ? "annual" : amountKey;
@@ -1076,7 +1115,13 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
    * - year / autumn / spring / summer 26/27: hide standalone Year 25/26 crash INV-Ps
    *   so re-enrol lists stay clean; Patrick autumn keeps showing (full invoice).
    */
-  if (amountKey === "year_2526") {
+  if (amountKey === "summer_2526") {
+    invoices = invoices.filter((inv) => isSummer2526ListInvoice(inv as Record<string, unknown>));
+  } else if (amountKey === "autumn_2526") {
+    invoices = invoices.filter((inv) => isPriorYear2526Term(inv as Record<string, unknown>, "autumn"));
+  } else if (amountKey === "spring_2526") {
+    invoices = invoices.filter((inv) => isPriorYear2526Term(inv as Record<string, unknown>, "spring"));
+  } else if (amountKey === "year_2526") {
     invoices = invoices.filter(
       (inv) =>
         inv.is_la_office_auto !== true &&
@@ -1137,7 +1182,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       billing_term: amountKey === "year" ? "year" : amountKey,
       billing_term_label: termLabel(amountKey === "year" ? "year" : amountKey),
       billing_amount: amountKey,
-      academic_year: amountKey === "year_2526" ? "2025-26" : REENROL_ACADEMIC_YEAR,
+      academic_year: amountKey === "year_2526" || String(amountKey).endsWith("_2526") ? "2025-26" : REENROL_ACADEMIC_YEAR,
     },
   });
 }
