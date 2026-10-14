@@ -1838,11 +1838,17 @@
             }else if(window.PortalParticipantsSheet
               && typeof window.PortalParticipantsSheet.overrideIsFinishBookingNewClient === 'function'
               && window.PortalParticipantsSheet.overrideIsFinishBookingNewClient(ov)){
-              out.hasUpdated = true;
+              if(typeof window.PortalParticipantsSheet.overrideShouldShowOnCalendarDate !== 'function'
+                || window.PortalParticipantsSheet.overrideShouldShowOnCalendarDate(ov, iso)){
+                out.hasUpdated = true;
+              }
             }else if(window.PortalParticipantsSheet
               && typeof window.PortalParticipantsSheet.overrideIsTermNewParticipant === 'function'
               && window.PortalParticipantsSheet.overrideIsTermNewParticipant(ov)){
-              out.hasUpdated = true;
+              if(typeof window.PortalParticipantsSheet.overrideShouldShowOnCalendarDate !== 'function'
+                || window.PortalParticipantsSheet.overrideShouldShowOnCalendarDate(ov, iso)){
+                out.hasUpdated = true;
+              }
             }else{
               out.hasMakeUp = true;
             }

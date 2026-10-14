@@ -1505,7 +1505,7 @@ async function ensurePaidBookingScheduleOverride(
   admin: SupabaseClient,
   reservation: Record<string, unknown>,
   participantName: string,
-  opts?: { isTrial?: boolean },
+  opts?: { isTrial?: boolean; firstSessionIso?: string },
 ): Promise<string> {
   const isTrial = !!opts?.isTrial;
   const iso = clean(reservation.date_iso, 12).slice(0, 10);
@@ -1584,6 +1584,9 @@ async function ensurePaidBookingScheduleOverride(
         finish_booking: true,
         new_client: !isTrial,
         term_new_participant: !isTrial,
+        first_session: isTrial
+          ? undefined
+          : (clean(opts?.firstSessionIso, 12).slice(0, 10) || iso),
         aquatic_half_band: isAquatic && bands.length > 1,
       },
       reason: `Finish booking ${isTrial ? "trial" : "term"} · ${client} · ${venue} · ${band.label}`,
@@ -1678,7 +1681,10 @@ async function projectPaidTermPlaceOntoLaterDates(
   let painted = 0;
   for (const iso of dates) {
     const copy = Object.assign({}, reservation, { date_iso: iso });
-    await ensurePaidBookingScheduleOverride(admin, copy, client, { isTrial: false });
+    await ensurePaidBookingScheduleOverride(admin, copy, client, {
+      isTrial: false,
+      firstSessionIso: fromIso,
+    });
     if (!instructor || !timeSlot) {
       painted++;
       continue;

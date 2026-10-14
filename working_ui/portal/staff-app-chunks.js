@@ -24,7 +24,7 @@
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
     "/portal/clients_info_embed.js?v=20260910-joelle-406",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
-    "/portal/portal_participants_sheet.js?v=20260909-mohamed-new-client",
+    "/portal/portal_participants_sheet.js?v=20261014-new-client-first",
     "/portal/portal_staff_lead_aquatic_slots.js?v=20261007-name-not-dc",
     "/portal/portal_participant_identity.js?v=20261003-mohamed-mohamud",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
@@ -52,7 +52,7 @@
     "/portal/staff-dashboard-term.js?v=20261013-acat-tue",
     "/portal/staff-dashboard-participants.js?v=20261013-dc-same-card",
     "/portal/staff-dashboard-today.js?v=20261014-bespoke-ht",
-    "/portal/staff-dashboard-ui.js?v=20261014-luliya-fri-red",
+    "/portal/staff-dashboard-ui.js?v=20261014-new-client-first",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
@@ -73,7 +73,7 @@
     "/portal/staff-dashboard-term.js?v=20261013-acat-tue",
     "/portal/staff-dashboard-participants.js?v=20261013-dc-same-card",
     "/portal/staff-dashboard-today.js?v=20261014-bespoke-ht",
-    "/portal/staff-dashboard-ui.js?v=20261014-luliya-fri-red",
+    "/portal/staff-dashboard-ui.js?v=20261014-new-client-first",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];

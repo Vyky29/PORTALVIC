@@ -333,13 +333,34 @@
     return "term-intake|" + staff + "|" + client + "|" + slot;
   }
 
+  function overrideStampedFirstSessionIso(row) {
+    const pl = overridePayload(row);
+    return normIso(pl && (pl.first_session || pl.firstSession));
+  }
+
+  /** Earliest dated copy of this term place (same staff, child, and slot). */
+  function earliestTermIntakeSessionIso(row, ctx) {
+    const gk = overrideTermIntakeGroupKey(row);
+    if (!gk) return "";
+    let first = "";
+    rowsAll(ctx).forEach(function (other) {
+      if (!other || overrideTermIntakeGroupKey(other) !== gk) return;
+      const stamped = overrideStampedFirstSessionIso(other);
+      const iso = stamped || normIso(other.session_date);
+      if (!iso) return;
+      if (!first || iso < first) first = iso;
+    });
+    return first;
+  }
+
   function overrideShouldShowOnCalendarDate(row, iso) {
     if (!overrideIsTermNewParticipant(row)) return true;
-    const first = clientFirstSessionDateIso(
-      overrideTermIntakeClientSlug(row),
-      buildContext()
-    );
     const key = normIso(iso);
+    const stamped = overrideStampedFirstSessionIso(row);
+    if (stamped) return !!key && key === stamped;
+    const first =
+      earliestTermIntakeSessionIso(row, buildContext()) ||
+      clientFirstSessionDateIso(overrideTermIntakeClientSlug(row), buildContext());
     if (first && key) return key === first;
     return normIso(row && row.session_date) === key;
   }
