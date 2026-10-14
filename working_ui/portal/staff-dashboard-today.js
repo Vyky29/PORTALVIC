@@ -29,23 +29,92 @@
       }catch(_){ return undefined; }
     }
     /**
-     * Weekday Day Centre cancellations drop off Today (no red card).
-     * After-school and weekend cancelled sessions still paint red unless
-     * the office cancelled that participant (those stay on the halo only).
+     * Day Centre cancellation stays on Today when that participant does not
+     * come back in the same hours. A live added card (session_add) covering
+     * the window replaces the cancel, so the worker sees the new seat.
      */
-    function portalTodayHideCancelledDayCentreCard(s, sessionDateKey){
+    function portalTodaySessionIsDayCentre(s){
       if(!s) return false;
-      var svc = String(s.rosterService || s.service || s.activity || '').toLowerCase();
-      if(!/day\s*centre/.test(svc)) return false;
-      var iso = String(sessionDateKey || '').slice(0, 10);
-      if(/^\d{4}-\d{2}-\d{2}$/.test(iso)){
-        var d = new Date(iso + 'T12:00:00');
-        if(!isNaN(d.getTime())){
-          var dow = d.getDay();
-          if(dow === 0 || dow === 6) return false;
-        }
+      var actBlob = String(s.rosterService || s.service || s.activity || '');
+      if(/day\s*centre/i.test(actBlob)) return true;
+      /* Aquatic / climb keep their own card. A default "Swimming" label on
+         Ikram / Fadi morning is still Day Centre. */
+      if(/aquatic|climb|multi[-\s]?activity|physical|fitness|\bgym\b/i.test(actBlob)) return false;
+      var who = s.clientId || s.client_id || s.clientName || s.clientDisplay || s.client_name || s.name;
+      if(typeof portalClientIsDayCentreSharedParticipant === 'function'
+        && portalClientIsDayCentreSharedParticipant(who)) return true;
+      if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)) return true;
+      return false;
+    }
+    function portalTodayHmMin(v){
+      var raw = typeof portalHmFromDbTime === 'function' ? (portalHmFromDbTime(v) || v) : v;
+      var hm = typeof portalCanonicalHmToken === 'function'
+        ? portalCanonicalHmToken(raw)
+        : String(raw || '').trim();
+      if(typeof portalHmToMinutes === 'function') return portalHmToMinutes(hm);
+      var m = String(hm || '').match(/^(\d{1,2}):(\d{2})$/);
+      if(!m) return NaN;
+      return (+m[1]) * 60 + (+m[2]);
+    }
+    function portalTodayClientKeyFromBits(clientId, name){
+      if(typeof portalCanonicalTodayClientKey === 'function'){
+        return portalCanonicalTodayClientKey(clientId, name);
       }
-      return true;
+      return String(clientId || name || '').trim().toLowerCase();
+    }
+    function portalTodayItemIsLiveSessionAdd(it){
+      if(!it || it.kind !== 'client') return false;
+      if(String(it.portalOverrideAlertPill || '').toUpperCase() === 'CANCELLED') return false;
+      var ov = it.__portalScheduleOverride;
+      return !!(ov && String(ov.override_type || '').trim() === 'session_add');
+    }
+    /** True when this worker has a live session_add for the same participant over this seat. */
+    function portalTodayLiveSessionAddCoversSeat(s, sessionDateKey){
+      if(!s) return false;
+      var iso = String(sessionDateKey || '').slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      var cid = portalTodayClientKeyFromBits(
+        s.clientId || s.client_id,
+        s.clientName || s.clientDisplay || s.client_name || s.name
+      );
+      if(!cid) return false;
+      var ss = portalTodayHmMin(s.start);
+      var se = portalTodayHmMin(s.end || s.start);
+      if(!Number.isFinite(ss)) return false;
+      if(!Number.isFinite(se) || se <= ss) se = ss + 30;
+      var rows = typeof portalScheduleOverrideRowsForSessionIso === 'function'
+        ? portalScheduleOverrideRowsForSessionIso(iso)
+        : [];
+      var sid = s.staffId;
+      try{
+        if(typeof STAFF_DASHBOARD_ID !== 'undefined' && STAFF_DASHBOARD_ID) sid = STAFF_DASHBOARD_ID;
+      }catch(_){}
+      for(var i = 0; i < rows.length; i++){
+        var ov = rows[i];
+        if(!ov || String(ov.status || 'active') !== 'active') continue;
+        if(String(ov.override_type || '').trim() !== 'session_add') continue;
+        if(sid){
+          if(typeof portalStaffKeysMatch === 'function'){
+            if(!portalStaffKeysMatch(ov.anchor_staff_id, sid)) continue;
+          }else if(portalNormKeyStr(ov.anchor_staff_id) !== portalNormKeyStr(sid)) continue;
+        }
+        var pl = typeof portalSessionAddPayloadObject === 'function'
+          ? portalSessionAddPayloadObject(ov)
+          : (ov.payload && typeof ov.payload === 'object' ? ov.payload : {});
+        var kind = String(pl.kind || '').trim().toLowerCase();
+        if(kind && kind !== 'session' && kind !== 'client' && kind !== 'office') continue;
+        var pax = portalTodayClientKeyFromBits(pl.client_id || ov.anchor_client_id, pl.client_name);
+        if(!pax || pax !== cid) continue;
+        var as = portalTodayHmMin(ov.anchor_start);
+        var ae = portalTodayHmMin(ov.anchor_end);
+        if(!Number.isFinite(as) || !Number.isFinite(ae) || ae <= as) continue;
+        if(ss < ae && as < se) return true;
+      }
+      return false;
+    }
+    function portalTodayHideCancelledDayCentreCard(s, sessionDateKey){
+      if(!portalTodaySessionIsDayCentre(s)) return false;
+      return portalTodayLiveSessionAddCoversSeat(s, sessionDateKey);
     }
     /**
      * Office-cancelled participant: no Today card. The halo keeps the
@@ -3608,7 +3677,18 @@
       const incomingHasOv = !!(incoming.__portalScheduleOverride || incoming.portalOverrideAlertPill || incoming.portalRosterTimeUpdated);
       let keep = existing;
       let drop = incoming;
-      if(incomingHasOv && !existingHasOv){
+      const existingLiveAdd = portalTodayItemIsLiveSessionAdd(existing);
+      const incomingLiveAdd = portalTodayItemIsLiveSessionAdd(incoming);
+      const existingCancelled = String(existing.portalOverrideAlertPill || '').toUpperCase() === 'CANCELLED';
+      const incomingCancelled = String(incoming.portalOverrideAlertPill || '').toUpperCase() === 'CANCELLED';
+      /* Added Day Centre card wins over the cancelled seat it replaces. */
+      if(incomingLiveAdd && existingCancelled){
+        keep = incoming;
+        drop = existing;
+      } else if(existingLiveAdd && incomingCancelled){
+        keep = existing;
+        drop = incoming;
+      } else if(incomingHasOv && !existingHasOv){
         keep = incoming;
         drop = existing;
       } else if(existingHasOv && !incomingHasOv){
@@ -3738,12 +3818,61 @@
         for(let i = 0; i < idxs.length; i++){
           for(let j = 0; j < idxs.length; j++){
             if(i === j) continue;
-            if(covers(items[idxs[i]], items[idxs[j]])) drop[idxs[j]] = true;
+            if(!covers(items[idxs[i]], items[idxs[j]])) continue;
+            /* A live added card must not be dropped under a wider cancelled seat. */
+            var outerCancelled = String(items[idxs[i]].portalOverrideAlertPill || '').toUpperCase() === 'CANCELLED';
+            var innerLive = String(items[idxs[j]].portalOverrideAlertPill || '').toUpperCase() !== 'CANCELLED';
+            if(outerCancelled && innerLive) continue;
+            if(portalTodayItemIsLiveSessionAdd(items[idxs[j]])) continue;
+            drop[idxs[j]] = true;
           }
         }
       });
       if(!Object.keys(drop).length) return items;
       return items.filter(function(_it, idx){ return !drop[idx]; });
+    }
+    /** Day Centre: drop a cancelled card when a live card for that participant covers the same hours. */
+    function portalTodayDropDayCentreCancelCoveredByReturn(items){
+      if(!Array.isArray(items) || items.length < 2) return items || [];
+      function keyOf(it){
+        var base = it && it.__portalBaseSession ? it.__portalBaseSession : {};
+        return portalTodayClientKeyFromBits(it.clientId || base.clientId, it.name || base.clientName || base.clientDisplay);
+      }
+      function win(it){
+        var base = it && it.__portalBaseSession ? it.__portalBaseSession : {};
+        var sk = String(it && it.sessionKey || '').split('|');
+        var s = portalTodayHmMin(base.start || sk[1] || '');
+        var e = portalTodayHmMin(base.end || '');
+        if(!Number.isFinite(e) || e <= s) e = Number.isFinite(s) ? s + 30 : NaN;
+        return { s: s, e: e };
+      }
+      function isDc(it){
+        var base = it && it.__portalBaseSession ? it.__portalBaseSession : it;
+        return portalTodaySessionIsDayCentre(base) || portalTodaySessionIsDayCentre(it);
+      }
+      var live = [];
+      items.forEach(function(it){
+        if(!it || it.kind !== 'client') return;
+        if(String(it.portalOverrideAlertPill || '').toUpperCase() === 'CANCELLED') return;
+        if(!isDc(it) && !portalTodayItemIsLiveSessionAdd(it)) return;
+        var k = keyOf(it);
+        var w = win(it);
+        if(!k || !Number.isFinite(w.s) || !Number.isFinite(w.e)) return;
+        live.push({ k: k, s: w.s, e: w.e });
+      });
+      if(!live.length) return items;
+      return items.filter(function(it){
+        if(!it || String(it.portalOverrideAlertPill || '').toUpperCase() !== 'CANCELLED') return true;
+        if(!isDc(it)) return true;
+        var k = keyOf(it);
+        var w = win(it);
+        if(!k || !Number.isFinite(w.s) || !Number.isFinite(w.e)) return true;
+        for(var i = 0; i < live.length; i++){
+          if(live[i].k !== k) continue;
+          if(w.s < live[i].e && live[i].s < w.e) return false;
+        }
+        return true;
+      });
     }
 
     /** Selected-day session list (overview “Today” block): anchor = `getViewAnchorCalendarDate(DEMO_VIEW_DAY)` — live calendar or Week/Term URL date lock. Optional `calendarIsoOverride` (YYYY-MM-DD) pins an exact day (next-session preview). */
@@ -5549,17 +5678,21 @@
         });
       }
       var sortedToday = portalInjectOrphanMakeupOverrideCards(
+        portalTodayDropDayCentreCancelCoveredByReturn(
         portalDedupeTodayDayCentreWidestClientWindow(
           portalDedupeTodayScheduleViewCards(
             portalSuppressAvailableWhenSlotFilled(
               primary.concat(portalDedupeInstructorCoverExtras(primary, extra)).filter(function(it){
                 if(!it) return false;
-                if(portalTodayItemIsOfficeCancelledCard(it)) return false;
+                var dcSeat = portalTodaySessionIsDayCentre(it.__portalBaseSession || it) || portalTodaySessionIsDayCentre(it);
+                /* Day Centre cancels stay unless that participant comes back in the same hours. */
+                if(portalTodayItemIsOfficeCancelledCard(it) && !dcSeat) return false;
                 if(String(it.portalOverrideAlertPill || '').toUpperCase() !== 'CANCELLED') return true;
                 return !portalTodayHideCancelledDayCentreCard(it.__portalBaseSession || it, sessionDateKey);
               })
             )
           )
+        )
         ),
         sessionDateKey,
         anchorDayWord,
