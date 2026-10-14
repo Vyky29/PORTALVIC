@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v433",
+  "version": "2026-10-14-v434",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1342,19 +1342,23 @@
             "visitors",
             "otp",
             "outcome",
+            "activity",
+            "cliqueado",
+            "clicked",
             "email interest",
             "potential"
           ],
           "steps": [
             "This page is not the child list. Lead Parent portal means they opened Booking from the family hub. Lead OTP means they asked for a code.",
-            "Outcome Only looked: they stay on Leads. They did not join another list. Activity, next to Outcome, lists the services they opened.",
-            "Outcome Trial or Term: Activity shows that service, the time, the day and the venue.",
+            "Outcome Only looked: they stay on Leads. They did not join another list. Activity lists a service only if they opened that service card, or a time if they tapped one. A dash means they only asked for the code.",
+            "Outcome Trial or Term: the place (service, time, day, venue) sits under the green chip. Activity stays blank on that row.",
             "Outcome Waiting list: they also show on WAITING. Outcome Trial: they also show on TRIAL. Outcome Term: they also show on Active.",
             "Type is who they were. New visitor is the first time. Known visitor is someone who already registered and is not ACTIVE. Not first time. Registered previously means they registered before. Known visitor (OLD CLIENT) is an old client who came back as a visitor. ACTIVE already has a place.",
             "Email interest is an old office file under Origin. It is not the lead list."
           ],
           "tips": [
-            "REGISTERED, under Services & places, is the child who finished the form and has no place. That is a different screen."
+            "REGISTERED, under Services & places, is the child who finished the form and has no place. That is a different screen.",
+            "If Activity names several centres after one service, those are the centres that service runs at. It is not a separate click on each pool."
           ],
           "es": {
             "title": "Que es Leads",
@@ -1362,14 +1366,15 @@
             "where": "Services & places → Leads",
             "steps": [
               "Esta pagina no es la lista de ninos. Lead Parent portal: abrieron Booking desde el hub. Lead OTP: pidieron un codigo.",
-              "Outcome Only looked: se quedan en Leads. No pasan a otra lista. Activity, al lado de Outcome, lista los servicios que abrieron.",
-              "Outcome Trial o Term: Activity muestra ese servicio, la hora, el dia y el venue.",
+              "Outcome Only looked: se quedan en Leads. No pasan a otra lista. Activity lista un servicio solo si abrieron esa tarjeta, o una hora si pulsaron una. Un guion significa que solo pidieron el codigo.",
+              "Outcome Trial o Term: el sitio (servicio, hora, dia, venue) va debajo del chip verde. Activity en esa fila se queda en blanco.",
               "Outcome Waiting list: tambien salen en WAITING. Outcome Trial: tambien salen en TRIAL. Outcome Term: tambien salen en Active.",
               "Type es quien eran. New visitor es la primera vez. Known visitor es alguien que ya se registro y no es ACTIVE. Not first time. Registered previously significa que ya se registraron. Known visitor (OLD CLIENT) es un cliente OLD que volvio como visitante. ACTIVE ya tiene plaza.",
               "Email interest es un archivo viejo de oficina, dentro de Origin. No es la lista de leads."
             ],
             "tips": [
-              "REGISTERED, en Services & places, es el nino que termino el formulario y no tiene plaza. Es otra pantalla."
+              "REGISTERED, en Services & places, es el nino que termino el formulario y no tiene plaza. Es otra pantalla.",
+              "Si Activity pone varios centros despues de un servicio, son los centros donde corre ese servicio. No es un clic en cada piscina."
             ]
           }
         },
