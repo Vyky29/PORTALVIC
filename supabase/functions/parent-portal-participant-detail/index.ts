@@ -935,6 +935,8 @@ function buildServicesDetail(
     venue: string;
     area: string;
     instructor: string;
+    fromIso: string;
+    fromOpen: boolean;
   };
   const groups = new Map<string, Group>();
 
@@ -970,8 +972,19 @@ function buildServicesDetail(
         venue: "",
         area: "",
         instructor: "",
+        fromIso: "",
+        fromOpen: false,
       };
       groups.set(key, g);
+    }
+    const fromRaw = clean(s.fromIso || s.bookedFrom || s.booked_from, 10);
+    const fromIso = /^\d{4}-\d{2}-\d{2}$/.test(fromRaw) ? fromRaw : "";
+    /* Any undated row means this weekday is already standing for the term. */
+    if (!fromIso) {
+      g.fromOpen = true;
+      g.fromIso = "";
+    } else if (!g.fromOpen && (!g.fromIso || fromIso < g.fromIso)) {
+      g.fromIso = fromIso;
     }
     if (!g.venue) g.venue = clean(s.venue, 80);
     if (!g.area) g.area = clean(s.area, 80);
@@ -1014,18 +1027,20 @@ function buildServicesDetail(
         venue: g.venue,
         area: g.area,
         instructor: g.instructor,
+        fromIso: g.fromOpen ? "" : g.fromIso,
         _order: DAY_ORDER[g.day.toLowerCase()] || 8,
         _start: g.startMin ?? 9999,
       };
     })
     .sort((a, b) => (a._order !== b._order ? a._order - b._order : a._start - b._start))
-    .map(({ label, day, time, venue, area, instructor }) => ({
+    .map(({ label, day, time, venue, area, instructor, fromIso }) => ({
       label,
       day,
       time,
       venue,
       area,
       ...(instructor ? { instructor } : {}),
+      ...(fromIso ? { fromIso } : {}),
     }));
 }
 

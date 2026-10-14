@@ -1475,6 +1475,7 @@ async function upsertServiceLinesForPaidBooking(
       area: /climb/i.test(serviceName) || /westway/i.test(venue) ? "Wall" : "Teaching Pool",
       weeks: opts.isTrial ? 1 : undefined,
       isTrial: opts.isTrial || undefined,
+      fromIso: opts.isTrial ? undefined : clean(reservation.date_iso, 12).slice(0, 10) || undefined,
     });
   }
   const { error } = await admin.from("portal_participant_service_lines").upsert(
@@ -1601,6 +1602,118 @@ async function ensurePaidBookingScheduleOverride(
   if (inserted === 0 && existed > 0) return "override_exists";
   if (inserted > 0) return bands.length > 1 ? `override_ok_halves:${inserted}` : "override_ok";
   return "override_ok";
+}
+
+/** Autumn 26/27 last day. After-school and weekend half term stays closed. */
+const AUTUMN_TERM_END_ISO = "2026-12-18";
+const AUTUMN_AS_CLOSED = { from: "2026-10-24", to: "2026-11-01" };
+
+function sheetTimeSlotLabel(label: string): string {
+  return label
+    .replace(/\s*[–—−]\s*/g, " to ")
+    .replace(/:00/g, "")
+    .replace(/\.00/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Every same-weekday date from the paid day through the end of term. */
+function termPlaceDates(dayLabel: string, fromIso: string, serviceName: string): string[] {
+  const names = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const want = names.indexOf(String(dayLabel || "").trim().toLowerCase());
+  if (want < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(fromIso)) return [];
+  const out: string[] = [];
+  let iso = fromIso;
+  let guard = 0;
+  while (iso <= AUTUMN_TERM_END_ISO && guard < 40) {
+    guard++;
+    const dow = new Date(iso + "T12:00:00Z").getUTCDay();
+    if (dow !== want) {
+      const step = new Date(iso + "T12:00:00Z");
+      step.setUTCDate(step.getUTCDate() + 1);
+      iso = step.toISOString().slice(0, 10);
+      continue;
+    }
+    const weekend = dow === 0 || dow === 6;
+    const dayCentre = /day\s*centre/i.test(serviceName);
+    const halfTerm = iso >= AUTUMN_AS_CLOSED.from && iso <= AUTUMN_AS_CLOSED.to;
+    if (!(halfTerm && (weekend || !dayCentre))) out.push(iso);
+    const next = new Date(iso + "T12:00:00Z");
+    next.setUTCDate(next.getUTCDate() + 7);
+    iso = next.toISOString().slice(0, 10);
+  }
+  return out;
+}
+
+/**
+ * A paid term place is every remaining weekday, not the one paid date.
+ * A trial stays on that single day.
+ */
+async function projectPaidTermPlaceOntoLaterDates(
+  admin: SupabaseClient,
+  reservation: Record<string, unknown>,
+  participantName: string,
+): Promise<string> {
+  const fromIso = clean(reservation.date_iso, 12).slice(0, 10);
+  const day = clean(reservation.day_label, 20);
+  const service = clean(reservation.service_name, 80) || "Aquatic Activity";
+  const dates = termPlaceDates(day, fromIso, service).filter((iso) => iso !== fromIso);
+  if (!dates.length) return "term_dates:0";
+  const client = clean(participantName, 80) || "Participant";
+  const instructor = preferredInstructorForReservation(reservation) ||
+    extractInstructorFromNotes(reservation.notes);
+  const timeSlot = sheetTimeSlotLabel(clean(reservation.time_label, 80));
+  const venue = clean(reservation.venue, 80);
+  let actorId: string | null = null;
+  try {
+    const { data: sample } = await admin
+      .from("portal_roster_rows")
+      .select("created_by")
+      .not("created_by", "is", null)
+      .limit(1);
+    actorId = sample && sample[0] ? String(sample[0].created_by || "") : null;
+  } catch (_e) {
+    actorId = null;
+  }
+  let painted = 0;
+  for (const iso of dates) {
+    const copy = Object.assign({}, reservation, { date_iso: iso });
+    await ensurePaidBookingScheduleOverride(admin, copy, client, { isTrial: false });
+    if (!instructor || !timeSlot) {
+      painted++;
+      continue;
+    }
+    const { data: existing } = await admin
+      .from("portal_roster_rows")
+      .select("id")
+      .eq("session_date", iso)
+      .ilike("client_name", client)
+      .eq("status", "active")
+      .limit(1);
+    if (existing && existing.length) {
+      painted++;
+      continue;
+    }
+    const row: Record<string, unknown> = {
+      client_name: client,
+      day,
+      time_slot: timeSlot,
+      instructors: instructor,
+      service,
+      area: /climb|westway/i.test(`${service} ${venue}`) ? "Wall" : "Teaching Pool",
+      venue,
+      session_date: iso,
+      status: "active",
+      updated_at: new Date().toISOString(),
+    };
+    if (actorId) {
+      row.created_by = actorId;
+      row.updated_by = actorId;
+    }
+    const { error } = await admin.from("portal_roster_rows").insert(row);
+    if (!error) painted++;
+  }
+  return "term_dates:" + painted;
 }
 
 /**
@@ -1784,6 +1897,20 @@ export async function syncOpsAfterFinishBookingPaid(
     { isTrial },
   );
   notes.push(overrideNote);
+  if (!isTrial) {
+    try {
+      notes.push(
+        await projectPaidTermPlaceOntoLaterDates(
+          admin,
+          reservation,
+          participantName || "Participant",
+        ),
+      );
+    } catch (e) {
+      notes.push("term_dates_error");
+      console.warn("[syncOpsAfterFinishBookingPaid] term dates", e);
+    }
+  }
 
   /* Linked aquatic halves: one OV per sibling reservation time (not a single hour OV). */
   if (token.document_id) {

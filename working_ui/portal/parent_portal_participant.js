@@ -4166,6 +4166,7 @@
     if (!detail.length) return [];
     var cols = Object.create(null);
     var dcCols = Object.create(null);
+    var fromByCol = weekdayFromByCol(detail);
     detail.forEach(function (s) {
       var col = serviceDetailCalCol(s);
       if (col == null) return;
@@ -4200,8 +4201,12 @@
           : isClubClosedIso(iso, data, kind === "day_centre" ? "Day Centre" : "Aquatic");
       if (!closed) {
         // 1–4 Sept 2026: Day Centre only — other services start 5 Sept.
+        // A term place with fromIso does not paint earlier weeks of that weekday.
+        var fromGate = fromByCol[col] || "";
         var runs =
-          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false, data));
+          cols[col] &&
+          (!fromGate || iso >= fromGate) &&
+          (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false, data));
         if (runs) {
           out.push(
             annotateChipDate(
@@ -7286,7 +7291,33 @@
       var colors = byCol[k];
       colMap[k] = colors.length === 1 ? colors[0] : colors;
     });
-    return { colMap: colMap, serviceTone: serviceTone };
+    return { colMap: colMap, serviceTone: serviceTone, fromByCol: weekdayFromByCol(detail) };
+  }
+
+  function serviceDetailFromIso(s) {
+    var iso = String((s && (s.fromIso || s.bookedFrom || s.from)) || "").trim().slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "";
+  }
+
+  /**
+   * Weekday columns where every service starts on a date (term place, not a trial).
+   * A column with any undated service stays open for the whole term.
+   */
+  function weekdayFromByCol(detail) {
+    var open = Object.create(null);
+    var from = Object.create(null);
+    (detail || []).forEach(function (s) {
+      var col = serviceDetailCalCol(s);
+      if (col == null) return;
+      var gate = serviceDetailFromIso(s);
+      if (!gate) open[col] = true;
+      else if (!from[col] || gate < from[col]) from[col] = gate;
+    });
+    var out = Object.create(null);
+    Object.keys(from).forEach(function (col) {
+      if (!open[col]) out[col] = from[col];
+    });
+    return out;
   }
 
   function myCalendarLegendHtml(data) {
@@ -7453,6 +7484,7 @@
     } else {
       var built = buildMyCalendarDayColors(data);
       loadOpts.dayColors = built.colMap || {};
+      loadOpts.dayColorFrom = built.fromByCol || {};
       var makeupIso = Object.create(null);
       ((data && data._ppMakeupSessions) || []).forEach(function (row) {
         if (row && row.iso) makeupIso[row.iso] = "#facc15";

@@ -198,16 +198,42 @@
    * (2 = half/half pie, 3+ = equal pie slices). Other green cells lose fill;
    * red (closed / half-term) cells are untouched.
    */
-  global.portalMarkPreviewSessionDays = function portalMarkPreviewSessionDays(root, dayColors) {
+  global.portalMarkPreviewSessionDays = function portalMarkPreviewSessionDays(root, dayColors, markOpts) {
     if (!root || !root.querySelectorAll) return;
+    markOpts = markOpts || {};
+    var fromByCol = markOpts.fromByCol || {};
     var grids = root.querySelectorAll(".dc-cal-grid");
     Array.prototype.forEach.call(grids, function (grid) {
+      var label = String(grid.getAttribute("aria-label") || "").trim();
+      var monthMatch = label.match(/^([A-Za-z]+)\s+(\d{4})$/);
+      var monthNum = monthMatch ? CAL_MONTH_NAME_TO_NUM[String(monthMatch[1] || "").toLowerCase()] : 0;
+      var year = monthMatch ? Number(monthMatch[2]) : 0;
       var cells = grid.children;
       for (var i = 0; i < cells.length; i++) {
         var cell = cells[i];
         if (!cell || !cell.classList) continue;
         if (!cell.classList.contains("dc-cal-cell--green")) continue;
         var col = i % 7;
+        var fromIso = fromByCol[col] || fromByCol[String(col)] || "";
+        if (fromIso && monthNum && year) {
+          var dayEl = cell.querySelector(".dc-cal-day");
+          var dayNum = Number(dayEl && String(dayEl.textContent || "").trim());
+          if (Number.isFinite(dayNum) && dayNum >= 1) {
+            var iso =
+              String(year) +
+              "-" +
+              (monthNum < 10 ? "0" : "") +
+              monthNum +
+              "-" +
+              (dayNum < 10 ? "0" : "") +
+              dayNum;
+            if (iso < fromIso) {
+              cell.classList.remove("dc-cal-cell--green");
+              cell.classList.add("dc-cal-cell--open");
+              continue;
+            }
+          }
+        }
         var bg = dayColors[col];
         var fill = sessionDayBackground(bg);
         if (fill) {
@@ -400,7 +426,9 @@
         } catch (_mineIso) {}
       } else if (opts.dayColors) {
         try {
-          global.portalMarkPreviewSessionDays(node, opts.dayColors);
+          global.portalMarkPreviewSessionDays(node, opts.dayColors, {
+            fromByCol: opts.dayColorFrom || {},
+          });
         } catch (_mine) {}
       }
       if (opts.extraIsoColors && typeof opts.extraIsoColors === "object") {

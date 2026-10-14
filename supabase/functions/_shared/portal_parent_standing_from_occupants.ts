@@ -37,6 +37,8 @@ export type ParentStandingSession = {
   venue: string;
   area: string;
   instructor: string;
+  /** Term place starts on this date. Earlier weekdays stay empty. */
+  fromIso?: string;
 };
 
 function clean(v: unknown, max = 120): string {
@@ -165,6 +167,7 @@ export function standingSessionsForParticipantFromOccupants(
       if (seen.has(key)) continue;
       seen.add(key);
 
+      const fromIso = clean(line.bookedFrom, 10);
       out.push({
         day,
         service,
@@ -172,6 +175,7 @@ export function standingSessionsForParticipantFromOccupants(
         venue,
         area: areaForVenue(venue),
         instructor,
+        ...( /^\d{4}-\d{2}-\d{2}$/.test(fromIso) ? { fromIso } : {}),
       });
     }
   }
