@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v435",
+  "version": "2026-10-14-v436",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -4306,11 +4306,12 @@
             "facturas"
           ],
           "steps": [
-            "Open the CEO dashboard and go to Finance.",
-            "Number sheets is the live page. It reads the portal invoices each time you open it.",
-            "Day Centre, September, October, the term, cash flow, afterschool and the personal cards are the closed sheets.",
-            "Tide and the personal cards do not move by themselves. The portal does not receive those bank lines.",
-            "If the bank has been paid and the live page still shows the invoice, the portal invoice is not marked paid yet."
+            "Open the CEO dashboard and go to Finance, then Number sheets.",
+            "The top box is the same on every sheet that is in use. It shows the Day Centre figures and, under that, what the portal invoices say.",
+            "The portal half changes when you open the page, after a payment is marked or a new invoice is added.",
+            "The Day Centre half changes when that figure is entered into the shared box. It then shows on every in-use sheet.",
+            "Tide sheets are closures. They do not move when the portal takes a payment.",
+            "If the bank has been paid and the portal half still shows the invoice, the portal invoice is not marked paid yet."
           ],
           "tips": [
             "Mark paid on the invoice when the money is in. That is what updates the live page."
@@ -4320,11 +4321,12 @@
             "summary": "En Finance del CEO estan las hojas. La pagina en vivo lee las facturas y cambia cuando se marca un pago o entra una factura nueva.",
             "where": "CEO → Finance → Number sheets",
             "steps": [
-              "Abre el CEO y entra en Finance.",
-              "Number sheets es la pagina en vivo. Lee las facturas del portal cada vez que se abre.",
-              "Day Centre, septiembre, octubre, el term, el flujo, afterschool y las tarjetas son hojas de cierre.",
-              "Tide y las tarjetas personales no se mueven solas. El portal no recibe esos movimientos del banco.",
-              "Si el banco ya cobro y la pagina sigue mostrando la factura, el portal no la tiene marcada como pagada."
+              "Abre el CEO, entra en Finance y luego Number sheets.",
+              "El recuadro de arriba es el mismo en todas las hojas en uso. Lleva el Day Centre y, debajo, lo que dicen las facturas del portal.",
+              "La parte del portal cambia al abrir la pagina, cuando se marca un pago o entra una factura nueva.",
+              "La parte de Day Centre cambia cuando se mete esa cifra en el recuadro. Entonces sale en todas las hojas en uso.",
+              "Las hojas de Tide son cierres. No se mueven cuando el portal cobra.",
+              "Si el banco ya cobro y el portal sigue mostrando la factura, el portal no la tiene marcada como pagada."
             ],
             "tips": [
               "Marca pagada la factura cuando el dinero esta dentro. Eso es lo que actualiza la pagina."

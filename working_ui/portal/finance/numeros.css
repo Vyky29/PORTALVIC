@@ -1,0 +1,32 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #0f2733; background: #f4f8f9; }
+header { background: #fff; border-bottom: 1px solid #d7e2e8; padding: 14px 18px; }
+h1 { margin: 0 0 4px; font-size: 1.35rem; overflow-wrap: anywhere; }
+h2 { font-size: 1.05rem; color: #0e7c86; border-bottom: 2px solid #0e7c86; padding-bottom: 4px; }
+h3 { font-size: 0.95rem; margin: 12px 0 6px; }
+a { color: #0e7c86; }
+main { max-width: 1100px; margin: 0 auto; padding: 16px; min-width: 0; }
+.meta { color: #5b7280; font-size: 0.9rem; margin: 0 0 10px; }
+.note, .warn, .callout { font-size: 0.88rem; padding: 8px 10px; margin: 8px 0 14px; overflow-wrap: anywhere; }
+.note { background: #f1f5f9; border-left: 3px solid #0e7c86; color: #3d5160; }
+.warn { background: #fffbeb; border-left: 3px solid #f59e0b; color: #92400e; }
+.callout { background: #fff; border: 1px solid #d7e2e8; border-left: 3px solid #0e7c86; }
+.sheets { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; margin: 8px 0 18px; }
+.sheets a { display: block; background: #fff; border: 1px solid #d7e2e8; border-radius: 8px; padding: 10px 12px; text-decoration: none; min-width: 0; }
+.sheets a b { display: block; color: #0f2733; overflow-wrap: anywhere; }
+.sheets a span { display: block; color: #5b7280; font-size: 0.82rem; margin-top: 2px; overflow-wrap: anywhere; }
+.sheets a.vivo { border-color: #0e7c86; }
+table { width: 100%; border-collapse: collapse; background: #fff; font-size: 0.88rem; margin: 0 0 14px; }
+th, td { border-bottom: 1px solid #e2e8f0; padding: 6px 8px; text-align: left; min-width: 0; overflow-wrap: anywhere; }
+th { background: #e6f3f4; font-size: 0.75rem; text-transform: uppercase; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+.wrap { overflow-x: auto; max-width: 100%; }
+.row, .kpis { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.stat, .kpi { flex: 1 1 140px; min-width: 0; background: #fff; border: 1px solid #d7e2e8; border-radius: 8px; padding: 8px 10px; }
+.stat b, .kpi .v { display: block; font-size: 1.05rem; color: #0e7c86; overflow-wrap: anywhere; }
+.stat span, .kpi .l { display: block; color: #5b7280; font-size: 0.78rem; margin-top: 2px; overflow-wrap: anywhere; }
+.pill { display: inline-block; background: #e6f3f4; color: #0a5c63; border-radius: 999px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; }
+.block { min-width: 0; }
+code { font-size: 0.82rem; overflow-wrap: anywhere; }
+hr { border: 0; border-top: 1px solid #d7e2e8; margin: 16px 0; }
+.canvas-body h1 { font-size: 1.15rem; margin: 8px 0; }
