@@ -12915,9 +12915,46 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return kind !== "open" && kind !== "closed" && kind !== "staff_duty" && kind !== "manager";
   }
 
+  /** Live added block (Ikram 11-3) that replaces the shorter seats inside it. */
+  function dayBoardItemIsMorningReplacement(it) {
+    var st = (it && it.st) || {};
+    var slot = (it && it.slot) || {};
+    if (st.isCancelled || st.isAbsent || st.isOpenSlot || st.isClosed) return false;
+    if (st.boardPlace === "cover" || st.boardPlace === "kept" || st.boardPlace === "away" || st.boardPlace === "mirror") {
+      return false;
+    }
+    if (slot.portalDutyPersonCard || slot.portalShadowingObserver) return false;
+    if (!isDayCentreService(slot.service)) return false;
+    if (slot.portalCreatedSession) return true;
+    var ov = slot.__portalScheduleOverride || null;
+    return String(ov && ov.override_type || "").trim() === "session_add";
+  }
+
+  /** Shorter morning seat the replacement covers: a cancel, or the old client kept with a cover chip. */
+  function dayBoardItemIsMorningOldSeat(it) {
+    var st = (it && it.st) || {};
+    var slot = (it && it.slot) || {};
+    if (dayBoardItemIsMorningReplacement(it)) return false;
+    if (!isDayCentreService(slot.service)) return false;
+    if (st.isCancelled || st.isAbsent) return true;
+    return st.boardPlace === "kept";
+  }
+
+  function dayBoardWindowContains(outer, inner) {
+    return !!(
+      outer &&
+      inner &&
+      inner.start >= outer.start &&
+      inner.end <= outer.end &&
+      inner.end > inner.start
+    );
+  }
+
   /**
    * Old seat (empty, cancelled, or absent) + override participant at the same time
-   * share a cluster id. 0 means the card stands alone.
+   * share a cluster id. A new Day Centre block also pulls in the shorter seats it
+   * covers (cancelled Ikram 11-12.30 and Fadi 12.30-3 under Ikram 11-3).
+   * 0 means the card stands alone.
    */
   function dayBoardSeatPairClusters(items) {
     var n = (items || []).length;
@@ -12925,12 +12962,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var bounds = [];
     var oldSeat = [];
     var added = [];
+    var morningNew = [];
+    var morningOld = [];
     var i;
     for (i = 0; i < n; i++) {
       parent[i] = i;
       bounds[i] = dayBoardItemClockBounds(items[i] && items[i].slot);
       oldSeat[i] = dayBoardItemIsOldSeat(items[i]);
       added[i] = dayBoardItemIsOverrideParticipant(items[i]);
+      morningNew[i] = dayBoardItemIsMorningReplacement(items[i]);
+      morningOld[i] = dayBoardItemIsMorningOldSeat(items[i]);
     }
     function find(x) {
       while (parent[x] !== x) {
@@ -12951,19 +12992,46 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (dayBoardClockOverlaps(bounds[i], bounds[j])) unite(i, j);
       }
     }
+    for (i = 0; i < n; i++) {
+      if (!morningNew[i]) continue;
+      for (var mj = 0; mj < n; mj++) {
+        if (!morningOld[mj]) continue;
+        if (dayBoardWindowContains(bounds[i], bounds[mj])) unite(i, mj);
+      }
+    }
     var hasOld = Object.create(null);
     var hasAdded = Object.create(null);
+    var hasMorningNew = Object.create(null);
+    var hasMorningOld = Object.create(null);
     for (i = 0; i < n; i++) {
       var root = find(i);
       if (oldSeat[i]) hasOld[root] = true;
       if (added[i]) hasAdded[root] = true;
+      if (morningNew[i]) hasMorningNew[root] = true;
+      if (morningOld[i]) hasMorningOld[root] = true;
     }
     var out = [];
     for (i = 0; i < n; i++) {
       var r = find(i);
-      out[i] = hasOld[r] && hasAdded[r] && (oldSeat[i] || added[i]) ? r + 1 : 0;
+      var inSeatPair = hasOld[r] && hasAdded[r] && (oldSeat[i] || added[i]);
+      var inMorning = hasMorningNew[r] && hasMorningOld[r] && (morningNew[i] || morningOld[i]);
+      out[i] = inSeatPair || inMorning ? r + 1 : 0;
     }
     return out;
+  }
+
+  /** Old Fadi seat kept on Luliya reads as the cancellation the new block replaces. */
+  function dayBoardMorningOldSeatState(it) {
+    var st = (it && it.st) || {};
+    if (st.boardPlace !== "kept") return st;
+    return Object.assign({}, st, {
+      isCancelled: true,
+      tone: "cancelled",
+      boardPlace: "normal",
+      coverByLabel: "",
+      isRealCover: false,
+      isInstructorReassign: false,
+    });
   }
 
   function dayBoardColHtml(hub, key, label, items, esc) {
@@ -13002,17 +13070,29 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       for (mi = 0; mi < items.length; mi++) {
         if (seatPairCluster[mi] === cluster) members.push(mi);
       }
-      /* The new override participant stays above the empty or cancelled card. */
+      /* New block first (Ikram 11-3), then the shorter seats it covers, by clock. */
       members.sort(function (a, b) {
-        var aNew = dayBoardItemIsOverrideParticipant(items[a]) ? 0 : 1;
-        var bNew = dayBoardItemIsOverrideParticipant(items[b]) ? 0 : 1;
+        var aNew = dayBoardItemIsMorningReplacement(items[a]) || dayBoardItemIsOverrideParticipant(items[a]) ? 0 : 1;
+        var bNew = dayBoardItemIsMorningReplacement(items[b]) || dayBoardItemIsOverrideParticipant(items[b]) ? 0 : 1;
         if (aNew !== bNew) return aNew - bNew;
+        var aBounds = dayBoardItemClockBounds(items[a] && items[a].slot);
+        var bBounds = dayBoardItemClockBounds(items[b] && items[b].slot);
+        var aStart = aBounds ? aBounds.start : 0;
+        var bStart = bBounds ? bBounds.start : 0;
+        if (aStart !== bStart) return aStart - bStart;
         return a - b;
       });
       var group = "";
       for (mi = 0; mi < members.length; mi++) {
         var it = items[members[mi]];
-        group += htmlDayBoardCard(hub, it.slot, it.st, esc, true);
+        var paintSt = it.st;
+        if (
+          dayBoardItemIsMorningOldSeat(it) &&
+          members.some(function (ix) { return dayBoardItemIsMorningReplacement(items[ix]); })
+        ) {
+          paintSt = dayBoardMorningOldSeatState(it);
+        }
+        group += htmlDayBoardCard(hub, it.slot, paintSt, esc, true);
       }
       cards += '<div class="ash-db-seat-pair">' + group + "</div>";
       pi += 1;
