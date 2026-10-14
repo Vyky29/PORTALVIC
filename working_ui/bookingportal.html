@@ -503,6 +503,10 @@
       min-width: 0;
       min-height: 0;
     }
+    .svc-sheet__hero-split[hidden],
+    #svcSheetImg[hidden] {
+      display: none !important;
+    }
     .svc-sheet__hero-split span {
       position: relative;
       min-width: 0;
@@ -2006,14 +2010,28 @@
         return '<img class="tile__img" src="' + esc(photo) + '" alt="" loading="lazy" />';
       }
 
+      function sheetHeroSplitEl() {
+        var split = document.getElementById("svcSheetHeroSplit");
+        var legacy = document.getElementById("sheetHeroSplit");
+        if (legacy && legacy !== split) {
+          if (!split) {
+            legacy.id = "svcSheetHeroSplit";
+            split = legacy;
+          } else {
+            legacy.remove();
+          }
+        }
+        return split;
+      }
+
       function setSheetHero(svcId) {
+        var split = sheetHeroSplitEl();
         if (svcId === "multi") {
           sheetImg.hidden = true;
           sheetImg.removeAttribute("src");
-          var split = document.getElementById("svcSheetHeroSplit");
           if (!split) {
             split = document.createElement("div");
-            split.id = "sheetHeroSplit";
+            split.id = "svcSheetHeroSplit";
             split.className = "svc-sheet__hero-split";
             split.setAttribute("aria-hidden", "true");
             sheetImg.parentNode.insertBefore(split, sheetImg);
@@ -2026,10 +2044,9 @@
             '<span class="tile__media-label">WET</span></span>';
           return;
         }
-        var splitEl = document.getElementById("svcSheetHeroSplit");
-        if (splitEl) {
-          splitEl.hidden = true;
-          splitEl.innerHTML = "";
+        if (split) {
+          split.hidden = true;
+          split.innerHTML = "";
         }
         sheetImg.hidden = false;
         sheetImg.src = PHOTOS[svcId] || PHOTOS.aquatic;
