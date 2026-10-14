@@ -1219,16 +1219,17 @@
       ];
       return;
     }
+    /* NHS paid Jun Inv 0360 £12,950 and Jul Inv 0361 £9,712.50 on 23 Sep 2026. */
     if (slug === "fadi" && !isNhsInflationUpliftRow(r)) {
-      r.payment_status = "Partial";
-      r._amountPaid = 25900;
-      r.amount_out = 22662.5;
+      r.payment_status = "Paid";
+      r._amountPaid = 48562.5;
+      r.amount_out = 0;
       if (!(face > 0)) r.amount = 48562.5;
       r._officeMonthLines = [
         { t: "Apr £9,712.50", paid: true },
         { t: "May £9,712.50", paid: true },
-        { t: "Jun £12,950", paid: false },
-        { t: "Jul £9,712.50", paid: false },
+        { t: "Jun £12,950", paid: true },
+        { t: "Jul £9,712.50", paid: true },
         { t: "Jul 0384 £6,475", paid: true },
       ];
       return;
