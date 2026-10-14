@@ -1371,6 +1371,11 @@
       min-width: 0;
       overflow-wrap: break-word;
     }
+    .booking-gate__check label {
+      display: inline;
+      font-weight: inherit;
+      cursor: pointer;
+    }
     .booking-gate__check a {
       color: var(--blueDeep);
       font-weight: 700;
@@ -1826,14 +1831,14 @@
                 inputmode="tel"
               />
             </div>
-            <label class="booking-gate__check">
+            <div class="booking-gate__check">
               <input id="bookingLeadPrivacy" name="privacy_accepted" type="checkbox" required />
               <span>
-                I have read and accept the
-                <a href="/parent/terms" target="_blank" rel="noopener">Privacy Notice</a>
-                (required).
+                <label for="bookingLeadPrivacy">I have read and accept the</label>
+                <a href="https://www.clubsensational.org/privacy/" target="_blank" rel="noopener">Privacy Notice</a>
+                <label for="bookingLeadPrivacy">(required).</label>
               </span>
-            </label>
+            </div>
             <label class="booking-gate__check">
               <input id="bookingLeadMarketing" name="marketing_consent" type="checkbox" />
               <span>
