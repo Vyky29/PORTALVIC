@@ -3,18 +3,66 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Director loans · Tide</title>
-<link rel="stylesheet" href="/portal/finance/numeros.css?v=20261014-canvas" />
+<title>Director loans - Tide</title>
+<link rel="stylesheet" href="/portal/finance/numeros.css?v=20261015-loans" />
 </head>
 <body>
 <header>
-  <h1>Director loans · Tide</h1>
-  <p class="meta"><a href="/ceo_numeros.html">Volver a las hojas</a></p>
+  <h1>Director loans - Tide</h1>
+  <p class="meta"><a href="/ceo_numeros.html">Volver a las hojas</a> | Sep 25 a Jul 26. Fuente: Tide Cleared hasta el 24 jul 2026 y extracto de Tide hasta el 12 oct 2026. Hoja al 15 oct 2026.</p>
 </header>
 <main>
-<div class="warn">Cierre. Esta foto no cambia cuando el portal cobra una factura.</div>
-<div class="canvas-body"><div class="block"><div class="block"><div class="row"><h1>Director loans · Tide</h1><span class="pill">Sep25–Jul26</span></div><p>Solo transferencias etiquetadas loan. Las tarjetas viven en tide-card-spend-vjr-sep-jul. Nominas / pagos self no van aqui.</p></div><div class="block"><div class="stat"><b>£8,000.00</b><span>Victor</span></div><div class="stat"><b>£47,374.92</b><span>Raul</span></div><div class="stat"><b>£42,200.00</b><span>Lumps (ref Loan)</span></div><div class="stat"><b>£55,374.92</b><span>Total tagged loan</span></div></div><div class="callout"><b>Ojo · etiquetado Tide</b><div>Tres lumps claros: Raul £9,200 + Victor £8,000 + Raul £25,000 = £42,200.00. El resto (£13,174.92) son lineas mensuales ~ £3,293.68 a Raul con bucket &quot;Director loan&quot; (Sep–Dic) — mismo importe que la nomina Victor; revisar si son loan de verdad o sueldo mal etiquetado. Desde Ene26 esas lineas mensuales pasan a &quot;Pago → Raul (self)&quot; fuera de este canvas.</div></div><h2>Lineas</h2><div class="wrap"><table><tr><th>Fecha</th><th>Hora</th><th>Quién</th><th class="num">£</th><th>Tipo</th><th>Ref</th></tr><tr><td>2025-09-18</td><td>14:02</td><td>Raul</td><td class="num">£9,200.00</td><td>Lump loan</td><td>Director Loan Raul</td></tr><tr><td>2025-09-26</td><td>16:59</td><td>Raul</td><td class="num">£3,293.68</td><td>Tagged month</td><td>September</td></tr><tr><td>2025-10-08</td><td>21:14</td><td>Victor</td><td class="num">£8,000.00</td><td>Lump loan</td><td>Loan Director</td></tr><tr><td>2025-10-30</td><td>18:12</td><td>Raul</td><td class="num">£3,293.68</td><td>Tagged month</td><td>October</td></tr><tr><td>2025-11-29</td><td>15:25</td><td>Raul</td><td class="num">£3,293.88</td><td>Tagged month</td><td>November</td></tr><tr><td>2025-12-24</td><td>04:07</td><td>Raul</td><td class="num">£3,293.68</td><td>Tagged month</td><td>December</td></tr><tr><td>2026-01-24</td><td>10:47</td><td>Raul</td><td class="num">£25,000.00</td><td>Lump loan</td><td>Loan</td></tr></table></div><h2>Resumen</h2><div class="wrap"><table><tr><th>Quién / grupo</th><th class="num">£</th></tr><tr><td>Victor · Loan Director</td><td class="num">£8,000.00</td></tr><tr><td>Raul · Director loan (todo el bucket)</td><td class="num">£47,374.92</td></tr><tr><td>  · de eso, lumps (Loan / Director Loan)</td><td class="num">£34,200.00</td></tr><tr><td>  · de eso, tagged month Sep–Dic</td><td class="num">£13,174.92</td></tr><tr><td>Total</td><td class="num">£55,374.92</td></tr></table></div><p>Fuente: RAUL_PAGOS en tide-card-spend (buckets Loan → Victor + Director loan → Raul). No mezclar con gastos de tarjeta.</p></div></div>
-</main>
+<div class="kpis">
+  <div class="kpi"><div class="v">£9,200.00</div><div class="l">Pendiente hoy (Raul)</div></div>
+  <div class="kpi"><div class="v">£9,200.00</div><div class="l">Raul, 18 sep 2025</div></div>
+  <div class="kpi"><div class="v">£8,000.00</div><div class="l">Victor, 8 oct 2025 (devuelto)</div></div>
+  <div class="kpi"><div class="v">£17,200.00</div><div class="l">Prestamos en el ano</div></div>
+</div>
+<div class="warn">Lo que no es prestamo: las cuatro lineas de £3,293.68 a Raul (sep a dic 2025) son su sueldo, con ref del mes y categoria Staff costs en Tide. Los £25,000 del 24 ene 2026 salieron a Raul a las 10:47 y volvieron a las 10:50, con el dinero que habia bajado del ahorro a las 10:46. Neto cero.</div>
 
+<h2>Prestamos</h2>
+<div class="wrap">
+<table>
+  <tr><th>Fecha</th><th>Quien</th><th class="num">£</th><th>Ref en Tide</th><th>Devuelto</th><th class="num">Pendiente</th></tr>
+  <tr><td>2025-09-18</td><td>Raul</td><td class="num">£9,200.00</td><td>Director Loan Raul</td><td>No sale devuelto en Tide hasta el 12 oct 2026</td><td class="num">£9,200.00</td></tr>
+  <tr><td>2025-10-08</td><td>Victor</td><td class="num">£8,000.00</td><td>Loan Director</td><td>Devuelto el 29 jul 2026 (£8,000, ref Clubsensational)</td><td class="num">£0.00</td></tr>
+</table>
+</div>
+<div class="note">Los £9,200 de Raul no devuelven un prestamo viejo: el de 2024 ya estaba cerrado (abajo). Dos semanas despues Raul metio £3,728.33 con ref Loan Valetta Rd 56 (3 y 4 oct 2025). Si eso cuenta contra los £9,200, quedarian £5,471.67.</div>
+
+<h2>Prestamo de Raul de 2024, cerrado</h2>
+<div class="wrap">
+<table>
+  <tr><th>Fecha</th><th>Que</th><th class="num">£</th></tr>
+  <tr><td>2024-09-11</td><td>A Raul, ref Loan</td><td class="num">-£30,000.00</td></tr>
+  <tr><td>2024-09-13</td><td>De Raul, ref Loan</td><td class="num">£15,000.00</td></tr>
+  <tr><td>2024-09-19</td><td>De Raul, sin referencia</td><td class="num">£10,000.00</td></tr>
+  <tr><td>2024-09-20</td><td>De Raul, ref Loan</td><td class="num">£6,000.00</td></tr>
+  <tr class="total"><td></td><td>Neto, a favor de Raul</td><td class="num">£1,000.00</td></tr>
+</table>
+</div>
+
+<h2>Sueldos de Raul, no loans</h2>
+<div class="wrap">
+<table>
+  <tr><th>Fecha</th><th>Ref</th><th class="num">£</th></tr>
+  <tr><td>2025-09-26</td><td>September</td><td class="num">£3,293.68</td></tr>
+  <tr><td>2025-10-30</td><td>October</td><td class="num">£3,293.68</td></tr>
+  <tr><td>2025-11-29</td><td>November</td><td class="num">£3,293.88</td></tr>
+  <tr><td>2025-12-24</td><td>December</td><td class="num">£3,293.68</td></tr>
+</table>
+</div>
+
+<h2>Los £25,000, ida y vuelta</h2>
+<div class="wrap">
+<table>
+  <tr><th>Fecha y hora</th><th>Que</th><th class="num">£</th></tr>
+  <tr><td>2025-12-12 10:18</td><td>Cuenta principal a ahorro</td><td class="num">-£25,000.00</td></tr>
+  <tr><td>2026-01-24 10:46</td><td>Ahorro a cuenta principal</td><td class="num">£25,000.00</td></tr>
+  <tr><td>2026-01-24 10:47</td><td>A Raul, ref Loan</td><td class="num">-£25,000.00</td></tr>
+  <tr><td>2026-01-24 10:50</td><td>Vuelve de Raul, ref Clubsensational Lt</td><td class="num">£25,000.00</td></tr>
+</table>
+</div>
+</main>
 </body>
 </html>
