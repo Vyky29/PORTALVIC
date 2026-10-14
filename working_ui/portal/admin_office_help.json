@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v432",
+  "version": "2026-10-14-v433",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -872,7 +872,8 @@
             "A person with a place now is CLIENT. That list is Clients and Families, Active. They are not in these three lists."
           ],
           "tips": [
-            "The path is Leads, then REGISTERED, then WAITING LIST if the service is full, then New client from an open seat on Places. After that they are on the Service roster as CLIENT."
+            "The path is Leads, then REGISTERED, then WAITING LIST if the service is full, then New client from an open seat on Places. After that they are on the Service roster as CLIENT.",
+            "A lead who only entered the email code has not chosen a time. If they opened the form and did not send it, follow that day and time and finish it with them. Do not ask them to register again once the form is sent. A waiting list label with no join today is an old status."
           ],
           "es": {
             "title": "Places, Leads, WAITING LIST y REGISTERED son cosas distintas",
@@ -886,7 +887,8 @@
               "Quien ya tiene plaza es CLIENT. Esa lista esta en Clients & Families, Active. No esta en estas tres listas."
             ],
             "tips": [
-              "El camino es Leads, luego REGISTERED, luego WAITING LIST si el servicio esta lleno, y New client cuando hay un hueco en Places. Despues sale en Service roster como CLIENT."
+              "El camino es Leads, luego REGISTERED, luego WAITING LIST si el servicio esta lleno, y New client cuando hay un hueco en Places. Despues sale en Service roster como CLIENT.",
+              "Un lead que solo puso el codigo del email no ha elegido hora. Si abrio el formulario y no lo envio, sigue ese dia y esa hora y terminalo con ellos. No les pidas registrarse otra vez si el formulario ya esta enviado. Una etiqueta de lista de espera sin alta de hoy es un estado viejo."
             ]
           }
         },
