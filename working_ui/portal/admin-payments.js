@@ -1293,16 +1293,17 @@
   /**
    * Live NHS monthly INV-Ps, Sep 2026–Jul 2027, uplift included. All still unpaid.
    * Fadi 0235–0245, Emanuel 0260–0270, Ikram 0271–0281, Timi 0168–0178.
-   * September (31 Aug–27 Sep) and October (28 Sep–25 Oct) are 4-week blocks, reissued 8 and 15 Oct 2026.
+   * September is the calendar month CLCH released on 14 Oct 2026 (P0235 / P0271 / P0260).
+   * October is the first 4-week block CLCH asked for: 5 Oct to 1 Nov 2026, then every 4 weeks.
    * Must match portal_parent_invoice_share amount_gbp when an INV-P is reissued.
    */
   function nhsFunderYearMonths(r) {
     if (termBucketFor(r) !== "autumn_2627") return null;
     var slug = paymentParticipantSlug(r);
     var table = {
-      fadi: [13212.8, 13212.8, 13873.44, 9248.96, 13212.8, 13212.8, 12552.16, 9909.6, 13873.44, 14534.08, 14534.08],
-      ikram: [12243.6, 12243.6, 13008.83, 8417.48, 12243.6, 12243.6, 11478.38, 9182.7, 13008.83, 13774.05, 13008.83],
-      emanuel: [6121.8, 6121.8, 6631.95, 4081.2, 6121.8, 6121.8, 5611.65, 4591.35, 6631.95, 6631.95, 6631.95],
+      fadi: [14534.08, 13212.8, 13873.44, 9248.96, 13212.8, 13212.8, 12552.16, 9909.6, 13873.44, 14534.08, 14534.08],
+      ikram: [13774.05, 12243.6, 13008.83, 8417.48, 12243.6, 12243.6, 11478.38, 9182.7, 13008.83, 13774.05, 13008.83],
+      emanuel: [6631.95, 6121.8, 6631.95, 4081.2, 6121.8, 6121.8, 5611.65, 4591.35, 6631.95, 6631.95, 6631.95],
       timi: [2856.84, 2856.84, 3213.95, 1785.53, 2856.84, 2856.84, 2499.74, 2142.63, 3213.95, 2856.84, 3213.95],
     };
     var amts = table[slug];
