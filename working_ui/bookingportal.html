@@ -2523,6 +2523,35 @@
           return;
         }
         var svc = api.serviceById(slot.serviceId);
+        if (!isExistingClientBookingSession()) {
+          var actionNew = document.getElementById("actionSheet");
+          var titleNew = document.getElementById("sheetTitle");
+          var bodyNew = document.getElementById("sheetBody");
+          var mailNew = document.getElementById("sheetMail");
+          var choicesNew = document.getElementById("sheetChoices");
+          titleNew.textContent = "Registration first";
+          bodyNew.textContent =
+            ((svc && svc.name) || "Session") +
+            " · " +
+            slot.day +
+            " · " +
+            slot.timeLabel +
+            " is full. We need this child's registration before the waiting list. It does not hold a seat.";
+          if (mailNew) mailNew.hidden = true;
+          if (choicesNew) {
+            choicesNew.hidden = false;
+            choicesNew.innerHTML =
+              '<button type="button" class="btn sheet__choice--pri" id="wlRegFirst" style="margin-top:8px;width:100%">Continue to registration</button>';
+          }
+          actionNew.hidden = false;
+          var regBtn = document.getElementById("wlRegFirst");
+          if (regBtn) {
+            regBtn.onclick = function () {
+              goToRegistration(slot, { waitingList: true });
+            };
+          }
+          return;
+        }
         var action = document.getElementById("actionSheet");
         var title = document.getElementById("sheetTitle");
         var body = document.getElementById("sheetBody");
