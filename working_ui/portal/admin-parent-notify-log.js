@@ -94,6 +94,7 @@
     query: "",
     outcome: "all",
     leadBuckets: null,
+    serviceFlags: null,
     pollTimer: null,
     realtimeChannel: null,
     selectedKey: "",
@@ -593,6 +594,155 @@
     return state.leadBuckets[key] || "";
   }
 
+  function serviceNameKey(raw) {
+    return String(raw || "")
+      .toLowerCase()
+      .replace(/\(?\btrial\b\)?/g, " ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .join(" ");
+  }
+
+  function reservationKind(row) {
+    var mode = String((row && row.booking_mode) || "").toLowerCase();
+    var notes = String((row && row.notes) || "");
+    if (mode === "trial" || /booking_kind\s*=\s*trial|trial_paid/i.test(notes)) return "trial";
+    if (mode === "term" || /booking_kind\s*=\s*term/i.test(notes)) return "term";
+    return "";
+  }
+
+  /**
+   * Services vs trial per family: trial schedule_overrides (live), paid booking reservations,
+   * and finish-booking holds still waiting for payment. Keyed by parent mobile and child name.
+   */
+  async function fetchServiceFlags() {
+    var out = { byPhone: Object.create(null), byName: Object.create(null) };
+    var client = cfg.getClient();
+    if (!client || typeof client.from !== "function") return out;
+    function slot(map, key) {
+      if (!key) return null;
+      if (!map[key]) map[key] = { term: false, trialIso: "", payPending: false };
+      return map[key];
+    }
+    function addTrial(info, iso) {
+      if (info && iso && iso > info.trialIso) info.trialIso = iso;
+    }
+    var res = await Promise.all([
+      client
+        .from("portal_booking_slot_reservations")
+        .select("participant_name, parent_phone, status, notes, booking_mode, date_iso, hold_expires_at")
+        .gte("created_at", "2026-08-01")
+        .in("status", ["pending", "awaiting_payment", "validated"])
+        .limit(1500)
+        .then(
+          function (r) { return r; },
+          function () { return null; }
+        ),
+      client
+        .from("schedule_overrides")
+        .select("session_date, status, payload")
+        .filter("payload->>is_trial", "eq", "true")
+        .gte("session_date", "2026-09-01")
+        .limit(500)
+        .then(
+          function (r) { return r; },
+          function () { return null; }
+        ),
+    ]);
+    var nowMs = Date.now();
+    ((res[0] && !res[0].error && res[0].data) || []).forEach(function (row) {
+      var kind = reservationKind(row);
+      var status = String(row.status || "").toLowerCase();
+      var notes = String(row.notes || "");
+      var byP = slot(out.byPhone, phoneMatchKey(row.parent_phone));
+      var byN = slot(out.byName, serviceNameKey(row.participant_name));
+      var paid = status === "validated" && (/trial_paid|booking_paid|ops_synced/i.test(notes) || !/pay_hold/i.test(notes));
+      if (paid) {
+        var iso = String(row.date_iso || "").slice(0, 10);
+        [byP, byN].forEach(function (info) {
+          if (!info) return;
+          if (kind === "term") info.term = true;
+          else if (kind === "trial") addTrial(info, iso);
+        });
+        return;
+      }
+      var until = Date.parse(String(row.hold_expires_at || ""));
+      var stillOpen = status === "awaiting_payment" || (status === "pending" && (!isFinite(until) || until > nowMs));
+      if (stillOpen) {
+        if (byP) byP.payPending = true;
+        if (byN) byN.payPending = true;
+      }
+    });
+    ((res[1] && !res[1].error && res[1].data) || []).forEach(function (ov) {
+      if (String(ov.status || "").toLowerCase() === "cancelled") return;
+      var p = ov.payload && typeof ov.payload === "object" ? ov.payload : {};
+      var name = p.replacement_client_name || p.to_client_name || p.client_name || "";
+      addTrial(slot(out.byName, serviceNameKey(name)), String(ov.session_date || "").slice(0, 10));
+    });
+    return out;
+  }
+
+  function serviceFlagForThread(t) {
+    var flags = state.serviceFlags;
+    var term = !!(t && t.inClass);
+    var trialIso = "";
+    var payPending = false;
+    if (flags) {
+      [flags.byPhone[phoneMatchKey((t && (t.phone || t.sendPhone)) || "")], flags.byName[serviceNameKey(t && t.client)]].forEach(
+        function (info) {
+          if (!info) return;
+          if (info.term) term = true;
+          if (info.trialIso > trialIso) trialIso = info.trialIso;
+          if (info.payPending) payPending = true;
+        }
+      );
+    }
+    return { term: term, trialIso: trialIso, payPending: payPending && !term };
+  }
+
+  function shortDayLabel(iso) {
+    var d = new Date(String(iso || "") + "T12:00:00Z");
+    if (isNaN(d.getTime())) return "";
+    var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return days[d.getUTCDay()] + " " + d.getUTCDate() + " " + months[d.getUTCMonth()];
+  }
+
+  function londonTodayIso() {
+    try {
+      return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+    } catch (_e) {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }
+
+  function serviceChipHtml(t) {
+    var f = (t && t.serviceFlag) || null;
+    if (!f) return "";
+    var html = "";
+    if (f.term) {
+      html +=
+        '<span class="portal-pnlog-chip portal-pnlog-chip--bucket portal-pnlog-chip--svc-term" title="Has a term place (in services)">SERVICES</span>';
+    }
+    if (f.trialIso) {
+      var upcoming = f.trialIso >= londonTodayIso();
+      html +=
+        '<span class="portal-pnlog-chip portal-pnlog-chip--bucket portal-pnlog-chip--svc-trial" title="' +
+        (upcoming ? "Trial booked" : "Trial already done") +
+        '">' +
+        (upcoming ? "TRIAL " : "TRIALLED ") +
+        esc(shortDayLabel(f.trialIso)) +
+        "</span>";
+    }
+    if (f.payPending) {
+      html +=
+        '<span class="portal-pnlog-chip portal-pnlog-chip--bucket portal-pnlog-chip--svc-pay" title="Place offered, payment not done yet">PAY PENDING</span>';
+    }
+    return html;
+  }
+
   /** CLIENT > WAITING > REGISTERED > OLD (known contact) > LEADS (booking code only). */
   function bucketForContact(contact, phone) {
     var lead = leadBucketForPhone(phone || (contact && contact.mobile) || "");
@@ -839,6 +989,7 @@
         t.fundingLabel = contact.fundingLabel || "";
       }
       t.contactKind = bucketForContact(contact, t.phone || t.sendPhone);
+      t.serviceFlag = serviceFlagForThread(t);
       /* Coordinator phones win over any mis-stamped outbound (Kate/Maire → Jordan). */
       var ov = knownWaThreadOverride(t.phone || t.sendPhone);
       if (ov) {
@@ -1524,6 +1675,9 @@
         t.coordinatorThread ? "jordan acat h&f" : "",
         BUCKET_LABELS[kind] ? BUCKET_LABELS[kind].label : "",
         kind === "waiting" ? "waiting list" : "",
+        t.serviceFlag && t.serviceFlag.term ? "services" : "",
+        t.serviceFlag && t.serviceFlag.trialIso ? "trial" : "",
+        t.serviceFlag && t.serviceFlag.payPending ? "pay pending" : "",
         t.fundingLabel || "",
       ].join(" ")
     );
@@ -1593,6 +1747,10 @@
     if (outcome === "sent" && !t.hasSent) return false;
     if (outcome === "unread" && !isThreadUnread(t)) return false;
     if (outcome.indexOf("b_") === 0 && String(t.contactKind || "") !== outcome.slice(2)) return false;
+    var sf = t.serviceFlag || {};
+    if (outcome === "svc_term" && !sf.term) return false;
+    if (outcome === "svc_trial" && !sf.trialIso) return false;
+    if (outcome === "svc_pay" && !sf.payPending) return false;
     if (!q) return true;
     if (threadPhoneMatchesQuery(t, qRaw)) return true;
     if (hayMatchesQuery(threadIdentityHay(t), q)) return true;
@@ -1653,6 +1811,7 @@
         lastInboundWaId: "",
         fromDirectory: true,
       });
+      out[out.length - 1].serviceFlag = serviceFlagForThread(out[out.length - 1]);
       existing[digits] = true;
     });
     return out;
@@ -2008,7 +2167,7 @@
     }
     var participant = t.client || "";
     var enrolledHtml = participant ? enrolledChipsForClient(participant) : "";
-    var kindHtml = contactKindChipHtml(t);
+    var kindHtml = contactKindChipHtml(t) + serviceChipHtml(t);
     var subline = threadPhoneForUi(t) + (participant ? " · " + participant : "");
     return (
       '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" id="portalPnlogBack">← Back</button>' +
@@ -2270,6 +2429,7 @@
     }
     var chips = "";
     chips += contactKindChipHtml(t);
+    chips += serviceChipHtml(t);
     if (unread) chips += '<span class="portal-pnlog-chip portal-pnlog-chip--unread">Unread</span>';
     return (
       '<button type="button" class="portal-pnlog-conv' +
@@ -3224,9 +3384,16 @@
       }
 
       state.timeline = mergeTimeline(outboundRes.data || [], inbound);
-      var dirAndLeads = await Promise.all([fetchLiveContactDirectory(), fetchLeadBuckets()]);
+      var dirAndLeads = await Promise.all([
+        fetchLiveContactDirectory(),
+        fetchLeadBuckets(),
+        fetchServiceFlags().catch(function () {
+          return null;
+        }),
+      ]);
       var liveDir = dirAndLeads[0];
       state.leadBuckets = dirAndLeads[1];
+      state.serviceFlags = dirAndLeads[2];
       var localDir = directoryFromCfg();
       /* Live portal_parent_contacts wins over static export / stale labels. */
       state.contactDirectory = mergeContactDirectories(liveDir, localDir);
@@ -3272,6 +3439,9 @@
       '<option value="b_leads">LEADS</option>' +
       '<option value="b_waiting">WAITING</option>' +
       '<option value="b_old">OLD</option>' +
+      '<option value="svc_term">In SERVICES</option>' +
+      '<option value="svc_trial">TRIAL (booked or done)</option>' +
+      '<option value="svc_pay">PAY PENDING</option>' +
       '<option value="unread">Unread</option>' +
       '<option value="replies">Has replies</option>' +
       '<option value="sent">Sent OK</option>' +

@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v442",
+  "version": "2026-10-15-v443",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -962,7 +962,9 @@
             "REGISTERED (blue): did the registration form but never had a place yet.",
             "OLD (grey): was a client, no slots this term.",
             "LEADS (orange): got the booking access code but did not finish registration.",
-            "Use the filter next to Search to list only one bucket."
+            "Use the filter next to Search to list only one bucket.",
+            "A second label says where the family is: SERVICES (term place), TRIAL + day (trial booked), TRIALLED + day (trial already done), PAY PENDING (place offered, not paid yet).",
+            "The filter also has In SERVICES, TRIAL and PAY PENDING."
           ],
           "tips": [
             "The label comes from the mobile. If a family shows no label, their mobile in Contacts or the booking lead is different from the WhatsApp number.",
@@ -978,7 +980,9 @@
               "REGISTERED (azul): hizo el formulario de registro pero nunca ha tenido plaza.",
               "OLD (gris): fue cliente, sin plazas este trimestre.",
               "LEADS (naranja): pidio el codigo del booking pero no termino el registro.",
-              "Usa el filtro al lado de Search para ver solo un grupo."
+              "Usa el filtro al lado de Search para ver solo un grupo.",
+              "Una segunda etiqueta dice donde esta la familia: SERVICES (plaza de trimestre), TRIAL + dia (trial reservado), TRIALLED + dia (trial ya hecho), PAY PENDING (plaza ofrecida, sin pagar).",
+              "El filtro tambien tiene In SERVICES, TRIAL y PAY PENDING."
             ],
             "tips": [
               "La etiqueta sale del movil. Si una familia no tiene etiqueta, su movil en Contacts o en el lead no es el mismo que el de WhatsApp.",

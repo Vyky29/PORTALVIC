@@ -982,6 +982,21 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   color: #475569;
 }
 
+.portal-pnlog-chip--svc-term {
+  background: #15803d;
+  color: #fff;
+}
+
+.portal-pnlog-chip--svc-trial {
+  background: #d97706;
+  color: #fff;
+}
+
+.portal-pnlog-chip--svc-pay {
+  background: #b91c1c;
+  color: #fff;
+}
+
 .portal-pnlog-chip--unread {
   background: var(--pnlog-blue);
   color: #fff;
