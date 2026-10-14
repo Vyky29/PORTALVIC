@@ -170,8 +170,9 @@ function buildMessage(q: Record<string, unknown>): string {
     "",
     "Place: " + place + ".",
   ];
+  const credit = q.settlement === "credit";
   if (!q.confident) {
-    lines.push("", "We will confirm any refund separately.");
+    lines.push("", credit ? "We will confirm any credit separately." : "We will confirm any refund separately.");
   } else if (Number(q.delivered_count) > 0) {
     lines.push(
       "",
@@ -186,22 +187,36 @@ function buildMessage(q: Record<string, unknown>): string {
         gbp(Number(q.unused_gbp)) + " was paid for sessions that will not take place.",
     );
   }
-  if (q.confident && Number(q.fee_gbp) > 0) {
-    lines.push(
-      "",
-      "We keep an administration charge of " + gbp(Number(q.fee_gbp)) +
-        " (10% of that unused amount, as in our terms).",
-    );
-  }
-  if (q.confident && Number(q.refund_gbp) > 0) {
-    lines.push(
-      "",
-      "We will refund " + gbp(Number(q.refund_gbp)) + ".\n\n" +
-        "To pay this into your account, please send the name on the account, the sort code, and the account number. " +
-        "Use Messages in the parent portal, or call or message 07592 558671.",
-    );
-  } else if (q.confident && Number(q.paid_gbp) > 0 && Number(q.refund_gbp) <= 0) {
-    lines.push("", "No refund is due.");
+  if (credit) {
+    if (q.confident && Number(q.credit_gbp) > 0) {
+      lines.push(
+        "",
+        "That " + gbp(Number(q.credit_gbp)) +
+          " stays on your account as a credit. It will be applied to the next term invoice, to anything new you book or to the services you already have.",
+        "",
+        "This is a credit, so we do not need your bank details. You can see it under Credits & refunds in the parent portal.",
+      );
+    } else if (q.confident && Number(q.paid_gbp) > 0) {
+      lines.push("", "No credit is due.");
+    }
+  } else {
+    if (q.confident && Number(q.fee_gbp) > 0) {
+      lines.push(
+        "",
+        "We keep an administration charge of " + gbp(Number(q.fee_gbp)) +
+          " (10% of that unused amount, as in our terms).",
+      );
+    }
+    if (q.confident && Number(q.refund_gbp) > 0) {
+      lines.push(
+        "",
+        "We will refund " + gbp(Number(q.refund_gbp)) + ".\n\n" +
+          "To pay this into your account, please send the name on the account, the sort code, and the account number. " +
+          "Use Messages in the parent portal, or call or message 07592 558671.",
+      );
+    } else if (q.confident && Number(q.paid_gbp) > 0 && Number(q.refund_gbp) <= 0) {
+      lines.push("", "No refund is due.");
+    }
   }
   if (q.confident && Number(q.uncollected_gbp) > 0) {
     const due = q.uncollected_due ? " due on " + longDate(String(q.uncollected_due)) : "";
@@ -212,6 +227,30 @@ function buildMessage(q: Record<string, unknown>): string {
 }
 
 type Quote = Record<string, unknown>;
+
+/** Refund keeps the admin charge. Credit keeps the full unused paid amount and drops the charge. */
+export function settleTermCancelQuote(quote: Quote, settlement: string): Quote {
+  const credit = settlement === "credit";
+  const next: Quote = { ...quote, settlement: credit ? "credit" : "refund" };
+  if (credit) {
+    next.fee_gbp = 0;
+    next.fee_applies = false;
+    next.refund_gbp = 0;
+    next.credit_gbp = next.confident ? round2(Number(next.unused_gbp) || 0) : 0;
+  } else {
+    next.credit_gbp = 0;
+  }
+  next.message = buildMessage(next);
+  return next;
+}
+
+function finishQuote(quote: Quote): Quote {
+  const refundView = settleTermCancelQuote(quote, "refund");
+  const creditView = settleTermCancelQuote(quote, "credit");
+  refundView.credit_message = creditView.message;
+  refundView.credit_gbp = creditView.credit_gbp;
+  return refundView;
+}
 
 export async function quoteTermCancelRefund(
   admin: SupabaseClient,
@@ -265,7 +304,7 @@ export async function quoteTermCancelRefund(
   if (!clientName || !anchor) {
     base.reason = "missing_fields";
     base.message = buildMessage(base);
-    return base;
+    return finishQuote(base);
   }
 
   let pax: { contact_id?: string; parent_person_id?: string; display_name?: string } | null = null;
@@ -308,7 +347,7 @@ export async function quoteTermCancelRefund(
   if (!contactId) {
     base.reason = "no_contact";
     base.message = buildMessage(base);
-    return base;
+    return finishQuote(base);
   }
 
   const { data: invoices } = await admin
@@ -340,7 +379,7 @@ export async function quoteTermCancelRefund(
   if (!best) {
     base.reason = "no_invoice_line";
     base.message = buildMessage(base);
-    return base;
+    return finishQuote(base);
   }
 
   const line = best.line;
@@ -353,7 +392,7 @@ export async function quoteTermCancelRefund(
     base.reason = "no_session_dates";
     base.invoice_number = clean(inv.invoice_number, 40);
     base.message = buildMessage(base);
-    return base;
+    return finishQuote(base);
   }
   const delivered = dates.filter((d) => d < anchor);
   const deliveredGbp = round2(delivered.length * unit);
@@ -401,5 +440,5 @@ export async function quoteTermCancelRefund(
   base.void_schedule = voidSchedule;
   base.service_amount_gbp = serviceAmount;
   base.message = buildMessage(base);
-  return base;
+  return finishQuote(base);
 }

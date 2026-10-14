@@ -1812,6 +1812,33 @@
     if (el && el.parentNode) el.parentNode.removeChild(el);
   }
 
+  function paintTermCancelSheet(quote, settlement) {
+    var credit = settlement === "credit";
+    var feeRow = document.getElementById("trsFeeRow");
+    var refundRow = document.getElementById("trsRefundRow");
+    var creditRow = document.getElementById("trsCreditRow");
+    var pre = document.getElementById("trsCancelPreview");
+    var go = document.getElementById("trsCancelRefundGo");
+    var intro = document.getElementById("trsCancelIntro");
+    if (feeRow) feeRow.hidden = credit;
+    if (refundRow) refundRow.hidden = credit;
+    if (creditRow) creditRow.hidden = !credit;
+    if (pre) {
+      pre.textContent = credit
+        ? String((quote && quote.credit_message) || "")
+        : String((quote && quote.message) || "");
+    }
+    if (go) {
+      go.textContent = credit ? "Cancel and keep as credit" : "Cancel and message the refund";
+      go.setAttribute("data-settlement", credit ? "credit" : "refund");
+    }
+    if (intro) {
+      intro.textContent = credit
+        ? "One message to the parent. The unused paid amount stays as a credit for the next term invoice. No admin charge, and the message does not ask for bank details."
+        : "One message to the parent. The refund asks for their bank details so the office can pay it in. This does not move the money by itself.";
+    }
+  }
+
   function showTermCancelRefundSheet(root, quote) {
     closeTermCancelSheet();
     var wrap = document.createElement("div");
@@ -1826,27 +1853,37 @@
         "<p style=\"margin:0 0 8px\">Paid towards this service: <strong>" + esc(moneyLabel(quote.paid_gbp)) + "</strong></p>" +
         "<p style=\"margin:0 0 8px\">Sessions already done: <strong>" + esc(String(quote.delivered_count || 0)) + "</strong> (" + esc(moneyLabel(quote.delivered_gbp)) + ")</p>" +
         "<p style=\"margin:0 0 8px\">Unused: <strong>" + esc(moneyLabel(quote.unused_gbp)) + "</strong></p>" +
-        "<p style=\"margin:0 0 8px\">Administration (10%, min £25, max £100): <strong>" + esc(moneyLabel(quote.fee_gbp)) + "</strong></p>" +
-        "<p style=\"margin:0 0 8px\">Refund: <strong>" + esc(moneyLabel(quote.refund_gbp)) + "</strong></p>" +
+        "<p id=\"trsFeeRow\" style=\"margin:0 0 8px\">Administration (10%, min £25, max £100): <strong>" + esc(moneyLabel(quote.fee_gbp)) + "</strong></p>" +
+        "<p id=\"trsRefundRow\" style=\"margin:0 0 8px\">Refund: <strong>" + esc(moneyLabel(quote.refund_gbp)) + "</strong></p>" +
+        "<p id=\"trsCreditRow\" hidden style=\"margin:0 0 8px\">Credit for the next term: <strong>" + esc(moneyLabel(quote.credit_gbp != null ? quote.credit_gbp : quote.unused_gbp)) + "</strong></p>" +
         "<p style=\"margin:0 0 8px\">Not collected: <strong>" + esc(moneyLabel(quote.uncollected_gbp)) + "</strong></p>";
     } else {
       lines = "<p style=\"margin:0 0 8px\">No matching invoice line, so this message confirms the cancel and does not invent a figure.</p>";
     }
     wrap.innerHTML =
-      "<div style=\"background:#fff;color:#0f172a;border-radius:16px;max-width:560px;width:100%;max-height:min(92vh,760px);overflow:auto;padding:16px;box-sizing:border-box\">" +
+      "<div style=\"background:#fff;color:#0f172a;border-radius:16px;max-width:560px;width:100%;max-height:min(92vh,760px);overflow:auto;padding:16px;box-sizing:border-box;min-width:0\">" +
       "<h2 style=\"margin:0 0 8px;font-size:18px\">Cancel service</h2>" +
-      "<p style=\"margin:0 0 10px;font-size:13px;line-height:1.4\">One message to the parent. When there is a refund, it asks for their bank details so the office can pay it in. This does not move the money by itself." +
-      (quote && quote.invoice_number ? " Invoice " + esc(quote.invoice_number) + "." : "") +
-      "</p>" +
+      "<p id=\"trsCancelIntro\" style=\"margin:0 0 10px;font-size:13px;line-height:1.4;overflow-wrap:break-word\"></p>" +
+      (quote && quote.invoice_number
+        ? "<p style=\"margin:0 0 10px;font-size:13px\">Invoice " + esc(quote.invoice_number) + ".</p>"
+        : "") +
+      "<div style=\"display:flex;flex-direction:column;gap:6px;margin:0 0 10px;min-width:0\">" +
+      "<label style=\"display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4;min-width:0\"><input type=\"radio\" name=\"trsSettle\" value=\"refund\" checked style=\"margin-top:3px\"/> <span style=\"min-width:0;overflow-wrap:break-word\">Refund. Admin charge applies. The message asks for bank details.</span></label>" +
+      "<label style=\"display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4;min-width:0\"><input type=\"radio\" name=\"trsSettle\" value=\"credit\" style=\"margin-top:3px\"/> <span style=\"min-width:0;overflow-wrap:break-word\">Credit. No admin charge. The unused paid amount stays for the next term invoice.</span></label>" +
+      "</div>" +
       lines +
-      "<pre style=\"margin:10px 0;white-space:pre-wrap;overflow-wrap:break-word;background:#f8fafc;border-radius:10px;padding:10px;font:13px/1.4 ui-sans-serif,system-ui,sans-serif\">" +
-      esc(quote && quote.message ? quote.message : "") +
-      "</pre>" +
+      "<pre id=\"trsCancelPreview\" style=\"margin:10px 0;white-space:pre-wrap;overflow-wrap:break-word;background:#f8fafc;border-radius:10px;padding:10px;font:13px/1.4 ui-sans-serif,system-ui,sans-serif;min-width:0\"></pre>" +
       "<div style=\"display:flex;gap:8px;flex-wrap:wrap\">" +
-      "<button type=\"button\" class=\"btn btn--pri\" id=\"trsCancelRefundGo\">Cancel and message parent</button>" +
+      "<button type=\"button\" class=\"btn btn--pri\" id=\"trsCancelRefundGo\" style=\"white-space:normal;text-align:center\">Cancel and message the refund</button>" +
       "<button type=\"button\" class=\"btn btn--ghost\" id=\"trsCancelRefundBack\">Back</button>" +
       "</div></div>";
     document.body.appendChild(wrap);
+    paintTermCancelSheet(quote, "refund");
+    wrap.querySelectorAll('input[name="trsSettle"]').forEach(function (input) {
+      input.addEventListener("change", function () {
+        if (input.checked) paintTermCancelSheet(quote, input.value);
+      });
+    });
     var back = document.getElementById("trsCancelRefundBack");
     if (back) back.onclick = function () { closeTermCancelSheet(); };
     wrap.addEventListener("click", function (ev) {
@@ -1855,16 +1892,20 @@
     var go = document.getElementById("trsCancelRefundGo");
     if (go) {
       go.onclick = function () {
+        var picked = wrap.querySelector('input[name="trsSettle"]:checked');
+        var settlement = picked && picked.value === "credit" ? "credit" : "refund";
         go.disabled = true;
+        quote.settlement = settlement;
         state.pendingTermRefund = quote;
         state.refundArmed = true;
         state.refundNotifyStarted = true;
         closeTermCancelSheet();
         var client = deps.getClient();
         sendTermCancelRefund(client, quote).then(function (sent) {
-          if (sent && sent.sent) deps.toast("Parent message sent.");
-          else if (sent && sent.already_sent) deps.toast("Parent message was already sent.");
-          else deps.toast("Parent message was not sent.");
+          var noun = settlement === "credit" ? "Credit message" : "Refund message";
+          if (sent && sent.sent) deps.toast(noun + " sent.");
+          else if (sent && sent.already_sent) deps.toast(noun + " was already sent.");
+          else deps.toast(noun + " was not sent.");
         }).catch(function () {
           deps.toast("Parent message was not sent.");
         });
@@ -2276,6 +2317,7 @@
   function sendTermCancelRefund(client, quote) {
     return termCancelRefundRequest(client, {
       action: "notify",
+      settlement: quote && quote.settlement === "credit" ? "credit" : "refund",
       client_name: quote.client_name,
       service: quote.service,
       weekday: quote.weekday,

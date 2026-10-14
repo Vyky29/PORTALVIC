@@ -10,7 +10,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
-import { quoteTermCancelRefund } from "../_shared/portal_term_cancel_refund.ts";
+import { quoteTermCancelRefund, settleTermCancelQuote } from "../_shared/portal_term_cancel_refund.ts";
 import {
   maskPhoneForLog,
   normalizeParentPhoneE164,
@@ -87,6 +87,63 @@ async function ensureCancelRefundLedger(
   if (error) console.warn("[term-cancel-refund] ledger", error.message);
 }
 
+/** Unused paid amount kept for the next term. No admin charge, and it is not money to pay back. */
+async function ensureCancelCreditLedger(
+  admin: ReturnType<typeof createClient>,
+  quote: Record<string, unknown>,
+  userId: string | null,
+) {
+  const credit = Math.round((Number(quote.credit_gbp) || 0) * 100) / 100;
+  if (credit <= 0 || !quote.confident) return;
+  const contactId = clean(quote.contact_id, 120);
+  const anchor = clean(quote.anchor_date, 12);
+  if (!contactId || !/^\d{4}-\d{2}-\d{2}$/.test(anchor)) return;
+  const { data: existing } = await admin
+    .from("portal_parent_family_credits")
+    .select("id, kind")
+    .eq("contact_id", contactId)
+    .eq("source", "club_cancellation")
+    .eq("session_date", anchor)
+    .neq("status", "cancelled")
+    .limit(5);
+  const rows = existing || [];
+  if (rows.some((row) => String(row.kind || "") === "credit" || String(row.kind || "") === "refund")) return;
+  const { data: pax } = await admin
+    .from("portal_participants")
+    .select("parent_person_id, display_name")
+    .eq("contact_id", contactId)
+    .limit(1)
+    .maybeSingle();
+  const parentPersonId = clean(pax?.parent_person_id, 120);
+  if (!parentPersonId) return;
+  const bits = [
+    "Told when the place was cancelled.",
+    "Paid " + gbp(quote.paid_gbp) + ".",
+    "Sessions already done " + gbp(quote.delivered_gbp) +
+      (quote.delivered_label ? " (" + clean(quote.delivered_label, 120) + ")" : "") + ".",
+    "Unused " + gbp(credit) + " kept as a credit for the next term invoice.",
+    "No admin charge. Not a refund.",
+  ];
+  if (quote.invoice_number) bits.push("Invoice " + clean(quote.invoice_number, 40) + ".");
+  const { error } = await admin.from("portal_parent_family_credits").insert({
+    parent_person_id: parentPersonId,
+    contact_id: contactId,
+    participant_display: clean(pax?.display_name || quote.client_name, 120),
+    kind: "credit",
+    status: "open",
+    amount_gbp: credit,
+    service_label: clean(
+      [quote.weekday, quote.service_short || quote.service, quote.venue].filter(Boolean).join(" "),
+      120,
+    ),
+    session_date: anchor,
+    notes: bits.join(" ").slice(0, 800),
+    source: "club_cancellation",
+    created_by: userId,
+  });
+  if (error) console.warn("[term-cancel-refund] credit ledger", error.message);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: portalAdminCorsHeaders() });
   if (req.method !== "POST") return portalAdminJson(405, { ok: false, error: "method_not_allowed" });
@@ -116,30 +173,36 @@ Deno.serve(async (req) => {
     anchor_date: body.anchor_date as string,
   });
 
+  const settlement = clean(body.settlement, 16) === "credit" ? "credit" : "refund";
+  const live = action === "notify" ? settleTermCancelQuote(quote, settlement) : quote;
+  const notifyKind = settlement === "credit" ? "term_service_cancel_credit" : "term_service_cancel";
+  const subject = settlement === "credit" ? "Place cancelled - credit on your account" : "Place cancelled";
+
   if (action !== "notify") return portalAdminJson(200, quote);
 
-  if (!quote.parent_mobile && !quote.parent_email) {
+  if (!live.parent_mobile && !live.parent_email) {
     const anchorMiss = clean(quote.anchor_date, 12);
     const childMiss = clean(quote.client_name, 120);
     try {
       await admin.from("portal_parent_notify_log").insert({
         sent_by_user_id: verified.userId || null,
         sent_by_email: clean(verified.email, 200) || "term-cancel-refund",
-        kind: "term_service_cancel",
+        kind: notifyKind,
         channel: "none",
         client_display: childMiss,
-        parent_name: clean(quote.parent_first, 80),
+        parent_name: clean(live.parent_first, 80),
         session_date: anchorMiss || null,
-        subject: "Place cancelled",
-        body_text: String(quote.message || "").slice(0, 4000),
+        subject: subject,
+        body_text: String(live.message || "").slice(0, 4000),
         email_status: "skipped",
         whatsapp_status: "skipped",
         error_detail: "no_parent_channel",
         meta: {
-          contact_id: quote.contact_id || null,
-          invoice_number: quote.invoice_number || null,
-          confident: !!quote.confident,
-          reason: quote.reason || "no_parent_channel",
+          contact_id: live.contact_id || null,
+          invoice_number: live.invoice_number || null,
+          confident: !!live.confident,
+          settlement: settlement,
+          reason: live.reason || "no_parent_channel",
           source: "term_roster_edit",
           automated: true,
         },
@@ -147,33 +210,43 @@ Deno.serve(async (req) => {
     } catch (err) {
       console.warn("[term-cancel-refund] log no channel", err);
     }
-    return portalAdminJson(200, { ...quote, sent: false, reason: "no_parent_channel" });
+    return portalAdminJson(200, { ...live, sent: false, reason: "no_parent_channel" });
   }
 
-  const anchor = clean(quote.anchor_date, 12);
-  const child = clean(quote.client_name, 120);
+  const anchor = clean(live.anchor_date, 12);
+  const child = clean(live.client_name, 120);
   if (anchor && child) {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: prior } = await admin
       .from("portal_parent_notify_log")
-      .select("id")
-      .eq("kind", "term_service_cancel")
+      .select("id, kind")
+      .in("kind", ["term_service_cancel", "term_service_cancel_credit"])
       .eq("client_display", child)
       .eq("session_date", anchor)
       .gte("created_at", since)
-      .limit(1);
-    if (prior && prior.length) {
-      await ensureCancelRefundLedger(admin, quote, verified.userId || null);
-      return portalAdminJson(200, { ...quote, sent: false, already_sent: true });
+      .limit(5);
+    const priorRows = prior || [];
+    if (priorRows.length) {
+      const same = priorRows.some((row) => String(row.kind || "") === notifyKind);
+      if (same) {
+        if (settlement === "credit") await ensureCancelCreditLedger(admin, live, verified.userId || null);
+        else await ensureCancelRefundLedger(admin, live, verified.userId || null);
+        return portalAdminJson(200, { ...live, sent: false, already_sent: true });
+      }
+      return portalAdminJson(200, {
+        ...live,
+        sent: false,
+        already_sent: true,
+        reason: "other_outcome_already_sent",
+      });
     }
   }
 
-  const message = String(quote.message || "");
-  const subject = "Place cancelled";
+  const message = String(live.message || "");
   let emailStatus = "skipped";
   let emailOk = false;
   const smtp = readParentNotifySmtpConfig();
-  const email = clean(quote.parent_email, 200);
+  const email = clean(live.parent_email, 200);
   if (smtp && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     try {
       const mail = await sendParentEmailViaSmtp({
@@ -193,7 +266,7 @@ Deno.serve(async (req) => {
   let waStatus = "skipped";
   let waOk = false;
   let waId: string | null = null;
-  const phone = normalizeParentPhoneE164(String(quote.parent_mobile || ""));
+  const phone = normalizeParentPhoneE164(String(live.parent_mobile || ""));
   if (phone) {
     try {
       const wa = await sendParentMobileMessage(phone, message, { kind: "session_cancelled" });
@@ -206,11 +279,11 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (quote.void_schedule && quote.invoice_id) {
+  if (live.void_schedule && live.invoice_id) {
     const { data: inv } = await admin
       .from("portal_parent_invoice_share")
       .select("id, payment_schedule, next_instalment_due")
-      .eq("id", quote.invoice_id)
+      .eq("id", live.invoice_id)
       .maybeSingle();
     const schedule = Array.isArray(inv?.payment_schedule) ? inv.payment_schedule : [];
     let changed = false;
@@ -221,7 +294,9 @@ Deno.serve(async (req) => {
       return {
         ...row,
         status: "void",
-        void_reason: "Place cancelled from Edit term slot",
+        void_reason: settlement === "credit"
+          ? "Place cancelled. Unused paid amount kept as a credit."
+          : "Place cancelled from Edit term slot",
       };
     });
     if (changed && inv?.id) {
@@ -240,12 +315,12 @@ Deno.serve(async (req) => {
     await admin.from("portal_parent_notify_log").insert({
       sent_by_user_id: verified.userId || null,
       sent_by_email: clean(verified.email, 200) || "term-cancel-refund",
-      kind: "term_service_cancel",
+      kind: notifyKind,
       channel: phone && email ? "whatsapp_email" : phone ? "whatsapp" : "email",
       client_display: child,
-      parent_name: clean(quote.parent_first, 80),
+      parent_name: clean(live.parent_first, 80),
       parent_email: email || null,
-      parent_phone: clean(quote.parent_mobile, 40) || null,
+      parent_phone: clean(live.parent_mobile, 40) || null,
       session_date: anchor || null,
       subject: subject,
       body_text: message.slice(0, 4000),
@@ -254,12 +329,14 @@ Deno.serve(async (req) => {
       whatsapp_message_id: waId,
       error_detail: emailOk || waOk ? null : "send_failed",
       meta: {
-        contact_id: quote.contact_id || null,
-        invoice_number: quote.invoice_number || null,
-        refund_gbp: quote.refund_gbp,
-        fee_gbp: quote.fee_gbp,
-        uncollected_gbp: quote.uncollected_gbp,
-        confident: !!quote.confident,
+        contact_id: live.contact_id || null,
+        invoice_number: live.invoice_number || null,
+        settlement: settlement,
+        refund_gbp: live.refund_gbp,
+        credit_gbp: live.credit_gbp,
+        fee_gbp: live.fee_gbp,
+        uncollected_gbp: live.uncollected_gbp,
+        confident: !!live.confident,
         source: "term_roster_edit",
         automated: true,
         parent_phone_masked: phone ? maskPhoneForLog(phone) : null,
@@ -270,11 +347,12 @@ Deno.serve(async (req) => {
   }
 
   if (emailOk || waOk) {
-    await ensureCancelRefundLedger(admin, quote, verified.userId || null);
+    if (settlement === "credit") await ensureCancelCreditLedger(admin, live, verified.userId || null);
+    else await ensureCancelRefundLedger(admin, live, verified.userId || null);
   }
 
   return portalAdminJson(200, {
-    ...quote,
+    ...live,
     sent: !!(emailOk || waOk),
     email_status: emailStatus,
     whatsapp_status: waStatus,
