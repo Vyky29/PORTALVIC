@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v428",
+  "version": "2026-10-14-v429",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2397,7 +2397,8 @@
             "Cancel service (Edit term slot, anchor on that weekday, Rest of term) opens a sheet with two choices. Refund keeps the admin charge and the message asks for bank details. Credit keeps the full unused paid amount, with no admin charge, and the message says it is a credit for the next term invoice.",
             "Cancel and keep as credit sends WhatsApp and email, and writes an open credit on Family credits and refunds. The parent sees it under Credits and refunds. Cancelled days show on My Calendar. It does not pay money back and it does not ask for bank details.",
             "Cancel and message the refund is the pay-back path. It writes an open refund and asks for the name on the account, sort code, and account number. It does not move the money by itself.",
-            "Unpaid later-term invoices that still list the cancelled service lose that line, and the total is recalculated. The open credit is not applied to those drafts. It waits for the next term invoice."
+            "Unpaid later-term invoices that still list the cancelled service lose that line, and the total is recalculated. The open credit is not applied to those drafts. It waits for the next term invoice.",
+            "Apply to invoice only when the credit already has a £ amount and the family has an unpaid bank or flexi invoice. GoCardless credits stay Available until the Spring mandate. Do not take them off the open Autumn GoCardless invoice. A credit with no £ cannot be applied. A refund is not applied: Mark refunded after the money has left the bank."
           ],
           "es": {
             "title": "Faltas, reembolsos y creditos",
@@ -2428,7 +2429,8 @@
               "Entrado Autumn: GoCardless sep/oct = cuota entera del mes. Flexi 1st half (cobro jul/ago) = mitad en septiembre y mitad en octubre (bloque Flexi / one off). Pago term al contado = total en autumn-2026-term.html; en septiembre solo la parte de sesiones de septiembre.",
               "Mark refunded abre un modal: nota de oficina y una casilla opcional Notify parent (WhatsApp + email de que el refund ya se envio). Dejala sin marcar salvo que el dinero ya salio del banco — por defecto solo libro + CN en Xero. El mismo modal sale en participant Payments Mark paid back. Si la factura ya esta pagada en Xero, la nota de credito no se pega encima; la nota autorizada mas el pago del banco es el refund.",
               "Cancel service debe dejar todo cuadrado: anular plazos futuros en la factura del portal, chips cancelados en el hub del padre, roster cortado desde el ancla. Revisa GoCardless / Stripe para que no cobre despues del void. Refund abre un refund. Credit abre un credito, sin tasa y sin datos bancarios.",
-              "En la hoja de Cancel service elige Refund o Credit antes de enviar. Credit manda WhatsApp y email diciendo que lo no usado queda como credito para la factura del proximo term. El padre lo ve en Credits and refunds. Refund pide la cuenta para devolver el dinero."
+              "En la hoja de Cancel service elige Refund o Credit antes de enviar. Credit manda WhatsApp y email diciendo que lo no usado queda como credito para la factura del proximo term. El padre lo ve en Credits and refunds. Refund pide la cuenta para devolver el dinero.",
+              "Apply to invoice solo si el credito ya tiene libras y hay una factura sin pagar por banco o flexi. Los de GoCardless se quedan en Available hasta el mandato de Spring. No los quites de la factura de Autumn por GoCardless. Sin libras no se puede aplicar. Un refund no se aplica: Mark refunded cuando el dinero ya salio del banco."
             ]
           }
         },
