@@ -30,6 +30,7 @@ import {
   sendParentEmailViaSmtp,
 } from "../_shared/portal_parent_messaging.ts";
 import { notifyOfficeNewBookingLead } from "../_shared/portal_booking_lead_office_notify.ts";
+import { sendParentPortalOtpViaWhatsapp } from "../_shared/parent_portal_auth.ts";
 
 function phoneLast10(raw: string): string {
   const digits = String(raw || "").replace(/\D/g, "");
@@ -371,7 +372,19 @@ Deno.serve(async (req) => {
       console.warn("[portal-booking-lead-otp-request] SMTP send failed", mail.error);
     }
   }
-  if (channel === "log") {
+  /* Same code on WhatsApp too: a mistyped email bounces minutes later, after the code is gone. */
+  let whatsappSent = false;
+  const waPhone = normalizePhoneE164(mobile) || "";
+  if (waPhone) {
+    whatsappSent = await sendParentPortalOtpViaWhatsapp(
+      waPhone,
+      code,
+      `Your clubSENsational booking access code is ${code}. It expires in 10 minutes. If you did not request this, ignore this message.`,
+    );
+  }
+  /* Meta accepts free text to new numbers, then drops it. Only promise WhatsApp when the template is set. */
+  const whatsappClaimed = whatsappSent && !!(Deno.env.get("META_WHATSAPP_TEMPLATE_NAME") || "").trim();
+  if (channel === "log" && !whatsappClaimed) {
     console.log(
       `[portal-booking-lead-otp-request] No SMTP configured. lead_id=${leadId} destination=${maskEmail(email)} code=${code}`,
     );
@@ -393,9 +406,12 @@ Deno.serve(async (req) => {
 
   return bookingLeadJson({
     ok: true,
-    message: "We’ve sent a code to your email.",
+    message: whatsappClaimed
+      ? "We’ve sent a code to your email and WhatsApp."
+      : "We’ve sent a code to your email.",
     email_hint: maskEmail(email),
     channel,
+    whatsapp_sent: whatsappClaimed,
     recognition,
   });
 });

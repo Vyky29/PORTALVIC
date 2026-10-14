@@ -105,20 +105,45 @@ export function normalizePhoneE164(raw: string): string {
   return "+" + digits;
 }
 
-export async function sendParentPortalOtpViaWhatsapp(phoneE164: string, code: string): Promise<boolean> {
+/**
+ * Plain text only reaches people who wrote to us in the last 24h.
+ * Everyone else needs the Meta Authentication template in META_WHATSAPP_TEMPLATE_NAME.
+ */
+export async function sendParentPortalOtpViaWhatsapp(
+  phoneE164: string,
+  code: string,
+  textBody?: string,
+): Promise<boolean> {
   const token = Deno.env.get("META_WHATSAPP_TOKEN");
   const phoneId = Deno.env.get("META_WHATSAPP_PHONE_NUMBER_ID");
   if (!token || !phoneId) return false;
   const url = `https://graph.facebook.com/v20.0/${phoneId}/messages`;
-  const payload = {
-    messaging_product: "whatsapp",
-    to: phoneE164.replace(/^\+/, ""),
-    type: "text",
-    text: {
-      body:
-        `Your clubSENsational parent portal verification code is ${code}. It expires in 10 minutes. If you did not request this, ignore this message.`,
-    },
-  };
+  const to = phoneE164.replace(/^\+/, "");
+  const template = (Deno.env.get("META_WHATSAPP_TEMPLATE_NAME") || "").trim();
+  const lang = (Deno.env.get("META_WHATSAPP_TEMPLATE_LANG") || "en").trim();
+  const payload = template
+    ? {
+      messaging_product: "whatsapp",
+      to,
+      type: "template",
+      template: {
+        name: template,
+        language: { code: lang },
+        components: [
+          { type: "body", parameters: [{ type: "text", text: code }] },
+          { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: code }] },
+        ],
+      },
+    }
+    : {
+      messaging_product: "whatsapp",
+      to,
+      type: "text",
+      text: {
+        body: textBody ||
+          `Your clubSENsational parent portal verification code is ${code}. It expires in 10 minutes. If you did not request this, ignore this message.`,
+      },
+    };
   try {
     const r = await fetch(url, {
       method: "POST",

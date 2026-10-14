@@ -476,8 +476,12 @@
           : recog === "returning_lead"
             ? "Welcome back. "
             : "";
-      otpHint.textContent =
-        prefix + "We sent a 6-digit code to " + hint + ". Enter it below to explore availability.";
+      var viaWa = !!(out.data && out.data.whatsapp_sent);
+      otpHint.textContent = viaWa
+        ? prefix +
+          "We sent a 6-digit code to " + hint + " and to your WhatsApp. " +
+          "If that email looks wrong, use the code from WhatsApp. Enter it below to explore availability."
+        : prefix + "We sent a 6-digit code to " + hint + ". Enter it below to explore availability.";
     }
     showStep("otp");
     var codeEl = $("bookingLeadCode");
