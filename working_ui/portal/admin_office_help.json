@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v439",
+  "version": "2026-10-14-v440",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -4429,7 +4429,9 @@
             "The top box is the same on every sheet that is in use. It shows the Day Centre figures and, under that, what the portal invoices say.",
             "The portal half changes when you open the page, after a payment is marked or a new invoice is added.",
             "The Day Centre half changes when that figure is entered into the shared box. It then shows on every in-use sheet.",
-            "Tide sheets are closures. They do not move when the portal takes a payment.",
+            "The review is two columns. In use is on the left. Closed is on the right. Ver opens the sheet. Volver a las hojas comes back.",
+            "En uso and Cerrado, and the note, stay in this browser. Tell the office which sheets are closed, or paste Copiar notas. That is what moves a sheet to closed and applies the correction.",
+            "Tide sheets start as closures. They do not move when the portal takes a payment.",
             "If the bank has been paid and the portal half still shows the invoice, the portal invoice is not marked paid yet."
           ],
           "tips": [
@@ -4444,7 +4446,9 @@
               "El recuadro de arriba es el mismo en todas las hojas en uso. Lleva el Day Centre y, debajo, lo que dicen las facturas del portal.",
               "La parte del portal cambia al abrir la pagina, cuando se marca un pago o entra una factura nueva.",
               "La parte de Day Centre cambia cuando se mete esa cifra en el recuadro. Entonces sale en todas las hojas en uso.",
-              "Las hojas de Tide son cierres. No se mueven cuando el portal cobra.",
+              "La revision son dos columnas. En uso a la izquierda. Cerrados a la derecha. Ver abre la hoja. Volver a las hojas regresa.",
+              "En uso, Cerrado y la nota se quedan en este navegador. Di cuales estan cerrados, o pega Copiar notas. Eso es lo que pasa una hoja a cerrado y aplica la correccion.",
+              "Las hojas de Tide empiezan como cierres. No se mueven cuando el portal cobra.",
               "Si el banco ya cobro y el portal sigue mostrando la factura, el portal no la tiene marcada como pagada."
             ],
             "tips": [

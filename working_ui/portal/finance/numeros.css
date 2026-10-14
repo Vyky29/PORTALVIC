@@ -30,3 +30,23 @@ td.num, th.num { text-align: right; white-space: nowrap; }
 code { font-size: 0.82rem; overflow-wrap: anywhere; }
 hr { border: 0; border-top: 1px solid #d7e2e8; margin: 16px 0; }
 .canvas-body h1 { font-size: 1.15rem; margin: 8px 0; }
+main.wide { max-width: 1180px; }
+.rev { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.rev-col { min-width: 0; background: #fff; border: 1px solid #d7e2e8; border-radius: 10px; padding: 10px; }
+.rev-col h2 { margin-top: 0; }
+.rev-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin: 0 0 8px; min-width: 0; }
+.rev-card b { display: block; overflow-wrap: anywhere; }
+.rev-card .hint { display: block; color: #92400e; font-size: 0.78rem; margin-top: 2px; overflow-wrap: anywhere; }
+.rev-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rev-actions a, .rev-actions button {
+  font: inherit; font-size: 0.78rem; font-weight: 700;
+  border: 1px solid #d7e2e8; background: #fff; color: #0f2733;
+  border-radius: 8px; padding: 5px 8px; text-decoration: none; cursor: pointer; min-width: 0;
+}
+.rev-actions button.is-on { background: #0e7c86; border-color: #0e7c86; color: #fff; }
+.rev-card textarea {
+  width: 100%; margin-top: 8px; min-height: 52px; resize: vertical;
+  font: inherit; font-size: 0.82rem; padding: 6px 8px; border: 1px solid #d7e2e8; border-radius: 8px;
+}
+.rev-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
+@media (max-width: 800px) { .rev { grid-template-columns: 1fr; } }
