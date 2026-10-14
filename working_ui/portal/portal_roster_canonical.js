@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 146;
+  var SOURCE_VERSION = 147;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -350,6 +350,8 @@
    * Abate brothers Teaching Pool; Logan Teaching Pool; Rayan Ta Teaching Pool;
    * Ayman always Lane (SE) Tue/Wed/Thu. Kareena counts Tue 15 and 22 Sep; Javier 5.30 is open from 29 Sep.
    * Overview seats: 1 Aurora · 2 Javier · 3 Roberto · 4 Luliya.
+   * From Tue 20 Oct 2026 the Abate twins swap instructors (Emmanuel → Roberto, Christian → Luliya).
+   * Dates before that stay as written here. applyAbateInstructorSwapFrom20 does the swap.
    * Brothers: Aydaan Javier 6–6.30 Lane (DE); Adaam Luliya 6–6.30 Lane (SE). Aurora 5.30 open.
    */
   var AUTUMN_ACTON_TUESDAY_BOARD = [
@@ -970,6 +972,61 @@
     var ov = dbAreaOverrideForStandingSlot(copy);
     if (ov) copy.area = ov;
     return copy;
+  }
+
+  /** Tue 20 Oct 2026: Emmanuel Abate moves to Roberto, Christian Abate to Luliya. Silent standing swap. */
+  var ABATE_INSTRUCTOR_SWAP_FROM = "2026-10-20";
+  function abateTuesdayClientKind(name) {
+    var n = String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    if (n === "christian" || n.indexOf("christian abate") === 0) return "christian";
+    if (n === "emmanuel" || n.indexOf("emmanuel abate") === 0) return "emmanuel";
+    return "";
+  }
+  function applyAbateInstructorSwapFrom20(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var iso = normIso(r.session_date);
+      if (!iso || iso < ABATE_INSTRUCTOR_SWAP_FROM) {
+        out.push(r);
+        return;
+      }
+      var day = String(r.day || "").trim().toLowerCase();
+      if (day.indexOf("tue") !== 0) {
+        out.push(r);
+        return;
+      }
+      if (!/acton/i.test(String(r.venue || ""))) {
+        out.push(r);
+        return;
+      }
+      if (!/aquatic/i.test(String(r.service || ""))) {
+        out.push(r);
+        return;
+      }
+      var time = String(r.time_slot || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      if (time !== "4 to 4.30") {
+        out.push(r);
+        return;
+      }
+      var who = abateTuesdayClientKind(r.client_name);
+      if (who === "christian") {
+        out.push(Object.assign({}, r, { instructors: "LULIYA" }));
+        return;
+      }
+      if (who === "emmanuel") {
+        out.push(Object.assign({}, r, { instructors: "ROBERTO" }));
+        return;
+      }
+      out.push(r);
+    });
+    return out;
   }
 
   function applyAutumnActonTuesdayStanding(rows) {
@@ -3553,9 +3610,23 @@
     return out;
   }
 
+  /** After-school / weekend half term, and Day Centre on the flanking weekends. */
+  function autumnProgrammeClosedOnIso(service, iso) {
+    var d = normIso(iso);
+    if (!d) return false;
+    var cal = typeof window !== "undefined" ? window.PortalTermCalendar : null;
+    var kind = isDayCentreService(service) ? "day_centre" : "afterschool";
+    if (cal && typeof cal.isClosedIso === "function") return !!cal.isClosedIso(d, kind);
+    if (kind === "day_centre") {
+      return (d >= "2026-10-24" && d <= "2026-10-25") || (d >= "2026-10-31" && d <= "2026-11-01");
+    }
+    return d >= "2026-10-24" && d <= "2026-11-01";
+  }
+
   function autumnStandingServiceAllowedOnIso(service, iso) {
     var d = normIso(iso);
     if (!d || d < AUTUMN_TERM_FROM_ISO || d > AUTUMN_TERM_THROUGH_ISO) return false;
+    if (autumnProgrammeClosedOnIso(service, d)) return false;
     if (isDayCentreService(service)) return true;
     return d >= AUTUMN_AFTER_SCHOOL_FROM_ISO;
   }
@@ -4670,6 +4741,7 @@
     merged = applyLuliyaNewStandingFrom28(merged);
     merged = applyPatienceIkramFrom28(merged);
     merged = applyOct5MondayAndTuesdayDcFrom6(merged);
+    merged = applyAbateInstructorSwapFrom20(merged);
     return dedupeRosterAdapterRows(merged);
   }
 

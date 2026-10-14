@@ -4231,13 +4231,22 @@ function rosterRowToSlot(isoDate, wd, r) {
     return k.indexOf("day centre") !== -1 || k.indexOf("day_centre") !== -1 || k.indexOf("daycentre") !== -1;
   }
 
-  /** 2026/27: 1–4 Sep Day Centre only; ASW/Climb/Multi from Sat 5 Sep. */
+  /** 2026/27: 1–4 Sep Day Centre only; ASW/Climb/Multi from Sat 5 Sep.
+   *  Oct half term: morning Day Centre only. After-school and weekend stay off. */
   var AUTUMN_DC_ONLY_FROM = "2026-09-01";
   var AUTUMN_ASW_FROM = "2026-09-05";
   function rosterServiceAllowedOnAutumnDate(service, isoDate) {
     var iso = String(isoDate || "").trim().substring(0, 10);
-    if (!iso || iso < AUTUMN_DC_ONLY_FROM || iso >= AUTUMN_ASW_FROM) return true;
-    return isDayCentreService(service);
+    if (!iso) return true;
+    if (iso >= AUTUMN_DC_ONLY_FROM && iso < AUTUMN_ASW_FROM) return isDayCentreService(service);
+    var cal = global.PortalTermCalendar;
+    if (cal && typeof cal.isClosedIso === "function") {
+      var kind = isDayCentreService(service) ? "day_centre" : "afterschool";
+      if (cal.isClosedIso(iso, kind)) return false;
+    } else if (!isDayCentreService(service) && iso >= "2026-10-24" && iso <= "2026-11-01") {
+      return false;
+    }
+    return true;
   }
 
   function slotInstructorCount(slot) {
@@ -8924,6 +8933,11 @@ function rosterRowToSlot(isoDate, wd, r) {
       out = annotateBespokeSharedUnitKeys(out);
       out = applyShadowingHostDisplay(this, out);
       out = injectDutyPersonCards(this, out, isoDate, wd);
+      /* Half term and other programme closures: drop after-school even if an override injected it. */
+      out = out.filter(function (s) {
+        if (!s || !clean(s.service)) return true;
+        return rosterServiceAllowedOnAutumnDate(s.service, isoDate);
+      });
       /* One pass: auto consecutive swim merge using this day's slots only. */
       for (var mi = 0; mi < out.length; mi++) {
         out[mi].feedback_merge_group = feedbackMergeGroupForSlot(out[mi], { daySlots: out });

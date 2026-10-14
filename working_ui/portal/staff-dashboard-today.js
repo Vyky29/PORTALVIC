@@ -3874,6 +3874,30 @@
         return true;
       });
     }
+    /** Half term: morning Day Centre stays. After-school and weekend cards do not. */
+    function portalTodayDropHalfTermClosedProgramme(items, sessionDateKey){
+      var iso = String(sessionDateKey || '').slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !Array.isArray(items)) return items || [];
+      var cal = typeof window !== 'undefined' ? window.PortalTermCalendar : null;
+      function closed(kind){
+        if(cal && typeof cal.isClosedIso === 'function') return !!cal.isClosedIso(iso, kind);
+        if(kind === 'day_centre'){
+          return (iso >= '2026-10-24' && iso <= '2026-10-25') || (iso >= '2026-10-31' && iso <= '2026-11-01');
+        }
+        return iso >= '2026-10-24' && iso <= '2026-11-01';
+      }
+      if(!closed('afterschool') && !closed('day_centre')) return items;
+      return items.filter(function(it){
+        if(!it || (it.kind !== 'client' && it.kind !== 'available')) return true;
+        var base = it.__portalBaseSession || it;
+        var dc = portalTodaySessionIsDayCentre(base) || portalTodaySessionIsDayCentre(it);
+        if(!dc){
+          var svc = String(it.activity || it.service || base.rosterService || base.service || base.activity || '');
+          dc = /day\s*centre/i.test(svc);
+        }
+        return !closed(dc ? 'day_centre' : 'afterschool');
+      });
+    }
 
     /** Selected-day session list (overview “Today” block): anchor = `getViewAnchorCalendarDate(DEMO_VIEW_DAY)` — live calendar or Week/Term URL date lock. Optional `calendarIsoOverride` (YYYY-MM-DD) pins an exact day (next-session preview). */
     function buildSelectedDayViewFromLauraModel(modelOverride, calendarIsoOverride){
@@ -5678,6 +5702,7 @@
         });
       }
       var sortedToday = portalInjectOrphanMakeupOverrideCards(
+        portalTodayDropHalfTermClosedProgramme(
         portalTodayDropDayCentreCancelCoveredByReturn(
         portalDedupeTodayDayCentreWidestClientWindow(
           portalDedupeTodayScheduleViewCards(
@@ -5694,6 +5719,7 @@
           )
         )
         ),
+        sessionDateKey),
         sessionDateKey,
         anchorDayWord,
         anchor,

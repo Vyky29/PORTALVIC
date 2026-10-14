@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20261014-morning-box';
+  var PORTAL_DAY_OPS_BUILD = '20261014-half-term';
   var venueReviewFilters = {
     venue: '',
     staff: '',

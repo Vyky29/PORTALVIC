@@ -16,7 +16,7 @@
     "/portal/portal_staff_feedback_data_loader.js?v=20261007-dc-day-feedback",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20261005-logan-white",
-      "/portal/portal_roster_canonical.js?v=20261013-dec18",
+      "/portal/portal_roster_canonical.js?v=20261014-half-term",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/portal_client_day_visibility.js?v=20261007-dc-day-feedback",
