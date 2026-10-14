@@ -24,11 +24,11 @@ function panelHechos() {
       <div class="kpi"><div class="v">£15,400.00</div><div class="l">Falta: Ikram £12,000 y Timi £3,400</div></div>
     </div>
     <div class="kpis">
-      <div class="kpi"><div class="v">£93,490.72</div><div class="l">Remanente ahora</div></div>
-      <div class="kpi"><div class="v">£23,412.36</div><div class="l">Victor por coger ahora</div></div>
-      <div class="kpi"><div class="v">£46,745.36</div><div class="l">Raul por coger ahora</div></div>
+      <div class="kpi"><div class="v">£93,454.72</div><div class="l">Remanente ahora</div></div>
+      <div class="kpi"><div class="v">£23,394.36</div><div class="l">Victor por coger ahora</div></div>
+      <div class="kpi"><div class="v">£46,727.36</div><div class="l">Raul por coger ahora</div></div>
     </div>
-    <div class="note">Victor ya cogio £23,333 (Michelle £15,500, agosto incluido, y £7,833 de julio). Cuando entren los £15,400, Victor coge £31,112.36 y Raul £54,445.36. Tarjetas personales, sin top: Victor £18,338.37, Raul £19,088.99, Javier £10,753.21. Para igualar a Raul: Victor £750.62 y Javier £8,335.78. No se ha dado.</div>
+    <div class="note">Victor ya cogio £23,333 (Michelle £15,500, agosto incluido, y £7,833 de julio). Cuando entren los £15,400, Victor coge £31,094.36 y Raul £54,427.36. Tarjetas personales, sin top: Victor £18,338.37, Raul £19,088.99, Javier £10,753.21. Para igualar a Raul: Victor £750.62 y Javier £8,335.78. No se ha dado.</div>
   `;
 }
 
