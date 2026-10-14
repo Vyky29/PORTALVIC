@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v430",
+  "version": "2026-10-14-v431",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1833,6 +1833,9 @@
             "lista de espera",
             "joined waiting",
             "otp",
+            "fully booked",
+            "register again",
+            "registro otra vez",
             "funding",
             "payment",
             "reciente",
@@ -1846,7 +1849,7 @@
             "The list is newest join at the top and oldest at the bottom. Not on file sits at the bottom.",
             "Funding and Payment are hidden. They fill in on ACTIVE when the child has a service.",
             "OTP with no finished registration stays in LEADS. Do not add a separate OTP-only filter on this list.",
-            "On Booking, a full time sends a new visitor to registration first, then onto this list. Someone who is already REGISTERED or ACTIVE joins with the short form. The old name-only join did not collect the registration.",
+            "On Booking, a full time opens Join the waiting list once the family has the email code. It does not send them back through registration. The list does not hold the seat. A new visitor enters the email code once, then the waiting list.",
             "When a place opens (Services / Edit term slot / finish-booking), move them through your usual offer flow."
           ],
           "tips": [
@@ -1866,7 +1869,7 @@
               "La lista pone arriba quien se apunto mas reciente y abajo el mas antiguo. Not on file se queda abajo.",
               "Funding y Payment van ocultos. Se rellenan en ACTIVE cuando el nino tiene un servicio.",
               "OTP sin registro terminado se queda en LEADS. No anadas un filtro solo de OTP en esta lista.",
-              "En Booking, una hora llena manda a un visitante nuevo al registro primero, y luego a esta lista. Quien ya es REGISTERED o ACTIVE entra con el formulario corto. El alta antigua solo con el nombre no recibia el registro.",
+              "En Booking, una hora llena abre Join the waiting list cuando la familia ya tiene el codigo del email. No les manda otra vez al formulario de registro. La lista no guarda la plaza. Un visitante nuevo pone el codigo una vez, y luego entra en la lista de espera.",
               "Cuando se abre una plaza (Services / Edit term slot / finish-booking), pasalos por el camino de oferta de siempre."
             ],
             "tips": [

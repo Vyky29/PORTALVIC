@@ -1891,7 +1891,7 @@
   <script src="/portal/portal_booking_offer.js?v=20260913-aquatic-30"></script>
   <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20261010-office-view"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20261014-waitlist-keep-session"></script>
   <script src="/portal/portal_booking_waitlist.js?v=20260913-no-cross-family-pii"></script>
   <script>
     (function () {
@@ -2523,35 +2523,6 @@
           return;
         }
         var svc = api.serviceById(slot.serviceId);
-        if (!isExistingClientBookingSession()) {
-          var actionNew = document.getElementById("actionSheet");
-          var titleNew = document.getElementById("sheetTitle");
-          var bodyNew = document.getElementById("sheetBody");
-          var mailNew = document.getElementById("sheetMail");
-          var choicesNew = document.getElementById("sheetChoices");
-          titleNew.textContent = "Registration first";
-          bodyNew.textContent =
-            ((svc && svc.name) || "Session") +
-            " · " +
-            slot.day +
-            " · " +
-            slot.timeLabel +
-            " is full. We do not have this child's registration yet, so the form comes first. After that you join the waiting list. It does not hold a seat.";
-          if (mailNew) mailNew.hidden = true;
-          if (choicesNew) {
-            choicesNew.hidden = false;
-            choicesNew.innerHTML =
-              '<button type="button" class="btn sheet__choice--pri" id="wlRegFirst" style="margin-top:8px;width:100%">Continue to registration</button>';
-          }
-          actionNew.hidden = false;
-          var regBtn = document.getElementById("wlRegFirst");
-          if (regBtn) {
-            regBtn.onclick = function () {
-              goToRegistration(slot, { waitingList: true });
-            };
-          }
-          return;
-        }
         var action = document.getElementById("actionSheet");
         var title = document.getElementById("sheetTitle");
         var body = document.getElementById("sheetBody");
@@ -2826,13 +2797,18 @@
               if (deepSlot) {
                 if (!svcQ && deepSlot.serviceId) openSheet(deepSlot.serviceId);
                 setTimeout(function () {
-                  openBookChoiceSheet(deepSlot);
+                  if (slotIsFull(deepSlot)) openWaitlistSheet(deepSlot);
+                  else openBookChoiceSheet(deepSlot);
                 }, 80);
               }
             }
           } catch (_d) {}
           try {
             if (window.PortalBookingLeadGate) {
+              document.addEventListener("portal-booking-unlocked", function () {
+                portalPaintBookingSession();
+                resumePendingBook();
+              });
               window.PortalBookingLeadGate.guardClicks(document.getElementById("svcSheetSlots"));
               window.PortalBookingLeadGate.guardClicks(mosaic);
               void window.PortalBookingLeadGate.boot({

@@ -400,11 +400,16 @@
         saveStored(tok, out.data.expires_at || (stored && stored.expiresAt), out.data.lead);
         return true;
       }
+      var status = out.res && out.res.status;
+      var err = String((out.data && out.data.error) || "");
+      if (status === 401 || err === "unauthorized" || err === "expired") {
+        clearStored();
+      }
+      return false;
     } catch (_e) {
-      /* ignore */
+      /* Network blip: keep the saved code. A new email code would revoke it. */
+      return false;
     }
-    clearStored();
-    return false;
   }
 
   function unlock() {
@@ -415,25 +420,40 @@
     state.signedIn = true;
     setLocked(false);
     showModal(false);
+    try {
+      global.dispatchEvent(new Event("portal-booking-unlocked"));
+    } catch (_e) {
+      /* ignore */
+    }
   }
 
+  var gateOpenGen = 0;
+
   function openGate() {
-    if (state.officeView) {
+    if (state.officeView || state.signedIn) {
       unlock();
       return;
     }
-    void tryParentPortalHandoff().then(function (ok) {
-      if (ok) {
+    var gen = ++gateOpenGen;
+    void (async function () {
+      if (await tryParentPortalHandoff()) {
+        if (gen !== gateOpenGen) return;
         unlock();
         return;
       }
-      state.signedIn = false;
+      if (state.signedIn || gen !== gateOpenGen) return;
+      if (await validateSession()) {
+        if (gen !== gateOpenGen) return;
+        unlock();
+        return;
+      }
+      if (state.signedIn || gen !== gateOpenGen) return;
       setLocked(true);
       showStep("details");
       setFlow("choice");
       showModal(true);
       focusFlowField();
-    });
+    })();
   }
 
   function afterOtpSent(email, out, msgId, btn, idleLabel) {
