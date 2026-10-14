@@ -28,7 +28,7 @@ function panelHechos() {
       <div class="kpi"><div class="v">£23,394.36</div><div class="l">Victor por coger ahora</div></div>
       <div class="kpi"><div class="v">£46,727.36</div><div class="l">Raul por coger ahora</div></div>
     </div>
-    <div class="note">Victor ya cogio £23,333 (Michelle £15,500, agosto incluido, y £7,833 de julio). Cuando entren los £15,400, Victor coge £31,094.36 y Raul £54,427.36. Tarjetas personales, sin top: Victor £18,338.37, Raul £19,088.99, Javier £10,753.21. Para igualar a Raul: Victor £750.62 y Javier £8,335.78. No se ha dado.</div>
+    <div class="note">Victor ya cogio £23,333 (Michelle £15,500, agosto incluido, y £7,833 de julio). Cuando entren los £15,400, Victor coge £31,094.36 y Raul £54,427.36. Tarjetas personales hasta el 31 ago, sin top: Victor £18,204.59, Raul £18,839.90, Javier £10,753.21. Para igualar a Raul: Victor £635.31 y Javier £8,086.69. No se ha dado. Lo personal de septiembre se resta de la mitad de Day Centre en la hoja de septiembre.</div>
   `;
 }
 
