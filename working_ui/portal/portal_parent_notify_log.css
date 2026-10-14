@@ -950,6 +950,38 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   margin-top: 0;
 }
 
+.portal-pnlog-chip--bucket {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin-top: 0;
+  flex: 0 0 auto;
+}
+
+.portal-pnlog-chip--b-client {
+  background: rgba(22, 163, 74, 0.16);
+  color: #15803d;
+}
+
+.portal-pnlog-chip--b-registered {
+  background: rgba(45, 132, 179, 0.16);
+  color: #1a5f82;
+}
+
+.portal-pnlog-chip--b-leads {
+  background: rgba(217, 119, 6, 0.18);
+  color: #9a3412;
+}
+
+.portal-pnlog-chip--b-waiting {
+  background: rgba(124, 58, 237, 0.14);
+  color: #6d28d9;
+}
+
+.portal-pnlog-chip--b-old {
+  background: rgba(100, 116, 139, 0.16);
+  color: #475569;
+}
+
 .portal-pnlog-chip--unread {
   background: var(--pnlog-blue);
   color: #fff;

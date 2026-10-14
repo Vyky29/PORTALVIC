@@ -93,6 +93,7 @@
     loading: false,
     query: "",
     outcome: "all",
+    leadBuckets: null,
     pollTimer: null,
     realtimeChannel: null,
     selectedKey: "",
@@ -517,19 +518,91 @@
   }
 
   /**
-   * lead = waiting list / web-email interested (not enrolled).
-   * former = not in class and not waiting (released / old).
-   * client = in class.
+   * Office buckets: client | registered | leads | waiting | old.
+   * Contacts alone cannot tell REGISTERED from OLD (both in_class false);
+   * booking-lead registration status upgrades those to registered in bucketForContact.
    */
   function contactKindFromFlags(inClass, onWaitingList) {
     var waiting = truthyFlag(onWaitingList);
     var enrolled = truthyFlag(inClass);
     var notEnrolled = falsyInClass(inClass);
-    if (waiting && !enrolled) return "lead";
-    if (waiting && enrolled) return "client";
     if (enrolled) return "client";
-    if (notEnrolled) return "former";
+    if (waiting) return "waiting";
+    if (notEnrolled) return "old";
     return "";
+  }
+
+  var BUCKET_LABELS = {
+    client: { label: "CLIENT", title: "On services now (has term slots)" },
+    registered: { label: "REGISTERED", title: "Registration form done, never had a place yet" },
+    leads: { label: "LEADS", title: "Got the booking code, did not finish registration" },
+    waiting: { label: "WAITING", title: "Registered and waiting for a full service" },
+    old: { label: "OLD", title: "Was a client, no slots this term" },
+  };
+
+  function leadBucketFromRow(r) {
+    if (!r) return "";
+    var book = String(r.booking_status || "").toLowerCase();
+    var reg = String(r.registration_status || "").toLowerCase();
+    var cli = String(r.client_status || "").toLowerCase();
+    if (book === "waiting_list" || cli === "waiting_list") return "waiting";
+    if (reg === "submitted" || cli === "registered" || book === "registration_submitted") return "registered";
+    return "leads";
+  }
+
+  var LEAD_BUCKET_RANK = { waiting: 3, registered: 2, leads: 1 };
+
+  async function fetchLeadBuckets() {
+    var token = await portalAuthToken();
+    var base = String(cfg.getSupabaseUrl() || "").replace(/\/$/, "");
+    var anon = String(cfg.getAnonKey() || "");
+    var byKey = Object.create(null);
+    if (!token || !base || !anon) return byKey;
+    try {
+      var res = await fetch(base + "/functions/v1/portal-admin-booking-leads-list", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+          apikey: anon,
+        },
+        body: JSON.stringify({ mode: "buckets" }),
+      });
+      var j = null;
+      try {
+        j = await res.json();
+      } catch (_e) {
+        j = null;
+      }
+      if (!res.ok || !j || !j.ok || !Array.isArray(j.buckets)) return byKey;
+      j.buckets.forEach(function (r) {
+        var key = phoneMatchKey(r.mobile);
+        if (!key) return;
+        var b = leadBucketFromRow(r);
+        if (!byKey[key] || (LEAD_BUCKET_RANK[b] || 0) > (LEAD_BUCKET_RANK[byKey[key]] || 0)) {
+          byKey[key] = b;
+        }
+      });
+    } catch (_e) {}
+    return byKey;
+  }
+
+  function leadBucketForPhone(phone) {
+    var key = phoneMatchKey(phone);
+    if (!key || !state.leadBuckets) return "";
+    return state.leadBuckets[key] || "";
+  }
+
+  /** CLIENT > WAITING > REGISTERED > OLD (known contact) > LEADS (booking code only). */
+  function bucketForContact(contact, phone) {
+    var lead = leadBucketForPhone(phone || (contact && contact.mobile) || "");
+    if (contact && contact.inClass) return "client";
+    if ((contact && contact.onWaitingList) || lead === "waiting") return "waiting";
+    if (lead === "registered") return "registered";
+    var dirKind = String((contact && contact.contactKind) || "");
+    if (dirKind === "old") return "old";
+    if (lead) return "leads";
+    return dirKind;
   }
 
   function normalizeDirContact(row) {
@@ -637,8 +710,8 @@
     if (c.inClass) score += 100;
     var kind = String(c.contactKind || "").toLowerCase();
     if (kind === "client") score += 50;
-    else if (kind === "lead") score += 20;
-    else if (kind === "former") score += 5;
+    else if (kind === "waiting") score += 20;
+    else if (kind === "old") score += 5;
     if (isReleasedOldChildName(c.child)) score -= 80;
     return score;
   }
@@ -761,11 +834,11 @@
       if (contact && contact.parent) t.parentName = contact.parent;
       if (contact && contact.child) t.client = contact.child;
       if (contact) {
-        t.contactKind = contact.contactKind || "";
         t.inClass = !!contact.inClass;
         t.onWaitingList = !!contact.onWaitingList;
         t.fundingLabel = contact.fundingLabel || "";
       }
+      t.contactKind = bucketForContact(contact, t.phone || t.sendPhone);
       /* Coordinator phones win over any mis-stamped outbound (Kate/Maire → Jordan). */
       var ov = knownWaThreadOverride(t.phone || t.sendPhone);
       if (ov) {
@@ -1449,8 +1522,8 @@
         phoneKey,
         t.fromDirectory ? "directory" : "",
         t.coordinatorThread ? "jordan acat h&f" : "",
-        kind === "lead" ? "lead interested waiting list web email" : "",
-        kind === "former" ? "former old client released" : "",
+        BUCKET_LABELS[kind] ? BUCKET_LABELS[kind].label : "",
+        kind === "waiting" ? "waiting list" : "",
         t.fundingLabel || "",
       ].join(" ")
     );
@@ -1519,8 +1592,7 @@
     if (outcome === "failed" && !t.hasFailed) return false;
     if (outcome === "sent" && !t.hasSent) return false;
     if (outcome === "unread" && !isThreadUnread(t)) return false;
-    if (outcome === "leads" && String(t.contactKind || "") !== "lead") return false;
-    if (outcome === "clients" && String(t.contactKind || "") === "lead") return false;
+    if (outcome.indexOf("b_") === 0 && String(t.contactKind || "") !== outcome.slice(2)) return false;
     if (!q) return true;
     if (threadPhoneMatchesQuery(t, qRaw)) return true;
     if (hayMatchesQuery(threadIdentityHay(t), q)) return true;
@@ -1534,7 +1606,7 @@
     var q = foldSearchText(qRaw);
     if (q.length < 2) return [];
     var outcome = String(state.outcome || "all").toLowerCase();
-    if (outcome && outcome !== "all" && outcome !== "leads") return [];
+    if (outcome && outcome !== "all" && outcome.indexOf("b_") !== 0) return [];
     var existing = Object.create(null);
     (state.threads || []).forEach(function (t) {
       var d = phoneDigits(t.phone || t.sendPhone || "");
@@ -1545,11 +1617,12 @@
     var out = [];
     (state.contactDirectory || []).forEach(function (c) {
       if (!c || !c.mobile) return;
-      if (outcome === "leads" && c.contactKind !== "lead") return;
+      var bucket = bucketForContact(c, c.mobile);
+      if (outcome.indexOf("b_") === 0 && bucket !== outcome.slice(2)) return;
       var digits = c.sendDigits || canonicalPhoneDigits(c.mobile) || phoneDigits(c.mobile);
       if (!digits || existing[digits] || existing[c.matchKey]) return;
       var hay = foldSearchText(
-        [c.parent, c.child, c.mobile, digits, c.contactId, c.contactKind === "lead" ? "lead interested" : ""].join(" ")
+        [c.parent, c.child, c.mobile, digits, c.contactId, BUCKET_LABELS[bucket] ? BUCKET_LABELS[bucket].label : ""].join(" ")
       );
       if (!phoneQueryMatches(c.mobile, qRaw) && !phoneQueryMatches(digits, qRaw) && !hayMatchesQuery(hay, q)) {
         return;
@@ -1565,7 +1638,7 @@
         sendPhone: digits,
         profilePhone: digits,
         phoneFromProfile: true,
-        contactKind: c.contactKind || "",
+        contactKind: bucket,
         inClass: !!c.inClass,
         onWaitingList: !!c.onWaitingList,
         fundingLabel: c.fundingLabel || "",
@@ -1914,17 +1987,17 @@
 
   function contactKindChipHtml(t) {
     var kind = String((t && t.contactKind) || "").toLowerCase();
-    if (kind === "lead") {
-      return (
-        '<span class="portal-pnlog-chip portal-pnlog-chip--lead" title="Web / email lead — interested, not an enrolled client">Lead</span>'
-      );
-    }
-    if (kind === "former") {
-      return (
-        '<span class="portal-pnlog-chip portal-pnlog-chip--former" title="Not in class — former / released place">Former</span>'
-      );
-    }
-    return "";
+    var b = BUCKET_LABELS[kind];
+    if (!b) return "";
+    return (
+      '<span class="portal-pnlog-chip portal-pnlog-chip--bucket portal-pnlog-chip--b-' +
+      kind +
+      '" title="' +
+      esc(b.title) +
+      '">' +
+      b.label +
+      "</span>"
+    );
   }
 
   function renderPaneHeadHtml(t) {
@@ -2179,7 +2252,11 @@
     var sel = t.key === state.selectedKey ? " is-selected" : "";
     var kind = String(t.contactKind || "").toLowerCase();
     var kindCls =
-      kind === "lead" ? " portal-pnlog-conv--lead" : kind === "former" ? " portal-pnlog-conv--former" : "";
+      kind === "leads" || kind === "registered" || kind === "waiting"
+        ? " portal-pnlog-conv--lead"
+        : kind === "old"
+          ? " portal-pnlog-conv--former"
+          : "";
     var sub = t.events.length
       ? bodyPreview(clientFacingOutboundBody(t.events[t.events.length - 1]))
       : t.fromDirectory
@@ -3147,7 +3224,9 @@
       }
 
       state.timeline = mergeTimeline(outboundRes.data || [], inbound);
-      var liveDir = await fetchLiveContactDirectory();
+      var dirAndLeads = await Promise.all([fetchLiveContactDirectory(), fetchLeadBuckets()]);
+      var liveDir = dirAndLeads[0];
+      state.leadBuckets = dirAndLeads[1];
       var localDir = directoryFromCfg();
       /* Live portal_parent_contacts wins over static export / stale labels. */
       state.contactDirectory = mergeContactDirectories(liveDir, localDir);
@@ -3188,8 +3267,11 @@
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search parent, participant, phone…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogOutcome" class="sel portal-pnlog-toolbar__sel" aria-label="Filter">' +
       '<option value="all">All</option>' +
-      '<option value="leads">Leads / interested</option>' +
-      '<option value="clients">Clients (not leads)</option>' +
+      '<option value="b_client">CLIENT</option>' +
+      '<option value="b_registered">REGISTERED</option>' +
+      '<option value="b_leads">LEADS</option>' +
+      '<option value="b_waiting">WAITING</option>' +
+      '<option value="b_old">OLD</option>' +
       '<option value="unread">Unread</option>' +
       '<option value="replies">Has replies</option>' +
       '<option value="sent">Sent OK</option>' +

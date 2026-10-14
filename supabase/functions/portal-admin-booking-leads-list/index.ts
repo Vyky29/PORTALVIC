@@ -491,6 +491,7 @@ Deno.serve(async (req) => {
   }
 
   let body: {
+    mode?: string;
     client_status?: string;
     booking_status?: string;
     track_status?: string;
@@ -514,6 +515,29 @@ Deno.serve(async (req) => {
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  /* Family Messages bucket labels: phone + statuses only (no signed files, no visit join). */
+  if (String(body.mode || "").trim().toLowerCase() === "buckets") {
+    const { data: rows, error: bErr } = await admin
+      .from("portal_booking_leads")
+      .select("mobile, booking_status, registration_status, client_status, last_activity_at")
+      .not("mobile", "is", null)
+      .order("last_activity_at", { ascending: false })
+      .limit(5000);
+    if (bErr) {
+      console.error("[portal-admin-booking-leads-list] buckets", bErr.message);
+      return portalAdminJson(500, { ok: false, error: "query_failed" });
+    }
+    const buckets = (rows || [])
+      .map((r) => ({
+        mobile: String(r.mobile || "").trim(),
+        booking_status: r.booking_status || null,
+        registration_status: r.registration_status || null,
+        client_status: r.client_status || null,
+      }))
+      .filter((r) => r.mobile);
+    return portalAdminJson(200, { ok: true, buckets });
+  }
 
   /* Global truth counts (not limited to the current page). */
   const [

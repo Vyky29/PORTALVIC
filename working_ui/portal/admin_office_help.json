@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-14-v441",
+  "version": "2026-10-14-v442",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -934,6 +934,55 @@
             "tips": [
               "Un rebote Address not found en info@ significa que ese email no existe. Pide al padre el correcto.",
               "La correccion solo se une al lead viejo si el movil es el mismo y el email viejo nunca se verifico (ultimas 48 horas)."
+            ]
+          }
+        },
+        {
+          "id": "messages_bucket_labels",
+          "title": "Family Messages - CLIENT / REGISTERED / LEADS / WAITING / OLD labels",
+          "summary": "Every WhatsApp conversation shows a coloured label with the family bucket, matched by the parent mobile.",
+          "where": "Admin - API / Portal (Family Messages) - conversation list and chat header",
+          "keywords": [
+            "bucket",
+            "label",
+            "etiqueta",
+            "client",
+            "registered",
+            "leads",
+            "waiting",
+            "old",
+            "active",
+            "quien es",
+            "me lio",
+            "filter messages"
+          ],
+          "steps": [
+            "CLIENT (green): in class now, has term slots.",
+            "WAITING (purple): on the waiting list for a full service.",
+            "REGISTERED (blue): did the registration form but never had a place yet.",
+            "OLD (grey): was a client, no slots this term.",
+            "LEADS (orange): got the booking access code but did not finish registration.",
+            "Use the filter next to Search to list only one bucket."
+          ],
+          "tips": [
+            "The label comes from the mobile. If a family shows no label, their mobile in Contacts or the booking lead is different from the WhatsApp number.",
+            "If one mobile has several children, the label follows the child who is in class."
+          ],
+          "es": {
+            "title": "Mensajes familias - etiquetas CLIENT / REGISTERED / LEADS / WAITING / OLD",
+            "summary": "Cada conversacion de WhatsApp lleva una etiqueta de color con el grupo de la familia, segun el movil del padre.",
+            "where": "Admin - API / Portal (Mensajes familias) - lista de conversaciones y cabecera del chat",
+            "steps": [
+              "CLIENT (verde): en clase ahora, tiene plazas este trimestre.",
+              "WAITING (morado): en lista de espera de un servicio lleno.",
+              "REGISTERED (azul): hizo el formulario de registro pero nunca ha tenido plaza.",
+              "OLD (gris): fue cliente, sin plazas este trimestre.",
+              "LEADS (naranja): pidio el codigo del booking pero no termino el registro.",
+              "Usa el filtro al lado de Search para ver solo un grupo."
+            ],
+            "tips": [
+              "La etiqueta sale del movil. Si una familia no tiene etiqueta, su movil en Contacts o en el lead no es el mismo que el de WhatsApp.",
+              "Si un movil tiene varios ninos, manda el nino que esta en clase."
             ]
           }
         },
