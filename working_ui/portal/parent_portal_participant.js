@@ -10218,7 +10218,9 @@
       !isPaid &&
       status !== "void" &&
       (status === "unpaid" || status === "partial" || status === "pending_confirmation");
-    var showBankPanel = !isPaid && !isGcInvoice && !isLaInvoice && payActionNeeded;
+    var bankReady = !!(inv && inv.bank_transfer);
+    var showBankPanel =
+      !isPaid && !isGcInvoice && !isLaInvoice && payActionNeeded && bankReady;
     var previewLabel =
       status === "partial"
         ? "Preview partially paid invoice"
@@ -10325,9 +10327,11 @@
         (bankBtn || payBtn
           ? '<div class="pp-invoice-pay-pair">' + bankBtn + payBtn + "</div>"
           : "") +
-        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">Prefer <strong>bank transfer</strong> (Tide details above). After you transfer, open <strong>Messages</strong> (or WhatsApp / email <a href="' +
-        esc(OFFICE_CONTACT_MAILTO) +
-        '">info@clubsensational.org</a>) and tell us you have paid. A photo is optional. The office checks Tide and marks the invoice paid.</p>';
+        (showBankPanel
+          ? '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">The Tide payee, sort code, and account are in the box above. After you transfer, open <strong>Messages</strong> (or WhatsApp / email <a href="' +
+            esc(OFFICE_CONTACT_MAILTO) +
+            '">info@clubsensational.org</a>) and tell us you have paid. A photo is optional. The office checks Tide and marks the invoice paid.</p>'
+          : "");
     }
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
@@ -10559,10 +10563,7 @@
           if (gcMeta.mandate_active && anyGcInvoice) {
             gcHost.hidden = false;
             gcHost.innerHTML =
-              '<button type="button" class="pp-btn pp-btn--gc-setup-done pp-invoice-card__btn-full" disabled aria-disabled="true">' +
-              invoiceBtnLabel("gocardless", "Direct Payment set up") +
-              "</button>" +
-              '<p class="pp-muted pp-invoice-pay__note">Mandate is active. Upcoming invoices are collected automatically.</p>';
+              '<p class="pp-muted pp-invoice-pay__note">Direct Payment is set up. Upcoming invoices on that plan are collected automatically.</p>';
           } else if (gcMeta.setup_available && anyGcInvoice && !gcSetupOnCard) {
             gcHost.hidden = false;
             gcHost.innerHTML =
@@ -10778,10 +10779,19 @@
             } catch (_e) {
               panel.scrollIntoView(true);
             }
+            panel.classList.add("pp-invoice-pay--flash");
+            global.setTimeout(function () {
+              panel.classList.remove("pp-invoice-pay--flash");
+            }, 2200);
+            showNotice(
+              "ok",
+              "Use the payee, sort code, and account in the highlighted box. Put the participant name as the reference, then message the office.",
+            );
+            return;
           }
           showNotice(
-            "ok",
-            "Bank transfer details are above — Tide payee, sort code, and account. After you transfer, message the office so they can confirm.",
+            "info",
+            "Bank details are not on this invoice. If an earlier invoice still needs paying, settle that one first.",
           );
         });
       });

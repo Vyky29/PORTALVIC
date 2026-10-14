@@ -70,8 +70,42 @@ function parentInvoiceAllowedForShare(
   return true;
 }
 
+/** Activity + day/time/venue from invoice rows. Skips the GoCardless fee line. */
+function servicePlaceLine(share: {
+  line_items?: unknown;
+  line_description?: unknown;
+}): string {
+  const items = Array.isArray(share.line_items) ? share.line_items : [];
+  const bits: string[] = [];
+  for (const raw of items) {
+    if (!raw || typeof raw !== "object") continue;
+    const item = raw as Record<string, unknown>;
+    const key = clean(item.service_key, 40).toUpperCase();
+    const desc = clean(item.description, 80);
+    if (!desc || key === "GC_FEE" || /gocardless fee/i.test(desc)) continue;
+    const detail = clean(item.detail, 80).replace(/\s*[–—]\s*/g, " - ");
+    bits.push(detail ? `${desc} - ${detail}` : desc);
+  }
+  if (bits.length) return bits.join("; ").slice(0, 180);
+  const lines = String(share.line_description || "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const activity = lines.find(
+    (l) => /activity/i.test(l) && !/^structured activity/i.test(l),
+  );
+  if (!activity) return "";
+  return clean(activity.replace(/\s*[—–-]\s*GBP[\s\d.,]+$/i, ""), 160);
+}
+
 function parentFacingSubtitle(
-  share: { invoice_number?: unknown; reference_text?: unknown; line_description?: unknown },
+  share: {
+    invoice_number?: unknown;
+    reference_text?: unknown;
+    line_description?: unknown;
+    line_items?: unknown;
+    billing_term?: unknown;
+  },
   docTitle: unknown,
 ): string | null {
   const num = clean(share.invoice_number, 80);
@@ -79,16 +113,22 @@ function parentFacingSubtitle(
   const lineFirst = clean(String(share.line_description || "").split("\n")[0], 120);
   const title = clean(docTitle, 200).toLowerCase();
   const blob = `${ref} ${lineFirst} ${title}`.toLowerCase();
+  const place = servicePlaceLine(share);
 
+  let term = "";
   if (/\bcrash\b/.test(blob) || /summer term 25\/26/.test(ref.toLowerCase())) {
-    return "Summer crash course Jul 2026";
+    term = "Summer crash course Jul 2026";
+  } else if (/26\/27|2026-27|2026\/27|autumn|re-enrol|spring term|summer term/.test(blob)) {
+    term = ref || "Autumn term 26/27";
+  } else if (ref && ref !== num) {
+    term = ref;
+  } else if (lineFirst && !/^structured activity support/i.test(lineFirst)) {
+    term = lineFirst;
   }
-  if (/26\/27|2026-27|2026\/27|autumn|re-enrol|spring term|summer term/.test(blob)) {
-    return ref || lineFirst || "Autumn term 26/27";
+  if (place && term && place.toLowerCase() !== term.toLowerCase()) {
+    return `${place}. ${term}`.slice(0, 220);
   }
-  if (ref && ref !== num) return ref;
-  if (lineFirst && !/^structured activity support/i.test(lineFirst)) return lineFirst;
-  return null;
+  return place || term || null;
 }
 
 function json(status: number, body: Record<string, unknown>) {
@@ -157,7 +197,7 @@ Deno.serve(async (req) => {
   const { data: shares, error } = await supabase
     .from("portal_parent_invoice_share")
     .select(
-      "id, document_id, contact_id, invoice_number, amount_gbp, amount_paid_gbp, payment_schedule, next_instalment_due, billing_term, due_date, payment_status, share_status, ready_at, created_at, updated_at, payment_method_hint, gocardless_url, gocardless_payment_id, gocardless_mandate_id, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, paid_at, paid_via, vat_mode, reference_text, line_description",
+      "id, document_id, contact_id, invoice_number, amount_gbp, amount_paid_gbp, payment_schedule, next_instalment_due, billing_term, due_date, payment_status, share_status, ready_at, created_at, updated_at, payment_method_hint, gocardless_url, gocardless_payment_id, gocardless_mandate_id, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, paid_at, paid_via, vat_mode, reference_text, line_description, line_items",
     )
     .eq("contact_id", contactId)
     .eq("share_status", "ready")
@@ -238,7 +278,16 @@ Deno.serve(async (req) => {
     return true;
   });
 
-  const sequenceShares: PaySequenceShare[] = parentVisibleShares.map((s) => ({
+  /*
+   * A live Direct Payment mandate collects that invoice itself. It must not
+   * hide Tide details on a later bank-transfer invoice for another place.
+   */
+  const sequenceShares: PaySequenceShare[] = parentVisibleShares
+    .filter((s) => {
+      if (!gcMandateActive) return true;
+      return clean(s.payment_method_hint, 40).toLowerCase() !== "gocardless";
+    })
+    .map((s) => ({
     id: s.id,
     invoice_number: s.invoice_number,
     billing_term: s.billing_term,
