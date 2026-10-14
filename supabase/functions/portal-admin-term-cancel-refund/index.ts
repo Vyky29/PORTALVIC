@@ -11,6 +11,7 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 import { quoteTermCancelRefund, settleTermCancelQuote } from "../_shared/portal_term_cancel_refund.ts";
+import { autoApplyOpenCreditToNextInvoices } from "../_shared/portal_family_credit_apply.ts";
 import {
   maskPhoneForLog,
   normalizeParentPhoneE164,
@@ -125,7 +126,7 @@ async function ensureCancelCreditLedger(
     "No admin charge. Not a refund.",
   ];
   if (quote.invoice_number) bits.push("Invoice " + clean(quote.invoice_number, 40) + ".");
-  const { error } = await admin.from("portal_parent_family_credits").insert({
+  const { data: inserted, error } = await admin.from("portal_parent_family_credits").insert({
     parent_person_id: parentPersonId,
     contact_id: contactId,
     participant_display: clean(pax?.display_name || quote.client_name, 120),
@@ -140,8 +141,18 @@ async function ensureCancelCreditLedger(
     notes: bits.join(" ").slice(0, 800),
     source: "club_cancellation",
     created_by: userId,
-  });
-  if (error) console.warn("[term-cancel-refund] credit ledger", error.message);
+  }).select("id").maybeSingle();
+  if (error) {
+    console.warn("[term-cancel-refund] credit ledger", error.message);
+    return;
+  }
+  const creditId = clean(inserted?.id, 80);
+  if (!creditId) return;
+  try {
+    await autoApplyOpenCreditToNextInvoices(admin, creditId);
+  } catch (err) {
+    console.warn("[term-cancel-refund] credit apply", err);
+  }
 }
 
 Deno.serve(async (req) => {

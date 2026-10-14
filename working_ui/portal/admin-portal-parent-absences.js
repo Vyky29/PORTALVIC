@@ -1328,7 +1328,7 @@
           notes = global.prompt('Optional notes for the family / file:', '') || '';
           var amountRaw =
             global.prompt(
-              '£ amount for the family ledger (optional — leave blank for session credit without cash figure):',
+            '£ amount (leave blank to use the session price on the invoice). A credit applies to the next unpaid bank or flexi invoice. If nothing is due, it stays for the next term:',
               ''
             ) || '';
           if (String(amountRaw).trim()) {

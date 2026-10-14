@@ -12,6 +12,7 @@ import {
 } from "../_shared/portal_admin_auth.ts";
 import { autoApplyOpenCreditToNextInvoices } from "../_shared/portal_family_credit_apply.ts";
 import { notifyParentAbsenceOutcome } from "../_shared/portal_absence_outcome_notify.ts";
+import { unitPriceForCancelledSession } from "../_shared/portal_term_cancel_refund.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -363,6 +364,14 @@ Deno.serve(async (req) => {
   let credit_apply = null;
   let parent_notify = null;
   if (action === "approve" && (outcome === "credit" || outcome === "refund")) {
+    if (outcome === "credit" && !(amountGbp != null && amountGbp > 0)) {
+      const priced = await unitPriceForCancelledSession(
+        admin,
+        clean(updated.contact_id, 120),
+        clean(updated.session_date, 12),
+      );
+      if (priced != null && priced > 0) amountGbp = priced;
+    }
     const creditSource = isCancellationCase ? "club_cancellation" : "excused_absence";
     const { data: existingCredit } = await admin
       .from("portal_parent_family_credits")

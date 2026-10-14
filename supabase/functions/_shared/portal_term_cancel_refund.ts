@@ -83,6 +83,36 @@ export function parseInvoiceDates(raw: unknown, anchorIso: string): string[] {
   return out;
 }
 
+/** Session price on the family invoice when the credit was saved without a £ amount. */
+export async function unitPriceForCancelledSession(
+  admin: SupabaseClient,
+  contactId: string,
+  sessionDate: string,
+): Promise<number | null> {
+  const cid = clean(contactId, 120);
+  const iso = clean(sessionDate, 12);
+  if (!cid || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const { data: invoices } = await admin
+    .from("portal_parent_invoice_share")
+    .select("line_items, payment_status")
+    .eq("contact_id", cid)
+    .limit(30);
+  for (const inv of invoices || []) {
+    const st = String(inv.payment_status || "").toLowerCase();
+    if (st === "void" || st === "cancelled") continue;
+    const items = Array.isArray(inv.line_items) ? inv.line_items : [];
+    for (const line of items) {
+      if (!line || typeof line !== "object") continue;
+      const row = line as Record<string, unknown>;
+      const unit = round2(Number(row.unit_price_gbp) || 0);
+      if (unit <= 0) continue;
+      const dates = parseInvoiceDates(row.dates, iso);
+      if (dates.includes(iso)) return unit;
+    }
+  }
+  return null;
+}
+
 function isCrashLine(line: Record<string, unknown>): boolean {
   const h = norm(
     String(line.description || "") + " " + String(line.service_key || "") + " " + String(line.detail || ""),
