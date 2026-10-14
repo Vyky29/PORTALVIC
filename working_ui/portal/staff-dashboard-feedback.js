@@ -1401,6 +1401,11 @@
         cancelled = true;
         cancelNeedsFeedback = false;
       }
+      /* Added card replaces the cancelled slice. It is a live session, not a resolved cancel. */
+      if(typeof portalTodayItemIsLiveSessionAdd === 'function' && portalTodayItemIsLiveSessionAdd(item)){
+        cancelled = false;
+        cancelNeedsFeedback = false;
+      }
       if(absent || (cancelled && !cancelNeedsFeedback)) feedbackDone = false;
       if(cancelled && !cancelNeedsFeedback){
         /* Before-start / admin cancel counts as submitted (no instructor feedback). */

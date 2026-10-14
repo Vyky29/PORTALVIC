@@ -2482,6 +2482,9 @@
         if(plClear.cancelled_by_admin
           && plClear.day_reassign !== true
           && plClear.not_makeup !== true){
+          /* A later added card puts this participant back in these hours.
+             The short clear must not paint that live card Cancelled / green. */
+          if(portalTodayLiveSessionAddCoversSeat(s, iso)) return null;
           return { feedbackDone: false, incident: false, absent: false, cancelled: true };
         }
       }
@@ -3705,7 +3708,8 @@
           : '';
         if(shortName) keep = Object.assign({}, keep, { name: shortName });
       }catch(_){}
-      if(drop && drop.sessionKey && keep.sessionKey && drop.sessionKey !== keep.sessionKey){
+      if(drop && drop.sessionKey && keep.sessionKey && drop.sessionKey !== keep.sessionKey
+        && !portalTodayItemIsLiveSessionAdd(keep)){
         const mem = typeof getSessionReviewRecord === 'function' ? getSessionReviewRecord(drop) : null;
         if(mem && typeof sessionReviewMapMemory === 'object' && sessionReviewMapMemory){
           sessionReviewMapMemory[keep.sessionKey] = Object.assign(

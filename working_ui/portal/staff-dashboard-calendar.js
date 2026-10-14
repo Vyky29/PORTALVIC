@@ -744,7 +744,8 @@
         if(exEarly && exEarly.absent){
           return { feedbackDone: false, incident: false, absent: true, cancelled: false };
         }
-        if(exEarly && exEarly.cancelled){
+        if(exEarly && exEarly.cancelled
+          && !(typeof portalTodayItemIsLiveSessionAdd === 'function' && portalTodayItemIsLiveSessionAdd(item))){
           return { feedbackDone: false, incident: false, absent: false, cancelled: true, cancelNeedsFeedback: false };
         }
         if(exEarly && exEarly.feedbackDone){
@@ -788,7 +789,8 @@
       if(iso && portalIsServerTruthFeedbackDay(iso)){
         const serverRec = portalServerTruthReviewRecordForItem(item, iso);
         if(serverRec.absent) return serverRec;
-        if(serverRec.cancelled){
+        if(serverRec.cancelled
+          && !(typeof portalTodayItemIsLiveSessionAdd === 'function' && portalTodayItemIsLiveSessionAdd(item))){
           const pillSrv = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
           const ovCan = item && item.__portalScheduleOverride;
           const ovCanT = ovCan ? String(ovCan.override_type || '').trim() : '';
@@ -815,7 +817,8 @@
         if(baseSrv && typeof portalGetMergedSessionReviewRecordForRoster === 'function'){
           const memSrv = portalGetMergedSessionReviewRecordForRoster(baseSrv, dayWordSrv, iso);
           /* Cancelled can stay local (admin/UI). Absent on today+ must be server-confirmed. */
-          if(memSrv.cancelled){
+          if(memSrv.cancelled
+            && !(typeof portalTodayItemIsLiveSessionAdd === 'function' && portalTodayItemIsLiveSessionAdd(item))){
             return {
               feedbackDone: false,
               incident: !!(serverRec.incident || memSrv.incident),
@@ -831,6 +834,9 @@
       let mem = getSessionReviewRecord(item) || { feedbackDone: false, incident: false, absent: false, cancelled: false };
       if(baseS && iso && typeof portalGetMergedSessionReviewRecordForRoster === 'function'){
         mem = portalGetMergedSessionReviewRecordForRoster(baseS, dayWord, iso);
+      }
+      if(typeof portalTodayItemIsLiveSessionAdd === 'function' && portalTodayItemIsLiveSessionAdd(item)){
+        mem = Object.assign({}, mem, { cancelled: false, cancelNeedsFeedback: false });
       }
       if(!iso || !staffId) return mem;
       if(baseS && typeof portalRosterSessionFeedbackResolvedFlags === 'function' && !portalTodayCardUsesReplaceOverride(item)){
