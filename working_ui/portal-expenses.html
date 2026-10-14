@@ -404,16 +404,18 @@
 
   <script type="module">
     async function portalImportDocumentsModule(tag) {
-      const v = "20260905-expense-amount";
+      const v = "20261014-staff-name";
       const custom =
         typeof window !== "undefined" && window.PORTAL_DOCUMENTS_BASE
           ? String(window.PORTAL_DOCUMENTS_BASE).trim().replace(/\/$/, "")
           : "";
-      const originBase =
-        typeof location !== "undefined" && location.origin
-          ? String(location.origin).replace(/\/$/, "") + "/portal-shared-js"
-          : "/portal-shared-js";
-      const bases = [custom, originBase].filter(Boolean);
+      const bases = [
+        custom,
+        typeof location !== "undefined" && location.href
+          ? String(new URL("portal/", location.href).href).replace(/\/$/, "")
+          : "",
+        "portal",
+      ].filter(Boolean);
       const uniq = [...new Set(bases)];
       for (const base of uniq) {
         const url = `${base}/portal_documents.js?v=${v}`;
@@ -424,7 +426,7 @@
         }
       }
       throw new Error(
-        "Could not load portal_documents.js from /portal-shared-js/. Ensure portal-shared-js/portal_documents.js is deployed."
+        "Could not load portal_documents.js. Add working_ui/portal/portal_documents.js to the deploy (same origin as this page)."
       );
     }
     const { portalUploadPdfAndCreateDocument, portalRequireUser } = await portalImportDocumentsModule("expenses");
@@ -446,10 +448,13 @@
       stf013: { name: "Victor", role: "Manager" },
       stf014: { name: "Carlos", role: "Climbing Instructor 3" },
       stf015: { name: "Alex", role: "Climbing Instructor 3" },
+      stf016: { name: "Simon", role: "Staff" },
       stf017: { name: "Javi", role: "CEO" },
       stf018: { name: "Raul", role: "Manager" },
       stf019: { name: "Sevitha", role: "Admin" },
-      stf020: { name: "Teflon", role: "Staff" }
+      stf020: { name: "Teflon", role: "Staff" },
+      stf021: { name: "Luliya", role: "Staff" },
+      stf022: { name: "Andres", role: "Staff" }
     };
         const form = document.getElementById("expenseForm");
     const bodyEl = document.getElementById("expenseBody");
@@ -720,17 +725,25 @@
       let roleResolved = "";
       try {
         const { user, supabase } = await portalRequireUser();
-        const { data } = await supabase
-          .from("staff_profiles")
-          .select("full_name, username, role_track, role, app_role")
-          .eq("id", user.id)
-          .maybeSingle();
+        let profile = {};
+        const rpc = await supabase.rpc("portal_get_session_staff_profile");
+        const rpcRow = rpc && !rpc.error ? rpc.data : null;
+        if (rpcRow && typeof rpcRow === "object" && !Array.isArray(rpcRow) && rpcRow.full_name) {
+          profile = rpcRow;
+        } else {
+          const byId = await supabase
+            .from("staff_profiles")
+            .select("full_name, username, app_role, staff_role")
+            .eq("id", user.id)
+            .maybeSingle();
+          if (byId && !byId.error && byId.data) profile = byId.data;
+          else if (byId && byId.error) console.warn("[expenses] staff profile", byId.error.message || byId.error);
+        }
         const { data: rateData } = await supabase
           .from("staff_pay_rates")
           .select("role_label")
           .eq("user_id", user.id)
           .maybeSingle();
-        const profile = data || {};
         const meta = (user && user.user_metadata) || {};
         const emailLocal = String((user && user.email) || "").split("@")[0].trim().toLowerCase();
         const codeFallback = STAFF_CODE_FALLBACK[emailLocal] || null;
@@ -747,8 +760,7 @@
         );
         roleResolved = firstNonEmpty(
           [
-            profile.role_track,
-            profile.role,
+            profile.staff_role,
             rateData && rateData.role_label,
             codeFallback && codeFallback.role,
             profile.app_role,
