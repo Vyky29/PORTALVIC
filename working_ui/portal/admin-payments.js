@@ -1294,21 +1294,27 @@
    * Live NHS monthly INV-Ps, Sep 2026–Jul 2027, uplift included. All still unpaid.
    * Fadi 0235–0245, Emanuel 0260–0270, Ikram 0271–0281, Timi 0168–0178.
    * September is the calendar month CLCH released on 14 Oct 2026 (P0235 / P0271 / P0260).
-   * October is the first 4-week block CLCH asked for: 5 Oct to 1 Nov 2026, then every 4 weeks.
+   * Thu 1 + Fri 2 Oct fall between the two, billed on their own INV-P (0551-0554).
+   * October is the first 4-week block CLCH asked for: 5 Oct to 1 Nov 2026, then every 4 weeks
+   * (November 2 Nov to 29 Nov).
    * Must match portal_parent_invoice_share amount_gbp when an INV-P is reissued.
    */
+  var NHS_FUNDER_YEAR_LINES = 12;
+  var NHS_FUNDER_AUTUMN_LINES = 5;
+  var NHS_FUNDER_SPRING_END = 8;
+
   function nhsFunderYearMonths(r) {
     if (termBucketFor(r) !== "autumn_2627") return null;
     var slug = paymentParticipantSlug(r);
     var table = {
-      fadi: [14534.08, 13212.8, 13873.44, 9248.96, 13212.8, 13212.8, 12552.16, 9909.6, 13873.44, 14534.08, 14534.08],
-      ikram: [13774.05, 12243.6, 13008.83, 8417.48, 12243.6, 12243.6, 11478.38, 9182.7, 13008.83, 13774.05, 13008.83],
-      emanuel: [6631.95, 6121.8, 6631.95, 4081.2, 6121.8, 6121.8, 5611.65, 4591.35, 6631.95, 6631.95, 6631.95],
-      timi: [2856.84, 2856.84, 3213.95, 1785.53, 2856.84, 2856.84, 2499.74, 2142.63, 3213.95, 2856.84, 3213.95],
+      fadi: [14534.08, 1321.28, 13212.8, 13212.8, 9248.96, 13212.8, 13212.8, 12552.16, 9909.6, 13873.44, 14534.08, 14534.08],
+      ikram: [13774.05, 765.23, 12243.6, 12243.6, 8417.48, 12243.6, 12243.6, 11478.38, 9182.7, 13008.83, 13774.05, 13008.83],
+      emanuel: [6631.95, 510.15, 6121.8, 6121.8, 4081.2, 6121.8, 6121.8, 5611.65, 4591.35, 6631.95, 6631.95, 6631.95],
+      timi: [2856.84, 357.11, 2856.84, 2856.84, 1785.53, 2856.84, 2856.84, 2499.74, 2142.63, 3213.95, 2856.84, 3213.95],
     };
     var amts = table[slug];
     if (!amts) return null;
-    var labels = ["Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+    var labels = ["Sep", "1-2 Oct", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
     return labels.map(function (lab, i) {
       return { t: lab + " " + money(amts[i]), amt: amts[i] };
     });
@@ -7026,16 +7032,16 @@
       var row = agg[key];
       /* NHS Day Centre: Autumn = Sep–Dec INV-Ps, year = all 11 (not the booking catalogue). */
       var nhsMonthsAgg = nhsFunderYearMonths(row);
-      if (nhsMonthsAgg && nhsMonthsAgg.length === 11) {
+      if (nhsMonthsAgg && nhsMonthsAgg.length === NHS_FUNDER_YEAR_LINES) {
         var nhsSum = function (from, to) {
           return Math.round(
             nhsMonthsAgg.slice(from, to).reduce(function (s, m) { return s + m.amt; }, 0) * 100
           ) / 100;
         };
-        row._amountAutumn = nhsSum(0, 4);
-        row._amountSpring = nhsSum(4, 7);
-        row._amountSummer = nhsSum(7, 11);
-        row._amountAnnual = nhsSum(0, 11);
+        row._amountAutumn = nhsSum(0, NHS_FUNDER_AUTUMN_LINES);
+        row._amountSpring = nhsSum(NHS_FUNDER_AUTUMN_LINES, NHS_FUNDER_SPRING_END);
+        row._amountSummer = nhsSum(NHS_FUNDER_SPRING_END, NHS_FUNDER_YEAR_LINES);
+        row._amountAnnual = nhsSum(0, NHS_FUNDER_YEAR_LINES);
       }
       var a = Number(row._amountAutumn) || 0;
       var sp = Number(row._amountSpring) || 0;
