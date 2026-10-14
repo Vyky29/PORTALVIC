@@ -1524,12 +1524,14 @@
       function pack(s){
         const cid = String(s.clientId || '').trim();
         const name = portalParticipantDisplayName(String(s.clientDisplay || s.clientName || cid).trim(), cid);
-        if(!name) return null;
+        const start = String(s.start || '').trim();
+        const end = String(s.end || s.start || '').trim();
+        if(!name || !start || !end) return null;
         return {
           clientId: cid,
           name: name,
-          start: String(s.start || ovStart).trim(),
-          end: String(s.end || s.start || ovEnd).trim(),
+          start: start,
+          end: end,
           venue: String(s.venue || s.sessionVenue || ov.anchor_venue || '').trim(),
           activity: String(s.activity || s.rosterService || 'Swimming').trim(),
           session: s
@@ -1553,15 +1555,29 @@
         if(prev && prev.score === score && prev.date && d && d < prev.date) return;
         picked[key] = { score: score, date: d, packed: packed };
       }
+      function hmSpan(start, end){
+        function toMin(hm){
+          const p = String(hm || '').split(':');
+          const h = Number(p[0]);
+          const m = Number(p[1] || 0);
+          if(!Number.isFinite(h)) return null;
+          return h * 60 + m;
+        }
+        const a = toMin(start);
+        const b = toMin(end || start);
+        if(a == null || b == null || b <= a) return 0;
+        return b - a;
+      }
       function pickedList(){
         const values = [];
         Object.keys(picked).forEach(function(k){ values.push(picked[k]); });
-        const hasExact = values.some(function(v){ return v.score >= 3; });
-        const list = [];
-        values.forEach(function(v){
-          if(hasExact && v.score < 3) return;
-          list.push(v.packed);
+        const ovSpan = hmSpan(ovStart, ovEnd);
+        const slices = values.filter(function(v){
+          return v && v.packed && ovSpan && hmSpan(v.packed.start, v.packed.end) < ovSpan;
         });
+        const use = slices.length ? slices : values;
+        const list = [];
+        use.forEach(function(v){ list.push(v.packed); });
         list.sort(function(a, b){
           const as = String(a.start || '');
           const bs = String(b.start || '');
@@ -1573,7 +1589,8 @@
       }
       (typeof sessionsModel !== 'undefined' ? sessionsModel : []).forEach(function(s){
         if(!rowOk(s)) return;
-        consider(pack(s), iso);
+        const modelDate = String(s.sessionDate || s.session_date || s.date || '').slice(0, 10);
+        consider(pack(s), /^\d{4}-\d{2}-\d{2}$/.test(modelDate) ? modelDate : '');
       });
       const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
       const profs = src && src.staffProfiles ? src.staffProfiles : null;

@@ -3123,14 +3123,25 @@ function rosterRowToSlot(isoDate, wd, r) {
       var cardSources = shadowSeats.length ? shadowSeats : [null];
       for (var cs = 0; cs < cardSources.length; cs++) {
         var hostSeat = cardSources[cs];
-        if (cs > 0) continue;
         var rowName = hostSeat ? clean(hostSeat.client_name) : cardName;
-        /* The card keeps the hours that were saved. Luliya finishing at 3 must not shorten an 11-4 shadowing. */
+        /* Each child keeps their own half. The saved window only finds who overlaps. */
         var rowStart = startHm;
         var rowEnd = endHm;
-        var rowLabel = hostSeat
-          ? rosterTimeSlotLabelFromBounds(rowStart, rowEnd, wd) || clean(hostSeat.time_slot) || rosterTimeLabel
-          : rosterTimeLabel;
+        if (hostSeat) {
+          var seatStart = normTimeShort(hostSeat.time_start || hostSeat.time_slot);
+          var seatEnd = normTimeShort(hostSeat.time_end || hostSeat.time_start);
+          var seatOverlap = hmOverlapBounds(startHm, endHm, seatStart, seatEnd);
+          if (seatOverlap) {
+            rowStart = seatOverlap.start;
+            rowEnd = seatOverlap.end;
+          } else if (seatStart && seatEnd) {
+            rowStart = seatStart;
+            rowEnd = seatEnd;
+          }
+        }
+        var rowLabel = rosterTimeSlotLabelFromBounds(rowStart, rowEnd, wd)
+          || (hostSeat ? clean(hostSeat.time_slot) : "")
+          || rosterTimeLabel;
         var rowService = hostSeat ? clean(hostSeat.service) || service : service;
         var rowVenue = hostSeat ? clean(hostSeat.venue) || venue : venue;
         var rowArea = hostSeat ? clean(hostSeat.area) || area : area;
