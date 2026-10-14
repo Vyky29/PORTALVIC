@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 147;
+  var SOURCE_VERSION = 148;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -2954,7 +2954,7 @@
 
   /**
    * Autumn Sunday Westway climbing (60' books).
-   * Scott de Wolff not renewing - 12-1 open. Alex 2-3 open. Sun 3-4 is HOLD WAITLIST (Alex + Carlos), not a child.
+   * Scott de Wolff not renewing - 12-1 open. Sun 2-3 and 3-4 are HOLD WAITLIST (Alex + Carlos), not a child.
    * Stamp = first standing Autumn Sunday (13 Sep), never a summer week.
    * Muhammad Alex 12-1 is a dated trial that same Sunday — do not project that name
    * onto later Sundays (open seat / bookable). See shouldProjectDatedOneOffTrialFromSnap.
@@ -3022,9 +3022,9 @@
     /* Trial Sun 13 Sep · Alex · 12–1 (Places + Overview). Later Sundays stay open via trialDate. */
     { staff: "ALEX", name: "Muhammad", time: "12 to 1", trial: true, trialDate: "2026-09-13" },
     { staff: "ALEX", name: "Rodin", time: "1 to 2" },
+    /* Sun 2-3 and 3-4 stay HOLD WAITLIST on Places (same office hold as Elia Tue/Thu).
+       Instructors see No participant, not a child, and do not owe feedback. */
     { staff: "ALEX", name: "No participant", time: "2 to 3" },
-    /* Sun 3-4 stays HOLD WAITLIST on Places until the rest of Sunday Westway climb is full.
-       Instructors see No participant (not Elia / Patrick). */
     { staff: "ALEX", name: "No participant", time: "3 to 4" },
     { staff: "CARLOS", name: "Hazem", time: "10 to 11" },
     { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
@@ -3032,6 +3032,7 @@
     { staff: "CARLOS", name: "Zakariya", time: "1 to 2" },
     { staff: "CARLOS", name: "No participant", time: "2 to 3" },
     { staff: "CARLOS", name: "No participant", time: "3 to 4" },
+    /* Serine leaves Carlos 12-1 from Sun 18 Oct 2026. Earlier Sundays stay her seat. */
   ];
 
   /**
@@ -3094,6 +3095,17 @@
     if (!/^patrick\b/i.test(String(row.client_name || "").trim())) return false;
     var t = climbNoonSlotKey(row.time_slot);
     return /^(3(\.00)?|15(\.00)?)\s*(to|-)\s*(4(\.00)?|16(\.00)?)$/.test(t);
+  }
+
+  /** Serine Sunday Westway climbing with Carlos ends before 18 Oct 2026. Earlier Sundays stay. */
+  function serineSundayClimbEnded(row, iso) {
+    if (!row || !iso || iso < "2026-10-18") return false;
+    if (!isClimbingService(row.service) || !isWestwayVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "sunday") return false;
+    if (!/\bcarlos\b/i.test(String(row.instructors || ""))) return false;
+    if (!/^serine\b/i.test(String(row.client_name || "").trim())) return false;
+    var t = climbNoonSlotKey(row.time_slot);
+    return /^(12(\.00)?)\s*(to|-)\s*(1(\.00)?|13(\.00)?)$/.test(t);
   }
 
   function climbNoonSlotKey(raw) {
@@ -3688,7 +3700,9 @@
         day: DOW_TITLE[dk] || row.day,
       };
       /* Patrick Sunday climb cancelled from 27 Sep 2026. 6, 13 and 20 stay. */
-      if (patrickSundayClimbReleased(row, iso)) copy.client_name = "No participant";
+      if (patrickSundayClimbReleased(row, iso) || serineSundayClimbEnded(row, iso)) {
+        copy.client_name = "No participant";
+      }
       out.push(Object.assign({}, row, copy));
     }
     return out;

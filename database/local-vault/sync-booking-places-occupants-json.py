@@ -45,8 +45,15 @@ def _seat_line(line: dict, *, places: bool) -> dict:
         "trialDate": line.get("trialDate") or line.get("trial_date"),
         "trialClient": line.get("trialClient") or line.get("trial_client"),
     }
+    if places and line.get("offerOpen"):
+        # Standing still names the child (parent chips). Places treats the seat as free.
+        out["kind"] = "open"
+        out["client"] = None
     if not places:
         out["bookedFrom"] = line.get("bookedFrom") or line.get("booked_from")
+        until = line.get("bookedUntil") or line.get("booked_until")
+        if until:
+            out["bookedUntil"] = until
     return out
 
 
@@ -66,19 +73,40 @@ def main() -> None:
         }
         if str(s.get("serviceId") or "").lower() not in PLACES:
             continue
+        place_lines = [_seat_line(line, places=True) for line in (s.get("seatLines") or [])]
+        offer_open = any(line.get("offerOpen") for line in (s.get("seatLines") or []))
+        booked_names = []
+        open_instructors = []
+        if offer_open:
+            for line in place_lines:
+                kind = str(line.get("kind") or "")
+                client = line.get("client")
+                if kind in ("booked", "hold", "closed") and client:
+                    booked_names.append(client)
+                elif kind == "open" and line.get("instructor"):
+                    open_instructors.append(str(line.get("instructor")).upper())
+            taken = len([line for line in place_lines if str(line.get("kind") or "") != "open"])
+            capacity = s.get("capacity") if isinstance(s.get("capacity"), int) else len(place_lines)
+            open_seats = max(0, capacity - taken)
+        else:
+            booked_names = list(s.get("bookedNames") or [])
+            open_instructors = list(s.get("openInstructors") or [])
+            taken = s.get("taken")
+            capacity = s.get("capacity")
+            open_seats = s.get("openSeats")
         places_by[sid] = {
             "serviceId": s.get("serviceId"),
             "day": s.get("day"),
             "venue": s.get("venue"),
             "timeLabel": s.get("timeLabel"),
             **_phase_fields(s),
-            "capacity": s.get("capacity"),
-            "taken": s.get("taken"),
-            "openSeats": s.get("openSeats"),
+            "capacity": capacity,
+            "taken": taken,
+            "openSeats": open_seats,
             "instructors": s.get("instructors") or [],
-            "openInstructors": s.get("openInstructors") or [],
-            "bookedNames": s.get("bookedNames") or [],
-            "seatLines": [_seat_line(line, places=True) for line in (s.get("seatLines") or [])],
+            "openInstructors": open_instructors,
+            "bookedNames": booked_names,
+            "seatLines": place_lines,
         }
 
     places_out = {
