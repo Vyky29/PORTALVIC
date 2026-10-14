@@ -1780,15 +1780,6 @@
         esc(waMid) +
         '" title="Reply to this message (quote in WhatsApp)">Reply</button>';
     }
-    var deleteId = ev.dir === "in" ? ev.inboundId : ev.id;
-    if (deleteId) {
-      actionHtml +=
-        '<button type="button" class="portal-pnlog-bubble__delete" data-pnlog-delete-id="' +
-        esc(deleteId) +
-        '" data-pnlog-delete-dir="' +
-        (ev.dir === "in" ? "in" : "out") +
-        '" title="Delete this message for everyone">Delete</button>';
-    }
     return (
       '<div class="portal-pnlog-bubble portal-pnlog-bubble--' +
       side +
@@ -2059,35 +2050,6 @@
   function isNearBottom(el) {
     if (!el) return true;
     return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-  }
-
-  async function deleteMessageForEveryone(dir, id) {
-    var logId = String(id || "").trim();
-    if (!logId) return;
-    var ok = global.confirm(
-      "Delete this message for everyone? It leaves the office thread and the parent portal. The WhatsApp already on their phone stays."
-    );
-    if (!ok) return;
-    var client = cfg.getClient();
-    if (!client) {
-      global.alert("Family messages are not connected. Refresh and try again.");
-      return;
-    }
-    var table = dir === "in" ? "portal_parent_whatsapp_inbound" : "portal_parent_notify_log";
-    var res = await client.from(table).delete().eq("id", logId);
-    if (res.error) {
-      global.alert(res.error.message || "Could not delete this message.");
-      return;
-    }
-    (state.threads || []).forEach(function (t) {
-      if (!t || !t.events) return;
-      t.events = t.events.filter(function (ev) {
-        var evId = ev && ev.dir === "in" ? ev.inboundId : ev && ev.id;
-        return String(evId || "") !== logId;
-      });
-    });
-    state.threadRefresh.sig = "";
-    renderChat(false);
   }
 
   function scrollThreadToBottom(force) {
@@ -2987,14 +2949,6 @@
           var replyThreadEl = document.getElementById("portalPnlogThread");
           if (replyThreadEl) replyThreadEl.innerHTML = renderThreadMessagesHtml(replyThread);
         }
-        return;
-      }
-      var deleteBtn = e.target.closest(".portal-pnlog-bubble__delete[data-pnlog-delete-id]");
-      if (deleteBtn) {
-        e.preventDefault();
-        var deleteId = deleteBtn.getAttribute("data-pnlog-delete-id") || "";
-        var deleteDir = deleteBtn.getAttribute("data-pnlog-delete-dir") || "out";
-        if (deleteId) void deleteMessageForEveryone(deleteDir, deleteId);
         return;
       }
       var replyBtn = e.target.closest(".portal-pnlog-bubble__reply[data-reply-wa-id]");
