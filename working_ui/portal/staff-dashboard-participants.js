@@ -1482,19 +1482,21 @@
       });
       return found;
     }
-    /** Host's booked child for a shadowing session_add, so the shadower sees that child, not an empty seat. */
-    function portalShadowingHostClientForAdd(ov, sessionDateIso){
+    /** Every host child whose session overlaps the shadowing window.
+     *  A 10-1 shadow sees the child already in the pool at 10, each full slot inside
+     *  the window, and the child who is still in at 1. The next slot (1.15) stays off. */
+    function portalShadowingHostClientsForAdd(ov, sessionDateIso){
       const iso = normaliseIsoDate(sessionDateIso);
-      if(!ov || !iso) return null;
+      if(!ov || !iso) return [];
       const pl = portalSessionAddPayloadObject(ov);
       const trainer = String(pl.trainer || '').trim();
-      if(!trainer) return null;
+      if(!trainer) return [];
       const ovStart = portalHmFromDbTime(ov.anchor_start) || '';
       const ovEnd = portalHmFromDbTime(ov.anchor_end) || ovStart;
       const dayWord = typeof portalWeekdayLongEnGB === 'function'
         ? portalWeekdayLongEnGB(new Date(iso + 'T12:00:00'))
         : '';
-      if(!dayWord) return null;
+      if(!dayWord) return [];
       const shadower = portalStaffNormRosterKey(ov.anchor_staff_id);
       function rowOk(s){
         if(!s) return false;
@@ -1533,16 +1535,49 @@
           session: s
         };
       }
-      let found = null;
+      const picked = Object.create(null);
+      function rowDateScore(rowDate){
+        const d = String(rowDate || '').slice(0, 10);
+        if(d === iso) return 3;
+        if(!d) return 1;
+        return 0;
+      }
+      function consider(packed, rowDate){
+        if(!packed || !packed.clientId || !packed.name) return;
+        const score = rowDateScore(rowDate);
+        if(!score) return;
+        const key = String(packed.clientId).toLowerCase() + '|' + String(packed.start || '') + '|' + String(packed.end || '');
+        const prev = picked[key];
+        const d = String(rowDate || '').slice(0, 10);
+        if(prev && prev.score > score) return;
+        if(prev && prev.score === score && prev.date && d && d < prev.date) return;
+        picked[key] = { score: score, date: d, packed: packed };
+      }
+      function pickedList(){
+        const values = [];
+        Object.keys(picked).forEach(function(k){ values.push(picked[k]); });
+        const hasExact = values.some(function(v){ return v.score >= 3; });
+        const list = [];
+        values.forEach(function(v){
+          if(hasExact && v.score < 3) return;
+          list.push(v.packed);
+        });
+        list.sort(function(a, b){
+          const as = String(a.start || '');
+          const bs = String(b.start || '');
+          if(as < bs) return -1;
+          if(as > bs) return 1;
+          return String(a.name || '').localeCompare(String(b.name || ''));
+        });
+        return list;
+      }
       (typeof sessionsModel !== 'undefined' ? sessionsModel : []).forEach(function(s){
-        if(found || !rowOk(s)) return;
-        found = pack(s);
+        if(!rowOk(s)) return;
+        consider(pack(s), iso);
       });
-      if(found) return found;
       const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
       const profs = src && src.staffProfiles ? src.staffProfiles : null;
       if(profs && typeof portalBaseClientSessionsForCalendarDate === 'function') Object.keys(profs).forEach(function(sid){
-        if(found) return;
         const prof = profs[sid];
         const dn = prof && String(prof.staffName || prof.name || '').trim();
         if(!portalStaffNameMatchesShadowHost(trainer, sid, dn)) return;
@@ -1553,11 +1588,9 @@
         for(let i = 0; i < rows.length; i++){
           const s = Object.assign({ staffId: sid, day: dayWord }, rows[i]);
           if(!rowOk(s)) continue;
-          found = pack(s);
-          if(found) return;
+          consider(pack(s), iso);
         }
       });
-      if(found) return found;
       /* The signed-in worker's sessionsModel does not include the host's book
          (Luliya does not carry Dan's Mia). Read the full roster and the standing
          occupants so the shadower still sees that child. */
@@ -1594,12 +1627,11 @@
         return !!(tid && portalStaffNameMatchesShadowHost(tid, bit, bit));
       }
       const rosterRows = src && Array.isArray(src.rows) ? src.rows : [];
-      let bestDate = '';
       rosterRows.forEach(function(row){
         if(!row) return;
         if(String(row.day || '').trim() !== dayWord) return;
         const nameRaw = String(row.client_name || '').trim();
-        if(!nameRaw || /no\s*participant|no\s*client/i.test(nameRaw)) return;
+        if(!nameRaw || /no\s*participant|no\s*client/i.test(nameRaw) || /^(closed|available|open|free)$/i.test(nameRaw)) return;
         const instructors = String(row.instructors || '').split(/[,/&+]|\band\b/i).map(function(p){ return String(p || '').trim(); }).filter(Boolean);
         if(!instructors.some(hostNamed)) return;
         const range = labelRange(row.time_slot);
@@ -1609,8 +1641,6 @@
         if(!portalShadowingVenuesMatch(ov.anchor_venue, venue)) return;
         const rowDate = String(row.session_date || row.date || '').slice(0, 10);
         if(/^\d{4}-\d{2}-\d{2}$/.test(rowDate) && rowDate > iso) return;
-        if(bestDate && rowDate && rowDate < bestDate) return;
-        if(bestDate && !rowDate) return;
         const packed = pack({
           clientId: slugName(nameRaw),
           clientName: nameRaw,
@@ -1626,17 +1656,13 @@
           day: dayWord,
           status: 'Scheduled'
         });
-        if(!packed) return;
-        bestDate = rowDate || bestDate;
-        found = packed;
+        consider(packed, rowDate);
       });
-      if(found) return found;
       try{
         const Occ = window.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
         const by = Occ && Occ.bySlotId;
         if(by){
           Object.keys(by).forEach(function(slotId){
-            if(found) return;
             const slot = by[slotId];
             if(!slot || String(slot.day || '').trim() !== dayWord) return;
             if(!portalShadowingVenuesMatch(ov.anchor_venue, slot.venue)) return;
@@ -1646,9 +1672,9 @@
             for(let i = 0; i < lines.length; i++){
               const line = lines[i];
               const client = String(line && line.client || '').trim();
-              if(!client || /no\s*participant|no\s*client/i.test(client)) continue;
+              if(!client || /no\s*participant|no\s*client/i.test(client) || /^(closed|available|open|free)$/i.test(client)) continue;
               if(!hostNamed(line && line.instructor)) continue;
-              found = pack({
+              consider(pack({
                 clientId: slugName(client),
                 clientName: client,
                 clientDisplay: client,
@@ -1661,13 +1687,16 @@
                 staffId: String(pl.trainer_staff_id || '').trim(),
                 day: dayWord,
                 status: 'Scheduled'
-              });
-              if(found) return;
+              }), iso);
             }
           });
         }
       }catch(_occ){}
-      return found;
+      return pickedList();
+    }
+    function portalShadowingHostClientForAdd(ov, sessionDateIso){
+      const list = portalShadowingHostClientsForAdd(ov, sessionDateIso);
+      return list && list.length ? list[0] : null;
     }
     function portalSessionAddShadowingChipLabel(payload, ov, sessionDateIso){
       payload = payload && typeof payload === 'object' ? payload : {};
