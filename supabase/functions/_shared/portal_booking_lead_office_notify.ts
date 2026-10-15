@@ -3,10 +3,12 @@
  * or when a Client / Climbing registration form is submitted for review.
  */
 import {
+  plainTextToHtml,
   readParentNotifySmtpConfig,
   sendEmailWithAttachmentViaSmtp,
   sendParentEmailViaSmtp,
 } from "./portal_parent_messaging.ts";
+import { bookingPlaceSummary, sessionBlockEmailText } from "./portal_booking_context.ts";
 import { adminPushOpenBase } from "./portal_webpush_util.ts";
 import {
   suggestedTransferReference,
@@ -36,14 +38,6 @@ function bytesToBase64(bytes: Uint8Array): string {
     );
   }
   return btoa(binary);
-}
-
-function escapeHtml(s: string): string {
-  return String(s || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 function registrationReviewUrl(): string {
@@ -191,6 +185,17 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
   leadId?: string | null;
   slotHeld?: boolean;
   bookingSummary?: string | null;
+  /** Requested place, shown as Service / Date / Venue / Instructor lines. */
+  place?: {
+    service?: string | null;
+    venue?: string | null;
+    day?: string | null;
+    dateIso?: string | null;
+    time?: string | null;
+    instructor?: string | null;
+    trial?: boolean;
+  } | null;
+  existingClient?: boolean;
   /** Optional PDF bytes so office can open the form from the email. */
   pdfBytes?: Uint8Array | null;
   pdfFilename?: string | null;
@@ -205,13 +210,34 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
       ? "Climbing registration"
       : "Client registration";
   const bookingSummary = String(opts.bookingSummary || "").trim();
-  const isExistingShort =
+  const isExistingShort = !!opts.existingClient ||
     bookingSummary.toUpperCase().includes("EXISTING CLIENT");
+  const place = opts.place || null;
+  const placeBlock = place
+    ? sessionBlockEmailText({
+      service: place.service,
+      venue: place.venue,
+      day: place.day,
+      dateIso: place.dateIso,
+      time: place.time,
+      instructor: place.instructor,
+    })
+    : null;
+  const placeOneLine = place
+    ? bookingPlaceSummary({
+      service: place.service,
+      venue: place.venue,
+      day: place.day,
+      dateIso: place.dateIso,
+      time: place.time,
+      trial: place.trial,
+    })
+    : null;
   const holdLine = opts.slotHeld
-    ? "A short pay hold was opened on that session - finish-booking / Stripe or Mark paid confirms the seat."
-    : bookingSummary
-    ? "Requested session is above. Pay hold / invoice details follow when they finish funding or report paid."
-    : "If they already held a session in Booking Portal, finish-booking will refresh a short pay hold.";
+    ? "The place is held for 30 minutes. It is confirmed when the parent pays, or when you Mark paid."
+    : placeBlock || bookingSummary
+    ? "No place is held yet. It is held when the parent opens the finish-booking link."
+    : "";
   const reviewUrl = registrationReviewUrl();
   const pdfName =
     String(opts.pdfFilename || "").trim() ||
@@ -220,76 +246,49 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
   const smtp = readParentNotifySmtpConfig();
   const tos = officeNotifyEmails();
   if (smtp && tos.length) {
-    const subject = bookingSummary
-      ? `${formLabel} · ${participant} (${parent}) · ${bookingSummary}`
+    const subjectPlace = placeOneLine || bookingSummary;
+    const subject = subjectPlace
+      ? `${formLabel} · ${participant} (${parent}) · ${subjectPlace}`
       : `${formLabel} submitted · ${participant} (${parent})`;
     const lines = [
-      `${formLabel} received - FYI only. The parent can finish payment now; you do not need to Accept before they pay.`,
-      "Review the PDF in Documents when useful. Suitability / form checks are after payment.",
+      isExistingShort
+        ? `${parent} asked for a new place for ${participant}. They are already a client, so the form is already on file.`
+        : `${parent} sent the ${formLabel.toLowerCase()} form for ${participant}.`,
+      "They can pay now. You do not need to accept the form first.",
+      "",
     ];
-    if (bookingSummary) {
-      lines.push(`Requested session: ${bookingSummary}`);
-    }
-    if (isExistingShort) {
-      lines.push(
-        "(Existing client - short place request; questionnaire already on file.)",
-      );
+    if (placeBlock) {
+      lines.push(placeBlock);
+      lines.push(`Type: ${place?.trial ? "Trial" : "Term"}`);
+      lines.push("");
+    } else if (bookingSummary) {
+      lines.push(`Requested place: ${bookingSummary}`);
+      lines.push("");
     }
     lines.push(
-      "",
       `Participant: ${participant}`,
       `Parent: ${parent}`,
       `Email: ${email || "-"}`,
       `Phone: ${mobile || "-"}`,
+      "",
     );
-    if (holdLine) lines.push(holdLine);
-    lines.push(`Document id: ${opts.documentId}`);
-    if (opts.leadId) lines.push(`Lead id: ${opts.leadId}`);
-    lines.push("");
+    if (holdLine) {
+      lines.push(holdLine);
+      lines.push("");
+    }
     if (reviewUrl) {
-      lines.push(`Open Registration forms (optional review):`);
+      lines.push("REGISTRATION FORMS:");
       lines.push(reviewUrl);
       lines.push("");
     } else {
-      lines.push(
-        "Optional: Admin -> Documents -> Registration forms to open the PDF.",
-      );
+      lines.push("Admin -> Registered -> Registration forms to open the PDF.");
       lines.push("");
     }
     if (opts.pdfBytes && opts.pdfBytes.length) {
-      lines.push("The submitted PDF is attached to this email.");
-      lines.push("");
+      lines.push("The form PDF is attached to this email.");
     }
-    lines.push("- clubSENsational portal");
-    const bodyText = lines.join("\n");
-
-    const html =
-      `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0f172a">` +
-      `<p><strong>${escapeHtml(formLabel)}</strong> received - <strong>FYI</strong>. Parent can pay now; no Accept gate before payment.</p>` +
-      (bookingSummary
-        ? `<p style="margin:12px 0;padding:12px 14px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px">` +
-          `<strong>Requested session</strong><br/>` +
-          `<span style="font-size:16px;font-weight:700">${escapeHtml(bookingSummary)}</span>` +
-          `</p>`
-        : `<p style="color:#64748b;font-size:13px">No session attached to this form submit.</p>`) +
-      (isExistingShort
-        ? `<p style="color:#64748b;font-size:13px">Existing client - short place request (questionnaire already on file).</p>`
-        : "") +
-      `<p>` +
-      `Participant: <strong>${escapeHtml(participant)}</strong><br/>` +
-      `Parent: ${escapeHtml(parent)}<br/>` +
-      `Email: ${escapeHtml(email || "-")}<br/>` +
-      `Phone: ${escapeHtml(mobile || "-")}` +
-      (holdLine ? `<br/>${escapeHtml(holdLine)}` : "") +
-      `</p>` +
-      (reviewUrl
-        ? `<p><a href="${escapeHtml(reviewUrl)}" style="display:inline-block;padding:10px 14px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:8px;font-weight:700">Open Registration forms</a></p>`
-        : `<p>Admin -> Documents -> Registration forms (optional PDF review).</p>`) +
-      (opts.pdfBytes && opts.pdfBytes.length
-        ? `<p style="color:#64748b;font-size:13px">PDF attached.</p>`
-        : "") +
-      `<p style="color:#64748b;font-size:12px">Document id: ${escapeHtml(opts.documentId)}</p>` +
-      `</div>`;
+    const bodyText = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    const html = plainTextToHtml(bodyText);
 
     const attachment =
       opts.pdfBytes && opts.pdfBytes.length

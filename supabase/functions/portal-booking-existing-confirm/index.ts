@@ -23,6 +23,7 @@ import { saveParticipantAvatarWithArchive } from "../_shared/participant_avatar.
 
 import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
 import {
+  displayInstructorName,
   notesWithInstructor,
   pickOpenInstructorsForBand,
 } from "../_shared/portal_booking_reservation_ops.ts";
@@ -627,6 +628,16 @@ Deno.serve(async (req) => {
     leadId: String(lead.id),
     slotHeld: !!holdRow?.id,
     bookingSummary,
+    existingClient: true,
+    place: {
+      service: bookingRequest.service_name,
+      venue: bookingRequest.venue,
+      day: bookingRequest.day,
+      dateIso: resolvedDateIso || bookingRequest.date_iso,
+      time: bookingRequest.time,
+      instructor: displayInstructorName(instructorStamp) || null,
+      trial: bookingRequest.booking_kind === "trial",
+    },
     pdfBytes,
     pdfFilename: `ExistingClient_${safeName}.pdf`,
   }).catch((notifyErr) => {

@@ -26,6 +26,7 @@ import {
   type RegistrationAnswers,
 } from "../_shared/parent_registration_answers.ts";
 import {
+  displayInstructorName,
   notesWithInstructor,
   pickOpenInstructorsForBand,
 } from "../_shared/portal_booking_reservation_ops.ts";
@@ -761,6 +762,8 @@ Deno.serve(async (req) => {
   }
 
   let reservationId: string | null = null;
+  let heldDateIso: string | null = null;
+  let heldInstructor: string | null = null;
   let joinedWaitingList = false;
   if (waitingListRequest && bookingRequest && formType === "client_registration") {
     try {
@@ -882,6 +885,8 @@ Deno.serve(async (req) => {
           console.warn("[portal-parent-form-submit] slot_unavailable after race");
           return json(409, { ok: false, error: "slot_unavailable" });
         }
+        heldDateIso = resolvedDateIso || bookingRequest.date_iso || null;
+        heldInstructor = displayInstructorName(instructorStamp) || null;
       } catch (e) {
         console.warn("[portal-parent-form-submit] pick instructor", e);
         return json(409, { ok: false, error: "slot_unavailable" });
@@ -963,6 +968,17 @@ Deno.serve(async (req) => {
       leadId: primaryLeadId,
       slotHeld: !!reservationId,
       bookingSummary,
+      place: bookingRequest && !waitingListRequest
+        ? {
+          service: bookingRequest.service_name,
+          venue: bookingRequest.venue,
+          day: bookingRequest.day,
+          dateIso: heldDateIso || bookingRequest.date_iso,
+          time: bookingRequest.time,
+          instructor: heldInstructor,
+          trial: bookingRequest.booking_kind === "trial",
+        }
+        : null,
       pdfBytes,
       pdfFilename: `${safeName}_${formType}.pdf`,
     });
