@@ -24,11 +24,11 @@ function panelHechos() {
       <div class="kpi"><div class="v">£15,400.00</div><div class="l">Falta: Ikram £12,000 y Timi £3,400</div></div>
     </div>
     <div class="kpis">
-      <div class="kpi"><div class="v">£93,454.72</div><div class="l">Remanente ahora</div></div>
-      <div class="kpi"><div class="v">£23,394.36</div><div class="l">Victor por coger ahora</div></div>
-      <div class="kpi"><div class="v">£46,727.36</div><div class="l">Raul por coger ahora</div></div>
+      <div class="kpi"><div class="v">£85,091.53</div><div class="l">Remanente ahora</div></div>
+      <div class="kpi"><div class="v">£19,212.76</div><div class="l">Victor por coger ahora</div></div>
+      <div class="kpi"><div class="v">£42,545.77</div><div class="l">Raul por coger ahora</div></div>
     </div>
-    <div class="note">Victor ya cogio £23,333 (Michelle £15,500, agosto incluido, y £7,833 de julio). Cuando entren los £15,400, Victor coge £31,094.36 y Raul £54,427.36. Tarjetas personales hasta el 31 ago, sin top: Victor £18,204.59, Raul £18,839.90, Javier £10,753.21. Para igualar a Raul: Victor £635.31 y Javier £8,086.69. No se ha dado. Lo personal de septiembre se resta de la mitad de Day Centre en la hoja de septiembre.</div>
+    <div class="note">Victor ya cogio £23,333 (Michelle £15,500, agosto incluido, y £7,833 de julio). Cuando entren los £15,400, Victor coge £26,912.76 y Raul £50,245.77. Tarjetas personales hasta el 31 ago, sin top: Victor £18,204.59, Raul £18,839.90, Javier £10,753.21. Para igualar a Raul: Victor £635.31 y Javier £8,086.69. No se ha dado. Lo personal de septiembre se resta de la mitad de Day Centre en la hoja de septiembre.</div>
   `;
 }
 
