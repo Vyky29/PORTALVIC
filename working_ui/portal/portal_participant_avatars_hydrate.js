@@ -14,17 +14,19 @@
     if (!path) return "";
     var base = supabaseUrl();
     if (!base) return "";
+    /* Server thumbnail: some parent uploads are full camera photos (several MB). */
     var url =
       base +
-      "/storage/v1/object/public/participant-avatars/" +
+      "/storage/v1/render/image/public/participant-avatars/" +
       path
         .split("/")
         .map(function (seg) {
           return encodeURIComponent(seg);
         })
-        .join("/");
+        .join("/") +
+      "?width=480&quality=75";
     var v = String(version || "").trim();
-    return v ? url + "?v=" + encodeURIComponent(v) : url;
+    return v ? url + "&v=" + encodeURIComponent(v) : url;
   }
 
   async function hydrateParticipantAvatarsFromSupabase() {
