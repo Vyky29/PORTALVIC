@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15-v452",
+  "version": "2026-10-15-v453",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2211,21 +2211,23 @@
             "xero",
             "conciliar",
             "reconcile",
-            "receive money"
+            "receive money",
+            "factura por ciclo",
+            "EAL-"
           ],
           "steps": [
             "Each Ealing year INV-P has 13 rows: cycle 1 (07/09 - 04/10/2026) to cycle 13 (09/08 - 05/09/2027). The remittance shows the cycle as Client Ref (from - to). The cycle across 31 March is cut at the financial year end: 5 weeks before, 3 weeks after.",
             "Cycle amount = weekly rate x weeks in the cycle (4, or 5 and 3 around March). Weekly rate = each weekly session price x 0.7288, rounded to pennies. Example: Steven £50 a week is £36.44 a week, £145.76 a cycle.",
             "The date on each row is when the money should land: the next run of the Ealing LAC PV Payment Timetable after the cycle ends (cycle 1 landed 12 Oct). Dates after March 2027 are estimated until Ealing sends the next timetable.",
             "When the remittance comes in, match each line to the child by the amount and the number after the slash (Client Ref; Tinashe comes as 724579), then mark that cycle paid. A child missing from the remittance keeps that cycle pending: chase Ealing with the Client Ref.",
-            "In Xero, reconcile the LB EALING line in the Tide account (clubSENsational LTD) as Receive money to account 200, contact LB Ealing, reference = remittance number. The year INV-Ps stay in the portal only: do not push them to Xero, or the money counts twice.",
-            "If the remittance pays a Xero invoice number (INV-0...), record that payment on the invoice first, then in Reconcile use Find & Match: tick the invoice payments and add the rest as Receive money to 200 so the total matches the bank line."
+            "In Xero, each remittance gets one Xero-only invoice EAL-<pay cycle id> (contact Business Support Team (Children), one line per child with the Client Ref, account 202, Exempt Income), created from the remittance with database/local-vault/office-ealing-xero-cycle-invoice-20261015.ts. It is not emailed to Ealing. When the LB EALING line lands in Tide, Reconcile shows the EAL invoice: click OK. The year INV-Ps stay in the portal only: do not push them to Xero, or the money counts twice.",
+            "If the remittance also pays an older Xero invoice (INV-0...), record that payment on the invoice first, then in Reconcile use Find & Match and search the remittance number. Your Xero has no Split: any part without an invoice is created first as Receive money from the Tide account (Manage account > Receive money, 202, Exempt Income) and then ticked in Find & Match with the rest."
           ],
           "tips": [
             "Ealing buys pro rata: price x 38 term weeks spread over 52 weeks. The last two cycles (mid July to early September) land in mid September, as in 2025/26 when both were paid on 24 Sep, unless Ealing agrees to settle earlier.",
             "52 weeks at the Ealing rate add up to a bit more than an invoice billed on real session dates. The gap is in the invoice notes. Square it with Ealing in summer.",
             "The CEO month sheet still counts the activity month: the part of September not paid in cycle 1 shows as Falta and arrives in the holiday cycles.",
-            "Why no year invoice in Xero: Xero counts the whole invoice as income on the invoice date. Our financial year ends 30 November, so a September year invoice puts the whole Sep-Aug year into the year ending November, and it shows as overdue debt all year. Receive money to 200 books each cycle when it lands."
+            "Why no year invoice in Xero: Xero counts the whole invoice as income on the invoice date. Our financial year ends 30 November, so a September year invoice puts the whole Sep-Aug year into the year ending November, and it shows as overdue debt all year. One EAL invoice per 4-week cycle books each cycle in its own period and matches the bank line exactly. Monthly portal invoices do not work: Ealing pays 4-week cycles at a weekly rate, so the amounts never match."
           ],
           "es": {
             "title": "Ealing paga la factura del ano en 13 ciclos",
@@ -2236,14 +2238,14 @@
               "Importe del ciclo = precio semanal Ealing x semanas del ciclo (4, o 5 y 3 alrededor de marzo). Precio semanal Ealing = precio de cada sesion semanal x 0.7288, redondeado a peniques. Ejemplo: Steven £50 a la semana son £36.44 a la semana, £145.76 por ciclo.",
               "La fecha de cada fila es cuando deberia entrar el dinero: la siguiente tanda del LAC PV Payment Timetable de Ealing despues de acabar el ciclo (el ciclo 1 entro el 12 oct). Las fechas despues de marzo 2027 son estimadas hasta que Ealing mande el siguiente calendario.",
               "Cuando llegue el aviso de pago, empareja cada linea con el nino por el importe y el numero tras la barra (Client Ref; Tinashe sale como 724579), y marca ese ciclo como pagado. Si falta un nino, ese ciclo sigue pendiente: reclama a Ealing con el Client Ref.",
-              "En Xero, concilia la linea LB EALING de la cuenta Tide (clubSENsational LTD) como Receive money a la cuenta 200, contacto LB Ealing, referencia = numero del aviso. Las INV-P anuales se quedan solo en el portal: no las subas a Xero o el dinero cuenta dos veces.",
-              "Si el aviso paga una factura de Xero (INV-0...), registra primero ese pago en la factura y luego en Reconcile usa Find & Match: marca los pagos de las facturas y anade el resto como Receive money a la 200 para que el total cuadre con la linea del banco."
+              "En Xero, cada aviso de pago lleva una factura solo de Xero EAL-<numero de ciclo> (contacto Business Support Team (Children), una linea por nino con su Client Ref, cuenta 202, Exempt Income), creada desde el aviso con database/local-vault/office-ealing-xero-cycle-invoice-20261015.ts. No se envia a Ealing. Cuando entra la linea LB EALING en Tide, Reconcile sugiere la factura EAL: dale a OK. Las INV-P anuales se quedan solo en el portal: no las subas a Xero o el dinero cuenta dos veces.",
+              "Si el aviso paga tambien una factura antigua de Xero (INV-0...), registra primero ese pago en la factura y luego en Reconcile usa Find & Match y busca el numero del aviso. Tu Xero no tiene Split: la parte sin factura se crea antes como Receive money desde la cuenta Tide (Manage account > Receive money, 202, Exempt Income) y luego se marca en Find & Match con lo demas."
             ],
             "tips": [
               "Ealing compra pro rata: precio x 38 semanas de curso repartido en 52 semanas. Los dos ultimos ciclos (mediados de julio a principios de septiembre) entran a mediados de septiembre, como en 2025/26 que se pagaron los dos el 24 sep, salvo que Ealing acepte liquidar antes.",
               "52 semanas al precio Ealing suman algo mas que una factura hecha con las fechas reales. La diferencia esta en las notas de la factura. Se cuadra con Ealing en verano.",
               "La hoja CEO del mes sigue contando el mes de actividad: la parte de septiembre que no entra en el ciclo 1 sale como Falta y llega en los ciclos de vacaciones.",
-              "Por que no una factura anual en Xero: Xero cuenta toda la factura como ingreso el dia de la factura. Nuestro ano fiscal cierra el 30 de noviembre, asi que una factura anual de septiembre mete todo el curso sep-ago en el ano que cierra en noviembre, y sale como deuda vencida todo el ano. Receive money a la 200 apunta cada ciclo cuando entra."
+              "Por que no una factura anual en Xero: Xero cuenta toda la factura como ingreso el dia de la factura. Nuestro ano fiscal cierra el 30 de noviembre, asi que una factura anual de septiembre mete todo el curso sep-ago en el ano que cierra en noviembre, y sale como deuda vencida todo el ano. Una factura EAL por ciclo de 4 semanas apunta cada ciclo en su periodo y cuadra exacta con el banco. Facturas mensuales del portal no sirven: Ealing paga ciclos de 4 semanas a precio semanal y los importes nunca cuadran."
             ]
           }
         },
