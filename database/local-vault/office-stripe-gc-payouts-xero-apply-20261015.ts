@@ -7,7 +7,8 @@
  * In Reconcile: Find & Match, search the ref, tick all (Show Spent Items for the GC fee), Reconcile.
  *
  * Dry run by default; skips an invoice that already has a payment with that ref.
- *   npx -y deno run -A database/local-vault/office-stripe-gc-payouts-xero-apply-20261015.ts [--apply] [--only=2026-09-11,...]
+ *   npx -y deno run -A database/local-vault/office-stripe-gc-payouts-xero-apply-20261015.ts [--apply] [--only=2026-09-11,...] [--plan=path]
+ * Optional per payout: extraSales / extraSalesDesc (Stripe money with no invoice, e.g. a portal test payment) -> 200 line.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { XERO_API, xeroAccessToken, xeroAuthHeaders } from "../../supabase/functions/_shared/xero_auth.ts";
@@ -34,7 +35,8 @@ const TIDE_ACCOUNT_ID = "ffe69fb0-8363-4a15-a29f-18dd13109c24";
 const APPLY = Deno.args.includes("--apply");
 const onlyArg = Deno.args.find((a) => a.startsWith("--only="));
 const only = onlyArg ? new Set(onlyArg.slice(7).split(",")) : null;
-const plan = JSON.parse(Deno.readTextFileSync("database/local-vault/private/ealing-mail/payouts_plan.json"));
+const planPath = (Deno.args.find((a) => a.startsWith("--plan=")) || "--plan=database/local-vault/private/ealing-mail/payouts_plan.json").slice(7);
+const plan = JSON.parse(Deno.readTextFileSync(planPath));
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const pause = () => new Promise((r) => setTimeout(r, 1100));
 
@@ -51,6 +53,7 @@ const h = { ...xeroAuthHeaders(token), "Content-Type": "application/json" };
 
 async function invoiceByNumber(num: string): Promise<any | null> {
   const r = await fetch(`${XERO_API}/Invoices?InvoiceNumbers=${encodeURIComponent(num)}`, { headers: h });
+  if (!r.ok) console.log(`  lookup ${num}: HTTP ${r.status} ${r.headers.get("x-rate-limit-problem") || ""} retry-after ${r.headers.get("retry-after") || "-"}s ${(await r.clone().text()).slice(0, 160)}`);
   const list = r.ok ? (await r.json()).Invoices || [] : [];
   return list.find((i: any) => !["VOIDED", "DELETED"].includes(i.Status)) || null;
 }
@@ -109,6 +112,7 @@ for (const p of plan) {
       LineItems: [
         { Description: `Card surcharge paid by families in ${ref}`, Quantity: 1, UnitAmount: p.surcharge, AccountCode: "200", TaxType: "OUTPUT2" },
         { Description: `Stripe fees in ${ref}`, Quantity: 1, UnitAmount: -p.fees, AccountCode: "404", TaxType: "NONE" },
+        ...(p.extraSales ? [{ Description: p.extraSalesDesc || `Other sales in ${ref}`, Quantity: 1, UnitAmount: p.extraSales, AccountCode: "200", TaxType: "OUTPUT2" }] : []),
       ],
     }
     : {
@@ -117,7 +121,7 @@ for (const p of plan) {
       InvoiceNumber: adjNum,
       LineItems: [{ Description: `GoCardless fees in ${ref}`, Quantity: 1, UnitAmount: p.fees, AccountCode: "404", TaxType: "NONE" }],
     };
-  const adjAmount = p.kind === "stripe" ? r2(p.surcharge - p.fees) : p.fees;
+  const adjAmount = p.kind === "stripe" ? r2(p.surcharge - p.fees + (p.extraSales || 0)) : p.fees;
   if (Math.abs(r2(sum + (p.kind === "stripe" ? adjAmount : -adjAmount)) - p.amount) > 0.005) {
     console.log(`  parts do not add up to the payout - PROBLEM`);
     problems++;
