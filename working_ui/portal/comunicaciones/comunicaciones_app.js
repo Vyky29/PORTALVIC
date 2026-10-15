@@ -22,6 +22,60 @@ const ALLOWED_MIME = [
 ];
 const MAX_FILE = 15 * 1024 * 1024;
 const MAX_VOICE_MS = 180000;
+/* Chrome / Edge / Android cannot paint HEIC (iPhone / Samsung camera default).
+   JS HEIC decoders hang on Samsung grid HEICs, so only the browser's own decoder is used. */
+const HEIC_DECODE_TIMEOUT_MS = 8000;
+const PHOTO_MAX_EDGE = 2000;
+
+function isHeicLike(mime, name) {
+  const m = String(mime || "").toLowerCase();
+  if (m.indexOf("heic") !== -1 || m.indexOf("heif") !== -1) return true;
+  return /\.(heic|heif)$/i.test(String(name || ""));
+}
+
+function decodeImageNatively(file) {
+  return new Promise(function (resolve, reject) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    const timer = setTimeout(function () {
+      URL.revokeObjectURL(url);
+      reject(new Error("decode_timeout"));
+    }, HEIC_DECODE_TIMEOUT_MS);
+    img.onload = function () {
+      clearTimeout(timer);
+      resolve({ img: img, url: url });
+    };
+    img.onerror = function () {
+      clearTimeout(timer);
+      URL.revokeObjectURL(url);
+      reject(new Error("decode_failed"));
+    };
+    img.src = url;
+  });
+}
+
+/** Safari / iOS decode HEIC natively; elsewhere this rejects and the original is sent. */
+async function heicFileToJpeg(file) {
+  const dec = await decodeImageNatively(file);
+  try {
+    const w0 = dec.img.naturalWidth;
+    const h0 = dec.img.naturalHeight;
+    if (!w0 || !h0) throw new Error("decode_empty");
+    const scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(w0, h0));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(w0 * scale);
+    canvas.height = Math.round(h0 * scale);
+    canvas.getContext("2d").drawImage(dec.img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise(function (resolve) {
+      canvas.toBlob(resolve, "image/jpeg", 0.85);
+    });
+    if (!blob) throw new Error("encode_failed");
+    const base = String(file.name || "photo").replace(/\.(heic|heif)$/i, "");
+    return new File([blob], base + ".jpg", { type: "image/jpeg" });
+  } finally {
+    URL.revokeObjectURL(dec.url);
+  }
+}
 
 const state = {
   me: null,
@@ -756,13 +810,19 @@ function bubbleHtml(m) {
     who += " · sent by " + esc(m.performed_by_name);
   }
   let body = "";
-  if (m.message_type === "image" && m.storage_path) {
+  if (m.message_type === "image" && m.storage_path && isHeicLike(m.mime_type, m.file_name)) {
+    body =
+      '<a class="comms-file" data-file="' +
+      esc(m.storage_path) +
+      '" href="#"><span class="comms-file-fallback">Photo (HEIC) - tap to open</span></a>' +
+      attachmentCaptionHtml(m);
+  } else if (m.message_type === "image" && m.storage_path) {
     body =
       '<a class="comms-file" data-file="' +
       esc(m.storage_path) +
       '" href="#"><img alt="" data-file-img="' +
       esc(m.storage_path) +
-      '" /></a>' +
+      '" /><span class="comms-file-fallback" hidden>Open photo</span></a>' +
       attachmentCaptionHtml(m);
   } else if (m.message_type === "audio" && m.storage_path) {
     body =
@@ -902,7 +962,14 @@ async function hydrateFiles(root) {
           a.target = "_blank";
           a.rel = "noopener";
           const img = a.querySelector("[data-file-img]");
-          if (img) img.src = data.signedUrl;
+          if (img) {
+            img.addEventListener("error", function () {
+              img.hidden = true;
+              const fb = a.querySelector(".comms-file-fallback");
+              if (fb) fb.hidden = false;
+            });
+            img.src = data.signedUrl;
+          }
         }
       }
     } catch (_e) {}
@@ -1351,7 +1418,7 @@ async function sendMessage(ev) {
   if (ev) ev.preventDefault();
   if (!state.open) return;
   const body = String($("commsDraft").value || "").trim();
-  const file = state.pendingFile;
+  let file = state.pendingFile;
   if (!body && !file) return;
   $("commsSendBtn").disabled = true;
   try {
@@ -1360,6 +1427,13 @@ async function sendMessage(ev) {
     let mime = null;
     let name = null;
     let size = null;
+    if (file && isHeicLike(file.type, file.name)) {
+      try {
+        file = await heicFileToJpeg(file);
+      } catch (_e) {
+        /* Browser cannot decode HEIC: send the original (shown as a tap-to-open photo). */
+      }
+    }
     if (file) {
       if (file.size > MAX_FILE) throw new Error("File is larger than 15 MB.");
       mime = String(file.type || "application/octet-stream")

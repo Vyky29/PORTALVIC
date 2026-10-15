@@ -529,6 +529,17 @@ body.comms-embed .comms-shell {
   text-decoration: none;
 }
 .comms-file img { max-width: 220px; max-height: 180px; border-radius: 10px; display: block; }
+.comms-file img[hidden],
+.comms-file-fallback[hidden] { display: none; }
+.comms-file-fallback {
+  display: inline-block;
+  max-width: 220px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line, #d7e2ea);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
 .comms-audio {
   display: block;
   width: 100%;
