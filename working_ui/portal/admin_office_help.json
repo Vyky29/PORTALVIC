@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15-v450",
+  "version": "2026-10-15-v451",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2207,13 +2207,19 @@
             "cuanto paga ealing",
             "pago ealing",
             "agosto",
-            "septiembre"
+            "septiembre",
+            "xero",
+            "conciliar",
+            "reconcile",
+            "receive money"
           ],
           "steps": [
             "Each Ealing year INV-P has 13 rows: cycle 1 (07/09 - 04/10/2026) to cycle 13 (09/08 - 05/09/2027). The remittance shows the cycle as Client Ref (from - to). The cycle across 31 March is cut at the financial year end: 5 weeks before, 3 weeks after.",
             "Cycle amount = weekly rate x weeks in the cycle (4, or 5 and 3 around March). Weekly rate = each weekly session price x 0.7288, rounded to pennies. Example: Steven £50 a week is £36.44 a week, £145.76 a cycle.",
             "The date on each row is when the money should land: the next run of the Ealing LAC PV Payment Timetable after the cycle ends (cycle 1 landed 12 Oct). Dates after March 2027 are estimated until Ealing sends the next timetable.",
-            "When the remittance comes in, match each line to the child by the amount and the number after the slash (Client Ref; Tinashe comes as 724579), then mark that cycle paid. A child missing from the remittance keeps that cycle pending: chase Ealing with the Client Ref."
+            "When the remittance comes in, match each line to the child by the amount and the number after the slash (Client Ref; Tinashe comes as 724579), then mark that cycle paid. A child missing from the remittance keeps that cycle pending: chase Ealing with the Client Ref.",
+            "In Xero, reconcile the LB EALING line in the Tide account (clubSENsational LTD) as Receive money to account 200, contact LB Ealing, reference = remittance number. The year INV-Ps stay in the portal only: do not push them to Xero, or the money counts twice.",
+            "If the remittance pays a Xero invoice number (INV-0...), record that payment on the invoice first, then in Reconcile use Find & Match: tick the invoice payments and add the rest as Receive money to 200 so the total matches the bank line."
           ],
           "tips": [
             "Ealing buys pro rata: price x 38 term weeks spread over 52 weeks. The last two cycles (mid July to early September) land in mid September, as in 2025/26 when both were paid on 24 Sep, unless Ealing agrees to settle earlier.",
@@ -2228,7 +2234,9 @@
               "Cada INV-P anual de Ealing tiene 13 filas: ciclo 1 (07/09 - 04/10/2026) hasta ciclo 13 (09/08 - 05/09/2027). El aviso de pago muestra el ciclo en Client Ref (desde - hasta). El ciclo que cruza el 31 de marzo se corta en el cierre fiscal: 5 semanas antes y 3 despues.",
               "Importe del ciclo = precio semanal Ealing x semanas del ciclo (4, o 5 y 3 alrededor de marzo). Precio semanal Ealing = precio de cada sesion semanal x 0.7288, redondeado a peniques. Ejemplo: Steven £50 a la semana son £36.44 a la semana, £145.76 por ciclo.",
               "La fecha de cada fila es cuando deberia entrar el dinero: la siguiente tanda del LAC PV Payment Timetable de Ealing despues de acabar el ciclo (el ciclo 1 entro el 12 oct). Las fechas despues de marzo 2027 son estimadas hasta que Ealing mande el siguiente calendario.",
-              "Cuando llegue el aviso de pago, empareja cada linea con el nino por el importe y el numero tras la barra (Client Ref; Tinashe sale como 724579), y marca ese ciclo como pagado. Si falta un nino, ese ciclo sigue pendiente: reclama a Ealing con el Client Ref."
+              "Cuando llegue el aviso de pago, empareja cada linea con el nino por el importe y el numero tras la barra (Client Ref; Tinashe sale como 724579), y marca ese ciclo como pagado. Si falta un nino, ese ciclo sigue pendiente: reclama a Ealing con el Client Ref.",
+              "En Xero, concilia la linea LB EALING de la cuenta Tide (clubSENsational LTD) como Receive money a la cuenta 200, contacto LB Ealing, referencia = numero del aviso. Las INV-P anuales se quedan solo en el portal: no las subas a Xero o el dinero cuenta dos veces.",
+              "Si el aviso paga una factura de Xero (INV-0...), registra primero ese pago en la factura y luego en Reconcile usa Find & Match: marca los pagos de las facturas y anade el resto como Receive money a la 200 para que el total cuadre con la linea del banco."
             ],
             "tips": [
               "Ealing compra pro rata: precio x 38 semanas de curso repartido en 52 semanas. Los dos ultimos ciclos (mediados de julio a principios de septiembre) entran a mediados de septiembre, como en 2025/26 que se pagaron los dos el 24 sep, salvo que Ealing acepte liquidar antes.",
