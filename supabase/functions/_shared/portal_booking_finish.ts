@@ -1158,17 +1158,19 @@ export async function notifyParentTrialBookingCompleted(opts: {
       withPhoto: !!photo.url,
     })
     : "";
-  const placeLine = String(placeBlock || "")
+  const placeLines = String(placeBlock || "")
     .replace(/\n*\[\[photo\]\]\s*/g, "")
     .split("\n")
     .map((line) => line.trim())
-    .filter(Boolean)
-    .join(" · ");
-  const bodyText =
-    `Hi ${name},\n\n` +
-    `Booking completed for ${participant}.\n\n` +
-    (placeLine || `Trial: ${whenPart}${venuePart}${withWho}.`) +
-    `\n\nSee you there.\n\n${noPortalReplyFooter()}`;
+    .filter(Boolean);
+  const bodyText = [
+    `Hi ${name},`,
+    `Booking completed for ${participant}.`,
+    ...(placeLines.length
+      ? placeLines
+      : [`Trial: ${whenPart}${venuePart}${withWho}.`]),
+    "See you there.",
+  ].join("\n\n") + `\n\n${noPortalReplyFooter()}`;
 
   let emailOk = false;
   let waResult: { ok: boolean; id?: string; channel?: string; error?: string } = {
