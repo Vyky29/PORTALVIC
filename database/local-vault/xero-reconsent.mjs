@@ -2,7 +2,8 @@
 /**
  * One-off Xero OAuth consent for Portal invoice push + payment write-back.
  *
- * Scopes: accounting.payments + accounting.invoices + accounting.contacts
+ * Scopes: accounting.payments + accounting.invoices + accounting.contacts + accounting.settings
+ *         + accounting.banktransactions.read
  *
  * Usage:
  *   node database/local-vault/xero-reconsent.mjs
@@ -28,6 +29,7 @@ const SCOPES = [
   "accounting.invoices",
   "accounting.contacts",
   "accounting.settings", // Items (products) sync for the Xero product map
+  "accounting.banktransactions.read", // reconciled receive-money lines (LA remittance audit)
 ].join(" ");
 
 function loadEnv(path) {
