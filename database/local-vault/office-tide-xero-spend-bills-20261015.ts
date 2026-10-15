@@ -88,6 +88,11 @@ const PLAN: Item[] = [
   one("SEVWEB", "2026-10-02", 214, "Sevitha", "400", "NONE", "Website graphic designer"),
   one("ELEVEN", "2026-10-07", 137.34, "Elevenlabs", "463", "REVERSECHARGES", "ElevenLabs"),
   one("WIX", "2026-10-09", 61.86, "Wix com", "463", "NONE", "Wix"),
+  one("DELIVEROO", "2026-10-13", 33.17, "Deliveroo", "429", "NONE", "Work meal"),
+  one("TOCA", "2026-10-14", 164.75, "Toca Social White City", "429", "NONE", "Staff outing"),
+  one("CURSOR1", "2026-10-14", 76.15, "Cursor", "463", "REVERSECHARGES", "Cursor usage (USD 100)"),
+  one("CURSOR2", "2026-10-15", 76.15, "Cursor", "463", "REVERSECHARGES", "Cursor usage (USD 100)"),
+  one("VICDLA", "2026-10-15", 1000, "Victor Matilla Casanova", "8352", "NONE", "Director's loan Victor"),
 ];
 // Family refunds: office-sep-refund-credit-notes-fix-20261015.ts (CN per portal refund row).
 void refund;
