@@ -19,16 +19,16 @@ function panelHechos() {
     <h2>Cifras en uso</h2>
     <p class="meta">Hoja al 15 oct 2026. Es la misma en todas las hojas en uso. Day Centre es Victor y Raul.</p>
     <div class="kpis">
-      <div class="kpi"><div class="v">£212,348.60</div><div class="l">Day Centre, sep 25 a jul 26</div></div>
-      <div class="kpi"><div class="v">£208,948.60</div><div class="l">Ya entrado. Ikram 0355 el 15 oct, Fadi el 8 oct, uplift de Timi el 5 oct, de Emanuel el 7 sep</div></div>
+      <div class="kpi"><div class="v">£212,125.30</div><div class="l">Day Centre, sep 25 a jul 26</div></div>
+      <div class="kpi"><div class="v">£208,725.30</div><div class="l">Ya entrado. Ikram 0355 el 15 oct, Fadi el 8 oct, uplift de Timi el 5 oct</div></div>
       <div class="kpi"><div class="v">£3,400.00</div><div class="l">Falta: Timi £3,400</div></div>
     </div>
     <div class="kpis">
-      <div class="kpi"><div class="v">£97,090.39</div><div class="l">Remanente ahora</div></div>
-      <div class="kpi"><div class="v">£25,212.19</div><div class="l">Victor por coger ahora</div></div>
-      <div class="kpi"><div class="v">£48,545.20</div><div class="l">Raul por coger ahora</div></div>
+      <div class="kpi"><div class="v">£96,867.09</div><div class="l">Remanente ahora</div></div>
+      <div class="kpi"><div class="v">£25,100.54</div><div class="l">Victor por coger ahora</div></div>
+      <div class="kpi"><div class="v">£48,433.55</div><div class="l">Raul por coger ahora</div></div>
     </div>
-    <div class="note">Victor ya cogio £23,333 (Michelle £15,500, agosto incluido, y £7,833 de julio). Cuando entren los £3,400 de Timi, Victor coge £26,912.19 y Raul £50,245.20. Alquiler Acton 28 y 30 jul £128.44, sin pagar, ya restado. Timi septiembre, INV P0168 £2,856.84, entro el 15 oct y se queda en Autumn. El 15 oct el NHS pago otra vez Emanuel INV 0391, £223.30 (ya cobrado el 7 sep): se le debe al NHS, credit note CN-0391, no entra en el remanente. Tarjetas personales hasta el 31 ago, sin top: Victor £18,204.59, Raul £18,839.90, Javier £10,753.21. Para igualar a Raul: Victor £635.31 y Javier £8,086.69. No se ha dado. Lo personal de septiembre se resta de la mitad de Day Centre en la hoja de septiembre.</div>
+    <div class="note">Victor ya cogio £23,333 (Michelle £15,500, agosto incluido, y £7,833 de julio). Cuando entren los £3,400 de Timi, Victor coge £26,800.54 y Raul £50,133.55. Alquiler Acton 28 y 30 jul £128.44, sin pagar, ya restado. Timi septiembre, INV P0168 £2,856.84, entro el 15 oct y se queda en Autumn. Emanuel INV 0391, £223.30, se anulo con CN-0395 el 26 ago, pero el NHS la pago el 7 sep y el 15 oct: se le deben £446.60 (CN-0395 y CN-0391), fuera del remanente. Tarjetas personales hasta el 31 ago, sin top: Victor £18,204.59, Raul £18,839.90, Javier £10,753.21. Para igualar a Raul: Victor £635.31 y Javier £8,086.69. No se ha dado. Lo personal de septiembre se resta de la mitad de Day Centre en la hoja de septiembre.</div>
   `;
 }
 
