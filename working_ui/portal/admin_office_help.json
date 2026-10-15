@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15-v456",
+  "version": "2026-10-15-v457",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2130,6 +2130,56 @@
               "El chip viejo 1 partially paid era una factura aun abierta. No era una cuota.",
               "GoCardless crea los meses siguientes por adelantado. Pending en GoCardless no es Paid en la factura hasta que ese cobro sale.",
               "Un mes se pone verde solo cuando ese cobro ha salido. El cobro de octubre no debe pintar noviembre."
+            ]
+          }
+        },
+        {
+          "id": "gocardless_failed_bank_fee",
+          "title": "GoCardless failed: bank transfer + fee that month",
+          "summary": "When a GoCardless collection fails, that month the parent pays by bank transfer and adds a small fee on top (usually GBP 5) to cover the charge GoCardless bills us for the failed payment. One transfer: month + fee. Do not mint a separate GBP 4 or GBP 5 invoice.",
+          "where": "Finance → Bookings → family invoice · Tide bank · GoCardless dashboard",
+          "keywords": [
+            "gocardless failed",
+            "go cardless failed",
+            "failed payment",
+            "pago fallido",
+            "chargeback",
+            "bank transfer fee",
+            "tasa",
+            "cinco pavos",
+            "five pounds",
+            "four pounds",
+            "ashley",
+            "on top",
+            "gc fail"
+          ],
+          "steps": [
+            "Confirm the GoCardless collection for that month failed (dashboard or payout notice).",
+            "Tell the parent: that month is bank transfer only, and they must send the instalment amount plus the failed-payment fee (default GBP 5 unless office sets another figure from the GoCardless charge).",
+            "One Tide transfer: instalment + fee (example: GBP 164 + GBP 5 = GBP 169). Reference = child name / invoice as usual.",
+            "On the invoice: mark that instalment paid by bank for the instalment amount. Book the fee as an admin note / ledger line (GoCardless failed payment fee), not as a new INV-P of GBP 4 or GBP 5.",
+            "Later months stay on GoCardless if the mandate is still active, unless office decides otherwise."
+          ],
+          "tips": [
+            "Do not create a separate invoice for the GBP 4 / GBP 5 fee. It clutters Family invoices and confuses Xero match.",
+            "If they only send the instalment with no fee (e.g. Ashley GBP 164 only), note the missing fee. From this rule onward, chase the fee for new failures; older misses can stay noted.",
+            "Huma GBP 4 short / Hanna GBP 5 bank lines can be this fee already received or still due - check the Tide amount vs the instalment."
+          ],
+          "es": {
+            "title": "GoCardless fallido: transferencia + tasa ese mes",
+            "summary": "Si falla un cobro de GoCardless, ese mes el padre paga por transferencia bancaria y suma una tasa pequena (normalmente GBP 5) para cubrir lo que GoCardless nos cobra por el fallo. Una sola transferencia: mes + tasa. No hagas una factura aparte de GBP 4 o GBP 5.",
+            "where": "Finance → Bookings → factura de la familia · Tide · panel de GoCardless",
+            "steps": [
+              "Confirma que el cobro de GoCardless de ese mes fallo (panel o aviso de payout).",
+              "Di al padre: ese mes es solo transferencia, y debe mandar la cuota mas la tasa del fallo (por defecto GBP 5, salvo que la oficina ponga otra cifra segun el cargo de GoCardless).",
+              "Una sola transferencia en Tide: cuota + tasa (ejemplo: GBP 164 + GBP 5 = GBP 169). Referencia = nombre del nino / factura como siempre.",
+              "En la factura: marca esa cuota pagada por banco por el importe de la cuota. La tasa va como nota de oficina / linea de ledger (tasa por fallo de GoCardless), no como un INV-P nuevo de GBP 4 o GBP 5.",
+              "Los meses siguientes siguen en GoCardless si el mandato sigue activo, salvo que la oficina diga otra cosa."
+            ],
+            "tips": [
+              "No crees una factura aparte solo por la tasa de GBP 4 / GBP 5. Ensucia Family invoices y complica el match en Xero.",
+              "Si solo mandan la cuota sin la tasa (ej. Ashley GBP 164), anota la tasa pendiente. Desde esta regla, se cobra en fallos nuevos; los fallos viejos pueden quedarse anotados.",
+              "Huma con GBP 4 de corto / Hanna con GBP 5 en banco pueden ser esta tasa ya recibida o aun pendiente: mira Tide frente a la cuota."
             ]
           }
         },

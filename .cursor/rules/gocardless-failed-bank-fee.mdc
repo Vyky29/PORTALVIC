@@ -1,0 +1,13 @@
+# GoCardless failed → bank transfer + fee
+
+When a parent's **GoCardless collection fails** for a month:
+
+1. That month they pay by **bank transfer** (not another GC retry for that instalment unless office decides otherwise).
+2. They must pay the instalment **plus a small fee on top** (default **GBP 5**, or the actual GoCardless failed-payment charge if office sets another figure) so we recover what GC bills us for the failure.
+3. **One Tide transfer**: instalment + fee (e.g. GBP 164 + GBP 5 = GBP 169). Same child/invoice reference.
+4. **Do not** create a separate INV-P for GBP 4 / GBP 5. Mark the instalment paid by bank for the instalment amount; record the fee in an office note / ledger line ("GoCardless failed payment fee").
+5. Later months stay on GoCardless if the mandate is still active, unless office says otherwise.
+
+Office help lesson: `gocardless_failed_bank_fee` in `working_ui/portal/admin_office_help.json`.
+
+Older misses (e.g. Ashley sent only the instalment with no fee) can stay noted; enforce the fee for **new** failures from this rule onward.
