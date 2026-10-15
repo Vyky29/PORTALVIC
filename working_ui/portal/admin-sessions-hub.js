@@ -4388,11 +4388,14 @@ function rosterRowToSlot(isoDate, wd, r) {
     if (!slot) return [];
     var iso = String(slot.session_date || (hub && hub.selectedDay) || "").slice(0, 10);
     var names = dedupeInstructorNames(slotInstructors(slot));
+    var observer = clean(slot.portalShadowingObserverName);
     var out = [];
     for (var i = 0; i < names.length; i++) {
       var n = names[i];
       if (!n) continue;
       if (/^cover[\s_]*needed$/i.test(n) || canonicalStaffMatchKey(n) === "coverneeded") continue;
+      /* Shadowing watches the session. They do not submit feedback. */
+      if (observer && completedByMatchesInstructor(n, observer)) continue;
       if (hub && iso && hubStaffAwayOnIso(hub, iso, n)) continue;
       out.push(n);
     }
@@ -4410,12 +4413,7 @@ function rosterRowToSlot(isoDate, wd, r) {
     var whoOwes = !!opts.feedbackWhoOwes;
     if (slot.portalShadowingHost && slot.portalShadowingObserverName) {
       if (whoOwes) {
-        var obs = slot.portalShadowingObserverName;
-        if (opts.hub && hubStaffAwayOnIso(opts.hub, slot.session_date, obs)) {
-          obs = "";
-        }
         return (
-          (obs ? formatInstructorPill(obs) : "") ||
           feedbackWhoOwesInstructors(opts.hub, slot).map(formatInstructorPill).join(" ") ||
           "\u2014"
         );
@@ -5098,8 +5096,10 @@ function rosterRowToSlot(isoDate, wd, r) {
   function awaitingSlotMatchesInstructorFilter(hub, slot, inst) {
     if (!inst) return true;
     if (!slot) return false;
+    if (slot.portalDutyPersonCard || (slot.portalShadowingObserver && !slot.portalShadowingHost)) {
+      return false;
+    }
     var names = feedbackWhoOwesInstructors(hub, slot);
-    if (slot.portalShadowingObserverName) names = names.concat([slot.portalShadowingObserverName]);
     for (var i = 0; i < names.length; i++) {
       if (completedByMatchesInstructor(names[i], inst)) return true;
     }
