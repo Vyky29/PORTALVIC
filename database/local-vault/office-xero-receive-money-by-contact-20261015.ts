@@ -52,7 +52,7 @@ for (let page = 1; page < 10; page++) {
   const list = r.ok ? (await r.json()).BankTransactions || [] : [];
   for (const t of list.sort((a: any, b: any) => xdate(a.Date).localeCompare(xdate(b.Date)))) {
     if (t.Status === "DELETED") continue;
-    console.log(`${xdate(t.Date)} | ${t.Contact?.Name} | £${t.Total} | ${t.BankAccount?.Name} | reconciled ${t.IsReconciled} | ref ${t.Reference || "-"}`);
+    console.log(`${xdate(t.Date)} | ${t.Contact?.Name} | £${t.Total} | ${t.BankAccount?.Name} | reconciled ${t.IsReconciled} | ref ${t.Reference || "-"} | ${t.BankTransactionID}`);
     for (const l of t.LineItems || []) {
       const tr = (l.Tracking || []).map((x: any) => `${x.Name}=${x.Option}`).join(", ");
       console.log(`    ${l.AccountCode} | ${l.TaxType} | £${l.LineAmount} | ${String(l.Description || "").replace(/\s+/g, " ").slice(0, 70)}${tr ? " | " + tr : ""}`);
