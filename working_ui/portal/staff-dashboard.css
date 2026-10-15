@@ -9141,6 +9141,53 @@
     body.announcement-gate-active #announcementsSheet .sheet-head p{
       color:#fff;
     }
+    /* Feedback film: the video is the whole screen. No title, no back, no other taps. */
+    body.announcement-film-lock #announcementsSheet .sheet-head,
+    body.announcement-film-lock #announcementsSheet .announcements-sheet-back{
+      display:none !important;
+    }
+    body.announcement-film-lock #announcementsSheet.sheet--fullscreen.sheet--mobile-frame,
+    body.announcement-film-lock #announcementsSheet.sheet--fullscreen.sheet--mobile-frame.open{
+      position:fixed !important;
+      inset:0 !important;
+      left:0 !important;
+      right:0 !important;
+      top:0 !important;
+      width:100vw !important;
+      max-width:none !important;
+      height:100dvh !important;
+      margin:0 !important;
+      transform:none !important;
+      border:none !important;
+      border-radius:0 !important;
+      box-shadow:none !important;
+      z-index:400 !important;
+      background:#ebe6dc !important;
+      padding:0 !important;
+    }
+    body.announcement-film-lock #announcementsSheet .sheet-body{
+      padding:0 !important;
+      height:100%;
+      min-height:100dvh;
+    }
+    body.announcement-film-lock #announcementPendingHost,
+    body.announcement-film-lock .announcement-lock-card--feedback-watch{
+      width:100% !important;
+      max-width:none !important;
+      height:100dvh;
+      margin:0 !important;
+      padding:0 !important;
+      border:none !important;
+      border-radius:0 !important;
+      box-shadow:none !important;
+      background:#ebe6dc !important;
+    }
+    body.announcement-film-lock .feedback-watch-frame{
+      width:100%;
+      height:100dvh;
+      min-height:100dvh;
+      border-radius:0;
+    }
     body.announcement-gate-active #announcementsSheet .sheet-body{
       display:flex;
       flex-direction:column;

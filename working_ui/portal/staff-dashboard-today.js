@@ -7769,6 +7769,36 @@
      * Mandatory gate: unsigned office announcements (not schedule/feedback alerts).
      * Schedule overrides and outstanding feedback stay on the logo halo.
      */
+    function portalAnnouncementPendingIsFilm(){
+      try{
+        var p = typeof portalAnnouncementPendingItem === 'function' ? portalAnnouncementPendingItem() : null;
+        return !!(p && (p.feedbackWatch || p.feedbackOnTime));
+      }catch(_film){
+        return false;
+      }
+    }
+    function portalAnnouncementQueueHasFilm(pending){
+      try{
+        var list = pending;
+        if(!list && typeof portalActiveAnnouncementItems === 'function') list = portalActiveAnnouncementItems();
+        list = list || [];
+        for(var i = 0; i < list.length; i++){
+          if(list[i] && (list[i].feedbackWatch || list[i].feedbackOnTime)) return true;
+        }
+        return false;
+      }catch(_q){
+        return false;
+      }
+    }
+    function portalSyncFilmLockStorage(pending){
+      try{
+        if(portalAnnouncementQueueHasFilm(pending)) sessionStorage.setItem('portalFilmLock', '1');
+        else sessionStorage.removeItem('portalFilmLock');
+      }catch(_flag){}
+    }
+    function portalReleaseAnnouncementBootHold(){
+      try{ document.documentElement.classList.remove('portal-ann-boot-hold'); }catch(_rel){}
+    }
     function portalMaybeGateUnsignedAnnouncements(opts){
       opts = opts && typeof opts === 'object' ? opts : {};
       try{
@@ -7776,10 +7806,11 @@
         if(dashboardData.portalAnnouncementAcksMerged !== true) return false;
         if(typeof portalActiveAnnouncementItems !== 'function') return false;
         const pending = portalActiveAnnouncementItems();
+        portalSyncFilmLockStorage(pending);
         if(!pending || !pending.length){
           try{
-            document.body.classList.remove('announcement-gate-active', 'dock-context-announcement-lock');
-            document.documentElement.classList.remove('announcement-gate-active');
+            document.body.classList.remove('announcement-gate-active', 'announcement-film-lock', 'dock-context-announcement-lock');
+            document.documentElement.classList.remove('announcement-gate-active', 'announcement-film-lock');
           }catch(_off){}
           try{
             const annSheet = document.getElementById('announcementsSheet');
@@ -7791,10 +7822,15 @@
               closeSheet({ bypassAnnouncementLock: true, forceCloseAnnouncementGate: true });
             }
           }catch(_closeSigned){}
+          portalReleaseAnnouncementBootHold();
           return false;
         }
         try{
-          if(document.body && document.body.classList.contains('portal-achievements-camera-open')) return false;
+          var filmQueued = portalAnnouncementQueueHasFilm(pending);
+          if(!filmQueued && document.body && document.body.classList.contains('portal-achievements-camera-open')){
+            portalReleaseAnnouncementBootHold();
+            return false;
+          }
         }catch(_cam){}
         const annSheet = document.getElementById('announcementsSheet');
         const annOpen = !!(annSheet && annSheet.classList.contains('open'));
@@ -7802,15 +7838,44 @@
           portalAnnouncementsSheetEntry = 'newNotice';
           if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
           if(typeof portalSyncAnnouncementGateBodyClass === 'function') portalSyncAnnouncementGateBodyClass();
+          portalReleaseAnnouncementBootHold();
           return true;
         }
         portalOpenAnnouncementsSheet('newNotice');
         if(typeof portalSyncAnnouncementGateBodyClass === 'function') portalSyncAnnouncementGateBodyClass();
+        portalReleaseAnnouncementBootHold();
         return true;
       }catch(_gate){
         return false;
       }
     }
+    try{ window.portalAnnouncementPendingIsFilm = portalAnnouncementPendingIsFilm; }catch(_wFilm){}
+    document.addEventListener('click', function(ev){
+      var root = document.documentElement;
+      var hold = !!(root && root.classList.contains('portal-ann-boot-hold'));
+      var gate = typeof portalAnnouncementGatePending === 'function' && portalAnnouncementGatePending();
+      if(!hold && !gate) return;
+      var t = ev && ev.target;
+      if(!t || !t.closest) return;
+      var a = t.closest('a[href]');
+      if(!a) return;
+      var film = portalAnnouncementQueueHasFilm();
+      if(!hold && gate && !film && a.closest('#announcementsSheet')) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+    }, true);
+    setTimeout(function(){
+      try{
+        if(!document.documentElement.classList.contains('portal-ann-boot-hold')) return;
+        if(dashboardData && dashboardData.portalIdentityResolved && dashboardData.portalAnnouncementAcksMerged === true){
+          portalMaybeGateUnsignedAnnouncements({ force: true });
+          return;
+        }
+        if(!dashboardData || dashboardData.portalIdentityResolved !== true){
+          portalReleaseAnnouncementBootHold();
+        }
+      }catch(_bootT){}
+    }, 30000);
     try{ window.portalOpenAnnouncementsSheet = portalOpenAnnouncementsSheet; }catch(_w1){}
     try{ window.portalMaybeGateUnsignedAnnouncements = portalMaybeGateUnsignedAnnouncements; }catch(_w2){}
     var _portalAckMapCache = null;
@@ -8808,9 +8873,12 @@
     function portalSyncAnnouncementGateBodyClass(){
       try{
         const on = portalAnnouncementLockActive();
+        const film = on && portalAnnouncementPendingIsFilm();
         document.body.classList.toggle('announcement-gate-active', on);
+        document.body.classList.toggle('announcement-film-lock', film);
         document.body.classList.toggle('dock-context-announcement-lock', on);
         document.documentElement.classList.toggle('announcement-gate-active', on);
+        document.documentElement.classList.toggle('announcement-film-lock', film);
       }catch(_b){}
     }
     try{ window.portalAnnouncementGatePending = portalAnnouncementGatePending; }catch(_w3){}

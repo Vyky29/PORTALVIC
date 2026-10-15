@@ -47,12 +47,12 @@
 
   var TIER_DASH = [
     "/portal/staff-dashboard-topbar.js?v=" + VER,
-    "/portal/staff-dashboard-feedback.js?v=20261007-name-not-dc",
+    "/portal/staff-dashboard-feedback.js?v=20261015-film-lock",
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=20261013-acat-tue",
     "/portal/staff-dashboard-participants.js?v=20261013-dc-same-card",
-    "/portal/staff-dashboard-today.js?v=20261015-lockbar",
-    "/portal/staff-dashboard-ui.js?v=20261014-pending-web",
+    "/portal/staff-dashboard-today.js?v=20261015-film-lock",
+    "/portal/staff-dashboard-ui.js?v=20261015-film-lock",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
@@ -68,12 +68,12 @@
 
   var EXTRACTED_BEFORE_AUTH = [
     "/portal/staff-dashboard-topbar.js?v=" + VER,
-    "/portal/staff-dashboard-feedback.js?v=20261007-name-not-dc",
+    "/portal/staff-dashboard-feedback.js?v=20261015-film-lock",
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=20261013-acat-tue",
     "/portal/staff-dashboard-participants.js?v=20261013-dc-same-card",
-    "/portal/staff-dashboard-today.js?v=20261015-lockbar",
-    "/portal/staff-dashboard-ui.js?v=20261014-pending-web",
+    "/portal/staff-dashboard-today.js?v=20261015-film-lock",
+    "/portal/staff-dashboard-ui.js?v=20261015-film-lock",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];

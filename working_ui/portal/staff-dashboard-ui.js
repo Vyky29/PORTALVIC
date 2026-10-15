@@ -323,7 +323,10 @@
       }
     }
     function portalSyncAnnouncementBeforeUnloadListener(){
-      const need = !!(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive());
+      const need = !!(
+        (typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive()) ||
+        document.documentElement.classList.contains('portal-ann-boot-hold')
+      );
       if(need){
         if(!window.__portalAnnouncementBeforeUnloadBound){
           window.addEventListener('beforeunload', portalAnnouncementBeforeUnloadHandler);
@@ -464,7 +467,7 @@
       if(portalAnnSyncFullscreenOpen()) delay = Math.max(delay, 450);
       _portalAnnSyncTimer = setTimeout(function(){
         _portalAnnSyncTimer = null;
-        if(portalAnnSyncFullscreenOpen()){
+        if(portalAnnSyncFullscreenOpen() && !document.documentElement.classList.contains('portal-ann-boot-hold')){
           portalSyncAnnouncementsAndRemindersUi({ force: !!opts.force });
           return;
         }
@@ -473,7 +476,7 @@
     }
     function portalSyncAnnouncementsAndRemindersUiCore(opts){
       opts = opts && typeof opts === 'object' ? opts : {};
-      if(portalAnnSyncFullscreenOpen()){
+      if(portalAnnSyncFullscreenOpen() && !document.documentElement.classList.contains('portal-ann-boot-hold')){
         portalSyncAnnouncementsAndRemindersUi({ force: !!opts.force });
         return;
       }
@@ -4519,6 +4522,12 @@
     function openSheet(id, opts){
       if(id === 'internalChatSheet') return; /* chat removed — see archive/chat-full-removal-20260609 */
       opts = opts || {};
+      if(
+        id !== 'announcementsSheet' &&
+        document.documentElement.classList.contains('portal-ann-boot-hold')
+      ){
+        return;
+      }
       /* Hard gate: only the announcements sheet may open while unsigned notices remain. */
       if(
         id !== 'announcementsSheet' &&
@@ -6405,6 +6414,15 @@
       function goUrl(u){
         var href = String(u || '').trim();
         if(!href) return;
+        if(
+          document.documentElement.classList.contains('portal-ann-boot-hold') ||
+          (typeof portalAnnouncementGatePending === 'function' && portalAnnouncementGatePending())
+        ){
+          if(typeof portalMaybeGateUnsignedAnnouncements === 'function'){
+            portalMaybeGateUnsignedAnnouncements({ force: true });
+          }
+          return;
+        }
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
         if(typeof portalQuickMenuNavigate === 'function'){
           portalQuickMenuNavigate(href);
@@ -6640,6 +6658,12 @@
       if(calOpen){
         e.preventDefault();
         e.stopPropagation();
+        if(
+          document.documentElement.classList.contains('portal-ann-boot-hold') ||
+          (typeof portalAnnouncementGatePending === 'function' && portalAnnouncementGatePending())
+        ){
+          return;
+        }
         const calUrl = typeof portalCalendar202627SectionUrl === 'function'
           ? portalCalendar202627SectionUrl()
           : '/portal/day-centre-calendar-2026-27-section.html?from=staff';
@@ -6673,6 +6697,12 @@
       const calOpen = e.target.closest('#portalOpenCalendar202627');
       if(calOpen){
         e.preventDefault();
+        if(
+          document.documentElement.classList.contains('portal-ann-boot-hold') ||
+          (typeof portalAnnouncementGatePending === 'function' && portalAnnouncementGatePending())
+        ){
+          return;
+        }
         const calUrl = typeof portalCalendar202627SectionUrl === 'function'
           ? portalCalendar202627SectionUrl()
           : '/portal/day-centre-calendar-2026-27-section.html?from=staff';

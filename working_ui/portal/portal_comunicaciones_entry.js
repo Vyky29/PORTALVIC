@@ -4,6 +4,19 @@
  */
 (function (global) {
   "use strict";
+  try{
+    var staffHost = location.hostname === "clubsensational-staff.vercel.app" ||
+      location.hostname === "127.0.0.1" ||
+      location.hostname === "localhost";
+    if(
+      staffHost &&
+      /comunicaciones\.html$/i.test(location.pathname) &&
+      sessionStorage.getItem("portalFilmLock") === "1"
+    ){
+      location.replace("/staff_dashboard.html");
+      return;
+    }
+  }catch(_filmBounce){}
 
   function normalizeKey(raw) {
     return String(raw || "")

@@ -2149,6 +2149,15 @@
     function portalQuickMenuNavigate(url){
       const u = String(url || '').trim();
       if(!u) return;
+      if(
+        document.documentElement.classList.contains('portal-ann-boot-hold') ||
+        (typeof portalAnnouncementGatePending === 'function' && portalAnnouncementGatePending())
+      ){
+        if(typeof portalMaybeGateUnsignedAnnouncements === 'function'){
+          portalMaybeGateUnsignedAnnouncements({ force: true });
+        }
+        return;
+      }
       let target = u;
       try{
         try{ sessionStorage.setItem('portalStaffFormNavAt', String(Date.now())); }catch(_){}
