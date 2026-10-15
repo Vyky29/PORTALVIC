@@ -243,6 +243,66 @@ function digestClientOwesFeedback(name: string): boolean {
   return true;
 }
 
+export type DigestAbsenceOverride = {
+  override_type?: string | null;
+  status?: string | null;
+  anchor_client_id?: string | null;
+  anchor_time_slot_label?: string | null;
+  payload?: Record<string, unknown> | null;
+};
+
+/** 5.30 and 17.30 are the same afternoon seat. Morning hours stay as written. */
+function digestStartMinutes(label: string): number | null {
+  const s = String(label || "").trim().toLowerCase().replace(/\./g, ":");
+  const m = s.match(/(\d{1,2})(?::(\d{2}))?/);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const min = Number(m[2] || "0");
+  if (!Number.isFinite(h) || !Number.isFinite(min)) return null;
+  if (h >= 1 && h <= 7) h += 12;
+  return h * 60 + min;
+}
+
+function digestTimesSameSeat(a: string, b: string): boolean {
+  const aa = digestStartMinutes(a);
+  const bb = digestStartMinutes(b);
+  if (aa == null || bb == null) return true;
+  return Math.abs(aa - bb) <= 20;
+}
+
+/** Absence and admin cancel live on schedule_overrides, not on the quick-mark table. */
+export function digestOverrideClearsRosterSlot(
+  roster: DigestRosterRow,
+  ov: DigestAbsenceOverride,
+): boolean {
+  const st = String(ov.status || "active").trim().toLowerCase();
+  if (st && st !== "active") return false;
+  const ot = String(ov.override_type || "").trim();
+  const pl = ov.payload && typeof ov.payload === "object" ? ov.payload : {};
+  const feedbackRes = String(pl.feedback_resolution || "").trim().toLowerCase();
+  const clears =
+    ot === "client_absence_announced" ||
+    ot === "slot_close" ||
+    ot === "client_cancelled" ||
+    feedbackRes === "absent" ||
+    feedbackRes === "cancelled" ||
+    (ot === "slot_clear_client" &&
+      !!pl.cancelled_by_admin &&
+      pl.day_reassign !== true &&
+      pl.not_makeup !== true);
+  if (!clears) return false;
+  const client = String(roster.client_name || "");
+  const anchor = String(ov.anchor_client_id || "").trim();
+  const key = String(pl.portal_session_key || "").trim();
+  const clientHit =
+    (anchor && rosterClientsMatch(client, anchor)) ||
+    (key && portalKeyMatchesRosterClient(key, client));
+  if (!clientHit) return false;
+  const timeLab = String(ov.anchor_time_slot_label || "").trim();
+  if (!timeLab) return true;
+  return digestTimesSameSeat(String(roster.time_slot || ""), timeLab);
+}
+
 export function missingFeedbackClientsForShift(
   rosterRows: DigestRosterRow[],
   shiftDateIso: string,
@@ -251,11 +311,13 @@ export function missingFeedbackClientsForShift(
     cancelRows: DigestKeyRow[];
     absentMarks: DigestKeyRow[];
     feedbackDoneMarks: DigestKeyRow[];
+    absenceOverrides?: DigestAbsenceOverride[];
   },
 ): string[] {
   const seenSlots = new Set<string>();
   const missing: string[] = [];
   const missingNames = new Set<string>();
+  const overrides = ctx.absenceOverrides || [];
 
   for (const r of rosterRows) {
     const client = String(r.client_name || "").trim();
@@ -263,6 +325,7 @@ export function missingFeedbackClientsForShift(
     const slotKey = rosterDigestSlotKey(r, shiftDateIso);
     if (seenSlots.has(slotKey)) continue;
     seenSlots.add(slotKey);
+    if (overrides.some((ov) => digestOverrideClearsRosterSlot(r, ov))) continue;
     if (rosterSlotIsComplete(r, shiftDateIso, ctx)) continue;
     if (!missingNames.has(client)) {
       missingNames.add(client);

@@ -740,6 +740,48 @@ export function preferRosterOverMadreGhosts(
   });
 }
 
+/**
+ * A dated roster row is that day's instructor. Occupants and MADRE still carry
+ * the standing name (Roberto on Emmanuel after that Tuesday moved Emmanuel to Luliya).
+ * Keep the roster instructor. Do not also bill the standing one.
+ */
+export function dropStandingInstructorWhenRosterHasSeat(
+  slots: Feedback2030Slot[],
+  rosterSlots: Feedback2030Slot[],
+): Feedback2030Slot[] {
+  const staffBySeat = new Map<string, Set<string>>();
+  for (const s of rosterSlots || []) {
+    if (!isRealFeedbackClient(s.client)) continue;
+    const k = [
+      slugClient(clientDisplayStem(s.client) || s.client),
+      slugClient(s.service),
+    ].join("|");
+    let set = staffBySeat.get(k);
+    if (!set) {
+      set = new Set();
+      staffBySeat.set(k, set);
+    }
+    const sk = normalizeStaffKey(s.staff);
+    if (sk) set.add(sk);
+  }
+  if (!staffBySeat.size) return slots;
+  return (slots || []).filter((s) => {
+    if (!isRealFeedbackClient(s.client)) return true;
+    const k = [
+      slugClient(clientDisplayStem(s.client) || s.client),
+      slugClient(s.service),
+    ].join("|");
+    const set = staffBySeat.get(k);
+    if (!set || !set.size) return true;
+    const sk = normalizeStaffKey(s.staff);
+    if (!sk) return true;
+    for (const have of set) {
+      if (staffKeysMatch(have, sk)) return true;
+    }
+    return false;
+  });
+}
+
 export function mergeFeedback2030Slots(lists: Feedback2030Slot[][]): Feedback2030Slot[] {
   const seen = new Map<string, Feedback2030Slot>();
   const out: Feedback2030Slot[] = [];

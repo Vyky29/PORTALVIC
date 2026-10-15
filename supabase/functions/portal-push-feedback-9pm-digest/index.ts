@@ -188,12 +188,22 @@ Deno.serve(async (req) => {
   const feedbackDoneMarks = (quickMarkRows || []).filter(
     (r) => r.mark_type === "feedback_done",
   );
+  const { data: absenceOverrides, error: absErr } = await admin
+    .from("schedule_overrides")
+    .select("override_type, status, anchor_client_id, anchor_time_slot_label, payload")
+    .eq("session_date", shiftDateIso)
+    .eq("status", "active");
+  if (absErr) {
+    console.error("[portal-feedback-late-digest] absences", absErr);
+    return jsonPushResponse({ error: absErr.message }, 500);
+  }
 
   const missing = missingFeedbackClientsForShift(rosterRows || [], shiftDateIso, {
     feedbackRows: feedbackRows || [],
     cancelRows: cancelRows || [],
     absentMarks,
     feedbackDoneMarks,
+    absenceOverrides: absenceOverrides || [],
   });
 
   if (!missing.length) {

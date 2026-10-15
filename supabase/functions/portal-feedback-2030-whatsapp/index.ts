@@ -40,6 +40,7 @@ import {
   applyScheduleOverridesToFeedback2030Slots,
   datedFallbackSlots,
   dropSlotsForUnavailableStaff,
+  dropStandingInstructorWhenRosterHasSeat,
   feedbackRingAlreadySentToday,
   FEEDBACK_2030_MADRE_TERM_KEYS,
   mergeFeedback2030Slots,
@@ -537,12 +538,15 @@ Deno.serve(async (req) => {
     if (occupantsHasDayCentre) {
       madreSlots = madreSlots.filter((s) => !/day centre/i.test(String(s.service || "")));
     }
-    let slots = mergeFeedback2030Slots([
+    let slots = dropStandingInstructorWhenRosterHasSeat(
+      mergeFeedback2030Slots([
+        rosterSlots,
+        occupantsSlots,
+        datedFallbackSlots(dayIso),
+        madreSlots,
+      ]),
       rosterSlots,
-      occupantsSlots,
-      datedFallbackSlots(dayIso),
-      madreSlots,
-    ]);
+    );
     slots = scrubFadiOffDayCentreSlots(slots, dayIso);
     slots = applyFeedback2030BoardPolicy(slots, dayIso);
     slots = applyScheduleOverridesToFeedback2030Slots(
