@@ -68,21 +68,24 @@ const refund = (key: string, date: string, amount: number, contact: string, desc
 
 const PLAN: Item[] = [
   atm(1, 250), atm(2, 250), atm(3, 250), atm(4, 100), atm(5, 250), atm(6, 250),
-  one("AL1", "2026-09-10", 57.10, "Addison Lee", "493", "INPUT2", "Addison Lee card ride"),
-  one("AL2", "2026-09-10", 38.94, "Addison Lee", "493", "INPUT2", "Addison Lee card ride"),
-  one("AL3", "2026-09-11", 54.35, "Addison Lee", "493", "INPUT2", "Addison Lee card ride"),
-  one("AL4", "2026-09-11", 7.30, "Addison Lee", "493", "INPUT2", "Addison Lee extra"),
-  one("AL5", "2026-09-17", 38.94, "Addison Lee", "493", "INPUT2", "Addison Lee card ride"),
-  one("AL6", "2026-09-17", 38.94, "Addison Lee", "493", "INPUT2", "Addison Lee card ride"),
-  one("AL7", "2026-09-18", 72.66, "Addison Lee", "493", "INPUT2", "Addison Lee extra"),
-  one("AL8", "2026-09-18", 26.26, "Addison Lee", "493", "INPUT2", "Addison Lee extra"),
+  // Addison Lee = participant taxis (service cost, not office travel); re-booked via office-xero-rebook-paid-bill.
+  one("AL1", "2026-09-10", 57.10, "Addison Lee", "325", "INPUT2", "Addison Lee card ride"),
+  one("AL2", "2026-09-10", 38.94, "Addison Lee", "325", "INPUT2", "Addison Lee card ride"),
+  one("AL3", "2026-09-11", 54.35, "Addison Lee", "325", "INPUT2", "Addison Lee card ride"),
+  one("AL4", "2026-09-11", 7.30, "Addison Lee", "325", "INPUT2", "Addison Lee extra"),
+  one("AL5", "2026-09-17", 38.94, "Addison Lee", "325", "INPUT2", "Addison Lee card ride"),
+  one("AL6", "2026-09-17", 38.94, "Addison Lee", "325", "INPUT2", "Addison Lee card ride"),
+  one("AL7", "2026-09-18", 72.66, "Addison Lee", "325", "INPUT2", "Addison Lee extra"),
+  one("AL8", "2026-09-18", 26.26, "Addison Lee", "325", "INPUT2", "Addison Lee extra"),
   one("SUSP300", "2026-09-11", 300, "clubSENsational LTD", "850", "NONE", "Transfer out 11 Sep - returned same amount"),
+  one("BEAUTY", "2026-09-24", 38.30, "The Beauty Store", "8351", "NONE", "Raul personal purchase on company card"),
   one("HELLOPRINT", "2026-09-12", 43.48, "HelloPrint", "461", "INPUT2", "Printing"),
   one("1STFORM", "2026-09-18", 46.80, "1st Formations", "429", "INPUT2", "Company services"),
   one("VERCEL", "2026-09-28", 287.45, "Vercel", "463", "REVERSECHARGES", "Vercel hosting (USD 379.46)"),
   one("RUNWAY", "2026-10-02", 14.17, "Runway", "463", "REVERSECHARGES", "Runway standard plan"),
   one("EMMSEP", "2026-10-02", 273.60, "Emmanuel Amoakohene", "320", "NONE", "September"),
-  // SEVSEP / SEVWEB: Sevitha September pay and website (paid on to the designer) wait for the accountant.
+  // SEVSEP: Sevitha September pay waits for the accountant.
+  one("SEVWEB", "2026-10-02", 214, "Sevitha", "400", "NONE", "Website graphic designer"),
   one("ELEVEN", "2026-10-07", 137.34, "Elevenlabs", "463", "REVERSECHARGES", "ElevenLabs"),
   one("WIX", "2026-10-09", 61.86, "Wix com", "463", "NONE", "Wix"),
 ];
