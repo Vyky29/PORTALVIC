@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15-v449",
+  "version": "2026-10-15-v450",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2190,17 +2190,18 @@
           }
         },
         {
-          "id": "ealing_12_months",
-          "title": "Ealing pays the year invoice in 12 monthly payments",
-          "summary": "Ealing gets one year INV-P per child but pays it monthly, 12 times from September to August, at 73% of the weekly price per week. Each invoice plan shows those 12 payments with the date the money lands.",
+          "id": "ealing_13_cycles",
+          "title": "Ealing pays the year invoice in 13 cycles",
+          "summary": "Ealing gets one year INV-P per child but pays it in 13 cycles of 4 weeks (52 weeks, September to early September), at 73% of the weekly price per week. Each invoice plan shows those 13 payments with the date the money should land.",
           "where": "Finance → the Ealing year INV-P (Academic year 2026/27) → payment plan",
           "keywords": [
             "ealing",
-            "12 pagos",
-            "12 months",
-            "mensual",
+            "13 pagos",
+            "13 cycles",
+            "ciclo",
+            "4 weeks",
+            "pay cycle",
             "timetable",
-            "payment timetable",
             "0.7288",
             "remittance",
             "cuanto paga ealing",
@@ -2209,30 +2210,30 @@
             "septiembre"
           ],
           "steps": [
-            "Each Ealing year INV-P has 12 rows, one per month: September 2026 to August 2027. The date is when Ealing puts the money in the bank, from their LAC PV Payment Timetable 2026/27 (September lands 13 Oct, October lands 17 Nov...). April to August 2027 dates are estimated until Ealing sends the next timetable.",
-            "Month amount = weekly rate x weeks in the month (Mondays in that month: 4 or 5). Weekly rate = each weekly session price x 0.7288, rounded to pennies. Example: Steven £50 a week is £36.44 a week, £145.76 in a 4-week month, £182.20 in a 5-week month.",
-            "When the Ealing remittance comes in, match each line to the child by the amount and the number after the slash in Document Number (usually the ClientID in the invoice notes; Tinashe comes as 724579), then mark that month paid.",
-            "A child missing from the remittance keeps that month pending. Chase Ealing with the ClientID."
+            "Each Ealing year INV-P has 13 rows: cycle 1 (07/09 - 04/10/2026) to cycle 13 (09/08 - 05/09/2027). The remittance shows the cycle as Client Ref (from - to). The cycle across 31 March is cut at the financial year end: 5 weeks before, 3 weeks after.",
+            "Cycle amount = weekly rate x weeks in the cycle (4, or 5 and 3 around March). Weekly rate = each weekly session price x 0.7288, rounded to pennies. Example: Steven £50 a week is £36.44 a week, £145.76 a cycle.",
+            "The date on each row is when the money should land: the next run of the Ealing LAC PV Payment Timetable after the cycle ends (cycle 1 landed 12 Oct). Dates after March 2027 are estimated until Ealing sends the next timetable.",
+            "When the remittance comes in, match each line to the child by the amount and the number after the slash (Client Ref; Tinashe comes as 724579), then mark that cycle paid. A child missing from the remittance keeps that cycle pending: chase Ealing with the Client Ref."
           ],
           "tips": [
-            "Ealing buys pro rata: price x 38 term weeks spread over 52 weeks. So they also pay for August, and the August payment lands in mid September of the next school year unless Ealing agrees to settle the balance earlier.",
+            "Ealing buys pro rata: price x 38 term weeks spread over 52 weeks. The last two cycles (mid July to early September) land in mid September, as in 2025/26 when both were paid on 24 Sep, unless Ealing agrees to settle earlier.",
             "52 weeks at the Ealing rate add up to a bit more than an invoice billed on real session dates. The gap is in the invoice notes. Square it with Ealing in summer.",
-            "The CEO month sheet still counts the activity month: the part of September not paid in the September payment shows as Falta and arrives in the holiday months."
+            "The CEO month sheet still counts the activity month: the part of September not paid in cycle 1 shows as Falta and arrives in the holiday cycles."
           ],
           "es": {
-            "title": "Ealing paga la factura del ano en 12 pagos mensuales",
-            "summary": "Ealing recibe una INV-P anual por nino pero la paga cada mes, 12 veces de septiembre a agosto, al 73% del precio semanal por semana. El plan de cada factura muestra esos 12 pagos con el dia en que entra el dinero.",
+            "title": "Ealing paga la factura del ano en 13 ciclos",
+            "summary": "Ealing recibe una INV-P anual por nino pero la paga en 13 ciclos de 4 semanas (52 semanas, de septiembre a principios del septiembre siguiente), al 73% del precio semanal por semana. El plan de cada factura muestra esos 13 pagos con el dia en que deberia entrar el dinero.",
             "where": "Finance → la INV-P anual de Ealing (Academic year 2026/27) → plan de pagos",
             "steps": [
-              "Cada INV-P anual de Ealing tiene 12 filas, una por mes: de September 2026 a August 2027. La fecha es cuando Ealing mete el dinero en el banco, segun su LAC PV Payment Timetable 2026/27 (septiembre entra el 13 oct, octubre el 17 nov...). Las fechas de abril a agosto 2027 son estimadas hasta que Ealing mande el siguiente calendario.",
-              "Importe del mes = precio semanal Ealing x semanas del mes (lunes de ese mes: 4 o 5). Precio semanal Ealing = precio de cada sesion semanal x 0.7288, redondeado a peniques. Ejemplo: Steven £50 a la semana son £36.44 a la semana, £145.76 en un mes de 4 semanas y £182.20 en uno de 5.",
-              "Cuando llegue el aviso de pago de Ealing, empareja cada linea con el nino por el importe y el numero tras la barra del Document Number (suele ser el ClientID de las notas; Tinashe sale como 724579), y marca ese mes como pagado.",
-              "Si falta un nino en el aviso, ese mes sigue pendiente. Reclama a Ealing con el ClientID."
+              "Cada INV-P anual de Ealing tiene 13 filas: ciclo 1 (07/09 - 04/10/2026) hasta ciclo 13 (09/08 - 05/09/2027). El aviso de pago muestra el ciclo en Client Ref (desde - hasta). El ciclo que cruza el 31 de marzo se corta en el cierre fiscal: 5 semanas antes y 3 despues.",
+              "Importe del ciclo = precio semanal Ealing x semanas del ciclo (4, o 5 y 3 alrededor de marzo). Precio semanal Ealing = precio de cada sesion semanal x 0.7288, redondeado a peniques. Ejemplo: Steven £50 a la semana son £36.44 a la semana, £145.76 por ciclo.",
+              "La fecha de cada fila es cuando deberia entrar el dinero: la siguiente tanda del LAC PV Payment Timetable de Ealing despues de acabar el ciclo (el ciclo 1 entro el 12 oct). Las fechas despues de marzo 2027 son estimadas hasta que Ealing mande el siguiente calendario.",
+              "Cuando llegue el aviso de pago, empareja cada linea con el nino por el importe y el numero tras la barra (Client Ref; Tinashe sale como 724579), y marca ese ciclo como pagado. Si falta un nino, ese ciclo sigue pendiente: reclama a Ealing con el Client Ref."
             ],
             "tips": [
-              "Ealing compra pro rata: precio x 38 semanas de curso repartido en 52 semanas. Por eso tambien paga agosto, y el pago de agosto entra a mediados de septiembre del curso siguiente salvo que Ealing acepte liquidar antes.",
+              "Ealing compra pro rata: precio x 38 semanas de curso repartido en 52 semanas. Los dos ultimos ciclos (mediados de julio a principios de septiembre) entran a mediados de septiembre, como en 2025/26 que se pagaron los dos el 24 sep, salvo que Ealing acepte liquidar antes.",
               "52 semanas al precio Ealing suman algo mas que una factura hecha con las fechas reales. La diferencia esta en las notas de la factura. Se cuadra con Ealing en verano.",
-              "La hoja CEO del mes sigue contando el mes de actividad: la parte de septiembre que no entra en el pago de septiembre sale como Falta y llega en los meses de vacaciones."
+              "La hoja CEO del mes sigue contando el mes de actividad: la parte de septiembre que no entra en el ciclo 1 sale como Falta y llega en los ciclos de vacaciones."
             ]
           }
         },
