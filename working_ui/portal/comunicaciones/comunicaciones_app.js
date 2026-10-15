@@ -810,17 +810,13 @@ function bubbleHtml(m) {
     who += " · sent by " + esc(m.performed_by_name);
   }
   let body = "";
-  if (m.message_type === "image" && m.storage_path && isHeicLike(m.mime_type, m.file_name)) {
+  if (m.message_type === "image" && m.storage_path) {
     body =
       '<a class="comms-file" data-file="' +
       esc(m.storage_path) +
-      '" href="#"><span class="comms-file-fallback">Photo (HEIC) - tap to open</span></a>' +
-      attachmentCaptionHtml(m);
-  } else if (m.message_type === "image" && m.storage_path) {
-    body =
-      '<a class="comms-file" data-file="' +
-      esc(m.storage_path) +
-      '" href="#"><img alt="" data-file-img="' +
+      '"' +
+      (isHeicLike(m.mime_type, m.file_name) ? ' data-heic="1"' : "") +
+      ' href="#"><img alt="" loading="lazy" data-file-img="' +
       esc(m.storage_path) +
       '" /><span class="comms-file-fallback" hidden>Open photo</span></a>' +
       attachmentCaptionHtml(m);
@@ -946,6 +942,23 @@ function scrollCommsThreadToEnd() {
   });
 }
 
+const signedUrlCache = new Map();
+const SIGNED_URL_TTL_S = 3600;
+
+/** Reuse signed URLs across thread re-renders (realtime refresh repaints every bubble). */
+async function signedFileUrl(c, path, transform) {
+  const key = path + "|" + (transform ? transform.width + "x" + transform.quality : "orig");
+  const hit = signedUrlCache.get(key);
+  if (hit && hit.exp > Date.now()) return hit.url;
+  const res = await c.storage
+    .from("communication-files")
+    .createSignedUrl(path, SIGNED_URL_TTL_S, transform ? { transform: transform } : undefined);
+  const url = res && res.data && res.data.signedUrl;
+  if (!url) return "";
+  signedUrlCache.set(key, { url: url, exp: Date.now() + (SIGNED_URL_TTL_S - 300) * 1000 });
+  return url;
+}
+
 async function hydrateFiles(root) {
   const c = client();
   if (!c) return;
@@ -953,7 +966,11 @@ async function hydrateFiles(root) {
   for (const a of nodes) {
     const path = a.getAttribute("data-file");
     try {
-      const { data } = await c.storage.from("communication-files").createSignedUrl(path, 3600);
+      const img = a.tagName === "AUDIO" ? null : a.querySelector("[data-file-img]");
+      const heic = a.getAttribute("data-heic") === "1";
+      /* HEIC: the server renders JPEG / WebP so every browser can open it. */
+      const full = await signedFileUrl(c, path, heic ? { width: 2000, quality: 82 } : null);
+      const data = full ? { signedUrl: full } : null;
       if (data && data.signedUrl) {
         if (a.tagName === "AUDIO") {
           a.src = data.signedUrl;
@@ -961,14 +978,15 @@ async function hydrateFiles(root) {
           a.href = data.signedUrl;
           a.target = "_blank";
           a.rel = "noopener";
-          const img = a.querySelector("[data-file-img]");
           if (img) {
             img.addEventListener("error", function () {
               img.hidden = true;
               const fb = a.querySelector(".comms-file-fallback");
               if (fb) fb.hidden = false;
             });
-            img.src = data.signedUrl;
+            /* Bubble shows a small server thumbnail, not the full camera photo. */
+            const thumb = await signedFileUrl(c, path, { width: 480, quality: 75 });
+            img.src = thumb || data.signedUrl;
           }
         }
       }
@@ -1431,7 +1449,7 @@ async function sendMessage(ev) {
       try {
         file = await heicFileToJpeg(file);
       } catch (_e) {
-        /* Browser cannot decode HEIC: send the original (shown as a tap-to-open photo). */
+        /* Browser cannot decode HEIC: send the original; comms-photo-normalize converts it. */
       }
     }
     if (file) {
@@ -1439,6 +1457,7 @@ async function sendMessage(ev) {
       mime = String(file.type || "application/octet-stream")
         .split(";")[0]
         .trim();
+      if (!mime.startsWith("image/") && isHeicLike(mime, file.name)) mime = "image/heic";
       if (!mimeAllowed(mime)) {
         throw new Error("This file type is not allowed.");
       }
@@ -1463,6 +1482,13 @@ async function sendMessage(ev) {
       p_file_name: name,
       p_file_size: size,
     });
+    if (path && type === "image" && isHeicLike(mime, name)) {
+      try {
+        await client().functions.invoke("comms-photo-normalize", { body: { storage_path: path } });
+      } catch (_e) {
+        /* Viewers still get a server-rendered copy of the HEIC. */
+      }
+    }
     $("commsDraft").value = "";
     state.pendingFile = null;
     paintAttachButton();
