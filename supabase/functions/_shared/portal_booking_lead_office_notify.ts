@@ -8,7 +8,12 @@ import {
   sendEmailWithAttachmentViaSmtp,
   sendParentEmailViaSmtp,
 } from "./portal_parent_messaging.ts";
-import { bookingPlaceSummary, sessionBlockEmailText } from "./portal_booking_context.ts";
+import {
+  formatBookingClockRange,
+  formatBookingDateLabel,
+  venueEmailLabel,
+  weekdayFromIso,
+} from "./portal_booking_context.ts";
 import { adminPushOpenBase } from "./portal_webpush_util.ts";
 import {
   suggestedTransferReference,
@@ -185,7 +190,7 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
   leadId?: string | null;
   slotHeld?: boolean;
   bookingSummary?: string | null;
-  /** Requested place, shown as Service / Date / Venue / Instructor lines. */
+  /** Requested place: service, then day/date/time, then venue. */
   place?: {
     service?: string | null;
     venue?: string | null;
@@ -213,30 +218,20 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
   const isExistingShort = !!opts.existingClient ||
     bookingSummary.toUpperCase().includes("EXISTING CLIENT");
   const place = opts.place || null;
-  const placeBlock = place
-    ? sessionBlockEmailText({
-      service: place.service,
-      venue: place.venue,
-      day: place.day,
-      dateIso: place.dateIso,
-      time: place.time,
-      instructor: place.instructor,
-    })
-    : null;
-  const placeOneLine = place
-    ? bookingPlaceSummary({
-      service: place.service,
-      venue: place.venue,
-      day: place.day,
-      dateIso: place.dateIso,
-      time: place.time,
-      trial: place.trial,
-    })
-    : null;
-  const holdLine = opts.slotHeld
-    ? "The place is held for 30 minutes. It is confirmed when the parent pays, or when you Mark paid."
-    : placeBlock || bookingSummary
-    ? "No place is held yet. It is held when the parent opens the finish-booking link."
+  const placeService = place
+    ? [String(place.service || "").trim(), place.trial ? "trial" : ""].filter(Boolean).join(" ")
+    : "";
+  const placeDate = place ? formatBookingDateLabel(place.dateIso) : null;
+  const placeWhen = place
+    ? [
+      [String(place.day || "").trim() || weekdayFromIso(place.dateIso), placeDate].filter(Boolean).join(", "),
+      formatBookingClockRange(place.time),
+    ].filter(Boolean).join(", ")
+    : "";
+  const placeVenue = place ? venueEmailLabel(place.venue) : "";
+  const placeShortDate = place
+    ? [weekdayFromIso(place.dateIso).slice(0, 3), placeDate ? placeDate.replace(/\s\d{4}$/, "") : ""]
+      .filter(Boolean).join(" ")
     : "";
   const reviewUrl = registrationReviewUrl();
   const pdfName =
@@ -246,46 +241,29 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
   const smtp = readParentNotifySmtpConfig();
   const tos = officeNotifyEmails();
   if (smtp && tos.length) {
-    const subjectPlace = placeOneLine || bookingSummary;
-    const subject = subjectPlace
-      ? `${formLabel} · ${participant} (${parent}) · ${subjectPlace}`
-      : `${formLabel} submitted · ${participant} (${parent})`;
+    const headline = isExistingShort
+      ? "New place request"
+      : formType === "climbing_registration"
+      ? "New climbing registration"
+      : "New registration";
+    const subject = [headline, participant, placeService, placeShortDate].filter(Boolean).join(" · ");
     const lines = [
-      isExistingShort
-        ? `${parent} asked for a new place for ${participant}. They are already a client, so the form is already on file.`
-        : `${parent} sent the ${formLabel.toLowerCase()} form for ${participant}.`,
-      "They can pay now. You do not need to accept the form first.",
+      `${headline}: ${participant}${isExistingShort ? " (already a client)" : ""}`,
+      `Parent: ${parent}`,
       "",
     ];
-    if (placeBlock) {
-      lines.push(placeBlock);
-      lines.push(`Type: ${place?.trial ? "Trial" : "Term"}`);
+    if (placeService) {
+      lines.push(placeService.charAt(0).toUpperCase() + placeService.slice(1));
+      if (placeWhen) lines.push(placeWhen);
+      if (placeVenue) lines.push(placeVenue);
       lines.push("");
     } else if (bookingSummary) {
-      lines.push(`Requested place: ${bookingSummary}`);
-      lines.push("");
-    }
-    lines.push(
-      `Participant: ${participant}`,
-      `Parent: ${parent}`,
-      `Email: ${email || "-"}`,
-      `Phone: ${mobile || "-"}`,
-      "",
-    );
-    if (holdLine) {
-      lines.push(holdLine);
+      lines.push(bookingSummary);
       lines.push("");
     }
     if (reviewUrl) {
       lines.push("REGISTRATION FORMS:");
       lines.push(reviewUrl);
-      lines.push("");
-    } else {
-      lines.push("Admin -> Registered -> Registration forms to open the PDF.");
-      lines.push("");
-    }
-    if (opts.pdfBytes && opts.pdfBytes.length) {
-      lines.push("The form PDF is attached to this email.");
     }
     const bodyText = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
     const html = plainTextToHtml(bodyText);

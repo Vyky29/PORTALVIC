@@ -402,6 +402,7 @@
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="/portal/parent_registration_pdf.js?v=20261015-letterhead"></script>
   <script src="/portal/parent_form_submit.js?v=20260909-slot-hold"></script>
   <script src="/portal/parent_registration_portal.js?v=20260909-sibling-reg"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
@@ -1268,138 +1269,76 @@
       el.removeAttribute('hidden');
     })();
 
-    function fmtDate(iso){
-      if (!iso) return '';
-      var p = iso.split('-');
-      if (p.length !== 3) return iso;
-      return p[2]+'/'+p[1]+'/'+p[0];
-    }
-
-    /* PDF helpers — keep text/photo fully on-page (no clipping / below-the-fold loss). */
-    var PDF_LINE = 5;
-    function pdfEnsureSpace(doc, y, need, M, maxY) {
-      if (y + need <= maxY) return y;
-      doc.addPage();
-      return 18;
-    }
-    function pdfDrawWrapped(doc, text, x, y, maxWidth, lineH, M, maxY) {
-      var lines = doc.splitTextToSize(String(text || ''), Math.max(20, maxWidth));
-      if (!lines.length) return y;
-      for (var i = 0; i < lines.length; i++) {
-        y = pdfEnsureSpace(doc, y, lineH + 1, M, maxY);
-        doc.text(lines[i], x, y);
-        y += lineH;
-      }
-      return y;
-    }
-    function pdfFitImageInBox(doc, dataUrl, boxX, boxY, boxW, boxH) {
-      if (!dataUrl) return;
-      try {
-        var props = doc.getImageProperties(dataUrl);
-        var iw = Number(props.width) || 1;
-        var ih = Number(props.height) || 1;
-        var scale = Math.min(boxW / iw, boxH / ih);
-        var dw = Math.max(1, iw * scale);
-        var dh = Math.max(1, ih * scale);
-        var dx = boxX + (boxW - dw) / 2;
-        var dy = boxY + (boxH - dh) / 2;
-        var imgFmt = dataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
-        doc.addImage(dataUrl, imgFmt, dx, dy, dw, dh);
-      } catch (imgErr) {
-        console.warn(imgErr);
-      }
-    }
-    function addSection(doc, y, title, lines, pageW, M, maxY) {
-      var contentW = pageW - M * 2;
-      y = pdfEnsureSpace(doc, y, 16, M, maxY);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(45, 132, 179);
-      y = pdfDrawWrapped(doc, title, M, y, contentW, 5.5, M, maxY);
-      y += 2;
-      doc.setTextColor(0, 0, 0);
-      lines.forEach(function (row) {
-        var value = row[1] == null ? '' : String(row[1]).trim();
-        if (!value) return;
-        var label = String(row[0] || '').trim();
-        y = pdfEnsureSpace(doc, y, PDF_LINE * 2 + 2, M, maxY);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        y = pdfDrawWrapped(doc, label, M, y, contentW, PDF_LINE, M, maxY);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        y = pdfDrawWrapped(doc, value, M, y, contentW, PDF_LINE, M, maxY);
-        y += 2.5;
-      });
-      return y + 3;
-    }
-    function addParticipantSection(doc, y, lines, photoDataUrl, pageW, M, maxY) {
-      var photoSize = 46;
-      var gap = 8;
-      var hasPhoto = !!photoDataUrl;
-      var textW = hasPhoto ? pageW - M * 2 - photoSize - gap : pageW - M * 2;
-      var photoX = pageW - M - photoSize;
-      y = pdfEnsureSpace(doc, y, (hasPhoto ? photoSize : 8) + 14, M, maxY);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(45, 132, 179);
-      doc.text('Participant', M, y);
-      y += 7;
-
-      var boxY = y - 1;
-      if (hasPhoto) {
-        doc.setDrawColor(45, 132, 179);
-        doc.setLineWidth(0.35);
-        doc.setFillColor(255, 255, 255);
-        doc.rect(photoX, boxY, photoSize, photoSize, 'FD');
-        pdfFitImageInBox(doc, photoDataUrl, photoX + 1.5, boxY + 1.5, photoSize - 3, photoSize - 3);
-      }
-
-      doc.setTextColor(0, 0, 0);
-      var lineY = y;
-      var pageBefore = doc.internal.getNumberOfPages();
-      lines.forEach(function (row) {
-        var value = row[1] == null ? '' : String(row[1]).trim();
-        if (!value) return;
-        var label = String(row[0] || '').trim();
-        /* Keep name/DOB beside photo while still on the first participant page. */
-        var besidePhoto =
-          hasPhoto &&
-          doc.internal.getNumberOfPages() === pageBefore &&
-          lineY < boxY + photoSize - 2;
-        var x = M;
-        var w = besidePhoto ? textW : pageW - M * 2;
-        lineY = pdfEnsureSpace(doc, lineY, PDF_LINE * 2 + 2, M, maxY);
-        if (doc.internal.getNumberOfPages() !== pageBefore) {
-          w = pageW - M * 2;
-        }
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        lineY = pdfDrawWrapped(doc, label, x, lineY, w, PDF_LINE, M, maxY);
-        doc.setFont('helvetica', 'normal');
-        lineY = pdfDrawWrapped(doc, value, x, lineY, w, PDF_LINE, M, maxY);
-        lineY += 2.5;
-      });
-
-      var endY = lineY;
-      if (hasPhoto && doc.internal.getNumberOfPages() === pageBefore) {
-        endY = Math.max(lineY, boxY + photoSize + 4);
-      }
-      return endY + 4;
-    }
-    function pdfStampPageNumbers(doc, M) {
-      var total = doc.internal.getNumberOfPages();
-      var pageH = doc.internal.pageSize.getHeight();
-      var pageW = doc.internal.pageSize.getWidth();
-      for (var p = 1; p <= total; p++) {
-        doc.setPage(p);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(120, 120, 120);
-        doc.text('Page ' + p + ' of ' + total, pageW - M, pageH - 8, { align: 'right' });
-      }
-      doc.setTextColor(0, 0, 0);
+    function registrationPdfData(photoForPdf, ehcpAttached) {
+      var br = bookingRequest;
+      var activity = br ? String(br.activity || br.crash_activity || '').trim() : '';
+      var service = br ? String(br.service_name || br.service || '').trim() : '';
+      return {
+        title: 'Client registration',
+        submittedAt: new Date(),
+        logoDataUrl: pdfBrandLogoDataUrl,
+        photoDataUrl: photoForPdf || null,
+        photoNote: photoForPdf ? '' : 'Photo uploaded separately',
+        participant: {
+          name: val('participant_name'),
+          dobIso: val('participant_dob'),
+          gender: val('participant_gender'),
+          school: val('participant_school')
+        },
+        booking: br ? {
+          service: activity && service.indexOf(activity) < 0 ? service + ' - ' + activity : service,
+          venue: br.venue || '',
+          dateIso: br.date_iso || '',
+          day: br.day || '',
+          time: br.time || '',
+          trial: br.booking_kind === 'trial'
+        } : null,
+        sections: [
+          { title: 'Parent / guardian', rows: [
+            ['Name', val('parent_name')],
+            ['Relationship', radio('relationship')],
+            ['Phone', val('parent_phone')],
+            ['Email', val('parent_email')],
+            ['Address', val('parent_address')],
+            ['Postcode', val('parent_postcode')]
+          ] },
+          { title: 'Medical and support plans', rows: [
+            ['EHCP', radio('ehcp')],
+            ['EHCP details', val('ehcp_details')],
+            ['EHCP upload', ehcpAttached ? 'Attached' : ''],
+            ['Social worker', radio('social_worker')],
+            ['Social worker name', val('social_worker_name')],
+            ['Social worker email', val('social_worker_email')],
+            ['Motivators', val('motivators')],
+            ['Dislikes', val('dislikes')],
+            ['Medication', val('medication')],
+            ['Allergies', val('allergies')],
+            ['Medical conditions', val('medical_conditions')],
+            ['Health / emergency plan', radio('health_plan')],
+            ['Health plan details', val('health_plan_details')]
+          ] },
+          { title: 'Behaviour', rows: [
+            ['Triggers', checks('triggers')],
+            ['Regulation strategies', checks('strategies')],
+            ['Additional notes', val('behaviour_notes')],
+            ['Support when regulated', radio('support_regulated')],
+            ['Support when dysregulated', radio('support_dysregulated')]
+          ] },
+          { title: 'Communication', rows: [
+            ['Expressive communication', checks('expressive_comm')],
+            ['Understands instructions', radio('understand_instructions')],
+            ['Preferred strategies', val('comm_strategies')]
+          ] },
+          { title: 'Independence', rows: [
+            ['Mobility', radio('mobility')],
+            ['Personal care', radio('personal_care')],
+            ['Task engagement', radio('task_engagement')],
+            ['Transitions', radio('transitions')],
+            ['Risk awareness', radio('risk_awareness')],
+            ['Anything else', val('anything_else')]
+          ] }
+        ]
+      };
     }
 
     var pdfBrandLogoDataUrl = null;
@@ -1462,7 +1401,7 @@
       }
 
       var JsPDF = window.jspdf && window.jspdf.jsPDF;
-      if (!JsPDF) {
+      if (!JsPDF || !window.PortalRegistrationPdf) {
         alert('Could not load PDF generator. Check your connection and try again.');
         btn.disabled = false;
         btn.textContent = 'Submit form';
@@ -1470,110 +1409,14 @@
       }
 
       try {
-        var doc = new JsPDF({ unit: 'mm', format: 'a4' });
-        var M = 14;
-        var pageW = doc.internal.pageSize.getWidth();
-        var maxY = doc.internal.pageSize.getHeight() - 14;
-        var y = 14;
-        var logoSize = 24;
-        if (pdfBrandLogoDataUrl) {
-          try {
-            doc.addImage(pdfBrandLogoDataUrl, pdfBrandLogoDataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG', M, y, logoSize, logoSize);
-            y += logoSize + 5;
-          } catch (logoErr) {
-            console.warn(logoErr);
-          }
-        }
-
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(45, 132, 179);
-        y = pdfDrawWrapped(doc, 'ClubSENsational — Client Registration', M, y, pageW - M * 2, 7, M, maxY);
-        y += 4;
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(80, 80, 80);
-        y = pdfDrawWrapped(
-          doc,
-          'Prepared (send only after club confirms): ' + new Date().toLocaleString('en-GB'),
-          M,
-          y,
-          pageW - M * 2,
-          5,
-          M,
-          maxY
+        var ehcpPicked = document.getElementById('ehcp_file');
+        var doc = window.PortalRegistrationPdf.build(
+          JsPDF,
+          registrationPdfData(
+            photoPdfDataUrl || photoDataUrl,
+            !!(ehcpPicked && ehcpPicked.files && ehcpPicked.files[0])
+          )
         );
-        y += 6;
-
-        doc.setTextColor(0, 0, 0);
-        if (bookingRequest) {
-          y = addSection(doc, y, 'Requested booking slot', [
-            ['Service', bookingRequest.service_name || bookingRequest.service || ''],
-            ['Venue', bookingRequest.venue || ''],
-            ['Day', bookingRequest.day || ''],
-            ['Time', bookingRequest.time || ''],
-            ['Activity', bookingRequest.activity || bookingRequest.crash_activity || ''],
-            ['Slot id', bookingRequest.slot_id || '']
-          ], pageW, M, maxY);
-        }
-
-        y = addSection(doc, y, 'Parent / guardian', [
-          ['Name', val('parent_name')],
-          ['Relationship', radio('relationship')],
-          ['Phone', val('parent_phone')],
-          ['Email', val('parent_email')],
-          ['Address', val('parent_address')],
-          ['Postcode', val('parent_postcode')]
-        ], pageW, M, maxY);
-
-        y = addParticipantSection(doc, y, [
-          ['Name', val('participant_name')],
-          ['Date of birth', fmtDate(val('participant_dob'))],
-          ['Gender', val('participant_gender')],
-          ['School / college / residential', val('participant_school')]
-        ], photoPdfDataUrl || photoDataUrl, pageW, M, maxY);
-
-        y = addSection(doc, y, 'Medical & support plans', [
-          ['EHCP', radio('ehcp')],
-          ['EHCP details', val('ehcp_details')],
-          ['EHCP upload', (document.getElementById('ehcp_file') && document.getElementById('ehcp_file').files && document.getElementById('ehcp_file').files[0]) ? 'Attached' : ''],
-          ['Social worker', radio('social_worker')],
-          ['Social worker name', val('social_worker_name')],
-          ['Social worker email', val('social_worker_email')],
-          ['Social worker contact', syncSocialWorkerContactHidden()],
-          ['Motivators', val('motivators')],
-          ['Dislikes', val('dislikes')],
-          ['Medication', val('medication')],
-          ['Allergies', val('allergies')],
-          ['Medical conditions', val('medical_conditions')],
-          ['Health / emergency plan', radio('health_plan')],
-          ['Health plan details', val('health_plan_details')]
-        ], pageW, M, maxY);
-
-        y = addSection(doc, y, 'Behaviour', [
-          ['Triggers', checks('triggers')],
-          ['Regulation strategies', checks('strategies')],
-          ['Additional notes', val('behaviour_notes')],
-          ['Support when regulated', radio('support_regulated')],
-          ['Support when dysregulated', radio('support_dysregulated')]
-        ], pageW, M, maxY);
-
-        y = addSection(doc, y, 'Communication', [
-          ['Expressive communication', checks('expressive_comm')],
-          ['Understands instructions', radio('understand_instructions')],
-          ['Preferred strategies', val('comm_strategies')]
-        ], pageW, M, maxY);
-
-        y = addSection(doc, y, 'Independence', [
-          ['Mobility', radio('mobility')],
-          ['Personal care', radio('personal_care')],
-          ['Task engagement', radio('task_engagement')],
-          ['Transitions', radio('transitions')],
-          ['Risk awareness', radio('risk_awareness')],
-          ['Anything else', val('anything_else')]
-        ], pageW, M, maxY);
-
-        pdfStampPageNumbers(doc, M);
 
         var safeName = (val('participant_name') || 'Participant').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
         var filename = 'ClubSENsational_Registration_' + safeName + '.pdf';
@@ -1674,83 +1517,7 @@
           var code = String((uploadErr && uploadErr.message) || '').toLowerCase();
           if (code !== 'pdf_too_large') throw uploadErr;
           console.warn('[registration] pdf_too_large — rebuilding PDF without embedded photo');
-          var lean = new JsPDF({ unit: 'mm', format: 'a4' });
-          var Lm = 14;
-          var Lw = lean.internal.pageSize.getWidth();
-          var Lmax = lean.internal.pageSize.getHeight() - 14;
-          var Ly = 18;
-          lean.setFont('helvetica', 'bold');
-          lean.setFontSize(14);
-          lean.setTextColor(45, 132, 179);
-          Ly = pdfDrawWrapped(lean, 'ClubSENsational — Client Registration', Lm, Ly, Lw - Lm * 2, 7, Lm, Lmax);
-          Ly += 4;
-          lean.setFont('helvetica', 'normal');
-          lean.setFontSize(9);
-          lean.setTextColor(80, 80, 80);
-          Ly = pdfDrawWrapped(
-            lean,
-            'Photo attached separately (not embedded — kept PDF under upload limit). ' +
-              new Date().toLocaleString('en-GB'),
-            Lm,
-            Ly,
-            Lw - Lm * 2,
-            5,
-            Lm,
-            Lmax
-          );
-          Ly += 6;
-          lean.setTextColor(0, 0, 0);
-          Ly = addSection(lean, Ly, 'Parent / guardian', [
-            ['Name', val('parent_name')],
-            ['Relationship', radio('relationship')],
-            ['Phone', val('parent_phone')],
-            ['Email', val('parent_email')],
-            ['Address', val('parent_address')],
-            ['Postcode', val('parent_postcode')]
-          ], Lw, Lm, Lmax);
-          Ly = addParticipantSection(lean, Ly, [
-            ['Name', val('participant_name')],
-            ['Date of birth', fmtDate(val('participant_dob'))],
-            ['Gender', val('participant_gender')],
-            ['School / college / residential', val('participant_school')]
-          ], null, Lw, Lm, Lmax);
-          Ly = addSection(lean, Ly, 'Medical & support plans', [
-            ['EHCP', radio('ehcp')],
-            ['EHCP details', val('ehcp_details')],
-            ['EHCP upload', ehcpFile ? 'Attached' : ''],
-            ['Social worker', radio('social_worker')],
-            ['Social worker name', val('social_worker_name')],
-            ['Social worker email', val('social_worker_email')],
-            ['Social worker contact', syncSocialWorkerContactHidden()],
-            ['Motivators', val('motivators')],
-            ['Dislikes', val('dislikes')],
-            ['Medication', val('medication')],
-            ['Allergies', val('allergies')],
-            ['Medical conditions', val('medical_conditions')],
-            ['Health / emergency plan', radio('health_plan')],
-            ['Health plan details', val('health_plan_details')]
-          ], Lw, Lm, Lmax);
-          Ly = addSection(lean, Ly, 'Behaviour', [
-            ['Triggers', checks('triggers')],
-            ['Regulation strategies', checks('strategies')],
-            ['Additional notes', val('behaviour_notes')],
-            ['Support when regulated', radio('support_regulated')],
-            ['Support when dysregulated', radio('support_dysregulated')]
-          ], Lw, Lm, Lmax);
-          Ly = addSection(lean, Ly, 'Communication', [
-            ['Expressive communication', checks('expressive_comm')],
-            ['Understands instructions', radio('understand_instructions')],
-            ['Preferred strategies', val('comm_strategies')]
-          ], Lw, Lm, Lmax);
-          Ly = addSection(lean, Ly, 'Independence', [
-            ['Mobility', radio('mobility')],
-            ['Personal care', radio('personal_care')],
-            ['Task engagement', radio('task_engagement')],
-            ['Transitions', radio('transitions')],
-            ['Risk awareness', radio('risk_awareness')],
-            ['Anything else', val('anything_else')]
-          ], Lw, Lm, Lmax);
-          pdfStampPageNumbers(lean, Lm);
+          var lean = window.PortalRegistrationPdf.build(JsPDF, registrationPdfData(null, !!ehcpFile));
           doc = lean;
           pdfBlob = lean.output('blob');
           return window.portalSubmitParentForm({
