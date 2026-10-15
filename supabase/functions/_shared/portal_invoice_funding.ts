@@ -178,9 +178,22 @@ export type LaFunderBillTo = {
   adminNote: string | null;
 };
 
+/**
+ * Funder ledger key stamped on office funder INV-Ps, e.g.
+ * office_funder_2627_nhs_month_2026-10_tinashe-nhs → "tinashe-nhs".
+ * One participant can have two funders (Tinashe: Ealing + NHS), so the invoice row wins.
+ */
+export function funderClientKeyFromReadyBy(readyBy: unknown): string {
+  const s = clean(readyBy, 160);
+  const m = /^office_funder_\d{4}_(?:nhs|hf|ealing)_(?:month_\d{4}-\d{2}|year(?:_draft)?)_([a-z0-9-]+)$/i
+    .exec(s);
+  return m ? m[1].toLowerCase() : "";
+}
+
 async function loadLaPaymentRow(
   admin: SupabaseClient,
   displayName: string,
+  funderClientKey?: string | null,
 ): Promise<Record<string, unknown> | null> {
   let paymentRow: Record<string, unknown> | null = null;
 
@@ -196,6 +209,7 @@ async function loadLaPaymentRow(
     if (keyed) paymentRow = keyed as Record<string, unknown>;
   };
 
+  await tryKey(clean(funderClientKey, 80));
   const preferredKey = paymentClientKeyForParticipant(displayName);
   await tryKey(preferredKey);
   /* Sheet keys are often compacted (jackw) while aliases emit hyphenated (jack-w). */
@@ -278,10 +292,16 @@ function profileToBillTo(profile: LaBillToProfile): LaFunderBillTo {
  */
 export async function resolveLaFunderBillTo(
   admin: SupabaseClient,
-  opts: { contactId: string; displayName: string; dobIso?: string | null },
+  opts: {
+    contactId: string;
+    displayName: string;
+    dobIso?: string | null;
+    funderClientKey?: string | null;
+  },
 ): Promise<LaFunderBillTo> {
   const displayName = clean(opts.displayName, 120);
   const contactId = clean(opts.contactId, 120);
+  const funderClientKey = clean(opts.funderClientKey, 80);
 
   let dobIso = opts.dobIso ? String(opts.dobIso).slice(0, 10) : null;
   if (!dobIso && contactId) {
@@ -293,20 +313,22 @@ export async function resolveLaFunderBillTo(
     if (pax?.dob_iso) dobIso = String(pax.dob_iso).slice(0, 10);
   }
 
-  const paymentRow = await loadLaPaymentRow(admin, displayName);
+  const paymentRow = await loadLaPaymentRow(admin, displayName, funderClientKey);
   const data =
     paymentRow?.data && typeof paymentRow.data === "object"
       ? (paymentRow.data as Record<string, unknown>)
       : {};
   const funder = clean(data["Funder"], 120) || clean(data["Funding"], 120);
   const clientKey = clean(paymentRow?.client_key, 80);
+  const keyedToInvoiceFunder = !!funderClientKey && clientKey === funderClientKey && !!funder;
 
   const { data: contact } = await admin
     .from("portal_parent_contacts")
     .select("funding_label")
     .eq("contact_id", contactId)
     .maybeSingle();
-  const fundingLabel = clean(contact?.funding_label, 120);
+  /* The contact label names the participant's main funder; ignore it for a second-funder invoice. */
+  const fundingLabel = keyedToInvoiceFunder ? "" : clean(contact?.funding_label, 120);
 
   /* Joelle Atoui is an NHS referral (2:1 afterschool). The contact label says EHCP funds. */
   const nameKey = displayName.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -374,7 +396,7 @@ export async function resolveLaFunderBillTo(
 
 export async function resolveParticipantInvoiceFunding(
   admin: SupabaseClient,
-  opts: { contactId: string; displayName: string },
+  opts: { contactId: string; displayName: string; funderClientKey?: string | null },
 ): Promise<ParticipantInvoiceFunding> {
   const contactId = clean(opts.contactId, 120);
   const displayName = clean(opts.displayName, 120);
@@ -389,7 +411,7 @@ export async function resolveParticipantInvoiceFunding(
   const fl = fundingLabel.toLowerCase();
 
   /* Sheet first — short names (Eiji / Jack W / Yusef) beat contact funding_label. */
-  const paymentRow = await loadLaPaymentRow(admin, displayName);
+  const paymentRow = await loadLaPaymentRow(admin, displayName, opts.funderClientKey);
 
   if (paymentRow) {
     const ctx = paymentRowToContext(paymentRow);

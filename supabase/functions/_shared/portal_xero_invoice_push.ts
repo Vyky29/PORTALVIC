@@ -8,7 +8,7 @@ import {
   xeroHydrateRefreshFromDb,
   xeroPersistRefreshToDb,
 } from "./xero_oauth_store.ts";
-import { resolveLaFunderBillTo } from "./portal_invoice_funding.ts";
+import { funderClientKeyFromReadyBy, resolveLaFunderBillTo } from "./portal_invoice_funding.ts";
 import { buildXeroPushLines } from "./portal_xero_product_catalog.ts";
 import {
   normalizePaymentSchedule,
@@ -49,7 +49,7 @@ export async function pushPortalInvoiceShareToXero(
   const { data: share, error } = await admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, contact_id, document_id, invoice_number, amount_gbp, due_date, quantity, unit_price_gbp, line_description, line_items, reference_text, vat_mode, xero_invoice_id, created_at, payment_status, payment_method_hint, payment_schedule, notes, share_status",
+      "id, contact_id, document_id, invoice_number, amount_gbp, due_date, quantity, unit_price_gbp, line_description, line_items, reference_text, vat_mode, xero_invoice_id, created_at, payment_status, payment_method_hint, payment_schedule, notes, share_status, ready_by",
     )
     .eq("id", shareId)
     .maybeSingle();
@@ -132,6 +132,7 @@ export async function pushPortalInvoiceShareToXero(
       contactId: cid,
       displayName: paxName,
       dobIso: pax?.dob_iso ? String(pax.dob_iso) : null,
+      funderClientKey: funderClientKeyFromReadyBy(share.ready_by),
     });
     parentName = laBillTo.name;
     parentEmail = laBillTo.paymentEmail;

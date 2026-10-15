@@ -19,6 +19,7 @@ import {
   xeroPersistRefreshToDb,
 } from "../_shared/xero_oauth_store.ts";
 import {
+  funderClientKeyFromReadyBy,
   resolveLaFunderBillTo,
   resolveParticipantInvoiceFunding,
 } from "../_shared/portal_invoice_funding.ts";
@@ -87,7 +88,7 @@ Deno.serve(async (req) => {
   let q = admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, contact_id, invoice_number, amount_gbp, due_date, payment_status, paid_via, xero_invoice_id, xero_payment_id, created_via, vat_mode, line_description, line_items, quantity, unit_price_gbp, reference_text, created_at, document_id, payment_method_hint, payment_schedule, notes",
+      "id, contact_id, invoice_number, amount_gbp, due_date, payment_status, paid_via, xero_invoice_id, xero_payment_id, created_via, vat_mode, line_description, line_items, quantity, unit_price_gbp, reference_text, created_at, document_id, payment_method_hint, payment_schedule, notes, ready_by",
     )
     .is("xero_invoice_id", null)
     .in("created_via", ["portal", "reenrolment"])
@@ -196,6 +197,7 @@ Deno.serve(async (req) => {
       const laBillTo = await resolveLaFunderBillTo(admin, {
         contactId: cid,
         displayName: participantByContact.get(cid) || cid,
+        funderClientKey: funderClientKeyFromReadyBy(share.ready_by),
       });
       parentName = laBillTo.name;
       parentEmail = laBillTo.paymentEmail;

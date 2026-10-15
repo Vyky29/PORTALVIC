@@ -8,6 +8,7 @@ import {
   type PortalInvoiceVatMode,
 } from "./portal_tax_invoice_pdf.ts";
 import {
+  funderClientKeyFromReadyBy,
   resolveLaFunderBillTo,
   resolveParticipantInvoiceFunding,
 } from "./portal_invoice_funding.ts";
@@ -530,8 +531,10 @@ function invoiceDescriptionLines(input: {
       ].filter((x): x is string => x !== null);
     }
     /* NHS: month stays in the top Reference box only.
-     * Body: Client's ID NWL… + Reference = shared PO (XXPRASHERV1). */
+     * Body: Client's ID NWL… + Reference = shared PO (XXPRASHERV1).
+     * Other NHS POs (Tinashe ILA 910006639) keep the funder's own client ID, no NWL prefix. */
     if (input.nhsInvoice) {
+      const nwlPo = !input.poLabel || input.poLabel.toUpperCase() === "XXPRASHERV1";
       const rawLead = descriptionBody.find((s) => s.trim()) ||
         "Structured activity support delivered within a day centre environment for a SEND participant as part of funded provision.";
       const splitAt = rawLead.search(/\s+for a SEND participant\b/i);
@@ -541,7 +544,7 @@ function invoiceDescriptionLines(input: {
       return [
         ...leadLines,
         "",
-        `Client's ID: ${formatNhsClientIdLabel(input.clientIdLabel)}`,
+        `Client's ID: ${nwlPo ? formatNhsClientIdLabel(input.clientIdLabel) : (input.clientIdLabel || "—")}`,
         `Reference: ${input.poLabel || "XXPRASHERV1"}`,
       ];
     }
@@ -981,9 +984,11 @@ export async function regeneratePortalInvoiceSharePdf(
     [participant.first_name, participant.last_name].filter(Boolean).join(" ").trim() ||
     contactId;
 
+  const funderClientKey = funderClientKeyFromReadyBy(share.ready_by);
   const funding = await resolveParticipantInvoiceFunding(admin, {
     contactId,
     displayName,
+    funderClientKey,
   });
   const storedVat = clean(share.vat_mode, 20).toLowerCase();
   // Prefer live funding when DP/LA is exempt — corrects stale vat_20 on Direct Payment shares.
@@ -1000,7 +1005,7 @@ export async function regeneratePortalInvoiceSharePdf(
   let billToLines: string[];
   let laAdminNote: string | null = null;
   if (hintForBillTo === "la_funded") {
-    const laBillTo = await resolveLaFunderBillTo(admin, { contactId, displayName });
+    const laBillTo = await resolveLaFunderBillTo(admin, { contactId, displayName, funderClientKey });
     billToName = laBillTo.name;
     billToLines = laBillTo.lines;
     laAdminNote = laBillTo.adminNote;
