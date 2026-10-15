@@ -3022,8 +3022,8 @@
     /* Trial Sun 13 Sep · Alex · 12–1 (Places + Overview). Later Sundays stay open via trialDate. */
     { staff: "ALEX", name: "Muhammad", time: "12 to 1", trial: true, trialDate: "2026-09-13" },
     { staff: "ALEX", name: "Rodin", time: "1 to 2" },
-    /* Sun 2-3 and 3-4 stay HOLD WAITLIST on Places (same office hold as Elia Tue/Thu).
-       Instructors see No participant, not a child, and do not owe feedback. */
+    /* Sun 2-3 Alex is open on Places (bookable). Carlos 2-3 and both 3-4 stay
+       HOLD WAITLIST. Instructors see No participant and do not owe feedback. */
     { staff: "ALEX", name: "No participant", time: "2 to 3" },
     { staff: "ALEX", name: "No participant", time: "3 to 4" },
     { staff: "CARLOS", name: "Hazem", time: "10 to 11" },
