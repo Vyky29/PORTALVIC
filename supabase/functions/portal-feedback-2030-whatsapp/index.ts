@@ -38,30 +38,20 @@ import {
 import {
   applyFeedback2030BoardPolicy,
   applyScheduleOverridesToFeedback2030Slots,
-  datedFallbackSlots,
   dropSlotsForUnavailableStaff,
   dropStandingInstructorWhenRosterHasSeat,
   feedbackRingAlreadySentToday,
-  FEEDBACK_2030_MADRE_TERM_KEYS,
-  mergeFeedback2030Slots,
-  preferRosterOverMadreGhosts,
   outstandingByStaff,
   resolveProfileForStaffKey,
   scrubFadiOffDayCentreSlots,
-  slotsFromCapacityChainOccupants,
-  slotsFromMadre,
   slotsFromRosterRows,
   staffSkipTueThuOfficeHoldFeedback,
   type Feedback2030KeyRow,
-  type Feedback2030OccupantSlot,
   type Feedback2030OverrideRow,
   type Feedback2030Row,
   type Feedback2030StaffDebt,
   type Feedback2030UnavailabilityRow,
 } from "../_shared/portal_feedback_2030_match.ts";
-import standingOccupants from "../_shared/portal_capacity_chain_standing_occupants.json" with {
-  type: "json",
-};
 
 const DEDUPE_TABLE = "portal_feedback_2030_wa_sent";
 /** Staff app host (Vercel). Override with PORTAL_STAFF_DASHBOARD_URL if needed. */
@@ -490,21 +480,6 @@ Deno.serve(async (req) => {
       .is("session_date", null)
       .ilike("day", weekday);
 
-    let madreDoc = null;
-    let madreTermKey = "";
-    for (const termKey of FEEDBACK_2030_MADRE_TERM_KEYS) {
-      const { data: madreRow } = await admin
-        .from("portal_madre_document")
-        .select("term_key, document")
-        .eq("term_key", termKey)
-        .maybeSingle();
-      if (madreRow?.document) {
-        madreDoc = madreRow.document;
-        madreTermKey = String(madreRow.term_key || termKey);
-        break;
-      }
-    }
-
     const { data: overrideRows } = await admin
       .from("schedule_overrides")
       .select(
@@ -517,34 +492,15 @@ Deno.serve(async (req) => {
       .select("name_key, staff_name")
       .eq("off_date", dayIso);
 
-    /* B1b/B1c: roster first; capacity-chain occupants gap-fill when roster thin;
-     * dated fallback + MADRE last. First list in mergeFeedback2030Slots wins. */
+    /* Nag from the live roster only. Occupants and MADRE were putting the
+       standing instructor back on a seat that day's board had already moved,
+       and inventing seats nobody worked. Dated row wins over the template. */
     const rosterSlots = slotsFromRosterRows(
       [...(datedRoster || []), ...(templateRoster || [])],
       dayIso,
     );
-    const occupantsSlots = slotsFromCapacityChainOccupants(
-      (standingOccupants as { bySlotId?: Record<string, Feedback2030OccupantSlot> })?.bySlotId,
-      dayIso,
-    );
-    /* Today's Day Centre board already names the kids. MADRE autumn standing
-     * (July week) still has the old Monday book, so it was gap-filling Timi
-     * onto Raul after the 5 Oct board had moved Timi off him. */
-    let madreSlots = preferRosterOverMadreGhosts(
-      rosterSlots,
-      slotsFromMadre(madreDoc, dayIso),
-    );
-    const occupantsHasDayCentre = occupantsSlots.some((s) => /day centre/i.test(String(s.service || "")));
-    if (occupantsHasDayCentre) {
-      madreSlots = madreSlots.filter((s) => !/day centre/i.test(String(s.service || "")));
-    }
     let slots = dropStandingInstructorWhenRosterHasSeat(
-      mergeFeedback2030Slots([
-        rosterSlots,
-        occupantsSlots,
-        datedFallbackSlots(dayIso),
-        madreSlots,
-      ]),
+      rosterSlots,
       rosterSlots,
     );
     slots = scrubFadiOffDayCentreSlots(slots, dayIso);
@@ -595,12 +551,11 @@ Deno.serve(async (req) => {
       ),
       staffIdByKey,
     });
-    return { slots, debts, madreTermKey, profiles: profiles || [] };
+    return { slots, debts, profiles: profiles || [] };
   }
 
   const todayPack = await outstandingDebtsForIso(iso);
   let slots = todayPack.slots;
-  let madreTermKey = todayPack.madreTermKey;
   const profiles = todayPack.profiles;
   const debtDays = [iso];
   const debtLists = [todayPack.debts];
@@ -665,7 +620,6 @@ Deno.serve(async (req) => {
       wave,
       shiftDate: iso,
       debtDays,
-      madreTermKey: madreTermKey || null,
       slotCount: slots.length,
       targets: targets.map((t) => ({
         username: t.username,
@@ -673,6 +627,12 @@ Deno.serve(async (req) => {
         pending: t.pending,
         sample: t.sample,
         hasPhone: !!t.phone,
+      })),
+      openDebts: debts.map((d) => ({
+        staff: d.staffLabel,
+        n: d.pending,
+        sample: d.sample,
+        day: d.openIso || iso,
       })),
     });
   }

@@ -1,6 +1,7 @@
 /** Outstanding session-feedback units for the 20:30 WhatsApp nudge. */
 
 import {
+  feedbackAttendanceIsAbsent,
   isBespokeSharedService,
   isDayCentreService,
   rosterClientsMatch,
@@ -1591,7 +1592,16 @@ export function slotIsResolved(
     if (!clientsClose(slot.client, String(fb.client_name || ""))) {
       if (!keyTouchesClient(String(fb.portal_session_key || ""), slot.client)) continue;
     }
+    if (feedbackAttendanceIsAbsent(fb.attendance)) return true;
     if (dc || feedbackClearsSharedStaffUnit(slot, fb)) return true;
+    const pk = String(fb.portal_session_key || "");
+    const keyHm = hmFromFeedbackKey(pk);
+    const timeFits = !keyHm ||
+      aquaticTimesExactOr12h(slot.time, keyHm) ||
+      aquaticKeyInsideSlot(slot.time, keyHm);
+    /* One submit for that child at that time is enough. Do not also ask
+       the standing instructor after a cover, or anyone, has already sent it. */
+    if (timeFits) return true;
     const who = String(fb.completed_by_name || "");
     if (who && namesMatchInstructor(who, slot.staff)) return true;
   }
