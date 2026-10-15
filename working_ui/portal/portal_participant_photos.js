@@ -309,21 +309,68 @@
    * Do not copy it onto a roster spelling alias (yusuf -> yusuf_ah) or a bare
    * first name. That showed Yusuf Harzi on Yusuf Ah, and Ayaan Towle on Ayaan.
    */
+  /** Same file in Storage. A later write without ?v= must not put the cached old face back. */
+  function participantAvatarStorageKey(url) {
+    var m = String(url || "").match(/participant-avatars\/([^?]+)/i);
+    if (!m) return "";
+    try {
+      return decodeURIComponent(m[1]);
+    } catch (_) {
+      return m[1];
+    }
+  }
+
+  function keepNewerParticipantAvatarUrl(prev, next) {
+    if (!prev) return next;
+    if (!next) return prev;
+    var sameFile =
+      participantAvatarStorageKey(prev) &&
+      participantAvatarStorageKey(prev) === participantAvatarStorageKey(next);
+    if (sameFile && /[?&]v=/.test(prev) && !/[?&]v=/.test(next)) return prev;
+    return next;
+  }
+
   function portalRegisterParticipantStorageAvatar(contactId, displayName, url) {
     url = normalizePhotoUrl(String(url || "").trim());
     if (!url || !/^https?:\/\//i.test(url)) return;
     var id = String(contactId || "").trim();
-    if (id) PARTICIPANT_STORAGE_AVATARS.byId[id] = url;
+    if (id) {
+      PARTICIPANT_STORAGE_AVATARS.byId[id] = keepNewerParticipantAvatarUrl(
+        PARTICIPANT_STORAGE_AVATARS.byId[id],
+        url
+      );
+      url = PARTICIPANT_STORAGE_AVATARS.byId[id];
+    }
     var canon = canonicalAvatarId(displayName);
-    if (canon) PARTICIPANT_STORAGE_AVATARS.byId[canon] = url;
+    if (canon) {
+      PARTICIPANT_STORAGE_AVATARS.byId[canon] = keepNewerParticipantAvatarUrl(
+        PARTICIPANT_STORAGE_AVATARS.byId[canon],
+        url
+      );
+    }
     var nk = storageAvatarKey(displayName);
-    if (nk) PARTICIPANT_STORAGE_AVATARS.byName[nk] = url;
+    if (nk) {
+      PARTICIPANT_STORAGE_AVATARS.byName[nk] = keepNewerParticipantAvatarUrl(
+        PARTICIPANT_STORAGE_AVATARS.byName[nk],
+        url
+      );
+    }
     var rawSlug = nk ? nk.replace(/\s+/g, "_") : "";
-    if (rawSlug) PARTICIPANT_STORAGE_AVATARS.byId[rawSlug] = url;
+    if (rawSlug) {
+      PARTICIPANT_STORAGE_AVATARS.byId[rawSlug] = keepNewerParticipantAvatarUrl(
+        PARTICIPANT_STORAGE_AVATARS.byId[rawSlug],
+        url
+      );
+    }
     var parts = nk ? nk.split(/\s+/).filter(Boolean) : [];
     if (parts.length >= 2) {
       var short2 = parts[0] + " " + parts[1].slice(0, 2);
-      if (short2 !== nk) PARTICIPANT_STORAGE_AVATARS.byName[short2] = url;
+      if (short2 !== nk) {
+        PARTICIPANT_STORAGE_AVATARS.byName[short2] = keepNewerParticipantAvatarUrl(
+          PARTICIPANT_STORAGE_AVATARS.byName[short2],
+          url
+        );
+      }
     }
   }
 
@@ -413,11 +460,20 @@
           var nk = storageAvatarKey(r.display_name);
           var parts = nk.split(" ").filter(Boolean);
           if (parts.length >= 2 && bareFirstNameIsSafe(r.display_name, parts[0], firstCount)) {
-            PARTICIPANT_STORAGE_AVATARS.byName[parts[0]] = url;
-            PARTICIPANT_STORAGE_AVATARS.byId[parts[0]] = url;
+            PARTICIPANT_STORAGE_AVATARS.byName[parts[0]] = keepNewerParticipantAvatarUrl(
+              PARTICIPANT_STORAGE_AVATARS.byName[parts[0]],
+              url
+            );
+            PARTICIPANT_STORAGE_AVATARS.byId[parts[0]] = keepNewerParticipantAvatarUrl(
+              PARTICIPANT_STORAGE_AVATARS.byId[parts[0]],
+              url
+            );
           }
         });
         refreshOpenParticipantPhotos();
+        try {
+          if (typeof global.__portalAdminRenderAlerts === "function") global.__portalAdminRenderAlerts();
+        } catch (_) {}
         return true;
       })
       .catch(function () {
@@ -435,7 +491,7 @@
   }
 
   function portalParticipantStorageAvatarUrl(contactId, displayName) {
-    var id = String(contactId || "").trim();
+    var id = frameContactKey(contactId);
     if (id && PARTICIPANT_STORAGE_AVATARS.byId[id]) return PARTICIPANT_STORAGE_AVATARS.byId[id];
     var canonId = canonicalAvatarId(id) || canonicalAvatarId(displayName);
     if (canonId && PARTICIPANT_STORAGE_AVATARS.byId[canonId]) {
@@ -712,8 +768,19 @@
       else if (gOpt === "f") wrapClass += " portal-roster-avatar--f";
       else wrapClass += portalParticipantGenderClass(name, "portal-roster-avatar--");
     }
+    var identityCid = frameContactKey(opts.contactId || clientId);
+    var identityAttr =
+      ' data-photo-name="' + esc(name) + '" data-photo-contact="' + esc(identityCid) + '"';
     if (!url) {
-      return '<span class="' + esc(wrapClass) + '" aria-hidden="true">' + initials + "</span>";
+      return (
+        '<span class="' +
+        esc(wrapClass) +
+        '"' +
+        identityAttr +
+        ' aria-hidden="true">' +
+        initials +
+        "</span>"
+      );
     }
     var loadAttr = photoLoadAttr();
     var imgClass = String(opts.imgClass || "portal-roster-avatar__img portal-screenshot-protected").trim();
@@ -721,19 +788,14 @@
     var adjustAttr = "";
     var hiddenAttr = ' aria-hidden="true"';
     if (opts.adjustable) {
-      var cid = frameContactKey(opts.contactId || clientId);
-      adjustAttr =
-        ' data-photo-adjust="1" role="button" tabindex="0" data-photo-contact="' +
-        esc(cid) +
-        '" data-photo-name="' +
-        esc(name) +
-        '" title="Adjust photo"';
+      adjustAttr = ' data-photo-adjust="1" role="button" tabindex="0" title="Adjust photo"';
       hiddenAttr = "";
     }
     return (
       '<span class="' +
       esc(wrapClass) +
       ' portal-roster-avatar--has-photo"' +
+      identityAttr +
       adjustAttr +
       hiddenAttr +
       ">" +
@@ -797,6 +859,46 @@
     root = root || document;
     ctx = ctx || {};
     var esc = typeof ctx.escapeHtml === "function" ? ctx.escapeHtml : defaultEsc;
+
+    function avatarSrcIsStale(current, next) {
+      current = String(current || "");
+      next = String(next || "");
+      if (!next || current === next) return false;
+      var curKey = participantAvatarStorageKey(current);
+      var nextKey = participantAvatarStorageKey(next);
+      if (!curKey && /^https?:\/\//i.test(next)) return true;
+      if (curKey && nextKey && curKey === nextKey) {
+        var curV = (current.match(/[?&]v=([^&]+)/) || [])[1] || "";
+        var nextV = (next.match(/[?&]v=([^&]+)/) || [])[1] || "";
+        return !!(nextV && nextV !== curV);
+      }
+      return curKey !== nextKey;
+    }
+
+    Array.prototype.slice
+      .call(root.querySelectorAll(".portal-roster-avatar[data-photo-name]"))
+      .forEach(function (wrap) {
+        if (!wrap || wrap.classList.contains("portal-roster-avatar--staff")) return;
+        var name = String(wrap.getAttribute("data-photo-name") || "").trim();
+        var cid = String(wrap.getAttribute("data-photo-contact") || "").trim();
+        var url = portalParticipantPhotoUrl(name, "", cid);
+        if (!url || !/^https?:\/\//i.test(url)) return;
+        var img = wrap.querySelector("img");
+        if (!img) {
+          var cls = String(wrap.getAttribute("class") || "portal-roster-avatar");
+          wrap.outerHTML = portalParticipantAvatarInnerHtml(name, cid, {
+            esc: esc,
+            contactId: cid,
+            className: cls.replace(/\s*portal-roster-avatar--has-photo\b/g, " ").trim(),
+            adjustable: wrap.getAttribute("data-photo-adjust") === "1",
+          });
+          return;
+        }
+        var cur = img.getAttribute("src") || "";
+        if (!avatarSrcIsStale(cur, url)) return;
+        img.setAttribute("src", url);
+        wrap.classList.add("portal-roster-avatar--has-photo");
+      });
 
     root.querySelectorAll(".calendar-day-avatar[data-participant-name]").forEach(function (wrap) {
       var name = String(wrap.getAttribute("data-participant-name") || "").trim();

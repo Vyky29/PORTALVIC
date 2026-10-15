@@ -107,7 +107,7 @@
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
   <script src="/portal/admin-portal-parent-contact-edit.js?v=20261001-live-contact"></script>
   <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos-ceo"></script>
-  <script src="/portal/portal_participant_photos.js?v=20261015-avatar-thumbs"></script>
+  <script src="/portal/portal_participant_photos.js?v=20261015-photo-new"></script>
   <script src="/portal/admin-participant-photo-frame.js?v=20261009-photo-front"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
   <script src="/portal/portal_staff_photos.js?v=20261005-expense-face"></script>
@@ -187,7 +187,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261010-bell-chip-colors" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20261015-pax-profile" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20261004-header-order" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -23933,9 +23933,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
       if(!client || typeof client.from !== 'function') return false;
       try{
-        var res = await client.from('portal_participants')
-          .select('contact_id,display_name,first_name,last_name,avatar_storage_path,in_class,on_waiting_list,created_at')
-          .limit(2000);
+        var faceCols = 'contact_id,display_name,first_name,last_name,avatar_storage_path,avatar_updated_at,in_class,on_waiting_list,created_at';
+        var res = await client.from('portal_participants').select(faceCols).limit(2000);
+        if(res.error && /avatar_updated_at/i.test(String(res.error.message || res.error.code || ''))){
+          res = await client.from('portal_participants')
+            .select('contact_id,display_name,first_name,last_name,avatar_storage_path,in_class,on_waiting_list,created_at')
+            .limit(2000);
+        }
         if(res.error || !res.data) return false;
         var byId = Object.create(null);
         var base = String(window.SUPABASE_URL || '').replace(/\/$/, '');
@@ -23946,9 +23950,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var path = String(r.avatar_storage_path || '').trim();
           byId[id] = { contact_id: id, display_name: name, path: path };
           if(path && base && path.indexOf('..') < 0 && typeof portalRegisterParticipantStorageAvatar === 'function'){
-            var url = base + '/storage/v1/object/public/participant-avatars/' + path.split('/').map(function(part){
+            var url = base + '/storage/v1/render/image/public/participant-avatars/' + path.split('/').map(function(part){
               return encodeURIComponent(part);
-            }).join('/');
+            }).join('/') + '?width=480&quality=75';
+            var ver = String(r.avatar_updated_at || '').trim();
+            if(ver) url += '&v=' + encodeURIComponent(ver);
             portalRegisterParticipantStorageAvatar(id, name, url);
           }
         });
@@ -36938,7 +36944,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if(root2){
           portalParentContactEditConfigureOnce();
-          state.openPaxContactId = null;
+          var requestedPaxId = String(state.pendingOpenPaxContactId || '').trim();
+          state.pendingOpenPaxContactId = '';
+          state.openPaxContactId = requestedPaxId || null;
           state.rebuildPaxContactsList = function(){
             var tb = document.querySelector('#paxContactsTbl tbody');
             if(!tb) return;
@@ -36973,12 +36981,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             paxContactsLoadPlaceFlags(),
             paxContactsLoadCancelledServices()
           ]).then(function(results){
-            if(!(results && (results[0] || results[1] || results[2] || results[3] || results[4] || results[5] || results[6] || results[7] || results[8]))) return;
-            if(typeof state.rebuildPaxContactsList === 'function'){
+            var loaded = !!(results && (results[0] || results[1] || results[2] || results[3] || results[4] || results[5] || results[6] || results[7] || results[8]));
+            if(loaded && typeof state.rebuildPaxContactsList === 'function'){
               state.rebuildPaxContactsList();
               if(typeof paxContactsRefreshFilters === 'function') paxContactsRefreshFilters();
-              if(state.openPaxContactId && typeof state.reopenPaxDetail === 'function') state.reopenPaxDetail();
             }
+            if(state.openPaxContactId && typeof state.reopenPaxDetail === 'function') state.reopenPaxDetail();
+            if(typeof window.portalRefreshDashboardParticipantPhotos === 'function'){
+              window.portalRefreshDashboardParticipantPhotos(document);
+            }
+            if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
           });
           var ps = $('paxContactsSearch');
           if(ps) ps.addEventListener('input', paxContactsRefreshFilters);
@@ -37077,6 +37089,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           root2.addEventListener('click', function(ev){
             var tbtn = ev.target.closest('.pax-contacts-workspace [data-c4k-tab]');
             if(tbtn && root2.contains(tbtn)){
+              ev.preventDefault();
+              ev.stopPropagation();
               var wrap = tbtn.closest('.pax-contacts-workspace');
               if(wrap){
                 var tid = tbtn.getAttribute('data-c4k-tab');
@@ -40498,7 +40512,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tab === 'clients'){
         var paxId = String(meta.recordId || '').trim();
         if(paxId && paxId.indexOf('pp-') !== 0 && /^\d+$/.test(paxId)) paxId = 'pp-' + paxId;
-        if(paxId) state.openPaxContactId = paxId;
+        if(paxId){
+          state.pendingOpenPaxContactId = paxId;
+          state.openPaxContactId = paxId;
+        }
         setView('clients');
         return;
       }
@@ -40988,7 +41005,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(target.who === 'staff' && typeof portalStaffAvatarInnerHtml === 'function'){
         html = portalStaffAvatarInnerHtml(target.name, { esc: esc, displayName: target.name, className: cls + ' portal-roster-avatar--staff' });
       }else if(typeof portalParticipantAvatarInnerHtml === 'function'){
-        html = portalParticipantAvatarInnerHtml(target.name, '', { esc: esc, className: cls });
+        var faceCid = String(a && a.recordId || '').replace(/^pp-/i, '').trim();
+        if(!/^\d+$/.test(faceCid)) faceCid = '';
+        html = portalParticipantAvatarInnerHtml(target.name, faceCid, { esc: esc, className: cls, contactId: faceCid });
       }
       if(!html) return '';
       return '<span class="portal-admin-alert-face-slot">'+html+'</span>';

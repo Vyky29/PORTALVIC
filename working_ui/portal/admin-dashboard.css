@@ -526,7 +526,7 @@
       right:0;
       bottom:0;
       left:var(--sidebarLayoutReserve, 260px);
-      z-index:10050;
+      z-index:13060;
       margin:0;
       background:var(--surface,#fff);
       overflow:auto;
