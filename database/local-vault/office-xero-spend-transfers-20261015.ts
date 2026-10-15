@@ -42,7 +42,9 @@ const xdate = (s: string) => {
 if (Deno.args.includes("--accounts")) {
   const a = await fetch(`${XERO_API}/Accounts`, { headers: h });
   for (const x of (a.ok ? (await a.json()).Accounts : []) || []) {
-    if (/interest|suspense|director|sales|nhs/i.test(x.Name)) console.log(`${x.Code} | ${x.Name} | ${x.Type}`);
+    const filter = Deno.args.find((s) => s.startsWith("--match="));
+    const re = new RegExp(filter ? filter.slice(8) : "interest|suspense|director|sales|nhs", "i");
+    if (re.test(x.Name)) console.log(`${x.Code} | ${x.Name} | ${x.Type} | ${x.TaxType || "-"}`);
   }
   Deno.exit(0);
 }
