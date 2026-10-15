@@ -31,6 +31,11 @@ export type PortalXeroPushResult =
   | { ok: true; xero_invoice_id: string; skipped?: boolean }
   | { ok: false; error: string; detail?: string };
 
+/** Ealing year INV-Ps stay Portal-only: Xero gets one EAL-<cycle> invoice per remittance instead. */
+export function portalShareXeroExcluded(notes: unknown): boolean {
+  return /_ealing_year|\[\[ealing:/i.test(String(notes || ""));
+}
+
 export async function pushPortalInvoiceShareToXero(
   admin: SupabaseClient,
   shareId: string,
@@ -62,6 +67,9 @@ export async function pushPortalInvoiceShareToXero(
   }
   if (clean(share.share_status, 20).toLowerCase() === "hidden") {
     return { ok: false, error: "xero_skip_hidden_schedule_copy" };
+  }
+  if (portalShareXeroExcluded(share.notes)) {
+    return { ok: false, error: "xero_skip_ealing_cycle_invoices" };
   }
   const tracker = String(share.notes || "").match(
     /Consolidated payment tracker:\s*([0-9a-f-]{20,80})/i,

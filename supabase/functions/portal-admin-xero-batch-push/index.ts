@@ -24,6 +24,7 @@ import {
   resolveParticipantInvoiceFunding,
 } from "../_shared/portal_invoice_funding.ts";
 import { buildXeroPushLines } from "../_shared/portal_xero_product_catalog.ts";
+import { portalShareXeroExcluded } from "../_shared/portal_xero_invoice_push.ts";
 import {
   normalizePaymentSchedule,
   paymentSchedulePlanShortLabel,
@@ -94,6 +95,7 @@ Deno.serve(async (req) => {
     .in("created_via", ["portal", "reenrolment"])
     .eq("share_status", "ready")
     .in("payment_status", ["paid", "partial"])
+    .or("notes.is.null,notes.not.ilike.*ealing_year*")
     .order("created_at", { ascending: true })
     .limit(limit);
 
@@ -176,6 +178,11 @@ Deno.serve(async (req) => {
     if (tracker && tracker[1] !== shareId) {
       skipped += 1;
       results.push({ id: shareId, ok: true, skipped: "schedule_shadow" });
+      continue;
+    }
+    if (portalShareXeroExcluded(share.notes)) {
+      skipped += 1;
+      results.push({ id: shareId, ok: true, skipped: "ealing_cycle_invoices" });
       continue;
     }
 

@@ -1265,8 +1265,14 @@
     return out.join('');
   }
 
+  /* Ealing year INV-Ps stay Portal-only; Xero gets one EAL-<cycle> invoice per remittance. */
+  function xeroExcluded(inv) {
+    return /_ealing_year|\[\[ealing:/i.test(String((inv && inv.notes) || ''));
+  }
+
   function xeroSummary(inv) {
     var pay = String((inv && inv.payment_status) || '').toLowerCase();
+    if (xeroExcluded(inv) && !inv.xero_invoice_id) return '';
     /* Xero push creates ACCREC awaiting payment — unpaid drafts stay Portal-only. */
     if (pay !== 'paid') return '';
     if (inv.xero_invoice_id) {
@@ -1685,7 +1691,7 @@
       }
       /* Xero chips: full or first-instalment paid, not yet in Xero */
       if (pay !== 'paid' && pay !== 'partial') return;
-      if (inv.xero_invoice_id) return;
+      if (inv.xero_invoice_id || xeroExcluded(inv)) return;
       if (inv.xero_push_status === 'failed') xeroFail += 1;
       else if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') xeroMissing += 1;
     });
@@ -2038,6 +2044,8 @@
             ? ': ' + esc(String(inv.xero_push_error).slice(0, 60))
             : '') +
           '</div>'
+        : xeroExcluded(inv)
+          ? '<div class="muted" style="font-size:11px">Xero: EAL cycle invoices (not pushed)</div>'
         : (inv.payment_status === 'paid' || inv.payment_status === 'partial') &&
             (inv.created_via === 'portal' || inv.created_via === 'reenrolment')
           ? '<div class="muted" style="font-size:11px;color:#92400e">' +

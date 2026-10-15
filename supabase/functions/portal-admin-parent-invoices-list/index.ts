@@ -440,7 +440,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     q = q
       .is("xero_invoice_id", null)
       .in("created_via", ["portal", "reenrolment"])
-      .in("payment_status", ["paid", "partial"]);
+      .in("payment_status", ["paid", "partial"])
+      .or("notes.is.null,notes.not.ilike.*ealing_year*");
   }
 
   const { data: sharesMain, error } = await q;
@@ -1162,7 +1163,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     .select("id", { count: "exact", head: true })
     .is("xero_invoice_id", null)
     .in("payment_status", ["paid", "partial"])
-    .in("created_via", ["portal", "reenrolment"]);
+    .in("created_via", ["portal", "reenrolment"])
+    .or("notes.is.null,notes.not.ilike.*ealing_year*");
 
   const bufferLowContacts = [...bufferByContact.values()].filter((b) => b.is_low).length;
   const laAutoCount = invoices.filter((inv) => inv.created_via === "la_office_auto").length;
