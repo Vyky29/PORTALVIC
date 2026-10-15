@@ -1149,12 +1149,12 @@
     r._officeMonthLines = spec.lines;
   }
 
-  /** Ealing receipts into Afterschool Summer 2026, summed per child. */
+  /** Ealing receipts into Afterschool Summer 2026, summed per child: the six cycles 1 Apr to 6 Sep 2026. */
   var EALING_SUMMER_IN = {
-    samer: 2361.42,
-    steven: 983.88,
+    samer: 2011.58,
+    steven: 838.12,
     tinashe: 11566.24,
-    amar_rai: 3935.52,
+    amar_rai: 3352.48,
     /* £2,470 is Spring + Summer together. The £655.92, the £145.76 lines and the −£1,093.20 do not count. */
     adaam: 2470,
     amaar: 2470,
