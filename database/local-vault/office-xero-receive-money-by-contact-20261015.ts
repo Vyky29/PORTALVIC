@@ -3,6 +3,7 @@
  * (description / account / tax / tracking) to see how the office booked them.
  *
  *   npx -y deno run -A database/local-vault/office-xero-receive-money-by-contact-20261015.ts EALING
+ *   npx -y deno run -A database/local-vault/office-xero-receive-money-by-contact-20261015.ts Raul --type=SPEND
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { XERO_API, xeroAccessToken, xeroAuthHeaders } from "../../supabase/functions/_shared/xero_auth.ts";
@@ -39,8 +40,9 @@ const xdate = (s: string) => {
   const m = /\/Date\((\d+)/.exec(s || "");
   return m ? new Date(Number(m[1])).toISOString().slice(0, 10) : "";
 };
-const name = Deno.args[0] || "EALING";
-const where = encodeURIComponent(`Type=="RECEIVE"&&Contact.Name.Contains("${name}")`);
+const name = Deno.args.find((a) => !a.startsWith("--")) || "EALING";
+const type = (Deno.args.find((a) => a.startsWith("--type=")) || "--type=RECEIVE").slice(7);
+const where = encodeURIComponent(`Type=="${type}"&&Contact.Name.Contains("${name}")`);
 for (let page = 1; page < 10; page++) {
   const r = await fetch(`${XERO_API}/BankTransactions?where=${where}&page=${page}`, { headers: h });
   const list = r.ok ? (await r.json()).BankTransactions || [] : [];
