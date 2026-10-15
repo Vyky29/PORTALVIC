@@ -121,16 +121,18 @@
   var remoteSeen = {};
   /**
    * Meta cold template shells (Utility · en). Only {{1}} is editable.
-   * hello → portal_parent_update_v2 · urgent → portal_parent_urgent_v1
+   * hello → portal_parent_update_v3 · urgent → portal_parent_urgent_v1
    */
   var WA_COLD_TEMPLATES = [
     {
       id: "hello",
-      label: "Hello…",
+      label: "Booking update",
       kind: "contact_update",
-      metaName: "portal_parent_update_v2",
-      prefix: "Hello,\n",
-      suffix: "\nThank you.",
+      metaName: "portal_parent_update_v3",
+      prefix: "Update about your existing ClubSENsational booking\n\n",
+      suffix:
+        "\n\nThis is an automatic message from the system. Please do not reply here.\n\n" +
+        "To reply, use Messages in the parent portal, or call or message 07592 558671.",
     },
     {
       id: "urgent",

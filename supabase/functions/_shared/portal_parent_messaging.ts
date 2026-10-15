@@ -773,7 +773,9 @@ function whatsappTemplateBodyParam(body: string, template: string): string {
 /** Approved spaced templates: four body boxes. Line breaks live in the template, not inside a box. */
 function isSpacedWhatsappTemplate(template: string): boolean {
   const name = String(template || "").trim().toLowerCase();
-  return name === "portal_parent_update_v3" || name === "portal_staff_update_v3";
+  return name === "portal_parent_update_v3" ||
+    name === "portal_staff_update_v3" ||
+    name === "portal_parent_photo_v1";
 }
 
 function stripTemplateClosing(body: string): string {
@@ -890,10 +892,20 @@ export async function sendParentMessageViaWhatsapp(
 
   const to = phoneE164.replace(/^\+/, "");
   const url = `https://graph.facebook.com/v20.0/${phoneId}/messages`;
-  const template = (opts?.templateName ??
+  let template = (opts?.templateName ??
     resolveParentNotifyWhatsappTemplate(opts?.kind ?? "")).trim();
   const preferredLang = (opts?.templateLang ?? Deno.env.get("META_WHATSAPP_TEMPLATE_LANG") ??
     "en").trim() || "en";
+  const photoUrl = normalizePublicPhotoUrl(String(opts?.instructorPhotoUrl || "").trim());
+  const kind = String(opts?.kind || "").trim().toLowerCase();
+  const photoTemplate = (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PHOTO") ?? "").trim();
+  if (
+    photoUrl &&
+    photoTemplate &&
+    parentNotifyKindsWithInstructorPhoto().has(kind)
+  ) {
+    template = photoTemplate;
+  }
 
   if (!template) {
     const contextId = String(opts?.contextWaId || "").trim();
@@ -953,11 +965,10 @@ export async function sendParentMessageViaWhatsapp(
     return { ok: false, error: "whatsapp_empty_template_body" };
   }
 
-  const photoUrl = normalizePublicPhotoUrl(String(opts?.instructorPhotoUrl || "").trim());
-  const kind = String(opts?.kind || "").trim().toLowerCase();
-  const usePhotoHeader = photoUrl &&
-    parentNotifyKindsWithInstructorPhoto().has(kind) &&
-    whatsappPhotoHeaderEnabled();
+  const usePhotoHeader = !!(photoUrl && photoTemplate && template === photoTemplate) ||
+    !!(photoUrl &&
+      parentNotifyKindsWithInstructorPhoto().has(kind) &&
+      whatsappPhotoHeaderEnabled());
 
   let lastErr = "whatsapp_send_failed";
   for (const lang of whatsappTemplateLangCandidates(preferredLang)) {

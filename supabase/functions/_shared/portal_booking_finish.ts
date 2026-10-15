@@ -471,7 +471,10 @@ async function logFinishBookingNotify(
         parent_phone_masked: opts.parentPhone ? maskPhoneForLog(opts.parentPhone) : null,
         wa_template_kind: "contact_update",
         wa_client_body: opts.bodyText.trim()
-          ? `Hello,\n${opts.bodyText.trim()}\nThank you.`
+          ? "Update about your existing ClubSENsational booking\n\n" +
+            opts.bodyText.trim() +
+            "\n\nThis is an automatic message from the system. Please do not reply here.\n\n" +
+            "To reply, use Messages in the parent portal, or call or message 07592 558671."
           : null,
       },
     }).select("id").maybeSingle();

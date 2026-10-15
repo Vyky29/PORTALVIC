@@ -376,7 +376,10 @@ Deno.serve(async (req) => {
   } else if (loggedKind === "contact_update") {
     waTemplateKind = "contact_update";
     waClientBody = bodyForLog.trim()
-      ? `Hello,\n${bodyForLog.trim()}\nThank you.`
+      ? "Update about your existing ClubSENsational booking\n\n" +
+        bodyForLog.trim() +
+        "\n\nThis is an automatic message from the system. Please do not reply here.\n\n" +
+        "To reply, use Messages in the parent portal, or call or message 07592 558671."
       : null;
   }
 
