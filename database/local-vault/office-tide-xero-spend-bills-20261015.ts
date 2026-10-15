@@ -80,10 +80,9 @@ const PLAN: Item[] = [
   one("HELLOPRINT", "2026-09-12", 43.48, "HelloPrint", "461", "INPUT2", "Printing"),
   one("1STFORM", "2026-09-18", 46.80, "1st Formations", "429", "INPUT2", "Company services"),
   one("VERCEL", "2026-09-28", 287.45, "Vercel", "463", "REVERSECHARGES", "Vercel hosting (USD 379.46)"),
-  one("SEVSEP", "2026-09-30", 3862.92, "Sevitha", "320", "NONE", "September"),
   one("RUNWAY", "2026-10-02", 14.17, "Runway", "463", "REVERSECHARGES", "Runway standard plan"),
   one("EMMSEP", "2026-10-02", 273.60, "Emmanuel Amoakohene", "320", "NONE", "September"),
-  one("SEVWEB", "2026-10-02", 214, "Sevitha", "463", "NONE", "Website"),
+  // SEVSEP / SEVWEB: Sevitha September pay and website (paid on to the designer) wait for the accountant.
   one("ELEVEN", "2026-10-07", 137.34, "Elevenlabs", "463", "REVERSECHARGES", "ElevenLabs"),
   one("WIX", "2026-10-09", 61.86, "Wix com", "463", "NONE", "Wix"),
 ];
