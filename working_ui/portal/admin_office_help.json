@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15-v447",
+  "version": "2026-10-15-v448",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2186,6 +2186,48 @@
               "El coste semanal no cambia. Cambian el periodo y la forma de la linea.",
               "El 1-4 sep 2026 van dentro de la primera factura de 28 dias. Son parte de la semana del 1 sep, cobrada como semana entera.",
               "La misma forma si preguntan por una factura NHS de after-school cobrada por sesion dentro de un mes natural: 4 veces el paquete semanal, no una lista de dias sueltos."
+            ]
+          }
+        },
+        {
+          "id": "ealing_13_cycles",
+          "title": "Ealing pays the year invoice in 13 cycles",
+          "summary": "Ealing gets one year INV-P per child but pays every 4 weeks, 13 times a year, at 73% of the weekly price. Each invoice plan shows those 13 payments.",
+          "where": "Finance → the Ealing year INV-P (Academic year 2026/27) → payment plan",
+          "keywords": [
+            "ealing",
+            "13 pagos",
+            "13 cycles",
+            "ciclo",
+            "4 weeks",
+            "0.7288",
+            "remittance",
+            "cuanto paga ealing",
+            "pago ealing"
+          ],
+          "steps": [
+            "Each Ealing year INV-P has 13 rows: Ealing cycle 1 of 13 (7 Sep - 4 Oct 2026) to cycle 13 (9 Aug - 5 Sep 2027). Due date is 4 days after the cycle ends.",
+            "Cycle amount = each weekly session price x 0.7288, rounded to pennies, x 4. Example: Steven £50 a week pays £145.76 per cycle. Tinashe 2 x £345 pays £2,011.52.",
+            "When the Ealing remittance comes in, match each line to the child by the cycle amount and the number after the slash in Document Number (usually the ClientID in the invoice notes; Tinashe comes as 724579), then mark that cycle paid.",
+            "A child missing from the remittance keeps that cycle pending. Chase Ealing with the ClientID."
+          ],
+          "tips": [
+            "Ealing always counts 38 weeks, so 13 cycles add up to more than an invoice billed on real session dates. The gap is in the invoice notes. Square it with Ealing in summer.",
+            "The CEO month sheet still counts the activity month: the part of September not in cycle 1 shows as Falta and arrives in the holiday cycles."
+          ],
+          "es": {
+            "title": "Ealing paga la factura del ano en 13 ciclos",
+            "summary": "Ealing recibe una INV-P anual por nino pero paga cada 4 semanas, 13 veces al ano, al 73% del precio semanal. El plan de cada factura muestra esos 13 pagos.",
+            "where": "Finance → la INV-P anual de Ealing (Academic year 2026/27) → plan de pagos",
+            "steps": [
+              "Cada INV-P anual de Ealing tiene 13 filas: Ealing cycle 1 of 13 (7 sep - 4 oct 2026) hasta el ciclo 13 (9 ago - 5 sep 2027). La fecha es 4 dias despues de acabar el ciclo.",
+              "Importe del ciclo = precio de cada sesion semanal x 0.7288, redondeado a peniques, x 4. Ejemplo: Steven £50 a la semana cobra £145.76 por ciclo. Tinashe 2 x £345 cobra £2,011.52.",
+              "Cuando llegue el aviso de pago de Ealing, empareja cada linea con el nino por el importe del ciclo y el numero tras la barra del Document Number (suele ser el ClientID de las notas; Tinashe sale como 724579), y marca ese ciclo como pagado.",
+              "Si falta un nino en el aviso, ese ciclo sigue pendiente. Reclama a Ealing con el ClientID."
+            ],
+            "tips": [
+              "Ealing siempre cuenta 38 semanas, asi que 13 ciclos suman mas que una factura hecha con las fechas reales. La diferencia esta en las notas de la factura. Se cuadra con Ealing en verano.",
+              "La hoja CEO del mes sigue contando el mes de actividad: la parte de septiembre que no entra en el ciclo 1 sale como Falta y llega en los ciclos de vacaciones."
             ]
           }
         },
