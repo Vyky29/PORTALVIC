@@ -761,10 +761,12 @@ export function flattenWhatsappTemplateBody(body: string, max = WHATSAPP_TEMPLAT
 
 function whatsappTemplateBodyParam(body: string, template: string): string {
   let text = String(body || "").trim();
-  if (template !== "hello_world") {
+  /* v3 keeps the machine close as fixed lines under the boxes.
+     The live Hello template is only "Hello, {{1}} Thank you." so the close
+     has to stay inside the box or the parent never sees it. */
+  if (isSpacedWhatsappTemplate(template)) {
     text = stripApiMachineFooter(text);
   }
-  // Meta template {{1}} rejects newlines/tabs and 5+ consecutive spaces.
   return flattenWhatsappTemplateBody(text, WHATSAPP_TEMPLATE_BODY_MAX);
 }
 

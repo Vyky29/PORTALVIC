@@ -7,6 +7,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 import {
   maskEmailForLog,
   maskPhoneForLog,
+  noPortalReplyFooter,
   normalizeParentPhoneE164,
   normalizePublicPhotoUrl,
   readParentNotifySmtpConfig,
@@ -520,7 +521,7 @@ export async function notifyParentFinishBooking(opts: {
     : " After the office confirms payment we send your Parent Portal PIN.";
   // Put the magic link FIRST so WhatsApp / Meta {{1}} truncation cannot cut the token
   // (chopped ?t=… shows as "This link is not valid").
-  const bodyText = resendHold
+  const payBody = resendHold
     ? `Complete booking now: ${link} ` +
       `Place held 30 minutes for ${participant}` +
       (slot ? ` — ${slot}` : "") +
@@ -535,6 +536,7 @@ export async function notifyParentFinishBooking(opts: {
         (slot ? ` — ${slot}` : "") +
         `. Place held 30 minutes.` +
         pinLine;
+  const bodyText = `${payBody}\n\n${noPortalReplyFooter()}`;
 
   let emailOk = false;
   let waOk = false;
@@ -1159,8 +1161,9 @@ export async function notifyParentTrialBookingCompleted(opts: {
   const bodyText =
     `Booking completed for ${participant}. Trial: ${whenPart}${venuePart}${withWho}. ` +
     (photo.url
-      ? `Please show them the photo so they know who to expect. See you there.`
-      : `See you there.`);
+      ? `Please show them this photo so they know who to expect: ${photo.url} See you there.`
+      : `See you there.`) +
+    `\n\n${noPortalReplyFooter()}`;
 
   let emailOk = false;
   let waResult: { ok: boolean; id?: string; channel?: string; error?: string } = {
