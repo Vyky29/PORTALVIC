@@ -17,18 +17,18 @@ function esc(s) {
 function panelHechos() {
   return `
     <h2>Cifras en uso</h2>
-    <p class="meta">Hoja al 14 oct 2026. Es la misma en todas las hojas en uso. Day Centre es Victor y Raul.</p>
+    <p class="meta">Hoja al 15 oct 2026. Es la misma en todas las hojas en uso. Day Centre es Victor y Raul.</p>
     <div class="kpis">
       <div class="kpi"><div class="v">£212,348.60</div><div class="l">Day Centre, sep 25 a jul 26</div></div>
       <div class="kpi"><div class="v">£196,948.60</div><div class="l">Ya entrado. Fadi el 8 oct, uplift de Timi el 5 oct, de Emanuel el 7 sep</div></div>
       <div class="kpi"><div class="v">£15,400.00</div><div class="l">Falta: Ikram £12,000 y Timi £3,400</div></div>
     </div>
     <div class="kpis">
-      <div class="kpi"><div class="v">£85,314.83</div><div class="l">Remanente ahora</div></div>
-      <div class="kpi"><div class="v">£19,324.41</div><div class="l">Victor por coger ahora</div></div>
-      <div class="kpi"><div class="v">£42,657.42</div><div class="l">Raul por coger ahora</div></div>
+      <div class="kpi"><div class="v">£85,218.83</div><div class="l">Remanente ahora</div></div>
+      <div class="kpi"><div class="v">£19,276.41</div><div class="l">Victor por coger ahora</div></div>
+      <div class="kpi"><div class="v">£42,609.42</div><div class="l">Raul por coger ahora</div></div>
     </div>
-    <div class="note">Victor ya cogio £23,333 (Michelle £15,500, agosto incluido, y £7,833 de julio). Cuando entren los £15,400, Victor coge £27,024.41 y Raul £50,357.42. Tarjetas personales hasta el 31 ago, sin top: Victor £18,204.59, Raul £18,839.90, Javier £10,753.21. Para igualar a Raul: Victor £635.31 y Javier £8,086.69. No se ha dado. Lo personal de septiembre se resta de la mitad de Day Centre en la hoja de septiembre.</div>
+    <div class="note">Victor ya cogio £23,333 (Michelle £15,500, agosto incluido, y £7,833 de julio). Cuando entren los £15,400, Victor coge £26,976.41 y Raul £50,309.42. El alquiler de Acton del 28 y 30 jul aun no esta: falta el importe de la factura. Tarjetas personales hasta el 31 ago, sin top: Victor £18,204.59, Raul £18,839.90, Javier £10,753.21. Para igualar a Raul: Victor £635.31 y Javier £8,086.69. No se ha dado. Lo personal de septiembre se resta de la mitad de Day Centre en la hoja de septiembre.</div>
   `;
 }
 
