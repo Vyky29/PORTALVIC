@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15-v451",
+  "version": "2026-10-15-v452",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2224,7 +2224,8 @@
           "tips": [
             "Ealing buys pro rata: price x 38 term weeks spread over 52 weeks. The last two cycles (mid July to early September) land in mid September, as in 2025/26 when both were paid on 24 Sep, unless Ealing agrees to settle earlier.",
             "52 weeks at the Ealing rate add up to a bit more than an invoice billed on real session dates. The gap is in the invoice notes. Square it with Ealing in summer.",
-            "The CEO month sheet still counts the activity month: the part of September not paid in cycle 1 shows as Falta and arrives in the holiday cycles."
+            "The CEO month sheet still counts the activity month: the part of September not paid in cycle 1 shows as Falta and arrives in the holiday cycles.",
+            "Why no year invoice in Xero: Xero counts the whole invoice as income on the invoice date. Our financial year ends 30 November, so a September year invoice puts the whole Sep-Aug year into the year ending November, and it shows as overdue debt all year. Receive money to 200 books each cycle when it lands."
           ],
           "es": {
             "title": "Ealing paga la factura del ano en 13 ciclos",
@@ -2241,7 +2242,8 @@
             "tips": [
               "Ealing compra pro rata: precio x 38 semanas de curso repartido en 52 semanas. Los dos ultimos ciclos (mediados de julio a principios de septiembre) entran a mediados de septiembre, como en 2025/26 que se pagaron los dos el 24 sep, salvo que Ealing acepte liquidar antes.",
               "52 semanas al precio Ealing suman algo mas que una factura hecha con las fechas reales. La diferencia esta en las notas de la factura. Se cuadra con Ealing en verano.",
-              "La hoja CEO del mes sigue contando el mes de actividad: la parte de septiembre que no entra en el ciclo 1 sale como Falta y llega en los ciclos de vacaciones."
+              "La hoja CEO del mes sigue contando el mes de actividad: la parte de septiembre que no entra en el ciclo 1 sale como Falta y llega en los ciclos de vacaciones.",
+              "Por que no una factura anual en Xero: Xero cuenta toda la factura como ingreso el dia de la factura. Nuestro ano fiscal cierra el 30 de noviembre, asi que una factura anual de septiembre mete todo el curso sep-ago en el ano que cierra en noviembre, y sale como deuda vencida todo el ano. Receive money a la 200 apunta cada ciclo cuando entra."
             ]
           }
         },
