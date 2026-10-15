@@ -175,6 +175,13 @@
       '<div style="overflow-wrap:break-word;min-width:0">' +
       esc(e.notes || e.close_notes || '—') +
       '</div>' +
+      (e.credit_note_pdf_url
+        ? '<a class="btn btn--sm btn--sec" style="margin-top:6px;margin-right:4px" target="_blank" rel="noopener" href="' +
+          esc(e.credit_note_pdf_url) +
+          '">' +
+          esc(e.xero_credit_note_number || 'Credit note') +
+          ' PDF</a>'
+        : '') +
       '<button type="button" class="btn btn--sm btn--ghost" style="margin-top:6px" data-credit-act="edit_note" data-credit-id="' +
       esc(e.id) +
       '">Edit note</button>' +

@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15-v446",
+  "version": "2026-10-15-v447",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2478,7 +2478,11 @@
             "makeup",
             "proof",
             "justificante",
-            "sin prueba"
+            "sin prueba",
+            "credit note",
+            "nota de credito",
+            "pagado dos veces",
+            "funder"
           ],
           "steps": [
             "One day with no instructor: Schedule and Covers, that date, Change on the child's card, then Cancelled. Do not use Absent. Absent is the family missing the session.",
@@ -2510,7 +2514,8 @@
             "Cancel and keep as credit sends WhatsApp and email, and writes an open credit on Family credits and refunds. The parent sees it under Credits and refunds. Cancelled days show on My Calendar. It does not pay money back and it does not ask for bank details.",
             "Cancel and message the refund is the pay-back path. It writes an open refund and asks for the name on the account, sort code, and account number. It does not move the money by itself.",
             "Unpaid later-term invoices that still list the cancelled service lose that line, and the total is recalculated. The open credit is not applied to those drafts. It waits for the next term invoice.",
-            "Choosing Credit on a cancelled session writes the credit and applies it to the next unpaid bank or flexi invoice. If the amount box is left blank, the session price on the invoice is used. If nothing is due, or the family pays by GoCardless, the credit stays Available for the next term. A refund is not applied: Mark refunded after the money has left the bank."
+            "Choosing Credit on a cancelled session writes the credit and applies it to the next unpaid bank or flexi invoice. If the amount box is left blank, the session price on the invoice is used. If nothing is due, or the family pays by GoCardless, the credit stays Available for the next term. A refund is not applied: Mark refunded after the money has left the bank.",
+            "Credit note for a funder (NHS, LA) that paid twice: it is made in Xero on the funder contact and the PDF is stored in the portal. It shows as an open refund on Family credits and refunds, with a CN-... PDF button under Notes. Open the PDF and email it to the funder by hand. Mark refunded when the funder deducts it or the money goes back, with Notify parent left off."
           ],
           "es": {
             "title": "Faltas, reembolsos y creditos",
@@ -2542,7 +2547,8 @@
               "Mark refunded abre un modal: nota de oficina y una casilla opcional Notify parent (WhatsApp + email de que el refund ya se envio). Dejala sin marcar salvo que el dinero ya salio del banco — por defecto solo libro + CN en Xero. El mismo modal sale en participant Payments Mark paid back. Si la factura ya esta pagada en Xero, la nota de credito no se pega encima; la nota autorizada mas el pago del banco es el refund.",
               "Cancel service debe dejar todo cuadrado: anular plazos futuros en la factura del portal, chips cancelados en el hub del padre, roster cortado desde el ancla. Revisa GoCardless / Stripe para que no cobre despues del void. Refund abre un refund. Credit abre un credito, sin tasa y sin datos bancarios.",
               "En la hoja de Cancel service elige Refund o Credit antes de enviar. Credit manda WhatsApp y email diciendo que lo no usado queda como credito para la factura del proximo term. El padre lo ve en Credits and refunds. Refund pide la cuenta para devolver el dinero.",
-              "Al elegir Credit en una sesion cancelada, el credito se escribe y se aplica a la siguiente factura sin pagar por banco o flexi. Si dejas el importe en blanco, se usa el precio de esa sesion en la factura. Si no hay nada que cobrar, o pagan por GoCardless, el credito se queda en Available para el proximo term. Un refund no se aplica: Mark refunded cuando el dinero ya salio del banco."
+              "Al elegir Credit en una sesion cancelada, el credito se escribe y se aplica a la siguiente factura sin pagar por banco o flexi. Si dejas el importe en blanco, se usa el precio de esa sesion en la factura. Si no hay nada que cobrar, o pagan por GoCardless, el credito se queda en Available para el proximo term. Un refund no se aplica: Mark refunded cuando el dinero ya salio del banco.",
+              "Credit note para un funder (NHS, LA) que pago dos veces: se crea en Xero sobre el contacto del funder y el PDF se guarda en el portal. Sale como refund abierto en Family credits and refunds, con un boton CN-... PDF en Notes. Abre el PDF y mandalo a mano por email al funder. Mark refunded cuando el funder lo descuente o se le devuelva el dinero, sin marcar Notify parent."
             ]
           }
         },

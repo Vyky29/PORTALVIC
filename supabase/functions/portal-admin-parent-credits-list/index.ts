@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
   let q = admin
     .from("portal_parent_family_credits")
     .select(
-      "id, parent_person_id, contact_id, participant_display, absence_report_id, kind, status, amount_gbp, currency, service_label, session_date, notes, source, created_at, closed_at, close_notes, updated_at",
+      "id, parent_person_id, contact_id, participant_display, absence_report_id, kind, status, amount_gbp, currency, service_label, session_date, notes, source, created_at, closed_at, close_notes, updated_at, linked_invoice_number, xero_credit_note_number",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -69,6 +69,28 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "list_failed" });
   }
 
+  const entries = (data || []) as Record<string, unknown>[];
+  const cnPaths = [...new Set(
+    entries
+      .map((e) => clean(e.xero_credit_note_number, 80))
+      .filter((n) => /^[A-Za-z0-9._-]+$/.test(n))
+      .map((n) => `credit-notes/${n}.pdf`),
+  )];
+  if (cnPaths.length) {
+    const { data: signed } = await admin.storage
+      .from("documents")
+      .createSignedUrls(cnPaths, 60 * 60);
+    const urlByPath = new Map<string, string>();
+    for (const s of signed || []) {
+      if (s?.path && s?.signedUrl && !s.error) urlByPath.set(String(s.path), String(s.signedUrl));
+    }
+    for (const e of entries) {
+      const n = clean(e.xero_credit_note_number, 80);
+      const url = n ? urlByPath.get(`credit-notes/${n}.pdf`) : null;
+      if (url) e.credit_note_pdf_url = url;
+    }
+  }
+
   const { count: openCredits } = await admin
     .from("portal_parent_family_credits")
     .select("id", { count: "exact", head: true })
@@ -82,7 +104,7 @@ Deno.serve(async (req) => {
 
   return portalAdminJson(200, {
     ok: true,
-    entries: data || [],
+    entries,
     meta: {
       open_credits: openCredits || 0,
       open_refunds: openRefunds || 0,
