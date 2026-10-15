@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15-v458",
+  "version": "2026-10-15-v459",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2890,7 +2890,7 @@
           "tips": [
             "Do not press Enter inside a box. Meta rejects line breaks inside {{1}}.",
             "Parents use portal_parent_update_v3. Staff use portal_staff_update_v3. The chat name and the round logo are not part of the template.",
-            "A photo inside the WhatsApp bubble uses portal_parent_photo_v1 (image header). It sends only after Meta says Approved. Until then the message stays on portal_parent_update_v3 and the photo is a link.",
+            "A photo inside the WhatsApp bubble uses portal_parent_photo_v1 (image header). Meta approved it. Messages that name an instructor send that template. If the photo cannot attach, the same text still goes on portal_parent_update_v3.",
             "If Meta says the category does not match and recommends Marketing, press Cancel. Keep Servicio. Change the first line so it is an update about an existing booking, not a portal introduction."
           ],
           "es": {
@@ -2906,7 +2906,7 @@
             "tips": [
               "No pulses Enter dentro de una caja. Meta rechaza los saltos de linea dentro de {{1}}.",
               "Padres usan portal_parent_update_v3. Staff usa portal_staff_update_v3. El nombre del chat y el logo redondo no van en la plantilla.",
-              "La foto dentro del globo de WhatsApp usa portal_parent_photo_v1 (cabecera de imagen). Solo se envia cuando Meta pone Approved. Hasta entonces el mensaje sigue en portal_parent_update_v3 y la foto va como enlace.",
+              "La foto dentro del globo de WhatsApp usa portal_parent_photo_v1 (cabecera de imagen). Meta ya la aprobo. Los mensajes que nombran instructor salen con esa plantilla. Si la foto no se puede pegar, el mismo texto sale igual con portal_parent_update_v3.",
               "Si Meta dice que la categoria no coincide y recomienda Marketing, pulsa Cancelar. Deja Servicio. Cambia la primera linea para que sea un aviso de una reserva que ya existe, no una presentacion del portal."
             ]
           }

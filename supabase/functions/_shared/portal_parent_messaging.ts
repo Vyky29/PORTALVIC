@@ -892,8 +892,9 @@ export async function sendParentMessageViaWhatsapp(
 
   const to = phoneE164.replace(/^\+/, "");
   const url = `https://graph.facebook.com/v20.0/${phoneId}/messages`;
-  let template = (opts?.templateName ??
+  const textTemplate = (opts?.templateName ??
     resolveParentNotifyWhatsappTemplate(opts?.kind ?? "")).trim();
+  let template = textTemplate;
   const preferredLang = (opts?.templateLang ?? Deno.env.get("META_WHATSAPP_TEMPLATE_LANG") ??
     "en").trim() || "en";
   const photoUrl = normalizePublicPhotoUrl(String(opts?.instructorPhotoUrl || "").trim());
@@ -1013,6 +1014,9 @@ export async function sendParentMessageViaWhatsapp(
         const text = await res.text();
         if (!res.ok) {
           lastErr = `whatsapp_${res.status}: ${text.slice(0, 400)}`;
+          if (template === photoTemplate && textTemplate && textTemplate !== photoTemplate) {
+            break;
+          }
           if (withHeader && /1320|header|component/i.test(text)) {
             continue;
           }
@@ -1043,6 +1047,13 @@ export async function sendParentMessageViaWhatsapp(
         lastErr = String(e);
       }
     }
+  }
+  if (template === photoTemplate && textTemplate && textTemplate !== photoTemplate) {
+    return await sendParentMessageViaWhatsapp(phoneE164, body, {
+      ...opts,
+      instructorPhotoUrl: "",
+      templateName: textTemplate,
+    });
   }
   return { ok: false, error: lastErr };
 }
