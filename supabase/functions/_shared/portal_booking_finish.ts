@@ -519,27 +519,24 @@ export async function notifyParentFinishBooking(opts: {
   const autoPay = opts.variant === "registration_submitted";
   const resendHold = opts.variant === "resend_pay_hold";
   const trial = !!opts.isTrial;
-  const pinLine = trial
-    ? ""
-    : " After the office confirms payment we send your Parent Portal PIN.";
-  // Put the magic link FIRST so WhatsApp / Meta {{1}} truncation cannot cut the token
-  // (chopped ?t=… shows as "This link is not valid").
-  const payBody = resendHold
-    ? `Complete booking now: ${link} ` +
-      `Place held 30 minutes for ${participant}` +
-      (slot ? ` — ${slot}` : "") +
-      `.`
+  const placeLine = String(placeBlock || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" · ");
+  const payLead = resendHold
+    ? `Complete booking now: ${link}`
     : autoPay
-      ? `Complete booking and payment now: ${link} ` +
-        `Registration received for ${participant}` +
-        (slot ? ` — ${slot}` : "") +
-        `. Place held 30 minutes.`
-      : `Finish booking now: ${link} ` +
-        `Registration accepted for ${participant}` +
-        (slot ? ` — ${slot}` : "") +
-        `. Place held 30 minutes.` +
-        pinLine;
-  const bodyText = `${payBody}\n\n${noPortalReplyFooter()}`;
+      ? `Complete booking and payment now: ${link}`
+      : `Finish booking now: ${link}`;
+  const bodyText = [
+    `Hi ${name},`,
+    payLead,
+    placeLine || (slot ? slot : "Your place is held for 30 minutes."),
+    trial
+      ? "Your place is held for 30 minutes."
+      : "Your place is held for 30 minutes. After the office confirms payment we send your Parent Portal PIN.",
+  ].join("\n\n") + `\n\n${noPortalReplyFooter()}`;
 
   let emailOk = false;
   let waOk = false;
@@ -1161,12 +1158,17 @@ export async function notifyParentTrialBookingCompleted(opts: {
       withPhoto: !!photo.url,
     })
     : "";
+  const placeLine = String(placeBlock || "")
+    .replace(/\n*\[\[photo\]\]\s*/g, "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" · ");
   const bodyText =
-    `Booking completed for ${participant}. Trial: ${whenPart}${venuePart}${withWho}. ` +
-    (photo.url
-      ? `Please show them this photo so they know who to expect: ${photo.url} See you there.`
-      : `See you there.`) +
-    `\n\n${noPortalReplyFooter()}`;
+    `Hi ${name},\n\n` +
+    `Booking completed for ${participant}.\n\n` +
+    (placeLine || `Trial: ${whenPart}${venuePart}${withWho}.`) +
+    `\n\nSee you there.\n\n${noPortalReplyFooter()}`;
 
   let emailOk = false;
   let waResult: { ok: boolean; id?: string; channel?: string; error?: string } = {
