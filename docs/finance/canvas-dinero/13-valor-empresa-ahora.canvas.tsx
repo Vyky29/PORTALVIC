@@ -1,1 +1,0 @@
-/Users/victor/.cursor/projects/Users-victor-cursor-PORTALVIC/canvases/valor-empresa-ahora.canvas.tsx

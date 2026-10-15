@@ -1,1 +1,0 @@
-/Users/victor/.cursor/projects/Users-victor-cursor-PORTALVIC/canvases/day-centre-may-jul-2026.canvas.tsx
