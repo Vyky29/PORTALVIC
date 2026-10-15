@@ -107,6 +107,8 @@ export async function settleFamilyRefundAfterPayout(
         creditNoteNumberHint: creditNoteHint(linkedInv, entryId),
         dateIso: new Date().toISOString().slice(0, 10),
         allocateToInvoice: false,
+        invoiceNumber: linkedInv,
+        portalEntryId: entryId,
       });
 
       result.xero = cnRes;

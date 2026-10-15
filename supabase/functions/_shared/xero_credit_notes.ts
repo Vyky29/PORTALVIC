@@ -32,6 +32,10 @@ export type RefundCreditNoteInput = {
   dateIso?: string | null;
   /** false for money paid back to the family: the CN stays open so Reconcile matches it to the bank refund line. */
   allocateToInvoice?: boolean;
+  /** Portal invoice number (INV-P-0346) - used to recognise a CN the office already made by hand in Xero. */
+  invoiceNumber?: string | null;
+  /** portal_parent_family_credits.id of this refund; other rows' CNs are never reused. */
+  portalEntryId?: string | null;
 };
 
 export type RefundCreditNoteResult =
@@ -40,6 +44,7 @@ export type RefundCreditNoteResult =
       xero_credit_note_id: string;
       xero_credit_note_number: string;
       allocated: boolean;
+      reused?: boolean;
     }
   | { ok: false; error: string; detail?: string };
 
@@ -88,6 +93,53 @@ function cnAlreadyAllocatedToInvoice(
     const amt = round2(Number(a?.Amount) || 0);
     return aid === invId && Math.abs(amt - amount) < 0.02;
   });
+}
+
+/**
+ * A refund CN for this family that already covers the amount (made by hand in Xero, or by an earlier
+ * run): same contact, last 180 days, not linked to another portal refund row, and either the total,
+ * one refund payment, or the remaining credit equals the amount - or the reference names the invoice.
+ */
+export async function xeroFindExistingRefundCreditNote(
+  token: string,
+  admin: SupabaseClient,
+  xeroContactId: string,
+  amount: number,
+  invoiceNumber: string,
+  portalEntryId: string,
+): Promise<{ id: string; number: string } | null> {
+  const since = new Date(Date.now() - 180 * 86400000);
+  const where =
+    `Type=="ACCRECCREDIT"&&Contact.ContactID==Guid("${xeroContactId}")` +
+    `&&Date>=DateTime(${since.getUTCFullYear()},${since.getUTCMonth() + 1},${since.getUTCDate()})`;
+  const res = await fetch(`${XERO_API}/CreditNotes?where=${encodeURIComponent(where)}`, {
+    headers: xeroAuthHeaders(token),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) return null;
+  const live = ((json?.CreditNotes as Record<string, unknown>[]) || []).filter(
+    (c) => !["VOIDED", "DELETED", "DRAFT"].includes(String(c.Status)),
+  );
+  if (!live.length) return null;
+
+  const ids = live.map((c) => String(c.CreditNoteID));
+  const { data: linked } = await admin
+    .from("portal_parent_family_credits")
+    .select("id, xero_credit_note_id")
+    .in("xero_credit_note_id", ids);
+  const takenByOthers = new Set(
+    (linked || []).filter((r) => String(r.id) !== portalEntryId).map((r) => String(r.xero_credit_note_id)),
+  );
+
+  const inv = clean(invoiceNumber, 40).toUpperCase();
+  const near = (v: unknown) => Math.abs(round2(Number(v) || 0) - amount) < 0.02;
+  const hit = live.find((c) => {
+    if (takenByOthers.has(String(c.CreditNoteID))) return false;
+    const pays = (c.Payments as Record<string, unknown>[]) || [];
+    if (near(c.Total) || near(c.RemainingCredit) || pays.some((p) => near(p.Amount))) return true;
+    return !!inv && String(c.Reference || "").toUpperCase().includes(inv);
+  });
+  return hit ? { id: String(hit.CreditNoteID), number: String(hit.CreditNoteNumber || hit.CreditNoteID) } : null;
 }
 
 async function xeroGetInvoiceAmountDue(
@@ -191,6 +243,26 @@ export async function xeroCreateRefundCreditNote(
 
   const contact = await resolveOrCreateXeroContact(token, admin, pushInput);
   if (!contact.ok) return contact;
+
+  if (!allocate) {
+    const existing = await xeroFindExistingRefundCreditNote(
+      token,
+      admin,
+      contact.contact_id,
+      amount,
+      clean(input.invoiceNumber, 40),
+      clean(input.portalEntryId, 80),
+    );
+    if (existing) {
+      return {
+        ok: true,
+        xero_credit_note_id: existing.id,
+        xero_credit_note_number: existing.number,
+        allocated: false,
+        reused: true,
+      };
+    }
+  }
 
   const { taxType, salesCode, lineAmountTypes } = taxAndAccount(input.vatMode);
   const dateIso = pushInput.invoiceDateIso;
