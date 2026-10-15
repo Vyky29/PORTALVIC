@@ -42,7 +42,11 @@ const xdate = (s: string) => {
 };
 const name = Deno.args.find((a) => !a.startsWith("--")) || "EALING";
 const type = (Deno.args.find((a) => a.startsWith("--type=")) || "--type=RECEIVE").slice(7);
-const where = encodeURIComponent(`Type=="${type}"&&Contact.Name.Contains("${name}")`);
+const onDay = (Deno.args.find((a) => a.startsWith("--date=")) || "").slice(7);
+const dayFilter = onDay ? `&&Date==DateTime(${onDay.replaceAll("-", ",")})` : "";
+const where = encodeURIComponent(
+  name === "*" ? `Type=="${type}"${dayFilter}` : `Type=="${type}"&&Contact.Name.Contains("${name}")${dayFilter}`,
+);
 for (let page = 1; page < 10; page++) {
   const r = await fetch(`${XERO_API}/BankTransactions?where=${where}&page=${page}`, { headers: h });
   const list = r.ok ? (await r.json()).BankTransactions || [] : [];

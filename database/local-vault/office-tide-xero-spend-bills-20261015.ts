@@ -79,18 +79,16 @@ const PLAN: Item[] = [
   one("SUSP300", "2026-09-11", 300, "clubSENsational LTD", "850", "NONE", "Transfer out 11 Sep - returned same amount"),
   one("HELLOPRINT", "2026-09-12", 43.48, "HelloPrint", "461", "INPUT2", "Printing"),
   one("1STFORM", "2026-09-18", 46.80, "1st Formations", "429", "INPUT2", "Company services"),
-  one("VERCEL", "2026-09-28", 287.45, "Vercel", "463", "NONE", "Vercel hosting (USD 379.46)"),
+  one("VERCEL", "2026-09-28", 287.45, "Vercel", "463", "REVERSECHARGES", "Vercel hosting (USD 379.46)"),
   one("SEVSEP", "2026-09-30", 3862.92, "Sevitha", "320", "NONE", "September"),
-  one("RUNWAY", "2026-10-02", 14.17, "Runway", "463", "NONE", "Runway standard plan"),
+  one("RUNWAY", "2026-10-02", 14.17, "Runway", "463", "REVERSECHARGES", "Runway standard plan"),
   one("EMMSEP", "2026-10-02", 273.60, "Emmanuel Amoakohene", "320", "NONE", "September"),
   one("SEVWEB", "2026-10-02", 214, "Sevitha", "463", "NONE", "Website"),
-  one("ELEVEN", "2026-10-07", 137.34, "Elevenlabs", "463", "NONE", "ElevenLabs"),
+  one("ELEVEN", "2026-10-07", 137.34, "Elevenlabs", "463", "REVERSECHARGES", "ElevenLabs"),
   one("WIX", "2026-10-09", 61.86, "Wix com", "463", "NONE", "Wix"),
-  refund("NICOLE", "2026-09-18", 50, "Nicole Stephens", "Refund 16/09 session"),
-  refund("KELIDON", "2026-09-24", 50, "Kelidon Mesi", "Refund session"),
-  refund("MANSURA", "2026-09-24", 50, "Mansura Akter", "Refund - 1 session"),
-  refund("ABATE", "2026-10-08", 50, "Abate km", "Refund - EA missed session"),
 ];
+// Family refunds: office-sep-refund-credit-notes-fix-20261015.ts (CN per portal refund row).
+void refund;
 
 for (const it of PLAN) {
   const s = Math.round(it.lines.reduce((a, l) => a + l.amount, 0) * 100) / 100;

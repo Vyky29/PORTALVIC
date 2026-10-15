@@ -30,6 +30,8 @@ export type RefundCreditNoteInput = {
   invoiceXeroId: string;
   creditNoteNumberHint?: string | null;
   dateIso?: string | null;
+  /** false for money paid back to the family: the CN stays open so Reconcile matches it to the bank refund line. */
+  allocateToInvoice?: boolean;
 };
 
 export type RefundCreditNoteResult =
@@ -137,9 +139,13 @@ export async function xeroCreateRefundCreditNote(
   const token = await xeroAccessToken();
   if (!token) return { ok: false, error: "xero_auth_failed" };
 
+  const allocate = input.allocateToInvoice !== false;
   const hint = cleanXero(input.creditNoteNumberHint, 80);
   if (hint) {
     const existing = await xeroFindCreditNoteByNumber(token, hint);
+    if (existing && !allocate) {
+      return { ok: true, xero_credit_note_id: existing.id, xero_credit_note_number: existing.number, allocated: false };
+    }
     if (existing) {
       const cnRow = await xeroGetCreditNote(token, existing.id);
       if (cnAlreadyAllocatedToInvoice(cnRow, invoiceXeroId, amount)) {
@@ -232,6 +238,7 @@ export async function xeroCreateRefundCreditNote(
   const cnId = String(cn?.CreditNoteID || "").trim();
   const cnNum = String(cn?.CreditNoteNumber || hint || cnId).trim();
   if (!cnId) return { ok: false, error: "xero_credit_note_missing_id" };
+  if (!allocate) return { ok: true, xero_credit_note_id: cnId, xero_credit_note_number: cnNum, allocated: false };
 
   const alloc = await xeroAllocateCreditNoteToInvoice(token, cnId, invoiceXeroId, amount);
   if (!alloc.ok) {
