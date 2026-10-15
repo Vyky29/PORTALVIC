@@ -253,6 +253,7 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
       "",
     ];
     if (placeService) {
+      lines.push("Wants to book (not paid yet):");
       lines.push(placeService.charAt(0).toUpperCase() + placeService.slice(1));
       if (placeWhen) lines.push(placeWhen);
       if (placeVenue) lines.push(placeVenue);
