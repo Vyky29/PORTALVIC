@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>clubSENsational LTD - Cambios en Xero / Tide para la contable - 15 oct 2026</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #1d2433; max-width: 900px; margin: 32px auto; padding: 0 20px; line-height: 1.45; font-size: 14px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 28px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #e3e7ef; }
+  h3 { font-size: 14px; margin: 18px 0 6px; }
+  .sub { color: #5b6475; margin: 0 0 18px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; table-layout: fixed; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e3e7ef; vertical-align: top; overflow-wrap: break-word; }
+  th { background: #f4f6fa; font-weight: 600; }
+  td.num, th.num { text-align: right; white-space: nowrap; width: 90px; }
+  .q { background: #fff7e6; border: 1px solid #f0d9a8; border-radius: 8px; padding: 10px 14px; margin: 8px 0; }
+  .q b { display: block; margin-bottom: 2px; }
+  .note { background: #eef4ff; border: 1px solid #cddcfb; border-radius: 8px; padding: 10px 14px; margin: 8px 0; }
+  code { background: #f4f6fa; padding: 1px 4px; border-radius: 4px; font-size: 13px; }
+  ul { margin: 6px 0 10px 18px; padding: 0; }
+  li { margin: 3px 0; }
+  @media print { body { margin: 0 auto; } h2 { break-after: avoid; } table, .q, .note { break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>Cambios en Xero / Tide - para la contable</h1>
+<p class="sub">clubSENsational LTD - Conciliación de la cuenta principal de Tide, de septiembre al 15 de octubre de 2026. Preparado el 15 oct 2026. Actualizado la noche del 15 oct (cambios de oficina / portal; mañana desde las 12:00, API Xero).</p>
+
+<div class="note">
+  <b>Actualización noche del 15 oct 2026 (ya hecho en portal / oficina, sin esperar a Xero)</b>
+  <ul>
+    <li>Joelle INV-P-0543: 3 sesiones (10, 17, 24 sep) £1,071.33, Client ID NWL474963.</li>
+    <li>Ibrahim Amir INV-P-0555: Day Centre 5 oct £357.11, NWL618898 (octubre).</li>
+    <li>Tinashe NHS ILA: INV-P-0180 a 0189 a £364.68/sesión; INV-P-0556 £531.54 (corrección sep); INV-P-0557 £94.32 (uplift 2.03% abr-jul). Pediremos el uplift a Anna Garland (NHS), no por Tradeshift.</li>
+    <li>Fadwa INV-P-0106: solo 1a mitad £350 pagada; 2a mitad pendiente (26 oct).</li>
+    <li>Timi septiembre INV-P-0168 £2,856.84: ya en remesa NHS 1033593 (con Ikram £12,000). Apuntar en Xero mañana.</li>
+    <li>Haneef: verano £660 = pagos madre 30 mar + 13 abr (£330 + £330). Emparejar a INV-0328 en Xero; no reclamar a H&amp;F ese importe. Autumn 26/27 lo pagó la madre (£1,560).</li>
+    <li>Yassir INV-P-0207: £50 (no £150).</li>
+    <li>Saiib INV-P-0301 £200: H&amp;F lo paga el viernes (no chase).</li>
+    <li>Portal: facturas de financiador ocultas ya guardan el financiador (ready_by). Al marcar pagado (Stripe / GoCardless / Confirm paid) el pago también se envía a Xero, no solo la factura.</li>
+    <li>Ahmed (Aydaan, Amaar, Adaam): tres hermanos. En otoño 2025 iban a Multi; el swimming empezó ~enero 2026. Las facturas anuales 26/27 (INV-P-0331/0333/0334) sí llevan Aquatic en Autumn 2026; si hace falta ajuste de asistencia, lo revisamos aparte. Remesas Ealing: aún no hay payment notice de Autumn 2026 para ellos.</li>
+    <li>En hold (no tocar aún): Ayan Muse INV-0279; Tinashe £714.84 pagado dos veces (1657); cancelar 1657 en Tradeshift.</li>
+  </ul>
+</div>
+
+<div class="q">
+  <b>Mañana a partir de las 12:00 (límite diario de la API de Xero)</b>
+  Plan Stripe julio-agosto (quitar Receive money y emparejar facturas); LBHF / NHS / familias abiertas en Awaiting payment; subir a Xero las INV-P de sep NHS/H&amp;F y las nuevas (0543, 0555, 0556, 0557); credit notes acordados (Siama, Sam Abdi, Huma £4 = tasa por fallo de GoCardless). Te pasaremos la lista de cambios antes de aplicarlos. Lo que quede para ti después de eso lo dejamos en una nota aparte.
+</div>
+
+<div class="q">
+  <b>Regla bancaria de Stripe en Xero - bórrala (nosotros no tenemos permiso API para Bank Rules)</b>
+  Accounting → Bank accounts → clubSENsational LTD → Bank rules (o Manage account → Bank rules). Borra la regla de "Stripe Payments UK Ltd" (o similar) que crea Receive money a 200 Sales.
+  Si sigue activa, cada payout de Stripe vuelve a contar ventas dos veces. A partir de ahora el portal ya marca las facturas pagadas en Xero; el payout se empareja con esos pagos + el ajuste STRIPE-&lt;fecha&gt;.
+</div>
+
+<div class="note">
+  Nuestra conexión con Xero por API no puede crear Spend money ni Receive money. Por eso cada salida del banco que hemos apuntado es una
+  <b>factura de proveedor ya pagada</b> (bill) con número <code>TIDE-&lt;fecha&gt;-&lt;clave&gt;</code>, pagada desde Tide con la fecha del banco y emparejada 1 a 1 en Reconcile.
+  Los ingresos de Stripe y GoCardless se emparejan con los pagos de cada factura más un documento de comisiones por ingreso.
+</div>
+
+<h2>1. Cambios dentro del periodo que ya conciliaste (junio - agosto)</h2>
+
+<div class="note">
+  Sabemos que junio - agosto ya está conciliado y que la declaración de IVA de junio - agosto ya está presentada. Hemos cambiado estas partidas para que las facturas y el banco cuadren.
+  Los cambios de Lea y de Stripe de julio - agosto quitan ventas que estaban contadas dos veces en ese trimestre. Si esos Receive money llevaban IVA, el IVA presentado salió más alto de lo que tocaba.
+  ¿Lo ajustas en la próxima declaración (septiembre - noviembre) o como prefieras?
+  <b>Si lo prefieres como estaba, dínoslo y lo dejamos exactamente igual que antes.</b>
+</div>
+
+<h3>a) Cobros de Lea Belhadj - contados dos veces (31 jul, 11 ago)</h3>
+<p>Había tres Receive money a 200 Sales (31 jul £1,267.50, 31 jul £633.75, 11 ago £633.75) que duplicaban pagos ya registrados en sus facturas.
+Hemos hecho Remove &amp; Redo de esos tres Receive money y hemos emparejado las líneas del banco con los pagos de las facturas:</p>
+<ul>
+  <li>31 jul £1,267.50 - INV-P-0079-R2 (Hazem, primera mitad)</li>
+  <li>31 jul £633.75 y 11 ago £633.75 - INV-P-0083-R2 (Eiji, primera mitad partida en dos para que cuadre con el banco)</li>
+</ul>
+
+<h3>b) Intereses del Tide Instant Saver - apuntados como transferencias (1 jul, 1 ago, y también 1 sep, 1 oct)</h3>
+<p>Los intereses (£100.24, £91.98, £18.36, £17.82) se habían apuntado como transferencias desde la cuenta principal de Tide, lo que creaba cuatro transferencias que nunca pasaron en la cuenta principal.
+Hemos borrado las transferencias y hemos apuntado cada interés en el Instant Saver como Receive money a <b>270 Interest Income</b>.</p>
+
+<h3>c) LBHF £500 del 10 ago - la línea del banco no llegó al feed de Xero</h3>
+<p>En Tide entraron +£500 de LBHF MAIN AP el 10 ago (ref 9030 9700428471 K). Pagan INV-0377 (£150, mayo), INV-0378 (£200, junio) e INV-0379 (£150, julio) -
+Learning Disabilities Team (LBHF - ASC). La línea del extracto nunca llegó a Xero, así que los tres pagos se registraron el 10 ago y se <b>marcaron como conciliados a mano</b>.
+Por eso el saldo del extracto en Xero puede diferir del de Tide en £500 en esa fecha.</p>
+
+<h3>d) Ingresos de Stripe de julio - agosto - ventas contadas dos veces y facturas que siguen como pendientes</h3>
+<p>Antes de septiembre, cada ingreso de Stripe se apuntaba entero como Receive money a 200 Sales y la factura de la familia se quedaba sin pagar.
+Así la venta sale dos veces (factura + Receive money) y la factura sigue como pendiente aunque la familia pagó con tarjeta.
+Vamos a sustituir los cinco Receive money por los pagos de las facturas más un ajuste <code>STRIPE-&lt;fecha&gt;</code> por ingreso (recargo de tarjeta a 200 con IVA 20%, comisiones de Stripe a 404), igual que desde septiembre:</p>
+<table>
+  <thead><tr><th style="width:110px">Ingreso</th><th>Facturas pagadas</th><th class="num">Ingreso</th></tr></thead>
+  <tbody>
+    <tr><td>23 jul</td><td>INV-P-0074-R2 £1,625, INV-P-CRASH-MRMCPDUG-R2 £700, más £20 de un pago de prueba del portal con tarjeta (sin factura, 200 Sales)</td><td class="num">£2,393.13</td></tr>
+    <tr><td>13 ago</td><td>INV-P-0340 £1,050</td><td class="num">£1,071.78</td></tr>
+    <tr><td>17 ago</td><td>INV-P-0105 £650, INV-P-0109-R1 £350 (primera mitad)</td><td class="num">£1,020.75</td></tr>
+    <tr><td>19 ago</td><td>INV-P-0106 £350 (primera mitad), INV-P-0139 £1,100</td><td class="num">£1,460.13</td></tr>
+    <tr><td>3 sep</td><td>INV-P-0447 £50</td><td class="num">£51.05</td></tr>
+  </tbody>
+</table>
+<p>Efecto: las ventas de julio - agosto bajan lo que estaba contado dos veces, y esas facturas dejan de salir como pendientes.</p>
+
+<h2>2. Otras correcciones (septiembre - octubre)</h2>
+
+<h3>a) Ingreso de Stripe del 17 sep (£651.69)</h3>
+<p>Se había conciliado como Receive money a 200 Sales (con IVA), duplicando INV-P-0498 (Zeina Al Bakry, £650). Lo hemos quitado y emparejado con el pago de la factura
+más <code>STRIPE-2026-09-17</code> (£1.69). Xero lo propuso por una regla bancaria de "Stripe Payments UK Ltd" que mete los ingresos directamente en ventas; la vamos a borrar.</p>
+
+<h3>b) Ingresos de Stripe y GoCardless - cómo se apuntan ahora</h3>
+<ul>
+  <li>Cada ingreso = los pagos de las facturas que contiene (con la fecha de llegada del ingreso) + un documento de ajuste.</li>
+  <li>Stripe: factura de venta <code>STRIPE-&lt;fecha&gt;</code> al contacto "Stripe" - recargo de tarjeta que paga la familia (200, IVA 20%) menos comisiones de Stripe (404 Bank Fees, sin IVA). 10 ingresos, del 10 sep al 15 oct.</li>
+  <li>GoCardless: bill <code>GC-FEES-&lt;fecha&gt;</code> (404 Bank Fees, sin IVA). 2 ingresos: 3 sep £3,832.98 y 5 oct £4,833.86.</li>
+</ul>
+
+<h3>c) Reembolsos a familias - credit notes que faltaban</h3>
+<p>Los reembolsos pagados en septiembre no tenían credit note. Hemos creado un credit note de £50 por reembolso (200, IVA 20%, devuelto desde Tide con la fecha del banco):
+CN-P-0102-Rb045 (18 sep), CN-P-0102-R988c (23 sep), CN-P-0365-R0cc5 (24 sep). CN-P-0496-R8d15 y CN-P-0544 se han desasignado de sus facturas y se han devuelto desde Tide (8 y 13 oct).
+Duplicados anulados: CN-P-0346-R58df y CN-0410.</p>
+
+<h3>d) Facturas anuales de Ealing enviadas a Xero por error</h3>
+<p>INV-P-0328, 0329, 0330 y 0332 (calendario anual de Ealing) se subieron a Xero por error y se han <b>anulado</b> (voided). A Ealing se le factura una vez por cada remesa (<code>EAL-&lt;ciclo&gt;</code>).</p>
+
+<h2>3. Salidas del banco apuntadas (bills pagadas)</h2>
+<table>
+  <thead><tr><th style="width:110px">Fecha</th><th>Qué</th><th class="num">Importe</th><th style="width:250px">Cuenta / IVA</th></tr></thead>
+  <tbody>
+    <tr><td>10 sep</td><td>6 retiradas de cajero, RBS Tesco Acton - ropa del personal</td><td class="num">£1,350.00</td><td>486 Uniform, sin IVA (£1 cada una a 404, comisión del cajero)</td></tr>
+    <tr><td>10 - 18 sep</td><td>Addison Lee, 8 viajes - taxis de un participante (no son viajes de oficina)</td><td class="num">£334.49</td><td>325 Direct Expenses, IVA 20%</td></tr>
+    <tr><td>11 sep</td><td>Transferencia de salida, devuelta por el mismo importe</td><td class="num">£300.00</td><td>850 Suspense</td></tr>
+    <tr><td>12 sep</td><td>HelloPrint</td><td class="num">£43.48</td><td>461 Printing, IVA 20%</td></tr>
+    <tr><td>18 sep</td><td>1st Formations</td><td class="num">£46.80</td><td>429 General, IVA 20%</td></tr>
+    <tr><td>24 sep</td><td>The Beauty Store - compra personal de Raúl con la tarjeta de la empresa</td><td class="num">£38.30</td><td>8351 Director's Loan Raul</td></tr>
+    <tr><td>28 sep</td><td>Vercel (USD 379.46)</td><td class="num">£287.45</td><td>463 IT Software, reverse charge</td></tr>
+    <tr><td>2 oct</td><td>Runway</td><td class="num">£14.17</td><td>463 IT Software, reverse charge</td></tr>
+    <tr><td>2 oct</td><td>Emmanuel Amoakohene - septiembre</td><td class="num">£273.60</td><td>320 Direct Wages</td></tr>
+    <tr><td>2 oct</td><td>Sevitha - diseñador gráfico de la web</td><td class="num">£214.00</td><td>400 Advertising &amp; Marketing, sin IVA</td></tr>
+    <tr><td>7 oct</td><td>ElevenLabs</td><td class="num">£137.34</td><td>463 IT Software, reverse charge</td></tr>
+    <tr><td>9 oct</td><td>Wix</td><td class="num">£61.86</td><td>463 IT Software, sin IVA</td></tr>
+    <tr><td>13 oct</td><td>Deliveroo - comida de trabajo</td><td class="num">£33.17</td><td>429 General, sin IVA</td></tr>
+    <tr><td>14 oct</td><td>Toca Social White City - salida del equipo</td><td class="num">£164.75</td><td>429 General, sin IVA</td></tr>
+    <tr><td>14 y 15 oct</td><td>Cursor, 2 x USD 100</td><td class="num">£152.30</td><td>463 IT Software, reverse charge</td></tr>
+    <tr><td>15 oct</td><td>Victor Matilla Casanova</td><td class="num">£1,000.00</td><td>8352 Director's Loan Victor</td></tr>
+  </tbody>
+</table>
+
+<h2>4. Preguntas para ti</h2>
+
+<div class="q"><b>Sevitha - salario de septiembre, 30 sep, £3,862.92</b>Todavía sin apuntar. ¿Cómo lo quieres (nómina / 320, o subcontratista 321)?</div>
+
+<div class="q"><b>Credit note del NHS CN-0395 (£223.30) - Emanuel, INV-0391</b>
+La INV-0391 (uplift de Emanuel) se anuló con el CN-0395 el 26 ago (el uplift no correspondía: su paquete empezó después del 1 abr 2026), pero el NHS volvió a pagar la INV-0391 el 15 oct.
+El CN-0395 está <b>abierto en Xero</b> (sin asignar). Esperamos que el NHS descuente los £223.30 de un pago futuro; cuando llegue esa remesa, hay que asignar el CN-0395 a la factura de la que lo descuenten.
+Si en cambio le devolvemos el dinero al NHS, se apunta como refund del CN-0395. Confírmanos si lo quieres así.</div>
+
+<div class="q"><b>El NHS pagó dos veces abril de 2025 de Tinashe - les debemos £714.84 (6 ago 2026)</b>
+La factura 1657 (28 abr 2025, por Tradeshift, Tinashe 4 y 25 abr 2025) estaba en disputa, así que se volvió a emitir como 1673 (19 may 2025), que el NHS pagó el 26 jun 2025.
+Después el NHS pagó también la 1657 el 4 ago 2026 (remesa 843155, en Tide el 6 ago 2026). Ese cobro del 6 ago es un pago de más que le debemos al NHS West and North London ICB, no es un ingreso.
+Vamos a hacer un credit note de £714.84 (para que lo descuenten de un pago futuro del NHS o devolverlo). ¿Puedes mirar cómo apuntaste la línea del 6 ago cuando conciliaste agosto?</div>
+
+<div class="q"><b>Intereses del Instant Saver de marzo a junio 2026 - siguen como transferencias</b>
+Los intereses del 1 mar (£88.11), 1 abr (£97.78), 1 may (£94.87) y 1 jun (£101.78), en total £382.54, están apuntados como transferencia desde la cuenta principal ("Interest Receipt"), igual que los de julio y agosto que ya hemos corregido.
+Así faltan £382.54 en 270 Interest Income y aparecen salidas en la cuenta principal que no ocurrieron. Enero y febrero están bien ("Tide Platform Ltd").
+No los hemos tocado porque son de declaraciones ya presentadas. No llevan IVA, así que solo afecta a los resultados. ¿Los cambias tú o lo hacemos nosotros igual que julio - octubre?</div>
+
+<div class="q"><b>IVA de recibos pequeños</b>Deliveroo y Toca Social están sin IVA; los recibos están adjuntos en Tide por si quieres recuperarlo. Addison Lee está al 20% (revisa las facturas mensuales: puede que solo cobren IVA en la tasa de reserva).</div>
+
+<div class="q"><b>Web de Sevitha (£214)</b>Apuntada en la 400 Advertising &amp; Marketing, sin IVA (diseñador gráfico, no registrado en IVA). Cámbiala si prefieres otra cuenta.</div>
+
+</body>
+</html>

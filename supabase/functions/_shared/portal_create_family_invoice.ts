@@ -878,7 +878,9 @@ export async function createPortalFamilyInvoice(
     payment_status: "unpaid",
     share_status: shareStatus,
     ready_at: shareStatus === "ready" ? now : null,
-    ready_by: shareStatus === "ready" ? readyBy : null,
+    /* Keep funder key even when share is hidden (NHS/H&F months not yet shown to parents).
+     * Without it, PDF bill-to falls back to the contact's default funder (e.g. Ealing for Tinashe). */
+    ready_by: readyBy || null,
     notes,
     payment_method_hint: paymentMethodHint,
     gocardless_url: clean(input.gocardlessUrl, 500) || null,

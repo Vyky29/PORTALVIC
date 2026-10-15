@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
 
   const xero =
     data.payment_status === "paid"
-      ? await xeroEnsurePaidShareInBooks(supabase, data)
+      ? await xeroEnsurePaidShareInBooks(supabase, data, { syncPayment: true })
       : { skipped: "partial_instalment" };
   let hold = null;
   try {

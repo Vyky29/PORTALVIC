@@ -217,11 +217,15 @@ async function markInvoicePaid(
       const { data: paidTarget } = await supabase
         .from("portal_parent_invoice_share")
         .select(
-          "id, contact_id, payment_status, amount_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
+          "id, contact_id, payment_status, amount_gbp, amount_paid_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
         )
         .eq("id", targetId)
         .maybeSingle();
-      if (paidTarget) xero = await xeroEnsurePaidShareInBooks(supabase, paidTarget);
+      if (paidTarget) {
+        xero = await xeroEnsurePaidShareInBooks(supabase, paidTarget, {
+          syncPayment: true,
+        });
+      }
     }
     let hold = null;
     try {
@@ -287,11 +291,15 @@ async function markInvoicePaid(
       const { data: paidTarget } = await supabase
         .from("portal_parent_invoice_share")
         .select(
-          "id, contact_id, payment_status, amount_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
+          "id, contact_id, payment_status, amount_gbp, amount_paid_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
         )
         .eq("id", before.id)
         .maybeSingle();
-      if (paidTarget) xero = await xeroEnsurePaidShareInBooks(supabase, paidTarget);
+      if (paidTarget) {
+        xero = await xeroEnsurePaidShareInBooks(supabase, paidTarget, {
+          syncPayment: true,
+        });
+      }
     }
     let hold = null;
     try {
@@ -340,7 +348,7 @@ async function markInvoicePaid(
 
   const { data, error } = await q
     .select(
-      "id, contact_id, payment_status, amount_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
+      "id, contact_id, payment_status, amount_gbp, amount_paid_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
     )
     .maybeSingle();
   if (error) {
@@ -349,7 +357,9 @@ async function markInvoicePaid(
   }
   if (!data) return { ok: false as const, reason: "invoice_not_found" };
 
-  const xero = await xeroEnsurePaidShareInBooks(supabase, data);
+  const xero = await xeroEnsurePaidShareInBooks(supabase, data, {
+    syncPayment: String(data.payment_status || "").toLowerCase() === "paid",
+  });
   let hold = null;
   try {
     const cid = clean(data.contact_id, 120);
