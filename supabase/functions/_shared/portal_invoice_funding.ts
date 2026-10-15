@@ -249,7 +249,12 @@ async function loadLaPaymentRow(
         ? candToks[candToks.length - 1]
         : candToks[0] || "";
       let score = 0;
+      const candIsLeadingTokens =
+        candToks.length >= 2 &&
+        candToks.length < targetToks.length &&
+        candToks.every((t, i) => t === targetToks[i]);
       if (candidate === target) score = 1000;
+      else if (candIsLeadingTokens) score = 900; /* Amar Rai / Amar Rai Singh */
       else if (target.startsWith(candidate) || candidate.startsWith(target)) {
         score = 100 + candidate.length;
         if (wantLast && candLast && candLast !== wantFirst) {
