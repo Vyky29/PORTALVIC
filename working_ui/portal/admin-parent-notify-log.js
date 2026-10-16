@@ -2476,7 +2476,7 @@
     if (digits.indexOf("00") === 0) digits = digits.slice(2);
     if (digits.charAt(0) === "0" && digits.length >= 10) digits = "44" + digits.slice(1);
     if (digits.length < 8) return "";
-    return "https://wa.me/" + digits;
+    return "https://web.whatsapp.com/send?phone=" + digits;
   }
 
   function renderComposer(t) {
