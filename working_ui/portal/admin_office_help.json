@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16-v466",
+  "version": "2026-10-16-v467",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -285,6 +285,9 @@
             "portal_roster_rows",
             "schedule_overrides",
             "which tool",
+            "cambiar instructor",
+            "todos los martes",
+            "no cancelado",
             "que pantalla",
             "edit term or covers",
             "un dia o el term",
@@ -307,7 +310,9 @@
             "Joel to Anas every Monday is Edit term slot. Joel absent today and back next week is Schedule & Covers. One instructor covering another this Sunday only is Schedule & Covers, Instructor cover.",
             "Before you save: is it one day or every week? Check the name, the anchor date, the time, the service, the pool / area, and the instructor. Then open Staff for that instructor on the same date.",
             "If Staff still shows the old name after a term swap, only a one-day override was saved, or the standing name is still the old one. Use Edit term slot with the weekday scope. Do not cancel the old name in Schedule & Covers.",
-            "If the whole term is wrong on every week, that is the baseline. Ask the technical owner. Do not fix it with one-day cancels. Sessions Overview is the day look-here."
+            "If the whole term is wrong on every week, that is the baseline. Ask the technical owner. Do not fix it with one-day cancels. Sessions Overview is the day look-here.",
+            "To move one instructor off every remaining Tuesday: Edit term slot on each of their Tuesday seats, set the new instructor, scope Rest of term from the anchor. The anchor must be a Tuesday. Past Tuesdays stay. Do not press Cancelled. Their card leaves. It does not say Cancelled, and they are not asked for feedback. The new instructor sees the shift.",
+            "One Tuesday only: Schedule and Covers, that date, Change, Change instructor, pick the person. Same result: the original instructor loses the card, it is not Cancelled. Cancelled is a different action. On after-school it paints Cancelled and messages the parent."
           ],
           "es": {
             "title": "Que pantalla cambia el roster",
@@ -328,7 +333,9 @@
               "Joel a Anas todos los lunes es Edit term slot. Joel falta hoy y vuelve la semana que viene es Schedule & Covers. Un instructor que cubre a otro solo este domingo es Schedule & Covers, Instructor cover.",
               "Antes de guardar: es un dia o todas las semanas? Revisa el nombre, la fecha ancla, la hora, el servicio, la piscina / zona y el instructor. Luego abre Staff de ese instructor en la misma fecha.",
               "Si Staff sigue con el nombre viejo despues de un cambio de term, solo se guardo un cambio de un dia, o el nombre fijo sigue siendo el viejo. Usa Edit term slot con el alcance del dia de la semana. No canceles el nombre viejo en Schedule & Covers.",
-              "Si el term entero esta mal todas las semanas, eso es la base. Pregunta al dueno tecnico. No lo arregles con cancelaciones de un dia. El dia se mira en Sessions Overview."
+              "Si el term entero esta mal todas las semanas, eso es la base. Pregunta al dueno tecnico. No lo arregles con cancelaciones de un dia. El dia se mira en Sessions Overview.",
+              "Para quitar a un instructor todos los martes que quedan: Edit term slot en cada plaza de ese martes, pon el instructor nuevo, alcance Rest of term from the anchor. El ancla tiene que ser un martes. Los martes ya pasados se quedan. No pulses Cancelled. Se le quita la tarjeta. No pone Cancelled, y no le pide feedback. El instructor nuevo ve el turno.",
+              "Un solo martes: Schedule and Covers, esa fecha, Change, Change instructor, elige a la persona. Igual: al original se le quita la tarjeta, no sale Cancelled. Cancelled es otra accion. En after-school pinta Cancelled y avisa al padre."
             ]
           }
         },
