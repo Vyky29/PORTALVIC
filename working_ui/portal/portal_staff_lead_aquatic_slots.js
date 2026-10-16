@@ -934,12 +934,36 @@
       chains.push(chain);
       chains.forEach(function (ch) {
         if (!ch.length) return;
-        var nCancel = 0;
-        for (var ci = 0; ci < ch.length; ci++) {
-          if (itemLooksCancelledOrCleared(ch[ci])) nCancel++;
+        if (ch.length === 1) {
+          pushOneAquaticCard(ch[0], cid);
+          return;
         }
-        if (ch.length === 1 || (nCancel && nCancel < ch.length)) {
+        var nAbsent = 0;
+        var nOtherClear = 0;
+        for (var ai = 0; ai < ch.length; ai++) {
+          var pillA = String(ch[ai].portalOverrideAlertPill || "").trim().toUpperCase();
+          if (pillA === "ABSENT") nAbsent++;
+          else if (itemLooksCancelledOrCleared(ch[ai])) nOtherClear++;
+        }
+        /* One half cancelled and the other taught stays two cards (Joelle 5.30 / 6). */
+        if (nOtherClear && nOtherClear < ch.length && !nAbsent) {
           for (var cj = 0; cj < ch.length; cj++) pushOneAquaticCard(ch[cj], cid);
+          return;
+        }
+        /* Absent on part of the hour is the whole hour for this instructor.
+           Admin keeps the two halves so a replacement can be assigned. */
+        if (nAbsent && nAbsent < ch.length) {
+          var forced = [];
+          for (var fi = 0; fi < ch.length; fi++) {
+            forced.push(Object.assign({}, ch[fi], {
+              portalOverrideAlertPill: "ABSENT",
+              noSessionFeedbackRequired: true,
+              actionsDisabled: true,
+              portalOverrideSuppressReviewOrange: true,
+              portalOverrideCardTone: "green",
+            }));
+          }
+          emitMergedAquaticChain(merged, forced, iso, cid, dayWord, chains.length === 1);
           return;
         }
         emitMergedAquaticChain(merged, ch, iso, cid, dayWord, chains.length === 1);

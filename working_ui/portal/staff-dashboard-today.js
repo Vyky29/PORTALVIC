@@ -114,7 +114,11 @@
     }
     function portalTodayHideCancelledDayCentreCard(s, sessionDateKey){
       if(!portalTodaySessionIsDayCentre(s)) return false;
-      return portalTodayLiveSessionAddCoversSeat(s, sessionDateKey);
+      /* Day Centre clears reshape the cards. The worker does not see Cancelled
+         and is not asked for feedback on the old window. A live added card
+         for the same child still shows. */
+      void sessionDateKey;
+      return true;
     }
     /**
      * Office-cancelled participant: no Today card. The halo keeps the
