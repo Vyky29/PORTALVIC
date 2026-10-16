@@ -5,6 +5,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   buildPortalTaxInvoicePdf,
+  isPortalCreditLineItem,
   type PortalInvoiceVatMode,
 } from "./portal_tax_invoice_pdf.ts";
 import {
@@ -329,6 +330,68 @@ function cleanMultiline(v: unknown, max = 2400): string {
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+function creditDiscountDetail(row: { service_label?: unknown; notes?: unknown }): string {
+  const notes = String(row.notes || "");
+  const label = String(row.service_label || "").replace(/\s+/g, " ").trim();
+  if (/for autumn/i.test(notes) || /carry-forward/i.test(label)) return "From summer, for Autumn";
+  if (label) return label.slice(0, 42);
+  return "Family credit";
+}
+
+/**
+ * Parent PDF shows each applied credit as a discount under the session total.
+ * Only when the service lines are still the full price and the invoice total
+ * is lower by exactly those credits. Lines that already include the credit stay as they are.
+ */
+async function lineItemsPlusAppliedCredits(
+  admin: SupabaseClient,
+  shareId: string,
+  lines: PortalInvoiceLineItem[],
+  amountGbp: number,
+): Promise<PortalInvoiceLineItem[]> {
+  const { data, error } = await admin
+    .from("portal_parent_family_credits")
+    .select("amount_gbp, service_label, notes, created_at")
+    .eq("applied_invoice_share_id", shareId)
+    .eq("status", "applied")
+    .eq("kind", "credit")
+    .order("created_at", { ascending: true });
+  if (error || !data?.length) return lines;
+  const applied = round2(
+    data.reduce((sum, row) => sum + Math.abs(Number(row.amount_gbp) || 0), 0),
+  );
+  if (applied <= 0) return lines;
+  const onLines = round2(
+    lines.reduce((sum, line) => {
+      if (!isPortalCreditLineItem(line)) return sum;
+      return sum + Math.abs(Number(line.amount_gbp) || 0);
+    }, 0),
+  );
+  if (onLines + 0.02 >= applied) return lines;
+  const serviceGross = round2(
+    lines.reduce((sum, line) => {
+      if (isPortalCreditLineItem(line)) return sum;
+      return sum + (Number(line.amount_gbp) || 0);
+    }, 0),
+  );
+  const gap = round2(serviceGross - amountGbp - onLines);
+  if (Math.abs(gap - applied) > 0.02) return lines;
+  const extra: PortalInvoiceLineItem[] = data.map((row) => {
+    const amt = round2(Math.abs(Number(row.amount_gbp) || 0));
+    return {
+      service_key: "CREDIT",
+      description: "Credit",
+      detail: creditDiscountDetail(row),
+      dates: null,
+      quantity: 1,
+      unit_price_gbp: round2(-amt),
+      amount_gbp: round2(-amt),
+      xero_item_code: null,
+    };
+  }).filter((line) => line.amount_gbp < 0);
+  return extra.length ? [...lines, ...extra] : lines;
 }
 
 type ParentContactBillRow = {
@@ -1161,6 +1224,7 @@ export async function regeneratePortalInvoiceSharePdf(
     familyPaymentLabel: resolvedFamilyPaymentLabel,
   });
 
+  const pdfLineItems = await lineItemsPlusAppliedCredits(admin, shareId, lineItems, amountGbp);
   let pdfBytes: Uint8Array;
   try {
     pdfBytes = await buildPortalTaxInvoicePdf({
@@ -1173,7 +1237,7 @@ export async function regeneratePortalInvoiceSharePdf(
       totalGbp: amountGbp,
       quantity,
       descriptionLines,
-      lineItems: nhsPdfLineItems(lineItems, nhsInvoice),
+      lineItems: nhsPdfLineItems(pdfLineItems, nhsInvoice),
       billToName,
       billToLines,
       participantName: displayName,

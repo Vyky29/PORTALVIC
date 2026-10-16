@@ -386,28 +386,24 @@ export async function buildPortalTaxInvoicePdf(
         line.amount_gbp !== 0,
     );
 
+  const serviceLines = rawLineItems.filter((line) => !line.isCredit);
+  const creditLines = rawLineItems.filter((line) => line.isCredit);
   let taxableGross = 0;
-  let creditGross = 0;
-  for (const line of rawLineItems) {
-    if (line.isCredit) creditGross = roundMoney(creditGross + line.amount_gbp);
-    else taxableGross = roundMoney(taxableGross + line.amount_gbp);
+  for (const line of serviceLines) {
+    taxableGross = roundMoney(taxableGross + line.amount_gbp);
   }
   const splitBase =
-    rawLineItems.length > 0
-      ? isExempt
-        ? taxableGross
-        : taxableGross
+    serviceLines.length > 0
+      ? taxableGross
       : total;
   const taxSplit = isExempt
     ? { net: roundMoney(splitBase), vat: 0, total: roundMoney(splitBase) }
     : splitVat20(splitBase);
-  /* Credits stay outside VAT — parent sees the £ taken off the session. */
+  /* Session price stays the VAT total. Credits are discount lines under it. */
   const split = {
-    net: roundMoney(taxSplit.net + creditGross),
+    net: taxSplit.net,
     vat: taxSplit.vat,
-    total: rawLineItems.length > 0
-      ? roundMoney(taxableGross + creditGross)
-      : total,
+    total: serviceLines.length > 0 ? roundMoney(taxableGross) : total,
   };
   const unitNet =
     qty > 0 ? Math.round((taxSplit.net / qty) * 10000) / 10000 : taxSplit.net;
@@ -439,9 +435,9 @@ export async function buildPortalTaxInvoicePdf(
   }
   const descEndY = y;
 
-  if (rawLineItems.length) {
+  if (serviceLines.length) {
     y = descEndY - 4;
-    for (const line of rawLineItems.slice(0, 12)) {
+    for (const line of serviceLines.slice(0, 12)) {
       const rowIsCredit = !!line.isCredit;
       const rowSplit = rowIsCredit || isExempt
         ? { net: roundMoney(line.amount_gbp), vat: 0, total: roundMoney(line.amount_gbp) }
@@ -555,12 +551,42 @@ export async function buildPortalTaxInvoicePdf(
   const credit = input.creditAppliedGbp != null ? Number(input.creditAppliedGbp) : 0;
   const paidAmt = input.amountPaidGbp != null ? Number(input.amountPaidGbp) : 0;
   const hideServicePaidLine = showCardFee && !!input.cardCoversInvoice;
-  if (credit > 0) drawTot("Less Family Credit", money(credit));
-  if ((paidAmt > 0 || input.paid) && !hideServicePaidLine) {
-    drawTot("Less Amount Paid", money(paidAmt || split.total - credit));
+  let creditFromLines = 0;
+  for (const line of creditLines) {
+    const off = roundMoney(Math.abs(line.amount_gbp));
+    if (off <= 0) continue;
+    creditFromLines = roundMoney(creditFromLines + off);
+    const detail = pdfSafeText(line.detail || "");
+    const label = detail ? `Less credit (${detail})` : "Less credit";
+    const size = 9;
+    const val = money(off);
+    const valW = font.widthOfTextAtSize(val, size);
+    let shown = label;
+    const maxW = right - 70 - valW;
+    if (font.widthOfTextAtSize(shown, size) > maxW) {
+      while (shown.length > 12 && font.widthOfTextAtSize(shown + "...", size) > maxW) {
+        shown = shown.slice(0, -1);
+      }
+      shown = shown.replace(/\s+$/, "") + "...";
+    }
+    page.drawText(shown, { x: right - 300, y, size, font, color: ink });
+    page.drawText(val, {
+      x: right - valW,
+      y,
+      size,
+      font,
+      color: ink,
+    });
+    y -= 14;
   }
-  const due = Math.max(0, Math.round((split.total - credit - (paidAmt || (input.paid ? split.total - credit : 0))) * 100) / 100);
-  if (input.paid || credit > 0 || paidAmt > 0) {
+  const extraCredit = creditFromLines > 0 ? 0 : credit > 0 ? credit : 0;
+  if (extraCredit > 0) drawTot("Less Family Credit", money(extraCredit));
+  const creditOff = roundMoney(creditFromLines + extraCredit);
+  if ((paidAmt > 0 || input.paid) && !hideServicePaidLine) {
+    drawTot("Less Amount Paid", money(paidAmt || split.total - creditOff));
+  }
+  const due = Math.max(0, Math.round((split.total - creditOff - (paidAmt || (input.paid ? split.total - creditOff : 0))) * 100) / 100);
+  if (input.paid || creditOff > 0 || paidAmt > 0) {
     drawTot("AMOUNT DUE GBP", money(input.paid ? 0 : due), true);
   }
 
