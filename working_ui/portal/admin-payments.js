@@ -1203,6 +1203,7 @@
    * Office sheet (Sep 2026), not the stale portal paint.
    * Emanuel summer face is paid in full. Timi: May+Jun paid (remittance 974292);
    * Apr INV-0388 £250 and Jul INV-0385 £3,150 still due (chase Ikhlat).
+   * Ikram: all summer months paid incl. Jun INV-0355 £12,000 (remittance 1033593, 15 Oct).
    * Uplift IO, FA, ED and TD (£148.21) are paid.
    */
   function applyOfficeSummerNhsSettlement(r) {
@@ -1236,15 +1237,15 @@
       return;
     }
     if (slug === "ikram" && !isNhsInflationUpliftRow(r)) {
-      r.payment_status = "Partial";
-      r._amountPaid = 40128.6;
-      r.amount_out = 12000;
+      r.payment_status = "Paid";
+      r._amountPaid = 52128.6;
+      r.amount_out = 0;
       if (!(face > 0)) r.amount = 52128.6;
       r._officeMonthLines = [
         { t: "Mar £4,610", paid: true },
         { t: "Apr £12,268.60", paid: true },
         { t: "May £8,250", paid: true },
-        { t: "Jun £12,000", paid: false },
+        { t: "Jun £12,000", paid: true },
         { t: "Jul £15,000", paid: true },
       ];
       return;
