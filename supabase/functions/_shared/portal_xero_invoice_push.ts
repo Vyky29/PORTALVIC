@@ -45,6 +45,11 @@ export async function pushPortalInvoiceShareToXero(
      * Normal push: `paid` or `partial` (full ACCREC amount; instalments reconcile in Xero).
      */
     allowUnpaid?: boolean;
+    /**
+     * Office only. Hidden funder INV-Ps (NHS/H&F, not shown to parents) are real
+     * invoices. Schedule-shadow copies are still skipped via the tracker note.
+     */
+    allowHidden?: boolean;
   },
 ): Promise<PortalXeroPushResult> {
   if (!xeroConfigured()) return { ok: false, error: "xero_not_configured" };
@@ -65,7 +70,7 @@ export async function pushPortalInvoiceShareToXero(
   if (clean(share.xero_invoice_id, 80)) {
     return { ok: true, xero_invoice_id: String(share.xero_invoice_id), skipped: true };
   }
-  if (clean(share.share_status, 20).toLowerCase() === "hidden") {
+  if (clean(share.share_status, 20).toLowerCase() === "hidden" && !opts?.allowHidden) {
     return { ok: false, error: "xero_skip_hidden_schedule_copy" };
   }
   if (portalShareXeroExcluded(share.notes)) {
