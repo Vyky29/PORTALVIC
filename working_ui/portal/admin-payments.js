@@ -6529,7 +6529,22 @@
       var annual = Number(inv && inv.booked_annual_gbp) || 0;
       /* Face amount matching year is not Autumn. */
       if (face > 0 && annual > 0 && Math.abs(face - annual) < 0.05) return autumn;
-      if (face > 0 && face <= autumn * 1.15) return Math.max(autumn, face);
+      if (face > 0 && face <= autumn * 1.15) {
+        /*
+         * Reduced keeper (e.g. Belhadj aquatic drop £2,655 → £1,755): when face
+         * matches the flexi schedule total and is below catalogue Autumn, trust face.
+         */
+        var sched = Array.isArray(inv && inv.payment_schedule) ? inv.payment_schedule : [];
+        var schedSum = 0;
+        for (var si = 0; si < sched.length; si++) {
+          schedSum += Number(sched[si] && sched[si].amount_gbp) || 0;
+        }
+        schedSum = Math.round(schedSum * 100) / 100;
+        if (schedSum > 0 && Math.abs(face - schedSum) < 0.05 && face + 0.05 < autumn) {
+          return face;
+        }
+        return Math.max(autumn, face);
+      }
       return autumn;
     }
     if (via === "reenrolment") {
