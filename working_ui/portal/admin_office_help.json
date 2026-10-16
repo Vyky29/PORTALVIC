@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16-v460",
+  "version": "2026-10-16-v461",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1354,13 +1354,14 @@
             "Open CLIENT and stay on Active.",
             "Click the participant photo (the list circle, or the photo next to the name once the profile is open).",
             "Drag the picture until the face sits in the circle. Zoom 1 shows the whole photo. Move the slider only if you want it closer.",
-            "Save. Reset puts it back to the whole photo, centred. Admin and the staff portal use that framing on the circles and on the participant card. The parent portal keeps the photo they uploaded, whole, with no zoom.",
+            "Save. The circle on Active uses that same size. Zoom 1 is the whole photo inside the circle. Reset puts it back to the whole photo, centred. Admin and the staff portal use that framing. The parent portal keeps the photo they uploaded, whole, with no zoom.",
             "On the staff participant card, tap the photo. It opens larger. Tap the dark area around it to go back to the card."
           ],
           "tips": [
             "Photos the office already had as a face crop stay as they were until you click and Save.",
             "A short name on Today still uses the framing you saved on the full name.",
-            "An office recognition photo shows on admin and the staff portal only. Parents do not see it. When they upload a photo in their portal, that upload replaces the office one for admin and staff."
+            "An office recognition photo shows on admin and the staff portal only. Parents do not see it. When they upload a photo in their portal, that upload replaces the office one for admin and staff.",
+            "Search on Active still lists the name if they are Registered or Old. The chip on the row says which list they are on."
           ],
           "es": {
             "title": "Centrar la foto de un padre",
@@ -1370,13 +1371,14 @@
               "Abre CLIENT y quedate en Active.",
               "Pulsa la foto (el circulo de la lista, o la foto junto al nombre cuando el perfil esta abierto).",
               "Arrastra hasta que la cara quede en el circulo. Zoom 1 ensena la foto entera. Mueve el slider solo si la quieres mas cerca.",
-              "Save. Reset la deja otra vez entera y centrada. Admin y el portal de trabajadores usan ese encuadre en los circulos y en la ficha. El portal de padres se queda con la foto que ellos subieron, entera y sin zoom.",
+              "Save. El circulo de Active usa ese mismo tamano. Zoom 1 es la foto entera dentro del circulo. Reset la deja otra vez entera y centrada. Admin y el portal de trabajadores usan ese encuadre. El portal de padres se queda con la foto que ellos subieron, entera y sin zoom.",
               "En la ficha del participante, en el portal de trabajadores, pulsa la foto. Se abre mas grande. Pulsa la zona oscura de alrededor para volver a la ficha."
             ],
             "tips": [
               "Las fotos que ya eran un recorte de cara se quedan igual hasta que pulses y guardes.",
               "Un nombre corto en Today usa el encuadre que guardaste con el nombre completo.",
-              "Una foto de reconocimiento de la oficina sale solo en admin y en el portal de trabajadores. Los padres no la ven. Cuando suben una foto en su portal, esa sustituye a la de la oficina en admin y en staff."
+              "Una foto de reconocimiento de la oficina sale solo en admin y en el portal de trabajadores. Los padres no la ven. Cuando suben una foto en su portal, esa sustituye a la de la oficina en admin y en staff.",
+              "Si buscas un nombre en Active, la fila sale aunque sea Registered u Old. El chip dice en que lista esta."
             ]
           }
         },

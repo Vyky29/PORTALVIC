@@ -107,7 +107,7 @@
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
   <script src="/portal/admin-portal-parent-contact-edit.js?v=20261001-live-contact"></script>
   <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos-ceo"></script>
-  <script src="/portal/portal_participant_photos.js?v=20261015-photo-new"></script>
+  <script src="/portal/portal_participant_photos.js?v=20261016-photo-size"></script>
   <script src="/portal/admin-participant-photo-frame.js?v=20261009-photo-front"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
   <script src="/portal/portal_staff_photos.js?v=20261005-expense-face"></script>
@@ -36569,7 +36569,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           root2.querySelectorAll('#paxContactsTbl tbody tr').forEach(function(tr){
             var id = tr.getAttribute('data-pax-id');
             var p = byId[String(id)];
-            if(!p){ tr.style.display = 'none'; return; }
+            if(!p){
+              var rawName = String(tr.getAttribute('data-pax-name') || '').toLowerCase();
+              var nameHit = !!(q && rawName && rawName.indexOf(q) >= 0);
+              tr.style.display = nameHit ? '' : 'none';
+              if(nameHit) n++;
+              return;
+            }
             var statusOk = bk === 'all' || paxContactsMatchesBookingStatus(p, bk);
             if(statusOk && showJoined && waitSrc !== 'all' && paxContactsWaitingKind(p) !== waitSrc) statusOk = false;
             if(statusOk && showRegistered && placeF !== 'all' && paxContactsPlaceFlag(p) !== placeF) statusOk = false;
@@ -36602,7 +36608,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
             var focusOk = true;
             if(focusNames && !focusNames[adminPortalNormalizedPersonName(p.name)]) focusOk = false;
-            var ok = statusOk && dimOk && regOk && nameOk && focusOk;
+            var listedHere = statusOk && dimOk && regOk && nameOk && focusOk;
+            var foundBySearch = !!(q && nameOk && dimOk && regOk && focusOk);
+            var ok = listedHere || foundBySearch;
             if(!ok && q && nameOk && dimOk && regOk && focusOk && !statusOk) missed.push({ tr: tr, p: p });
             var ansCell = tr.querySelector('[data-pax-ans]');
             if(ansCell){
