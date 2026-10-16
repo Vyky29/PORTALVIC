@@ -241,12 +241,6 @@ export async function nudgeUnpaidBookingPayHolds(
       ),
     );
 
-    const bodyText =
-      `Reminder: ${participant}'s place is held for about ${minsLeft} more minute` +
-      (minsLeft === 1 ? "" : "s") +
-      `. Pay now or the seat goes live again` +
-      (slot ? ` (${slot})` : "") +
-      `: ${finishLink}`;
     const placeBlock = sessionBlockEmailText({
       service: row.service_name,
       venue: row.venue,
@@ -254,14 +248,29 @@ export async function nudgeUnpaidBookingPayHolds(
       dateIso: row.date_iso,
       time: row.time_label,
     });
+    const minsLabel =
+      `about ${minsLeft} more minute` + (minsLeft === 1 ? "" : "s");
     const emailBody =
       `Hi ${parent.split(/\s+/)[0] || parent},\n\n` +
-      `Reminder: ${participant}'s place is held for about ${minsLeft} more minute` +
-      (minsLeft === 1 ? "" : "s") +
-      `. Pay now or the seat goes live again.\n\n` +
+      `Reminder: ${participant}'s place is held for ${minsLabel}. ` +
+      `Pay now or the seat goes live again.\n\n` +
       (placeBlock ? `${placeBlock}\n\n` : "") +
       `${finishLink}\n\n` +
       `Thank you,\nclubSENsational`;
+    /* Pay URL on email only (Card / Apple Pay break inside WhatsApp). */
+    const waBodyWithLink =
+      `Hi ${parent.split(/\s+/)[0] || parent},\n\n` +
+      `Reminder: ${participant}'s place is held for ${minsLabel}. ` +
+      `Pay now or the seat goes live again` +
+      (slot ? ` (${slot})` : "") +
+      `:\n${finishLink}\n\n` +
+      `If the link does not open payment, use Open in Safari / Chrome (not inside WhatsApp).`;
+    const waBodyNudge =
+      `Hi ${parent.split(/\s+/)[0] || parent},\n\n` +
+      `Reminder: ${participant}'s place is held for ${minsLabel}. ` +
+      `We emailed you the payment link` +
+      (slot ? ` (${slot})` : "") +
+      `. Open the email to pay, or the seat goes live again.`;
 
     let emailOk = false;
     let wa: { ok: boolean; id?: string; channel?: string; error?: string } = {
@@ -283,8 +292,10 @@ export async function nudgeUnpaidBookingPayHolds(
       }
     }
 
+    let waText = "";
     if (phone) {
-      wa = await sendParentMobileMessage(phone, bodyText, {
+      waText = emailOk ? waBodyNudge : waBodyWithLink;
+      wa = await sendParentMobileMessage(phone, waText, {
         kind: "contact_update",
       });
       if (!wa.ok) {
@@ -335,7 +346,7 @@ export async function nudgeUnpaidBookingPayHolds(
         parent_email: email,
         parent_phone: phone,
         subject: `Pay within ${minsLeft} min · ${participant}`,
-        body_text: bodyText,
+        body_text: waText || emailBody,
         message_type: "text",
         email_status: emailOk ? "sent" : email ? "failed" : "skipped",
         whatsapp_status: waStatus,
@@ -346,6 +357,7 @@ export async function nudgeUnpaidBookingPayHolds(
           reservation_id: String(row.id),
           hold_expires_at: row.hold_expires_at,
           mins_left: minsLeft,
+          whatsapp_has_link: !emailOk,
         },
       }).select("id").maybeSingle();
       if (insertedNudgeLog?.id) {

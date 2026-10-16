@@ -471,6 +471,7 @@ async function logFinishBookingNotify(
         parent_email_masked: opts.parentEmail ? maskEmailForLog(opts.parentEmail) : null,
         parent_phone_masked: opts.parentPhone ? maskPhoneForLog(opts.parentPhone) : null,
         wa_template_kind: "contact_update",
+        /* Meta approved shell still says “existing booking” until Victor adds portal_parent_booking_notice_v1. */
         wa_client_body: opts.bodyText.trim()
           ? "Update about your existing ClubSENsational booking\n\n" +
             opts.bodyText.trim() +
@@ -1107,8 +1108,25 @@ export async function notifyParentPortalPin(opts: {
   const participant = clean(opts.participantName, 120) || "your child";
   const first = participant.split(/\s+/)[0] || participant;
   const portalUrl = `${portalPublicOrigin()}/parent`;
-  const bodyText =
-    `Parent Portal ready for ${participant}. Sign in at ${portalUrl} — child first name: ${first} — Family PIN: ${opts.pin4}. Keep this PIN private.`;
+  /* PIN stays on email. WhatsApp only carries it if email is missing/failed. */
+  const emailBody =
+    `Hi ${name},\n\n` +
+    `Your Parent Portal is ready for ${participant}.\n\n` +
+    `Sign in at ${portalUrl}\n` +
+    `Child first name: ${first}\n` +
+    `Family PIN: ${opts.pin4}\n\n` +
+    `Keep this PIN private. You can change it after login.\n\nThank you,\nclubSENsational`;
+  const waWithPin =
+    `Hi ${name},\n\n` +
+    `Parent Portal ready for ${participant}.\n\n` +
+    `Sign in at ${portalUrl}\n` +
+    `Child first name: ${first}\n` +
+    `Family PIN: ${opts.pin4}\n\n` +
+    `Keep this PIN private.`;
+  const waNudge =
+    `Hi ${name},\n\n` +
+    `Your Parent Portal is ready for ${participant}. ` +
+    `We emailed you the sign-in link and Family PIN. Open the email to get in.`;
 
   let emailOk = false;
   let waResult: { ok: boolean; id?: string; channel?: string; error?: string } = {
@@ -1122,13 +1140,7 @@ export async function notifyParentPortalPin(opts: {
       config: smtp,
       to: email,
       subject: `Parent Portal PIN · ${participant}`,
-      bodyText:
-        `Hi ${name},\n\n` +
-        `Your Parent Portal is ready for ${participant}.\n\n` +
-        `Sign in at ${portalUrl}\n` +
-        `Child first name: ${first}\n` +
-        `Family PIN: ${opts.pin4}\n\n` +
-        `Keep this PIN private. You can change it after login.\n\nThank you,\nclubSENsational`,
+      bodyText: emailBody,
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-pin] email", mail.error);
@@ -1136,7 +1148,7 @@ export async function notifyParentPortalPin(opts: {
 
   const phone = normalizeParentPhoneE164(String(opts.parentPhone || ""));
   if (phone) {
-    const wa = await sendParentMobileMessage(phone, bodyText, {
+    const wa = await sendParentMobileMessage(phone, emailOk ? waNudge : waWithPin, {
       kind: "contact_update",
     });
     waResult = wa;
@@ -1150,7 +1162,7 @@ export async function notifyParentPortalPin(opts: {
     parentPhone: phone,
     participantName: participant,
     subject: `Parent Portal PIN · ${participant}`,
-    bodyText,
+    bodyText: emailOk ? waNudge : waWithPin,
     emailOk,
     wa: waResult,
   });

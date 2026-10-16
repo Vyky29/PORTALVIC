@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16-v470",
+  "version": "2026-10-16-v471",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1125,10 +1125,12 @@
             "After the trial ends, the parent is sent a term finish link for the same place. They have until the end of that day. No reply releases the place."
           ],
           "tips": [
+            "PIN and pay links go in the email. WhatsApp only nudges to open the email (link/PIN on WhatsApp only if email failed).",
             "Pay link on email only. WhatsApp is a nudge to open the email.",
             "Do not put suitability wording on pay links.",
             "Aquatic: one override per 30-minute half, not one 60-minute band.",
-            "The term link is automatic. Reply FREE releases the place. A different slot is a reply to the office, not a new trial."
+            "The term link is automatic. Reply FREE releases the place. A different slot is a reply to the office, not a new trial.",
+            "WhatsApp still shows Meta title “Update about your existing booking” until Meta approves a new template (portal_parent_booking_notice_v1) in Business Manager."
           ],
           "es": {
             "title": "Finish-booking / trial pagado y Overview",
@@ -1145,10 +1147,12 @@
               "Cuando acaba el trial, al padre le llega un enlace de term para la misma plaza. Tienen hasta el final de ese dia. Si no contestan, la plaza se suelta."
             ],
             "tips": [
+              "El PIN y el enlace de pago van en el email. El WhatsApp solo avisa que abran el email (enlace/PIN en WhatsApp solo si el email fallo).",
               "El enlace de pago solo por email. El WhatsApp avisa que miren el email.",
               "En los enlaces de pago no pongas frases de suitability.",
               "Aquatic: un override por cada media hora, no una banda de 60 minutos.",
-              "El enlace de term sale solo. Contestar FREE suelta la plaza. Otra hora es una respuesta a la oficina, no un trial nuevo."
+              "El enlace de term sale solo. Contestar FREE suelta la plaza. Otra hora es una respuesta a la oficina, no un trial nuevo.",
+              "El WhatsApp sigue mostrando el titulo de Meta “Update about your existing booking” hasta que Meta apruebe una plantilla nueva (portal_parent_booking_notice_v1) en Business Manager."
             ]
           }
         },
@@ -4457,12 +4461,18 @@
             "Sign in is the welcome popup (family PIN or email code). Sign out clears that family on this browser and asks again. Office view has Admin, which returns to Places.",
             "Clients and former families both see their own name. A former label only means they are not in class yet.",
             "When a registration finishes, the pay link holds that seat for 30 minutes. If they do not pay, the hold expires and the seat is free on the offer again.",
-            "Do not send a second hold while they are about to pay. A second hold paints the seat full before payment."
+            "Do not send a second hold while they are about to pay. A second hold paints the seat full before payment.",
+            "The 25-minute pay-hold reminder puts the pay link in the email only. WhatsApp says we emailed the link. If email failed, WhatsApp still includes the link."
           ],
           "tips": [
             "If the top bar shows another family, Sign out before booking. The slot link does not switch the account by itself.",
             "Fully booked with no payment usually means the 30-minute hold has not been cleared yet."
-          ]
+          ],
+          "es": {
+            "steps": [
+              "El recordatorio del pay hold a los 25 minutos pone el enlace solo en el email. El WhatsApp dice que les enviamos el enlace por email. Si el email fallo, el WhatsApp si lleva el enlace."
+            ]
+          }
         },
         {
           "id": "weekend_friday_1800_cutoff",

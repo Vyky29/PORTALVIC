@@ -908,13 +908,20 @@ export async function sendParentMessageViaWhatsapp(
     "en").trim() || "en";
   const photoUrl = normalizePublicPhotoUrl(String(opts?.instructorPhotoUrl || "").trim());
   const kind = String(opts?.kind || "").trim().toLowerCase();
-  const photoTemplate = (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PHOTO") ?? "").trim();
-  if (
-    photoUrl &&
-    photoTemplate &&
-    parentNotifyKindsWithInstructorPhoto().has(kind)
-  ) {
-    template = photoTemplate;
+  const photoTemplateEnv = (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PHOTO") ?? "").trim();
+  /* Prefer 7-box photo template (Service/Date/Venue lines). Fall back to env / v1. */
+  const photoTemplateFallbacks = [
+    "portal_parent_photo_v2",
+    photoTemplateEnv,
+    "portal_parent_photo_v1",
+  ].filter((name, i, arr) => !!name && arr.indexOf(name) === i);
+  const wantsPhotoTemplate =
+    !!photoUrl &&
+    photoTemplateFallbacks.length > 0 &&
+    parentNotifyKindsWithInstructorPhoto().has(kind);
+  if (wantsPhotoTemplate) {
+    const forced = String(opts?.templateName || "").trim();
+    template = photoTemplateFallbacks.includes(forced) ? forced : photoTemplateFallbacks[0];
   }
 
   if (!template) {
@@ -975,7 +982,7 @@ export async function sendParentMessageViaWhatsapp(
     return { ok: false, error: "whatsapp_empty_template_body" };
   }
 
-  const usePhotoHeader = !!(photoUrl && photoTemplate && template === photoTemplate) ||
+  const usePhotoHeader = !!(photoUrl && photoTemplateFallbacks.includes(template)) ||
     !!(photoUrl &&
       parentNotifyKindsWithInstructorPhoto().has(kind) &&
       whatsappPhotoHeaderEnabled());
@@ -1023,7 +1030,7 @@ export async function sendParentMessageViaWhatsapp(
         const text = await res.text();
         if (!res.ok) {
           lastErr = `whatsapp_${res.status}: ${text.slice(0, 400)}`;
-          if (template === photoTemplate && textTemplate && textTemplate !== photoTemplate) {
+          if (photoTemplateFallbacks.includes(template)) {
             break;
           }
           if (withHeader && /1320|header|component/i.test(text)) {
@@ -1057,12 +1064,21 @@ export async function sendParentMessageViaWhatsapp(
       }
     }
   }
-  if (template === photoTemplate && textTemplate && textTemplate !== photoTemplate) {
-    return await sendParentMessageViaWhatsapp(phoneE164, body, {
-      ...opts,
-      instructorPhotoUrl: "",
-      templateName: textTemplate,
-    });
+  if (photoTemplateFallbacks.includes(template)) {
+    const nextPhoto = photoTemplateFallbacks[photoTemplateFallbacks.indexOf(template) + 1];
+    if (nextPhoto) {
+      return await sendParentMessageViaWhatsapp(phoneE164, body, {
+        ...opts,
+        templateName: nextPhoto,
+      });
+    }
+    if (textTemplate && !photoTemplateFallbacks.includes(textTemplate)) {
+      return await sendParentMessageViaWhatsapp(phoneE164, body, {
+        ...opts,
+        instructorPhotoUrl: "",
+        templateName: textTemplate,
+      });
+    }
   }
   return { ok: false, error: lastErr };
 }
