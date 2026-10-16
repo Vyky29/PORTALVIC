@@ -94,7 +94,8 @@ Deno.serve(async (req) => {
         : result.error === "already_paid" ||
             result.error === "invoice_not_shared" ||
             result.error === "invoice_not_open" ||
-            result.error === "credit_not_open"
+            result.error === "credit_not_open" ||
+            result.error === "nothing_owed"
           ? 409
           : 400;
     if (

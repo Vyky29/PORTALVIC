@@ -27,6 +27,44 @@ function money(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/** Pounds already collected. Schedule paid rows are the fallback when the paid field is empty. */
+function paidTowardInvoiceGbp(inv: {
+  amount_paid_gbp?: unknown;
+  payment_schedule?: unknown;
+}): number {
+  const field = money(Math.max(0, Number(inv.amount_paid_gbp) || 0));
+  if (field > 0) return field;
+  if (!hasPaymentSchedule(inv.payment_schedule)) return 0;
+  const preview = applyCreditToSchedule(inv.payment_schedule, 0);
+  let sum = 0;
+  for (const row of preview.schedule) {
+    if (row.status === "paid") sum += Number(row.amount_gbp) || 0;
+  }
+  return money(sum);
+}
+
+/**
+ * What is still to pay BEFORE this credit.
+ * Instalment plan: unpaid rows only. Otherwise gross minus what is already paid.
+ * Never the invoice total.
+ */
+function owedBeforeCreditGbp(inv: {
+  amount_gbp?: unknown;
+  amount_paid_gbp?: unknown;
+  payment_schedule?: unknown;
+}): number {
+  if (hasPaymentSchedule(inv.payment_schedule)) {
+    const preview = applyCreditToSchedule(inv.payment_schedule, 0);
+    let sum = 0;
+    for (const row of preview.schedule) {
+      if (row.status !== "paid") sum += Number(row.amount_gbp) || 0;
+    }
+    return money(sum);
+  }
+  const gross = money(Math.max(0, Number(inv.amount_gbp) || 0));
+  return money(Math.max(0, gross - paidTowardInvoiceGbp(inv)));
+}
+
 export type CreditApplyActor = "parent_portal" | "office_auto" | "admin";
 
 export type ApplyCreditResult = {
@@ -40,6 +78,7 @@ export type ApplyCreditResult = {
   credit_residual_gbp?: number;
   credit_status?: string;
   invoice_remaining_gbp?: number;
+  next_instalment_due?: string | null;
   partial?: boolean;
   xero?: Record<string, unknown> | null;
   hold?: Record<string, unknown> | null;
@@ -82,13 +121,21 @@ export function invoiceIsGocardlessHint(share: { payment_method_hint?: unknown }
 export async function findNextInvoiceForCreditApply(
   admin: { from: (t: string) => any },
   contactId: string,
-  opts?: { allowHidden?: boolean; preferInvoiceId?: string; skipGocardless?: boolean },
+  opts?: {
+    allowHidden?: boolean;
+    preferInvoiceId?: string;
+    skipGocardless?: boolean;
+    excludeIds?: string[];
+  },
 ): Promise<(PaySequenceShare & { amount_gbp?: unknown; payment_schedule?: unknown; xero_invoice_id?: unknown; invoice_number?: unknown; payment_method_hint?: unknown }) | null> {
   const cid = clean(contactId, 120);
   if (!cid) return null;
   const allowHidden = opts?.allowHidden !== false;
   const skipGocardless = opts?.skipGocardless === true;
   const preferId = clean(opts?.preferInvoiceId, 80);
+  const exclude = new Set(
+    (opts?.excludeIds || []).map((id) => clean(id, 80)).filter(Boolean),
+  );
 
   const { data, error } = await admin
     .from("portal_parent_invoice_share")
@@ -102,8 +149,9 @@ export async function findNextInvoiceForCreditApply(
     return null;
   }
 
-  const eligible = (data || []).filter((s: PaySequenceShare) =>
-    invoiceEligibleForCreditApply(s, { allowHidden, skipGocardless }),
+  const eligible = (data || []).filter((s: PaySequenceShare & { id?: unknown }) =>
+    invoiceEligibleForCreditApply(s, { allowHidden, skipGocardless }) &&
+    !exclude.has(clean(s.id, 80))
   );
   if (!eligible.length) return null;
 
@@ -144,7 +192,7 @@ export async function applyOpenCreditToInvoice(
   const { data: inv, error: invErr } = await admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, contact_id, amount_gbp, payment_status, share_status, invoice_number, xero_invoice_id, payment_schedule, payment_method_hint, billing_term",
+      "id, contact_id, amount_gbp, amount_paid_gbp, payment_status, share_status, invoice_number, xero_invoice_id, payment_schedule, payment_method_hint, billing_term",
     )
     .eq("id", invoiceId)
     .eq("contact_id", contactId)
@@ -191,10 +239,21 @@ export async function applyOpenCreditToInvoice(
     };
   }
 
-  const appliedGbp = money(Math.min(creditAmount, invoiceAmount));
-  const invoiceRemaining = money(invoiceAmount - appliedGbp);
+  const owedGbp = owedBeforeCreditGbp(inv);
+  if (owedGbp <= 0) {
+    return {
+      ok: false,
+      error: "nothing_owed",
+      message: "This invoice has nothing left to pay.",
+    };
+  }
+
+  // Cap the credit at the unpaid balance. Do not eat pounds already paid.
+  const appliedGbp = money(Math.min(creditAmount, owedGbp));
+  const balanceDue = money(owedGbp - appliedGbp);
   const creditResidual = money(creditAmount - appliedGbp);
-  const fullyPaid = invoiceRemaining <= 0;
+  const fullyPaid = balanceDue <= 0;
+  const paidToward = paidTowardInvoiceGbp(inv);
   const creditFullyUsed = creditResidual <= 0;
   const invNo = clean(inv.invoice_number, 40);
   const actorLabel =
@@ -246,10 +305,12 @@ export async function applyOpenCreditToInvoice(
   }
 
   const invPatch: Record<string, unknown> = { updated_at: now };
+  let nextDue: string | null = null;
   if (hasPaymentSchedule(inv.payment_schedule)) {
     const scheduled = applyCreditToSchedule(inv.payment_schedule, appliedGbp);
     invPatch.payment_schedule = scheduled.schedule;
-    invPatch.next_instalment_due = fullyPaid ? null : scheduled.next_instalment_due;
+    nextDue = fullyPaid ? null : scheduled.next_instalment_due;
+    invPatch.next_instalment_due = nextDue;
   }
   if (fullyPaid) {
     invPatch.payment_status = "paid";
@@ -257,9 +318,11 @@ export async function applyOpenCreditToInvoice(
     invPatch.paid_via = "credit";
     invPatch.amount_gbp = invoiceAmount;
     invPatch.next_instalment_due = null;
+    nextDue = null;
   } else {
     invPatch.payment_status = "partial";
-    invPatch.amount_gbp = invoiceRemaining;
+    // Office "still due" is amount minus amount paid. Keep that equal to the unpaid balance.
+    invPatch.amount_gbp = money(paidToward + balanceDue);
     invPatch.paid_at = null;
     invPatch.paid_via = null;
   }
@@ -346,7 +409,8 @@ export async function applyOpenCreditToInvoice(
     applied_gbp: appliedGbp,
     credit_residual_gbp: creditFullyUsed ? 0 : creditResidual,
     credit_status: creditFullyUsed ? "applied" : "open",
-    invoice_remaining_gbp: fullyPaid ? 0 : invoiceRemaining,
+    invoice_remaining_gbp: fullyPaid ? 0 : balanceDue,
+    next_instalment_due: nextDue,
     partial: !fullyPaid,
     xero,
     hold,
@@ -395,6 +459,7 @@ export async function autoApplyOpenCreditToNextInvoices(
   }
 
   const contactId = clean(credit.contact_id, 120);
+  const skipNothingOwed: string[] = [];
   for (let i = 0; i < maxInvoices; i++) {
     const { data: live } = await admin
       .from("portal_parent_family_credits")
@@ -408,6 +473,7 @@ export async function autoApplyOpenCreditToNextInvoices(
     const nextInv = await findNextInvoiceForCreditApply(admin, contactId, {
       allowHidden: true,
       skipGocardless: true,
+      excludeIds: skipNothingOwed,
     });
     if (!nextInv) {
       // Distinguish: no invoice at all vs only GC instalments left.
@@ -439,6 +505,10 @@ export async function autoApplyOpenCreditToNextInvoices(
       actor: "office_auto",
     });
     applications.push(result);
+    if (!result.ok && result.error === "nothing_owed") {
+      skipNothingOwed.push(clean(nextInv.id, 80));
+      continue;
+    }
     if (!result.ok) break;
     if ((result.credit_residual_gbp || 0) <= 0) break;
   }

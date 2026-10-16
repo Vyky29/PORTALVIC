@@ -26,6 +26,40 @@ function formatGbp(n: number | null | undefined): string {
   return "£" + money(Number(n)).toFixed(2);
 }
 
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+function longDate(iso: string): string {
+  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return "";
+  const day = Number(m[3]);
+  const month = MONTHS[Number(m[2]) - 1];
+  if (!month || !day) return "";
+  return day + " " + month + " " + m[1];
+}
+
+/** Parent-facing balance after a credit. This is what is left to pay, not the invoice total. */
+function stillToPayLine(remain: number | null | undefined, due: unknown): string {
+  const label = formatGbp(remain);
+  if (!label) return "The amount still to pay on that invoice has been reduced.";
+  const dueLabel = longDate(clean(due, 12));
+  return dueLabel
+    ? `The amount still to pay on that invoice is ${label}, due on ${dueLabel}.`
+    : `The amount still to pay on that invoice is ${label}.`;
+}
+
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function weekdayFromIso(iso: string): string {
@@ -114,6 +148,7 @@ export async function notifyParentAbsenceOutcome(
         ok?: boolean;
         payment_status?: string;
         invoice_remaining_gbp?: number;
+        next_instalment_due?: string | null;
         applied_gbp?: number;
         invoice_id?: string;
       }>;
@@ -203,7 +238,7 @@ export async function notifyParentAbsenceOutcome(
         `. ` +
         (paidFull
           ? "That invoice is now paid in full."
-          : `The remaining amount due is ${formatGbp(remain) || "reduced"}.`) +
+          : stillToPayLine(remain, firstOk.next_instalment_due)) +
         `\n\nSee Credits & refunds in the parent portal: ${portalHint}\n\nThank you,\nclubSENsational`;
     } else if (gcHeld) {
       subject = amountLabel
