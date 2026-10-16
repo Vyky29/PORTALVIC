@@ -144,13 +144,6 @@
       suffix: "\nThank you.",
     },
   ];
-  /** Kinds that are not "existing booking" updates — show a clearer office label above the Meta shell. */
-  var WA_NEW_BOOKING_KINDS = {
-    finish_booking: 1,
-    portal_pin: 1,
-    booking_pay_hold_nudge_25m: 1,
-    trial_booking_completed: 1,
-  };
   var WA_TEMPLATE_BODY_MAX = 700;
 
   function activeColdTemplate() {
