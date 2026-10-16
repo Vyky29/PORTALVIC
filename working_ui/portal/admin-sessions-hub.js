@@ -13494,6 +13494,39 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return canonicalStaffMatchKey(raw) || slugify(clean(raw)) || "staff";
   }
 
+  /**
+   * From Tue 20 Oct 2026, Luliya's afternoon seats with a named cover leave her column.
+   * They show only on the cover. Morning Day Centre stays.
+   */
+  function dayBoardNamedCoverLeavesOriginal(iso, origInsts, slot) {
+    var day = String(iso || "").slice(0, 10);
+    if (!day || day < "2026-10-20") return false;
+    var list = Array.isArray(origInsts) ? origInsts : [];
+    var luliya = false;
+    for (var i = 0; i < list.length; i++) {
+      var key = canonicalStaffMatchKey(list[i]);
+      if (key === "luliya" || key === "lulia") luliya = true;
+    }
+    if (!luliya) return false;
+    return dayBoardSlotStartMinutes(slot) >= 16 * 60;
+  }
+
+  /** Clock start in minutes. Labels like "4 to 4.30" are afternoon (16:00). */
+  function dayBoardSlotStartMinutes(slot) {
+    var raw = clean(slot && (slot.time_start || slot.anchor_start));
+    if (raw.indexOf(":") >= 0) {
+      var hm = normTimeShort(raw).match(/^(\d{1,2}):(\d{2})$/);
+      if (hm) return (parseInt(hm[1], 10) || 0) * 60 + (parseInt(hm[2], 10) || 0);
+    }
+    var lab = clean(slot && (slot.time_slot || slot.anchor_time_slot_label || raw));
+    var lm = lab.match(/^(\d{1,2})(?:[.:](\d{2}))?\s+to\b/i);
+    if (!lm) return NaN;
+    var h = parseInt(lm[1], 10) || 0;
+    var min = lm[2] ? parseInt(lm[2], 10) || 0 : 0;
+    if (h > 0 && h < 8) h += 12;
+    return h * 60 + min;
+  }
+
   /** Instructors that own a visible column for this slot (cover / reassign already on slot). */
   function dayBoardInstructorsForSlot(slot) {
     var list = slotInstructors(slot);
@@ -14300,7 +14333,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
          * Change instructor while they are still on the rota (no day-off yet).
          * Keep their clients on this column, with a chip naming who is covering.
          */
-        if (!awayOrig.length) {
+        if (!awayOrig.length && !dayBoardNamedCoverLeavesOriginal(iso, origInsts, slot)) {
           var keptCover = dayBoardStaffLabel(
             slot.portalCoveringStaffName || slot.portalCoveringStaffId
           );
