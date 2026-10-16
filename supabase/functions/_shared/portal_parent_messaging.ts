@@ -776,12 +776,14 @@ function isSpacedWhatsappTemplate(template: string): boolean {
   return name === "portal_parent_update_v3" ||
     name === "portal_staff_update_v3" ||
     name === "portal_parent_photo_v1" ||
-    name === "portal_parent_photo_v2";
+    name === "portal_parent_photo_v2" ||
+    name === "portal_parent_photo_v3";
 }
 
 function spacedBoxCount(template: string): number {
   const name = String(template || "").trim().toLowerCase();
-  if (name === "portal_parent_photo_v2") return 7;
+  /* v2 + v3: 7 boxes. v3 keeps Service/Date/Venue/Instructor tight (no blank line between). */
+  if (name === "portal_parent_photo_v2" || name === "portal_parent_photo_v3") return 7;
   return 4;
 }
 
@@ -911,6 +913,7 @@ export async function sendParentMessageViaWhatsapp(
   const photoTemplateEnv = (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PHOTO") ?? "").trim();
   /* Prefer 7-box photo template (Service/Date/Venue lines). Fall back to env / v1. */
   const photoTemplateFallbacks = [
+    "portal_parent_photo_v3",
     "portal_parent_photo_v2",
     photoTemplateEnv,
     "portal_parent_photo_v1",
