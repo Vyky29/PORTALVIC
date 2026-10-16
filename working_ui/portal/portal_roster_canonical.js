@@ -5331,6 +5331,10 @@
       try {
         out = applyPatienceIkramFrom28(out);
       } catch (_) {}
+      /* Tue 20 Oct on: Christian Abate with Luliya, Emmanuel Abate with Roberto. */
+      try {
+        out = applyAbateInstructorSwapFrom20(out);
+      } catch (_) {}
       return out;
     },
   };
