@@ -617,7 +617,7 @@ export async function notifyParentFinishBooking(opts: {
   if (phone) {
     // Cold outreach must use approved Meta template (contact_update), not free-text.
     const wa = await sendParentMobileMessage(phone, waBody, {
-      kind: "contact_update",
+      kind: "finish_booking",
     });
     waOk = wa.ok;
     waResult = wa;
@@ -1141,6 +1141,7 @@ export async function notifyParentPortalPin(opts: {
       to: email,
       subject: `Parent Portal PIN · ${participant}`,
       bodyText: emailBody,
+      replyFooter: "parent",
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-pin] email", mail.error);
@@ -1149,7 +1150,7 @@ export async function notifyParentPortalPin(opts: {
   const phone = normalizeParentPhoneE164(String(opts.parentPhone || ""));
   if (phone) {
     const wa = await sendParentMobileMessage(phone, emailOk ? waNudge : waWithPin, {
-      kind: "contact_update",
+      kind: "portal_pin",
     });
     waResult = wa;
     if (!wa.ok) console.warn("[finish-booking-pin] whatsapp", wa.error);

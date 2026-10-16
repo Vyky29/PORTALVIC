@@ -717,6 +717,22 @@ export function resolveParentNotifyWhatsappTemplate(kind: string): string {
     const urgent = (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_URGENT") ?? "").trim();
     return urgent || "portal_parent_urgent_v1";
   }
+  /* Pre-portal: pay / finish-booking / hold. Phone-only footer (no Parent Portal yet). */
+  if (
+    k === "finish_booking" ||
+    k === "booking_nudge" ||
+    k === "booking_pay_hold" ||
+    k === "booking_pay_hold_nudge_25m" ||
+    k === "registration_submitted"
+  ) {
+    const nudge = (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_NUDGE") ?? "").trim();
+    return nudge || "portal_parent_nudge_v1";
+  }
+  /* Just got Parent Portal (PIN). Client footer. */
+  if (k === "portal_pin") {
+    return (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim() ||
+      "portal_parent_update_v4";
+  }
   const byKind: Record<string, string> = {
     weekly_note: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_WEEKLY_NOTE",
     payment_due: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PAYMENT",
@@ -737,11 +753,16 @@ export function resolveParentNotifyWhatsappTemplate(kind: string): string {
     "portal_parent_update_v4";
 }
 
-/** Same shell structure; v4 = one bold footer. Fall back to v3 while Meta reviews. */
+/** Same shell structure; v4/nudge = one bold footer. Fall back while Meta reviews. */
 function spacedTextTemplateFallbacks(template: string): string[] {
   const name = String(template || "").trim().toLowerCase();
   if (name.startsWith("portal_staff_update")) {
     return ["portal_staff_update_v4", "portal_staff_update_v3"].filter(
+      (n, i, arr) => arr.indexOf(n) === i,
+    );
+  }
+  if (name.startsWith("portal_parent_nudge")) {
+    return ["portal_parent_nudge_v1", "portal_parent_update_v3"].filter(
       (n, i, arr) => arr.indexOf(n) === i,
     );
   }
@@ -804,6 +825,7 @@ function isSpacedWhatsappTemplate(template: string): boolean {
   const name = String(template || "").trim().toLowerCase();
   return name === "portal_parent_update_v3" ||
     name === "portal_parent_update_v4" ||
+    name === "portal_parent_nudge_v1" ||
     name === "portal_staff_update_v3" ||
     name === "portal_staff_update_v4" ||
     name === "portal_parent_photo_v1" ||

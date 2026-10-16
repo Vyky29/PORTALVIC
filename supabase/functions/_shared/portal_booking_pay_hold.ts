@@ -296,7 +296,7 @@ export async function nudgeUnpaidBookingPayHolds(
     if (phone) {
       waText = emailOk ? waBodyNudge : waBodyWithLink;
       wa = await sendParentMobileMessage(phone, waText, {
-        kind: "contact_update",
+        kind: "booking_pay_hold",
       });
       if (!wa.ok) {
         console.warn("[nudgeUnpaidBookingPayHolds] wa", wa.error);
