@@ -445,6 +445,23 @@
     } catch (_sw) {}
   }
 
+  function stopStream(stream) {
+    if (!stream || !stream.getTracks) return;
+    stream.getTracks().forEach(function (t) {
+      try {
+        t.stop();
+      } catch (_t) {}
+    });
+  }
+
+  /* Ask for the mic on the tap so Safari remembers the permission, then let go.
+     Holding the stream blocks the call iframe, so the room joins with no voice. */
+  function releaseUnlockCapture() {
+    var stream = global.__PORTAL_COMMS_UNLOCK_STREAM__;
+    global.__PORTAL_COMMS_UNLOCK_STREAM__ = null;
+    stopStream(stream);
+  }
+
   function unlockCallAudio() {
     try {
       var AC = global.AudioContext || global.webkitAudioContext;
@@ -464,7 +481,7 @@
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
-          global.__PORTAL_COMMS_UNLOCK_STREAM__ = stream;
+          stopStream(stream);
         }).catch(function () {});
       }
     } catch (_mic) {}
@@ -472,6 +489,7 @@
 
   function dispose() {
     tellSwStopCallRing();
+    releaseUnlockCapture();
     joinGen += 1;
     callHoldActive = false;
     userWantedMute = false;
@@ -512,6 +530,7 @@
       jitsiApi = null;
     }
     stopTracksOn(parent);
+    releaseUnlockCapture();
     var token = opts.token || preparedToken(opts);
     var domain = "8x8.vc";
     try {
@@ -528,12 +547,14 @@
       throw err;
     }
     if (gen !== joinGen) return null;
+    releaseUnlockCapture();
     stopTracksOn(parent);
     parent.innerHTML = "";
     var size = sizeHost(parent);
     var Jitsi = global.JitsiMeetExternalAPI;
     var hangupArmed = false;
     var joined = false;
+    var framed = false;
     var audioOnly = opts.video !== true;
     jitsiApi = new Jitsi(domain, {
       roomName: String(token.roomName),
@@ -549,7 +570,10 @@
         startWithVideoMuted: audioOnly,
         startWithAudioMuted: false,
         startAudioMuted: 0,
-        startAudioOnly: audioOnly,
+        /* Audio-only mode dropped the room after a few seconds and muted the
+           other person. Keep the camera off for a voice call, and keep both
+           voices on the bridge instead of a direct phone-to-phone link. */
+        startAudioOnly: false,
         p2p: { enabled: false },
         enableOpusRed: false,
         disableDeepLinking: true,
@@ -616,7 +640,14 @@
         if (ok) resolve(jitsiApi);
         else reject(err || new Error("Could not connect to the call. Allow microphone and try again."));
       }
+      function noteFrame() {
+        if (framed || gen !== joinGen) return;
+        if (!(parent && parent.querySelector("iframe"))) return;
+        framed = true;
+        if (typeof opts.onFrame === "function") opts.onFrame();
+      }
       var t = global.setTimeout(function () {
+        noteFrame();
         if (parent && parent.querySelector("iframe")) finish(true);
         else finish(false);
       }, 18000);
@@ -626,6 +657,7 @@
           global.clearTimeout(t);
           return;
         }
+        noteFrame();
         if (joined || (parent && parent.querySelector("iframe"))) {
           hangupArmed = hangupArmed || joined;
           finish(true);

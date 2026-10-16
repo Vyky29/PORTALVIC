@@ -1897,6 +1897,10 @@ async function joinLiveCall() {
     displayName: myCallDisplayName(),
     video: String(state.call.type || "").toUpperCase() === "VIDEO",
     parent: host,
+    onFrame: function () {
+      const overlay = $("commsCallOverlay");
+      if (overlay) overlay.classList.remove("is-connecting");
+    },
     onJoined: function () {
       const overlay = $("commsCallOverlay");
       if (overlay) overlay.classList.remove("is-connecting");

@@ -1600,7 +1600,11 @@
       try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
-            global.__PORTAL_COMMS_UNLOCK_STREAM__ = stream;
+            try {
+              stream.getTracks().forEach(function (t) {
+                t.stop();
+              });
+            } catch (_st) {}
           }).catch(function () {});
         }
       } catch (_mic) {}
@@ -1630,7 +1634,7 @@
     if (global.PortalCommsCalls) return Promise.resolve(global.PortalCommsCalls);
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260925-call-both";
+      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20261016-call-audio";
       s.onload = function () {
         if (global.PortalCommsCalls) resolve(global.PortalCommsCalls);
         else reject(new Error("Call service failed to load."));
@@ -1823,6 +1827,9 @@
         displayName: myDashboardCallName(st.mode),
         video: String(st.type || "").toUpperCase() === "VIDEO",
         parent: host,
+        onFrame: function () {
+          el.classList.remove("is-connecting");
+        },
         onJoined: function () {
           el.classList.remove("is-connecting");
         },
