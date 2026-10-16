@@ -333,8 +333,9 @@
 
   function isThreadUnread(t) {
     if (!t || t.channel !== "whatsapp" || !t.hasInbound || !t.lastInboundAt) return false;
-    // Only a successful club WhatsApp reply clears unread — failed API sends must not.
-    if (t.lastOutboundOkAt && String(t.lastOutboundOkAt) >= String(t.lastInboundAt)) return false;
+    /* A parent reply stays unread until the office opens that chat.
+       Machine sends do not clear it and do not count on their own. */
+    if (t.lastHumanOutboundOkAt && String(t.lastHumanOutboundOkAt) >= String(t.lastInboundAt)) return false;
     var seen = readSeenMap()[t.key] || "";
     return String(t.lastInboundAt) > seen;
   }
@@ -1567,6 +1568,7 @@
           lastInboundAt: "",
           lastOutboundAt: "",
           lastOutboundOkAt: "",
+          lastHumanOutboundOkAt: "",
           lastInboundWaId: "",
         };
       }
@@ -1636,6 +1638,9 @@
       if (outAt > wt.lastOutboundAt) wt.lastOutboundAt = outAt;
       if (waOutboundCountsAsReply(row.whatsapp_status) && outAt > wt.lastOutboundOkAt) {
         wt.lastOutboundOkAt = outAt;
+        if (!isScheduleOverrideMachineNotify(row) && outAt > wt.lastHumanOutboundOkAt) {
+          wt.lastHumanOutboundOkAt = outAt;
+        }
       }
       var pname = String(row.parent_name || "").trim();
       var cname = String(row.client_display || "").trim();
@@ -1704,6 +1709,9 @@
       var rb = searchRankForThread(b, q);
       if (rb !== ra) return rb - ra;
     }
+    var ua = isThreadUnread(a) ? 1 : 0;
+    var ub = isThreadUnread(b) ? 1 : 0;
+    if (ua !== ub) return ub - ua;
     return String(adminWaThreadLatestAt(b) || "").localeCompare(
       String(adminWaThreadLatestAt(a) || "")
     );
@@ -2431,8 +2439,17 @@
         : kind === "old"
           ? " portal-pnlog-conv--former"
           : "";
-    var sub = t.events.length
-      ? bodyPreview(clientFacingOutboundBody(t.events[t.events.length - 1]))
+    var previewEv = t.events.length ? t.events[t.events.length - 1] : null;
+    if (unread) {
+      for (var pi = t.events.length - 1; pi >= 0; pi--) {
+        if (t.events[pi] && t.events[pi].dir === "in") {
+          previewEv = t.events[pi];
+          break;
+        }
+      }
+    }
+    var sub = previewEv
+      ? bodyPreview(clientFacingOutboundBody(previewEv))
       : t.fromDirectory
         ? "No API messages yet"
         : "";
@@ -2534,8 +2551,10 @@
         threads.length +
         " WhatsApp conversation" +
         (threads.length === 1 ? "" : "s") +
-        (unreadCount ? " · " + unreadCount + " unread" : "") +
-        " · latest first";
+        (unreadCount
+          ? " · " + unreadCount + " parent " + (unreadCount === 1 ? "reply" : "replies")
+          : "") +
+        (unreadCount ? " · replies first" : " · latest first");
       countEl.classList.toggle("portal-pnlog-count--has-unread", unreadCount > 0);
     }
     try {
