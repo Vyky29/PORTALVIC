@@ -1914,12 +1914,8 @@
     );
   }
 
-  function canReplyToEvent(ev) {
-    var id = eventWaMessageId(ev);
-    if (!id || id.indexOf("app:") === 0) return false;
-    if (ev.messageType === "reaction") return false;
-    if (ev.dir === "out" && String(ev.status || "").toLowerCase() === "failed") return false;
-    return true;
+  function canReplyToEvent() {
+    return false;
   }
 
   function replyPreviewForEvent(ev) {
@@ -2228,7 +2224,7 @@
       '<section class="portal-pnlog-chat__pane" aria-label="Thread">' +
       '<div class="portal-pnlog-pane-empty" id="portalPnlogPaneEmpty">' +
       "<p><strong>Select a conversation</strong></p>" +
-      '<p class="muted">WhatsApp threads with families appear on the left. Replies send via the Business API number.</p>' +
+      '<p class="muted">Every WhatsApp the API sent is in the thread: machine and office. Replies are on WhatsApp Business, not here.</p>' +
       "</div>" +
       '<div class="portal-pnlog-pane-active" id="portalPnlogPaneActive" hidden>' +
       '<div class="portal-pnlog-pane-head" id="portalPnlogPaneHead"></div>' +
@@ -2239,46 +2235,9 @@
     return host.querySelector("#portalPnlogChatShell");
   }
 
-  function mountComposer(t, force) {
+  function mountComposer() {
     var mount = document.getElementById("portalPnlogComposerMount");
-    if (!mount) return;
-    var phoneKey = composerPhoneKey(t);
-    var replyKey =
-      state.replyTo && state.replyTo.threadKey === (t && t.key)
-        ? state.replyTo.waMessageId || ""
-        : "";
-    var editKey = state.editing && state.editing.threadKey === (t && t.key) ? state.editing.logId || "" : "";
-    var sessionKey = threadHasOpenWhatsappSession(t) ? "open" : "cold";
-    var tplKey = sessionKey === "cold" ? String(state.coldTemplateId || "hello") : "session";
-    var nextSig =
-      (t && t.key ? t.key : "") +
-      "|" +
-      phoneKey +
-      "|" +
-      (phoneKey ? "ok" : "none") +
-      "|" +
-      sessionKey +
-      "|tpl:" +
-      tplKey +
-      "|r:" +
-      replyKey +
-      "|e:" +
-      editKey;
-    var paneActive = document.getElementById("portalPnlogPaneActive");
-    if (paneActive) {
-      paneActive.classList.toggle(
-        "portal-pnlog-pane-active--tpl",
-        !!(t && !threadHasOpenWhatsappSession(t) && phoneKey),
-      );
-    }
-    if (!force && state.composerSig === nextSig && mount.querySelector("#portalPnlogComposerInput, .portal-pnlog-composer--disabled")) {
-      syncComposerSendingState();
-      return;
-    }
-    state.composerSig = nextSig;
-    mount.innerHTML = renderComposer(t);
-    syncComposerSendingState();
-    syncColdTemplatePreview();
+    if (mount) mount.innerHTML = "";
   }
 
   function isNearBottom(el) {
@@ -2421,7 +2380,7 @@
     var sub = t.events.length
       ? bodyPreview(clientFacingOutboundBody(t.events[t.events.length - 1]))
       : t.fromDirectory
-        ? "No WhatsApp history yet — open to send a first message"
+        ? "No API messages yet"
         : "";
     var subline = threadPhoneForUi(t) + (t.client ? " · " + t.client : "");
     var headName = t.name;
@@ -2459,167 +2418,32 @@
     );
   }
 
+  function whatsappBusinessChatUrl(t) {
+    var digits = String((t && (t.sendPhone || t.phone)) || "").replace(/\D/g, "");
+    if (digits.indexOf("00") === 0) digits = digits.slice(2);
+    if (digits.charAt(0) === "0" && digits.length >= 10) digits = "44" + digits.slice(1);
+    if (digits.length < 8) return "";
+    return "https://wa.me/" + digits;
+  }
+
   function renderComposer(t) {
-    if (!t || !(t.sendPhone || t.phone)) {
-      return (
-        '<div class="portal-pnlog-composer portal-pnlog-composer--disabled">' +
-        '<p class="muted" style="margin:0">No WhatsApp number for this thread.</p></div>'
-      );
+    if (!t) {
+      return '<div class="portal-pnlog-composer portal-pnlog-composer--disabled muted">Select a conversation.</div>';
     }
-    var draft = state.draftByKey[t.key] != null ? state.draftByKey[t.key] : "";
-    var disabled = state.sending ? " disabled" : "";
-    var openSession = threadHasOpenWhatsappSession(t);
-    var needsTemplate = !openSession && !state.editing;
-    var mediaDisabled = !openSession || state.sending || state.editing ? " disabled" : "";
-    var toName = t.name || t.parentName || "Parent";
-    var toPhone = threadPhoneForUi(t);
-    var editingNote = state.editing
-      ? '<p class="portal-pnlog-composer__edit-banner" role="status">Correcting a sent message — WhatsApp will quote the original; check the recipient below before sending.</p>'
-      : "";
-    var replyNote = "";
-    if (state.replyTo && state.replyTo.threadKey === t.key && !state.editing) {
-      var quoteWorks = openSession;
-      replyNote =
-        '<div class="portal-pnlog-composer__reply-banner" role="status">' +
-        '<div class="portal-pnlog-composer__reply-banner-main">' +
-        "<strong>Replying to</strong> · " +
-        esc(state.replyTo.side === "in" ? "parent" : "our message") +
-        ": " +
-        esc(state.replyTo.preview || "Message") +
-        (!quoteWorks
-          ? '<span class="portal-pnlog-composer__reply-banner-warn"> Quote appears in WhatsApp only while the 24-hour reply window is open (parent messaged recently).</span>'
-          : "") +
-        "</div>" +
-        '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelReply">Cancel</button>' +
-        "</div>";
-    }
-    var sessionNote = "";
-    var templateShell = "";
-    var textareaPlaceholder = "Type a WhatsApp reply…";
-    var textareaMax = "4000";
-    var coldTpl = activeColdTemplate();
-    if (needsTemplate) {
-      var tplPick =
-        '<div class="portal-pnlog-composer__tpl-pick" role="radiogroup" aria-label="WhatsApp template">' +
-        WA_COLD_TEMPLATES.map(function (tpl) {
-          var on = tpl.id === coldTpl.id;
-          return (
-            '<label class="portal-pnlog-composer__tpl-opt' +
-            (on ? " is-on" : "") +
-            (tpl.id === "urgent" ? " portal-pnlog-composer__tpl-opt--urgent" : "") +
-            '">' +
-            '<input type="radio" name="portalPnlogColdTpl" value="' +
-            esc(tpl.id) +
-            '"' +
-            (on ? " checked" : "") +
-            " />" +
-            "<span>" +
-            esc(tpl.label) +
-            "</span></label>"
-          );
-        }).join("") +
-        "</div>";
-      sessionNote =
-        '<div class="portal-pnlog-composer__tpl-banner" role="status">' +
-        '<span class="portal-pnlog-composer__tpl-banner-txt">' +
-        "<strong>Needs Meta template</strong> — no open WhatsApp Phone window " +
-        "(Parent app messages do not open Meta's 24h session). " +
-        "Choose a shell, then edit only <code>{{1}}</code>. " +
-        "<strong>Chat history stays above — scroll it to read.</strong>" +
-        "</span>" +
-        tplPick +
-        "</div>";
-      templateShell =
-        '<div class="portal-pnlog-composer__tpl-shell">' +
-        '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplPrefix" aria-hidden="true">' +
-        esc(String(coldTpl.prefix || "").trim()) +
-        "</div>";
-      textareaPlaceholder =
-        "Write {{1}} here — use a blank line between paragraphs (Meta flattens real line breaks)…";
-      textareaMax = String(WA_TEMPLATE_BODY_MAX);
-    } else if (openSession && !state.editing) {
-      sessionNote =
-        '<p class="portal-pnlog-composer__session-open muted" role="status">WhatsApp 24h window open (parent messaged on Phone) — free-text reply.</p>';
-    }
-    var afterTextarea = needsTemplate
-      ? '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplSuffix" aria-hidden="true">' +
-        esc(String(coldTpl.suffix || "").trim()) +
-        "</div></div>"
-      : "";
-    var tplLenHtml = needsTemplate
-      ? '<p id="portalPnlogTplLen" class="portal-pnlog-composer__tpl-len muted"></p>'
-      : "";
+    var href = whatsappBusinessChatUrl(t);
+    var btn = href
+      ? '<a class="btn btn--pri portal-pnlog-biz-link" href="' +
+        esc(href) +
+        '" target="_blank" rel="noopener noreferrer">Open in WhatsApp Business</a>'
+      : '<span class="muted">No WhatsApp number on this conversation.</span>';
     return (
-      '<div class="portal-pnlog-composer' +
-      (needsTemplate ? " portal-pnlog-composer--tpl" : "") +
-      '">' +
-      editingNote +
-      replyNote +
-      sessionNote +
-      '<p class="portal-pnlog-composer__to" title="Messages always go to this WhatsApp number">' +
-      "<strong>To:</strong> " +
-      esc(toName) +
-      " · " +
-      esc(toPhone) +
-      "</p>" +
-      (needsTemplate
-        ? state.editing
-          ? '<div class="portal-pnlog-composer__tools">' +
-            '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelEdit">Cancel</button>' +
-            "</div>"
-          : ""
-        : '<div class="portal-pnlog-composer__tools">' +
-          '<input type="file" id="portalPnlogComposerFile" accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" hidden />' +
-          '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerPhoto"' +
-          mediaDisabled +
-          ">📷 Photo</button>" +
-          '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerDocument"' +
-          mediaDisabled +
-          ">📎 Document</button>" +
-          '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerAudio"' +
-          mediaDisabled +
-          ">🎙 Audio</button>" +
-          '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerClearAttach" hidden>✕ Clear</button>' +
-          (state.editing
-            ? '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelEdit">Cancel</button>'
-            : "") +
-          '<span id="portalPnlogComposerAttachPreview" class="portal-pnlog-composer__attach-preview muted"></span>' +
-          "</div>") +
-      templateShell +
-      '<textarea id="portalPnlogComposerInput" class="portal-pnlog-composer__input' +
-      (needsTemplate ? " portal-pnlog-composer__input--tpl" : "") +
-      '" rows="' +
-      (needsTemplate ? "3" : "4") +
-      '" placeholder="' +
-      esc(textareaPlaceholder) +
-      '" maxlength="' +
-      textareaMax +
-      '" autocomplete="off" spellcheck="true" enterkeyhint="send"' +
-      disabled +
-      ">" +
-      esc(draft) +
-      "</textarea>" +
-      afterTextarea +
-      '<div class="portal-pnlog-composer__bar' +
-      (needsTemplate ? " portal-pnlog-composer__bar--tpl" : "") +
-      '">' +
-      tplLenHtml +
-      '<p id="portalPnlogComposerStatus" class="portal-pnlog-composer__status muted" role="status"></p>' +
-      '<button type="button" class="btn btn--pri portal-pnlog-composer__send" id="portalPnlogComposerSend"' +
-      disabled +
-      ">" +
-      (state.sending
-        ? state.editing
-          ? "Sending correction…"
-          : "Sending…"
-        : state.editing
-          ? "Send correction"
-          : needsTemplate
-            ? "Send template"
-            : "Send") +
-      "</button></div></div>"
+      '<div class="portal-pnlog-composer portal-pnlog-biz">' +
+      btn +
+      '<p class="portal-pnlog-biz__note muted">This chat is what the API sent. Replies are sent from WhatsApp Business, not from here.</p>' +
+      "</div>"
     );
   }
+
 
   function renderChat(fromRefresh, renderOpts) {
     var host = document.getElementById("portalParentNotifyLogList");

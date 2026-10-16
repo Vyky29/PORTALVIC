@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15-v459",
+  "version": "2026-10-16-v460",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2833,13 +2833,12 @@
         {
           "id": "parent_notify",
           "title": "Parent notify / WhatsApp",
-          "summary": "Send approved template updates (payment, absence, makeup drafts, etc.).",
-          "where": "Communications → Parent notify / Staff WhatsApp tools",
+          "summary": "Read the API chat. Replies go from WhatsApp Business.",
+          "where": "Communications → API/Portal (Messages)",
           "steps": [
-            "Open the parent notify or WhatsApp tool for the family.",
-            "Use an approved Meta template when WhatsApp requires it.",
-            "Preview the body; keep under template length limits.",
-            "Send and check the notify log if delivery fails."
+            "Open the conversation. The thread shows every message the API sent, machine and automation, plus replies that arrived on the API number.",
+            "There is no box to type a message here.",
+            "At the bottom, Open in WhatsApp Business opens that parent's chat so you can reply from the Business app."
           ],
           "tips": [
             "API WhatsApp number — not the company mobile.",
@@ -2850,13 +2849,12 @@
           ],
           "es": {
             "title": "Avisos a padres / WhatsApp",
-            "summary": "Envia plantillas aprobadas (pago, falta, borradores de makeup, etc.).",
-            "where": "Communications → Parent notify / herramientas de WhatsApp de staff",
+            "summary": "Lee el chat de la API. Las respuestas salen por WhatsApp Business.",
+            "where": "Communications → API/Portal (Messages)",
             "steps": [
-              "Abre parent notify o la herramienta de WhatsApp de esa familia.",
-              "Usa una plantilla Meta aprobada cuando WhatsApp la pida.",
-              "Revisa el texto. Respeta el largo de la plantilla.",
-              "Envia y mira el registro de avisos si no llega."
+              "Abre la conversacion. El hilo muestra cada mensaje que mando la API, de maquina y de automatizacion, y las respuestas que llegaron al numero API.",
+              "Aqui no hay caja para escribir.",
+              "Abajo, Open in WhatsApp Business abre el chat de ese padre para contestar desde la app Business."
             ],
             "tips": [
               "El numero de WhatsApp API no es el movil de la empresa.",

@@ -176,14 +176,7 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 }
 
 #portalPnlogComposerMount {
-  flex: 0 0 auto;
-  min-width: 0;
-  max-height: min(46vh, 420px);
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  border-top: 1px solid rgba(45, 132, 179, 0.16);
-  background: #fff;
+  display: none;
 }
 
 .portal-pnlog-conv {
@@ -1002,6 +995,23 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   color: #fff;
   font-weight: 700;
   margin-top: 0;
+}
+
+.portal-pnlog-biz-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  text-align: center;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.portal-pnlog-biz__note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 /* Composer sits in #portalPnlogComposerMount (scrollable when Meta template UI is tall) */
