@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16-v469",
+  "version": "2026-10-16-v470",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -1099,19 +1099,24 @@
           "summary": "When a family pays finish-booking, the trial seat appears on the day board without editing LOCAL.",
           "where": "Booking / pay link → then Sessions Overview",
           "keywords": [
-            "finish booking",
+            "email only",
+            "no funciona",
             "whatsapp",
             "safari",
             "link does not work",
-            "card",
             "apple pay",
             "enlace",
-            "no funciona",
+            "estructura whatsapp",
+            "pay link",
+            "estructura",
+            "rahaf",
+            "card",
+            "finish booking",
             "tarjeta"
           ],
           "steps": [
             "Family completes finish-booking payment (Stripe or bank confirm).",
-            "If a parent says the link does not work or will not continue to payment, they opened it inside WhatsApp. The link is fine. Card and Apple Pay do not run in WhatsApp's browser. Ask them to open the same link in Safari (menu on the page, Open in Safari), then choose Card / Apple Pay. Bank transfer still works inside WhatsApp.",
+            "The finish-booking pay link goes in the email only. WhatsApp only says we emailed the link and that the place is held for 30 minutes. It does not include the pay URL (Card / Apple Pay break inside WhatsApp). If there is no email or the email failed, WhatsApp still includes the link as a fallback — then ask them to Open in Safari / Chrome.",
             "A paid trial sends the parent a confirmation on WhatsApp and by email: child, day, time, venue, and instructor. Card payment sends it as soon as Stripe marks the invoice paid. Mark paid sends the same message. If that confirmation already went out, it is not sent again.",
             "The instructor does not get that WhatsApp, and it does not appear in Comms or WhatsApp API. Their alert is a phone push: New client for trial. It is sent when the roster row is written, and again if the day, the time, or the instructor on that row changes. The phone notifies then, with the app closed, locked, or open. A cover is the message that WhatsApps the worker.",
             "Ops sync folds MADRE + trial schedule_overrides (+ dated roster row).",
@@ -1120,6 +1125,7 @@
             "After the trial ends, the parent is sent a term finish link for the same place. They have until the end of that day. No reply releases the place."
           ],
           "tips": [
+            "Pay link on email only. WhatsApp is a nudge to open the email.",
             "Do not put suitability wording on pay links.",
             "Aquatic: one override per 30-minute half, not one 60-minute band.",
             "The term link is automatic. Reply FREE releases the place. A different slot is a reply to the office, not a new trial."
@@ -1130,7 +1136,7 @@
             "where": "Enlace de pago y luego Sessions Overview",
             "steps": [
               "La familia paga finish-booking (Stripe o confirmacion de banco).",
-              "Si un padre dice que el enlace no va o que no le deja seguir al pago, lo abrio dentro de WhatsApp. El enlace esta bien. La tarjeta y Apple Pay no corren en el navegador de WhatsApp. Que abra el mismo enlace en Safari (menu de la pagina, Open in Safari) y elija Card / Apple Pay. La transferencia sigue funcionando dentro de WhatsApp.",
+              "El enlace de pago de finish-booking va solo en el email. El WhatsApp solo dice que les hemos enviado el enlace por email y que la plaza esta retenida 30 minutos. No lleva la URL de pago (la tarjeta y Apple Pay fallan dentro de WhatsApp). Si no hay email o el email fallo, el WhatsApp si lleva el enlace como respaldo — entonces que abran en Safari / Chrome.",
               "Un trial pagado manda al padre una confirmacion por WhatsApp y por email: nino, dia, hora, sede e instructor. Si pagan con tarjeta, sale en cuanto Stripe marca la factura pagada. Mark paid manda el mismo mensaje. Si esa confirmacion ya salio, no se repite.",
               "Al instructor no le llega ese WhatsApp, y no sale en Comms ni en WhatsApp API. Su aviso es un push al movil: New client for trial. Sale cuando se escribe la fila del roster, y otra vez si cambian el dia, la hora o el instructor de esa fila. El movil avisa en ese momento, con la app cerrada, bloqueada o abierta. El que se manda por WhatsApp al trabajador es un cover.",
               "El sistema pliega MADRE, el override de trial y la fila del roster de ese dia.",
@@ -1139,6 +1145,7 @@
               "Cuando acaba el trial, al padre le llega un enlace de term para la misma plaza. Tienen hasta el final de ese dia. Si no contestan, la plaza se suelta."
             ],
             "tips": [
+              "El enlace de pago solo por email. El WhatsApp avisa que miren el email.",
               "En los enlaces de pago no pongas frases de suitability.",
               "Aquatic: un override por cada media hora, no una banda de 60 minutos.",
               "El enlace de term sale solo. Contestar FREE suelta la plaza. Otra hora es una respuesta a la oficina, no un trial nuevo."

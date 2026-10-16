@@ -525,19 +525,35 @@ export async function notifyParentFinishBooking(opts: {
     .map((line) => line.trim())
     .filter(Boolean)
     .join(" · ");
-  const payLead = resendHold
-    ? `Complete booking now: ${link}`
+  /* Email owns the pay URL. WhatsApp in-app browsers break Card / Apple Pay. */
+  const emailBody = resendHold
+    ? `Hi ${name},\n\n` +
+      `Please finish booking for ${participant} now.\n\n` +
+      `${link}\n\n` +
+      placeEmail +
+      `Your place is held for 30 minutes only while you complete funding, payment and the first instalment.\n\n` +
+      `If the window ends without payment, the seat returns to the Booking Portal.\n\n` +
+      (trial
+        ? `After payment we send a booking-completed message with the day, time, venue and instructor.\n\nThank you,\nclubSENsational`
+        : `After the office confirms your payment we send your Parent Portal PIN.\n\nThank you,\nclubSENsational`)
     : autoPay
-      ? `Complete booking and payment now: ${link}`
-      : `Finish booking now: ${link}`;
-  const bodyText = [
-    `Hi ${name},`,
-    payLead,
-    placeLine || (slot ? slot : "Your place is held for 30 minutes."),
-    trial
-      ? "Your place is held for 30 minutes."
-      : "Your place is held for 30 minutes. After the office confirms payment we send your Parent Portal PIN.",
-  ].join("\n\n") + `\n\n${noPortalReplyFooter()}`;
+      ? `Hi ${name},\n\n` +
+        `Thank you — we received the registration for ${participant}.\n\n` +
+        `Please complete booking and payment now:\n${link}\n\n` +
+        placeEmail +
+        `Your place is held for 30 minutes while you pay.\n\nThank you,\nclubSENsational`
+      : `Hi ${name},\n\n` +
+        `clubSENsational has accepted the registration for ${participant}.\n\n` +
+        `Please finish your booking:\n${link}\n\n` +
+        placeEmail +
+        (trial
+          ? `Your place is held for 30 minutes while you pay. After payment we send a booking-completed message with the day, time, venue and instructor.\n\nThank you,\nclubSENsational`
+          : `Your place is held for 30 minutes while you pay. After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\nThank you,\nclubSENsational`);
+
+  const holdLine = trial
+    ? "Your place is held for 30 minutes."
+    : "Your place is held for 30 minutes. After the office confirms payment we send your Parent Portal PIN.";
+  const placeForWa = placeLine || slot || "";
 
   let emailOk = false;
   let waOk = false;
@@ -548,36 +564,15 @@ export async function notifyParentFinishBooking(opts: {
 
   const smtp = readParentNotifySmtpConfig();
   const email = clean(opts.parentEmail, 200);
-  if (smtp && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  const emailLooksValid = !!(email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+  if (smtp && emailLooksValid) {
     const mail = await sendParentEmailViaSmtp({
       config: smtp,
       to: email,
       subject: resendHold || autoPay
         ? `Complete booking · ${participant} · 30 minutes`
         : `Finish booking · ${participant}`,
-      bodyText: resendHold
-        ? `Hi ${name},\n\n` +
-          `Please finish booking for ${participant} now.\n\n` +
-          `${link}\n\n` +
-          placeEmail +
-          `Your place is held for 30 minutes only while you complete funding, payment and the first instalment.\n\n` +
-          `If the window ends without payment, the seat returns to the Booking Portal.\n\n` +
-          (trial
-            ? `After payment we send a booking-completed message with the day, time, venue and instructor.\n\nThank you,\nclubSENsational`
-            : `After the office confirms your payment we send your Parent Portal PIN.\n\nThank you,\nclubSENsational`)
-        : autoPay
-          ? `Hi ${name},\n\n` +
-            `Thank you — we received the registration for ${participant}.\n\n` +
-            `Please complete booking and payment now:\n${link}\n\n` +
-            placeEmail +
-            `Your place is held for 30 minutes while you pay.\n\nThank you,\nclubSENsational`
-          : `Hi ${name},\n\n` +
-            `clubSENsational has accepted the registration for ${participant}.\n\n` +
-            `Please finish your booking:\n${link}\n\n` +
-            placeEmail +
-            (trial
-              ? `Your place is held for 30 minutes while you pay. After payment we send a booking-completed message with the day, time, venue and instructor.\n\nThank you,\nclubSENsational`
-              : `Your place is held for 30 minutes while you pay. After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\nThank you,\nclubSENsational`),
+      bodyText: emailBody,
       replyFooter: "no_portal",
     });
     emailOk = mail.ok;
@@ -586,10 +581,41 @@ export async function notifyParentFinishBooking(opts: {
     console.log(`[finish-booking-notify] email skipped to=${email || "—"} link=${link}`);
   }
 
+  /*
+   * Prefer WhatsApp without the pay URL when email went out.
+   * Only put the finish-booking URL on WhatsApp if email is missing/failed
+   * (otherwise the family has no pay path for the 30-minute hold).
+   */
+  const waNeedsLinkFallback = !emailOk;
+  const waBody = waNeedsLinkFallback
+    ? [
+        `Hi ${name},`,
+        resendHold
+          ? `Complete booking now: ${link}`
+          : autoPay
+            ? `Complete booking and payment now: ${link}`
+            : `Finish booking now: ${link}`,
+        placeForWa || holdLine,
+        holdLine,
+        "If the link does not open payment, use Open in Safari / Chrome (not inside WhatsApp).",
+      ].join("\n\n") + `\n\n${noPortalReplyFooter()}`
+    : [
+        `Hi ${name},`,
+        autoPay
+          ? `We received the registration for ${participant}. We emailed you the link to complete booking and payment.`
+          : resendHold
+            ? `Please finish booking for ${participant}. We emailed you the payment link.`
+            : `We accepted the registration for ${participant}. We emailed you the link to finish booking.`,
+        placeForWa,
+        holdLine + " Open the email to pay.",
+      ]
+        .filter(Boolean)
+        .join("\n\n") + `\n\n${noPortalReplyFooter()}`;
+
   const phone = normalizeParentPhoneE164(String(opts.parentPhone || ""));
   if (phone) {
     // Cold outreach must use approved Meta template (contact_update), not free-text.
-    const wa = await sendParentMobileMessage(phone, bodyText, {
+    const wa = await sendParentMobileMessage(phone, waBody, {
       kind: "contact_update",
     });
     waOk = wa.ok;
@@ -607,7 +633,7 @@ export async function notifyParentFinishBooking(opts: {
     parentPhone: phone,
     participantName: participant,
     subject: `Finish booking · ${participant}`,
-    bodyText,
+    bodyText: waBody,
     emailOk,
     wa: waResult,
   });
