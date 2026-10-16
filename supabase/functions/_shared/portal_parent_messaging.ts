@@ -17,27 +17,39 @@ export function normalizeParentPhoneE164(raw: string): string | null {
   return "+" + digits;
 }
 
-/** WhatsApp shows *this* in bold. */
-const API_DO_NOT_REPLY = "*Please do not reply here.*";
+/**
+ * Shared machine-footer shape (email + free-form WA when not using Meta static footer):
+ * one bold line; reply channel changes by audience.
+ */
+function apiMachineFooterLine(replyClause: string): string {
+  return (
+    `*This is an automatic message from the system. Please do not reply here. ` +
+    `To reply, ${replyClause}*`
+  );
+}
 
 function apiThankYou(): string {
   return "Thank you,\nclubSENsational";
 }
 
-/** Parent API WhatsApp. Do not reply on this thread. */
+/** Parent / client with Parent Portal. */
 export function parentApiMachineFooter(): string {
   return (
-    "To reply, use Messages in the parent portal, or call or message 07592 558671.\n\n" +
-    "This is an automatic message from the system. " + API_DO_NOT_REPLY + "\n\n" +
+    apiMachineFooterLine(
+      "use Messages in the parent portal, or call or message 07592 558671.",
+    ) +
+    "\n\n" +
     apiThankYou()
   );
 }
 
-/** Staff who already have the staff app. Comms is the channel. */
+/** Staff who already have the staff app. */
 export function staffApiMachineFooter(): string {
   return (
-    "To reply, use Comms in the Staff Portal, or call or message 07592 558671.\n\n" +
-    "This is an automatic message from the system. " + API_DO_NOT_REPLY + "\n\n" +
+    apiMachineFooterLine(
+      "use Messages (chat) in the Staff Portal, or call or message 07592 558671.",
+    ) +
+    "\n\n" +
     apiThankYou()
   );
 }
@@ -45,8 +57,8 @@ export function staffApiMachineFooter(): string {
 /** Onboarding hire has no staff app yet. */
 export function onboardingReplyFooter(): string {
   return (
-    "To reply, contact the admin, or call or message 07592 558671.\n\n" +
-    "This is an automatic message from the system. " + API_DO_NOT_REPLY + "\n\n" +
+    apiMachineFooterLine("contact the admin, or call or message 07592 558671.") +
+    "\n\n" +
     apiThankYou()
   );
 }
@@ -54,8 +66,8 @@ export function onboardingReplyFooter(): string {
 /** Lead or trial family: no Parent Portal yet. */
 export function noPortalReplyFooter(): string {
   return (
-    "To reply, call or message 07592 558671.\n\n" +
-    "This is an automatic message from the system. " + API_DO_NOT_REPLY + "\n\n" +
+    apiMachineFooterLine("call or message 07592 558671.") +
+    "\n\n" +
     apiThankYou()
   );
 }
@@ -695,7 +707,7 @@ export function resolveParentNotifyWhatsappTemplate(kind: string): string {
   if (k === "staff_contact_update" || k === "staff_update") {
     const staffTpl = (Deno.env.get("PORTAL_STAFF_WHATSAPP_TEMPLATE") ?? "").trim();
     if (staffTpl) return staffTpl;
-    return (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim();
+    return "portal_staff_update_v4";
   }
   // Other staff_* kinds stay free-form unless listed above.
   if (k.startsWith("staff_")) {
@@ -721,7 +733,24 @@ export function resolveParentNotifyWhatsappTemplate(kind: string): string {
     const specific = (Deno.env.get(specificKey) ?? "").trim();
     if (specific) return specific;
   }
-  return (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim();
+  return (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim() ||
+    "portal_parent_update_v4";
+}
+
+/** Same shell structure; v4 = one bold footer. Fall back to v3 while Meta reviews. */
+function spacedTextTemplateFallbacks(template: string): string[] {
+  const name = String(template || "").trim().toLowerCase();
+  if (name.startsWith("portal_staff_update")) {
+    return ["portal_staff_update_v4", "portal_staff_update_v3"].filter(
+      (n, i, arr) => arr.indexOf(n) === i,
+    );
+  }
+  if (name.startsWith("portal_parent_update")) {
+    return ["portal_parent_update_v4", "portal_parent_update_v3"].filter(
+      (n, i, arr) => arr.indexOf(n) === i,
+    );
+  }
+  return [];
 }
 
 /** Flatten + cap for Meta Utility {{1}} (same rules as parent cold outbound).
@@ -774,7 +803,9 @@ function whatsappTemplateBodyParam(body: string, template: string): string {
 function isSpacedWhatsappTemplate(template: string): boolean {
   const name = String(template || "").trim().toLowerCase();
   return name === "portal_parent_update_v3" ||
+    name === "portal_parent_update_v4" ||
     name === "portal_staff_update_v3" ||
+    name === "portal_staff_update_v4" ||
     name === "portal_parent_photo_v1" ||
     name === "portal_parent_photo_v2" ||
     name === "portal_parent_photo_v3" ||
@@ -952,6 +983,12 @@ export async function sendParentMessageViaWhatsapp(
   if (wantsPhotoTemplate) {
     const forced = String(opts?.templateName || "").trim();
     template = photoTemplateFallbacks.includes(forced) ? forced : photoTemplateFallbacks[0];
+  } else {
+    const textFallbacks = spacedTextTemplateFallbacks(template);
+    if (textFallbacks.length) {
+      const forced = String(opts?.templateName || "").trim();
+      template = textFallbacks.includes(forced) ? forced : textFallbacks[0];
+    }
   }
 
   if (!template) {
@@ -1110,6 +1147,16 @@ export async function sendParentMessageViaWhatsapp(
         ...opts,
         instructorPhotoUrl: "",
         templateName: textTemplate,
+      });
+    }
+  }
+  const textFallbacks = spacedTextTemplateFallbacks(template);
+  if (textFallbacks.includes(template)) {
+    const nextText = textFallbacks[textFallbacks.indexOf(template) + 1];
+    if (nextText) {
+      return await sendParentMessageViaWhatsapp(phoneE164, body, {
+        ...opts,
+        templateName: nextText,
       });
     }
   }
