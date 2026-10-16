@@ -2112,6 +2112,8 @@
           time_slot: slot.time_slot,
           venue: "SwimFarm",
           session_date: iso,
+          bookedFrom: slot.bookedFrom || "",
+          bookedUntil: slot.bookedUntil || "",
         };
       });
     }
@@ -2142,8 +2144,21 @@
       { client_name: "No participant", service: "Aquatic Activity", area: "Small Pool", time_slot: "9 to 9.30" },
       { client_name: "Jack S", service: "Multi-Activity", area: "Big Pool", time_slot: "9.30 to 10.15" },
       { client_name: "Zaid", service: "Multi-Activity", area: "Small Pool", time_slot: "10.15 to 11" },
-      { client_name: "Hazem", service: "Multi-Activity", area: "Big Pool", time_slot: "11 to 11.45" },
-      { client_name: "Eiji", service: "Multi-Activity", area: "Big Pool", time_slot: "11.45 to 12.30" },
+      /* Belhadj Multi billed through Sun 18 Oct only (INV-P-0079 / 0083). Climbing stays. */
+      {
+        client_name: "Hazem",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "11 to 11.45",
+        bookedUntil: "2026-10-19",
+      },
+      {
+        client_name: "Eiji",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "11.45 to 12.30",
+        bookedUntil: "2026-10-19",
+      },
       { client_name: "Rayyan F", service: "Multi-Activity", area: "Small Pool", time_slot: "12.30 to 1.15" },
       { client_name: "Haneef", service: "Multi-Activity", area: "Small Pool", time_slot: "1.15 to 2" },
       { client_name: "Max", service: "Aquatic Activity", area: "Big Pool", time_slot: "2 to 2.30" },
@@ -3108,6 +3123,16 @@
     return /^(12(\.00)?)\s*(to|-)\s*(1(\.00)?|13(\.00)?)$/.test(t);
   }
 
+  /** Eiji / Hazem Sunday SwimFarm Multi ends after Sun 18 Oct 2026 (invoice dates). Climbing stays. */
+  function belhadjSundayMultiEnded(row, iso) {
+    if (!row || !iso || iso < "2026-10-19") return false;
+    if (!isMultiActivityService(row.service)) return false;
+    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return false;
+    if (normalizeDowKey(row.day) !== "sunday") return false;
+    var cn = String(row.client_name || "").trim();
+    return /^(eiji|hazem)\b/i.test(cn);
+  }
+
   function climbNoonSlotKey(raw) {
     return String(raw || "")
       .toLowerCase()
@@ -3700,7 +3725,11 @@
         day: DOW_TITLE[dk] || row.day,
       };
       /* Patrick Sunday climb cancelled from 27 Sep 2026. 6, 13 and 20 stay. */
-      if (patrickSundayClimbReleased(row, iso) || serineSundayClimbEnded(row, iso)) {
+      if (
+        patrickSundayClimbReleased(row, iso) ||
+        serineSundayClimbEnded(row, iso) ||
+        belhadjSundayMultiEnded(row, iso)
+      ) {
         copy.client_name = "No participant";
       }
       out.push(Object.assign({}, row, copy));
@@ -4044,8 +4073,9 @@
   var AUTUMN_SUNDAY_HUB_EMMANUEL = [
     { client_name: "Zaid", time_slot: "9.30 to 10.15" },
     { client_name: "Jack S", time_slot: "10.15 to 11" },
-    { client_name: "Eiji", time_slot: "11 to 11.45" },
-    { client_name: "Hazem", time_slot: "11.45 to 12.30" },
+    /* Belhadj Multi billed through Sun 18 Oct only — Hub half opens with the pool half. */
+    { client_name: "Eiji", time_slot: "11 to 11.45", bookedUntil: "2026-10-19" },
+    { client_name: "Hazem", time_slot: "11.45 to 12.30", bookedUntil: "2026-10-19" },
     { client_name: "Haneef", time_slot: "12.30 to 1.15" },
     { client_name: "Rayyan F", time_slot: "1.15 to 2" },
   ];
@@ -4096,6 +4126,8 @@
           time_slot: slot.time_slot,
           venue: "SwimFarm",
           session_date: iso,
+          bookedFrom: slot.bookedFrom || "",
+          bookedUntil: slot.bookedUntil || "",
         };
       });
     }

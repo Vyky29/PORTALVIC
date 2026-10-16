@@ -16,6 +16,7 @@ export type CapacityChainStandingSeatLine = {
   client?: string | null;
   instructor?: string | null;
   bookedFrom?: string | null;
+  bookedUntil?: string | null;
   trialDate?: string | null;
   trialClient?: string | null;
 };
@@ -39,6 +40,8 @@ export type ParentStandingSession = {
   instructor: string;
   /** Term place starts on this date. Earlier weekdays stay empty. */
   fromIso?: string;
+  /** Term place ends before this date (seat open from untilIso). */
+  untilIso?: string;
 };
 
 function clean(v: unknown, max = 120): string {
@@ -168,6 +171,7 @@ export function standingSessionsForParticipantFromOccupants(
       seen.add(key);
 
       const fromIso = clean(line.bookedFrom, 10);
+      const untilIso = clean(line.bookedUntil, 10);
       out.push({
         day,
         service,
@@ -176,6 +180,7 @@ export function standingSessionsForParticipantFromOccupants(
         area: areaForVenue(venue),
         instructor,
         ...( /^\d{4}-\d{2}-\d{2}$/.test(fromIso) ? { fromIso } : {}),
+        ...( /^\d{4}-\d{2}-\d{2}$/.test(untilIso) ? { untilIso } : {}),
       });
     }
   }

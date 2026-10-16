@@ -1062,6 +1062,16 @@
   function appendSundayMultiHalfRows(iso, out) {
     function addHalf(list, book) {
       list.forEach(function (h) {
+        /* Belhadj Multi billed through Sun 18 Oct — seats open after; Climbing stays. */
+        var clientLabel = h.client;
+        var kind = "booked";
+        if (
+          String(iso || "").slice(0, 10) >= "2026-10-19" &&
+          /^(eiji|hazem)$/i.test(String(h.client || "").trim())
+        ) {
+          clientLabel = "No participant";
+          kind = "open";
+        }
         var band = parseBandMinutes(h.time.replace(/\s+to\s+/i, " – "));
         if (band.start < 0) {
           /* "9.30 to 10.15" */
@@ -1082,7 +1092,7 @@
             "sunday-ma|" +
             timeLabel +
             "|" +
-            slug(h.client) +
+            slug(clientLabel) +
             "|" +
             slug(h.area),
           slotId: "sunday-ma-45",
@@ -1093,8 +1103,8 @@
           bandEnd: band.end,
           service: "90' Multi-Activity",
           standingStaff: h.staff,
-          clientLabel: h.client,
-          kind: "booked",
+          clientLabel: clientLabel,
+          kind: kind,
           parentBand: "90'",
           board: "asw",
         });

@@ -915,6 +915,7 @@ function mergeInstructorNames(existing: string, next: string): string {
 
 function buildServicesDetail(
   sessions: unknown,
+  todayIso = "",
 ): Array<{
   label: string;
   day: string;
@@ -924,6 +925,10 @@ function buildServicesDetail(
   instructor?: string;
 }> {
   const list = Array.isArray(sessions) ? sessions : [];
+  const today =
+    /^\d{4}-\d{2}-\d{2}$/.test(todayIso)
+      ? todayIso
+      : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
   type Group = {
     svc: string;
     day: string;
@@ -942,6 +947,9 @@ function buildServicesDetail(
 
   for (const raw of list) {
     const s = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+    const untilRaw = clean(s.untilIso || s.bookedUntil || s.booked_until, 10);
+    /* Seat ended before today (e.g. Belhadj Multi after last billed Sunday). */
+    if (/^\d{4}-\d{2}-\d{2}$/.test(untilRaw) && today >= untilRaw) continue;
     const svcRaw = clean(s.service, 80);
     // Crash / intensives are separate bookings — never drive weekly term chips.
     if (/crash|intensiv/i.test(svcRaw)) continue;
