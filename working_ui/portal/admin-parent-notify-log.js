@@ -2241,17 +2241,62 @@
     );
   }
 
+  /** Right pane: the parent's phone, not the office log. */
+  function renderParentPhoneBubble(ev) {
+    var fromParent = ev.dir === "in";
+    var bodyStr = fromParent
+      ? String(ev.body || "")
+      : String(clientFacingOutboundBody(ev) || ev.body || "");
+    var type = String(ev.messageType || "").toLowerCase();
+    var isMediaPlaceholder = /^\[(sticker|image|video|audio|document)\]$/i.test(String(ev.body || "").trim());
+    var photo = "";
+    if (!fromParent && ev.mediaUrl && (type === "image" || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(String(ev.mediaUrl)))) {
+      photo = '<img src="' + esc(ev.mediaUrl) + '" alt="" />';
+    }
+    var textHtml = "";
+    if (bodyStr && !isMediaPlaceholder) {
+      textHtml =
+        '<div class="portal-pnlog-phone__text">' +
+        esc(bodyStr)
+          .replace(/\r\n/g, "\n")
+          .replace(/\n/g, "<br>")
+          .replace(/\*Please do not reply here\.\*/g, "<strong>Please do not reply here.</strong>") +
+        "</div>";
+    } else if (isMediaPlaceholder && !photo) {
+      textHtml = '<div class="portal-pnlog-phone__text">' + esc(String(ev.body || "").replace(/^\[|\]$/g, "")) + "</div>";
+    }
+    var waMid = eventWaMessageId(ev);
+    return (
+      '<div class="portal-pnlog-phone__msg portal-pnlog-phone__msg--' +
+      (fromParent ? "parent" : "api") +
+      '"' +
+      (waMid ? ' data-wa-id="' + esc(waMid) + '"' : "") +
+      ">" +
+      photo +
+      textHtml +
+      '<div class="portal-pnlog-phone__time">' +
+      esc(formatLondon(ev.when)) +
+      "</div></div>"
+    );
+  }
+
   function renderThreadMessagesHtml(t) {
     if (!t) return "";
     if (!t.events.length) {
       return '<p class="muted portal-pnlog-empty">No messages in this thread yet.</p>';
     }
-    var byWaId = threadEventByWaIdMap(t);
-    return t.events
+    var bubbles = t.events
       .map(function (ev) {
-        return renderBubble(ev, byWaId);
+        return renderParentPhoneBubble(ev);
       })
       .join("");
+    return (
+      '<div class="portal-pnlog-phone">' +
+      '<div class="portal-pnlog-phone__bar">clubSENsational<small>What the parent sees</small></div>' +
+      '<div class="portal-pnlog-phone__thread">' +
+      bubbles +
+      "</div></div>"
+    );
   }
 
   function threadEventsSig(t) {

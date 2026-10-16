@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16-v467",
+  "version": "2026-10-16-v468",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2850,7 +2850,7 @@
           "summary": "Read the API chat. Replies go from WhatsApp Business.",
           "where": "Communications → API/Portal (Messages)",
           "steps": [
-            "Open the conversation. The thread shows every message the API sent, machine and automation, plus replies that arrived on the API number.",
+            "Open the conversation. The right side is the parent's phone: white bubbles are what the API sent, green bubbles are what the parent wrote.",
             "There is no box to type a message here.",
             "At the bottom, Open in WhatsApp Business opens that parent's chat in WhatsApp Web, on the Business number already signed in on this computer."
           ],
@@ -2867,7 +2867,7 @@
             "summary": "Lee el chat de la API. Las respuestas salen por WhatsApp Business.",
             "where": "Communications → API/Portal (Messages)",
             "steps": [
-              "Abre la conversacion. El hilo muestra cada mensaje que mando la API, de maquina y de automatizacion, y las respuestas que llegaron al numero API.",
+              "Abre la conversacion. A la derecha esta el movil del padre: los globos blancos son lo que mando la API, los verdes lo que escribio el padre.",
               "Aqui no hay caja para escribir.",
               "Abajo, Open in WhatsApp Business abre el chat de ese padre en WhatsApp Web, en el numero Business que ya esta abierto en este ordenador."
             ],
