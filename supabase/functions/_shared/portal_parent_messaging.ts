@@ -778,24 +778,26 @@ function isSpacedWhatsappTemplate(template: string): boolean {
     name === "portal_parent_photo_v1" ||
     name === "portal_parent_photo_v2" ||
     name === "portal_parent_photo_v3" ||
-    name === "portal_parent_photo_v4";
+    name === "portal_parent_photo_v4" ||
+    name === "portal_parent_photo_v5";
 }
 
 function spacedBoxCount(template: string): number {
   const name = String(template || "").trim().toLowerCase();
-  /* v2/v3/v4: 7 boxes. v4 uses static bold labels; boxes 3-6 are values only. */
+  /* v2–v5: 7 boxes. v4/v5 use static bold labels; boxes 3-6 are values only. */
   if (
     name === "portal_parent_photo_v2" ||
     name === "portal_parent_photo_v3" ||
-    name === "portal_parent_photo_v4"
+    name === "portal_parent_photo_v4" ||
+    name === "portal_parent_photo_v5"
   ) {
     return 7;
   }
   return 4;
 }
 
-/** photo_v4 has *Service:* etc. fixed in Meta; strip those prefixes from body boxes. */
-function stripPhotoV4DetailLabels(boxes: string[]): string[] {
+/** v4/v5 have *Service:* etc. fixed in Meta; strip those prefixes from body boxes. */
+function stripPhotoBoldDetailLabels(boxes: string[]): string[] {
   return boxes.map((text, i) => {
     if (i < 2 || i > 5) return text;
     const stripped = String(text || "")
@@ -803,6 +805,11 @@ function stripPhotoV4DetailLabels(boxes: string[]): string[] {
       .trim();
     return stripped || text;
   });
+}
+
+function isPhotoBoldLabelTemplate(template: string): boolean {
+  const name = String(template || "").trim().toLowerCase();
+  return name === "portal_parent_photo_v4" || name === "portal_parent_photo_v5";
 }
 
 function stripTemplateClosing(body: string): string {
@@ -931,6 +938,7 @@ export async function sendParentMessageViaWhatsapp(
   const photoTemplateEnv = (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PHOTO") ?? "").trim();
   /* Prefer 7-box photo template (Service/Date/Venue lines). Fall back to env / v1. */
   const photoTemplateFallbacks = [
+    "portal_parent_photo_v5",
     "portal_parent_photo_v4",
     "portal_parent_photo_v3",
     "portal_parent_photo_v2",
@@ -1000,8 +1008,8 @@ export async function sendParentMessageViaWhatsapp(
   const spaced = isSpacedWhatsappTemplate(template);
   const paramText = spaced ? "" : whatsappTemplateBodyParam(body, template);
   let spacedParams = spaced ? spacedWhatsappTemplateParams(body, spacedBoxCount(template)) : [];
-  if (String(template || "").trim().toLowerCase() === "portal_parent_photo_v4") {
-    spacedParams = stripPhotoV4DetailLabels(spacedParams);
+  if (isPhotoBoldLabelTemplate(template)) {
+    spacedParams = stripPhotoBoldDetailLabels(spacedParams);
   }
   if (!spaced && !paramText) {
     return { ok: false, error: "whatsapp_empty_template_body" };
