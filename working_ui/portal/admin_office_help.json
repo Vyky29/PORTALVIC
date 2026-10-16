@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16-v464",
+  "version": "2026-10-16-v465",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -4467,12 +4467,15 @@
           ],
           "steps": [
             "A Saturday or Sunday place booked before Friday 18:00 London can be this coming weekend.",
-            "From Friday 18:00, this weekend is closed for new bookings. The same day and time moves forward one week.",
+            "From Friday 18:00, this weekend is closed for new bookings. The same day and time moves forward one week. If that next weekend is half term, it moves one more week to the next open Saturday or Sunday.",
             "Example: Friday 9 Oct at 18:07, Sunday climbing. Sunday 11 is closed. The trial lands on Sunday 18.",
+            "One instructor closed on that day does not move the whole slot. Another open seat the same time still books this week.",
+            "After-school and weekend places skip half term (24 Oct to 1 Nov). Day Centre weekdays stay open. A Tuesday trial must not land on 27 Oct."
             "The paid trial is still that one Sunday only. It does not book every Sunday in between."
           ],
           "tips": [
-            "If a family needs this weekend after 18:00 on Friday, the office books it by hand. The portal will not offer it."
+            "If a family needs this weekend after 18:00 on Friday, the office books it by hand. The portal will not offer it.",
+            "To move one trial by hand: Schedule and Covers, that date, Change, then set the new date and instructor. Half term is not a bookable after-school day."
           ]
         },
         {

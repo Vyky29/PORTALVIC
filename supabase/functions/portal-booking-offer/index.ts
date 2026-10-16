@@ -478,6 +478,7 @@ Deno.serve(async (req) => {
         day: slot.day,
         time: slot.timeLabel || null,
         venue: slot.venue || null,
+        service: slot.serviceId || null,
         asOfIso: todayIso,
         standingOpenSeats: Number(slot.openSeats) || 0,
       },
@@ -488,6 +489,7 @@ Deno.serve(async (req) => {
       dateIso: resolved.iso || resolveSessionDateIso({
         day: slot.day,
         time: slot.timeLabel || null,
+        service: slot.serviceId || null,
         asOfIso: todayIso,
       }),
       startDeferredForAdminOverride: !!resolved.bumpedForAdminDayOverride,

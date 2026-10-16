@@ -846,6 +846,7 @@ Deno.serve(async (req) => {
       day,
       time: timeLabel,
       venue,
+      service: serviceName,
       asOfIso: todayIso,
       bookingKind: portalBookingKind,
     },
@@ -857,6 +858,7 @@ Deno.serve(async (req) => {
       dateIso: reservation?.date_iso ? String(reservation.date_iso).slice(0, 10) : null,
       day,
       time: timeLabel,
+      service: serviceName,
       asOfIso: todayIso,
       bookingKind: portalBookingKind,
     });

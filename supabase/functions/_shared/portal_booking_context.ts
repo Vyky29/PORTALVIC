@@ -2,6 +2,7 @@
  * Booking Portal slot context — URL payload, lead pending slot, reservations, invoices.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { inferServiceKind, isClosedIso } from "./portal_term_calendar.ts";
 
 export type PortalBookingRequest = {
   from: string;
@@ -454,12 +455,37 @@ export function firstBookableSessionFloorIso(
   return null;
 }
 
+/**
+ * Half term, Christmas, and Easter are not bookable for after-school or weekend.
+ * Day Centre weekdays stay open through half term.
+ */
+export function advancePastClosedProgrammeDays(
+  sessionIso: string,
+  opts?: { day?: string | null; service?: string | null },
+): string {
+  let iso = String(sessionIso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const weekend =
+    isWeekendDayName(opts?.day) ||
+    weekdayIndexFromIso(iso) === 0 ||
+    weekdayIndexFromIso(iso) === 6;
+  const kind = weekend ? "weekend" : inferServiceKind(opts?.service || "");
+  for (let i = 0; i < 16; i++) {
+    if (!isClosedIso(iso, kind)) return iso;
+    const next = bumpToNextWeekSameWeekday(iso);
+    if (!next || next === iso) return iso;
+    iso = next;
+  }
+  return iso;
+}
+
 export function resolveSessionDateIso(input: {
   dateIso?: string | null;
   day?: string | null;
   time?: string | null;
   asOfIso?: string | null;
   bookingKind?: string | null;
+  service?: string | null;
   now?: Date;
 }): string | null {
   const now = input.now instanceof Date && !Number.isNaN(input.now.getTime())
@@ -504,7 +530,10 @@ export function resolveSessionDateIso(input: {
     }
   }
 
-  return candidate;
+  return advancePastClosedProgrammeDays(candidate, {
+    day: input.day,
+    service: input.service,
+  });
 }
 
 /** Minimal override shape for same-day admin bump checks. */
@@ -666,11 +695,11 @@ export function applyAdminDayOverrideStartBump(
         timeLabel: opts?.timeLabel,
       })
     );
-    // Staff covers / Closed rows never fill. Only bump when open seats for
-    // that band are exhausted that day (or any fill when open count unknown).
+    /* One closed instructor must not skip the day while another seat is free.
+       Bump only when this band's open count is known and already used up. */
     const shouldBump = hasOpenBudget
       ? fills.length >= Math.max(0, openBudget as number)
-      : fills.length > 0;
+      : false;
     if (!shouldBump) break;
     const next = bumpToNextWeekSameWeekday(iso);
     if (!next || next === iso) break;
@@ -720,8 +749,12 @@ export function resolveSessionDateIsoWithAdminDayOverrides(
     timeLabel: input.time,
     standingOpenSeats: input.standingOpenSeats,
   });
+  const iso = advancePastClosedProgrammeDays(bumped.iso, {
+    day: input.day,
+    service: input.service,
+  });
   return {
-    iso: bumped.iso,
+    iso,
     bumpedForAdminDayOverride: bumped.bumped,
     parentMessage: bumped.bumped
       ? adminDayOverrideStartParentMessage(bumped.iso)

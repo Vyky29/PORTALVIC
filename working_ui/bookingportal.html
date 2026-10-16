@@ -2365,10 +2365,7 @@
             if (!weekendPastFridayCutoff(candidate)) break;
             candidate = addDaysIso(candidate, 7) || candidate;
           }
-          return candidate;
-        }
-
-        if (bookingKind === "trial") {
+        } else if (bookingKind === "trial") {
           var clock = londonClockParts();
           if (candidate === clock.iso) {
             var start = parseSessionStartMinutes(timeLabel);
@@ -2378,7 +2375,29 @@
             }
           }
         }
+        var serviceId = String(opts.serviceId || "").toLowerCase();
+        for (var c = 0; c < 16; c++) {
+          if (!programmeDayClosed(candidate, weekend, serviceId)) break;
+          candidate = addDaysIso(candidate, 7) || candidate;
+        }
         return candidate;
+      }
+
+      /** After-school and weekends skip half term. Day Centre weekdays stay open. */
+      function programmeDayClosed(iso, weekend, serviceId) {
+        if (!iso) return false;
+        if (iso >= "2026-12-19" && iso <= "2027-01-03") return true;
+        if (iso >= "2027-03-26" && iso <= "2027-04-11") return true;
+        if (iso === "2027-05-03") return true;
+        if (serviceId === "day_centre" && !weekend) return false;
+        if (!weekend && iso >= "2026-10-24" && iso <= "2026-11-01") return true;
+        if (weekend && iso >= "2026-10-24" && iso <= "2026-10-25") return true;
+        if (weekend && iso >= "2026-10-31" && iso <= "2026-11-01") return true;
+        if (weekend && iso >= "2027-02-13" && iso <= "2027-02-14") return true;
+        if (weekend && iso >= "2027-02-20" && iso <= "2027-02-21") return true;
+        if (weekend && iso >= "2027-05-29" && iso <= "2027-05-30") return true;
+        if (weekend && iso >= "2027-06-05" && iso <= "2027-06-06") return true;
+        return false;
       }
 
       function adminOverrideStartNote(slot) {
@@ -2417,6 +2436,7 @@
         var dateIso = resolveBookableSessionDateIso(slot.day, slot.dateIso || "", {
           bookingKind: bookingKind,
           timeLabel: slot.timeLabel || "",
+          serviceId: slot.serviceId || "",
         });
         if (dateIso) q.set("date", dateIso);
         q.set("booking_kind", bookingKind);

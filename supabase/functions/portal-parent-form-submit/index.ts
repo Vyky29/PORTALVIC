@@ -845,6 +845,7 @@ Deno.serve(async (req) => {
           day: bookingRequest.day,
           time: bookingRequest.time,
           venue: bookingRequest.venue,
+          service: bookingRequest.service_name || bookingRequest.service_id,
           asOfIso: calendarDateIsoInLondon(),
           bookingKind: bookingRequest.booking_kind,
         },
@@ -859,6 +860,7 @@ Deno.serve(async (req) => {
           dateIso: bookingRequest.date_iso,
           day: bookingRequest.day,
           time: bookingRequest.time,
+          service: bookingRequest.service_name || bookingRequest.service_id,
           asOfIso: calendarDateIsoInLondon(),
           bookingKind: bookingRequest.booking_kind,
         });
