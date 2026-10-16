@@ -25,6 +25,7 @@ import {
   sessionBlockEmailText,
 } from "./portal_booking_context.ts";
 import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
+import { displaceOpenMakeupOnSeat } from "./parent_portal_makeup_roster.ts";
 import {
   type BookingTermKey,
   type NewClientPayPlan,
@@ -1617,6 +1618,17 @@ async function ensurePaidBookingScheduleOverride(
   let inserted = 0;
   let existed = 0;
   for (const band of bands) {
+    try {
+      await displaceOpenMakeupOnSeat(admin, {
+        sessionDate: iso,
+        staffKey: staffId,
+        anchorStart: band.start,
+        bookedClientName: client,
+        actorId,
+      });
+    } catch (e) {
+      console.warn("[syncOpsAfterFinishBookingPaid] displace makeup", e);
+    }
     const { data: existing } = await admin
       .from("schedule_overrides")
       .select("id, payload")

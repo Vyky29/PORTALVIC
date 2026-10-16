@@ -4520,6 +4520,15 @@
                 __portalScheduleOverride: ov
               }, meta);
             }
+            const newClientFromClear = typeof portalTryNewClientTodayCardFromOpenSlot === 'function'
+              ? portalTryNewClientTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote)
+              : null;
+            if(newClientFromClear){
+              return Object.assign({}, meta, newClientFromClear, {
+                __portalScheduleOverride: newClientFromClear.__portalScheduleOverride,
+                scheduleAdminAdjusted: true
+              });
+            }
             const makeupFromClear = portalTryMakeupTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote);
             if(makeupFromClear){
               return Object.assign({}, meta, makeupFromClear, {
@@ -4533,15 +4542,6 @@
             if(moveInFromClear){
               return Object.assign({}, meta, moveInFromClear, {
                 __portalScheduleOverride: moveInFromClear.__portalScheduleOverride,
-                scheduleAdminAdjusted: true
-              });
-            }
-            const newClientFromClear = typeof portalTryNewClientTodayCardFromOpenSlot === 'function'
-              ? portalTryNewClientTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote)
-              : null;
-            if(newClientFromClear){
-              return Object.assign({}, meta, newClientFromClear, {
-                __portalScheduleOverride: newClientFromClear.__portalScheduleOverride,
                 scheduleAdminAdjusted: true
               });
             }
@@ -4573,6 +4573,15 @@
             }, meta);
           }
           if(st === 'Available'){
+            const newClientFromOpen = typeof portalTryNewClientTodayCardFromOpenSlot === 'function'
+              ? portalTryNewClientTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote)
+              : null;
+            if(newClientFromOpen){
+              return Object.assign({}, meta, newClientFromOpen, {
+                __portalScheduleOverride: newClientFromOpen.__portalScheduleOverride,
+                scheduleAdminAdjusted: true
+              });
+            }
             const makeupFromOpen = portalTryMakeupTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote);
             if(makeupFromOpen){
               return Object.assign({}, meta, makeupFromOpen, {
@@ -4586,15 +4595,6 @@
             if(moveInFromOpen){
               return Object.assign({}, meta, moveInFromOpen, {
                 __portalScheduleOverride: moveInFromOpen.__portalScheduleOverride,
-                scheduleAdminAdjusted: true
-              });
-            }
-            const newClientFromOpen = typeof portalTryNewClientTodayCardFromOpenSlot === 'function'
-              ? portalTryNewClientTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote)
-              : null;
-            if(newClientFromOpen){
-              return Object.assign({}, meta, newClientFromOpen, {
-                __portalScheduleOverride: newClientFromOpen.__portalScheduleOverride,
                 scheduleAdminAdjusted: true
               });
             }

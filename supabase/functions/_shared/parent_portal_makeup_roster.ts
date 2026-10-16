@@ -5,6 +5,7 @@ import {
   rosterParticipantSlugAlias,
   slugifyParticipantKey,
 } from "./participant_identity.ts";
+import { notifyParentMakeupLost } from "./portal_makeup_offer_notify.ts";
 
 export function cleanMakeup(v: unknown, max = 500): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -145,6 +146,13 @@ export async function applyAcceptedMakeupToRoster(
     return { override_id: null, error: "time_required" };
   }
 
+  if (await openSeatHasBooking(admin, sessionDate, staffKey, anchorStart)) {
+    return {
+      override_id: null,
+      error: "That seat is already booked. Pick another makeup.",
+    };
+  }
+
   const client = resolveMakeupClientSlug({
     displayName: String(grant.participant_display || ""),
     contactId: String(grant.contact_id || offer.contact_id || ""),
@@ -233,4 +241,150 @@ export async function applyAcceptedMakeupToRoster(
     .eq("id", offer.id);
 
   return { override_id: String(inserted.id) };
+}
+
+function payloadRecord(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : {};
+}
+
+/** Trial or term book on an open seat. A makeup does not count. */
+export function overridePayloadIsBookingSeat(payload: unknown): boolean {
+  const p = payloadRecord(payload);
+  if (p.is_trial === true || p.finish_booking === true || p.finish_booking === "true") return true;
+  if (p.new_client === true || p.new_client === "true") return true;
+  if (p.term_new_participant === true || p.term_new_participant === "true") return true;
+  const kind = String(p.booking_kind || p.session_kind || "").trim().toLowerCase();
+  return kind === "trial" || kind === "term";
+}
+
+export function overridePayloadIsOpenMakeup(payload: unknown): boolean {
+  const p = payloadRecord(payload);
+  return p.open_slot_makeup === true ||
+    p.parent_portal_makeup === true ||
+    !!cleanMakeup(p.makeup_offer_id, 80);
+}
+
+function childNamesCollide(bookedName: string, makeupName: string): boolean {
+  const norm = (v: string) =>
+    v.toLowerCase().replace(/\(trial\)/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  const a = norm(bookedName);
+  const b = norm(makeupName);
+  if (!a || !b) return false;
+  return a === b || a.includes(b) || b.includes(a);
+}
+
+export async function openSeatHasBooking(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  sessionDate: string,
+  staffKey: string,
+  anchorStart: string,
+): Promise<boolean> {
+  const { data } = await admin
+    .from("schedule_overrides")
+    .select("id, payload")
+    .eq("session_date", sessionDate)
+    .eq("status", "active")
+    .ilike("anchor_staff_id", staffKey)
+    .eq("anchor_start", anchorStart)
+    .eq("override_type", "client_replace_in_slot")
+    .limit(8);
+  return (data || []).some((row: { payload?: unknown }) =>
+    overridePayloadIsBookingSeat(row.payload)
+  );
+}
+
+/**
+ * A trial, booking, or term book takes the seat.
+ * The makeup comes off, the grant goes back to open, and the parent is told
+ * the office will offer another day.
+ */
+export async function displaceOpenMakeupOnSeat(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  opts: {
+    sessionDate: string;
+    staffKey: string;
+    anchorStart: string;
+    bookedClientName: string;
+    actorId?: string | null;
+  },
+): Promise<{ displaced: number }> {
+  const sessionDate = cleanMakeup(opts.sessionDate, 12);
+  const staffKey = normalizeStaffRosterKey(opts.staffKey);
+  const anchorStart = cleanMakeup(opts.anchorStart, 12);
+  if (!sessionDate || !staffKey || !anchorStart) return { displaced: 0 };
+
+  const { data: rows } = await admin
+    .from("schedule_overrides")
+    .select("id, payload, reason")
+    .eq("session_date", sessionDate)
+    .eq("status", "active")
+    .ilike("anchor_staff_id", staffKey)
+    .eq("anchor_start", anchorStart)
+    .eq("override_type", "client_replace_in_slot")
+    .limit(8);
+
+  let displaced = 0;
+  const now = new Date().toISOString();
+  for (const row of rows || []) {
+    const payload = payloadRecord(row.payload);
+    if (!overridePayloadIsOpenMakeup(payload)) continue;
+    if (overridePayloadIsBookingSeat(payload)) continue;
+    const makeupName = String(
+      payload.replacement_client_name || payload.to_client_name || "",
+    );
+    if (childNamesCollide(opts.bookedClientName, makeupName)) continue;
+
+    const actorId = cleanMakeup(opts.actorId, 60);
+    const patch: Record<string, unknown> = {
+      status: "cancelled",
+      reason: "Seat booked - makeup removed. Office will offer another day.",
+      updated_at: now,
+    };
+    if (actorId) patch.updated_by = actorId;
+    const { error } = await admin
+      .from("schedule_overrides")
+      .update(patch)
+      .eq("id", row.id)
+      .eq("status", "active");
+    if (error) {
+      console.warn("[displaceOpenMakeupOnSeat]", error.message);
+      continue;
+    }
+    displaced++;
+
+    const offerId = cleanMakeup(payload.makeup_offer_id, 80);
+    if (!offerId) continue;
+    const { data: offer } = await admin
+      .from("portal_parent_makeup_offers")
+      .select("*")
+      .eq("id", offerId)
+      .maybeSingle();
+    if (!offer) continue;
+    await admin
+      .from("portal_parent_makeup_offers")
+      .update({ status: "withdrawn", updated_at: now, responded_at: now })
+      .eq("id", offerId);
+    const grantId = cleanMakeup(offer.grant_id, 80);
+    let grant: Record<string, unknown> | null = null;
+    if (grantId) {
+      const { data: grantRow } = await admin
+        .from("portal_parent_makeup_grants")
+        .select("*")
+        .eq("id", grantId)
+        .maybeSingle();
+      grant = grantRow || null;
+      await admin
+        .from("portal_parent_makeup_grants")
+        .update({ status: "open", closed_at: null, updated_at: now })
+        .eq("id", grantId);
+    }
+    try {
+      await notifyParentMakeupLost(admin, grant || {}, offer);
+    } catch (e) {
+      console.warn("[displaceOpenMakeupOnSeat] notify", e);
+    }
+  }
+  return { displaced };
 }

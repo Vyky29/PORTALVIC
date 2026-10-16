@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16-v463",
+  "version": "2026-10-16-v464",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2701,7 +2701,8 @@
             "Confirm date puts the child on the roster and paints the yellow makeup chip. The parent does not Accept or Decline. A reply on WhatsApp does not change the day. The date on the Absents row under Proof deadline is the proof window, not the makeup day.",
             "The parent card shows the session and the instructor name only. Do not put office words on it (Absents, decide queue, admin).",
             "Absent date stays the original missed day. If that makeup day is cancelled and you offer another day, the new row still shows the original date.",
-            "If a makeup was placed on a seat that is not on that day's roster, Schedule and Covers still shows that name so you can open Change and Undo change."
+            "If a makeup was placed on a seat that is not on that day's roster, Schedule and Covers still shows that name so you can open Change and Undo change.",
+            "A makeup does not hold the booking seat. If a trial, a booking, or a term book takes that half, the makeup comes off. Sessions Overview, Staff, and Schedule and Covers show the new child. The parent is told that day's makeup is gone and the office will offer another."
           ]
         },
         {

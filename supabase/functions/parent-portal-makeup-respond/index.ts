@@ -100,8 +100,9 @@ Deno.serve(async (req) => {
         ok: false,
         error: "roster_failed",
         roster_error: roster.error || "unknown",
-        message:
-          "Could not place this makeup on the timetable. It is still waiting for Accept. Please try again or contact the office.",
+        message: roster.error && roster.error.indexOf(" ") >= 0
+          ? roster.error
+          : "Could not place this makeup on the timetable. It is still waiting for Accept. Please try again or contact the office.",
       });
     }
 

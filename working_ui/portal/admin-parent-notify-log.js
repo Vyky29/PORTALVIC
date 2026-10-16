@@ -348,6 +348,7 @@
     session_time_change: "Time change",
     absence_announced: "Absence",
     makeup_scheduled: "Make up session",
+    makeup_displaced: "Makeup no longer available",
     trial_scheduled: "Trial session",
     session_cancelled: "Session cancelled",
     booking_confirmation: "Booking confirmation",

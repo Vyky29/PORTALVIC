@@ -2489,10 +2489,11 @@ function rosterRowToSlot(isoDate, wd, r) {
           var aliases = swimfarmInstructorAnchorAliases(ov.anchor_staff_id);
           if (!aliases.length || aliases.indexOf(sStaff) < 0) continue;
         }
-        if (
-          !best ||
-          (ov.created_at && (!best.created_at || String(ov.created_at) > String(best.created_at)))
-        ) {
+        /* A trial or term book keeps the seat. A makeup on the same half loses. */
+        var rank = overrideIsTrialType(ov) || overrideIsNewClientReplace(ov) ? 2 : (overrideIsMakeupReplaceType(ov) ? 0 : 1);
+        var bestRank = !best ? -1 : (overrideIsTrialType(best) || overrideIsNewClientReplace(best) ? 2 : (overrideIsMakeupReplaceType(best) ? 0 : 1));
+        var newer = !!(ov.created_at && (!best || !best.created_at || String(ov.created_at) > String(best.created_at)));
+        if (!best || rank > bestRank || (rank === bestRank && newer)) {
           best = ov;
         }
       }

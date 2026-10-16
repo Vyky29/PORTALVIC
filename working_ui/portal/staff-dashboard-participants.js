@@ -5371,6 +5371,15 @@
       if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(ov)){
         return null;
       }
+      /* Open-seat makeup adds a child. It does not mark their normal session Absent. */
+      const mkPl = ov.payload || {};
+      if(mkPl.open_slot_makeup === true || mkPl.parent_portal_makeup === true || mkPl.makeup_offer_id){
+        return null;
+      }
+      if(typeof portalScheduleOverrideAnchorIsOpenSlot === 'function'
+        && portalScheduleOverrideAnchorIsOpenSlot(ov.anchor_client_id)){
+        return null;
+      }
       const repId = portalOverrideReplacementClientId(ov.payload);
       const anchorId = String(s.clientId || '').trim().toLowerCase();
       if(!repId || !anchorId || repId === anchorId) return null;
