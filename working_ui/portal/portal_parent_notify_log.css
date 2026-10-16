@@ -398,6 +398,13 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   color: #334155;
 }
 
+.portal-pnlog-enrolled-chip--ended {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: currentColor;
+  opacity: 0.8;
+}
+
 /* Thread row — always tall enough to read history while Meta template is open */
 .portal-pnlog-thread-scroll {
   flex: 1 1 0;

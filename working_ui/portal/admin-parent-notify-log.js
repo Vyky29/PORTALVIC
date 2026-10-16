@@ -1307,13 +1307,23 @@
         prev.day === slot.day &&
         prev.venue === slot.venue &&
         prev.serviceKey === slot.serviceKey &&
-        /multi/.test(prev.serviceKey) &&
         prev.end === slot.start &&
         prev.mins <= 50 &&
-        slot.mins <= 50;
+        slot.mins <= 50 &&
+        (/multi/.test(prev.serviceKey) ||
+          (/aquatic/.test(prev.serviceKey) &&
+            prev.mins <= 35 &&
+            slot.mins <= 35 &&
+            Object.keys(prev.instructors || {})
+              .sort()
+              .join("|") ===
+              Object.keys(slot.instructors || {})
+                .sort()
+                .join("|")));
       if (canMerge) {
         prev.end = slot.end;
         prev.mins = prev.end - prev.start;
+        prev.ended = !!(prev.ended && slot.ended);
         Object.keys(slot.instructors || {}).forEach(function (k) {
           prev.instructors[k] = true;
         });
@@ -1327,24 +1337,31 @@
         start: slot.start,
         end: slot.end,
         mins: slot.mins,
+        ended: !!slot.ended,
         instructors: Object.assign(Object.create(null), slot.instructors || {}),
       });
     });
     // Drop Multi fragments fully covered by a longer same-day/venue Multi block
     // (e.g. leftover 4–5.15 when 4.30–6 already merged).
     var kept = out.filter(function (slot, idx) {
-      if (!/multi/.test(slot.serviceKey)) return true;
+      if (!/multi/.test(slot.serviceKey) && !/aquatic/.test(slot.serviceKey)) return true;
       for (var i = 0; i < out.length; i++) {
         if (i === idx) continue;
         var other = out[i];
         if (other.day !== slot.day || other.venue !== slot.venue) continue;
-        if (!/multi/.test(other.serviceKey)) continue;
+        if (other.serviceKey !== slot.serviceKey) continue;
         if (other.start <= slot.start && other.end >= slot.end && other.mins > slot.mins) {
           return false;
         }
         // Overlapping feedback fragment vs real 90' booking (e.g. 4–5.15 vs 4.30–6).
         var overlap = Math.min(slot.end, other.end) - Math.max(slot.start, other.start);
-        if (overlap > 0 && other.mins >= 80 && slot.mins < other.mins && overlap >= Math.min(slot.mins, 30)) {
+        if (
+          /multi/.test(slot.serviceKey) &&
+          overlap > 0 &&
+          other.mins >= 80 &&
+          slot.mins < other.mins &&
+          overlap >= Math.min(slot.mins, 30)
+        ) {
           return false;
         }
       }
@@ -1372,6 +1389,7 @@
           start: slot.start,
           end: slot.end,
           mins: slot.mins,
+          ended: !!slot.ended,
           instructors: Object.assign(Object.create(null), slot.instructors || {}),
         };
         return;
@@ -1379,6 +1397,7 @@
       buckets[bk].start = Math.min(buckets[bk].start, slot.start);
       buckets[bk].end = Math.max(buckets[bk].end, slot.end);
       buckets[bk].mins = buckets[bk].end - buckets[bk].start;
+      if (!slot.ended) buckets[bk].ended = false;
       Object.keys(slot.instructors || {}).forEach(function (k) {
         buckets[bk].instructors[k] = true;
       });
@@ -1393,7 +1412,28 @@
   /**
    * Enrolled service chips for the participant (hover = ratio / day / time / venue).
    * Multi-Activity halves and Day Centre fragments are merged to the real booking.
+   * Aquatic halves with the same instructor merge to one chip.
+   * A service cancelled for the rest of the term stays, with a line through the words.
    */
+  function todayIsoLocal() {
+    var d = new Date();
+    function p(n) {
+      return (n < 10 ? "0" : "") + n;
+    }
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+
+  /** Serine Sunday Westway climbing 12-1 ended 18 Oct 2026. She stays a client. */
+  function enrolledServiceEnded(clientName, day, service, venue, bounds) {
+    if (todayIsoLocal() < "2026-10-18") return false;
+    if (!/^serine\b/i.test(String(clientName || "").trim())) return false;
+    if (!/climb/i.test(String(service || ""))) return false;
+    if (!/westway/i.test(String(venue || ""))) return false;
+    if (String(day || "").toLowerCase() !== "sunday") return false;
+    if (!bounds) return false;
+    return bounds.start === 12 * 60 && bounds.end === 13 * 60;
+  }
+
   function enrolledChipsForClient(clientName) {
     var want = String(clientName || "").trim();
     if (!want) return "";
@@ -1412,6 +1452,7 @@
       if (!day || !service || !bounds) return;
       var serviceKey = shortServiceLabel(service).toLowerCase() || service.toLowerCase();
       var dk = [day, serviceKey, venue, bounds.start, bounds.end].join("|");
+      var ended = enrolledServiceEnded(rowName, day, service, venue, bounds);
       if (!deduped[dk]) {
         deduped[dk] = {
           day: day,
@@ -1421,8 +1462,11 @@
           start: bounds.start,
           end: bounds.end,
           mins: bounds.mins,
+          ended: ended,
           instructors: Object.create(null),
         };
+      } else if (!ended) {
+        deduped[dk].ended = false;
       }
       String(r.instructors || r.instructor || "")
         .split(/[,+/&|]/)
@@ -1448,8 +1492,11 @@
           start: slot.start,
           end: slot.end,
           mins: slot.mins,
+          ended: !!slot.ended,
           days: Object.create(null),
         };
+      } else if (!slot.ended) {
+        groups[gk].ended = false;
       }
       groups[gk].days[slot.day] = true;
     });
@@ -1479,10 +1526,12 @@
         tipBits.push(formatTimeRangeFromMinutes(g.start, g.end));
         tipBits.push(g.venue);
         var tip = tipBits.filter(Boolean).join(" / ");
+        if (g.ended) tip = "Cancelled this term. Still a client. " + tip;
         var tone = serviceChipTone(g.service, g.venue);
         return (
           '<span class="portal-pnlog-enrolled-chip portal-pnlog-enrolled-chip--' +
           esc(tone) +
+          (g.ended ? " portal-pnlog-enrolled-chip--ended" : "") +
           '" title="' +
           esc(tip) +
           '">' +

@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16-v461",
+  "version": "2026-10-16-v462",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -2847,7 +2847,8 @@
             "Every parent API message ends with: To reply, use Messages in the parent portal, or call or message 07592 558671. Then: This is an automatic message from the system. Please do not reply here. Then: Thank you, ClubSENsational Portal. Please do not reply here is bold on WhatsApp.",
             "Template portal_parent_update covers common drafts.",
             "To edit the approved templates, Settings has Edit WhatsApp templates. It opens Meta. Log in with the Facebook account that owns the business. Parents use portal_parent_update_v3. Staff use portal_staff_update_v3. Urgent stays portal_parent_urgent_v1.",
-            "Do not press Enter inside the one {{1}} box. Meta rejects that and the portal flattens the text into one block. For gaps, create a new template (do not edit the live one) with a blank line between each box: {{1}} then a blank line then {{2}} then a blank line then {{3}}. When Meta shows Approved, the automations can fill one paragraph per box."
+            "Do not press Enter inside the one {{1}} box. Meta rejects that and the portal flattens the text into one block. For gaps, create a new template (do not edit the live one) with a blank line between each box: {{1}} then a blank line then {{2}} then a blank line then {{3}}. When Meta shows Approved, the automations can fill one paragraph per box.",
+            "Service chips above the chat are the places they still have. Two aquatic halves with the same instructor show as one hour. A service cancelled for the rest of the term stays, with a line through the words. The child is still a client."
           ],
           "es": {
             "title": "Avisos a padres / WhatsApp",
@@ -2863,7 +2864,8 @@
               "Cada mensaje de API a padres cierra con: To reply, use Messages in the parent portal, or call or message 07592 558671. Luego: This is an automatic message from the system. Please do not reply here. Luego: Thank you, ClubSENsational Portal. Please do not reply here va en negrita en WhatsApp.",
               "La plantilla portal_parent_update cubre los borradores habituales.",
               "Para editar las plantillas: Settings, Edit WhatsApp templates. Abre Meta. Entra con la cuenta de Facebook del negocio. Padres: portal_parent_update_v3. Staff: portal_staff_update_v3. Urgente: portal_parent_urgent_v1.",
-              "No pulses Enter dentro de la caja {{1}}. Meta lo rechaza y el portal junta el texto en un bloque. Para que haya espacio, crea una plantilla nueva (no edites la que ya esta en uso) con una linea en blanco entre cada caja: {{1}}, linea en blanco, {{2}}, linea en blanco, {{3}}. Cuando Meta ponga Approved, las automatizaciones pueden meter un parrafo en cada caja."
+              "No pulses Enter dentro de la caja {{1}}. Meta lo rechaza y el portal junta el texto en un bloque. Para que haya espacio, crea una plantilla nueva (no edites la que ya esta en uso) con una linea en blanco entre cada caja: {{1}}, linea en blanco, {{2}}, linea en blanco, {{3}}. Cuando Meta ponga Approved, las automatizaciones pueden meter un parrafo en cada caja.",
+              "Los chips de servicio encima del chat son las plazas que siguen. Dos medias horas de aquatic con el mismo instructor salen como una hora. Un servicio cancelado el resto del termino se queda, con una linea sobre las letras. El nino sigue siendo cliente."
             ]
           }
         },
