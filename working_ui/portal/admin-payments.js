@@ -1161,6 +1161,17 @@
     aydaan: 2470,
   };
 
+  /**
+   * Ealing Domcare cycle 1 (07/09-04/10/2026): remittance 73979, Tide 12 Oct 2026 £3,090.16.
+   * Ahmed brothers were not on that remittance. Paint against Autumn face only.
+   */
+  var EALING_AUTUMN_CYCLE1 = {
+    tinashe: 2011.52,
+    amar_rai: 583.04,
+    samer: 349.84,
+    steven: 145.76,
+  };
+
   function applyOfficeEalingSummerIn(r) {
     if (!r || r._crash || !isSummerTermRow(r)) return;
     if (isDayCentreRow(r)) return;
@@ -1197,6 +1208,42 @@
       r.payment_status = "Partial";
       r.amount_out = Math.round((face - received) * 100) / 100;
     }
+  }
+
+  function applyOfficeEalingAutumnCycle1(r) {
+    if (!r || r._crash) return;
+    if (termBucketFor(r) !== "autumn_2627") return;
+    if (typeof isDayCentreRow === "function" && isDayCentreRow(r)) return;
+    var slug = paymentParticipantSlug(r);
+    var name = String((r && r.client_name) || "").toLowerCase();
+    var svc = typeof rowServiceBlob === "function" ? rowServiceBlob(r) : "";
+    var paidBy = String((r.data && r.data.Paid) || "").toLowerCase();
+    if (/nhs/.test(paidBy)) return;
+    var key = "";
+    if (slug.indexOf("samer") === 0 || name.indexOf("samer") >= 0) key = "samer";
+    else if (slug.indexOf("steven") === 0 || name.indexOf("steven") >= 0) key = "steven";
+    else if (slug.indexOf("tinashe") === 0 || name.indexOf("tinashe") >= 0) {
+      if (/\bfri/.test(svc) && !/\bmon|\bwed/.test(svc)) return;
+      key = "tinashe";
+    } else if (
+      slug === "amar_rai" ||
+      name.indexOf("amar-rai") >= 0 ||
+      name.indexOf("amar rai") >= 0 ||
+      name.indexOf("sandhir") >= 0
+    ) {
+      key = "amar_rai";
+    }
+    var cyclePaid = EALING_AUTUMN_CYCLE1[key];
+    if (!(cyclePaid > 0)) return;
+    var autumn = Number(r._amountAutumn) || Number(r.amount) || Number(r.amount_billed) || 0;
+    if (!(autumn > 0)) return;
+    var paid = Math.max(Number(r._amountPaid) || 0, cyclePaid);
+    r._amountPaid = Math.round(paid * 100) / 100;
+    r.amount_out = Math.max(0, Math.round((autumn - r._amountPaid) * 100) / 100);
+    r.payment_status = r.amount_out > 0.009 ? "Partial" : "Paid";
+    r._officeMonthLines = [
+      { t: "Cycle 1 £" + (typeof money === "function" ? money(cyclePaid) : String(cyclePaid)), paid: true },
+    ];
   }
 
   /**
@@ -7192,6 +7239,7 @@
         invoice_type: row.data && row.data["Invoice type"],
         _reenrol: true,
       });
+      applyOfficeEalingAutumnCycle1(row);
       return row;
     });
   }
