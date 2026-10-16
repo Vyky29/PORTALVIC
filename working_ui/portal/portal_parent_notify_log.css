@@ -175,10 +175,6 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   overscroll-behavior: contain;
 }
 
-#portalPnlogComposerMount {
-  display: none;
-}
-
 .portal-pnlog-conv {
   display: flex;
   flex-direction: column;

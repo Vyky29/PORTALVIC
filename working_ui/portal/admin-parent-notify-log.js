@@ -2235,9 +2235,13 @@
     return host.querySelector("#portalPnlogChatShell");
   }
 
-  function mountComposer() {
+  function mountComposer(t) {
     var mount = document.getElementById("portalPnlogComposerMount");
-    if (mount) mount.innerHTML = "";
+    if (!mount) return;
+    var html = renderComposer(t || null);
+    if (mount.getAttribute("data-biz-html") === html) return;
+    mount.innerHTML = html;
+    mount.setAttribute("data-biz-html", html);
   }
 
   function isNearBottom(el) {
