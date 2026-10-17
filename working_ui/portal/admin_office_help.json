@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16-v471",
+  "version": "2026-10-17-v472",
   "title": "Office help guide",
   "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
@@ -4535,11 +4535,13 @@
             "Card or Apple Pay confirms by itself. Bank transfer is manual: the parent pays, WhatsApps the office, then the office marks paid.",
             "The bank reference is the child name plus the date of the first session they are paying for, for example Mohamed 18 Oct 26. Tide keeps 18 characters, so a long name uses the first name. Autumn, spring, summer, flexi 1 and flexi 2 each get their own date. The invoice number does not exist until Mark paid.",
             "There is no separate leave button. If they do not pay by the deadline, the seat goes live.",
-            "Opening the pay page does not cut the hold down to 30 minutes."
+            "Opening the pay page does not cut the hold down to 30 minutes.",
+            "If the office cancels the trial (credit held, seat released, override cancelled), the post-trial offer must be cancelled too. Otherwise the cron still emails a term pay link after the trial hour. Cancel the pending offer, release the soft hold, and expire any finish-booking token. Do not message the parent about term pay."
           ],
           "tips": [
             "The clock starts when the trial starts. It is not 23:59 the same night, and it is not 14 days.",
-            "The parent does not get this WhatsApp on the day they pay for the trial. It goes out after the trial hour has finished. The cron checks every 10 minutes."
+            "The parent does not get this WhatsApp on the day they pay for the trial. It goes out after the trial hour has finished. The cron checks every 10 minutes.",
+            "Cancelled trial = no automatic pay link. The cron now skips / closes the offer when the trial reservation is released."
           ]
         },
         {

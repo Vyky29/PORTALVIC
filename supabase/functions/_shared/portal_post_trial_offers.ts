@@ -885,6 +885,82 @@ async function releaseSoftHold(
     .neq("status", "released");
 }
 
+/**
+ * True when the office cancelled / released the paid trial seat.
+ * In that case the family must not get the automatic term pay waves.
+ */
+async function trialReservationCancelled(
+  admin: SupabaseClient,
+  offer: Record<string, unknown>,
+): Promise<{ cancelled: boolean; reason: string }> {
+  const trialId = clean(offer.reservation_id, 80);
+  if (!trialId) return { cancelled: false, reason: "" };
+  const { data } = await admin
+    .from("portal_booking_slot_reservations")
+    .select("id, status, notes")
+    .eq("id", trialId)
+    .maybeSingle();
+  if (!data) return { cancelled: true, reason: "trial_reservation_missing" };
+  const st = String(data.status || "").toLowerCase();
+  if (st === "released" || st === "cancelled" || st === "expired" || st === "void") {
+    return { cancelled: true, reason: `trial_status_${st}` };
+  }
+  const notes = String(data.notes || "");
+  if (
+    /office_cancel|cancelled_trial|trial_cancelled|credit_held|no_fee_cancel|cancel_sat|cancel_thu/i
+      .test(notes)
+  ) {
+    return { cancelled: true, reason: "trial_notes_cancelled" };
+  }
+  return { cancelled: false, reason: "" };
+}
+
+/**
+ * Office / scripts: close a pending post-trial offer when the trial itself is cancelled.
+ * Releases the soft hold. Does not message the parent.
+ */
+export async function cancelPostTrialOfferForTrialReservation(
+  admin: SupabaseClient,
+  trialReservationId: string,
+  resolveNote = "office_trial_cancelled",
+): Promise<{ ok: boolean; offer_id?: string; note: string }> {
+  const id = clean(trialReservationId, 80);
+  if (!id) return { ok: false, note: "no_reservation_id" };
+  const { data: offer } = await admin
+    .from("portal_post_trial_offers")
+    .select("*")
+    .eq("reservation_id", id)
+    .eq("status", "pending")
+    .maybeSingle();
+  if (!offer?.id) return { ok: true, note: "no_pending_offer" };
+  const now = new Date().toISOString();
+  await releaseSoftHold(admin, offer, "trial_cancelled");
+  const meta =
+    offer.meta && typeof offer.meta === "object" && !Array.isArray(offer.meta)
+      ? (offer.meta as Record<string, unknown>)
+      : {};
+  const finishTokenId = clean(meta.finish_token_id, 80);
+  if (finishTokenId) {
+    await admin
+      .from("portal_booking_completion_tokens")
+      .update({ status: "expired", updated_at: now })
+      .eq("id", finishTokenId)
+      .neq("status", "used");
+  }
+  const { error } = await admin
+    .from("portal_post_trial_offers")
+    .update({
+      status: "cancelled",
+      resolved_at: now,
+      resolve_note: clean(resolveNote, 200),
+      updated_at: now,
+    })
+    .eq("id", offer.id)
+    .eq("status", "pending");
+  if (error) return { ok: false, offer_id: String(offer.id), note: error.message };
+  return { ok: true, offer_id: String(offer.id), note: "cancelled" };
+}
+
 /** Cron tick: wave1 after session end, wave2 at 20:00, release at start + 24h. */
 export async function runPostTrialOffersMaintenance(
   admin: SupabaseClient,
@@ -895,6 +971,7 @@ export async function runPostTrialOffersMaintenance(
     wave2: 0,
     term_booked: 0,
     eod_released: 0,
+    trial_cancelled: 0,
     errors: 0,
   };
   const now = new Date();
@@ -914,6 +991,35 @@ export async function runPostTrialOffersMaintenance(
     stats.pending += 1;
     try {
       const offer = await refreshOfferSlotFromReservation(admin, rawOffer);
+
+      const trialGone = await trialReservationCancelled(admin, offer);
+      if (trialGone.cancelled) {
+        await releaseSoftHold(admin, offer, "trial_cancelled");
+        const meta =
+          offer.meta && typeof offer.meta === "object" && !Array.isArray(offer.meta)
+            ? (offer.meta as Record<string, unknown>)
+            : {};
+        const finishTokenId = clean(meta.finish_token_id, 80);
+        if (finishTokenId) {
+          await admin
+            .from("portal_booking_completion_tokens")
+            .update({ status: "expired", updated_at: now.toISOString() })
+            .eq("id", finishTokenId)
+            .neq("status", "used");
+        }
+        await admin
+          .from("portal_post_trial_offers")
+          .update({
+            status: "cancelled",
+            resolved_at: now.toISOString(),
+            resolve_note: `auto_${trialGone.reason}`,
+            updated_at: now.toISOString(),
+          })
+          .eq("id", offer.id)
+          .eq("status", "pending");
+        stats.trial_cancelled += 1;
+        continue;
+      }
 
       if (await softHoldAlreadyPaid(admin, offer)) {
         await admin
