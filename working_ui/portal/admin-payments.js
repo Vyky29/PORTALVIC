@@ -1340,33 +1340,107 @@
   }
 
   /**
-   * Live NHS monthly INV-Ps, Sep 2026–Jul 2027, uplift included. All still unpaid.
-   * Fadi 0235–0245, Emanuel 0260–0270, Ikram 0271–0281, Timi 0168–0178.
+   * Live NHS monthly INV-Ps, Sep 2026–Jul 2027, uplift included.
+   * Fadi 0235–0245 + 0551, Emanuel 0260–0270 + 0553, Ikram 0271–0281 + 0552, Timi 0168–0178 + 0554.
    * September is the calendar month CLCH released on 14 Oct 2026 (P0235 / P0271 / P0260).
    * Thu 1 + Fri 2 Oct fall between the two, billed on their own INV-P (0551-0554).
    * October is the first 4-week block CLCH asked for: 5 Oct to 1 Nov 2026, then every 4 weeks
    * (November 2 Nov to 29 Nov).
    * Must match portal_parent_invoice_share amount_gbp when an INV-P is reissued.
+   * Paid months paint green from amount_paid_gbp on each INV-P (e.g. Timi Sep INV-P-0168).
    */
   var NHS_FUNDER_YEAR_LINES = 12;
   var NHS_FUNDER_AUTUMN_LINES = 5;
   var NHS_FUNDER_SPRING_END = 8;
+  var NHS_FUNDER_MONTH_INVS = {
+    fadi: [
+      "INV-P-0235", "INV-P-0551", "INV-P-0236", "INV-P-0237", "INV-P-0238", "INV-P-0239",
+      "INV-P-0240", "INV-P-0241", "INV-P-0242", "INV-P-0243", "INV-P-0244", "INV-P-0245",
+    ],
+    ikram: [
+      "INV-P-0271", "INV-P-0552", "INV-P-0272", "INV-P-0273", "INV-P-0274", "INV-P-0275",
+      "INV-P-0276", "INV-P-0277", "INV-P-0278", "INV-P-0279", "INV-P-0280", "INV-P-0281",
+    ],
+    emanuel: [
+      "INV-P-0260", "INV-P-0553", "INV-P-0261", "INV-P-0262", "INV-P-0263", "INV-P-0264",
+      "INV-P-0265", "INV-P-0266", "INV-P-0267", "INV-P-0268", "INV-P-0269", "INV-P-0270",
+    ],
+    timi: [
+      "INV-P-0168", "INV-P-0554", "INV-P-0169", "INV-P-0170", "INV-P-0171", "INV-P-0172",
+      "INV-P-0173", "INV-P-0174", "INV-P-0175", "INV-P-0176", "INV-P-0177", "INV-P-0178",
+    ],
+  };
+  var NHS_FUNDER_MONTH_AMTS = {
+    fadi: [14534.08, 1321.28, 13212.8, 13212.8, 9248.96, 13212.8, 13212.8, 12552.16, 9909.6, 13873.44, 14534.08, 14534.08],
+    ikram: [13774.05, 765.23, 12243.6, 12243.6, 8417.48, 12243.6, 12243.6, 11478.38, 9182.7, 13008.83, 13774.05, 13008.83],
+    emanuel: [6631.95, 510.15, 6121.8, 6121.8, 4081.2, 6121.8, 6121.8, 5611.65, 4591.35, 6631.95, 6631.95, 6631.95],
+    timi: [2856.84, 357.11, 2856.84, 2856.84, 1785.53, 2856.84, 2856.84, 2499.74, 2142.63, 3213.95, 2856.84, 3213.95],
+  };
+
+  function nhsFunderSlugForInvoiceNumber(num) {
+    var n = String(num || "").trim().toUpperCase();
+    if (!n) return "";
+    var slugs = Object.keys(NHS_FUNDER_MONTH_INVS);
+    for (var i = 0; i < slugs.length; i++) {
+      var slug = slugs[i];
+      if (NHS_FUNDER_MONTH_INVS[slug].indexOf(n) >= 0) return slug;
+    }
+    return "";
+  }
 
   function nhsFunderYearMonths(r) {
     if (termBucketFor(r) !== "autumn_2627") return null;
     var slug = paymentParticipantSlug(r);
-    var table = {
-      fadi: [14534.08, 1321.28, 13212.8, 13212.8, 9248.96, 13212.8, 13212.8, 12552.16, 9909.6, 13873.44, 14534.08, 14534.08],
-      ikram: [13774.05, 765.23, 12243.6, 12243.6, 8417.48, 12243.6, 12243.6, 11478.38, 9182.7, 13008.83, 13774.05, 13008.83],
-      emanuel: [6631.95, 510.15, 6121.8, 6121.8, 4081.2, 6121.8, 6121.8, 5611.65, 4591.35, 6631.95, 6631.95, 6631.95],
-      timi: [2856.84, 357.11, 2856.84, 2856.84, 1785.53, 2856.84, 2856.84, 2499.74, 2142.63, 3213.95, 2856.84, 3213.95],
-    };
-    var amts = table[slug];
-    if (!amts) return null;
+    var amts = NHS_FUNDER_MONTH_AMTS[slug];
+    var invs = NHS_FUNDER_MONTH_INVS[slug];
+    if (!amts || !invs) return null;
+    var paidMap = (r && r._nhsPaidByInv) || {};
     var labels = ["Sep", "1-2 Oct", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
     return labels.map(function (lab, i) {
-      return { t: lab + " " + money(amts[i]), amt: amts[i] };
+      var face = amts[i];
+      var invNo = invs[i];
+      var paidCash = Number(paidMap[invNo]) || 0;
+      var paid = paidCash + 0.009 >= face && face > 0;
+      return {
+        t: lab + " " + money(face),
+        amt: face,
+        paid: paid,
+        inv: invNo,
+      };
     });
+  }
+
+  /** Apply year paid/due from monthly INV-Ps onto the aggregated NHS Day Centre row. */
+  function applyNhsFunderYearSettlement(row) {
+    if (!row) return;
+    var months = nhsFunderYearMonths(row);
+    if (!months || months.length !== NHS_FUNDER_YEAR_LINES) return;
+    var paidSum = 0;
+    var dueSum = 0;
+    var autumnDue = 0;
+    months.forEach(function (m, i) {
+      if (m.paid) paidSum = Math.round((paidSum + m.amt) * 100) / 100;
+      else {
+        dueSum = Math.round((dueSum + m.amt) * 100) / 100;
+        if (i < NHS_FUNDER_AUTUMN_LINES) {
+          autumnDue = Math.round((autumnDue + m.amt) * 100) / 100;
+        }
+      }
+    });
+    row._nhsMonthLines = months;
+    row._amountPaid = paidSum;
+    row.amount_out = dueSum;
+    row.amount_billed = Math.round((paidSum + dueSum) * 100) / 100;
+    if (paidSum < 0.01) row.payment_status = "Outstanding";
+    else if (dueSum < 0.01) row.payment_status = "Paid";
+    else row.payment_status = "Partial";
+    /* Keep Autumn face for the season split; chip Out/Part follows year due. */
+    if (!(Number(row._amountAutumn) > 0)) {
+      row._amountAutumn = Math.round(
+        months.slice(0, NHS_FUNDER_AUTUMN_LINES).reduce(function (s, m) { return s + m.amt; }, 0) * 100
+      ) / 100;
+    }
+    row.amount = Number(row._amountAutumn) || autumnDue;
   }
 
   /**
@@ -1494,14 +1568,17 @@
     var payCat = category(r);
     var paidSoFar = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
 
-    /* NHS Day Centre year is 11 monthly invoices, Sep 2026–Jul 2027. */
-    var nhsMonths = nhsFunderYearMonths(r);
+    /* NHS Day Centre year is 12 monthly INV-Ps, Sep 2026–Jul 2027 (+ 1-2 Oct gap). */
+    var nhsMonths = (r && r._nhsMonthLines) || nhsFunderYearMonths(r);
     if (bucket === "autumn_2627" && nhsMonths) {
       var nhsYear = 0;
       var nhsHtml = "";
       nhsMonths.forEach(function (line) {
         nhsYear = Math.round((nhsYear + line.amt) * 100) / 100;
-        nhsHtml += '<span class="pay-amt-season pay-amt-season--due">' + esc(line.t) + "</span>";
+        nhsHtml += '<span class="pay-amt-season '
+          + (line.paid ? "pay-amt-season--paid" : "pay-amt-season--due")
+          + '" title="' + esc((line.inv || "") + (line.paid ? " · paid" : " · unpaid")) + '">'
+          + esc(line.t) + "</span>";
       });
       return '<span class="pay-amt-stack" title="NHS monthly invoices Sep 2026 to Jul 2027">'
         + nhsHtml
@@ -6993,6 +7070,14 @@
       if (amt > 0) {
         row.amount_billed = Math.max(Number(row.amount_billed) || 0, amt);
       }
+      /* NHS Day Centre month INV-Ps: track cash per invoice for green month paint. */
+      var nhsInvNo = String(inv.invoice_number || "").trim().toUpperCase();
+      var nhsSlug = nhsFunderSlugForInvoiceNumber(nhsInvNo);
+      if (nhsSlug) {
+        row._nhsPaidByInv = row._nhsPaidByInv || {};
+        var nhsCash = Number(inv.amount_paid_gbp) || 0;
+        if (nhsCash > 0.009) row._nhsPaidByInv[nhsInvNo] = nhsCash;
+      }
       if (st === "paid") {
         var cashPaid = Number(inv.amount_paid_gbp) || 0;
         /*
@@ -7007,11 +7092,18 @@
             row.payment_status = "Outstanding";
           }
         } else if (paidOnInv > 0) {
-          row._amountPaid = Math.max(Number(row._amountPaid) || 0, paidOnInv);
-          /* Paid Autumn INV-P — clear outstanding unless a later autumn sibling is open. */
-          if (!(Number(row.amount_out) > 0) && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
-            row.amount_out = 0;
-            row.payment_status = "Paid";
+          /* NHS month pack: sum paid cash across INV-Ps (not max of one month). */
+          if (nhsSlug) {
+            row._amountPaid = Math.round(((Number(row._amountPaid) || 0) + paidOnInv) * 100) / 100;
+            if (Number(row.amount_out) > 0.009) row.payment_status = "Partial";
+            else row.payment_status = "Paid";
+          } else {
+            row._amountPaid = Math.max(Number(row._amountPaid) || 0, paidOnInv);
+            /* Paid Autumn INV-P — clear outstanding unless a later autumn sibling is open. */
+            if (!(Number(row.amount_out) > 0) && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+              row.amount_out = 0;
+              row.payment_status = "Paid";
+            }
           }
         }
       } else if (st === "partial") {
@@ -7054,7 +7146,15 @@
           return;
         }
         /* Outstanding: catalogue autumn still unpaid (don't stack instalment GBP). */
-        if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+        if (nhsSlug) {
+          /*
+           * NHS month siblings: one paid Sep must not be wiped to Out when Oct is open.
+           * Final paid/due comes from applyNhsFunderYearSettlement.
+           */
+          row.amount_out = Math.round(((Number(row.amount_out) || 0) + amt) * 100) / 100;
+          if (Number(row._amountPaid) > 0.009) row.payment_status = "Partial";
+          else row.payment_status = "Outstanding";
+        } else if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
           row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
           row.payment_status = "Outstanding";
         }
@@ -7094,7 +7194,7 @@
 
     return Object.keys(agg).map(function (key) {
       var row = agg[key];
-      /* NHS Day Centre: Autumn = Sep–Dec INV-Ps, year = all 11 (not the booking catalogue). */
+      /* NHS Day Centre: Autumn = Sep–Dec INV-Ps, year = all 12 (not the booking catalogue). */
       var nhsMonthsAgg = nhsFunderYearMonths(row);
       if (nhsMonthsAgg && nhsMonthsAgg.length === NHS_FUNDER_YEAR_LINES) {
         var nhsSum = function (from, to) {
@@ -7106,6 +7206,7 @@
         row._amountSpring = nhsSum(NHS_FUNDER_AUTUMN_LINES, NHS_FUNDER_SPRING_END);
         row._amountSummer = nhsSum(NHS_FUNDER_SPRING_END, NHS_FUNDER_YEAR_LINES);
         row._amountAnnual = nhsSum(0, NHS_FUNDER_YEAR_LINES);
+        applyNhsFunderYearSettlement(row);
       }
       var a = Number(row._amountAutumn) || 0;
       var sp = Number(row._amountSpring) || 0;
@@ -7123,31 +7224,35 @@
       }
       if (Number(row._amountAutumn) > 0) {
         row.amount = row._amountAutumn;
-        row.amount_billed = Math.max(Number(row.amount_billed) || 0, row._amountAutumn);
-        if (
-          String(row.payment_status || "").toLowerCase().indexOf("partial") === 0
-          && Number(row._amountPaid) > 0
-        ) {
-          row.amount_out = Math.max(
-            0,
-            Math.round((row._amountAutumn - Number(row._amountPaid)) * 100) / 100,
-          );
-        } else if (Number(row.amount_out) > 0) {
-          /* Keep split balance when one Autumn INV-P is paid and another is open. */
-          if (!(Number(row._amountPaid) > 0)) {
-            row.amount_out = row._amountAutumn;
-          }
-        } else if (!(Number(row._amountPaid) > 0)) {
-          /*
-           * Catalogue autumn with amount_out still at initial 0 (common for NHS/LA
-           * exempt invoices) — still owed until a real payment is recorded.
-           */
-          row.amount_out = row._amountAutumn;
+        if (!row._nhsMonthLines) {
+          row.amount_billed = Math.max(Number(row.amount_billed) || 0, row._amountAutumn);
+        }
+        if (!row._nhsMonthLines) {
           if (
-            String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0
+            String(row.payment_status || "").toLowerCase().indexOf("partial") === 0
+            && Number(row._amountPaid) > 0
           ) {
-            /* Fake "Paid" with no cash (H&F / NHS mes vencido) → Outstanding. */
-            row.payment_status = "Outstanding";
+            row.amount_out = Math.max(
+              0,
+              Math.round((row._amountAutumn - Number(row._amountPaid)) * 100) / 100,
+            );
+          } else if (Number(row.amount_out) > 0) {
+            /* Keep split balance when one Autumn INV-P is paid and another is open. */
+            if (!(Number(row._amountPaid) > 0)) {
+              row.amount_out = row._amountAutumn;
+            }
+          } else if (!(Number(row._amountPaid) > 0)) {
+            /*
+             * Catalogue autumn with amount_out still at initial 0 (common for NHS/LA
+             * exempt invoices) — still owed until a real payment is recorded.
+             */
+            row.amount_out = row._amountAutumn;
+            if (
+              String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0
+            ) {
+              /* Fake "Paid" with no cash (H&F / NHS mes vencido) → Outstanding. */
+              row.payment_status = "Outstanding";
+            }
           }
         }
       } else {
@@ -7155,7 +7260,9 @@
       }
       var autumnFaceFix = Number(row._amountAutumn) || 0;
       var paidFix = Number(row._amountPaid) || 0;
-      if (
+      if (row._nhsMonthLines) {
+        /* Paid/due already set from monthly INV-Ps — do not rebuild from Autumn face. */
+      } else if (
         autumnFaceFix > 0
         && paidFix > 0
         && paidFix + 0.009 < autumnFaceFix
